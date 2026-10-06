@@ -3,6 +3,14 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
   @script "scripts/maintainer/verify_phase140_read_only_closure.py"
   @contract_test "test/lockspire/release/phase140_read_only_closure_contract_test.exs"
+  @pre_terminal_planning_commit "877a0f758aa0bbd5433cbe3d70f1476fa0e12223"
+  @conditional_planning_records [
+    ".planning/REQUIREMENTS.md",
+    ".planning/ROADMAP.md",
+    ".planning/STATE.md",
+    ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md",
+    ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
+  ]
   @ci_workflow ".github/workflows/ci.yml"
   @mix_file "mix.exs"
   @ci_jobs [
@@ -50,6 +58,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     repo_root = Path.expand("../../..", __DIR__)
     fixture = build_fixture!(repo_root)
     on_exit(fn -> cleanup_fixture(fixture) end)
+    assert_pre_terminal_planning_inputs!(fixture, repo_root)
 
     before = repository_state(fixture.repository)
     protected_before = Enum.map(@protected_files, &File.read!(Path.join(fixture.repository, &1)))
@@ -296,6 +305,53 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       git_count_file: Path.join(directory, "ls-remote-count"),
       real_git: System.find_executable("git")
     }
+  end
+
+  defp assert_pre_terminal_planning_inputs!(fixture, repo_root) do
+    records =
+      Map.new(@conditional_planning_records, fn relative ->
+        expected =
+          git!(repo_root, ["show", "#{@pre_terminal_planning_commit}:#{relative}"])
+
+        actual = File.read!(Path.join(fixture.repository, relative))
+        assert actual == expected, "fixture did not use historical planning blob #{relative}"
+        {relative, actual}
+      end)
+
+    requirements = Map.fetch!(records, ".planning/REQUIREMENTS.md")
+
+    for id <- ["CI-06", "CI-07"] do
+      pending = Regex.compile!("^- \\[ \\] \\*\\*#{id}\\*\\*:", "m")
+      complete = Regex.compile!("^- \\[x\\] \\*\\*#{id}\\*\\*:", "m")
+
+      assert length(Regex.scan(pending, requirements)) == 1
+      assert Regex.scan(complete, requirements) == []
+    end
+
+    roadmap = Map.fetch!(records, ".planning/ROADMAP.md")
+    assert Regex.match?(~r/^- \[ \] \*\*Phase 140:/m, roadmap)
+    refute Regex.match?(~r/^- \[x\] \*\*Phase 140:/m, roadmap)
+
+    state = Map.fetch!(records, ".planning/STATE.md")
+    assert Regex.match?(~r/^current_phase: 140$/m, state)
+    assert Regex.match?(~r/^status: verifying$/m, state)
+
+    verification =
+      Map.fetch!(
+        records,
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md"
+      )
+
+    assert Regex.match?(~r/^status: gaps_found$/m, verification)
+    assert Regex.match?(~r/^score: 30\/32 must-haves verified$/m, verification)
+
+    acceptance =
+      Map.fetch!(
+        records,
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
+      )
+
+    assert acceptance =~ "CI-06 and CI-07 remain pending"
   end
 
   defp receipt(sha) do
