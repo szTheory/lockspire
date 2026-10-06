@@ -5,28 +5,28 @@ titles: json
 findings:
   - id: CR-01
     severity: critical
-    disposition: open
-    title: "Exact public release query is not tied to the candidate version"
+    disposition: fixed
+    title: "GitHub release evidence is not bound to the Lockspire repository"
   - id: CR-02
     severity: critical
-    disposition: open
+    disposition: fixed
     title: "GitHub tag link destination can disagree with the parsed release version"
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Historical release fixture leaves Release Please metadata unchanged"
-open: 3
+open: 0
 total: 3
-recorded: 2026-10-06T09:52:42Z
+recorded: 2026-10-06T10:13:27Z
 ---
 
 # Phase 139: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| CR-01 | critical | open | - |
-| CR-02 | critical | open | - |
-| WR-01 | warning | open | - |
+| CR-01 | critical | fixed | 139-REVIEW-FIX.md (not in the current review) |
+| CR-02 | critical | fixed | 139-REVIEW-FIX.md (not in the current review) |
+| WR-01 | warning | fixed | 139-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
