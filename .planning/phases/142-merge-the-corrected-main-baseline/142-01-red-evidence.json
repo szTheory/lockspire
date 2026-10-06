@@ -1,0 +1,10 @@
+{
+  "command": "GSD_TAP_REPORT_PATH=.planning/phases/142-merge-the-corrected-main-baseline/142-01-red.tap ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.0.5 elixir -r /private/tmp/LockspireTapFormatter.exs -S mix test test/lockspire/release/repository_hygiene_contract_test.exs --only release_train_links --formatter LockspireTapFormatter --no-color",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test local release train Markdown destinations resolve\n1..1\n",
+  "targetTest": "test local release train Markdown destinations resolve",
+  "targetFile": "test/lockspire/release/repository_hygiene_contract_test.exs",
+  "expected": "The tagged contract fails because the Phase 141 relative destination in .planning/RELEASE-TRAIN.md does not resolve.",
+  "actual": "The named test executed, failed its File.exists? assertion, and identified phases/141-maintenance-baseline-closure/141-BASELINE.md as unresolved. The formatter's TAP report records exactly one failing test.",
+  "semanticAssessment": "Valid RED: the intended test ran and failed on the planned missing-link assertion. No compile, load, setup, or unrelated test failure was observed."
+}

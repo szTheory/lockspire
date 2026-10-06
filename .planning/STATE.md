@@ -3,17 +3,17 @@ gsd_state_version: "1.0"
 milestone: v1.39
 current_phase: 142
 current_phase_name: Merge the Corrected Main Baseline
-status: Ready to plan Phase 142
-stopped_at: Phase 142 context gathered
-last_updated: "2026-10-06T16:34:57.490Z"
+status: Phase 142 Plan 01 halted at the contributor gate; repair archived-path fixtures before resuming.
+stopped_at: Phase 142 Plan 01 halted at contributor gate; next is fixture repair then execute-phase 142
+last_updated: "2026-10-06T17:14:42.832Z"
 last_activity: 2026-10-06
-last_activity_desc: Phase 142 context gathered; next plan Phase 142
-state_head: 59440acf6a28a875b11495468fee3ad82b422032
+last_activity_desc: Phase 142 Plan 01 halted at archived-path failures in mix ci; repair fixtures before resuming
+state_head: fffee44071d302399bd76eb3a461425345319365
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Plan Phase 142: Merge the Corrected Main Baseline
+**Current focus:** Fix stale Phase 138/139 fixture paths, rerun mix ci, then resume Plan 142-01.
 
 ## Current Position
 
-Phase: 142 (Merge the Corrected Main Baseline) — READY TO EXECUTE
-Plan: Not yet created
-Status: Ready to plan Phase 142
-Last activity: 2026-10-06 — Phase 142 context gathered
+Phase: 142 (Merge the Corrected Main Baseline) — HALTED
+Plan: 01 of 3 — halted at the contributor gate
+Status: Phase 142 Plan 01 halted at the contributor gate; repair archived-path fixtures before resuming.
+Last activity: 2026-10-06 — Phase 142 Plan 01 halted at the contributor gate
 
 ## Accumulated Context
 
@@ -166,6 +166,7 @@ Last activity: 2026-10-06 — Phase 142 context gathered
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
+- Phase 142 Plan 01 halted: mix ci reached mix test.fast and exposed stale Phase 138/139 planning and recovery fixture paths under .planning/phases/ instead of .planning/milestones/v1.38-phases/. One .git/FETCH_HEAD permission error also appeared but was not diagnosed. Repair the fixture paths and rerun mix ci before resuming.
 
 ### Quick Tasks Completed
 
@@ -187,10 +188,10 @@ Last activity: 2026-10-06 — Phase 142 context gathered
 
 ## Session Continuity
 
-Last session: 2026-10-06T15:40:19.673Z
-Stopped at: Phase 142 context gathered
-Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-CONTEXT.md
-Resume instruction: Run `$gsd-plan-phase 142 --text` to create the plan for the first v1.39 phase. Lockspire 1.5.0 remains the latest public package until verified 1.5.1 publication.
+Last session: 2026-10-06T17:14:42.789Z
+Stopped at: Phase 142 Plan 01 halted at contributor gate; next is fixture repair then execute-phase 142
+Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-01-SUMMARY.md
+Resume instruction: Repair the stale Phase 138/139 fixture paths, rerun mix ci successfully, then run `$gsd-execute-phase 142` to resume Plan 01. Keep Plans 02 and 03 blocked until the PR gate passes.
 
 ## Performance Metrics
 
