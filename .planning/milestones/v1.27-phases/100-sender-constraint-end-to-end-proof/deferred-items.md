@@ -2,6 +2,9 @@
 
 ## Pre-existing Integration Test Failures (Out of Scope)
 
+- **Status:** resolved
+- **Resolution evidence:** 2026-10-05 targeted regression run passed both integration files and `audit_writer_test.exs`: 38 tests, 0 failures.
+
 The following integration test failures exist in the worktree but are NOT caused by
 Phase 100 Plan 03 changes. They are pre-existing breakage caused by Phase 98's
 strict RFC 9068 `typ: "at+jwt"` enforcement landing before the hand-signed
@@ -30,8 +33,9 @@ files. Phase 100 Plan 03 deliberately demonstrates the CORRECT approach (using
 `AccessTokenSigner.issue/3` which emits `typ: "at+jwt"`) and both Phase 100 tests
 pass green.
 
-**Recommended fix:** Update `phase81_generated_host_route_protection_e2e_test.exs`
+**Historical recommendation at Plan 100-03 closeout:** Update `phase81_generated_host_route_protection_e2e_test.exs`
 and `phase32_device_flow_token_exchange_e2e_test.exs` to use `AccessTokenSigner.issue/3`
 instead of hand-signing with `JOSE.JWT.sign` — the same D-07 refinement Phase 100
-demonstrates. This is a candidate for Phase 101 (Adoption-Demo Re-Wire) or a
-separate cleanup plan.
+demonstrates. At that point this was a candidate for Phase 101 (Adoption-Demo Re-Wire)
+or a separate cleanup plan; the later passing regression run above records the current
+status.
