@@ -15,9 +15,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:execute-phase 142",
-    "label": "Execute Phase 142",
-    "reason": "Plan 01 and the full contributor gate are complete; Plan 02 must review the full branch diff before any push, then handle PR and live release-timing checks."
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 142 of 2 · executing"
   },
-  "updated_at": "2026-10-06T20:05:40Z"
+  "updated_at": "2026-10-06T22:26:52.637Z"
 }

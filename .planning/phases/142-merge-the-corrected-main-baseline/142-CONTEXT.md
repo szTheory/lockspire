@@ -27,6 +27,11 @@ Merge the reviewed Phase 141 correction through the normal PR path so `main` tru
 - **D-07:** Add a small automated contract in the existing release-hygiene test area that checks local links in `.planning/RELEASE-TRAIN.md` resolve. Keep it narrow to this maintained record; do not introduce a repository-wide Markdown-link framework. This turns the observed broken baseline link into a CI-detectable regression.
 - **D-08:** Do not add manual UAT for properties proved by exact-SHA CI and repository hygiene. The normal PR review and authorization to perform consequential GitHub actions remain separate from verification evidence.
 
+### Demonstrated Phase 142 release blockers (2026-10-06 amendment)
+- **D-09:** The user authorized automatic, targeted remediation of the live Plan 02 blockers before seeking merge authorization. Repair the `Release Hygiene Drift` failure caused by the phase-finalizer router's dependency on active Phase 138/139 directories after archival, and prove the intended child exit semantics with the existing focused lifecycle/router tests. Do not weaken the seven-job canonical CI gate.
+- **D-10:** Establish a fail-closed Phase 142/143 boundary before the correction PR can merge. First apply and verify an immediately effective live hold on Release Please auto-merge and a protected `hex-publish` environment reviewer gate while preserving its existing `main` branch policy; require zero active publication runs before continuing. Use an independent required reviewer and prevent self-review when an eligible reviewer is available. If the sole eligible reviewer is the authenticated maintainer, permit self-review for that environment so Phase 143 can require an explicit manual deployment approval, and record clearly that this is not independent review. Then add checked-in, default-deny controls so auto-merge requires an explicit repository enable flag and `release.yml` protected dispatch requires a nonempty exact authorized main SHA set only during Phase 143. Immediately before protected publication, re-fetch remote `main` and require that full SHA, the authorized variable, and the previously verified source SHA to match. Keep these controls closed throughout Phase 142. Do not merge a Release Please PR, dispatch protected publication, create a release/tag, or publish as part of this remediation. Re-enabling automation or setting the authorized SHA belongs to Phase 143's separate authorization and current-main proof.
+- **D-11:** Configure and verify `main` branch protection with the seven canonical CI checks and the normal PR path. Require an independent GitHub approval if a real eligible reviewer is available; where the repository has only the PR author, use the GitHub PR requirement with zero approvals and retain the separate blocking-human exact-head merge decision in D-01/D-08. Do not invent a review or bypass a failed check. Record the live settings and any GitHub feature limitation.
+
 ### the agent's Discretion
 - Choose the filename and concise layout for Phase 142's durable result record. It should record the exact accepted SHA, matching CI evidence, hygiene summary, each warning disposition, current public-release truth, and the Phase 143 boundary without copying raw logs.
 - Reuse the existing workflow and contract-test structure. If a required live check is unavailable or contradicts the record, stop with the specific missing evidence rather than assuming success.
@@ -54,6 +59,8 @@ Merge the reviewed Phase 141 correction through the normal PR path so `main` tru
 - `.github/workflows/ci.yml` — Canonical CI workflow and required checks.
 - `.github/workflows/release.yml` — Release Please and protected publication behavior.
 - `.github/workflows/release-please-automerge.yml` — Live Release Please merge and exact post-merge CI dispatch behavior.
+- `tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.cjs` and its router/lifecycle tests — portable CI root detection and child exit semantics.
+- `test/lockspire/release_ci_evidence_contract_test.exs` — existing release workflow contract assertions to extend with the authorization controls.
 - `test/lockspire/release/repository_hygiene_contract_test.exs` — Existing release-hygiene contract-test home.
 - `test/lockspire/release_ci_evidence_contract_test.exs` — Exact-SHA canonical CI evidence contract.
 
@@ -88,6 +95,7 @@ Merge the reviewed Phase 141 correction through the normal PR path so `main` tru
 - The reviewed Phase 141 PR lands on `main`, after which canonical CI and exact-SHA repository hygiene establish the Phase 142 readiness result.
 - The release-train baseline link should target the archived Phase 141 artifact under `.planning/milestones/v1.38-phases/`.
 - Release Please automation can react to a successful `main` CI run, so its current live state must be checked against the Phase 143 publication boundary before merge.
+- The live workflow disable and environment reviewer gate must be verified before the checked-in guard is merged; a repository variable alone cannot constrain an already-deployed workflow that does not read it.
 
 </code_context>
 
@@ -104,8 +112,8 @@ Merge the reviewed Phase 141 correction through the normal PR path so `main` tru
 ## Deferred Ideas
 
 - Protected publication, Hex checksum verification, matching GitHub release, and clean-room public install proof remain Phase 143 work.
-- Broad release-workflow redesign, new release interfaces, OAuth/OIDC behavior, host integration, admin UI, and visual design are outside this phase.
-- If live release automation state would bypass Phase 142 readiness, treat it as a concrete stop condition for planning/execution; do not widen this phase into speculative release-system changes.
+- Broad release-workflow redesign, new release interfaces, OAuth/OIDC behavior, host integration, admin UI, and visual design are outside this phase. D-09 through D-11 supersede this deferral only for the observed CI failure and demonstrated pre-readiness automation path.
+- An unverified or ineffective live control remains a concrete stop condition; the targeted remediation does not authorize crossing the Phase 143 publication boundary.
 
 </deferred>
 

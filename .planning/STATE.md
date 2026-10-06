@@ -3,16 +3,16 @@ gsd_state_version: "1.0"
 milestone: v1.39
 current_phase: 142
 current_phase_name: Merge the Corrected Main Baseline
-status: Phase 142 Plan 01 is complete; Plan 02 is ready to create or update the review PR and inspect live release timing.
+status: executing
 stopped_at: Before Phase 142 Plan 02 PR creation and live review
-last_updated: "2026-10-06T20:05:40Z"
+last_updated: "2026-10-06T22:26:52.620Z"
 last_activity: 2026-10-06
-last_activity_desc: Full mix ci passed; Plan 02 must inspect the clean 75-commit branch diff before any push
-state_head: cfcb73ad01907e8d8d1aff5891791af1ba6a0937
+last_activity_desc: Phase 142 execution resumed (wave continue)
+state_head: 5feff7a2e444b9493d4dbea6376403de94c23c10
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 3
+  total_plans: 4
   completed_plans: 1
 milestone_name: Verified 1.5.1 Release
 ---
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Run `$gsd-execute-phase 142` to review the full Phase 141 branch diff, then create or update its PR and check exact head, required checks, and live release timing.
+**Current focus:** Phase 142 — Merge the Corrected Main Baseline
 
 ## Current Position
 
-Phase: 142 (Merge the Corrected Main Baseline) — IN PROGRESS
-Plan: 02 of 3 — ready to create or update the review PR and inspect live release timing
-Status: Plan 01's archive-aware fixtures and full contributor gate are complete. The checkout is clean; the local comparison showed at least 76 commits / 250 paths ahead of `origin/main`. No PR has been opened or pushed.
-Last activity: 2026-10-06 — repaired archived-path fixtures and passed the full `mix ci` gate
+Phase: 142 (Merge the Corrected Main Baseline) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 142
+Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Accumulated Context
 
