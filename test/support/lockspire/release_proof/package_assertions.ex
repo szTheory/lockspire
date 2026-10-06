@@ -123,6 +123,72 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
            )
   end
 
+  def assert_phase_139_release_train_fail_closed! do
+    release_train_path = Paths.path(".planning/RELEASE-TRAIN.md")
+    metadata_line = "- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->"
+
+    public_line =
+      "- Latest public package: Hex lists `1.5.0` as latest at the 2026-10-05 closure observation; the exact `1.5.1` release query returned HTTP 404. Release Please metadata above is not publication proof."
+
+    source = File.read!(release_train_path)
+
+    cases = [
+      {"missing Release Please metadata", String.replace(source, metadata_line <> "\n", "")},
+      {"duplicate Release Please metadata",
+       String.replace(source, metadata_line, metadata_line <> "\n" <> metadata_line)},
+      {"malformed Release Please metadata",
+       String.replace(
+         source,
+         metadata_line,
+         "- Release Please version metadata: `one.five.one` <!-- x-release-please-version -->"
+       )},
+      {"mismatched Release Please metadata",
+       String.replace(source, metadata_line, String.replace(metadata_line, "1.5.1", "1.5.2"))},
+      {"missing public package claim", String.replace(source, public_line <> "\n", "")},
+      {"duplicate public package claim",
+       String.replace(source, public_line, public_line <> "\n" <> public_line)},
+      {"malformed public package claim",
+       String.replace(
+         source,
+         public_line,
+         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `latest`")
+       )},
+      {"misleading unpublished public package",
+       String.replace(
+         source,
+         public_line,
+         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `1.5.1`")
+       )},
+      {"artifact disagrees with public package",
+       String.replace(
+         source,
+         "lockspire-1.5.0` package checksum",
+         "lockspire-1.5.1` package checksum"
+       )},
+      {"tag disagrees with public package",
+       String.replace(
+         source,
+         "lockspire-v1.5.0](https://github.com",
+         "lockspire-v1.5.1](https://github.com"
+       )},
+      {"legacy release label cannot replace metadata",
+       String.replace(source, metadata_line, "- Latest released version: `1.5.1`")}
+    ]
+
+    Enum.each(cases, fn {label, contents} ->
+      {output, status} =
+        run_exact_sha_hygiene_fixture!("success", release_train_contents: contents)
+
+      assert status != 0, "#{label} unexpectedly passed: #{output}"
+
+      assert output =~ "[BLOCK] release train ledger",
+             "#{label} did not block the ledger: #{output}"
+
+      refute output =~ "fixture-credential-sentinel", "#{label} leaked fixture credentials"
+      refute output =~ ~s({"workflow_runs"), "#{label} leaked a raw workflow response"
+    end)
+  end
+
   def assert_phase_139_docker_volume_name_matching! do
     script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
 
@@ -8516,6 +8582,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     state = Path.join(fixture, "state")
     jq = System.find_executable("jq") || flunk("jq is required for the exact-SHA fixture")
 
+    repository =
+      if Keyword.has_key?(options, :release_train_contents),
+        do:
+          prepare_release_train_fixture_repo!(
+            fixture,
+            Keyword.fetch!(options, :release_train_contents)
+          ),
+        else: Paths.path(".")
+
     try do
       File.mkdir_p!(bin)
       File.mkdir_p!(state)
@@ -8547,10 +8622,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         System.cmd(
           "bash",
           args,
-          cd: Paths.path("."),
+          cd: repository,
           env: [
             {"PATH", bin <> ":" <> System.get_env("PATH", "")},
-            {"FAKE_REPO_ROOT", Paths.path(".")},
+            {"FAKE_REPO_ROOT", repository},
             {"FAKE_HYGIENE_SHA", acceptance_sha()},
             {"FAKE_HYGIENE_STATE", state},
             {"TMPDIR", state},
@@ -8563,7 +8638,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       if Keyword.get(options, :assert_main_only_fetch, false) do
         fetch_log = Path.join(state, "fetch.argv")
 
-        assert File.exists?(fetch_log), "exact-SHA acceptance did not refresh origin/main: #{elem(result, 0)}"
+        assert File.exists?(fetch_log),
+               "exact-SHA acceptance did not refresh origin/main: #{elem(result, 0)}"
 
         fetch_commands =
           fetch_log
@@ -8579,11 +8655,44 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "exact-SHA acceptance must fetch only origin/main without tags or pruning"
       end
 
+      if Keyword.has_key?(options, :release_train_contents) do
+        refute File.exists?(Path.join(state, "fetch.argv")),
+               "a blocked release-train claim must stop before origin/main fetch"
+
+        refute elem(result, 0) =~ ~s("schema":"lockspire-phase-),
+               "a blocked release-train claim must not emit an acceptance receipt"
+      end
+
       refute Enum.any?(File.ls!(state), &String.starts_with?(&1, "lockspire-mix-ci."))
       result
     after
       File.rm_rf(fixture)
     end
+  end
+
+  defp prepare_release_train_fixture_repo!(fixture, release_train_contents) do
+    source_root = Paths.path(".")
+    repository = Path.join(fixture, "repo")
+
+    generated_or_mutable = [
+      ".git",
+      ".planning",
+      "_build",
+      "deps",
+      "node_modules",
+      "coverage",
+      ".elixir_ls",
+      "tmp"
+    ]
+
+    File.mkdir_p!(Path.join(repository, ".planning"))
+
+    for entry <- File.ls!(source_root), entry not in generated_or_mutable do
+      File.ln_s!(Path.join(source_root, entry), Path.join(repository, entry))
+    end
+
+    File.write!(Path.join(repository, ".planning/RELEASE-TRAIN.md"), release_train_contents)
+    repository
   end
 
   defp acceptance_sha, do: String.duplicate("a", 40)
