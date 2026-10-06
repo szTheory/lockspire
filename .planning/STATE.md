@@ -4,16 +4,16 @@ milestone: v1.39
 current_phase: 142
 current_phase_name: Merge the Corrected Main Baseline
 status: executing
-stopped_at: Before Phase 142 Plan 02 PR creation and live review
-last_updated: "2026-10-06T22:26:52.620Z"
+stopped_at: Completed 142-04-PLAN.md; ready for 142-02 full PR and live timing review
+last_updated: "2026-10-06T23:13:56.844Z"
 last_activity: 2026-10-06
 last_activity_desc: Phase 142 execution resumed (wave continue)
-state_head: 5feff7a2e444b9493d4dbea6376403de94c23c10
+state_head: 9d38928be44a7f137bb8f39fd1bd29f84ddf06b1
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -30,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 ## Current Position
 
 Phase: 142 (Merge the Corrected Main Baseline) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 142
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Accumulated Context
@@ -151,6 +151,9 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 - [Phase 139]: Release Please version metadata and latest public package remain independent; public truth must agree with the artifact and release tag.
 - [Phase 139]: Malformed, duplicate, missing, or contradictory release-train fields block before exact-SHA acceptance.
 - [Phase 139]: Historical test repositories must use records from the exact committed boundary they model. — This prevents later planning state from contaminating earlier acceptance and relation fixtures.
+- [Phase 142]: Keep Release Please auto-merge disabled and both authorization variables absent through Phase 142; Phase 143 may authorize only one exact SHA.
+- [Phase 142]: With szTheory as the only eligible reviewer, use an explicit hex-publish environment approval with self-review allowed; require zero GitHub PR approvals and document that it is not independent review.
+- [Phase 142]: Accept both active and archived phase layouts while preserving maintainer-script checks and child-process exit semantics.
 
 ### Pending Todos
 
@@ -188,9 +191,9 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Session Continuity
 
-Last session: 2026-10-06T20:05:40Z
-Stopped at: Phase 142 Plan 01 complete; ready for Plan 02 full-diff review, PR and live release-timing checks
-Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-01-SUMMARY.md
+Last session: 2026-10-06T23:13:56.826Z
+Stopped at: Completed 142-04-PLAN.md; ready for 142-02 full PR and live timing review
+Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-02-PLAN.md
 Resume instruction: Run `$gsd-execute-phase 142` to refresh and review the complete branch diff before any push, then create or update the PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
 
 ## Performance Metrics
@@ -263,6 +266,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 139 P14 | 9 min | 2 tasks | 3 files |
 | Phase 139 P16 | 39min | 2 tasks | 2 files |
 | Phase 139 P15 | 325min | 2 tasks | 4 files |
+| Phase 142 P04 | 39min | 3 tasks | 6 files |
 
 ## Operator Next Steps
 
