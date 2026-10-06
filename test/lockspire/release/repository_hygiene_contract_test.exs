@@ -7,6 +7,32 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
   alias Lockspire.TestSupport.ReleaseProof.PackageAssertions
   alias Lockspire.TestSupport.QualityBaseline
 
+  @release_train Path.expand("../../../.planning/RELEASE-TRAIN.md", __DIR__)
+
+  @tag :release_train_links
+  test "local release train Markdown destinations resolve" do
+    content = File.read!(@release_train)
+
+    destinations =
+      Regex.scan(~r/\[[^\]]+\]\(([^)]+)\)/, content, capture: :all_but_first)
+      |> List.flatten()
+
+    local_destinations =
+      Enum.reject(destinations, fn destination ->
+        URI.parse(destination).scheme != nil or String.starts_with?(destination, "#")
+      end)
+
+    assert local_destinations != [], "expected at least one local link in .planning/RELEASE-TRAIN.md"
+
+    Enum.each(local_destinations, fn destination ->
+      path = destination |> String.split("#", parts: 2) |> hd()
+      resolved = Path.expand(path, Path.dirname(@release_train))
+
+      assert File.exists?(resolved),
+             "unresolved local Markdown destination #{inspect(destination)} in .planning/RELEASE-TRAIN.md"
+    end)
+  end
+
   test "package inputs are explicit and exclude repository-local artifacts" do
     PackageAssertions.assert_hex_package_inputs!()
   end
