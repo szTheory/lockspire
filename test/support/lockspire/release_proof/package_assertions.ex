@@ -159,6 +159,12 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          public_line,
          String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `1.5.1`")
        )},
+      {"public release query disagrees with Release Please metadata",
+       String.replace(
+         source,
+         "exact `1.5.1` release query",
+         "exact `1.5.2` release query"
+       )},
       {"artifact disagrees with public package",
        String.replace(
          source,

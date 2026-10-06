@@ -652,6 +652,10 @@ release_train_public_package_version() {
   sed -nE 's/^- Latest public package: Hex lists `([0-9]+\.[0-9]+\.[0-9]+)` as latest at the [0-9-]+ closure observation; the exact `([0-9]+\.[0-9]+\.[0-9]+)` release query returned HTTP 404\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
 }
 
+release_train_public_query_version() {
+  sed -nE 's/^- Latest public package: Hex lists `[0-9]+\.[0-9]+\.[0-9]+` as latest at the [0-9-]+ closure observation; the exact `([0-9]+\.[0-9]+\.[0-9]+)` release query returned HTTP 404\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
+}
+
 release_train_artifact_version() {
   sed -nE 's/^- Artifact truth: the published `lockspire-([0-9]+\.[0-9]+\.[0-9]+)` package checksum is `[0-9a-f]{64}`; the protected release run verified the exact package and public install journey\.$/\1/p' .planning/RELEASE-TRAIN.md
 }
@@ -662,7 +666,7 @@ release_train_tag_version() {
 
 release_train_has_consistent_versions() {
   local metadata_count public_count artifact_count tag_count
-  local metadata_version public_version artifact_version tag_version
+  local metadata_version public_version public_query_version artifact_version tag_version
 
   metadata_count="$(grep -c '^- Release Please version metadata:' .planning/RELEASE-TRAIN.md || true)"
   public_count="$(grep -c '^- Latest public package:' .planning/RELEASE-TRAIN.md || true)"
@@ -672,10 +676,11 @@ release_train_has_consistent_versions() {
 
   metadata_version="$(release_train_metadata_version)"
   public_version="$(release_train_public_package_version)"
+  public_query_version="$(release_train_public_query_version)"
   artifact_version="$(release_train_artifact_version)"
   tag_version="$(release_train_tag_version)"
-  [[ -n "$metadata_version" && -n "$public_version" && -n "$artifact_version" && -n "$tag_version" ]] || return 1
-  [[ "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" ]]
+  [[ -n "$metadata_version" && -n "$public_version" && -n "$public_query_version" && -n "$artifact_version" && -n "$tag_version" ]] || return 1
+  [[ "$public_query_version" == "$metadata_version" && "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" ]]
 }
 
 release_train_has_required_lines() {
