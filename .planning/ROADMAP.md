@@ -27,7 +27,13 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 2. The post-merge local `main` and refreshed `origin/main` resolve to the same full commit SHA, and the canonical required CI run passes for that SHA.
 3. The exact-SHA repository-hygiene check reports no `BLOCK`, with every `WARN` disposition recorded; supplemental OIDF/FAPI results remain outside the release gate.
 
-**Plans**: 0 plans
+**Plans**: 3 plans
+
+Plans:
+
+- [ ] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
+- [ ] 142-02-PLAN.md — Inspect live release timing and obtain exact-head merge authorization.
+- [ ] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
 
 ### Phase 143: Publish and Verify Lockspire 1.5.1
 
