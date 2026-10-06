@@ -1,18 +1,19 @@
 defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
   use ExUnit.Case, async: true
 
-  @phase_dir ".planning/phases/139-required-truth-reconciliation"
+  @phase_dir ".planning/milestones/v1.38-phases/139-required-truth-reconciliation"
+  @phase_141_dir ".planning/milestones/v1.38-phases/141-maintenance-baseline-closure"
 
   @tag :phase139_gap_closure
   test "maintained Phase 139 records expose one lifecycle posture across gap closure and historical completion" do
-    roadmap = File.read!(".planning/ROADMAP.md")
+    roadmap = File.read!(".planning/milestones/v1.38-ROADMAP.md")
     state = File.read!(".planning/STATE.md")
+    milestones = File.read!(".planning/MILESTONES.md")
     verification = File.read!("#{@phase_dir}/139-VERIFICATION.md")
     validation = File.read!("#{@phase_dir}/139-VALIDATION.md")
-    baseline = File.read!(".planning/phases/141-maintenance-baseline-closure/141-BASELINE.md")
+    baseline = File.read!(Path.join(@phase_141_dir, "141-BASELINE.md"))
 
-    phase_141_summary =
-      File.read!(".planning/phases/141-maintenance-baseline-closure/141-01-SUMMARY.md")
+    phase_141_summary = File.read!(Path.join(@phase_141_dir, "141-01-SUMMARY.md"))
 
     release_train = File.read!(".planning/RELEASE-TRAIN.md")
 
@@ -48,11 +49,11 @@ defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
 
     assert roadmap =~ "| 141. Maintenance-Baseline Closure | 1/1 | Complete"
 
-    assert state =~
-             "Current position (2026-10-05): Phases 138-141 and all 70 v1.38 plans are complete."
-
-    assert state =~ "accepted source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`"
-    assert state =~ "The latest public package remains 1.5.0; v1.38 completion is not a release."
+    assert state =~ "milestone: v1.39"
+    assert state =~ "current_phase: 142"
+    assert state =~ "The 1.5.0 publication chain remains the latest public release."
+    assert milestones =~ "**Phases completed:** **4** (**138-141**), **73** plans"
+    assert milestones =~ "This is planning completion only; it did not publish a package."
 
     assert baseline =~ "accepts source tree `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`"
 

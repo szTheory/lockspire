@@ -35,6 +35,14 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md",
     "docs/lockspire-milestone-roadmap-ratchet-prompt.txt"
   ]
+  @archived_source_paths %{
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md"
+  }
 
   @tag :phase140_closure_tracer
   test "the committed closure command exposes only the exact-SHA acceptance inputs" do
@@ -209,7 +217,9 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     Enum.each(files, fn relative ->
       target = Path.join(repository, relative)
       File.mkdir_p!(Path.dirname(target))
-      File.cp!(Path.join(repo_root, relative), target)
+
+      source_relative = Map.get(@archived_source_paths, relative, relative)
+      File.cp!(Path.join(repo_root, source_relative), target)
     end)
 
     Enum.each(@conditional_planning_records, fn relative ->

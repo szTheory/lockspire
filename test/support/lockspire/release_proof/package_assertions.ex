@@ -1120,19 +1120,21 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert script =~ ~s(yaml_quoted_scalar "no — inventory proposal only")
     refute script =~ "git clean"
 
-    active_record_patterns =
+    archived_record_patterns =
       for suffix <- ~w(REVIEW AUDIT VERIFICATION UAT HANDOFF CHECKPOINT) do
-        ":(glob).planning/phases/*/*-#{suffix}*.md"
+        ":(glob).planning/milestones/v1.38-phases/*/*-#{suffix}*.md"
       end
 
-    {active_record_output, 0} =
-      System.cmd("git", ["ls-files", "-z", "--" | active_record_patterns], stderr_to_stdout: true)
+    {archived_record_output, 0} =
+      System.cmd("git", ["ls-files", "-z", "--" | archived_record_patterns],
+        stderr_to_stdout: true
+      )
 
-    active_record_paths = String.split(active_record_output, <<0>>, trim: true)
+    archived_record_paths = String.split(archived_record_output, <<0>>, trim: true)
 
-    assert ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md" in active_record_paths
+    assert ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md" in archived_record_paths
 
-    assert ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" in active_record_paths
+    assert ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" in archived_record_paths
 
     assert {:ok, lifecycle_output} =
              run_baseline_fixture!("maintained", "maintained-active-lifecycle")
@@ -4757,12 +4759,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       source = Paths.path(".")
 
       context_paths = [
-        ".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md",
-        ".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+        {
+          ".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md",
+          ".planning/milestones/v1.38-phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md"
+        },
+        {
+          ".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md",
+          ".planning/milestones/v1.38-phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+        }
       ]
 
-      Enum.each(context_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      Enum.each(context_paths, fn {fixture_path, archived_path} ->
+        content = File.read!(Path.join(source, archived_path))
+        write_repo_file!(repository, fixture_path, content)
       end)
 
       commit_all!(repository, "docs(140): capture phase context (assumptions mode)")
@@ -6186,7 +6195,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
 
     copy_phase_139_planning_fixture!(repository)
-    copy_phase_139_verification_parent_documents!(repository)
+    copy_phase_139_parent_planning_root!(repository)
 
     state_path = Path.join(repository, ".planning/STATE.md")
 
@@ -6302,20 +6311,31 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     {ledger_commit, evidence_base, remote}
   end
 
-  defp copy_phase_139_verification_parent_documents!(repository) do
+  defp copy_phase_139_parent_planning_root!(repository) do
     source = Paths.path(".")
 
     parent =
       run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
       |> String.trim()
 
-    for path <- [
-          ".planning/PROJECT.md",
-          ".planning/REQUIREMENTS.md",
-          ".planning/STATE.md",
-          ".planning/ROADMAP.md",
-          ".planning/state.json"
-        ] do
+    planning_root = Path.join(repository, ".planning")
+
+    # This fixture models the exact Phase 139 completion parent. Rebuild its
+    # tracked planning-root files from that commit so later milestone and
+    # release-train edits in the working tree cannot contaminate the snapshot.
+    planning_root
+    |> File.ls!()
+    |> Enum.each(fn entry ->
+      path = Path.join(planning_root, entry)
+      if File.regular?(path), do: File.rm!(path)
+    end)
+
+    paths =
+      run_git!(source, ["ls-tree", "-r", "--name-only", parent, "--", ".planning"])
+      |> String.split("\n", trim: true)
+      |> Enum.filter(&(Path.dirname(&1) == ".planning"))
+
+    for path <- paths do
       write_repo_file!(repository, path, run_git!(source, ["show", "#{parent}:#{path}"]))
     end
   end
@@ -6351,9 +6371,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
     end)
 
-    for phase_dir <- ["phases/138-baseline-inventory-evidence-taxonomy"] do
-      source_path = Path.join(source, phase_dir)
-      destination_path = Path.join(destination, phase_dir)
+    for {source_phase_dir, fixture_phase_dir} <- [
+          {
+            "milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy",
+            "phases/138-baseline-inventory-evidence-taxonomy"
+          }
+        ] do
+      source_path = Path.join(source, source_phase_dir)
+      destination_path = Path.join(destination, fixture_phase_dir)
       File.mkdir_p!(Path.dirname(destination_path))
       copy_planning_fixture!(source_path, destination_path)
     end
