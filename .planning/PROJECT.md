@@ -56,7 +56,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 ## Current State
 
-v1.39 is defining requirements. The Phase 141 branch has corrected release-truth records but is not yet merged to `main`; current remote `main` still incorrectly labels 1.5.1 as released. Hex and GitHub evidence show 1.5.0 is the latest public release. The milestone must merge the correction, establish fresh exact-current-main release gates, and publish 1.5.1 through the protected workflow only if every gate passes.
+v1.39 requirements are defined and its two-phase roadmap is proposed for review. The Phase 141 branch has corrected release-truth records but is not yet merged to `main`; current remote `main` still incorrectly labels 1.5.1 as released. Hex and GitHub evidence show 1.5.0 is the latest public release. The milestone must merge the correction, establish fresh exact-current-main release gates, and publish 1.5.1 through the protected workflow only if every gate passes.
 
 The completed v1.38 planning milestone returned the repository to its sustaining GA release train without publishing a package. Its Phase 140 post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits.
 
@@ -412,4 +412,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-06 after starting milestone v1.39*
+*Last updated: 2026-10-06 after defining the v1.39 requirements and roadmap*

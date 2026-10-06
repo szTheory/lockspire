@@ -43,16 +43,16 @@ Populated during roadmap creation. Every v1.39 requirement maps to exactly one p
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRUTH-06 | Pending | Pending |
-| CI-09 | Pending | Pending |
-| REL-01 | Pending | Pending |
-| REL-02 | Pending | Pending |
-| REL-03 | Pending | Pending |
+| TRUTH-06 | Phase 142 | Pending |
+| CI-09 | Phase 142 | Pending |
+| REL-01 | Phase 143 | Pending |
+| REL-02 | Phase 143 | Pending |
+| REL-03 | Phase 143 | Pending |
 
 **Coverage:**
 - v1 requirements: 5 total
-- Mapped to phases: 0
-- Unmapped: 5
+- Mapped to phases: 5
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-10-06*
