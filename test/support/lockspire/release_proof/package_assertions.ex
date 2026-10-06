@@ -3715,10 +3715,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       old_release_state = fn repo ->
         release_train =
-          File.read!(Path.join(repo, ".planning/RELEASE-TRAIN.md"))
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:.planning/RELEASE-TRAIN.md"])
           |> String.replace(
-            "Latest released version: `1.5.1`",
-            "Latest released version: `1.5.0`"
+            "Latest released version: `1.5.1` <!-- x-release-please-version -->",
+            "Latest released version: `1.5.0` <!-- x-release-please-version -->"
           )
 
         write_repo_file!(repo, ".planning/RELEASE-TRAIN.md", release_train)
@@ -3829,7 +3829,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "CHANGELOG.md",
             "mix.exs"
           ] do
-        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       release_train = File.read!(Path.join(repository, ".planning/RELEASE-TRAIN.md"))
@@ -6188,13 +6192,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md"
       )
 
-    unless File.exists?(summary13) do
-      write_repo_file!(
-        repository,
-        ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md",
-        "---\nphase: 139-required-truth-reconciliation\nplan: \"13\"\nstatus: complete\n---\n# Phase 139 Plan 13 Summary\n"
-      )
-    end
+    assert File.regular?(summary13),
+           "pinned Phase 139 completion parent must contain the Plan 13 summary"
 
     parent_mutate.(repository)
 
@@ -6331,15 +6330,14 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
     end)
 
-    for phase_dir <- [
-          "phases/138-baseline-inventory-evidence-taxonomy",
-          "phases/139-required-truth-reconciliation"
-        ] do
+    for phase_dir <- ["phases/138-baseline-inventory-evidence-taxonomy"] do
       source_path = Path.join(source, phase_dir)
       destination_path = Path.join(destination, phase_dir)
       File.mkdir_p!(Path.dirname(destination_path))
       copy_planning_fixture!(source_path, destination_path)
     end
+
+    copy_phase_139_completion_parent_tree!(repository)
 
     phase_139_directory =
       Path.join(destination, "phases/139-required-truth-reconciliation")
@@ -6373,6 +6371,49 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
     assert actual_summaries == expected_summaries,
            "Phase 139 parent fixture must contain only summaries 01 through 13"
+  end
+
+  defp copy_phase_139_completion_parent_tree!(repository) do
+    source = Paths.path(".")
+
+    parent =
+      run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
+      |> String.trim()
+
+    phase_directory = ".planning/phases/139-required-truth-reconciliation"
+    destination = Path.join(repository, phase_directory)
+    File.rm_rf!(destination)
+    File.mkdir_p!(destination)
+
+    blobs =
+      run_git!(source, ["ls-tree", "-r", "-z", "--full-tree", parent, "--", phase_directory])
+      |> String.split(<<0>>, trim: true)
+      |> Enum.flat_map(fn record ->
+        case String.split(record, "\t", parts: 2) do
+          [metadata, path] ->
+            case String.split(metadata, " ", trim: true) do
+              [mode, "blob", _object] when mode in ["100644", "100755"] ->
+                unless String.starts_with?(path, phase_directory <> "/") do
+                  raise "Phase 139 historical tree escaped its planning directory: #{path}"
+                end
+
+                [{path, run_git!(source, ["show", "#{parent}:#{path}"])}]
+
+              _ ->
+                []
+            end
+
+          _ ->
+            raise "Could not parse Phase 139 historical Git tree entry: #{inspect(record)}"
+        end
+      end)
+      |> Enum.sort_by(&elem(&1, 0))
+
+    Enum.each(blobs, fn {path, content} ->
+      target = Path.join(repository, path)
+      File.mkdir_p!(Path.dirname(target))
+      File.write!(target, content)
+    end)
   end
 
   defp build_sealed_phase_139_acceptance_fixture!(
