@@ -661,7 +661,8 @@ release_train_artifact_version() {
 }
 
 release_train_tag_version() {
-  sed -nE 's/^- GitHub release truth: \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/[^)]*\/tag\/lockspire-v[0-9]+\.[0-9]+\.[0-9]+\) was created on `[0-9-]+`.*/\1/p' .planning/RELEASE-TRAIN.md
+  sed -nE 's/^- GitHub release truth: \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/[^)]*\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\) was created on `[0-9-]+`.*/\1 \2/p' .planning/RELEASE-TRAIN.md |
+    awk '$1 == $2 { print $1 }'
 }
 
 release_train_has_consistent_versions() {
