@@ -123,7 +123,7 @@ None.
 
 - Plan 01 is complete. Plan 02 is ready to create or update the review PR, confirm its exact head and required checks, and inspect live release timing. Plan 03 remains dependent on Plan 02's explicit merge authorization.
 - The verified fixture-repair commit is `cfcb73ad01907e8d8d1aff5891791af1ba6a0937` on `gsd/phase-141-maintenance-baseline-closure`. No PR was opened and no remote update occurred during this preparation.
-- The checkout is clean with one worktree. Against its current local `origin/main` reference, the branch is 75 commits and 250 paths ahead; Plan 02 must refresh that reference and account for the full diff before any push or PR creation.
+- The checkout is clean with one worktree. Its local comparison showed at least 76 commits and 250 paths ahead of `origin/main`; Plan 02 must refresh the reference and account for the full diff before any push or PR creation.
 - Lockspire 1.5.0 remains the latest public package. No publication action occurred.
 
 ---
