@@ -43,7 +43,8 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
     end
   end
 
-  test "release hygiene runs the portable phase-finalizer lifecycle exactly once in protected order" do
+  @tag :phase139_gap_closure
+  test "release hygiene runs the combined phase-finalizer lifecycle exactly once in protected order" do
     workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
     assert length(Regex.scan(~r/^permissions:\s*\n  contents: read\s*$/m, workflow)) == 1
 
@@ -63,31 +64,39 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
              "Check out repository",
              "Verify repo-owned release hygiene contract",
              "Lint workflows and maintained shell scripts",
-             "Verify phase finalizer command router",
              "Verify portable phase-finalizer lifecycle",
              "Verify and audit Release Please runtime dependencies",
              "Verify dependency setup did not rewrite locks"
            ]
 
-    router_command =
-      "node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs"
-
-    lifecycle_command =
+    combined_command =
       "LOCKSPIRE_SKIP_BEAM_INTEGRATION=1 LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs"
 
-    router_step = step_source(job, "Verify phase finalizer command router")
     lifecycle_step = step_source(job, "Verify portable phase-finalizer lifecycle")
 
-    assert length(:binary.matches(router_step, router_command)) == 1
-    assert length(:binary.matches(lifecycle_step, lifecycle_command)) == 1
+    assert length(:binary.matches(lifecycle_step, combined_command)) == 1
 
-    router_position = :binary.match(job, router_command) |> elem(0)
-    lifecycle_position = :binary.match(job, lifecycle_command) |> elem(0)
+    assert length(
+             :binary.matches(
+               lifecycle_step,
+               "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs"
+             )
+           ) == 1
+
+    assert length(
+             :binary.matches(
+               lifecycle_step,
+               "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs"
+             )
+           ) == 1
+
+    lint_position = :binary.match(job, "Lint workflows and maintained shell scripts") |> elem(0)
+    lifecycle_position = :binary.match(job, combined_command) |> elem(0)
 
     release_audit_position =
       :binary.match(job, "Verify and audit Release Please runtime dependencies") |> elem(0)
 
-    assert router_position < lifecycle_position
+    assert lint_position < lifecycle_position
     assert lifecycle_position < release_audit_position
   end
 
