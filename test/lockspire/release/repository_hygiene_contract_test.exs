@@ -22,7 +22,8 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
         URI.parse(destination).scheme != nil or String.starts_with?(destination, "#")
       end)
 
-    assert local_destinations != [], "expected at least one local link in .planning/RELEASE-TRAIN.md"
+    assert local_destinations != [],
+           "expected at least one local link in .planning/RELEASE-TRAIN.md"
 
     Enum.each(local_destinations, fn destination ->
       path = destination |> String.split("#", parts: 2) |> hd()
