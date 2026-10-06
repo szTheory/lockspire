@@ -4,7 +4,7 @@ defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
   @phase_dir ".planning/phases/139-required-truth-reconciliation"
 
   @tag :phase139_gap_closure
-  test "Phase 139 gap closure preserves Phase 140 and 141 historical completion" do
+  test "maintained Phase 139 records expose one lifecycle posture across gap closure and historical completion" do
     roadmap = File.read!(".planning/ROADMAP.md")
     state = File.read!(".planning/STATE.md")
     verification = File.read!("#{@phase_dir}/139-VERIFICATION.md")

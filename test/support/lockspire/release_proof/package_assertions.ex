@@ -3854,7 +3854,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       write_repo_file!(
         repository,
         "test/support/lockspire/release_proof/workflow_assertions.ex",
-        File.read!(Paths.path("test/support/lockspire/release_proof/workflow_assertions.ex"))
+        run_git!(Paths.path("."), [
+          "show",
+          "#{lineage_base}:test/support/lockspire/release_proof/workflow_assertions.ex"
+        ])
       )
 
       commit_all!(repository, "test(release): follow the active release train version")
