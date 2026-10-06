@@ -283,17 +283,13 @@ The phase uses local Git/Mix plus authenticated GitHub CLI access for final acce
 | A1 | A concise `142-RESULT.md` filename is suitable for the durable post-merge record. | Architecture Patterns | Low; filename is explicitly discretionary and can be changed during planning. |
 | A2 | The implementation can parse the simple local links currently present in `.planning/RELEASE-TRAIN.md` with a small regex-based ExUnit helper. | Architecture Patterns | Low; if link syntax expands, keep test narrow and adapt parsing without making a general framework. |
 
-## Open Questions
+## Questions Resolved by Execution-Time Checks
 
-1. **What Release Please PRs and workflow runs are live immediately before merge, and can the current automation publish before the Phase 142 handoff?**
-   - What we know: checked-in automation can act after a successful main CI run, but it only shows program logic.
-   - What's unclear: current live PR and run state; no live GitHub queries were made for this research.
-   - Recommendation: inspect live state immediately before merge; if it can cross the Phase 143 publication boundary, halt and resolve the concrete timing issue. Never infer state from these checked-in workflow files.
+These values are mutable hosted state, so research cannot truthfully answer them in advance. Their resolution is to query the live sources at the phase's required decision point, with an explicit stop condition; repository files and this research report are not substitutes for those observations.
 
-2. **What is the latest public package at the time of the Phase 142 result record?**
-   - What we know: the Phase 141 baseline records a 2026-10-05 observation that Hex/GitHub supported 1.5.0 as latest public.
-   - What's unclear: later publication state may have changed.
-   - Recommendation: revalidate public evidence before writing the result record; keep 1.5.0 truth until current public proof establishes 1.5.1.
+1. **Release Please timing before merge — resolved by Plan 142-02 Task 1 and rechecked by Plan 142-03 Task 1.** The plans enumerate all live Release Please PRs and active runs with authenticated, paginated queries, validate complete coverage, and inspect whether the main-CI automation chain could publish before the Phase 142 readiness handoff. Missing, incomplete, changing, ambiguous, or unsafe evidence stops the merge path. No current live state is asserted here.
+
+2. **Latest public package when recording the result — resolved by Plan 142-03 Task 3.** The plan queries current Hex package and exact 1.5.1 release/tag sources and records the observation time and links. A failed query is a blocker; if current public proof establishes a changed version, the record must disclose it. The Phase 141 observation supports 1.5.0 only as historical context, not as a claim about current public state.
 
 ## Metadata
 

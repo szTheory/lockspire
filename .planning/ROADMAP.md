@@ -30,9 +30,13 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 **Plans**: 3 plans
 
 Plans:
-
+**Wave 1**
 - [ ] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 142-02-PLAN.md — Inspect live release timing and obtain exact-head merge authorization.
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
 
 ### Phase 143: Publish and Verify Lockspire 1.5.1
