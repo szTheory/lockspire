@@ -5,9 +5,9 @@ current_phase: 142
 current_phase_name: Merge the Corrected Main Baseline
 status: Phase 142 Plan 01 is complete; Plan 02 is ready to create or update the review PR and inspect live release timing.
 stopped_at: Before Phase 142 Plan 02 PR creation and live review
-last_updated: "2026-10-06T19:56:52Z"
+last_updated: "2026-10-06T20:03:40Z"
 last_activity: 2026-10-06
-last_activity_desc: Archived-path fixtures repaired; full mix ci passed; Phase 142 Plan 02 is next
+last_activity_desc: Full mix ci passed; Plan 02 must inspect the clean 75-commit branch diff before any push
 state_head: cfcb73ad01907e8d8d1aff5891791af1ba6a0937
 progress:
   total_phases: 2
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Run `$gsd-execute-phase 142` to create or update the review PR and check its exact head, required checks, and live release timing.
+**Current focus:** Run `$gsd-execute-phase 142` to review the full Phase 141 branch diff, then create or update its PR and check exact head, required checks, and live release timing.
 
 ## Current Position
 
 Phase: 142 (Merge the Corrected Main Baseline) — IN PROGRESS
 Plan: 02 of 3 — ready to create or update the review PR and inspect live release timing
-Status: Plan 01's archive-aware fixtures and full contributor gate are complete. No PR has been opened or pushed.
+Status: Plan 01's archive-aware fixtures and full contributor gate are complete. The checkout is clean; its branch is 75 commits / 250 paths ahead of the current local `origin/main` reference. No PR has been opened or pushed.
 Last activity: 2026-10-06 — repaired archived-path fixtures and passed the full `mix ci` gate
 
 ## Accumulated Context
@@ -166,7 +166,7 @@ Last activity: 2026-10-06 — repaired archived-path fixtures and passed the ful
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
-- Phase 142 Plan 01's initial `mix ci` run found stale Phase 138/139 current-source paths and a Phase 139 fixture contaminated by later planning-root files. The fixtures now read the v1.38 archive and rebuild historical state from the exact modeled parent commit. A final full `mix ci` exited 0, including 102 integration tests with no failures. Dependency audit emitted a sandbox `.git/FETCH_HEAD` permission message but completed with no vulnerabilities. Plan 02 is ready; no PR or remote update has occurred.
+- Phase 142 Plan 01's initial `mix ci` run found stale Phase 138/139 current-source paths and a Phase 139 fixture contaminated by later planning-root files. The fixtures now read the v1.38 archive and rebuild historical state from the exact modeled parent commit. A final full `mix ci` exited 0, including 102 integration tests with no failures. Dependency audit emitted a sandbox `.git/FETCH_HEAD` permission message but completed with no vulnerabilities. Plan 02 must refresh the local `origin/main` reference and account for all 75 commits / 250 paths in the clean branch diff before pushing or opening a PR; no remote update has occurred.
 
 ### Quick Tasks Completed
 
@@ -188,10 +188,10 @@ Last activity: 2026-10-06 — repaired archived-path fixtures and passed the ful
 
 ## Session Continuity
 
-Last session: 2026-10-06T19:56:52Z
-Stopped at: Phase 142 Plan 01 complete; ready for Plan 02 PR and live release-timing checks
+Last session: 2026-10-06T20:03:40Z
+Stopped at: Phase 142 Plan 01 complete; ready for Plan 02 full-diff review, PR and live release-timing checks
 Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-01-SUMMARY.md
-Resume instruction: Run `$gsd-execute-phase 142` to create or update the review PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
+Resume instruction: Run `$gsd-execute-phase 142` to refresh and review the complete branch diff before any push, then create or update the PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
 
 ## Performance Metrics
 
