@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v1.39
 current_phase: 143
 current_phase_name: Publish and Verify Lockspire 1.5.1
-current_plan: 3
+current_plan: 4
 status: executing
-stopped_at: Completed 143-02-PLAN.md
-last_updated: "2026-10-07T17:41:13.000Z"
+stopped_at: Completed 143-03-PLAN.md
+last_updated: "2026-10-07T17:55:50.000Z"
 last_activity: 2026-10-07
-last_activity_desc: Phase 143 Plan 02 completed; Plan 03 is next
-state_head: 1f97eb0a60ae56a2517a6a2294b74d631862ba97
+last_activity_desc: Phase 143 Plan 03 completed; Plan 04 is next
+state_head: d00b34b15bbb46cf9df60316f07ad1a747ab7259
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-07)
 
 ## Current Position
 
-Current Plan: 3
+Current Plan: 4
 Total Plans in Phase: 6
 Phase: 143 (Publish and Verify Lockspire 1.5.1) — IN PROGRESS
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
-Last activity: 2026-10-07 — Phase 143 Plan 02 completed; Plan 03 is next
+Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 
 ## Accumulated Context
 
@@ -159,6 +159,7 @@ Last activity: 2026-10-07 — Phase 143 Plan 02 completed; Plan 03 is next
 - [Phase 142]: Accept both active and archived phase layouts while preserving maintainer-script checks and child-process exit semantics.
 - [Phase 143]: Phase 143 Plan 01 verifies actual remote lightweight or peeled annotated tag targets against the exact source SHA before Release Please tag-label mutation.
 - [Phase 143]: The protected Hex publisher installs the manifest's `runtime.publisher_hex`, which must equal builder `runtime.hex`; prepublish proof records API export and exact-byte fixture success for this selected archive only.
+- [Phase 143]: Terminal receipts preserve per-stage `passed`/`failed`/`not_run`/`unknown` state and separate public Hex presence from complete verification; missing checksums and tag targets remain unknown.
 
 ### Pending Todos
 
@@ -273,6 +274,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 142 P04 | 39min | 3 tasks | 6 files |
 | Phase 143 P01 | 10min | 2 tasks | 4 files |
 | Phase 143 P02 | 7min | 2 tasks | 5 files |
+| Phase 143 P03 | 14min | 3 tasks | 6 files |
 
 ## Operator Next Steps
 

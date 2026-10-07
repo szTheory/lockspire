@@ -64,7 +64,7 @@ Plans:
 - [x] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
+- [x] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 143-04-PLAN.md — Review and merge release hardening, then accept fresh exact-main evidence.
