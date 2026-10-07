@@ -167,6 +167,8 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
       - name: Install locked dependencies
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-builder-mix-home
         run: |
           mix local.hex --force
           mix local.rebar --force
@@ -174,6 +176,7 @@ jobs:
       - name: Build and bind release artifact
         env:
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+          MIX_HOME: ${{ runner.temp }}/lockspire-builder-mix-home
         shell: bash
         run: |
           set -euo pipefail
@@ -192,10 +195,24 @@ jobs:
             --package-tar "release-input/$package_tar" \
             --package-sha256 "$checksum" \
             --only happy_path
+          HEX_VERSION="$(jq -er '.runtime.publisher_hex' release-input/release-manifest.json)"
+          BUILDER_HEX_VERSION="$(jq -er '.runtime.hex' release-input/release-manifest.json)"
+          test "$HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          export MIX_HOME="$RUNNER_TEMP/lockspire-publisher-mix-home"
+          mkdir -p "$MIX_HOME"
+          mix local.hex "$HEX_VERSION" --force
+          INSTALLED_HEX_VERSION="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(Hex.version())')"
+          test "$INSTALLED_HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          API_EXPORT="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(if Code.ensure_loaded?(Hex.API.Release) and function_exported?(Hex.API.Release, :publish, 5), do: "true", else: "false")')"
+          test "$API_EXPORT" = "true"
+          mix test test/lockspire/release_artifact_chain_contract_test.exs
           python3 scripts/publish/release_artifact.py receipt \
             --manifest release-input/release-manifest.json \
             --stage prepublish \
-            --output release-input/prepublish-receipt.json
+            --output release-input/prepublish-receipt.json \
+            --publisher-hex-version "$HEX_VERSION" \
+            --publisher-api-export "$API_EXPORT" \
+            --exact-byte-fixture true
       - name: Upload exact proven package data
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -233,14 +250,6 @@ jobs:
           set -euo pipefail
           git checkout --detach "$VERIFIED_SHA"
           test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
-      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
-        with:
-          elixir-version: ${{ env.ELIXIR_VERSION }}
-          otp-version: ${{ env.OTP_VERSION }}
-      - run: |
-          mix local.hex --force
-          mix local.rebar --force
-      - run: mix deps.get --check-locked
       - name: Download clean-room-proven package data
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -260,6 +269,33 @@ jobs:
             --tar "release-input/$package_name" \
             --manifest release-input/release-manifest.json \
             --source-sha "$VERIFIED_SHA"
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      - name: Install and verify manifest-bound Hex publisher
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEX_VERSION="$(jq -er '.runtime.publisher_hex' release-input/release-manifest.json)"
+          BUILDER_HEX_VERSION="$(jq -er '.runtime.hex' release-input/release-manifest.json)"
+          [[ "$HEX_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          test "$HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          mkdir -p "$MIX_HOME"
+          mix local.hex "$HEX_VERSION" --force
+          INSTALLED_HEX_VERSION="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(Hex.version())')"
+          test "$INSTALLED_HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          API_EXPORT="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(if Code.ensure_loaded?(Hex.API.Release) and function_exported?(Hex.API.Release, :publish, 5), do: "true", else: "false")')"
+          test "$API_EXPORT" = "true"
+          echo "Manifest-bound Hex $HEX_VERSION exports Hex.API.Release.publish/5."
+      - name: Install build tools and locked dependencies
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
+        run: |
+          mix local.rebar --force
+          mix deps.get --check-locked
       - name: Mint scoped release freeze token
         id: release-freeze-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -280,6 +316,7 @@ jobs:
       - name: Publish exact package while main is frozen
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
           GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           FREEZE_RULESET_ID: ${{ steps.release-freeze.outputs.ruleset_id }}

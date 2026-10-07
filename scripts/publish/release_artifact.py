@@ -65,6 +65,7 @@ def locked_version(package: str) -> str:
 def runtime_versions() -> dict[str, str]:
     hex_info = command_output("mix", "hex.info")
     mix_info = command_output("mix", "--version")
+    hex_version = match(r"^Hex:\s+([^\s]+)", hex_info, "Hex version")
     try:
         postgres = command_output("pg_config", "--version")
     except EvidenceError:
@@ -74,7 +75,8 @@ def runtime_versions() -> dict[str, str]:
         "elixir": match(r"^Elixir:\s+([^\s]+)", hex_info, "Elixir version"),
         "otp": match(r"^OTP:\s+([^\s]+)", hex_info, "OTP version"),
         "mix": match(r"^Mix\s+([^\s]+)", mix_info, "Mix version"),
-        "hex": match(r"^Hex:\s+([^\s]+)", hex_info, "Hex version"),
+        "hex": hex_version,
+        "publisher_hex": hex_version,
         "phoenix": locked_version("phoenix"),
         "phoenix_live_view": locked_version("phoenix_live_view"),
         "postgresql": match(r"(?:PostgreSQL\)?\s+)([0-9]+(?:\.[0-9]+)+)", postgres, "PostgreSQL version"),
@@ -154,12 +156,23 @@ def validate_manifest(payload: object) -> None:
         raise EvidenceError("release artifact size is invalid")
 
     runtime = payload["runtime"]
-    expected_runtime = {"elixir", "otp", "mix", "hex", "phoenix", "phoenix_live_view", "postgresql"}
+    expected_runtime = {
+        "elixir",
+        "otp",
+        "mix",
+        "hex",
+        "publisher_hex",
+        "phoenix",
+        "phoenix_live_view",
+        "postgresql",
+    }
     if not isinstance(runtime, dict) or set(runtime) != expected_runtime:
         raise EvidenceError("release runtime fields differ from the allowlist")
     safe_version = re.compile(r"[0-9]+(?:\.[0-9]+)+(?:-[0-9A-Za-z.-]+)?")
     if any(not isinstance(value, str) or safe_version.fullmatch(value) is None for value in runtime.values()):
         raise EvidenceError("release runtime value is invalid")
+    if runtime["publisher_hex"] != runtime["hex"]:
+        raise EvidenceError("publisher Hex version differs from builder Hex version")
 
 
 def verify_local(tarball: Path, manifest: dict[str, object], source_sha: str) -> None:
@@ -223,6 +236,9 @@ def parser() -> argparse.ArgumentParser:
     receipt.add_argument("--manifest", required=True, type=Path)
     receipt.add_argument("--stage", required=True, choices=("prepublish", "postpublish"))
     receipt.add_argument("--output", required=True, type=Path)
+    receipt.add_argument("--publisher-hex-version")
+    receipt.add_argument("--publisher-api-export", choices=("true", "false"))
+    receipt.add_argument("--exact-byte-fixture", choices=("true", "false"))
     return root
 
 
@@ -241,7 +257,32 @@ def main(argv: list[str]) -> int:
             manifest = read_manifest(args.manifest)
             artifact = manifest["artifact"]
             assert isinstance(artifact, dict)
-            write_json(args.output, {
+            compatibility_args = (
+                args.publisher_hex_version,
+                args.publisher_api_export,
+                args.exact_byte_fixture,
+            )
+            publisher_compatibility = None
+            if args.stage == "prepublish":
+                if any(value is None for value in compatibility_args):
+                    raise EvidenceError("prepublish receipt requires publisher compatibility proof")
+                runtime = manifest["runtime"]
+                assert isinstance(runtime, dict)
+                if args.publisher_hex_version != runtime["hex"] or args.publisher_hex_version != runtime["publisher_hex"]:
+                    raise EvidenceError("publisher compatibility version differs from the manifest")
+                if args.publisher_api_export != "true":
+                    raise EvidenceError("Hex.API.Release.publish/5 compatibility was not proven")
+                if args.exact_byte_fixture != "true":
+                    raise EvidenceError("exact-byte upload fixture did not pass")
+                publisher_compatibility = {
+                    "hex_version": args.publisher_hex_version,
+                    "api_export": True,
+                    "exact_byte_fixture": True,
+                }
+            elif any(value is not None for value in compatibility_args):
+                raise EvidenceError("publisher compatibility proof belongs only to prepublish receipts")
+
+            payload = {
                 "schema_version": SCHEMA_VERSION,
                 "stage": args.stage,
                 "source_sha": manifest["source_sha"],
@@ -249,7 +290,10 @@ def main(argv: list[str]) -> int:
                 "version": manifest["version"],
                 "sha256": artifact["sha256"],
                 "status": "verified",
-            })
+            }
+            if publisher_compatibility is not None:
+                payload["publisher_compatibility"] = publisher_compatibility
+            write_json(args.output, payload)
         return 0
     except (EvidenceError, OSError, subprocess.SubprocessError) as error:
         print(f"release evidence failed: {error}", file=sys.stderr)
