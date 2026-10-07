@@ -716,6 +716,13 @@ jobs:
             404) docs_presence=absent ;;
           esac
 
+          docs_stage=unknown
+          case "$docs_presence" in
+            present) docs_stage=passed ;;
+            absent) docs_stage=failed ;;
+            unknown) docs_stage=unknown ;;
+          esac
+
           hex_stage="$(step_state "$HEX_PUBLISH_OUTPUT" "$PUBLISH_RESULT")"
           github_release_stage="$(step_state "$GITHUB_RELEASE_OUTPUT" "$PUBLISH_RESULT")"
           tag_stage="$(step_state "$TAG_OUTPUT" "$PUBLISH_RESULT")"
@@ -732,7 +739,7 @@ jobs:
             --arg hex_publish "$hex_stage" \
             --arg github_release "$github_release_stage" \
             --arg tag "$tag_stage" \
-            --arg docs "$docs_presence" \
+            --arg docs "$docs_stage" \
             --arg install "$install_state" \
             --arg hex_presence "$hex_presence" \
             --arg hex_checksum "$hex_checksum" \

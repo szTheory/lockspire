@@ -250,6 +250,13 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert collector =~ "git ls-remote"
     assert collector =~ "needs.publish.result"
     assert collector =~ "needs.post-publish-install-truth.result"
+    assert collector =~ "case \"$docs_presence\" in"
+    assert collector =~ "present) docs_stage=passed ;;"
+    assert collector =~ "absent) docs_stage=failed ;;"
+    assert collector =~ "unknown) docs_stage=unknown ;;"
+    assert collector =~ "--arg docs \"$docs_stage\""
+    assert collector =~ "docs_presence: $docs_presence"
+    refute collector =~ "--arg docs \"$docs_presence\""
     refute collector =~ "HEX_API_KEY"
 
     upload = final_step!(collector, "Upload the terminal outcome receipt")
