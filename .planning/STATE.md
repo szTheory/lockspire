@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.39
-current_phase: 142
-current_phase_name: Merge the Corrected Main Baseline
-status: executing
-stopped_at: Completed 142-04-PLAN.md; ready for 142-02 full PR and live timing review
-last_updated: "2026-10-06T23:13:56.844Z"
-last_activity: 2026-10-06
-last_activity_desc: Phase 142 execution resumed (wave continue)
-state_head: 9d38928be44a7f137bb8f39fd1bd29f84ddf06b1
+current_phase: 143
+current_phase_name: Publish and Verify Lockspire 1.5.1
+status: planning
+stopped_at: Phase 142 complete, ready to plan Phase 143
+last_updated: "2026-10-07T12:56:46.666Z"
+last_activity: 2026-10-07
+last_activity_desc: Phase 142 complete, transitioned to Phase 143
+state_head: dda50e2d3b02ce223620e9689d818767f4423377
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 4
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -21,18 +21,18 @@ milestone_name: Verified 1.5.1 Release
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-06)
+See: .planning/PROJECT.md (updated 2026-10-07)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 142 — Merge the Corrected Main Baseline
+**Current focus:** Phase 143 — Publish and Verify Lockspire 1.5.1
 
 ## Current Position
 
-Phase: 142 (Merge the Corrected Main Baseline) — EXECUTING
-Plan: 2 of 3
-Status: Ready to execute
-Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
+Phase: 143 — Publish and Verify Lockspire 1.5.1
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-07 — Phase 142 complete, transitioned to Phase 143
 
 ## Accumulated Context
 
@@ -169,7 +169,7 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
-- Phase 142 Plan 01's initial `mix ci` run found stale Phase 138/139 current-source paths and a Phase 139 fixture contaminated by later planning-root files. The fixtures now read the v1.38 archive and rebuild historical state from the exact modeled parent commit. A final full `mix ci` exited 0, including 102 integration tests with no failures. Dependency audit emitted a sandbox `.git/FETCH_HEAD` permission message but completed with no vulnerabilities. Plan 02 must refresh the local `origin/main` reference and account for the full branch diff (at least 76 commits / 250 paths in the last local comparison) before pushing or opening a PR; no remote update has occurred.
+- Phase 142 completed against exact current `main` SHA `6f1a19b39999f96eb24352c75c2a0628375175ae`: PR #113 and all seven CI jobs passed, exact-source hygiene was 24 PASS / 0 WARN / 0 BLOCK, and Release ended `no_publish`. Public Hex/GitHub truth remains 1.5.0 with no 1.5.1 release or tag. Phase 143 must revalidate its current source and controls; this completion does not authorize publication. A failed freeze setup that returns no usable ruleset ID may require administrator cleanup, but it fails closed.
 
 ### Quick Tasks Completed
 
@@ -191,10 +191,9 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Session Continuity
 
-Last session: 2026-10-06T23:13:56.826Z
-Stopped at: Completed 142-04-PLAN.md; ready for 142-02 full PR and live timing review
-Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-02-PLAN.md
-Resume instruction: Run `$gsd-execute-phase 142` to refresh and review the complete branch diff before any push, then create or update the PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
+Last session: 2026-10-07T12:58:29Z
+Stopped at: Phase 142 complete, ready to plan Phase 143
+Resume file: None
 
 ## Performance Metrics
 
