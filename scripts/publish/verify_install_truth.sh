@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+record_github_output() {
+  local name="$1"
+  local value="$2"
+  if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    printf '%s=%s\n' "$name" "$value" >> "$GITHUB_OUTPUT"
+  fi
+}
+
 manifest=${1:?release manifest is required}
 source_sha=${2:?source SHA is required}
 receipt=${3:-install-truth-receipt.json}
@@ -62,17 +70,23 @@ DOCS_URL="https://hexdocs.pm/lockspire/$EXPECTED_VERSION/supported-surface.html"
 # and fails the check even when the docs are published and reachable.
 DOCS_STATUS=$(curl --silent --show-error --location --retry 3 --retry-all-errors -o /dev/null -w "%{http_code}" "$DOCS_URL" || true)
 
-if [ "$DOCS_STATUS" -ne 200 ]; then
+if [[ "$DOCS_STATUS" != 200 ]]; then
+  record_github_output docs_state failed
   echo "Error: Failed to fetch documentation at $DOCS_URL (HTTP $DOCS_STATUS)"
   exit 1
 fi
+record_github_output docs_state passed
 echo "==> Hexdocs successfully verified."
 
 echo "==> Running exact public package through the clean-room HTTP journey..."
-bash scripts/acceptance/run_clean_room_saas_journey.sh \
+if ! bash scripts/acceptance/run_clean_room_saas_journey.sh \
   --hex-version "$EXPECTED_VERSION" \
   --package-sha256 "$EXPECTED_CHECKSUM" \
-  --only happy_path
+  --only happy_path; then
+  record_github_output install_state failed
+  exit 1
+fi
+record_github_output install_state passed
 
 python3 scripts/publish/release_artifact.py receipt \
   --manifest "$manifest" \

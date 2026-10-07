@@ -128,6 +128,9 @@ jobs:
     if: ${{ needs.recovery-validation.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    outputs:
+      artifact_state: ${{ steps.build-artifact.outputs.artifact_state }}
+      prepublish_state: ${{ steps.build-artifact.outputs.prepublish_state }}
     permissions:
       contents: read
     services:
@@ -167,13 +170,17 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
       - name: Install locked dependencies
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-builder-mix-home
         run: |
           mix local.hex --force
           mix local.rebar --force
           mix deps.get --check-locked
       - name: Build and bind release artifact
+        id: build-artifact
         env:
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+          MIX_HOME: ${{ runner.temp }}/lockspire-builder-mix-home
         shell: bash
         run: |
           set -euo pipefail
@@ -187,15 +194,35 @@ jobs:
             --tar "release-input/$package_tar" \
             --source-sha "$VERIFIED_SHA" \
             --output release-input/release-manifest.json
+          python3 scripts/publish/release_artifact.py verify-local \
+            --tar "release-input/$package_tar" \
+            --manifest release-input/release-manifest.json \
+            --source-sha "$VERIFIED_SHA"
+          echo "artifact_state=passed" >> "$GITHUB_OUTPUT"
           checksum="$(jq -er '.artifact.sha256' release-input/release-manifest.json)"
           bash scripts/acceptance/run_clean_room_saas_journey.sh \
             --package-tar "release-input/$package_tar" \
             --package-sha256 "$checksum" \
             --only happy_path
+          HEX_VERSION="$(jq -er '.runtime.publisher_hex' release-input/release-manifest.json)"
+          BUILDER_HEX_VERSION="$(jq -er '.runtime.hex' release-input/release-manifest.json)"
+          test "$HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          export MIX_HOME="$RUNNER_TEMP/lockspire-publisher-mix-home"
+          mkdir -p "$MIX_HOME"
+          mix local.hex "$HEX_VERSION" --force
+          INSTALLED_HEX_VERSION="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(Hex.version())')"
+          test "$INSTALLED_HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          API_EXPORT="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(if Code.ensure_loaded?(Hex.API.Release) and function_exported?(Hex.API.Release, :publish, 5), do: "true", else: "false")')"
+          test "$API_EXPORT" = "true"
+          mix test test/lockspire/release_artifact_chain_contract_test.exs
           python3 scripts/publish/release_artifact.py receipt \
             --manifest release-input/release-manifest.json \
             --stage prepublish \
-            --output release-input/prepublish-receipt.json
+            --output release-input/prepublish-receipt.json \
+            --publisher-hex-version "$HEX_VERSION" \
+            --publisher-api-export "$API_EXPORT" \
+            --exact-byte-fixture true
+          echo "prepublish_state=passed" >> "$GITHUB_OUTPUT"
       - name: Upload exact proven package data
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -213,6 +240,10 @@ jobs:
     if: ${{ needs.recovery-validation.result == 'success' && needs.prepublish-proof.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      hex_publish_state: ${{ steps.publish-exact.outputs.hex_publish_state }}
+      github_release_state: ${{ steps.create-release.outputs.github_release_state }}
+      tag_state: ${{ steps.create-release.outputs.tag_state }}
     environment: hex-publish
     permissions:
       contents: write
@@ -233,14 +264,6 @@ jobs:
           set -euo pipefail
           git checkout --detach "$VERIFIED_SHA"
           test "$(git rev-parse HEAD)" = "$VERIFIED_SHA"
-      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
-        with:
-          elixir-version: ${{ env.ELIXIR_VERSION }}
-          otp-version: ${{ env.OTP_VERSION }}
-      - run: |
-          mix local.hex --force
-          mix local.rebar --force
-      - run: mix deps.get --check-locked
       - name: Download clean-room-proven package data
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -260,6 +283,47 @@ jobs:
             --tar "release-input/$package_name" \
             --manifest release-input/release-manifest.json \
             --source-sha "$VERIFIED_SHA"
+      - uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      - name: Install and verify manifest-bound Hex publisher
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
+        shell: bash
+        run: |
+          set -euo pipefail
+          HEX_VERSION="$(jq -er '.runtime.publisher_hex' release-input/release-manifest.json)"
+          BUILDER_HEX_VERSION="$(jq -er '.runtime.hex' release-input/release-manifest.json)"
+          [[ "$HEX_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          test "$HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          mkdir -p "$MIX_HOME"
+          mix local.hex "$HEX_VERSION" --force
+          INSTALLED_HEX_VERSION="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(Hex.version())')"
+          test "$INSTALLED_HEX_VERSION" = "$BUILDER_HEX_VERSION"
+          API_EXPORT="$(elixir -e 'Mix.start(); Mix.Local.append_archives(); Hex.start(); IO.write(if Code.ensure_loaded?(Hex.API.Release) and function_exported?(Hex.API.Release, :publish, 5), do: "true", else: "false")')"
+          test "$API_EXPORT" = "true"
+          echo "Manifest-bound Hex $HEX_VERSION exports Hex.API.Release.publish/5."
+      - name: Install build tools and locked dependencies
+        env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
+        run: |
+          mix local.rebar --force
+          mix deps.get --check-locked
+      - name: Preflight existing GitHub tag target before publication
+        env:
+          GH_REPO: ${{ github.repository }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(jq -er '.version' release-input/release-manifest.json)"
+          tag_name="lockspire-v$version"
+          bash scripts/publish/verify_github_release_target.sh \
+            "$tag_name" \
+            "${GITHUB_SERVER_URL}/${GH_REPO}.git" \
+            "$VERIFIED_SHA" \
+            --if-present
       - name: Mint scoped release freeze token
         id: release-freeze-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -277,15 +341,45 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: bash scripts/publish/release_main_freeze.sh create
+      - name: Freeze updates and deletion for the exact release tag
+        id: release-tag-freeze
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(jq -er '.version' release-input/release-manifest.json)"
+          bash scripts/publish/release_tag_guard.sh create "lockspire-v$version"
+      - name: Create or verify the exact release tag
+        id: ensure-release-tag
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          REF_CREATE_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/publish/release_tag_guard.sh ensure \
+            "$TAG_FREEZE_RULESET_ID" \
+            "$RELEASE_TAG" \
+            "$VERIFIED_SHA"
       - name: Publish exact package while main is frozen
+        id: publish-exact
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
+          MIX_HOME: ${{ runner.temp }}/lockspire-publisher-mix-home
           GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           FREEZE_RULESET_ID: ${{ steps.release-freeze.outputs.ruleset_id }}
           AUTHORIZED_SHA: ${{ vars.LOCKSPIRE_PHASE143_AUTHORIZED_SHA }}
           RECOVERY_REF: ${{ inputs.recovery_ref }}
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         shell: bash
         run: |
@@ -298,7 +392,9 @@ jobs:
             "$VERIFIED_SHA" \
             "release-input/$package_name" \
             release-input/release-manifest.json
+          echo "hex_publish_state=passed" >> "$GITHUB_OUTPUT"
       - name: Create matching GitHub release
+        id: create-release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -310,11 +406,18 @@ jobs:
           tag_name="lockspire-v$version"
           notes="$(awk -v version="$version" '$0 ~ "^## \\[" version "\\]" { found=1; next } found && $0 ~ "^## \\[" { exit } found { print }' CHANGELOG.md)"
           test -n "$notes"
-          if gh release view "$tag_name" --json targetCommitish --jq '.targetCommitish' >/tmp/release-target 2>/dev/null; then
-            test "$(git rev-parse "$(cat /tmp/release-target)^{commit}")" = "$VERIFIED_SHA"
+          if gh release view "$tag_name" >/dev/null 2>&1; then
+            echo "GitHub release $tag_name already exists; verifying its remote tag target."
           else
             gh release create "$tag_name" --target "$VERIFIED_SHA" --title "lockspire: v$version" --notes "$notes"
           fi
+          test "$(gh release view "$tag_name" --json tagName --jq '.tagName')" = "$tag_name"
+          echo "github_release_state=passed" >> "$GITHUB_OUTPUT"
+          bash scripts/publish/verify_github_release_target.sh \
+            "$tag_name" \
+            "${GITHUB_SERVER_URL}/${GH_REPO}.git" \
+            "$VERIFIED_SHA"
+          echo "tag_state=passed" >> "$GITHUB_OUTPUT"
       # Release Please does not advance the merged release PR's `autorelease:`
       # label when `skip-github-release: true`; this protected lane owns that
       # state transition after publication and GitHub release creation succeed.
@@ -342,6 +445,16 @@ jobs:
             --add-label 'autorelease: tagged' \
             --remove-label 'autorelease: pending'
           echo "Marked #${pull_request} as tagged for ${version}."
+      - name: Remove temporary release tag freeze
+        if: ${{ always() && steps.release-tag-freeze.outputs.ruleset_id != '' }}
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
+        shell: bash
+        run: bash scripts/publish/release_tag_guard.sh delete "$TAG_FREEZE_RULESET_ID" "$RELEASE_TAG"
       - name: Remove temporary main freeze
         if: ${{ always() && steps.release-freeze.outputs.ruleset_id != '' }}
         timeout-minutes: 5
@@ -357,6 +470,9 @@ jobs:
     if: ${{ needs.publish.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      docs_state: ${{ steps.public-truth.outputs.docs_state }}
+      install_state: ${{ steps.public-truth.outputs.install_state }}
     permissions:
       contents: read
     services:
@@ -396,6 +512,7 @@ jobs:
           name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}
           path: release-input
       - name: Verify exact published checksum, docs, and HTTP journey
+        id: public-truth
         env:
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
         shell: bash
@@ -451,5 +568,218 @@ jobs:
         with:
           name: release-evidence-${{ needs.recovery-validation.outputs.verified_sha }}
           path: retained-release-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  terminal-outcome:
+    name: Record terminal release outcome
+    needs: [recovery-validation, prepublish-proof, publish, post-publish-install-truth]
+    if: ${{ always() && github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+      - name: Download prepublish artifact when available
+        if: always()
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: release-package-${{ inputs.recovery_ref }}
+          path: release-input
+      - name: Observe public release facts and build terminal receipt input
+        id: terminal-state
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RECOVERY_REF: ${{ inputs.recovery_ref }}
+          SOURCE_CI_RUN_ID: ${{ inputs.source_ci_run_id }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+          RECOVERY_RESULT: ${{ needs.recovery-validation.result }}
+          PREPUBLISH_RESULT: ${{ needs.prepublish-proof.result }}
+          PREPUBLISH_OUTPUT: ${{ needs.prepublish-proof.outputs.prepublish_state }}
+          PUBLISH_RESULT: ${{ needs.publish.result }}
+          HEX_PUBLISH_OUTPUT: ${{ needs.publish.outputs.hex_publish_state }}
+          GITHUB_RELEASE_OUTPUT: ${{ needs.publish.outputs.github_release_state }}
+          TAG_OUTPUT: ${{ needs.publish.outputs.tag_state }}
+          POSTPUBLISH_RESULT: ${{ needs.post-publish-install-truth.result }}
+          INSTALL_OUTPUT: ${{ needs.post-publish-install-truth.outputs.install_state }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          job_state() {
+            case "$1" in
+              success) printf 'passed' ;;
+              failure) printf 'failed' ;;
+              skipped) printf 'not_run' ;;
+              *) printf 'unknown' ;;
+            esac
+          }
+
+          step_state() {
+            case "$1" in
+              passed|failed|not_run|unknown) printf '%s' "$1" ;;
+              *)
+                if [[ "$2" == skipped ]]; then printf 'not_run'; else printf 'unknown'; fi
+                ;;
+            esac
+          }
+
+          version="$(sed -nE 's/^[[:space:]]*version:[[:space:]]*"([^"]+)".*/\1/p' mix.exs | head -1)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]
+          tag_name="lockspire-v$version"
+          source_sha="$VERIFIED_SHA"
+          if [[ ! "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+            source_sha="$RECOVERY_REF"
+          fi
+          if [[ ! "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then source_sha=""; fi
+          ci_run_id="$SOURCE_CI_RUN_ID"
+          if [[ ! "$ci_run_id" =~ ^[0-9]+$ ]]; then ci_run_id=""; fi
+
+          candidate_state="$(job_state "$RECOVERY_RESULT")"
+          prepublish_state="$(step_state "$PREPUBLISH_OUTPUT" "$PREPUBLISH_RESULT")"
+          artifact_state=unknown
+          manifest_path="release-input/release-manifest.json"
+          if [[ -f "$manifest_path" && ! -L "$manifest_path" ]]; then
+            package_name="$(jq -er '.artifact.filename' "$manifest_path" 2>/dev/null || true)"
+            if [[ "$package_name" =~ ^lockspire-[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?\.tar$ && -f "release-input/$package_name" && ! -L "release-input/$package_name" && "$source_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              if python3 scripts/publish/release_artifact.py verify-local \
+                --tar "release-input/$package_name" \
+                --manifest "$manifest_path" \
+                --source-sha "$source_sha" >/dev/null 2>&1; then
+                artifact_state=passed
+              else
+                artifact_state=failed
+              fi
+            else
+              artifact_state=failed
+            fi
+          elif [[ "$PREPUBLISH_RESULT" == skipped ]]; then
+            artifact_state=not_run
+          fi
+
+          hex_presence=unknown
+          hex_checksum=""
+          hex_status="$(curl --silent --show-error --location --max-time 15 \
+            --output "$RUNNER_TEMP/hex-release.json" --write-out '%{http_code}' \
+            "https://hex.pm/api/packages/lockspire/releases/$version" 2>/dev/null || true)"
+          if [[ "$hex_status" == 200 ]]; then
+            hex_presence=present
+            hex_checksum="$(jq -r '.checksum // empty' "$RUNNER_TEMP/hex-release.json" 2>/dev/null || true)"
+            if [[ ! "$hex_checksum" =~ ^[0-9a-f]{64}$ ]]; then hex_checksum=""; fi
+          elif [[ "$hex_status" == 404 ]]; then
+            hex_presence=absent
+          fi
+
+          latest_version=""
+          if curl --silent --show-error --location --max-time 15 \
+            --output "$RUNNER_TEMP/hex-package.json" \
+            "https://hex.pm/api/packages/lockspire" 2>/dev/null; then
+            latest_version="$(jq -r '.latest_version // empty' "$RUNNER_TEMP/hex-package.json" 2>/dev/null || true)"
+            if [[ ! "$latest_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then latest_version=""; fi
+          fi
+
+          release_presence=unknown
+          release_response="$(gh api --include "repos/$GH_REPO/releases/tags/$tag_name" 2>/dev/null || true)"
+          release_status="$(awk '$1 ~ /^HTTP\// { code=$2 } END { print code }' <<< "$release_response")"
+          case "$release_status" in
+            200) release_presence=present ;;
+            404) release_presence=absent ;;
+          esac
+
+          tag_target_sha=""
+          tag_ref="refs/tags/$tag_name"
+          remote_refs="$(git ls-remote "${GITHUB_SERVER_URL}/${GH_REPO}.git" "$tag_ref" "$tag_ref^{}" 2>/dev/null || true)"
+          direct_sha=""
+          peeled_sha=""
+          while IFS=$'\t' read -r object_sha ref_name; do
+            [[ -n "$ref_name" ]] || continue
+            [[ "$object_sha" =~ ^[0-9a-f]{40}$ ]] || continue
+            case "$ref_name" in
+              "$tag_ref") direct_sha="$object_sha" ;;
+              "$tag_ref^{}") peeled_sha="$object_sha" ;;
+            esac
+          done <<< "$remote_refs"
+          tag_target_sha="${peeled_sha:-$direct_sha}"
+
+          docs_presence=unknown
+          docs_status="$(curl --silent --show-error --location --max-time 15 \
+            --output /dev/null --write-out '%{http_code}' \
+            "https://hexdocs.pm/lockspire/$version/supported-surface.html" 2>/dev/null || true)"
+          case "$docs_status" in
+            200) docs_presence=present ;;
+            404) docs_presence=absent ;;
+          esac
+
+          hex_stage="$(step_state "$HEX_PUBLISH_OUTPUT" "$PUBLISH_RESULT")"
+          github_release_stage="$(step_state "$GITHUB_RELEASE_OUTPUT" "$PUBLISH_RESULT")"
+          tag_stage="$(step_state "$TAG_OUTPUT" "$PUBLISH_RESULT")"
+          install_state="$(step_state "$INSTALL_OUTPUT" "$POSTPUBLISH_RESULT")"
+
+          jq -n \
+            --arg workflow_run_id "$GITHUB_RUN_ID" \
+            --arg source_sha "$source_sha" \
+            --arg ci_run_id "$ci_run_id" \
+            --arg version "$version" \
+            --arg candidate "$candidate_state" \
+            --arg artifact "$artifact_state" \
+            --arg prepublish "$prepublish_state" \
+            --arg hex_publish "$hex_stage" \
+            --arg github_release "$github_release_stage" \
+            --arg tag "$tag_stage" \
+            --arg docs "$docs_presence" \
+            --arg install "$install_state" \
+            --arg hex_presence "$hex_presence" \
+            --arg hex_checksum "$hex_checksum" \
+            --arg public_latest_version "$latest_version" \
+            --arg github_release_presence "$release_presence" \
+            --arg tag_target_sha "$tag_target_sha" \
+            --arg docs_presence "$docs_presence" \
+            '{
+              schema_version: 1,
+              workflow_run_id: $workflow_run_id,
+              source_sha: (if $source_sha == "" then null else $source_sha end),
+              ci_run_id: (if $ci_run_id == "" then null else $ci_run_id end),
+              package: "lockspire",
+              version: $version,
+              stages: {
+                candidate: $candidate,
+                artifact: $artifact,
+                prepublish: $prepublish,
+                hex_publish: $hex_publish,
+                github_release: $github_release,
+                tag: $tag,
+                docs: $docs,
+                install: $install
+              },
+              observations: {
+                hex_presence: $hex_presence,
+                hex_checksum: (if $hex_checksum == "" then null else $hex_checksum end),
+                public_latest_version: (if $public_latest_version == "" then null else $public_latest_version end),
+                github_release_presence: $github_release_presence,
+                tag_target_sha: (if $tag_target_sha == "" then null else $tag_target_sha end),
+                docs_presence: $docs_presence,
+                install_result: $install
+              }
+            }' > terminal-state.json
+
+          mkdir -p terminal-receipt-output
+          args=(terminal-receipt --input terminal-state.json --output terminal-receipt-output/release-terminal-receipt.json --workflow-run-id "$GITHUB_RUN_ID")
+          if [[ -f "$manifest_path" && ! -L "$manifest_path" ]]; then
+            args+=(--manifest "$manifest_path")
+          fi
+          python3 scripts/publish/release_artifact.py "${args[@]}"
+          cp terminal-receipt-output/release-terminal-receipt.json release-terminal-receipt.json
+      - name: Upload the terminal outcome receipt
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-release-terminal-receipt-${{ github.run_id }}
+          path: release-terminal-receipt.json
           if-no-files-found: error
           retention-days: 90

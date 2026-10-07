@@ -10,11 +10,11 @@ Requirements for the v1.39 release milestone. Each maps to exactly one roadmap p
 
 ### Release Truth
 
-- [ ] **TRUTH-06**: Maintainer can merge the corrected Phase 141 release record through the reviewed PR path and keep 1.5.0 identified as the latest public package until public proof for 1.5.1 exists.
+- [x] **TRUTH-06**: Maintainer can merge the corrected Phase 141 release record through the reviewed PR path and keep 1.5.0 identified as the latest public package until public proof for 1.5.1 exists.
 
 ### Main Readiness
 
-- [ ] **CI-09**: Maintainer can verify that required CI and the repository-hygiene check pass for the exact current `main` revision before release; every reported warning has an explicit disposition.
+- [x] **CI-09**: Maintainer can verify that required CI and the repository-hygiene check pass for the exact current `main` revision before release; every reported warning has an explicit disposition.
 
 ### Protected Publication
 
@@ -43,8 +43,8 @@ Populated during roadmap creation. Every v1.39 requirement maps to exactly one p
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TRUTH-06 | Phase 142 | Pending |
-| CI-09 | Phase 142 | Pending |
+| TRUTH-06 | Phase 142 | Complete |
+| CI-09 | Phase 142 | Complete |
 | REL-01 | Phase 143 | Pending |
 | REL-02 | Phase 143 | Pending |
 | REL-03 | Phase 143 | Pending |

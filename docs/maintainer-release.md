@@ -37,7 +37,7 @@ The standing release-train ledger lives in `.planning/RELEASE-TRAIN.md`. Update 
 6. Wait for the merge commit's own successful `CI` push run on the current `main` head. That exact run dispatches the trusted release lane with its SHA and run ID; the pre-merge CI run is never publish evidence.
 7. Let the validator confirm the exact immutable main SHA, matching successful CI run, and repository identity.
 8. Let the unprivileged prepublish job build one tar, bind it to a redacted manifest, and prove that local tar through the clean-room SaaS HTTP journey.
-9. Let the protected publisher validate and consume that same SHA-bound artifact; it publishes the manifest-verified package to Hex before creating or validating the matching GitHub release and must not rebuild release intent from a moving branch.
+9. Let the protected publisher validate and consume that same SHA-bound artifact; it checks any existing GitHub tag before publication, applies a no-bypass update/deletion freeze to the exact version tag, and creates or verifies that tag at the exact source SHA before uploading to Hex. It then publishes the manifest-verified package to Hex before creating or validating the matching GitHub release, and verifies the tag again. The temporary tag freeze remains through release creation and is removed by the job's always-run cleanup. A failed Hex upload can leave the verified tag without a GitHub release; recovery must reuse that same tag and SHA. It must not rebuild release intent from a moving branch.
 10. Treat the resulting protected Hex package, matching GitHub release, exact-version public HTTP journey, and bounded evidence artifact as the authoritative release record.
 
 Checked-in proof stops at the merged release commit plus the repo-owned workflow and docs. Protected-environment proof starts only when the `publish` job in `.github/workflows/release.yml` enters the `hex-publish` environment.
@@ -49,8 +49,65 @@ Keep release evidence in three separate buckets:
 
 - Repo-owned proof: `.github/workflows/release.yml`, `.github/workflows/release-please-automerge.yml`, `.github/actions/release-please/action.yml`, `docs/maintainer-release.md`, and `test/lockspire/release_readiness_contract_test.exs` define the canonical lane and should stay reviewable in git.
 - GitHub settings proof: the live `hex-publish` environment settings prove branch restriction to `main`, admin-bypass posture, and environment-secret placement.
-- Main-freeze proof: a temporary repository ruleset prevents updates to `main` during protected publication. The publish job reads back its exact active scope, no-bypass policy, and effective `update` rule before using the final exact-SHA check. The GitHub App installation is limited to `szTheory/lockspire` and its token receives only `Administration: write` and `Actions: read` permissions.
+- Main-freeze proof: a temporary repository ruleset prevents updates to `main` during protected publication. The publish job reads back its exact active scope, no-bypass policy, and effective `update` rule before using the final exact-SHA check. A separate temporary tag ruleset targets only `lockspire-v<version>` and blocks updates and deletions while the package and GitHub release are created. The tag is created through GitHub's create-reference endpoint, then its exact commit is read back before Hex upload. The GitHub App installation is limited to `szTheory/lockspire` and its token receives only `Administration: write` and `Actions: read` permissions.
 - Workflow-run proof: the single-artifact chain retains a schema-versioned manifest plus bounded prepublish/postpublish receipts. The manifest binds source SHA, package version, tar checksum and byte size, and pinned Elixir/OTP/Mix/Hex/Phoenix/LiveView/PostgreSQL versions. Raw OAuth journey logs, process configuration, and secrets are never uploaded.
+
+Plan 04 review finding CR-01 added a temporary no-bypass ruleset for the exact
+version tag and a create-only tag reservation before Hex upload. The tag guard
+rechecks the ruleset and the remote peeled target immediately before uploading;
+the ruleset is removed only after release creation or the always-run cleanup.
+Manifest validation also rejects JSON booleans for integer schema and byte-size
+fields.
+
+The exact-tar uploader calls the undocumented, version-bound internal API
+`Hex.API.Release.publish/5`. The prepublish receipt records that the manifest's
+`runtime.publisher_hex` equals the builder's `runtime.hex`, that the selected
+archive exports the API, and that the exact-byte fixture passed. Review those
+fields before the protected publication decision. The protected job installs
+that same manifest-recorded archive and repeats the version and API checks
+before it reaches any credential-bearing upload step. This is evidence for the
+selected archive only; it does not claim compatibility with a version range.
+
+## Terminal outcome and partial publication
+
+Every `workflow_dispatch` release attempt produces the bounded
+`lockspire-release-terminal-receipt-<workflow_run_id>` artifact, including when
+the publisher or postpublish job fails or is skipped. It contains only
+`release-terminal-receipt.json` and is retained for 90 days. The separate
+prepublish package artifact, including the exact tar, is retained for 30 days.
+The terminal receipt records `.workflow_run_id`, `.source_sha`, `.ci_run_id`,
+`.package`, `.version`, `.public_latest_version`, `.manifest.sha256`,
+`.manifest.state`, `.artifact.sha256`, and `.artifact.state`. Each entry under
+`.stages` (`candidate`, `artifact`, `prepublish`, `hex_publish`,
+`github_release`, `tag`, `docs`, and `install`) is `passed`, `failed`,
+`not_run`, or `unknown`. `.observations` records `hex_presence`,
+`hex_checksum`, `github_release_presence`, `tag_target_sha`, `docs_presence`,
+and `install_result`; `.release_verified`, `.blocker`, and `.next_safe_action`
+summarize the outcome. It contains no raw logs or credentials.
+
+Treat `observations.hex_presence: present` as “public on Hex,” even when
+`release_verified` is false. Complete verification requires the manifest and
+exact tar to match, the exact Hex checksum, a GitHub release and tag target
+matching the source SHA, exact-version docs, and a passing public install
+journey. A failed or skipped workflow job alone does not prove that Hex lacks
+the package. Read the terminal receipt and independently query the public Hex
+release before updating release truth.
+
+If Hex exposes 1.5.1 while later proof is incomplete, record 1.5.1 as public in
+`.planning/RELEASE-TRAIN.md`, state that release verification is incomplete,
+preserve the blocker and terminal receipt, and leave the milestone open. The
+maintainer-facing result should show the current public version, verification
+state, source SHA, matching CI run, package checksum, GitHub release/tag
+target, install result, blocker, and next safe action. Link the bounded receipt
+instead of copying logs.
+
+Recovery may reuse only the same authorized source SHA and the same
+manifest-verified tar bytes; first confirm any existing Hex version has that
+same whole-tar checksum. Never rebuild under prior proof, overwrite a public
+version, or retarget a mismatching tag. The tar is available for same-artifact
+recovery for 30 days, while bounded evidence remains for 90 days. Once the tar
+expires, same-artifact recovery under the old proof is no longer possible; do
+not describe retained metadata or receipts as the missing package bytes.
 
 Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
@@ -122,6 +179,7 @@ Repo-owned commands stop at `mix ci` and the checked-in artifact review above. `
 - Configure the `hex-publish` environment to serialize and restrict publication from `main`; the workflow's release concurrency remains non-canceling.
 - If a merged release needs to be replayed after a workflow failure, use `workflow_dispatch` with both a recovery reason and the exact recovery ref so the protected publish lane replays the intended revision rather than whatever `main` points to later.
 - The publisher creates the temporary ruleset `Lockspire protected release main freeze` with exactly one rule (`update`, with fetch-and-merge disabled), `refs/heads/main` as its only target, and an empty bypass actor list. The `publish` job removes the ruleset in an `always()` cleanup step after publishing or failure. If the runner is lost or cleanup fails, `main` stays frozen; check for active protected release runs, then inspect and remove only this reserved ruleset as an administrator before resuming merges.
+- The publisher also creates `Lockspire protected release tag freeze <tag>` for the exact `lockspire-v<version>` tag, with update and deletion blocked and no bypass actors. If its cleanup fails, check for active protected release runs, inspect the exact tag target and ruleset scope, then remove only the stranded ruleset for that tag as an administrator. Preserve the tag and any unrelated rulesets; stop for maintainer review if the tag does not point to the verified release SHA.
 - Record protected-environment evidence separately from repo-owned proof: deployment restrictions, bypass posture, and environment-secret placement all live in GitHub settings rather than in the repo.
 
 ## Phase 142/143 release hold

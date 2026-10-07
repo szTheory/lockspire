@@ -1,19 +1,20 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.39
-current_phase: 142
-current_phase_name: Merge the Corrected Main Baseline
+current_phase: 143
+current_phase_name: Publish and Verify Lockspire 1.5.1
+current_plan: 4
 status: executing
-stopped_at: Before Phase 142 Plan 02 PR creation and live review
-last_updated: "2026-10-06T22:26:52.620Z"
-last_activity: 2026-10-06
-last_activity_desc: Phase 142 execution resumed (wave continue)
-state_head: 5feff7a2e444b9493d4dbea6376403de94c23c10
+stopped_at: Completed 143-03-PLAN.md
+last_updated: "2026-10-07T17:55:50.000Z"
+last_activity: 2026-10-07
+last_activity_desc: Phase 143 Plan 03 completed; Plan 04 is next
+state_head: d00b34b15bbb46cf9df60316f07ad1a747ab7259
 progress:
   total_phases: 2
-  completed_phases: 0
-  total_plans: 4
-  completed_plans: 1
+  completed_phases: 1
+  total_plans: 10
+  completed_plans: 8
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -21,18 +22,20 @@ milestone_name: Verified 1.5.1 Release
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-06)
+See: .planning/PROJECT.md (updated 2026-10-07)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 142 — Merge the Corrected Main Baseline
+**Current focus:** Phase 143 — Publish and Verify Lockspire 1.5.1
 
 ## Current Position
 
-Phase: 142 (Merge the Corrected Main Baseline) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 142
-Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
+Current Plan: 4
+Total Plans in Phase: 6
+Phase: 143 (Publish and Verify Lockspire 1.5.1) — IN PROGRESS
+Plan: 4 of 6
+Status: Ready to execute
+Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 
 ## Accumulated Context
 
@@ -151,6 +154,12 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 - [Phase 139]: Release Please version metadata and latest public package remain independent; public truth must agree with the artifact and release tag.
 - [Phase 139]: Malformed, duplicate, missing, or contradictory release-train fields block before exact-SHA acceptance.
 - [Phase 139]: Historical test repositories must use records from the exact committed boundary they model. — This prevents later planning state from contaminating earlier acceptance and relation fixtures.
+- [Phase 142]: Keep Release Please auto-merge disabled and both authorization variables absent through Phase 142; Phase 143 may authorize only one exact SHA.
+- [Phase 142]: With szTheory as the only eligible reviewer, use an explicit hex-publish environment approval with self-review allowed; require zero GitHub PR approvals and document that it is not independent review.
+- [Phase 142]: Accept both active and archived phase layouts while preserving maintainer-script checks and child-process exit semantics.
+- [Phase 143]: Phase 143 Plan 01 verifies actual remote lightweight or peeled annotated tag targets against the exact source SHA before Release Please tag-label mutation.
+- [Phase 143]: The protected Hex publisher installs the manifest's `runtime.publisher_hex`, which must equal builder `runtime.hex`; prepublish proof records API export and exact-byte fixture success for this selected archive only.
+- [Phase 143]: Terminal receipts preserve per-stage `passed`/`failed`/`not_run`/`unknown` state and separate public Hex presence from complete verification; missing checksums and tag targets remain unknown.
 
 ### Pending Todos
 
@@ -166,7 +175,7 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
-- Phase 142 Plan 01's initial `mix ci` run found stale Phase 138/139 current-source paths and a Phase 139 fixture contaminated by later planning-root files. The fixtures now read the v1.38 archive and rebuild historical state from the exact modeled parent commit. A final full `mix ci` exited 0, including 102 integration tests with no failures. Dependency audit emitted a sandbox `.git/FETCH_HEAD` permission message but completed with no vulnerabilities. Plan 02 must refresh the local `origin/main` reference and account for the full branch diff (at least 76 commits / 250 paths in the last local comparison) before pushing or opening a PR; no remote update has occurred.
+- Phase 142 completed against exact current `main` SHA `6f1a19b39999f96eb24352c75c2a0628375175ae`: PR #113 and all seven CI jobs passed, exact-source hygiene was 24 PASS / 0 WARN / 0 BLOCK, and Release ended `no_publish`. Public Hex/GitHub truth remains 1.5.0 with no 1.5.1 release or tag. Phase 143 must revalidate its current source and controls; this completion does not authorize publication. A failed freeze setup that returns no usable ruleset ID may require administrator cleanup, but it fails closed.
 
 ### Quick Tasks Completed
 
@@ -188,10 +197,9 @@ Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Session Continuity
 
-Last session: 2026-10-06T20:05:40Z
-Stopped at: Phase 142 Plan 01 complete; ready for Plan 02 full-diff review, PR and live release-timing checks
-Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-01-SUMMARY.md
-Resume instruction: Run `$gsd-execute-phase 142` to refresh and review the complete branch diff before any push, then create or update the PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
+Last session: 2026-10-07T17:31:17.279Z
+Stopped at: Completed 143-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -263,6 +271,10 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 139 P14 | 9 min | 2 tasks | 3 files |
 | Phase 139 P16 | 39min | 2 tasks | 2 files |
 | Phase 139 P15 | 325min | 2 tasks | 4 files |
+| Phase 142 P04 | 39min | 3 tasks | 6 files |
+| Phase 143 P01 | 10min | 2 tasks | 4 files |
+| Phase 143 P02 | 7min | 2 tasks | 5 files |
+| Phase 143 P03 | 14min | 3 tasks | 6 files |
 
 ## Operator Next Steps
 

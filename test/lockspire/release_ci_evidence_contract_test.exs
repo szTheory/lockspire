@@ -63,7 +63,8 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
              "prepublish-proof",
              "publish",
              "recovery-validation",
-             "release-please"
+             "release-please",
+             "terminal-outcome"
            ]
 
     release_please = graph["release-please"]
