@@ -3,6 +3,7 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
 
   @automerge Path.expand("../../.github/workflows/release-please-automerge.yml", __DIR__)
   @release Path.expand("../../.github/workflows/release.yml", __DIR__)
+  @release_freeze Path.expand("../../scripts/publish/release_main_freeze.sh", __DIR__)
 
   test "release automation dispatches post-merge CI and carries its exact evidence" do
     workflow = File.read!(@automerge)
@@ -35,6 +36,7 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
 
     assert workflow =~ "source_ci_run_id:"
     assert workflow =~ "actions: read"
+    assert workflow =~ "test \"$GITHUB_REF\" = \"refs/heads/main\""
     assert workflow =~ "[[ \"$RECOVERY_REF\" =~ ^[0-9a-f]{40}$ ]]"
     assert workflow =~ "git rev-parse origin/main"
     assert workflow =~ "git merge-base --is-ancestor \"$verified_sha\" origin/main"
@@ -116,18 +118,44 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
     assert recovery_validation =~ "test -n \"$AUTHORIZED_SHA\""
     assert recovery_validation =~ "test \"$RECOVERY_REF\" = \"$AUTHORIZED_SHA\""
     assert recovery_validation =~ "test \"$verified_sha\" = \"$AUTHORIZED_SHA\""
-    assert publish =~ "name: Recheck exact current main before Hex upload"
-    assert publish =~ "git fetch --no-tags origin refs/heads/main"
-    assert publish =~ "repos/$GH_REPO/git/ref/heads/main"
-    assert publish =~ "actions/variables/LOCKSPIRE_PHASE143_AUTHORIZED_SHA"
-    assert publish =~ "test \"$remote_main_sha\" = \"$hosted_main_sha\""
-    assert publish =~ "test \"$remote_main_sha\" = \"$AUTHORIZED_SHA\""
-    assert publish =~ "test \"$remote_main_sha\" = \"$authorized_sha_from_api\""
-    assert publish =~ "test \"$remote_main_sha\" = \"$RECOVERY_REF\""
-    assert publish =~ "test \"$remote_main_sha\" = \"$VERIFIED_SHA\""
 
-    assert :binary.match(publish, "name: Recheck exact current main before Hex upload") <
-             :binary.match(publish, "name: Publish package")
+    assert publish =~
+             "uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
+
+    assert publish =~ "permission-administration: write"
+    assert publish =~ "permission-actions: read"
+    assert publish =~ "LOCKSPIRE_RELEASE_FREEZE_APP_ID"
+    assert publish =~ "LOCKSPIRE_RELEASE_FREEZE_APP_PRIVATE_KEY"
+    assert publish =~ "name: Freeze main updates for the protected publish window"
+    assert publish =~ "name: Publish exact package while main is frozen"
+    assert publish =~ "name: Remove temporary main freeze"
+    refute publish =~ "name: Recheck exact current main before Hex upload"
+
+    assert :binary.match(publish, "name: Freeze main updates for the protected publish window") <
+             :binary.match(publish, "name: Publish exact package while main is frozen")
+
+    assert :binary.match(publish, "name: Mark the merged release PR as tagged") <
+             :binary.match(publish, "name: Remove temporary main freeze")
+
+    freeze_script = File.read!(@release_freeze)
+    assert freeze_script =~ "bypass_actors == []"
+    assert freeze_script =~ "enforcement == \"active\""
+    assert freeze_script =~ "update_allows_fetch_and_merge == false"
+    assert freeze_script =~ "ruleset_source_type == \"Repository\""
+    assert freeze_script =~ "actions/variables/LOCKSPIRE_PHASE143_AUTHORIZED_SHA"
+    assert freeze_script =~ "git fetch --no-tags origin refs/heads/main"
+    assert freeze_script =~ "[[ \"$remote_main_sha\" == \"$authorized_sha_from_api\" ]]"
+    assert freeze_script =~ "bypass_actors: []"
+    assert freeze_script =~ "publish_with_freeze \"$2\" \"$3\" \"$4\" \"$5\" \"$6\" \"$7\""
+
+    assert freeze_script =~
+             "preflight \"$ruleset_id\" \"$authorized_sha\" \"$recovery_ref\" \"$verified_sha\""
+
+    assert freeze_script =~ "unset HEX_API_KEY"
+    assert freeze_script =~ "unset GH_TOKEN"
+
+    assert :binary.match(freeze_script, "preflight \"$ruleset_id\"") <
+             :binary.match(freeze_script, "bash scripts/publish/publish_hex_idempotently.sh")
   end
 
   defp release_job_graph(workflow) do
