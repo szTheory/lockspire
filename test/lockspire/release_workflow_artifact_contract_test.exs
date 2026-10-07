@@ -3,6 +3,7 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
 
   @workflow Path.expand("../../.github/workflows/release.yml", __DIR__)
   @guide Path.expand("../../docs/maintainer-release.md", __DIR__)
+  @freeze_script Path.expand("../../scripts/publish/release_main_freeze.sh", __DIR__)
 
   test "unprivileged prepublish proof carries one SHA-bound package identity" do
     workflow = File.read!(@workflow)
@@ -28,6 +29,7 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
   test "protected publish validates downloaded data from a fresh exact-SHA checkout" do
     workflow = File.read!(@workflow)
     publish = job!(workflow, "publish", "post-publish-install-truth")
+    freeze_script = File.read!(@freeze_script)
 
     assert publish =~ "environment: hex-publish"
     assert publish =~ "needs: [recovery-validation, prepublish-proof]"
@@ -35,7 +37,13 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert publish =~ "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c"
     assert publish =~ "test \"$(find release-input -type f | wc -l | tr -d ' ')\" = \"3\""
     assert publish =~ "release_artifact.py verify-local"
-    assert publish =~ "publish_hex_idempotently.sh"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh create"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh publish"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh delete \"$FREEZE_RULESET_ID\""
+
+    assert freeze_script =~
+             "bash scripts/publish/publish_hex_idempotently.sh \"$package_tar\" \"$manifest\" \"$verified_sha\""
+
     assert publish =~ "release-input/release-manifest.json"
     assert publish =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
     refute publish =~ "run: release-input/"

@@ -901,7 +901,11 @@ repo_owned_checks() {
      grep -Fq "needs.recovery-validation.result == 'success'" .github/workflows/release.yml &&
      grep -Fq 'git checkout --detach "$VERIFIED_SHA"' .github/workflows/release.yml &&
      grep -Fq 'mix release.preflight' .github/workflows/release.yml &&
-     grep -Fq 'bash scripts/publish/publish_hex_idempotently.sh' .github/workflows/release.yml &&
+     grep -Fq 'bash scripts/publish/release_main_freeze.sh create' .github/workflows/release.yml &&
+     grep -Fq 'bash scripts/publish/release_main_freeze.sh publish' .github/workflows/release.yml &&
+     grep -Fq 'bash scripts/publish/release_main_freeze.sh delete "$FREEZE_RULESET_ID"' .github/workflows/release.yml &&
+     grep -Fq 'preflight "$ruleset_id" "$authorized_sha" "$recovery_ref" "$verified_sha"' scripts/publish/release_main_freeze.sh &&
+     grep -Fq 'bash scripts/publish/publish_hex_idempotently.sh "$package_tar" "$manifest" "$verified_sha"' scripts/publish/release_main_freeze.sh &&
      grep -Fq 'upload_hex_artifact.exs "$package_tar"' scripts/publish/publish_hex_idempotently.sh &&
      grep -Fq 'Hex.API.Release.publish("hexpm", bytes' scripts/publish/upload_hex_artifact.exs; then
     record_result "PASS" "release workflow" "repo-controlled Release Please and exact-CI-evidence publish commands are intact"

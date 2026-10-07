@@ -94,6 +94,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          test "$GITHUB_REF" = "refs/heads/main"
           test -n "$RECOVERY_REASON"
           [[ "$RECOVERY_REF" =~ ^[0-9a-f]{40}$ ]]
           test -n "$AUTHORIZED_SHA"
@@ -259,44 +260,44 @@ jobs:
             --tar "release-input/$package_name" \
             --manifest release-input/release-manifest.json \
             --source-sha "$VERIFIED_SHA"
-      - name: Recheck exact current main before Hex upload
+      - name: Mint scoped release freeze token
+        id: release-freeze-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ vars.LOCKSPIRE_RELEASE_FREEZE_APP_ID }}
+          private-key: ${{ secrets.LOCKSPIRE_RELEASE_FREEZE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-administration: write
+          permission-actions: read
+      - name: Freeze main updates for the protected publish window
+        id: release-freeze
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: bash scripts/publish/release_main_freeze.sh create
+      - name: Publish exact package while main is frozen
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
+          FREEZE_RULESET_ID: ${{ steps.release-freeze.outputs.ruleset_id }}
           AUTHORIZED_SHA: ${{ vars.LOCKSPIRE_PHASE143_AUTHORIZED_SHA }}
           RECOVERY_REF: ${{ inputs.recovery_ref }}
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$AUTHORIZED_SHA" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$RECOVERY_REF" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$VERIFIED_SHA" =~ ^[0-9a-f]{40}$ ]]
-          git fetch --no-tags origin refs/heads/main
-          remote_main_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"
-          hosted_main_sha="$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq '.object.sha')"
-          authorized_sha_from_api="$(gh api "repos/$GH_REPO/actions/variables/LOCKSPIRE_PHASE143_AUTHORIZED_SHA" --jq '.value')"
-          [[ "$remote_main_sha" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$hosted_main_sha" =~ ^[0-9a-f]{40}$ ]]
-          [[ "$authorized_sha_from_api" =~ ^[0-9a-f]{40}$ ]]
-          test "$remote_main_sha" = "$hosted_main_sha"
-          test "$remote_main_sha" = "$AUTHORIZED_SHA"
-          test "$remote_main_sha" = "$authorized_sha_from_api"
-          test "$remote_main_sha" = "$RECOVERY_REF"
-          test "$remote_main_sha" = "$VERIFIED_SHA"
-      - name: Publish package
-        env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
-          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
         shell: bash
         run: |
           set -euo pipefail
           package_name="$(jq -er '.artifact.filename' release-input/release-manifest.json)"
-          bash scripts/publish/publish_hex_idempotently.sh \
+          bash scripts/publish/release_main_freeze.sh publish \
+            "$FREEZE_RULESET_ID" \
+            "$AUTHORIZED_SHA" \
+            "$RECOVERY_REF" \
+            "$VERIFIED_SHA" \
             "release-input/$package_name" \
-            release-input/release-manifest.json \
-            "$VERIFIED_SHA"
+            release-input/release-manifest.json
       - name: Create matching GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -341,6 +342,15 @@ jobs:
             --add-label 'autorelease: tagged' \
             --remove-label 'autorelease: pending'
           echo "Marked #${pull_request} as tagged for ${version}."
+      - name: Remove temporary main freeze
+        if: ${{ always() && steps.release-freeze.outputs.ruleset_id != '' }}
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          FREEZE_RULESET_ID: ${{ steps.release-freeze.outputs.ruleset_id }}
+        shell: bash
+        run: bash scripts/publish/release_main_freeze.sh delete "$FREEZE_RULESET_ID"
   post-publish-install-truth:
     name: Verify public install truth
     needs: [recovery-validation, publish]

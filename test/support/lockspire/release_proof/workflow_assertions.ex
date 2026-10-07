@@ -18,6 +18,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
       Paths.workflow_job(".github/workflows/release.yml", "recovery-validation", "publish")
 
     publish = Paths.final_workflow_job(".github/workflows/release.yml", "publish")
+    freeze_script = Paths.read!("scripts/publish/release_main_freeze.sh")
     publish_script = Paths.read!("scripts/publish/publish_hex_idempotently.sh")
 
     assert workflow =~ "source_ci_run_id"
@@ -28,7 +29,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert workflow =~ "mix release.preflight"
     assert workflow =~ "prepublish-proof:"
     assert publish =~ "release-package-${{ needs.recovery-validation.outputs.verified_sha }}"
-    assert publish =~ "bash scripts/publish/publish_hex_idempotently.sh"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh create"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh publish"
+    assert publish =~ "bash scripts/publish/release_main_freeze.sh delete \"$FREEZE_RULESET_ID\""
+
+    assert freeze_script =~
+             "preflight \"$ruleset_id\" \"$authorized_sha\" \"$recovery_ref\" \"$verified_sha\""
+
+    assert freeze_script =~
+             "bash scripts/publish/publish_hex_idempotently.sh \"$package_tar\" \"$manifest\" \"$verified_sha\""
+
     assert publish_script =~ "upload_hex_artifact.exs \"$package_tar\""
     assert publish_script =~ "mix hex.publish docs --yes"
     assert publish_script =~ "release_artifact.py verify-local"
@@ -50,7 +60,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     refute release_train =~ "GitHub release exists before Hex publish"
 
     assert guide =~
-             "`workflow_dispatch` accepts only one lowercase full 40-hex commit equal to current `origin/main`"
+             "`workflow_dispatch` must run from `main` and accepts only one lowercase full 40-hex commit equal to current `origin/main`, together with the matching successful canonical CI run ID and a nonempty matching `LOCKSPIRE_PHASE143_AUTHORIZED_SHA`."
 
     assert guide =~
              "publishes the manifest-verified package to Hex before creating or validating the matching GitHub release"
@@ -73,7 +83,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
       assert release_train =~ historical_value
     end
 
-    assert byte_offset(publish, "- name: Publish package") <
+    assert byte_offset(publish, "- name: Publish exact package while main is frozen") <
              byte_offset(publish, "- name: Create matching GitHub release")
   end
 
