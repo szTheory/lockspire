@@ -54,7 +54,15 @@ Plans:
 3. `.planning/RELEASE-TRAIN.md` records the actual public version, source SHA, canonical CI run, protected publish run, package checksum, GitHub release, and install-truth result.
 4. If any gate fails, publication or milestone completion stops, the evidence and blocker are recorded, and no record says 1.5.1 shipped.
 
-**Plans**: 0 plans
+**Plans**: 6 plans
+
+Plans:
+- [ ] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
+- [ ] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
+- [ ] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
+- [ ] 143-04-PLAN.md — Review and merge release hardening, then accept fresh exact-main evidence.
+- [ ] 143-05-PLAN.md — Refresh candidate authorization and stage the manifest-bound prepublish artifact.
+- [ ] 143-06-PLAN.md — Approve or cancel the protected publish and record public release truth.
 
 </details>
 
