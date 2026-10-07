@@ -4,6 +4,10 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
   @workflow Path.expand("../../.github/workflows/release.yml", __DIR__)
   @guide Path.expand("../../docs/maintainer-release.md", __DIR__)
   @freeze_script Path.expand("../../scripts/publish/release_main_freeze.sh", __DIR__)
+  @tag_target_verifier Path.expand(
+                         "../../scripts/publish/verify_github_release_target.sh",
+                         __DIR__
+                       )
 
   test "unprivileged prepublish proof carries one SHA-bound package identity" do
     workflow = File.read!(@workflow)
@@ -49,6 +53,28 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     refute publish =~ "run: release-input/"
   end
 
+  test "GitHub release target is checked before Release Please tag bookkeeping" do
+    workflow = File.read!(@workflow)
+    publish = job!(workflow, "publish", "post-publish-install-truth")
+
+    release_step =
+      step!(publish, "Create matching GitHub release", "Mark the merged release PR as tagged")
+
+    verifier = File.read!(@tag_target_verifier)
+
+    assert release_step =~ "gh release view \"$tag_name\""
+    assert release_step =~ "gh release create \"$tag_name\" --target \"$VERIFIED_SHA\""
+    assert release_step =~ "scripts/publish/verify_github_release_target.sh"
+    assert release_step =~ "\"${GITHUB_SERVER_URL}/${GH_REPO}.git\""
+    assert release_step =~ "\"$VERIFIED_SHA\""
+
+    assert verifier =~ "git ls-remote \"$remote_url\" \"$tag_ref\" \"$tag_ref^{}\""
+    assert verifier =~ "resolved_sha=\"${peeled_sha:-$direct_sha}\""
+
+    assert index!(publish, "verify_github_release_target.sh") <
+             index!(publish, "gh pr edit \"$pull_request\"")
+  end
+
   test "postpublish verifies exact public behavior and retains only bounded JSON" do
     workflow = File.read!(@workflow)
     postpublish = final_job!(workflow, "post-publish-install-truth")
@@ -83,5 +109,20 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
   defp final_job!(workflow, name) do
     [_, job] = Regex.run(~r/^  #{Regex.escape(name)}:\n(.*)\z/ms, workflow)
     job
+  end
+
+  defp step!(job, name, next_name) do
+    [_, step] =
+      Regex.run(
+        ~r/^      - name: #{Regex.escape(name)}\n(.*?)^      - name: #{Regex.escape(next_name)}\n/ms,
+        job
+      )
+
+    step
+  end
+
+  defp index!(text, substring) do
+    {index, _length} = :binary.match(text, substring)
+    index
   end
 end
