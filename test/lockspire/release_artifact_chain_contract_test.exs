@@ -165,6 +165,154 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert message =~ "publisher compatibility version differs from the manifest"
   end
 
+  test "terminal receipt records complete public verification with deterministic manifest identity", context do
+    state = terminal_state(context)
+    receipt = Path.join(context.root, "terminal-receipt.json")
+
+    assert {_output, 0} = write_terminal_receipt(context, state, receipt)
+    payload = Jason.decode!(File.read!(receipt))
+
+    assert payload["workflow_run_id"] == "991001"
+    assert payload["source_sha"] == context.source_sha
+    assert payload["ci_run_id"] == "991000"
+    assert payload["version"] == Mix.Project.config()[:version]
+    assert payload["manifest"] == %{
+             "sha256" => sha256_bytes(File.read!(context.manifest)),
+             "state" => "passed"
+           }
+
+    assert payload["artifact"] == %{
+             "sha256" => Jason.decode!(File.read!(context.manifest))["artifact"]["sha256"],
+             "state" => "passed"
+           }
+
+    assert payload["stages"] == %{
+             "candidate" => "passed",
+             "artifact" => "passed",
+             "prepublish" => "passed",
+             "hex_publish" => "passed",
+             "github_release" => "passed",
+             "tag" => "passed",
+             "docs" => "passed",
+             "install" => "passed"
+           }
+
+    assert payload["observations"]["hex_presence"] == "present"
+    assert payload["observations"]["hex_checksum"] == payload["artifact"]["sha256"]
+    assert payload["observations"]["tag_target_sha"] == context.source_sha
+    assert payload["release_verified"]
+    assert payload["blocker"] == "none"
+    assert payload["next_safe_action"] == "none"
+
+    second_receipt = Path.join(context.root, "terminal-receipt-second.json")
+    assert {_output, 0} = write_terminal_receipt(context, state, second_receipt)
+    assert File.read!(second_receipt) == File.read!(receipt)
+  end
+
+  test "terminal receipt keeps Hex public truth when later release proof fails", context do
+    state = terminal_state(context)
+    stages = put_in(state["stages"]["github_release"], "failed")
+    stages = put_in(stages["stages"]["tag"], "not_run")
+    stages = put_in(stages["stages"]["docs"], "not_run")
+    stages = put_in(stages["stages"]["install"], "not_run")
+    observations = put_in(stages["observations"]["github_release_presence"], "absent")
+    observations = put_in(observations["observations"]["install_result"], "not_run")
+    receipt = Path.join(context.root, "partial-terminal-receipt.json")
+
+    assert {_output, 0} = write_terminal_receipt(context, observations, receipt)
+    payload = Jason.decode!(File.read!(receipt))
+
+    assert payload["observations"]["hex_presence"] == "present"
+    assert payload["stages"]["hex_publish"] == "passed"
+    assert payload["release_verified"] == false
+    assert payload["blocker"] == "github_release_missing"
+    assert payload["next_safe_action"] == "retry_same_artifact_before_expiry"
+  end
+
+  test "terminal receipt records prepublish stages as not run when no manifest exists", context do
+    state = terminal_state(context)
+    state = put_in(state["stages"]["artifact"], "not_run")
+    state = put_in(state["stages"]["prepublish"], "not_run")
+    state = put_in(state["stages"]["hex_publish"], "not_run")
+    state = put_in(state["stages"]["github_release"], "not_run")
+    state = put_in(state["stages"]["tag"], "not_run")
+    state = put_in(state["stages"]["docs"], "not_run")
+    state = put_in(state["stages"]["install"], "not_run")
+    state = put_in(state["observations"]["hex_presence"], "absent")
+    state = put_in(state["observations"]["hex_checksum"], nil)
+    state = put_in(state["observations"]["github_release_presence"], "absent")
+    state = put_in(state["observations"]["docs_presence"], "unknown")
+    state = put_in(state["observations"]["tag_target_sha"], nil)
+    state = put_in(state["observations"]["install_result"], "not_run")
+    receipt = Path.join(context.root, "not-run-terminal-receipt.json")
+
+    assert {_output, 0} = write_terminal_receipt(context, state, receipt, manifest: false)
+    payload = Jason.decode!(File.read!(receipt))
+
+    assert payload["manifest"] == %{"sha256" => nil, "state" => "not_run"}
+    assert payload["artifact"] == %{"sha256" => nil, "state" => "not_run"}
+    assert payload["stages"]["prepublish"] == "not_run"
+    assert payload["release_verified"] == false
+  end
+
+  test "terminal receipt preserves unknown public observations without inferring success", context do
+    state = terminal_state(context)
+    state = put_in(state["stages"]["hex_publish"], "unknown")
+    state = put_in(state["stages"]["github_release"], "unknown")
+    state = put_in(state["stages"]["tag"], "unknown")
+    state = put_in(state["stages"]["docs"], "unknown")
+    state = put_in(state["stages"]["install"], "unknown")
+    state = put_in(state["observations"]["hex_presence"], "unknown")
+    state = put_in(state["observations"]["hex_checksum"], nil)
+    state = put_in(state["observations"]["public_latest_version"], nil)
+    state = put_in(state["observations"]["github_release_presence"], "unknown")
+    state = put_in(state["observations"]["docs_presence"], "unknown")
+    state = put_in(state["observations"]["tag_target_sha"], nil)
+    state = put_in(state["observations"]["install_result"], "unknown")
+    receipt = Path.join(context.root, "unknown-terminal-receipt.json")
+
+    assert {_output, 0} = write_terminal_receipt(context, state, receipt)
+    payload = Jason.decode!(File.read!(receipt))
+
+    assert payload["observations"]["hex_presence"] == "unknown"
+    assert payload["observations"]["github_release_presence"] == "unknown"
+    assert payload["stages"]["hex_publish"] == "unknown"
+    assert payload["stages"]["github_release"] == "unknown"
+    assert payload["release_verified"] == false
+  end
+
+  test "terminal receipt rejects unknown fields and stage values", context do
+    receipt = Path.join(context.root, "invalid-terminal-receipt.json")
+    unknown_field = Map.put(terminal_state(context), "unexpected", "value")
+
+    assert {message, 1} = write_terminal_receipt(context, unknown_field, receipt)
+    assert message =~ "fields differ from the allowlist"
+
+    invalid_stage = put_in(terminal_state(context)["stages"]["tag"], "maybe")
+    assert {message, 1} = write_terminal_receipt(context, invalid_stage, receipt)
+    assert message =~ "stage state is invalid"
+  end
+
+  test "terminal receipt binds its workflow run identity to the current invocation", context do
+    state = put_in(terminal_state(context)["workflow_run_id"], "991002")
+    receipt = Path.join(context.root, "mismatched-terminal-receipt.json")
+
+    assert {message, 1} = write_terminal_receipt(context, state, receipt)
+    assert message =~ "workflow run identity mismatch"
+    refute File.exists?(receipt)
+  end
+
+  test "terminal receipt rejects secret-bearing input without echoing the value", context do
+    secret = "ghp_abcdefghijklmnopqrstuvwxyz123456"
+    state = put_in(terminal_state(context)["version"], secret)
+    receipt = Path.join(context.root, "secret-terminal-receipt.json")
+
+    assert {message, 1} = write_terminal_receipt(context, state, receipt)
+    assert message =~ "credential-like value"
+    refute message =~ secret
+    refute File.exists?(receipt)
+  end
+
   test "Hex verification requires the same exact version and checksum", context do
     payload = Jason.decode!(File.read!(context.manifest))
     response = Path.join(context.root, "hex.json")
@@ -304,6 +452,57 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     )
   end
 
+  defp terminal_state(context) do
+    manifest = Jason.decode!(File.read!(context.manifest))
+
+    %{
+      "schema_version" => 1,
+      "workflow_run_id" => "991001",
+      "source_sha" => context.source_sha,
+      "ci_run_id" => "991000",
+      "package" => "lockspire",
+      "version" => manifest["version"],
+      "stages" => %{
+        "candidate" => "passed",
+        "artifact" => "passed",
+        "prepublish" => "passed",
+        "hex_publish" => "passed",
+        "github_release" => "passed",
+        "tag" => "passed",
+        "docs" => "passed",
+        "install" => "passed"
+      },
+      "observations" => %{
+        "hex_presence" => "present",
+        "hex_checksum" => manifest["artifact"]["sha256"],
+        "public_latest_version" => manifest["version"],
+        "github_release_presence" => "present",
+        "tag_target_sha" => context.source_sha,
+        "docs_presence" => "present",
+        "install_result" => "passed"
+      }
+    }
+  end
+
+  defp write_terminal_receipt(context, state, receipt, opts \\ []) do
+    state_path = Path.join(context.root, "terminal-state.json")
+    File.write!(state_path, Jason.encode!(state))
+
+    args = [
+      @tool,
+      "terminal-receipt",
+      "--input",
+      state_path,
+      "--output",
+      receipt,
+      "--workflow-run-id",
+      "991001"
+    ]
+
+    args = if Keyword.get(opts, :manifest, true), do: args ++ ["--manifest", context.manifest], else: args
+    System.cmd("python3", args, stderr_to_stdout: true)
+  end
+
   defp verify_github_release_target(remote, tag, source_sha) do
     System.cmd(
       "bash",
@@ -359,6 +558,10 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
 
   defp sha256(path) do
     :crypto.hash(:sha256, File.read!(path)) |> Base.encode16(case: :lower)
+  end
+
+  defp sha256_bytes(bytes) do
+    :crypto.hash(:sha256, bytes) |> Base.encode16(case: :lower)
   end
 
   defp create_valid_tarball!(path, version) do

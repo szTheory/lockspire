@@ -16,7 +16,24 @@ import urllib.request
 SCHEMA_VERSION = 1
 SHA_PATTERN = re.compile(r"[0-9a-f]{64}")
 SOURCE_PATTERN = re.compile(r"[0-9a-f]{40}")
+DECIMAL_ID_PATTERN = re.compile(r"[0-9]+")
 VERSION_PATTERN = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z][0-9A-Za-z.-]*)?")
+CREDENTIAL_PATTERN = re.compile(
+    r"(?i)(?:gh[pousr]_[a-z0-9_]{20,}|github_pat_[a-z0-9_]{20,}|"
+    r"hex_[a-z0-9]{20,}|bearer\s+[a-z0-9._~+/=-]+|"
+    r"(?:api[_-]?key|token|secret|password)\s*[:=]\s*\S+)"
+)
+RELEASE_STAGES = (
+    "candidate",
+    "artifact",
+    "prepublish",
+    "hex_publish",
+    "github_release",
+    "tag",
+    "docs",
+    "install",
+)
+STAGE_STATES = {"passed", "failed", "not_run", "unknown"}
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -214,6 +231,239 @@ def write_json(path: Path, payload: dict[str, object]) -> None:
     path.write_text(json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n")
 
 
+def contains_credential(value: object) -> bool:
+    if isinstance(value, str):
+        return CREDENTIAL_PATTERN.search(value) is not None
+    if isinstance(value, dict):
+        return any(contains_credential(key) or contains_credential(item) for key, item in value.items())
+    if isinstance(value, list):
+        return any(contains_credential(item) for item in value)
+    return False
+
+
+def nullable_identifier(value: object, pattern: re.Pattern[str], label: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or pattern.fullmatch(value) is None:
+        raise EvidenceError(f"terminal receipt {label} is invalid")
+    return value
+
+
+def terminal_receipt(state_path: Path, manifest_path: Path | None, expected_run_id: str) -> dict[str, object]:
+    if DECIMAL_ID_PATTERN.fullmatch(expected_run_id) is None:
+        raise EvidenceError("terminal receipt workflow run identity is invalid")
+    if not state_path.is_file() or state_path.is_symlink():
+        raise EvidenceError("terminal receipt state must be a regular file")
+    try:
+        state = json.loads(state_path.read_text())
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise EvidenceError("terminal receipt state is invalid JSON") from error
+
+    expected_keys = {
+        "schema_version",
+        "workflow_run_id",
+        "source_sha",
+        "ci_run_id",
+        "package",
+        "version",
+        "stages",
+        "observations",
+    }
+    if not isinstance(state, dict) or set(state) != expected_keys:
+        raise EvidenceError("terminal receipt state fields differ from the allowlist")
+    if contains_credential(state):
+        raise EvidenceError("terminal receipt state contains a credential-like value")
+    if type(state["schema_version"]) is not int or state["schema_version"] != SCHEMA_VERSION or state["package"] != "lockspire":
+        raise EvidenceError("terminal receipt state identity is invalid")
+    run_id = nullable_identifier(state["workflow_run_id"], DECIMAL_ID_PATTERN, "workflow run identity")
+    if run_id != expected_run_id:
+        raise EvidenceError("terminal receipt workflow run identity mismatch")
+    source_sha = nullable_identifier(state["source_sha"], SOURCE_PATTERN, "source SHA")
+    ci_run_id = nullable_identifier(state["ci_run_id"], DECIMAL_ID_PATTERN, "CI run identity")
+    version = state["version"]
+    if not isinstance(version, str) or VERSION_PATTERN.fullmatch(version) is None:
+        raise EvidenceError("terminal receipt package version is invalid")
+
+    stages = state["stages"]
+    if not isinstance(stages, dict) or set(stages) != set(RELEASE_STAGES):
+        raise EvidenceError("terminal receipt stage fields differ from the allowlist")
+    if any(not isinstance(value, str) or value not in STAGE_STATES for value in stages.values()):
+        raise EvidenceError("terminal receipt stage state is invalid")
+
+    observations = state["observations"]
+    observation_keys = {
+        "hex_presence",
+        "hex_checksum",
+        "public_latest_version",
+        "github_release_presence",
+        "tag_target_sha",
+        "docs_presence",
+        "install_result",
+    }
+    if not isinstance(observations, dict) or set(observations) != observation_keys:
+        raise EvidenceError("terminal receipt observation fields differ from the allowlist")
+    if not isinstance(observations["hex_presence"], str) or observations["hex_presence"] not in {
+        "present", "absent", "unknown"
+    }:
+        raise EvidenceError("terminal receipt Hex presence is invalid")
+    if not isinstance(observations["github_release_presence"], str) or observations["github_release_presence"] not in {
+        "present", "absent", "unknown"
+    }:
+        raise EvidenceError("terminal receipt GitHub release presence is invalid")
+    if not isinstance(observations["docs_presence"], str) or observations["docs_presence"] not in {
+        "present", "absent", "unknown"
+    }:
+        raise EvidenceError("terminal receipt documentation presence is invalid")
+    if not isinstance(observations["install_result"], str) or observations["install_result"] not in STAGE_STATES:
+        raise EvidenceError("terminal receipt install result is invalid")
+    hex_checksum = nullable_identifier(observations["hex_checksum"], SHA_PATTERN, "Hex checksum")
+    tag_target_sha = nullable_identifier(observations["tag_target_sha"], SOURCE_PATTERN, "tag target SHA")
+    latest_version = observations["public_latest_version"]
+    if latest_version is not None and (
+        not isinstance(latest_version, str) or VERSION_PATTERN.fullmatch(latest_version) is None
+    ):
+        raise EvidenceError("terminal receipt public version is invalid")
+
+    manifest_digest: str | None = None
+    manifest_state = "not_run" if stages["artifact"] == "not_run" else "unknown"
+    artifact_digest: str | None = None
+    if manifest_path is not None:
+        if manifest_path.is_symlink() or not manifest_path.is_file():
+            manifest_state = "failed"
+        else:
+            manifest_bytes = manifest_path.read_bytes()
+            manifest_digest = hashlib.sha256(manifest_bytes).hexdigest()
+            try:
+                manifest_payload = json.loads(manifest_bytes)
+                validate_manifest(manifest_payload)
+            except (EvidenceError, UnicodeDecodeError, json.JSONDecodeError):
+                manifest_state = "failed"
+            else:
+                manifest_artifact = manifest_payload["artifact"]
+                assert isinstance(manifest_artifact, dict)
+                artifact_digest = manifest_artifact["sha256"]
+                if (
+                    manifest_payload["source_sha"] == source_sha
+                    and manifest_payload["package"] == state["package"]
+                    and manifest_payload["version"] == version
+                ):
+                    manifest_state = "passed"
+                else:
+                    manifest_state = "failed"
+
+    normalized_stages = dict(stages)
+    if manifest_state == "failed" and normalized_stages["artifact"] == "passed":
+        normalized_stages["artifact"] = "failed"
+    elif manifest_state != "passed" and normalized_stages["artifact"] == "passed":
+        normalized_stages["artifact"] = "unknown"
+
+    if observations["hex_presence"] == "present":
+        if artifact_digest is None or hex_checksum is None:
+            normalized_stages["hex_publish"] = "unknown"
+        elif hex_checksum == artifact_digest:
+            normalized_stages["hex_publish"] = "passed"
+        else:
+            normalized_stages["hex_publish"] = "failed"
+    elif observations["hex_presence"] == "absent":
+        if normalized_stages["hex_publish"] == "not_run":
+            normalized_stages["hex_publish"] = "not_run"
+        elif normalized_stages["hex_publish"] == "passed":
+            normalized_stages["hex_publish"] = "unknown"
+        else:
+            normalized_stages["hex_publish"] = "failed"
+    elif observations["hex_presence"] == "unknown" and normalized_stages["hex_publish"] == "passed":
+        normalized_stages["hex_publish"] = "unknown"
+
+    if observations["github_release_presence"] == "present":
+        normalized_stages["github_release"] = "passed"
+    elif observations["github_release_presence"] == "unknown":
+        if normalized_stages["github_release"] == "passed":
+            normalized_stages["github_release"] = "unknown"
+    elif observations["github_release_presence"] == "absent":
+        normalized_stages["github_release"] = (
+            "not_run" if normalized_stages["github_release"] == "not_run" else "failed"
+        )
+
+    if tag_target_sha is not None:
+        normalized_stages["tag"] = (
+            "passed" if source_sha is not None and tag_target_sha == source_sha else "failed"
+        )
+
+    if observations["docs_presence"] == "present":
+        normalized_stages["docs"] = "passed"
+    elif observations["docs_presence"] == "absent":
+        normalized_stages["docs"] = "failed"
+    elif normalized_stages["docs"] == "passed":
+        normalized_stages["docs"] = "unknown"
+
+    normalized_stages["install"] = observations["install_result"]
+    release_verified = (
+        manifest_state == "passed"
+        and artifact_digest is not None
+        and all(normalized_stages[name] == "passed" for name in RELEASE_STAGES)
+        and observations["hex_presence"] == "present"
+        and hex_checksum == artifact_digest
+        and observations["github_release_presence"] == "present"
+        and tag_target_sha == source_sha
+        and observations["docs_presence"] == "present"
+        and observations["install_result"] == "passed"
+    )
+
+    blocker = "none"
+    next_safe_action = "none"
+    if not release_verified:
+        if normalized_stages["candidate"] == "failed" or source_sha is None or ci_run_id is None:
+            blocker, next_safe_action = "candidate_not_accepted", "repair_candidate_and_reauthorize"
+        elif manifest_state == "failed" or normalized_stages["artifact"] == "failed":
+            blocker, next_safe_action = "artifact_integrity_failed", "stop_and_escalate"
+        elif artifact_digest is not None and observations["hex_presence"] == "present" and hex_checksum != artifact_digest:
+            blocker, next_safe_action = "hex_checksum_mismatch", "stop_and_escalate_checksum_mismatch"
+        elif manifest_state != "passed" or normalized_stages["artifact"] in {"unknown", "not_run"}:
+            blocker, next_safe_action = "artifact_unavailable", "inspect_retained_prepublication_artifact"
+        elif normalized_stages["prepublish"] != "passed":
+            blocker, next_safe_action = "prepublish_not_complete", "inspect_release_run"
+        elif observations["hex_presence"] == "unknown":
+            blocker, next_safe_action = "hex_public_state_unknown", "query_public_release_state_again"
+        elif observations["hex_presence"] == "absent":
+            blocker, next_safe_action = "hex_not_public", "inspect_release_run_before_retry"
+        elif normalized_stages["github_release"] == "failed" or observations["github_release_presence"] == "absent":
+            blocker, next_safe_action = "github_release_missing", "retry_same_artifact_before_expiry"
+        elif observations["github_release_presence"] == "unknown":
+            blocker, next_safe_action = "github_release_state_unknown", "query_public_release_state_again"
+        elif normalized_stages["tag"] == "failed":
+            blocker, next_safe_action = "tag_target_mismatch", "stop_and_escalate_tag_mismatch"
+        elif normalized_stages["tag"] != "passed" or tag_target_sha is None:
+            blocker, next_safe_action = "tag_target_unknown", "query_public_release_state_again"
+        elif normalized_stages["docs"] != "passed" or normalized_stages["install"] != "passed":
+            blocker, next_safe_action = "public_verification_incomplete", "retry_same_artifact_before_expiry"
+        else:
+            blocker, next_safe_action = "release_proof_incomplete", "inspect_release_run"
+
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "workflow_run_id": run_id,
+        "package": "lockspire",
+        "version": version,
+        "public_latest_version": latest_version,
+        "source_sha": source_sha,
+        "ci_run_id": ci_run_id,
+        "manifest": {"sha256": manifest_digest, "state": manifest_state},
+        "artifact": {"sha256": artifact_digest, "state": normalized_stages["artifact"]},
+        "stages": normalized_stages,
+        "observations": {
+            "hex_presence": observations["hex_presence"],
+            "hex_checksum": hex_checksum,
+            "github_release_presence": observations["github_release_presence"],
+            "tag_target_sha": tag_target_sha,
+            "docs_presence": observations["docs_presence"],
+            "install_result": observations["install_result"],
+        },
+        "release_verified": release_verified,
+        "blocker": blocker,
+        "next_safe_action": next_safe_action,
+    }
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser()
     commands = root.add_subparsers(dest="command", required=True)
@@ -239,6 +489,12 @@ def parser() -> argparse.ArgumentParser:
     receipt.add_argument("--publisher-hex-version")
     receipt.add_argument("--publisher-api-export", choices=("true", "false"))
     receipt.add_argument("--exact-byte-fixture", choices=("true", "false"))
+
+    terminal = commands.add_parser("terminal-receipt")
+    terminal.add_argument("--input", required=True, type=Path)
+    terminal.add_argument("--output", required=True, type=Path)
+    terminal.add_argument("--manifest", type=Path)
+    terminal.add_argument("--workflow-run-id", required=True)
     return root
 
 
@@ -294,6 +550,11 @@ def main(argv: list[str]) -> int:
             if publisher_compatibility is not None:
                 payload["publisher_compatibility"] = publisher_compatibility
             write_json(args.output, payload)
+        elif args.command == "terminal-receipt":
+            write_json(
+                args.output,
+                terminal_receipt(args.input, args.manifest, args.workflow_run_id),
+            )
         return 0
     except (EvidenceError, OSError, subprocess.SubprocessError) as error:
         print(f"release evidence failed: {error}", file=sys.stderr)
