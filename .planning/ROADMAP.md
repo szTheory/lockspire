@@ -57,11 +57,22 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
+**Wave 1**
 - [ ] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 143-04-PLAN.md — Review and merge release hardening, then accept fresh exact-main evidence.
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 143-05-PLAN.md — Refresh candidate authorization and stage the manifest-bound prepublish artifact.
+
+**Wave 6** *(blocked on Wave 5 completion)*
 - [ ] 143-06-PLAN.md — Approve or cancel the protected publish and record public release truth.
 
 </details>
