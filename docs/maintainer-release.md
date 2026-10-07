@@ -52,6 +52,15 @@ Keep release evidence in three separate buckets:
 - Main-freeze proof: a temporary repository ruleset prevents updates to `main` during protected publication. The publish job reads back its exact active scope, no-bypass policy, and effective `update` rule before using the final exact-SHA check. The GitHub App installation is limited to `szTheory/lockspire` and its token receives only `Administration: write` and `Actions: read` permissions.
 - Workflow-run proof: the single-artifact chain retains a schema-versioned manifest plus bounded prepublish/postpublish receipts. The manifest binds source SHA, package version, tar checksum and byte size, and pinned Elixir/OTP/Mix/Hex/Phoenix/LiveView/PostgreSQL versions. Raw OAuth journey logs, process configuration, and secrets are never uploaded.
 
+The exact-tar uploader calls the undocumented, version-bound internal API
+`Hex.API.Release.publish/5`. The prepublish receipt records that the manifest's
+`runtime.publisher_hex` equals the builder's `runtime.hex`, that the selected
+archive exports the API, and that the exact-byte fixture passed. Review those
+fields before the protected publication decision. The protected job installs
+that same manifest-recorded archive and repeats the version and API checks
+before it reaches any credential-bearing upload step. This is evidence for the
+selected archive only; it does not claim compatibility with a version range.
+
 Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
 ## Contributor gate

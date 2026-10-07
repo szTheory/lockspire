@@ -4,6 +4,7 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
   @workflow Path.expand("../../.github/workflows/release.yml", __DIR__)
   @guide Path.expand("../../docs/maintainer-release.md", __DIR__)
   @freeze_script Path.expand("../../scripts/publish/release_main_freeze.sh", __DIR__)
+  @artifact_tool Path.expand("../../scripts/publish/release_artifact.py", __DIR__)
   @tag_target_verifier Path.expand(
                          "../../scripts/publish/verify_github_release_target.sh",
                          __DIR__
@@ -21,6 +22,22 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert prepublish =~ "--package-sha256 \"$checksum\""
     assert prepublish =~ "--only happy_path"
     assert prepublish =~ "--stage prepublish"
+    assert prepublish =~ ".runtime.publisher_hex"
+    assert prepublish =~ ".runtime.hex"
+    assert prepublish =~ "test \"$HEX_VERSION\" = \"$BUILDER_HEX_VERSION\""
+    assert prepublish =~ "mix local.hex \"$HEX_VERSION\" --force"
+    assert prepublish =~ "Hex.version()"
+    assert prepublish =~ "Hex.API.Release, :publish, 5"
+    assert prepublish =~ "mix test test/lockspire/release_artifact_chain_contract_test.exs"
+    assert prepublish =~ "--publisher-hex-version \"$HEX_VERSION\""
+    assert prepublish =~ "--publisher-api-export \"$API_EXPORT\""
+    assert prepublish =~ "--exact-byte-fixture true"
+
+    artifact_tool = File.read!(@artifact_tool)
+    assert artifact_tool =~ "\"publisher_compatibility\""
+    assert artifact_tool =~ "\"hex_version\": args.publisher_hex_version"
+    assert artifact_tool =~ "\"api_export\": True"
+    assert artifact_tool =~ "\"exact_byte_fixture\": True"
 
     assert prepublish =~
              "name: release-package-${{ needs.recovery-validation.outputs.verified_sha }}"
@@ -51,6 +68,26 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert publish =~ "release-input/release-manifest.json"
     assert publish =~ "HEX_API_KEY: ${{ secrets.HEX_API_KEY }}"
     refute publish =~ "run: release-input/"
+
+    publisher_step =
+      step!(
+        publish,
+        "Install and verify manifest-bound Hex publisher",
+        "Install build tools and locked dependencies"
+      )
+
+    assert publisher_step =~ ".runtime.publisher_hex"
+    assert publisher_step =~ ".runtime.hex"
+    assert publisher_step =~ "test \"$HEX_VERSION\" = \"$BUILDER_HEX_VERSION\""
+    assert publisher_step =~ "mix local.hex \"$HEX_VERSION\" --force"
+    assert publisher_step =~ "Hex.version()"
+    assert publisher_step =~ "Hex.API.Release, :publish, 5"
+
+    assert index!(publish, "Download clean-room-proven package data") <
+             index!(publish, "Install and verify manifest-bound Hex publisher")
+
+    assert index!(publish, "Hex.API.Release, :publish, 5") < index!(publish, "HEX_API_KEY")
+    refute publish =~ "mix release.preflight"
   end
 
   test "GitHub release target is checked before Release Please tag bookkeeping" do
@@ -94,6 +131,9 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert guide =~ "single-artifact chain"
     assert guide =~ "checksum mismatch"
     assert guide =~ "same verified SHA"
+    assert guide =~ "Hex.API.Release.publish/5"
+    assert guide =~ "undocumented, version-bound internal API"
+    assert guide =~ "exact-byte fixture"
   end
 
   defp job!(workflow, name, next_name) do

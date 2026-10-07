@@ -57,9 +57,10 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert payload["source_sha"] == context.source_sha
     assert payload["artifact"]["filename"] == Path.basename(context.tarball)
     assert payload["artifact"]["sha256"] == sha256(context.tarball)
+    assert payload["runtime"]["publisher_hex"] == payload["runtime"]["hex"]
 
     assert Map.keys(payload["runtime"]) |> Enum.sort() ==
-             ~w(elixir hex mix otp phoenix phoenix_live_view postgresql)
+             ~w(elixir hex mix otp phoenix phoenix_live_view postgresql publisher_hex)
 
     refute File.read!(context.manifest) =~ System.tmp_dir!()
     refute File.read!(context.manifest) =~ "token"
@@ -96,6 +97,72 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     File.write!(context.manifest, Jason.encode!(payload))
     assert {message, 1} = verify_local(context)
     assert message =~ "allowlist"
+  end
+
+  test "manifest publisher Hex version must match the builder Hex version", context do
+    payload = Jason.decode!(File.read!(context.manifest))
+    payload = put_in(payload["runtime"]["publisher_hex"], "2.0.0")
+    File.write!(context.manifest, Jason.encode!(payload))
+
+    assert {message, 1} = verify_local(context)
+    assert message =~ "publisher Hex version differs from builder Hex version"
+  end
+
+  test "prepublish receipt records successful manifest-bound publisher compatibility", context do
+    payload = Jason.decode!(File.read!(context.manifest))
+    receipt = Path.join(context.root, "prepublish-receipt.json")
+
+    assert {_output, 0} =
+             System.cmd(
+               "python3",
+               [
+                 @tool,
+                 "receipt",
+                 "--manifest",
+                 context.manifest,
+                 "--stage",
+                 "prepublish",
+                 "--output",
+                 receipt,
+                 "--publisher-hex-version",
+                 payload["runtime"]["hex"],
+                 "--publisher-api-export",
+                 "true",
+                 "--exact-byte-fixture",
+                 "true"
+               ],
+               stderr_to_stdout: true
+             )
+
+    assert Jason.decode!(File.read!(receipt))["publisher_compatibility"] == %{
+             "hex_version" => payload["runtime"]["hex"],
+             "api_export" => true,
+             "exact_byte_fixture" => true
+           }
+
+    assert {message, 1} =
+             System.cmd(
+               "python3",
+               [
+                 @tool,
+                 "receipt",
+                 "--manifest",
+                 context.manifest,
+                 "--stage",
+                 "prepublish",
+                 "--output",
+                 receipt,
+                 "--publisher-hex-version",
+                 "2.0.0",
+                 "--publisher-api-export",
+                 "true",
+                 "--exact-byte-fixture",
+                 "true"
+               ],
+               stderr_to_stdout: true
+             )
+
+    assert message =~ "publisher compatibility version differs from the manifest"
   end
 
   test "Hex verification requires the same exact version and checksum", context do
@@ -174,6 +241,9 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert output =~ "Exact release artifact accepted by Hex"
     assert_receive {^port, {:exit_status, 0}}, 2_000
     assert File.read!(captured) == File.read!(context.tarball)
+    manifest = Jason.decode!(File.read!(context.manifest))
+    assert File.stat!(captured).size == manifest["artifact"]["bytes"]
+    assert sha256(captured) == manifest["artifact"]["sha256"]
   end
 
   test "GitHub release target verification accepts exact lightweight and annotated tags",
