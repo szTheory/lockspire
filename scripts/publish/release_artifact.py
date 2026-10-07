@@ -416,12 +416,19 @@ def terminal_receipt(state_path: Path, manifest_path: Path | None, expected_run_
             blocker, next_safe_action = "candidate_not_accepted", "repair_candidate_and_reauthorize"
         elif manifest_state == "failed" or normalized_stages["artifact"] == "failed":
             blocker, next_safe_action = "artifact_integrity_failed", "stop_and_escalate"
-        elif artifact_digest is not None and observations["hex_presence"] == "present" and hex_checksum != artifact_digest:
+        elif (
+            artifact_digest is not None
+            and observations["hex_presence"] == "present"
+            and hex_checksum is not None
+            and hex_checksum != artifact_digest
+        ):
             blocker, next_safe_action = "hex_checksum_mismatch", "stop_and_escalate_checksum_mismatch"
         elif manifest_state != "passed" or normalized_stages["artifact"] in {"unknown", "not_run"}:
             blocker, next_safe_action = "artifact_unavailable", "inspect_retained_prepublication_artifact"
         elif normalized_stages["prepublish"] != "passed":
             blocker, next_safe_action = "prepublish_not_complete", "inspect_release_run"
+        elif observations["hex_presence"] == "present" and hex_checksum is None:
+            blocker, next_safe_action = "hex_checksum_unknown", "query_public_release_state_again"
         elif observations["hex_presence"] == "unknown":
             blocker, next_safe_action = "hex_public_state_unknown", "query_public_release_state_again"
         elif observations["hex_presence"] == "absent":

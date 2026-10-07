@@ -281,6 +281,20 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert payload["release_verified"] == false
   end
 
+  test "terminal receipt treats an unavailable Hex checksum as unknown", context do
+    state = put_in(terminal_state(context)["observations"]["hex_checksum"], nil)
+    receipt = Path.join(context.root, "missing-hex-checksum-receipt.json")
+
+    assert {_output, 0} = write_terminal_receipt(context, state, receipt)
+    payload = Jason.decode!(File.read!(receipt))
+
+    assert payload["observations"]["hex_presence"] == "present"
+    assert payload["observations"]["hex_checksum"] == nil
+    assert payload["stages"]["hex_publish"] == "unknown"
+    assert payload["blocker"] == "hex_checksum_unknown"
+    assert payload["release_verified"] == false
+  end
+
   test "terminal receipt rejects unknown fields and stage values", context do
     receipt = Path.join(context.root, "invalid-terminal-receipt.json")
     unknown_field = Map.put(terminal_state(context), "unexpected", "value")
