@@ -61,7 +61,7 @@ Plans:
 - [x] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
+- [x] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.

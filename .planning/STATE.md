@@ -3,18 +3,18 @@ gsd_state_version: "1.0"
 milestone: v1.39
 current_phase: 143
 current_phase_name: Publish and Verify Lockspire 1.5.1
-current_plan: 2
+current_plan: 3
 status: executing
-stopped_at: Completed 143-01-PLAN.md
-last_updated: "2026-10-07T17:31:43.819Z"
+stopped_at: Completed 143-02-PLAN.md
+last_updated: "2026-10-07T17:41:13.000Z"
 last_activity: 2026-10-07
-last_activity_desc: Phase 143 Plan 01 completed; Plan 02 is next
-state_head: 649243b958c8f70a601cad6c8bb076a047ef252c
+last_activity_desc: Phase 143 Plan 02 completed; Plan 03 is next
+state_head: 1f97eb0a60ae56a2517a6a2294b74d631862ba97
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 10
-  completed_plans: 5
+  completed_plans: 7
 milestone_name: Verified 1.5.1 Release
 ---
 
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-07)
 
 ## Current Position
 
-Current Plan: 2
+Current Plan: 3
 Total Plans in Phase: 6
 Phase: 143 (Publish and Verify Lockspire 1.5.1) — IN PROGRESS
-Plan: 2 of 6
-Status: In progress
-Last activity: 2026-10-07 — Phase 143 Plan 01 completed; Plan 02 is next
+Plan: 3 of 6
+Status: Ready to execute
+Last activity: 2026-10-07 — Phase 143 Plan 02 completed; Plan 03 is next
 
 ## Accumulated Context
 
@@ -158,6 +158,7 @@ Last activity: 2026-10-07 — Phase 143 Plan 01 completed; Plan 02 is next
 - [Phase 142]: With szTheory as the only eligible reviewer, use an explicit hex-publish environment approval with self-review allowed; require zero GitHub PR approvals and document that it is not independent review.
 - [Phase 142]: Accept both active and archived phase layouts while preserving maintainer-script checks and child-process exit semantics.
 - [Phase 143]: Phase 143 Plan 01 verifies actual remote lightweight or peeled annotated tag targets against the exact source SHA before Release Please tag-label mutation.
+- [Phase 143]: The protected Hex publisher installs the manifest's `runtime.publisher_hex`, which must equal builder `runtime.hex`; prepublish proof records API export and exact-byte fixture success for this selected archive only.
 
 ### Pending Todos
 
@@ -271,6 +272,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 139 P15 | 325min | 2 tasks | 4 files |
 | Phase 142 P04 | 39min | 3 tasks | 6 files |
 | Phase 143 P01 | 10min | 2 tasks | 4 files |
+| Phase 143 P02 | 7min | 2 tasks | 5 files |
 
 ## Operator Next Steps
 
