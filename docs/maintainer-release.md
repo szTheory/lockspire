@@ -61,6 +61,47 @@ that same manifest-recorded archive and repeats the version and API checks
 before it reaches any credential-bearing upload step. This is evidence for the
 selected archive only; it does not claim compatibility with a version range.
 
+## Terminal outcome and partial publication
+
+Every `workflow_dispatch` release attempt produces the bounded
+`lockspire-release-terminal-receipt-<workflow_run_id>` artifact, including when
+the publisher or postpublish job fails or is skipped. It contains only
+`release-terminal-receipt.json` and is retained for 90 days. The separate
+prepublish package artifact, including the exact tar, is retained for 30 days.
+The terminal receipt records `.workflow_run_id`, `.source_sha`, `.ci_run_id`,
+`.package`, `.version`, `.public_latest_version`, `.manifest.sha256`,
+`.manifest.state`, `.artifact.sha256`, and `.artifact.state`. Each entry under
+`.stages` (`candidate`, `artifact`, `prepublish`, `hex_publish`,
+`github_release`, `tag`, `docs`, and `install`) is `passed`, `failed`,
+`not_run`, or `unknown`. `.observations` records `hex_presence`,
+`hex_checksum`, `github_release_presence`, `tag_target_sha`, `docs_presence`,
+and `install_result`; `.release_verified`, `.blocker`, and `.next_safe_action`
+summarize the outcome. It contains no raw logs or credentials.
+
+Treat `observations.hex_presence: present` as “public on Hex,” even when
+`release_verified` is false. Complete verification requires the manifest and
+exact tar to match, the exact Hex checksum, a GitHub release and tag target
+matching the source SHA, exact-version docs, and a passing public install
+journey. A failed or skipped workflow job alone does not prove that Hex lacks
+the package. Read the terminal receipt and independently query the public Hex
+release before updating release truth.
+
+If Hex exposes 1.5.1 while later proof is incomplete, record 1.5.1 as public in
+`.planning/RELEASE-TRAIN.md`, state that release verification is incomplete,
+preserve the blocker and terminal receipt, and leave the milestone open. The
+maintainer-facing result should show the current public version, verification
+state, source SHA, matching CI run, package checksum, GitHub release/tag
+target, install result, blocker, and next safe action. Link the bounded receipt
+instead of copying logs.
+
+Recovery may reuse only the same authorized source SHA and the same
+manifest-verified tar bytes; first confirm any existing Hex version has that
+same whole-tar checksum. Never rebuild under prior proof, overwrite a public
+version, or retarget a mismatching tag. The tar is available for same-artifact
+recovery for 30 days, while bounded evidence remains for 90 days. Once the tar
+expires, same-artifact recovery under the old proof is no longer possible; do
+not describe retained metadata or receipts as the missing package bytes.
+
 Public release claims stay anchored to `docs/supported-surface.md` plus the checked-in artifact chain (`mix.exs`, `.release-please-manifest.json`, `CHANGELOG.md`). GitHub settings and workflow-run evidence support that story, but they do not replace the canonical support contract.
 
 ## Contributor gate
