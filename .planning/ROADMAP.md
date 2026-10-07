@@ -58,7 +58,7 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
+- [x] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
