@@ -1,22 +1,22 @@
 ---
-status: diagnosed
+status: resolved
 trigger: "Diagnose Phase 138 UAT gap G-138-96: determine why 138-34-SUMMARY.md says plan_head_before=5490b0b21c9846045b29af839c126500749958e8 and commits=4 while git rev-list --count 5490b0b21c9846045b29af839c126500749958e8..HEAD is now 78; distinguish a bad summary claim from a measurement-scope issue caused by later commits."
 created: 2026-09-24T12:28:15Z
-updated: 2026-09-24T12:33:49Z
+updated: 2026-10-05T22:23:58Z
 ---
 
 ## Current Focus
 
-hypothesis: The blocker requires two conditions: verify-work compares the summary's historical plan base against evolving current HEAD, and later descendants after the plan are present; their combination counts unrelated later commits as if they belonged to the plan.
-test: Compare direct `git rev-list` counts at task completion, summary addition, the UAT measurement's matching historical endpoint, and current HEAD; inspect the installed verifier endpoint definition.
-expecting: The plan-task boundary should count 4, summary addition should count 5 (the contract's allowed +1), and later descendants should explain the UAT's historical 78 and current 80.
-next_action: Return the root-cause-only diagnosis to the orchestrator; no code or planning changes are requested.
+hypothesis: Confirmed historical false mismatch — the old verifier used an evolving HEAD for a plan-local commit claim, and later descendants entered that unbounded count.
+test: Inspect the exact Phase 138 summary and the installed #4670 reconciliation rule; confirm the original task and summary commit boundaries in Git.
+expecting: Satisfied — this summary lacks `plan_head_after`, so the current verifier reports the unbounded count as a WARNING and never a commit_claim_mismatch BLOCKER.
+next_action: none
 bug_class: bohrbug
 known_pattern_candidate: none (Phase 0: MemPalace CLI and durable knowledge base are both absent; keyword fallback unavailable)
 phase_1_25: skipped; this is a deterministic Git-history measurement with no failing/passing test spectrum or per-test coverage.
 candidate_causes:
-  - "code: installed verify-work reconciliation evaluates `BASE..HEAD` at verification time although `commits` records the count when the plan completed."
-  - "data: the repository has 75 descendants after the summary-add commit, so current HEAD includes later plan, phase, and UAT bookkeeping commits."
+  - "code: the historical verify-work reconciliation evaluated `BASE..HEAD` at verification time although `commits` recorded the count when the plan completed."
+  - "data: at diagnosis time the repository had 75 descendants after the summary-add commit, including later plan, phase, and UAT bookkeeping commits."
 and_gate: "yes — the false mismatch requires both the unbounded current-HEAD endpoint and post-summary descendants; at summary creation the measurement was 4 before the summary commit and 5 after it, which the contract accepts."
 
 ## Symptoms
@@ -60,9 +60,19 @@ started: The summary was produced during Phase 138; the mismatch is observed at 
   found: `BASE..b09beccd^`=4 and `BASE..b09beccd`=5; `BASE..c95e4eee^`=78, `BASE..c95e4eee`=79, and current `BASE..e08c1661`=80. `b09beccd..HEAD`=75. Commit `c95e4eee` is the Phase 138 UAT receipt commit and `e08c1661` adds the mismatch report; the reported 78 matches HEAD immediately before `c95e4eee`, while current HEAD includes both later commits.
   implication: The claim was correct at plan-task completion, and its own metadata commit is the one allowed extra commit. The observed 78 is a prior HEAD snapshot; current is 80. Verification of the historical summary becomes time-dependent because all 75 post-summary descendants are included in the same base..current-HEAD range.
 
+- timestamp: 2026-10-05T22:23:58Z
+  checked: Exact `138-34-SUMMARY.md` frontmatter, installed `/Users/jon/.codex/gsd-core/workflows/verify-work.md` reconciliation contract, and Git commit boundaries
+  found: The summary still has `plan_head_before: 5490b0b21c9846045b29af839c126500749958e8` and `commits: 4`, but no `plan_head_after`. The installed #4670 contract bounds modern summaries to `BASE..AFTER` and classifies older summaries with a base but no `plan_head_after` as WARNING; it explicitly forbids a BLOCKER from the unbounded `BASE..HEAD` count. `BASE..2beab2df` remains 4 and `BASE..b09beccd` remains 5, with `b09beccd` adding the summary.
+  implication: The historical claim is accurate and the current verifier no longer makes G-138-96 a blocking commit-claim mismatch. Preserve the original summary and commit history.
+
 ## Resolution
 
-root_cause: "Two contributing conditions: (1) the installed verify-work contract uses the old plan_head_before as BASE but measures through the evolving current HEAD, although the summary's commits field is measured at plan completion; (2) 75 commits landed after 138-34-SUMMARY.md, so later Phase 138/139 and UAT history is counted as plan 138-34 work. Their conjunction creates a false commit_claim_mismatch. The summary's commits=4 is accurate; BASE..the four task commits is 4, and the summary metadata commit makes it 5, the explicitly accepted +1."
-fix: diagnosis-only; no code or planning fix applied
-verification: "Direct Git range counts were run at plan-task completion, summary addition, pre-UAT receipt, UAT receipt, and current HEAD; each matched the commit ancestry. The installed verify-work contract was read and confirms it measures BASE..current HEAD."
+root_cause: "The historical verifier compared a plan-local `commits: 4` claim with an unbounded `plan_head_before..HEAD` count after later commits had landed. The four task commits were real; the later descendants made the old check report a false mismatch."
+fix: "The installed #4670 verifier now uses `plan_head_after` to bound modern summaries and reports legacy summaries like 138-34, which lack that field, as WARNING rather than BLOCKER. No source or historical-summary edit was needed."
+verification: "The exact summary has no `plan_head_after`; the installed verifier explicitly applies legacy WARNING behavior and forbids a BLOCKER from the unbounded count. Git counts remain 4 at the last task commit and 5 at the summary commit."
 files_changed: []
+
+## Prevention
+
+- Why not caught earlier: The original reconciliation contract did not record the plan's terminal commit and used the repository's evolving HEAD, so its count changed after unrelated work.
+- Recurrence guard: Installed verify-work reconciliation #4670 records and checks `plan_head_after` for modern summaries; older summaries without that boundary produce a WARNING for manual review.

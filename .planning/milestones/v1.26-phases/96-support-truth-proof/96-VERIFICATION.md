@@ -1,6 +1,6 @@
 ---
 phase: 96
-status: complete
+status: passed
 requirements:
   - PROOF-01
 ---

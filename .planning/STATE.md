@@ -1,45 +1,38 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.38
-milestone_name: Repository Baseline & Reconciliation
-current_phase: 140
-current_phase_name: Bounded Operational Loose-End Triage
-current_plan: 18
-status: verifying
-stopped_at: Plan 140-18 protected-file pins reconciled; exact-SHA acceptance pending
-last_updated: "2026-10-05T15:16:01.975Z"
-last_activity: 2026-10-05
-last_activity_desc: Replaced Plan 140-18's one-off reviewer signoff with an adversarial CLI contract in required CI; focused contract passes.
-state_head: 36c6a9dbc30cde1e2316b69bc165cfba4fe6c066
+milestone: v1.39
+current_phase: 142
+current_phase_name: Merge the Corrected Main Baseline
+status: executing
+stopped_at: Before Phase 142 Plan 02 PR creation and live review
+last_updated: "2026-10-06T22:26:52.620Z"
+last_activity: 2026-10-06
+last_activity_desc: Phase 142 execution resumed (wave continue)
+state_head: 5feff7a2e444b9493d4dbea6376403de94c23c10
 progress:
-  total_phases: 4
-  completed_phases: 2
-  total_plans: 70
-  completed_plans: 69
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 1
+milestone_name: Verified 1.5.1 Release
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-04)
+See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 140 — Bounded Operational Loose-End Triage
+**Current focus:** Phase 142 — Merge the Corrected Main Baseline
 
 ## Current Position
 
-Phase: 140 (Bounded Operational Loose-End Triage) — EXECUTING
-Current Plan: 18
-Total Plans in Phase: 18
-Plan: 18 of 18
-Status: Phase complete — ready for verification
-Last activity: 2026-10-05 — Phase 140 execution started
-
-Progress: [█████░░░░░] 50%
-
-Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase 139 has stale verification and a retained failed post-transition probe at 5259a6545c04277ee44038779b23b139b6b1fcb2; do not rerun its finalizer or reinterpret the probe. Plans 140-01 through 140-18 have summaries. The verifier's protected-file pins now match the current committed Phase 139 inventory refresh and Phase 138 verification refresh, and its contract test rejects later edits. CI-06/CI-07 remain pending until terminal proof exists on one synchronized SHA; no human verifier UAT is required.
+Phase: 142 (Merge the Corrected Main Baseline) — EXECUTING
+Plan: 1 of 3
+Status: Executing Phase 142
+Last activity: 2026-10-06 — Phase 142 execution resumed (wave continue)
 
 ## Accumulated Context
 
@@ -152,20 +145,28 @@ Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase
 - [Phase 140]: Phase 140 Plan 02: assess only source-identifiable archived findings; do not fabricate missing identities or equate grouped counts with records.
 - [Phase 140]: Phase 140 Plan 02: keep current rerun selectors distinct from unnamed historical Phase32/AuditWriter identities.
 - [Phase 140]: The initially planned external SSH reviewer signature was removed on 2026-10-05. The actual closure command is exercised by an adversarial CLI contract in the required test suite and its CI job is part of the exact-SHA acceptance join.
-- [Phase 140]: Plan 140-17 now has its GSD summary; all 17 Phase 140 plans are summarized, but the phase remains active with CI-06/CI-07 pending at 30/32. After verification returns with gaps, plan the remaining closure with $gsd-plan-phase 140 --gaps.
+- [Phase 140]: The post-summary private terminal receipt accepts CI-06/CI-07 on `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; preserve the tracked 30/32 verification report as pre-terminal history and link the terminal result through the Phase 141 baseline.
+- [Phase 141]: Phase 140 receipt proves only source SHA 877a0f758aa0bbd5433cbe3d70f1476fa0e12223; report and reconciliation documentation SHAs stay distinct.
+- [Phase 141]: v1.38 planning closure does not publish a package; the latest public release is 1.5.0 and the next sustaining action remains conditional.
+- [Phase 139]: Release Please version metadata and latest public package remain independent; public truth must agree with the artifact and release tag.
+- [Phase 139]: Malformed, duplicate, missing, or contradictory release-train fields block before exact-SHA acceptance.
+- [Phase 139]: Historical test repositories must use records from the exact committed boundary they model. — This prevents later planning state from contaminating earlier acceptance and relation fixtures.
 
 ### Pending Todos
 
-- Phase 140: CI-06 and CI-07 remain pending at 30/32 until the post-GSD candidate receives its exact-SHA local/hygiene receipt, required CI results, and Release no-publish result. Plan 140-18 automates verifier UAT; any candidate-specific ref update still requires separate exact-action authorization if one is needed.
+- Phase 138: UAT #100 remains pending an authorized live snapshot refresh; current inventory dispositions remain proposal-only until exact-target revalidation and action authority.
+- Phase 140: WR-01 remains deferred with unknown cause; reopen only if the exact sealed Release Please relation rejection recurs, then capture stage-specific evidence.
+- Future bounded conformance: supplemental OIDF/FAPI evidence remains redacted, supplemental, and non-certifying.
 
 ### Blockers/Concerns
 
-- Plans 140-01 through 140-17 have summaries; Plan 140-18 is the current gap closure. Canonical verification records 30/32 truths verified; only CI-06 and CI-07 remain. The Plan 140-18 CLI contract is automated in required CI, and final exact-SHA evidence runs after GSD's summary/lifecycle writes. The live `5259a654` post-transition probe remains failed historical evidence with its recorded stage-specific disposition; do not broaden the historical classifier. Phase 140 remains active.
-- No terminal exact-SHA receipt exists for the current HEAD. Receipt A and prior ref-action approvals apply only to their named candidates. If synchronization needs a local-main update or push, stop at the candidate-specific human checkpoint in `140-ACCEPTANCE.md`; no ref movement is currently authorized.
+- Phase 140 is complete through the post-summary exact-SHA receipt for `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. The tracked 30/32 verification result remains a historical pre-terminal record; its two CI truths have private terminal evidence linked from the Phase 141 baseline. The live `5259a654` post-transition probe remains a failed historical observation with its original disposition; do not broaden the historical classifier.
+- The 1.5.0 publication chain remains the latest public release. Phase 141 and its documentation commits are planning records; they did not publish a package or change release-owned metadata.
 - Supported receipt supersession archived predecessor `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` and wrote pending recovery-v2 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The live post-transition probe at `5259a654` still failed before the no-publish barrier because the strict classifier accepts only the historical planning prefix. Preserve both receipts and the failure; Plan 140-14 proves the proper historical entry point without broadening production authority.
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
+- Phase 142 Plan 01's initial `mix ci` run found stale Phase 138/139 current-source paths and a Phase 139 fixture contaminated by later planning-root files. The fixtures now read the v1.38 archive and rebuild historical state from the exact modeled parent commit. A final full `mix ci` exited 0, including 102 integration tests with no failures. Dependency audit emitted a sandbox `.git/FETCH_HEAD` permission message but completed with no vulnerabilities. Plan 02 must refresh the local `origin/main` reference and account for the full branch diff (at least 76 commits / 250 paths in the last local comparison) before pushing or opening a PR; no remote update has occurred.
 
 ### Quick Tasks Completed
 
@@ -181,17 +182,20 @@ Current position (2026-10-05): Phase 138 is the last fully complete phase. Phase
 |----------|------|--------|-------------|
 | Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start |
 | Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start |
+| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 |
+| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
+| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 
 ## Session Continuity
 
-Last session: 2026-10-05T15:16:01.865Z
-Stopped at: Plan 140-18 protected-file pins reconciled; exact-SHA acceptance pending
-Resume file: .planning/phases/140-bounded-operational-loose-end-triage/.continue-here.md
-Resume instruction: Finish Plan 140-18 and let standard GSD commit its SUMMARY and lifecycle records. Then follow 140-ACCEPTANCE.md for fresh exact-SHA local/hygiene, required CI, Release no-publish and read-only closure evidence. Do not request manual verifier review/UAT; the required CI contract test covers that property. Keep candidate-specific ref authorization only if a local-main update or push is actually needed.
+Last session: 2026-10-06T20:05:40Z
+Stopped at: Phase 142 Plan 01 complete; ready for Plan 02 full-diff review, PR and live release-timing checks
+Resume file: .planning/phases/142-merge-the-corrected-main-baseline/142-01-SUMMARY.md
+Resume instruction: Run `$gsd-execute-phase 142` to refresh and review the complete branch diff before any push, then create or update the PR and inspect its exact head, required checks, and live release timing. Keep Plan 03 blocked until Plan 02 records explicit merge authorization.
 
 ## Performance Metrics
 
-All 38 Phase 138 plans, all 13 Phase 139 plans, and all 16 Phase 140 plans have complete summaries. Phase 140's canonical verification remains 30/32; CI-06 and CI-07 need a terminal same-SHA join after the final tracked writes. See `140-ACCEPTANCE.md` for the complete candidate history and required gates. Phase 140 must not advance until that acceptance passes.
+All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the Phase 141 plan have summaries. Phase 140's tracked verifier remains a historical 30/32 pre-terminal report; the private post-summary terminal result passes CI-06/CI-07 for the accepted source SHA recorded in the Phase 141 baseline.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -255,3 +259,11 @@ All 38 Phase 138 plans, all 13 Phase 139 plans, and all 16 Phase 140 plans have 
 | Phase 140 P14 | 55 min | 3 tasks | 4 files |
 | Phase 140 P17 | 12 min | 1 tasks | 5 files |
 | Phase 140 P18 | 43 min | 3 tasks | 12 files |
+| Phase 141 P01 | 10m | 3 tasks | 7 files |
+| Phase 139 P14 | 9 min | 2 tasks | 3 files |
+| Phase 139 P16 | 39min | 2 tasks | 2 files |
+| Phase 139 P15 | 325min | 2 tasks | 4 files |
+
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone

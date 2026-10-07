@@ -123,6 +123,90 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
            )
   end
 
+  def assert_phase_139_release_train_fail_closed! do
+    release_train_path = Paths.path(".planning/RELEASE-TRAIN.md")
+    metadata_line = "- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->"
+
+    public_line =
+      "- Latest public package: Hex lists `1.5.0` as latest at the 2026-10-05 closure observation; the exact `1.5.1` release query returned HTTP 404. Release Please metadata above is not publication proof."
+
+    source = File.read!(release_train_path)
+
+    cases = [
+      {"missing Release Please metadata", String.replace(source, metadata_line <> "\n", "")},
+      {"duplicate Release Please metadata",
+       String.replace(source, metadata_line, metadata_line <> "\n" <> metadata_line)},
+      {"malformed Release Please metadata",
+       String.replace(
+         source,
+         metadata_line,
+         "- Release Please version metadata: `one.five.one` <!-- x-release-please-version -->"
+       )},
+      {"mismatched Release Please metadata",
+       String.replace(source, metadata_line, String.replace(metadata_line, "1.5.1", "1.5.2"))},
+      {"missing public package claim", String.replace(source, public_line <> "\n", "")},
+      {"duplicate public package claim",
+       String.replace(source, public_line, public_line <> "\n" <> public_line)},
+      {"malformed public package claim",
+       String.replace(
+         source,
+         public_line,
+         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `latest`")
+       )},
+      {"misleading unpublished public package",
+       String.replace(
+         source,
+         public_line,
+         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `1.5.1`")
+       )},
+      {"public release query disagrees with Release Please metadata",
+       String.replace(
+         source,
+         "exact `1.5.1` release query",
+         "exact `1.5.2` release query"
+       )},
+      {"artifact disagrees with public package",
+       String.replace(
+         source,
+         "lockspire-1.5.0` package checksum",
+         "lockspire-1.5.1` package checksum"
+       )},
+      {"tag disagrees with public package",
+       String.replace(
+         source,
+         "lockspire-v1.5.0](https://github.com",
+         "lockspire-v1.5.1](https://github.com"
+       )},
+      {"GitHub release URL disagrees with its label",
+       String.replace(
+         source,
+         "/tag/lockspire-v1.5.0)",
+         "/tag/lockspire-v1.5.1)"
+       )},
+      {"GitHub release URL points to another repository",
+       String.replace(
+         source,
+         "https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.0",
+         "https://github.com/another-owner/another-repo/releases/tag/lockspire-v1.5.0"
+       )},
+      {"legacy release label cannot replace metadata",
+       String.replace(source, metadata_line, "- Latest released version: `1.5.1`")}
+    ]
+
+    Enum.each(cases, fn {label, contents} ->
+      {output, status} =
+        run_exact_sha_hygiene_fixture!("success", release_train_contents: contents)
+
+      assert status != 0, "#{label} unexpectedly passed: #{output}"
+
+      assert output =~ "[BLOCK] release train ledger",
+             "#{label} did not block the ledger: #{output}"
+
+      refute output =~ "fixture-credential-sentinel", "#{label} leaked fixture credentials"
+      refute output =~ ~s({"workflow_runs"), "#{label} leaked a raw workflow response"
+    end)
+  end
+
   def assert_phase_139_docker_volume_name_matching! do
     script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
 
@@ -1036,19 +1120,21 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert script =~ ~s(yaml_quoted_scalar "no — inventory proposal only")
     refute script =~ "git clean"
 
-    active_record_patterns =
+    archived_record_patterns =
       for suffix <- ~w(REVIEW AUDIT VERIFICATION UAT HANDOFF CHECKPOINT) do
-        ":(glob).planning/phases/*/*-#{suffix}*.md"
+        ":(glob).planning/milestones/v1.38-phases/*/*-#{suffix}*.md"
       end
 
-    {active_record_output, 0} =
-      System.cmd("git", ["ls-files", "-z", "--" | active_record_patterns], stderr_to_stdout: true)
+    {archived_record_output, 0} =
+      System.cmd("git", ["ls-files", "-z", "--" | archived_record_patterns],
+        stderr_to_stdout: true
+      )
 
-    active_record_paths = String.split(active_record_output, <<0>>, trim: true)
+    archived_record_paths = String.split(archived_record_output, <<0>>, trim: true)
 
-    assert ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md" in active_record_paths
+    assert ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-REVIEW.md" in archived_record_paths
 
-    assert ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" in active_record_paths
+    assert ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" in archived_record_paths
 
     assert {:ok, lifecycle_output} =
              run_baseline_fixture!("maintained", "maintained-active-lifecycle")
@@ -3649,10 +3735,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     try do
       old_release_state = fn repo ->
         release_train =
-          File.read!(Path.join(repo, ".planning/RELEASE-TRAIN.md"))
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:.planning/RELEASE-TRAIN.md"])
           |> String.replace(
-            "Latest released version: `1.5.1`",
-            "Latest released version: `1.5.0`"
+            "- Latest released version: `1.5.1` <!-- x-release-please-version -->",
+            "- Latest released version: `1.5.0` <!-- x-release-please-version -->"
           )
 
         write_repo_file!(repo, ".planning/RELEASE-TRAIN.md", release_train)
@@ -3763,7 +3849,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
             "CHANGELOG.md",
             "mix.exs"
           ] do
-        write_repo_file!(repository, path, File.read!(Paths.path(path)))
+        write_repo_file!(
+          repository,
+          path,
+          run_git!(Paths.path("."), ["show", "#{lineage_base}:#{path}"])
+        )
       end
 
       release_train = File.read!(Path.join(repository, ".planning/RELEASE-TRAIN.md"))
@@ -3784,7 +3874,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       write_repo_file!(
         repository,
         "test/support/lockspire/release_proof/workflow_assertions.ex",
-        File.read!(Paths.path("test/support/lockspire/release_proof/workflow_assertions.ex"))
+        run_git!(Paths.path("."), [
+          "show",
+          "#{lineage_base}:test/support/lockspire/release_proof/workflow_assertions.ex"
+        ])
       )
 
       commit_all!(repository, "test(release): follow the active release train version")
@@ -4666,12 +4759,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       source = Paths.path(".")
 
       context_paths = [
-        ".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md",
-        ".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+        {
+          ".planning/phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md",
+          ".planning/milestones/v1.38-phases/140-bounded-operational-loose-end-triage/140-CONTEXT.md"
+        },
+        {
+          ".planning/phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md",
+          ".planning/milestones/v1.38-phases/140-bounded-operational-loose-end-triage/140-DISCUSSION-LOG.md"
+        }
       ]
 
-      Enum.each(context_paths, fn path ->
-        write_repo_file!(repository, path, File.read!(Path.join(source, path)))
+      Enum.each(context_paths, fn {fixture_path, archived_path} ->
+        content = File.read!(Path.join(source, archived_path))
+        write_repo_file!(repository, fixture_path, content)
       end)
 
       commit_all!(repository, "docs(140): capture phase context (assumptions mode)")
@@ -6095,7 +6195,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     end
 
     copy_phase_139_planning_fixture!(repository)
-    copy_phase_139_verification_parent_documents!(repository)
+    copy_phase_139_parent_planning_root!(repository)
 
     state_path = Path.join(repository, ".planning/STATE.md")
 
@@ -6122,13 +6222,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md"
       )
 
-    unless File.exists?(summary13) do
-      write_repo_file!(
-        repository,
-        ".planning/phases/139-required-truth-reconciliation/139-13-SUMMARY.md",
-        "---\nphase: 139-required-truth-reconciliation\nplan: \"13\"\nstatus: complete\n---\n# Phase 139 Plan 13 Summary\n"
-      )
-    end
+    assert File.regular?(summary13),
+           "pinned Phase 139 completion parent must contain the Plan 13 summary"
 
     parent_mutate.(repository)
 
@@ -6216,20 +6311,31 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     {ledger_commit, evidence_base, remote}
   end
 
-  defp copy_phase_139_verification_parent_documents!(repository) do
+  defp copy_phase_139_parent_planning_root!(repository) do
     source = Paths.path(".")
 
     parent =
       run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
       |> String.trim()
 
-    for path <- [
-          ".planning/PROJECT.md",
-          ".planning/REQUIREMENTS.md",
-          ".planning/STATE.md",
-          ".planning/ROADMAP.md",
-          ".planning/state.json"
-        ] do
+    planning_root = Path.join(repository, ".planning")
+
+    # This fixture models the exact Phase 139 completion parent. Rebuild its
+    # tracked planning-root files from that commit so later milestone and
+    # release-train edits in the working tree cannot contaminate the snapshot.
+    planning_root
+    |> File.ls!()
+    |> Enum.each(fn entry ->
+      path = Path.join(planning_root, entry)
+      if File.regular?(path), do: File.rm!(path)
+    end)
+
+    paths =
+      run_git!(source, ["ls-tree", "-r", "--name-only", parent, "--", ".planning"])
+      |> String.split("\n", trim: true)
+      |> Enum.filter(&(Path.dirname(&1) == ".planning"))
+
+    for path <- paths do
       write_repo_file!(repository, path, run_git!(source, ["show", "#{parent}:#{path}"]))
     end
   end
@@ -6265,15 +6371,95 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       end
     end)
 
-    for phase_dir <- [
-          "phases/138-baseline-inventory-evidence-taxonomy",
-          "phases/139-required-truth-reconciliation"
+    for {source_phase_dir, fixture_phase_dir} <- [
+          {
+            "milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy",
+            "phases/138-baseline-inventory-evidence-taxonomy"
+          }
         ] do
-      source_path = Path.join(source, phase_dir)
-      destination_path = Path.join(destination, phase_dir)
+      source_path = Path.join(source, source_phase_dir)
+      destination_path = Path.join(destination, fixture_phase_dir)
       File.mkdir_p!(Path.dirname(destination_path))
       copy_planning_fixture!(source_path, destination_path)
     end
+
+    copy_phase_139_completion_parent_tree!(repository)
+
+    phase_139_directory =
+      Path.join(destination, "phases/139-required-truth-reconciliation")
+
+    expected_plans =
+      Enum.map(1..13, fn number ->
+        "139-#{String.pad_leading(to_string(number), 2, "0")}-PLAN.md"
+      end)
+
+    expected_summaries =
+      Enum.map(1..13, fn number ->
+        "139-#{String.pad_leading(to_string(number), 2, "0")}-SUMMARY.md"
+      end)
+
+    actual_plans =
+      phase_139_directory
+      |> Path.join("139-??-PLAN.md")
+      |> Path.wildcard()
+      |> Enum.map(&Path.basename/1)
+      |> Enum.sort()
+
+    actual_summaries =
+      phase_139_directory
+      |> Path.join("139-??-SUMMARY.md")
+      |> Path.wildcard()
+      |> Enum.map(&Path.basename/1)
+      |> Enum.sort()
+
+    assert actual_plans == expected_plans,
+           "Phase 139 parent fixture must contain only plans 01 through 13"
+
+    assert actual_summaries == expected_summaries,
+           "Phase 139 parent fixture must contain only summaries 01 through 13"
+  end
+
+  defp copy_phase_139_completion_parent_tree!(repository) do
+    source = Paths.path(".")
+
+    parent =
+      run_git!(source, ["rev-parse", "#{@next_phase_completion_commit}^"])
+      |> String.trim()
+
+    phase_directory = ".planning/phases/139-required-truth-reconciliation"
+    destination = Path.join(repository, phase_directory)
+    File.rm_rf!(destination)
+    File.mkdir_p!(destination)
+
+    blobs =
+      run_git!(source, ["ls-tree", "-r", "-z", "--full-tree", parent, "--", phase_directory])
+      |> String.split(<<0>>, trim: true)
+      |> Enum.flat_map(fn record ->
+        case String.split(record, "\t", parts: 2) do
+          [metadata, path] ->
+            case String.split(metadata, " ", trim: true) do
+              [mode, "blob", _object] when mode in ["100644", "100755"] ->
+                unless String.starts_with?(path, phase_directory <> "/") do
+                  raise "Phase 139 historical tree escaped its planning directory: #{path}"
+                end
+
+                [{path, run_git!(source, ["show", "#{parent}:#{path}"])}]
+
+              _ ->
+                []
+            end
+
+          _ ->
+            raise "Could not parse Phase 139 historical Git tree entry: #{inspect(record)}"
+        end
+      end)
+      |> Enum.sort_by(&elem(&1, 0))
+
+    Enum.each(blobs, fn {path, content} ->
+      target = Path.join(repository, path)
+      File.mkdir_p!(Path.dirname(target))
+      File.write!(target, content)
+    end)
   end
 
   defp build_sealed_phase_139_acceptance_fixture!(
@@ -8516,6 +8702,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     state = Path.join(fixture, "state")
     jq = System.find_executable("jq") || flunk("jq is required for the exact-SHA fixture")
 
+    repository =
+      if Keyword.has_key?(options, :release_train_contents),
+        do:
+          prepare_release_train_fixture_repo!(
+            fixture,
+            Keyword.fetch!(options, :release_train_contents)
+          ),
+        else: Paths.path(".")
+
     try do
       File.mkdir_p!(bin)
       File.mkdir_p!(state)
@@ -8547,10 +8742,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         System.cmd(
           "bash",
           args,
-          cd: Paths.path("."),
+          cd: repository,
           env: [
             {"PATH", bin <> ":" <> System.get_env("PATH", "")},
-            {"FAKE_REPO_ROOT", Paths.path(".")},
+            {"FAKE_REPO_ROOT", repository},
             {"FAKE_HYGIENE_SHA", acceptance_sha()},
             {"FAKE_HYGIENE_STATE", state},
             {"TMPDIR", state},
@@ -8563,7 +8758,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       if Keyword.get(options, :assert_main_only_fetch, false) do
         fetch_log = Path.join(state, "fetch.argv")
 
-        assert File.exists?(fetch_log), "exact-SHA acceptance did not refresh origin/main"
+        assert File.exists?(fetch_log),
+               "exact-SHA acceptance did not refresh origin/main: #{elem(result, 0)}"
 
         fetch_commands =
           fetch_log
@@ -8579,11 +8775,44 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "exact-SHA acceptance must fetch only origin/main without tags or pruning"
       end
 
+      if Keyword.has_key?(options, :release_train_contents) do
+        refute File.exists?(Path.join(state, "fetch.argv")),
+               "a blocked release-train claim must stop before origin/main fetch"
+
+        refute elem(result, 0) =~ ~s("schema":"lockspire-phase-),
+               "a blocked release-train claim must not emit an acceptance receipt"
+      end
+
       refute Enum.any?(File.ls!(state), &String.starts_with?(&1, "lockspire-mix-ci."))
       result
     after
       File.rm_rf(fixture)
     end
+  end
+
+  defp prepare_release_train_fixture_repo!(fixture, release_train_contents) do
+    source_root = Paths.path(".")
+    repository = Path.join(fixture, "repo")
+
+    generated_or_mutable = [
+      ".git",
+      ".planning",
+      "_build",
+      "deps",
+      "node_modules",
+      "coverage",
+      ".elixir_ls",
+      "tmp"
+    ]
+
+    File.mkdir_p!(Path.join(repository, ".planning"))
+
+    for entry <- File.ls!(source_root), entry not in generated_or_mutable do
+      File.ln_s!(Path.join(source_root, entry), Path.join(repository, entry))
+    end
+
+    File.write!(Path.join(repository, ".planning/RELEASE-TRAIN.md"), release_train_contents)
+    repository
   end
 
   defp acceptance_sha, do: String.duplicate("a", 40)

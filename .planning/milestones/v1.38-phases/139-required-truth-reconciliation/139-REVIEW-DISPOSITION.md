@@ -6,10 +6,18 @@ findings:
   - id: CR-01
     severity: critical
     disposition: fixed
-    title: "Completion-state allowlist accepts contradictory prefixed rows"
+    title: "GitHub release evidence is not bound to the Lockspire repository"
+  - id: CR-02
+    severity: critical
+    disposition: fixed
+    title: "GitHub tag link destination can disagree with the parsed release version"
+  - id: WR-01
+    severity: warning
+    disposition: fixed
+    title: "Historical release fixture leaves Release Please metadata unchanged"
 open: 0
-total: 1
-recorded: 2026-10-03T21:38:07.994Z
+total: 3
+recorded: 2026-10-06T10:13:27Z
 ---
 
 # Phase 139: Code Review Disposition
@@ -17,6 +25,8 @@ recorded: 2026-10-03T21:38:07.994Z
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
 | CR-01 | critical | fixed | 139-REVIEW-FIX.md (not in the current review) |
+| CR-02 | critical | fixed | 139-REVIEW-FIX.md (not in the current review) |
+| WR-01 | warning | fixed | 139-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

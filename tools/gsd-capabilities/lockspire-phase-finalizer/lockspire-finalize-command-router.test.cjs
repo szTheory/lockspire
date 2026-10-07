@@ -148,6 +148,70 @@ test('138-33-2 rejects invalid routing input without constructing a child proces
   assert.deepEqual(accepted.errors, []);
 });
 
+test('archived project root remains routable after phase directories are archived', () => {
+  const router = loadRouter();
+  const archivedDirectories = [
+    '.planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy',
+    '.planning/milestones/v1.38-phases/139-required-truth-reconciliation',
+  ];
+  for (const relative of archivedDirectories) {
+    assert.equal(fs.statSync(path.join(root, relative)).isDirectory(), true);
+    assert.equal(fs.existsSync(path.join(root, relative.replace('/milestones/v1.38-phases', '/phases'))), false);
+  }
+
+  const result = invoke(router, ['lockspire-finalize', 'post-transition', '--phase', '139'], { cwd: root });
+  assert.equal(result.calls.length, 1);
+  assert.equal(result.calls[0].argv[1], fs.realpathSync(root));
+  assert.equal(result.exitCode, undefined);
+  assert.deepEqual(result.errors, []);
+});
+
+test('portable active-phase fixture remains an accepted project root', () => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-finalizer-active-root-'));
+  try {
+    for (const relative of [
+      'scripts/maintainer/finalize_phase_138_inventory.sh',
+      'scripts/maintainer/finalize_phase_139_acceptance.sh',
+    ]) {
+      const target = path.join(fixture, relative);
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, '#!/usr/bin/env bash\nexit 0\n');
+    }
+    for (const relative of [
+      '.planning/phases/138-baseline-inventory-evidence-taxonomy',
+      '.planning/phases/139-required-truth-reconciliation',
+    ]) {
+      fs.mkdirSync(path.join(fixture, relative), { recursive: true });
+    }
+
+    const result = invoke(loadRouter(), ['lockspire-finalize', 'pre-verify', '--phase', '138'], { cwd: fixture });
+    assert.equal(result.calls.length, 1);
+    assert.equal(result.calls[0].argv[1], fs.realpathSync(fixture));
+    assert.equal(result.exitCode, undefined);
+  } finally {
+    fs.rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
+test('unrelated root with archived phase directories but missing maintainer scripts is rejected', () => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'lockspire-finalizer-unrelated-root-'));
+  try {
+    for (const relative of [
+      '.planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy',
+      '.planning/milestones/v1.38-phases/139-required-truth-reconciliation',
+    ]) {
+      fs.mkdirSync(path.join(fixture, relative), { recursive: true });
+    }
+
+    const result = invoke(loadRouter(), ['lockspire-finalize', 'pre-verify', '--phase', '138'], { cwd: fixture });
+    assert.equal(result.calls.length, 0);
+    assert.equal(result.exitCode, 2);
+    assert.match(result.errors[0], /not a Lockspire project root/);
+  } finally {
+    fs.rmSync(fixture, { recursive: true, force: true });
+  }
+});
+
 test('both exact modes spawn one no-shell process-group supervisor', () => {
   const router = loadRouter();
   for (const mode of ['pre-verify', 'post-transition']) {

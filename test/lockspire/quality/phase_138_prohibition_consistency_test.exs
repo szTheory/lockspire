@@ -1,7 +1,8 @@
 defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
   use ExUnit.Case, async: true
 
-  @phase_dir ".planning/phases/138-baseline-inventory-evidence-taxonomy"
+  @phase_dir ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy"
+  @historical_phase_dir ".planning/phases/138-baseline-inventory-evidence-taxonomy"
   @ledger Path.join(@phase_dir, "138-PROHIBITION-VALIDATION.md")
   @owner "test/lockspire/release/repository_hygiene_contract_test.exs"
   @historical_bytes_sha256 "49fe183ce113f0bd97d5491605871fdd2f47ca4d480375f377e4b536de01dcc4"
@@ -180,7 +181,10 @@ defmodule Lockspire.Quality.Phase138ProhibitionConsistencyTest do
 
     current_digest =
       paths
-      |> Enum.map(fn path -> [path, <<0>>, File.read!(path), <<0>>] end)
+      |> Enum.map(fn path ->
+        historical_path = String.replace_prefix(path, @phase_dir, @historical_phase_dir)
+        [historical_path, <<0>>, File.read!(path), <<0>>]
+      end)
       |> IO.iodata_to_binary()
       |> then(&:crypto.hash(:sha256, &1))
       |> Base.encode16(case: :lower)

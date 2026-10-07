@@ -1,16 +1,30 @@
 ---
-status: checkpoint
+status: resolved
 trigger: "Phase 140 gap planning is blocked by its mandatory Phase 139 finalizer gate; determine the safe supported recovery without discarding Phase 140 work or performing unauthorized ref movement."
 created: 2026-09-30T07:56:39Z
-updated: 2026-09-30T17:56:26Z
+updated: 2026-10-05T22:59:48Z
 ---
 
 ## Current Focus
 
-hypothesis: An opt-in, digest-bound supersession path can authenticate the current Phase 140 candidate without moving refs; the normal prepare path remains fail-closed, and the separate exact-SHA publication barrier keeps the live gate blocked.
-test: Implemented the isolated supersession path and extended the existing lifecycle fixture for archive integrity, stale receipt preservation, drift rejection, code-path rejection, and no-ref movement. Only shell/JavaScript syntax checks and `git diff --check` were run; the lifecycle suite and live finalizer were not run.
-expecting: Preserve the pending receipt, Phase 140 work, protected overlays, and refs byte-for-byte. Keep the gate blocked. Finish review before any commit or fixture execution; any future publication remains a separate exact-SHA checkpoint.
-next_action: Re-review the five source files through `$gsd-code-review 140 --files=scripts/maintainer/baseline_inventory.sh,scripts/maintainer/finalize_phase_139_acceptance.sh,scripts/maintainer/supersede_phase_139_host_receipt.sh,tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs,tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs`; do not run the finalizer or `$gsd-plan-phase 140 --gaps`.
+hypothesis: The repaired supersession path now rejects invalid authority and nested lineage, serializes supported receipt mutations, and restores or reports the exact pending state on failed publication.
+test: Focused isolated recovery fixture passed; portable-host lifecycle file passed all seven applicable tests; isolated pre-fix helper failed at truncated-authority assertion and repaired helper passed; final five-file re-review found no remaining concrete blocker.
+expecting: Preserve the live pending receipt (SHA-256 59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c), canonical review (SHA-256 839152a14375808d18bc5af4592579d051f03b07a870803e631a5011ad06d4fa), and refs. Keep live gate blocked.
+next_action: Archived reviewed recovery code; the live gate remains blocked pending a separate authorized receipt transition and exact-SHA publication decision.
+reasoning_checkpoint:
+  hypothesis: "Five concrete gaps in the new supersession path permit publishing a successor from inadequate durable authority, losing deeper archived lineage, or reporting failure after changing pending state because receipt and ref observations are not serialized through publication."
+  confirming_evidence:
+    - "The helper's acceptedPhase139Base checks only schema and baseline_sha; the finalizer's durable validator checks exact receipt keys, CI/release job graphs, historical release, and inventory relation."
+    - "Both Python consumers inspect only the immediate supersedesSha256 archive, while the helper accepts an existing v2 predecessor."
+    - "Standalone complete unlinks without a helper mutation lock; supersede checks the digest then renames, and checks refs only afterward."
+    - "archiveReceipt fsyncs file and directory, whereas writeReceipt currently does not."
+  falsification_test: "A truncated acceptance receipt, a second v2 supersession, or a concurrent completion/ref change should either be rejected before successor publication or restore exact prior pending bytes; a valid single supersession should retain archive integrity and refs."
+  fix_rationale: "Make issuance and consumers agree on authority, bound lineage to one supported hop, serialize supported receipt writes, and make successor publication durable and reversible when ref observations change."
+  blind_spots: "No live finalizer, remote publish, or live receipt mutation is authorized; only isolated fixture behavior can be exercised."
+  candidate_causes:
+    - "code: incomplete authority and lineage validation plus non-atomic receipt/ref observations"
+    - "environment: Git refs and advertised remote state may change concurrently with the helper"
+  and_gate: "yes — valid authority, intact lineage, serialized receipt state, and stable refs must hold together; the exact-SHA publication barrier remains separate."
 bug_class: stale-lifecycle-receipt
 reasoning_checkpoint:
   hypothesis: The current receipt is unusable because it is bound to an earlier HEAD and worktree snapshot, while prepare intentionally reuses pending receipts; a separately authenticated supersession receipt can rebind the current candidate without changing refs.
@@ -57,10 +71,41 @@ timeline: "Resumed 2026-09-30 after user returned online; phase 140 verifier was
   checked: Full finalizer state transitions and live worktree status
   found: The state helper's `prepare` reuses an existing pending plan:pre receipt rather than refreshing it; recovery issuance requires HEAD == local main, an ancestor baseline, and only whitelisted planning overlays. Current HEAD is 280c8a6048ada75b85191ea640f6ccbdabeca6af, while receipt after.head is 5ad2b2e935556c8f1a91be32605958530b477527. Current status also includes this active debug session file, which is outside the recovery allowlist. `complete` unlinks the pending receipt.
   implication: Retrying `prepare` cannot refresh the receipt, and `complete` would erase lifecycle evidence. The live checkout fails candidate and recovery-path conditions; no safe supported state refresh is evident.
+- timestamp: 2026-10-05T22:59:10Z
+  checked: Standard-depth focused five-file Phase 140 review and two source re-reviews
+  found: The additive report initially identified four blockers and one warning in the supersession path. After targeted fixes, the reviewer found no remaining concrete blocker. The canonical `140-REVIEW.md` remained SHA-256 839152a14375808d18bc5af4592579d051f03b07a870803e631a5011ad06d4fa.
+  implication: The reviewed opt-in path is ready as code, while the live gate and separate exact-SHA publication barrier remain blocked.
+- timestamp: 2026-10-05T22:59:10Z
+  checked: Focused recovery fixture and adjacent lifecycle suite
+  found: The recovery fixture passed 1/1. Portable-host lifecycle mode passed 7/7 applicable tests with two skips. Installed-capability mode failed only its tracked-versus-installed byte-equality assertion because the protected installed helper copy was not updated.
+  implication: Current tracked source behavior is verified in isolated fixtures. Installed-copy drift is a verification limit and will remain until the installed capability is refreshed by an authorized workflow.
+- timestamp: 2026-10-05T22:59:10Z
+  checked: Isolated revert-and-reconfirm and static checks
+  found: In a temporary source copy, the current regression failed against the pre-fix helper at the truncated acceptance receipt assertion and passed with the repaired helper. `node --check` for both JavaScript files, `bash -n` for three shell files, and `git diff --check` passed. No Stryker configuration or package manifest exists for mutation testing.
+  implication: The fix changes the reported behavior and has syntax/format evidence without touching live receipt or refs.
+- timestamp: 2026-10-05T22:59:10Z
+  checked: Live-state preservation at review end
+  found: Pending receipt SHA-256 59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c; HEAD fdc22eb296840f06d49200a9055b8691316ce5f2; local and cached origin/main 877a0f758aa0bbd5433cbe3d70f1476fa0e12223. These match this review continuation's recorded values.
+  implication: This continuation did not move refs or change the live pending receipt; the Phase 139 gate remains blocked.
 
 ## Resolution
 
 root_cause: The pending host plan:pre receipt is bound to the earlier checkout at 5ad2b2e935556c8f1a91be32605958530b477527, but the active checkout has moved to 280c8a6048ada75b85191ea640f6ccbdabeca6af. The helper's prepare path reuses pending receipts, and finalizer authentication checks current HEAD and porcelain state, so the receipt cannot authorize work from the current checkout. The initially reported `another final acceptance is active` was the lock guard; the lock is now absent, while the stale-receipt condition remains.
+review_root_cause: The first supersession implementation checked only two fields of durable acceptance authority, permitted repeated v2 lineage without recursive validation, left direct completion outside the receipt mutation lock, and checked ref drift after successor publication without rollback. Archive retry and successor writes also lacked complete directory durability handling.
+fix: Strict full-shape acceptance validation for supersede; one-hop-only v2 issuance and consumption; shared receipt mutation lock; prepublication ref checks; postpublication prior-byte restoration or explicit uncertain-state reporting; synced archive retry and successor publication.
+verification:
+  target_test: { result: pass, detail: "Phase 140 recovery fixture 1/1" }
+  mutation_check: { result: skipped, reason: "No Stryker configuration or package manifest in repository" }
+  no_op_deletion: { result: pass, detail: "Fix adds validation, locks, durability, rollback, and discriminating assertions; no behavior-deleting patch" }
+  adjacent_tests: { result: pass, suites_run: ["portable-host lifecycle 7 passed, 2 skipped"], limitation: "installed copy byte-drift check fails while protected installed helper remains unchanged" }
+  revert_and_reconfirm: { result: pass, bug_returned_on_revert: true, fixed_on_reapply: true, detail: "temporary source copy; old helper rejected by test at line 517, repaired helper passed" }
+  guardrail_verdict: accepted_for_tracked_source
+files_changed:
+  - scripts/maintainer/baseline_inventory.sh
+  - scripts/maintainer/finalize_phase_139_acceptance.sh
+  - tools/gsd-capabilities/lockspire-phase-finalizer/post-completion-finalizer-state.cjs
+  - tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs
+  - .planning/phases/140-bounded-operational-loose-end-triage/140-2026-10-05-finalizer-supersession-REVIEW.md
 fix_direction:
   - Identify a supported way to reconcile the stale host receipt while preserving the current Phase 140 branch and protected overlays.
   - Keep any exact-SHA local-main or origin/main movement behind a separate explicit approval for the candidate SHA.
@@ -163,3 +208,17 @@ Continuation closed at the existing checkpoint. The maintainer's decision to kee
 ## Recovery Checkpoint — 2026-09-30T17:26:04Z
 
 The user clarified to follow the conservative recommendation autonomously. Decision: retain the existing `main == candidate` guard and recovery overlay allowlist; keep the Phase 139 gate blocked; do not modify the live receipt or refs. The earlier stale-replay lifecycle regression remains the only code change for this issue and is already wired into CI. No supersession implementation was made in this continuation, and no tests, planner, finalizer, or publication commands were run. Do not repeat Phase 140 gap planning. Resume this debug session only after a reviewed supersession implementation exists; then the next phase command may be `$gsd-plan-phase 140 --gaps` after the gate is safely resolvable.
+
+## Final Reviewed Resolution — 2026-10-05T22:59:48Z
+
+The opt-in supersession path is implemented and reviewed. The additive Phase 140 review records all four initial blockers and one warning as closed. The focused recovery fixture passed, the portable-host lifecycle suite passed all seven applicable tests, and an isolated pre-fix/repaired-helper comparison reproduced and removed the truncated-authority failure. The installed capability byte-equality check remains a verification limit because its protected copy was left untouched.
+
+The live pending receipt remained SHA-256 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c` throughout this review continuation. HEAD remained `fdc22eb296840f06d49200a9055b8691316ce5f2`; local and cached `origin/main` remained `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. The canonical Phase 140 review remained SHA-256 `839152a14375808d18bc5af4592579d051f03b07a870803e631a5011ad06d4fa`. No live finalizer, supersession, planner, publication, or ref-mutating operation was invoked. The live gate remains blocked.
+
+## Prevention
+
+- **Code branch:** The original pending `plan:pre` receipt was intentionally reused, but the protocol had no authenticated successor transition. The first successor implementation then accepted a reduced durable receipt shape and lacked complete archive, mutation, and ref-drift failure handling. The five-file review and regression fixture now guard those boundaries.
+- **Data/environment branch:** The live receipt's sealed checkout and overlay identities drifted while Phase 140 work continued, and local/remote main may change independently of a receipt operation. The successor path binds the expected prior digest, validates current authority, and checks refs around publication.
+- **Why not caught:** The lifecycle fixture and initial review did not exercise truncated durable authority, a second v2 supersession, direct completion interleaving, postpublication drift, or directory-sync failures.
+- **Recurrence guard:** `tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs` exercises those cases in an isolated repository; the helper and both Python consumers fail closed on unsupported lineage. The dated Phase 140 review records each finding's final disposition.
+- **Operational boundary:** This resolution covers reviewed recovery code. The live Phase 139 receipt was not superseded, no ref was moved, and the gate remains blocked. The installed capability copy has a known tracked-versus-installed byte mismatch until an authorized refresh.

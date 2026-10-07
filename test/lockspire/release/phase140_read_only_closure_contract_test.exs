@@ -3,6 +3,14 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
 
   @script "scripts/maintainer/verify_phase140_read_only_closure.py"
   @contract_test "test/lockspire/release/phase140_read_only_closure_contract_test.exs"
+  @pre_terminal_planning_commit "877a0f758aa0bbd5433cbe3d70f1476fa0e12223"
+  @conditional_planning_records [
+    ".planning/REQUIREMENTS.md",
+    ".planning/ROADMAP.md",
+    ".planning/STATE.md",
+    ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md",
+    ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
+  ]
   @ci_workflow ".github/workflows/ci.yml"
   @mix_file "mix.exs"
   @ci_jobs [
@@ -27,6 +35,14 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md",
     "docs/lockspire-milestone-roadmap-ratchet-prompt.txt"
   ]
+  @archived_source_paths %{
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md",
+    ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" =>
+      ".planning/milestones/v1.38-phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md"
+  }
 
   @tag :phase140_closure_tracer
   test "the committed closure command exposes only the exact-SHA acceptance inputs" do
@@ -50,6 +66,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
     repo_root = Path.expand("../../..", __DIR__)
     fixture = build_fixture!(repo_root)
     on_exit(fn -> cleanup_fixture(fixture) end)
+    assert_pre_terminal_planning_inputs!(fixture, repo_root)
 
     before = repository_state(fixture.repository)
     protected_before = Enum.map(@protected_files, &File.read!(Path.join(fixture.repository, &1)))
@@ -176,7 +193,7 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
   end
 
   defp build_fixture!(repo_root) do
-    nonce = System.unique_integer([:positive])
+    nonce = "#{System.pid()}-#{System.unique_integer([:positive])}"
     directory = Path.join(System.tmp_dir!(), "lockspire-closure-fixture-#{nonce}")
     repository = Path.join(directory, "repository")
     origin = Path.join(directory, "origin.git")
@@ -194,24 +211,32 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       @script,
       @contract_test,
       @ci_workflow,
-      @mix_file,
-      ".planning/REQUIREMENTS.md",
-      ".planning/ROADMAP.md",
-      ".planning/STATE.md",
-      ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md",
-      ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
-      | @protected_files
+      @mix_file | @protected_files
     ]
 
     Enum.each(files, fn relative ->
       target = Path.join(repository, relative)
       File.mkdir_p!(Path.dirname(target))
-      File.cp!(Path.join(repo_root, relative), target)
+
+      source_relative = Map.get(@archived_source_paths, relative, relative)
+      File.cp!(Path.join(repo_root, source_relative), target)
+    end)
+
+    Enum.each(@conditional_planning_records, fn relative ->
+      target = Path.join(repository, relative)
+      File.mkdir_p!(Path.dirname(target))
+
+      File.write!(
+        target,
+        git!(repo_root, ["show", "#{@pre_terminal_planning_commit}:#{relative}"])
+      )
     end)
 
     protected_baseline_blobs = %{
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md" =>
         "171d46351f804951e8a13c82173113662bb14c1c",
+      ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-UAT.md" =>
+        @pre_terminal_planning_commit,
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/138-VERIFICATION.md" =>
         "17a908a794449885c39e5a059f370a5823eeefd3"
     }
@@ -296,6 +321,53 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       git_count_file: Path.join(directory, "ls-remote-count"),
       real_git: System.find_executable("git")
     }
+  end
+
+  defp assert_pre_terminal_planning_inputs!(fixture, repo_root) do
+    records =
+      Map.new(@conditional_planning_records, fn relative ->
+        expected =
+          git!(repo_root, ["show", "#{@pre_terminal_planning_commit}:#{relative}"])
+
+        actual = File.read!(Path.join(fixture.repository, relative))
+        assert actual == expected, "fixture did not use historical planning blob #{relative}"
+        {relative, actual}
+      end)
+
+    requirements = Map.fetch!(records, ".planning/REQUIREMENTS.md")
+
+    for id <- ["CI-06", "CI-07"] do
+      pending = Regex.compile!("^- \\[ \\] \\*\\*#{id}\\*\\*:", "m")
+      complete = Regex.compile!("^- \\[x\\] \\*\\*#{id}\\*\\*:", "m")
+
+      assert length(Regex.scan(pending, requirements)) == 1
+      assert Regex.scan(complete, requirements) == []
+    end
+
+    roadmap = Map.fetch!(records, ".planning/ROADMAP.md")
+    assert Regex.match?(~r/^- \[ \] \*\*Phase 140:/m, roadmap)
+    refute Regex.match?(~r/^- \[x\] \*\*Phase 140:/m, roadmap)
+
+    state = Map.fetch!(records, ".planning/STATE.md")
+    assert Regex.match?(~r/^current_phase: 140$/m, state)
+    assert Regex.match?(~r/^status: verifying$/m, state)
+
+    verification =
+      Map.fetch!(
+        records,
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-VERIFICATION.md"
+      )
+
+    assert Regex.match?(~r/^status: gaps_found$/m, verification)
+    assert Regex.match?(~r/^score: 30\/32 must-haves verified$/m, verification)
+
+    acceptance =
+      Map.fetch!(
+        records,
+        ".planning/phases/140-bounded-operational-loose-end-triage/140-ACCEPTANCE.md"
+      )
+
+    assert acceptance =~ "CI-06 and CI-07 remain pending"
   end
 
   defp receipt(sha) do

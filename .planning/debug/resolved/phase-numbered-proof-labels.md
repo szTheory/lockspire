@@ -1,16 +1,16 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Fix the post-wave regression introduced during Phase 138 gap execution: mix test fails because QualityBaseline.active_phase_numbered_proof_locations/0 returns five locations in test/support/lockspire/release_proof/package_assertions.ex, expected []. Rename active phase-numbered proof labels to phase-neutral durable capability names without weakening assertions."
 created: 2026-08-29T00:05:06Z
-updated: 2026-08-29T00:16:44Z
+updated: 2026-10-05T22:20:09Z
 ---
 
 ## Current Focus
 
 hypothesis: Confirmed — commit a354e723 replaced the prior package-proof abstraction with five literal references to the phase-numbered production execution label, causing the permanent scanner to report all five lines.
-test: Await parent/orchestrator acceptance of the committed fix and automated verification evidence.
-expecting: The phase-neutral inventory label is accepted as preserving the intended proposal-only contract.
-next_action: Parent agent reviews commit 57252ca5 and either accepts the fix or reports any remaining real-workflow failure.
+test: The milestone pre-close audit selected Resolve; current-checkout quality and collector workflow tests pass.
+expecting: Satisfied — the phase-neutral inventory label preserves the proposal-only contract.
+next_action: none
 bug_class: bohrbug
 reasoning_checkpoint:
   hypothesis: "Commit a354e723 causes the quality failure because its YAML assertion update expanded a previously split Phase 138 label into five literal active-proof lines matched by the permanent regex."
@@ -106,6 +106,10 @@ started: After Phase 138 gap execution, specifically changes from Plans 138-12 t
   checked: Exact regression test from committed HEAD 57252ca5
   found: The test passed 1 test with 0 failures and 3 unrelated tests excluded.
   implication: The committed state retains the verified fix.
+- timestamp: 2026-10-05T22:20:09Z
+  checked: Current checkout after milestone pre-close audit selected Resolve
+  found: The exact phase-numbered proof quality test passed (1 test, 0 failures); four collector workflow tests for Git receipts, Git domain rows, GitHub evidence, and maintained follow-up sources passed (4 tests, 0 failures). The old label has zero matches in the collector or package proof helper. Commit 57252ca5 changes only those two files; the existing quality assertion remains active.
+  implication: The committed fix still closes the reported regression in the current checkout and preserves the proposal-only collector contract.
 
 ## Resolution
 
@@ -120,3 +124,10 @@ verification:
   guardrail_verdict: accepted
 files_changed: [scripts/maintainer/baseline_inventory.sh, test/support/lockspire/release_proof/package_assertions.ex]
 oracle_type: specified
+
+## Prevention
+
+- Code branch: Phase 138 gap work copied a historical execution label into durable collector output and five active proof expectations. The label became an output contract because both producer and proof used the same literal.
+- Validation branch: The permanent phase-neutral quality gate already existed, but it surfaced this gap during the post-wave test run. The focused quality test now passes with the producer and proof using the durable inventory label.
+- Why not caught earlier: The existing `proof_quality_baseline_test.exs` gate caught the issue after the gap changes had landed; it was not a passing gate on that change.
+- Recurrence guard: `test/lockspire/quality/proof_quality_baseline_test.exs:62` checks `QualityBaseline.active_phase_numbered_proof_locations() == []` across active proof files. The collector assertions in `repository_hygiene_contract_test.exs` also check the phase-neutral proposal-only output.

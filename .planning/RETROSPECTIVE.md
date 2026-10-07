@@ -262,12 +262,47 @@
 
 ---
 
+## Milestone: v1.38 — Repository Baseline & Reconciliation
+
+**Completed:** 2026-10-06
+**Phases:** 4 | **Plans:** 73 | **Tasks:** 132
+
+### What Was Built
+- A proposal-only inventory of Git, GitHub, and maintained follow-up evidence with stable identities and source-specific failure reporting.
+- Exact-source CI and Release no-publish acceptance, plus a dated baseline linking local checks, required CI, release history, and deferred findings.
+- An automated route for terminal evidence that preserves earlier verification reports and their exact source boundaries.
+
+### What Worked
+- Staging the work from inventory through exact-source acceptance made the final release and repository claims traceable to their evidence.
+- Portable contract tests and required CI replaced repeated manual checks where the same behavior could be established reliably.
+
+### What Was Inefficient
+- Phase 139 and Phase 140 verification reports retained `gaps_found` results after later evidence became available. The closeout therefore needed explicit acknowledgements and a clear audit trail instead of silently changing the reports.
+- GSD's closeout scan also found one halted Phase 139 repair task, which had to be recorded with the two verification gaps.
+
+### Patterns Established
+- Automate recurring integration, end-to-end, smoke, and seam checks at the earliest reliable boundary; put repeatable checks in CI when they provide ongoing value.
+- Keep human review for judgment, access, or real-world observations automation cannot establish, and do not repeat a human signoff for a property already proven by required CI without new evidence.
+- Keep terminal receipts tied to the exact accepted source and preserve earlier reports as historical evidence.
+
+### Key Lessons
+1. Make automated verification the default and shift useful checks into CI early enough to prevent late human handoffs.
+2. Keep evidence status honest: a later receipt can close a decision without rewriting the earlier report or expanding its source claim.
+3. Put halted tasks and verification gaps in one visible closeout record so they do not reappear as surprise work next session.
+
+### Cost Observations
+- Model mix and session count: not recorded.
+- Notable: The accepted-source receipt closed terminal CI and release questions without a manual verifier UAT step or a package publication.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.38 | N/A | 4 | Exact-source maintenance evidence and automated closeout returned the project to its sustaining release train. |
 | v1.37 | N/A | 7 | Packaged adoption, real SaaS integration, architecture quality, conformance evidence, and exact-artifact release proof converged into one acceptance spine. |
 | v1.36 | N/A | 5 | Structural quality moved release, CI, architecture, token policy, and repository proof from convention to executable contracts. |
 | v1.32 | N/A | 5 | Admin UI quality moved from component stress to page-first IA and interaction proof. |
@@ -280,6 +315,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.38 | Exact-source CI/release proof and portable lifecycle contracts | N/A (maintenance milestone) | Repository inventory and closeout automation |
 | v1.37 | Canonical CI, clean-room provider/client/resource journey, dual-router Sobelow, architecture/quality gates, OIDF receipts, and protected public release proof | 84%+ complete suite | Semantic token readers, neutral client lifecycle, aggregate stores, typed token collaborators, immutable evidence scripts |
 | v1.36 | Exact-ref release contracts, quality gates, architecture fitness tests, Dialyzer, split proof suites, and final integration flows | 73% floor | Storage ports/services, lifetime policy, private JWK decoder, shared isolation helpers |
 | v1.32 | ExUnit/LiveView/LazyHTML rendered route proof, source contracts, parsed browser evidence, docs, and adversarial artifacts | High | Route scorecards, BrowserEvidence parser, redaction-safe proof matrix extensions |
@@ -297,3 +333,4 @@
 5. **Design-System Stress Before Polish:** Real component labs with hostile fixture data make reusable UI improvements safer than isolated route edits.
 6. **Proof Artifacts Need Parsers:** Manual/browser evidence becomes more reliable when closeout tests parse structured rows and enforce redaction, viewport, and gap fields.
 7. **Metadata Is Part of Verification:** Passing behavior is not enough for durable project memory; summary frontmatter and Nyquist reconciliation must close with the implementation.
+8. **Shift Verification Left:** Automate recurring checks in CI where they provide reliable value, and reserve human handoffs for decisions or observations automation cannot establish.

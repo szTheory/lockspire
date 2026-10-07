@@ -1,33 +1,23 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.38 — Repository Baseline & Reconciliation",
+  "milestone": "v1.39",
   "phases": [
     {
-      "number": "138",
-      "name": "Baseline Inventory & Evidence Taxonomy",
-      "status": "complete"
-    },
-    {
-      "number": "139",
-      "name": "Required Truth Reconciliation",
-      "status": "complete"
-    },
-    {
-      "number": "140",
-      "name": "Bounded Operational Loose-End Triage",
+      "number": "142",
+      "name": "Merge the Corrected Main Baseline",
       "status": "in_progress"
     },
     {
-      "number": "141",
-      "name": "Maintenance-Baseline Closure",
+      "number": "143",
+      "name": "Publish and Verify Lockspire 1.5.1",
       "status": "pending"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 140 of 4 · ready to verify"
+    "label": "Advance to the next step",
+    "reason": "Phase 142 of 2 · executing"
   },
-  "updated_at": "2026-10-05T14:55:46.636Z"
+  "updated_at": "2026-10-06T22:26:52.637Z"
 }

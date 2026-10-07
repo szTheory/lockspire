@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.38 Repository Baseline & Reconciliation (Completed: 2026-10-06)
+
+**Delivered:** Closed the maintenance baseline with a dated, source-linked handoff, reconciled Phase 140's terminal exact-SHA acceptance, and returned Lockspire to its sustaining GA release train. This is planning completion only; it did not publish a package.
+
+**Phases completed:** **4** (**138-141**), **73** plans, **132** tasks, **20** requirements closed.
+
+**Count reconciliation:** The archive roll-up counts 73 plans: 38 in Phase 138, 16 in Phase 139, 18 in Phase 140, and 1 in Phase 141. Earlier Phase 141 audit snapshots recorded 70 before Phase 139's final three plans; those historical reports remain unchanged.
+
+**Key outcomes:**
+
+- Phase 138's automated inventory and lifecycle proof passed; Phase 141 records the final baseline and exact-source evidence.
+- Accepted Phase 140 source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223` with matching local gates, all seven required CI jobs, and the successful Release no-publish graph.
+- Recorded the current public-package chain independently: Lockspire 1.5.0 remains latest public, published from source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`.
+- Preserved proposal-only maintenance findings, historical evidence, WR-01's recurrence trigger, and non-certifying supplemental OIDF/FAPI status.
+- Returned the next supported action to the sustaining train: evaluate a merged patch-eligible change against exact-main CI, hygiene without BLOCK, and supported-surface truth before the release owner acts.
+
+**Known verification overrides: 3 newly acknowledged, 0 carried forward (see STATE.md Deferred Items).** The three acknowledged audit items are one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. The reports retain their original statuses; none was relabeled as passed.
+
+**Evidence:** [Phase 141 baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md); [execution summary with distinct report and reconciliation commit SHAs](milestones/v1.38-phases/141-maintenance-baseline-closure/141-01-SUMMARY.md); [v1.38 milestone audit](milestones/v1.38-MILESTONE-AUDIT.md). The Phase 140 receipt proves only its accepted source SHA. The latest public release remains 1.5.0.
+
+**Archives:** `milestones/v1.38-ROADMAP.md`, `milestones/v1.38-REQUIREMENTS.md`, `milestones/v1.38-MILESTONE-AUDIT.md`, `milestones/v1.38-phases/` · **Package release:** none.
+
+---
+
 ## v1.3 Roadmap: Lockspire (Backfilled: 2026-09-24)
 
 **Note:** Synthesized from archive snapshot by `$gsd-health --backfill`. Original completion date unknown.

@@ -1,109 +1,59 @@
 # Requirements: Lockspire
 
-**Defined:** 2026-08-28
-**Milestone:** v1.38 Repository Baseline & Reconciliation
+**Defined:** 2026-10-06
+**Milestone:** v1.39 Verified 1.5.1 Release
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## v1.38 Requirements
+## v1 Requirements
 
-Requirements for the Repository Baseline & Reconciliation milestone. Each requirement maps to exactly one roadmap phase.
+Requirements for the v1.39 release milestone. Each maps to exactly one roadmap phase.
 
-### Repository Baseline
+### Release Truth
 
-- [x] **BASE-01**: Maintainer can refresh origin refs and tags and prove that local `main` is clean and synchronized with `origin/main`, or record the exact divergence blocking that state.
-- [x] **BASE-02**: Maintainer can inspect every relevant local/remote branch, tag, and worktree with an explicit keep, remove, or defer disposition.
-- [ ] **BASE-03**: Maintainer can perform only authorized, exact-target cleanup without deleting uncommitted work, intentional refs, or historical release evidence.
+- [ ] **TRUTH-06**: Maintainer can merge the corrected Phase 141 release record through the reviewed PR path and keep 1.5.0 identified as the latest public package until public proof for 1.5.1 exists.
 
-### GitHub Triage
+### Main Readiness
 
-- [x] **TRIAGE-01**: Maintainer can inspect every open pull request and record a merge-ready, needs-work, close, or defer disposition supported by current evidence.
-- [x] **TRIAGE-02**: Maintainer can inspect every open issue and record a close, retain, or defer disposition without using zero open issues as a success metric.
-- [ ] **TRIAGE-03**: Maintainer can evaluate each dependency-update PR independently against compatibility, security, and required repository gates rather than treating updates as a bulk campaign.
+- [ ] **CI-09**: Maintainer can verify that required CI and the repository-hygiene check pass for the exact current `main` revision before release; every reported warning has an explicit disposition.
 
-### CI and Release Evidence
+### Protected Publication
 
-- [ ] **CI-06**: Maintainer can prove all required repo-owned CI checks pass for the exact synchronized final `main` SHA. Candidate `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d` passed receipt A with CI run `37056328643`, all seven required jobs successful, local `mix ci` passing, and exact hygiene at 24 PASS, 0 WARN, 0 BLOCK. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with required CI evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
-- [ ] **CI-07**: Maintainer can prove the release workflow is successful or intentionally skipped/no-op for that same baseline without publishing or manually changing release-owned files. Release run `37056328607` passed on predecessor `4ce0ab3dfd9acbf587bb5aea6d8ba679c951fb3d`; Maintain Release Please PR succeeded and all four protected publication jobs were skipped. This is predecessor evidence only; completion still requires a terminal private receipt for the final synchronized SHA and a GSD-compatible read-only join with same-SHA Release evidence. The committed closure-command contract test runs in the required fast-test lane; no manual verifier UAT is required.
-- [x] **CI-08**: Maintainer can distinguish required acceptance checks from supplemental OIDF runs and retain OIDF findings as redacted, non-certifying evidence.
-
-### Local Gates
-
-- [x] **QUAL-05**: Maintainer can run `mix ci` from the reconciled baseline with all checks passing.
-- [x] **HYGIENE-05**: Maintainer can run the repository hygiene check with no unresolved `BLOCK` result and an explicit disposition for every `WARN`.
-- [x] **HYGIENE-06**: Maintainer can add or tighten a deterministic repository-health check only when execution demonstrates a repeatable repository-owned gap.
-
-### Planning and Release Truth
-
-- [x] **TRUTH-03**: Maintainer can verify that `PROJECT.md`, `ROADMAP.md`, `STATE.md`, `MILESTONES.md`, requirements, and maintained planning records describe one coherent current milestone and release posture.
-- [x] **TRUTH-04**: Maintainer can trace the current public release through its source SHA, CI run, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
-- [x] **TRUTH-05**: Maintainer can verify that Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
-
-### Evidence-Led Loose Ends
-
-- [x] **LOOSE-01**: Maintainer can inventory pending todos, archived audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records.
-- [ ] **LOOSE-02**: Maintainer can assign each credible finding exactly one evidence-backed disposition: fix now, defer with a trigger, retain as historical evidence, already resolved, or out of scope.
-- [ ] **LOOSE-03**: Maintainer can close blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps while excluding speculative or feature-sized work.
-
-### Baseline Closure
-
-- [ ] **BASE-04**: Maintainer can inspect a dated baseline record tying final Git state, local gates, required workflow runs, release evidence, loose-end dispositions, and explicit deferrals to exact SHAs and sources.
-- [ ] **BASE-05**: Maintainer can finish v1.38 with coherent GSD state and an explicit return to Lockspire's sustaining GA release train.
+- [ ] **REL-01**: Maintainer can publish Lockspire 1.5.1 only through the protected release workflow for the exact current `main` SHA with its matching successful canonical CI run.
+- [ ] **REL-02**: Maintainer can verify that the public Hex package checksum matches the workflow's manifest-bound artifact, the `lockspire-v1.5.1` GitHub release targets the same source, and the clean-room public install journey passes.
+- [ ] **REL-03**: If a release gate fails, maintainer can preserve its evidence and record the blocker without claiming 1.5.1 shipped or closing the milestone.
 
 ## Future Requirements
 
-Deferred to a later sustaining pass or separately justified milestone.
-
-### Follow-Up Candidates
-
-- **FUTURE-04**: Maintainer can rely on additional repository-truth drift checks if v1.38 demonstrates recurring, mechanically detectable drift not covered by existing gates.
-- **FUTURE-05**: Maintainer can run a bounded conformance-hardening milestone with measurable acceptance around retained OIDF findings.
-- **FUTURE-06**: Maintainer can reconsider CI or merge-process design if sustained queue contention or insufficient current controls are demonstrated.
+No additional release automation or product capability is planned by this milestone.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| New OAuth/OIDC protocol capability | v1.38 is a maintenance baseline, not a product-expansion milestone. |
-| Host-seam or admin-surface expansion | Requires separate adopter evidence and feature planning. |
-| Forced OIDF/FAPI suite success or certification claim | Supplemental results remain honest, redacted, non-certifying follow-up evidence. |
-| New CI platform, issue tracker, dashboard, or maintenance subsystem | Existing repository tooling is sufficient; no replacement need was demonstrated. |
-| Broad dependency-refresh or speculative refactor campaign | Each dependency or code change must be justified by concrete repository evidence. |
-| Destructive bulk cleanup, history rewriting, or zero-open-issues target | Cleanliness is an evidence-backed disposition, not erasure of work or history. |
-| Manual version, changelog, manifest, tag, or package publication changes | Release Please and the protected exact-ref publishing lane retain ownership. |
+| New OAuth/OIDC capability, host seam, or admin surface | v1.39 corrects release truth and publishes an already-prepared patch; it does not expand Lockspire's product surface. |
+| A new release platform or replacement publishing workflow | The repository already has a protected exact-SHA lane that builds, verifies, publishes, and checks public install truth. |
+| Manual edits to release-owned version metadata, tags, or package contents | Release Please and the protected release workflow own those changes. |
+| Manual UAT for behavior already proven by required CI and the protected clean-room release journey | Repeatable checks are the acceptance evidence; human attention is reserved for judgments those checks cannot establish. |
+| Supplemental OIDF/FAPI certification or pass requirements | These remain supplemental, non-certifying evidence and are not a 1.5.1 release gate. |
+| Non-critical dependency refreshes or a broad Dependabot campaign | They are unrelated to this release and remain outside the approved milestone scope. |
 
 ## Traceability
 
-Populated during roadmap creation. Every v1.38 requirement must map to exactly one phase.
+Populated during roadmap creation. Every v1.39 requirement maps to exactly one phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01 | Phase 138 | Complete |
-| BASE-02 | Phase 138 | Complete |
-| BASE-03 | Phase 140 | Pending |
-| TRIAGE-01 | Phase 138 | Complete |
-| TRIAGE-02 | Phase 138 | Complete |
-| TRIAGE-03 | Phase 140 | Pending |
-| CI-06 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA required CI evidence |
-| CI-07 | Phase 140 | pending terminal exact-SHA receipt and GSD-compatible read-only closure path with same-SHA Release evidence |
-| CI-08 | Phase 139 | Complete |
-| QUAL-05 | Phase 139 | Complete |
-| HYGIENE-05 | Phase 139 | Complete |
-| HYGIENE-06 | Phase 139 | Complete |
-| TRUTH-03 | Phase 139 | Complete |
-| TRUTH-04 | Phase 139 | Complete |
-| TRUTH-05 | Phase 139 | Complete |
-| LOOSE-01 | Phase 138 | Complete |
-| LOOSE-02 | Phase 140 | Pending |
-| LOOSE-03 | Phase 140 | Pending |
-| BASE-04 | Phase 141 | Pending |
-| BASE-05 | Phase 141 | Pending |
+| TRUTH-06 | Phase 142 | Pending |
+| CI-09 | Phase 142 | Pending |
+| REL-01 | Phase 143 | Pending |
+| REL-02 | Phase 143 | Pending |
+| REL-03 | Phase 143 | Pending |
 
 **Coverage:**
-
-- v1.38 requirements: 20 total
-- Mapped to phases: 20
+- v1 requirements: 5 total
+- Mapped to phases: 5
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-08-28*
-*Last updated: 2026-09-25 after Phase 139 verification*
+*Requirements defined: 2026-10-06*
+*Last updated: 2026-10-06 after v1.39 requirements definition*

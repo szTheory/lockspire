@@ -2,323 +2,87 @@
 
 ## Milestones
 
-- ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131-137 (shipped 2026-08-28 as Lockspire 1.5.0)
-- 🚧 **v1.38 Repository Baseline & Reconciliation** — Phases 138-141 (planned)
+- 🔄 **v1.39 Verified 1.5.1 Release** — Phases 142–143 (active; publish only after exact-main checks and protected verification pass).
+- ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
+- ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
 
 Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and preserved under `.planning/milestones/`.
 
 ## Phases
 
-- [x] **Phase 138: Baseline Inventory & Evidence Taxonomy** - Establish the exact local, remote, and maintained-record evidence on which every later disposition relies. (completed 2026-09-25)
-- [x] **Phase 139: Required Truth Reconciliation** - Reconcile the exact-SHA acceptance, release, hygiene, and planning truth using existing repository controls. (completed 2026-09-25)
-- [ ] **Phase 140: Bounded Operational Loose-End Triage** - Decide and resolve only evidence-backed operational loose ends without broad cleanup or feature work.
-- [ ] **Phase 141: Maintenance-Baseline Closure** - Publish the final evidence-backed baseline record and return Lockspire to its sustaining GA release train.
+<details>
+<summary>🔄 v1.39 Verified 1.5.1 Release (active)</summary>
 
-## Phase Details
+- [ ] **Phase 142: Merge the Corrected Main Baseline** — Merge the corrected Phase 141 release record through review and prove the resulting exact `main` revision is ready for release.
+- [ ] **Phase 143: Publish and Verify Lockspire 1.5.1** — Use the protected release workflow to publish and verify the exact 1.5.1 artifact, or record the failing gate and keep the milestone open.
 
-### Phase 138: Baseline Inventory & Evidence Taxonomy
+### Phase 142: Merge the Corrected Main Baseline
 
-**Goal**: Maintainers have one current, non-destructive evidence inventory for local/remote Git state and every maintained operational follow-up.
-**Depends on**: Nothing (first phase)
-**Requirements**: BASE-01, BASE-02, TRIAGE-01, TRIAGE-02, LOOSE-01
+**Goal**: Maintainers merge the reviewed Phase 141 correction so `main` truthfully identifies 1.5.0 as the latest public package until 1.5.1 has public proof, then establish a green, exact-current-main release candidate.
+**Depends on**: None
+**Requirements**: TRUTH-06, CI-09
 **Success Criteria** (what must be TRUE):
 
-  1. A maintainer can refresh origin references and show whether local `main` is clean and synchronized with `origin/main`, including the exact divergence when it is not.
-  2. A maintainer can inspect every relevant branch, tag, and worktree in a dated inventory with an explicit proposed keep, remove, or defer disposition.
-  3. A maintainer can inspect every open pull request and issue and find a current evidence-backed disposition for each, without equating a healthy baseline with an empty queue.
-  4. A maintainer can locate todos, audit and verification findings, debug or handoff artifacts, roadmap notes, and other maintained follow-up records in one complete inventory.
+1. The correction lands through the normal reviewed PR path, and release records continue to identify 1.5.0 as latest until a verified 1.5.1 publication exists.
+2. The post-merge local `main` and refreshed `origin/main` resolve to the same full commit SHA, and the canonical required CI run passes for that SHA.
+3. The exact-SHA repository-hygiene check reports no `BLOCK`, with every `WARN` disposition recorded; supplemental OIDF/FAPI results remain outside the release gate.
 
-**Plans**: 38/38 plans complete; Phase 138 verification passed (G-138-98 closed)
+**Plans**: 4 plans
 
 Plans:
-
-**Wave 37** *(gap closure)*
-
-- [x] 138-37-PLAN.md — Add claim-specific negative evidence and explicit review states for the prohibition ledger.
-
-**Wave 38** *(gap closure; blocked on 138-37; includes maintainer review checkpoint)*
-
-- [x] 138-38-PLAN.md — Resolve every remaining claim and enforce a zero-pending closure gate.
-
-**Wave 35** *(gap closure)*
-
-- [x] 138-35-PLAN.md — Repair the two Phase 138 lifecycle receipt fixtures and retain fail-closed recovery proof.
-
-**Wave 36** *(gap closure)*
-
-- [x] 138-36-PLAN.md — Record evidence tiers and truthful dispositions for every Phase 138 prohibition; claim-level resolution remains open.
-
-**Wave 34** *(zero-human UAT gap closure; blocked on 138-33)*
-
-- [x] 138-34-PLAN.md — Convert all remaining Phase 138 UAT checks to automated coverage and add only the portable finalizer-router contract to recurring CI.
-
-**Wave 30** *(gap closure; blocked on 138-29)*
-
-- [x] 138-30-PLAN.md — Bind GSD closeout decisions and performance rows to exact summary semantics.
-
-**Wave 31** *(gap closure; blocked on Wave 30)*
-
-- [x] 138-31-PLAN.md — Redact lowercase-run opaque credentials across every evidence sink.
-
-**Wave 32** *(gap closure; blocked on Wave 31)*
-
-- [x] 138-32-PLAN.md — Publish one truthful pre-verifier ledger and validate it against the host-sealed post-transition receipt.
-
-**Wave 33** *(gap closure; blocked on Wave 32; final gap plan and lifecycle activation)*
-
-- [x] 138-33-PLAN.md — Install the tracked two-hook capability and prove pending-state recovery blocks later routing.
-
-Required Phase 138 gap handoff:
-
-`$gsd-execute-phase 138 --gaps-only --interactive`
-
-This executes only the newly planned Waves 37–38: Plan 37 adds claim-specific evidence and a separate resolution state for the 108 prohibition claims; Plan 38 records explicit delegated maintainer outcomes and enforces a zero-pending closure gate. All 108 outcomes are complete and the phase verification passed. The earlier Waves 30–36 were not rerun by `--gaps-only`.
-
-- [x] 138-26-PLAN.md
-- [x] 138-27-PLAN.md
-- [x] 138-28-PLAN.md
-- [x] 138-29-PLAN.md
-
-**Wave 24** *(gap closure; blocked on 138-23)*
-
-- [x] 138-24-PLAN.md — Correct exact GitHub OID validation and fail-closed maintained-record classification with adversarial fixtures.
-
-**Wave 25** *(gap closure; blocked on Wave 24)*
-
-- [x] 138-25-PLAN.md — Recollect and immutably republish the canonical ledger from the corrected clean base.
-
-- [x] 138-22-PLAN.md
-- [x] 138-23-PLAN.md
-
-- [x] 138-17-PLAN.md
-- [x] 138-18-PLAN.md
-- [x] 138-19-PLAN.md
-- [x] 138-20-PLAN.md
-- [x] 138-21-PLAN.md
-
-- [x] 138-12-PLAN.md
-- [x] 138-13-PLAN.md
-- [x] 138-14-PLAN.md
-- [x] 138-15-PLAN.md
-- [x] 138-16-PLAN.md
-
-- [x] 138-04-PLAN.md
-- [x] 138-05-PLAN.md
-- [x] 138-06-PLAN.md
-
 **Wave 1**
-
-- [x] 138-01-PLAN.md — Prove safe Git baseline collection, then inventory branches, tags, and worktrees.
+- [ ] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 138-02-PLAN.md — Enumerate every open pull request and issue through complete redaction-safe pagination.
-
-**Wave 3** *(blocked on Wave 2 completion)*
-
-- [x] 138-03-PLAN.md — Inventory maintained follow-ups and generate the canonical dated live ledger.
-
-**Wave 7** *(gap closure; blocked on 138-06)*
-
-- [x] 138-07-PLAN.md — Buffer and validate both GitHub namespaces before rendering actionable dispositions.
-
-**Wave 8** *(gap closure; blocked on Wave 7)*
-
-- [x] 138-08-PLAN.md — Fail branch, tag, and worktree domains closed when stable evidence IDs cannot be generated.
-
-**Wave 9** *(gap closure; blocked on Wave 8)*
-
-- [x] 138-09-PLAN.md — Preserve maintained selector failures and make hostile tracked paths NUL-safe and render-safe.
-
-**Wave 10** *(gap closure; blocked on Wave 9)*
-
-- [x] 138-10-PLAN.md — Prove live writer safety and implement fail-closed immutable-snapshot drift classification.
-
-**Wave 11** *(gap closure; blocked on Wave 10)*
-
-- [x] 138-11-PLAN.md — Publish the ledger-only immutable snapshot and hand its bounded currentness relation to the normal verifier.
-
-### Phase 139: Required Truth Reconciliation
-
-**Goal**: Maintainers can rely on one exact-SHA, repository-owned acceptance and release truth across gates, workflows, planning, and release records.
-**Depends on**: Phase 138
-**Requirements**: CI-08, QUAL-05, HYGIENE-05, HYGIENE-06, TRUTH-03, TRUTH-04, TRUTH-05
-**Success Criteria** (what must be TRUE):
-
-  1. Repository-owned acceptance checks enforce `mix ci` and repository hygiene for the reconciled baseline, including no unresolved hygiene `BLOCK` and an explicit disposition for every `WARN`.
-  2. Repository-owned acceptance logic identifies the exact synchronized `main` SHA and fails closed without canonical same-SHA CI and Release no-publish evidence. The live evidence itself is accepted at the Phase 140 entry gate.
-  3. A maintainer can distinguish required acceptance from supplemental OIDF evidence, whose retained findings are redacted and explicitly non-certifying.
-  4. A maintainer can trace the current public release from its source SHA through CI, release run, tag, package checksum, Hex package, and maintained release records without rewriting historical evidence.
-  5. Maintained planning and release records agree on the current milestone and release posture, while Release Please ownership, protected exact-ref publishing, full-SHA action pins, and manifest-bound artifact proof remain intact.
-
-**Plans**: 13/13 plans complete
-
-Plans:
-
-**Wave 1**
-
-- [x] 139-01-PLAN.md — Prove one exact-SHA hygiene and workflow acceptance path end to end.
-
-**Wave 2** *(after tracer proof)*
-
-- [x] 139-02-PLAN.md — Restore the demonstrated shell-lint and proof-quality gates.
-- [x] 139-03-PLAN.md — Pin Release no-publish structure and the complete action-reference surface.
-- [x] 139-04-PLAN.md — Reconcile maintained planning, release, hygiene, and supplemental truth.
-
-**Wave 3** *(after local gate repair)*
-
-- [x] 139-05-PLAN.md — Refresh the immutable inventory and bind Phase 139 lifecycle/main currentness.
-
-**Wave 4** *(after exact hygiene and currentness contracts)*
-
-- [x] 139-06-PLAN.md — Land sealed repository writes on main and retain final live acceptance externally.
-
-**Wave 5** *(after every implementation expansion)*
-
-- [x] 139-07-PLAN.md — Activate the two-boundary Phase 139 finalizer and durable recovery path.
-
-**Wave 6** *(verification gap closure; after 139-07)*
-
-- [x] 139-08-PLAN.md — Bind every non-host verification gap and all nineteen completed-plan prohibitions to focused executable proof.
-
-**Wave 7** *(terminal lifecycle gap closure; after 139-08)*
-
-- [x] 139-09-PLAN.md — Prove the supported Phase 139 lifecycle portably in required CI and retain live exact-SHA acceptance as the blocking transition gate.
-
-**Wave 8** *(current exact-acceptance fixture and receipt gaps; after 139-09)*
-
-- [x] 139-10-PLAN.md — Repair writer-descriptor fixture authority and restore exact-acceptance proof.
-
-**Wave 9** *(lifecycle rendering and post-transition proof; after 139-10)*
-
-- [x] 139-11-PLAN.md — Make portable/live rendering explicit and gate planning consistency after canonical verification.
-
-### Phase 140: Bounded Operational Loose-End Triage
-
-**Goal**: Maintainers close only safe, evidence-backed maintenance gaps and retain a clear, recoverable disposition for everything else.
-**Depends on**: Phase 139
-**Requirements**: CI-06, CI-07, BASE-03, TRIAGE-03, LOOSE-02, LOOSE-03
-**Success Criteria** (what must be TRUE):
-
-  1. A maintainer can see exactly why every credible finding is fixed now, deferred with a trigger, retained as historical evidence, already resolved, or out of scope.
-  2. Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
-  3. Each dependency-update pull request has its own compatibility, security, and required-gate assessment rather than being handled as part of a bulk campaign.
-  4. Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
-
-**Plans**: 18/18 plans executed; 140-01 through 140-18 have summaries; automated verifier contract is complete, with final exact-SHA acceptance pending at 30/32 for CI-06/CI-07
-
-Plans:
-**Wave 1**
-
-- [x] 140-01-PLAN.md — Refresh current evidence and establish the single source-linked disposition record.
-
-**Wave 2** *(blocked on Wave 1 completion)*
-
-- [x] 140-02-PLAN.md — Reassess nine archived UAT candidates and correct demonstrated current planning contradictions.
+- [ ] 142-04-PLAN.md — Repair Release Hygiene Drift and establish verified live and checked-in publication holds plus main protection.
 
 **Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 142-02-PLAN.md — Recheck the remediated PR, live release timing and exact-head merge authorization.
 
-- [x] 140-03-PLAN.md — Assess every dependency-update PR against its own current evidence.
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
 
-**Wave 4** *(local closeout complete; external acceptance belongs to phase verification)*
+### Phase 143: Publish and Verify Lockspire 1.5.1
 
-- [x] 140-04-PLAN.md — Close finite dispositions and prepare final exact-SHA acceptance.
-
-**Wave 5** *(gap closure after the Plan 140-04 verification failures)*
-
-- [x] 140-05-PLAN.md — Complete origin and maintained-record source receipts, then disposition newly observed candidates.
-
-**Wave 6** *(after the inventory collector edit)*
-
-- [x] 140-06-PLAN.md — Repair recovery diagnostics and authenticate recovery-v2 receipts through the no-publish barrier.
-
-**Wave 7** *(after inventory and recovery repairs)*
-
-- [x] 140-07-PLAN.md — Repair the four current Phase32/AuditWriter signing-key fixture failures.
-
-**Wave 8** *(after inventory and focused repairs)*
-
-- [x] 140-08-PLAN.md — Capture every local CI failure, repair bounded roots, and prove a clean full local run.
-
-**Wave 9** *(after clean local CI)*
-
-- [x] 140-09-PLAN.md — Reconcile terminal dispositions and hand off the post-summary same-SHA CI/Release gate.
-
-**Wave 10** *(completed focused formatter repair)*
-
-- [x] 140-10-PLAN.md — Repair the two formatter findings without changing release proof behavior.
-
-**Wave 11** *(completed fixture isolation)*
-
-- [x] 140-11-PLAN.md — Isolate the current test database fixture behavior.
-
-**Wave 12** *(completed release proof fixture repair)*
-
-- [x] 140-12-PLAN.md — Repair the release-readiness and synthetic receipt selectors.
-
-**Wave 13** *(new gap closure after complete local CI exposed two receipt identity failures)*
-
-- [x] 140-13-PLAN.md — Diagnose and repair the full-suite receipt identity failure, then prove complete local CI.
-
-**Wave 14** *(real historical entry-point proof and final acceptance handoff)*
-
-- [x] 140-14-PLAN.md — Prove valid and hostile recovery-v2 through the real entry point, then distinguish historical recovery from final exact-SHA acceptance.
-
-**Wave 15** *(final synchronized-SHA CI and Release gap closure)*
-
-- [x] 140-15-PLAN.md — Join the final exact candidate, local gates, canonical CI, and Release no-publish graph behind candidate-specific ref authorization.
-
-**Wave 16** *(terminal receipt after all tracked completion writes)*
-
-- [x] 140-16-PLAN.md — Close CI-06/CI-07 on the last exact candidate with fresh ref authority and a private same-SHA receipt.
-
-**Wave 17** *(safe deferral while GSD-compatible receipt closure is planned)*
-
-- [x] 140-17-PLAN.md — Record the GSD post-task write boundary, preserve CI-06/CI-07 as pending, and hand off to a lifecycle-compatible closure plan.
-
-**Wave 18** *(automated read-only completion route after GSD tracked writes; no manual verifier UAT)*
-
-- [x] 140-18-PLAN.md — Prove the closure command through required CI contract tests, establish the post-GSD read-only receipt route, and gate final same-SHA CI/Release acceptance.
-
-**Cross-cutting constraints:**
-
-- A maintainer can see exactly why every credible finding is fixed now, deferred with a trigger, retained as historical evidence, already resolved, or out of scope.
-- Any authorized cleanup names exact targets and leaves uncommitted work, intentional refs, and historical release evidence intact.
-- Blockers, regressions, contradictions, stale actionable artifacts, and small high-confidence maintenance gaps are closed when proof supports it; speculative or feature-sized work is explicitly deferred.
-
-**Entry gate (dated pass, current blocker)**: On 2026-09-28 the blocking Phase 140 `plan:pre` hook validated the Phase 139 exact-SHA acceptance receipt for synchronized SHA `c6332d3a8b716b938f93d978243281764e3eac41`: required CI run `36476762461` passed and Release no-publish run `36476762490` succeeded with publication jobs skipped. The latest `plan:pre` attempt failed on a stale writer descriptor. Supported CAS subsequently archived that predecessor and wrote recovery-v2, but the real post-transition probe at `5259a654` failed before the no-publish barrier: completed Phase 140 execution history lies outside the strict historical planning-prefix classifier. Plan 140-14 proves the proper historical entry path and documents the independent final acceptance route; neither CAS success nor local authorization is a gate pass. CI-06 and CI-07 still require final same-SHA acceptance.
-
-### Phase 141: Maintenance-Baseline Closure
-
-**Goal**: Maintainers receive a durable final-baseline handoff and Lockspire resumes its sustaining GA release train without false completion claims.
-**Depends on**: Phase 140
-**Requirements**: BASE-04, BASE-05
+**Goal**: Maintainers publish Lockspire 1.5.1 from the approved exact `main` revision through the protected workflow and record the matching public package proof.
+**Depends on**: Phase 142
+**Requirements**: REL-01, REL-02, REL-03
 **Success Criteria** (what must be TRUE):
 
-  1. A maintainer can inspect a dated baseline record connecting final Git state, local gates, required workflow runs, release evidence, loose-end dispositions, and explicit deferrals to exact SHAs and sources.
-  2. GSD project, roadmap, requirements, state, and milestone records describe the same completed v1.38 posture and the next sustaining GA release-train action.
-  3. A maintainer can distinguish verified closure from deferred conformance, feature, cleanup, or release-publication work that remains outside this milestone.
+1. The protected workflow validates that the 1.5.1 source is the exact current `main` SHA and has its own matching successful canonical CI run before publication.
+2. The workflow publishes the same manifest-verified artifact it proved before publication; public Hex checksum, `lockspire-v1.5.1` release target, and clean-room install proof all match that artifact and source.
+3. `.planning/RELEASE-TRAIN.md` records the actual public version, source SHA, canonical CI run, protected publish run, package checksum, GitHub release, and install-truth result.
+4. If any gate fails, publication or milestone completion stops, the evidence and blocker are recorded, and no record says 1.5.1 shipped.
 
-**Plans**: 1 plan
+**Plans**: 0 plans
 
-Plans:
-- [ ] 141-01-PLAN.md — Link the terminal baseline evidence and reconcile v1.38 planning truth
+</details>
 
-## Progress
+<details>
+<summary>✅ v1.38 Repository Baseline & Reconciliation (completed 2026-10-06)</summary>
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 138. Baseline Inventory & Evidence Taxonomy | 38/38 | Complete    | 2026-09-25 |
-| 139. Required Truth Reconciliation | 13/13 | Complete    | 2026-09-26 |
-| 140. Bounded Operational Loose-End Triage | 18/18 | In Progress|  |
-| 141. Maintenance-Baseline Closure | 0/TBD | Not started | - |
+- [x] Phase 138: Baseline Inventory & Evidence Taxonomy — 38/38 plans; verification report passed.
+- [x] Phase 139: Required Truth Reconciliation — 16/16 plans; `gaps_found` report retained and acknowledged at closeout.
+- [x] Phase 140: Bounded Operational Loose-End Triage — 18/18 plans; historical 30/32 report retained, with terminal CI-06/CI-07 acceptance linked from Phase 141.
+- [x] Phase 141: Maintenance-Baseline Closure — 1/1 plan; verification report passed.
+
+Closeout acknowledged one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See the [closeout record](MILESTONES.md) and [STATE.md](STATE.md). The latest public package remains 1.5.0.
+
+</details>
+
+<details>
+<summary>✅ v1.37 Prime-Time Readiness Ratchet (Phases 131–137) — SHIPPED 2026-08-28</summary>
+
+- [x] Phases 131–137: 58/58 plans complete; released as Lockspire 1.5.0.
+
+</details>
 
 ## Backlog
 
 ### Phase 999.1: Repository Readability & Docs Polish (BACKLOG)
 
 **Goal:** Make Lockspire's repository a joy to navigate: clarify what each major directory is for, remove only verified stale clutter, and give adopters and maintainers a clear, accurate route through the README and canonical documentation.
-**Requirements:** TBD
+**Requirements:** None assigned; identify applicable requirements during backlog promotion.
 **Plans:** 0 plans
 
 **Captured direction:**
@@ -329,4 +93,4 @@ Plans:
 
 Plans:
 
-- [ ] TBD (promote with `$gsd-review-backlog` when ready)
+- [ ] Define and scope plans during backlog promotion with `$gsd-review-backlog`.

@@ -5,9 +5,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
 
   alias Lockspire.TestSupport.ReleaseProof.Paths
 
-  @active_phase_number "140"
-  @active_phase_label "Phase " <> @active_phase_number
-
   def assert_protected_publish_lane! do
     workflow = Paths.read!(".github/workflows/release.yml")
     release_train = Paths.read!(".planning/RELEASE-TRAIN.md")
@@ -86,9 +83,6 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     changelog = Paths.read!("CHANGELOG.md")
     mixfile = Paths.read!("mix.exs")
     guide = Paths.read!("docs/maintainer-release.md")
-    project = Paths.read!(".planning/PROJECT.md")
-    roadmap = Paths.read!(".planning/ROADMAP.md")
-    state = Paths.read!(".planning/STATE.md")
     milestones = Paths.read!(".planning/MILESTONES.md")
     release_train = Paths.read!(".planning/RELEASE-TRAIN.md")
     hygiene = Paths.read!(".planning/REPO-HYGIENE-CHECKLIST.md")
@@ -105,25 +99,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert guide =~ "docs/supported-surface.md"
     refute Enum.any?([mixfile, config, manifest, changelog], &String.contains?(&1, "1.0.0-rc"))
 
-    assert project =~ "## Current Milestone: v1.38 Repository Baseline & Reconciliation"
-
-    assert project =~
-             "Finish the active v1.38 Repository Baseline & Reconciliation milestone before returning to the sustaining GA release train."
-
-    assert roadmap =~ "🚧 **v1.38 Repository Baseline & Reconciliation**"
-    assert roadmap =~ @active_phase_label <> ": Bounded Operational Loose-End Triage"
-    assert state =~ "milestone: v1.38"
-    assert state =~ "current_phase: 140"
     assert milestones =~ "## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)"
     assert milestones =~ "public package `1.5.0`"
-    assert release_train =~ "Latest released version: `#{Paths.mix_version()}`"
+    assert release_train =~ "Release Please version metadata: `1.5.1`"
+    assert release_train =~ "Latest public package: Hex lists `1.5.0`"
 
     assert hygiene =~
              "bash ./scripts/maintainer/repo_hygiene_check.sh --accept-sha <40-lowercase-hex-current-main-sha> --format json"
 
     assert hygiene =~ "Every `WARN` requires one explicit `--warn-disposition CODE=DISPOSITION`"
     assert hygiene =~ ~s(`"warn_dispositions": []`)
-    assert hygiene =~ "v1.38 and " <> @active_phase_label <> " are the current planning truth"
     assert hygiene =~ "v1.37 and Lockspire 1.5.0 remain the latest shipped truth"
     refute hygiene =~ "latest `main` CI"
 
