@@ -114,10 +114,12 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
 
   test "postpublish verifies exact public behavior and retains only bounded JSON" do
     workflow = File.read!(@workflow)
-    postpublish = final_job!(workflow, "post-publish-install-truth")
+    postpublish = job!(workflow, "post-publish-install-truth", "terminal-outcome")
 
     assert postpublish =~ "permissions:\n      contents: read"
     assert postpublish =~ "verify_install_truth.sh"
+    assert postpublish =~ "docs_state: ${{ steps.public-truth.outputs.docs_state }}"
+    assert postpublish =~ "install_state: ${{ steps.public-truth.outputs.install_state }}"
     assert postpublish =~ "release-input/release-manifest.json"
     assert postpublish =~ "postpublish-receipt.json"
     assert postpublish =~ "retained-release-evidence"
@@ -134,6 +136,31 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert guide =~ "Hex.API.Release.publish/5"
     assert guide =~ "undocumented, version-bound internal API"
     assert guide =~ "exact-byte fixture"
+  end
+
+  test "terminal outcome is collected after failed or skipped publish stages" do
+    workflow = File.read!(@workflow)
+    collector = final_job!(workflow, "terminal-outcome")
+
+    assert collector =~ "needs: [recovery-validation, prepublish-proof, publish, post-publish-install-truth]"
+    assert collector =~ "if: ${{ always() && github.event_name == 'workflow_dispatch' }}"
+    assert collector =~ "permissions:\n      actions: read\n      contents: read"
+    assert collector =~ "continue-on-error: true"
+    assert collector =~ "terminal-receipt --input terminal-state.json"
+    assert collector =~ "--workflow-run-id \"$GITHUB_RUN_ID\""
+    assert collector =~ "https://hex.pm/api/packages/lockspire/releases/$version"
+    assert collector =~ "https://hexdocs.pm/lockspire/$version/supported-surface.html"
+    assert collector =~ "git ls-remote"
+    assert collector =~ "needs.publish.result"
+    assert collector =~ "needs.post-publish-install-truth.result"
+    refute collector =~ "HEX_API_KEY"
+
+    upload = final_step!(collector, "Upload the terminal outcome receipt")
+    assert upload =~ "if: always()"
+    assert upload =~ "name: lockspire-release-terminal-receipt-${{ github.run_id }}"
+    assert upload =~ "path: release-terminal-receipt.json"
+    assert upload =~ "if-no-files-found: error"
+    assert upload =~ "retention-days: 90"
   end
 
   defp job!(workflow, name, next_name) do
@@ -158,6 +185,11 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
         job
       )
 
+    step
+  end
+
+  defp final_step!(job, name) do
+    [_, step] = Regex.run(~r/^      - name: #{Regex.escape(name)}\n(.*)\z/ms, job)
     step
   end
 
