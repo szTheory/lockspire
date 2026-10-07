@@ -32,9 +32,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert publish =~ "bash scripts/publish/release_main_freeze.sh create"
     assert publish =~ "bash scripts/publish/release_main_freeze.sh publish"
     assert publish =~ "bash scripts/publish/release_main_freeze.sh delete \"$FREEZE_RULESET_ID\""
-    assert freeze_script =~ "preflight \"$ruleset_id\" \"$authorized_sha\" \"$recovery_ref\" \"$verified_sha\""
+
+    assert freeze_script =~
+             "preflight \"$ruleset_id\" \"$authorized_sha\" \"$recovery_ref\" \"$verified_sha\""
+
     assert freeze_script =~
              "bash scripts/publish/publish_hex_idempotently.sh \"$package_tar\" \"$manifest\" \"$verified_sha\""
+
     assert publish_script =~ "upload_hex_artifact.exs \"$package_tar\""
     assert publish_script =~ "mix hex.publish docs --yes"
     assert publish_script =~ "release_artifact.py verify-local"
