@@ -310,11 +310,15 @@ jobs:
           tag_name="lockspire-v$version"
           notes="$(awk -v version="$version" '$0 ~ "^## \\[" version "\\]" { found=1; next } found && $0 ~ "^## \\[" { exit } found { print }' CHANGELOG.md)"
           test -n "$notes"
-          if gh release view "$tag_name" --json targetCommitish --jq '.targetCommitish' >/tmp/release-target 2>/dev/null; then
-            test "$(git rev-parse "$(cat /tmp/release-target)^{commit}")" = "$VERIFIED_SHA"
+          if gh release view "$tag_name" >/dev/null 2>&1; then
+            echo "GitHub release $tag_name already exists; verifying its remote tag target."
           else
             gh release create "$tag_name" --target "$VERIFIED_SHA" --title "lockspire: v$version" --notes "$notes"
           fi
+          bash scripts/publish/verify_github_release_target.sh \
+            "$tag_name" \
+            "${GITHUB_SERVER_URL}/${GH_REPO}.git" \
+            "$VERIFIED_SHA"
       # Release Please does not advance the merged release PR's `autorelease:`
       # label when `skip-github-release: true`; this protected lane owns that
       # state transition after publication and GitHub release creation succeed.

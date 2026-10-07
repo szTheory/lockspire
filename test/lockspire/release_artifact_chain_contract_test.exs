@@ -6,6 +6,10 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
   @uploader Path.expand("../../scripts/publish/upload_hex_artifact.exs", __DIR__)
   @upload_fixture Path.expand("../support/hex_release_upload_fixture.py", __DIR__)
   @verifier Path.expand("../../scripts/publish/verify_install_truth.sh", __DIR__)
+  @tag_target_verifier Path.expand(
+                         "../../scripts/publish/verify_github_release_target.sh",
+                         __DIR__
+                       )
 
   setup do
     root =
@@ -172,6 +176,47 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert File.read!(captured) == File.read!(context.tarball)
   end
 
+  test "GitHub release target verification accepts exact lightweight and annotated tags",
+       context do
+    {remote, source_sha, _other_sha, _blob_sha} = create_tag_remote!(context.root)
+
+    assert {output, 0} =
+             verify_github_release_target(remote, "lockspire-v1.5.1-lightweight", source_sha)
+
+    assert output =~ source_sha
+
+    assert {output, 0} =
+             verify_github_release_target(remote, "lockspire-v1.5.1-annotated", source_sha)
+
+    assert output =~ source_sha
+  end
+
+  test "GitHub release target verification rejects missing and mismatched refs", context do
+    {remote, source_sha, other_sha, _blob_sha} = create_tag_remote!(context.root)
+
+    assert {output, 1} = verify_github_release_target(remote, "missing", source_sha)
+    assert output =~ "tag ref"
+
+    assert {output, 1} =
+             verify_github_release_target(remote, "lockspire-v1.5.1-mismatch", source_sha)
+
+    assert output =~ "not verified source"
+    assert output =~ other_sha
+  end
+
+  test "GitHub release target verification rejects malformed SHA and non-commit tag targets",
+       context do
+    {remote, source_sha, _other_sha, _blob_sha} = create_tag_remote!(context.root)
+
+    assert {output, 1} =
+             verify_github_release_target(remote, "lockspire-v1.5.1-lightweight", "not-a-sha")
+
+    assert output =~ "40-character"
+
+    assert {output, 1} = verify_github_release_target(remote, "lockspire-v1.5.1-blob", source_sha)
+    assert output =~ "not verified source"
+  end
+
   defp verify_local(context) do
     System.cmd(
       "python3",
@@ -187,6 +232,59 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
       ],
       stderr_to_stdout: true
     )
+  end
+
+  defp verify_github_release_target(remote, tag, source_sha) do
+    System.cmd(
+      "bash",
+      [@tag_target_verifier, tag, remote, source_sha],
+      stderr_to_stdout: true
+    )
+  end
+
+  defp create_tag_remote!(root) do
+    source = Path.join(root, "tag-source")
+    remote = Path.join(root, "tag-remote.git")
+    File.mkdir_p!(source)
+
+    git!(root, ["init", "--bare", remote])
+    git!(root, ["init", source])
+    git!(source, ["config", "user.name", "Lockspire Test"])
+    git!(source, ["config", "user.email", "lockspire-test@example.invalid"])
+
+    File.write!(Path.join(source, "README.md"), "first commit\n")
+    git!(source, ["add", "README.md"])
+    git!(source, ["commit", "-m", "first commit"])
+    source_sha = git!(source, ["rev-parse", "HEAD"])
+
+    git!(source, ["tag", "lockspire-v1.5.1-lightweight", source_sha])
+    git!(source, ["tag", "-a", "lockspire-v1.5.1-annotated", source_sha, "-m", "release tag"])
+
+    File.write!(Path.join(source, "README.md"), "second commit\n")
+    git!(source, ["add", "README.md"])
+    git!(source, ["commit", "-m", "second commit"])
+    other_sha = git!(source, ["rev-parse", "HEAD"])
+    git!(source, ["tag", "lockspire-v1.5.1-mismatch", other_sha])
+
+    blob_sha = git!(source, ["rev-parse", "HEAD:README.md"])
+    git!(source, ["tag", "-a", "lockspire-v1.5.1-blob", blob_sha, "-m", "non-commit tag"])
+    git!(source, ["remote", "add", "origin", remote])
+
+    git!(source, [
+      "push",
+      "origin",
+      "refs/tags/lockspire-v1.5.1-lightweight",
+      "refs/tags/lockspire-v1.5.1-annotated",
+      "refs/tags/lockspire-v1.5.1-mismatch",
+      "refs/tags/lockspire-v1.5.1-blob"
+    ])
+
+    {remote, source_sha, other_sha, blob_sha}
+  end
+
+  defp git!(cwd, args) do
+    assert {output, 0} = System.cmd("git", args, cd: cwd, stderr_to_stdout: true)
+    String.trim(output)
   end
 
   defp sha256(path) do
