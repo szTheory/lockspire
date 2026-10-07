@@ -13,7 +13,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 <details>
 <summary>🔄 v1.39 Verified 1.5.1 Release (active)</summary>
 
-- [ ] **Phase 142: Merge the Corrected Main Baseline** — Merge the corrected Phase 141 release record through review and prove the resulting exact `main` revision is ready for release.
+- [x] **Phase 142: Merge the Corrected Main Baseline** — Merge the corrected Phase 141 release record through review and prove the resulting exact `main` revision is ready for release. (completed 2026-10-07)
 - [ ] **Phase 143: Publish and Verify Lockspire 1.5.1** — Use the protected release workflow to publish and verify the exact 1.5.1 artifact, or record the failing gate and keep the milestone open.
 
 ### Phase 142: Merge the Corrected Main Baseline
@@ -27,20 +27,20 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 2. The post-merge local `main` and refreshed `origin/main` resolve to the same full commit SHA, and the canonical required CI run passes for that SHA.
 3. The exact-SHA repository-hygiene check reports no `BLOCK`, with every `WARN` disposition recorded; supplemental OIDF/FAPI results remain outside the release gate.
 
-**Plans**: 4 plans
+**Plans**: 4/4 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
+- [x] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 142-04-PLAN.md — Repair Release Hygiene Drift and establish verified live and checked-in publication holds plus main protection.
+- [x] 142-04-PLAN.md — Repair Release Hygiene Drift and establish verified live and checked-in publication holds plus main protection.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 142-02-PLAN.md — Recheck the remediated PR, live release timing and exact-head merge authorization.
+- [x] 142-02-PLAN.md — Recheck the remediated PR, live release timing and exact-head merge authorization.
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
+- [x] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
 
 ### Phase 143: Publish and Verify Lockspire 1.5.1
 
@@ -54,7 +54,26 @@ Plans:
 3. `.planning/RELEASE-TRAIN.md` records the actual public version, source SHA, canonical CI run, protected publish run, package checksum, GitHub release, and install-truth result.
 4. If any gate fails, publication or milestone completion stops, the evidence and blocker are recorded, and no record says 1.5.1 shipped.
 
-**Plans**: 0 plans
+**Plans**: 6 plans
+
+Plans:
+**Wave 1**
+- [x] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 143-04-PLAN.md — Review and merge release hardening, then accept fresh exact-main evidence.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 143-05-PLAN.md — Refresh candidate authorization and stage the manifest-bound prepublish artifact.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 143-06-PLAN.md — Approve or cancel the protected publish and record public release truth.
 
 </details>
 

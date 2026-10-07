@@ -240,13 +240,13 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-- [ ] The corrected Phase 141 release record is merged through a reviewed PR, and 1.5.0 remains the latest-release claim until public 1.5.1 proof exists.
-- [ ] Required CI and the repository-hygiene check pass for the exact current `main` revision before release dispatch.
 - [ ] The protected release workflow publishes one manifest-verified 1.5.1 artifact and proves its public checksum, matching GitHub release, and clean-room install journey.
 - [ ] Any failed release gate stops publication or completion, preserves its evidence, and records the blocker without claiming 1.5.1 shipped.
 
 ### Validated
 
+- ✓ The corrected Phase 141 release record is merged through a reviewed PR, and 1.5.0 remains the latest-release claim until public 1.5.1 proof exists — Phase 142; PR #113 merged at `6f1a19b39999f96eb24352c75c2a0628375175ae`, with public Hex/GitHub checks confirming no 1.5.1 release or tag.
+- ✓ Required CI and repository hygiene pass for the exact current `main` revision before release dispatch — Phase 142; all seven canonical jobs passed on the accepted SHA and the private receipt records 24 PASS, 0 WARN, 0 BLOCK.
 - Phase 132 aligned the public client and resource-server contract with shipped behavior: semantic `AccessToken` readers, shared capability-aware registration, exact redirect enforcement, durable fail-closed DPoP replay storage, truthful generated examples, and 16/16 modeled threats are verified.
 - Phase 131 delivered the executable packaged-install path: generated host/router/consent seams compile and run, migrations and managed files install and upgrade transactionally, `mix lockspire.verify` reports all required seams, default and opt-in FAPI smoke proofs match their profiles, and the generated consent flow completes through token exchange with 31/31 modeled threats closed.
 - Delivered v1.36 Structural Quality Ratchet: exact-ref release proof, executable quality and compatibility baselines, repaired storage boundaries, cohesive token internals, zero-warning Dialyzer, readable tests/runtime code, synchronized docs, and artifact hygiene were completed across Phases 126-130.
@@ -348,6 +348,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Bind protected publication to an active main-only update freeze and repeat exact-SHA checks immediately before package upload | Closes the interval where `main` could move after recovery validation but before upload; fail closed if the freeze or read-back cannot be established | Adopted and verified in Phase 142 via PR #113; publication remains Phase 143 work |
 | Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md) |
 | Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141; Lockspire 1.5.0 remains the latest public package |
 | Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
@@ -412,4 +413,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-06 after defining the v1.39 requirements and roadmap*
+*Last updated: 2026-10-07 after completing Phase 142*
