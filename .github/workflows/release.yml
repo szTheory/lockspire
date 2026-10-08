@@ -334,6 +334,7 @@ jobs:
           repositories: ${{ github.event.repository.name }}
           permission-administration: write
           permission-actions: read
+          permission-variables: read
       - name: Freeze main updates for the protected publish window
         id: release-freeze
         env:
