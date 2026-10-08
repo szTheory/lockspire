@@ -200,6 +200,14 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert postpublish =~ "release-input/release-manifest.json"
     assert postpublish =~ "postpublish-receipt.json"
     assert postpublish =~ "retained-release-evidence"
+
+    evidence_retention =
+      step!(postpublish, "Prepare bounded retained evidence", "Upload bounded release evidence")
+
+    assert evidence_retention =~ "publisher_compatibility: {"
+    assert evidence_retention =~ "hex_version: $manifest[0].runtime.publisher_hex"
+    assert evidence_retention =~ "api_export: true"
+    assert evidence_retention =~ "exact_byte_fixture: true"
     assert postpublish =~ "retention-days: 90"
     refute postpublish =~ "environment: hex-publish"
     refute postpublish =~ "HEX_API_KEY"

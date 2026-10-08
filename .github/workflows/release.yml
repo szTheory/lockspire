@@ -535,15 +535,20 @@ jobs:
             --tar "release-input/$package_name" \
             --manifest release-input/release-manifest.json \
             --source-sha "$VERIFIED_SHA"
-          jq -e --arg stage prepublish --slurpfile manifest release-input/release-manifest.json '
+          jq -e --slurpfile manifest release-input/release-manifest.json '
             . == {
               schema_version: 1,
-              stage: $stage,
+              stage: "prepublish",
               source_sha: $manifest[0].source_sha,
               package: $manifest[0].package,
               version: $manifest[0].version,
               sha256: $manifest[0].artifact.sha256,
-              status: "verified"
+              status: "verified",
+              publisher_compatibility: {
+                hex_version: $manifest[0].runtime.publisher_hex,
+                api_export: true,
+                exact_byte_fixture: true
+              }
             }
           ' release-input/prepublish-receipt.json >/dev/null
           mkdir -p retained-release-evidence
