@@ -4,6 +4,13 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.5.2](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.1...lockspire-v1.5.2) (2026-10-08)
+
+
+### Bug Fixes
+
+* **release:** retain complete prepublish evidence ([#120](https://github.com/szTheory/lockspire/issues/120)) ([ef6e33b](https://github.com/szTheory/lockspire/commit/ef6e33be2d8bc8ac438390495990b231b475466c))
+
 ## [1.5.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.0...lockspire-v1.5.1) (2026-09-26)
 
 

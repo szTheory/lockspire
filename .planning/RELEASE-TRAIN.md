@@ -6,8 +6,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->
-- Release Please date metadata: `2026-09-26` <!-- x-release-please-date -->
+- Release Please version metadata: `1.5.2` <!-- x-release-please-version -->
+- Release Please date metadata: `2026-10-08` <!-- x-release-please-date -->
 - Latest public package: Hex lists `1.5.0` as latest at the 2026-10-05 closure observation; the exact `1.5.1` release query returned HTTP 404. Release Please metadata above is not publication proof.
 - Published source: `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` passed and protected `workflow_dispatch` run `33141484467` published successfully for this same SHA.
 - Artifact truth: the published `lockspire-1.5.0` package checksum is `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`; the protected release run verified the exact package and public install journey.
