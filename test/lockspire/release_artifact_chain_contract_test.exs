@@ -159,6 +159,18 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert ruleset["target"] == "tag"
     assert ruleset["bypass_actors"] == []
     assert Enum.map(ruleset["rules"], & &1["type"]) |> Enum.sort() == ["deletion", "update"]
+    assert Enum.find(ruleset["rules"], &(&1["type"] == "update")) == %{"type" => "update"}
+
+    explicit_false_ruleset =
+      Map.update!(ruleset, "rules", fn rules ->
+        Enum.map(rules, fn rule ->
+          if rule["type"] == "update",
+            do: Map.put(rule, "parameters", %{"update_allows_fetch_and_merge" => false}),
+            else: rule
+        end)
+      end)
+
+    File.write!(ruleset_path, Jason.encode!(explicit_false_ruleset))
 
     assert {output, 0} =
              System.cmd(
@@ -174,6 +186,28 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
              System.cmd("git", ["--git-dir", remote, "rev-parse", "refs/tags/lockspire-v1.5.1"])
 
     assert String.trim(tag_sha) == source_sha
+
+    explicit_true_ruleset =
+      Map.update!(ruleset, "rules", fn rules ->
+        Enum.map(rules, fn rule ->
+          if rule["type"] == "update",
+            do: Map.put(rule, "parameters", %{"update_allows_fetch_and_merge" => true}),
+            else: rule
+        end)
+      end)
+
+    File.write!(ruleset_path, Jason.encode!(explicit_true_ruleset))
+
+    assert {output, 1} =
+             System.cmd(
+               "bash",
+               [@tag_guard, "preflight", "42", "lockspire-v1.5.1", source_sha],
+               env: env,
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "tag freeze is not the exact active no-bypass update/deletion lock"
+    File.write!(ruleset_path, Jason.encode!(ruleset))
 
     assert {output, 0} =
              System.cmd(
@@ -670,7 +704,9 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
       cat "$FAKE_RULESET_STATE"
     elif [[ "$request" == *"api --method POST repos/lockspire/fixture/rulesets --input -"* ]]; then
       jq --argjson id 42 --arg source "lockspire/fixture" \
-        '. + {id: $id, source_type: "Repository", source: $source}' > "$FAKE_RULESET_STATE"
+        '. + {id: $id, source_type: "Repository", source: $source}
+        | .rules |= map(if .type == "update" then del(.parameters) else . end)' \
+        > "$FAKE_RULESET_STATE"
       cat "$FAKE_RULESET_STATE"
     elif [[ "$request" == *"api --method POST repos/lockspire/fixture/git/refs --input -"* ]]; then
       payload="$(cat)"
