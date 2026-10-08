@@ -124,11 +124,13 @@ defmodule Lockspire.ReleaseCiEvidenceContractTest do
              "uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1"
 
     assert publish =~ "repositories: ${{ github.event.repository.name }}"
+
     assert publish =~
              "This pinned action does not expose the repository Variables permission."
 
     assert publish =~
              "grants: Administration: write, Actions: read, and Variables: read."
+
     refute Regex.match?(~r/^\s+permission-[a-z-]+:/m, publish)
     assert publish =~ "LOCKSPIRE_RELEASE_FREEZE_APP_ID"
     assert publish =~ "LOCKSPIRE_RELEASE_FREEZE_APP_PRIVATE_KEY"
