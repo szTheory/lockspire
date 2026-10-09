@@ -270,8 +270,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp clients_index_path(nil), do: Lockspire.mount_path() <> "/admin/clients"
 
   defp clients_index_path(filters),
-    do:
-      Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(Map.drop(filters, ["page"]))
+    do: Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(filters)
 
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
 

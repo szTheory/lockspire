@@ -307,8 +307,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
       assert {:noreply, socket} =
                Index.handle_params(
-                 %{"q" => "alpha", "status" => "disabled"},
-                 "/admin/clients?q=alpha&status=disabled",
+                 %{"q" => "alpha", "status" => "disabled", "page" => "3"},
+                 "/admin/clients?q=alpha&status=disabled&page=3",
                  socket
                )
 
@@ -317,6 +317,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
       assert error_html =~ "Could not load clients"
       assert error_html =~ "Your filters and investigation context are still available."
       assert error_html =~ "Reload this view"
+      assert [_, reload_href] =
+               Regex.run(~r/href="([^"]*page=3[^"]*)"/, error_html)
+
+      assert reload_href =~ "q=alpha"
+      assert reload_href =~ "status=disabled"
       assert error_html =~ ~s(value="alpha")
       assert error_html =~ ~s(value="disabled" selected)
       refute error_html =~ "No matching clients"
