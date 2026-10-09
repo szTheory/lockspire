@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; roadmap approved; Phase 144 planning in progress. No UI implementation or fresh browser proof is claimed.
+- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; roadmap approved; Phase 144 planned with four checked plans. No UI implementation or fresh browser proof is claimed.
 - ✅ **[v1.39 Verified 1.5.1 Release](milestones/v1.39-ROADMAP.md)** — Phases 142–143; Lockspire 1.5.1 shipped 2026-10-08. Phase 143's exact-head PR #119 merge-authorization gap was acknowledged at closeout; see the archived audit.
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
@@ -45,6 +45,7 @@ Refine the existing embedded LiveView operator UI through four complete delivery
 ## v1.40 Admin Operator UI Refinement
 
 ### Phase 144: Working Preview and Representative Journeys
+
 **Goal**: Operators can complete representative Configure and Support jobs in a working host-mounted UI whose shared visual and interaction patterns are ready to carry forward.
 **Depends on**: Nothing in v1.40; v1.39 is already archived and its acknowledged verification gap is non-blocking.
 **Requirements**: UIB-01, UIB-02, UIB-03
@@ -53,12 +54,27 @@ Refine the existing embedded LiveView operator UI through four complete delivery
   2. Operator can complete a client-configuration task on the mounted pages with a clear primary action, readable hierarchy, relevant validation, and coherent form and action groups.
   3. Operator can find a token or consent grant, inspect its context, and reach the relevant supported next action through a complete mounted investigation journey.
   4. Maintainer can compare representative before/after views and apply the demonstrated page, type, spacing, control, and domain-language patterns through existing shared components and tokens.
-**Plans**: TBD
+
+**Plans**: 4 plans
+Plans:
+**Wave 1**
+- [ ] 144-01-PLAN.md — Isolated host preview and fresh before-edit 29-workflow baseline
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 144-02-PLAN.md — Complete client inventory, detail, metadata save and error journey
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 144-03-PLAN.md — Token investigation and distinct token/family consequences
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 144-04-PLAN.md — Consent investigation and bounded served-browser proof
+
 **UI hint**: yes
 
 Planning note: Read [PRODUCT.md](../PRODUCT.md) and [UI-MILESTONE-PREFLIGHT.md](UI-MILESTONE-PREFLIGHT.md); establish the phase UI contract using Impeccable Operate guidance and the confirmed code-first preference, with installed Emil design/motion skills only where useful. Resolve the documented browser-baseline unknown before relying on screenshots. Implement representative complete jobs in this phase, not only a contract or scorecard refresh. Keep the host preview stable; use separate disposable data for mutating checks.
 
 ### Phase 145: Configure and Onboard
+
 **Goal**: Operators can configure supported clients, policies, credentials, onboarding, and keys through a coherent, safe workflow.
 **Depends on**: Phase 144
 **Requirements**: UIC-01, UIC-02, UIC-03, UIC-04, UIC-05, UIC-06
@@ -68,12 +84,14 @@ Planning note: Read [PRODUCT.md](../PRODUCT.md) and [UI-MILESTONE-PREFLIGHT.md](
   3. Operator can issue or rotate a supported client credential, understand the consequence, and complete its one-time handoff without a later redisclosure path.
   4. Operator can complete DCR onboarding and initial-access-token tasks with distinct token purposes, lifecycle, scope, and expiry made clear.
   5. Operator can inspect signing-key state and complete already-supported key actions with accurate consequence and outcome feedback.
+
 **Plans**: TBD
 **UI hint**: yes
 
 Planning note: Carry Phase 144's proven patterns into each changed Configure journey, including narrow/zoomed layout, keyboard and focus behavior, light/dark/system appearance, clear copy, redaction, and reduced motion. Preserve the host seam and supported security defaults.
 
 ### Phase 146: Support, Orient, and Operate
+
 **Goal**: Operators can investigate authorizations and operational state, distinguish missing evidence from healthy emptiness, and take only the supported action with a truthful result.
 **Depends on**: Phase 145
 **Requirements**: UIS-01, UIS-02, UIS-03, UIO-01, UIO-02, UIO-03
@@ -83,12 +101,14 @@ Planning note: Carry Phase 144's proven patterns into each changed Configure jou
   3. Operator can distinguish token, consent-grant, and refresh-family revocations, confirm the exact supported consequence, recover from failure, and see the actual resulting state.
   4. Operator can tell a successful empty token, consent, or device inventory from an unavailable observation; failed loads retain context and an existing recovery path, and the overview never presents unknown as measured zero or healthy.
   5. Operator can use the overview to choose a next task and inspect interaction, device, logout, and client propagation evidence with legible state and useful pivots; operation queues remain read-only.
+
 **Plans**: TBD
 **UI hint**: yes
 
 Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and reduced-motion rules into every changed Support, Orient, and Operate state. Narrow error-state repairs through existing admin/service seams are in scope; new queue controls or protocol actions are not.
 
 ### Phase 147: Surface Coherence and Working Preview
+
 **Goal**: The existing operator surface reads and behaves as one coherent interface, with bounded proof and a stable preview ready for optional user feedback.
 **Depends on**: Phase 146
 **Requirements**: UIQ-01, UIQ-02, UIQ-03, UIQ-04, UIQ-05, UIV-01, UIV-02, UIV-03, UIV-04
@@ -98,6 +118,7 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
   3. Operator can read and distinguish controls and status in light, dark, and system appearance with AA contrast targets, non-color-only cues, one clear selected theme preference, consistent domain language, and prompt feedback that respects reduced motion.
   4. Maintainer can inspect fresh rendered evidence across all 29 existing scorecards, with deeper state/theme/viewport checks chosen by risk, and run focused regressions against delivered styling and behavior with visible failures/skips and reliable claimed CI coverage.
   5. User can open a stable, documented synthetic-data preview and compare representative before/after views under matching conditions; the handoff records one batched finding list, fixes, one confirmation pass, current operator guidance, and explicit remaining limits.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -107,7 +128,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 144. Working Preview and Representative Journeys | v1.40 | 0/TBD | Not started | - |
+| 144. Working Preview and Representative Journeys | v1.40 | 0/4 | Planned | - |
 | 145. Configure and Onboard | v1.40 | 0/TBD | Not started | - |
 | 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |

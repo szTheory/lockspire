@@ -6,7 +6,7 @@
     {
       "number": "144",
       "name": "Working Preview and Representative Journeys",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "145",
@@ -26,8 +26,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 144)",
-    "reason": "Phase 144 of 4 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 144 of 4 · 0% · executing"
   },
-  "updated_at": "2026-10-09T13:11:47.248Z"
+  "updated_at": "2026-10-09T13:42:26.016Z"
 }
