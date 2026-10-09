@@ -12,8 +12,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
   def lifecycle_actions(assigns) do
     ~H"""
     <div>
-      <p :if={@action_error}>{@action_error}</p>
-      <p :if={@action_notice}>{@action_notice}</p>
+      <ul :if={@action_error} class="lockspire-admin-errors" role="alert">
+        <li>{@action_error}</li>
+      </ul>
+      <p :if={@action_notice} role="status" class="lockspire-admin-help lockspire-admin-help-block">
+        {@action_notice}
+      </p>
 
       <p :if={@key_detail.next_actions == []}>
         No lifecycle action is available for this key right now.
@@ -28,13 +32,17 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
               <span>
-                Publish this public key for verification overlap before activation.
+                Publish this public key so it is served in JWKS before activation.
                 Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes visible in JWKS while the current signer remains active.
+                becomes available to verifiers while the current signer remains active.
               </span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:primary}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:primary}
+                phx-disable-with="Publishing key…"
+              >
                 Publish key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -53,11 +61,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
               <span>
                 Activate this public key only when verifiers can accept the cutover signer.
                 Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes active and the previous active signer moves into retiring overlap.
+                becomes active; the previous signer moves to retiring overlap and remains in JWKS.
               </span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:primary}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:primary}
+                phx-disable-with="Activating key…"
+              >
                 Activate key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -77,11 +89,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
               <span>
                 Retire this public key only after verifiers have moved off publication overlap.
                 Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                leaves JWKS once retirement succeeds.
+                leaves the served JWKS when retirement succeeds.
               </span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:danger}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:danger}
+                phx-disable-with="Retiring key…"
+              >
                 Retire key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>

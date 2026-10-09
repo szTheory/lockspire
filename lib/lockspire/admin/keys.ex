@@ -11,6 +11,8 @@ defmodule Lockspire.Admin.Keys do
 
   @type lifecycle_action :: :publish | :activate | :retire
 
+  @private_jwk_members MapSet.new(~w(d p q dp dq qi oth k))
+
   @type key_view :: %{
           key: SigningKey.t() | map(),
           published: boolean(),
@@ -179,7 +181,7 @@ defmodule Lockspire.Admin.Keys do
     %{
       key: strip_private_key_material(key),
       published: not is_nil(key.published_at),
-      publishable: key.status in [:active, :retiring] or not is_nil(key.published_at),
+      publishable: publishable?(key),
       next_actions: next_actions(key)
     }
   end
@@ -207,10 +209,17 @@ defmodule Lockspire.Admin.Keys do
         }
       },
       published: not is_nil(key.published_at),
-      publishable: key.status in [:active, :retiring] or not is_nil(key.published_at),
+      publishable: publishable?(key),
       next_actions: next_actions(key)
     }
   end
+
+  defp publishable?(%SigningKey{status: status}) when status in [:active, :retiring], do: true
+
+  defp publishable?(%SigningKey{status: :upcoming, published_at: published_at}),
+    do: not is_nil(published_at)
+
+  defp publishable?(%SigningKey{}), do: false
 
   defp next_actions(%SigningKey{status: :upcoming, published_at: nil}), do: [:publish]
   defp next_actions(%SigningKey{status: :upcoming}), do: [:activate]
@@ -231,8 +240,21 @@ defmodule Lockspire.Admin.Keys do
   defp descending_unix(_value), do: 0
 
   defp strip_private_key_material(%SigningKey{} = key) do
-    %SigningKey{key | private_jwk_encrypted: nil}
+    %SigningKey{
+      key
+      | private_jwk_encrypted: nil,
+        public_jwk: public_jwk_members(key.public_jwk)
+    }
   end
+
+  defp public_jwk_members(public_jwk) when is_map(public_jwk) do
+    Map.reject(public_jwk, fn {member, _value} ->
+      (is_binary(member) or is_atom(member)) and
+        MapSet.member?(@private_jwk_members, to_string(member))
+    end)
+  end
+
+  defp public_jwk_members(_public_jwk), do: %{}
 
   defp key_handle(%SigningKey{} = key), do: Redaction.handle(:kid, key.kid)
 
