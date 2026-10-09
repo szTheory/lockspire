@@ -3,6 +3,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
   import Phoenix.LiveViewTest
 
+  alias Lockspire.Admin
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.Repository
@@ -258,6 +259,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Revoke token family"
     assert html =~ "family-wide refresh-token invalidation"
     assert html =~ "currently unrevoked tokens in the refresh family"
+    assert html =~
+             "Revoke this refresh token? This revokes only this token; other tokens in its refresh family remain unchanged."
+
+    assert html =~
+             "Revoke this refresh token family? This revokes the currently unrevoked tokens in this family."
+
+    assert html =~ ~s(phx-disable-with="Revoking this refresh token…")
+    assert html =~ ~s(phx-disable-with="Revoking this refresh token family…")
     refute html =~ "revokes every active token"
     refute html =~ "token-ui-refresh-hash"
     refute html =~ "family-ui-123"
@@ -318,12 +327,93 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              Show.handle_event("revoke_token", %{"revoke" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.token_detail.token.revoked_at
+    assert socket.assigns.token_detail.family_active_count == 1
     assert socket.assigns.token_detail.token.family_handle =~ "family_"
 
     assert {:noreply, socket} =
              Show.handle_event("revoke_family", %{"family" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.family_notice =~ "Revoked"
+    assert socket.assigns.family_notice =~ "1 currently unrevoked token(s)"
+    assert socket.assigns.token_detail.family_active_count == 0
+  end
+
+  test "token detail uses kind-specific single-record confirmations and revokes only the selected record", %{
+    refresh_token: refresh_token
+  } do
+    code =
+      store_support_token!(
+        token_hash: "token-ui-code-hash-must-not-render",
+        token_type: :authorization_code,
+        family_id: nil,
+        generation: 0
+      )
+
+    {_code_socket, code_html} = render_show_for(code)
+
+    assert code_html =~
+             "Revoke this authorization code? This revokes only this code."
+
+    assert code_html =~ ~s(phx-disable-with="Revoking this authorization code…")
+    refute code_html =~ "token-ui-code-hash-must-not-render"
+
+    assert {:ok, code_socket} = Show.mount(%{"id" => Integer.to_string(code.id)}, %{}, socket_for(:show))
+
+    assert {:noreply, code_socket} =
+             Show.handle_params(%{"id" => Integer.to_string(code.id)}, "/lockspire/admin/tokens/#{code.id}", code_socket)
+
+    assert {:noreply, code_socket} =
+             Show.handle_event("revoke_token", %{"revoke" => %{"confirm" => "true"}}, code_socket)
+
+    assert code_socket.assigns.token_detail.status == :revoked
+    assert {:ok, %{status: :active}} = Admin.get_token(refresh_token.id)
+
+    access_token =
+      store_support_token!(
+        token_hash: "token-ui-access-only-hash-must-not-render",
+        token_type: :access_token,
+        family_id: "family-ui-access-only",
+        consent_grant_id: 1234
+      )
+
+    {_access_socket, access_html} = render_show_for(access_token)
+
+    assert access_html =~
+             "Revoke this access token? This revokes only this token; other tokens in its refresh family remain unchanged."
+
+    assert access_html =~ "View client details"
+    assert access_html =~ "View consent grant"
+    refute access_html =~ "token-ui-access-only-hash-must-not-render"
+  end
+
+  test "token detail reports missing and unavailable records with a return path" do
+    assert {:ok, missing_socket} = Show.mount(%{"id" => "999999999"}, %{}, socket_for(:show))
+
+    assert {:noreply, missing_socket} =
+             Show.handle_params(%{"id" => "999999999"}, "/lockspire/admin/tokens/999999999", missing_socket)
+
+    missing_html = rendered_to_string(Show.render(missing_socket.assigns))
+    assert missing_html =~ "Token not found"
+    assert missing_html =~ "Review token investigation"
+    assert missing_html =~ ~s(href="/lockspire/admin/tokens")
+
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, String)
+      assert {:ok, failed_socket} = Show.mount(%{"id" => "2"}, %{}, socket_for(:show))
+
+      assert {:noreply, failed_socket} =
+               Show.handle_params(%{"id" => "2"}, "/lockspire/admin/tokens/2", failed_socket)
+
+      failed_html = rendered_to_string(Show.render(failed_socket.assigns))
+      assert failed_html =~ "Could not load token details"
+      assert failed_html =~ "Try loading token details again"
+      refute failed_html =~ "Token not found"
+      assert failed_html =~ ~s(href="/lockspire/admin/tokens/2")
+    after
+      Application.put_env(:lockspire, :repo, original_repo)
+    end
   end
 
   test "token detail clears stale sibling form errors after alternate revoke actions succeed", %{
