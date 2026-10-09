@@ -43,7 +43,7 @@ Progress: [███░░░░░░░] 25%
 - User invoked `$gsd-new-milestone Admin Operator UI Refinement` after approving the Impeccable audience and code-first setup. Read root PRODUCT.md and .planning/UI-MILESTONE-PREFLIGHT.md; do not repeat those initialization questions.
 - Reuse the completed source stocktake and sibling-project research for this milestone; no new ecosystem research pass or change to the standing research preference. Fresh browser inspection is still required in Phase 144.
 - Continue numbering after Phase 143. The GSD init helper reports v1.37 as latest completed because newer archive headings use Completed; MILESTONES.md and the v1.39 archive establish that v1.40 starts at Phase 144.
-- User’s `$gsd-plan-phase 144` instruction confirms the detailed requirements and roadmap for planning. No UI implementation, new visual proof, or phase completion is claimed.
+- User’s `$gsd-plan-phase 144` instruction confirmed the detailed requirements and roadmap. Configured auto-advance then executed all four Phase 144 plans; independent verification passed. The current implementation, browser proof, and explicit coverage limits are retained in the Phase 144 artifacts.
 - Approved sequence: Phase 144 proves shared improvements on mounted client-configuration and token/consent-investigation workflows; Phase 145 carries them through Configure/onboarding; Phase 146 covers Support, Orient, and read-only Operate including failed/unknown observations; Phase 147 owns bounded cross-surface acceptance and a stable optional-feedback preview. Every v1.40 requirement maps once; Phase 144 planning is authorized.
 - Earlier docs-backlog promotion is superseded. Phase 999.1 stays backlog. Historical v1.39 exceptions remain acknowledged and non-blocking.
 

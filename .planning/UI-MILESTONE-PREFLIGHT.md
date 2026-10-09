@@ -2,7 +2,7 @@
 
 Captured: 2026-10-09 UTC. Source inspected: `fd047a29b2fa247ab8d68a76cd9f57f00fe43feb`.
 
-Status: Preflight complete; v1.40 milestone kickoff is complete and Phase 144 planning is complete (2026-10-09). Impeccable init completed on 2026-10-09 after the user confirmed the recommended audience and code-first default. Durable product context is in [PRODUCT.md](../PRODUCT.md), and the workflow preference is in [.impeccable/config.json](../.impeccable/config.json). The user has invoked `$gsd-new-milestone Admin Operator UI Refinement`; the subsequent `$gsd-plan-phase 144` instruction confirms the requirements and roadmap in the canonical GSD files. No implementation or fresh browser proof is claimed, and the phase UI contract is approved in phases/144-working-preview-and-representative-journeys/144-UI-SPEC.md. This direction supersedes the conversation's proposed promotion of repository/docs polish. Phase 999.1 remains in the backlog. v1.39 and its acknowledged historical verification gap remain archived; neither needs to be reopened for UI work.
+Status: Preflight and v1.40 milestone kickoff are complete. Phase 144 was planned, executed, and independently verified on 2026-10-09; Phase 145 is next. Impeccable init completed on 2026-10-09 after the user confirmed the recommended audience and code-first default. Durable product context is in [PRODUCT.md](../PRODUCT.md), and the workflow preference is in [.impeccable/config.json](../.impeccable/config.json). The user's `$gsd-plan-phase 144` instruction confirmed the requirements and roadmap; configured auto-advance then executed all four plans. Current proof and its explicit limits are in [144-VERIFICATION.md](phases/144-working-preview-and-representative-journeys/144-VERIFICATION.md). This direction supersedes the conversation's proposed promotion of repository/docs polish. Phase 999.1 remains in the backlog. v1.39 and its acknowledged historical verification gap remain archived; neither needs to be reopened for UI work.
 
 ## User intent
 
@@ -94,20 +94,21 @@ Motion should clarify a real state change or interaction. Existing 150/220ms tok
 
 Impeccable init is complete. The user confirmed the recommended audience and chose code-first for future new UI surfaces. Honor the recorded preference in `.impeccable/config.json`; it is a default, not a prohibition on a later explicitly requested image comp. `PRODUCT.md` records product truth. Init did not create `DESIGN.md` or a surface brief and does not authorize replacement of the existing identity.
 
-Impeccable's launcher reported `hasVisualImplementation: false` when targeting an Elixir router despite the real UI above; that heuristic must not trigger a greenfield redesign. The optional live picker has not been configured: the library renders through Phoenix/Elixir and the current mounted demo has not been verified. Establish an actual injection target and working development preview before configuring it; a generic HTML/JavaScript-framework config is not evidence of Phoenix compatibility.
+Impeccable's launcher reported `hasVisualImplementation: false` when targeting an Elixir router despite the real UI above; that heuristic must not trigger a greenfield redesign. The optional live picker has not been configured. Phase 144 verified the working Phoenix/Elixir demo through guarded direct LiveView mounts; the public forwarded-router LiveView join limitation remains deferred. If the picker is later needed, establish an actual injection target; a generic HTML/JavaScript-framework config is not evidence of Phoenix compatibility.
 
-Phase 144 planning is complete; next execution command: `$gsd-execute-phase 144`.
+Phase 144 is complete: four executed plans, passed independent verification, and a retained stable preview. Phase 145 has no context or plans; next command: `$gsd-discuss-phase 145`.
 
-Completed command:
+Completed planning and auto-advanced execution:
 
 ```text
 $gsd-plan-phase 144
+$gsd-execute-phase 144 --auto --no-transition
 ```
 
-Read this preflight and root `PRODUCT.md` when resuming. Product initialization and its two choices are settled; execute the checked Phase 144 plans without repeating init, scope questions or planning.
+Read this preflight, root `PRODUCT.md`, `.planning/STATE.md`, and the Phase 144 verification/preview receipts when resuming. Product initialization and its two choices are settled. Carry the proven patterns into Phase 145 without repeating init, the baseline inventory, or completed Phase 144 work.
 
 The milestone kickoff targets v1.40, with phase numbering continuing after 143. The canonical roadmap owns the phase decomposition and STATE.md records its approval status. The earlier docs-focused scope confirmation is superseded by the user's UI direction.
 
 GSD owns requirements, sequencing and completion. Impeccable supplies design reasoning and scoped refinement. When a UI phase is actually planned, carry confirmed choices into its UI contract and delegated required reading rather than assuming subagents inherit this conversation.
 
-Documented preview startup: `make demo`, then `http://lockspire-demo.localhost/lockspire/admin`, login `ops`. See [adoption demo guide](../docs/adoption-demo.md). This command was not run during preflight and the URL is not currently a verified working preview. Keep a future feedback preview stable and run mutating fixture verification in a separate disposable instance.
+Verified stable preview: `http://127.0.0.1:4121/lockspire/admin`, synthetic login `ops` (`ops@billingo.test`). Use [144-PREVIEW.md](phases/144-working-preview-and-representative-journeys/144-PREVIEW.md) for the isolated environment and app-only refresh recipe; preserve its data. Mutating checks belong on the separate disposable instance at 4122, and root tests use their dedicated database. Do not rerun the destructive demo bootstrap to refresh source.
