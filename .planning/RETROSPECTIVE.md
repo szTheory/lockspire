@@ -296,12 +296,45 @@
 
 ---
 
+## Milestone: v1.39 — Verified 1.5.1 Release
+
+**Shipped:** 2026-10-09
+**Phases:** 2 | **Plans:** 10 | **Tasks:** 14
+
+### What Was Built
+- Corrected the main release baseline and published Lockspire 1.5.1 through the protected exact-source workflow.
+- Bound one source and package artifact across canonical CI, repository hygiene, prepublish proof, public checksum, GitHub release/tag, docs, clean-room install, and terminal receipt.
+- Preserved unsuccessful and partial release outcomes without claiming the workflow succeeded when evidence retention failed.
+
+### What Worked
+- Exact-source receipts made the public package claim independently checkable across CI, Hex, GitHub, docs, and installation.
+- Focused release contract tests covered tag targets, manifest identity, exact-byte publication, and partial terminal outcomes.
+
+### What Was Inefficient
+- The retained records do not contain PR #119's exact-head merge authorization. A later protected publication approval is separate, so Phase 143 remains `gaps_found` despite verified public artifact proof.
+- The first protected attempt stopped before upload on missing freeze configuration; its blocker and the later successful publication are both retained.
+
+### Patterns Established
+- Record source-PR merge decisions and protected publication approvals as separate, exact-identity decisions.
+- Keep public artifact truth independent from the overall workflow result when post-publication evidence retention fails.
+
+### Key Lessons
+1. Retain the precise PR head and its merge decision before merge; publication approval cannot repair missing merge provenance after the fact.
+2. Do not turn an acknowledged historical evidence gap into a blocker for unrelated forward development; preserve its formal status and record the disposition.
+
+### Cost Observations
+- Model mix and session count: not recorded.
+- Notable: Targeted release tests passed 32/32 with a temporary writable Hex home; the failed cache attempt was an environment permission issue, not a code failure.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.39 | N/A | 2 | Verified the public 1.5.1 artifact across exact-source CI, protected publication, and install proof while retaining a separate accepted merge-provenance gap. |
 | v1.38 | N/A | 4 | Exact-source maintenance evidence and automated closeout returned the project to its sustaining release train. |
 | v1.37 | N/A | 7 | Packaged adoption, real SaaS integration, architecture quality, conformance evidence, and exact-artifact release proof converged into one acceptance spine. |
 | v1.36 | N/A | 5 | Structural quality moved release, CI, architecture, token policy, and repository proof from convention to executable contracts. |
@@ -315,6 +348,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.39 | Focused release contracts, exact-main CI, package checksum, tag/docs/install, and terminal receipt | N/A (release-engineering milestone) | Manifest-bound publisher, exact tag checks, per-stage terminal release receipts |
 | v1.38 | Exact-source CI/release proof and portable lifecycle contracts | N/A (maintenance milestone) | Repository inventory and closeout automation |
 | v1.37 | Canonical CI, clean-room provider/client/resource journey, dual-router Sobelow, architecture/quality gates, OIDF receipts, and protected public release proof | 84%+ complete suite | Semantic token readers, neutral client lifecycle, aggregate stores, typed token collaborators, immutable evidence scripts |
 | v1.36 | Exact-ref release contracts, quality gates, architecture fitness tests, Dialyzer, split proof suites, and final integration flows | 73% floor | Storage ports/services, lifetime policy, private JWK decoder, shared isolation helpers |

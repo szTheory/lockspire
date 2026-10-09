@@ -1,41 +1,38 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.39
-current_phase: 143
-current_phase_name: Publish and Verify Lockspire 1.5.1
-current_plan: 4
-status: executing
-stopped_at: Completed 143-03-PLAN.md
-last_updated: "2026-10-07T17:55:50.000Z"
-last_activity: 2026-10-07
-last_activity_desc: Phase 143 Plan 03 completed; Plan 04 is next
-state_head: d00b34b15bbb46cf9df60316f07ad1a747ab7259
+status: v1.39 archived with the Phase 143 verification gap acknowledged for forward development; ready to define the next milestone
+stopped_at: "v1.39 archived with accepted Phase 143 gap; next command: $gsd-new-milestone"
+last_updated: "2026-10-09T01:34:55.747Z"
+last_activity: 2026-10-08
+last_activity_desc: v1.39 release milestone archived with the accepted Phase 143 gap
+state_head: 996df96bdddc9529419fd8844d0f40e421eb5d6b
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 10
-  completed_plans: 8
+  completed_plans: 10
 milestone_name: Verified 1.5.1 Release
+current_phase: 143
+current_phase_name: Publish and Verify Lockspire 1.5.1
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-07)
+See: .planning/PROJECT.md (updated 2026-10-09)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 143 — Publish and Verify Lockspire 1.5.1
+**Current focus:** Planning next milestone — run $gsd-new-milestone
 
 ## Current Position
 
-Current Plan: 4
-Total Plans in Phase: 6
-Phase: 143 (Publish and Verify Lockspire 1.5.1) — IN PROGRESS
-Plan: 4 of 6
-Status: Ready to execute
-Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
+Phase: Milestone v1.39 complete
+Plan: —
+Status: v1.39 archived with the Phase 143 verification gap acknowledged for forward development; ready to define the next milestone
+Last activity: 2026-10-08 — v1.39 release milestone archived with the accepted Phase 143 gap
 
 ## Accumulated Context
 
@@ -44,6 +41,13 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 - Release PR #93 merged the 1.5.0 bookkeeping at `02e74366`; release automation hardening #94 produced source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`.
 - Canonical `main` CI run `33141161205` passed at that SHA; protected release run `33141484467` published and re-verified the exact tar (SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`).
 - Supplemental OIDF run `33139876101` retained redacted, non-certifying suite-failure evidence; it is not a release gate or certification claim.
+
+### Verified Publication: 1.5.1 (2026-10-08)
+
+- Published source SHA: `0b56503859b69531ff86d8e4a465a0e75f963594`; Hex package SHA-256: `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`.
+- Protected run `37795671282` published and independently verified Hex checksum, docs, GitHub release/tag target, and clean-room install. Its terminal receipt says `release_verified: true`; the overall run failed only at bounded evidence retention.
+- PR #119 fixed the pinned GitHub App token input; PR #120 fixed receipt retention and merged as current `main` `ef6e33be2d8bc8ac438390495990b231b475466c`. Main CI `37800419349` and Release push `37800419385` passed.
+- This publication record supersedes the historical no-publish observations below. The active release-train and roadmap records have been reconciled locally; commit and merge them through the normal project flow before milestone archival.
 
 ### Decisions
 
@@ -161,6 +165,13 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 - [Phase 143]: The protected Hex publisher installs the manifest's `runtime.publisher_hex`, which must equal builder `runtime.hex`; prepublish proof records API export and exact-byte fixture success for this selected archive only.
 - [Phase 143]: Terminal receipts preserve per-stage `passed`/`failed`/`not_run`/`unknown` state and separate public Hex presence from complete verification; missing checksums and tag targets remain unknown.
 
+- [Phase 143]: Phase 143 Plan 04 merged reviewed PR #114 at exact head 0d8b8db3e9625b9934122abd8a72d181b716cd0e; current main e9e44667d0ee04e8978d14e007d6bc23666d29eb has matching successful CI and hygiene evidence, and the Release push ended no_publish.
+- [Phase 143, first attempt]: Release Please auto-merge was disabled and one-use authorization cleared after run 37689835922. PR merge approval did not authorize publication; automation was restored only after the later exact-candidate publication proof.
+
+- [Phase 143]: Approve only the exact run and candidate covered by the user's publication decision; a failed attempt does not authorize a replacement run.
+
+- Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the historical attempt in `143-RESULT.md`.
+
 ### Pending Todos
 
 - Phase 138: UAT #100 remains pending an authorized live snapshot refresh; current inventory dispositions remain proposal-only until exact-target revalidation and action authority.
@@ -170,12 +181,12 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 ### Blockers/Concerns
 
 - Phase 140 is complete through the post-summary exact-SHA receipt for `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. The tracked 30/32 verification result remains a historical pre-terminal record; its two CI truths have private terminal evidence linked from the Phase 141 baseline. The live `5259a654` post-transition probe remains a failed historical observation with its original disposition; do not broaden the historical classifier.
-- The 1.5.0 publication chain remains the latest public release. Phase 141 and its documentation commits are planning records; they did not publish a package or change release-owned metadata.
+- Phase 141 and its documentation commits were planning records and did not publish a package or change release-owned metadata. The latest public release is now 1.5.1 as recorded above.
+- Phase 143 verification remains `gaps_found` at 16/18. The published 1.5.1 artifact is verified, but the final publication source includes PR #119 without a retained exact-head maintainer merge decision. The user acknowledged this exception for forward project development; do not infer historical merge authorization from the separate deployment approval.
 - Supported receipt supersession archived predecessor `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` and wrote pending recovery-v2 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The live post-transition probe at `5259a654` still failed before the no-publish barrier because the strict classifier accepts only the historical planning prefix. Preserve both receipts and the failure; Plan 140-14 proves the proper historical entry point without broadening production authority.
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
-- Phase 142 completed against exact current `main` SHA `6f1a19b39999f96eb24352c75c2a0628375175ae`: PR #113 and all seven CI jobs passed, exact-source hygiene was 24 PASS / 0 WARN / 0 BLOCK, and Release ended `no_publish`. Public Hex/GitHub truth remains 1.5.0 with no 1.5.1 release or tag. Phase 143 must revalidate its current source and controls; this completion does not authorize publication. A failed freeze setup that returns no usable ruleset ID may require administrator cleanup, but it fails closed.
 
 ### Quick Tasks Completed
 
@@ -184,6 +195,10 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 | 260924-mhp | Classify active UAT lifecycle records from structured status and document shape | 2026-09-24 | 37a1d62c | [260924-mhp-classify-active-uat-records-in-the-phase](./quick/260924-mhp-classify-active-uat-records-in-the-phase/) |
 | 2 | 260925-x8y: classify structurally valid status: testing UAT as active evidence | 2026-09-26 | f0270d2d | — |
 | 260926-c7l | Refresh Phase 139 verification across all 13 plans | 2026-09-26 | 285c6c62 | [260926-c7l-refresh-phase-139-s-canonical-verificati](./quick/260926-c7l-refresh-phase-139-s-canonical-verificati/) |
+
+### Roadmap Evolution
+
+- Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 
 ## Deferred Items
 
@@ -194,11 +209,12 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 | Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 |
 | Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 | Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
+| Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 |
 
 ## Session Continuity
 
-Last session: 2026-10-07T17:31:17.279Z
-Stopped at: Completed 143-01-PLAN.md
+Last session: 2026-10-09T00:59:07Z
+Stopped at: v1.39 archived with accepted Phase 143 gap; next command: $gsd-new-milestone
 Resume file: None
 
 ## Performance Metrics
@@ -278,4 +294,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start the next milestone with $gsd-new-milestone

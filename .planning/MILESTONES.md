@@ -1,5 +1,32 @@
 # Milestones
 
+## v1.39 Verified 1.5.1 Release (Completed: 2026-10-08)
+
+**Delivered:** Lockspire 1.5.1 was published and verified from exact source `0b56503859b69531ff86d8e4a465a0e75f963594`, with matching canonical CI, protected run, package checksum, GitHub release/tag, docs, and clean-room install proof.
+
+**Phases:** 2 (Phase 142 verification passed; Phase 143 executed with its verification gap acknowledged at closeout) · **Plans:** 10 · **Tasks:** 14.
+
+**Key accomplishments:**
+- Corrected and verified the main release baseline and exact-SHA readiness evidence.
+- Bound the protected publication to one manifest-verified Hex archive and checked its source, checksum, release/tag target, docs, and public install journey.
+- Added exact GitHub tag-target checks, manifest-bound publisher validation, and per-stage terminal receipts for complete and partial release outcomes.
+- Kept the later bounded evidence-retention failure visible even though the protected run's public release checks passed and the terminal receipt was retained.
+
+**Known verification overrides: 1 newly acknowledged, 3 carried forward (see STATE.md Deferred Items).** Phase 143 remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap as non-blocking for forward development. The separate protected publication approval does not establish PR merge authorization.
+
+### Known Gaps
+
+- **REL-01:** Retained records do not establish an exact-head maintainer merge decision for PR #119. The protected 1.5.1 publication proof is verified; its environment approval is separate from merge authorization.
+- **REL-02 and REL-03:** The archived requirements remain unchecked under the milestone audit's three-source rule because Phase 143 is `gaps_found`. The Phase 143 requirements table directly records both as satisfied, and the public artifact and truthful terminal-receipt outcomes are verified; these pending rows do not indicate a missing release artifact.
+
+**Audit:** [v1.39 milestone audit](milestones/v1.39-MILESTONE-AUDIT.md) (`gaps_found`; closeout proceeded with the accepted exception).
+
+**Release proof:** canonical CI `37788996197`; protected publish run `37795671282`; public checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`.
+
+**Archives:** `milestones/v1.39-ROADMAP.md`, `milestones/v1.39-REQUIREMENTS.md`, `milestones/v1.39-MILESTONE-AUDIT.md`, `milestones/v1.39-phases/` · **Package release:** Lockspire 1.5.1.
+
+---
+
 ## v1.38 Repository Baseline & Reconciliation (Completed: 2026-10-06)
 
 **Delivered:** Closed the maintenance baseline with a dated, source-linked handoff, reconciled Phase 140's terminal exact-SHA acceptance, and returned Lockspire to its sustaining GA release train. This is planning completion only; it did not publish a package.

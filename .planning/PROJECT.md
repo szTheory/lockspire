@@ -25,7 +25,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 **Delivered:** Phases 138-141 closed the repository evidence baseline, exact-SHA required CI and Release no-publish acceptance, and a sustaining-train handoff. This v1.38 completion archives planning only and publishes no package; Lockspire 1.5.0 remains the latest public release. Three audit items were acknowledged at closeout: one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See [MILESTONES.md](MILESTONES.md) and [STATE.md](STATE.md).
 
-## Current Milestone: v1.39 Verified 1.5.1 Release
+## Completed Milestone: v1.39 Verified 1.5.1 Release
 
 **Goal:** Correct the release record on `main`, land the reviewed Phase 141 baseline, and publish Lockspire 1.5.1 only after exact-main checks and protected artifact verification pass.
 
@@ -36,6 +36,8 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 - If any gate fails, preserve the evidence, record the blocker, and make no claim that 1.5.1 shipped.
 
 **Verification:** Use the existing required CI, repository-hygiene, protected publish, and public install checks as the acceptance evidence. Do not add a manual UAT step for a property those checks prove.
+
+**Delivered:** Phase 142 corrected and verified the main baseline. Phase 143 published and verified Lockspire 1.5.1 from `0b56503859b69531ff86d8e4a465a0e75f963594`, with canonical CI, protected run, package checksum, release/tag target, docs, and clean-room install evidence joined in the release receipt. The Phase 143 verifier remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap for forward development; no approval is inferred from the separate publication approval. See the [milestone audit](v1.39-MILESTONE-AUDIT.md) and [milestone history](MILESTONES.md).
 
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
@@ -56,7 +58,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 ## Current State
 
-v1.39 requirements are defined and its two-phase roadmap is proposed for review. The Phase 141 branch has corrected release-truth records but is not yet merged to `main`; current remote `main` still incorrectly labels 1.5.1 as released. Hex and GitHub evidence show 1.5.0 is the latest public release. The milestone must merge the correction, establish fresh exact-current-main release gates, and publish 1.5.1 through the protected workflow only if every gate passes.
+The v1.39 release milestone is complete: Lockspire 1.5.1 is public and its source, canonical CI, protected run, package checksum, GitHub release/tag, docs, and clean-room install proof agree. The exact-head merge authorization for PR #119 is absent from retained records, so the Phase 143 verification and milestone audit preserve that gap as acknowledged for forward development.
 
 The completed v1.38 planning milestone returned the repository to its sustaining GA release train without publishing a package. Its Phase 140 post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits.
 
@@ -68,7 +70,7 @@ Lockspire now supports a full embedded-provider-to-resource-server path: authori
 
 Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
 
-The most recently shipped work, v1.37 / Lockspire 1.5.0, turned those foundations into an executable packaged-provider journey and a checksum-bound public release with canonical CI, conformance receipts, HexDocs, and clean-room install proof.
+The most recently shipped work is Lockspire 1.5.1, released through the protected exact-source workflow. v1.37 / Lockspire 1.5.0 established the executable packaged-provider journey and checksum-bound public release baseline.
 
 Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
 
@@ -240,11 +242,12 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-- [ ] The protected release workflow publishes one manifest-verified 1.5.1 artifact and proves its public checksum, matching GitHub release, and clean-room install journey.
-- [ ] Any failed release gate stops publication or completion, preserves its evidence, and records the blocker without claiming 1.5.1 shipped.
+No next-milestone requirements are defined yet; set scope through `$gsd-new-milestone`.
 
 ### Validated
 
+- ✓ The protected release workflow published one manifest-verified 1.5.1 artifact with matching public checksum, GitHub release/tag, docs, and clean-room install proof — Phase 143; source `0b56503859b69531ff86d8e4a465a0e75f963594`, CI `37788996197`, protected run `37795671282`, checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`. The phase audit still records the separate PR #119 merge-authorization gap.
+- ✓ Failed release attempts preserve per-stage evidence and distinguish public package presence from complete verification — Phase 143; the first failed attempt and the later evidence-retention failure are recorded without inferring a successful workflow or inventing missing evidence.
 - ✓ The corrected Phase 141 release record is merged through a reviewed PR, and 1.5.0 remains the latest-release claim until public 1.5.1 proof exists — Phase 142; PR #113 merged at `6f1a19b39999f96eb24352c75c2a0628375175ae`, with public Hex/GitHub checks confirming no 1.5.1 release or tag.
 - ✓ Required CI and repository hygiene pass for the exact current `main` revision before release dispatch — Phase 142; all seven canonical jobs passed on the accepted SHA and the private receipt records 24 PASS, 0 WARN, 0 BLOCK.
 - Phase 132 aligned the public client and resource-server contract with shipped behavior: semantic `AccessToken` readers, shared capability-aware registration, exact redirect enforcement, durable fail-closed DPoP replay storage, truthful generated examples, and 16/16 modeled threats are verified.
@@ -348,9 +351,10 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Bind protected publication to an active main-only update freeze and repeat exact-SHA checks immediately before package upload | Closes the interval where `main` could move after recovery validation but before upload; fail closed if the freeze or read-back cannot be established | Adopted and verified in Phase 142 via PR #113; publication remains Phase 143 work |
+| Bind protected publication to an active main-only update freeze and repeat exact-SHA checks immediately before package upload | Closes the interval where `main` could move after recovery validation but before upload; fail closed if the freeze or read-back cannot be established | Adopted and verified across Phases 142–143; Lockspire 1.5.1 was published from exact source `0b56503859b69531ff86d8e4a465a0e75f963594` |
+| Keep PR merge authorization separate from protected publication approval | A deployment approval for one exact source SHA does not establish that a source PR's exact head was approved for merge | Adopted in Phase 143; the missing PR #119 merge record remains an acknowledged verification gap and is not inferred from the publication approval |
 | Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md) |
-| Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141; Lockspire 1.5.0 remains the latest public package |
+| Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141 and verified in Phase 143; public Lockspire 1.5.1 is confirmed while the separate PR #119 provenance gap remains explicit |
 | Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
 | Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |
 | Keep the v1.38 baseline immutable and proposal-only, with lifecycle movement authorized by exact receipts and semantic classifiers | Reconciliation needs a stable evidence boundary without mistaking publication for cleanup authority or treating ordinary GSD bookkeeping as evidence drift | Adopted and verified in Phase 138; Phase 139 consumes ledger `b8b9ad75` |
@@ -413,4 +417,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-07 after completing Phase 142*
+*Last updated: 2026-10-09 after completing the v1.39 release milestone*

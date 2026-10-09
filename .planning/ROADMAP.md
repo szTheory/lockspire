@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🔄 **v1.39 Verified 1.5.1 Release** — Phases 142–143 (active; publish only after exact-main checks and protected verification pass).
+- ✅ **[v1.39 Verified 1.5.1 Release](milestones/v1.39-ROADMAP.md)** — Phases 142–143; Lockspire 1.5.1 shipped 2026-10-08. Phase 143's exact-head PR #119 merge-authorization gap was acknowledged at closeout; see the archived audit.
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
 
@@ -11,86 +11,22 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 ## Phases
 
 <details>
-<summary>🔄 v1.39 Verified 1.5.1 Release (active)</summary>
+<summary>✅ v1.39 Verified 1.5.1 Release — completed 2026-10-08 with an acknowledged verification gap</summary>
 
-- [x] **Phase 142: Merge the Corrected Main Baseline** — Merge the corrected Phase 141 release record through review and prove the resulting exact `main` revision is ready for release. (completed 2026-10-07)
-- [ ] **Phase 143: Publish and Verify Lockspire 1.5.1** — Use the protected release workflow to publish and verify the exact 1.5.1 artifact, or record the failing gate and keep the milestone open.
-
-### Phase 142: Merge the Corrected Main Baseline
-
-**Goal**: Maintainers merge the reviewed Phase 141 correction so `main` truthfully identifies 1.5.0 as the latest public package until 1.5.1 has public proof, then establish a green, exact-current-main release candidate.
-**Depends on**: None
-**Requirements**: TRUTH-06, CI-09
-**Success Criteria** (what must be TRUE):
-
-1. The correction lands through the normal reviewed PR path, and release records continue to identify 1.5.0 as latest until a verified 1.5.1 publication exists.
-2. The post-merge local `main` and refreshed `origin/main` resolve to the same full commit SHA, and the canonical required CI run passes for that SHA.
-3. The exact-SHA repository-hygiene check reports no `BLOCK`, with every `WARN` disposition recorded; supplemental OIDF/FAPI results remain outside the release gate.
-
-**Plans**: 4/4 plans complete
-
-Plans:
-**Wave 1**
-- [x] 142-01-PLAN.md — Correct and test the Phase 141 baseline link in a reviewed PR.
-
-**Wave 2** *(blocked on Wave 1 completion)*
-- [x] 142-04-PLAN.md — Repair Release Hygiene Drift and establish verified live and checked-in publication holds plus main protection.
-
-**Wave 3** *(blocked on Wave 2 completion)*
-- [x] 142-02-PLAN.md — Recheck the remediated PR, live release timing and exact-head merge authorization.
-
-**Wave 4** *(blocked on Wave 3 completion)*
-- [x] 142-03-PLAN.md — Merge the approved correction and record exact-main CI and hygiene acceptance.
-
-### Phase 143: Publish and Verify Lockspire 1.5.1
-
-**Goal**: Maintainers publish Lockspire 1.5.1 from the approved exact `main` revision through the protected workflow and record the matching public package proof.
-**Depends on**: Phase 142
-**Requirements**: REL-01, REL-02, REL-03
-**Success Criteria** (what must be TRUE):
-
-1. The protected workflow validates that the 1.5.1 source is the exact current `main` SHA and has its own matching successful canonical CI run before publication.
-2. The workflow publishes the same manifest-verified artifact it proved before publication; public Hex checksum, `lockspire-v1.5.1` release target, and clean-room install proof all match that artifact and source.
-3. `.planning/RELEASE-TRAIN.md` records the actual public version, source SHA, canonical CI run, protected publish run, package checksum, GitHub release, and install-truth result.
-4. If any gate fails, publication or milestone completion stops, the evidence and blocker are recorded, and no record says 1.5.1 shipped.
-
-**Plans**: 6 plans
-
-Plans:
-**Wave 1**
-- [x] 143-01-PLAN.md — Validate the actual GitHub tag target against the verified source SHA.
-
-**Wave 2** *(blocked on Wave 1 completion)*
-- [x] 143-02-PLAN.md — Pin a compatible Hex publisher client and prove exact-tar upload.
-
-**Wave 3** *(blocked on Wave 2 completion)*
-- [x] 143-03-PLAN.md — Preserve terminal partial-outcome receipts and maintainer recovery guidance.
-
-**Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 143-04-PLAN.md — Review and merge release hardening, then accept fresh exact-main evidence.
-
-**Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 143-05-PLAN.md — Refresh candidate authorization and stage the manifest-bound prepublish artifact.
-
-**Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 143-06-PLAN.md — Approve or cancel the protected publish and record public release truth.
+- [x] Phase 142: Merge the Corrected Main Baseline — 4/4 plans; verification passed 11/11.
+- [ ] Phase 143: Publish and Verify Lockspire 1.5.1 — 6/6 plans executed; public artifact verified; `gaps_found` (16/18) for the unrecorded exact-head PR #119 merge decision. User acknowledged this historical gap; milestone closeout proceeded with an override.
 
 </details>
 
 <details>
 <summary>✅ v1.38 Repository Baseline & Reconciliation (completed 2026-10-06)</summary>
 
-- [x] Phase 138: Baseline Inventory & Evidence Taxonomy — 38/38 plans; verification report passed.
-- [x] Phase 139: Required Truth Reconciliation — 16/16 plans; `gaps_found` report retained and acknowledged at closeout.
-- [x] Phase 140: Bounded Operational Loose-End Triage — 18/18 plans; historical 30/32 report retained, with terminal CI-06/CI-07 acceptance linked from Phase 141.
-- [x] Phase 141: Maintenance-Baseline Closure — 1/1 plan; verification report passed.
-
-Closeout acknowledged one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See the [closeout record](MILESTONES.md) and [STATE.md](STATE.md). The latest public package remains 1.5.0.
+- [x] Phases 138–141: 73 plans; completed with acknowledged Phase 139/140 verification gaps.
 
 </details>
 
 <details>
-<summary>✅ v1.37 Prime-Time Readiness Ratchet (Phases 131–137) — SHIPPED 2026-08-28</summary>
+<summary>✅ v1.37 Prime-Time Readiness Ratchet (Phases 131–137) — shipped 2026-08-28</summary>
 
 - [x] Phases 131–137: 58/58 plans complete; released as Lockspire 1.5.0.
 
