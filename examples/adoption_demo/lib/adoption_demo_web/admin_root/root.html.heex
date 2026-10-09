@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />
+    <script src="/lockspire-assets/phoenix.js" defer></script>
+    <script src="/lockspire-assets/phoenix_live_view.js" defer></script>
+    <script src="/lockspire-assets/lockspire-admin-live-view.js" defer></script>
+    <title>Lockspire admin - Billingo</title>
+  </head>
+  <body>
+    {@inner_content}
+  </body>
+</html>

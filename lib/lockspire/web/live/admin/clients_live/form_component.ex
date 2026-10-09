@@ -553,13 +553,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     }
   end
 
-  defp field_errors(errors, field) do
-    Enum.filter(errors, &(is_map(&1) and Map.get(&1, :field) == field))
-  end
-
-  defp client_detail_path(%Client{client_id: client_id}),
-    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
-
   defp defaults_for(:par_policy, %Client{} = client) do
     %{
       par_policy: Atom.to_string(client.par_policy)
@@ -591,6 +584,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   end
 
   defp submitted_defaults(defaults, _params), do: defaults
+
+  defp field_errors(errors, field) do
+    Enum.filter(errors, &(is_map(&1) and Map.get(&1, :field) == field))
+  end
+
+  defp client_detail_path(%Client{client_id: client_id}),
+    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
 
   # `nil` means inherit (no `:inherit` sentinel is stored), so the inherit option
   # must pre-select for a nil override. Unlike `dpop_policy`, which stores a real atom.
