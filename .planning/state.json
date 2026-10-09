@@ -1,23 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.39",
+  "milestone": "v1.40 — Admin Operator UI Refinement",
   "phases": [
     {
-      "number": "142",
-      "name": "Merge the Corrected Main Baseline",
-      "status": "complete"
+      "number": "144",
+      "name": "Working Preview and Representative Journeys",
+      "status": "pending"
     },
     {
-      "number": "143",
-      "name": "Publish and Verify Lockspire 1.5.1",
-      "status": "in_progress"
+      "number": "145",
+      "name": "Configure and Onboard",
+      "status": "pending"
+    },
+    {
+      "number": "146",
+      "name": "Support, Orient, and Operate",
+      "status": "pending"
+    },
+    {
+      "number": "147",
+      "name": "Surface Coherence and Working Preview",
+      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd:new-milestone",
-    "label": "Start the next milestone",
-    "reason": "v1.39 is archived; define the next milestone scope"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step (plan phase 144)",
+    "reason": "Phase 144 of 4 — needs a plan"
   },
-  "updated_at": "2026-10-09T01:31:00Z"
+  "updated_at": "2026-10-09T13:11:47.248Z"
 }

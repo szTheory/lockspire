@@ -2,7 +2,7 @@
 
 Captured: 2026-10-09 UTC. Source inspected: `fd047a29b2fa247ab8d68a76cd9f57f00fe43feb`.
 
-Status: Preflight complete; v1.40 milestone kickoff is now in progress (2026-10-09). Impeccable init completed on 2026-10-09 after the user confirmed the recommended audience and code-first default. Durable product context is in [PRODUCT.md](../PRODUCT.md), and the workflow preference is in [.impeccable/config.json](../.impeccable/config.json). The user has invoked `$gsd-new-milestone Admin Operator UI Refinement`; requirements and roadmap are being prepared in the canonical GSD files. No implementation or fresh browser proof is claimed, and the phase UI contract remains to be established. This direction supersedes the conversation's proposed promotion of repository/docs polish. Phase 999.1 remains in the backlog. v1.39 and its acknowledged historical verification gap remain archived; neither needs to be reopened for UI work.
+Status: Preflight complete; v1.40 milestone kickoff is complete and Phase 144 planning is in progress (2026-10-09). Impeccable init completed on 2026-10-09 after the user confirmed the recommended audience and code-first default. Durable product context is in [PRODUCT.md](../PRODUCT.md), and the workflow preference is in [.impeccable/config.json](../.impeccable/config.json). The user has invoked `$gsd-new-milestone Admin Operator UI Refinement`; the subsequent `$gsd-plan-phase 144` instruction confirms the requirements and roadmap in the canonical GSD files. No implementation or fresh browser proof is claimed, and the phase UI contract remains to be established. This direction supersedes the conversation's proposed promotion of repository/docs polish. Phase 999.1 remains in the backlog. v1.39 and its acknowledged historical verification gap remain archived; neither needs to be reopened for UI work.
 
 ## User intent
 
@@ -66,7 +66,7 @@ Useful sibling references: `~/projects/accrue/.planning/notes/2026-10-07-accrue-
 
 ## Preflight delivery recommendation
 
-This recommendation informs the current milestone draft. The canonical phase list and approval status live in ROADMAP.md and STATE.md.
+This recommendation informs the approved milestone. The canonical phase list and approval status live in ROADMAP.md and STATE.md.
 
 1. **Current baseline and representative pages.** Bring up the actual mounted demo, confirm working routes and served styles, refresh the existing inventory, and inspect representative client configuration and token/consent investigation journeys. Include realistic adverse data. Identify named visual and behavioral defects before broad token changes.
 2. **Shared foundation proven in those journeys.** Resolve reading order, type/spacing, form/action hierarchy, theme states and component grouping in representative whole pages. Consolidate repeated solutions into the existing component/token system and remove superseded rules.
@@ -96,15 +96,15 @@ Impeccable init is complete. The user confirmed the recommended audience and cho
 
 Impeccable's launcher reported `hasVisualImplementation: false` when targeting an Elixir router despite the real UI above; that heuristic must not trigger a greenfield redesign. The optional live picker has not been configured: the library renders through Phoenix/Elixir and the current mounted demo has not been verified. Establish an actual injection target and working development preview before configuring it; a generic HTML/JavaScript-framework config is not evidence of Phoenix compatibility.
 
-Current command: `$gsd-new-milestone Admin Operator UI Refinement`.
+Current command: `$gsd-plan-phase 144` (milestone kickoff confirmed).
 
-After the requirements and roadmap are approved, the next command is:
+The user has now invoked:
 
 ```text
 $gsd-plan-phase 144
 ```
 
-Read this preflight and root `PRODUCT.md` when resuming. Product initialization and its two choices are settled; continue with milestone requirements and scope rather than running init again.
+Read this preflight and root `PRODUCT.md` when resuming. Product initialization and its two choices are settled; continue Phase 144 planning without repeating init or milestone scope questions.
 
 The milestone kickoff targets v1.40, with phase numbering continuing after 143. The canonical roadmap owns the phase decomposition and STATE.md records its approval status. The earlier docs-focused scope confirmation is superseded by the user's UI direction.
 
