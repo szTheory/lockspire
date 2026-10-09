@@ -1635,7 +1635,7 @@ defmodule Lockspire.Web.Admin.CSS do
     border-color: var(--ls-status-danger-border);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 800px) {
     .lockspire-admin-header,
     .lockspire-admin-body,
     .lockspire-admin-nav {
