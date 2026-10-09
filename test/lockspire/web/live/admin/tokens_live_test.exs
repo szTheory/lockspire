@@ -112,7 +112,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "Selected account: account_"
     assert html =~ "Selected status: active"
     assert html =~ "Filter tokens"
-    assert html =~ "Review token"
+    assert html =~ "View token details"
     assert html =~ "lockspire-admin-decision-summary"
     assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
@@ -131,13 +131,12 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert decision_summary =~ "account_"
     refute decision_summary =~ "account-token-ui"
 
-    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
-             html_index(
-               html,
-               ~s(<form method="get" action="/lockspire/admin/tokens" class="lockspire-admin-filter-bar)
-             )
+    assert html_index(
+             html,
+             ~s(<form method="get" action="/lockspire/admin/tokens" class="lockspire-admin-filter-bar)
+           ) < html_index(html, ~s(<dl class="lockspire-admin-decision-summary))
 
-    assert rows =~ "Review token"
+    assert rows =~ "View token details"
     assert rows =~ "account_"
     assert rows =~ "client_"
     assert rows =~ "family_"
@@ -159,8 +158,43 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
                socket
              )
 
-    assert rendered_to_string(Index.render(empty_socket.assigns)) =~
-             "No investigation results match these filters"
+    empty_html = rendered_to_string(Index.render(empty_socket.assigns))
+    assert empty_html =~ "No matching tokens"
+    assert empty_html =~ "missing-account-token-ui"
+    refute empty_html =~ "Could not load tokens"
+  end
+
+  test "token index keeps failed reads distinct from successful empty results" do
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, String)
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, failed_socket} =
+               Index.handle_params(
+                 %{"account" => "account-read-failure", "client" => "client-read-failure", "status" => "revoked"},
+                 "/lockspire/admin/tokens?account=account-read-failure&client=client-read-failure&status=revoked",
+                 socket
+               )
+
+      html = rendered_to_string(Index.render(failed_socket.assigns))
+      assert failed_socket.assigns.filters == %{
+               "account" => "account-read-failure",
+               "client" => "client-read-failure",
+               "status" => "revoked"
+             }
+
+      assert html =~ "Could not load tokens"
+      assert html =~ "Try loading tokens again"
+      assert html =~ "account-read-failure"
+      assert html =~ "client-read-failure"
+      assert html =~ "status=revoked"
+      refute html =~ "No matching tokens"
+      refute html =~ "0 matching token lifecycle records"
+    after
+      Application.put_env(:lockspire, :repo, original_repo)
+    end
   end
 
   test "token detail shows lineage and guarded single-token and family revoke flows", %{
@@ -553,7 +587,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert rows =~ "Token Proof Client With Dense State"
     assert rows =~ "Not recorded"
     assert rows =~ "lockspire-admin-long-value"
-    assert rows =~ "Review token"
+    assert rows =~ "View token details"
     refute rows =~ long_client_id
     refute rows =~ long_account_id
     refute rows =~ long_family_id
