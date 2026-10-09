@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 144
 current_phase_name: Working Preview and Representative Journeys
 status: executing
-stopped_at: Completed 144-01-PLAN.md
-last_updated: "2026-10-09T14:01:45.375Z"
+stopped_at: Completed 144-02-PLAN.md
+last_updated: "2026-10-09T14:45:34.829Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 144 execution started
-state_head: b0f20650e3673b631aa52b3a3c163b7a1c95472c
+state_head: dbcb5eea57d00203939ba6cdfaabbe7b505d90d7
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 144 (Working Preview and Representative Journeys) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 144 execution started
 Progress: [░░░░░░░░░░] 0%
@@ -184,6 +184,8 @@ Progress: [░░░░░░░░░░] 0%
 - Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the historical attempt in `143-RESULT.md`.
 - [Phase 144]: Keep the stable preview, disposable demo checks, and root ExUnit database on separate named projects, ports, and volumes because demo startup can drop its configured database.
 - [Phase 144]: Treat UIB-02/03 evidence in plan 144-01 as baseline contribution only; later Phase 144 plans must establish representative improvements and final proof.
+- [Phase 144]: Keep preview LiveView bootstrap and direct guarded route mounts demo-owned; preserve the public library router and host seam.
+- [Phase 144]: Defer the forwarded AdminRouter full-host LiveView join mismatch for separate library-level resolution.
 
 ### Pending Todos
 
@@ -224,11 +226,12 @@ Progress: [░░░░░░░░░░] 0%
 | Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 | Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 | Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 |
+| Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 |
 
 ## Session Continuity
 
-Last session: 2026-10-09T14:01:45.352Z
-Stopped at: Completed 144-01-PLAN.md
+Last session: 2026-10-09T14:45:34.806Z
+Stopped at: Completed 144-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -306,6 +309,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 143 P02 | 7min | 2 tasks | 5 files |
 | Phase 143 P03 | 14min | 3 tasks | 6 files |
 | Phase 144 P01 | 20min | 2 tasks | 11 files |
+| Phase 144 P02 | 2580 | 3 tasks | 20 files |
 
 ## Operator Next Steps
 
