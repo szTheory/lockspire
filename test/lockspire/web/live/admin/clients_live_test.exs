@@ -150,6 +150,47 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Beta Client"
   end
 
+  test "client filter submit keeps the native GET fallback and emits busy copy" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} = Index.handle_params(%{}, "/admin/clients", socket)
+
+    {:noreply, submitted} =
+      Index.handle_event(
+        "filter_inventory",
+        %{"q" => "alpha", "status" => "all", "provenance" => "all"},
+        socket
+      )
+
+    assert submitted.assigns.clients == socket.assigns.clients
+
+    assert {:live, :patch, %{to: "/admin/clients?page=1&provenance=all&q=alpha&status=all"}} =
+             submitted.redirected
+
+    html = rendered_to_string(Index.render(socket.assigns))
+    assert html =~ ~s(method="get")
+    assert html =~ ~s(action="/admin/clients")
+    assert html =~ ~s(phx-submit="filter_inventory")
+    assert html =~ ~s(phx-disable-with="Filtering clients…")
+  end
+
+  test "client filter submit patches the URL and resets pagination" do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients?page=3")
+    assert html =~ ~s(phx-disable-with="Filtering clients…")
+
+    view
+    |> form("form[phx-submit=filter_inventory]", %{
+      "q" => "alpha",
+      "status" => "all",
+      "provenance" => "all"
+    })
+    |> render_submit()
+
+    assert_patch(view, "/admin/clients?page=1&provenance=all&q=alpha&status=all")
+    assert render(view) =~ "Search: alpha"
+    assert render(view) =~ "Matching clients: 1"
+  end
+
   test "clients index renders Configure filter context and copy-once client-secret handoff" do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients?q=Alpha&status=active&provenance=operator")
@@ -317,6 +358,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
       assert error_html =~ "Could not load clients"
       assert error_html =~ "Your filters and investigation context are still available."
       assert error_html =~ "Reload this view"
+
       assert [_, reload_href] =
                Regex.run(~r/href="([^"]*page=3[^"]*)"/, error_html)
 

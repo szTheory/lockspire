@@ -34,6 +34,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   end
 
   @impl true
+  def handle_event("filter_inventory", params, socket) do
+    filters = normalize_filters(params)
+
+    {:noreply, push_patch(socket, to: clients_index_path(filters))}
+  end
+
+  @impl true
   def handle_event("save_client", %{"client" => client_params}, socket) do
     case Admin.create_client(create_attrs(client_params)) do
       {:ok, result} ->
@@ -60,7 +67,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       />
 
       <AdminComponents.section_card title="Find a client" subtitle="Filter the inventory, then open a client to review its current configuration.">
-        <AdminComponents.filter_bar action={clients_index_path()}>
+        <AdminComponents.filter_bar action={clients_index_path()} phx_submit="filter_inventory">
           <:fields>
             <div class="lockspire-admin-field">
               <label for="client_search">Search</label>
@@ -98,7 +105,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <p :if={@inventory_state == :error}>Matching count unavailable while the client inventory is unavailable.</p>
           </:help>
           <:actions>
-            <AdminComponents.admin_button variant={:secondary} type="submit">
+            <AdminComponents.admin_button
+              variant={:secondary}
+              type="submit"
+              phx-disable-with="Filtering clients…"
+            >
               Filter clients
             </AdminComponents.admin_button>
           </:actions>

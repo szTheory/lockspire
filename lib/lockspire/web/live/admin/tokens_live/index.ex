@@ -26,27 +26,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
 
-    case load_tokens(filters) do
-      {:ok, tokens} ->
-        {:noreply,
-         assign(socket,
-           filters: filters,
-           tokens: tokens,
-           inventory_state: :loaded,
-           total_tokens: length(tokens),
-           token_metrics: token_metrics(tokens)
-         )}
+    {:noreply, assign_tokens(socket, filters)}
+  end
 
-      {:error, _reason} ->
-        {:noreply,
-         assign(socket,
-           filters: filters,
-           tokens: [],
-           inventory_state: :error,
-           total_tokens: nil,
-           token_metrics: nil
-         )}
-    end
+  @impl true
+  def handle_event("filter_inventory", params, socket) do
+    filters = normalize_filters(params)
+
+    {:noreply, push_patch(socket, to: tokens_index_path(filters))}
   end
 
   @impl true
@@ -69,7 +56,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         title="Filter token investigation"
         subtitle="URL filters preserve the support case context while rows stay limited to durable non-secret metadata."
       >
-        <AdminComponents.filter_bar action={tokens_index_path()}>
+        <AdminComponents.filter_bar action={tokens_index_path()} phx_submit="filter_inventory">
           <:fields>
             <AdminComponents.form_field id="token_account" label="Account">
               <input id="token_account" name="account" type="text" value={@filters["account"]} />
@@ -96,7 +83,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
             <p :if={@inventory_state == :error}>Matching token count is unavailable.</p>
           </:help>
           <:actions>
-            <AdminComponents.admin_button type="submit">Filter tokens</AdminComponents.admin_button>
+            <AdminComponents.admin_button type="submit" phx-disable-with="Filtering tokens…">
+              Filter tokens
+            </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
@@ -229,6 +218,28 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
     case Admin.list_tokens(opts) do
       {:ok, tokens} -> {:ok, tokens}
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp assign_tokens(socket, filters) do
+    case load_tokens(filters) do
+      {:ok, tokens} ->
+        assign(socket,
+          filters: filters,
+          tokens: tokens,
+          inventory_state: :loaded,
+          total_tokens: length(tokens),
+          token_metrics: token_metrics(tokens)
+        )
+
+      {:error, _reason} ->
+        assign(socket,
+          filters: filters,
+          tokens: [],
+          inventory_state: :error,
+          total_tokens: nil,
+          token_metrics: nil
+        )
     end
   end
 
@@ -388,6 +399,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
   defp formatted_timestamp(value), do: to_string(value)
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
+  defp tokens_index_path(filters), do: tokens_index_path() <> "?" <> URI.encode_query(filters)
   defp token_show_path(id), do: tokens_index_path() <> "/" <> Integer.to_string(id)
 
   defp token_filter_path(filters) do

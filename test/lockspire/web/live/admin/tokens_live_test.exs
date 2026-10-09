@@ -164,6 +164,42 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute empty_html =~ "Could not load tokens"
   end
 
+  test "token filter submit keeps the native GET fallback and emits busy copy" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"account" => "account-token-ui", "status" => "active"},
+               "/lockspire/admin/tokens?account=account-token-ui&status=active",
+               socket
+             )
+
+    assert socket.assigns.tokens != []
+
+    initial_html = rendered_to_string(Index.render(socket.assigns))
+    assert initial_html =~ ~s(phx-submit="filter_inventory")
+    assert initial_html =~ ~s(phx-disable-with="Filtering tokens…")
+
+    {:noreply, submitted} =
+      Index.handle_event(
+        "filter_inventory",
+        %{"account" => "pending-account", "client" => "", "status" => "all"},
+        socket
+      )
+
+    assert submitted.assigns.tokens == socket.assigns.tokens
+    assert {:live, :patch, %{to: path}} = submitted.redirected
+    assert ["/lockspire/admin/tokens", query] = String.split(path, "?", parts: 2)
+
+    assert URI.decode_query(query) == %{
+             "account" => "pending-account",
+             "client" => "",
+             "status" => "all"
+           }
+
+    assert initial_html =~ ~s(method="get")
+  end
+
   test "token index keeps failed reads distinct from successful empty results" do
     original_repo = Application.fetch_env!(:lockspire, :repo)
 

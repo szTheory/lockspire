@@ -239,13 +239,19 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:action, :string, required: true)
   attr(:method, :string, default: "get")
   attr(:class, :string, default: "")
+  attr(:phx_submit, :string, default: nil)
   slot(:fields, required: true)
   slot(:help)
   slot(:actions)
 
   def filter_bar(assigns) do
     ~H"""
-    <form method={@method} action={@action} class={["lockspire-admin-filter-bar", @class]}>
+    <form
+      method={@method}
+      action={@action}
+      class={["lockspire-admin-filter-bar", @class]}
+      phx-submit={@phx_submit}
+    >
       <div class="lockspire-admin-filter-bar__fields">
         {render_slot(@fields)}
       </div>

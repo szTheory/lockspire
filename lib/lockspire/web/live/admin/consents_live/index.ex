@@ -25,16 +25,15 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
-    {read_state, consents} = load_consents(filters)
 
-    {:noreply,
-     assign(socket,
-       filters: filters,
-       consent_read_state: read_state,
-       consents: consents,
-       total_consents: length(consents),
-       consent_metrics: consent_metrics(consents)
-     )}
+    {:noreply, assign_consents(socket, filters)}
+  end
+
+  @impl true
+  def handle_event("filter_inventory", params, socket) do
+    filters = normalize_filters(params)
+
+    {:noreply, push_patch(socket, to: consents_index_path(filters))}
   end
 
   @impl true
@@ -57,7 +56,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
         title="Filter consent grants"
         subtitle="URL filters preserve support case context while rows show only durable non-secret grant metadata."
       >
-        <AdminComponents.filter_bar action={consents_index_path()}>
+        <AdminComponents.filter_bar action={consents_index_path()} phx_submit="filter_inventory">
           <:fields>
             <AdminComponents.form_field id="consent_account" label="Account">
               <input id="consent_account" name="account" type="text" value={@filters["account"]} />
@@ -79,7 +78,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
           <p :if={@consent_read_state == :loaded}>Total matching consents: {@total_consents}</p>
           </:help>
           <:actions>
-            <AdminComponents.admin_button type="submit">Filter consent grants</AdminComponents.admin_button>
+            <AdminComponents.admin_button
+              type="submit"
+              phx-disable-with="Filtering consent grants…"
+            >
+              Filter consent grants
+            </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
@@ -104,7 +108,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                 </AdminComponents.admin_button>
               </:actions>
             </AdminComponents.empty_state>
-          <% @consents == [] -> %>
+          <% @consent_read_state == :loading -> %>
+            <p role="status">Loading consent grants…</p>
+          <% @consent_read_state == :loaded and @consents == [] -> %>
             <AdminComponents.empty_state
               title="No matching consent grants"
               body="Adjust the account, client, or status filters to review another stored grant."
@@ -172,6 +178,18 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       {:ok, consents} -> {:loaded, consents}
       {:error, _reason} -> {:error, []}
     end
+  end
+
+  defp assign_consents(socket, filters) do
+    {read_state, consents} = load_consents(filters)
+
+    assign(socket,
+      filters: filters,
+      consent_read_state: read_state,
+      consents: consents,
+      total_consents: length(consents),
+      consent_metrics: consent_metrics(consents)
+    )
   end
 
   defp read_consents(opts) do

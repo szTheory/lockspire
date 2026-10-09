@@ -135,6 +135,42 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              "No matching consent grants"
   end
 
+  test "consent filter submit keeps the native GET fallback and emits busy copy" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"account" => "account-consent-ui", "status" => "active"},
+               "/lockspire/admin/consents?account=account-consent-ui&status=active",
+               socket
+             )
+
+    assert socket.assigns.consents != []
+
+    initial_html = rendered_to_string(Index.render(socket.assigns))
+    assert initial_html =~ ~s(phx-submit="filter_inventory")
+    assert initial_html =~ ~s(phx-disable-with="Filtering consent grants…")
+
+    {:noreply, submitted} =
+      Index.handle_event(
+        "filter_inventory",
+        %{"account" => "pending-account", "client" => "", "status" => "all"},
+        socket
+      )
+
+    assert submitted.assigns.consents == socket.assigns.consents
+    assert {:live, :patch, %{to: path}} = submitted.redirected
+    assert ["/lockspire/admin/consents", query] = String.split(path, "?", parts: 2)
+
+    assert URI.decode_query(query) == %{
+             "account" => "pending-account",
+             "client" => "",
+             "status" => "all"
+           }
+
+    assert initial_html =~ ~s(method="get")
+  end
+
   test "consent index distinguishes failed reads from successful empty results and keeps filters" do
     original_repo = Application.fetch_env!(:lockspire, :repo)
 
