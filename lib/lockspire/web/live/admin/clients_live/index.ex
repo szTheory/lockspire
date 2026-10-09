@@ -22,7 +22,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        inventory_state: :loading,
        filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
-       created_result: nil
+       create_params: nil,
+       created_result: nil,
+       created_secret_hidden?: false
      )}
   end
 
@@ -30,7 +32,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
 
-    {:noreply, assign_inventory(socket, filters)}
+    {:noreply,
+     socket
+     |> assign_inventory(filters)
+     |> assign(
+       form_errors: [],
+       create_params: nil,
+       created_result: nil,
+       created_secret_hidden?: false
+     )}
   end
 
   @impl true
@@ -41,7 +51,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   end
 
   @impl true
+  def handle_event("validate_client", %{"client" => client_params}, socket) do
+    {:noreply, assign(socket, create_params: safe_create_params(client_params), form_errors: [])}
+  end
+
+  @impl true
   def handle_event("save_client", %{"client" => client_params}, socket) do
+    safe_params = safe_create_params(client_params)
+
     case Admin.create_client(create_attrs(client_params)) do
       {:ok, result} ->
         filters = socket.assigns.filters
@@ -49,10 +66,36 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         {:noreply,
          socket
          |> assign_inventory(filters)
-         |> assign(created_result: result, form_errors: [])}
+         |> assign(
+           created_result: result,
+           created_secret_hidden?: false,
+           create_params: nil,
+           form_errors: []
+         )}
 
       {:error, errors} ->
-        {:noreply, assign(socket, form_errors: errors, created_result: nil)}
+        {:noreply,
+         assign(socket,
+           form_errors: errors,
+           create_params: safe_params,
+           created_result: nil,
+           created_secret_hidden?: false
+         )}
+    end
+  end
+
+  @impl true
+  def handle_event("hide_created_secret", _params, socket) do
+    case socket.assigns.created_result do
+      %{client_secret: secret} = result when is_binary(secret) ->
+        {:noreply,
+         assign(socket,
+           created_result: %{result | client_secret: nil},
+           created_secret_hidden?: true
+         )}
+
+      _other ->
+        {:noreply, socket}
     end
   end
 
@@ -134,11 +177,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
           <AdminComponents.empty_state
             :if={@inventory_state == :loaded and @clients == []}
-            title="No matching clients"
-            body="Change or clear the filters to see other records."
+            title={
+              if first_use_empty?(@filters, @total_clients),
+                do: "No clients yet",
+                else: "No matching clients"
+            }
+            body={
+              if first_use_empty?(@filters, @total_clients),
+                do: "Create a client to begin connecting applications.",
+                else: "Change or clear the filters to see other records."
+            }
           >
             <:actions>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path()}>
+              <.link
+                :if={first_use_empty?(@filters, @total_clients)}
+                class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                href="#client-create-form"
+              >
+                Create client
+              </.link>
+              <.link
+                :if={!first_use_empty?(@filters, @total_clients)}
+                class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                href={clients_index_path()}
+              >
                 Clear filters
               </.link>
             </:actions>
@@ -180,24 +242,46 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
       <AdminComponents.section_card
         title="Create client"
-        subtitle="Create a client through the existing Lockspire Admin API and copy any plaintext secret before leaving this state."
+        subtitle="Register an application with its exact browser redirect destinations and allowed scopes."
       >
-        <FormComponent.client_form mode={:new} errors={@form_errors} />
+        <FormComponent.client_form mode={:new} errors={@form_errors} params={@create_params} />
 
         <div :if={@created_result}>
           <p>Client ID: <code>{@created_result.client.client_id}</code></p>
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={client_show_path(@created_result.client.client_id)}
+          >
+            View client details
+          </.link>
           <AdminComponents.copy_once_secret_panel
-            title="Client created"
+            title={
+              cond do
+                @created_secret_hidden? -> "Client secret hidden"
+                @created_result.client_secret -> "Copy this client secret now"
+                true -> "Client created"
+              end
+            }
             body={
-              if @created_result.client_secret,
-                do:
-                  "Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response.",
-                else: "This public client does not use a client secret."
+              cond do
+                @created_secret_hidden? -> "Credential hidden. It will not be shown again."
+                @created_result.client_secret ->
+                  "This secret authenticates the confidential client at the token endpoint. Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response."
+                true -> "This public client does not use a client secret."
+              end
             }
             label="Client secret"
             value={@created_result.client_secret}
             redacted={is_nil(@created_result.client_secret)}
           />
+          <AdminComponents.admin_button
+            :if={@created_result.client_secret}
+            type="button"
+            variant={:secondary}
+            phx-click="hide_created_secret"
+          >
+            Hide credential
+          </AdminComponents.admin_button>
         </div>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
@@ -284,6 +368,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     do: Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(filters)
 
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+
+  defp first_use_empty?(filters, 0) do
+    filters["q"] in [nil, ""] and filters["status"] == "all" and
+      filters["provenance"] == "all" and filters["page"] == "1"
+  end
+
+  defp first_use_empty?(_filters, _total_clients), do: false
+
+  defp safe_create_params(params) do
+    Map.take(params, [
+      "name",
+      "client_type",
+      "token_endpoint_auth_method",
+      "redirect_uris",
+      "allowed_scopes"
+    ])
+  end
 
   defp client_count_label(1), do: "1 matching client"
   defp client_count_label(count), do: "#{count} matching clients"

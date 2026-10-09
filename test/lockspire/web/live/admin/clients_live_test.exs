@@ -228,7 +228,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     created_html = render(view)
 
-    assert created_html =~ "Client created"
+    assert created_html =~ "Copy this client secret now"
+    assert created_html =~ "View client details"
     assert created_html =~ "Client secret"
     assert created_html =~ "Plaintext is shown once"
     assert created_html =~ "Lockspire stores only the hash and does not re-show it"
@@ -236,8 +237,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     plaintext_secret = extract_copy_once_value(created_html)
 
+    created_client_id = extract_created_client_id(created_html)
+    assert created_html =~ ~s(href="/admin/clients/#{created_client_id}")
+
     {:ok, _detail_view, durable_detail_html} =
-      live(conn_for_admin(), "/admin/clients/#{extract_created_client_id(created_html)}")
+      live(conn_for_admin(), "/admin/clients/#{created_client_id}")
 
     HtmlAssertions.assert_no_text(durable_detail_html, [
       plaintext_secret,
@@ -251,6 +255,113 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _index_view, durable_index_html} = live(conn_for_admin(), "/admin/clients")
     HtmlAssertions.assert_no_text(durable_index_html, [plaintext_secret, "client_secret_hash"])
+  end
+
+  test "rejected client creation retains safe input and associates actionable field errors" do
+    submitted_name = "Partner Portal 🚀"
+    submitted_redirect = "https://*.partner.example/callback"
+
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients")
+    assert html =~ ~s(id="client-create-form")
+    assert html =~ ~s(phx-disable-with="Creating client…")
+
+    view
+    |> form("#client-create-form", %{
+      client: %{
+        name: submitted_name,
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: submitted_redirect,
+        allowed_scopes: "email, profile"
+      }
+    })
+    |> render_submit()
+
+    html = render(view)
+
+    assert html =~ "Client was not created. Review the marked fields and try again."
+    assert html =~ ~s(value="#{submitted_name}")
+    assert html =~ submitted_redirect
+    assert html =~ ~s(value="email, profile")
+    assert html =~ "Use a valid redirect URI. Redirects are matched exactly."
+    assert html =~ ~s(id="client_redirect_uris-error")
+    assert html =~ ~s(aria-invalid="true")
+    assert html =~ ~s(role="alert" tabindex="-1")
+    refute html =~ "invalid_redirect_uri"
+    refute html =~ "Client created"
+    refute html =~ "Client secret"
+  end
+
+  test "created client secret is cleared on acknowledgement and inventory filter change" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients")
+
+    view
+    |> form("#client-create-form", %{
+      client: %{
+        name: "One-time Secret Client",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://one-time.example.com/callback",
+        allowed_scopes: "email"
+      }
+    })
+    |> render_submit()
+
+    created_html = render(view)
+    secret = extract_copy_once_value(created_html)
+    assert created_html =~ secret
+
+    view
+    |> element("button[phx-click=hide_created_secret]")
+    |> render_click()
+
+    hidden_html = render(view)
+    assert hidden_html =~ "Credential hidden. It will not be shown again."
+    assert hidden_html =~ "Redacted"
+    refute hidden_html =~ secret
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        name: "One-time Secret Client Two",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://one-time-two.example.com/callback",
+        allowed_scopes: "email"
+      }
+    })
+    |> render_submit()
+
+    second_secret = extract_copy_once_value(render(view))
+    refute second_secret == secret
+
+    view
+    |> form("form[phx-submit=filter_inventory]", %{
+      "q" => "One-time Secret Client",
+      "status" => "all",
+      "provenance" => "all"
+    })
+    |> render_submit()
+
+    filtered_html = render(view)
+    refute filtered_html =~ second_secret
+    refute filtered_html =~ "Client created"
+  end
+
+  test "client inventory distinguishes first-use empty from filtered empty" do
+    assert {3, nil} = Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.ClientRecord)
+    assert {:ok, []} = Repository.list_clients()
+
+    assert {:ok, _view, empty_html} = live(conn_for_admin(), "/admin/clients")
+    assert empty_html =~ "No clients yet"
+    assert empty_html =~ "Create client"
+    refute empty_html =~ "No matching clients"
+
+    assert {:ok, _filtered_view, filtered_html} =
+             live(conn_for_admin(), "/admin/clients?q=missing")
+
+    assert filtered_html =~ "No matching clients"
+    refute filtered_html =~ "No clients yet"
   end
 
   test "clients index proves empty, disabled, many-count, and long-value Configure states" do

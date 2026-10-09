@@ -19,10 +19,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       assigns
       |> assign(:title, title_for(assigns.mode))
       |> assign(:button_label, button_for(assigns.mode))
+      |> assign(:form_id, form_id(assigns.mode))
+      |> assign(:display_errors, display_errors(assigns.errors))
       |> assign(
         :defaults,
         submitted_defaults(defaults_for(assigns.mode, assigns.client), assigns.params)
       )
+      |> assign(:error_title, error_title(assigns.mode, display_errors(assigns.errors)))
 
     ~H"""
     <section class="lockspire-admin-form-shell">
@@ -32,22 +35,51 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       </header>
 
       <AdminComponents.error_summary
-        :if={@mode == :edit and @errors != []}
-        title="Client changes were not saved. Review the marked fields and try again."
-        errors={@errors}
+        :if={@mode in [:new, :edit] and @display_errors != []}
+        title={@error_title}
+        errors={@display_errors}
       />
-      <.error_list :if={@mode != :edit} errors={@errors} />
+      <.error_list :if={@mode not in [:new, :edit]} errors={@display_errors} />
 
-      <form class="lockspire-admin-form-stack" phx-submit="save_client">
+      <form
+        id={@form_id}
+        class="lockspire-admin-form-stack"
+        phx-change={if @mode == :new, do: "validate_client"}
+        phx-submit="save_client"
+      >
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
 
         <div :if={@mode == :new} class="lockspire-admin-fieldset">
-          <AdminComponents.form_field id="client_name" label="Name">
-            <input id="client_name" name="client[name]" type="text" value={@defaults.name} />
+          <AdminComponents.form_field
+            id="client_name"
+            label="Name"
+            errors={field_errors(@display_errors, :name)}
+          >
+            <input
+              id="client_name"
+              name="client[name]"
+              type="text"
+              value={@defaults.name}
+              aria-invalid={field_errors(@display_errors, :name) != []}
+              aria-describedby={
+                if field_errors(@display_errors, :name) != [], do: "client_name-error"
+              }
+            />
           </AdminComponents.form_field>
 
-          <AdminComponents.form_field id="client_type" label="Client type">
-            <select id="client_type" name="client[client_type]">
+          <AdminComponents.form_field
+            id="client_type"
+            label="Client type"
+            errors={field_errors(@display_errors, :client_type)}
+          >
+            <select
+              id="client_type"
+              name="client[client_type]"
+              aria-invalid={field_errors(@display_errors, :client_type) != []}
+              aria-describedby={
+                if field_errors(@display_errors, :client_type) != [], do: "client_type-error"
+              }
+            >
               <option value="confidential" selected={@defaults.client_type == "confidential"}>
                 Confidential
               </option>
@@ -55,9 +87,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             </select>
           </AdminComponents.form_field>
 
-          <div class="lockspire-admin-field">
-            <label for="client_auth_method">Token endpoint auth method</label>
-            <select id="client_auth_method" name="client[token_endpoint_auth_method]">
+          <AdminComponents.form_field
+            id="client_auth_method"
+            label="Token endpoint auth method"
+            errors={field_errors(@display_errors, :token_endpoint_auth_method)}
+          >
+            <select
+              id="client_auth_method"
+              name="client[token_endpoint_auth_method]"
+              aria-invalid={field_errors(@display_errors, :token_endpoint_auth_method) != []}
+              aria-describedby={
+                if field_errors(@display_errors, :token_endpoint_auth_method) != [],
+                  do: "client_auth_method-error"
+              }
+            >
               <option
                 value="client_secret_basic"
                 selected={@defaults.token_endpoint_auth_method == "client_secret_basic"}
@@ -85,7 +128,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               it with read-only <code>HS256</code> truth and does not expose a generic signing
               algorithm editor here.
             </p>
-          </div>
+          </AdminComponents.form_field>
         </div>
 
         <div :if={@mode in [:new, :edit]} class="lockspire-admin-fieldset">
@@ -110,16 +153,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <AdminComponents.form_field
             id="client_allowed_scopes"
             label="Allowed scopes"
-            errors={field_errors(@errors, :allowed_scopes)}
+            errors={field_errors(@display_errors, :allowed_scopes)}
           >
             <input
               id="client_allowed_scopes"
               name="client[allowed_scopes]"
               type="text"
               value={@defaults.allowed_scopes}
-              aria-invalid={field_errors(@errors, :allowed_scopes) != []}
+              required={@mode == :new}
+              aria-invalid={field_errors(@display_errors, :allowed_scopes) != []}
               aria-describedby={
-                if field_errors(@errors, :allowed_scopes) != [],
+                if field_errors(@display_errors, :allowed_scopes) != [],
                   do: "client_allowed_scopes-error"
               }
             />
@@ -252,15 +296,45 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </AdminComponents.form_field>
         </div>
 
-        <div :if={@mode in [:new, :redirects]} class="lockspire-admin-field">
-          <label for="client_redirect_uris">Redirect URIs</label>
-          <textarea id="client_redirect_uris" name="client[redirect_uris]" rows="4"><%= @defaults.redirect_uris %></textarea>
-        </div>
+        <AdminComponents.form_field
+          :if={@mode in [:new, :redirects]}
+          id="client_redirect_uris"
+          label="Redirect URIs"
+          help="Enter one URI per line. Lockspire matches each destination exactly."
+          required={@mode == :new}
+          errors={field_errors(@display_errors, :redirect_uris)}
+        >
+          <textarea
+            id="client_redirect_uris"
+            name="client[redirect_uris]"
+            rows="4"
+            required={@mode == :new}
+            aria-invalid={field_errors(@display_errors, :redirect_uris) != []}
+            aria-describedby={
+              if field_errors(@display_errors, :redirect_uris) != [],
+                do: "client_redirect_uris-error"
+            }
+          ><%= @defaults.redirect_uris %></textarea>
+        </AdminComponents.form_field>
 
-        <div :if={@mode in [:new, :logout_uris]} class="lockspire-admin-field">
-          <label for="client_post_logout_redirect_uris">Post-Logout Redirect URIs</label>
-          <textarea id="client_post_logout_redirect_uris" name="client[post_logout_redirect_uris]" rows="4"><%= @defaults.post_logout_redirect_uris %></textarea>
-        </div>
+        <AdminComponents.form_field
+          :if={@mode == :logout_uris}
+          id="client_post_logout_redirect_uris"
+          label="Post-logout redirect URIs"
+          help="These are browser destinations after logout; they are separate from logout propagation endpoints."
+          errors={field_errors(@display_errors, :post_logout_redirect_uris)}
+        >
+          <textarea
+            id="client_post_logout_redirect_uris"
+            name="client[post_logout_redirect_uris]"
+            rows="4"
+            aria-invalid={field_errors(@display_errors, :post_logout_redirect_uris) != []}
+            aria-describedby={
+              if field_errors(@display_errors, :post_logout_redirect_uris) != [],
+                do: "client_post_logout_redirect_uris-error"
+            }
+          ><%= @defaults.post_logout_redirect_uris %></textarea>
+        </AdminComponents.form_field>
 
         <div :if={@mode == :par_policy} class="lockspire-admin-field">
           <label for="client_par_policy">Client PAR override</label>
@@ -452,7 +526,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <AdminComponents.admin_button
             type="submit"
             variant={:primary}
-            phx-disable-with={if @mode == :edit, do: "Saving client changes…", else: nil}
+            phx-disable-with={
+              cond do
+                @mode == :new -> "Creating client…"
+                @mode == :edit -> "Saving client changes…"
+                true -> nil
+              end
+            }
           >
             {@button_label}
           </AdminComponents.admin_button>
@@ -588,6 +668,71 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp field_errors(errors, field) do
     Enum.filter(errors, &(is_map(&1) and Map.get(&1, :field) == field))
   end
+
+  defp display_errors(errors) do
+    Enum.map(errors, fn
+      %{field: field, reason: reason} = error ->
+        Map.put(error, :message, error_message(field, reason, Map.get(error, :detail)))
+
+      _error ->
+        %{field: :base, message: "The client could not be saved. Try again."}
+    end)
+  end
+
+  defp error_message(:redirect_uris, :invalid_redirect_uri, :empty),
+    do: "Add at least one redirect URI."
+
+  defp error_message(:redirect_uris, :invalid_redirect_uri, _detail),
+    do: "Use a valid redirect URI. Redirects are matched exactly."
+
+  defp error_message(:post_logout_redirect_uris, :invalid_redirect_uri, _detail),
+    do: "Use a valid post-logout redirect URI. Destinations are matched exactly."
+
+  defp error_message(:allowed_scopes, :invalid_scope, :empty),
+    do: "Enter at least one allowed scope."
+
+  defp error_message(:allowed_scopes, :invalid_scope, _detail),
+    do: "Enter valid scope names separated by commas."
+
+  defp error_message(:token_endpoint_auth_method, :invalid_token_endpoint_auth_method, _detail),
+    do: "Choose an authentication method supported by the current security policy."
+
+  defp error_message(:token_endpoint_auth_method, _reason, _detail),
+    do: "Choose a supported token endpoint authentication method."
+
+  defp error_message(:client_type, _reason, _detail), do: "Choose public or confidential."
+
+  defp error_message(:base, _reason, _detail),
+    do: "The client could not be saved. Your information is still here; try again."
+
+  defp error_message(_field, _reason, _detail),
+    do: "Review this value and try again."
+
+  defp error_title(:new, errors) do
+    if Enum.any?(errors, &(Map.get(&1, :field) == :base)) do
+      "Client was not created. Your information is still here; try again."
+    else
+      "Client was not created. Review the marked fields and try again."
+    end
+  end
+
+  defp error_title(:edit, errors) do
+    if Enum.any?(errors, &(Map.get(&1, :field) == :base)) do
+      "Client changes were not saved. Your information is still here; try again."
+    else
+      "Client changes were not saved. Review the marked fields and try again."
+    end
+  end
+
+  defp error_title(_mode, _errors), do: "Review the highlighted fields."
+
+  defp form_id(:new), do: "client-create-form"
+  defp form_id(:edit), do: "client-edit-form"
+  defp form_id(:redirects), do: "client-redirect-uris-form"
+  defp form_id(:logout_uris), do: "client-post-logout-redirect-uris-form"
+  defp form_id(:logout_propagation), do: "client-logout-propagation-form"
+  defp form_id(:par_policy), do: "client-par-policy-form"
+  defp form_id(:security_profile), do: "client-security-profile-form"
 
   defp client_detail_path(%Client{client_id: client_id}),
     do: Lockspire.mount_path() <> "/admin/clients/" <> client_id

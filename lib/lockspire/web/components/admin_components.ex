@@ -794,6 +794,8 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp format_datetime(nil), do: "Not recorded"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
 
+  defp format_error(%{message: message}) when is_binary(message), do: message
+
   defp format_error(%{field: field, reason: reason, detail: detail}) do
     "#{field} #{reason} #{inspect(detail)}"
   end
