@@ -278,6 +278,52 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     HtmlAssertions.assert_no_generic_cta_text(empty_html)
   end
 
+  test "client inventory leads with filters and safe detail actions, with truthful empty and failure states" do
+    assert {:ok, _view, populated_html} = live(conn_for_admin(), "/admin/clients")
+
+    assert populated_html =~ "View client"
+    assert populated_html =~ "3 matching clients"
+    assert populated_html =~ "alpha-client"
+    assert populated_html =~ "Active"
+    assert match_at(populated_html, "Filter clients") <
+             match_at(populated_html, "Selected client context")
+
+    assert {:ok, _empty_view, empty_html} =
+             live(conn_for_admin(), "/admin/clients?q=does-not-exist&status=active")
+
+    assert empty_html =~ "No matching clients"
+    assert empty_html =~ "Change or clear the filters to see other records."
+    assert empty_html =~ ~s(value="does-not-exist")
+    assert empty_html =~ ~s(value="active" selected)
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailableRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, socket} =
+               Index.handle_params(
+                 %{"q" => "alpha", "status" => "disabled"},
+                 "/admin/clients?q=alpha&status=disabled",
+                 socket
+               )
+
+      error_html = rendered_to_string(Index.render(socket.assigns))
+
+      assert error_html =~ "Could not load clients"
+      assert error_html =~ "Your filters and investigation context are still available."
+      assert error_html =~ "Reload this view"
+      assert error_html =~ ~s(value="alpha")
+      assert error_html =~ ~s(value="disabled" selected)
+      refute error_html =~ "No matching clients"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "client detail shows self-registered panel for DCR clients" do
     assert {:ok, alpha_socket} =
              Show.mount(%{"client_id" => "alpha-client"}, %{}, socket_for(:show))
@@ -563,6 +609,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
+
+  defp match_at(string, fragment), do: string |> :binary.match(fragment) |> elem(0)
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
