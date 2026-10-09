@@ -5,10 +5,10 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 145
 current_phase_name: Configure and Onboard
 status: verifying
-stopped_at: Completed 145-05-PLAN.md
-last_updated: "2026-10-09T22:44:47.999Z"
+stopped_at: Phase 145 verification returned human_needed; 11 UAT items pending
+last_updated: "2026-10-09T23:27:23Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 145 execution started
+last_activity_desc: Phase 145 implementation and automated gates passed; human UAT pending
 state_head: 192a7d645059bb08ef6e20bdfd7055e1a708b24f
 progress:
   total_phases: 4
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 ## Current Position
 
-Phase: 145 (Configure and Onboard) — EXECUTING
+Phase: 145 (Configure and Onboard) — VERIFYING (human UAT pending)
 Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-10-09 — Phase 145 execution started
+Status: Verifier scored 5/5; 0 of 11 human UAT items resolved
+Last activity: 2026-10-09 — 120 targeted tests and 87 prior-phase regression tests passed
 Progress: [███░░░░░░░] 25%
 
 ## Accumulated Context
@@ -249,6 +249,7 @@ Progress: [███░░░░░░░] 25%
 | Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
 | Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 |
 | Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 |
+| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review |
 
 ## Session Continuity
 
@@ -342,6 +343,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Phase 144 is complete: 4/4 plans, independent verification passed (5/5 merged must-haves), requirements UIB-01/02/03 satisfied. The risk matrix remains explicit at 8 pass / 9 partial / 0 untested; the public forwarded-router LiveView limitation remains deferred above.
-- Next command: `$gsd-discuss-phase 145`. Installed progress Route B selects discussion because Phase 145 has no directory, CONTEXT, or plans. This execution stopped at the authorized `--no-transition` boundary; Phase 145 has not started.
-- Stable feedback preview: `http://127.0.0.1:4121/lockspire/admin`; choose synthetic `ops` (`ops@billingo.test`) in the host login. Preserve its data; use separate checks 4122 and the explicit dedicated root test DB for mutations/tests. Reuse `144-PREVIEW.md` and the retained evidence instead of repeating baseline work.
+- Phase 144 is the last completed phase: 4/4 plans, independent verification passed (5/5), and UIB-01/02/03 satisfied. Phase 145's five plans and all automated gates are complete; its verifier scored 5/5 success criteria but requires 11 human UAT items, now recorded in `145-UAT.md`.
+- Next command: `$gsd-verify-work 145`. It will walk through the pending UAT; the phase stays pending until that verification is resolved. Do not run credential or key mutation actions in the browser.
+- After Phase 145 passes UAT, run `$gsd-discuss-phase 146` for Support, Orient, and read-only Operate.
+- The Phase 145 synthetic preview is open at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data. Reuse `144-PREVIEW.md` and retained evidence instead of repeating baseline work.
