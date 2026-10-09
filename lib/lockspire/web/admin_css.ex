@@ -1388,6 +1388,28 @@ defmodule Lockspire.Web.Admin.CSS do
     gap: var(--ls-space-2);
   }
 
+  .lockspire-admin-client-inventory__results {
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-resource-list {
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-resource-list__actions,
+  .lockspire-admin-client-inventory__recovery {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-alert p {
+    margin: 0;
+  }
+
   .lockspire-admin-long-value {
     display: inline-block;
     max-width: 100%;

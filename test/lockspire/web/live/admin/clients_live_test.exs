@@ -272,8 +272,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert empty_html =~ "Search: does-not-exist"
     assert empty_html =~ "Matching clients: 0"
     assert empty_html =~ "Total clients: 4"
-    assert empty_html =~ "No clients match this view"
-    assert empty_html =~ "Adjust the search or status filter"
+    assert empty_html =~ "No matching clients"
+    assert empty_html =~ "Change or clear the filters to see other records."
 
     HtmlAssertions.assert_no_generic_cta_text(empty_html)
   end
@@ -285,6 +285,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert populated_html =~ "3 matching clients"
     assert populated_html =~ "alpha-client"
     assert populated_html =~ "Active"
+
     assert match_at(populated_html, "Filter clients") <
              match_at(populated_html, "Selected client context")
 

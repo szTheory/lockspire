@@ -17,8 +17,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        page_title: "Clients",
        current_section: :clients,
        clients: [],
-       matching_clients: 0,
-       total_clients: 0,
+       matching_clients: nil,
+       total_clients: nil,
+       inventory_state: :loading,
        filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
        created_result: nil
@@ -28,16 +29,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
-    clients = load_clients(filters)
-    total_clients = load_clients(base_filters()) |> length()
 
-    {:noreply,
-     assign(socket,
-       filters: filters,
-       clients: paginate(clients, filters),
-       matching_clients: length(clients),
-       total_clients: total_clients
-     )}
+    {:noreply, assign_inventory(socket, filters)}
   end
 
   @impl true
@@ -48,13 +41,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
         {:noreply,
          socket
-         |> assign(
-           created_result: result,
-           form_errors: [],
-           clients: paginate(load_clients(filters), filters),
-           matching_clients: length(load_clients(filters)),
-           total_clients: load_clients(base_filters()) |> length()
-         )}
+         |> assign_inventory(filters)
+         |> assign(created_result: result, form_errors: [])}
 
       {:error, errors} ->
         {:noreply, assign(socket, form_errors: errors, created_result: nil)}
@@ -71,18 +59,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
       />
 
-      <AdminComponents.section_card
-        title="Selected client context"
-        subtitle="Current filters and inventory counts are shown before dense client rows."
-      >
-        <div class="lockspire-admin-detail-section">
-          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
-          <p>Status: {@filters["status"]}</p>
-          <p>Provenance: {@filters["provenance"]}</p>
-          <p>Matching clients: {@matching_clients}</p>
-          <p>Total clients: {@total_clients}</p>
-        </div>
-
+      <AdminComponents.section_card title="Find a client" subtitle="Filter the inventory, then open a client to review its current configuration.">
         <AdminComponents.filter_bar action={clients_index_path()}>
           <:fields>
             <div class="lockspire-admin-field">
@@ -117,7 +94,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </div>
           </:fields>
           <:help>
-            <p>Matching clients: {@matching_clients} of {@total_clients}</p>
+            <p :if={@inventory_state == :loaded}>{client_count_label(@matching_clients)} of {@total_clients} total clients</p>
+            <p :if={@inventory_state == :error}>Matching count unavailable while the client inventory is unavailable.</p>
           </:help>
           <:actions>
             <AdminComponents.admin_button variant={:secondary} type="submit">
@@ -126,27 +104,67 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
           </:actions>
         </AdminComponents.filter_bar>
 
-        <%= if @clients == [] do %>
+        <div class="lockspire-admin-client-inventory__results" aria-live="polite">
+          <AdminComponents.alert
+            :if={@inventory_state == :error}
+            variant={:danger}
+            title="Could not load clients"
+          >
+            <p>Your filters and investigation context are still available. Reload this view or return to the inventory and try again.</p>
+            <div class="lockspire-admin-client-inventory__recovery">
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path(@filters)}>
+                Reload this view
+              </.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path()}>
+                Return to the inventory
+              </.link>
+            </div>
+          </AdminComponents.alert>
+
           <AdminComponents.empty_state
-            title="No clients match this view"
-            body="Adjust the search or status filter, or register a new client."
-          />
-        <% else %>
-          <AdminComponents.resource_list>
+            :if={@inventory_state == :loaded and @clients == []}
+            title="No matching clients"
+            body="Change or clear the filters to see other records."
+          >
+            <:actions>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path()}>
+                Clear filters
+              </.link>
+            </:actions>
+          </AdminComponents.empty_state>
+
+          <AdminComponents.resource_list :if={@inventory_state == :loaded and @clients != []}>
             <%= for client <- @clients do %>
               <AdminComponents.resource_item
-                href={client_show_path(client.client_id)}
                 title={client.name || client.client_id}
                 subtitle={client.client_id}
               >
-                <:meta>
+                <:status>
                   <AdminComponents.status_badge status={status_for(client)} />
                   <AdminComponents.status_badge status={client.provenance} />
-                </:meta>
+                </:status>
+                <:actions>
+                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id)}>
+                    View client
+                  </.link>
+                </:actions>
               </AdminComponents.resource_item>
             <% end %>
           </AdminComponents.resource_list>
-        <% end %>
+        </div>
+      </AdminComponents.section_card>
+
+      <AdminComponents.section_card
+        title="Selected client context"
+        subtitle="The current URL filters remain available while you review the matching records."
+      >
+        <div class="lockspire-admin-detail-section">
+          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
+          <p>Status: {@filters["status"]}</p>
+          <p>Provenance: {@filters["provenance"]}</p>
+          <p :if={@inventory_state == :loaded}>Matching clients: {@matching_clients}</p>
+          <p :if={@inventory_state == :loaded}>Total clients: {@total_clients}</p>
+        </div>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
@@ -182,8 +200,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       |> put_provenance_filter(filters["provenance"])
 
     case Admin.list_clients(opts) do
-      {:ok, clients} -> clients
-      {:error, _reason} -> []
+      {:ok, clients} -> {:ok, clients}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp assign_inventory(socket, filters) do
+    with {:ok, clients} <- load_clients(filters),
+         {:ok, all_clients} <- load_clients(base_filters()) do
+      assign(socket,
+        filters: filters,
+        clients: paginate(clients, filters),
+        matching_clients: length(clients),
+        total_clients: length(all_clients),
+        inventory_state: :loaded
+      )
+    else
+      {:error, _reason} ->
+        assign(socket,
+          filters: filters,
+          clients: [],
+          matching_clients: nil,
+          total_clients: nil,
+          inventory_state: :error
+        )
     end
   end
 
@@ -226,8 +266,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp status_for(%{active: true}), do: :active
   defp status_for(_client), do: :disabled
 
-  defp clients_index_path, do: Lockspire.mount_path() <> "/admin/clients"
+  defp clients_index_path(filters \\ nil)
+  defp clients_index_path(nil), do: Lockspire.mount_path() <> "/admin/clients"
+
+  defp clients_index_path(filters),
+    do:
+      Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(Map.drop(filters, ["page"]))
+
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+
+  defp client_count_label(1), do: "1 matching client"
+  defp client_count_label(count), do: "#{count} matching clients"
 
   defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)
   defp put_status_filter(opts, "disabled"), do: Keyword.put(opts, :active, false)
