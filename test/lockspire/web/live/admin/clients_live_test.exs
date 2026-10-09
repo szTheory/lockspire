@@ -538,7 +538,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert rat_prompt_html =~ "Rotate registration access token"
     assert rat_prompt_html =~ "previous RAT stops being current"
-    assert rat_prompt_html =~ "Plaintext is shown once"
+    assert rat_prompt_html =~ "plaintext is shown once"
     refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm
