@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-discuss-phase 145",
-    "label": "Discuss Phase 145 — Configure and Onboard",
-    "reason": "Phase 144 verification passed; Phase 145 has no context or plans (installed progress Route B)."
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 145 of 4 · 25% · executing"
   },
-  "updated_at": "2026-10-09T18:11:58.521Z"
+  "updated_at": "2026-10-09T20:43:21.865Z"
 }
