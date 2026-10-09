@@ -216,6 +216,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert security_text =~ "Issuer default: FAPI 2.0 Security Profile"
     assert security_text =~ "Selected client override: Inherit from issuer"
     assert security_text =~ "Effective behavior if saved: FAPI 2.0 Security Profile"
+    assert security_text =~ "Currently saved effective profile: FAPI 2.0 Security Profile"
 
     changed_security_html =
       security_view
@@ -290,9 +291,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert updated_client.authorization_signed_response_alg == :ES256
 
     html_after = render(view)
-    assert html_after =~ "Effective profile:"
+    assert html_after =~ "Currently saved effective profile:"
     assert html_after =~ "FAPI 2.0 Message Signing"
-    assert html_after =~ "Strict readiness:"
+    assert html_after =~ "Current strict readiness:"
     assert html_after =~ "Ready"
   end
 

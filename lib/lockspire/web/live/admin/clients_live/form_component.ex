@@ -481,15 +481,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
           <div :if={@effective_security_profile} class="lockspire-admin-help">
             <p>
-              <strong>Global policy:</strong> {@effective_security_profile.global_profile}
+              <strong>Currently saved global policy:</strong>
+              {@effective_security_profile.global_profile}
             </p>
             <p>
-              <strong>Effective profile:</strong> {effective_profile_label(
+              <strong>Currently saved effective profile:</strong> {effective_profile_label(
                 @effective_security_profile
               )}
             </p>
             <p>
-              <strong>Strict readiness:</strong> {strict_readiness_label(
+              <strong>Current strict readiness:</strong> {strict_readiness_label(
                 @effective_security_profile,
                 @strict_readiness
               )}
