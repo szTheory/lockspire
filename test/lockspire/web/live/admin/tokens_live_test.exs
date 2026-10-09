@@ -173,12 +173,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
       assert {:noreply, failed_socket} =
                Index.handle_params(
-                 %{"account" => "account-read-failure", "client" => "client-read-failure", "status" => "revoked"},
+                 %{
+                   "account" => "account-read-failure",
+                   "client" => "client-read-failure",
+                   "status" => "revoked"
+                 },
                  "/lockspire/admin/tokens?account=account-read-failure&client=client-read-failure&status=revoked",
                  socket
                )
 
       html = rendered_to_string(Index.render(failed_socket.assigns))
+
       assert failed_socket.assigns.filters == %{
                "account" => "account-read-failure",
                "client" => "client-read-failure",

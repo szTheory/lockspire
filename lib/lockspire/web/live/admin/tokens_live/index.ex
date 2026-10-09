@@ -15,8 +15,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
        page_title: "Tokens",
        current_section: :tokens,
        tokens: [],
+       inventory_state: :loading,
        filters: %{"account" => "", "client" => "", "status" => "all"},
-       total_tokens: 0,
+       total_tokens: nil,
        token_metrics: token_metrics([])
      )}
   end
@@ -24,15 +25,28 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
-    tokens = load_tokens(filters)
 
-    {:noreply,
-     assign(socket,
-       filters: filters,
-       tokens: tokens,
-       total_tokens: length(tokens),
-       token_metrics: token_metrics(tokens)
-     )}
+    case load_tokens(filters) do
+      {:ok, tokens} ->
+        {:noreply,
+         assign(socket,
+           filters: filters,
+           tokens: tokens,
+           inventory_state: :loaded,
+           total_tokens: length(tokens),
+           token_metrics: token_metrics(tokens)
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         assign(socket,
+           filters: filters,
+           tokens: [],
+           inventory_state: :error,
+           total_tokens: nil,
+           token_metrics: nil
+         )}
+    end
   end
 
   @impl true
@@ -50,37 +64,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
           <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
         </:summary>
       </AdminComponents.page_hero>
-
-      <AdminComponents.decision_summary>
-        <:item
-          label="Selected filters"
-          value={selected_filter_summary(@filters)}
-          detail="Raw URL filters stay editable below while summaries use redacted handles."
-          tone={:info}
-        >
-        </:item>
-        <:item
-          label="Token health"
-          value={token_health_summary(@token_metrics)}
-          detail={"#{@total_tokens} matching token lifecycle records in this support view."}
-          tone={token_health_tone(@token_metrics)}
-        >
-        </:item>
-        <:item
-          label="Family pressure"
-          value={family_pressure_summary(@tokens)}
-          detail="Refresh-family context appears as redacted handles before the detail route."
-          tone={family_pressure_tone(@tokens)}
-        >
-        </:item>
-        <:item
-          label="Smallest safe action"
-          value={token_smallest_safe_action(@tokens)}
-          detail="Open one token before choosing any revocation path."
-          tone={if @tokens == [], do: :neutral, else: :info}
-        >
-        </:item>
-      </AdminComponents.decision_summary>
 
       <AdminComponents.section_card
         title="Filter token investigation"
@@ -109,29 +92,41 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
             </AdminComponents.form_field>
           </:fields>
           <:help>
-            <p>Total matching tokens: {@total_tokens}</p>
+            <p :if={@inventory_state == :loaded}>Matching tokens: {@total_tokens}</p>
+            <p :if={@inventory_state == :error}>Matching token count is unavailable.</p>
           </:help>
           <:actions>
             <AdminComponents.admin_button type="submit">Filter tokens</AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
-        <AdminComponents.metric_grid>
-          <AdminComponents.summary_stat value={@token_metrics.active} label="Active" />
-          <AdminComponents.summary_stat value={@token_metrics.revoked} label="Revoked" />
-          <AdminComponents.summary_stat value={@token_metrics.expired} label="Expired" />
-          <AdminComponents.summary_stat
-            value={@token_metrics.reuse_detected}
-            label="Reuse detected"
-          />
-        </AdminComponents.metric_grid>
-
-        <%= if @tokens == [] do %>
+        <div class="lockspire-admin-token-inventory__results" aria-live="polite" aria-atomic="true">
+        <%= case @inventory_state do %>
+        <% :loading -> %>
+          <p role="status">Loading tokens…</p>
+        <% :error -> %>
           <AdminComponents.empty_state
-            title="No investigation results match these filters"
-            body="Adjust the account, client, status, or scope filters, or return to the overview to choose a different Support workflow."
-          />
-        <% else %>
+            title="Could not load tokens"
+            body="Lockspire could not read the token inventory. The selected filters are still available; retry the read or change them."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={token_filter_path(@filters)}>
+                Try loading tokens again
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
+        <% :loaded when @tokens == [] -> %>
+          <AdminComponents.empty_state
+            title="No matching tokens"
+            body="No token records match the selected account, client, and status filters. Change a filter or clear the filters to search again."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={tokens_index_path()}>
+                Clear filters
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
+        <% :loaded -> %>
           <AdminComponents.resource_list>
             <%= for entry <- @tokens do %>
               <AdminComponents.dense_resource_row
@@ -170,14 +165,56 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
                 </:status>
                 <:actions>
                   <AdminComponents.admin_button href={token_show_path(entry.token.id)}>
-                    Review token
+                    View token details
                   </AdminComponents.admin_button>
                 </:actions>
               </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
         <% end %>
+        </div>
+
+        <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
+          <AdminComponents.summary_stat value={@token_metrics.active} label="Active" />
+          <AdminComponents.summary_stat value={@token_metrics.revoked} label="Revoked" />
+          <AdminComponents.summary_stat value={@token_metrics.expired} label="Expired" />
+          <AdminComponents.summary_stat
+            value={@token_metrics.reuse_detected}
+            label="Reuse detected"
+          />
+        </AdminComponents.metric_grid>
       </AdminComponents.section_card>
+
+      <AdminComponents.decision_summary :if={@inventory_state == :loaded}>
+        <:item
+          label="Selected filters"
+          value={selected_filter_summary(@filters)}
+          detail="Filters remain in the URL and can be changed above."
+          tone={:info}
+        >
+        </:item>
+        <:item
+          label="Token health"
+          value={token_health_summary(@token_metrics)}
+          detail={"#{@total_tokens} matching token lifecycle records in this support view."}
+          tone={token_health_tone(@token_metrics)}
+        >
+        </:item>
+        <:item
+          label="Family pressure"
+          value={family_pressure_summary(@tokens)}
+          detail="Refresh-family context appears as redacted handles in matching records."
+          tone={family_pressure_tone(@tokens)}
+        >
+        </:item>
+        <:item
+          label="Smallest safe action"
+          value={token_smallest_safe_action(@tokens)}
+          detail="Open one token before choosing any revocation path."
+          tone={if @tokens == [], do: :neutral, else: :info}
+        >
+        </:item>
+      </AdminComponents.decision_summary>
     </AdminLayoutLive.shell>
     """
   end
@@ -190,8 +227,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
       |> put_status_filter(filters["status"])
 
     case Admin.list_tokens(opts) do
-      {:ok, tokens} -> tokens
-      {:error, _reason} -> []
+      {:ok, tokens} -> {:ok, tokens}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -352,4 +389,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
   defp token_show_path(id), do: tokens_index_path() <> "/" <> Integer.to_string(id)
+
+  defp token_filter_path(filters) do
+    tokens_index_path() <> "?" <> URI.encode_query(filters)
+  end
 end

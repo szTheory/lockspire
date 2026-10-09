@@ -1315,6 +1315,26 @@ defmodule Lockspire.Web.Admin.CSS do
     padding: 0;
   }
 
+  .lockspire-admin-token-inventory__results {
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+  }
+
+  .lockspire-admin-token-inventory__results .lockspire-admin-empty__actions,
+  .lockspire-admin-token-inventory__results .lockspire-admin-dense-resource-row__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+    min-width: 0;
+  }
+
+  .lockspire-admin-token-inventory__results .lockspire-admin-dense-resource-row__main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .lockspire-admin-key-list {
     margin-top: var(--ls-space-4);
   }
