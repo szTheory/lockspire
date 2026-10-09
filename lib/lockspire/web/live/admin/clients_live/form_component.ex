@@ -9,7 +9,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   attr(:mode, :atom, required: true)
   attr(:client, Client, default: nil)
   attr(:effective_par_policy, :map, default: nil)
+  attr(:effective_dpop_policy, :map, default: nil)
   attr(:effective_security_profile, :map, default: nil)
+  attr(:global_access_token_format, :string, default: nil)
+  attr(:policy_load_state, :atom, default: :loaded)
   attr(:strict_readiness, :map, default: nil)
   attr(:errors, :list, default: [])
   attr(:params, :map, default: nil)
@@ -35,16 +38,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       </header>
 
       <AdminComponents.error_summary
-        :if={@mode in [:new, :edit] and @display_errors != []}
+        :if={@display_errors != []}
         title={@error_title}
         errors={@display_errors}
       />
-      <.error_list :if={@mode not in [:new, :edit]} errors={@display_errors} />
 
       <form
         id={@form_id}
         class="lockspire-admin-form-stack"
-        phx-change={if @mode == :new, do: "validate_client"}
+        phx-change={change_event(@mode)}
         phx-submit="save_client"
       >
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
@@ -192,6 +194,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 Require DPoP-bound access tokens
               </option>
             </select>
+            <div class="lockspire-admin-help">
+              <p><strong>Issuer default:</strong> {dpop_default_label(@effective_dpop_policy, @policy_load_state)}</p>
+              <p><strong>Selected client override:</strong> {dpop_choice_label(@defaults.dpop_policy)}</p>
+              <p>
+                <strong>Effective behavior if saved:</strong>
+                {dpop_effective_preview(@effective_dpop_policy, @defaults.dpop_policy, @policy_load_state)}
+              </p>
+            </div>
           </AdminComponents.form_field>
 
           <AdminComponents.form_field
@@ -227,6 +237,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               </p>
               <p>
                 <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
+              </p>
+              <p><strong>Issuer default:</strong> {access_token_format_label(@global_access_token_format, @policy_load_state)}</p>
+              <p><strong>Selected client override:</strong> {access_token_format_choice_label(@defaults.access_token_format)}</p>
+              <p>
+                <strong>Effective behavior if saved:</strong>
+                {access_token_format_preview(@global_access_token_format, @defaults.access_token_format, @policy_load_state)}
               </p>
             </div>
           </AdminComponents.form_field>
@@ -336,9 +352,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           ><%= @defaults.post_logout_redirect_uris %></textarea>
         </AdminComponents.form_field>
 
-        <div :if={@mode == :par_policy} class="lockspire-admin-field">
-          <label for="client_par_policy">Client PAR override</label>
-          <select id="client_par_policy" name="client[par_policy]">
+        <AdminComponents.form_field
+          :if={@mode == :par_policy}
+          id="client_par_policy"
+          label="Client PAR override"
+          errors={field_errors(@display_errors, :par_policy)}
+        >
+          <select
+            id="client_par_policy"
+            name="client[par_policy]"
+            aria-invalid={field_errors(@display_errors, :par_policy) != []}
+            aria-describedby={
+              if field_errors(@display_errors, :par_policy) != [],
+                do: "client_par_policy-error"
+            }
+          >
             <option value="inherit" selected={@defaults.par_policy == "inherit"}>
               Inherit from global policy
             </option>
@@ -350,22 +378,31 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             </option>
           </select>
 
-          <div :if={@effective_par_policy} class="lockspire-admin-help">
+          <div class="lockspire-admin-help">
+            <p><strong>Issuer default:</strong> {par_default_label(@effective_par_policy, @policy_load_state)}</p>
+            <p><strong>Selected client override:</strong> {par_choice_label(@defaults.par_policy)}</p>
             <p>
-              <strong>Global policy:</strong> {@effective_par_policy.global_policy}
-            </p>
-            <p>
-              <strong>Effective requirement:</strong> {if @effective_par_policy.par_required?,
-                do: "Required",
-                else: "Not required"}
+              <strong>Effective behavior if saved:</strong>
+              {par_effective_preview(@effective_par_policy, @defaults.par_policy, @policy_load_state)}
             </p>
           </div>
-        </div>
+        </AdminComponents.form_field>
 
         <div :if={@mode == :security_profile} class="lockspire-admin-fieldset">
-          <div class="lockspire-admin-field">
-            <label for="client_security_profile">Client security profile override</label>
-            <select id="client_security_profile" name="client[security_profile]">
+          <AdminComponents.form_field
+            id="client_security_profile"
+            label="Client security profile override"
+            errors={field_errors(@display_errors, :security_profile)}
+          >
+            <select
+              id="client_security_profile"
+              name="client[security_profile]"
+              aria-invalid={field_errors(@display_errors, :security_profile) != []}
+              aria-describedby={
+                if field_errors(@display_errors, :security_profile) != [],
+                  do: "client_security_profile-error"
+              }
+            >
               <option value="inherit" selected={@defaults.security_profile == "inherit"}>
                 Inherit from global policy
               </option>
@@ -385,15 +422,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 None (Standard OIDC)
               </option>
             </select>
-          </div>
+            <div class="lockspire-admin-help">
+              <p>
+                <strong>Issuer default:</strong>
+                {security_default_label(@effective_security_profile, @policy_load_state)}
+              </p>
+              <p><strong>Selected client override:</strong> {security_choice_label(@defaults.security_profile)}</p>
+              <p>
+                <strong>Effective behavior if saved:</strong>
+                {security_effective_preview(@effective_security_profile, @defaults.security_profile, @policy_load_state)}
+              </p>
+            </div>
+          </AdminComponents.form_field>
 
-          <div class="lockspire-admin-field">
-            <label for="client_authorization_signed_response_alg">
-              Authorization response signing algorithm
-            </label>
+          <AdminComponents.form_field
+            id="client_authorization_signed_response_alg"
+            label="Authorization response signing algorithm"
+            errors={field_errors(@display_errors, :authorization_signed_response_alg)}
+          >
             <select
               id="client_authorization_signed_response_alg"
               name="client[authorization_signed_response_alg]"
+              aria-invalid={field_errors(@display_errors, :authorization_signed_response_alg) != []}
+              aria-describedby={
+                if field_errors(@display_errors, :authorization_signed_response_alg) != [],
+                  do: "client_authorization_signed_response_alg-error"
+              }
             >
               <option value="" selected={is_nil(@defaults.authorization_signed_response_alg)}>
                 Use legacy default / not set
@@ -423,7 +477,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 EdDSA
               </option>
             </select>
-          </div>
+          </AdminComponents.form_field>
 
           <div :if={@effective_security_profile} class="lockspire-admin-help">
             <p>
@@ -530,6 +584,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               cond do
                 @mode == :new -> "Creating client…"
                 @mode == :edit -> "Saving client changes…"
+                @mode == :par_policy -> "Saving PAR policy…"
+                @mode == :security_profile -> "Saving security profile…"
                 true -> nil
               end
             }
@@ -546,18 +602,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         </AdminComponents.action_bar>
       </form>
     </section>
-    """
-  end
-
-  attr(:errors, :list, required: true)
-
-  def error_list(assigns) do
-    ~H"""
-    <ul :if={@errors != []} class="lockspire-admin-errors">
-      <%= for error <- @errors do %>
-        <li>{format_error(error)}</li>
-      <% end %>
-    </ul>
     """
   end
 
@@ -724,7 +768,119 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     end
   end
 
+  defp error_title(:par_policy, _errors),
+    do: "Client PAR override was not saved. Review the selected value and try again."
+
+  defp error_title(:security_profile, _errors),
+    do: "Client security profile was not saved. Review the selected value and try again."
+
   defp error_title(_mode, _errors), do: "Review the highlighted fields."
+
+  defp change_event(:new), do: "validate_client"
+
+  defp change_event(mode) when mode in [:edit, :par_policy, :security_profile],
+    do: "preview_client_policy"
+
+  defp change_event(_mode), do: nil
+
+  defp dpop_default_label(%{global_policy: :bearer}, :loaded), do: "Bearer access tokens"
+  defp dpop_default_label(%{global_policy: :dpop}, :loaded), do: "DPoP-bound access tokens"
+  defp dpop_default_label(_policy, _state), do: "Unavailable"
+
+  defp dpop_choice_label("inherit"), do: "Inherit from issuer"
+  defp dpop_choice_label("bearer"), do: "Use bearer access tokens"
+  defp dpop_choice_label("dpop"), do: "Require DPoP-bound access tokens"
+  defp dpop_choice_label(_value), do: "Review the selected value"
+
+  defp dpop_effective_preview(_policy, _choice, state) when state != :loaded,
+    do: "Unavailable until issuer policy loads"
+
+  defp dpop_effective_preview(%{global_policy: global}, "inherit", :loaded),
+    do: dpop_default_label(%{global_policy: global}, :loaded)
+
+  defp dpop_effective_preview(_policy, "bearer", :loaded), do: "Bearer access tokens"
+  defp dpop_effective_preview(_policy, "dpop", :loaded), do: "DPoP-bound access tokens"
+
+  defp dpop_effective_preview(_policy, _choice, :loaded),
+    do: "Unavailable until the selection is valid"
+
+  defp access_token_format_label("jwt", :loaded), do: "JWT (RFC 9068 at+jwt)"
+  defp access_token_format_label("opaque", :loaded), do: "Opaque (Lockspire-stored)"
+  defp access_token_format_label(_format, _state), do: "Unavailable"
+
+  defp access_token_format_choice_label("inherit"), do: "Inherit from issuer"
+  defp access_token_format_choice_label("jwt"), do: "JWT (RFC 9068 at+jwt)"
+  defp access_token_format_choice_label("opaque"), do: "Opaque (Lockspire-stored)"
+  defp access_token_format_choice_label(_value), do: "Review the selected value"
+
+  defp access_token_format_preview(_global, _choice, state) when state != :loaded,
+    do: "Unavailable until issuer policy loads"
+
+  defp access_token_format_preview(global, "inherit", :loaded),
+    do: access_token_format_label(global, :loaded)
+
+  defp access_token_format_preview(_global, "jwt", :loaded),
+    do: "JWT (RFC 9068 at+jwt)"
+
+  defp access_token_format_preview(_global, "opaque", :loaded),
+    do: "Opaque (Lockspire-stored)"
+
+  defp access_token_format_preview(_global, _choice, :loaded),
+    do: "Unavailable until the selection is valid"
+
+  defp par_default_label(%{global_policy: :required}, :loaded), do: "Required"
+  defp par_default_label(%{global_policy: :optional}, :loaded), do: "Optional"
+  defp par_default_label(_policy, _state), do: "Unavailable"
+
+  defp par_choice_label("inherit"), do: "Inherit from issuer"
+  defp par_choice_label("required"), do: "Require PAR for this client"
+  defp par_choice_label("optional"), do: "Allow requests without PAR for this client"
+  defp par_choice_label(_value), do: "Review the selected value"
+
+  defp par_effective_preview(_policy, _choice, state) when state != :loaded,
+    do: "Unavailable until issuer policy loads"
+
+  defp par_effective_preview(%{global_policy: global}, "inherit", :loaded),
+    do: par_default_label(%{global_policy: global}, :loaded)
+
+  defp par_effective_preview(_policy, "required", :loaded), do: "Required"
+  defp par_effective_preview(_policy, "optional", :loaded), do: "Optional"
+
+  defp par_effective_preview(_policy, _choice, :loaded),
+    do: "Unavailable until the selection is valid"
+
+  defp security_default_label(%{global_profile: profile}, :loaded),
+    do: security_profile_name(profile)
+
+  defp security_default_label(_profile, _state), do: "Unavailable"
+
+  defp security_choice_label("inherit"), do: "Inherit from issuer"
+  defp security_choice_label("fapi_2_0_message_signing"), do: "FAPI 2.0 Message Signing"
+  defp security_choice_label("fapi_2_0_security"), do: "FAPI 2.0 Security Profile"
+  defp security_choice_label("none"), do: "None (Standard OIDC)"
+  defp security_choice_label(_value), do: "Review the selected value"
+
+  defp security_effective_preview(_profile, _choice, state) when state != :loaded,
+    do: "Unavailable until issuer policy loads"
+
+  defp security_effective_preview(%{global_profile: global}, "inherit", :loaded),
+    do: security_profile_name(global)
+
+  defp security_effective_preview(_profile, "fapi_2_0_message_signing", :loaded),
+    do: "FAPI 2.0 Message Signing"
+
+  defp security_effective_preview(_profile, "fapi_2_0_security", :loaded),
+    do: "FAPI 2.0 Security Profile"
+
+  defp security_effective_preview(_profile, "none", :loaded), do: "None (Standard OIDC)"
+
+  defp security_effective_preview(_profile, _choice, :loaded),
+    do: "Unavailable until the selection is valid"
+
+  defp security_profile_name(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
+  defp security_profile_name(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
+  defp security_profile_name(:none), do: "None (Standard OIDC)"
+  defp security_profile_name(_profile), do: "Unavailable"
 
   defp form_id(:new), do: "client-create-form"
   defp form_id(:edit), do: "client-edit-form"
@@ -776,8 +932,4 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp button_for(:logout_uris), do: "Save post-logout redirect URIs"
   defp button_for(:par_policy), do: "Save PAR policy"
   defp button_for(:security_profile), do: "Save security profile"
-
-  defp format_error(%{field: field, reason: reason, detail: detail}) do
-    "#{field} #{reason} #{inspect(detail)}"
-  end
 end

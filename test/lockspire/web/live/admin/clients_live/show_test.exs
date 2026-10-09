@@ -132,6 +132,114 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "mixed-mode bypass"
   end
 
+  test "unavailable issuer policy is shown as unavailable instead of a default", %{
+    client: client
+  } do
+    Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_server_policies", [])
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert html =~ "Issuer policy is unavailable"
+
+    assert html =~
+             "The client overrides are still shown, but issuer defaults and effective behavior could not be loaded."
+
+    visible = text_content(html)
+    assert visible =~ "Global security profile Unavailable"
+    assert visible =~ "Global PAR policy Unavailable"
+    assert visible =~ "Global access token format Unavailable"
+    refute visible =~ "Global security profile none"
+    refute visible =~ "Global PAR policy optional"
+    refute visible =~ "Global access token format jwt"
+  end
+
+  test "override editors show issuer default, selected client override, and effective behavior",
+       %{
+         client: client
+       } do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%Lockspire.Domain.ServerPolicy{
+               id: 1,
+               par_policy: :required,
+               dpop_policy: :dpop,
+               security_profile: :fapi_2_0_security,
+               access_token_format: :opaque
+             })
+
+    assert {:ok, edit_view, edit_html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/edit")
+
+    edit_text = text_content(edit_html)
+    assert edit_text =~ "Issuer default: DPoP-bound access tokens"
+    assert edit_text =~ "Selected client override: Inherit from issuer"
+    assert edit_text =~ "Effective behavior if saved: DPoP-bound access tokens"
+    assert edit_text =~ "Issuer default: Opaque"
+    assert edit_text =~ "Effective behavior if saved: Opaque"
+
+    changed_edit_html =
+      edit_view
+      |> form("#client-edit-form", %{
+        client: %{mode: "edit", dpop_policy: "bearer", access_token_format: "jwt"}
+      })
+      |> render_change()
+
+    changed_edit_text = text_content(changed_edit_html)
+    assert changed_edit_text =~ "Selected client override: Use bearer access tokens"
+    assert changed_edit_text =~ "Effective behavior if saved: Bearer access tokens"
+    assert changed_edit_text =~ "Selected client override: JWT (RFC 9068 at+jwt)"
+    assert changed_edit_text =~ "Effective behavior if saved: JWT (RFC 9068 at+jwt)"
+
+    assert {:ok, par_view, par_html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/par-policy")
+
+    par_text = text_content(par_html)
+    assert par_text =~ "Issuer default: Required"
+    assert par_text =~ "Selected client override: Inherit from issuer"
+    assert par_text =~ "Effective behavior if saved: Required"
+
+    changed_par_html =
+      par_view
+      |> form("#client-par-policy-form", %{client: %{mode: "par_policy", par_policy: "optional"}})
+      |> render_change()
+
+    changed_par_text = text_content(changed_par_html)
+
+    assert changed_par_text =~
+             "Selected client override: Allow requests without PAR for this client"
+
+    assert changed_par_text =~ "Effective behavior if saved: Optional"
+
+    assert {:ok, security_view, security_html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/security-profile")
+
+    security_text = text_content(security_html)
+    assert security_text =~ "Issuer default: FAPI 2.0 Security Profile"
+    assert security_text =~ "Selected client override: Inherit from issuer"
+    assert security_text =~ "Effective behavior if saved: FAPI 2.0 Security Profile"
+
+    changed_security_html =
+      security_view
+      |> form("#client-security-profile-form", %{
+        client: %{mode: "security_profile", security_profile: "none"}
+      })
+      |> render_change()
+
+    changed_security_text = text_content(changed_security_html)
+    assert changed_security_text =~ "Selected client override: None (Standard OIDC)"
+    assert changed_security_text =~ "Effective behavior if saved: None (Standard OIDC)"
+
+    invalid_security_html = render_invalid_security_profile_html(client.client_id)
+
+    invalid_security_text = text_content(invalid_security_html)
+    assert invalid_security_text =~ "Client security profile was not saved."
+    assert invalid_security_text =~ "Review this value and try again."
+    assert invalid_security_text =~ "security-show-client"
+    assert invalid_security_html =~ ~s(aria-invalid="true")
+    assert invalid_security_html =~ ~s(aria-describedby="client_security_profile-error")
+
+    HtmlAssertions.assert_describedby_targets_exist(invalid_security_html)
+  end
+
   test "per-client security profile editor renders current values and persists updates", %{
     client: client
   } do
@@ -386,7 +494,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Rotate client secret"
     assert html =~ "previous secret stops being the current credential"
     assert html =~ "Plaintext is shown once"
-    assert html =~ "Lockspire does not store or re-show it"
+    assert html =~ "not stored"
+    assert html =~ "token endpoint"
+    assert html =~ ~s(phx-disable-with="Rotating client secret…")
     refute html =~ "sha256:show:hash"
     refute html =~ "client_secret_hash"
 
@@ -414,6 +524,170 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       "Reveal secret",
       "Export credential"
     ])
+  end
+
+  test "client secret acknowledgement and route departure clear the one-time value", %{
+    client: client
+  } do
+    assert {:ok, view, _html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
+
+    rotated_html =
+      view
+      |> form("form[phx-submit=rotate_secret]", %{rotate: %{confirm: "true"}})
+      |> render_submit()
+
+    plaintext_secret = extract_copy_once_value(rotated_html)
+
+    hidden_html =
+      view
+      |> element("button[phx-click=acknowledge_secret]")
+      |> render_click()
+
+    refute hidden_html =~ plaintext_secret
+
+    rotated_again_html =
+      view
+      |> form("form[phx-submit=rotate_secret]", %{rotate: %{confirm: "true"}})
+      |> render_submit()
+
+    second_secret = extract_copy_once_value(rotated_again_html)
+    assert second_secret != plaintext_secret
+
+    detail_html = render_patch(view, "/admin/clients/#{client.client_id}")
+    refute detail_html =~ second_secret
+
+    reopened_html = render_patch(view, "/admin/clients/#{client.client_id}/rotate-secret")
+    refute reopened_html =~ second_secret
+  end
+
+  test "registration access token rotation explains its endpoint and clears on acknowledgement and route exit",
+       %{client: client} do
+    assert {:ok, self_registered_client} =
+             Repository.register_client(%Client{
+               client_id: "rat-handoff-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "RAT Handoff Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_access_token_hash: "sha256:rat:handoff",
+               registration_client_uri: "https://issuer.example.com/register/rat-handoff-client",
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    path = "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
+    assert {:ok, view, html} = live(conn_for_admin(), path)
+
+    assert html =~ "Registration Access Token manages this client at its Registration Client URI"
+    assert html =~ self_registered_client.registration_client_uri
+    assert html =~ ~s(phx-disable-with="Rotating Registration Access Token…")
+
+    rotated_html =
+      view
+      |> form("form[phx-submit=rotate_rat]", %{rotate: %{confirm: "true"}})
+      |> render_submit()
+
+    plaintext_rat = extract_copy_once_value(rotated_html)
+    assert rotated_html =~ "New Registration Access Token"
+
+    detail_html = render_patch(view, "/admin/clients/#{self_registered_client.client_id}")
+    refute detail_html =~ plaintext_rat
+
+    reopened_html = render_patch(view, path)
+    refute reopened_html =~ plaintext_rat
+
+    rotated_again_html =
+      view
+      |> form("form[phx-submit=rotate_rat]", %{rotate: %{confirm: "true"}})
+      |> render_submit()
+
+    second_rat = extract_copy_once_value(rotated_again_html)
+
+    hidden_html =
+      view
+      |> element("button[phx-click=acknowledge_rat]")
+      |> render_click()
+
+    refute hidden_html =~ second_rat
+  end
+
+  test "failed secret and RAT rotations preserve client context without showing a credential", %{
+    client: client
+  } do
+    unavailable_repo = Module.concat(__MODULE__, "UnavailableRotationRepo")
+    prior_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      assert {:ok, secret_view, _html} =
+               live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
+
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      secret_error_html =
+        secret_view
+        |> form("form[phx-submit=rotate_secret]", %{rotate: %{confirm: "true"}})
+        |> render_submit()
+
+      assert secret_error_html =~ "Rotation was not confirmed. No new client secret is shown."
+      assert secret_error_html =~ "security-show-client"
+      refute secret_error_html =~ "New client secret"
+      refute secret_error_html =~ "client_secret_hash"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+
+    assert {:ok, self_registered_client} =
+             Repository.register_client(%Client{
+               client_id: "rat-failure-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "RAT Failure Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_access_token_hash: "sha256:rat:failure",
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    assert {:ok, rat_view, _html} =
+             live(
+               conn_for_admin(),
+               "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
+             )
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      rat_error_html =
+        rat_view
+        |> form("form[phx-submit=rotate_rat]", %{rotate: %{confirm: "true"}})
+        |> render_submit()
+
+      assert rat_error_html =~
+               "Rotation was not confirmed. No new Registration Access Token is shown."
+
+      assert rat_error_html =~ "rat-failure-client"
+      refute rat_error_html =~ "New Registration Access Token"
+      refute rat_error_html =~ "sha256:rat:failure"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   test "client lifecycle changes require explicit confirmation", %{client: client} do
@@ -809,6 +1083,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     Phoenix.ConnTest.build_conn()
   end
 
+  defp text_content(html) do
+    html
+    |> then(&Regex.replace(~r/<[^>]+>/u, &1, " "))
+    |> String.replace(~r/\s+/u, " ")
+  end
+
   defp render_show_html(client_id) do
     assert {:ok, socket} =
              Show.mount(%{"client_id" => client_id}, %{}, %Phoenix.LiveView.Socket{
@@ -819,6 +1099,35 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              Show.handle_params(
                %{"client_id" => client_id},
                "/admin/clients/#{client_id}",
+               socket
+             )
+
+    rendered_to_string(Show.render(socket.assigns))
+  end
+
+  defp render_invalid_security_profile_html(client_id) do
+    assert {:ok, socket} =
+             Show.mount(%{"client_id" => client_id}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :security_profile, __changed__: %{}}
+             })
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"client_id" => client_id},
+               "/admin/clients/#{client_id}/security-profile",
+               socket
+             )
+
+    assert {:noreply, socket} =
+             Show.handle_event(
+               "save_client",
+               %{
+                 "client" => %{
+                   "mode" => "security_profile",
+                   "security_profile" => "unsupported-profile",
+                   "authorization_signed_response_alg" => ""
+                 }
+               },
                socket
              )
 

@@ -9,6 +9,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.MessageSigningProfile
+  alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Web.Components.AdminComponents
@@ -32,7 +33,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        form_params: nil,
        save_notice: nil,
        effective_par_policy: nil,
+       effective_dpop_policy: nil,
        effective_security_profile: nil,
+       policy_load_state: :unavailable,
        strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
        remote_jwks_summary: nil,
@@ -60,9 +63,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        save_notice: if(form_mode, do: nil, else: socket.assigns.save_notice),
        form_errors: [],
        rotation_errors: [],
-       lifecycle_errors: []
+       lifecycle_errors: [],
+       revealed_secret: nil,
+       revealed_rat: nil
      )
      |> load_client(Map.get(params, "client_id", socket.assigns.client_id))}
+  end
+
+  @impl true
+  def handle_event(
+        "preview_client_policy",
+        %{"client" => params},
+        %{assigns: %{form_mode: mode}} = socket
+      )
+      when mode in [:edit, :par_policy, :security_profile] do
+    {:noreply, assign(socket, form_params: safe_form_params(params, mode))}
   end
 
   @impl true
@@ -75,24 +90,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
     case result do
       {:ok, %Client{} = client} ->
-        server_policy = server_policy()
-
         updated_socket =
           assign(socket,
             client: client,
             client_load_state: :loaded,
-            effective_par_policy: resolve_effective_par_policy(client),
-            effective_security_profile: resolve_effective_security_profile(client),
             strict_readiness: strict_readiness(),
             remote_jwks_summary: AdminClients.remote_jwks_summary(client),
-            global_access_token_format: global_access_token_format(server_policy),
-            effective_access_token_format:
-              resolve_effective_access_token_format(server_policy, client),
             form_errors: [],
             form_params: nil,
             save_notice:
               if(socket.assigns.form_mode == :edit, do: "Client changes saved.", else: nil)
           )
+          |> assign(policy_view_assigns(client))
 
         if socket.assigns.form_mode == :edit do
           {:noreply, push_patch(updated_socket, to: show_path(client.client_id, :show))}
@@ -118,51 +127,99 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     end
   end
 
-  def handle_event("rotate_secret", %{"rotate" => %{"confirm" => "true"}}, socket) do
+  def handle_event(
+        "rotate_secret",
+        %{"rotate" => %{"confirm" => "true"}},
+        %{assigns: %{action: :rotate_secret, revealed_secret: nil}} = socket
+      ) do
     case Admin.rotate_client_secret(socket.assigns.client_id, %{
            actor: %{type: :operator, id: "admin-ui"}
          }) do
       {:ok, %{client: client, client_secret: secret}} ->
-        {:noreply, assign(socket, client: client, revealed_secret: secret, rotation_errors: [])}
-
-      {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, rotation_errors: errors)}
+        {:noreply,
+         assign(socket,
+           client: client,
+           revealed_secret: secret,
+           revealed_rat: nil,
+           rotation_errors: []
+         )}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, rotation_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           revealed_secret: nil,
+           revealed_rat: nil,
+           rotation_errors: [client_secret_rotation_error()]
+         )}
     end
   end
 
-  def handle_event("rotate_secret", _params, socket) do
+  def handle_event(
+        "rotate_secret",
+        _params,
+        %{assigns: %{action: :rotate_secret, revealed_secret: nil}} = socket
+      ) do
     {:noreply,
      assign(socket,
        rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
      )}
   end
 
-  def handle_event("rotate_rat", %{"rotate" => %{"confirm" => "true"}}, socket) do
+  def handle_event(
+        "rotate_rat",
+        %{"rotate" => %{"confirm" => "true"}},
+        %{
+          assigns: %{
+            action: :rotate_registration_access_token,
+            client: %Client{provenance: :self_registered},
+            revealed_rat: nil
+          }
+        } = socket
+      ) do
     case Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(
            socket.assigns.client
          ) do
       {:ok, plaintext, updated_client} ->
         {:noreply,
-         assign(socket, client: updated_client, revealed_rat: plaintext, rotation_errors: [])}
-
-      {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, rotation_errors: errors)}
+         assign(socket,
+           client: updated_client,
+           revealed_secret: nil,
+           revealed_rat: plaintext,
+           rotation_errors: []
+         )}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, rotation_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           revealed_secret: nil,
+           revealed_rat: nil,
+           rotation_errors: [registration_token_rotation_error()]
+         )}
     end
   end
 
-  def handle_event("rotate_rat", _params, socket) do
+  def handle_event(
+        "rotate_rat",
+        _params,
+        %{
+          assigns: %{
+            action: :rotate_registration_access_token,
+            client: %Client{provenance: :self_registered},
+            revealed_rat: nil
+          }
+        } = socket
+      ) do
     {:noreply,
      assign(socket,
        rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
      )}
+  end
+
+  def handle_event("rotate_secret", _params, socket), do: {:noreply, socket}
+  def handle_event("rotate_rat", _params, socket), do: {:noreply, socket}
+
+  def handle_event("acknowledge_secret", _params, socket) do
+    {:noreply, assign(socket, revealed_secret: nil)}
   end
 
   def handle_event("acknowledge_rat", _params, socket) do
@@ -295,16 +352,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           title="Effective posture"
           subtitle="Issuer defaults and client overrides shown together."
         >
+          <AdminComponents.alert
+            :if={@policy_load_state == :unavailable}
+            variant={:warning}
+            title="Issuer policy is unavailable"
+          >
+            <p>
+              The client overrides are still shown, but issuer defaults and effective behavior could not be loaded.
+            </p>
+          </AdminComponents.alert>
           <:status>
             <AdminComponents.status_cluster>
               <span>Security: {security_verdict_for(@effective_security_profile)}</span>
               <span>PAR: {verdict_for(@effective_par_policy)}</span>
-              <span>Access tokens: {@effective_access_token_format}</span>
+              <span>Access tokens: {policy_value_label(@effective_access_token_format)}</span>
             </AdminComponents.status_cluster>
           </:status>
           <AdminComponents.description_list>
             <:item label="Global security profile">
-              <code>{security_profile_label(@effective_security_profile.global_profile)}</code>
+              <code>{security_global_profile_label(@effective_security_profile)}</code>
             </:item>
             <:item label="Client security override">
               <code>{security_profile_label(@client.security_profile)}</code>
@@ -313,7 +379,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <strong>{security_verdict_for(@effective_security_profile)}</strong>
             </:item>
             <:item label="Global PAR policy">
-              <code>{par_policy_label(@effective_par_policy.global_policy)}</code>
+              <code>{par_global_policy_label(@effective_par_policy)}</code>
             </:item>
             <:item label="Client PAR override">
               <code>{par_policy_label(@client.par_policy)}</code>
@@ -322,13 +388,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <strong>{verdict_for(@effective_par_policy)}</strong>
             </:item>
             <:item label="Global access token format">
-              <code>{@global_access_token_format}</code>
+              <code>{policy_value_label(@global_access_token_format)}</code>
             </:item>
             <:item label="Client access token override">
               <code>{access_token_format_override_label(@client.access_token_format)}</code>
             </:item>
             <:item label="Effective access token format">
-              <strong>{@effective_access_token_format}</strong>
+              <strong>{policy_value_label(@effective_access_token_format)}</strong>
+            </:item>
+            <:item label="Global DPoP policy">
+              <code>{dpop_policy_label(global_dpop_policy(@effective_dpop_policy))}</code>
+            </:item>
+            <:item label="Client DPoP override">
+              <code>{dpop_policy_label(@client.dpop_policy)}</code>
+            </:item>
+            <:item label="Effective DPoP behavior">
+              <strong>{dpop_policy_label(effective_dpop_policy(@effective_dpop_policy))}</strong>
             </:item>
           </AdminComponents.description_list>
 
@@ -660,7 +735,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           mode={@form_mode}
           client={@client}
           effective_par_policy={@effective_par_policy}
+          effective_dpop_policy={@effective_dpop_policy}
           effective_security_profile={@effective_security_profile}
+          global_access_token_format={@global_access_token_format}
+          policy_load_state={@policy_load_state}
           strict_readiness={@strict_readiness}
           errors={@form_errors}
           params={@form_params}
@@ -675,8 +753,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         <section class="lockspire-admin-form-shell">
           <header>
             <p>
-              Plaintext is shown once. The previous RAT stops being current after rotation;
-              Lockspire keeps only the durable redacted state.
+              A Registration Access Token manages this client at its Registration Client URI.
+              The previous token stops being current after rotation. Lockspire keeps only the
+              durable redacted state.
+            </p>
+            <p>
+              <strong>Registration Client URI:</strong>
+              <AdminComponents.long_value
+                value={value_or_not_configured(@client.registration_client_uri)}
+                kind={:url}
+              />
             </p>
           </header>
 
@@ -703,7 +789,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </label>
 
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:danger}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:danger}
+                phx-disable-with="Rotating Registration Access Token…"
+              >
                 Rotate registration access token
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -730,7 +820,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       client: nil,
       client_load_state: :not_found,
       effective_par_policy: nil,
+      effective_dpop_policy: nil,
       effective_security_profile: nil,
+      policy_load_state: :unavailable,
       strict_readiness: default_readiness(),
       private_key_jwt_truth: nil,
       remote_jwks_summary: nil,
@@ -742,22 +834,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp load_client(socket, client_id) do
     case Admin.get_client(client_id) do
       {:ok, %Client{} = client} ->
-        server_policy = server_policy()
-
         assign(socket,
           client_id: client_id,
           client: client,
           client_load_state: :loaded,
-          effective_par_policy: resolve_effective_par_policy(client),
-          effective_security_profile: resolve_effective_security_profile(client),
           strict_readiness: strict_readiness(),
-          private_key_jwt_truth:
-            AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
-          remote_jwks_summary: AdminClients.remote_jwks_summary(client),
-          global_access_token_format: global_access_token_format(server_policy),
-          effective_access_token_format:
-            resolve_effective_access_token_format(server_policy, client)
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
         )
+        |> assign(policy_view_assigns(client))
 
       {:error, :not_found} ->
         assign(socket,
@@ -765,7 +849,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client: nil,
           client_load_state: :not_found,
           effective_par_policy: nil,
+          effective_dpop_policy: nil,
           effective_security_profile: nil,
+          policy_load_state: :unavailable,
           strict_readiness: default_readiness(),
           private_key_jwt_truth: nil,
           remote_jwks_summary: nil,
@@ -779,7 +865,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           client: nil,
           client_load_state: :error,
           effective_par_policy: nil,
+          effective_dpop_policy: nil,
           effective_security_profile: nil,
+          policy_load_state: :unavailable,
           strict_readiness: default_readiness(),
           private_key_jwt_truth: nil,
           remote_jwks_summary: nil,
@@ -939,18 +1027,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp status_for(%Client{active: true}), do: :active
   defp status_for(%Client{}), do: :disabled
 
-  defp resolve_effective_par_policy(%Client{} = client) do
-    ParPolicy.resolve_effective_policy(server_policy(), client)
-  end
-
-  defp resolve_effective_security_profile(%Client{} = client) do
-    SecurityProfile.resolve_effective_profile(server_policy(), client)
-  end
-
-  defp server_policy do
+  defp policy_view_assigns(%Client{} = client) do
     case Admin.get_server_policy() do
-      {:ok, %ServerPolicy{} = policy} -> policy
-      {:error, _reason} -> %ServerPolicy{}
+      {:ok, %ServerPolicy{} = policy} ->
+        {:ok, effective_dpop_policy} = DpopPolicy.resolve_effective_policy(policy, client)
+
+        %{
+          policy_load_state: :loaded,
+          effective_par_policy: ParPolicy.resolve_effective_policy(policy, client),
+          effective_dpop_policy: effective_dpop_policy,
+          effective_security_profile: SecurityProfile.resolve_effective_profile(policy, client),
+          strict_readiness: strict_readiness(),
+          private_key_jwt_truth: AdminServerPolicy.private_key_jwt_registration_truth(policy),
+          global_access_token_format: global_access_token_format(policy),
+          effective_access_token_format: resolve_effective_access_token_format(policy, client)
+        }
+
+      {:error, _reason} ->
+        %{
+          policy_load_state: :unavailable,
+          effective_par_policy: nil,
+          effective_dpop_policy: nil,
+          effective_security_profile: nil,
+          private_key_jwt_truth: nil,
+          global_access_token_format: nil,
+          effective_access_token_format: nil
+        }
     end
   end
 
@@ -977,13 +1079,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     Atom.to_string(policy)
   end
 
+  defp par_policy_label(nil), do: "Unavailable"
+
+  defp par_global_policy_label(nil), do: "Unavailable"
+  defp par_global_policy_label(%{global_policy: policy}), do: par_policy_label(policy)
+
+  defp dpop_policy_label(policy) when policy in [:inherit, :bearer, :dpop],
+    do: Atom.to_string(policy)
+
+  defp dpop_policy_label(nil), do: "Unavailable"
+  defp global_dpop_policy(nil), do: nil
+  defp global_dpop_policy(%{global_policy: policy}), do: policy
+  defp effective_dpop_policy(nil), do: nil
+  defp effective_dpop_policy(%{effective_policy: policy}), do: policy
+
+  defp security_global_profile_label(nil), do: "Unavailable"
+
+  defp security_global_profile_label(%{global_profile: profile}),
+    do: security_profile_label(profile)
+
   defp security_profile_label(profile)
        when profile in [:inherit, :fapi_2_0_message_signing, :fapi_2_0_security, :none] do
     Atom.to_string(profile)
   end
 
+  defp security_profile_label(nil), do: "Unavailable"
+
+  defp policy_value_label(nil), do: "Unavailable"
+  defp policy_value_label(value), do: value
+
   defp verdict_for(%{par_required?: true}), do: "Required"
   defp verdict_for(%{par_required?: false}), do: "Not required"
+  defp verdict_for(nil), do: "Unavailable"
 
   defp security_verdict_for(%{effective_profile: :fapi_2_0_message_signing}),
     do: "FAPI 2.0 Message Signing"
@@ -992,6 +1119,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     do: "FAPI 2.0 Security Profile"
 
   defp security_verdict_for(%{effective_profile: :none}), do: "None (Standard OIDC)"
+  defp security_verdict_for(nil), do: "Unavailable"
 
   defp mixed_mode_override?(%{
          global_profile: :fapi_2_0_message_signing,
@@ -1044,6 +1172,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp supported_assertion_algorithms(%{supported_assertion_signing_algorithms: algorithms}) do
     Enum.join(algorithms, ", ")
+  end
+
+  defp client_secret_rotation_error do
+    %{
+      field: :base,
+      reason: :request_failed,
+      detail: nil,
+      message:
+        "Rotation was not confirmed. No new client secret is shown. Check the client before retrying."
+    }
+  end
+
+  defp registration_token_rotation_error do
+    %{
+      field: :base,
+      reason: :request_failed,
+      detail: nil,
+      message:
+        "Rotation was not confirmed. No new Registration Access Token is shown. Review the client before retrying."
+    }
   end
 
   defp format_datetime(nil), do: "Never"
