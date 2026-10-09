@@ -47,7 +47,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert text =~ "Initial Access Tokens authorize initial registration requests"
 
     assert text =~
-             "Registration Access Tokens manage one registered client's configuration endpoint"
+             "Registration Access Tokens manage one registered client&#39;s configuration endpoint"
 
     assert text =~ "Client secrets authenticate confidential clients at the token endpoint"
     assert html =~ ~s(href="/admin/policies/dcr")
@@ -59,7 +59,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
     text = rendered_text(html)
 
-    assert text =~ "0 active IATs"
+    assert text =~ "Active 0"
     assert text =~ "0 self-registered clients"
     assert text =~ "No self-registered clients yet"
     assert text =~ "Mint initial access token"
@@ -77,7 +77,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert text =~ "2 self-registered clients"
     assert text =~ "Northstar Reports"
     assert text =~ "Billing Console"
-    assert text =~ "1 active IAT"
+    assert text =~ "Active 1"
     assert html =~ ~s(href="/admin/clients/#{client.client_id}")
     refute html =~ "fixture-iat-hash-1"
   end
@@ -91,10 +91,10 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       text = rendered_text(html)
 
       assert text =~ "Registration policy unavailable"
-      assert text =~ "1 active IAT"
+      assert text =~ "Active 1"
       assert text =~ "1 self-registered client"
       refute text =~ "Registration disabled"
-      refute text =~ "0 active IATs"
+      refute text =~ "Active 0"
     end)
   end
 
@@ -106,7 +106,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       text = rendered_text(html)
 
       assert text =~ "Registration disabled"
-      assert text =~ "1 active IAT"
+      assert text =~ "Active 1"
       assert text =~ "Self-registered client inventory unavailable"
       refute text =~ "0 self-registered clients"
     end)
@@ -122,7 +122,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       assert text =~ "Registration disabled"
       assert text =~ "1 self-registered client"
       assert text =~ "Initial Access Token inventory unavailable"
-      refute text =~ "0 active IATs"
+      refute text =~ "Active 0"
     end)
   end
 
