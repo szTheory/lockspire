@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; roadmap approved; Phase 144 planned with four checked plans. No UI implementation or fresh browser proof is claimed.
+- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; Phase 144 complete with four executed plans, passed independent verification, and a stable synthetic preview. Phase 145 is next.
 - ✅ **[v1.39 Verified 1.5.1 Release](milestones/v1.39-ROADMAP.md)** — Phases 142–143; Lockspire 1.5.1 shipped 2026-10-08. Phase 143's exact-head PR #119 merge-authorization gap was acknowledged at closeout; see the archived audit.
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
@@ -11,11 +11,11 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Overview
 
-Refine the existing embedded LiveView operator UI through four complete delivery boundaries: prove shared improvements on working client-configuration and support-investigation journeys; extend them through Configure and onboarding; make Support, Orient, and read-only Operate states and consequences truthful; then confirm coherence across the full surface and leave a stable preview for optional feedback. Phase 144 begins by bringing up the host-mounted synthetic demo, confirming current source and served styles, and refreshing all 29 existing route/workflow scorecards. The documented demo returned HTTP 404 during preflight, so a fresh browser baseline and the exact preview setup are still unknown. Each implementation phase must carry responsive, keyboard, theme, domain-copy, redaction, and reduced-motion behavior in its changed pages; Phase 147 owns final cross-surface acceptance. Use existing components, `--ls-*` tokens, and valid historical UI work. Keep the feedback preview stable and run mutating checks against separate disposable data. Scope excludes new protocol or service capability, host-owned account UX, invented queue controls, a new frontend stack, paid/open-ended visual judges, and any reexecution of the archived Phase 143 release decision.
+Refine the existing embedded LiveView operator UI through four complete delivery boundaries: prove shared improvements on working client-configuration and support-investigation journeys; extend them through Configure and onboarding; make Support, Orient, and read-only Operate states and consequences truthful; then confirm coherence across the full surface and leave a stable preview for optional feedback. Phase 144 established the isolated host-mounted synthetic demo, confirmed current source and served styles, and refreshed all 29 existing route/workflow observations before editing. Its preview recipe, connected representative jobs, and explicit coverage limits are retained in the phase evidence. Each implementation phase must carry responsive, keyboard, theme, domain-copy, redaction, and reduced-motion behavior in its changed pages; Phase 147 owns final cross-surface acceptance. Use existing components, `--ls-*` tokens, and valid historical UI work. Keep the feedback preview stable and run mutating checks against separate disposable data. Scope excludes new protocol or service capability, host-owned account UX, invented queue controls, a new frontend stack, paid/open-ended visual judges, and any reexecution of the archived Phase 143 release decision.
 
 ## Phases
 
-- [ ] **Phase 144: Working Preview and Representative Journeys** - Open the actual mounted UI and deliver shared refinements on complete client-configuration and token/consent-investigation workflows.
+- [x] **Phase 144: Working Preview and Representative Journeys** - Open the actual mounted UI and deliver shared refinements on complete client-configuration and token/consent-investigation workflows. Completed 2026-10-09.
 - [ ] **Phase 145: Configure and Onboard** - Carry the proven patterns through supported client, policy, credential, DCR, and key workflows.
 - [ ] **Phase 146: Support, Orient, and Operate** - Make investigation, revocation, overview, and read-only operations clear and truthful, including failed or unknown observations.
 - [ ] **Phase 147: Surface Coherence and Working Preview** - Confirm responsive, accessible, themed, and motion behavior across the surface with bounded evidence and a stable optional-feedback preview.
@@ -55,7 +55,7 @@ Refine the existing embedded LiveView operator UI through four complete delivery
   3. Operator can find a token or consent grant, inspect its context, and reach the relevant supported next action through a complete mounted investigation journey.
   4. Maintainer can compare representative before/after views and apply the demonstrated page, type, spacing, control, and domain-language patterns through existing shared components and tokens.
 
-**Plans**: 4/4 plans executed
+**Plans**: 4/4 plans complete
 Plans:
 **Wave 1**
 - [x] 144-01-PLAN.md — Isolated host preview and fresh before-edit 29-workflow baseline
@@ -128,7 +128,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 144. Working Preview and Representative Journeys | v1.40 | 4/4 | In Progress | - |
+| 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
 | 145. Configure and Onboard | v1.40 | 0/TBD | Not started | - |
 | 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |

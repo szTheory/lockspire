@@ -1,12 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.40 — Admin Operator UI Refinement",
+  "milestone": "v1.40 \u2014 Admin Operator UI Refinement",
   "phases": [
     {
       "number": "144",
       "name": "Working Preview and Representative Journeys",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "145",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 144 of 4 · 0% · ready to verify"
+    "command": "$gsd-discuss-phase 145",
+    "label": "Discuss Phase 145 \u2014 Configure and Onboard",
+    "reason": "Phase 144 verification passed; Phase 145 has no context or plans (installed progress Route B)."
   },
-  "updated_at": "2026-10-09T17:03:28.265Z"
+  "updated_at": "2026-10-09T18:09:44.946Z"
 }
