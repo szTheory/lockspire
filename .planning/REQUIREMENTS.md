@@ -16,10 +16,10 @@ Refine existing supported capabilities. Requirement IDs below are new UI-specifi
 
 ### Configure and onboard
 
-- [ ] **UIC-01**: Operator can find, inspect, create, and edit a client through coherent list/detail/form navigation with visible primary actions, useful validation, and preserved client context.
-- [ ] **UIC-02**: Operator can configure supported redirect and logout settings with labels/help that distinguish browser return destinations from relying-party cleanup endpoints and identify invalid values at the relevant input.
-- [ ] **UIC-03**: Operator can understand and change supported issuer/client security policies with explicit inherited versus overridden settings, consistent field grouping, and truthful save or failure feedback.
-- [ ] **UIC-04**: Operator can issue or rotate supported client credentials with clear consequences and a usable one-time handoff that never exposes the credential again after that handoff ends.
+- [x] **UIC-01**: Operator can find, inspect, create, and edit a client through coherent list/detail/form navigation with visible primary actions, useful validation, and preserved client context.
+- [x] **UIC-02**: Operator can configure supported redirect and logout settings with labels/help that distinguish browser return destinations from relying-party cleanup endpoints and identify invalid values at the relevant input.
+- [x] **UIC-03**: Operator can understand and change supported issuer/client security policies with explicit inherited versus overridden settings, consistent field grouping, and truthful save or failure feedback.
+- [x] **UIC-04**: Operator can issue or rotate supported client credentials with clear consequences and a usable one-time handoff that never exposes the credential again after that handoff ends.
 - [ ] **UIC-05**: Operator can follow DCR onboarding and initial-access-token workflows with clear lifecycle, scope, and expiry information, without conflating initial access tokens with registration access tokens or onboarding with policy configuration.
 - [ ] **UIC-06**: Operator can inspect signing-key lifecycle and perform already-supported key actions with a clear current state, action consequences, and accurate completion or failure feedback.
 
@@ -89,10 +89,10 @@ Approved roadmap mapping. Each of the 24 requirements belongs to exactly one pha
 | UIB-01 | Phase 144 | Complete |
 | UIB-02 | Phase 144 | Complete |
 | UIB-03 | Phase 144 | Complete |
-| UIC-01 | Phase 145 | Pending |
-| UIC-02 | Phase 145 | Pending |
-| UIC-03 | Phase 145 | Pending |
-| UIC-04 | Phase 145 | Pending |
+| UIC-01 | Phase 145 | Complete |
+| UIC-02 | Phase 145 | Complete |
+| UIC-03 | Phase 145 | Complete |
+| UIC-04 | Phase 145 | Complete |
 | UIC-05 | Phase 145 | Pending |
 | UIC-06 | Phase 145 | Pending |
 | UIS-01 | Phase 146 | Pending |
