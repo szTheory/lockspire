@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 144
 current_phase_name: Working Preview and Representative Journeys
 status: executing
-stopped_at: Phase 144 plans checked; auto-advance will execute 144-01 through 144-04
-last_updated: "2026-10-09T13:41:56.279Z"
+stopped_at: Completed 144-01-PLAN.md
+last_updated: "2026-10-09T14:01:45.375Z"
 last_activity: 2026-10-09
-last_activity_desc: Completed Phase 144 planning: 4 plans, independent UI and plan checks passed, 3/3 requirements and 7/7 decisions covered
-state_head: b59fd8ae664ccaabe8c88428aa82db82d16cdfcf
+last_activity_desc: Phase 144 execution started
+state_head: b0f20650e3673b631aa52b3a3c163b7a1c95472c
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.40 Admin Operator UI Refinement — Phase 144 planning complete; four checked plans ready for execution
+**Current focus:** Phase 144 — Working Preview and Representative Journeys
 
 ## Current Position
 
-Phase: 144 (Working Preview and Representative Journeys) — READY TO EXECUTE
-Plan: 0 of 4 complete; 144-01 is ready
+Phase: 144 (Working Preview and Representative Journeys) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-10-09 — Completed Phase 144 planning: 4 plans, independent UI and plan checks passed, 3/3 requirements and 7/7 decisions covered
+Last activity: 2026-10-09 — Phase 144 execution started
 Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
@@ -182,6 +182,8 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 143]: Approve only the exact run and candidate covered by the user's publication decision; a failed attempt does not authorize a replacement run.
 
 - Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the historical attempt in `143-RESULT.md`.
+- [Phase 144]: Keep the stable preview, disposable demo checks, and root ExUnit database on separate named projects, ports, and volumes because demo startup can drop its configured database.
+- [Phase 144]: Treat UIB-02/03 evidence in plan 144-01 as baseline contribution only; later Phase 144 plans must establish representative improvements and final proof.
 
 ### Pending Todos
 
@@ -225,8 +227,8 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-Last session: 2026-10-09T12:43:38Z
-Stopped at: Phase 144 plans checked; auto-advance will execute 144-01 through 144-04
+Last session: 2026-10-09T14:01:45.352Z
+Stopped at: Completed 144-01-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -303,6 +305,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 143 P01 | 10min | 2 tasks | 4 files |
 | Phase 143 P02 | 7min | 2 tasks | 5 files |
 | Phase 143 P03 | 14min | 3 tasks | 6 files |
+| Phase 144 P01 | 20min | 2 tasks | 11 files |
 
 ## Operator Next Steps
 

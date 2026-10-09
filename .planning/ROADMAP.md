@@ -55,10 +55,10 @@ Refine the existing embedded LiveView operator UI through four complete delivery
   3. Operator can find a token or consent grant, inspect its context, and reach the relevant supported next action through a complete mounted investigation journey.
   4. Maintainer can compare representative before/after views and apply the demonstrated page, type, spacing, control, and domain-language patterns through existing shared components and tokens.
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 Plans:
 **Wave 1**
-- [ ] 144-01-PLAN.md — Isolated host preview and fresh before-edit 29-workflow baseline
+- [x] 144-01-PLAN.md — Isolated host preview and fresh before-edit 29-workflow baseline
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 144-02-PLAN.md — Complete client inventory, detail, metadata save and error journey
@@ -128,7 +128,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 144. Working Preview and Representative Journeys | v1.40 | 0/4 | Planned | - |
+| 144. Working Preview and Representative Journeys | v1.40 | 1/4 | In Progress | - |
 | 145. Configure and Onboard | v1.40 | 0/TBD | Not started | - |
 | 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |

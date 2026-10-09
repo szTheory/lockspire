@@ -10,9 +10,9 @@ Refine existing supported capabilities. Requirement IDs below are new UI-specifi
 
 ### Working baseline and representative workflows
 
-- [ ] **UIB-01**: Maintainer can open a working host-mounted demo backed by synthetic data and inspect a refreshed inventory of the existing 28 admin routes plus the logout-propagation query workflow, with current source/style identity and baseline observations recorded.
-- [ ] **UIB-02**: Operator can complete a representative client-configuration workflow and a token/consent-investigation workflow with a clear primary task, readable information hierarchy, and consistent form/action grouping demonstrated in the mounted UI.
-- [ ] **UIB-03**: Maintainer can apply the demonstrated page, typography, spacing, control, and domain-copy patterns using the existing shared components and tokens, with an evidence-based UI contract and concrete before/after examples.
+- [x] **UIB-01**: Maintainer can open a working host-mounted demo backed by synthetic data and inspect a refreshed inventory of the existing 28 admin routes plus the logout-propagation query workflow, with current source/style identity and baseline observations recorded.
+- [x] **UIB-02**: Operator can complete a representative client-configuration workflow and a token/consent-investigation workflow with a clear primary task, readable information hierarchy, and consistent form/action grouping demonstrated in the mounted UI.
+- [x] **UIB-03**: Maintainer can apply the demonstrated page, typography, spacing, control, and domain-copy patterns using the existing shared components and tokens, with an evidence-based UI contract and concrete before/after examples.
 
 ### Configure and onboard
 
@@ -86,9 +86,9 @@ Approved roadmap mapping. Each of the 24 requirements belongs to exactly one pha
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UIB-01 | Phase 144 | Pending |
-| UIB-02 | Phase 144 | Pending |
-| UIB-03 | Phase 144 | Pending |
+| UIB-01 | Phase 144 | Complete |
+| UIB-02 | Phase 144 | Complete |
+| UIB-03 | Phase 144 | Complete |
 | UIC-01 | Phase 145 | Pending |
 | UIC-02 | Phase 145 | Pending |
 | UIC-03 | Phase 145 | Pending |
