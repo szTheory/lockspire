@@ -56,7 +56,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert html =~ "Global DCR policy"
     assert html =~ "Save global DCR policy"
-    assert html =~ "Initial Access Token gated"
+    assert html =~ "Current gate: Initial Access Token gated"
     assert html =~ "future Dynamic Client Registration requests"
   end
 
@@ -166,7 +166,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     )
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Current mode is open"
+    assert html =~ "Current gate: Open registration"
     assert html =~ "Open registration"
     assert html =~ "partner.deep.audit.read"
     assert html =~ long_host
@@ -291,7 +291,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     text = rendered_text(html)
     assert text =~ "must be greater than or equal to 0"
     assert html =~ ~s(id="dcr_default_client_lifetime_seconds-error")
-    assert policy_control(html, "dcr_default_client_lifetime_seconds") =~ ~s(value="-100")
+    client_lifetime_control = policy_control(html, "dcr_default_client_lifetime_seconds")
+    assert client_lifetime_control =~ ~s(value="-100")
+
+    assert client_lifetime_control =~
+             ~s(aria-describedby="dcr_default_client_lifetime_seconds-error")
 
     HtmlAssertions.assert_no_text(html, [
       "Ecto.Changeset",
