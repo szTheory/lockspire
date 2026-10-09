@@ -10,7 +10,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
 
   @consent_confirm_error "Select the confirmation checkbox to revoke this consent grant."
   @revocation_failure "Revocation could not be confirmed. The consent grant may still be active; reload this Support workflow before retrying."
-  @already_revoked_copy "This consent grant is already revoked. It no longer authorizes future remembered-consent reuse."
+  @already_revoked_copy "This consent grant is already revoked. It cannot be reused for future remembered consent."
+  @revocation_consequence "This prevents future remembered-consent reuse for this grant."
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -20,6 +21,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
        current_section: :consents,
        consent_id: parse_id(id),
        consent: nil,
+       detail_state: :loading,
+       revoke_notice: nil,
        revoke_error: nil
      )}
   end
@@ -30,7 +33,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
 
     {:noreply,
      socket
-     |> assign(consent_id: consent_id, revoke_error: nil)
+     |> assign(
+       consent_id: consent_id,
+       detail_state: :loading,
+       revoke_notice: nil,
+       revoke_error: nil
+     )
      |> load_consent(consent_id)}
   end
 
@@ -41,7 +49,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
            revoked_reason: "operator_revoked"
          }) do
       {:ok, consent} ->
-        {:noreply, assign(socket, consent: consent, revoke_error: nil)}
+        {:noreply,
+         assign(socket,
+           consent: consent,
+           revoke_notice: "Consent grant revoked. #{@revocation_consequence}",
+           revoke_error: nil
+         )}
 
       {:error, _reason} ->
         {:noreply, assign(socket, revoke_error: @revocation_failure)}
@@ -56,13 +69,39 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   end
 
   @impl true
-  def render(%{consent: nil} = assigns) do
+  def render(%{detail_state: :error, consent: nil} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.empty_state
-        title="Consent not found"
-        body="Lockspire could not load that durable consent grant."
-      />
+        title="Could not load consent grant"
+        body="The grant detail is unavailable. Retry this exact record or return to the consent inventory."
+      >
+        <:actions>
+          <AdminComponents.admin_button href={consent_show_path(@consent_id)}>
+            Retry consent grant
+          </AdminComponents.admin_button>
+          <AdminComponents.admin_button href={consents_index_path()}>
+            Return to consent investigation
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.empty_state>
+    </AdminLayoutLive.shell>
+    """
+  end
+
+  def render(%{detail_state: :missing, consent: nil} = assigns) do
+    ~H"""
+    <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.empty_state
+        title="Consent grant not found"
+        body="No stored grant matches this record. Return to the consent inventory to continue the investigation."
+      >
+        <:actions>
+          <AdminComponents.admin_button href={consents_index_path()}>
+            Return to consent investigation
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.empty_state>
     </AdminLayoutLive.shell>
     """
   end
@@ -73,7 +112,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
       <AdminComponents.page_hero
         eyebrow="Support"
         title="Stored grant decision"
-        body="Review whether this consent grant remains healthy and whether revocation is the next safe action."
+        body="Review the stored grant, account, client, scopes, and local revocation outcome."
       >
         <:summary>
           <span>Status: <AdminComponents.status_badge status={@consent.grant.status} /></span>
@@ -97,41 +136,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         </:status>
       </AdminComponents.entity_header>
 
-      <AdminComponents.decision_summary>
-        <:item
-          label="Grant status"
-          value={grant_status_summary(@consent).value}
-          detail={grant_status_summary(@consent).detail}
-          tone={grant_status_summary(@consent).tone}
-        >
-        </:item>
-        <:item
-          label="Scope context"
-          value={consent_scope_context_summary(@consent).value}
-          detail={consent_scope_context_summary(@consent).detail}
-          tone={consent_scope_context_summary(@consent).tone}
-        >
-          <AdminComponents.long_value value={scope_label(@consent.grant.scopes)} kind={:text} />
-        </:item>
-        <:item
-          label="Client/account pivot"
-          value={client_account_pivot_summary(@consent).value}
-          detail={client_account_pivot_summary(@consent).detail}
-          tone={client_account_pivot_summary(@consent).tone}
-        >
-        </:item>
-        <:item
-          label="Revocation consequence"
-          value={revocation_consequence_summary(@consent).value}
-          detail={revocation_consequence_summary(@consent).detail}
-          tone={revocation_consequence_summary(@consent).tone}
-        >
-        </:item>
-      </AdminComponents.decision_summary>
-
       <AdminComponents.pane
-        title="Durable grant identity and current state"
-        subtitle="Use redacted grant, account, and client handles as support pivots without exposing raw credential material."
+        title="Grant context"
+        subtitle="Review the stored grant and its safe account and client pivots before choosing an action."
       >
         <AdminComponents.description_list>
           <:item label="Grant ID">
@@ -151,6 +158,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
               value={redacted_handle(:client, @consent.grant.client_id)}
               kind={:id}
             />
+            <AdminComponents.admin_button
+              :if={client_detail_path_available?(@consent)}
+              href={client_detail_path(@consent.grant.client_id)}
+            >
+              View client details
+            </AdminComponents.admin_button>
           </:item>
           <:item label="Grant kind"><AdminComponents.status_badge status={@consent.grant.kind} /></:item>
           <:item label="Status"><AdminComponents.status_badge status={@consent.grant.status} /></:item>
@@ -164,14 +177,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
           <:item label="Revoked reason">
             <code>{@consent.grant.revoked_reason || "Not recorded"}</code>
           </:item>
+          <:item label="Scopes">
+            <AdminComponents.long_value value={scope_label(@consent.grant.scopes)} kind={:text} />
+          </:item>
         </AdminComponents.description_list>
-      </AdminComponents.pane>
-
-      <AdminComponents.pane
-        title="Scope context"
-        subtitle="Scopes explain what this remembered grant may authorize if it remains active."
-      >
-        <AdminComponents.long_value value={scope_label(@consent.grant.scopes)} kind={:text} />
       </AdminComponents.pane>
 
       <AdminComponents.pane
@@ -185,6 +194,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         >
           <:body>
             <form class="lockspire-admin-form-stack" phx-submit="revoke_consent">
+              <p :if={@revoke_notice} role="status">{@revoke_notice}</p>
               <p :if={consent_revoked?(@consent)}>{already_revoked_copy()}</p>
               <label class="lockspire-admin-checkbox-field">
                 <input
@@ -197,8 +207,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                   Revoke consent grant for client
                   {client_display(@consent)}, subject
                   {redacted_handle(:account, @consent.grant.account_id)}, and scopes
-                  {scope_label(@consent.grant.scopes)}. This remembered grant will no longer
-                  authorize future remembered-consent reuse.
+                  {scope_label(@consent.grant.scopes)}. This prevents future remembered-consent reuse for this grant.
                 </span>
               </label>
               <AdminComponents.action_bar>
@@ -206,6 +215,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                   type="submit"
                   variant={:danger}
                   disabled={consent_revoke_disabled?(@consent)}
+                  phx-disable-with="Revoking this consent grant…"
                 >
                   {consent_revoke_button_label(@consent)}
                 </AdminComponents.admin_button>
@@ -218,13 +228,20 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
     """
   end
 
-  defp load_consent(socket, nil), do: assign(socket, consent: nil)
+  defp load_consent(socket, nil), do: assign(socket, consent: nil, detail_state: :missing)
 
   defp load_consent(socket, consent_id) do
-    case Admin.get_consent(consent_id) do
-      {:ok, consent} -> assign(socket, consent: consent)
-      {:error, _reason} -> assign(socket, consent: nil)
+    case read_consent(consent_id) do
+      {:ok, nil} -> assign(socket, consent: nil, detail_state: :missing)
+      {:ok, consent} -> assign(socket, consent: consent, detail_state: :loaded)
+      {:error, _reason} -> assign(socket, consent: nil, detail_state: :error)
     end
+  end
+
+  defp read_consent(consent_id) do
+    Admin.get_consent(consent_id)
+  rescue
+    _error -> {:error, :unavailable}
   end
 
   defp parse_id(value) when is_integer(value), do: value
@@ -255,55 +272,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
       else: "Revoke consent grant"
   end
 
-  defp grant_status_summary(consent) do
-    if consent_revoked?(consent) do
-      summary("Revoked", @already_revoked_copy, :warning)
-    else
-      summary(
-        "Active remembered grant",
-        "This durable grant can authorize future remembered-consent reuse until revoked.",
-        :success
-      )
-    end
-  end
-
-  defp consent_scope_context_summary(consent) do
-    scopes = consent.grant.scopes || []
-
-    if scopes == [] do
-      summary("No scopes recorded", "No scope list is stored for this consent grant.", :warning)
-    else
-      summary(
-        "#{length(scopes)} #{pluralize(length(scopes), "scope")}",
-        "Scopes tied to this durable grant are wrapped for support review.",
-        :info
-      )
-    end
-  end
-
-  defp client_account_pivot_summary(consent) do
-    client = redacted_handle(:client, consent.grant.client_id)
-    account = redacted_handle(:account, consent.grant.account_id)
-
-    summary(
-      "#{client} / #{account}",
-      "Use these redacted client and account pivots for support triage.",
-      :info
-    )
-  end
-
-  defp revocation_consequence_summary(consent) do
-    if consent_revoked?(consent) do
-      summary("Already revoked", @already_revoked_copy, :warning)
-    else
-      summary(
-        "Stops future reuse",
-        "Revoking this grant stops future remembered-consent reuse for this client/account scope set.",
-        :warning
-      )
-    end
-  end
-
   defp consent_revoke_errors(nil), do: []
   defp consent_revoke_errors(error), do: [error]
 
@@ -313,10 +281,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")
 
-  defp pluralize(1, noun), do: noun
-  defp pluralize(_count, noun), do: noun <> "s"
-
-  defp summary(value, detail, tone), do: %{value: value, detail: detail, tone: tone}
-
   defp consents_index_path, do: Lockspire.mount_path() <> "/admin/consents"
+  defp consent_show_path(id), do: consents_index_path() <> "/#{id}"
+
+  defp client_detail_path_available?(%{grant: %{client_id: client_id}}) when is_binary(client_id),
+    do: byte_size(client_id) <= 64
+
+  defp client_detail_path_available?(_consent), do: false
+
+  defp client_detail_path(client_id),
+    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
 end

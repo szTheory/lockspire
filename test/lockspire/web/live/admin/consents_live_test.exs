@@ -88,7 +88,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
-    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert html =~ "Support"
@@ -97,8 +96,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Selected client: client_"
     assert html =~ "Selected status: active"
     assert html =~ "Filter consent grants"
-    assert html =~ "Review stored grant"
-    assert html =~ "lockspire-admin-decision-summary"
+    assert html =~ "View consent grant details"
     assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "Consent UI Client"
@@ -108,21 +106,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Overview"
     assert html =~ "DCR"
 
-    assert decision_summary =~ "Selected filters"
-    assert decision_summary =~ "Grant status"
-    assert decision_summary =~ "Scope context"
-    assert decision_summary =~ "Smallest safe action"
-    assert decision_summary =~ "account_"
-    assert decision_summary =~ "client_"
-    refute decision_summary =~ "account-consent-ui"
-    refute decision_summary =~ "consent-ui-client"
-
     assert html_index(
              html,
              ~s(<form method="get" action="/lockspire/admin/consents" class="lockspire-admin-filter-bar)
-           ) < html_index(html, ~s(<dl class="lockspire-admin-decision-summary))
+           ) < html_index(html, "Total matching consents: 1")
 
-    assert rows =~ "Review stored grant"
+    assert rows =~ "View consent grant details"
     assert rows =~ "account_"
     assert rows =~ "client_"
     assert rows =~ "openid, email"
@@ -200,7 +189,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     end
   end
 
-  test "failed consent revoke retains the loaded active grant and support context", %{grant: grant} do
+  test "failed consent revoke retains the loaded active grant and support context", %{
+    grant: grant
+  } do
     assert {:ok, socket} =
              Show.mount(%{"id" => Integer.to_string(grant.id)}, %{}, socket_for(:show))
 
@@ -248,7 +239,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     HtmlAssertions.assert_no_text(html, [
       "account-consent-ui",
-      "consent-ui-client",
       "sha256:consent-ui:hash",
       "client_secret",
       "refresh_token",
@@ -261,39 +251,22 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Support"
     assert html =~ "Stored grant decision"
     assert html =~ "Durable consent truth"
-    assert html =~ "lockspire-admin-decision-summary"
-    assert html =~ "Durable grant identity and current state"
-    assert html =~ "Scope context"
+    assert html =~ "Grant context"
     assert html =~ "Review stored grant"
+    assert html =~ "View client details"
+    assert html =~ ~s(href="/lockspire/admin/clients/consent-ui-client")
     assert html =~ "Revoke consent grant"
     assert html =~ "lockspire-admin-entity-header"
     assert html =~ "lockspire-admin-pane"
     assert html =~ ~s(phx-submit="revoke_consent")
-    assert html =~ "remembered grant will no longer"
-    assert html =~ "future remembered-consent reuse"
+    assert html =~ "This prevents future remembered-consent reuse for this grant."
     assert html =~ "openid, email"
     assert html =~ long_scope
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "account_"
     assert html =~ "client_"
     refute html =~ "account-consent-ui"
-    refute html =~ "consent-ui-client"
     refute html =~ "sha256:consent-ui:hash"
-
-    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
-
-    assert decision_summary =~ "Grant status"
-    assert decision_summary =~ "Scope context"
-    assert decision_summary =~ "Client/account pivot"
-    assert decision_summary =~ "Revocation consequence"
-    assert decision_summary =~ "account_"
-    assert decision_summary =~ "client_"
-    assert decision_summary =~ "future remembered-consent reuse"
-    refute decision_summary =~ "account-consent-ui"
-    refute decision_summary =~ "consent-ui-client"
-
-    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
-             html_index(html, "Durable grant identity and current state")
 
     assert {:noreply, missing_confirm_socket} = Show.handle_event("revoke_consent", %{}, socket)
 
@@ -331,10 +304,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert socket.assigns.consent.grant.status == :revoked
 
+    assert socket.assigns.revoke_notice =~
+             "This prevents future remembered-consent reuse for this grant."
+
     revoked_html = rendered_to_string(Show.render(socket.assigns))
 
     assert revoked_html =~
-             "This consent grant is already revoked. It no longer authorizes future remembered-consent reuse."
+             "This consent grant is already revoked. It cannot be reused for future remembered consent."
 
     assert revoked_html =~ "Consent grant already revoked"
     assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
@@ -403,7 +379,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              )
 
     index_html = rendered_to_string(Index.render(index_socket.assigns))
-    decision_summary = fragment_html(index_html, ".lockspire-admin-decision-summary")
     rows = fragment_html(index_html, ".lockspire-admin-dense-resource-row")
 
     assert_support_route_guardrails(index_html, [
@@ -418,16 +393,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     HtmlAssertions.assert_label_targets_exist(index_html)
 
-    assert decision_summary =~ "Selected filters"
-    assert decision_summary =~ "Grant status"
-    assert decision_summary =~ "Scope context"
-    assert decision_summary =~ "Smallest safe action"
-    assert decision_summary =~ "2 active, 1 revoked"
-    assert decision_summary =~ "3 scopes across matching grants"
-    assert decision_summary =~ "Review stored grant"
-    refute decision_summary =~ long_client_id
-    refute decision_summary =~ long_account_id
-
     assert rows =~ "Active remembered grant"
     assert rows =~ "Active one time grant"
     assert rows =~ "Revoked remembered grant"
@@ -435,12 +400,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert rows =~ "No scopes recorded"
     assert rows =~ long_scope
     assert rows =~ "lockspire-admin-long-value"
-    assert rows =~ "Review stored grant"
+    assert rows =~ "View consent grant details"
     refute rows =~ long_client_id
     refute rows =~ long_account_id
 
     {_active_socket, active_html} = render_show_for(active_grant)
-    active_summary = fragment_html(active_html, ".lockspire-admin-decision-summary")
 
     assert_support_route_guardrails(active_html, [
       "sha256:consent-proof-secret-hash",
@@ -448,19 +412,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       long_account_id
     ])
 
-    assert active_summary =~ "Grant status"
-    assert active_summary =~ "Active remembered grant"
-    assert active_summary =~ "Scope context"
-    assert active_summary =~ "Client/account pivot"
-    assert active_summary =~ "Revocation consequence"
-    assert active_summary =~ "Stops future reuse"
     assert active_html =~ long_scope
     assert active_html =~ "Not recorded"
-    assert active_html =~ "future remembered-consent reuse"
+    assert active_html =~ "This prevents future remembered-consent reuse for this grant."
     assert active_html =~ "lockspire-admin-long-value"
 
     {_revoked_socket, revoked_html} = render_show_for(revoked_grant)
-    revoked_summary = fragment_html(revoked_html, ".lockspire-admin-decision-summary")
 
     assert_support_route_guardrails(revoked_html, [
       "sha256:consent-proof-secret-hash",
@@ -468,10 +425,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       long_account_id
     ])
 
-    assert revoked_summary =~ "Already revoked"
-
     assert revoked_html =~
-             "This consent grant is already revoked. It no longer authorizes future remembered-consent reuse."
+             "This consent grant is already revoked. It cannot be reused for future remembered consent."
 
     assert revoked_html =~ "Consent grant already revoked"
     assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s

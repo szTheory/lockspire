@@ -15,6 +15,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
        page_title: "Consents",
        current_section: :consents,
        consents: [],
+       consent_read_state: :loading,
        filters: %{"account" => "", "client" => "", "status" => "all"},
        total_consents: 0,
        consent_metrics: consent_metrics([])
@@ -24,11 +25,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
-    consents = load_consents(filters)
+    {read_state, consents} = load_consents(filters)
 
     {:noreply,
      assign(socket,
        filters: filters,
+       consent_read_state: read_state,
        consents: consents,
        total_consents: length(consents),
        consent_metrics: consent_metrics(consents)
@@ -50,37 +52,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
           <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
         </:summary>
       </AdminComponents.page_hero>
-
-      <AdminComponents.decision_summary>
-        <:item
-          label="Selected filters"
-          value={selected_filter_summary(@filters)}
-          detail="Raw URL filters stay editable below while summaries use redacted handles."
-          tone={:info}
-        >
-        </:item>
-        <:item
-          label="Grant status"
-          value={grant_status_summary(@consent_metrics)}
-          detail={"#{@total_consents} matching stored grants in this support view."}
-          tone={grant_status_tone(@consent_metrics)}
-        >
-        </:item>
-        <:item
-          label="Scope context"
-          value={scope_context_summary(@consents)}
-          detail="Scope values wrap in rows so long grant context stays scannable."
-          tone={scope_context_tone(@consents)}
-        >
-        </:item>
-        <:item
-          label="Smallest safe action"
-          value={consent_smallest_safe_action(@consents)}
-          detail="Open one stored grant before choosing any revocation path."
-          tone={if @consents == [], do: :neutral, else: :info}
-        >
-        </:item>
-      </AdminComponents.decision_summary>
 
       <AdminComponents.section_card
         title="Filter consent grants"
@@ -105,25 +76,40 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
             </AdminComponents.form_field>
           </:fields>
           <:help>
-            <p>Total matching consents: {@total_consents}</p>
+          <p :if={@consent_read_state == :loaded}>Total matching consents: {@total_consents}</p>
           </:help>
           <:actions>
             <AdminComponents.admin_button type="submit">Filter consent grants</AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
-        <AdminComponents.metric_grid>
+        <AdminComponents.metric_grid :if={@consent_read_state == :loaded}>
           <AdminComponents.summary_stat value={@consent_metrics.active} label="Active grants" />
           <AdminComponents.summary_stat value={@consent_metrics.revoked} label="Revoked grants" />
           <AdminComponents.summary_stat value={@total_consents} label="Matching grants" />
         </AdminComponents.metric_grid>
 
-        <%= if @consents == [] do %>
-          <AdminComponents.empty_state
-            title="No investigation results match these filters"
-            body="Adjust the account, client, status, or scope filters, or return to the overview to choose a different Support workflow."
-          />
-        <% else %>
+        <%= cond do %>
+          <% @consent_read_state == :error -> %>
+            <AdminComponents.empty_state
+              title="Could not load consent grants"
+              body="The grant inventory is unavailable. Your filters are still here; retry this support workflow or return to the overview."
+            >
+              <:actions>
+                <AdminComponents.admin_button href={consents_index_path(@filters)}>
+                  Try loading consent grants again
+                </AdminComponents.admin_button>
+                <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/"}>
+                  Return to overview
+                </AdminComponents.admin_button>
+              </:actions>
+            </AdminComponents.empty_state>
+          <% @consents == [] -> %>
+            <AdminComponents.empty_state
+              title="No matching consent grants"
+              body="Adjust the account, client, or status filters to review another stored grant."
+            />
+          <% true -> %>
           <AdminComponents.resource_list>
             <%= for consent <- @consents do %>
               <AdminComponents.dense_resource_row
@@ -163,7 +149,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                 </:status>
                 <:actions>
                   <AdminComponents.admin_button href={consent_show_path(consent.grant.id)}>
-                    Review stored grant
+                    View consent grant details
                   </AdminComponents.admin_button>
                 </:actions>
               </AdminComponents.dense_resource_row>
@@ -182,10 +168,16 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       |> put_filter(:client_id, filters["client"])
       |> put_status_filter(filters["status"])
 
-    case Admin.list_consents(opts) do
-      {:ok, consents} -> consents
-      {:error, _reason} -> []
+    case read_consents(opts) do
+      {:ok, consents} -> {:loaded, consents}
+      {:error, _reason} -> {:error, []}
     end
+  end
+
+  defp read_consents(opts) do
+    Admin.list_consents(opts)
+  rescue
+    _error -> {:error, :unavailable}
   end
 
   defp normalize_filters(params) do
@@ -221,57 +213,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
     do: redacted_handle(type, value)
 
   defp selected_filter(_type, value), do: value
-
-  defp selected_filter_summary(filters) do
-    [
-      selected_filter_part("Account", :account, filters["account"]),
-      selected_filter_part("Client", :client, filters["client"]),
-      selected_status_filter_part(filters["status"])
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> "All stored consent grants"
-      parts -> Enum.join(parts, " | ")
-    end
-  end
-
-  defp selected_filter_part(_label, _type, value) when value in [nil, "", "all"], do: nil
-
-  defp selected_filter_part(label, type, value),
-    do: "#{label} #{redacted_handle(type, value)}"
-
-  defp selected_status_filter_part(status) when status in [nil, "", "all"], do: nil
-  defp selected_status_filter_part(status), do: "Status #{status}"
-
-  defp grant_status_summary(metrics),
-    do: "#{metrics.active} active, #{metrics.revoked} revoked"
-
-  defp grant_status_tone(%{revoked: revoked}) when revoked > 0, do: :warning
-  defp grant_status_tone(%{active: active}) when active > 0, do: :success
-  defp grant_status_tone(_metrics), do: :neutral
-
-  defp scope_context_summary([]), do: "No scopes in matching grants"
-
-  defp scope_context_summary(consents) do
-    case unique_scope_count(consents) do
-      0 -> "No scopes in matching grants"
-      1 -> "1 scope across matching grants"
-      count -> "#{count} scopes across matching grants"
-    end
-  end
-
-  defp scope_context_tone([]), do: :neutral
-  defp scope_context_tone(consents) when is_list(consents), do: :info
-
-  defp unique_scope_count(consents) do
-    consents
-    |> Enum.flat_map(& &1.grant.scopes)
-    |> Enum.uniq()
-    |> length()
-  end
-
-  defp consent_smallest_safe_action([]), do: "Adjust filters"
-  defp consent_smallest_safe_action(_consents), do: "Review stored grant"
 
   defp consent_row_title(consent),
     do: "#{status_label(consent.grant.status)} #{grant_kind_label(consent.grant.kind)} grant"
@@ -319,6 +260,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
 
   defp formatted_timestamp(value), do: to_string(value)
 
-  defp consents_index_path, do: Lockspire.mount_path() <> "/admin/consents"
+  defp consents_index_path(filters \\ %{}) do
+    base = Lockspire.mount_path() <> "/admin/consents"
+    query = URI.encode_query(Map.to_list(filters))
+    if query == "", do: base, else: base <> "?" <> query
+  end
+
   defp consent_show_path(id), do: consents_index_path() <> "/" <> Integer.to_string(id)
 end
