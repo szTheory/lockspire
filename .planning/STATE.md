@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 144
 current_phase_name: Working Preview and Representative Journeys
 status: executing
-stopped_at: Completed 144-02-PLAN.md
-last_updated: "2026-10-09T14:45:34.829Z"
+stopped_at: Completed 144-03-PLAN.md
+last_updated: "2026-10-09T15:29:15.534Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 144 execution started
-state_head: dbcb5eea57d00203939ba6cdfaabbe7b505d90d7
+state_head: 637749b07919d8bbfc19c945825e6061fa893088
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 144 (Working Preview and Representative Journeys) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 144 execution started
 Progress: [░░░░░░░░░░] 0%
@@ -186,6 +186,9 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 144]: Treat UIB-02/03 evidence in plan 144-01 as baseline contribution only; later Phase 144 plans must establish representative improvements and final proof.
 - [Phase 144]: Keep preview LiveView bootstrap and direct guarded route mounts demo-owned; preserve the public library router and host seam.
 - [Phase 144]: Defer the forwarded AdminRouter full-host LiveView join mismatch for separate library-level resolution.
+- [Phase 144]: Keep the operator lifecycle on access and refresh tokens; authorization codes use distinct redeem semantics and remain outside this UI/API boundary.
+- [Phase 144]: Avoid repeating unusually long raw client IDs in detail URLs; keep the redacted client handle visible.
+- [Phase 144]: Keep consent navigation separate from consent revocation; token detail links only to the existing consent-grant route.
 
 ### Pending Todos
 
@@ -230,8 +233,8 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-Last session: 2026-10-09T14:45:34.806Z
-Stopped at: Completed 144-02-PLAN.md
+Last session: 2026-10-09T15:29:15.460Z
+Stopped at: Completed 144-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -310,6 +313,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 143 P03 | 14min | 3 tasks | 6 files |
 | Phase 144 P01 | 20min | 2 tasks | 11 files |
 | Phase 144 P02 | 2580 | 3 tasks | 20 files |
+| Phase 144 P03 | 42min | 2 tasks | 8 files |
 
 ## Operator Next Steps
 
