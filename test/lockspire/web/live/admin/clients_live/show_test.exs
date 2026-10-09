@@ -639,11 +639,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, updated_client} = Admin.get_client(client.client_id)
     assert updated_client.access_token_format == :opaque
+
+    html_after = render(view)
+    assert html_after =~ "Client changes saved."
+    assert html_after =~ "Review client configuration"
+    refute html_after =~ "Save client changes"
   end
 
-  test "client metadata edit retains attempted and untouched values with associated save errors", %{
-    client: client
-  } do
+  test "client metadata edit retains attempted and untouched values with associated save errors",
+       %{
+         client: client
+       } do
     assert {:ok, _updated_client} =
              Admin.update_client(client.client_id, %{
                allowed_scopes: ["openid", "profile"],

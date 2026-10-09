@@ -12,13 +12,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   attr(:effective_security_profile, :map, default: nil)
   attr(:strict_readiness, :map, default: nil)
   attr(:errors, :list, default: [])
+  attr(:params, :map, default: nil)
 
   def client_form(assigns) do
     assigns =
       assigns
       |> assign(:title, title_for(assigns.mode))
       |> assign(:button_label, button_for(assigns.mode))
-      |> assign(:defaults, defaults_for(assigns.mode, assigns.client))
+      |> assign(
+        :defaults,
+        submitted_defaults(defaults_for(assigns.mode, assigns.client), assigns.params)
+      )
 
     ~H"""
     <section class="lockspire-admin-form-shell">
@@ -27,7 +31,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         <p class="lockspire-admin-help">{subtitle_for(@mode)}</p>
       </header>
 
-      <.error_list errors={@errors} />
+      <AdminComponents.error_summary
+        :if={@mode == :edit and @errors != []}
+        title="Client changes were not saved. Review the marked fields and try again."
+        errors={@errors}
+      />
+      <.error_list :if={@mode != :edit} errors={@errors} />
 
       <form class="lockspire-admin-form-stack" phx-submit="save_client">
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
@@ -80,29 +89,55 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         </div>
 
         <div :if={@mode in [:new, :edit]} class="lockspire-admin-fieldset">
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_name">Name</label>
+          <h3 :if={@mode == :edit}>Client identity and access</h3>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_name"
+            label="Name"
+            errors={field_errors(@errors, :name)}
+          >
             <input
               id="client_name"
               name="client[name]"
               type="text"
               value={@defaults.name}
+              aria-invalid={field_errors(@errors, :name) != []}
+              aria-describedby={if field_errors(@errors, :name) != [], do: "client_name-error"}
             />
-          </div>
 
-          <div class="lockspire-admin-field">
-            <label for="client_allowed_scopes">Allowed scopes</label>
+          </AdminComponents.form_field>
+
+          <AdminComponents.form_field
+            id="client_allowed_scopes"
+            label="Allowed scopes"
+            errors={field_errors(@errors, :allowed_scopes)}
+          >
             <input
               id="client_allowed_scopes"
               name="client[allowed_scopes]"
               type="text"
               value={@defaults.allowed_scopes}
+              aria-invalid={field_errors(@errors, :allowed_scopes) != []}
+              aria-describedby={
+                if field_errors(@errors, :allowed_scopes) != [],
+                  do: "client_allowed_scopes-error"
+              }
             />
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_dpop_policy">Client DPoP override</label>
-            <select id="client_dpop_policy" name="client[dpop_policy]">
+          <h3 :if={@mode == :edit}>Effective security defaults</h3>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_dpop_policy"
+            label="Client DPoP override"
+            errors={field_errors(@errors, :dpop_policy)}
+          >
+            <select
+              id="client_dpop_policy"
+              name="client[dpop_policy]"
+              aria-invalid={field_errors(@errors, :dpop_policy) != []}
+              aria-describedby={if field_errors(@errors, :dpop_policy) != [], do: "client_dpop_policy-error"}
+            >
               <option value="inherit" selected={@defaults.dpop_policy == "inherit"}>
                 Inherit from global policy
               </option>
@@ -113,13 +148,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 Require DPoP-bound access tokens
               </option>
             </select>
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_access_token_format">Access token format override</label>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_access_token_format"
+            label="Access token format override"
+            errors={field_errors(@errors, :access_token_format)}
+          >
             <select
               id="client_access_token_format"
               name="client[access_token_format]"
+              aria-invalid={field_errors(@errors, :access_token_format) != []}
+              aria-describedby={
+                if field_errors(@errors, :access_token_format) != [],
+                  do: "client_access_token_format-error"
+              }
             >
               <option value="inherit" selected={@defaults.access_token_format == "inherit"}>
                 Inherit from server default
@@ -141,47 +185,71 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
                 <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
               </p>
             </div>
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_contacts">Contacts</label>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_contacts"
+            label="Contacts"
+            errors={field_errors(@errors, :contacts)}
+          >
             <input
               id="client_contacts"
               name="client[contacts]"
               type="text"
               value={@defaults.contacts}
+              aria-invalid={field_errors(@errors, :contacts) != []}
+              aria-describedby={if field_errors(@errors, :contacts) != [], do: "client_contacts-error"}
             />
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_logo_uri">Logo URI</label>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_logo_uri"
+            label="Logo URI"
+            errors={field_errors(@errors, :logo_uri)}
+          >
             <input
               id="client_logo_uri"
               name="client[logo_uri]"
               type="text"
               value={@defaults.logo_uri}
+              aria-invalid={field_errors(@errors, :logo_uri) != []}
+              aria-describedby={if field_errors(@errors, :logo_uri) != [], do: "client_logo_uri-error"}
             />
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_tos_uri">Terms of service URI</label>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_tos_uri"
+            label="Terms of service URI"
+            errors={field_errors(@errors, :tos_uri)}
+          >
             <input
               id="client_tos_uri"
               name="client[tos_uri]"
               type="text"
               value={@defaults.tos_uri}
+              aria-invalid={field_errors(@errors, :tos_uri) != []}
+              aria-describedby={if field_errors(@errors, :tos_uri) != [], do: "client_tos_uri-error"}
             />
-          </div>
+          </AdminComponents.form_field>
 
-          <div :if={@mode == :edit} class="lockspire-admin-field">
-            <label for="client_policy_uri">Policy URI</label>
+          <AdminComponents.form_field
+            :if={@mode == :edit}
+            id="client_policy_uri"
+            label="Policy URI"
+            errors={field_errors(@errors, :policy_uri)}
+          >
             <input
               id="client_policy_uri"
               name="client[policy_uri]"
               type="text"
               value={@defaults.policy_uri}
+              aria-invalid={field_errors(@errors, :policy_uri) != []}
+              aria-describedby={if field_errors(@errors, :policy_uri) != [], do: "client_policy_uri-error"}
             />
-          </div>
+          </AdminComponents.form_field>
         </div>
 
         <div :if={@mode in [:new, :redirects]} class="lockspire-admin-field">
@@ -381,9 +449,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         </div>
 
         <AdminComponents.action_bar>
-          <AdminComponents.admin_button type="submit" variant={:primary}>
+          <AdminComponents.admin_button
+            type="submit"
+            variant={:primary}
+            phx-disable-with={if @mode == :edit, do: "Saving client changes…", else: nil}
+          >
             {@button_label}
           </AdminComponents.admin_button>
+          <.link
+            :if={@mode == :edit and @client}
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={client_detail_path(@client)}
+          >
+            Return to client details
+          </.link>
         </AdminComponents.action_bar>
       </form>
     </section>
@@ -474,6 +553,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     }
   end
 
+  defp field_errors(errors, field) do
+    Enum.filter(errors, &(is_map(&1) and Map.get(&1, :field) == field))
+  end
+
+  defp client_detail_path(%Client{client_id: client_id}),
+    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+
   defp defaults_for(:par_policy, %Client{} = client) do
     %{
       par_policy: Atom.to_string(client.par_policy)
@@ -497,6 +583,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       frontchannel_logout_session_required: client.frontchannel_logout_session_required
     }
   end
+
+  defp submitted_defaults(defaults, params) when is_map(params) do
+    Map.new(defaults, fn {key, default} ->
+      {key, Map.get(params, Atom.to_string(key), default)}
+    end)
+  end
+
+  defp submitted_defaults(defaults, _params), do: defaults
 
   # `nil` means inherit (no `:inherit` sentinel is stored), so the inherit option
   # must pre-select for a nil override. Unlike `dpop_policy`, which stores a real atom.
@@ -531,7 +625,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     do: "Override the global security profile requirement for this specific client."
 
   defp button_for(:new), do: "Create client"
-  defp button_for(:edit), do: "Save metadata"
+  defp button_for(:edit), do: "Save client changes"
   defp button_for(:logout_propagation), do: "Save logout propagation"
   defp button_for(:redirects), do: "Save redirect URIs"
   defp button_for(:logout_uris), do: "Save post-logout redirect URIs"

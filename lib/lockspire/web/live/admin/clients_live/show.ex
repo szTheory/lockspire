@@ -28,6 +28,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        client_id: client_id,
        form_mode: nil,
        client: nil,
+       form_params: nil,
+       save_notice: nil,
        effective_par_policy: nil,
        effective_security_profile: nil,
        strict_readiness: default_readiness(),
@@ -53,6 +55,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
      |> assign(
        action: action,
        form_mode: form_mode,
+       form_params: nil,
+       save_notice: if(form_mode, do: nil, else: socket.assigns.save_notice),
        form_errors: [],
        rotation_errors: [],
        lifecycle_errors: []
@@ -72,25 +76,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       {:ok, %Client{} = client} ->
         server_policy = server_policy()
 
-        {:noreply,
-         assign(socket,
-           client: client,
-           effective_par_policy: resolve_effective_par_policy(client),
-           effective_security_profile: resolve_effective_security_profile(client),
-           strict_readiness: strict_readiness(),
-           remote_jwks_summary: AdminClients.remote_jwks_summary(client),
-           global_access_token_format: global_access_token_format(server_policy),
-           effective_access_token_format:
-             resolve_effective_access_token_format(server_policy, client),
-           form_errors: []
-         )}
+        updated_socket =
+          assign(socket,
+            client: client,
+            effective_par_policy: resolve_effective_par_policy(client),
+            effective_security_profile: resolve_effective_security_profile(client),
+            strict_readiness: strict_readiness(),
+            remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+            global_access_token_format: global_access_token_format(server_policy),
+            effective_access_token_format:
+              resolve_effective_access_token_format(server_policy, client),
+            form_errors: [],
+            form_params: nil,
+            save_notice:
+              if(socket.assigns.form_mode == :edit, do: "Client changes saved.", else: nil)
+          )
+
+        if socket.assigns.form_mode == :edit do
+          {:noreply, push_patch(updated_socket, to: show_path(client.client_id, :show))}
+        else
+          {:noreply, updated_socket}
+        end
 
       {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, form_errors: errors)}
+        {:noreply, assign(socket, form_errors: errors, form_params: params, save_notice: nil)}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, form_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           form_errors: [%{field: :base, reason: :request_failed, detail: nil}],
+           form_params: params,
+           save_notice: nil
+         )}
     end
   end
 
@@ -181,6 +198,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert :if={@save_notice} variant={:success} title={@save_notice}>
+        The saved client configuration is shown below.
+      </AdminComponents.alert>
+
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Review client configuration"
@@ -604,6 +625,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           effective_security_profile={@effective_security_profile}
           strict_readiness={@strict_readiness}
           errors={@form_errors}
+          params={@form_params}
         />
       </AdminComponents.section_card>
 
@@ -738,13 +760,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp edit_attrs(params, %Client{} = client) do
     %{
       name: Map.get(params, "name", client.name),
-      allowed_scopes: split_csv(params["allowed_scopes"]),
-      dpop_policy: params["dpop_policy"],
-      access_token_format: params["access_token_format"],
-      contacts: split_csv(params["contacts"]),
-      logo_uri: params["logo_uri"],
-      tos_uri: params["tos_uri"],
-      policy_uri: params["policy_uri"]
+      allowed_scopes:
+        if(Map.has_key?(params, "allowed_scopes"),
+          do: split_csv(params["allowed_scopes"]),
+          else: client.allowed_scopes
+        ),
+      dpop_policy: Map.get(params, "dpop_policy", client.dpop_policy),
+      access_token_format: Map.get(params, "access_token_format", client.access_token_format),
+      contacts:
+        if(Map.has_key?(params, "contacts"),
+          do: split_csv(params["contacts"]),
+          else: client.contacts
+        ),
+      logo_uri: Map.get(params, "logo_uri", client.logo_uri),
+      tos_uri: Map.get(params, "tos_uri", client.tos_uri),
+      policy_uri: Map.get(params, "policy_uri", client.policy_uri)
     }
   end
 
