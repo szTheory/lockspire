@@ -187,6 +187,20 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     after
       Application.put_env(:lockspire, :repo, original_repo)
     end
+
+    assert {:ok, missing_socket} = Show.mount(%{"id" => "987654321"}, %{}, socket_for(:show))
+
+    assert {:noreply, missing_socket} =
+             Show.handle_params(
+               %{"id" => "987654321"},
+               "/lockspire/admin/consents/987654321",
+               missing_socket
+             )
+
+    missing_html = rendered_to_string(Show.render(missing_socket.assigns))
+    assert missing_html =~ "Consent grant not found"
+    assert missing_html =~ "Return to consent investigation"
+    refute missing_html =~ "Could not load consent grant"
   end
 
   test "failed consent revoke retains the loaded active grant and support context", %{
@@ -259,6 +273,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "lockspire-admin-entity-header"
     assert html =~ "lockspire-admin-pane"
     assert html =~ ~s(phx-submit="revoke_consent")
+    assert html =~ ~s(phx-disable-with="Revoking this consent grant…")
     assert html =~ "This prevents future remembered-consent reuse for this grant."
     assert html =~ "openid, email"
     assert html =~ long_scope
