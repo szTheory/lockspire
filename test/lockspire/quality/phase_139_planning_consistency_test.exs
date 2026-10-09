@@ -50,19 +50,41 @@ defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
     assert roadmap =~ "| 141. Maintenance-Baseline Closure | 1/1 | Complete"
 
     assert state =~ "milestone: v1.39"
-    assert state =~ "current_phase: 142"
-    assert state =~ "The 1.5.0 publication chain remains the latest public release."
+    assert state =~ "current_phase: 143"
+    assert state =~ "### Recent Sustaining Release: 1.5.0"
+    assert state =~ "### Verified Publication: 1.5.1 (2026-10-08)"
+
+    assert state =~
+             "This publication record supersedes the historical no-publish observations below."
+
     assert milestones =~ "**Phases completed:** **4** (**138-141**), **73** plans"
     assert milestones =~ "This is planning completion only; it did not publish a package."
 
+    assert baseline =~ "Closure-time read-only queries at 2026-10-05 19:38 UTC"
+    assert baseline =~ "`latest_version` and `latest_stable_version` both `1.5.0`"
+
+    assert baseline =~
+             "checksum `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`"
+
+    assert baseline =~ "lockspire-v1.5.0"
     assert baseline =~ "accepts source tree `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`"
 
     assert phase_141_summary =~
              "receipt proves only accepted source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; it does not prove the Task 1 baseline commit or the Task 3 reconciliation commit."
 
     assert release_train =~ "Release Please version metadata: `1.5.1`"
-    assert release_train =~ "Latest public package: Hex lists `1.5.0`"
-    refute release_train =~ ~r/1\.5\.1.*(?:published|released)/i
+
+    assert release_train =~
+             "Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08."
+
+    assert release_train =~
+             "protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282)"
+
+    assert release_train =~
+             "public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`"
+
+    assert release_train =~
+             "[lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1)"
 
     assert validation_gap_ids(validation) ==
              Enum.map(1..11, &"G-139-#{String.pad_leading(Integer.to_string(&1), 2, "0")}")

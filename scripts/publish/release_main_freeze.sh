@@ -163,6 +163,10 @@ publish_with_freeze() {
   unset HEX_API_KEY
 
   preflight "$ruleset_id" "$authorized_sha" "$recovery_ref" "$verified_sha"
+  bash scripts/publish/release_tag_guard.sh preflight \
+    "${TAG_FREEZE_RULESET_ID:?TAG_FREEZE_RULESET_ID is required}" \
+    "${RELEASE_TAG:?RELEASE_TAG is required}" \
+    "$verified_sha"
 
   # Keep the rules-management token away from the Hex publisher, and keep the
   # Hex credential away from the ruleset and GitHub API checks above.

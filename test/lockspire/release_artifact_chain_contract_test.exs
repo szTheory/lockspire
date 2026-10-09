@@ -10,6 +10,7 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
                          "../../scripts/publish/verify_github_release_target.sh",
                          __DIR__
                        )
+  @tag_guard Path.expand("../../scripts/publish/release_tag_guard.sh", __DIR__)
 
   setup do
     root =
@@ -99,6 +100,102 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert message =~ "allowlist"
   end
 
+  test "manifest rejects boolean byte counts", context do
+    File.write!(context.tarball, "x")
+    payload = Jason.decode!(File.read!(context.manifest))
+    payload = put_in(payload["artifact"]["bytes"], true)
+    payload = put_in(payload["artifact"]["sha256"], sha256(context.tarball))
+    File.write!(context.manifest, Jason.encode!(payload))
+
+    assert {message, 1} = verify_local(context)
+    assert message =~ "release artifact size is invalid"
+  end
+
+  test "manifest rejects boolean schema versions", context do
+    payload = Jason.decode!(File.read!(context.manifest))
+    payload = Map.put(payload, "schema_version", true)
+    File.write!(context.manifest, Jason.encode!(payload))
+
+    assert {message, 1} = verify_local(context)
+    assert message =~ "release manifest schema version is invalid"
+  end
+
+  test "release tag guard locks, creates, verifies, and cleans up one exact tag", context do
+    {remote, source_sha, _other_sha, _blob_sha} = create_tag_remote!(context.root)
+    bin = Path.join(context.root, "tag-guard-bin")
+    ruleset_path = Path.join(context.root, "tag-freeze.json")
+    output_path = Path.join(context.root, "tag-guard-output")
+    File.mkdir_p!(bin)
+
+    File.write!(Path.join(bin, "git"), tag_guard_git_wrapper())
+    File.write!(Path.join(bin, "gh"), tag_guard_gh_wrapper())
+    File.chmod!(Path.join(bin, "git"), 0o755)
+    File.chmod!(Path.join(bin, "gh"), 0o755)
+
+    env = [
+      {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+      {"GH_TOKEN", "fixture-token"},
+      {"REF_CREATE_TOKEN", "fixture-write-token"},
+      {"GH_REPO", "lockspire/fixture"},
+      {"GITHUB_SERVER_URL", "https://github.com"},
+      {"GITHUB_OUTPUT", output_path},
+      {"REAL_GIT", System.find_executable("git") || raise("git is required")},
+      {"FAKE_GIT_REMOTE", remote},
+      {"FAKE_RULESET_STATE", ruleset_path}
+    ]
+
+    assert {output, 0} =
+             System.cmd(
+               "bash",
+               [@tag_guard, "create", "lockspire-v1.5.1"],
+               env: env,
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "protected against update and deletion"
+    assert File.read!(output_path) =~ "ruleset_id=42"
+
+    ruleset = Jason.decode!(File.read!(ruleset_path))
+    assert ruleset["target"] == "tag"
+    assert ruleset["bypass_actors"] == []
+    assert Enum.map(ruleset["rules"], & &1["type"]) |> Enum.sort() == ["deletion", "update"]
+
+    assert {output, 0} =
+             System.cmd(
+               "bash",
+               [@tag_guard, "ensure", "42", "lockspire-v1.5.1", source_sha],
+               env: env,
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "resolves to verified commit #{source_sha}"
+
+    assert {tag_sha, 0} =
+             System.cmd("git", ["--git-dir", remote, "rev-parse", "refs/tags/lockspire-v1.5.1"])
+
+    assert String.trim(tag_sha) == source_sha
+
+    assert {output, 0} =
+             System.cmd(
+               "bash",
+               [@tag_guard, "preflight", "42", "lockspire-v1.5.1", source_sha],
+               env: env,
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "remains protected at verified SHA"
+
+    assert {output, 0} =
+             System.cmd(
+               "bash",
+               [@tag_guard, "delete", "42", "lockspire-v1.5.1"],
+               env: env,
+               stderr_to_stdout: true
+             )
+
+    assert output =~ "removed temporary release tag freeze 42"
+  end
+
   test "manifest publisher Hex version must match the builder Hex version", context do
     payload = Jason.decode!(File.read!(context.manifest))
     payload = put_in(payload["runtime"]["publisher_hex"], "2.0.0")
@@ -165,7 +262,8 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert message =~ "publisher compatibility version differs from the manifest"
   end
 
-  test "terminal receipt records complete public verification with deterministic manifest identity", context do
+  test "terminal receipt records complete public verification with deterministic manifest identity",
+       context do
     state = terminal_state(context)
     receipt = Path.join(context.root, "terminal-receipt.json")
 
@@ -176,6 +274,7 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert payload["source_sha"] == context.source_sha
     assert payload["ci_run_id"] == "991000"
     assert payload["version"] == Mix.Project.config()[:version]
+
     assert payload["manifest"] == %{
              "sha256" => sha256_bytes(File.read!(context.manifest)),
              "state" => "passed"
@@ -255,7 +354,8 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert payload["release_verified"] == false
   end
 
-  test "terminal receipt preserves unknown public observations without inferring success", context do
+  test "terminal receipt preserves unknown public observations without inferring success",
+       context do
     state = terminal_state(context)
     state = put_in(state["stages"]["hex_publish"], "unknown")
     state = put_in(state["stages"]["github_release"], "unknown")
@@ -436,6 +536,15 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
     assert output =~ other_sha
   end
 
+  test "prepublish tag verification permits an absent ref only in if-present mode", context do
+    {remote, source_sha, _other_sha, _blob_sha} = create_tag_remote!(context.root)
+
+    assert {output, 0} =
+             verify_github_release_target(remote, "missing", source_sha, ["--if-present"])
+
+    assert output =~ "prepublish tag check passed"
+  end
+
   test "GitHub release target verification rejects malformed SHA and non-commit tag targets",
        context do
     {remote, source_sha, _other_sha, _blob_sha} = create_tag_remote!(context.root)
@@ -513,16 +622,72 @@ defmodule Lockspire.ReleaseArtifactChainContractTest do
       "991001"
     ]
 
-    args = if Keyword.get(opts, :manifest, true), do: args ++ ["--manifest", context.manifest], else: args
+    args =
+      if Keyword.get(opts, :manifest, true),
+        do: args ++ ["--manifest", context.manifest],
+        else: args
+
     System.cmd("python3", args, stderr_to_stdout: true)
   end
 
-  defp verify_github_release_target(remote, tag, source_sha) do
+  defp verify_github_release_target(remote, tag, source_sha, extra_args \\ []) do
     System.cmd(
       "bash",
-      [@tag_target_verifier, tag, remote, source_sha],
+      [@tag_target_verifier, tag, remote, source_sha] ++ extra_args,
       stderr_to_stdout: true
     )
+  end
+
+  defp tag_guard_git_wrapper do
+    """
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "${1:-}" == ls-remote ]]; then
+      shift
+      exec "$REAL_GIT" ls-remote "$FAKE_GIT_REMOTE" "$@"
+    fi
+    exec "$REAL_GIT" "$@"
+    """
+  end
+
+  defp tag_guard_gh_wrapper do
+    """
+    #!/usr/bin/env bash
+    set -euo pipefail
+    request="$*"
+
+    list_rulesets() {
+      if [[ -f "$FAKE_RULESET_STATE" ]]; then
+        jq -n --slurpfile ruleset "$FAKE_RULESET_STATE" '[$ruleset]'
+      else
+        printf '[[]]\\n'
+      fi
+    }
+
+    if [[ "$request" == *"api --paginate --slurp repos/lockspire/fixture/rulesets?per_page=100"* ]]; then
+      list_rulesets
+    elif [[ "$request" == *"api repos/lockspire/fixture/rulesets/42?includes_parents=false"* ]]; then
+      cat "$FAKE_RULESET_STATE"
+    elif [[ "$request" == *"api --method POST repos/lockspire/fixture/rulesets --input -"* ]]; then
+      jq --argjson id 42 --arg source "lockspire/fixture" \
+        '. + {id: $id, source_type: "Repository", source: $source}' > "$FAKE_RULESET_STATE"
+      cat "$FAKE_RULESET_STATE"
+    elif [[ "$request" == *"api --method POST repos/lockspire/fixture/git/refs --input -"* ]]; then
+      payload="$(cat)"
+      ref="$(jq -er '.ref' <<< "$payload")"
+      sha="$(jq -er '.sha' <<< "$payload")"
+      if "$REAL_GIT" --git-dir "$FAKE_GIT_REMOTE" show-ref --verify --quiet "$ref"; then
+        exit 1
+      fi
+      "$REAL_GIT" --git-dir "$FAKE_GIT_REMOTE" update-ref "$ref" "$sha"
+      jq -nc --arg ref "$ref" --arg sha "$sha" '{ref: $ref, object: {sha: $sha}}'
+    elif [[ "$request" == *"api --method DELETE repos/lockspire/fixture/rulesets/42"* ]]; then
+      rm -f "$FAKE_RULESET_STATE"
+    else
+      printf 'unexpected fake gh request\\n' >&2
+      exit 1
+    fi
+    """
   end
 
   defp create_tag_remote!(root) do

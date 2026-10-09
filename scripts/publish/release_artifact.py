@@ -155,7 +155,9 @@ def validate_manifest(payload: object) -> None:
         "schema_version", "package", "version", "source_sha", "artifact", "runtime"
     }:
         raise EvidenceError("release manifest fields differ from the allowlist")
-    if payload["schema_version"] != SCHEMA_VERSION or payload["package"] != "lockspire":
+    if type(payload["schema_version"]) is not int or payload["schema_version"] != SCHEMA_VERSION:
+        raise EvidenceError("release manifest schema version is invalid")
+    if payload["package"] != "lockspire":
         raise EvidenceError("release manifest identity is invalid")
     if VERSION_PATTERN.fullmatch(str(payload["version"])) is None:
         raise EvidenceError("release manifest version is invalid")
@@ -169,7 +171,7 @@ def validate_manifest(payload: object) -> None:
         raise EvidenceError("release artifact filename is invalid")
     if SHA_PATTERN.fullmatch(str(artifact["sha256"])) is None:
         raise EvidenceError("release artifact checksum is invalid")
-    if not isinstance(artifact["bytes"], int) or artifact["bytes"] <= 0:
+    if type(artifact["bytes"]) is not int or artifact["bytes"] <= 0:
         raise EvidenceError("release artifact size is invalid")
 
     runtime = payload["runtime"]

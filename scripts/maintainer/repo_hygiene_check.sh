@@ -649,43 +649,48 @@ release_train_metadata_version() {
 }
 
 release_train_public_package_version() {
-  sed -nE 's/^- Latest public package: Hex lists `([0-9]+\.[0-9]+\.[0-9]+)` as latest at the [0-9-]+ closure observation; the exact `([0-9]+\.[0-9]+\.[0-9]+)` release query returned HTTP 404\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
+  sed -nE 's/^- Latest public package: Hex `([0-9]+\.[0-9]+\.[0-9]+)`, published from source `[0-9a-f]{40}` on [0-9]{4}-[0-9]{2}-[0-9]{2}\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
 }
 
-release_train_public_query_version() {
-  sed -nE 's/^- Latest public package: Hex lists `[0-9]+\.[0-9]+\.[0-9]+` as latest at the [0-9-]+ closure observation; the exact `([0-9]+\.[0-9]+\.[0-9]+)` release query returned HTTP 404\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
+release_train_public_package_source_sha() {
+  sed -nE 's/^- Latest public package: Hex `[0-9]+\.[0-9]+\.[0-9]+`, published from source `([0-9a-f]{40})` on [0-9]{4}-[0-9]{2}-[0-9]{2}\. Release Please metadata above is not publication proof\.$/\1/p' .planning/RELEASE-TRAIN.md
 }
 
 release_train_artifact_version() {
-  sed -nE 's/^- Artifact truth: the published `lockspire-([0-9]+\.[0-9]+\.[0-9]+)` package checksum is `[0-9a-f]{64}`; the protected release run verified the exact package and public install journey\.$/\1/p' .planning/RELEASE-TRAIN.md
+  release_train_verified_tag_evidence | cut -d '|' -f 2
+}
+
+release_train_verified_tag_evidence() {
+  sed -nE 's/^- Artifact truth: protected release run \[[0-9]+\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/actions\/runs\/[0-9]+\) for source `([0-9a-f]{40})` verified the public Hex checksum `[0-9a-f]{64}`, HexDocs, \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\), and clean-room install\. Its terminal receipt records `release_verified: true` with no blocker\..*$/\2|\3|\4|\5|\1/p' .planning/RELEASE-TRAIN.md
 }
 
 release_train_tag_version() {
-  local tag_evidence label_version url_repository url_version expected_repository
-  tag_evidence="$(sed -nE 's/^- GitHub release truth: \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\) was created on `[0-9-]+`.*/\1|\2|\3/p' .planning/RELEASE-TRAIN.md)"
-  IFS='|' read -r label_version url_repository url_version <<< "$tag_evidence"
+  local tag_evidence source_sha label_version url_repository url_version workflow_repository expected_repository
+  tag_evidence="$(release_train_verified_tag_evidence)"
+  IFS='|' read -r source_sha label_version url_repository url_version workflow_repository <<< "$tag_evidence"
   expected_repository="${REPOSITORY:-szTheory/lockspire}"
-  [[ "$url_repository" == "$expected_repository" && "$label_version" == "$url_version" ]] || return 1
+  [[ "$url_repository" == "$expected_repository" && "$workflow_repository" == "$expected_repository" && "$label_version" == "$url_version" && "$source_sha" =~ ^[0-9a-f]{40}$ ]] || return 1
   printf '%s\n' "$label_version"
 }
 
 release_train_has_consistent_versions() {
   local metadata_count public_count artifact_count tag_count
-  local metadata_version public_version public_query_version artifact_version tag_version
+  local metadata_version public_version public_source_sha artifact_source_sha artifact_version tag_version
 
   metadata_count="$(grep -c '^- Release Please version metadata:' .planning/RELEASE-TRAIN.md || true)"
   public_count="$(grep -c '^- Latest public package:' .planning/RELEASE-TRAIN.md || true)"
   artifact_count="$(grep -c '^- Artifact truth:' .planning/RELEASE-TRAIN.md || true)"
-  tag_count="$(grep -c '^- GitHub release truth:' .planning/RELEASE-TRAIN.md || true)"
+  tag_count="$(grep -Ec '^- Artifact truth:.*\[lockspire-v[0-9]+\.[0-9]+\.[0-9]+\]\(https://github\.com/[^/]+/[^/]+/releases/tag/lockspire-v[0-9]+\.[0-9]+\.[0-9]+\)' .planning/RELEASE-TRAIN.md || true)"
   [[ "$metadata_count" == "1" && "$public_count" == "1" && "$artifact_count" == "1" && "$tag_count" == "1" ]] || return 1
 
   metadata_version="$(release_train_metadata_version)"
   public_version="$(release_train_public_package_version)"
-  public_query_version="$(release_train_public_query_version)"
+  public_source_sha="$(release_train_public_package_source_sha)"
+  artifact_source_sha="$(release_train_verified_tag_evidence | cut -d '|' -f 1)"
   artifact_version="$(release_train_artifact_version)"
   tag_version="$(release_train_tag_version)"
-  [[ -n "$metadata_version" && -n "$public_version" && -n "$public_query_version" && -n "$artifact_version" && -n "$tag_version" ]] || return 1
-  [[ "$public_query_version" == "$metadata_version" && "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" ]]
+  [[ -n "$metadata_version" && -n "$public_version" && -n "$public_source_sha" && -n "$artifact_source_sha" && -n "$artifact_version" && -n "$tag_version" ]] || return 1
+  [[ "$public_version" == "$metadata_version" && "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" && "$public_source_sha" == "$artifact_source_sha" ]]
 }
 
 release_train_has_required_lines() {

@@ -310,6 +310,20 @@ jobs:
         run: |
           mix local.rebar --force
           mix deps.get --check-locked
+      - name: Preflight existing GitHub tag target before publication
+        env:
+          GH_REPO: ${{ github.repository }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(jq -er '.version' release-input/release-manifest.json)"
+          tag_name="lockspire-v$version"
+          bash scripts/publish/verify_github_release_target.sh \
+            "$tag_name" \
+            "${GITHUB_SERVER_URL}/${GH_REPO}.git" \
+            "$VERIFIED_SHA" \
+            --if-present
       - name: Mint scoped release freeze token
         id: release-freeze-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
@@ -327,6 +341,32 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: bash scripts/publish/release_main_freeze.sh create
+      - name: Freeze updates and deletion for the exact release tag
+        id: release-tag-freeze
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(jq -er '.version' release-input/release-manifest.json)"
+          bash scripts/publish/release_tag_guard.sh create "lockspire-v$version"
+      - name: Create or verify the exact release tag
+        id: ensure-release-tag
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          REF_CREATE_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
+          VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/publish/release_tag_guard.sh ensure \
+            "$TAG_FREEZE_RULESET_ID" \
+            "$RELEASE_TAG" \
+            "$VERIFIED_SHA"
       - name: Publish exact package while main is frozen
         id: publish-exact
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -338,6 +378,8 @@ jobs:
           AUTHORIZED_SHA: ${{ vars.LOCKSPIRE_PHASE143_AUTHORIZED_SHA }}
           RECOVERY_REF: ${{ inputs.recovery_ref }}
           VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         shell: bash
         run: |
@@ -403,6 +445,16 @@ jobs:
             --add-label 'autorelease: tagged' \
             --remove-label 'autorelease: pending'
           echo "Marked #${pull_request} as tagged for ${version}."
+      - name: Remove temporary release tag freeze
+        if: ${{ always() && steps.release-tag-freeze.outputs.ruleset_id != '' }}
+        timeout-minutes: 5
+        env:
+          GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}
+          RELEASE_TAG: ${{ steps.release-tag-freeze.outputs.tag_name }}
+        shell: bash
+        run: bash scripts/publish/release_tag_guard.sh delete "$TAG_FREEZE_RULESET_ID" "$RELEASE_TAG"
       - name: Remove temporary main freeze
         if: ${{ always() && steps.release-freeze.outputs.ruleset_id != '' }}
         timeout-minutes: 5

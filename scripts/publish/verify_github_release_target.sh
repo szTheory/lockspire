@@ -6,13 +6,19 @@ fail() {
   exit 1
 }
 
-if [[ "$#" != 3 ]]; then
-  fail "usage: $0 TAG REMOTE_URL VERIFIED_SHA"
+if [[ "$#" -lt 3 || "$#" -gt 4 ]]; then
+  fail "usage: $0 TAG REMOTE_URL VERIFIED_SHA [--if-present]"
 fi
 
 tag_name="$1"
 remote_url="$2"
 verified_sha="$3"
+allow_missing=0
+
+if [[ "$#" == 4 ]]; then
+  [[ "$4" == "--if-present" ]] || fail "unknown option: $4"
+  allow_missing=1
+fi
 
 [[ -n "$tag_name" ]] || fail "tag name is required"
 [[ "$remote_url" != -* && -n "$remote_url" ]] || fail "remote URL is invalid"
@@ -42,7 +48,14 @@ while IFS=$'\t' read -r object_sha ref_name; do
   esac
 done <<< "$remote_refs"
 
-[[ -n "$direct_sha" ]] || fail "remote tag ref is missing"
+if [[ -z "$direct_sha" ]]; then
+  [[ -z "$peeled_sha" ]] || fail "remote returned a peeled tag without its tag ref"
+  if [[ "$allow_missing" == 1 ]]; then
+    printf 'tag %s is absent; prepublish tag check passed\n' "$tag_name"
+    exit 0
+  fi
+  fail "remote tag ref is missing"
+fi
 resolved_sha="${peeled_sha:-$direct_sha}"
 [[ "$resolved_sha" == "$verified_sha" ]] ||
   fail "tag $tag_name resolves to $resolved_sha, not verified source $verified_sha"

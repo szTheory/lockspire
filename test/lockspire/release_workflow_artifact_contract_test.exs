@@ -9,6 +9,7 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
                          "../../scripts/publish/verify_github_release_target.sh",
                          __DIR__
                        )
+  @tag_guard Path.expand("../../scripts/publish/release_tag_guard.sh", __DIR__)
 
   test "unprivileged prepublish proof carries one SHA-bound package identity" do
     workflow = File.read!(@workflow)
@@ -94,6 +95,13 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     workflow = File.read!(@workflow)
     publish = job!(workflow, "publish", "post-publish-install-truth")
 
+    preflight_step =
+      step!(
+        publish,
+        "Preflight existing GitHub tag target before publication",
+        "Mint scoped release freeze token"
+      )
+
     release_step =
       step!(publish, "Create matching GitHub release", "Mark the merged release PR as tagged")
 
@@ -104,12 +112,81 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert release_step =~ "scripts/publish/verify_github_release_target.sh"
     assert release_step =~ "\"${GITHUB_SERVER_URL}/${GH_REPO}.git\""
     assert release_step =~ "\"$VERIFIED_SHA\""
+    refute release_step =~ "--if-present"
+
+    assert preflight_step =~ "jq -er '.version' release-input/release-manifest.json"
+    assert preflight_step =~ "scripts/publish/verify_github_release_target.sh"
+    assert preflight_step =~ "--if-present"
 
     assert verifier =~ "git ls-remote \"$remote_url\" \"$tag_ref\" \"$tag_ref^{}\""
     assert verifier =~ "resolved_sha=\"${peeled_sha:-$direct_sha}\""
 
+    assert index!(publish, "Preflight existing GitHub tag target before publication") <
+             index!(publish, "name: Publish exact package while main is frozen")
+
     assert index!(publish, "verify_github_release_target.sh") <
              index!(publish, "gh pr edit \"$pull_request\"")
+  end
+
+  test "exact release tag is frozen and verified before Hex publication" do
+    workflow = File.read!(@workflow)
+    publish = job!(workflow, "publish", "post-publish-install-truth")
+    tag_guard = File.read!(@tag_guard)
+    freeze_script = File.read!(@freeze_script)
+
+    freeze_step =
+      step!(
+        publish,
+        "Freeze updates and deletion for the exact release tag",
+        "Create or verify the exact release tag"
+      )
+
+    ensure_step =
+      step!(
+        publish,
+        "Create or verify the exact release tag",
+        "Publish exact package while main is frozen"
+      )
+
+    tag_cleanup =
+      step!(
+        publish,
+        "Remove temporary release tag freeze",
+        "Remove temporary main freeze"
+      )
+
+    assert freeze_step =~ "release_tag_guard.sh create"
+    assert freeze_step =~ "GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}"
+    assert ensure_step =~ "release_tag_guard.sh ensure"
+    assert ensure_step =~ "GH_TOKEN: ${{ steps.release-freeze-token.outputs.token }}"
+    assert ensure_step =~ "REF_CREATE_TOKEN: ${{ github.token }}"
+    assert ensure_step =~ "VERIFIED_SHA: ${{ needs.recovery-validation.outputs.verified_sha }}"
+
+    assert ensure_step =~
+             "TAG_FREEZE_RULESET_ID: ${{ steps.release-tag-freeze.outputs.ruleset_id }}"
+
+    assert tag_cleanup =~ "always()"
+    assert tag_cleanup =~ "release_tag_guard.sh delete"
+
+    assert tag_guard =~ "target: \"tag\""
+    assert tag_guard =~ "bypass_actors: []"
+    assert tag_guard =~ "type: \"update\""
+    assert tag_guard =~ "type: \"deletion\""
+    assert tag_guard =~ "repos/$expected_repo/git/refs"
+    assert tag_guard =~ "verify_github_release_target.sh"
+    assert freeze_script =~ "release_tag_guard.sh preflight"
+
+    assert index!(publish, "Preflight existing GitHub tag target before publication") <
+             index!(publish, "Freeze updates and deletion for the exact release tag")
+
+    assert index!(publish, "Freeze updates and deletion for the exact release tag") <
+             index!(publish, "Create or verify the exact release tag")
+
+    assert index!(publish, "Create or verify the exact release tag") <
+             index!(publish, "Publish exact package while main is frozen")
+
+    assert index!(publish, "Publish exact package while main is frozen") <
+             index!(publish, "Create matching GitHub release")
   end
 
   test "postpublish verifies exact public behavior and retains only bounded JSON" do
@@ -160,7 +237,9 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     workflow = File.read!(@workflow)
     collector = final_job!(workflow, "terminal-outcome")
 
-    assert collector =~ "needs: [recovery-validation, prepublish-proof, publish, post-publish-install-truth]"
+    assert collector =~
+             "needs: [recovery-validation, prepublish-proof, publish, post-publish-install-truth]"
+
     assert collector =~ "if: ${{ always() && github.event_name == 'workflow_dispatch' }}"
     assert collector =~ "permissions:\n      actions: read\n      contents: read"
     assert collector =~ "continue-on-error: true"
