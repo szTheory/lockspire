@@ -7,7 +7,7 @@
 
   <Lockspire.Web.Components.AdminComponents.workflow_shell
     title="Mint initial access token"
-    help="Use short-lived, scoped intake tokens for partner onboarding. Plaintext is not stored or shown again as plaintext."
+    help="This credential authorizes an initial dynamic client registration request within issuer DCR policy. It is not an OAuth access token and does not carry OAuth scopes."
   >
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
@@ -21,15 +21,20 @@
           phx-click="acknowledge_copy"
           variant={:primary}
         >
-          I have copied this secret
+          I have copied this Initial Access Token
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% else %>
-      <form phx-submit="mint" class="lockspire-admin-form-stack">
+      <Lockspire.Web.Components.AdminComponents.error_summary
+        title="Review the IAT details"
+        errors={@form_errors}
+      />
+
+      <form id="iat_mint_form" phx-submit="mint" class="lockspire-admin-form-stack">
         <Lockspire.Web.Components.AdminComponents.form_field
           id="iat_single_use"
           label="Single use"
-          help="Keep partner intake to one registration unless a deliberate multi-use handoff is required."
+          help="Single-use is recommended for a partner handoff. The issuer's DCR policy still controls which registrations are allowed."
         >
           <select id="iat_single_use" name="single_use">
             <option value="true" selected={@form["single_use"].value == "true"}>Yes (Recommended)</option>
@@ -40,21 +45,28 @@
         <Lockspire.Web.Components.AdminComponents.form_field
           id="iat_expires_in_days"
           label="Expires in days"
-          help="Bound how long this DCR onboarding credential can be used."
+          help="Set how long this credential can authorize an initial registration."
           required
+          errors={if(@expiry_error, do: [%{message: @expiry_error}], else: [])}
         >
           <input
             id="iat_expires_in_days"
             type="number"
             name="expires_in_days"
-            value={@form["expires_in_days"].value || "30"}
+            value={@form["expires_in_days"].value || ""}
             required
             min="1"
+            aria-invalid={if(@expiry_error, do: "true", else: nil)}
+            aria-describedby={expiry_describedby(@expiry_error)}
           />
         </Lockspire.Web.Components.AdminComponents.form_field>
 
         <Lockspire.Web.Components.AdminComponents.action_bar>
-          <Lockspire.Web.Components.AdminComponents.admin_button variant={:primary} type="submit">
+          <Lockspire.Web.Components.AdminComponents.admin_button
+            variant={:primary}
+            type="submit"
+            phx-disable-with="Minting initial access token…"
+          >
             Mint initial access token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button

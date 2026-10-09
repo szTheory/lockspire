@@ -8,17 +8,31 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
 
   @revoke_confirm_error "Select the confirmation checkbox to revoke this initial access token."
   @revoke_failure_error "Initial access token revocation could not be confirmed. Reload this Configure workflow before retrying."
+  @inventory_failure_error "Initial access token inventory is unavailable. Reload this workflow to try again."
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok,
-     assign(socket,
-       page_title: "Initial Access Tokens",
-       current_section: :dcr,
-       tokens: load_tokens(),
-       revoke_error: nil,
-       revoke_notice: nil
-     )}
+    socket =
+      assign(socket,
+        page_title: "Initial Access Tokens",
+        current_section: :dcr,
+        tokens: [],
+        inventory_state: :loading,
+        inventory_counts: nil,
+        inventory_error: nil,
+        revoke_error: nil,
+        revoke_notice: nil
+      )
+
+    {:ok, load_inventory(socket)}
+  end
+
+  @impl true
+  def handle_event("reload_iats", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(revoke_error: nil, revoke_notice: nil)
+     |> load_inventory()}
   end
 
   @impl true
@@ -43,15 +57,19 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   defp revoke_iat(token_id, socket) do
     case InitialAccessTokens.revoke_iat(token_id) do
       :ok ->
+        updated_socket = load_inventory(assign(socket, revoke_error: nil))
+
+        revoke_notice =
+          if updated_socket.assigns.inventory_state == :loaded do
+            "Initial access token revoked. Partners using it can no longer dynamically register clients."
+          else
+            "Initial access token was revoked, but the inventory could not be refreshed. Reload to confirm its updated status."
+          end
+
         {:noreply,
-         socket
-         |> put_flash(:info, "IAT revoked successfully.")
-         |> assign(
-           tokens: load_tokens(),
-           revoke_error: nil,
-           revoke_notice:
-             "Initial access token revoked. Partners using it can no longer dynamically register clients."
-         )}
+         updated_socket
+         |> put_flash(:info, "IAT revocation completed.")
+         |> assign(revoke_notice: revoke_notice)}
 
       {:error, _reason} ->
         {:noreply, assign(socket, revoke_error: @revoke_failure_error, revoke_notice: nil)}
@@ -67,9 +85,36 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
 
   defp parse_revoke_id(_id), do: :error
 
-  defp load_tokens do
-    {:ok, tokens} = InitialAccessTokens.list_iats()
-    tokens
+  defp load_inventory(socket) do
+    case safely_list_iats() do
+      {:ok, tokens} ->
+        assign(socket,
+          tokens: tokens,
+          inventory_state: :loaded,
+          inventory_counts: iat_inventory_status_counts(tokens),
+          inventory_error: nil
+        )
+
+      {:error, _reason} ->
+        assign(socket,
+          tokens: [],
+          inventory_state: :unavailable,
+          inventory_counts: nil,
+          inventory_error: @inventory_failure_error
+        )
+    end
+  end
+
+  defp safely_list_iats do
+    case InitialAccessTokens.list_iats() do
+      {:ok, tokens} when is_list(tokens) -> {:ok, tokens}
+      {:error, reason} -> {:error, reason}
+      _unexpected_result -> {:error, :unavailable}
+    end
+  rescue
+    _exception -> {:error, :unavailable}
+  catch
+    _kind, _reason -> {:error, :unavailable}
   end
 
   def iat_status(token) do
@@ -109,7 +154,8 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   defp iat_revoke_error(nil), do: []
   defp iat_revoke_error(error), do: [error]
 
-  def token_timestamp(token), do: token.revoked_at || token.used_at || token.expires_at
+  def token_timestamp(token),
+    do: token.revoked_at || token.used_at || token.updated_at || token.inserted_at
 
   def redacted_handle(_type, nil), do: "Not recorded"
   def redacted_handle(type, value), do: Redaction.handle(type, value)
