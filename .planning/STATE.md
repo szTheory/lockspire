@@ -4,17 +4,17 @@ milestone: v1.40
 milestone_name: Admin Operator UI Refinement
 current_phase: 144
 current_phase_name: Working Preview and Representative Journeys
-status: executing
-stopped_at: Completed 144-03-PLAN.md
-last_updated: "2026-10-09T15:29:15.534Z"
+status: verifying
+stopped_at: Completed 144-04-PLAN.md
+last_updated: "2026-10-09T17:03:38.838Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 144 execution started
-state_head: 637749b07919d8bbfc19c945825e6061fa893088
+state_head: 99056f6afe0f05bc5d27c8560bac03aba1c3e27f
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 Phase: 144 (Working Preview and Representative Journeys) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-09 — Phase 144 execution started
 Progress: [░░░░░░░░░░] 0%
 
@@ -189,6 +189,9 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 144]: Keep the operator lifecycle on access and refresh tokens; authorization codes use distinct redeem semantics and remain outside this UI/API boundary.
 - [Phase 144]: Avoid repeating unusually long raw client IDs in detail URLs; keep the redacted client handle visible.
 - [Phase 144]: Keep consent navigation separate from consent revocation; token detail links only to the existing consent-grant route.
+- [Phase 144]: A consent-grant revoke reports prevention of future remembered-consent reuse for that grant only.
+- [Phase 144]: Keep route identity and error context on failed reads; never render a failed read as zero results.
+- [Phase 144]: Wrap operator navigation at 800px after native 200% zoom exposed a clipped focused link at the prior 720px breakpoint.
 
 ### Pending Todos
 
@@ -233,8 +236,8 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Session Continuity
 
-Last session: 2026-10-09T15:29:15.460Z
-Stopped at: Completed 144-03-PLAN.md
+Last session: 2026-10-09T17:03:38.770Z
+Stopped at: Completed 144-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -314,6 +317,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 144 P01 | 20min | 2 tasks | 11 files |
 | Phase 144 P02 | 2580 | 3 tasks | 20 files |
 | Phase 144 P03 | 42min | 2 tasks | 8 files |
+| Phase 144 P04 | 87min | 2 tasks | 8 files |
 
 ## Operator Next Steps
 
