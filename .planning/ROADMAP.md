@@ -85,7 +85,16 @@ Planning note: Read [PRODUCT.md](../PRODUCT.md) and [UI-MILESTONE-PREFLIGHT.md](
   4. Operator can complete DCR onboarding and initial-access-token tasks with distinct token purposes, lifecycle, scope, and expiry made clear.
   5. Operator can inspect signing-key state and complete already-supported key actions with accurate consequence and outcome feedback.
 
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+**Wave 1**
+- [ ] 145-01-PLAN.md — Client create, destinations, and recoverable form tracer
+
+**Wave 2** *(after Wave 1; parallel file ownership)*
+- [ ] 145-02-PLAN.md — Client security overrides and one-time credential handoffs
+- [ ] 145-03-PLAN.md — Issuer DCR policy and onboarding hub
+- [ ] 145-04-PLAN.md — Initial access token mint, handoff, and inventory
+- [ ] 145-05-PLAN.md — Signing-key lifecycle and served-JWKS truth
 **UI hint**: yes
 
 Planning note: Carry Phase 144's proven patterns into each changed Configure journey, including narrow/zoomed layout, keyboard and focus behavior, light/dark/system appearance, clear copy, redaction, and reduced motion. Preserve the host seam and supported security defaults.
