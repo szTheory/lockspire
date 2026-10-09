@@ -117,11 +117,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     refute decision_summary =~ "account-consent-ui"
     refute decision_summary =~ "consent-ui-client"
 
-    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
-             html_index(
-               html,
-               ~s(<form method="get" action="/lockspire/admin/consents" class="lockspire-admin-filter-bar)
-             )
+    assert html_index(
+             html,
+             ~s(<form method="get" action="/lockspire/admin/consents" class="lockspire-admin-filter-bar)
+           ) < html_index(html, ~s(<dl class="lockspire-admin-decision-summary))
 
     assert rows =~ "Review stored grant"
     assert rows =~ "account_"
@@ -144,7 +143,86 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
              )
 
     assert rendered_to_string(Index.render(empty_socket.assigns)) =~
-             "No investigation results match these filters"
+             "No matching consent grants"
+  end
+
+  test "consent index distinguishes failed reads from successful empty results and keeps filters" do
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, String)
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, failed_socket} =
+               Index.handle_params(
+                 %{"account" => "account-read-failure", "client" => "client-read-failure"},
+                 "/lockspire/admin/consents?account=account-read-failure&client=client-read-failure",
+                 socket
+               )
+
+      html = rendered_to_string(Index.render(failed_socket.assigns))
+
+      assert failed_socket.assigns.filters == %{
+               "account" => "account-read-failure",
+               "client" => "client-read-failure",
+               "status" => "all"
+             }
+
+      assert html =~ "Could not load consent grants"
+      assert html =~ "Try loading consent grants again"
+      assert html =~ "account-read-failure"
+      assert html =~ "client-read-failure"
+      refute html =~ "No matching consent grants"
+      refute html =~ "Total matching consents: 0"
+    after
+      Application.put_env(:lockspire, :repo, original_repo)
+    end
+  end
+
+  test "consent detail distinguishes missing and failed reads with recovery" do
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, String)
+      assert {:ok, socket} = Show.mount(%{"id" => "42"}, %{}, socket_for(:show))
+
+      assert {:noreply, failed_socket} =
+               Show.handle_params(%{"id" => "42"}, "/lockspire/admin/consents/42", socket)
+
+      failed_html = rendered_to_string(Show.render(failed_socket.assigns))
+
+      assert failed_html =~ "Could not load consent grant"
+      assert failed_html =~ "/lockspire/admin/consents/42"
+      assert failed_html =~ "/lockspire/admin/consents"
+      refute failed_html =~ "Consent not found"
+    after
+      Application.put_env(:lockspire, :repo, original_repo)
+    end
+  end
+
+  test "failed consent revoke retains the loaded active grant and support context", %{grant: grant} do
+    assert {:ok, socket} =
+             Show.mount(%{"id" => Integer.to_string(grant.id)}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"id" => Integer.to_string(grant.id)},
+               "/lockspire/admin/consents/#{grant.id}",
+               socket
+             )
+
+    assert {:noreply, failed_socket} =
+             Show.handle_event(
+               "revoke_consent",
+               %{"revoke" => %{"confirm" => "true"}},
+               put_in(socket.assigns.consent_id, -1)
+             )
+
+    html = rendered_to_string(Show.render(failed_socket.assigns))
+    assert failed_socket.assigns.consent.grant.status == :active
+    assert html =~ "Stored grant decision"
+    assert html =~ "Revocation could not be confirmed"
+    refute html =~ "Consent grant already revoked"
   end
 
   test "consent detail renders support-grade detail and guarded revoke action", %{
