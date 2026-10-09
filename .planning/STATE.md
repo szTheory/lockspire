@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 145
 current_phase_name: Configure and Onboard
 status: executing
-stopped_at: Completed 145-02-PLAN.md
-last_updated: "2026-10-09T21:35:07.261Z"
+stopped_at: Completed 145-03-PLAN.md
+last_updated: "2026-10-09T22:01:27.948Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 145 execution started
-state_head: d4f13d08cbc02edb2eab90fd2e8cadd3c271cb37
+state_head: 5dc3466d3c673209b8feb99df7a9ddfdb8b00876
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 6
+  completed_plans: 7
   percent: 25
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 145 (Configure and Onboard) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 145 execution started
 Progress: [███░░░░░░░] 25%
@@ -198,6 +198,9 @@ Progress: [███░░░░░░░] 25%
 - [Phase 145]: Client override previews reuse existing policy resolution and Admin operations; unavailable issuer-policy reads stay unavailable.
 - [Phase 145]: Client secret and Registration Access Token values remain temporary handoff assigns and clear on acknowledgement, failure, or route change.
 - [Phase 145]: Plan 02 completes UIC-03 and UIC-04 only; UIC-05 and UIC-06 remain pending for later plans despite the repeated phase-wide IDs in plan frontmatter.
+- [Phase 145]: Keep policy, client, and IAT observations independent; failures remain unavailable rather than fabricated disabled or zero states.
+- [Phase 145]: Keep DCR policy, IAT, RAT, and client-secret purposes distinct; do not change public protocol or domain behavior.
+- [Phase 145]: Keep issuer policy saves automated-only in browser verification because they change registration admission policy; ExUnit covers save outcomes.
 
 ### Pending Todos
 
@@ -242,8 +245,8 @@ Progress: [███░░░░░░░] 25%
 
 ## Session Continuity
 
-Last session: 2026-10-09T21:35:07.219Z
-Stopped at: Completed 145-02-PLAN.md
+Last session: 2026-10-09T22:01:27.903Z
+Stopped at: Completed 145-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -326,6 +329,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 144 P04 | 87min | 2 tasks | 8 files |
 | Phase 145 P01 | 20min | 3 tasks | 8 files |
 | Phase 145 P02 | 14min | 3 tasks | 6 files |
+| Phase 145 P03 | 25min | 3 tasks | 8 files |
 
 ## Operator Next Steps
 

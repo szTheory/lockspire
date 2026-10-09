@@ -85,14 +85,14 @@ Planning note: Read [PRODUCT.md](../PRODUCT.md) and [UI-MILESTONE-PREFLIGHT.md](
   4. Operator can complete DCR onboarding and initial-access-token tasks with distinct token purposes, lifecycle, scope, and expiry made clear.
   5. Operator can inspect signing-key state and complete already-supported key actions with accurate consequence and outcome feedback.
 
-**Plans**: 2/5 plans executed
+**Plans**: 3/5 plans executed
 Plans:
 **Wave 1**
 - [x] 145-01-PLAN.md — Client create, destinations, and recoverable form tracer
 
 **Wave 2** *(after Wave 1; parallel file ownership)*
 - [x] 145-02-PLAN.md — Client security overrides and one-time credential handoffs
-- [ ] 145-03-PLAN.md — Issuer DCR policy and onboarding hub
+- [x] 145-03-PLAN.md — Issuer DCR policy and onboarding hub
 - [ ] 145-04-PLAN.md — Initial access token mint, handoff, and inventory
 - [ ] 145-05-PLAN.md — Signing-key lifecycle and served-JWKS truth
 
@@ -139,7 +139,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
-| 145. Configure and Onboard | v1.40 | 2/5 | In Progress | - |
+| 145. Configure and Onboard | v1.40 | 3/5 | In Progress | - |
 | 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |
 
