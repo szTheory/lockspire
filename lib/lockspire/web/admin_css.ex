@@ -1446,7 +1446,7 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-client-workspace {
     display: grid;
     gap: var(--ls-space-6);
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     max-width: 100%;
     min-width: 0;
     margin-bottom: var(--ls-space-6);
