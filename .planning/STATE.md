@@ -4,17 +4,17 @@ milestone: v1.40
 milestone_name: Admin Operator UI Refinement
 current_phase: 145
 current_phase_name: Configure and Onboard
-status: executing
-stopped_at: Completed 145-04-PLAN.md
-last_updated: "2026-10-09T22:24:45.351Z"
+status: verifying
+stopped_at: Completed 145-05-PLAN.md
+last_updated: "2026-10-09T22:44:47.999Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 145 execution started
-state_head: 8f63d84a108bc9629aafadb68fce3c71ea893ca7
+state_head: 192a7d645059bb08ef6e20bdfd7055e1a708b24f
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
   percent: 25
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 Phase: 145 (Configure and Onboard) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-09 — Phase 145 execution started
 Progress: [███░░░░░░░] 25%
 
@@ -204,6 +204,10 @@ Progress: [███░░░░░░░] 25%
 - [Phase 145]: Preserve the single-use IAT and 30-day defaults, and reject missing, malformed, or non-positive expiry before mint.
 - [Phase 145]: Keep IAT authority within issuer DCR policy; do not present an IAT as an OAuth access token or invent OAuth scopes.
 - [Phase 145]: Keep IAT mint and revoke out of mounted browser checks; use automated tests for mutations and inspect synthetic reads only.
+- [Phase 145]: Derive served-JWKS visibility from the same status/publication predicate used by the repository query; historical publication does not make a retired key served.
+- [Phase 145]: Preserve separate publish, activate, and retire confirmations and report only the returned local lifecycle state.
+- [Phase 145]: Keep private JWK members out of Admin list/detail views and mounted evidence.
+- [Phase 145]: Keep mounted browser inspection read-only for key lifecycle operations; cover mutations in automated tests.
 
 ### Pending Todos
 
@@ -248,8 +252,8 @@ Progress: [███░░░░░░░] 25%
 
 ## Session Continuity
 
-Last session: 2026-10-09T22:24:45.293Z
-Stopped at: Completed 145-04-PLAN.md
+Last session: 2026-10-09T22:44:47.960Z
+Stopped at: Completed 145-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -334,6 +338,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 145 P02 | 14min | 3 tasks | 6 files |
 | Phase 145 P03 | 25min | 3 tasks | 8 files |
 | Phase 145 P04 | 22min | 3 tasks | 6 files |
+| Phase 145 P05 | 17min | 3 tasks | 7 files |
 
 ## Operator Next Steps
 
