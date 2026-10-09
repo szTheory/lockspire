@@ -28,6 +28,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        client_id: client_id,
        form_mode: nil,
        client: nil,
+       client_load_state: :loading,
        form_params: nil,
        save_notice: nil,
        effective_par_policy: nil,
@@ -79,6 +80,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         updated_socket =
           assign(socket,
             client: client,
+            client_load_state: :loaded,
             effective_par_policy: resolve_effective_par_policy(client),
             effective_security_profile: resolve_effective_security_profile(client),
             strict_readiness: strict_readiness(),
@@ -99,13 +101,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         end
 
       {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, form_errors: errors, form_params: params, save_notice: nil)}
+        {:noreply,
+         assign(socket,
+           form_errors: errors,
+           form_params: safe_form_params(params, socket.assigns.form_mode),
+           save_notice: nil
+         )}
 
       {:error, _reason} ->
         {:noreply,
          assign(socket,
            form_errors: [%{field: :base, reason: :request_failed, detail: nil}],
-           form_params: params,
+           form_params: safe_form_params(params, socket.assigns.form_mode),
            save_notice: nil
          )}
     end
@@ -184,13 +191,44 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   @impl true
+  def render(%{client: nil, client_load_state: :error} = assigns) do
+    ~H"""
+    <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert variant={:danger} title="Could not load client">
+        <p>The client result is unavailable. Reload this view or return to the client inventory.</p>
+        <div class="lockspire-admin-client-inventory__recovery">
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={show_path(@client_id, :show)}
+          >
+            Reload this view
+          </.link>
+          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_index_path()}>
+            Return to client inventory
+          </.link>
+        </div>
+      </AdminComponents.alert>
+      </AdminLayoutLive.shell>
+    """
+  end
+
+  @impl true
   def render(%{client: nil} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.empty_state
         title="Client not found"
-        body="Lockspire could not load that client from durable storage."
-      />
+        body="No client has this identifier. Return to the inventory and choose a current client."
+      >
+        <:actions>
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={client_index_path()}
+          >
+            Return to client inventory
+          </.link>
+        </:actions>
+      </AdminComponents.empty_state>
     </AdminLayoutLive.shell>
     """
   end
@@ -690,6 +728,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp load_client(socket, nil) do
     assign(socket,
       client: nil,
+      client_load_state: :not_found,
       effective_par_policy: nil,
       effective_security_profile: nil,
       strict_readiness: default_readiness(),
@@ -708,6 +747,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         assign(socket,
           client_id: client_id,
           client: client,
+          client_load_state: :loaded,
           effective_par_policy: resolve_effective_par_policy(client),
           effective_security_profile: resolve_effective_security_profile(client),
           strict_readiness: strict_readiness(),
@@ -719,10 +759,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             resolve_effective_access_token_format(server_policy, client)
         )
 
+      {:error, :not_found} ->
+        assign(socket,
+          client_id: client_id,
+          client: nil,
+          client_load_state: :not_found,
+          effective_par_policy: nil,
+          effective_security_profile: nil,
+          strict_readiness: default_readiness(),
+          private_key_jwt_truth: nil,
+          remote_jwks_summary: nil,
+          global_access_token_format: nil,
+          effective_access_token_format: nil
+        )
+
       {:error, _reason} ->
         assign(socket,
           client_id: client_id,
           client: nil,
+          client_load_state: :error,
           effective_par_policy: nil,
           effective_security_profile: nil,
           strict_readiness: default_readiness(),
@@ -840,6 +895,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp show_path(client_id, :rotate_registration_access_token),
     do: show_path(client_id, :show) <> "/rotate-registration-access-token"
+
+  defp client_index_path, do: Lockspire.mount_path() <> "/admin/clients"
+
+  defp safe_form_params(params, mode) when is_map(params) do
+    Map.take(params, form_param_keys(mode))
+  end
+
+  defp form_param_keys(:edit),
+    do:
+      ~w(name allowed_scopes dpop_policy access_token_format contacts logo_uri tos_uri policy_uri)
+
+  defp form_param_keys(:redirects), do: ~w(redirect_uris)
+  defp form_param_keys(:logout_uris), do: ~w(post_logout_redirect_uris)
+
+  defp form_param_keys(:logout_propagation),
+    do:
+      ~w(backchannel_logout_uri backchannel_logout_session_required frontchannel_logout_uri frontchannel_logout_session_required)
+
+  defp form_param_keys(:par_policy), do: ~w(par_policy)
+
+  defp form_param_keys(:security_profile),
+    do: ~w(security_profile authorization_signed_response_alg)
+
+  defp form_param_keys(_mode), do: []
 
   defp split_csv(value) when is_binary(value) do
     value

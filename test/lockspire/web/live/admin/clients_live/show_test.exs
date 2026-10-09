@@ -67,6 +67,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/clients/:client_id/security-profile", Show))
   end
 
+  test "a missing client is distinct from a failed client read" do
+    assert {:ok, _missing_view, missing_html} =
+             live(conn_for_admin(), "/admin/clients/not-a-current-client")
+
+    assert missing_html =~ "Client not found"
+    assert missing_html =~ "Return to client inventory"
+    refute missing_html =~ "Could not load client"
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailableClientRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, _error_view, error_html} =
+               live(conn_for_admin(), "/admin/clients/security-show-client")
+
+      assert error_html =~ "Could not load client"
+      assert error_html =~ "The client result is unavailable."
+      assert error_html =~ "Reload this view"
+      refute error_html =~ "Client not found"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "client detail shows effective strict message-signing posture and mixed-mode warning", %{
     client: client
   } do
@@ -680,6 +706,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert error_html =~ ~s(tabindex="-1")
     assert error_html =~ ~s(id="client_allowed_scopes-error")
     assert error_html =~ ~s(aria-describedby="client_allowed_scopes-error")
+    assert error_html =~ "Enter at least one allowed scope."
+    refute error_html =~ "invalid_scope"
     assert error_html =~ ~s(value="Attempted client name")
     assert error_html =~ ~s(value="ops@example.test")
     assert error_html =~ "https://client.example.test/logo.svg"
@@ -688,6 +716,69 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert unchanged_client.name == "Security Show Client"
     assert unchanged_client.allowed_scopes == ["openid", "profile"]
     assert unchanged_client.contacts == ["ops@example.test"]
+  end
+
+  test "editing one metadata field preserves stored destinations and scopes", %{client: client} do
+    redirect_uri = "https://client.example.com/callback"
+    logout_redirect_uri = "https://client.example.com/signed-out"
+
+    assert {:ok, _stored_client} =
+             Admin.update_client(client.client_id, %{
+               redirect_uris: [redirect_uri],
+               post_logout_redirect_uris: [logout_redirect_uri],
+               allowed_scopes: ["openid", "profile"]
+             })
+
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}/edit")
+    assert html =~ ~s(id="client-edit-form")
+
+    view
+    |> form("#client-edit-form", %{client: %{mode: "edit", name: "Updated client name"}})
+    |> render_submit()
+
+    assert {:ok, updated_client} = Admin.get_client(client.client_id)
+    assert updated_client.name == "Updated client name"
+    assert updated_client.redirect_uris == [redirect_uri]
+    assert updated_client.post_logout_redirect_uris == [logout_redirect_uri]
+    assert updated_client.allowed_scopes == ["openid", "profile"]
+  end
+
+  test "redirect editors keep long safe destinations complete and separate", %{client: client} do
+    redirect_uri =
+      "https://client.example.com/" <> String.duplicate("long-path-segment/", 12) <> "callback"
+
+    post_logout_uri =
+      "https://client.example.com/" <>
+        String.duplicate("logout-path-segment/", 12) <> "signed-out"
+
+    assert {:ok, _stored_client} =
+             Admin.update_client(client.client_id, %{
+               redirect_uris: [redirect_uri],
+               post_logout_redirect_uris: [post_logout_uri]
+             })
+
+    assert {:ok, _redirect_view, redirect_html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/redirects")
+
+    assert redirect_html =~ "Redirect URIs"
+    assert redirect_html =~ "exactly"
+
+    [redirect_form] =
+      Regex.run(~r/<form id="client-redirect-uris-form".*?<\/form>/s, redirect_html)
+
+    assert redirect_form =~ redirect_uri
+    refute redirect_form =~ post_logout_uri
+
+    assert {:ok, _logout_view, logout_html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/logout-uris")
+
+    assert logout_html =~ "Post-logout redirect URIs"
+
+    [logout_form] =
+      Regex.run(~r/<form id="client-post-logout-redirect-uris-form".*?<\/form>/s, logout_html)
+
+    assert logout_form =~ post_logout_uri
+    refute logout_form =~ redirect_uri
   end
 
   test "client detail shows global / override / effective access token format rows with nil as inherit",
