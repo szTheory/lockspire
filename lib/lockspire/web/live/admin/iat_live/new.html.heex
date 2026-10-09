@@ -2,7 +2,7 @@
   <Lockspire.Web.Components.AdminComponents.page_hero
     eyebrow="Configure"
     title="Mint initial access token"
-    body="Create a DCR onboarding intake token. DCR policy controls issuer registration posture; this token is the partner handoff credential."
+    body="Create a single-use credential for an initial client registration request. Issuer DCR policy still controls which registrations are allowed."
   />
 
   <Lockspire.Web.Components.AdminComponents.workflow_shell
@@ -11,20 +11,23 @@
   >
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
-        title="Initial access token minted"
-        body="Plaintext is shown once. Lockspire stores only the hash and redacted durable state after this response."
+        title="Copy this Initial Access Token now"
+        body="This single-use token authorizes an initial client registration request within issuer policy. Plaintext is shown once."
         label="Initial access token"
         value={@iat_secret}
       />
       <Lockspire.Web.Components.AdminComponents.action_bar>
         <Lockspire.Web.Components.AdminComponents.admin_button
           phx-click="acknowledge_copy"
-          variant={:primary}
+          variant={:secondary}
         >
-          I have copied this Initial Access Token
+          Hide credential
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% else %>
+      <p :if={@iat_acknowledged?} role="status" aria-live="polite">
+        Credential hidden. It will not be shown again.
+      </p>
       <Lockspire.Web.Components.AdminComponents.error_summary
         title="Review the IAT details"
         errors={@form_errors}
@@ -32,20 +35,9 @@
 
       <form id="iat_mint_form" phx-submit="mint" class="lockspire-admin-form-stack">
         <Lockspire.Web.Components.AdminComponents.form_field
-          id="iat_single_use"
-          label="Single use"
-          help="Single-use is recommended for a partner handoff. The issuer's DCR policy still controls which registrations are allowed."
-        >
-          <select id="iat_single_use" name="single_use">
-            <option value="true" selected={@form["single_use"].value == "true"}>Yes (Recommended)</option>
-            <option value="false" selected={@form["single_use"].value == "false"}>No (Multi-use)</option>
-          </select>
-        </Lockspire.Web.Components.AdminComponents.form_field>
-
-        <Lockspire.Web.Components.AdminComponents.form_field
           id="iat_expires_in_days"
           label="Expires in days"
-          help="Set how long this credential can authorize an initial registration."
+          help="This single-use token authorizes an initial client registration request. Issuer registration policy still applies."
           required
           errors={if(@expiry_error, do: [%{message: @expiry_error}], else: [])}
         >
@@ -65,9 +57,9 @@
           <Lockspire.Web.Components.AdminComponents.admin_button
             variant={:primary}
             type="submit"
-            phx-disable-with="Minting initial access token…"
+            phx-disable-with="Creating initial access token…"
           >
-            Mint initial access token
+            Create initial access token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             href={iat_index_path()}

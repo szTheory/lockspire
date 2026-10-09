@@ -48,15 +48,6 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
         body="Initial Access Tokens authorize initial registration requests. Registration Access Tokens manage one registered client's configuration endpoint. Client secrets authenticate confidential clients at the token endpoint."
       >
         <:actions>
-          <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-            Mint initial access token
-          </AdminComponents.admin_button>
-          <AdminComponents.admin_button href={admin_path("/iats")}>
-            Review initial access tokens
-          </AdminComponents.admin_button>
-          <AdminComponents.admin_button href={admin_path("/policies/dcr")}>
-            Edit DCR policy
-          </AdminComponents.admin_button>
           <AdminComponents.admin_button type="button" phx-click="reload_dcr_status">
             Reload DCR status
           </AdminComponents.admin_button>
@@ -155,7 +146,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
               Review initial access tokens
             </AdminComponents.admin_button>
             <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-              Mint initial access token
+              Create initial access token
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </AdminComponents.section_card>
@@ -342,6 +333,13 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
        do: "Edit DCR policy"
 
   defp next_safe_action(
+         %{state: :loaded, policy: %{registration_policy: :open}},
+         _iats,
+         _clients
+       ),
+       do: "Review DCR policy"
+
+  defp next_safe_action(
          %{state: :loaded, policy: %{registration_policy: :initial_access_token}},
          %{state: :loaded, counts: %{active: active}},
          _clients
@@ -366,6 +364,14 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
          _clients
        ),
        do: "Registration is disabled until issuer policy is intentionally changed."
+
+  defp next_safe_action_detail(
+         %{state: :loaded, policy: %{registration_policy: :open}},
+         _iats,
+         _clients
+       ),
+       do:
+         "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
 
   defp next_safe_action_detail(_policy, %{state: :unavailable}, _clients),
     do: "The intake-token status is unavailable; verify it before a partner handoff."

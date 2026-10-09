@@ -62,8 +62,25 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert text =~ "Active 0"
     assert text =~ "0 self-registered clients"
     assert text =~ "No self-registered clients yet"
-    assert text =~ "Mint initial access token"
+    assert text =~ "Create initial access token"
+    assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
     refute text =~ "unavailable"
+  end
+
+  test "open registration recommends policy review instead of an unnecessary IAT" do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{id: 1, registration_policy: :open})
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
+    text = rendered_text(html)
+
+    assert text =~ "Next safe action"
+    assert text =~ "Review DCR policy"
+
+    assert text =~
+             "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
+
+    refute text =~ "Next safe action Mint initial access token"
   end
 
   test "populated hub links safe self-registered identities to client detail" do

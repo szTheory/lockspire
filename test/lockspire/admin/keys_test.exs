@@ -1,3 +1,7 @@
+defmodule Lockspire.Admin.KeysTest.FailingPolicyReadRepo do
+  def one(_query, _opts), do: raise("synthetic server policy read failure")
+end
+
 defmodule Lockspire.Admin.KeysTest do
   use ExUnit.Case, async: false
 
@@ -199,6 +203,16 @@ defmodule Lockspire.Admin.KeysTest do
     assert enc_view.key.status == :upcoming
     assert enc_view.key.kty == :RSA
     assert enc_view.key.alg == "RS256"
+  end
+
+  test "generate_key returns server policy read failures instead of raising" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    Application.put_env(:lockspire, :repo, Lockspire.Admin.KeysTest.FailingPolicyReadRepo)
+
+    on_exit(fn -> Application.put_env(:lockspire, :repo, prior_repo) end)
+
+    assert {:error, %RuntimeError{message: "synthetic server policy read failure"}} =
+             Keys.generate_key(:sig)
   end
 
   test "generate_key defaults to a FAPI-compliant signing key when the server profile requires it" do

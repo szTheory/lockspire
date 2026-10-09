@@ -15,6 +15,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
        page_title: "Mint Initial Access Token",
        current_section: :dcr,
        iat_secret: nil,
+       iat_acknowledged?: false,
        form: to_form(default_form_params()),
        form_errors: [],
        expiry_error: nil
@@ -26,6 +27,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
     {:noreply,
      assign(socket,
        iat_secret: nil,
+       iat_acknowledged?: false,
        form: to_form(default_form_params()),
        form_errors: [],
        expiry_error: nil
@@ -44,7 +46,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
     case expiry_at(Map.get(safe_params, "expires_in_days")) do
       {:ok, expires_at} ->
         attrs = %{
-          single_use: safe_params["single_use"] == "true",
+          single_use: true,
           expires_at: expires_at,
           created_by: "operator"
         }
@@ -54,6 +56,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
             {:noreply,
              assign(socket,
                iat_secret: plaintext_secret,
+               iat_acknowledged?: false,
                form_errors: [],
                expiry_error: nil
              )}
@@ -62,6 +65,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
             {:noreply,
              assign(socket,
                iat_secret: nil,
+               iat_acknowledged?: false,
                form: to_form(safe_params),
                form_errors: [%{message: @mint_failure_error}],
                expiry_error: nil
@@ -72,6 +76,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
         {:noreply,
          assign(socket,
            iat_secret: nil,
+           iat_acknowledged?: false,
            form: to_form(safe_params),
            form_errors: [%{message: @invalid_expiry_error}],
            expiry_error: @invalid_expiry_error
@@ -91,7 +96,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
 
   @impl true
   def handle_event("acknowledge_copy", _params, socket) do
-    {:noreply, assign(socket, iat_secret: nil)}
+    {:noreply, assign(socket, iat_secret: nil, iat_acknowledged?: true)}
   end
 
   defp expiry_at(days_str) when is_binary(days_str) do
@@ -117,17 +122,13 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
   end
 
   defp safe_form_params(params) do
-    single_use = Map.get(params, "single_use")
     expires_in_days = Map.get(params, "expires_in_days")
 
-    %{
-      "single_use" => if(single_use in ["true", "false"], do: single_use, else: "true"),
-      "expires_in_days" => if(is_binary(expires_in_days), do: expires_in_days, else: "")
-    }
+    %{"expires_in_days" => if(is_binary(expires_in_days), do: expires_in_days, else: "")}
   end
 
   defp default_form_params do
-    %{"single_use" => "true", "expires_in_days" => "30"}
+    %{"expires_in_days" => "30"}
   end
 
   defp expiry_describedby(nil), do: "iat_expires_in_days-help"

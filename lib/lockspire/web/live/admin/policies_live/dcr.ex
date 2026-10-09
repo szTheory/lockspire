@@ -235,7 +235,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   defp comma_value(_value), do: ""
 
   defp registration_policy_label(:disabled), do: "Disabled"
-  defp registration_policy_label(:initial_access_token), do: "Initial Access Token gated"
+  defp registration_policy_label(:initial_access_token), do: "Initial access token required"
   defp registration_policy_label(:open), do: "Open registration"
   defp registration_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
 

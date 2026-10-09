@@ -3,13 +3,7 @@
     eyebrow="Configure"
     title="Initial access token inventory"
     body="Review DCR onboarding intake credentials by lifecycle, expiry, creator, and usage limit. Plaintext values are never shown in inventory."
-  >
-    <:actions>
-      <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-        Mint initial access token
-      </Lockspire.Web.Components.AdminComponents.admin_button>
-    </:actions>
-  </Lockspire.Web.Components.AdminComponents.page_hero>
+  />
 
   <Lockspire.Web.Components.AdminComponents.pane
     title="Review initial access tokens"
@@ -53,7 +47,7 @@
           Reload inventory
         </Lockspire.Web.Components.AdminComponents.admin_button>
         <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()}>
-          Mint initial access token
+          Create initial access token
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% end %>
@@ -82,25 +76,31 @@
         />
       </Lockspire.Web.Components.AdminComponents.metric_grid>
 
-      <Lockspire.Web.Components.AdminComponents.action_bar>
-        <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-          Mint initial access token
-        </Lockspire.Web.Components.AdminComponents.admin_button>
-        <Lockspire.Web.Components.AdminComponents.admin_button
-          type="button"
-          phx-click="reload_iats"
-          phx-disable-with="Reloading inventory…"
-        >
-          Reload inventory
-        </Lockspire.Web.Components.AdminComponents.admin_button>
-      </Lockspire.Web.Components.AdminComponents.action_bar>
-
       <%= if @tokens == [] do %>
         <Lockspire.Web.Components.AdminComponents.empty_state
-          title="No initial access tokens minted"
-          body="Mint a token for a partner that needs an initial registration request."
-        />
+          title="No initial access tokens"
+          body="Create a single-use token for a partner's first registration request. Issuer registration policy still applies."
+        >
+          <:actions>
+            <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
+              Create initial access token
+            </Lockspire.Web.Components.AdminComponents.admin_button>
+          </:actions>
+        </Lockspire.Web.Components.AdminComponents.empty_state>
       <% else %>
+        <Lockspire.Web.Components.AdminComponents.action_bar>
+          <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
+            Create initial access token
+          </Lockspire.Web.Components.AdminComponents.admin_button>
+          <Lockspire.Web.Components.AdminComponents.admin_button
+            type="button"
+            phx-click="reload_iats"
+            phx-disable-with="Reloading inventory…"
+          >
+            Reload inventory
+          </Lockspire.Web.Components.AdminComponents.admin_button>
+        </Lockspire.Web.Components.AdminComponents.action_bar>
+
         <Lockspire.Web.Components.AdminComponents.resource_list>
           <%= for token <- @tokens do %>
             <Lockspire.Web.Components.AdminComponents.dense_resource_row

@@ -36,45 +36,45 @@ defmodule Lockspire.Admin.Keys do
 
   @spec generate_key(SigningKey.use_type()) :: {:ok, key_view()} | {:error, term()}
   def generate_key(use \\ :sig) do
-    {:ok, server_policy} = Repository.get_server_policy()
+    with {:ok, server_policy} <- Repository.get_server_policy() do
+      {jwk, kty, alg} =
+        signing_key_defaults(server_policy.security_profile, use)
 
-    {jwk, kty, alg} =
-      signing_key_defaults(server_policy.security_profile, use)
+      {_, public_jwk_map} = JOSE.JWK.to_map(JOSE.JWK.to_public(jwk))
+      {_, private_jwk_map} = JOSE.JWK.to_map(jwk)
 
-    {_, public_jwk_map} = JOSE.JWK.to_map(JOSE.JWK.to_public(jwk))
-    {_, private_jwk_map} = JOSE.JWK.to_map(jwk)
+      kid = Base.encode16(:crypto.strong_rand_bytes(8))
 
-    kid = Base.encode16(:crypto.strong_rand_bytes(8))
+      public_jwk_map =
+        public_jwk_map
+        |> Map.put("use", Atom.to_string(use))
+        |> Map.put("kid", kid)
+        |> Map.put("alg", alg)
 
-    public_jwk_map =
-      public_jwk_map
-      |> Map.put("use", Atom.to_string(use))
-      |> Map.put("kid", kid)
-      |> Map.put("alg", alg)
+      private_jwk_map = Map.put(private_jwk_map, "kid", kid)
 
-    private_jwk_map = Map.put(private_jwk_map, "kid", kid)
+      key = %SigningKey{
+        kid: kid,
+        kty: kty,
+        alg: alg,
+        use: use,
+        public_jwk: public_jwk_map,
+        private_jwk_encrypted: Jason.encode!(private_jwk_map),
+        status: :upcoming,
+        inserted_at: DateTime.utc_now(),
+        updated_at: DateTime.utc_now()
+      }
 
-    key = %SigningKey{
-      kid: kid,
-      kty: kty,
-      alg: alg,
-      use: use,
-      public_jwk: public_jwk_map,
-      private_jwk_encrypted: Jason.encode!(private_jwk_map),
-      status: :upcoming,
-      inserted_at: DateTime.utc_now(),
-      updated_at: DateTime.utc_now()
-    }
-
-    with {:ok, published_key} <-
-           transact_with_audit(
-             fn -> Repository.publish_key(key) end,
-             fn %SigningKey{} = k ->
-               key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})
-             end
-           ) do
-      emit(:key, :generated, published_key, actor_from_attrs(%{}))
-      {:ok, to_view(published_key)}
+      with {:ok, published_key} <-
+             transact_with_audit(
+               fn -> Repository.publish_key(key) end,
+               fn %SigningKey{} = k ->
+                 key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})
+               end
+             ) do
+        emit(:key, :generated, published_key, actor_from_attrs(%{}))
+        {:ok, to_view(published_key)}
+      end
     end
   end
 

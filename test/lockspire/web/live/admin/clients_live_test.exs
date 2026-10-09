@@ -437,6 +437,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert populated_html =~ "3 matching clients"
     assert populated_html =~ "alpha-client"
     assert populated_html =~ "Active"
+    HtmlAssertions.assert_has_link(populated_html, "#client-create-form")
 
     assert match_at(populated_html, "Filter clients") <
              match_at(populated_html, "Selected client context")

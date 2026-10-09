@@ -107,7 +107,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         eyebrow="Configure"
         title="Client inventory"
         body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
-      />
+      >
+        <:actions>
+          <AdminComponents.admin_button
+            :if={@inventory_state == :loaded and not first_use_empty?(@filters, @total_clients)}
+            href="#client-create-form"
+            variant={:secondary}
+          >
+            Create client
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
 
       <AdminComponents.section_card title="Find a client" subtitle="Filter the inventory, then open a client to review its current configuration.">
         <AdminComponents.filter_bar action={clients_index_path()} phx_submit="filter_inventory">

@@ -82,6 +82,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
             >
               Generate signing key
             </AdminComponents.admin_button>
+          </:primary>
+          <:secondary>
             <AdminComponents.admin_button
               phx-click="generate"
               phx-value-use="enc"
@@ -90,7 +92,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
             >
               Generate encryption key
             </AdminComponents.admin_button>
-          </:primary>
+          </:secondary>
         </AdminComponents.action_group>
 
         <p :if={@generation_notice} role="status" class="lockspire-admin-help lockspire-admin-help-block">
@@ -114,7 +116,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
                 body="The key inventory is unavailable. No key count or lifecycle state is shown until the read succeeds."
               >
                 <:actions>
-                  <AdminComponents.admin_button type="button" phx-click="retry_inventory">
+                  <AdminComponents.admin_button
+                    type="button"
+                    phx-click="retry_inventory"
+                    phx-disable-with="Loading signing keys…"
+                  >
                     Try loading signing keys again
                   </AdminComponents.admin_button>
                 </:actions>

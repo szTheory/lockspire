@@ -93,7 +93,22 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Retired"
     assert html =~ "Total keys"
     assert html =~ "lockspire-admin-action-group"
-    assert html =~ "lockspire-admin-action-group__primary"
+
+    [primary_action_group] =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query(".lockspire-admin-action-group__primary")
+      |> Enum.to_list()
+
+    [secondary_action_group] =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query(".lockspire-admin-action-group__secondary")
+      |> Enum.to_list()
+
+    assert LazyHTML.text(primary_action_group) =~ "Generate signing key"
+    refute LazyHTML.text(primary_action_group) =~ "Generate encryption key"
+    assert LazyHTML.text(secondary_action_group) =~ "Generate encryption key"
     assert html =~ "Key generation actions"
     assert html =~ "phx-disable-with=\"Generating signing key…\""
     assert html =~ "phx-disable-with=\"Generating encryption key…\""
@@ -152,6 +167,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert is_nil(unavailable_socket.assigns.total_keys)
     assert html =~ "Could not load signing keys"
     assert html =~ "Try loading signing keys again"
+    assert html =~ "phx-disable-with=\"Loading signing keys…\""
+    assert html =~ "phx-disable-with=\"Loading signing keys…\""
     refute html =~ "No signing keys are stored"
     refute html =~ "Total keys"
   end
@@ -215,7 +232,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "kid_"
     assert html =~ "Database handle"
-    assert html =~ "Publish this public key so it is served in JWKS before activation."
+    assert html =~ "Make this public key available for verifier overlap."
+    assert html =~ "The current signing key remains active."
+    refute html =~ "becomes available to verifiers"
     assert html =~ "name=\"publish[confirm]\""
     assert html =~ "phx-submit=\"publish_key\""
     assert html =~ "phx-disable-with=\"Publishing key…\""
@@ -243,8 +262,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
              "Key is now served in JWKS; the current signer remains active."
 
     html = rendered_to_string(Show.render(socket.assigns))
-    assert html =~ "Activate this public key only when verifiers can accept the cutover signer."
-    assert html =~ "the previous signer moves to retiring overlap and remains in JWKS."
+    assert html =~ "Use this key to sign new tokens. The previous active key moves to retiring."
+    refute html =~ "only when verifiers can accept the cutover signer"
     assert html =~ "name=\"activate[confirm]\""
     assert html =~ "phx-submit=\"activate_key\""
     assert html =~ "phx-disable-with=\"Activating key…\""
@@ -291,8 +310,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     html = rendered_to_string(Show.render(socket.assigns))
     assert html =~ "Retire key"
 
-    assert html =~
-             "Retire this public key only after verifiers have moved off publication overlap."
+    assert html =~ "Remove this key from the published JWKS set."
+    refute html =~ "only after verifiers have moved off publication overlap"
 
     assert html =~ "name=\"retire[confirm]\""
     assert html =~ "phx-submit=\"retire_key\""

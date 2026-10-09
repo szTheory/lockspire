@@ -32,9 +32,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
               <span>
-                Publish this public key so it is served in JWKS before activation.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes available to verifiers while the current signer remains active.
+                Make this public key available for verifier overlap. The current signing key remains active.
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -59,9 +57,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="activate[confirm]" value="true" />
               <span>
-                Activate this public key only when verifiers can accept the cutover signer.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes active; the previous signer moves to retiring overlap and remains in JWKS.
+                Use this key to sign new tokens. The previous active key moves to retiring.
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -87,9 +83,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
               <span>
-                Retire this public key only after verifiers have moved off publication overlap.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                leaves the served JWKS when retirement succeeds.
+                Remove this key from the published JWKS set.
               </span>
             </label>
             <AdminComponents.action_bar>

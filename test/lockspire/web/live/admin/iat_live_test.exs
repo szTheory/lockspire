@@ -80,7 +80,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     assert html =~ "Initial Access Token inventory"
     assert html =~ "Self-registered clients"
     assert html =~ "Next safe action"
-    assert html =~ "Mint initial access token"
+    assert html =~ "Create initial access token"
     assert html =~ "Review initial access tokens"
     assert html =~ "Edit DCR policy"
   end
@@ -89,10 +89,25 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     test "D-06/D-07 successful empty inventory has zero counts and a named next step" do
       {:ok, _view, html} = live(conn_for_admin(), "/admin/iats")
 
-      assert String.contains?(html, "No initial access tokens minted")
+      assert String.contains?(html, "No initial access tokens")
       assert inventory_counts(html) == ["0", "0", "0", "0", "0"]
-      HtmlAssertions.assert_has_link(html, "/admin/iats/new")
+      assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
+      assert html =~ "Create initial access token"
       HtmlAssertions.assert_no_selector(html, ".lockspire-admin-alert-danger")
+    end
+
+    test "D-06 populated inventory has one create action" do
+      {:ok, _iat, _plaintext} =
+        InitialAccessTokens.mint_iat(%{
+          single_use: true,
+          created_by: "operator",
+          expires_at: DateTime.add(DateTime.utc_now(), 30, :day)
+        })
+
+      {:ok, _view, html} = live(conn_for_admin(), "/admin/iats")
+
+      assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
+      assert html =~ "Create initial access token"
     end
 
     test "D-06 failed inventory read remains unavailable and reload can recover" do
@@ -113,7 +128,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
       recovered_html = render_click(view, "reload_iats")
 
-      assert String.contains?(recovered_html, "No initial access tokens minted")
+      assert String.contains?(recovered_html, "No initial access tokens")
       assert inventory_counts(recovered_html) == ["0", "0", "0", "0", "0"]
     end
 
@@ -377,7 +392,8 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert String.contains?(html, ~s(name="expires_in_days"))
       assert String.contains?(html, ~s(value="30"))
-      assert String.contains?(html, ~s(value="true" selected))
+      refute String.contains?(html, ~s(name="single_use"))
+      refute String.contains?(html, "Multi-use")
     end
 
     test "D-08 route parameter changes clear a successful one-time handoff" do
@@ -427,24 +443,29 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert initial_html =~ "Mint initial access token"
       assert initial_html =~ "DCR policy"
       assert initial_html =~ "lockspire-admin-workflow-shell"
-      assert initial_html =~ "iat_single_use-help"
       assert initial_html =~ "iat_expires_in_days-help"
-      assert initial_html =~ ~s(name="single_use")
       assert initial_html =~ ~s(name="expires_in_days")
       assert initial_html =~ ~s(value="30")
-      assert initial_html =~ ~s(value="true" selected)
+
+      assert initial_html =~
+               "This single-use token authorizes an initial client registration request. Issuer registration policy still applies."
+
+      refute initial_html =~ "Multi-use"
+      refute initial_html =~ ~s(name="single_use")
       assert initial_html =~ ~s(phx-submit="mint")
       assert initial_html =~ "Review initial access tokens"
-      refute initial_html =~ "Initial access token minted"
+      refute initial_html =~ "Copy this Initial Access Token now"
 
       # Mint a new token
       html_after_mint =
         view
         |> element("form")
-        |> render_submit(%{"single_use" => "true", "expires_in_days" => "30"})
+        |> render_submit(%{"expires_in_days" => "30"})
 
       assert_handoff_rendered(html_after_mint)
       plaintext = handoff_token(html_after_mint)
+      assert {:ok, [minted_iat]} = InitialAccessTokens.list_iats()
+      assert minted_iat.single_use
 
       # Clicking the acknowledge button
       html_after_ack =
@@ -455,7 +476,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert_handoff_cleared(html_after_ack, plaintext)
 
       {:ok, _index_view, inventory_html} = live(conn_for_admin(), "/admin/iats")
-      assert_handoff_cleared(inventory_html, plaintext)
+      assert_handoff_not_present(inventory_html, plaintext)
     end
   end
 
@@ -478,9 +499,9 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     required_copy =
       Enum.all?(
         [
-          "Initial access token minted",
-          "Plaintext is shown once. Lockspire stores only the hash and redacted durable state after this response.",
-          "I have copied this Initial Access Token"
+          "Copy this Initial Access Token now",
+          "This single-use token authorizes an initial client registration request within issuer policy. Plaintext is shown once.",
+          "Hide credential"
         ],
         &String.contains?(html, &1)
       )
@@ -493,12 +514,19 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
   end
 
   defp assert_handoff_cleared(html, token) do
+    assert_handoff_not_present(html, token)
+
+    unless String.contains?(html, "Credential hidden. It will not be shown again.") do
+      flunk("The IAT handoff did not confirm that the credential was hidden.")
+    end
+  end
+
+  defp assert_handoff_not_present(html, token) do
     if String.contains?(html, token) do
       flunk("The IAT plaintext remained in rendered HTML after handoff clearing.")
     end
 
-    if String.contains?(html, "Initial access token minted") or
-         String.contains?(html, "I have copied this Initial Access Token") do
+    if String.contains?(html, "Copy this Initial Access Token now") do
       flunk("The IAT handoff remained visible after it was cleared.")
     end
 

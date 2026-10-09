@@ -56,7 +56,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert html =~ "Global DCR policy"
     assert html =~ "Save global DCR policy"
-    assert html =~ "Current gate: Initial Access Token gated"
+    assert html =~ "Current gate: Initial access token required"
     assert html =~ "future Dynamic Client Registration requests"
   end
 

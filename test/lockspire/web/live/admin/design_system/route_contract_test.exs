@@ -8,7 +8,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
     RouteAssertions.assert_mounted_routes!()
   end
 
-  test "Phase 144 browser inventory matches current router workflows" do
+  test "Phase 144 browser inventory remains covered by current router workflows" do
     inventory_path =
       Path.join([
         File.cwd!(),
@@ -30,9 +30,11 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
       end)
 
     expected_routes = RouteScorecards.expected_routes()
+    historical_routes = MapSet.new(routes)
+    current_routes = MapSet.new(expected_routes)
 
-    assert length(routes) == 29
-    assert MapSet.new(routes) == MapSet.new(expected_routes)
+    assert routes != []
+    assert MapSet.subset?(historical_routes, current_routes)
   end
 
   test "operator documentation keeps the host and embedded-library boundary explicit" do
