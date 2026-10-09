@@ -1452,6 +1452,10 @@ defmodule Lockspire.Web.Admin.CSS do
     margin-bottom: var(--ls-space-6);
   }
 
+  .lockspire-admin-client-workspace > :first-child {
+    grid-column: 1 / -1;
+  }
+
   .lockspire-admin-client-workspace > * {
     max-width: 100%;
     min-width: 0;

@@ -23,6 +23,11 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.CssContractTest do
     CssAssertions.assert_responsive_layout!()
   end
 
+  test "client detail identity and edit action span the summary grid" do
+    assert Lockspire.Web.Admin.CSS.get() =~
+             ~r/\.lockspire-admin-client-workspace\s*>\s*:first-child\s*\{\s*grid-column:\s*1\s*\/\s*-1;/
+  end
+
   test "shared components preserve redaction-safe long-value presentation" do
     CssAssertions.assert_redaction_safe_presentation!()
   end
