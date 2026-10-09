@@ -641,6 +641,49 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert updated_client.access_token_format == :opaque
   end
 
+  test "client metadata edit retains attempted and untouched values with associated save errors", %{
+    client: client
+  } do
+    assert {:ok, _updated_client} =
+             Admin.update_client(client.client_id, %{
+               allowed_scopes: ["openid", "profile"],
+               contacts: ["ops@example.test"],
+               logo_uri: "https://client.example.test/logo.svg"
+             })
+
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}/edit")
+
+    assert html =~ "Save client changes"
+    assert html =~ "Return to client details"
+    refute html =~ "Save metadata"
+
+    error_html =
+      view
+      |> form("form[phx-submit=save_client]", %{
+        client: %{
+          mode: "edit",
+          name: "Attempted client name",
+          allowed_scopes: "",
+          dpop_policy: "bearer"
+        }
+      })
+      |> render_submit()
+
+    assert error_html =~ "Client changes were not saved."
+    assert error_html =~ ~s(role="alert")
+    assert error_html =~ ~s(tabindex="-1")
+    assert error_html =~ ~s(id="client_allowed_scopes-error")
+    assert error_html =~ ~s(aria-describedby="client_allowed_scopes-error")
+    assert error_html =~ ~s(value="Attempted client name")
+    assert error_html =~ ~s(value="ops@example.test")
+    assert error_html =~ "https://client.example.test/logo.svg"
+
+    assert {:ok, unchanged_client} = Admin.get_client(client.client_id)
+    assert unchanged_client.name == "Security Show Client"
+    assert unchanged_client.allowed_scopes == ["openid", "profile"]
+    assert unchanged_client.contacts == ["ops@example.test"]
+  end
+
   test "client detail shows global / override / effective access token format rows with nil as inherit",
        %{client: client} do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
