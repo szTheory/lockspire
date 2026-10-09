@@ -160,6 +160,7 @@ defmodule Lockspire.Admin.Tokens do
       account_handle: optional_handle(:account, token.account_id),
       token_type: token.token_type,
       generation: token.generation,
+      consent_grant_id: token.consent_grant_id,
       expires_at: token.expires_at,
       revoked_at: token.revoked_at,
       reuse_detected_at: token.reuse_detected_at,

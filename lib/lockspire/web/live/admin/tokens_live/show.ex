@@ -22,6 +22,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
        current_section: :tokens,
        token_id: parse_id(id),
        token_detail: nil,
+       detail_state: :loading,
        revoke_error: nil,
        family_error: nil,
        family_notice: nil
@@ -68,9 +69,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     case Admin.revoke_token_family(socket.assigns.token_id, %{revoked_by: "operator"}) do
       {:ok, %{count: count, token: detail}} ->
         notice =
-          if count == 0,
-            do: "This refresh family was already fully revoked.",
-            else: "Revoked #{count} currently unrevoked token(s) in this refresh family."
+          case count do
+            0 -> "This refresh family was already fully revoked."
+            1 -> "Revoked 1 currently unrevoked token in this refresh family."
+            count -> "Revoked #{count} currently unrevoked tokens in this refresh family."
+          end
 
         {:noreply,
          assign(socket,
@@ -101,10 +104,35 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def render(%{token_detail: nil} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.empty_state
-        title="Token not found"
-        body="Lockspire could not load that lifecycle token from durable storage."
-      />
+      <%= if @detail_state == :error do %>
+        <AdminComponents.empty_state
+          title="Could not load token details"
+          body="The token detail read failed, so its current state is unknown. Retry this read or return to the inventory."
+        >
+          <:actions>
+            <AdminComponents.admin_button
+              :if={is_integer(@token_id)}
+              href={token_detail_path(@token_id)}
+            >
+              Try loading token details again
+            </AdminComponents.admin_button>
+            <AdminComponents.admin_button href={tokens_index_path()}>
+              Review token investigation
+            </AdminComponents.admin_button>
+          </:actions>
+        </AdminComponents.empty_state>
+      <% else %>
+        <AdminComponents.empty_state
+          title="Token not found"
+          body="Lockspire could not find that supported access or refresh token in durable storage."
+        >
+          <:actions>
+            <AdminComponents.admin_button href={tokens_index_path()}>
+              Review token investigation
+            </AdminComponents.admin_button>
+          </:actions>
+        </AdminComponents.empty_state>
+      <% end %>
     </AdminLayoutLive.shell>
     """
   end
@@ -179,6 +207,12 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           </:item>
           <:item label="Client handle">
             <AdminComponents.long_value value={@token_detail.token.client_handle} kind={:id} />
+            <AdminComponents.admin_button
+              :if={client_detail_path_available?(@token_detail)}
+              href={client_detail_path(@token_detail.client.client_id)}
+            >
+              View client details
+            </AdminComponents.admin_button>
           </:item>
           <:item label="Account">
             <AdminComponents.long_value
@@ -217,6 +251,15 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
             />
           </:item>
           <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
+          <:item label="Consent grant">
+            <AdminComponents.admin_button
+              :if={is_integer(@token_detail.token.consent_grant_id)}
+              href={consent_detail_path(@token_detail.token.consent_grant_id)}
+            >
+              View consent grant
+            </AdminComponents.admin_button>
+            <span :if={!is_integer(@token_detail.token.consent_grant_id)}>Not recorded</span>
+          </:item>
         </AdminComponents.description_list>
       </AdminComponents.pane>
 
@@ -238,8 +281,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         <AdminComponents.resource_list>
           <%= for entry <- @token_detail.family_tokens do %>
             <AdminComponents.dense_resource_row
-              title={if(entry.current?, do: "Current token", else: entry.token.handle)}
-              subtitle={"#{entry.token.token_type} token generation #{entry.token.generation}"}
+              title={
+                if(entry.current?,
+                  do:
+                    "Current #{token_kind_label(entry.token.token_type)} generation #{entry.token.generation}",
+                  else: entry.token.handle
+                )
+              }
             >
               <:meta>
                 <span>
@@ -279,18 +327,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                   value="true"
                   disabled={token_action_disabled?(@token_detail)}
                 />
-                <span>
-                  Revoke only this {@token_detail.token.token_type} token for client
-                  {@token_detail.token.client_display}, subject
-                  {@token_detail.token.account_handle || "not recorded"}, expiring
-                  <AdminComponents.timestamp value={@token_detail.token.expires_at} />.
-                </span>
+                <span>{single_token_confirmation(@token_detail)}</span>
               </label>
               <AdminComponents.action_bar>
                 <AdminComponents.admin_button
                   type="submit"
                   variant={:danger}
                   disabled={token_action_disabled?(@token_detail)}
+                  phx-disable-with={token_pending_label(@token_detail)}
                 >
                   {token_revoke_button_label(@token_detail)}
                 </AdminComponents.admin_button>
@@ -320,15 +364,15 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                   disabled={family_action_disabled?(@token_detail)}
                 />
                 <span>
-                  Revoke token family
+                  Revoke this refresh token family? This revokes the currently unrevoked tokens in this family.
+                  Family
                   <AdminComponents.long_value
                     value={@token_detail.token.family_handle || "not recorded"}
                     kind={:id}
                   />
                   for client {@token_detail.token.client_display} and subject
                   {@token_detail.token.account_handle || "not recorded"}. This family-wide action
-                  revokes currently unrevoked tokens in the refresh family. It is irreversible and
-                  does not expose token plaintext.
+                  is irreversible and does not expose token plaintext.
                 </span>
               </label>
               <AdminComponents.action_bar>
@@ -336,6 +380,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
                   type="submit"
                   variant={:danger}
                   disabled={family_action_disabled?(@token_detail)}
+                  phx-disable-with="Revoking this refresh token family…"
                 >
                   {family_revoke_button_label(@token_detail)}
                 </AdminComponents.admin_button>
@@ -348,11 +393,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     """
   end
 
-  defp load_token(socket, nil), do: assign(socket, token_detail: nil)
+  defp load_token(socket, nil), do: assign(socket, token_detail: nil, detail_state: :missing)
 
   defp load_token(socket, token_id) do
-    {:ok, token_detail} = Admin.get_token(token_id)
-    assign(socket, token_detail: token_detail)
+    case read_token_detail(token_id) do
+      {:ok, nil} -> assign(socket, token_detail: nil, detail_state: :missing)
+      {:ok, token_detail} -> assign(socket, token_detail: token_detail, detail_state: :loaded)
+      {:error, _reason} -> assign(socket, token_detail: nil, detail_state: :error)
+    end
+  end
+
+  defp read_token_detail(token_id) do
+    Admin.get_token(token_id)
+  rescue
+    _error -> {:error, :unavailable}
   end
 
   defp parse_id(value) when is_integer(value), do: value
@@ -511,6 +565,23 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     end
   end
 
+  defp single_token_confirmation(%{token: %{token_type: :access_token}}),
+    do:
+      "Revoke this access token? This revokes only this token; other tokens in its refresh family remain unchanged."
+
+  defp single_token_confirmation(%{token: %{token_type: :refresh_token}}),
+    do:
+      "Revoke this refresh token? This revokes only this token; other tokens in its refresh family remain unchanged."
+
+  defp token_pending_label(%{token: %{token_type: :access_token}}),
+    do: "Revoking this access token…"
+
+  defp token_pending_label(%{token: %{token_type: :refresh_token}}),
+    do: "Revoking this refresh token…"
+
+  defp token_kind_label(:access_token), do: "access token"
+  defp token_kind_label(:refresh_token), do: "refresh token"
+
   defp family_revoke_button_label(token_detail) do
     cond do
       not refresh_family_present?(token_detail) -> "Family-wide revocation unavailable"
@@ -522,4 +593,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   defp summary(value, detail, tone), do: %{value: value, detail: detail, tone: tone}
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
+  defp token_detail_path(id), do: tokens_index_path() <> "/#{id}"
+
+  defp client_detail_path_available?(%{client: %{client_id: client_id}}),
+    do: is_binary(client_id) and byte_size(client_id) <= 64
+
+  defp client_detail_path_available?(_detail), do: false
+
+  defp client_detail_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+  defp consent_detail_path(id), do: Lockspire.mount_path() <> "/admin/consents/" <> to_string(id)
 end
