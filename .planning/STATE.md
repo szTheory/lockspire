@@ -1,20 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.39
-status: v1.39 archived with the Phase 143 verification gap acknowledged for forward development; ready to define the next milestone
-stopped_at: "v1.39 archived with accepted Phase 143 gap; next command: $gsd-new-milestone"
-last_updated: "2026-10-09T01:34:55.747Z"
-last_activity: 2026-10-08
-last_activity_desc: v1.39 release milestone archived with the accepted Phase 143 gap
-state_head: 996df96bdddc9529419fd8844d0f40e421eb5d6b
+milestone: v1.40
+milestone_name: Admin Operator UI Refinement
+status: planning
+last_updated: "2026-10-09T12:39:47.474Z"
+last_activity: 2026-10-09
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 10
-  completed_plans: 10
-milestone_name: Verified 1.5.1 Release
-current_phase: 143
-current_phase_name: Publish and Verify Lockspire 1.5.1
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,16 +21,24 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone — run $gsd-new-milestone
+**Current focus:** v1.40 Admin Operator UI Refinement — defining requirements and roadmap
 
 ## Current Position
 
-Phase: Milestone v1.39 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: v1.39 archived with the Phase 143 verification gap acknowledged for forward development; ready to define the next milestone
-Last activity: 2026-10-08 — v1.39 release milestone archived with the accepted Phase 143 gap
+Status: Defining requirements
+Last activity: 2026-10-09 — Milestone v1.40 started
 
 ## Accumulated Context
+
+### v1.40 UI Milestone Direction
+
+- User invoked `$gsd-new-milestone Admin Operator UI Refinement` after approving the Impeccable audience and code-first setup. Read root PRODUCT.md and .planning/UI-MILESTONE-PREFLIGHT.md; do not repeat those initialization questions.
+- Reuse the completed source stocktake and sibling-project research for this milestone; no new ecosystem research pass or change to the standing research preference. Fresh browser inspection is still required in Phase 144.
+- Continue numbering after Phase 143. The GSD init helper reports v1.37 as latest completed because newer archive headings use Completed; MILESTONES.md and the v1.39 archive establish that v1.40 starts at Phase 144.
+- Detailed requirements and roadmap are proposed and awaiting their final review. No UI implementation, new visual proof, or phase completion is claimed.
+- Earlier docs-backlog promotion is superseded. Phase 999.1 stays backlog. Historical v1.39 exceptions remain acknowledged and non-blocking.
 
 ### Recent Sustaining Release: 1.5.0
 
@@ -214,7 +218,7 @@ Last activity: 2026-10-08 — v1.39 release milestone archived with the accepted
 ## Session Continuity
 
 Last session: 2026-10-09T00:59:07Z
-Stopped at: v1.39 archived with accepted Phase 143 gap; next command: $gsd-new-milestone
+Stopped at: v1.40 requirements drafted; create and review roadmap before Phase 144 planning
 Resume file: None
 
 ## Performance Metrics
@@ -294,4 +298,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with $gsd-new-milestone
+- Finish the v1.40 requirements/roadmap review; after approval, run $gsd-plan-phase 144 with PRODUCT.md and UI-MILESTONE-PREFLIGHT.md as required context.

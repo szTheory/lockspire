@@ -14,6 +14,20 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 Once a repeatable check is automated and required CI proves it, do not add a manual UAT/signoff step for the same property or reopen that choice without new evidence that automation cannot establish it. Keep human approval for genuinely consequential external actions, such as a specifically identified ref update, separate from verification.
 
+## Current Milestone: v1.40 Admin Operator UI Refinement
+
+**Goal:** Refine Lockspire's existing operator UI into a calm, coherent interface for configuration, investigation, and operations, with a working preview and bounded automated/browser verification.
+
+**Target features:**
+- Establish a fresh mounted-demo baseline and prove shared design improvements on complete client-configuration and token/consent-investigation workflows before broad propagation.
+- Improve readable typography, spacing, information hierarchy, forms, navigation context, and domain microcopy through the existing admin tokens and components.
+- Refine Configure, Support, Orient, and read-only Operate journeys, including truthful empty, failed, unknown, and consequential-action states.
+- Finish with responsive, keyboard, theme, reduced-motion, and runtime interaction proof, a stable synthetic-data preview, and representative before/after evidence for optional feedback.
+
+**Design context:** Read [PRODUCT.md](../PRODUCT.md), [UI-MILESTONE-PREFLIGHT.md](UI-MILESTONE-PREFLIGHT.md), and [Impeccable preferences](../.impeccable/config.json). The user confirmed the audience and code-first approach and invoked this milestone after preflight. Use Impeccable Operate guidance and selective Emil Kowalski motion guidance; preserve the implemented identity and embedded host seam. Reuse the completed stocktake rather than repeat ecosystem research; phase research should resolve concrete runtime/design unknowns. Detailed requirement and phase approval is recorded in STATE.md.
+
+**Boundaries:** No protocol expansion, host account/login/consent redesign, invented queue controls, broad backend refactor, repository/docs-backlog promotion, or historic release-approval repair. Preserve credential redaction, copy-once semantics, security defaults, and truthful confirmation consequences. Historical v1.39 gaps stay acknowledged and non-blocking.
+
 ## Completed Milestone: v1.38 Repository Baseline & Reconciliation
 
 **Goal:** Bring Lockspire to a clean, green, internally consistent maintenance baseline, then close only concrete loose ends supported by repository evidence.
@@ -37,7 +51,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 **Verification:** Use the existing required CI, repository-hygiene, protected publish, and public install checks as the acceptance evidence. Do not add a manual UAT step for a property those checks prove.
 
-**Delivered:** Phase 142 corrected and verified the main baseline. Phase 143 published and verified Lockspire 1.5.1 from `0b56503859b69531ff86d8e4a465a0e75f963594`, with canonical CI, protected run, package checksum, release/tag target, docs, and clean-room install evidence joined in the release receipt. The Phase 143 verifier remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap for forward development; no approval is inferred from the separate publication approval. See the [milestone audit](v1.39-MILESTONE-AUDIT.md) and [milestone history](MILESTONES.md).
+**Delivered:** Phase 142 corrected and verified the main baseline. Phase 143 published and verified Lockspire 1.5.1 from `0b56503859b69531ff86d8e4a465a0e75f963594`, with canonical CI, protected run, package checksum, release/tag target, docs, and clean-room install evidence joined in the release receipt. The Phase 143 verifier remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap for forward development; no approval is inferred from the separate publication approval. See the [milestone audit](milestones/v1.39-MILESTONE-AUDIT.md) and [milestone history](MILESTONES.md).
 
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
@@ -57,6 +71,8 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 **Delivered:** Phases 126-130 are complete, verified, audited, and archived. The milestone bound publication to exact successful-CI evidence, made static-analysis/coverage/minimum-version claims executable, repaired host-Repo/storage boundaries, decomposed token orchestration behind stable facades, centralized lifetime and private-key policy, and made repository proof easier to maintain without adding protocol surface or changing public behavior.
 
 ## Current State
+
+The active planning direction is v1.40 Admin Operator UI Refinement. No UI implementation or fresh browser verification has been completed for this milestone yet. The repository/docs-polish idea remains backlog Phase 999.1.
 
 The v1.39 release milestone is complete: Lockspire 1.5.1 is public and its source, canonical CI, protected run, package checksum, GitHub release/tag, docs, and clean-room install proof agree. The exact-head merge authorization for PR #119 is absent from retained records, so the Phase 143 verification and milestone audit preserve that gap as acknowledged for forward development.
 
@@ -242,7 +258,13 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-No next-milestone requirements are defined yet; set scope through `$gsd-new-milestone`.
+- [ ] Current mounted preview, refreshed route/state inventory, and shared improvements demonstrated in representative whole workflows.
+- [ ] Consistent client, onboarding, credential, key, and security-policy configuration journeys.
+- [ ] Clear token/consent investigation, truthful observation failures, and readable read-only operations.
+- [ ] Coherent responsive, accessible, theme-aware, and reduced-motion behavior across the existing admin surface.
+- [ ] Bounded visual refinement and meaningful automated regression evidence, with a stable preview for optional user feedback.
+
+Detailed acceptance criteria and phase mapping are in [REQUIREMENTS.md](REQUIREMENTS.md) and [ROADMAP.md](ROADMAP.md).
 
 ### Validated
 
@@ -397,6 +419,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start and complete v1.31 as an admin design-system stress test | v1.29 made the admin UI coherent and v1.30 made the demo easier to inspect; the next leverage point was making shared components, fixtures, page IA, browser proof, and docs compound without protocol/storage/host-seam creep. | Adopted at v1.31 milestone start (2026-06-25); archived 2026-06-26 |
 | Start and complete v1.32 as a page-first admin IA and interaction-model polish milestone | v1.31 strengthened foundations and broad weak-page coverage; the remaining quality gap was judgment-level page composition, user-flow hierarchy, copy, and component-group polish under ugly Support/Operate data before wider Configure propagation and final proof ratchets. | Adopted 2026-06-28; shipped and archived 2026-06-30 |
 | Run repo hygiene before future milestones and releases | Clean local git/worktrees, triaged GitHub PRs/issues, green CI, current GSD state, and release-truth notes keep Lockspire ready for the next scoped adventure without starting from a dirty repo state. | Adopted 2026-07-01; documented in `.planning/REPO-HYGIENE-CHECKLIST.md` |
+| Start v1.40 as Admin Operator UI Refinement using the existing design system | The user requested a coherent, conventional operator experience, approved the Impeccable audience/code-first defaults, and selected this scope over the earlier docs backlog. Reuse prior UI work and sibling lessons; evaluate complete jobs in the actual browser with bounded review. | Milestone direction confirmed 2026-10-09; detailed roadmap approval tracked in STATE.md |
 
 ## Evolution
 
@@ -417,4 +440,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-09 after completing the v1.39 release milestone*
+*Last updated: 2026-10-09 at v1.40 Admin Operator UI Refinement kickoff*
