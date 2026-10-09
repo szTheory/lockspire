@@ -11,7 +11,7 @@
     {
       "number": "145",
       "name": "Configure and Onboard",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "146",
@@ -29,5 +29,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 145 of 4 · 25% · executing"
   },
-  "updated_at": "2026-10-09T20:43:21.865Z"
+  "updated_at": "2026-10-09T22:24:40.792Z"
 }
