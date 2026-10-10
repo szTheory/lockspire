@@ -169,14 +169,18 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
        do: "#{dpop} clients require DPoP; #{bearer} force bearer."
 
   defp summary_detail(%{self_registered: registered, active_iats: iats}, :dcr) do
-    [
-      if(is_integer(registered), do: "#{registered} self-registered clients"),
-      if(is_integer(iats), do: "#{iats} active Initial Access Tokens")
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> "Client and Initial Access Token counts are unavailable."
-      values -> Enum.join(values, "; ") <> "."
+    case {registered, iats} do
+      {registered, iats} when is_integer(registered) and is_integer(iats) ->
+        "#{registered} self-registered clients; #{iats} active Initial Access Tokens."
+
+      {nil, iats} when is_integer(iats) ->
+        "Self-registered client count is unavailable; #{iats} active Initial Access Tokens."
+
+      {registered, nil} when is_integer(registered) ->
+        "#{registered} self-registered clients; Initial Access Token count is unavailable."
+
+      {nil, nil} ->
+        "Client and Initial Access Token counts are unavailable."
     end
   end
 
