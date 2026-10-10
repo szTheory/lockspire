@@ -134,7 +134,7 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
   4. Maintainer can inspect fresh rendered evidence across all 29 existing scorecards, with deeper state/theme/viewport checks chosen by risk, and run focused regressions against delivered styling and behavior with visible failures/skips and reliable claimed CI coverage.
   5. User can open a stable, documented synthetic-data preview and compare representative before/after views under matching conditions; the handoff records one batched finding list, fixes, one confirmation pass, current operator guidance, and explicit remaining limits.
 
-**Plans**: TBD
+**Plans**: 7 plans
 **Wave 1**
 - [x] 147-01-PLAN.md
 
@@ -143,10 +143,18 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 147-03-PLAN.md
-- [x] 147-04-PLAN.md
 
 **Wave 4** *(blocked on Wave 3 completion)*
+- [x] 147-04-PLAN.md
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [x] 147-05-PLAN.md
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 147-06-PLAN.md — Report theme storage failures truthfully
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 147-07-PLAN.md — Complete matched comparison and current-source proof
 
 **UI hint**: yes
 
