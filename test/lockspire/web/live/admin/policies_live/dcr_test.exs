@@ -56,8 +56,20 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert html =~ "Global DCR policy"
     assert html =~ "Save global DCR policy"
-    assert html =~ "Current gate: Initial access token required"
+    assert html =~ "Current registration gate: Initial access token required"
     assert html =~ "future Dynamic Client Registration requests"
+
+    assert html =~
+             "Registration requires a valid Initial Access Token before client metadata is accepted."
+  end
+
+  test "disabled registration is named as a closed issuer gate" do
+    assert {:ok, _policy} = ServerPolicy.put_dcr_policy(%{registration_policy: :disabled})
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert html =~ "Current registration gate: Disabled"
+    assert html =~ "No new clients can register through Dynamic Client Registration."
   end
 
   test "failed policy read is unavailable and can be reloaded" do
@@ -123,10 +135,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert occurrence_count(html, "lockspire-admin-workflow-shell") >= 5
     assert html =~ "Disabled"
+    assert html =~ "Registration policy"
     assert html =~ "Initial Access Token"
     assert html =~ "Open registration"
+
+    assert html =~
+             "No Initial Access Token is required. Unauthenticated requests may register clients within issuer metadata allowlists and lifetime limits."
+
     assert html =~ "private_key_jwt posture"
     assert html =~ "client_secret_jwt posture"
+    refute html =~ "operators expect"
     refute html =~ "extreme caution"
   end
 
@@ -166,7 +184,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     )
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Current gate: Open registration"
+    assert html =~ "Current registration gate: Open registration"
     assert html =~ "Open registration"
     assert html =~ "partner.deep.audit.read"
     assert html =~ long_host
@@ -174,8 +192,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "private_key_jwt"
     assert html =~ "client_secret_jwt"
     assert html =~ "client_secret_basic"
-    assert html =~ "This page is descriptive only for this slice."
-    assert html =~ "does not create a remote key-fetch or algorithm-management workflow"
+
+    assert html =~
+             "This policy does not change remote JWKS fetching or supported signing algorithms."
+
     refute html =~ "self-service"
   end
 
@@ -185,7 +205,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
     assert html =~ "Save global DCR policy"
     assert html =~ "future Dynamic Client Registration requests"
-    assert html =~ "existing client records keep their stored configuration"
+    assert html =~ "Existing client records keep their stored configuration."
     assert html =~ "does not mint Initial Access Tokens"
     assert html =~ "rotate registration access tokens"
     assert html =~ "update existing client records"
@@ -266,8 +286,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       |> render_submit()
 
     text = rendered_text(html)
+    assert text =~ "Global Dynamic Client Registration policy saved."
     assert text =~ "This change applies to future registrations only"
-    assert text =~ "existing client records keep their stored configuration"
+    assert text =~ "Existing client records keep their stored configuration."
 
     assert {:ok, policy} = ServerPolicy.get_server_policy()
     assert policy.registration_policy == :open
@@ -289,7 +310,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     text = rendered_text(html)
-    assert text =~ "must be greater than or equal to 0"
+    assert text =~ "must be zero or greater"
     assert html =~ ~s(id="dcr_default_client_lifetime_seconds-error")
     client_lifetime_control = policy_control(html, "dcr_default_client_lifetime_seconds")
     assert client_lifetime_control =~ ~s(value="-100")
@@ -328,7 +349,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       assert text =~ "DCR policy was not saved"
       assert policy_control(html, "dcr_allowed_scopes") =~ ~s(value="openid, partner.audit.read")
       assert policy_control(html, "dcr_default_client_lifetime_seconds") =~ ~s(value="3600")
-      refute text =~ "DCR policy updated"
+      refute text =~ "Global Dynamic Client Registration policy saved"
       refute text =~ "UndefinedFunctionError"
     after
       Application.put_env(:lockspire, :repo, prior_repo)

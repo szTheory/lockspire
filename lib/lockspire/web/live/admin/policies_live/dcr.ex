@@ -13,7 +13,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
     {:ok,
      socket
      |> assign(
-       page_title: "DCR policy",
+       page_title: "Dynamic Client Registration policy",
        current_section: :policies,
        policy: nil,
        policy_state: :loading,
@@ -58,9 +58,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
              client_secret_jwt_truth: dcr_client_secret_jwt_truth(policy),
              form_errors: [],
              save_notice:
-               "This change applies to future registrations only. Existing client records keep their stored configuration."
+               "Global Dynamic Client Registration policy saved. This change applies to future registrations only. Existing client records keep their stored configuration."
            )
-           |> put_flash(:info, "Global DCR policy updated")}
+           |> put_flash(:info, "Global Dynamic Client Registration policy updated")}
 
         {:error, errors} when is_list(errors) ->
           {:noreply,
@@ -218,7 +218,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   defp field_label(:dcr_allowed_redirect_uri_hosts), do: "Allowed redirect URI hosts"
 
   defp field_label(:dcr_allowed_token_endpoint_auth_methods),
-    do: "Allowed token endpoint auth methods"
+    do: "Allowed token endpoint authentication methods"
 
   defp field_label(:dcr_default_client_lifetime_seconds), do: "Default client lifetime"
 
@@ -247,10 +247,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   defp registration_policy_detail(:disabled), do: "No new clients can self-register."
 
   defp registration_policy_detail(:initial_access_token),
-    do: "Partners need a valid intake token before metadata is accepted."
+    do: "Registration requires a valid Initial Access Token before client metadata is accepted."
 
   defp registration_policy_detail(:open),
-    do: "Unauthenticated registration is allowed within issuer metadata allowlists and lifetimes."
+    do:
+      "No Initial Access Token is required. Unauthenticated registration stays within issuer metadata allowlists and lifetimes."
 
   defp registration_policy_detail(_value), do: "Issuer registration posture."
 

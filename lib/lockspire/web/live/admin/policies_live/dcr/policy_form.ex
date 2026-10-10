@@ -40,10 +40,17 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.PolicyForm do
       :dcr_default_registration_access_token_lifetime_seconds
     ])
     |> validate_required([:registration_policy])
-    |> validate_number(:dcr_default_client_lifetime_seconds, greater_than_or_equal_to: 0)
-    |> validate_number(:dcr_default_client_secret_lifetime_seconds, greater_than_or_equal_to: 0)
+    |> validate_number(:dcr_default_client_lifetime_seconds,
+      greater_than_or_equal_to: 0,
+      message: "must be zero or greater"
+    )
+    |> validate_number(:dcr_default_client_secret_lifetime_seconds,
+      greater_than_or_equal_to: 0,
+      message: "must be zero or greater"
+    )
     |> validate_number(:dcr_default_registration_access_token_lifetime_seconds,
-      greater_than_or_equal_to: 0
+      greater_than_or_equal_to: 0,
+      message: "must be zero or greater"
     )
   end
 

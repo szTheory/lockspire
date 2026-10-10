@@ -27,7 +27,7 @@
     <Lockspire.Web.Components.AdminComponents.page_hero
       eyebrow="Configure"
       title="Global DCR policy"
-      body={"Current gate: #{registration_policy_label(@policy.registration_policy)}. These issuer settings bound metadata accepted in future Dynamic Client Registration requests."}
+      body={"Current registration gate: #{registration_policy_label(@policy.registration_policy)}. These issuer settings bound metadata accepted in future Dynamic Client Registration requests."}
     >
       <:summary>
         <Lockspire.Web.Components.AdminComponents.decision_summary>
@@ -67,7 +67,7 @@
 
     <Lockspire.Web.Components.AdminComponents.section_card
       title="Edit future registration policy"
-      subtitle="This change applies to future registrations only; existing client records keep their stored configuration. Open registration still follows issuer metadata allowlists."
+      subtitle="Changing this policy affects future registration requests only. Existing client records keep their stored configuration. Open registration still follows issuer metadata allowlists and lifetime limits."
     >
       <Lockspire.Web.Components.AdminComponents.error_summary
         :if={@form_errors != []}
@@ -82,12 +82,12 @@
       <form id="dcr-policy-form" class="lockspire-admin-form-stack" phx-submit="save_policy">
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Registration gate"
-          help="Choose how issuer registration requests are admitted before client metadata is accepted."
+          help="Choose whether clients can register, must present an Initial Access Token, or can register without one within issuer metadata limits."
         >
           <Lockspire.Web.Components.AdminComponents.form_field
             id="registration_policy"
-            label="Enforcement mode"
-            help="Choose whether registration is disabled, requires an Initial Access Token, or is open within issuer metadata limits."
+            label="Registration policy"
+            help="Choose between disabled registration, an Initial Access Token gate, and open registration within issuer metadata limits."
             errors={field_errors(@form_errors, :registration_policy)}
           >
             <select
@@ -107,23 +107,23 @@
               </option>
             </select>
             <p class="lockspire-admin-help">
-              <strong>Disabled:</strong> Dynamic Client Registration is disabled at the issuer.
+              <strong>Disabled:</strong> No new clients can register through Dynamic Client Registration.
               <br />
               <strong>Initial Access Token:</strong> Registration requires a valid Initial Access Token before client metadata is accepted.
               <br />
-              <strong>Open registration:</strong> Unauthenticated requests may register clients, but issuer metadata allowlists and lifetimes still apply.
+              <strong>Open registration:</strong> No Initial Access Token is required. Unauthenticated requests may register clients within issuer metadata allowlists and lifetime limits.
             </p>
           </Lockspire.Web.Components.AdminComponents.form_field>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Allowlist decisions"
-          help="Bound the scopes, grant types, response types, and redirect URI metadata self-registered clients may request."
+          help="Set which scopes, grant types, response types, and redirect URI metadata new registrations may request."
         >
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_scopes"
             label="Allowed scopes"
-            help="Comma-separated scopes self-registered clients may request."
+            help="Comma-separated scopes new registrations may request."
             errors={field_errors(@form_errors, :dcr_allowed_scopes)}
           >
             <input
@@ -139,7 +139,7 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_grant_types"
             label="Allowed grant types"
-            help="Comma-separated grant types accepted from DCR metadata."
+            help="Comma-separated grant types accepted in registration metadata."
             errors={field_errors(@form_errors, :dcr_allowed_grant_types)}
           >
             <input
@@ -155,7 +155,7 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_response_types"
             label="Allowed response types"
-            help="Comma-separated response types accepted from DCR metadata."
+            help="Comma-separated response types accepted in registration metadata."
             errors={field_errors(@form_errors, :dcr_allowed_response_types)}
           >
             <input
@@ -256,12 +256,12 @@
 
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Token endpoint auth methods"
-          help="Choose which token endpoint authentication methods self-registered clients may request."
+          help="Choose which token endpoint authentication methods new registrations may request."
         >
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_token_endpoint_auth_methods"
-            label="Allowed token endpoint auth methods"
-            help="Comma-separated methods accepted from DCR metadata."
+            label="Allowed token endpoint authentication methods"
+            help="Comma-separated methods accepted in registration metadata."
             errors={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods)}
           >
             <input
@@ -292,7 +292,7 @@
                   Self-registered clients may not use <code>client_secret_jwt</code> until this auth method is present in the DCR allowlist.
               <% end %>
               <br />
-              This page is descriptive only for this slice. It does not create a remote key-fetch or algorithm-management workflow.
+              This policy does not change remote JWKS fetching or supported signing algorithms.
             </p>
           </Lockspire.Web.Components.AdminComponents.form_field>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
@@ -308,7 +308,7 @@
             An Initial Access Token authorizes an initial registration request. A Registration Access Token manages one registered client's configuration endpoint. Client secrets authenticate confidential clients at the token endpoint.
           </p>
           <p class="lockspire-admin-help">
-            Open registration still respects issuer metadata limits. Keep allowlists and lifetimes aligned with the issuer posture operators expect partners to use. Use a supported client workflow to change an existing client record.
+            Open registration still respects issuer metadata limits. Set allowlists and lifetimes to define what new registrations may request. Use the client settings workflow to change an existing client record.
           </p>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
