@@ -79,7 +79,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           });
 
           const status = document.querySelector("[data-lockspire-theme-status]");
-          if (status) status.textContent = statusMessage;
+          if (status && status.textContent !== statusMessage) status.textContent = statusMessage;
         };
 
         let savedTheme = "system";
