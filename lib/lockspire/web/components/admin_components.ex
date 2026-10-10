@@ -703,7 +703,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
     do: %{
       label: status_label(status),
       tone: :warning,
-      title: "Operator attention may be required"
+      title: "Attention may be needed"
     }
 
   defp status_metadata(status, _domain) when status in [:reuse_detected, :discarded, :revoked],

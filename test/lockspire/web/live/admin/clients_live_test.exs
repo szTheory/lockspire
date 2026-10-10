@@ -8,6 +8,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.AdminProof.HtmlAssertions
+  alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
   alias Lockspire.Web.Live.Admin.OverviewLive
@@ -118,6 +119,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
              routes,
              &live_route?(&1, "/admin/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop)
            )
+  end
+
+  test "shared warning status copy does not expose the internal operator role" do
+    html =
+      render_component(&AdminComponents.status_badge/1, status: :retryable)
+
+    assert html =~ ~s(title="Attention may be needed")
+    refute html =~ "Operator"
   end
 
   test "clients index renders durable client truth and URL-driven filters" do
