@@ -37,18 +37,18 @@ Refine existing supported capabilities. Requirement IDs below are new UI-specifi
 
 ### Consistent behavior across the surface
 
-- [ ] **UIQ-01**: Operator can use the refreshed admin surface at narrow, intermediate, and desktop widths and at actual 200% browser zoom without clipped controls, lost diagnostic values, unreadably shrunken text, or unintended page overflow.
-- [ ] **UIQ-02**: Operator can complete changed forms and confirmation workflows by keyboard with associated labels/errors, visible and restored focus, and intact controls through busy, success, error, repeat-action, and LiveView patch cycles.
-- [ ] **UIQ-03**: Operator can read content and distinguish controls/status in light, dark, and system appearance with AA contrast targets, non-color-only cues, and one unambiguous selected theme preference distinct from its effective appearance.
-- [ ] **UIQ-04**: Operator sees concise, consistent domain language across navigation, headings, fields, actions, and feedback; explanations describe the job or consequence rather than CSS, code, or the development process.
-- [ ] **UIQ-05**: Operator receives prompt, purposeful interaction feedback that respects reduced motion and does not replay distracting animation or announcements on routine LiveView patches.
+- [x] **UIQ-01**: Operator can use the refreshed admin surface at narrow, intermediate, and desktop widths and at actual 200% browser zoom without clipped controls, lost diagnostic values, unreadably shrunken text, or unintended page overflow.
+- [x] **UIQ-02**: Operator can complete changed forms and confirmation workflows by keyboard with associated labels/errors, visible and restored focus, and intact controls through busy, success, error, repeat-action, and LiveView patch cycles.
+- [x] **UIQ-03**: Operator can read content and distinguish controls/status in light, dark, and system appearance with AA contrast targets, non-color-only cues, and one unambiguous selected theme preference distinct from its effective appearance.
+- [x] **UIQ-04**: Operator sees concise, consistent domain language across navigation, headings, fields, actions, and feedback; explanations describe the job or consequence rather than CSS, code, or the development process.
+- [x] **UIQ-05**: Operator receives prompt, purposeful interaction feedback that respects reduced motion and does not replay distracting animation or announcements on routine LiveView patches.
 
 ### Bounded finish and durable evidence
 
-- [ ] **UIV-01**: Maintainer can inspect fresh rendered evidence for every existing route/workflow, with deeper task/state/theme/viewport coverage selected by risk and linked to named findings rather than inferred from screenshot existence or source assertions.
-- [ ] **UIV-02**: Maintainer can run focused regression checks that exercise changed behavior and the actual delivered styling path, visibly report failures/skips, preserve expected screenshot baselines during ordinary verification, and run in the CI lane claimed for them where reliable.
-- [ ] **UIV-03**: Maintainer can compare representative before/after views using matching synthetic data and capture conditions, review one batched visual finding list, and see fixes plus one confirmation pass with explicit remaining limitations.
-- [ ] **UIV-04**: User can open a stable, documented final preview and follow the refined operator jobs, with current operator guidance and a concise evidence handoff suitable for optional feedback without repeating completed mechanical verification.
+- [x] **UIV-01**: Maintainer can inspect fresh rendered evidence for every existing route/workflow, with deeper task/state/theme/viewport coverage selected by risk and linked to named findings rather than inferred from screenshot existence or source assertions.
+- [x] **UIV-02**: Maintainer can run focused regression checks that exercise changed behavior and the actual delivered styling path, visibly report failures/skips, preserve expected screenshot baselines during ordinary verification, and run in the CI lane claimed for them where reliable.
+- [x] **UIV-03**: Maintainer can compare representative before/after views using matching synthetic data and capture conditions, review one batched visual finding list, and see fixes plus one confirmation pass with explicit remaining limitations.
+- [x] **UIV-04**: User can open a stable, documented final preview and follow the refined operator jobs, with current operator guidance and a concise evidence handoff suitable for optional feedback without repeating completed mechanical verification.
 
 ## Delivery and verification rules
 
@@ -101,15 +101,15 @@ Approved roadmap mapping. Each of the 24 requirements belongs to exactly one pha
 | UIO-01 | Phase 146 | Complete |
 | UIO-02 | Phase 146 | Complete |
 | UIO-03 | Phase 146 | Complete |
-| UIQ-01 | Phase 147 | Pending |
-| UIQ-02 | Phase 147 | Pending |
-| UIQ-03 | Phase 147 | Pending |
-| UIQ-04 | Phase 147 | Pending |
-| UIQ-05 | Phase 147 | Pending |
-| UIV-01 | Phase 147 | Pending |
-| UIV-02 | Phase 147 | Pending |
-| UIV-03 | Phase 147 | Pending |
-| UIV-04 | Phase 147 | Pending |
+| UIQ-01 | Phase 147 | Complete |
+| UIQ-02 | Phase 147 | Complete |
+| UIQ-03 | Phase 147 | Complete |
+| UIQ-04 | Phase 147 | Complete |
+| UIQ-05 | Phase 147 | Complete |
+| UIV-01 | Phase 147 | Complete |
+| UIV-02 | Phase 147 | Complete |
+| UIV-03 | Phase 147 | Complete |
+| UIV-04 | Phase 147 | Complete |
 
 **Coverage:**
 - v1.40 requirements: 24 total

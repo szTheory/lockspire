@@ -4,17 +4,17 @@ milestone: v1.40
 milestone_name: Admin Operator UI Refinement
 current_phase: 147
 current_phase_name: Surface Coherence and Working Preview
-status: executing
-stopped_at: Completed 147-04-PLAN.md
-last_updated: "2026-10-10T13:53:09.553Z"
+status: verifying
+stopped_at: Completed 147-05-PLAN.md
+last_updated: "2026-10-10T15:01:04.087Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 147 execution started
-state_head: 659938f41cb047e9be9a9e530391de6777ed2d5d
+state_head: 7ffd68011bcdefb2c9b93f08a70886686e66d18b
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 17
+  completed_plans: 18
   percent: 75
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 Phase: 147 (Surface Coherence and Working Preview) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-10 — Phase 147 execution started
 Progress: [████████░░] 75%
 
@@ -223,6 +223,9 @@ Progress: [████████░░] 75%
 - [Phase 146]: Keep interaction and logout queue reads truthful and read-only. — Operators need successful evidence distinct from unavailable reads; recorded logout delivery acceptance or rendering does not prove an end-user session ended.
 - [Phase 147]: Keep the Theme control synchronized with the saved System/Light/Dark choice after LiveView patches and reloads; the effective appearance alone does not prove the visible preference is accurate.
 - [Phase 147]: After an invalid keyboard form submit, move focus to the newly rendered error summary while preserving field-level label and error association.
+- [Phase 147]: Phase 147: Keep earlier-source responsive/native-risk observations distinct from the final-source 29-route evidence; make no unmatched before/after claim.
+- [Phase 147]: Fast ExUnit partition passed, but the wrapper missed its coverage artifact; the overall Fast Checks lane is not green.
+- [Phase 147]: Stable-preview feedback remains optional; Phase 147 does not require user UAT.
 
 ### Pending Todos
 
@@ -268,8 +271,8 @@ Progress: [████████░░] 75%
 
 ## Session Continuity
 
-Last session: 2026-10-10T13:53:09.498Z
-Stopped at: Completed 147-04-PLAN.md
+Last session: 2026-10-10T15:00:28.471Z
+Stopped at: Completed 147-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -363,6 +366,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 147 P2 | 35min | 2 tasks | 53 files |
 | Phase 147 P3 | 4min | 2 tasks | 2 files |
 | Phase 147 P4 | 2min | 2 tasks | 4 files |
+| Phase 147 P05 | 47 | 2 tasks | 42 files |
 
 ## Operator Next Steps
 
