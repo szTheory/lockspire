@@ -12,6 +12,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   @revocation_failure "Revocation could not be confirmed. The consent grant may still be active; reload this Support workflow before retrying."
   @already_revoked_copy "This consent grant is already revoked. It cannot be reused for future remembered consent."
   @revocation_consequence "This prevents future remembered-consent reuse for this grant."
+  @default_filters %{"account" => "", "client" => "", "status" => "all"}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -20,6 +21,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
        page_title: "Consent detail",
        current_section: :consents,
        consent_id: parse_id(id),
+       filters: @default_filters,
        consent: nil,
        detail_state: :loading,
        revoke_notice: nil,
@@ -30,11 +32,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   @impl true
   def handle_params(params, _uri, socket) do
     consent_id = parse_id(Map.get(params, "id", socket.assigns.consent_id))
+    filters = normalize_filters(params)
 
     {:noreply,
      socket
      |> assign(
        consent_id: consent_id,
+       filters: filters,
        detail_state: :loading,
        revoke_notice: nil,
        revoke_error: nil
@@ -69,6 +73,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   end
 
   @impl true
+  def render(%{detail_state: :loading, consent: nil} = assigns) do
+    ~H"""
+    <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <p role="status">Loading consent grant…</p>
+    </AdminLayoutLive.shell>
+    """
+  end
+
   def render(%{detail_state: :error, consent: nil} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
@@ -77,10 +89,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         body="The grant detail is unavailable. Retry this exact record or return to the consent inventory."
       >
         <:actions>
-          <AdminComponents.admin_button href={consent_show_path(@consent_id)}>
+          <AdminComponents.admin_button href={consent_show_path(@consent_id, @filters)}>
             Retry consent grant
           </AdminComponents.admin_button>
-          <AdminComponents.admin_button href={consents_index_path()}>
+          <AdminComponents.admin_button href={consents_index_path(@filters)}>
             Return to consent investigation
           </AdminComponents.admin_button>
         </:actions>
@@ -97,7 +109,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         body="No stored grant matches this record. Return to the consent inventory to continue the investigation."
       >
         <:actions>
-          <AdminComponents.admin_button href={consents_index_path()}>
+          <AdminComponents.admin_button href={consents_index_path(@filters)}>
             Return to consent investigation
           </AdminComponents.admin_button>
         </:actions>
@@ -119,7 +131,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
           <span>Scopes: {scope_label(@consent.grant.scopes)}</span>
         </:summary>
         <:actions>
-          <AdminComponents.admin_button href={consents_index_path()}>
+          <AdminComponents.admin_button href={consents_index_path(@filters)}>
             Review stored grant
           </AdminComponents.admin_button>
         </:actions>
@@ -255,6 +267,20 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
 
   defp parse_id(_value), do: nil
 
+  defp normalize_filters(params) do
+    %{
+      "account" => normalize_filter(Map.get(params, "account")),
+      "client" => normalize_filter(Map.get(params, "client")),
+      "status" => normalize_status(Map.get(params, "status"))
+    }
+  end
+
+  defp normalize_filter(value) when is_binary(value), do: value
+  defp normalize_filter(_value), do: ""
+
+  defp normalize_status(status) when status in ["all", "active", "revoked"], do: status
+  defp normalize_status(_status), do: "all"
+
   defp client_display(consent) do
     (consent.client && (consent.client.name || consent.client.client_id)) ||
       redacted_handle(:client, consent.grant.client_id)
@@ -281,8 +307,21 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")
 
-  defp consents_index_path, do: Lockspire.mount_path() <> "/admin/consents"
-  defp consent_show_path(id), do: consents_index_path() <> "/#{id}"
+  defp consents_base_path, do: Lockspire.mount_path() <> "/admin/consents"
+  defp consents_index_path(filters) do
+    append_filter_query(consents_base_path(), filters)
+  end
+
+  defp consent_show_path(id, filters) do
+    append_filter_query(consents_base_path() <> "/#{id}", filters)
+  end
+
+  defp append_filter_query(path, @default_filters), do: path
+
+  defp append_filter_query(path, filters) do
+    query = URI.encode_query(Map.to_list(filters))
+    if query == "", do: path, else: path <> "?" <> query
+  end
 
   defp client_detail_path_available?(%{grant: %{client_id: client_id}}) when is_binary(client_id),
     do: byte_size(client_id) <= 64

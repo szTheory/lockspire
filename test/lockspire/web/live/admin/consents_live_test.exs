@@ -73,7 +73,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/consents/:id", Show))
   end
 
-  test "consent index renders support grant investigation filters and rows without secrets" do
+  test "consent index renders support grant investigation filters and rows without secrets", %{
+    grant: grant
+  } do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
@@ -109,14 +111,16 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html_index(
              html,
              ~s(<form method="get" action="/lockspire/admin/consents" class="lockspire-admin-filter-bar)
-           ) < html_index(html, "Total matching consents: 1")
+           ) < html_index(html, "1 matching grant")
 
     assert rows =~ "View consent grant details"
     assert rows =~ "account_"
     assert rows =~ "client_"
     assert rows =~ "openid, email"
-    refute rows =~ "account-consent-ui"
-    refute rows =~ "consent-ui-client"
+    assert rows =~
+             ~s(href="/lockspire/admin/consents/#{grant.id}?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
+    refute visible_text(rows) =~ "account-consent-ui"
+    refute visible_text(rows) =~ "consent-ui-client"
 
     refute html =~ "sha256:consent-ui:hash"
     refute html =~ "client_secret"
@@ -133,6 +137,51 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert rendered_to_string(Index.render(empty_socket.assigns)) =~
              "No matching consent grants"
+  end
+
+  test "consent inventory count copy matches zero, one, and many successful results", %{
+    grant: grant
+  } do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    loading_html = rendered_to_string(Index.render(socket.assigns))
+
+    assert loading_html =~ "Loading consent grants"
+    refute loading_html =~ "matching grant"
+    refute loading_html =~ "No matching consent grants"
+
+    assert {:noreply, empty_socket} =
+             Index.handle_params(
+               %{"account" => "no-such-consent-account"},
+               "/lockspire/admin/consents?account=no-such-consent-account",
+               socket
+             )
+
+    assert rendered_to_string(Index.render(empty_socket.assigns)) =~ "0 matching grants"
+
+    assert {:noreply, one_socket} =
+             Index.handle_params(
+               %{"account" => grant.account_id},
+               "/lockspire/admin/consents?account=#{grant.account_id}",
+               socket
+             )
+
+    one_html = rendered_to_string(Index.render(one_socket.assigns))
+    assert one_html =~ "1 matching grant"
+    refute one_html =~ "1 matching grants"
+
+    _second = store_support_consent!(account_id: grant.account_id, client_id: grant.client_id)
+    _third = store_support_consent!(account_id: grant.account_id, client_id: grant.client_id)
+
+    assert {:noreply, many_socket} =
+             Index.handle_params(
+               %{"account" => grant.account_id},
+               "/lockspire/admin/consents?account=#{grant.account_id}",
+               socket
+             )
+
+    many_html = rendered_to_string(Index.render(many_socket.assigns))
+    assert many_html =~ "3 matching grants"
+    refute many_html =~ "3 matching grant</"
   end
 
   test "consent filter submit keeps the native GET fallback and emits busy copy" do
@@ -211,14 +260,32 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       Application.put_env(:lockspire, :repo, String)
       assert {:ok, socket} = Show.mount(%{"id" => "42"}, %{}, socket_for(:show))
 
+      loading_html = rendered_to_string(Show.render(socket.assigns))
+      assert loading_html =~ "Loading consent grant"
+      refute loading_html =~ "Consent grant not found"
+
+      filters = %{
+        "id" => "42",
+        "account" => "account-read-failure",
+        "client" => "client-read-failure",
+        "status" => "active"
+      }
+
       assert {:noreply, failed_socket} =
-               Show.handle_params(%{"id" => "42"}, "/lockspire/admin/consents/42", socket)
+               Show.handle_params(
+                 filters,
+                 "/lockspire/admin/consents/42?account=account-read-failure&client=client-read-failure&status=active",
+                 socket
+               )
 
       failed_html = rendered_to_string(Show.render(failed_socket.assigns))
 
       assert failed_html =~ "Could not load consent grant"
-      assert failed_html =~ "/lockspire/admin/consents/42"
-      assert failed_html =~ "/lockspire/admin/consents"
+      assert failed_html =~
+               "/lockspire/admin/consents/42?account=account-read-failure&amp;client=client-read-failure&amp;status=active"
+
+      assert failed_html =~
+               "/lockspire/admin/consents?account=account-read-failure&amp;client=client-read-failure&amp;status=active"
       refute failed_html =~ "Consent not found"
     after
       Application.put_env(:lockspire, :repo, original_repo)
@@ -247,8 +314,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert {:noreply, socket} =
              Show.handle_params(
-               %{"id" => Integer.to_string(grant.id)},
-               "/lockspire/admin/consents/#{grant.id}",
+               %{
+                 "id" => Integer.to_string(grant.id),
+                 "account" => grant.account_id,
+                 "client" => grant.client_id,
+                 "status" => "active"
+               },
+               "/lockspire/admin/consents/#{grant.id}?account=#{grant.account_id}&client=#{grant.client_id}&status=active",
                socket
              )
 
@@ -275,8 +347,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert {:noreply, socket} =
              Show.handle_params(
-               %{"id" => Integer.to_string(grant.id)},
-               "/lockspire/admin/consents/#{grant.id}",
+               %{
+                 "id" => Integer.to_string(grant.id),
+                 "account" => grant.account_id,
+                 "client" => grant.client_id,
+                 "status" => "active"
+               },
+               "/lockspire/admin/consents/#{grant.id}?account=#{grant.account_id}&client=#{grant.client_id}&status=active",
                socket
              )
 
@@ -285,9 +362,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
-    HtmlAssertions.assert_has_link(html, "/lockspire/admin/consents")
+    HtmlAssertions.assert_has_link(
+      html,
+      "/lockspire/admin/consents?account=account-consent-ui&client=consent-ui-client&status=active"
+    )
 
-    HtmlAssertions.assert_no_text(html, [
+    HtmlAssertions.assert_no_text(without_filter_query_values(html), [
       "account-consent-ui",
       "sha256:consent-ui:hash",
       "client_secret",
@@ -303,6 +383,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Durable consent truth"
     assert html =~ "Grant context"
     assert html =~ "Review stored grant"
+    assert html =~
+             ~s(href="/lockspire/admin/consents?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
     assert html =~ "View client details"
     assert html =~ ~s(href="/lockspire/admin/clients/consent-ui-client")
     assert html =~ "Revoke consent grant"
@@ -316,7 +398,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "account_"
     assert html =~ "client_"
-    refute html =~ "account-consent-ui"
+    refute visible_text(html) =~ "account-consent-ui"
     refute html =~ "sha256:consent-ui:hash"
 
     assert {:noreply, missing_confirm_socket} = Show.handle_event("revoke_consent", %{}, socket)
@@ -452,8 +534,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert rows =~ long_scope
     assert rows =~ "lockspire-admin-long-value"
     assert rows =~ "View consent grant details"
-    refute rows =~ long_client_id
-    refute rows =~ long_account_id
+    refute visible_text(rows) =~ long_client_id
+    refute visible_text(rows) =~ long_account_id
 
     {_active_socket, active_html} = render_show_for(active_grant)
 
@@ -523,6 +605,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
   defp assert_support_route_guardrails(html, denied_values) do
     html
+    |> without_filter_query_values()
     |> HtmlAssertions.assert_no_duplicate_ids()
     |> HtmlAssertions.assert_describedby_targets_exist()
     |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
@@ -532,6 +615,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     |> HtmlAssertions.assert_no_generic_cta_text()
     |> HtmlAssertions.assert_no_token_like_text()
     |> HtmlAssertions.assert_no_text(@unsupported_support_controls ++ denied_values)
+  end
+
+  defp without_filter_query_values(html) do
+    Regex.replace(~r/(account|client)=[^&"]*/, html, fn match ->
+      [key, _value] = String.split(match, "=", parts: 2)
+      key <> "=[filter]"
+    end)
+  end
+
+  defp visible_text(html) do
+    html
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace("&amp;", "&")
   end
 
   defp fragment_html(html, selector) do

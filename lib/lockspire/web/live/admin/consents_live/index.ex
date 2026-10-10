@@ -8,6 +8,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
+  @default_filters %{"account" => "", "client" => "", "status" => "all"}
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -16,8 +18,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
        current_section: :consents,
        consents: [],
        consent_read_state: :loading,
-       filters: %{"account" => "", "client" => "", "status" => "all"},
+       filters: @default_filters,
        total_consents: 0,
+       total_consents_label: consent_count_label(0),
        consent_metrics: consent_metrics([])
      )}
   end
@@ -75,7 +78,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
             </AdminComponents.form_field>
           </:fields>
           <:help>
-          <p :if={@consent_read_state == :loaded}>Total matching consents: {@total_consents}</p>
+          <p :if={@consent_read_state == :loaded}>{@total_consents_label}</p>
           </:help>
           <:actions>
             <AdminComponents.admin_button
@@ -90,7 +93,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
         <AdminComponents.metric_grid :if={@consent_read_state == :loaded}>
           <AdminComponents.summary_stat value={@consent_metrics.active} label="Active grants" />
           <AdminComponents.summary_stat value={@consent_metrics.revoked} label="Revoked grants" />
-          <AdminComponents.summary_stat value={@total_consents} label="Matching grants" />
+          <AdminComponents.summary_stat
+            value={@total_consents}
+            label={matching_grant_metric_label(@total_consents)}
+          />
         </AdminComponents.metric_grid>
 
         <%= cond do %>
@@ -154,7 +160,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                   <AdminComponents.status_badge status={consent.grant.kind} />
                 </:status>
                 <:actions>
-                  <AdminComponents.admin_button href={consent_show_path(consent.grant.id)}>
+                  <AdminComponents.admin_button
+                    href={consent_show_path(consent.grant.id, @filters)}
+                  >
                     View consent grant details
                   </AdminComponents.admin_button>
                 </:actions>
@@ -188,6 +196,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       consent_read_state: read_state,
       consents: consents,
       total_consents: length(consents),
+      total_consents_label: consent_count_label(length(consents)),
       consent_metrics: consent_metrics(consents)
     )
   end
@@ -200,11 +209,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
 
   defp normalize_filters(params) do
     %{
-      "account" => Map.get(params, "account", ""),
-      "client" => Map.get(params, "client", ""),
-      "status" => normalize_status(Map.get(params, "status", "all"))
+      "account" => normalize_filter(Map.get(params, "account")),
+      "client" => normalize_filter(Map.get(params, "client")),
+      "status" => normalize_status(Map.get(params, "status"))
     }
   end
+
+  defp normalize_filter(value) when is_binary(value), do: value
+  defp normalize_filter(_value), do: ""
 
   defp put_filter(opts, _key, nil), do: opts
   defp put_filter(opts, _key, ""), do: opts
@@ -223,6 +235,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       revoked: Enum.count(consents, &(&1.grant.status == :revoked))
     }
   end
+
+  defp consent_count_label(0), do: "0 matching grants"
+  defp consent_count_label(1), do: "1 matching grant"
+  defp consent_count_label(count), do: "#{count} matching grants"
+
+  defp matching_grant_metric_label(1), do: "Matching grant"
+  defp matching_grant_metric_label(_count), do: "Matching grants"
 
   defp selected_filter(_type, ""), do: "All"
   defp selected_filter(_type, "all"), do: "All"
@@ -278,11 +297,20 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
 
   defp formatted_timestamp(value), do: to_string(value)
 
-  defp consents_index_path(filters \\ %{}) do
-    base = Lockspire.mount_path() <> "/admin/consents"
-    query = URI.encode_query(Map.to_list(filters))
-    if query == "", do: base, else: base <> "?" <> query
+  defp consents_index_path(filters \\ @default_filters) do
+    append_filter_query(consents_base_path(), filters)
   end
 
-  defp consent_show_path(id), do: consents_index_path() <> "/" <> Integer.to_string(id)
+  defp consents_base_path, do: Lockspire.mount_path() <> "/admin/consents"
+
+  defp append_filter_query(path, @default_filters), do: path
+
+  defp append_filter_query(path, filters) do
+    query = URI.encode_query(Map.to_list(filters))
+    if query == "", do: path, else: path <> "?" <> query
+  end
+
+  defp consent_show_path(id, filters) do
+    append_filter_query(consents_base_path() <> "/" <> Integer.to_string(id), filters)
+  end
 end
