@@ -54,7 +54,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         <div :if={@mode == :new} class="lockspire-admin-fieldset">
           <AdminComponents.form_field
             id="client_name"
-            label="Name"
+            label="Client name"
             errors={field_errors(@display_errors, :name)}
           >
             <input
@@ -91,7 +91,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
           <AdminComponents.form_field
             id="client_auth_method"
-            label="Token endpoint auth method"
+            label="Token endpoint authentication"
             errors={field_errors(@display_errors, :token_endpoint_auth_method)}
           >
             <select
@@ -126,9 +126,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               </option>
             </select>
             <p class="lockspire-admin-help">
-              <code>client_secret_jwt</code> is the narrow direct-client slice. Lockspire stores
-              it with read-only <code>HS256</code> truth and does not expose a generic signing
-              algorithm editor here.
+              <code>client_secret_jwt</code> uses <code>HS256</code> on Lockspire's supported
+              direct-client endpoints.
             </p>
           </AdminComponents.form_field>
         </div>
@@ -138,7 +137,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_name"
-            label="Name"
+            label="Client name"
             errors={field_errors(@errors, :name)}
           >
             <input
@@ -155,6 +154,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           <AdminComponents.form_field
             id="client_allowed_scopes"
             label="Allowed scopes"
+            help="Separate OAuth scope names with commas. Only these scopes may be requested for this client."
             errors={field_errors(@display_errors, :allowed_scopes)}
           >
             <input
@@ -316,7 +316,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           :if={@mode in [:new, :redirects]}
           id="client_redirect_uris"
           label="Redirect URIs"
-          help="Enter one URI per line. Lockspire matches each destination exactly."
+          help="Enter one callback URI per line. Each must exactly match the URI sent in an authorization request."
           required={@mode == :new}
           errors={field_errors(@display_errors, :redirect_uris)}
         >
@@ -337,7 +337,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           :if={@mode == :logout_uris}
           id="client_post_logout_redirect_uris"
           label="Post-logout redirect URIs"
-          help="These are browser destinations after logout; they are separate from logout propagation endpoints."
+          help="Enter one browser destination per line after RP-initiated logout. These do not receive logout notifications."
           errors={field_errors(@display_errors, :post_logout_redirect_uris)}
         >
           <textarea
@@ -571,9 +571,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </div>
 
           <div class="lockspire-admin-help">
-            <p><strong>Separate concern:</strong> these URIs control RP logout propagation, not post-logout redirects.</p>
-            <p><strong>Protocol fork point:</strong> after the host clears its own browser session, <code>/end_session/complete</code> persists propagation intent and enqueues durable back-channel delivery.</p>
-            <p><strong>Truth model:</strong> front-channel logout stays best effort because browsers can block cross-site cleanup.</p>
+            <p>These endpoints receive logout notifications. They are separate from post-logout browser destinations.</p>
+            <p>After the host clears its browser session, <code>/end_session/complete</code> records propagation intent and enqueues durable back-channel delivery.</p>
+            <p>Front-channel logout is best effort because the browser may block cross-site cleanup.</p>
           </div>
         </div>
 
@@ -728,16 +728,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     do: "Add at least one redirect URI."
 
   defp error_message(:redirect_uris, :invalid_redirect_uri, _detail),
-    do: "Use a valid redirect URI. Redirects are matched exactly."
+    do:
+      "Enter a valid callback URI that exactly matches the value sent in an authorization request."
 
   defp error_message(:post_logout_redirect_uris, :invalid_redirect_uri, _detail),
-    do: "Use a valid post-logout redirect URI. Destinations are matched exactly."
+    do:
+      "Enter a valid post-logout redirect URI that exactly matches the browser destination sent during logout."
 
   defp error_message(:allowed_scopes, :invalid_scope, :empty),
     do: "Enter at least one allowed scope."
 
   defp error_message(:allowed_scopes, :invalid_scope, _detail),
-    do: "Enter valid scope names separated by commas."
+    do: "Enter valid OAuth scope names separated by commas."
 
   defp error_message(:token_endpoint_auth_method, :invalid_token_endpoint_auth_method, _detail),
     do: "Choose an authentication method supported by the current security policy."
@@ -900,35 +902,42 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp format_default_for_select(format), do: Atom.to_string(format)
 
   defp title_for(:new), do: "Create client"
-  defp title_for(:edit), do: "Update safe metadata"
-  defp title_for(:logout_propagation), do: "Update logout propagation"
+  defp title_for(:edit), do: "Edit client settings"
+  defp title_for(:logout_propagation), do: "Update logout propagation settings"
   defp title_for(:redirects), do: "Update redirect URIs"
   defp title_for(:logout_uris), do: "Update post-logout redirect URIs"
-  defp title_for(:par_policy), do: "Update PAR policy"
-  defp title_for(:security_profile), do: "Update security profile"
+  defp title_for(:par_policy), do: "Set client PAR policy"
+  defp title_for(:security_profile), do: "Update client security profile"
 
-  defp subtitle_for(:new), do: "Create a client using the canonical secure registration path."
+  defp subtitle_for(:new),
+    do:
+      "Enter this client's name, token endpoint authentication method, callback URI, and allowed scopes."
 
   defp subtitle_for(:edit),
-    do: "Change only the operator-safe metadata Lockspire allows in place."
+    do: "Update this client's name, scopes, descriptive details, and token policies."
 
   defp subtitle_for(:logout_propagation),
-    do: "Configure back-channel and front-channel logout separately from post-logout redirects."
+    do:
+      "Set this client's logout notification endpoints. Back-channel delivery is durable; front-channel browser cleanup is best effort."
 
-  defp subtitle_for(:redirects), do: "Redirect URIs stay explicit and exact-match validated."
+  defp subtitle_for(:redirects),
+    do:
+      "Set callback URIs for authorization responses. Lockspire matches each registered URI exactly."
 
   defp subtitle_for(:logout_uris),
-    do: "Post-logout redirect URIs stay explicit and exact-match validated."
+    do:
+      "Set browser destinations allowed after RP-initiated logout. These are separate from logout propagation endpoints."
 
   defp subtitle_for(:par_policy),
-    do: "Override the global PAR requirement for this specific client."
+    do:
+      "Choose whether this client requires Pushed Authorization Requests (PAR), may omit them, or inherits the issuer default."
 
   defp subtitle_for(:security_profile),
-    do: "Override the global security profile requirement for this specific client."
+    do: "Choose this client's FAPI/OIDC requirements or inherit the issuer's security profile."
 
   defp button_for(:new), do: "Create client"
   defp button_for(:edit), do: "Save client changes"
-  defp button_for(:logout_propagation), do: "Save logout propagation"
+  defp button_for(:logout_propagation), do: "Save logout propagation settings"
   defp button_for(:redirects), do: "Save redirect URIs"
   defp button_for(:logout_uris), do: "Save post-logout redirect URIs"
   defp button_for(:par_policy), do: "Save PAR policy"

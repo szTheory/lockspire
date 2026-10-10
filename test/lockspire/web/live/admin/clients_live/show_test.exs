@@ -306,7 +306,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/security-profile")
 
-    assert html =~ "Update security profile"
+    assert html =~ "Update client security profile"
     assert html =~ "Client security profile override"
     assert html =~ "Inherit from global policy"
     assert html =~ "FAPI 2.0 Message Signing"
@@ -875,11 +875,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              )
 
     assert html =~ "Update logout propagation"
-    assert html =~ "Separate concern:"
-    assert html =~ "not post-logout redirects"
+    assert html =~ "Update logout propagation settings"
+    assert html =~ "These endpoints receive logout notifications."
+    assert html =~ "separate from post-logout browser destinations"
     assert html =~ "/end_session/complete"
-    assert html =~ "durable back-channel delivery"
-    assert html =~ "front-channel logout stays best effort"
+    assert html =~ "records propagation intent and enqueues durable back-channel delivery"
+    assert html =~ "Front-channel logout is best effort"
   end
 
   test "client detail renders the shared remote JWKS incident summary when metadata is present",

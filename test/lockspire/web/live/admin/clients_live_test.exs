@@ -293,10 +293,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     html = render(view)
 
     assert html =~ "Client was not created. Review the marked fields and try again."
+    assert html =~ "Client name"
+    assert html =~ "Token endpoint authentication"
+    assert html =~ "Separate OAuth scope names with commas."
+    assert html =~ "Enter one callback URI per line."
     assert html =~ ~s(value="#{submitted_name}")
     assert html =~ submitted_redirect
     assert html =~ ~s(value="email, profile")
-    assert html =~ "Use a valid redirect URI. Redirects are matched exactly."
+
+    assert html =~
+             "Enter a valid callback URI that exactly matches the value sent in an authorization request."
+
     assert html =~ ~s(id="client_redirect_uris-error")
     assert html =~ ~s(aria-invalid="true")
     assert html =~ ~s(role="alert" tabindex="-1")
@@ -529,16 +536,31 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     gamma_html = rendered_to_string(Show.render(gamma_socket.assigns))
 
-    assert gamma_html =~ "Self-registered client (DCR)"
+    assert gamma_html =~ "This client was registered through DCR."
     assert gamma_html =~ "Rotate registration access token"
   end
 
-  test "register client form presents client_secret_jwt as the narrow HS256-backed option" do
+  test "client settings form names the task and explains supported authentication" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients")
+
+    assert html =~
+             "Enter this client&#39;s name, token endpoint authentication method, callback URI, and allowed scopes."
+
+    assert html =~
+             "Separate OAuth scope names with commas. Only these scopes may be requested for this client."
 
     assert html =~ "client_secret_jwt"
     assert html =~ "HS256"
-    refute html =~ "generic signing algorithm editor"
+    assert html =~ "direct-client"
+
+    assert {:ok, _edit_view, edit_html} =
+             live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    assert edit_html =~ "Edit client settings"
+    assert edit_html =~ "Client name"
+    assert edit_html =~ "Issuer default:"
+    assert edit_html =~ "Selected client override:"
+    refute edit_html =~ "operator-safe metadata"
   end
 
   test "RAT rotation workflow renders plaintext copy-once and explicit clear" do
@@ -551,8 +573,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     rat_prompt_html = render(view)
 
     assert rat_prompt_html =~ "Rotate registration access token"
-    assert rat_prompt_html =~ "previous RAT stops being current"
-    assert rat_prompt_html =~ "plaintext is shown once"
+    assert rat_prompt_html =~ "previous token stops being current after rotation"
+    assert rat_prompt_html =~ "shown once only after confirmed rotation"
     refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm
@@ -744,7 +766,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ frontchannel_logout_uri
     assert html =~ "Back-channel logout URI"
     assert html =~ "Front-channel logout URI"
-    assert html =~ "Save logout propagation"
+    assert html =~ "Save logout propagation settings"
+    assert html =~ "These endpoints receive logout notifications."
+    assert html =~ "separate from post-logout browser destinations"
+    assert html =~ "records propagation intent and enqueues durable back-channel delivery"
+    assert html =~ "Front-channel logout is best effort"
 
     HtmlAssertions.assert_no_generic_cta_text(html)
 
