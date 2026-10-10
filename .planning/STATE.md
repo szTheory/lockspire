@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 146
 current_phase_name: Support, Orient, and Operate
 status: executing
-stopped_at: Completed 146-02-PLAN.md
-last_updated: "2026-10-10T01:47:11.759Z"
+stopped_at: Completed 146-03-PLAN.md
+last_updated: "2026-10-10T01:52:55.776Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 146 execution started
-state_head: b96707f28082cec257b8733d2da92aeb44494b32
+state_head: 0a66aa85b495410332b0c8339ddea9b91cb443e8
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 13
-  completed_plans: 11
+  completed_plans: 12
   percent: 50
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 146 (Support, Orient, and Operate) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-10-09 — Phase 146 execution started
 Progress: [█████░░░░░] 50%
@@ -216,6 +216,10 @@ Progress: [█████░░░░░] 50%
 - [Phase 146]: Render complete consent grant, account, and client IDs as safe diagnostic evidence while continuing to redact credentials. — The approved Phase 146 UI-SPEC requires complete matchable safe IDs and distinguishes them from credential values.
 - [Phase 146]: A repeated revoke against an already-revoked grant returns its current state without issuing another mutation. — The LiveView must remain safe for duplicate or stale submissions while preserving the actual grant state.
 - [Phase 146]: Only a returned revoked grant can produce a consent-revocation success notice. — Operator feedback must follow the authoritative Admin result rather than a submitted action.
+- [Phase 146]: Each overview source reports measured, loading, or unavailable independently; one failure does not erase successful siblings. — The cockpit should remain useful during a partial outage without implying source completeness.
+- [Phase 146]: Treat a missing policy row as configured defaults only after a successful read; keep policy read errors unavailable. — The repository returns a default policy struct only for a successful missing-row result.
+- [Phase 146]: Show full safe device record/client/subject IDs but keep the verification capability and protocol credentials redacted. — Operators need matchable records, while the verification handle can authorize protocol actions and remains secret material.
+- [Phase 146]: Keep device queues read-only and offer a same-route reload plus existing client/overview pivots. — Queue recovery must restore observation without adding approve, deny, consume, retry, or other protocol controls.
 
 ### Pending Todos
 
@@ -261,9 +265,9 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-10-10T01:47:11.698Z
-Stopped at: Completed 146-02-PLAN.md
-Resume file: .planning/phases/146-support-orient-and-operate/146-03-PLAN.md
+Last session: 2026-10-10T01:52:55.705Z
+Stopped at: Completed 146-03-PLAN.md
+Resume file: .planning/phases/146-support-orient-and-operate/146-04-PLAN.md
 
 ## Performance Metrics
 
@@ -350,6 +354,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 145 P05 | 17min | 3 tasks | 7 files |
 | Phase 146 P01 | 6min | 2 tasks | 5 files |
 | Phase 146 P02 | 6min | 2 tasks | 3 files |
+| Phase 146 P03 | 5min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 
