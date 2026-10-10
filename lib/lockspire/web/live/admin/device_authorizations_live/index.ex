@@ -103,7 +103,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
                 <:meta>
                   <span>Request ID <AdminComponents.long_value value={safe_identifier(auth.id)} kind={:id} /></span>
                   <span>Client <AdminComponents.long_value value={safe_identifier(auth.client_id)} kind={:id} /></span>
-                  <span>Subject <AdminComponents.long_value value={safe_identifier(auth.subject_id)} kind={:id} /></span>
+                  <span>Subject <AdminComponents.long_value value={redacted_subject_identifier(auth.subject_id)} kind={:id} /></span>
                   <span>Handle <AdminComponents.long_value value={redacted_authorization_handle(auth)} kind={:id} /></span>
                   <span>Expires <AdminComponents.long_value value={formatted_timestamp(auth.expires_at)} kind={:timestamp} /></span>
                   <span>Poll interval {poll_interval_label(auth.effective_poll_interval_seconds)}</span>
@@ -177,6 +177,9 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   defp safe_identifier(value) when is_binary(value), do: value
   defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
   defp safe_identifier(value), do: to_string(value)
+
+  defp redacted_subject_identifier(nil), do: "Not recorded"
+  defp redacted_subject_identifier(value), do: Redaction.handle(:account, value)
 
   defp redacted_authorization_handle(%{verification_handle: handle})
        when is_binary(handle) and handle != "" do

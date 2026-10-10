@@ -478,6 +478,32 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute refresh_html =~ "This family-wide action revokes currently unrevoked tokens"
   end
 
+  test "token detail encodes a client pivot as one path segment" do
+    client_id = "token-ui?case=1"
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               client_id: client_id,
+               client_type: :confidential,
+               name: "Reserved Client ID",
+               provenance: :self_registered,
+               par_policy: :required,
+               dpop_policy: :dpop,
+               security_profile: :fapi_2_0_security
+             })
+
+    token =
+      store_support_token!(
+        token_hash: "token-ui-reserved-client-id-hash",
+        client_id: client_id
+      )
+
+    {_socket, html} = render_show_for(token)
+
+    assert html =~ ~s(href="/lockspire/admin/clients/token-ui%3Fcase%3D1")
+    refute html =~ ~s(href="/lockspire/admin/clients/token-ui?case=1")
+  end
+
   test "token detail reports missing and unavailable records with a return path" do
     assert {:ok, missing_socket} = Show.mount(%{"id" => "999999999"}, %{}, socket_for(:show))
 

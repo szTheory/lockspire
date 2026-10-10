@@ -8,6 +8,24 @@ defmodule Lockspire.Admin.InitialAccessTokens do
   alias Lockspire.Security.Policy
   alias Lockspire.Observability
 
+  @spec lifecycle_status(InitialAccessToken.t(), DateTime.t()) ::
+          :active | :expired | :used | :revoked
+  def lifecycle_status(token, now \\ DateTime.utc_now()) do
+    cond do
+      token.revoked_at != nil ->
+        :revoked
+
+      token.used_at != nil ->
+        :used
+
+      token.expires_at != nil and DateTime.compare(token.expires_at, now) != :gt ->
+        :expired
+
+      true ->
+        :active
+    end
+  end
+
   @spec list_iats(keyword()) :: {:ok, [InitialAccessToken.t()]} | {:error, term()}
   def list_iats(opts \\ []) do
     Repository.list_initial_access_tokens(opts)

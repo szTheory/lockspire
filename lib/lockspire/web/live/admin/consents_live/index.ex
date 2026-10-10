@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -131,7 +132,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                   <span>
                     Account
                     <AdminComponents.long_value
-                      value={safe_identifier(consent.grant.account_id)}
+                      value={redacted_account_identifier(consent.grant.account_id)}
                       kind={:id}
                     />
                   </span>
@@ -288,6 +289,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   defp safe_identifier(value) when is_binary(value), do: value
   defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
   defp safe_identifier(value), do: to_string(value)
+
+  defp redacted_account_identifier(nil), do: "Not recorded"
+  defp redacted_account_identifier(value), do: Redaction.handle(:account, value)
 
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")

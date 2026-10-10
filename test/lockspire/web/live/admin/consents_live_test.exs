@@ -114,7 +114,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
            ) < html_index(html, "1 matching grant")
 
     assert rows =~ "View consent grant details"
-    assert visible_text(rows) =~ "account-consent-ui"
+    assert visible_text(rows) =~ Lockspire.Redaction.handle(:account, "account-consent-ui")
+    refute visible_text(rows) =~ "account-consent-ui"
     assert visible_text(rows) =~ "consent-ui-client"
     assert rows =~ "openid, email"
 
@@ -453,10 +454,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     confirmation_text = visible_text(confirmation)
     assert confirmation_text =~ Integer.to_string(grant.id)
     assert confirmation_text =~ "Consent UI Client"
-    assert confirmation_text =~ "account-consent-ui"
+    assert confirmation_text =~ Lockspire.Redaction.handle(:account, "account-consent-ui")
+    refute confirmation_text =~ "account-consent-ui"
     assert confirmation_text =~ long_scope
     assert visible_text(html) =~ "#{grant.id}"
-    assert visible_text(html) =~ "account-consent-ui"
+    assert visible_text(html) =~ Lockspire.Redaction.handle(:account, "account-consent-ui")
+    refute visible_text(html) =~ "account-consent-ui"
     assert visible_text(html) =~ "consent-ui-client"
     refute html =~ "sha256:consent-ui:hash"
 
@@ -613,7 +616,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert rows =~ "lockspire-admin-long-value"
     assert rows =~ "View consent grant details"
     assert visible_text(rows) =~ long_client_id
-    assert visible_text(rows) =~ long_account_id
+    assert visible_text(rows) =~ Lockspire.Redaction.handle(:account, long_account_id)
+    refute visible_text(rows) =~ long_account_id
 
     {_active_socket, active_html} = render_show_for(active_grant)
 
@@ -623,7 +627,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert active_html =~ long_scope
     assert visible_text(active_html) =~ long_client_id
-    assert visible_text(active_html) =~ long_account_id
+    assert visible_text(active_html) =~ Lockspire.Redaction.handle(:account, long_account_id)
+    refute visible_text(active_html) =~ long_account_id
     assert visible_text(active_html) =~ Integer.to_string(active_grant.id)
     assert active_html =~ "Not recorded"
     assert active_html =~ "This prevents future remembered-consent reuse for this grant."
@@ -636,7 +641,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     ])
 
     assert visible_text(revoked_html) =~ long_client_id
-    assert visible_text(revoked_html) =~ long_account_id
+    assert visible_text(revoked_html) =~ Lockspire.Redaction.handle(:account, long_account_id)
+    refute visible_text(revoked_html) =~ long_account_id
     assert visible_text(revoked_html) =~ Integer.to_string(revoked_grant.id)
 
     assert revoked_html =~

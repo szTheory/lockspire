@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -180,7 +181,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
           </:item>
           <:item label="Account">
             <AdminComponents.long_value
-              value={safe_identifier(@consent.grant.account_id)}
+              value={redacted_account_identifier(@consent.grant.account_id)}
               kind={:id}
             />
           </:item>
@@ -242,7 +243,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                   />
                   for client
                   {client_display(@consent)}, subject
-                  {safe_identifier(@consent.grant.account_id)}, and scopes
+                  {redacted_account_identifier(@consent.grant.account_id)}, and scopes
                   {scope_label(@consent.grant.scopes)}. This prevents future remembered-consent reuse for this grant.
                 </span>
               </label>
@@ -334,6 +335,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
   defp safe_identifier(value), do: to_string(value)
 
+  defp redacted_account_identifier(nil), do: "Not recorded"
+  defp redacted_account_identifier(value), do: Redaction.handle(:account, value)
+
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")
 
@@ -360,5 +364,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp client_detail_path_available?(_consent), do: false
 
   defp client_detail_path(client_id),
-    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+    do:
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
 end

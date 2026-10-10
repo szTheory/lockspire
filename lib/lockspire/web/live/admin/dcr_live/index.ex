@@ -400,19 +400,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   defp registration_policy_detail(_policy), do: "Review issuer policy before partner intake."
 
   defp iat_status(token) do
-    cond do
-      token.revoked_at != nil ->
-        :revoked
-
-      token.used_at != nil ->
-        :used
-
-      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) != :gt ->
-        :expired
-
-      true ->
-        :active
-    end
+    InitialAccessTokens.lifecycle_status(token)
   end
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path

@@ -118,19 +118,7 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   end
 
   def iat_status(token) do
-    cond do
-      token.revoked_at != nil ->
-        :revoked
-
-      token.used_at != nil ->
-        :used
-
-      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) == :lt ->
-        :expired
-
-      true ->
-        :active
-    end
+    InitialAccessTokens.lifecycle_status(token)
   end
 
   defp iat_inventory_status_counts(tokens) do

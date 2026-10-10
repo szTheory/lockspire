@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Admin.InitialAccessTokens
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
@@ -212,7 +213,9 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
         end),
       iats:
         observe_list(fn -> Lockspire.Admin.InitialAccessTokens.list_iats() end, fn iats ->
-          %{active: Enum.count(iats, &(iat_status(&1) == :active))}
+          now = DateTime.utc_now()
+
+          %{active: Enum.count(iats, &(InitialAccessTokens.lifecycle_status(&1, now) == :active))}
         end),
       interactions:
         observe_list(fn -> Admin.list_interactions() end, fn interactions ->
@@ -305,22 +308,6 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   defp count_label(_observation, _key, _singular, plural), do: plural
 
   defp count_keys(keys, status), do: Enum.count(keys, &(&1.key.status == status))
-
-  defp iat_status(token) do
-    cond do
-      token.revoked_at != nil ->
-        :revoked
-
-      token.used_at != nil ->
-        :used
-
-      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) == :lt ->
-        :expired
-
-      true ->
-        :active
-    end
-  end
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 end

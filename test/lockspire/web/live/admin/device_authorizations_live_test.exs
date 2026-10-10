@@ -153,8 +153,10 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert rendered_text(page_html) =~ pending.client_id
     assert rendered_text(page_html) =~ approved.client_id
     assert rendered_text(page_html) =~ denied.client_id
-    assert rendered_text(page_html) =~ approved.subject_id
-    assert rendered_text(page_html) =~ denied.subject_id
+    assert rendered_text(page_html) =~ Redaction.handle(:account, approved.subject_id)
+    assert rendered_text(page_html) =~ Redaction.handle(:account, denied.subject_id)
+    refute rendered_text(page_html) =~ approved.subject_id
+    refute rendered_text(page_html) =~ denied.subject_id
     assert rendered_text(page_html) =~ Integer.to_string(pending.id)
     assert page_html =~ Redaction.handle(:device_authorization, pending.verification_handle)
     assert page_html =~ Redaction.handle(:device_authorization, consumed.verification_handle)
@@ -298,8 +300,10 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert rendered_text(page_html) =~ denied.client_id
     assert page_html =~ Redaction.handle(:device_authorization, expired.verification_handle)
     assert page_html =~ Redaction.handle(:device_authorization, consumed.verification_handle)
-    assert rendered_text(page_html) =~ approved.subject_id
-    assert rendered_text(page_html) =~ denied.subject_id
+    assert rendered_text(page_html) =~ Redaction.handle(:account, approved.subject_id)
+    assert rendered_text(page_html) =~ Redaction.handle(:account, denied.subject_id)
+    refute rendered_text(page_html) =~ approved.subject_id
+    refute rendered_text(page_html) =~ denied.subject_id
     refute rendered_text(page_html) =~ pending.verification_handle
     refute_protocol_field_context(page_html, "state")
     refute_protocol_field_context(page_html, "nonce")

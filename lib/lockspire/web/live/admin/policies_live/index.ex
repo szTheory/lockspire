@@ -4,6 +4,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
+  alias Lockspire.Admin.InitialAccessTokens
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
@@ -124,19 +125,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   defp ok_list(_result), do: []
 
   defp iat_status(token) do
-    cond do
-      token.revoked_at != nil ->
-        :revoked
-
-      token.used_at != nil ->
-        :used
-
-      token.expires_at != nil and DateTime.compare(token.expires_at, DateTime.utc_now()) == :lt ->
-        :expired
-
-      true ->
-        :active
-    end
+    InitialAccessTokens.lifecycle_status(token)
   end
 
   defp policy_review_label(:par), do: "Review PAR policy"

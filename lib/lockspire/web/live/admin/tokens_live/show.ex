@@ -637,6 +637,10 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   defp client_detail_path_available?(_detail), do: false
 
-  defp client_detail_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+  defp client_detail_path(client_id),
+    do:
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
+
   defp consent_detail_path(id), do: Lockspire.mount_path() <> "/admin/consents/" <> to_string(id)
 end
