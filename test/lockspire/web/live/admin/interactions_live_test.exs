@@ -93,6 +93,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert summary_stat?(page_html, "Completed", 1)
     assert summary_stat?(page_html, "Denied", 1)
     assert summary_stat?(page_html, "Expired", 1)
+    assert page_html =~ "5 authorization interactions recorded"
     assert page_html =~ "lockspire-admin-pane"
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
@@ -118,6 +119,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
              "Expired before completion; no interaction action is exposed from this page."
 
     assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+    assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
+    assert page_html =~ "View client details"
     assert page_html =~ "test-interaction-pending-consent"
     assert page_html =~ "test-interaction-completed"
     assert page_html =~ "test-interaction-denied"
@@ -132,7 +135,6 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "login, consent"
     assert page_html =~ "consent"
     assert page_html =~ "Not recorded"
-    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
     refute page_html =~ "account-with-a-very-long-safe-fixture-value"
     refute page_html =~ "<table"
     refute page_html =~ "lockspire-admin-table-wrap"
@@ -147,6 +149,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       %{
         current_section: :interactions,
         page_title: "Active interactions",
+        interaction_read_state: :loaded,
         interactions: [],
         __changed__: %{}
       }
@@ -159,6 +162,96 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
+  end
+
+  test "interactions show a stable loading state before reading the queue" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert socket.assigns.interaction_read_state == :loading
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert page_html =~ "Authorization interaction queue"
+    assert page_html =~ "Loading authorization interactions…"
+    refute page_html =~ "Pending login"
+    refute page_html =~ "No authorization interactions waiting for review"
+    refute page_html =~ "authorization interactions recorded"
+  end
+
+  test "failed interaction reads show unavailable and a same-route retry" do
+    with_failed_read(fn ->
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, socket} =
+               Index.handle_params(%{}, "/lockspire/admin/interactions", socket)
+
+      page_html =
+        socket.assigns
+        |> Index.render()
+        |> rendered_to_string()
+        |> page_markup()
+
+      assert socket.assigns.interaction_read_state == :unavailable
+      assert page_html =~ "Could not load authorization interactions"
+      assert page_html =~ "No count or empty result is available"
+      assert page_html =~ "Try loading interactions again"
+      assert page_html =~ ~s(href="/lockspire/admin/interactions")
+      refute page_html =~ "Pending login"
+      refute page_html =~ "No authorization interactions waiting for review"
+      refute page_html =~ "0 authorization interactions recorded"
+    end)
+  end
+
+  test "successful empty interaction reads show measured zero and the named empty state" do
+    clear_interactions()
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(%{}, "/lockspire/admin/interactions", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert socket.assigns.interaction_read_state == :loaded
+    assert page_html =~ "0 authorization interactions recorded"
+    assert summary_stat?(page_html, "Pending login", 0)
+    assert page_html =~ "No authorization interactions waiting for review"
+    refute page_html =~ "Could not load authorization interactions"
+  end
+
+  test "one interaction uses singular count copy and exposes the supported client pivot" do
+    clear_interactions()
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    interaction_fixture(:pending_login, now, %{
+      interaction_id: "one-safe-interaction-id",
+      client_id: "client-one"
+    })
+
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(%{}, "/lockspire/admin/interactions", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert page_html =~ "1 authorization interaction recorded"
+    assert page_html =~ "one-safe-interaction-id"
+    assert page_html =~ ~s(href="/lockspire/admin/clients/client-one")
+    refute page_html =~ "one authorization interactions recorded"
+    refute_unsupported_queue_controls(page_html)
   end
 
   test "interaction review keeps queue evidence redaction-safe and read-only" do
@@ -202,7 +295,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
-    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
+    assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
     refute page_html =~ "account-with-a-very-long-safe-fixture-value"
     refute_protocol_field_context(page_html, "state")
     refute_protocol_field_context(page_html, "nonce")
@@ -217,8 +310,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
 
-  defp interaction_fixture(status, now) do
-    attrs = interaction_attrs(status, now)
+  defp interaction_fixture(status, now, overrides \\ %{}) do
+    attrs = interaction_attrs(status, now) |> Map.merge(overrides)
 
     {:ok, interaction} =
       attrs
@@ -226,6 +319,26 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> Repository.put_interaction()
 
     interaction
+  end
+
+  defp clear_interactions do
+    Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DELETE FROM lockspire_interactions", [])
+  end
+
+  defp with_failed_read(fun) do
+    previous_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(
+        :lockspire,
+        :repo,
+        Lockspire.Web.Live.Admin.InteractionsLiveTest.FailingRepo
+      )
+
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+    end
   end
 
   defp interaction_attrs(:pending_login, now) do
@@ -343,4 +456,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
+end
+
+defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest.FailingRepo do
+  @moduledoc false
+
+  def all(_query, _options \\ []), do: raise("synthetic interaction list read failure")
 end
