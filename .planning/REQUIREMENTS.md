@@ -48,20 +48,20 @@
 
 ## Traceability
 
-Roadmap mapping pending.
+Each requirement maps to exactly one v1.41 phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LANG-01 | Pending | Not started |
-| LANG-02 | Pending | Not started |
-| LANG-03 | Pending | Not started |
-| DOC-01 | Pending | Not started |
-| DOC-02 | Pending | Not started |
-| DOC-03 | Pending | Not started |
-| REPO-01 | Pending | Not started |
-| REPO-02 | Pending | Not started |
+| LANG-01 | Phase 148 | Not started |
+| LANG-02 | Phase 148 | Not started |
+| LANG-03 | Phase 148 | Not started |
+| REPO-01 | Phase 149 | Not started |
+| REPO-02 | Phase 149 | Not started |
+| DOC-01 | Phase 150 | Not started |
+| DOC-02 | Phase 150 | Not started |
+| DOC-03 | Phase 150 | Not started |
 
-**Coverage:** 8 total; 0 mapped; 8 unmapped.
+**Coverage:** 8 total; 8 mapped; 0 unmapped.
 
 ---
 *Requirements defined: 2026-10-10*

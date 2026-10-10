@@ -2,11 +2,16 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Product Language & Repository Clarity
-status: planning
-last_updated: "2026-10-10T21:04:04.345Z"
+current_phase: 148
+current_phase_name: User-Facing Admin Language
+status: Ready to discuss Phase 148
+stopped_at: v1.40 milestone archived with override; awaiting next milestone selection
+last_updated: "2026-10-10T21:28:48.405Z"
 last_activity: 2026-10-10
+last_activity_desc: "v1.41 roadmap approved; next: discuss Phase 148."
+state_head: 05fcd9282bb0c00ce56999652377e7b576565803
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-10 at v1.41 kickoff)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.41 Product Language & Repository Clarity; Phase 999.1's repo/readability/docs scope is promoted, with operator-language review first.
+**Current focus:** Phase 148 — User-Facing Admin Language; then repository ownership and adopter/maintainer docs.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 148 (User-Facing Admin Language) — READY TO DISCUSS
 Plan: —
-Status: Defining requirements
-Last activity: 2026-10-10 — Milestone v1.41 started
+Status: Ready to discuss Phase 148
+Last activity: 2026-10-10 — v1.41 roadmap approved; next: discuss Phase 148.
 
 ## Accumulated Context
 
@@ -232,6 +237,7 @@ Last activity: 2026-10-10 — Milestone v1.41 started
 - [Phase 147]: Use an isolated same-origin iframe to replay the production theme shell with deterministic storage failures installed before initialization.
 - [Phase 147]: Refresh the Phase 144 preview only after the database, volume, mount, and normalized synthetic data fingerprint matched.
 - [Phase 147]: Keep the historical 29-route sweep at a3409cfa and report targeted current-source evidence separately at 59d79140.
+- [Phase 148]: Write visible admin copy for the intended user’s goal and mental model; translate internal labels, preserve precise protocol terms when they support safe decisions, and do not label users as operators. — This is the user-approved direction for v1.41’s language-first phase.
 
 ### Pending Todos
 
