@@ -436,7 +436,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Consent grant details"
     assert html =~ "stored permission decision and its current revocation status"
     assert html =~ "Grant context"
-    assert html =~ "Review the account and client details before choosing whether to revoke this grant."
+
+    assert html =~
+             "Review the account and client details before choosing whether to revoke this grant."
+
     assert html =~ "Review stored grant"
 
     assert html =~

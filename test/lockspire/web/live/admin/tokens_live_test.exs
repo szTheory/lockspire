@@ -117,7 +117,10 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Token investigation"
-    assert html =~ "Review access and refresh tokens by account, client, status, refresh-family lineage"
+
+    assert html =~
+             "Review access and refresh tokens by account, client, status, refresh-family lineage"
+
     assert html =~ "Filters stay in the URL so you can return to the same results."
     assert html =~ "Selected account: account_"
     assert html =~ "Selected status: active"
