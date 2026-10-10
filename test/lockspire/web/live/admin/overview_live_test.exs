@@ -12,6 +12,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
@@ -201,6 +202,92 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     ])
   end
 
+  test "overview starts in loading state and keeps each failed source independent" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    loading_html = rendered_to_string(Index.render(socket.assigns))
+    loading_text = rendered_text(loading_html)
+
+    assert loading_text =~ "Operator cockpit"
+    assert loading_text =~ "Loading client inventory"
+    assert loading_text =~ "Loading server policy"
+    refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)
+    refute loading_text =~ "No matching"
+
+    sources = [
+      {:clients, "Client inventory unavailable", "/admin/clients"},
+      {:tokens, "Token inventory unavailable", "/admin/tokens?status=reuse_detected"},
+      {:consents, "Consent inventory unavailable", "/admin/consents?status=active"},
+      {:keys, "Signing-key inventory unavailable", "/admin/keys"},
+      {:iats, "Initial access token inventory unavailable", "/admin/dcr"},
+      {:interactions, "Interaction inventory unavailable", "/admin/interactions"},
+      {:devices, "Device authorization inventory unavailable", "/admin/device_authorizations"},
+      {:logouts, "Logout delivery inventory unavailable", "/admin/logouts"},
+      {:policy, "Security policy unavailable", "/admin/policies"}
+    ]
+
+    for {source, unavailable_copy, pivot} <- sources do
+      with_read_override({:fail, source}, fn ->
+        failed_html = loaded_overview_html()
+        failed_text = rendered_text(failed_html)
+
+        assert failed_text =~ unavailable_copy
+        assert failed_text =~ "Security posture"
+        assert failed_text =~ "Live operations"
+        HtmlAssertions.assert_has_link(failed_html, pivot)
+
+        if source != :clients do
+          assert failed_text =~ "1 client"
+        end
+      end)
+    end
+  end
+
+  test "overview counts use measured zero, one, and many copy" do
+    with_read_override(:empty_clients, fn ->
+      text = loaded_overview_html() |> rendered_text()
+      assert text =~ "0 clients"
+      assert text =~ "Measured from client inventory"
+    end)
+
+    one_text = loaded_overview_html() |> rendered_text()
+    assert one_text =~ "1 client"
+    assert one_text =~ "1 self-registered client"
+
+    register_overview_client("overview-client-two", :self_registered)
+    many_text = loaded_overview_html() |> rendered_text()
+    assert many_text =~ "2 clients"
+    assert many_text =~ "2 self-registered clients"
+  end
+
+  test "overview distinguishes configured policy defaults, stored policy, and read failure" do
+    default_text = loaded_overview_html() |> rendered_text()
+    assert default_text =~ "Configured defaults"
+    assert default_text =~ "optional"
+    assert default_text =~ "bearer"
+    refute default_text =~ "Stored server policy"
+
+    assert {:ok, _stored_policy} =
+             Repository.put_server_policy(%ServerPolicy{
+               par_policy: :required,
+               dpop_policy: :dpop
+             })
+
+    stored_text = loaded_overview_html() |> rendered_text()
+    assert stored_text =~ "Stored server policy"
+    assert stored_text =~ "required"
+    assert stored_text =~ "dpop"
+    refute stored_text =~ "Configured defaults"
+
+    with_read_override({:fail, :policy}, fn ->
+      failed_text = loaded_overview_html() |> rendered_text()
+      assert failed_text =~ "Security policy unavailable"
+      assert failed_text =~ "1 client"
+      refute failed_text =~ "Configured defaults"
+      refute failed_text =~ "Stored server policy"
+      refute failed_text =~ "optional"
+    end)
+  end
+
   test "security and DCR landing pages orient related workflows" do
     assert {:ok, _security_view, security_html} = live(conn_for_admin(), "/admin/policies")
 
@@ -218,6 +305,48 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
   defp conn_for_admin do
     Phoenix.ConnTest.build_conn()
+  end
+
+  defp socket_for(action) do
+    %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+  end
+
+  defp loaded_overview_html do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/admin", socket)
+    rendered_to_string(Index.render(socket.assigns))
+  end
+
+  defp with_read_override(mode, fun) do
+    previous_repo = Application.get_env(:lockspire, :repo)
+    previous_mode = Application.get_env(:lockspire, :overview_live_test_mode)
+
+    try do
+      Application.put_env(:lockspire, :overview_live_test_mode, mode)
+      Application.put_env(:lockspire, :repo, Lockspire.Web.Live.Admin.OverviewLiveTest.ReadRepo)
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+      Application.put_env(:lockspire, :overview_live_test_mode, previous_mode)
+    end
+  end
+
+  defp register_overview_client(client_id, provenance) do
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               client_id: client_id,
+               client_type: :confidential,
+               name: "#{client_id} Name",
+               provenance: provenance
+             })
+  end
+
+  defp rendered_text(html) do
+    html
+    |> String.replace(~r/<style\b[^>]*>.*?<\/style>/s, " ")
+    |> String.replace(~r/<script\b[^>]*>.*?<\/script>/s, " ")
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace(~r/\s+/, " ")
   end
 
   defp forbidden_secret_samples do
@@ -249,4 +378,62 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
+end
+
+defmodule Lockspire.Web.Live.Admin.OverviewLiveTest.ReadRepo do
+  @moduledoc false
+
+  def one(query, options \\ []) do
+    maybe_fail(query)
+    Lockspire.TestRepo.one(query, options)
+  end
+
+  def all(query, options \\ []) do
+    case {Application.get_env(:lockspire, :overview_live_test_mode), source(query)} do
+      {:empty_clients, Lockspire.Storage.Ecto.ClientRecord} ->
+        []
+
+      _other ->
+        maybe_fail(query)
+        Lockspire.TestRepo.all(query, options)
+    end
+  end
+
+  defp maybe_fail(query) do
+    case Application.get_env(:lockspire, :overview_live_test_mode) do
+      {:fail, source_name} ->
+        if source(query) == source_module(source_name),
+          do: raise("synthetic overview read failure")
+
+      _other ->
+        :ok
+    end
+  end
+
+  defp source(query) do
+    query
+    |> Ecto.Queryable.to_query()
+    |> Map.fetch!(:from)
+    |> Map.fetch!(:source)
+    |> case do
+      {_table, schema} -> schema
+      value -> value
+    end
+  end
+
+  defp source_module(:clients), do: Lockspire.Storage.Ecto.ClientRecord
+  defp source_module(:tokens), do: Lockspire.Storage.Ecto.TokenRecord
+  defp source_module(:consents), do: Lockspire.Storage.Ecto.ConsentGrantRecord
+  defp source_module(:keys), do: Lockspire.Storage.Ecto.SigningKeyRecord
+
+  defp source_module(:iats),
+    do: Lockspire.Storage.Ecto.InitialAccessTokenRecord
+
+  defp source_module(:interactions), do: Lockspire.Storage.Ecto.InteractionRecord
+
+  defp source_module(:devices),
+    do: Lockspire.Storage.Ecto.DeviceAuthorizationRecord
+
+  defp source_module(:logouts), do: Lockspire.Storage.Ecto.LogoutDeliveryRecord
+  defp source_module(:policy), do: Lockspire.Storage.Ecto.ServerPolicyRecord
 end
