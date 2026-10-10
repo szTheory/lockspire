@@ -33,10 +33,14 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
   3. Client/secret, consent, token/family, Initial/Registration Access Token, and logout-destination wording preserves the security and behavior distinctions users need to make safe decisions.
   4. Success and failure copy reports only confirmed outcomes and offers a useful next action where one exists; changed wording preserves redaction and behavior.
   5. Existing automated checks cover recurring high-risk language/outcome rules, while relevant changed-page and rendered checks pass without new UI behavior or dependencies.
+
 **Plans**: 7 plans
 
 Plans:
+**Wave 1**
 - [ ] 148-01-PLAN.md — Shared language tracer, overview, and route-inventory test repair
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 148-02-PLAN.md — Client detail, edit, credential, and logout-workflow copy
 - [ ] 148-03-PLAN.md — DCR onboarding and Initial Access Token copy
 - [ ] 148-04-PLAN.md — Issuer policy index, DCR, and PAR copy
@@ -57,6 +61,7 @@ Planning note: Use Impeccable `clarify` to review complete page and task paths, 
   1. Contributors can find a concise map of major repository areas and understand the purpose and lifecycle of maintained docs, generated output, fixtures, brand assets, and planning records.
   2. Every proposed move or removal has an ownership and lifecycle finding plus checks of active worktrees and CI, test, package, generator, and documentation references before mutation.
   3. Any evidence-backed cleanup is narrow and passes the affected checks; ambiguous or still-used content remains in place with its status made clear.
+
 **Plans**: TBD
 
 Planning note: Inventory first. Age, names, or apparent generated status do not prove an item is stale. Do not reorganize paths for appearance alone.
@@ -71,6 +76,7 @@ Planning note: Inventory first. Age, names, or apparent generated status do not 
   2. Maintained guides are findable by adopter or maintainer task in README and generated HexDocs navigation, using the user-facing vocabulary established in Phase 148.
   3. `docs/supported-surface.md` remains the single canonical capability/non-claim contract, and all changed setup steps, commands, links, and claims match source.
   4. Existing docs and build checks provide deterministic evidence for changed links, navigation, setup instructions, and published guide structure; no manual handoff duplicates proof they establish.
+
 **Plans**: TBD
 
 Planning note: Keep the README an orientation and routing page; let focused guides explain the steps. Reuse existing ExDoc and docs-check infrastructure.

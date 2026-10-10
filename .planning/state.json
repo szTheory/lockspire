@@ -1,12 +1,28 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.41",
-  "phases": [],
+  "milestone": "v1.41 — Product Language & Repository Clarity",
+  "phases": [
+    {
+      "number": "148",
+      "name": "User-Facing Admin Language",
+      "status": "pending"
+    },
+    {
+      "number": "149",
+      "name": "Repository Ownership and Lifecycle",
+      "status": "pending"
+    },
+    {
+      "number": "150",
+      "name": "Adopter and Maintainer Documentation",
+      "status": "pending"
+    }
+  ],
   "next": {
-    "command": "/gsd:discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 148 of 3 · 0% · executing"
   },
-  "updated_at": "2026-10-10T21:04:04.348Z"
+  "updated_at": "2026-10-10T23:15:21.227Z"
 }
