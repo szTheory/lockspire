@@ -1,33 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.40 — Admin Operator UI Refinement",
-  "phases": [
-    {
-      "number": "144",
-      "name": "Working Preview and Representative Journeys",
-      "status": "complete"
-    },
-    {
-      "number": "145",
-      "name": "Configure and Onboard",
-      "status": "complete"
-    },
-    {
-      "number": "146",
-      "name": "Support, Orient, and Operate",
-      "status": "complete"
-    },
-    {
-      "number": "147",
-      "name": "Surface Coherence and Working Preview",
-      "status": "complete"
-    }
-  ],
+  "milestone": "v1.41",
+  "phases": [],
   "next": {
-    "command": "/gsd:progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd:discuss-phase",
+    "label": "Discuss the first phase",
+    "reason": "Project initialized — plan your first phase"
   },
-  "updated_at": "2026-10-10T20:37:00.702Z"
+  "updated_at": "2026-10-10T21:04:04.348Z"
 }

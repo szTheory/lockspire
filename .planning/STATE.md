@@ -1,40 +1,43 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.40
-milestone_name: Admin Operator UI Refinement
-status: Awaiting next milestone
-stopped_at: v1.40 archived with override closeout; awaiting next milestone selection
-last_updated: "2026-10-10T20:42:43Z"
+milestone: v1.41
+milestone_name: Product Language & Repository Clarity
+status: planning
+last_updated: "2026-10-10T21:04:04.345Z"
 last_activity: 2026-10-10
-last_activity_desc: Milestone v1.40 completed and archived
-state_head: b8a860f80136a97bce5403f87ccc115a47723cb1
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 21
-  percent: 100
-current_phase: 147
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10 after v1.40 closeout)
+See: .planning/PROJECT.md (updated 2026-10-10 at v1.41 kickoff)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** No active milestone; v1.40 closed after Phase 147. Phase 999.1 remains backlog.
+**Current focus:** v1.41 Product Language & Repository Clarity; Phase 999.1's repo/readability/docs scope is promoted, with operator-language review first.
 
 ## Current Position
 
-Phase: Milestone v1.40 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-10 — Milestone v1.40 completed and archived
+Status: Defining requirements
+Last activity: 2026-10-10 — Milestone v1.41 started
 
 ## Accumulated Context
+
+### v1.41 Milestone Direction
+
+- The user promoted Phase 999.1 Repository Readability & Docs Polish and added a plain-language operator UI copy pass before rewriting the README and guides. Confirmed scope: establish concise, accurate operator terminology; carry it into adopter/maintainer docs; verify documentation claims and navigation against current source and `docs/supported-surface.md`; clarify directory ownership and remove only proven stale, unowned, unused clutter.
+- Preserve protocol meaning, security distinctions, actual action consequences, host-owned UX boundaries, and the embedded-library shape. No protocol feature or UI behavior expansion is in scope.
+- Impeccable `clarify` guidance is the method for copy review; the milestone does not call for a visual redesign.
+- Continue phase numbering after Phase 147. No matching planted seed was found; the separate theme-caret seed remains dormant.
 
 ### v1.40 UI Milestone Direction
 
@@ -43,7 +46,7 @@ Last activity: 2026-10-10 — Milestone v1.40 completed and archived
 - Continue numbering after Phase 143. The GSD init helper reports v1.37 as latest completed because newer archive headings use Completed; MILESTONES.md and the v1.39 archive establish that v1.40 starts at Phase 144.
 - User’s `$gsd-plan-phase 144` instruction confirmed the detailed requirements and roadmap. Configured auto-advance then executed all four Phase 144 plans; independent verification passed. The current implementation, browser proof, and explicit coverage limits are retained in the Phase 144 artifacts.
 - Approved sequence: Phase 144 proves shared improvements on mounted client-configuration and token/consent-investigation workflows; Phase 145 carries them through Configure/onboarding; Phase 146 covers Support, Orient, and read-only Operate including failed/unknown observations; Phase 147 owns bounded cross-surface acceptance and a stable optional-feedback preview. Every v1.40 requirement maps once; Phase 144 planning is authorized.
-- Earlier docs-backlog promotion is superseded. Phase 999.1 stays backlog. Historical v1.39 exceptions remain acknowledged and non-blocking.
+- At v1.40 close, the earlier docs-backlog direction had been superseded and Phase 999.1 remained backlog. The subsequent v1.41 milestone explicitly promotes its repository/docs scope. Historical v1.39 exceptions remain acknowledged and non-blocking.
 
 ### Recent Sustaining Release: 1.5.0
 

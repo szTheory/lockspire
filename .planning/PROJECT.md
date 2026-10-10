@@ -8,6 +8,17 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.41 Product Language & Repository Clarity
+
+**Goal:** Make Lockspire's operator language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
+
+**Target features:**
+- Review and simplify operator-facing labels, headings, instructions, errors, empty/success states, and confirmations using a concise terminology guide that preserves protocol meanings, security distinctions, and truthful consequences.
+- Use the reviewed vocabulary to improve the README and canonical adopter/maintainer documentation; verify navigation, setup steps, links, and claims against current code and `docs/supported-surface.md`.
+- Clarify repository directory ownership and lifecycle, and move or remove clutter only after verifying it is stale, unowned, and unused by CI, tests, packaging, or maintained workflows.
+
+This scope refines language, documentation, repository navigation, and verified cleanup; it does not add protocol features or expand UI behavior.
+
 ## Verification and Automation Default
 
 Treat executable verification as the default. For each feature or maintenance change, identify the highest-value unit, integration, end-to-end, smoke, and seam checks; automate them and run them as early as practical. Put checks in CI when they provide recurring value and can run reliably there. Aim for zero human UAT or verification handoffs: reserve maintainer attention for the judgment, access, or real-world observation that cannot be established safely and reliably by automation. Prefer deterministic evidence that fails visibly and explains what remains unverified.
@@ -66,11 +77,13 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
+The v1.41 Product Language & Repository Clarity milestone is active. It begins with a plain-language pass over operator UI copy so the reviewed terminology can anchor the README and guide updates, then addresses repository navigation and only evidence-verified cleanup.
+
 The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 24 requirements and eight reviewed flows satisfied across Phases 144–147 (21 plans). The override closeout records three phase reports as stale after covered-source edits and Phase 146 as `human_needed`; original verification reports were preserved. The late policy/client readiness changes passed 35 focused tests and a clean code review. The audit makes no claim that every phase currently has fresh verification.
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. The repository/docs-polish idea remains backlog Phase 999.1 and was not promoted during v1.40. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; v1.40 neither resolves nor accepts it as safe for release.
+Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 is promoted into v1.41, with the operator-language pass ordered before documentation rewrites. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; v1.40 neither resolves nor accepts it as safe for release.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
@@ -240,7 +253,9 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No active requirements are assigned until the next milestone is selected.
+- [ ] Establish and apply concise, plain-language operator terminology without changing protocol meanings, security consequences, or host-owned UX boundaries.
+- [ ] Align adopter and maintainer documentation with the reviewed vocabulary and verify setup instructions, navigation, links, and supported-surface claims against source truth.
+- [ ] Make repository ownership and lifecycle easier to understand, changing or removing paths only when active ownership and all CI, test, packaging, and workflow references have been checked.
 
 The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40-REQUIREMENTS.md](milestones/v1.40-REQUIREMENTS.md).
 
@@ -356,6 +371,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Start v1.41 with a plain-language operator-copy pass before README and guide rewrites | The user reports that existing UI wording still feels like boilerplate and jargon; reviewed terms should anchor the documentation pass while preserving protocol accuracy and operator consequences | Adopted 2026-10-10; Impeccable `clarify` guidance informs the bounded copy review |
 | Keep synthetic adopter fixtures visibly distinct from real customers | Demo data must help adopters explore real journeys without implying a production integration or account | Applied to the v1.40 Billingo preview and its retained screenshots/records |
 | Render failed admin reads as unavailable and preserve healthy emptiness as a separate state | Operators must not mistake an unknown observation for zero records or confirmed missing prerequisites | Implemented and regression-tested across overview, policy, and client readiness surfaces; v1.40 audit records current freshness limits |
 | Keep revocation scopes and read-only operational queues explicit | Safe operator actions need accurate, separate consequences; queues must not imply unsupported controls | Preserved throughout the v1.40 Support and Operate journeys |
@@ -428,4 +444,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-10 after v1.40 Admin Operator UI Refinement closeout*
+*Last updated: 2026-10-10 after v1.41 Product Language & Repository Clarity kickoff*
