@@ -99,7 +99,9 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
                 : node.querySelector?.("[data-lockspire-focus-on-insert]");
 
               if (focusTarget) {
-                focusTarget.focus();
+                requestAnimationFrame(() => {
+                  if (focusTarget.isConnected) focusTarget.focus();
+                });
                 return;
               }
             }

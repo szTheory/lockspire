@@ -14,6 +14,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ThemeSyncTest do
     assert source =~ ~s|select.value = savedTheme|
     assert source =~ "new MutationObserver((mutations) =>"
     assert source =~ "shellObserver.observe(root"
+    assert source =~ "requestAnimationFrame(() =>"
+    assert source =~ "if (focusTarget.isConnected) focusTarget.focus()"
     assert source =~ "savedTheme = nextTheme"
   end
 end
