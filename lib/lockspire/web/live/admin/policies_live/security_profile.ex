@@ -33,7 +33,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   end
 
   @impl true
-  def handle_event("save_policy", %{"policy" => %{"security_profile" => profile}}, socket) do
+  def handle_event("reload_policy", _params, socket) do
+    {:noreply, socket |> load_policy() |> load_strict_readiness() |> load_summary()}
+  end
+
+  @impl true
+  def handle_event(
+        "save_policy",
+        %{"policy" => %{"security_profile" => profile}},
+        %{assigns: %{policy: %ServerPolicy{}}} = socket
+      ) do
     case Admin.put_security_profile(profile) do
       {:ok, %ServerPolicy{} = policy} ->
         {:noreply,
@@ -53,10 +62,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     end
   end
 
+  def handle_event("save_policy", _params, socket) do
+    {:noreply,
+     assign(socket,
+       form_errors: [%{field: :security_profile, reason: :request_failed, detail: nil}]
+     )}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load global security profile">
+        <p>The current issuer security profile is unavailable. Settings and save controls are hidden until Lockspire can confirm the stored profile.</p>
+        <AdminComponents.action_bar>
+          <AdminComponents.admin_button type="button" variant={:secondary} phx-click="reload_policy">
+            Reload policy
+          </AdminComponents.admin_button>
+        </AdminComponents.action_bar>
+      </AdminComponents.alert>
+
+      <div :if={@policy}>
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Global security profile"
@@ -140,7 +166,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
         title="Client override summary"
         subtitle="Exceptions to the global security profile across all registered clients."
       >
-        <div class="lockspire-admin-summary-grid">
+        <div :if={@summary} class="lockspire-admin-summary-grid">
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.inherit}</span>
             <span class="lockspire-admin-summary-label">
@@ -170,12 +196,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
         </div>
 
         <p
-          :if={@summary.fapi_2_0_message_signing == 0 and @summary.fapi_2_0_security == 0 and @summary.none == 0}
+          :if={@summary && @summary.fapi_2_0_message_signing == 0 and @summary.fapi_2_0_security == 0 and @summary.none == 0}
           class="lockspire-admin-empty-notice"
         >
           No client security profile overrides yet. All clients currently inherit the global security profile.
         </p>
+        <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
+          Client override counts are unavailable. Reload this page to try again.
+        </p>
       </AdminComponents.section_card>
+      </div>
     </AdminLayoutLive.shell>
     """
   end
@@ -187,26 +217,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   defp load_policy(socket) do
     case Admin.get_server_policy() do
       {:ok, %ServerPolicy{} = policy} -> assign(socket, policy: policy)
-      {:error, _reason} -> assign(socket, policy: %ServerPolicy{security_profile: :none})
+      _result -> assign(socket, policy: nil)
     end
   end
 
   defp load_summary(socket) do
-    {:ok, clients} = Admin.list_clients()
+    case Admin.list_clients() do
+      {:ok, clients} ->
+        summary =
+          Enum.reduce(
+            clients,
+            %{inherit: 0, fapi_2_0_message_signing: 0, fapi_2_0_security: 0, none: 0},
+            fn %Client{security_profile: mode}, acc ->
+              Map.update!(acc, mode, &(&1 + 1))
+            end
+          )
 
-    summary =
-      Enum.reduce(
-        clients,
-        %{inherit: 0, fapi_2_0_message_signing: 0, fapi_2_0_security: 0, none: 0},
-        fn %Client{
-             security_profile: mode
-           },
-           acc ->
-          Map.update!(acc, mode, &(&1 + 1))
-        end
-      )
+        assign(socket, summary: summary)
 
-    assign(socket, summary: summary)
+      _result ->
+        assign(socket, summary: nil)
+    end
   end
 
   defp load_strict_readiness(socket) do
@@ -216,26 +247,36 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   defp strict_readiness do
     case MessageSigningProfile.readiness() do
       readiness when is_map(readiness) ->
-        readiness
+        Map.put(readiness, :status, :available)
 
       {:error, _reason} ->
-        %{default_readiness() | remediation: ["Unable to load strict message-signing readiness."]}
+        %{
+          default_readiness()
+          | status: :unavailable,
+            remediation: ["Unable to load strict message-signing readiness."]
+        }
     end
   end
 
   defp default_readiness do
     %{
       ready?: false,
+      status: :unavailable,
       profile: :fapi_2_0_message_signing,
       prerequisite_reasons: [],
       remediation: []
     }
   end
 
+  defp strict_readiness_status(_profile, %{status: :unavailable}), do: "Unavailable"
   defp strict_readiness_status(:fapi_2_0_message_signing, %{ready?: true}), do: "Ready"
   defp strict_readiness_status(:fapi_2_0_message_signing, _readiness), do: "Blocked"
   defp strict_readiness_status(_profile, %{ready?: true}), do: "Ready if enabled"
   defp strict_readiness_status(_profile, _readiness), do: "Not ready yet"
+
+  defp strict_readiness_summary(_profile, %{status: :unavailable}) do
+    "Issuer signing-key readiness could not be confirmed."
+  end
 
   defp strict_readiness_summary(:fapi_2_0_message_signing, %{ready?: true}) do
     "Strict message signing is active. `/authorize` requires explicit JARM and `/introspect` requires JWT negotiation."
@@ -274,7 +315,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
       },
       %{
         label: "Clients that inherit",
-        value: inherited_clients_value(summary.inherit),
+        value: inherited_clients_value(summary),
         tone: :info,
         detail:
           "These clients use the global issuer security profile default; client overrides stay on client policy routes."
@@ -293,13 +334,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   defp security_profile_tone(:fapi_2_0_message_signing), do: :warning
   defp security_profile_tone(_profile), do: :info
 
+  defp strict_readiness_tone(_profile, %{status: :unavailable}), do: :warning
   defp strict_readiness_tone(:fapi_2_0_message_signing, %{ready?: true}), do: :success
   defp strict_readiness_tone(:fapi_2_0_message_signing, _readiness), do: :danger
   defp strict_readiness_tone(_profile, %{ready?: true}), do: :success
   defp strict_readiness_tone(_profile, _readiness), do: :warning
 
-  defp inherited_clients_value(1), do: "1 client"
-  defp inherited_clients_value(count), do: "#{count} clients"
+  defp inherited_clients_value(%{inherit: 1}), do: "1 client"
+  defp inherited_clients_value(%{inherit: count}), do: "#{count} clients"
+  defp inherited_clients_value(_summary), do: "Unavailable"
 
   defp policy_scope_copy(:security_profile) do
     "This save changes the global issuer security profile default for future requests from inheriting clients. Existing client overrides stay on their client policy routes."

@@ -83,6 +83,30 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     assert html =~ "client marks PAR optional"
   end
 
+  test "failed policy read is shown as unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/par")
+
+      assert html =~ "Could not load global PAR policy"
+      assert html =~ "Reload policy"
+      refute html =~ ~s(name="policy[par_policy]")
+      refute html =~ "Save global PAR policy"
+
+      Application.put_env(:lockspire, :repo, prior_repo)
+      html = render_click(view, "reload_policy")
+
+      assert html =~ "Global PAR policy"
+      assert html =~ "Save global PAR policy"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 PAR posture explains global scope before save" do
     assert {:ok, _policy} = ServerPolicy.put_server_policy(:required)
 

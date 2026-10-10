@@ -312,6 +312,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
+  test "client detail reports strict readiness read failures as unavailable", %{client: client} do
+    assert {:ok, _client} =
+             Repository.update_client(client, %{security_profile: :fapi_2_0_message_signing})
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, __MODULE__.ReadinessFailureRepo)
+
+      assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+      assert html =~ "Issuer readiness unavailable"
+      assert html =~ "Unable to load strict message-signing readiness."
+      refute html =~ "Blocked"
+      refute html =~ "Issuer prerequisites still missing"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "client detail groups routine, credential, endpoint, posture, and lifecycle actions",
        %{client: client} do
     assert {:ok, self_registered_client} =
@@ -1149,4 +1169,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
+end
+
+defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest.ReadinessFailureRepo do
+  def all(
+        %Ecto.Query{from: %{source: {_table, Lockspire.Storage.Ecto.SigningKeyRecord}}},
+        _opts
+      ) do
+    raise "simulated signing-key read failure"
+  end
+
+  def all(query, opts), do: Lockspire.TestRepo.all(query, opts)
+  def one(query, opts \\ []), do: Lockspire.TestRepo.one(query, opts)
 end

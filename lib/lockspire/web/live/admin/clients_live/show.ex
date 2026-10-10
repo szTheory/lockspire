@@ -426,7 +426,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               This client is using the explicit mixed-mode escape hatch. Strict message-signing
               enforcement does not apply to this client even though the issuer is stricter.
             </p>
-            <ul :if={@strict_readiness.remediation != [] and @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
+            <ul
+              :if={
+                @strict_readiness.remediation != [] and
+                  (@effective_security_profile.fapi_2_0_message_signing? or
+                     @strict_readiness.status == :unavailable)
+              }
+              class="lockspire-admin-errors"
+            >
               <%= for item <- @strict_readiness.remediation do %>
                 <li>{item}</li>
               <% end %>
@@ -1146,6 +1153,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp strict_posture_label(resolved) when is_map(resolved),
     do: "Mixed-mode escape hatch"
 
+  defp strict_readiness_label(_resolved, %{status: :unavailable}),
+    do: "Issuer readiness unavailable"
+
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, %{ready?: true}), do: "Ready"
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, _readiness), do: "Blocked"
 
@@ -1206,16 +1216,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp strict_readiness do
     case MessageSigningProfile.readiness() do
       readiness when is_map(readiness) ->
-        readiness
+        Map.put(readiness, :status, :available)
 
       {:error, _reason} ->
-        %{default_readiness() | remediation: ["Unable to load strict message-signing readiness."]}
+        %{
+          default_readiness()
+          | status: :unavailable,
+            remediation: ["Unable to load strict message-signing readiness."]
+        }
     end
   end
 
   defp default_readiness do
     %{
       ready?: false,
+      status: :unavailable,
       profile: :fapi_2_0_message_signing,
       prerequisite_reasons: [],
       remediation: []

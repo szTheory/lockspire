@@ -80,6 +80,30 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
     assert html =~ "client requires DPoP"
   end
 
+  test "failed policy read is shown as unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/dpop")
+
+      assert html =~ "Could not load global DPoP policy"
+      assert html =~ "Reload policy"
+      refute html =~ ~s(name="policy[dpop_policy]")
+      refute html =~ "Save global DPoP policy"
+
+      Application.put_env(:lockspire, :repo, prior_repo)
+      html = render_click(view, "reload_policy")
+
+      assert html =~ "Global DPoP policy"
+      assert html =~ "Save global DPoP policy"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 DPoP posture explains global sender constraint scope" do
     assert {:ok, _policy} = ServerPolicy.put_dpop_policy(:dpop)
 

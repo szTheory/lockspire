@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.40 Admin Operator UI Refinement (Completed: 2026-10-10)
+
+**Delivered:** Refined the existing Phoenix LiveView operator surface across Configure, Support, Orient, and read-only Operate. The work improves client, policy, credential, key, token, consent, device, interaction, logout, and overview journeys while preserving Lockspire's embedded-library and host-owned UX boundaries.
+
+**Phases completed:** 4 phases (144–147), 21 plans, 47 tasks; all 24 requirements and eight reviewed operator flows are satisfied.
+
+**Key accomplishments:**
+- Established a stable synthetic-data preview, current 29-route inventory, redaction-safe comparison evidence, and a risk-selected 48-image responsive/zoom matrix. Billingo is a synthetic demo adopter, not a real customer or account.
+- Improved client configuration, DCR/IAT onboarding, credentials, keys, and security-policy workflows with clearer hierarchy, retained safe input, explicit failure states, and copy-once secret handoffs.
+- Made token, consent, overview, device, interaction, and logout views distinguish unavailable data from healthy emptiness, preserve investigation context, and report supported consequences truthfully.
+- Added focused regression coverage for late policy/client readiness fixes; 35 focused tests passed and the final code review found no issues.
+- Recorded current-source verification freshness and visual-coverage limits without relabeling phase reports or claiming a clean all-phase pass.
+
+**Known verification overrides: 4 newly acknowledged, 4 carried forward from a prior close (see STATE.md Deferred Items).** Closeout is `override_closeout`: GSD reports Phases 144, 145, and 147 stale after covered-source edits, and Phase 146 `human_needed`. The reports retain their original verdicts; the milestone audit records the exact limits.
+
+**Audit:** [v1.40 milestone audit](milestones/v1.40-MILESTONE-AUDIT.md) (`tech_debt`; override closeout).
+
+**Archives:** `milestones/v1.40-ROADMAP.md`, `milestones/v1.40-REQUIREMENTS.md`, `milestones/v1.40-MILESTONE-AUDIT.md`, `milestones/v1.40-phases/` · **GSD milestone tag:** `v1.40`.
+
+---
+
 ## v1.39 Verified 1.5.1 Release (Completed: 2026-10-08)
 
 **Delivered:** Lockspire 1.5.1 was published and verified from exact source `0b56503859b69531ff86d8e4a465a0e75f963594`, with matching canonical CI, protected run, package checksum, GitHub release/tag, docs, and clean-room install proof.

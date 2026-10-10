@@ -2,38 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Admin Operator UI Refinement
-current_phase: 147
-status: completed
-stopped_at: Phase 147 complete — all phases complete
-last_updated: "2026-10-10T18:58:21.784Z"
+status: Awaiting next milestone
+stopped_at: v1.40 archived with override closeout; awaiting next milestone selection
+last_updated: "2026-10-10T20:42:43Z"
 last_activity: 2026-10-10
-last_activity_desc: Phase 147 complete
-state_head: def2fc31b17ed60a842510e8d2035678f812aaba
+last_activity_desc: Milestone v1.40 completed and archived
+state_head: b8a860f80136a97bce5403f87ccc115a47723cb1
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 21
   completed_plans: 21
   percent: 100
+current_phase: 147
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-09)
+See: .planning/PROJECT.md (updated 2026-10-10 after v1.40 closeout)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 147 — Surface Coherence and Working Preview
+**Current focus:** No active milestone; v1.40 closed after Phase 147. Phase 999.1 remains backlog.
 
 ## Current Position
 
-Phase: 147
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-10-10 — Phase 147 complete
-Progress: [██████████] 100%
+Phase: Milestone v1.40 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-10 — Milestone v1.40 completed and archived
 
 ## Accumulated Context
 
@@ -262,21 +261,27 @@ Progress: [██████████] 100%
 
 ## Deferred Items
 
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start |
-| Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start |
-| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 |
-| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
-| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
-| Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 |
-| Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 |
-| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review |
+Items acknowledged and deferred at milestone close; acknowledgment preserves the source report's status and is not a pass.
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start | v1.38 |
+| Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start | v1.38 |
+| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 | v1.39 |
+| Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 | v1.40 |
+| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review | v1.40 |
+| seeds | SEED-261010-zzo — inset operator theme-select caret | dormant | 2026-10-10 | v1.40 |
+| verification_gaps | 145/145-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
+| verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
+| deferred_items | 145/deferred-items.md: Phase 145 Plan 02's existing compiler/type warnings outside its ownership | acknowledged | 2026-10-10 | v1.40 |
 
 ## Session Continuity
 
-Last session: 2026-10-10T18:23:02.757Z
-Stopped at: Phase 147 complete — all phases complete
+Last session: 2026-10-10T20:42:43Z
+Stopped at: v1.40 milestone archived with override; awaiting next milestone selection
 Resume file: None
 
 ## Performance Metrics
@@ -376,9 +381,8 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Phase 146 is complete (4/4 plans; verifier 7/7). The combined Phase 144–146 operator regression run passed 183 tests, the focused route-contract suite passed 7 tests, code review has 0 findings, and browser back/forward restored filtered token and consent inventories and details. No manual UAT is pending for Phase 146.
-- Phase 147 is planned: five checked plans passed independent plan verification; all nine requirements and 11 decisions are covered. Execution and rendered-browser evidence remain pending.
-- Next command: `$gsd-execute-phase 147` — execute the Phase 147 acceptance, bounded UI repair, and stable-preview plans.
-- The known CR-01 key-at-rest finding remains separate release-readiness work; it does not block planning or development of Phase 147.
-- Phase 144–146 focused operator checks use the dedicated Phase 145 database. The refreshed Phase 145 checks app at `http://127.0.0.1:4123` remains separate from the stable Phase 144 preview at `http://127.0.0.1:4121`; preserve that preview's data and reuse its retained evidence.
-- The Phase 145 synthetic preview is documented at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data and reuse retained evidence instead of repeating baseline work.
+- v1.40 Admin Operator UI Refinement is archived: Phase 147 was the final phase; all 21 plans and 47 tasks are complete.
+- Closeout type is `override_closeout`. GSD freshness was 0/4 at close: Phases 144, 145, and 147 were stale after covered-source edits; Phase 146 remains `human_needed`. Their reports preserve their original verdicts; see the archived audit.
+- The late policy/client readiness fix passed 35 focused tests and a clean code review. Billingo is synthetic demo-adopter data, not a real customer.
+- Next command: `$gsd-new-milestone` to select the next milestone focus. Phase 999.1 Repository Readability & Docs Polish remains backlog and was not promoted.
+- CR-01 private-key-at-rest remains separate security work and is not accepted as release-ready.

@@ -98,6 +98,48 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
   end
 
+  test "failed policy read is shown as unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+      assert html =~ "Could not load global security profile"
+      assert html =~ "Reload policy"
+      refute html =~ ~s(name="policy[security_profile]")
+      refute html =~ "Save global security profile"
+
+      Application.put_env(:lockspire, :repo, prior_repo)
+      html = render_click(view, "reload_policy")
+
+      assert html =~ "Global security profile"
+      assert html =~ "Save global security profile"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
+  test "failed strict-readiness read is unavailable instead of a confirmed prerequisite gap" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, __MODULE__.ReadinessFailureRepo)
+
+      assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+      assert html =~ "Status:</strong> Unavailable"
+      assert html =~ "Issuer signing-key readiness could not be confirmed."
+      assert html =~ "Unable to load strict message-signing readiness."
+      refute html =~ "Not ready yet"
+      refute html =~ "Issuer prerequisites are not complete yet."
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
   test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 security profile posture explains strict readiness and host boundary" do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
 
@@ -253,4 +295,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
+end
+
+defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest.ReadinessFailureRepo do
+  def all(
+        %Ecto.Query{from: %{source: {_table, Lockspire.Storage.Ecto.SigningKeyRecord}}},
+        _opts
+      ) do
+    raise "simulated signing-key read failure"
+  end
+
+  def all(query, opts) do
+    Lockspire.TestRepo.all(query, opts)
+  end
+
+  def one(query, opts \\ []), do: Lockspire.TestRepo.one(query, opts)
 end

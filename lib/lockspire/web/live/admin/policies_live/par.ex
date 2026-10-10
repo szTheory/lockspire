@@ -30,7 +30,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
   end
 
   @impl true
-  def handle_event("save_policy", %{"policy" => %{"par_policy" => mode}}, socket) do
+  def handle_event("reload_policy", _params, socket) do
+    {:noreply, socket |> load_policy() |> load_summary()}
+  end
+
+  @impl true
+  def handle_event(
+        "save_policy",
+        %{"policy" => %{"par_policy" => mode}},
+        %{assigns: %{policy: %ServerPolicy{}}} = socket
+      ) do
     case Admin.put_server_policy(mode) do
       {:ok, %ServerPolicy{} = policy} ->
         {:noreply,
@@ -49,10 +58,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
     end
   end
 
+  def handle_event("save_policy", _params, socket) do
+    {:noreply,
+     assign(socket,
+       form_errors: [%{field: :par_policy, reason: :request_failed, detail: nil}]
+     )}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load global PAR policy">
+        <p>The current issuer PAR policy is unavailable. Settings and save controls are hidden until Lockspire can confirm the stored policy.</p>
+        <AdminComponents.action_bar>
+          <AdminComponents.admin_button type="button" variant={:secondary} phx-click="reload_policy">
+            Reload policy
+          </AdminComponents.admin_button>
+        </AdminComponents.action_bar>
+      </AdminComponents.alert>
+
+      <div :if={@policy}>
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Global PAR policy"
@@ -106,7 +132,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
         title="Client override summary"
         subtitle="Exceptions to the global policy across all registered clients."
       >
-        <div class="lockspire-admin-summary-grid">
+        <div :if={@summary} class="lockspire-admin-summary-grid">
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.inherit}</span>
             <span class="lockspire-admin-summary-label">
@@ -127,10 +153,14 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
           </div>
         </div>
 
-        <p :if={@summary.required == 0 and @summary.optional == 0} class="lockspire-admin-empty-notice">
+        <p :if={@summary && @summary.required == 0 and @summary.optional == 0} class="lockspire-admin-empty-notice">
           No client PAR overrides yet. All clients currently inherit the global PAR policy.
         </p>
+        <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
+          Client override counts are unavailable. Reload this page to try again.
+        </p>
       </AdminComponents.section_card>
+      </div>
     </AdminLayoutLive.shell>
     """
   end
@@ -138,20 +168,26 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
   defp load_policy(socket) do
     case Admin.get_server_policy() do
       {:ok, %ServerPolicy{} = policy} -> assign(socket, policy: policy)
-      {:error, _reason} -> assign(socket, policy: %ServerPolicy{par_policy: :optional})
+      _result -> assign(socket, policy: nil)
     end
   end
 
   defp load_summary(socket) do
-    {:ok, clients} = Admin.list_clients()
+    case Admin.list_clients() do
+      {:ok, clients} ->
+        summary =
+          Enum.reduce(clients, %{inherit: 0, required: 0, optional: 0}, fn %Client{
+                                                                             par_policy: mode
+                                                                           },
+                                                                           acc ->
+            Map.update!(acc, mode, &(&1 + 1))
+          end)
 
-    summary =
-      Enum.reduce(clients, %{inherit: 0, required: 0, optional: 0}, fn %Client{par_policy: mode},
-                                                                       acc ->
-        Map.update!(acc, mode, &(&1 + 1))
-      end)
+        assign(socket, summary: summary)
 
-    assign(socket, summary: summary)
+      _result ->
+        assign(socket, summary: nil)
+    end
   end
 
   defp par_decision_summary_items(%{policy: %ServerPolicy{} = policy, summary: summary}) do
@@ -164,7 +200,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       },
       %{
         label: "Clients that inherit",
-        value: inherited_clients_value(summary.inherit),
+        value: inherited_clients_value(summary),
         tone: :info,
         detail:
           "These clients use the global issuer PAR default; client overrides stay on client policy routes."
@@ -186,8 +222,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
   defp par_policy_tone(:optional), do: :success
   defp par_policy_tone(_value), do: :info
 
-  defp inherited_clients_value(1), do: "1 client"
-  defp inherited_clients_value(count), do: "#{count} clients"
+  defp inherited_clients_value(%{inherit: 1}), do: "1 client"
+  defp inherited_clients_value(%{inherit: count}), do: "#{count} clients"
+  defp inherited_clients_value(_summary), do: "Unavailable"
 
   defp policy_scope_copy(:par) do
     "This save changes the global issuer PAR default for future authorization requests from clients that inherit issuer policy. Existing client overrides stay on their client policy routes."
