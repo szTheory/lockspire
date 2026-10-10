@@ -51,15 +51,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
 
     assert html =~ "Configure"
-    assert html =~ "Policy posture"
-    assert html =~ "issuer-level policy route"
-    assert html =~ "Current setting"
-    assert html =~ "Review issuer PAR defaults and client override pressure."
-    assert html =~ "Review inherited security profile posture and strict readiness."
-    assert html =~ "Review sender-constrained token defaults and client exceptions."
+    assert html =~ "Issuer policy settings"
+    assert html =~ "Each page changes its own issuer policy."
+    assert html =~ "Current issuer setting"
+    assert html =~ "Review issuer PAR defaults and client exceptions."
+    assert html =~ "Review inherited security profile settings and readiness."
+    assert html =~ "Review the DPoP default and client exceptions."
     assert html =~ "Review future registration gates, metadata allowlists, and DCR lifetimes."
     assert html =~ "0 clients require PAR; 0 mark it optional."
-    assert html =~ "0 self-registered clients and 0 active IATs."
+    assert html =~ "0 self-registered clients; 0 active Initial Access Tokens."
+    refute html =~ "operator action surface"
 
     for {label, href} <- [
           {"Review PAR policy", "/admin/policies/par"},
@@ -92,6 +93,30 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
       "browser proof API",
       "AI judge gate"
     ])
+  end
+
+  test "failed policy and inventory reads stay unavailable instead of showing zero values" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies")
+
+      assert html =~ "Current issuer setting"
+      assert html =~ "Unavailable"
+      assert html =~ "Client counts are unavailable."
+      assert html =~ "Client and Initial Access Token counts are unavailable."
+      refute html =~ "0 clients require PAR"
+      refute html =~ "0 self-registered clients"
+
+      for href <- ["/admin/policies/par", "/admin/policies/dpop", "/admin/policies/dcr"] do
+        HtmlAssertions.assert_has_link(html, href)
+      end
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   defp conn_for_admin do

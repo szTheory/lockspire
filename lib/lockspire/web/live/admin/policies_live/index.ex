@@ -33,37 +33,37 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
 
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Policy posture"
-        body="Choose the issuer-level policy route that owns the setting you need to review. Each policy remains its own explicit operator action surface."
+        title="Issuer policy settings"
+        body="Choose the setting you need to review: PAR, security profile, DPoP, or Dynamic Client Registration. Each page changes its own issuer policy."
       />
 
       <div class="lockspire-admin-dashboard-grid">
         <.policy_card
           route={:par}
           title="PAR"
-          value={@policy.par_policy}
-          detail={"#{@summary.par.required} clients require PAR; #{@summary.par.optional} mark it optional."}
+          value={policy_value(@policy, :par_policy)}
+          detail={summary_detail(@summary.par, :par)}
           href={admin_path("/policies/par")}
         />
         <.policy_card
           route={:security_profile}
           title="Security profile"
-          value={@policy.security_profile}
-          detail={"#{@summary.security.fapi} clients require FAPI; #{@summary.security.message_signing} require message signing."}
+          value={policy_value(@policy, :security_profile)}
+          detail={summary_detail(@summary.security, :security)}
           href={admin_path("/policies/security-profile")}
         />
         <.policy_card
           route={:dpop}
           title="DPoP"
-          value={@policy.dpop_policy}
-          detail={"#{@summary.dpop.dpop} clients require DPoP; #{@summary.dpop.bearer} force bearer."}
+          value={policy_value(@policy, :dpop_policy)}
+          detail={summary_detail(@summary.dpop, :dpop)}
           href={admin_path("/policies/dpop")}
         />
         <.policy_card
           route={:dcr}
           title="Dynamic Client Registration"
-          value={@policy.registration_policy}
-          detail={"#{@summary.dcr.self_registered} self-registered clients and #{@summary.dcr.active_iats} active IATs."}
+          value={policy_value(@policy, :registration_policy)}
+          detail={summary_detail(@summary.dcr, :dcr)}
           href={admin_path("/policies/dcr")}
         />
       </div>
@@ -80,7 +80,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   defp policy_card(assigns) do
     ~H"""
     <AdminComponents.section_card title={@title} subtitle={@detail}>
-      <p class="lockspire-admin-kicker">Current setting</p>
+      <p class="lockspire-admin-kicker">Current issuer setting</p>
       <p class="lockspire-admin-display-value">{@value}</p>
       <p class="lockspire-admin-help">{policy_review_detail(@route)}</p>
       <AdminComponents.action_bar>
@@ -93,36 +93,94 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   defp load_policy do
     case Admin.get_server_policy() do
       {:ok, %ServerPolicy{} = policy} -> policy
-      _result -> %ServerPolicy{}
+      _result -> nil
     end
   end
 
   defp load_summary do
-    clients = ok_list(Admin.list_clients())
-    iats = ok_list(Lockspire.Admin.InitialAccessTokens.list_iats())
+    clients = read_list(fn -> Admin.list_clients() end)
+    iats = read_list(fn -> InitialAccessTokens.list_iats() end)
 
     %{
-      par: %{
-        required: Enum.count(clients, &(&1.par_policy == :required)),
-        optional: Enum.count(clients, &(&1.par_policy == :optional))
-      },
-      security: %{
-        fapi: Enum.count(clients, &(&1.security_profile == :fapi_2_0_security)),
-        message_signing: Enum.count(clients, &(&1.security_profile == :fapi_2_0_message_signing))
-      },
-      dpop: %{
-        dpop: Enum.count(clients, &(&1.dpop_policy == :dpop)),
-        bearer: Enum.count(clients, &(&1.dpop_policy == :bearer))
-      },
+      par:
+        client_counts(clients, fn clients ->
+          %{
+            required: Enum.count(clients, &(&1.par_policy == :required)),
+            optional: Enum.count(clients, &(&1.par_policy == :optional))
+          }
+        end),
+      security:
+        client_counts(clients, fn clients ->
+          %{
+            fapi: Enum.count(clients, &(&1.security_profile == :fapi_2_0_security)),
+            message_signing:
+              Enum.count(clients, &(&1.security_profile == :fapi_2_0_message_signing))
+          }
+        end),
+      dpop:
+        client_counts(clients, fn clients ->
+          %{
+            dpop: Enum.count(clients, &(&1.dpop_policy == :dpop)),
+            bearer: Enum.count(clients, &(&1.dpop_policy == :bearer))
+          }
+        end),
       dcr: %{
-        self_registered: Enum.count(clients, &(&1.provenance == :self_registered)),
-        active_iats: Enum.count(iats, &(iat_status(&1) == :active))
+        self_registered:
+          client_counts(clients, fn clients ->
+            Enum.count(clients, &(&1.provenance == :self_registered))
+          end),
+        active_iats: token_counts(iats)
       }
     }
   end
 
-  defp ok_list({:ok, list}) when is_list(list), do: list
-  defp ok_list(_result), do: []
+  defp result_list({:ok, list}) when is_list(list), do: list
+  defp result_list(_result), do: nil
+
+  defp read_list(read) do
+    read.() |> result_list()
+  rescue
+    _error -> nil
+  end
+
+  defp client_counts(clients, counter) when is_function(counter, 1) and is_list(clients),
+    do: counter.(clients)
+
+  defp client_counts(_clients, _counter), do: nil
+
+  defp token_counts(tokens) when is_list(tokens),
+    do: Enum.count(tokens, &(iat_status(&1) == :active))
+
+  defp token_counts(_tokens), do: nil
+
+  defp policy_value(%ServerPolicy{} = policy, field), do: Map.fetch!(policy, field)
+  defp policy_value(nil, _field), do: "Unavailable"
+
+  defp summary_detail(%{required: required, optional: optional}, :par)
+       when is_integer(required) and is_integer(optional),
+       do: "#{required} clients require PAR; #{optional} mark it optional."
+
+  defp summary_detail(%{fapi: fapi, message_signing: signing}, :security)
+       when is_integer(fapi) and is_integer(signing),
+       do: "#{fapi} clients require FAPI; #{signing} require message signing."
+
+  defp summary_detail(%{dpop: dpop, bearer: bearer}, :dpop)
+       when is_integer(dpop) and is_integer(bearer),
+       do: "#{dpop} clients require DPoP; #{bearer} force bearer."
+
+  defp summary_detail(%{self_registered: registered, active_iats: iats}, :dcr) do
+    [
+      if(is_integer(registered), do: "#{registered} self-registered clients"),
+      if(is_integer(iats), do: "#{iats} active Initial Access Tokens")
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> case do
+      [] -> "Client and Initial Access Token counts are unavailable."
+      values -> Enum.join(values, "; ") <> "."
+    end
+  end
+
+  defp summary_detail(_summary, _route), do: "Client counts are unavailable."
 
   defp iat_status(token) do
     InitialAccessTokens.lifecycle_status(token)
@@ -134,13 +192,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   defp policy_review_label(:dcr), do: "Review DCR policy"
 
   defp policy_review_detail(:par),
-    do: "Review issuer PAR defaults and client override pressure."
+    do: "Review issuer PAR defaults and client exceptions."
 
   defp policy_review_detail(:security_profile),
-    do: "Review inherited security profile posture and strict readiness."
+    do: "Review inherited security profile settings and readiness."
 
   defp policy_review_detail(:dpop),
-    do: "Review sender-constrained token defaults and client exceptions."
+    do: "Review the DPoP default and client exceptions."
 
   defp policy_review_detail(:dcr),
     do: "Review future registration gates, metadata allowlists, and DCR lifetimes."
