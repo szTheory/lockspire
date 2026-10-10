@@ -361,7 +361,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 ## Operator Next Steps
 
 - Phase 146 is complete (4/4 plans; verifier 7/7). The combined Phase 144–146 operator regression run passed 183 tests, the focused route-contract suite passed 7 tests, code review has 0 findings, and browser back/forward restored filtered token and consent inventories and details. No manual UAT is pending for Phase 146.
-- Next command: `$gsd-ui-phase 147` — create the Phase 147 UI design contract from the completed context. Then run `$gsd-plan-phase 147` to decompose the final v1.40 cross-surface acceptance phase into implementation work.
+- Next command: `$gsd-plan-phase 147` — create the implementation plans for the final v1.40 cross-surface acceptance phase using the approved UI design contract.
 - The known CR-01 key-at-rest finding remains separate release-readiness work; it does not block planning or development of Phase 147.
 - Phase 144–146 focused operator checks use the dedicated Phase 145 database. The refreshed Phase 145 checks app at `http://127.0.0.1:4123` remains separate from the stable Phase 144 preview at `http://127.0.0.1:4121`; preserve that preview's data and reuse its retained evidence.
 - The Phase 145 synthetic preview is documented at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data and reuse retained evidence instead of repeating baseline work.
