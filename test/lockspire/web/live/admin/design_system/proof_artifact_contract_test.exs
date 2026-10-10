@@ -81,6 +81,15 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
       BrowserEvidence.parse!(invalid_result)
     end
 
+    passing_overflow =
+      String.replace(valid_evidence(), "| 390 | 390 | pass |", "| 391 | 390 | pass |",
+        global: false
+      )
+
+    assert_raise ArgumentError, ~r/cannot report document-level horizontal overflow/, fn ->
+      BrowserEvidence.parse!(passing_overflow)
+    end
+
     malformed_route = String.replace(valid_evidence(), "`/admin`", "`admin`", global: false)
 
     assert_raise ArgumentError, ~r/malformed Route \/ Surface/, fn ->

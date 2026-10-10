@@ -139,6 +139,7 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
     validate_in!("Theme", row["Theme"], @allowed_themes)
     validate_in!("Motion", row["Motion"], @allowed_motion)
     validate_in!("Result", row["Result"], @allowed_results)
+    validate_no_document_overflow!(row)
     validate_route!(row["Route / Surface"])
 
     for column <- @required_columns do
@@ -158,6 +159,18 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
 
     row
   end
+
+  defp validate_no_document_overflow!(%{
+         "Result" => "pass",
+         "scrollWidth" => scroll_width,
+         "clientWidth" => client_width
+       })
+       when scroll_width > client_width do
+    raise ArgumentError,
+          "passing browser evidence cannot report document-level horizontal overflow"
+  end
+
+  defp validate_no_document_overflow!(_row), do: :ok
 
   defp parse_width!(column, value) do
     value = trim_backticks(value)
