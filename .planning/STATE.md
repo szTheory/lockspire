@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 147
 current_phase_name: Surface Coherence and Working Preview
 status: executing
-stopped_at: Halted 147-07-PLAN.md — browser evidence capture unavailable
-last_updated: "2026-10-10T16:41:02.617Z"
+stopped_at: Completed 147-08-PLAN.md
+last_updated: "2026-10-10T18:23:02.816Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 147 execution started
-state_head: 7b5e5392ee15a3197bfd75dc4249f06cff6b8079
+state_head: fe43ec52d43b25d095fe7b2e25b59f64918569f8
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 20
-  completed_plans: 19
+  total_plans: 21
+  completed_plans: 21
   percent: 75
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 147 (Surface Coherence and Working Preview) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 147 execution started
 Progress: [████████░░] 75%
@@ -228,6 +228,8 @@ Progress: [████████░░] 75%
 - [Phase 147]: Stable-preview feedback remains optional; Phase 147 does not require user UAT.
 - [Phase 147]: Keep current-page theme appearance separate from saved preference and report persistence outcomes accurately.
 - [Phase 147]: Use an isolated same-origin iframe to replay the production theme shell with deterministic storage failures installed before initialization.
+- [Phase 147]: Refresh the Phase 144 preview only after the database, volume, mount, and normalized synthetic data fingerprint matched.
+- [Phase 147]: Keep the historical 29-route sweep at a3409cfa and report targeted current-source evidence separately at 59d79140.
 
 ### Pending Todos
 
@@ -274,8 +276,8 @@ Progress: [████████░░] 75%
 
 ## Session Continuity
 
-Last session: 2026-10-10T16:41:02.561Z
-Stopped at: Halted 147-07-PLAN.md — browser evidence capture unavailable
+Last session: 2026-10-10T18:23:02.757Z
+Stopped at: Completed 147-08-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -371,6 +373,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 147 P4 | 2min | 2 tasks | 4 files |
 | Phase 147 P05 | 47 | 2 tasks | 42 files |
 | Phase 147 P06 | 24m | 2 tasks | 12 files |
+| Phase 147 P08 | 46 | 3 tasks | 61 files |
 
 ## Operator Next Steps
 

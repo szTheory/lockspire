@@ -134,8 +134,8 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
   4. Maintainer can inspect fresh rendered evidence across all 29 existing scorecards, with deeper state/theme/viewport checks chosen by risk, and run focused regressions against delivered styling and behavior with visible failures/skips and reliable claimed CI coverage.
   5. User can open a stable, documented synthetic-data preview and compare representative before/after views under matching conditions; the handoff records one batched finding list, fixes, one confirmation pass, current operator guidance, and explicit remaining limits.
 
-**Plans**: 6/8 plans executed
-- [ ] 147-08-PLAN.md
+**Plans**: 8/8 plans executed
+- [x] 147-08-PLAN.md
 
 **Wave 1**
 - [x] 147-01-PLAN.md
@@ -156,7 +156,7 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
 - [x] 147-06-PLAN.md — Report theme storage failures truthfully
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 147-07-PLAN.md — Halted during browser-evidence capture; see 147-07-SUMMARY.md
+- [x] 147-07-PLAN.md — Halted during browser-evidence capture; see 147-07-SUMMARY.md
 - [ ] 147-08-PLAN.md — Resume matched comparison, current-source risk evidence, and guarded stable-preview refresh
 
 **UI hint**: yes
@@ -170,7 +170,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
 | 145. Configure and Onboard | v1.40 | 5/5 | Complete    | 2026-10-09 |
 | 146. Support, Orient, and Operate | v1.40 | 4/4 | Complete    | 2026-10-10 |
-| 147. Surface Coherence and Working Preview | v1.40 | 7/8 | In Progress | - |
+| 147. Surface Coherence and Working Preview | v1.40 | 8/8 | In Progress | - |
 
 ## Backlog
 
