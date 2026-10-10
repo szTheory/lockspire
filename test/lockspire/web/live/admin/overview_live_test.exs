@@ -151,14 +151,22 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/overview", Index))
   end
 
-  test "overview renders operator cockpit metrics and journey links" do
+  test "overview renders task-centered status and journey links at both entry routes" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin")
+    assert {:ok, _overview_view, overview_html} = live(conn_for_admin(), "/admin/overview")
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
 
-    assert html =~ "Operator cockpit"
+    assert html =~ "Provider overview"
+    assert overview_html =~ "Provider overview"
+
+    assert html =~
+             "Review client registrations, security policy, signing keys, and current authorization activity."
+
+    refute html =~ "Operator cockpit"
+    refute overview_html =~ "Operator cockpit"
     assert html =~ "Security posture"
     assert html =~ "Key readiness"
     assert html =~ "Support queue"
@@ -207,7 +215,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     loading_html = rendered_to_string(Index.render(socket.assigns))
     loading_text = rendered_text(loading_html)
 
-    assert loading_text =~ "Operator cockpit"
+    assert loading_text =~ "Provider overview"
     assert loading_text =~ "Loading client inventory"
     assert loading_text =~ "Loading server policy"
     refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)

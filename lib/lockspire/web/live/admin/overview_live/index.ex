@@ -29,9 +29,9 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
-        eyebrow="Operator cockpit"
-        title="Run the embedded provider with the important state in view."
-        body="Start with client posture, issuer security, token incidents, key readiness, and live protocol work. Each card points to the workflow that owns the next action."
+        eyebrow="Overview"
+        title="Provider overview"
+        body="Review client registrations, security policy, signing keys, and current authorization activity. Use the linked pages to review settings or investigate a specific record."
       >
         <:actions>
           <AdminComponents.admin_button href={admin_path("/clients")} variant={:primary}>
@@ -111,7 +111,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
 
         <AdminComponents.section_card
           title="Key readiness"
-          subtitle="JWKS-visible material and rollover state."
+          subtitle="Published signing keys and rollover state."
         >
           <p role="status">{observation_note(@summary.keys, "signing-key inventory")}</p>
           <dl class="lockspire-admin-description-list">
@@ -135,7 +135,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
 
         <AdminComponents.section_card
           title="Support queue"
-          subtitle="Source-backed support counts with direct links to their investigation routes."
+          subtitle="Review refresh-token reuse, consent grants, and logout deliveries."
         >
           <div class="lockspire-admin-resource-list">
             <a href={admin_path("/tokens?status=reuse_detected")}>
@@ -158,7 +158,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
 
         <AdminComponents.section_card
           title="Live operations"
-          subtitle="Source-backed protocol observations with direct links to their read-only queues."
+          subtitle="Review pending interactions, device requests, and initial access tokens."
         >
           <div class="lockspire-admin-resource-list">
             <a href={admin_path("/interactions")}>
