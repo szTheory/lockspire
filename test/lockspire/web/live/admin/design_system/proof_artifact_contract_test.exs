@@ -87,6 +87,13 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
       BrowserEvidence.parse!(malformed_route)
     end
 
+    outside_admin_namespace =
+      String.replace(valid_evidence(), "`/admin`", "`/administrator`", global: false)
+
+    assert_raise ArgumentError, ~r/malformed Route \/ Surface/, fn ->
+      BrowserEvidence.parse!(outside_admin_namespace)
+    end
+
     duplicate = valid_evidence() <> "\nnot a table\n" <> valid_evidence()
 
     assert_raise ArgumentError, ~r/duplicate evidence row/, fn ->
@@ -96,12 +103,20 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
     for sensitive <- [
           "client_secret=plaintext-secret-value",
           "device_code=ABCD-EFGH-IJKL",
+          "Authorization: Bearer abcdefghijklmnop",
+          "proxy-authorization: basic c2VydmljZTpwYXNzd29yZA==",
           "https://accounts.lockspire.com/admin"
         ] do
       assert_raise ArgumentError, ~r/sensitive evidence/, fn ->
         BrowserEvidence.assert_redaction_safe!(sensitive)
       end
     end
+
+    distinct_states =
+      valid_evidence() <>
+        "| `/admin` | Orient | 390px | light | default | overview nav | validation error state | 390 | 390 | pass | synthetic local observation | passed denylist | none | contract test pass |\n"
+
+    assert length(BrowserEvidence.parse!(distinct_states)) == 6
   end
 
   defp valid_evidence do
