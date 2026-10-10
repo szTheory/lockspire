@@ -13,6 +13,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   @already_revoked_copy "This token is already revoked. No further token action is available."
   @expired_copy "This token is expired. No active token remains because its expiration time has passed."
   @no_family_copy "This token is not part of a refresh family, so family-wide revocation is unavailable."
+  @default_filters %{"account" => "", "client" => "", "status" => "all"}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
@@ -21,6 +22,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
        page_title: "Token detail",
        current_section: :tokens,
        token_id: parse_id(id),
+       filters: @default_filters,
        token_detail: nil,
        detail_state: :loading,
        revoke_error: nil,
@@ -32,10 +34,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   @impl true
   def handle_params(params, _uri, socket) do
     token_id = parse_id(Map.get(params, "id", socket.assigns.token_id))
+    filters = normalize_filters(params)
 
     {:noreply,
      socket
-     |> assign(token_id: token_id, revoke_error: nil, family_error: nil, family_notice: nil)
+     |> assign(
+       token_id: token_id,
+       filters: filters,
+       revoke_error: nil,
+       family_error: nil,
+       family_notice: nil
+     )
      |> load_token(token_id)}
   end
 
@@ -112,11 +121,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           <:actions>
             <AdminComponents.admin_button
               :if={is_integer(@token_id)}
-              href={token_detail_path(@token_id)}
+              href={token_detail_path(@token_id, @filters)}
             >
               Try loading token details again
             </AdminComponents.admin_button>
-            <AdminComponents.admin_button href={tokens_index_path()}>
+            <AdminComponents.admin_button href={tokens_index_path(@filters)}>
               Review token investigation
             </AdminComponents.admin_button>
           </:actions>
@@ -127,7 +136,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           body="Lockspire could not find that supported access or refresh token in durable storage."
         >
           <:actions>
-            <AdminComponents.admin_button href={tokens_index_path()}>
+            <AdminComponents.admin_button href={tokens_index_path(@filters)}>
               Review token investigation
             </AdminComponents.admin_button>
           </:actions>
@@ -149,7 +158,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
           <span>Status: <AdminComponents.status_badge status={@token_detail.status} /></span>
         </:summary>
         <:actions>
-          <AdminComponents.admin_button href={tokens_index_path()}>
+          <AdminComponents.admin_button href={tokens_index_path(@filters)}>
             Review token investigation
           </AdminComponents.admin_button>
         </:actions>
@@ -409,6 +418,23 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     _error -> {:error, :unavailable}
   end
 
+  defp normalize_filters(params) do
+    %{
+      "account" => normalize_filter(Map.get(params, "account")),
+      "client" => normalize_filter(Map.get(params, "client")),
+      "status" => normalize_status(Map.get(params, "status"))
+    }
+  end
+
+  defp normalize_filter(value) when is_binary(value), do: value
+  defp normalize_filter(_value), do: ""
+
+  defp normalize_status(status)
+       when status in ["all", "active", "revoked", "expired", "reuse_detected"],
+       do: status
+
+  defp normalize_status(_status), do: "all"
+
   defp parse_id(value) when is_integer(value), do: value
 
   defp parse_id(value) when is_binary(value) do
@@ -593,7 +619,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   defp summary(value, detail, tone), do: %{value: value, detail: detail, tone: tone}
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
-  defp token_detail_path(id), do: tokens_index_path() <> "/#{id}"
+
+  defp tokens_index_path(filters),
+    do: append_filter_query(tokens_index_path(), filters)
+
+  defp token_detail_path(id, filters),
+    do: append_filter_query(tokens_index_path() <> "/#{id}", filters)
+
+  defp append_filter_query(path, @default_filters), do: path
+
+  defp append_filter_query(path, filters),
+    do: path <> "?" <> URI.encode_query(filters)
 
   defp client_detail_path_available?(%{client: %{client_id: client_id}}),
     do: is_binary(client_id) and byte_size(client_id) <= 64

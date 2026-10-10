@@ -8,6 +8,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
+  @default_filters %{"account" => "", "client" => "", "status" => "all"}
+
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
@@ -79,7 +81,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
             </AdminComponents.form_field>
           </:fields>
           <:help>
-            <p :if={@inventory_state == :loaded}>Matching tokens: {@total_tokens}</p>
+            <p :if={@inventory_state == :loaded}>{matching_count_label(@total_tokens)}</p>
             <p :if={@inventory_state == :error}>Matching token count is unavailable.</p>
           </:help>
           <:actions>
@@ -153,7 +155,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
                   <AdminComponents.status_badge status={entry.status} />
                 </:status>
                 <:actions>
-                  <AdminComponents.admin_button href={token_show_path(entry.token.id)}>
+                  <AdminComponents.admin_button href={token_show_path(entry.token.id, @filters)}>
                     View token details
                   </AdminComponents.admin_button>
                 </:actions>
@@ -185,7 +187,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         <:item
           label="Token health"
           value={token_health_summary(@token_metrics)}
-          detail={"#{@total_tokens} matching token lifecycle records in this support view."}
+          detail={matching_count_detail(@total_tokens)}
           tone={token_health_tone(@token_metrics)}
         >
         </:item>
@@ -309,6 +311,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
     "#{metrics.active} active, #{metrics.revoked} revoked, #{metrics.expired} expired, #{metrics.reuse_detected} reuse detected"
   end
 
+  defp matching_count_label(1), do: "Matching token: 1"
+  defp matching_count_label(count), do: "Matching tokens: #{count}"
+
+  defp matching_count_detail(1), do: "1 matching token lifecycle record in this support view."
+
+  defp matching_count_detail(count),
+    do: "#{count} matching token lifecycle records in this support view."
+
   defp token_health_tone(%{reuse_detected: count}) when count > 0, do: :danger
 
   defp token_health_tone(%{revoked: revoked, expired: expired}) when revoked + expired > 0,
@@ -400,9 +410,18 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
   defp tokens_index_path(filters), do: tokens_index_path() <> "?" <> URI.encode_query(filters)
-  defp token_show_path(id), do: tokens_index_path() <> "/" <> Integer.to_string(id)
+
+  defp token_show_path(id, filters) do
+    path = tokens_index_path() <> "/" <> Integer.to_string(id)
+    append_filter_query(path, filters)
+  end
 
   defp token_filter_path(filters) do
-    tokens_index_path() <> "?" <> URI.encode_query(filters)
+    append_filter_query(tokens_index_path(), filters)
   end
+
+  defp append_filter_query(path, @default_filters), do: path
+
+  defp append_filter_query(path, filters),
+    do: path <> "?" <> URI.encode_query(filters)
 end

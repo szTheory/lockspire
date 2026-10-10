@@ -93,7 +93,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/tokens/:id", Show))
   end
 
-  test "token index filters durable lifecycle state without exposing raw token hashes" do
+  test "token index filters durable lifecycle state without exposing raw token hashes", %{
+    refresh_token: refresh_token
+  } do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
     assert {:noreply, socket} =
@@ -106,6 +108,12 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     html = rendered_to_string(Index.render(socket.assigns))
     decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
+
+    assert_path_query(html, "/lockspire/admin/tokens/#{refresh_token.id}", %{
+      "account" => "account-token-ui",
+      "client" => "",
+      "status" => "active"
+    })
 
     assert html =~ "Support"
     assert html =~ "Token investigation"
@@ -140,7 +148,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert rows =~ "account_"
     assert rows =~ "client_"
     assert rows =~ "family_"
-    refute rows =~ "account-token-ui"
+    refute visible_text(rows) =~ "account-token-ui"
     refute rows =~ "family-ui-123"
 
     refute html =~ "token-ui-refresh-hash"
@@ -200,6 +208,51 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert initial_html =~ ~s(method="get")
   end
 
+  test "token inventory count copy is accurate for zero, one, and many records" do
+    _single_match =
+      store_support_token!(
+        token_hash: "token-ui-single-count-hash",
+        family_id: "family-ui-single-count",
+        account_id: "account-single-count"
+      )
+
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, zero_socket} =
+             Index.handle_params(
+               %{"account" => "account-no-matches", "status" => "all"},
+               "/lockspire/admin/tokens?account=account-no-matches&status=all",
+               socket
+             )
+
+    zero_html = rendered_to_string(Index.render(zero_socket.assigns))
+    assert zero_html =~ "Matching tokens: 0"
+    assert zero_html =~ "0 matching token lifecycle records in this support view."
+
+    assert {:noreply, one_socket} =
+             Index.handle_params(
+               %{"account" => "account-single-count", "status" => "all"},
+               "/lockspire/admin/tokens?account=account-single-count&status=all",
+               socket
+             )
+
+    one_html = rendered_to_string(Index.render(one_socket.assigns))
+    assert one_html =~ "Matching token: 1"
+    assert one_html =~ "1 matching token lifecycle record in this support view."
+    refute one_html =~ "1 matching token lifecycle records"
+
+    assert {:noreply, many_socket} =
+             Index.handle_params(
+               %{"account" => "account-token-ui", "status" => "all"},
+               "/lockspire/admin/tokens?account=account-token-ui&status=all",
+               socket
+             )
+
+    many_html = rendered_to_string(Index.render(many_socket.assigns))
+    assert many_html =~ "Matching tokens: 2"
+    assert many_html =~ "2 matching token lifecycle records in this support view."
+  end
+
   test "token index keeps failed reads distinct from successful empty results" do
     original_repo = Application.fetch_env!(:lockspire, :repo)
 
@@ -244,21 +297,35 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert {:ok, socket} =
              Show.mount(%{"id" => Integer.to_string(refresh_token.id)}, %{}, socket_for(:show))
 
+    filters = %{
+      "account" => "account-token-ui",
+      "client" => "token-ui-client",
+      "status" => "active"
+    }
+
+    params = Map.merge(%{"id" => Integer.to_string(refresh_token.id)}, filters)
+    uri = "/lockspire/admin/tokens/#{refresh_token.id}?" <> URI.encode_query(filters)
+
     assert {:noreply, socket} =
              Show.handle_params(
-               %{"id" => Integer.to_string(refresh_token.id)},
-               "/lockspire/admin/tokens/#{refresh_token.id}",
+               params,
+               uri,
                socket
              )
 
+    assert socket.assigns.filters == filters
+    assert {:noreply, revisited_socket} = Show.handle_params(params, uri, socket)
+    assert revisited_socket.assigns.filters == filters
+
     html = rendered_to_string(Show.render(socket.assigns))
+    assert_path_query(html, "/lockspire/admin/tokens", filters)
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_has_link(html, "/lockspire/admin/tokens")
 
-    HtmlAssertions.assert_no_text(html, [
+    HtmlAssertions.assert_no_text(without_filter_query_values(html), [
       "token-ui-refresh-hash",
       "family-ui-123",
       "account-token-ui"
@@ -306,7 +373,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute html =~ "revokes every active token"
     refute html =~ "token-ui-refresh-hash"
     refute html =~ "family-ui-123"
-    refute html =~ "account-token-ui"
+    refute visible_text(html) =~ "account-token-ui"
     refute html =~ "Token ##{refresh_token.id}"
 
     decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
@@ -447,18 +514,30 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
   test "token detail shows an unavailable family read instead of a singleton family", %{
     refresh_token: refresh_token
   } do
+    filters = %{
+      "account" => "account-token-ui",
+      "client" => "token-ui-client",
+      "status" => "reuse_detected"
+    }
+
     with_repo_failure(:family_read, fn ->
       id = Integer.to_string(refresh_token.id)
       assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
 
       assert {:noreply, socket} =
-               Show.handle_params(%{"id" => id}, "/lockspire/admin/tokens/#{id}", socket)
+               Show.handle_params(
+                 Map.merge(%{"id" => id}, filters),
+                 "/lockspire/admin/tokens/#{id}?" <> URI.encode_query(filters),
+                 socket
+               )
 
       html = rendered_to_string(Show.render(socket.assigns))
       assert html =~ "Could not load token details"
       assert html =~ "Try loading token details again"
       refute html =~ "Refresh family lineage"
       refute html =~ "Token not found"
+      assert_path_query(html, "/lockspire/admin/tokens/#{id}", filters)
+      assert_path_query(html, "/lockspire/admin/tokens", filters)
     end)
   end
 
@@ -757,7 +836,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert rows =~ "Not recorded"
     assert rows =~ "lockspire-admin-long-value"
     assert rows =~ "View token details"
-    refute rows =~ long_client_id
+    refute visible_text(rows) =~ long_client_id
     refute rows =~ long_account_id
     refute rows =~ long_family_id
 
@@ -827,6 +906,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
   defp assert_support_route_guardrails(html, denied_values) do
     html
+    |> without_filter_query_values()
     |> HtmlAssertions.assert_no_duplicate_ids()
     |> HtmlAssertions.assert_describedby_targets_exist()
     |> HtmlAssertions.assert_aria_targets_exist("aria-labelledby")
@@ -836,6 +916,31 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     |> HtmlAssertions.assert_no_generic_cta_text()
     |> HtmlAssertions.assert_no_token_like_text()
     |> HtmlAssertions.assert_no_text(@unsupported_support_controls ++ denied_values)
+  end
+
+  defp without_filter_query_values(html) do
+    Regex.replace(~r/(account|client)=[^&"]*/, html, fn match ->
+      [key, _value] = String.split(match, "=", parts: 2)
+      key <> "=[filter]"
+    end)
+  end
+
+  defp visible_text(html) do
+    html
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace("&amp;", "&")
+  end
+
+  defp assert_path_query(html, path, expected_query) do
+    encoded_query =
+      case Regex.run(~r/href="#{Regex.escape(path)}\?([^"]+)"/, html) do
+        [_, query] -> query
+        _other -> flunk("expected a link to #{path} with preserved filter context")
+      end
+
+    assert encoded_query
+           |> String.replace("&amp;", "&")
+           |> URI.decode_query() == expected_query
   end
 
   defp with_repo_failure(failure, fun) do
