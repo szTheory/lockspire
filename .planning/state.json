@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-discuss-phase 147",
-    "label": "Discuss Phase 147 — Surface Coherence and Working Preview",
-    "reason": "Phase 146 is complete and verified; Phase 147 is the next unstarted phase"
+    "command": "/gsd:progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 147 of 4 · 72% · executing"
   },
-  "updated_at": "2026-10-10T05:10:19.491Z"
+  "updated_at": "2026-10-10T12:48:07.858Z"
 }

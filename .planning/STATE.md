@@ -3,19 +3,19 @@ gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Admin Operator UI Refinement
 current_phase: 147
-current_phase_name: Surface Coherence and Working Preview
-status: planning
+current_phase_name: surface-coherence-and-working-preview
+status: executing
 stopped_at: Phase 147 UI-SPEC approved
-last_updated: "2026-10-10T12:13:18.294Z"
+last_updated: "2026-10-10T12:48:07.815Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 146 complete, transitioned to Phase 147
-state_head: f2644b3706470a9e9d0e7faa968b62e0296e850c
+state_head: 5db5fe49ebca9b2a05cb62165af207f521a9300e
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 13
+  total_plans: 18
   completed_plans: 13
-  percent: 75
+  percent: 72
 ---
 
 # Project State
@@ -30,11 +30,11 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 ## Current Position
 
-Phase: 147 — Surface Coherence and Working Preview
+Phase: 147 (surface-coherence-and-working-preview) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-10-10 — Phase 146 complete, transitioned to Phase 147
-Progress: [████████░░] 75%
+Progress: [███████░░░] 72%
 
 ## Accumulated Context
 
@@ -361,7 +361,8 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 ## Operator Next Steps
 
 - Phase 146 is complete (4/4 plans; verifier 7/7). The combined Phase 144–146 operator regression run passed 183 tests, the focused route-contract suite passed 7 tests, code review has 0 findings, and browser back/forward restored filtered token and consent inventories and details. No manual UAT is pending for Phase 146.
-- Next command: `$gsd-plan-phase 147` — create the implementation plans for the final v1.40 cross-surface acceptance phase using the approved UI design contract.
+- Phase 147 is planned: five checked plans passed independent plan verification; all nine requirements and 11 decisions are covered. Execution and rendered-browser evidence remain pending.
+- Next command: `$gsd-execute-phase 147` — execute the Phase 147 acceptance, bounded UI repair, and stable-preview plans.
 - The known CR-01 key-at-rest finding remains separate release-readiness work; it does not block planning or development of Phase 147.
 - Phase 144–146 focused operator checks use the dedicated Phase 145 database. The refreshed Phase 145 checks app at `http://127.0.0.1:4123` remains separate from the stable Phase 144 preview at `http://127.0.0.1:4121`; preserve that preview's data and reuse its retained evidence.
 - The Phase 145 synthetic preview is documented at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data and reuse retained evidence instead of repeating baseline work.
