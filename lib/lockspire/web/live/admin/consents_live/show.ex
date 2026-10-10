@@ -46,17 +46,37 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   end
 
   @impl true
+  def handle_event(
+        "revoke_consent",
+        %{"revoke" => %{"confirm" => "true"}},
+        %{assigns: %{consent: %{grant: %{status: :revoked}}}} = socket
+      ) do
+    {:noreply,
+     assign(socket,
+       revoke_notice: @already_revoked_copy,
+       revoke_error: nil
+     )}
+  end
+
   def handle_event("revoke_consent", %{"revoke" => %{"confirm" => "true"}}, socket) do
     case Admin.revoke_consent(socket.assigns.consent_id, %{
            revoked_by: "operator",
            revoked_reason: "operator_revoked"
          }) do
-      {:ok, consent} ->
+      {:ok, %{grant: %{status: :revoked}} = consent} ->
         {:noreply,
          assign(socket,
            consent: consent,
            revoke_notice: "Consent grant revoked. #{@revocation_consequence}",
            revoke_error: nil
+         )}
+
+      {:ok, consent} ->
+        {:noreply,
+         assign(socket,
+           consent: consent,
+           revoke_notice: nil,
+           revoke_error: @revocation_failure
          )}
 
       {:error, _reason} ->
@@ -215,7 +235,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                   disabled={consent_revoke_disabled?(@consent)}
                 />
                 <span>
-                  Revoke consent grant for client
+                  Revoke consent grant
+                  <AdminComponents.long_value
+                    value={safe_identifier(@consent.grant.id)}
+                    kind={:id}
+                  />
+                  for client
                   {client_display(@consent)}, subject
                   {safe_identifier(@consent.grant.account_id)}, and scopes
                   {scope_label(@consent.grant.scopes)}. This prevents future remembered-consent reuse for this grant.
@@ -312,6 +337,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp scope_label(scopes), do: Enum.join(scopes, ", ")
 
   defp consents_base_path, do: Lockspire.mount_path() <> "/admin/consents"
+
   defp consents_index_path(filters) do
     append_filter_query(consents_base_path(), filters)
   end

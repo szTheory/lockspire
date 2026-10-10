@@ -117,8 +117,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert visible_text(rows) =~ "account-consent-ui"
     assert visible_text(rows) =~ "consent-ui-client"
     assert rows =~ "openid, email"
+
     assert rows =~
              ~s(href="/lockspire/admin/consents/#{grant.id}?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
+
     refute html =~ "sha256:consent-ui:hash"
     refute html =~ "client_secret"
     refute html =~ "refresh_token"
@@ -315,11 +317,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       failed_html = rendered_to_string(Show.render(failed_socket.assigns))
 
       assert failed_html =~ "Could not load consent grant"
+
       assert failed_html =~
                "/lockspire/admin/consents/42?account=account-read-failure&amp;client=client-read-failure&amp;status=active"
 
       assert failed_html =~
                "/lockspire/admin/consents?account=account-read-failure&amp;client=client-read-failure&amp;status=active"
+
       refute failed_html =~ "Consent not found"
     after
       Application.put_env(:lockspire, :repo, original_repo)
@@ -396,6 +400,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
+
     HtmlAssertions.assert_has_link(
       html,
       "/lockspire/admin/consents?account=account-consent-ui&client=consent-ui-client&status=active"
@@ -416,8 +421,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "Durable consent truth"
     assert html =~ "Grant context"
     assert html =~ "Review stored grant"
+
     assert html =~
              ~s(href="/lockspire/admin/consents?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
+
     assert html =~ "View client details"
     assert html =~ ~s(href="/lockspire/admin/clients/consent-ui-client")
     assert html =~ "Revoke consent grant"
@@ -429,6 +436,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "openid, email"
     assert html =~ long_scope
     assert html =~ "lockspire-admin-long-value"
+    confirmation = fragment_html(html, ".lockspire-admin-checkbox-field")
+    confirmation_text = visible_text(confirmation)
+    assert confirmation_text =~ Integer.to_string(grant.id)
+    assert confirmation_text =~ "Consent UI Client"
+    assert confirmation_text =~ "account-consent-ui"
+    assert confirmation_text =~ long_scope
     assert visible_text(html) =~ "#{grant.id}"
     assert visible_text(html) =~ "account-consent-ui"
     assert visible_text(html) =~ "consent-ui-client"
@@ -480,6 +493,25 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert revoked_html =~ "Consent grant already revoked"
     assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
+
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, String)
+
+      assert {:noreply, repeated_socket} =
+               Show.handle_event(
+                 "revoke_consent",
+                 %{"revoke" => %{"confirm" => "true"}},
+                 socket
+               )
+
+      assert repeated_socket.assigns.consent.grant.status == :revoked
+      assert repeated_socket.assigns.revoke_notice =~ "already revoked"
+      assert repeated_socket.assigns.revoke_error == nil
+    after
+      Application.put_env(:lockspire, :repo, original_repo)
+    end
   end
 
   test "support consent route proof covers ugly grant states and redaction guardrails" do
