@@ -38,6 +38,7 @@ Last activity: 2026-10-10 — Milestone v1.41 started
 - Preserve protocol meaning, security distinctions, actual action consequences, host-owned UX boundaries, and the embedded-library shape. No protocol feature or UI behavior expansion is in scope.
 - Impeccable `clarify` guidance is the method for copy review; the milestone does not call for a visual redesign.
 - Continue phase numbering after Phase 147. No matching planted seed was found; the separate theme-caret seed remains dormant.
+- Bounded primary-source and local research is recorded in [.planning/research/v1.41-language-docs/SUMMARY.md](research/v1.41-language-docs/SUMMARY.md): reuse the current stack, preserve standards meanings, keep the supported-surface contract canonical, and perform cleanup only after a full ownership/reference check.
 
 ### v1.40 UI Milestone Direction
 
