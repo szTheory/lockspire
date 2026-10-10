@@ -4,7 +4,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
-  alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -132,14 +131,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                   <span>
                     Account
                     <AdminComponents.long_value
-                      value={redacted_handle(:account, consent.grant.account_id)}
+                      value={safe_identifier(consent.grant.account_id)}
                       kind={:id}
                     />
                   </span>
                   <span>
                     Client
                     <AdminComponents.long_value
-                      value={redacted_handle(:client, consent.grant.client_id)}
+                      value={safe_identifier(consent.grant.client_id)}
                       kind={:id}
                     />
                   </span>
@@ -246,8 +245,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   defp selected_filter(_type, ""), do: "All"
   defp selected_filter(_type, "all"), do: "All"
 
-  defp selected_filter(type, value) when type in [:account, :client],
-    do: redacted_handle(type, value)
+  defp selected_filter(type, value) when type in [:account, :client], do: safe_identifier(value)
 
   defp selected_filter(_type, value), do: value
 
@@ -255,7 +253,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
     do: "#{status_label(consent.grant.status)} #{grant_kind_label(consent.grant.kind)} grant"
 
   defp consent_row_subtitle(consent) do
-    "Client #{consent_title(consent)}"
+    case consent_title(consent) do
+      "Client description unavailable" = copy -> copy
+      title -> "Client #{title}"
+    end
   end
 
   defp status_label(status) when is_atom(status) do
@@ -276,12 +277,17 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   defp grant_kind_label(kind), do: to_string(kind)
 
   defp consent_title(consent) do
-    (consent.client && (consent.client.name || consent.client.client_id)) ||
-      redacted_handle(:client, consent.grant.client_id)
+    case consent.client do
+      %{name: name} when is_binary(name) and name != "" -> name
+      %{client_id: client_id} when is_binary(client_id) and client_id != "" -> client_id
+      _missing -> "Client description unavailable"
+    end
   end
 
-  defp redacted_handle(_type, nil), do: "Not recorded"
-  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+  defp safe_identifier(nil), do: "Not recorded"
+  defp safe_identifier(value) when is_binary(value), do: value
+  defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
+  defp safe_identifier(value), do: to_string(value)
 
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")

@@ -4,7 +4,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
-  alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -140,7 +139,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
       <AdminComponents.entity_header
         title={client_display(@consent)}
         subtitle="Durable consent truth for support workflows. This screen does not infer from event history."
-        identifier={redacted_handle(:consent_grant, @consent.grant.id)}
+        identifier={safe_identifier(@consent.grant.id)}
       >
         <:status>
           <AdminComponents.status_badge status={@consent.grant.status} />
@@ -155,19 +154,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
         <AdminComponents.description_list>
           <:item label="Grant ID">
             <AdminComponents.long_value
-              value={redacted_handle(:consent_grant, @consent.grant.id)}
+              value={safe_identifier(@consent.grant.id)}
               kind={:id}
             />
           </:item>
           <:item label="Account">
             <AdminComponents.long_value
-              value={redacted_handle(:account, @consent.grant.account_id)}
+              value={safe_identifier(@consent.grant.account_id)}
               kind={:id}
             />
           </:item>
           <:item label="Client ID">
             <AdminComponents.long_value
-              value={redacted_handle(:client, @consent.grant.client_id)}
+              value={safe_identifier(@consent.grant.client_id)}
               kind={:id}
             />
             <AdminComponents.admin_button
@@ -218,7 +217,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
                 <span>
                   Revoke consent grant for client
                   {client_display(@consent)}, subject
-                  {redacted_handle(:account, @consent.grant.account_id)}, and scopes
+                  {safe_identifier(@consent.grant.account_id)}, and scopes
                   {scope_label(@consent.grant.scopes)}. This prevents future remembered-consent reuse for this grant.
                 </span>
               </label>
@@ -282,8 +281,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp normalize_status(_status), do: "all"
 
   defp client_display(consent) do
-    (consent.client && (consent.client.name || consent.client.client_id)) ||
-      redacted_handle(:client, consent.grant.client_id)
+    case consent.client do
+      %{name: name} when is_binary(name) and name != "" -> name
+      %{client_id: client_id} when is_binary(client_id) and client_id != "" -> client_id
+      _missing -> "Client description unavailable"
+    end
   end
 
   defp already_revoked_copy, do: @already_revoked_copy
@@ -301,8 +303,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
   defp consent_revoke_errors(nil), do: []
   defp consent_revoke_errors(error), do: [error]
 
-  defp redacted_handle(_type, nil), do: "Not recorded"
-  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+  defp safe_identifier(nil), do: "Not recorded"
+  defp safe_identifier(value) when is_binary(value), do: value
+  defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
+  defp safe_identifier(value), do: to_string(value)
 
   defp scope_label([]), do: "No scopes recorded"
   defp scope_label(scopes), do: Enum.join(scopes, ", ")

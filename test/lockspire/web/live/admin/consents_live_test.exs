@@ -94,8 +94,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Consent grant investigation"
-    assert html =~ "Selected account: account_"
-    assert html =~ "Selected client: client_"
+    assert html =~ "Selected account: account-consent-ui"
+    assert html =~ "Selected client: consent-ui-client"
     assert html =~ "Selected status: active"
     assert html =~ "Filter consent grants"
     assert html =~ "View consent grant details"
@@ -114,14 +114,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
            ) < html_index(html, "1 matching grant")
 
     assert rows =~ "View consent grant details"
-    assert rows =~ "account_"
-    assert rows =~ "client_"
+    assert visible_text(rows) =~ "account-consent-ui"
+    assert visible_text(rows) =~ "consent-ui-client"
     assert rows =~ "openid, email"
     assert rows =~
              ~s(href="/lockspire/admin/consents/#{grant.id}?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
-    refute visible_text(rows) =~ "account-consent-ui"
-    refute visible_text(rows) =~ "consent-ui-client"
-
     refute html =~ "sha256:consent-ui:hash"
     refute html =~ "client_secret"
     refute html =~ "refresh_token"
@@ -137,6 +134,43 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert rendered_to_string(Index.render(empty_socket.assigns)) =~
              "No matching consent grants"
+  end
+
+  test "consent grants without client enrichment retain the safe client ID and say the description is unavailable" do
+    grant =
+      store_support_consent!(
+        account_id: "account-with-unenriched-client",
+        client_id: "orphan-consent-client-safe-id"
+      )
+
+    assert {:ok, index_socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, index_socket} =
+             Index.handle_params(
+               %{"client" => grant.client_id},
+               "/lockspire/admin/consents?client=#{grant.client_id}",
+               index_socket
+             )
+
+    index_text =
+      index_socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> visible_text()
+
+    assert index_text =~ "Client description unavailable"
+    assert index_text =~ grant.client_id
+    refute index_text =~ "Consent UI Client"
+
+    detail_text =
+      grant
+      |> render_show_for()
+      |> elem(1)
+      |> visible_text()
+
+    assert detail_text =~ "Client description unavailable"
+    assert detail_text =~ grant.client_id
+    assert detail_text =~ Integer.to_string(grant.id)
   end
 
   test "consent inventory count copy matches zero, one, and many successful results", %{
@@ -368,7 +402,6 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     )
 
     HtmlAssertions.assert_no_text(without_filter_query_values(html), [
-      "account-consent-ui",
       "sha256:consent-ui:hash",
       "client_secret",
       "refresh_token",
@@ -396,9 +429,9 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "openid, email"
     assert html =~ long_scope
     assert html =~ "lockspire-admin-long-value"
-    assert html =~ "account_"
-    assert html =~ "client_"
-    refute visible_text(html) =~ "account-consent-ui"
+    assert visible_text(html) =~ "#{grant.id}"
+    assert visible_text(html) =~ "account-consent-ui"
+    assert visible_text(html) =~ "consent-ui-client"
     refute html =~ "sha256:consent-ui:hash"
 
     assert {:noreply, missing_confirm_socket} = Show.handle_event("revoke_consent", %{}, socket)
@@ -534,18 +567,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert rows =~ long_scope
     assert rows =~ "lockspire-admin-long-value"
     assert rows =~ "View consent grant details"
-    refute visible_text(rows) =~ long_client_id
-    refute visible_text(rows) =~ long_account_id
+    assert visible_text(rows) =~ long_client_id
+    assert visible_text(rows) =~ long_account_id
 
     {_active_socket, active_html} = render_show_for(active_grant)
 
     assert_support_route_guardrails(active_html, [
-      "sha256:consent-proof-secret-hash",
-      long_client_id,
-      long_account_id
+      "sha256:consent-proof-secret-hash"
     ])
 
     assert active_html =~ long_scope
+    assert visible_text(active_html) =~ long_client_id
+    assert visible_text(active_html) =~ long_account_id
+    assert visible_text(active_html) =~ Integer.to_string(active_grant.id)
     assert active_html =~ "Not recorded"
     assert active_html =~ "This prevents future remembered-consent reuse for this grant."
     assert active_html =~ "lockspire-admin-long-value"
@@ -553,10 +587,12 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     {_revoked_socket, revoked_html} = render_show_for(revoked_grant)
 
     assert_support_route_guardrails(revoked_html, [
-      "sha256:consent-proof-secret-hash",
-      long_client_id,
-      long_account_id
+      "sha256:consent-proof-secret-hash"
     ])
+
+    assert visible_text(revoked_html) =~ long_client_id
+    assert visible_text(revoked_html) =~ long_account_id
+    assert visible_text(revoked_html) =~ Integer.to_string(revoked_grant.id)
 
     assert revoked_html =~
              "This consent grant is already revoked. It cannot be reused for future remembered consent."
