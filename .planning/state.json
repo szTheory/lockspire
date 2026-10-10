@@ -21,13 +21,13 @@
     {
       "number": "147",
       "name": "Surface Coherence and Working Preview",
-      "status": "pending"
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "/gsd:progress --next",
     "label": "Advance to the next step",
-    "reason": "Phase 147 of 4 · 72% · executing"
+    "reason": "Phase 147 of 4 · 75% · executing"
   },
-  "updated_at": "2026-10-10T12:48:07.858Z"
+  "updated_at": "2026-10-10T13:11:57.329Z"
 }
