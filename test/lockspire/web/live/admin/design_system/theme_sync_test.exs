@@ -13,7 +13,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ThemeSyncTest do
     assert source =~ "const syncThemeSelects = () =>"
     assert source =~ ~s|select.value = savedTheme|
     assert source =~ "new MutationObserver(syncThemeSelects)"
-    assert source =~ "themeSelectObserver.observe(root"
+    assert source =~ "shellObserver.observe(root"
     assert source =~ "savedTheme = nextTheme"
   end
 end

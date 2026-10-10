@@ -89,8 +89,23 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
 
         // The shell select appears after this script and can be replaced during LiveView patches.
         // Keep its displayed choice tied to the same stored preference as the effective theme.
-        const themeSelectObserver = new MutationObserver(syncThemeSelects);
-        themeSelectObserver.observe(root, {
+        const shellObserver = new MutationObserver((mutations) => {
+          syncThemeSelects();
+
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              const focusTarget = node.matches?.("[data-lockspire-focus-on-insert]")
+                ? node
+                : node.querySelector?.("[data-lockspire-focus-on-insert]");
+
+              if (focusTarget) {
+                focusTarget.focus();
+                return;
+              }
+            }
+          }
+        });
+        shellObserver.observe(root, {
           subtree: true,
           childList: true,
           attributes: true,

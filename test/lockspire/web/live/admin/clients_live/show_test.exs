@@ -979,6 +979,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert error_html =~ "Client changes were not saved."
     assert error_html =~ ~s(role="alert")
     assert error_html =~ ~s(tabindex="-1")
+    assert error_html =~ ~s(data-lockspire-focus-on-insert="true")
     assert error_html =~ ~s(id="client_allowed_scopes-error")
     assert error_html =~ ~s(aria-describedby="client_allowed_scopes-error")
     assert error_html =~ "Enter at least one allowed scope."

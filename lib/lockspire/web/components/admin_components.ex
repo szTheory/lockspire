@@ -335,7 +335,13 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   def error_summary(assigns) do
     ~H"""
-    <section :if={@errors != []} class="lockspire-admin-error-summary" role="alert" tabindex="-1">
+    <section
+      :if={@errors != []}
+      class="lockspire-admin-error-summary"
+      role="alert"
+      tabindex="-1"
+      data-lockspire-focus-on-insert="true"
+    >
       <h2>{@title}</h2>
       <ul>
         <%= for error <- @errors do %>
