@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 147
 current_phase_name: Surface Coherence and Working Preview
 status: executing
-stopped_at: Completed 147-01-PLAN.md
-last_updated: "2026-10-10T13:11:58.659Z"
+stopped_at: Completed 147-02-PLAN.md
+last_updated: "2026-10-10T13:47:54.518Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 147 execution started
-state_head: dde8c77b0ebabc39d6187776c87ebe0c3360137e
+state_head: 8d6248e003a55b0584a40039a67b8e2abb7a382a
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 18
-  completed_plans: 14
+  completed_plans: 15
   percent: 75
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 147 (Surface Coherence and Working Preview) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-10-10 — Phase 147 execution started
 Progress: [████████░░] 75%
@@ -221,6 +221,8 @@ Progress: [████████░░] 75%
 - [Phase 146]: Show full safe device record/client/subject IDs but keep the verification capability and protocol credentials redacted. — Operators need matchable records, while the verification handle can authorize protocol actions and remains secret material.
 - [Phase 146]: Keep device queues read-only and offer a same-route reload plus existing client/overview pivots. — Queue recovery must restore observation without adding approve, deny, consume, retry, or other protocol controls.
 - [Phase 146]: Keep interaction and logout queue reads truthful and read-only. — Operators need successful evidence distinct from unavailable reads; recorded logout delivery acceptance or rendering does not prove an end-user session ended.
+- [Phase 147]: Keep the Theme control synchronized with the saved System/Light/Dark choice after LiveView patches and reloads; the effective appearance alone does not prove the visible preference is accurate.
+- [Phase 147]: After an invalid keyboard form submit, move focus to the newly rendered error summary while preserving field-level label and error association.
 
 ### Pending Todos
 
@@ -266,8 +268,8 @@ Progress: [████████░░] 75%
 
 ## Session Continuity
 
-Last session: 2026-10-10T13:11:58.574Z
-Stopped at: Completed 147-01-PLAN.md
+Last session: 2026-10-10T13:47:54.454Z
+Stopped at: Completed 147-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -358,6 +360,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 146 P03 | 5min | 2 tasks | 4 files |
 | Phase 146 P04 | 4 | 2 tasks | 4 files |
 | Phase 147 P01 | 8min | 2 tasks | 4 files |
+| Phase 147 P2 | 35min | 2 tasks | 53 files |
 
 ## Operator Next Steps
 
