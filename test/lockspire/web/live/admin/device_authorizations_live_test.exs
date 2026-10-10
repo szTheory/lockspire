@@ -201,7 +201,8 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
       failed_text = rendered_text(failed_html)
       assert failed_text =~ "Could not load device authorizations"
-      assert failed_text =~ "No count or empty result is available"
+      assert failed_text =~ "the current results are unavailable"
+      refute failed_text =~ "No count or empty result"
       assert failed_text =~ "Try loading device authorizations again"
       refute failed_text =~ "No device authorizations waiting for review"
       refute failed_text =~ "0 device authorizations recorded"
