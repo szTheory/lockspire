@@ -3,27 +3,32 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
   use Phoenix.LiveView
 
-  alias Lockspire.Redaction
   alias Lockspire.Admin
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, deliveries} = Admin.list_logout_deliveries()
-
     {:ok,
      assign(socket,
        page_title: "Logout deliveries",
        current_section: :logouts,
-       deliveries: deliveries,
-       delivery_metrics: delivery_metrics(deliveries)
+       delivery_read_state: :loading,
+       deliveries: [],
+       delivery_metrics: nil
      )}
   end
 
   @impl true
   def handle_params(_params, _uri, socket) do
-    {:noreply, socket}
+    {read_state, deliveries} = load_deliveries()
+
+    {:noreply,
+     assign(socket,
+       delivery_read_state: read_state,
+       deliveries: deliveries,
+       delivery_metrics: if(read_state == :loaded, do: delivery_metrics(deliveries), else: nil)
+     )}
   end
 
   @impl true
@@ -40,7 +45,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
         title="Review logout deliveries"
         subtitle="Read-only delivery rows expose status pressure, client, endpoint, attempts, and durable delivery context."
       >
-        <AdminComponents.metric_grid>
+        <AdminComponents.metric_grid :if={@delivery_read_state == :loaded}>
           <AdminComponents.summary_stat value={@delivery_metrics.waiting} label="Waiting" />
           <AdminComponents.summary_stat value={@delivery_metrics.retrying} label="Retrying" />
           <AdminComponents.summary_stat value={@delivery_metrics.failed} label="Failed" />
@@ -48,12 +53,33 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
           <AdminComponents.summary_stat value={@delivery_metrics.completed} label="Completed" />
         </AdminComponents.metric_grid>
 
-        <%= if @deliveries == [] do %>
+        <p :if={@delivery_read_state == :loaded} role="status">
+          {delivery_count_copy(length(@deliveries))}
+        </p>
+
+        <%= cond do %>
+          <% @delivery_read_state == :loading -> %>
+            <p role="status">Loading logout deliveries…</p>
+          <% @delivery_read_state == :unavailable -> %>
+            <AdminComponents.empty_state
+              title="Could not load logout deliveries"
+              body="The logout delivery queue is unavailable. No count or empty result is available. Reload this route or return to the overview."
+            >
+              <:actions>
+                <AdminComponents.admin_button href={logout_deliveries_path()}>
+                  Try loading logout deliveries again
+                </AdminComponents.admin_button>
+                <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+                  Return to overview
+                </AdminComponents.admin_button>
+              </:actions>
+            </AdminComponents.empty_state>
+          <% @delivery_read_state == :loaded and @deliveries == [] -> %>
           <AdminComponents.empty_state
             title="No logout deliveries waiting for review"
             body="There are no logout propagation records waiting for operator review."
           />
-        <% else %>
+          <% true -> %>
           <AdminComponents.resource_list>
             <%= for delivery <- @deliveries do %>
               <AdminComponents.dense_resource_row
@@ -61,10 +87,10 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
                 subtitle={delivery_pressure(delivery)}
               >
                 <:meta>
-                  <span>Delivery <AdminComponents.long_value value={delivery.delivery_id} kind={:id} /></span>
-                  <span>Client <AdminComponents.long_value value={redacted_handle(:client, delivery.client_id)} kind={:id} /></span>
+                  <span>Delivery <AdminComponents.long_value value={safe_identifier(delivery.delivery_id)} kind={:id} /></span>
+                  <span>Client <AdminComponents.long_value value={safe_identifier(delivery.client_id)} kind={:id} /></span>
                   <span>Channel <AdminComponents.long_value value={channel_label(delivery.channel)} kind={:text} /></span>
-                  <span>Endpoint <AdminComponents.long_value value={delivery.target_uri} kind={:url} /></span>
+                  <span>Endpoint <AdminComponents.long_value value={safe_identifier(delivery.target_uri)} kind={:url} /></span>
                   <span>Attempts {delivery.attempt_count}</span>
                   <span :if={delivery_failure_context(delivery)}>
                     Failure context <AdminComponents.long_value
@@ -80,6 +106,14 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
                 <:status>
                   <AdminComponents.status_badge status={delivery.status} />
                 </:status>
+                <:actions>
+                  <AdminComponents.admin_button
+                    :if={client_detail_path_available?(delivery)}
+                    href={client_detail_path(delivery.client_id)}
+                  >
+                    View client details
+                  </AdminComponents.admin_button>
+                </:actions>
               </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
@@ -88,6 +122,20 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
     </AdminLayoutLive.shell>
     """
   end
+
+  defp load_deliveries do
+    case Admin.list_logout_deliveries() do
+      {:ok, deliveries} when is_list(deliveries) -> {:loaded, deliveries}
+      _other -> {:unavailable, []}
+    end
+  rescue
+    _error -> {:unavailable, []}
+  end
+
+  defp delivery_count_copy(0), do: "0 logout deliveries recorded"
+  defp delivery_count_copy(1), do: "1 logout delivery recorded"
+
+  defp delivery_count_copy(count), do: "#{count} logout deliveries recorded"
 
   defp delivery_metrics(deliveries) do
     %{
@@ -101,11 +149,26 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
   defp delivery_timestamp(delivery) do
     delivery.delivered_at || delivery.rendered_at || delivery.finalized_at ||
-      delivery.last_attempted_at || delivery.updated_at || delivery.inserted_at
+      delivery.last_attempted_at
   end
 
-  defp redacted_handle(_type, nil), do: "Not recorded"
-  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+  defp client_detail_path_available?(%{client_id: client_id})
+       when is_binary(client_id) and byte_size(client_id) > 0 and byte_size(client_id) <= 64,
+       do: true
+
+  defp client_detail_path_available?(_delivery), do: false
+
+  defp client_detail_path(client_id),
+    do:
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
+
+  defp logout_deliveries_path, do: Lockspire.mount_path() <> "/admin/logouts"
+
+  defp safe_identifier(nil), do: "Not recorded"
+  defp safe_identifier(value) when is_binary(value), do: value
+  defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
+  defp safe_identifier(value), do: to_string(value)
 
   defp channel_label(:backchannel), do: "Back-channel"
   defp channel_label(:frontchannel), do: "Front-channel"
@@ -136,10 +199,12 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
     do: "Terminal queue outcome; skipped because no delivery action was required."
 
   defp delivery_pressure(%{status: :succeeded}),
-    do: "Delivery work completed; the back-channel endpoint accepted the logout."
+    do:
+      "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
 
   defp delivery_pressure(%{status: :rendered}),
-    do: "Delivery work completed; front-channel logout was rendered for browser delivery."
+    do:
+      "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
 
   defp delivery_pressure(_delivery), do: "Review durable delivery state."
 
@@ -207,11 +272,11 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
   defp delivery_support_note(%{status: :succeeded}),
     do:
-      "Support note: confirm the accepted timestamp and endpoint when answering partner questions."
+      "Support note: confirm the accepted timestamp and endpoint when answering partner questions; acceptance does not confirm the user session ended."
 
   defp delivery_support_note(%{status: :rendered}),
     do:
-      "Support note: confirm the rendered timestamp and front-channel endpoint when answering partner questions."
+      "Support note: confirm the rendered timestamp and front-channel endpoint when answering partner questions; rendering does not confirm the user session ended."
 
   defp delivery_support_note(_delivery),
     do:

@@ -152,7 +152,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       )
     end
 
-    %{long_endpoint: long_endpoint}
+    %{long_endpoint: long_endpoint, event_id: event_id}
   end
 
   defp default_delivery_fields do
@@ -226,6 +226,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert summary_stat?(page_html, "Failed", 1)
     assert summary_stat?(page_html, "Discarded", 2)
     assert summary_stat?(page_html, "Completed", 2)
+    assert page_html =~ "7 logout deliveries recorded"
     assert page_html =~ "lockspire-admin-pane"
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
@@ -250,6 +251,9 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       assert page_html =~ delivery_id
     end
 
+    assert page_html =~ "test-client-pending"
+    assert page_html =~ ~s(href="/lockspire/admin/clients/test-client-pending")
+
     assert page_html =~ long_endpoint
     assert page_html =~ "Pending"
     assert page_html =~ "Attempted"
@@ -264,7 +268,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Failure class Request failed / timeout"
     assert page_html =~ "Terminal queue outcome"
-    assert page_html =~ "Delivery work completed"
+
+    assert page_html =~
+             "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
+
+    assert page_html =~
+             "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
+
     refute page_html =~ "<table"
     refute page_html =~ "lockspire-admin-table-wrap"
     refute page_html =~ "phx-click"
@@ -277,8 +287,10 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       %{
         current_section: :logouts,
         page_title: "Logout deliveries",
+        delivery_read_state: :loaded,
         deliveries: [],
         delivery_metrics: %{waiting: 0, retrying: 0, failed: 0, discarded: 0, completed: 0},
+        delivery_count: 0,
         __changed__: %{}
       }
       |> Index.render()
@@ -287,10 +299,94 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     assert html =~ "No logout deliveries waiting for review"
     assert html =~ "There are no logout propagation records waiting for operator review."
+    assert html =~ "0 logout deliveries recorded"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_worker_control_text())
     refute_unsupported_worker_controls(html)
+  end
+
+  test "logout delivery page shows loading before reading the queue" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert socket.assigns.delivery_read_state == :loading
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert page_html =~ "Logout propagation queue"
+    assert page_html =~ "Loading logout deliveries…"
+    refute page_html =~ "Waiting"
+    refute page_html =~ "No logout deliveries waiting for review"
+    refute page_html =~ "logout deliveries recorded"
+  end
+
+  test "failed logout reads show unavailable and a same-route retry" do
+    with_failed_read(fn ->
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/logouts", socket)
+
+      page_html =
+        socket.assigns
+        |> Index.render()
+        |> rendered_to_string()
+        |> page_markup()
+
+      assert socket.assigns.delivery_read_state == :unavailable
+      assert page_html =~ "Could not load logout deliveries"
+      assert page_html =~ "No count or empty result is available"
+      assert page_html =~ "Try loading logout deliveries again"
+      assert page_html =~ ~s(href="/lockspire/admin/logouts")
+      refute page_html =~ "Waiting"
+      refute page_html =~ "No logout deliveries waiting for review"
+      refute page_html =~ "0 logout deliveries recorded"
+    end)
+  end
+
+  test "successful empty logout read shows measured zero" do
+    clear_deliveries()
+
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/logouts", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert socket.assigns.delivery_read_state == :loaded
+    assert page_html =~ "0 logout deliveries recorded"
+    assert summary_stat?(page_html, "Waiting", 0)
+    assert page_html =~ "No logout deliveries waiting for review"
+    refute page_html =~ "Could not load logout deliveries"
+  end
+
+  test "one logout delivery uses singular count copy and the supported client pivot", %{
+    event_id: event_id
+  } do
+    clear_deliveries()
+    insert_delivery(event_id, "single-safe-delivery-id", "client-single")
+
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/logouts", socket)
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert page_html =~ "1 logout delivery recorded"
+    assert page_html =~ "single-safe-delivery-id"
+    assert page_html =~ "client-single"
+    assert page_html =~ ~s(href="/lockspire/admin/clients/client-single")
+    refute page_html =~ "1 logout deliveries recorded"
+    refute_unsupported_worker_controls(page_html)
   end
 
   test "logout delivery review keeps incident evidence sanitized and read-only", %{
@@ -340,7 +436,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Failure class Request failed / timeout"
     assert page_html =~ "Terminal queue outcome"
-    assert page_html =~ "Delivery work completed"
+
+    assert page_html =~
+             "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
+
+    assert page_html =~
+             "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
+
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ long_endpoint
     refute_unsupported_worker_controls(page_html)
@@ -348,6 +450,41 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+  end
+
+  defp clear_deliveries do
+    Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DELETE FROM lockspire_logout_deliveries", [])
+  end
+
+  defp insert_delivery(event_id, delivery_id, client_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "INSERT INTO lockspire_logout_deliveries (delivery_id, logout_event_id, " <>
+        "client_id, channel, target_uri, status, attempt_count, session_required, " <>
+        "last_attempted_at, delivered_at, rendered_at, finalized_at, http_status, " <>
+        "failure_reason, logout_token_jti, oban_job_id, inserted_at, updated_at) " <>
+        "VALUES ($1, $2, $3, 'backchannel', 'https://rp.test.invalid/logout', " <>
+        "'pending', 0, false, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, $4, $4)",
+      [delivery_id, event_id, client_id, now]
+    )
+  end
+
+  defp with_failed_read(fun) do
+    previous_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(
+        :lockspire,
+        :repo,
+        Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest.FailingRepo
+      )
+
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+    end
   end
 
   defp live_route?(route, path, view) do
@@ -393,4 +530,10 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
   end
 
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
+end
+
+defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest.FailingRepo do
+  @moduledoc false
+
+  def all(_query, _options \\ []), do: raise("synthetic logout delivery read failure")
 end
