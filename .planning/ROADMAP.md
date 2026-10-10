@@ -113,6 +113,11 @@ Planning note: Carry Phase 144's proven patterns into each changed Configure jou
   5. Operator can use the overview to choose a next task and inspect interaction, device, logout, and client propagation evidence with legible state and useful pivots; operation queues remain read-only.
 
 **Plans**: TBD
+- [x] 146-01-PLAN.md
+- [ ] 146-02-PLAN.md
+- [ ] 146-03-PLAN.md
+- [ ] 146-04-PLAN.md
+
 **UI hint**: yes
 
 Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and reduced-motion rules into every changed Support, Orient, and Operate state. Narrow error-state repairs through existing admin/service seams are in scope; new queue controls or protocol actions are not.
@@ -140,7 +145,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 |-------|-----------|----------------|--------|-----------|
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
 | 145. Configure and Onboard | v1.40 | 5/5 | Complete    | 2026-10-09 |
-| 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
+| 146. Support, Orient, and Operate | v1.40 | 1/4 | In Progress | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |
 
 ## Backlog

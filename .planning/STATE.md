@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 146
 current_phase_name: Support, Orient, and Operate
 status: executing
-stopped_at: Phase 146 UI-SPEC approved
-last_updated: "2026-10-10T01:32:13.202Z"
+stopped_at: Completed 146-01-PLAN.md
+last_updated: "2026-10-10T01:40:14.490Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 145 complete, transitioned to Phase 146
-state_head: e0e36c8149a498bce44bc7095f76dc76bffa47bd
+last_activity_desc: Phase 146 execution started
+state_head: 63b562e93b4a57d8a8eeb3c462280670d2121e4a
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 13
-  completed_plans: 9
+  completed_plans: 10
   percent: 50
 ---
 
@@ -30,10 +30,10 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 ## Current Position
 
-Phase: 146 (Support, Orient, and Operate) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-10-09 — Phase 145 complete, transitioned to Phase 146
+Phase: 146 (Support, Orient, and Operate) — EXECUTING
+Plan: 2 of 4
+Status: Executing
+Last activity: 2026-10-09 — Phase 146 execution started
 Progress: [█████░░░░░] 50%
 
 ## Accumulated Context
@@ -210,6 +210,8 @@ Progress: [█████░░░░░] 50%
 - [Phase 145]: Keep mounted browser inspection read-only for key lifecycle operations; cover mutations in automated tests.
 - [Phase 145 verification]: All 10 semantic acceptance checks were satisfied by executable tests; the one cross-surface visual judgment is explicitly owned by Phase 147. Do not re-present already automated checks as human UAT unless new evidence shows automation cannot establish the property.
 - [Phase 145 automation]: The focused suite passed 105 tests and the Phase 144 regression gate passed 87. Existing required CI runs the recurring tests and adoption smoke; no new browser stack was justified for this bounded phase.
+- [Phase 146]: Propagate refresh-family read and transaction failures; never substitute one selected token for unavailable family evidence or report success before commit. — Family-wide operator claims must match the actual complete read and confirmed transaction, preserving the separate token-only action.
+- [Phase 146]: Keep token investigation filters in the local detail, retry, and return route query. — URL-backed account, client, and status filters restore the operator investigation through navigation and browser history without accepting arbitrary return destinations.
 
 ### Pending Todos
 
@@ -255,9 +257,9 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-10-10T01:00:18.625Z
-Stopped at: Phase 146 UI-SPEC approved
-Resume file: .planning/phases/146-support-orient-and-operate/146-UI-SPEC.md
+Last session: 2026-10-10T01:40:14.444Z
+Stopped at: Completed 146-01-PLAN.md
+Resume file: .planning/phases/146-support-orient-and-operate/146-02-PLAN.md
 
 ## Performance Metrics
 
@@ -342,6 +344,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 145 P03 | 25min | 3 tasks | 8 files |
 | Phase 145 P04 | 22min | 3 tasks | 6 files |
 | Phase 145 P05 | 17min | 3 tasks | 7 files |
+| Phase 146 P01 | 6min | 2 tasks | 5 files |
 
 ## Operator Next Steps
 
