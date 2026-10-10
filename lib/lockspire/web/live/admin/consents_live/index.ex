@@ -46,7 +46,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
       <AdminComponents.page_hero
         eyebrow="Support"
         title="Consent grant investigation"
-        body="Investigate stored grants by account, client, status, scopes, and safe revocation path without exposing secret material."
+        body="Review stored consent grants by account, client, status, and scopes. Open a grant to review its permissions or revoke it."
       >
         <:summary>
           <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
@@ -57,7 +57,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
 
       <AdminComponents.section_card
         title="Filter consent grants"
-        subtitle="URL filters preserve support case context while rows show only durable non-secret grant metadata."
+        subtitle="Filters stay in the URL so you can return to the same results. Rows show the stored grant details."
       >
         <AdminComponents.filter_bar action={consents_index_path()} phx_submit="filter_inventory">
           <:fields>

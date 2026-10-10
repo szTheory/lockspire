@@ -143,8 +143,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
         eyebrow="Support"
-        title="Stored grant decision"
-        body="Review the stored grant, account, client, scopes, and local revocation outcome."
+        title="Consent grant details"
+        body="Review the stored permission for this account and client, including its scopes and revocation status."
       >
         <:summary>
           <span>Status: <AdminComponents.status_badge status={@consent.grant.status} /></span>
@@ -159,7 +159,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
 
       <AdminComponents.entity_header
         title={client_display(@consent)}
-        subtitle="Durable consent truth for support workflows. This screen does not infer from event history."
+        subtitle="This page shows the stored permission decision and its current revocation status."
         identifier={safe_identifier(@consent.grant.id)}
       >
         <:status>
@@ -170,7 +170,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Show do
 
       <AdminComponents.pane
         title="Grant context"
-        subtitle="Review the stored grant and its safe account and client pivots before choosing an action."
+        subtitle="Review the account and client details before choosing whether to revoke this grant."
       >
         <AdminComponents.description_list>
           <:item label="Grant ID">

@@ -94,6 +94,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Consent grant investigation"
+    assert html =~ "Review stored consent grants by account, client, status, and scopes."
+    assert html =~ "Filters stay in the URL so you can return to the same results."
     assert html =~ "Selected account: account-consent-ui"
     assert html =~ "Selected client: consent-ui-client"
     assert html =~ "Selected status: active"
@@ -385,7 +387,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     html = rendered_to_string(Show.render(failed_socket.assigns))
     assert failed_socket.assigns.consent.grant.status == :active
-    assert html =~ "Stored grant decision"
+    assert html =~ "Consent grant details"
     assert html =~ "Revocation could not be confirmed"
     refute html =~ "Consent grant already revoked"
   end
@@ -431,9 +433,10 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     ])
 
     assert html =~ "Support"
-    assert html =~ "Stored grant decision"
-    assert html =~ "Durable consent truth"
+    assert html =~ "Consent grant details"
+    assert html =~ "stored permission decision and its current revocation status"
     assert html =~ "Grant context"
+    assert html =~ "Review the account and client details before choosing whether to revoke this grant."
     assert html =~ "Review stored grant"
 
     assert html =~
