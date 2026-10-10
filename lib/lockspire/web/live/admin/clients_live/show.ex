@@ -24,7 +24,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     {:ok,
      socket
      |> assign(
-       page_title: "Client detail",
+       page_title: "Client configuration",
+       task_title: "Client configuration",
+       task_body:
+         "Review this client's identity, effective policy, credentials, and registered endpoints.",
        current_section: :clients,
        client_id: client_id,
        form_mode: nil,
@@ -53,12 +56,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def handle_params(params, _uri, socket) do
     action = normalize_action(socket.assigns.live_action || :show)
     form_mode = resolve_form_mode(action, params)
+    {task_title, task_body} = client_task_copy(action, form_mode)
 
     {:noreply,
      socket
      |> assign(
        action: action,
        form_mode: form_mode,
+       page_title: task_title,
+       task_title: task_title,
+       task_body: task_body,
        form_params: nil,
        save_notice: if(form_mode, do: nil, else: socket.assigns.save_notice),
        form_errors: [],
@@ -299,15 +306,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Review client configuration"
-        body="Review identity, effective posture, credentials, endpoints, DCR context, and lifecycle actions for this client."
+        title={@task_title}
+        body={@task_body}
       />
 
       <div class="lockspire-admin-client-workspace">
         <AdminComponents.entity_header
           eyebrow="Client workspace"
           title={@client.name || @client.client_id}
-          subtitle="Identity, posture, credentials, endpoints, DCR context, support pivots, and lifecycle actions for this client."
+          subtitle="Registered application and the settings that shape its OAuth/OIDC behavior."
           identifier={@client.client_id}
         >
           <:status>
@@ -350,7 +357,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Effective posture"
-          subtitle="Issuer defaults and client overrides shown together."
+          subtitle="Issuer defaults and this client's overrides determine its effective behavior."
         >
           <AdminComponents.alert
             :if={@policy_load_state == :unavailable}
@@ -464,7 +471,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Credentials and assertion keys"
-          subtitle="Credential rotation and assertion-key posture without exposing raw credential material."
+          subtitle="Review credential status and assertion-key configuration. Secret values stay redacted."
         >
           <AdminComponents.description_list>
             <:item label="Current secret">
@@ -551,8 +558,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Endpoints and logout"
-          subtitle="Browser destinations are separate from RP cleanup endpoints."
+          title="Redirects and logout"
+          subtitle="Authorization and post-logout browser destinations are separate from logout propagation endpoints."
         >
           <AdminComponents.description_list>
             <:item label="Redirect URIs">
@@ -617,15 +624,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="DCR and RAT context"
-          subtitle="DCR onboarding, self-registered provenance, allowed scopes, and RAT handling."
+          title="Registration details"
+          subtitle="Dynamic client registration (DCR) creates self-registered clients; a Registration Access Token manages one."
         >
           <:status>
             <AdminComponents.status_badge status={@client.provenance} />
           </:status>
           <AdminComponents.description_list>
             <:item label="Provenance">
-              <code>{@client.provenance}</code>
+              <code>{client_provenance_label(@client.provenance)}</code>
             </:item>
             <:item :if={@client.provenance == :self_registered} label="Registration Client URI">
               <AdminComponents.long_value
@@ -645,7 +652,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:item>
           </AdminComponents.description_list>
           <p :if={@client.provenance == :self_registered} class="lockspire-admin-help">
-            Self-registered client (DCR). Registration access token rotation is grouped with credential actions above.
+            This client was registered through DCR. Its Registration Access Token manages this client at the Registration Client URI.
           </p>
           <AdminComponents.action_group>
             <:secondary>
@@ -655,17 +662,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Support pivots"
-          subtitle="Use stable identifiers to review adjacent support and operate surfaces without inventing new filters."
+          title="Related records"
+          subtitle="Use this client ID to match records in the token, consent, and logout-delivery inventories."
         >
           <AdminComponents.description_list>
-            <:item label="Client pivot">
+            <:item label="Client ID">
               <AdminComponents.long_value value={@client.client_id} kind={:id} />
             </:item>
-            <:item label="Review context">
+            <:item label="Finding related records">
               <span>
-                Use this client ID when reviewing token, consent, and logout delivery surfaces.
-                No client-specific support mutation is introduced here.
+                These links open the full inventories. Match records there by this client ID.
               </span>
             </:item>
           </AdminComponents.description_list>
@@ -680,7 +686,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Lifecycle and destructive actions"
-          subtitle="Client availability changes are explicit and keep the existing toggle event."
+          subtitle="Disabling blocks future OAuth/OIDC requests; enabling lets configured use resume."
         >
           <:status>
             <AdminComponents.status_badge status={status_for(@client)} />
@@ -711,7 +717,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                     <%= if @client.active do %>
                       Disable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
-                      so future OAuth/OIDC requests for this client are blocked until an operator enables it again.
+                      so future OAuth/OIDC requests for this client stay blocked until it is enabled again.
                     <% else %>
                       Enable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
@@ -735,8 +741,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={not is_nil(@form_mode)}
-        title="Safe edit workflow"
-        subtitle="Only the allowed shape for this workflow is editable."
+        title="Client settings"
+        subtitle="Change the values for this task; other client settings stay as they are."
       >
         <FormComponent.client_form
           mode={@form_mode}
@@ -754,8 +760,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
-        title="Rotate registration access token"
-        subtitle="Rotation is explicit: the previous RAT stops being current and plaintext is shown once."
+        title="Rotate Registration Access Token"
+        subtitle="This replaces the credential used to manage this registered client. The new token is shown once after confirmed rotation."
       >
         <section class="lockspire-admin-form-shell">
           <header>
@@ -810,8 +816,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={@action == :rotate_secret}
-        title="Secret rotation"
-        subtitle="Rotation is explicit and reveals the new secret once."
+        title="Rotate client secret"
+        subtitle="This replaces the confidential client's current credential. The new secret is shown once after confirmed rotation."
       >
         <RotateSecretComponent.rotation_panel
           errors={@rotation_errors}
@@ -973,6 +979,55 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        do: action
 
   defp resolve_form_mode(_action, _params), do: nil
+
+  defp client_task_copy(:show, _form_mode) do
+    {"Client configuration",
+     "Review this client's identity, effective policy, credentials, and registered endpoints."}
+  end
+
+  defp client_task_copy(:edit, :logout_propagation) do
+    {"Update logout propagation settings",
+     "Set this client's logout notification endpoints. Back-channel delivery is durable; front-channel browser cleanup is best effort."}
+  end
+
+  defp client_task_copy(:edit, :edit) do
+    {"Edit client settings",
+     "Update this client's name, scopes, descriptive details, and token policies."}
+  end
+
+  defp client_task_copy(:redirects, :redirects) do
+    {"Update redirect URIs",
+     "Set callback URIs for authorization responses. Lockspire matches each registered URI exactly."}
+  end
+
+  defp client_task_copy(:logout_uris, :logout_uris) do
+    {"Update post-logout redirect URIs",
+     "Set browser destinations allowed after RP-initiated logout. These are separate from logout propagation endpoints."}
+  end
+
+  defp client_task_copy(:par_policy, :par_policy) do
+    {"Set client PAR policy",
+     "Choose whether this client requires Pushed Authorization Requests (PAR), may omit them, or inherits the issuer default."}
+  end
+
+  defp client_task_copy(:security_profile, :security_profile) do
+    {"Update client security profile",
+     "Choose this client's FAPI/OIDC requirements or inherit the issuer's security profile."}
+  end
+
+  defp client_task_copy(:rotate_registration_access_token, _form_mode) do
+    {"Rotate Registration Access Token",
+     "Replace the credential used to manage this registered client. The new token is shown once only after confirmed rotation."}
+  end
+
+  defp client_task_copy(:rotate_secret, _form_mode) do
+    {"Rotate client secret",
+     "Replace this confidential client's current credential. The new client secret is shown once only after confirmed rotation."}
+  end
+
+  defp client_provenance_label(:operator), do: "Added directly"
+  defp client_provenance_label(:self_registered), do: "Self-registered"
+  defp client_provenance_label(_provenance), do: "Unknown"
 
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"

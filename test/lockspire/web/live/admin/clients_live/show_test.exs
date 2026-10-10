@@ -93,6 +93,63 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     end
   end
 
+  test "each client task route names its task and keeps provenance reader-facing", %{
+    client: client
+  } do
+    assert {:ok, registered_client} =
+             Repository.register_client(%Client{
+               client_id: "route-copy-self-registered-client",
+               client_secret_hash: client.client_secret_hash,
+               client_type: :confidential,
+               name: "Route Copy Client",
+               redirect_uris: client.redirect_uris,
+               allowed_scopes: client.allowed_scopes,
+               allowed_grant_types: client.allowed_grant_types,
+               allowed_response_types: client.allowed_response_types,
+               token_endpoint_auth_method: :client_secret_basic,
+               pkce_required: true,
+               subject_type: :public,
+               provenance: :self_registered,
+               registration_access_token_hash: "sha256:route-copy:rat",
+               registration_client_uri:
+                 "https://issuer.example.com/register/route-copy-self-registered-client",
+               created_at: DateTime.utc_now(),
+               metadata: %{}
+             })
+
+    routes = [
+      {"/admin/clients/#{client.client_id}", "Client configuration", "registered endpoints"},
+      {"/admin/clients/#{client.client_id}/edit", "Edit client settings",
+       "scopes, descriptive details, and token policies"},
+      {"/admin/clients/#{client.client_id}/edit?workflow=logout-propagation",
+       "Update logout propagation settings", "logout notification endpoints"},
+      {"/admin/clients/#{client.client_id}/logout-uris", "Update post-logout redirect URIs",
+       "browser destinations allowed after RP-initiated logout"},
+      {"/admin/clients/#{client.client_id}/par-policy", "Set client PAR policy",
+       "Pushed Authorization Requests (PAR)"},
+      {"/admin/clients/#{client.client_id}/redirects", "Update redirect URIs",
+       "matches each registered URI exactly"},
+      {"/admin/clients/#{registered_client.client_id}/rotate-registration-access-token",
+       "Rotate Registration Access Token", "credential used to manage this registered client"},
+      {"/admin/clients/#{client.client_id}/rotate-secret", "Rotate client secret",
+       "new client secret is shown once only after confirmed rotation"},
+      {"/admin/clients/#{client.client_id}/security-profile", "Update client security profile",
+       "FAPI/OIDC requirements or inherit"}
+    ]
+
+    Enum.each(routes, fn {path, title, explanation} ->
+      assert {:ok, _view, html} = live(conn_for_admin(), path)
+      visible_text = text_content(html)
+      assert visible_text =~ title
+      assert visible_text =~ explanation
+    end)
+
+    detail_html = render_show_html(client.client_id)
+    visible_detail = text_content(detail_html)
+    assert visible_detail =~ "Added directly"
+    refute visible_detail =~ "operator"
+  end
+
   test "client detail shows effective strict message-signing posture and mixed-mode warning", %{
     client: client
   } do
@@ -362,15 +419,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "lockspire-admin-pane"
     assert html =~ "lockspire-admin-status-cluster"
     assert html =~ "lockspire-admin-long-value"
-    assert html =~ "Review client configuration"
+    assert html =~ "Client configuration"
 
     for group <- [
           "Identity and current status",
           "Effective posture",
           "Credentials and assertion keys",
-          "Endpoints and logout",
-          "DCR and RAT context",
-          "Support pivots",
+          "Redirects and logout",
+          "Registration details",
+          "Related records",
           "Lifecycle and destructive actions"
         ] do
       assert html =~ group
@@ -412,9 +469,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Disable client"
 
     assert html =~
-             "future OAuth/OIDC requests for this client are blocked until an operator enables it again"
+             "future OAuth/OIDC requests for this client stay blocked until it is enabled again"
 
-    assert html =~ "Registration access token rotation is grouped with credential actions above."
+    assert html =~ "Registration Access Token manages this client at the Registration Client URI."
     refute html =~ "Rotate Registration Access Token (RAT)"
     refute html =~ "sha256:show:hash"
     refute html =~ "sha256:rat:show"
@@ -484,7 +541,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "redacted"
     assert html =~ "Registration access token"
     assert html =~ "Review DCR onboarding"
-    assert html =~ "No client-specific support mutation is introduced here."
+    assert html =~ "These links open the full inventories. Match records there by this client ID."
 
     html
     |> HtmlAssertions.assert_no_duplicate_ids()
@@ -743,7 +800,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   test "client detail support pivots link to supported logout queue route", %{client: client} do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
 
-    assert html =~ "Support pivots"
+    assert html =~ "Related records"
     assert html =~ "Review logout deliveries"
     assert html =~ ~s(href="/admin/logouts")
     refute html =~ "/admin/logout-deliveries"
@@ -963,7 +1020,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     html_after = render(view)
     assert html_after =~ "Client changes saved."
-    assert html_after =~ "Review client configuration"
+    assert html_after =~ "Client configuration"
     refute html_after =~ "Save client changes"
   end
 
