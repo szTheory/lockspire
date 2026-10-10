@@ -145,6 +145,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
            ) < html_index(html, ~s(<dl class="lockspire-admin-decision-summary))
 
     assert rows =~ "View token details"
+    assert rows =~ Lockspire.Redaction.handle(:token, refresh_token.id)
     assert rows =~ "account_"
     assert rows =~ "client_"
     assert rows =~ "family_"
@@ -539,6 +540,67 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
       assert_path_query(html, "/lockspire/admin/tokens/#{id}", filters)
       assert_path_query(html, "/lockspire/admin/tokens", filters)
     end)
+  end
+
+  test "token and family revocation render recoverable errors after an initial token read failure",
+       %{
+         refresh_token: refresh_token
+       } do
+    {socket, _html} = render_show_for(refresh_token)
+
+    with_repo_failure(:initial_read, fn ->
+      assert {:noreply, token_error_socket} =
+               Show.handle_event(
+                 "revoke_token",
+                 %{"revoke" => %{"confirm" => "true"}},
+                 socket
+               )
+
+      assert token_error_socket.assigns.revoke_error =~ "Revocation could not be confirmed"
+
+      assert rendered_to_string(Show.render(token_error_socket.assigns)) =~
+               "Revocation could not be confirmed"
+
+      assert {:noreply, family_error_socket} =
+               Show.handle_event(
+                 "revoke_family",
+                 %{"family" => %{"confirm" => "true"}},
+                 socket
+               )
+
+      assert family_error_socket.assigns.family_error =~ "Revocation could not be confirmed"
+
+      assert rendered_to_string(Show.render(family_error_socket.assigns)) =~
+               "Revocation could not be confirmed"
+    end)
+  end
+
+  test "token detail rejects malformed and non-positive IDs instead of loading a numeric prefix",
+       %{
+         refresh_token: refresh_token
+       } do
+    malformed_ids = [Integer.to_string(refresh_token.id) <> "junk", "0", "-1"]
+
+    for id <- malformed_ids do
+      assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
+
+      assert {:noreply, socket} =
+               Show.handle_params(%{"id" => id}, "/lockspire/admin/tokens/#{id}", socket)
+
+      assert socket.assigns.token_id == nil
+      assert socket.assigns.detail_state == :missing
+      assert rendered_to_string(Show.render(socket.assigns)) =~ "Token not found"
+    end
+  end
+
+  test "token detail displays a stored session identifier only as its stable safe handle" do
+    raw_sid = "host-session-secret-token-ui"
+    token = store_support_token!(sid: raw_sid)
+
+    {_socket, html} = render_show_for(token)
+
+    assert html =~ Lockspire.Redaction.handle(:session, raw_sid)
+    refute html =~ raw_sid
   end
 
   test "family revoke transaction failure stays recoverable and leaves the family unchanged", %{
@@ -988,7 +1050,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest.FailingRepo do
     Lockspire.TestRepo.all(query, options)
   end
 
-  def one(query, options \\ []), do: Lockspire.TestRepo.one(query, options)
+  def one(query, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_live_test_repo_failure) == :initial_read and
+         query_source(query) == Lockspire.Storage.Ecto.TokenRecord do
+      raise "synthetic token initial read failure"
+    end
+
+    Lockspire.TestRepo.one(query, options)
+  end
 
   def transaction(fun, options \\ []) do
     if Application.get_env(:lockspire, :tokens_live_test_repo_failure) == :transaction do

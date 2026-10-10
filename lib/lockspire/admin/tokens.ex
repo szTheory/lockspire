@@ -101,7 +101,10 @@ defmodule Lockspire.Admin.Tokens do
     case Repository.fetch_lifecycle_token_by_id(token_id) do
       {:ok, nil} -> {:error, :not_found}
       {:ok, %Token{} = token} -> {:ok, token}
+      {:error, reason} -> {:error, reason}
     end
+  rescue
+    error -> {:error, error}
   end
 
   defp revoke_token_detail(%Token{} = token, token_id, revoked_at) do
@@ -161,6 +164,7 @@ defmodule Lockspire.Admin.Tokens do
       token_type: token.token_type,
       generation: token.generation,
       consent_grant_id: token.consent_grant_id,
+      sid: optional_handle(:session, token.sid),
       expires_at: token.expires_at,
       revoked_at: token.revoked_at,
       reuse_detected_at: token.reuse_detected_at,

@@ -125,6 +125,18 @@ defmodule Lockspire.Admin.TokensTest do
     end)
   end
 
+  test "token revocations propagate an initial token read failure", %{
+    refresh_token: refresh_token
+  } do
+    with_repo_failure(:initial_read, fn ->
+      assert {:error, %RuntimeError{message: "synthetic token initial read failure"}} =
+               Tokens.revoke_token(refresh_token.id)
+
+      assert {:error, %RuntimeError{message: "synthetic token initial read failure"}} =
+               Tokens.revoke_token_family(refresh_token.id)
+    end)
+  end
+
   test "family revoke transaction failures do not emit success or change token state", %{
     access_token: access_token
   } do
@@ -258,7 +270,14 @@ defmodule Lockspire.Admin.TokensTest.FailingRepo do
     Lockspire.TestRepo.all(query, options)
   end
 
-  def one(query, options \\ []), do: Lockspire.TestRepo.one(query, options)
+  def one(query, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_test_repo_failure) == :initial_read and
+         query_source(query) == Lockspire.Storage.Ecto.TokenRecord do
+      raise "synthetic token initial read failure"
+    end
+
+    Lockspire.TestRepo.one(query, options)
+  end
 
   def transaction(fun, options \\ []) do
     if Application.get_env(:lockspire, :tokens_test_repo_failure) == :transaction do

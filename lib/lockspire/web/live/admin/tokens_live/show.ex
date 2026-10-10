@@ -435,12 +435,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   defp normalize_status(_status), do: "all"
 
-  defp parse_id(value) when is_integer(value), do: value
+  defp parse_id(value) when is_integer(value) and value > 0, do: value
 
   defp parse_id(value) when is_binary(value) do
     case Integer.parse(value) do
-      {id, _rest} -> id
+      {id, ""} when id > 0 -> id
       :error -> nil
+      _other -> nil
     end
   end
 

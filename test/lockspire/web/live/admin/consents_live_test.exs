@@ -289,7 +289,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     end
   end
 
-  test "consent detail distinguishes missing and failed reads with recovery" do
+  test "consent detail distinguishes missing and failed reads with recovery", %{grant: grant} do
     original_repo = Application.fetch_env!(:lockspire, :repo)
 
     try do
@@ -342,6 +342,19 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert missing_html =~ "Consent grant not found"
     assert missing_html =~ "Return to consent investigation"
     refute missing_html =~ "Could not load consent grant"
+
+    malformed_ids = [Integer.to_string(grant.id) <> "junk", "0", "-1"]
+
+    for id <- malformed_ids do
+      assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
+
+      assert {:noreply, socket} =
+               Show.handle_params(%{"id" => id}, "/lockspire/admin/consents/#{id}", socket)
+
+      assert socket.assigns.consent_id == nil
+      assert socket.assigns.detail_state == :missing
+      assert rendered_to_string(Show.render(socket.assigns)) =~ "Consent grant not found"
+    end
   end
 
   test "failed consent revoke retains the loaded active grant and support context", %{
