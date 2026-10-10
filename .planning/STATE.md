@@ -5,16 +5,16 @@ milestone_name: Admin Operator UI Refinement
 current_phase: 146
 current_phase_name: Support, Orient, and Operate
 status: executing
-stopped_at: Completed 146-01-PLAN.md
-last_updated: "2026-10-10T01:40:14.490Z"
+stopped_at: Completed 146-02-PLAN.md
+last_updated: "2026-10-10T01:47:11.759Z"
 last_activity: 2026-10-09
 last_activity_desc: Phase 146 execution started
-state_head: 63b562e93b4a57d8a8eeb3c462280670d2121e4a
+state_head: b96707f28082cec257b8733d2da92aeb44494b32
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
   percent: 50
 ---
 
@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 ## Current Position
 
 Phase: 146 (Support, Orient, and Operate) — EXECUTING
-Plan: 2 of 4
-Status: Executing
+Plan: 3 of 4
+Status: Ready to execute
 Last activity: 2026-10-09 — Phase 146 execution started
 Progress: [█████░░░░░] 50%
 
@@ -212,6 +212,10 @@ Progress: [█████░░░░░] 50%
 - [Phase 145 automation]: The focused suite passed 105 tests and the Phase 144 regression gate passed 87. Existing required CI runs the recurring tests and adoption smoke; no new browser stack was justified for this bounded phase.
 - [Phase 146]: Propagate refresh-family read and transaction failures; never substitute one selected token for unavailable family evidence or report success before commit. — Family-wide operator claims must match the actual complete read and confirmed transaction, preserving the separate token-only action.
 - [Phase 146]: Keep token investigation filters in the local detail, retry, and return route query. — URL-backed account, client, and status filters restore the operator investigation through navigation and browser history without accepting arbitrary return destinations.
+- [Phase 146]: Keep normalized consent filters in the local inventory/detail/retry/return URL query; default unfiltered routes remain concise. — URL-backed account, client, and status filters restore the support investigation through navigation and browser history without accepting arbitrary return destinations.
+- [Phase 146]: Render complete consent grant, account, and client IDs as safe diagnostic evidence while continuing to redact credentials. — The approved Phase 146 UI-SPEC requires complete matchable safe IDs and distinguishes them from credential values.
+- [Phase 146]: A repeated revoke against an already-revoked grant returns its current state without issuing another mutation. — The LiveView must remain safe for duplicate or stale submissions while preserving the actual grant state.
+- [Phase 146]: Only a returned revoked grant can produce a consent-revocation success notice. — Operator feedback must follow the authoritative Admin result rather than a submitted action.
 
 ### Pending Todos
 
@@ -257,9 +261,9 @@ Progress: [█████░░░░░] 50%
 
 ## Session Continuity
 
-Last session: 2026-10-10T01:40:14.444Z
-Stopped at: Completed 146-01-PLAN.md
-Resume file: .planning/phases/146-support-orient-and-operate/146-02-PLAN.md
+Last session: 2026-10-10T01:47:11.698Z
+Stopped at: Completed 146-02-PLAN.md
+Resume file: .planning/phases/146-support-orient-and-operate/146-03-PLAN.md
 
 ## Performance Metrics
 
@@ -345,6 +349,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 145 P04 | 22min | 3 tasks | 6 files |
 | Phase 145 P05 | 17min | 3 tasks | 7 files |
 | Phase 146 P01 | 6min | 2 tasks | 5 files |
+| Phase 146 P02 | 6min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
