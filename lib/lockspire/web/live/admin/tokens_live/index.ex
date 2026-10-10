@@ -45,7 +45,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
       <AdminComponents.page_hero
         eyebrow="Support"
         title="Token investigation"
-        body="Investigate account, client, status, refresh-family, expiration, and revocation state without exposing token material."
+        body="Review access and refresh tokens by account, client, status, refresh-family lineage, expiration, and revocation. Token values stay hidden."
       >
         <:summary>
           <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
@@ -56,7 +56,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
 
       <AdminComponents.section_card
         title="Filter token investigation"
-        subtitle="URL filters preserve the support case context while rows stay limited to durable non-secret metadata."
+        subtitle="Filters stay in the URL so you can return to the same results. Rows show token state and redacted identifiers."
       >
         <AdminComponents.filter_bar action={tokens_index_path()} phx_submit="filter_inventory">
           <:fields>

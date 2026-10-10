@@ -117,6 +117,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Token investigation"
+    assert html =~ "Review access and refresh tokens by account, client, status, refresh-family lineage"
+    assert html =~ "Filters stay in the URL so you can return to the same results."
     assert html =~ "Selected account: account_"
     assert html =~ "Selected status: active"
     assert html =~ "Filter tokens"
@@ -334,7 +336,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Token health decision"
-    assert html =~ "Opaque tokens stay opaque here"
+    assert html =~ "Access and refresh token values and stored hashes stay hidden"
+    refute visible_text(html) =~ "Operator detail"
     assert html =~ "lockspire-admin-decision-summary"
     assert html =~ "Token identity and current state"
     assert html =~ "Refresh family lineage"

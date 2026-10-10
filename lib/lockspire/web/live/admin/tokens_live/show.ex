@@ -166,7 +166,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
       <AdminComponents.entity_header
         title={@token_detail.token.handle}
-        subtitle="Opaque tokens stay opaque here. Operator detail uses durable metadata, not JWT decoding shortcuts or bearer-value inspection."
+        subtitle="Access and refresh token values and stored hashes stay hidden; this page shows their stored metadata."
         identifier={@token_detail.token.handle}
       >
         <:status>
