@@ -75,7 +75,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
 
         const syncShellThemeState = () => {
           document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
-            select.value = currentPageTheme;
+            if (select.value !== currentPageTheme) select.value = currentPageTheme;
           });
 
           const status = document.querySelector("[data-lockspire-theme-status]");
