@@ -25,15 +25,15 @@ Refine existing supported capabilities. Requirement IDs below are new UI-specifi
 
 ### Support investigation
 
-- [ ] **UIS-01**: Operator can filter token and consent inventories, inspect a matching record, and follow supported client/authorization pivots without losing the context needed to continue the investigation.
-- [ ] **UIS-02**: Operator can read relevant token, consent, and refresh-family lifecycle evidence, complete authorized diagnostic identifiers, and timestamps without confusing redacted credentials with safe identifiers.
-- [ ] **UIS-03**: Operator can distinguish and confirm the supported token, consent-grant, and refresh-family revocation actions, recover from failure, and see an accurate resulting state without widening the action's scope.
+- [x] **UIS-01**: Operator can filter token and consent inventories, inspect a matching record, and follow supported client/authorization pivots without losing the context needed to continue the investigation.
+- [x] **UIS-02**: Operator can read relevant token, consent, and refresh-family lifecycle evidence, complete authorized diagnostic identifiers, and timestamps without confusing redacted credentials with safe identifiers.
+- [x] **UIS-03**: Operator can distinguish and confirm the supported token, consent-grant, and refresh-family revocation actions, recover from failure, and see an accurate resulting state without widening the action's scope.
 
 ### Truthful overview and operations
 
-- [ ] **UIO-01**: Operator can distinguish a successful empty token/consent/device inventory from a failed or unavailable observation; failed loads retain useful context and an appropriate existing recovery path rather than silently becoming empty lists.
-- [ ] **UIO-02**: Operator can inspect interaction, device, and logout queues and client logout propagation with legible lifecycle/evidence states and useful existing pivots while these surfaces remain read-only.
-- [ ] **UIO-03**: Operator can use the overview to identify the next useful investigation or configuration task, with unavailable observations visibly distinct from measured zero or healthy state.
+- [x] **UIO-01**: Operator can distinguish a successful empty token/consent/device inventory from a failed or unavailable observation; failed loads retain useful context and an appropriate existing recovery path rather than silently becoming empty lists.
+- [x] **UIO-02**: Operator can inspect interaction, device, and logout queues and client logout propagation with legible lifecycle/evidence states and useful existing pivots while these surfaces remain read-only.
+- [x] **UIO-03**: Operator can use the overview to identify the next useful investigation or configuration task, with unavailable observations visibly distinct from measured zero or healthy state.
 
 ### Consistent behavior across the surface
 
@@ -95,12 +95,12 @@ Approved roadmap mapping. Each of the 24 requirements belongs to exactly one pha
 | UIC-04 | Phase 145 | Complete |
 | UIC-05 | Phase 145 | Complete |
 | UIC-06 | Phase 145 | Complete |
-| UIS-01 | Phase 146 | Pending |
-| UIS-02 | Phase 146 | Pending |
-| UIS-03 | Phase 146 | Pending |
-| UIO-01 | Phase 146 | Pending |
-| UIO-02 | Phase 146 | Pending |
-| UIO-03 | Phase 146 | Pending |
+| UIS-01 | Phase 146 | Complete |
+| UIS-02 | Phase 146 | Complete |
+| UIS-03 | Phase 146 | Complete |
+| UIO-01 | Phase 146 | Complete |
+| UIO-02 | Phase 146 | Complete |
+| UIO-03 | Phase 146 | Complete |
 | UIQ-01 | Phase 147 | Pending |
 | UIQ-02 | Phase 147 | Pending |
 | UIQ-03 | Phase 147 | Pending |
