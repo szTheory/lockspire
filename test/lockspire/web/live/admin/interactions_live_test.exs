@@ -157,8 +157,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert html =~ "No authorization interactions waiting for review"
-    assert html =~ "There are no authorization interaction records waiting for operator review."
+    assert html =~ "No authorization interactions recorded"
+    assert html =~ "No authorization interactions are currently recorded."
+    assert html =~ "Return to overview"
+    assert html =~ ~s(href="/lockspire/admin/overview")
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
@@ -178,7 +180,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "Authorization interaction queue"
     assert page_html =~ "Loading authorization interactions…"
     refute page_html =~ "Pending login"
-    refute page_html =~ "No authorization interactions waiting for review"
+    refute page_html =~ "No authorization interactions recorded"
     refute page_html =~ "authorization interactions recorded"
   end
 
@@ -222,7 +224,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert socket.assigns.interaction_read_state == :loaded
     assert page_html =~ "0 authorization interactions recorded"
     assert summary_stat?(page_html, "Pending login", 0)
-    assert page_html =~ "No authorization interactions waiting for review"
+    assert page_html =~ "No authorization interactions recorded"
+    assert page_html =~ "No authorization interactions are currently recorded."
     refute page_html =~ "Could not load authorization interactions"
   end
 

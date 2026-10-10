@@ -126,6 +126,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
               >
                 <:meta>
                   <span>
+                    Token
+                    <AdminComponents.long_value
+                      value={Lockspire.Redaction.handle(:token, entry.token.id)}
+                      kind={:id}
+                    />
+                  </span>
+                  <span>
                     Client
                     <AdminComponents.long_value
                       value={redacted_handle(:client, entry.token.client_id)}

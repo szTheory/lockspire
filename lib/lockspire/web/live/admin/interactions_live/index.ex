@@ -87,9 +87,15 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
             </AdminComponents.empty_state>
           <% @interaction_read_state == :loaded and @interactions == [] -> %>
           <AdminComponents.empty_state
-            title="No authorization interactions waiting for review"
-            body="There are no authorization interaction records waiting for operator review."
-          />
+            title="No authorization interactions recorded"
+            body="No authorization interactions are currently recorded. Return to the overview to choose another investigation."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+                Return to overview
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
           <% true -> %>
           <AdminComponents.resource_list>
             <%= for interaction <- @interactions do %>

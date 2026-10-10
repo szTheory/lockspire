@@ -76,9 +76,15 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
             </AdminComponents.empty_state>
           <% @delivery_read_state == :loaded and @deliveries == [] -> %>
           <AdminComponents.empty_state
-            title="No logout deliveries waiting for review"
-            body="There are no logout propagation records waiting for operator review."
-          />
+            title="No logout deliveries recorded"
+            body="No logout deliveries are currently recorded. Return to the overview to choose another investigation."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+                Return to overview
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
           <% true -> %>
           <AdminComponents.resource_list>
             <%= for delivery <- @deliveries do %>

@@ -297,8 +297,10 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert html =~ "No logout deliveries waiting for review"
-    assert html =~ "There are no logout propagation records waiting for operator review."
+    assert html =~ "No logout deliveries recorded"
+    assert html =~ "No logout deliveries are currently recorded."
+    assert html =~ "Return to overview"
+    assert html =~ ~s(href="/lockspire/admin/overview")
     assert html =~ "0 logout deliveries recorded"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
@@ -320,7 +322,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Logout propagation queue"
     assert page_html =~ "Loading logout deliveries…"
     refute page_html =~ "Waiting"
-    refute page_html =~ "No logout deliveries waiting for review"
+    refute page_html =~ "No logout deliveries recorded"
     refute page_html =~ "logout deliveries recorded"
   end
 
@@ -362,7 +364,8 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert socket.assigns.delivery_read_state == :loaded
     assert page_html =~ "0 logout deliveries recorded"
     assert summary_stat?(page_html, "Waiting", 0)
-    assert page_html =~ "No logout deliveries waiting for review"
+    assert page_html =~ "No logout deliveries recorded"
+    assert page_html =~ "No logout deliveries are currently recorded."
     refute page_html =~ "Could not load logout deliveries"
   end
 
