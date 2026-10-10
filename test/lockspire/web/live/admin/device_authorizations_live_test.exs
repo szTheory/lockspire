@@ -148,42 +148,84 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "5 seconds"
     assert page_html =~ "10 seconds"
     assert page_html =~ "Not recorded"
+    assert rendered_text(page_html) =~ "5 device authorizations recorded"
 
-    assert page_html =~ Redaction.handle(:client, pending.client_id)
-    assert page_html =~ Redaction.handle(:client, approved.client_id)
-    assert page_html =~ Redaction.handle(:client, denied.client_id)
-    assert page_html =~ Redaction.handle(:account, approved.subject_id)
-    assert page_html =~ Redaction.handle(:account, denied.subject_id)
+    assert rendered_text(page_html) =~ pending.client_id
+    assert rendered_text(page_html) =~ approved.client_id
+    assert rendered_text(page_html) =~ denied.client_id
+    assert rendered_text(page_html) =~ approved.subject_id
+    assert rendered_text(page_html) =~ denied.subject_id
+    assert rendered_text(page_html) =~ Integer.to_string(pending.id)
     assert page_html =~ Redaction.handle(:device_authorization, pending.verification_handle)
     assert page_html =~ Redaction.handle(:device_authorization, consumed.verification_handle)
 
-    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
-    refute page_html =~ "account-with-a-very-long-safe-fixture-value"
+    refute rendered_text(page_html) =~ pending.verification_handle
     refute page_html =~ "<table"
     refute page_html =~ "lockspire-admin-table-wrap"
     refute page_html =~ "phx-click"
     refute page_html =~ "phx-submit"
+    HtmlAssertions.assert_has_link(page_html, "/admin/clients/#{pending.client_id}")
 
     refute_unsupported_queue_controls(page_html)
   end
 
   test "device authorization empty state names operator review without controls" do
-    html =
-      %{
-        current_section: :device_authorizations,
-        page_title: "Device Authorizations",
-        device_authorizations: [],
-        __changed__: %{}
-      }
-      |> Index.render()
-      |> rendered_to_string()
-      |> page_markup()
+    html = render_queue(:loaded, [])
 
     assert html =~ "No device authorizations waiting for review"
     assert html =~ "There are no device authorization records waiting for operator review."
+    assert rendered_text(html) =~ "0 device authorizations recorded"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
+  end
+
+  test "device queue loading and failed reads remain distinct from successful empty" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    loading_html = socket.assigns |> Index.render() |> rendered_to_string() |> page_markup()
+    loading_text = rendered_text(loading_html)
+
+    assert loading_text =~ "Loading device authorizations"
+    refute loading_text =~ "No device authorizations waiting for review"
+    refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)
+
+    with_failed_read(fn ->
+      assert {:noreply, failed_socket} =
+               Index.handle_params(%{}, "/admin/device_authorizations", socket)
+
+      failed_html =
+        failed_socket.assigns
+        |> Index.render()
+        |> rendered_to_string()
+        |> page_markup()
+
+      failed_text = rendered_text(failed_html)
+      assert failed_text =~ "Could not load device authorizations"
+      assert failed_text =~ "No count or empty result is available"
+      assert failed_text =~ "Try loading device authorizations again"
+      refute failed_text =~ "No device authorizations waiting for review"
+      refute failed_text =~ "0 device authorizations recorded"
+      HtmlAssertions.assert_has_link(failed_html, "/admin/device_authorizations")
+
+      HtmlAssertions.assert_no_interactive_controls(failed_html,
+        text: unsupported_queue_control_text()
+      )
+    end)
+  end
+
+  test "device queue count copy is accurate for zero, one, and many records", %{
+    authorizations: authorizations
+  } do
+    [pending | _rest] = authorizations
+
+    for {records, expected} <- [
+          {[], "0 device authorizations recorded"},
+          {[pending], "1 device authorization recorded"},
+          {authorizations, "5 device authorizations recorded"}
+        ] do
+      html = render_queue(:loaded, records)
+      assert rendered_text(html) =~ expected
+    end
   end
 
   test "device authorization review keeps queue evidence redaction-safe and read-only", %{
@@ -249,13 +291,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "Consumed by the token flow; use the record as read-only support truth."
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
-    assert page_html =~ Redaction.handle(:client, pending.client_id)
-    assert page_html =~ Redaction.handle(:client, approved.client_id)
-    assert page_html =~ Redaction.handle(:client, denied.client_id)
+    assert rendered_text(page_html) =~ pending.client_id
+    assert rendered_text(page_html) =~ approved.client_id
+    assert rendered_text(page_html) =~ denied.client_id
     assert page_html =~ Redaction.handle(:device_authorization, expired.verification_handle)
     assert page_html =~ Redaction.handle(:device_authorization, consumed.verification_handle)
-    refute page_html =~ "client-with-a-very-long-safe-fixture-value"
-    refute page_html =~ "account-with-a-very-long-safe-fixture-value"
+    assert rendered_text(page_html) =~ approved.subject_id
+    assert rendered_text(page_html) =~ denied.subject_id
+    refute rendered_text(page_html) =~ pending.verification_handle
     refute_protocol_field_context(page_html, "state")
     refute_protocol_field_context(page_html, "nonce")
     refute_unsupported_queue_controls(page_html)
@@ -416,5 +459,48 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     html
   end
 
+  defp render_queue(state, authorizations) do
+    %{
+      current_section: :device_authorizations,
+      page_title: "Device Authorizations",
+      device_read_state: state,
+      device_authorizations: authorizations,
+      __changed__: %{}
+    }
+    |> Index.render()
+    |> rendered_to_string()
+    |> page_markup()
+  end
+
+  defp with_failed_read(fun) do
+    previous_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(
+        :lockspire,
+        :repo,
+        Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest.ReadRepo
+      )
+
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+    end
+  end
+
+  defp rendered_text(html) do
+    html
+    |> String.replace(~r/<style\b[^>]*>.*?<\/style>/s, " ")
+    |> String.replace(~r/<script\b[^>]*>.*?<\/script>/s, " ")
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace(~r/\s+/, " ")
+  end
+
   defp page_markup(html), do: Regex.replace(~r/<style>.*?<\/style>/s, html, "")
+end
+
+defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest.ReadRepo do
+  @moduledoc false
+
+  def all(_query, _options \\ []), do: raise("synthetic device authorization read failure")
 end
