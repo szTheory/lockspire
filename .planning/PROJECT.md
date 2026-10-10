@@ -14,6 +14,8 @@ Treat executable verification as the default. For each feature or maintenance ch
 
 Once a repeatable check is automated and required CI proves it, do not add a manual UAT/signoff step for the same property or reopen that choice without new evidence that automation cannot establish it. Keep human approval for genuinely consequential external actions, such as a specifically identified ref update, separate from verification.
 
+Before presenting a UAT checkpoint, map each criterion to current focused tests, end-to-end/smoke/seam checks, and required CI evidence. Add only missing deterministic checks with recurring regression value. If rendered or subjective acceptance belongs to a later phase, record that owner and reason instead of handing the same check to the user.
+
 ## Current Milestone: v1.40 Admin Operator UI Refinement
 
 **Goal:** Refine Lockspire's existing operator UI into a calm, coherent interface for configuration, investigation, and operations, with a working preview and bounded automated/browser verification.
@@ -378,7 +380,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md) |
 | Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141 and verified in Phase 143; public Lockspire 1.5.1 is confirmed while the separate PR #119 provenance gap remains explicit |
 | Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
-| Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |
+| Shift verification left and make automation the default phase-closure path | Map UAT claims to existing executable checks before creating human checkpoints; add missing repeatable tests and required CI only when they catch recurring regressions. Reserve human attention for genuinely subjective judgment or external boundaries automation cannot reach. | Adopted 2026-09-24; reaffirmed in Phase 145 (10 semantic checks closed from automated evidence; visual acceptance assigned to Phase 147); apply by default in future GSD discussion, planning, execution, and verification |
 | Keep the v1.38 baseline immutable and proposal-only, with lifecycle movement authorized by exact receipts and semantic classifiers | Reconciliation needs a stable evidence boundary without mistaking publication for cleanup authority or treating ordinary GSD bookkeeping as evidence drift | Adopted and verified in Phase 138; Phase 139 consumes ledger `b8b9ad75` |
 | Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
 | Start v1.36 as a structural quality ratchet | Audit evidence found high-leverage release-integrity, storage-boundary, static-analysis, compatibility, and readability gaps that can be fixed without adding product surface | Adopted and delivered across Phases 126-130; archived 2026-08-26 |
@@ -440,4 +442,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-09 at v1.40 Admin Operator UI Refinement kickoff*
+*Last updated: 2026-10-09 at Phase 145 verification and automation-first closure*

@@ -450,6 +450,13 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert initial_html =~
                "This single-use token authorizes an initial client registration request. Issuer registration policy still applies."
 
+      assert initial_html =~
+               "It is not an OAuth access token and does not carry OAuth scopes."
+
+      refute initial_html =~ "Registration Access Token"
+      refute initial_html =~ "metadata allowlist"
+      refute initial_html =~ ~s(name="metadata_allowlist")
+
       refute initial_html =~ "Multi-use"
       refute initial_html =~ ~s(name="single_use")
       assert initial_html =~ ~s(phx-submit="mint")

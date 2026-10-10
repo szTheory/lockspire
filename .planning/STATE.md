@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.40
 milestone_name: Admin Operator UI Refinement
-current_phase: 145
-current_phase_name: Configure and Onboard
-status: verifying
-stopped_at: Phase 145 verification returned human_needed; 11 UAT items pending
-last_updated: "2026-10-09T23:27:23Z"
+current_phase: 146
+current_phase_name: Support, Orient, and Operate
+status: planning
+stopped_at: Phase 145 complete; Phase 146 ready for discussion
+last_updated: "2026-10-10T00:42:13Z"
 last_activity: 2026-10-09
-last_activity_desc: Phase 145 implementation and automated gates passed; human UAT pending
-state_head: 192a7d645059bb08ef6e20bdfd7055e1a708b24f
+last_activity_desc: Phase 145 complete, transitioned to Phase 146
+state_head: 54dd35f857bd6a7ab671541b183fc864e523fd5d
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
   completed_plans: 9
-  percent: 25
+  percent: 50
 ---
 
 # Project State
@@ -26,15 +26,15 @@ See: .planning/PROJECT.md (updated 2026-10-09)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 145 — Configure and Onboard
+**Current focus:** Phase 146 — Support, Orient, and Operate
 
 ## Current Position
 
-Phase: 145 (Configure and Onboard) — VERIFYING (human UAT pending)
-Plan: 5 of 5
-Status: Verifier scored 5/5; 0 of 11 human UAT items resolved
-Last activity: 2026-10-09 — 120 targeted tests and 87 prior-phase regression tests passed
-Progress: [███░░░░░░░] 25%
+Phase: 146 — Support, Orient, and Operate
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-09 — Phase 145 complete, transitioned to Phase 146
+Progress: [█████░░░░░] 50%
 
 ## Accumulated Context
 
@@ -157,7 +157,7 @@ Progress: [███░░░░░░░] 25%
 - [Phase 138]: Compose Phase 139 fixture labels from semantic phase attributes so repository proof remains phase-neutral without weakening assertions. — The user-authorized repair restores the existing active proof-label hygiene contract while preserving generated fixture semantics.
 - [Phase 139]: Keep repository-owned proof separate from live external acceptance. The exact synchronized-main receipt passed at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI-06 and CI-07 remain assigned to Phase 140 until its verification closes them.
 - [Operating default]: Shift verification left into the earliest reliable automated layer; add repeatable integration, end-to-end, smoke, and seam checks to required CI when they provide recurring regression value. Treat passing automated evidence as satisfying UAT and hand off only subjective judgment or a truly unreachable external boundary, with its machine-owned lifecycle gate named.
-- [Operating default, reaffirmed 2026-10-05]: This is the standing GSD default. Once a repeatable check is automated and required CI proves it, do not add manual UAT/signoff for the same property or reopen the choice without new evidence that automation cannot establish it. Separate authorization for consequential external actions from verification.
+- [Operating default, reaffirmed 2026-10-09]: Before presenting UAT, map each criterion to current tests and required-CI evidence; add only missing deterministic checks with recurring value. Passing automation satisfies UAT. Defer subjective work only to a named phase with its reason recorded, and keep consequential action authorization separate from verification. Phase 145 applied this to its pending UAT set.
 - [Phase 138/139 verification]: Phase 138's 100 executable UAT checks pass and #100 remains explicitly deferred until the authorized live snapshot refresh; Phase 139's three focused lifecycle relation tests pass serially. Both phase reports record zero human verification required.
 - [Phase 140]: Keep fresh inventory and candidate outcomes proposal-only where origin refresh or maintained-source classification is incomplete. — The collector reported origin refresh unavailable and the active-record family ambiguous; treating those gaps as complete could authorize destructive or misleading maintenance.
 - [Phase 140]: Phase 140 Plan 02: assess only source-identifiable archived findings; do not fabricate missing identities or equate grouped counts with records.
@@ -208,6 +208,8 @@ Progress: [███░░░░░░░] 25%
 - [Phase 145]: Preserve separate publish, activate, and retire confirmations and report only the returned local lifecycle state.
 - [Phase 145]: Keep private JWK members out of Admin list/detail views and mounted evidence.
 - [Phase 145]: Keep mounted browser inspection read-only for key lifecycle operations; cover mutations in automated tests.
+- [Phase 145 verification]: All 10 semantic acceptance checks were satisfied by executable tests; the one cross-surface visual judgment is explicitly owned by Phase 147. Do not re-present already automated checks as human UAT unless new evidence shows automation cannot establish the property.
+- [Phase 145 automation]: The focused suite passed 105 tests and the Phase 144 regression gate passed 87. Existing required CI runs the recurring tests and adoption smoke; no new browser stack was justified for this bounded phase.
 
 ### Pending Todos
 
@@ -253,8 +255,8 @@ Progress: [███░░░░░░░] 25%
 
 ## Session Continuity
 
-Last session: 2026-10-09T22:44:47.960Z
-Stopped at: Completed 145-05-PLAN.md
+Last session: 2026-10-10T00:42:13Z
+Stopped at: Phase 145 complete, Phase 146 ready for discussion
 Resume file: None
 
 ## Performance Metrics
@@ -343,7 +345,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Phase 144 is the last completed phase: 4/4 plans, independent verification passed (5/5), and UIB-01/02/03 satisfied. Phase 145's five plans and all automated gates are complete; its verifier scored 5/5 success criteria but requires 11 human UAT items, now recorded in `145-UAT.md`.
-- Next command: `$gsd-verify-work 145`. It will walk through the pending UAT; the phase stays pending until that verification is resolved. Do not run credential or key mutation actions in the browser.
-- After Phase 145 passes UAT, run `$gsd-discuss-phase 146` for Support, Orient, and read-only Operate.
-- The Phase 145 synthetic preview is open at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data. Reuse `144-PREVIEW.md` and retained evidence instead of repeating baseline work.
+- Phase 144 is complete (4/4 plans; verifier 5/5). Phase 145 is complete (5/5 plans; verifier 5/5): 10 semantic UAT checks passed from automated evidence, and one cross-surface visual check is deferred to Phase 147. No human UAT is pending for Phase 145.
+- Next command: `$gsd-discuss-phase 146` — gather context for Support, Orient, and read-only Operate. Keep the known CR-01 key-at-rest finding separate; it remains a release-readiness concern and was not resolved by this UI phase.
+- Phase 145 regression evidence: 105 focused Phase 145 tests and 87 Phase 144 regression tests passed on their dedicated databases. CI already runs the recurring test and adoption-smoke seams; retain the bounded Phase 147 visual owner rather than repeating manual checks in this phase.
+- The Phase 145 synthetic preview is documented at `http://127.0.0.1:4123/lockspire/admin/keys`. Stable Phase 144 preview `http://127.0.0.1:4121/lockspire/admin` remains intact; preserve its data and reuse retained evidence instead of repeating baseline work.

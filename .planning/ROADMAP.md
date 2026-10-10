@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; Phase 144 complete with four executed plans, passed independent verification, and a stable synthetic preview. Phase 145 is next.
+- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; Phases 144–145 are complete, and Phase 146 is next.
 - ✅ **[v1.39 Verified 1.5.1 Release](milestones/v1.39-ROADMAP.md)** — Phases 142–143; Lockspire 1.5.1 shipped 2026-10-08. Phase 143's exact-head PR #119 merge-authorization gap was acknowledged at closeout; see the archived audit.
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
@@ -16,7 +16,7 @@ Refine the existing embedded LiveView operator UI through four complete delivery
 ## Phases
 
 - [x] **Phase 144: Working Preview and Representative Journeys** - Open the actual mounted UI and deliver shared refinements on complete client-configuration and token/consent-investigation workflows. Completed 2026-10-09.
-- [ ] **Phase 145: Configure and Onboard** - Carry the proven patterns through supported client, policy, credential, DCR, and key workflows.
+- [x] **Phase 145: Configure and Onboard** - Carry the proven patterns through supported client, policy, credential, DCR, and key workflows. Completed 2026-10-09.
 - [ ] **Phase 146: Support, Orient, and Operate** - Make investigation, revocation, overview, and read-only operations clear and truthful, including failed or unknown observations.
 - [ ] **Phase 147: Surface Coherence and Working Preview** - Confirm responsive, accessible, themed, and motion behavior across the surface with bounded evidence and a stable optional-feedback preview.
 
@@ -85,7 +85,7 @@ Planning note: Read [PRODUCT.md](../PRODUCT.md) and [UI-MILESTONE-PREFLIGHT.md](
   4. Operator can complete DCR onboarding and initial-access-token tasks with distinct token purposes, lifecycle, scope, and expiry made clear.
   5. Operator can inspect signing-key state and complete already-supported key actions with accurate consequence and outcome feedback.
 
-**Plans**: 5/5 plans executed
+**Plans**: 5/5 plans complete
 Plans:
 **Wave 1**
 - [x] 145-01-PLAN.md — Client create, destinations, and recoverable form tracer
@@ -139,7 +139,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
-| 145. Configure and Onboard | v1.40 | 5/5 | In Progress | - |
+| 145. Configure and Onboard | v1.40 | 5/5 | Complete    | 2026-10-09 |
 | 146. Support, Orient, and Operate | v1.40 | 0/TBD | Not started | - |
 | 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |
 

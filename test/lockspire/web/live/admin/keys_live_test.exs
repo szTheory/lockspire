@@ -235,6 +235,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Make this public key available for verifier overlap."
     assert html =~ "The current signing key remains active."
     refute html =~ "becomes available to verifiers"
+    refute_unsupported_verifier_promise(html)
     assert html =~ "name=\"publish[confirm]\""
     assert html =~ "phx-submit=\"publish_key\""
     assert html =~ "phx-disable-with=\"Publishing key…\""
@@ -264,6 +265,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     html = rendered_to_string(Show.render(socket.assigns))
     assert html =~ "Use this key to sign new tokens. The previous active key moves to retiring."
     refute html =~ "only when verifiers can accept the cutover signer"
+    refute_unsupported_verifier_promise(html)
     assert html =~ "name=\"activate[confirm]\""
     assert html =~ "phx-submit=\"activate_key\""
     assert html =~ "phx-disable-with=\"Activating key…\""
@@ -312,6 +314,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     assert html =~ "Remove this key from the published JWKS set."
     refute html =~ "only after verifiers have moved off publication overlap"
+    refute_unsupported_verifier_promise(html)
 
     assert html =~ "name=\"retire[confirm]\""
     assert html =~ "phx-submit=\"retire_key\""
@@ -500,5 +503,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
       "force publish",
       "fetch remote key"
     ]
+  end
+
+  defp refute_unsupported_verifier_promise(html) do
+    refute html =~ ~r/\b(?:within|after|for)\s+\d+\s+(?:seconds?|minutes?|hours?|days?)\b/i
+    refute html =~ ~r/\b(?:all|every|remote)\s+verifiers?\b/i
+
+    refute html =~
+             ~r/\b(?:propagation|propagated)\s+(?:is|has|will be)\s+(?:complete|finished|done)\b/i
   end
 end

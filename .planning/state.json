@@ -11,7 +11,7 @@
     {
       "number": "145",
       "name": "Configure and Onboard",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "146",
@@ -26,8 +26,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 145 of 4 · 25% · ready to verify"
+    "label": "Advance to the next step (plan phase 146)",
+    "reason": "Phase 146 of 4 — needs a plan"
   },
-  "updated_at": "2026-10-09T22:44:39.319Z"
+  "updated_at": "2026-10-10T00:40:28.557Z"
 }
