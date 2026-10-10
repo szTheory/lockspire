@@ -13,7 +13,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
       Path.join([
         File.cwd!(),
         ".planning",
-        "phases",
+        "milestones",
+        "v1.40-phases",
         "144-working-preview-and-representative-journeys",
         "144-ROUTE-INVENTORY.md"
       ])
