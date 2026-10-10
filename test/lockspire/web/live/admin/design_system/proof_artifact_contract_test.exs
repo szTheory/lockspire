@@ -56,7 +56,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
   end
 
   test "browser evidence accepts the maintained capability shape" do
-    assert [admin, lab] = BrowserEvidence.parse!(valid_evidence())
+    assert [admin, lab, boundary_799, boundary_800, boundary_801] =
+             BrowserEvidence.parse!(valid_evidence())
 
     assert admin["Route / Surface"] == "/admin"
     assert admin["Journey"] == "Orient"
@@ -66,6 +67,9 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
 
     assert lab["Route / Surface"] == "AdminLab.StressSurface"
     assert lab["Journey"] == "Internal lab"
+    assert Enum.map([boundary_799, boundary_800, boundary_801], & &1["Viewport"]) ==
+             ["799px", "800px", "801px"]
+
     assert BrowserEvidence.allowed_results() == ["pass", "fail", "gap", "blocked"]
   end
 
@@ -105,6 +109,9 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
     |---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|
     | `/admin` | Orient | 390px | light | default | overview nav | healthy summary | 390 | 390 | pass | synthetic local observation | passed denylist | none | contract test pass |
     | `AdminLab.StressSurface` | Internal lab | 1440px | system | reduced-motion | fixture tab order | long synthetic values | 1440 | 1440 | pass | internal render only | passed denylist | none | stress contract pass |
+    | `/admin/clients` | Configure | 799px | light | default | shell nav | synthetic client list | 799 | 799 | pass | boundary viewport fixture | passed denylist | none | parser boundary contract pass |
+    | `/admin/clients` | Configure | 800px | light | default | shell nav | synthetic client list | 800 | 800 | pass | boundary viewport fixture | passed denylist | none | parser boundary contract pass |
+    | `/admin/clients` | Configure | 801px | light | default | shell nav | synthetic client list | 801 | 801 | pass | boundary viewport fixture | passed denylist | none | parser boundary contract pass |
     """
   end
 end

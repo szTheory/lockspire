@@ -22,7 +22,7 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   @allowed_journeys ["Orient", "Configure", "Support", "Operate", "Internal lab"]
   @allowed_themes ["light", "dark", "system"]
   @allowed_motion ["default", "reduced-motion"]
-  @allowed_viewports ["320px", "390px", "768px", "1024px", "1440px"]
+  @allowed_viewports ["320px", "390px", "768px", "799px", "800px", "801px", "1024px", "1440px"]
 
   def required_columns, do: @required_columns
 
