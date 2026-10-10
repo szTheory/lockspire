@@ -135,6 +135,19 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
   5. User can open a stable, documented synthetic-data preview and compare representative before/after views under matching conditions; the handoff records one batched finding list, fixes, one confirmation pass, current operator guidance, and explicit remaining limits.
 
 **Plans**: TBD
+**Wave 1**
+- [ ] 147-01-PLAN.md
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 147-02-PLAN.md
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 147-03-PLAN.md
+- [ ] 147-04-PLAN.md
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 147-05-PLAN.md
+
 **UI hint**: yes
 
 Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve expected screenshot baselines during ordinary verification, use a separate disposable instance for mutating tests, retain redaction-safe evidence, and avoid paid judges or open-ended aesthetic loops. Final route coverage includes all 28 admin routes plus the logout-propagation query workflow; deepen cases by risk instead of multiplying every combination.
@@ -146,7 +159,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
 | 145. Configure and Onboard | v1.40 | 5/5 | Complete    | 2026-10-09 |
 | 146. Support, Orient, and Operate | v1.40 | 4/4 | Complete    | 2026-10-10 |
-| 147. Surface Coherence and Working Preview | v1.40 | 0/TBD | Not started | - |
+| 147. Surface Coherence and Working Preview | v1.40 | 0/5 | Planned     | - |
 
 ## Backlog
 
