@@ -14,11 +14,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
     {:ok,
      socket
      |> assign(
-       page_title: "PAR policy",
+       page_title: "Pushed Authorization Requests (PAR) policy",
        current_section: :policies,
        policy: nil,
        summary: %{inherit: 0, required: 0, optional: 0},
-       form_errors: []
+       form_errors: [],
+       save_notice: nil
      )
      |> load_policy()
      |> load_summary()}
@@ -44,16 +45,22 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       {:ok, %ServerPolicy{} = policy} ->
         {:noreply,
          socket
-         |> assign(policy: policy, form_errors: [])
+         |> assign(
+           policy: policy,
+           form_errors: [],
+           save_notice:
+             "Global PAR policy saved. The change applies to future authorization requests from clients that inherit issuer policy."
+         )
          |> put_flash(:info, "Global PAR policy updated")}
 
       {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, form_errors: errors)}
+        {:noreply, assign(socket, form_errors: policy_errors(errors), save_notice: nil)}
 
       {:error, _reason} ->
         {:noreply,
          assign(socket,
-           form_errors: [%{field: :par_policy, reason: :request_failed, detail: nil}]
+           form_errors: [save_uncertain_error()],
+           save_notice: nil
          )}
     end
   end
@@ -61,7 +68,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
   def handle_event("save_policy", _params, socket) do
     {:noreply,
      assign(socket,
-       form_errors: [%{field: :par_policy, reason: :request_failed, detail: nil}]
+       form_errors: [save_uncertain_error()],
+       save_notice: nil
      )}
   end
 
@@ -70,10 +78,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load global PAR policy">
-        <p>The current issuer PAR policy is unavailable. Settings and save controls are hidden until Lockspire can confirm the stored policy.</p>
+        <p>The current issuer Pushed Authorization Requests policy is unavailable. Settings and save controls are hidden until Lockspire can confirm the stored policy.</p>
         <AdminComponents.action_bar>
           <AdminComponents.admin_button type="button" variant={:secondary} phx-click="reload_policy">
-            Reload policy
+            Reload PAR policy
           </AdminComponents.admin_button>
         </AdminComponents.action_bar>
       </AdminComponents.alert>
@@ -81,8 +89,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       <div :if={@policy}>
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Global PAR policy"
-        body="Review the issuer PAR default, inherited-client impact, and the next safe policy save before changing enforcement."
+        title="Pushed Authorization Requests (PAR)"
+        body="PAR lets a client send authorization parameters to /par first, then use the returned request_uri at /authorize. Review the issuer default and which clients inherit it before changing enforcement."
       >
         <:summary>
           <AdminComponents.decision_summary>
@@ -106,6 +114,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       >
         <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
 
+        <p :if={@save_notice} role="status" class="lockspire-admin-alert lockspire-admin-alert-info">
+          {@save_notice}
+        </p>
+
         <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <div class="lockspire-admin-field">
             <label for="par_policy">Enforcement mode</label>
@@ -114,9 +126,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
               <option value="required" selected={@policy.par_policy == :required}>Required</option>
             </select>
             <p class="lockspire-admin-help">
-              <strong>Optional:</strong> Clients can use PAR but direct <code>/authorize</code> is still allowed.
+              <strong>Optional:</strong> Clients can use PAR, while direct <code>/authorize</code> requests are still allowed.
               <br />
-              <strong>Required:</strong> Inheriting clients MUST use PAR; direct <code>/authorize</code> will be rejected.
+              <strong>Required:</strong> Clients that inherit this policy must use PAR; direct <code>/authorize</code> requests are rejected.
             </p>
           </div>
 
@@ -130,7 +142,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
 
       <AdminComponents.section_card
         title="Client override summary"
-        subtitle="Exceptions to the global policy across all registered clients."
+        subtitle="Client-level PAR settings can override the global default."
       >
         <div :if={@summary} class="lockspire-admin-summary-grid">
           <div class="lockspire-admin-summary-stat">
@@ -188,6 +200,25 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
       _result ->
         assign(socket, summary: nil)
     end
+  end
+
+  defp policy_errors(errors) do
+    if Enum.any?(errors, fn
+         %{reason: :invalid_par_policy} -> true
+         _error -> false
+       end) do
+      [%{field: :par_policy, message: "Enforcement mode: choose Optional or Required."}]
+    else
+      [save_uncertain_error()]
+    end
+  end
+
+  defp save_uncertain_error do
+    %{
+      field: :par_policy,
+      message:
+        "The PAR policy change could not be confirmed. Reload the policy to check its current value."
+    }
   end
 
   defp par_decision_summary_items(%{policy: %ServerPolicy{} = policy, summary: summary}) do
