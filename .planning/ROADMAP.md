@@ -33,7 +33,16 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
   3. Client/secret, consent, token/family, Initial/Registration Access Token, and logout-destination wording preserves the security and behavior distinctions users need to make safe decisions.
   4. Success and failure copy reports only confirmed outcomes and offers a useful next action where one exists; changed wording preserves redaction and behavior.
   5. Existing automated checks cover recurring high-risk language/outcome rules, while relevant changed-page and rendered checks pass without new UI behavior or dependencies.
-**Plans**: TBD
+**Plans**: 7 plans
+
+Plans:
+- [ ] 148-01-PLAN.md — Shared language tracer, overview, and route-inventory test repair
+- [ ] 148-02-PLAN.md — Client detail, edit, credential, and logout-workflow copy
+- [ ] 148-03-PLAN.md — DCR onboarding and Initial Access Token copy
+- [ ] 148-04-PLAN.md — Issuer policy index, DCR, and PAR copy
+- [ ] 148-05-PLAN.md — Issuer DPoP and security-profile copy
+- [ ] 148-06-PLAN.md — Consent and token investigation/revocation copy
+- [ ] 148-07-PLAN.md — Key lifecycle and read-only operations copy
 
 **UI hint**: yes
 
@@ -70,7 +79,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 148. User-Facing Admin Language | v1.41 | 0/TBD | Not started | — |
+| 148. User-Facing Admin Language | v1.41 | 0/7 | Not started | — |
 | 149. Repository Ownership and Lifecycle | v1.41 | 0/TBD | Not started | — |
 | 150. Adopter and Maintainer Documentation | v1.41 | 0/TBD | Not started | — |
 
