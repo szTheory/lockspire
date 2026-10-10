@@ -2,7 +2,7 @@
 
 ## What This Is
 
-Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It helps Phoenix SaaS teams turn an existing app into a trustworthy OAuth/OIDC provider for third-party developers without standing up a separate auth service or assembling protocol-sensitive pieces by hand. The host app owns accounts, login UX, layouts, branding, and product policy; Lockspire owns protocol correctness, token and consent domain logic, operator tooling, telemetry, and install flow.
+Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It helps Phoenix SaaS teams turn an existing app into a trustworthy OAuth/OIDC provider for third-party developers without standing up a separate auth service or assembling protocol-sensitive pieces by hand. The host app owns accounts, login UX, layouts, branding, and product policy; Lockspire owns protocol correctness, token and consent domain logic, admin tools, telemetry, and install flow.
 
 ## Core Value
 
@@ -10,10 +10,10 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 ## Current Milestone: v1.41 Product Language & Repository Clarity
 
-**Goal:** Make Lockspire's operator language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
+**Goal:** Make Lockspire's admin UI language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
 
 **Target features:**
-- Review and simplify operator-facing labels, headings, instructions, errors, empty/success states, and confirmations using a concise terminology guide that preserves protocol meanings, security distinctions, and truthful consequences.
+- Review and simplify admin UI labels, headings, instructions, errors, empty/success states, and confirmations from the perspective of the people using them: their goals, familiarity, mental models, questions, and decisions. Translate internal concepts into user-facing language that helps them act; preserve protocol meanings, security distinctions, and truthful consequences. Name the task or object; do not use “operator” as visible audience copy or generic UI filler.
 - Use the reviewed vocabulary to improve the README and canonical adopter/maintainer documentation; verify navigation, setup steps, links, and claims against current code and `docs/supported-surface.md`.
 - Clarify repository directory ownership and lifecycle, and move or remove clutter only after verifying it is stale, unowned, and unused by CI, tests, packaging, or maintained workflows.
 
@@ -77,7 +77,7 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-The v1.41 Product Language & Repository Clarity milestone is active. It begins with a plain-language pass over operator UI copy so the reviewed terminology can anchor the README and guide updates, then addresses repository navigation and only evidence-verified cleanup.
+The v1.41 Product Language & Repository Clarity milestone is active. It begins with a plain-language pass over admin UI copy so the reviewed terminology can anchor the README and guide updates, then addresses repository navigation and only evidence-verified cleanup. “Operator” is an internal planning persona term and must not appear as visible UI audience copy or generic filler.
 
 The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 24 requirements and eight reviewed flows satisfied across Phases 144–147 (21 plans). The override closeout records three phase reports as stale after covered-source edits and Phase 146 as `human_needed`; original verification reports were preserved. The late policy/client readiness changes passed 35 focused tests and a clean code review. The audit makes no claim that every phase currently has fresh verification.
 
