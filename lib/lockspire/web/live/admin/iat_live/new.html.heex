@@ -1,19 +1,19 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
   <Lockspire.Web.Components.AdminComponents.page_hero
     eyebrow="Configure"
-    title="Mint initial access token"
-    body="Create a single-use credential for an initial client registration request. Issuer DCR policy still controls which registrations are allowed."
+    title="Create an Initial Access Token"
+    body="Use this single-use token to authorize a partner's initial client registration request. Issuer DCR policy still controls which registrations are accepted."
   />
 
   <Lockspire.Web.Components.AdminComponents.workflow_shell
-    title="Mint initial access token"
-    help="This credential authorizes an initial dynamic client registration request within issuer DCR policy. It is not an OAuth access token and does not carry OAuth scopes."
+    title="Choose an expiry"
+    help="This registration credential is not an OAuth access token and has no OAuth scopes."
   >
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
         title="Copy this Initial Access Token now"
-        body="This single-use token authorizes an initial client registration request within issuer policy. Plaintext is shown once."
-        label="Initial access token"
+        body="This single-use token authorizes one initial client registration request under issuer DCR policy. Its plaintext is shown only here."
+        label="Initial Access Token"
         value={@iat_secret}
       />
       <Lockspire.Web.Components.AdminComponents.action_bar>
@@ -29,7 +29,7 @@
         Credential hidden. It will not be shown again.
       </p>
       <Lockspire.Web.Components.AdminComponents.error_summary
-        title="Review the IAT details"
+        title="Review Initial Access Token details"
         errors={@form_errors}
       />
 
@@ -37,7 +37,7 @@
         <Lockspire.Web.Components.AdminComponents.form_field
           id="iat_expires_in_days"
           label="Expires in days"
-          help="This single-use token authorizes an initial client registration request. Issuer registration policy still applies."
+          help="This token expires after the number of days you enter. Issuer DCR policy still applies."
           required
           errors={if(@expiry_error, do: [%{message: @expiry_error}], else: [])}
         >
@@ -57,15 +57,15 @@
           <Lockspire.Web.Components.AdminComponents.admin_button
             variant={:primary}
             type="submit"
-            phx-disable-with="Creating initial access token…"
+            phx-disable-with="Creating Initial Access Token…"
           >
-            Create initial access token
+            Create an Initial Access Token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             href={iat_index_path()}
             variant={:secondary}
           >
-            Review initial access tokens
+            Review Initial Access Tokens
           </Lockspire.Web.Components.AdminComponents.admin_button>
         </Lockspire.Web.Components.AdminComponents.action_bar>
       </form>

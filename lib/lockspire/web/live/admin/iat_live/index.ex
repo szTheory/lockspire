@@ -6,9 +6,9 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   alias Lockspire.Admin.InitialAccessTokens
   alias Lockspire.Redaction
 
-  @revoke_confirm_error "Select the confirmation checkbox to revoke this initial access token."
-  @revoke_failure_error "Initial access token revocation could not be confirmed. Reload this Configure workflow before retrying."
-  @inventory_failure_error "Initial access token inventory is unavailable. Reload this workflow to try again."
+  @revoke_confirm_error "Select the checkbox to confirm revoking this Initial Access Token."
+  @revoke_failure_error "Lockspire could not confirm revocation of this Initial Access Token. Reload the inventory to check its status before retrying."
+  @inventory_failure_error "The Initial Access Token inventory is unavailable. Reload the inventory to try again."
 
   @impl true
   def mount(_params, _session, socket) do
@@ -61,14 +61,14 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
 
         revoke_notice =
           if updated_socket.assigns.inventory_state == :loaded do
-            "Initial access token revoked. Partners using it can no longer dynamically register clients."
+            "The Initial Access Token was revoked. Partners can no longer use it to register clients."
           else
-            "Initial access token was revoked, but the inventory could not be refreshed. Reload to confirm its updated status."
+            "The Initial Access Token was revoked, but the inventory could not be refreshed. Reload to confirm its updated status."
           end
 
         {:noreply,
          updated_socket
-         |> put_flash(:info, "IAT revocation completed.")
+         |> put_flash(:info, "Initial Access Token revoked.")
          |> assign(revoke_notice: revoke_notice)}
 
       {:error, _reason} ->
@@ -131,13 +131,13 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
     }
   end
 
-  def token_title(token), do: "Initial access token #{redacted_handle(:iat, token.id)}"
+  def token_title(token), do: "Initial Access Token #{redacted_handle(:iat, token.id)}"
 
   def usage_label(%{single_use: true}), do: "Single-use"
   def usage_label(_token), do: "Multi-use"
 
   defp iat_revoke_confirmation_copy(_token),
-    do: "Partners using this intake token can no longer dynamically register clients with it."
+    do: "Partners can no longer use this Initial Access Token to register clients."
 
   defp iat_revoke_error(nil), do: []
   defp iat_revoke_error(error), do: [error]

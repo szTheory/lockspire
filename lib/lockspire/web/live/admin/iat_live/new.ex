@@ -6,13 +6,13 @@ defmodule Lockspire.Web.Live.Admin.IatLive.New do
   alias Lockspire.Admin.InitialAccessTokens
 
   @invalid_expiry_error "Enter a whole number of days greater than zero."
-  @mint_failure_error "Initial access token could not be minted. Check the expiry and try again."
+  @mint_failure_error "Lockspire could not confirm token creation, so no value is shown. Check the Initial Access Token inventory before trying again."
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Mint Initial Access Token",
+       page_title: "Create an Initial Access Token",
        current_section: :dcr,
        iat_secret: nil,
        iat_acknowledged?: false,

@@ -61,7 +61,6 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     HtmlAssertions.assert_has_link(html, "/admin/policies/dcr")
 
     HtmlAssertions.assert_no_text(html, [
-      "client secret",
       "RAT plaintext",
       "Developer portal",
       "Approve registration",
@@ -75,24 +74,25 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
     ])
 
     assert html =~ "Configure"
-    assert html =~ "DCR onboarding"
-    assert html =~ "Registration gate"
+    assert html =~ "Prepare a partner registration"
+    assert html =~ "DCR policy"
     assert html =~ "Initial Access Token inventory"
     assert html =~ "Self-registered clients"
     assert html =~ "Next safe action"
-    assert html =~ "Create initial access token"
-    assert html =~ "Review initial access tokens"
+    assert html =~ "Create an Initial Access Token"
+    assert html =~ "Review Initial Access Tokens"
     assert html =~ "Edit DCR policy"
+    assert html =~ "a client secret authenticates a confidential client at the token endpoint"
   end
 
   describe "Index" do
     test "D-06/D-07 successful empty inventory has zero counts and a named next step" do
       {:ok, _view, html} = live(conn_for_admin(), "/admin/iats")
 
-      assert String.contains?(html, "No initial access tokens")
+      assert String.contains?(html, "No Initial Access Tokens yet")
       assert inventory_counts(html) == ["0", "0", "0", "0", "0"]
       assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
-      assert html =~ "Create initial access token"
+      assert html =~ "Create an Initial Access Token"
       HtmlAssertions.assert_no_selector(html, ".lockspire-admin-alert-danger")
     end
 
@@ -107,7 +107,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       {:ok, _view, html} = live(conn_for_admin(), "/admin/iats")
 
       assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
-      assert html =~ "Create initial access token"
+      assert html =~ "Create an Initial Access Token"
     end
 
     test "D-06 failed inventory read remains unavailable and reload can recover" do
@@ -120,7 +120,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       on_exit(fn -> Application.put_env(:lockspire, :repo, Lockspire.TestRepo) end)
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 
-      assert String.contains?(html, "Initial access token inventory is unavailable.")
+      assert String.contains?(html, "The Initial Access Token inventory is unavailable.")
       HtmlAssertions.assert_no_selector(html, ".lockspire-admin-summary-stat")
       HtmlAssertions.assert_no_selector(html, ".lockspire-admin-empty")
       assert String.contains?(html, ~s(phx-click="reload_iats"))
@@ -128,11 +128,11 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
       recovered_html = render_click(view, "reload_iats")
 
-      assert String.contains?(recovered_html, "No initial access tokens")
+      assert String.contains?(recovered_html, "No Initial Access Tokens yet")
       assert inventory_counts(recovered_html) == ["0", "0", "0", "0", "0"]
     end
 
-    test "D-06/D-07 failed revoke retains the active row and its operator context" do
+    test "D-06/D-07 failed revoke retains the active row and its creation context" do
       {:ok, iat, plaintext} =
         InitialAccessTokens.mint_iat(%{
           single_use: true,
@@ -161,7 +161,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert String.contains?(
                failed_html,
-               "Initial access token revocation could not be confirmed."
+               "Lockspire could not confirm revocation of this Initial Access Token."
              )
 
       assert String.contains?(failed_html, "partner-onboarding-review")
@@ -169,7 +169,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert String.contains?(failed_html, ~s(phx-submit="confirm_revoke_iat"))
     end
 
-    test "D-03/D-04/D-08/D-09/D-10 renders intake inventory and requires inline revoke confirmation" do
+    test "D-03/D-04/D-08/D-09/D-10 renders Initial Access Token inventory and requires inline revoke confirmation" do
       {:ok, active_iat, active_secret} =
         InitialAccessTokens.mint_iat(%{
           single_use: true,
@@ -226,19 +226,19 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert_no_sensitive_text(html, denied_material)
 
       assert html =~ "Configure"
-      assert html =~ "Initial access token inventory"
-      assert html =~ "Review initial access tokens"
+      assert html =~ "Initial Access Token inventory"
+      assert html =~ "Review Initial Access Tokens"
       assert html =~ "Active"
       assert html =~ "Used"
       assert html =~ "Expired"
       assert html =~ "Revoked"
-      assert html =~ "Total intake"
+      assert html =~ "Total tokens"
       assert html =~ "Single-use"
-      assert html =~ "Creator"
+      assert html =~ "Created by"
       assert html =~ "Expires"
       assert html =~ "Last state change"
-      assert html =~ "Usage/limit"
-      assert html =~ "Revoke initial access token"
+      assert html =~ "Use limit"
+      assert html =~ "Revoke Initial Access Token"
       assert html =~ ~s(phx-submit="confirm_revoke_iat")
       assert html =~ ~s(name="revoke[confirm]")
       assert html =~ "Multi-use"
@@ -247,8 +247,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert html =~ "revoked-fixture"
       assert inventory_counts(html) == ["1", "1", "1", "1", "4"]
 
-      assert html =~
-               "Partners using this intake token can no longer dynamically register clients with it."
+      assert html =~ "Partners can no longer use this Initial Access Token to register clients."
 
       refute html =~ ~s(data-confirm=)
       refute html =~ ~s(phx-click="revoke")
@@ -264,7 +263,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert_no_sensitive_text(html_without_confirmation, denied_material)
 
       assert html_without_confirmation =~
-               "Select the confirmation checkbox to revoke this initial access token."
+               "Select the checkbox to confirm revoking this Initial Access Token."
 
       assert html_without_confirmation =~ "lockspire-admin-errors"
 
@@ -289,8 +288,8 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert_no_sensitive_text(html_after_revoke, denied_material)
       refute html_after_revoke =~ ~s(phx-submit="confirm_revoke_iat")
-      refute html_after_revoke =~ "Revoke initial access token</button>"
-      assert html_after_revoke =~ "Initial access token revoked."
+      refute html_after_revoke =~ "Revoke Initial Access Token</button>"
+      assert html_after_revoke =~ "The Initial Access Token was revoked."
 
       duplicate_revoke_html =
         render_submit(view, "confirm_revoke_iat", %{
@@ -298,7 +297,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
         })
 
       assert_no_sensitive_text(duplicate_revoke_html, denied_material)
-      assert String.contains?(duplicate_revoke_html, "Initial access token revoked.")
+      assert String.contains?(duplicate_revoke_html, "The Initial Access Token was revoked.")
 
       assert inventory_counts(duplicate_revoke_html) == ["0", "1", "1", "2", "4"]
       refute String.contains?(duplicate_revoke_html, ~s(phx-submit="confirm_revoke_iat"))
@@ -380,7 +379,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       assert String.contains?(
                html,
-               "Initial access token could not be minted. Check the expiry and try again."
+               "Lockspire could not confirm token creation, so no value is shown. Check the Initial Access Token inventory before trying again."
              )
 
       assert String.contains?(html, ~s(value="14"))
@@ -440,7 +439,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       HtmlAssertions.assert_no_text(initial_html, forbidden_secret_samples())
 
       assert initial_html =~ "Configure"
-      assert initial_html =~ "Mint initial access token"
+      assert initial_html =~ "Create an Initial Access Token"
       assert initial_html =~ "DCR policy"
       assert initial_html =~ "lockspire-admin-workflow-shell"
       assert initial_html =~ "iat_expires_in_days-help"
@@ -448,10 +447,10 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       assert initial_html =~ ~s(value="30")
 
       assert initial_html =~
-               "This single-use token authorizes an initial client registration request. Issuer registration policy still applies."
+               "This token expires after the number of days you enter. Issuer DCR policy still applies."
 
       assert initial_html =~
-               "It is not an OAuth access token and does not carry OAuth scopes."
+               "This registration credential is not an OAuth access token and has no OAuth scopes."
 
       refute initial_html =~ "Registration Access Token"
       refute initial_html =~ "metadata allowlist"
@@ -460,7 +459,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       refute initial_html =~ "Multi-use"
       refute initial_html =~ ~s(name="single_use")
       assert initial_html =~ ~s(phx-submit="mint")
-      assert initial_html =~ "Review initial access tokens"
+      assert initial_html =~ "Review Initial Access Tokens"
       refute initial_html =~ "Copy this Initial Access Token now"
 
       # Mint a new token
@@ -507,7 +506,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       Enum.all?(
         [
           "Copy this Initial Access Token now",
-          "This single-use token authorizes an initial client registration request within issuer policy. Plaintext is shown once.",
+          "This single-use token authorizes one initial client registration request under issuer DCR policy. Its plaintext is shown only here.",
           "Hide credential"
         ],
         &String.contains?(html, &1)

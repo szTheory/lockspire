@@ -1,13 +1,13 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
   <Lockspire.Web.Components.AdminComponents.page_hero
     eyebrow="Configure"
-    title="Initial access token inventory"
-    body="Review DCR onboarding intake credentials by lifecycle, expiry, creator, and usage limit. Plaintext values are never shown in inventory."
+    title="Initial Access Token inventory"
+    body="Review each token's status, expiry, creator, and use limit. Token values are never shown in this inventory."
   />
 
   <Lockspire.Web.Components.AdminComponents.pane
-    title="Review initial access tokens"
-    subtitle="An Initial Access Token authorizes an initial dynamic client registration request within issuer policy. It does not manage an existing client or carry OAuth scopes."
+    title="Review Initial Access Tokens"
+    subtitle="An Initial Access Token authorizes initial client registration under issuer DCR policy. It is not an OAuth access token, has no OAuth scopes, and cannot manage an existing client."
   >
     <p :if={@revoke_notice} class="lockspire-admin-help" role="status" aria-live="polite">
       {@revoke_notice}
@@ -24,14 +24,14 @@
 
     <%= if @inventory_state == :loading do %>
       <p class="lockspire-admin-help" role="status" aria-live="polite">
-        Loading initial access token inventory…
+        Loading Initial Access Token inventory…
       </p>
     <% end %>
 
     <%= if @inventory_state == :unavailable do %>
       <Lockspire.Web.Components.AdminComponents.alert
         variant={:danger}
-        title="Initial access token inventory unavailable"
+        title="Initial Access Token inventory unavailable"
         role="alert"
       >
         {@inventory_error}
@@ -47,7 +47,7 @@
           Reload inventory
         </Lockspire.Web.Components.AdminComponents.admin_button>
         <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()}>
-          Create initial access token
+          Create an Initial Access Token
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% end %>
@@ -72,25 +72,25 @@
         />
         <Lockspire.Web.Components.AdminComponents.summary_stat
           value={@inventory_counts.total}
-          label="Total intake"
+          label="Total tokens"
         />
       </Lockspire.Web.Components.AdminComponents.metric_grid>
 
       <%= if @tokens == [] do %>
         <Lockspire.Web.Components.AdminComponents.empty_state
-          title="No initial access tokens"
-          body="Create a single-use token for a partner's first registration request. Issuer registration policy still applies."
+          title="No Initial Access Tokens yet"
+          body="Create a single-use Initial Access Token for a partner's first registration request. Issuer DCR policy still applies."
         >
           <:actions>
             <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-              Create initial access token
+              Create an Initial Access Token
             </Lockspire.Web.Components.AdminComponents.admin_button>
           </:actions>
         </Lockspire.Web.Components.AdminComponents.empty_state>
       <% else %>
         <Lockspire.Web.Components.AdminComponents.action_bar>
           <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-            Create initial access token
+          Create an Initial Access Token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             type="button"
@@ -105,11 +105,11 @@
           <%= for token <- @tokens do %>
             <Lockspire.Web.Components.AdminComponents.dense_resource_row
               title={token_title(token)}
-              subtitle="DCR onboarding intake token"
+              subtitle="Authorizes initial client registration under issuer DCR policy"
             >
               <:meta>
                 <span>
-                  Creator
+                  Created by
                   <Lockspire.Web.Components.AdminComponents.long_value
                     value={token.created_by || "Not recorded"}
                     kind={:id}
@@ -130,7 +130,7 @@
                   />
                 </span>
                 <span>
-                  Usage/limit
+                  Use limit
                   <Lockspire.Web.Components.AdminComponents.long_value
                     value={usage_label(token)}
                     kind={:text}
@@ -143,7 +143,7 @@
               <:actions>
                 <%= if iat_status(token) == :active do %>
                   <Lockspire.Web.Components.AdminComponents.confirmation_panel
-                    title="Revoke initial access token"
+                    title="Revoke Initial Access Token"
                     variant={:danger}
                     errors={iat_revoke_error(@revoke_error)}
                   >
@@ -168,9 +168,9 @@
                           <Lockspire.Web.Components.AdminComponents.admin_button
                             type="submit"
                             variant={:danger}
-                            phx-disable-with="Revoking initial access token…"
+                            phx-disable-with="Revoking Initial Access Token…"
                           >
-                            Revoke initial access token
+                            Revoke Initial Access Token
                           </Lockspire.Web.Components.AdminComponents.admin_button>
                         </Lockspire.Web.Components.AdminComponents.action_bar>
                       </form>
