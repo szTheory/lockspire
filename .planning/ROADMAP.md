@@ -143,7 +143,7 @@ Planning note: Carry responsive, keyboard/focus, theme, copy, redaction, and red
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 147-03-PLAN.md
-- [ ] 147-04-PLAN.md
+- [x] 147-04-PLAN.md
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 147-05-PLAN.md
@@ -159,7 +159,7 @@ Planning note: This is a bounded finish, not a new proof bureaucracy. Preserve e
 | 144. Working Preview and Representative Journeys | v1.40 | 4/4 | Complete    | 2026-10-09 |
 | 145. Configure and Onboard | v1.40 | 5/5 | Complete    | 2026-10-09 |
 | 146. Support, Orient, and Operate | v1.40 | 4/4 | Complete    | 2026-10-10 |
-| 147. Surface Coherence and Working Preview | v1.40 | 3/5 | In Progress | - |
+| 147. Surface Coherence and Working Preview | v1.40 | 4/5 | In Progress | - |
 
 ## Backlog
 
