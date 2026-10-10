@@ -199,6 +199,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
       assert socket.assigns.interaction_read_state == :unavailable
       assert page_html =~ "Could not load authorization interactions"
+      assert page_html =~ "Lockspire could not read interaction records"
       assert page_html =~ "the current results are unavailable"
       refute page_html =~ "No count or empty result"
       assert page_html =~ "Try loading interactions again"

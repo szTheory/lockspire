@@ -77,7 +77,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
           <% @device_read_state == :unavailable -> %>
             <AdminComponents.empty_state
               title="Could not load device authorizations"
-              body="Lockspire could not read device authorization records, so the current results are unavailable. Try loading device authorizations again or return to the overview."
+              body="Lockspire could not read device authorization records, so the current results are unavailable."
             >
               <:actions>
                 <AdminComponents.admin_button href={device_authorizations_path()}>

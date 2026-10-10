@@ -63,7 +63,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
           <% @delivery_read_state == :unavailable -> %>
             <AdminComponents.empty_state
               title="Could not load logout deliveries"
-              body="Lockspire could not read logout delivery records, so the current results are unavailable. Try loading logout deliveries again or return to the overview."
+              body="Lockspire could not read logout delivery records, so the current results are unavailable."
             >
               <:actions>
                 <AdminComponents.admin_button href={logout_deliveries_path()}>

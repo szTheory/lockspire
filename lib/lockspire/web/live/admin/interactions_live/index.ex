@@ -74,7 +74,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
           <% @interaction_read_state == :unavailable -> %>
             <AdminComponents.empty_state
               title="Could not load authorization interactions"
-              body="Lockspire could not read interaction records, so the current results are unavailable. Try loading interactions again or return to the overview."
+              body="Lockspire could not read interaction records, so the current results are unavailable."
             >
               <:actions>
                 <AdminComponents.admin_button href={interactions_path()}>

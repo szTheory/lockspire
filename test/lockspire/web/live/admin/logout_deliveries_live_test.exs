@@ -340,6 +340,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
       assert socket.assigns.delivery_read_state == :unavailable
       assert page_html =~ "Could not load logout deliveries"
+      assert page_html =~ "Lockspire could not read logout delivery records"
       assert page_html =~ "the current results are unavailable"
       refute page_html =~ "No count or empty result"
       assert page_html =~ "Try loading logout deliveries again"
