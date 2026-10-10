@@ -71,8 +71,11 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           } else {
             root.removeAttribute("data-theme");
           }
+        };
+
+        const syncThemeSelects = () => {
           document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
-            select.value = theme || "system";
+            select.value = savedTheme;
           });
         };
 
@@ -82,12 +85,24 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         } catch (_error) {}
 
         applyTheme(savedTheme);
+        syncThemeSelects();
+
+        // The shell select appears after this script and can be replaced during LiveView patches.
+        // Keep its displayed choice tied to the same stored preference as the effective theme.
+        const themeSelectObserver = new MutationObserver(syncThemeSelects);
+        themeSelectObserver.observe(root, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ["selected", "data-lockspire-theme-select"]
+        });
 
         document.addEventListener("change", (event) => {
           const select = event.target.closest("[data-lockspire-theme-select]");
           if (!select) return;
 
           const nextTheme = select.value;
+          savedTheme = nextTheme;
           try {
             if (nextTheme === "system") {
               window.localStorage.removeItem(storageKey);
@@ -97,6 +112,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           } catch (_error) {}
 
           applyTheme(nextTheme);
+          syncThemeSelects();
         });
       })();
     </script>
