@@ -44,12 +44,23 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     text = rendered_text(html)
 
     assert text =~ "Registration disabled"
-    assert text =~ "Initial Access Tokens authorize initial registration requests"
+    assert text =~ "Prepare a partner registration"
 
     assert text =~
-             "Registration Access Tokens manage one registered client&#39;s configuration endpoint"
+             "Dynamic Client Registration (DCR) lets a partner request client registration"
 
-    assert text =~ "Client secrets authenticate confidential clients at the token endpoint"
+    assert text =~
+             "Issuer policy determines whether a request can proceed and which requested client metadata is accepted"
+
+    assert text =~
+             "When policy requires one, an Initial Access Token authorizes the initial registration request"
+
+    assert text =~
+             "A Registration Access Token manages one registered client&#39;s configuration endpoint"
+
+    assert text =~ "a client secret authenticates a confidential client at the token endpoint"
+    assert text =~ "Changing it does not update existing clients."
+    refute html =~ "operator"
     assert html =~ ~s(href="/admin/policies/dcr")
     assert html =~ ~s(href="/admin/iats/new")
     assert html =~ ~s(href="/admin/iats")
@@ -62,7 +73,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert text =~ "Active 0"
     assert text =~ "0 self-registered clients"
     assert text =~ "No self-registered clients yet"
-    assert text =~ "Create initial access token"
+    assert text =~ "Create an Initial Access Token"
     assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
     refute text =~ "unavailable"
   end
@@ -80,7 +91,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert text =~
              "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
 
-    refute text =~ "Next safe action Mint initial access token"
+    refute text =~ "Next safe action Create an Initial Access Token"
   end
 
   test "populated hub links safe self-registered identities to client detail" do

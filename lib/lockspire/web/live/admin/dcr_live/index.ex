@@ -14,7 +14,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
     {:ok,
      socket
      |> assign(
-       page_title: "Dynamic Registration",
+       page_title: "Dynamic Client Registration",
        current_section: :dcr,
        policy_observation: %{state: :loading, policy: nil},
        client_observation: %{state: :loading, clients: nil, count: nil},
@@ -44,8 +44,8 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="DCR onboarding"
-        body="Initial Access Tokens authorize initial registration requests. Registration Access Tokens manage one registered client's configuration endpoint. Client secrets authenticate confidential clients at the token endpoint."
+        title="Prepare a partner registration"
+        body="Dynamic Client Registration (DCR) lets a partner request client registration. Issuer policy determines whether a request can proceed and which requested client metadata is accepted. When policy requires one, an Initial Access Token authorizes the initial registration request. A Registration Access Token manages one registered client's configuration endpoint; a client secret authenticates a confidential client at the token endpoint."
       >
         <:actions>
           <AdminComponents.admin_button type="button" phx-click="reload_dcr_status">
@@ -69,7 +69,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
       <AdminComponents.metric_grid>
         <AdminComponents.summary_stat
           value={policy_metric(@policy_observation)}
-          label="registration gate"
+          label="DCR policy"
         />
         <AdminComponents.summary_stat
           value={active_iat_metric(@iat_observation)}
@@ -84,19 +84,19 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
       <div class="lockspire-admin-dashboard-grid">
         <AdminComponents.section_card
           title="DCR policy"
-          subtitle="Issuer policy controls who may start dynamic registration and which requested metadata is accepted."
+          subtitle="Issuer policy controls whether future registration requests are accepted and which requested metadata is allowed. Changing it does not update existing clients."
         >
           <AdminComponents.alert
             :if={@policy_observation.state == :unavailable}
             variant={:danger}
             title="Registration policy unavailable"
           >
-            Lockspire could not confirm the current registration gate. No mode is assumed; reload this status or review issuer policy before partner onboarding.
+            Lockspire could not confirm the current DCR policy. No registration mode is assumed; reload this status or review issuer policy before preparing a partner registration.
           </AdminComponents.alert>
 
           <div :if={@policy_observation.state == :loaded}>
             <p class="lockspire-admin-help">
-              Current gate: <strong>{registration_policy_label(@policy_observation.policy.registration_policy)}</strong>.
+              Current DCR policy: <strong>{registration_policy_label(@policy_observation.policy.registration_policy)}</strong>.
               {registration_policy_detail(@policy_observation.policy.registration_policy)}
             </p>
             <p class="lockspire-admin-help">
@@ -120,7 +120,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
             variant={:danger}
             title="Initial Access Token inventory unavailable"
           >
-            Lockspire could not read intake-token status, so no count is shown. Review the inventory or reload this status before handing a token to a partner.
+            Lockspire could not read Initial Access Token status, so no count is shown. Review the inventory or reload this status before handing a token to a partner.
           </AdminComponents.alert>
 
           <dl
@@ -143,10 +143,10 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
 
           <AdminComponents.action_bar>
             <AdminComponents.admin_button href={admin_path("/iats")}>
-              Review initial access tokens
+              Review Initial Access Tokens
             </AdminComponents.admin_button>
             <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-              Create initial access token
+              Create an Initial Access Token
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </AdminComponents.section_card>
@@ -248,7 +248,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   defp decision_summary_items(policy, iats, clients) do
     [
       %{
-        label: "Registration gate",
+        label: "DCR policy",
         value: policy_metric(policy),
         detail: policy_detail(policy),
         tone: policy_tone(policy)
@@ -345,18 +345,18 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
          _clients
        )
        when active > 0,
-       do: "Review initial access tokens"
+       do: "Review Initial Access Tokens"
 
   defp next_safe_action(%{state: :loaded}, %{state: :unavailable}, _clients),
-    do: "Review intake token inventory"
+    do: "Review Initial Access Token inventory"
 
   defp next_safe_action(_policy, _iats, %{state: :loaded, count: count}) when count > 0,
     do: "Review self-registered clients"
 
-  defp next_safe_action(_policy, _iats, _clients), do: "Mint initial access token"
+  defp next_safe_action(_policy, _iats, _clients), do: "Create an Initial Access Token"
 
   defp next_safe_action_detail(%{state: :unavailable}, _iats, _clients),
-    do: "Confirm the issuer registration gate before partner intake."
+    do: "Confirm the issuer's DCR policy before preparing a partner registration."
 
   defp next_safe_action_detail(
          %{state: :loaded, policy: %{registration_policy: :disabled}},
@@ -374,13 +374,13 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
          "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
 
   defp next_safe_action_detail(_policy, %{state: :unavailable}, _clients),
-    do: "The intake-token status is unavailable; verify it before a partner handoff."
+    do: "Initial Access Token status is unavailable; verify it before a partner handoff."
 
   defp next_safe_action_detail(_policy, _iats, %{state: :loaded, count: count}) when count > 0,
     do: "Open a self-registered client record for safe identity and supported follow-up actions."
 
   defp next_safe_action_detail(_policy, _iats, _clients),
-    do: "Mint a bounded Initial Access Token, then review self-registered clients here."
+    do: "Create a bounded Initial Access Token, then review self-registered clients here."
 
   defp registration_policy_label(:initial_access_token), do: "Initial Access Token required"
   defp registration_policy_label(:open), do: "Open registration"
@@ -388,7 +388,8 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   defp registration_policy_label(_policy), do: "Registration mode unknown"
 
   defp registration_policy_detail(:initial_access_token),
-    do: "Partners need a short-lived intake token before dynamic registration can create clients."
+    do:
+      "Partners need a short-lived Initial Access Token before dynamic registration can create clients."
 
   defp registration_policy_detail(:open),
     do:
@@ -397,7 +398,8 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   defp registration_policy_detail(:disabled),
     do: "Dynamic registration is closed until the DCR policy is intentionally changed."
 
-  defp registration_policy_detail(_policy), do: "Review issuer policy before partner intake."
+  defp registration_policy_detail(_policy),
+    do: "Review issuer policy before partner registration."
 
   defp iat_status(token) do
     InitialAccessTokens.lifecycle_status(token)
