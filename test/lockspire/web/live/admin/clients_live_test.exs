@@ -128,7 +128,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Client inventory"
+    assert html =~ "Clients"
     assert html =~ "Alpha Client"
     assert html =~ "Keys"
     assert html =~ "Overview"
@@ -201,11 +201,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
 
     assert html =~ "Configure"
-    assert html =~ "Client inventory"
+    assert html =~ "Clients"
     assert html =~ "Selected client context"
     assert html =~ "Search: Alpha"
     assert html =~ "Status: active"
-    assert html =~ "Provenance: operator"
+    assert html =~ "Registration source: Added directly"
+    assert html =~ ~s(aria-label="Admin navigation")
+    assert html =~ ~s(option value="operator" selected)
+    assert html =~ "Added directly"
+    assert html =~ "Self-registered"
     assert html =~ "Matching clients: 1"
     assert html =~ "Total clients: 3"
     assert html =~ "Filter clients"
@@ -468,7 +472,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
       error_html = rendered_to_string(Index.render(socket.assigns))
 
       assert error_html =~ "Could not load clients"
-      assert error_html =~ "Your filters and investigation context are still available."
+      assert error_html =~ "No matching-client result is available until this read succeeds."
       assert error_html =~ "Reload this view"
 
       assert [_, reload_href] =

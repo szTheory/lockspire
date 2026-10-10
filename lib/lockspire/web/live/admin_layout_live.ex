@@ -168,7 +168,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         </div>
       </header>
 
-      <nav aria-label="Operator navigation" class="lockspire-admin-nav">
+      <nav aria-label="Admin navigation" class="lockspire-admin-nav">
         <%= for group <- @nav_groups do %>
           <section class="lockspire-admin-nav-group" aria-label={group.label}>
             <span class="lockspire-admin-nav-group-label">{group.label}</span>

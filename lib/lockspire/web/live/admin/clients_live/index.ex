@@ -105,8 +105,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Client inventory"
-        body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
+        title="Clients"
+        body="Find a client, check how it was added, or create one."
       >
         <:actions>
           <AdminComponents.admin_button
@@ -119,7 +119,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         </:actions>
       </AdminComponents.page_hero>
 
-      <AdminComponents.section_card title="Find a client" subtitle="Filter the inventory, then open a client to review its current configuration.">
+      <AdminComponents.section_card title="Find a client" subtitle="Search by name or filter by status and registration source.">
         <AdminComponents.filter_bar action={clients_index_path()} phx_submit="filter_inventory">
           <:fields>
             <div class="lockspire-admin-field">
@@ -143,12 +143,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </div>
 
             <div class="lockspire-admin-field">
-              <label for="client_provenance">Provenance</label>
+              <label for="client_provenance">Registration source</label>
               <select id="client_provenance" name="provenance">
-                <option value="all" selected={@filters["provenance"] == "all"}>All</option>
-                <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+                <option value="all" selected={@filters["provenance"] == "all"}>All sources</option>
+                <option value="operator" selected={@filters["provenance"] == "operator"}>Added directly</option>
                 <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>
-                  Self-Registered
+                  Self-registered
                 </option>
               </select>
             </div>
@@ -169,12 +169,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
         </AdminComponents.filter_bar>
 
         <div class="lockspire-admin-client-inventory__results" aria-live="polite">
+          <p :if={@inventory_state == :loading} role="status">Loading client inventory…</p>
+
           <AdminComponents.alert
             :if={@inventory_state == :error}
             variant={:danger}
             title="Could not load clients"
           >
-            <p>Your filters and investigation context are still available. Reload this view or return to the inventory and try again.</p>
+            <p>No matching-client result is available until this read succeeds. Reload this view or return to the inventory and try again.</p>
             <div class="lockspire-admin-client-inventory__recovery">
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path(@filters)}>
                 Reload this view
@@ -239,12 +241,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
       <AdminComponents.section_card
         title="Selected client context"
-        subtitle="The current URL filters remain available while you review the matching records."
+        subtitle="The URL keeps your current filters while you review matching clients."
       >
         <div class="lockspire-admin-detail-section">
           <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
           <p>Status: {@filters["status"]}</p>
-          <p>Provenance: {@filters["provenance"]}</p>
+          <p>Registration source: {provenance_filter_label(@filters["provenance"])}</p>
           <p :if={@inventory_state == :loaded}>Matching clients: {@matching_clients}</p>
           <p :if={@inventory_state == :loaded}>Total clients: {@total_clients}</p>
         </div>
@@ -398,6 +400,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
   defp client_count_label(1), do: "1 matching client"
   defp client_count_label(count), do: "#{count} matching clients"
+
+  defp provenance_filter_label("operator"), do: "Added directly"
+  defp provenance_filter_label("self_registered"), do: "Self-registered"
+  defp provenance_filter_label(_provenance), do: "All sources"
 
   defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)
   defp put_status_filter(opts, "disabled"), do: Keyword.put(opts, :active, false)

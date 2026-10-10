@@ -746,6 +746,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp status_tone_class(_tone), do: "lockspire-admin-badge-disabled"
 
   defp status_label(:reuse_detected), do: "Reuse detected"
+  defp status_label(:operator), do: "Added directly"
   defp status_label(:self_registered), do: "Self-registered"
   defp status_label(:self_registered_client), do: "Self-registered client"
   defp status_label(:host_app), do: "Host app"
