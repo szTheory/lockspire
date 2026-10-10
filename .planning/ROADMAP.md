@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; Phases 144–145 are complete, and Phase 146 is next.
+- 📋 **v1.40 Admin Operator UI Refinement** — Phases 144–147; Phases 144–146 are complete, and Phase 147 is next.
 - ✅ **[v1.39 Verified 1.5.1 Release](milestones/v1.39-ROADMAP.md)** — Phases 142–143; Lockspire 1.5.1 shipped 2026-10-08. Phase 143's exact-head PR #119 merge-authorization gap was acknowledged at closeout; see the archived audit.
 - ✅ **[v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md)** — Phases 138–141 (completed 2026-10-06; planning closeout only, no package publication; known closeout items are in STATE.md).
 - ✅ **[v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md)** — Phases 131–137 (shipped 2026-08-28 as Lockspire 1.5.0).
@@ -17,7 +17,7 @@ Refine the existing embedded LiveView operator UI through four complete delivery
 
 - [x] **Phase 144: Working Preview and Representative Journeys** - Open the actual mounted UI and deliver shared refinements on complete client-configuration and token/consent-investigation workflows. Completed 2026-10-09.
 - [x] **Phase 145: Configure and Onboard** - Carry the proven patterns through supported client, policy, credential, DCR, and key workflows. Completed 2026-10-09.
-- [ ] **Phase 146: Support, Orient, and Operate** - Make investigation, revocation, overview, and read-only operations clear and truthful, including failed or unknown observations.
+- [x] **Phase 146: Support, Orient, and Operate** - Make investigation, revocation, overview, and read-only operations clear and truthful, including failed or unknown observations. Completed 2026-10-10.
 - [ ] **Phase 147: Surface Coherence and Working Preview** - Confirm responsive, accessible, themed, and motion behavior across the surface with bounded evidence and a stable optional-feedback preview.
 
 <details>
