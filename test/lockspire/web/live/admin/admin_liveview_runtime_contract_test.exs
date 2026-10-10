@@ -31,8 +31,9 @@ defmodule Lockspire.Web.Live.Admin.LiveViewRuntimeContractTest do
     mounted_admin_routes =
       AdoptionDemoWeb.Router
       |> Phoenix.Router.routes()
-      |> Enum.filter(&(&1.plug == Phoenix.LiveView.Plug))
-      |> Enum.filter(&String.starts_with?(&1.path, "/lockspire/admin"))
+      |> Enum.filter(
+        &(&1.plug == Phoenix.LiveView.Plug and String.starts_with?(&1.path, "/lockspire/admin"))
+      )
 
     mounted_paths =
       mounted_admin_routes

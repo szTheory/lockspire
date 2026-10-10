@@ -67,6 +67,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
 
     assert lab["Route / Surface"] == "AdminLab.StressSurface"
     assert lab["Journey"] == "Internal lab"
+
     assert Enum.map([boundary_799, boundary_800, boundary_801], & &1["Viewport"]) ==
              ["799px", "800px", "801px"]
 

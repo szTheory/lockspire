@@ -38,9 +38,8 @@ defmodule Lockspire.Admin.Tokens do
 
   @spec get_token(integer()) :: {:ok, token_detail() | nil} | {:error, term()}
   def get_token(token_id) when is_integer(token_id) do
-    with {:ok, token} <- Repository.fetch_lifecycle_token_by_id(token_id),
-         {:ok, detail} <- build_detail(token) do
-      {:ok, detail}
+    with {:ok, token} <- Repository.fetch_lifecycle_token_by_id(token_id) do
+      build_detail(token)
     end
   end
 
