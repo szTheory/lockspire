@@ -116,6 +116,38 @@ defmodule Lockspire.Admin.TokensTest do
     assert detail.family_reuse_detected_at == now
   end
 
+  test "get_token/1 returns a family read failure instead of singleton family evidence", %{
+    refresh_token: refresh_token
+  } do
+    with_repo_failure(:family_read, fn ->
+      assert {:error, %RuntimeError{message: "synthetic token family read failure"}} =
+               Tokens.get_token(refresh_token.id)
+    end)
+  end
+
+  test "family revoke transaction failures do not emit success or change token state", %{
+    access_token: access_token
+  } do
+    {:ok, family_before} = Repository.list_token_family("family-admin-123")
+    before_state = Enum.map(family_before, &{&1.id, &1.revoked_at})
+
+    with_repo_failure(:transaction, fn ->
+      assert {:error, :synthetic_token_transaction_failure} =
+               Tokens.revoke_token_family(access_token.id)
+
+      refute_received {:telemetry_event, [:lockspire, :token, :family_revoked], _metadata}
+      refute_received {:telemetry_event, [:lockspire, :audit, :token, :family_revoked], _metadata}
+    end)
+
+    {:ok, family_after} = Repository.list_token_family("family-admin-123")
+    assert Enum.map(family_after, &{&1.id, &1.revoked_at}) == before_state
+
+    refute Lockspire.TestRepo.get_by(AuditEventRecord,
+             action: "token_family_revoked",
+             resource_id: "family-admin-123"
+           )
+  end
+
   test "revoke_token/2 and revoke_token_family/2 stay idempotent with operator telemetry and audit",
        %{
          access_token: access_token
@@ -197,5 +229,55 @@ defmodule Lockspire.Admin.TokensTest do
         limit: 1
       )
     )
+  end
+
+  defp with_repo_failure(failure, fun) do
+    previous_repo = Application.fetch_env!(:lockspire, :repo)
+    previous_failure = Application.get_env(:lockspire, :tokens_test_repo_failure)
+
+    try do
+      Application.put_env(:lockspire, :tokens_test_repo_failure, failure)
+      Application.put_env(:lockspire, :repo, Lockspire.Admin.TokensTest.FailingRepo)
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+      Application.put_env(:lockspire, :tokens_test_repo_failure, previous_failure)
+    end
+  end
+end
+
+defmodule Lockspire.Admin.TokensTest.FailingRepo do
+  @moduledoc false
+
+  def all(query, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_test_repo_failure) == :family_read and
+         query_source(query) == Lockspire.Storage.Ecto.TokenRecord do
+      raise "synthetic token family read failure"
+    end
+
+    Lockspire.TestRepo.all(query, options)
+  end
+
+  def one(query, options \\ []), do: Lockspire.TestRepo.one(query, options)
+
+  def transaction(fun, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_test_repo_failure) == :transaction do
+      {:error, :synthetic_token_transaction_failure}
+    else
+      Lockspire.TestRepo.transaction(fun, options)
+    end
+  end
+
+  def rollback(reason), do: Lockspire.TestRepo.rollback(reason)
+
+  defp query_source(query) do
+    query
+    |> Ecto.Queryable.to_query()
+    |> Map.fetch!(:from)
+    |> Map.fetch!(:source)
+    |> case do
+      {_table, schema} -> schema
+      source -> source
+    end
   end
 end

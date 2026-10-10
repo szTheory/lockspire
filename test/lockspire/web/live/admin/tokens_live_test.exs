@@ -444,6 +444,52 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     end
   end
 
+  test "token detail shows an unavailable family read instead of a singleton family", %{
+    refresh_token: refresh_token
+  } do
+    with_repo_failure(:family_read, fn ->
+      id = Integer.to_string(refresh_token.id)
+      assert {:ok, socket} = Show.mount(%{"id" => id}, %{}, socket_for(:show))
+
+      assert {:noreply, socket} =
+               Show.handle_params(%{"id" => id}, "/lockspire/admin/tokens/#{id}", socket)
+
+      html = rendered_to_string(Show.render(socket.assigns))
+      assert html =~ "Could not load token details"
+      assert html =~ "Try loading token details again"
+      refute html =~ "Refresh family lineage"
+      refute html =~ "Token not found"
+    end)
+  end
+
+  test "family revoke transaction failure stays recoverable and leaves the family unchanged", %{
+    refresh_token: refresh_token
+  } do
+    {:ok, family_before} = Repository.list_token_family("family-ui-123")
+    assert Enum.count(family_before, &is_nil(&1.revoked_at)) == 2
+    {socket, _html} = render_show_for(refresh_token)
+
+    with_repo_failure(:transaction, fn ->
+      assert {:noreply, failed_socket} =
+               Show.handle_event(
+                 "revoke_family",
+                 %{"family" => %{"confirm" => "true"}},
+                 socket
+               )
+
+      assert failed_socket.assigns.family_error ==
+               "Revocation could not be confirmed. The token may still be active; reload this Support workflow before retrying."
+
+      assert is_nil(failed_socket.assigns.family_notice)
+      html = rendered_to_string(Show.render(failed_socket.assigns))
+      assert html =~ "The token may still be active"
+      refute html =~ "Revoked 2 currently unrevoked tokens"
+    end)
+
+    {:ok, family_after} = Repository.list_token_family("family-ui-123")
+    assert Enum.count(family_after, &is_nil(&1.revoked_at)) == 2
+  end
+
   test "token detail clears stale sibling form errors after alternate revoke actions succeed", %{
     refresh_token: refresh_token
   } do
@@ -792,6 +838,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     |> HtmlAssertions.assert_no_text(@unsupported_support_controls ++ denied_values)
   end
 
+  defp with_repo_failure(failure, fun) do
+    previous_repo = Application.fetch_env!(:lockspire, :repo)
+    previous_failure = Application.get_env(:lockspire, :tokens_live_test_repo_failure)
+
+    try do
+      Application.put_env(:lockspire, :tokens_live_test_repo_failure, failure)
+      Application.put_env(:lockspire, :repo, Lockspire.Web.Live.Admin.TokensLiveTest.FailingRepo)
+      fun.()
+    after
+      Application.put_env(:lockspire, :repo, previous_repo)
+      Application.put_env(:lockspire, :tokens_live_test_repo_failure, previous_failure)
+    end
+  end
+
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
@@ -807,6 +867,42 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     case :binary.match(html, needle) do
       {index, _length} -> index
       :nomatch -> flunk("expected rendered HTML to contain #{inspect(needle)}")
+    end
+  end
+end
+
+defmodule Lockspire.Web.Live.Admin.TokensLiveTest.FailingRepo do
+  @moduledoc false
+
+  def all(query, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_live_test_repo_failure) == :family_read and
+         query_source(query) == Lockspire.Storage.Ecto.TokenRecord do
+      raise "synthetic token family read failure"
+    end
+
+    Lockspire.TestRepo.all(query, options)
+  end
+
+  def one(query, options \\ []), do: Lockspire.TestRepo.one(query, options)
+
+  def transaction(fun, options \\ []) do
+    if Application.get_env(:lockspire, :tokens_live_test_repo_failure) == :transaction do
+      {:error, :synthetic_token_transaction_failure}
+    else
+      Lockspire.TestRepo.transaction(fun, options)
+    end
+  end
+
+  def rollback(reason), do: Lockspire.TestRepo.rollback(reason)
+
+  defp query_source(query) do
+    query
+    |> Ecto.Queryable.to_query()
+    |> Map.fetch!(:from)
+    |> Map.fetch!(:source)
+    |> case do
+      {_table, schema} -> schema
+      source -> source
     end
   end
 end
