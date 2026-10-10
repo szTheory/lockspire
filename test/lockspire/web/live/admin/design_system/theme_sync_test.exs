@@ -10,8 +10,8 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ThemeSyncTest do
     source = File.read!(@layout_path)
 
     assert source =~ ~s|const storageKey = "lockspire-admin-theme"|
-    assert source =~ "const syncThemeSelects = () =>"
-    assert source =~ ~s|select.value = savedTheme|
+    assert source =~ "const syncShellThemeState = () =>"
+    assert source =~ ~s|select.value = currentPageTheme|
     assert source =~ "new MutationObserver((mutations) =>"
     assert source =~ "shellObserver.observe(root"
     assert source =~ "requestAnimationFrame(() =>"
@@ -23,11 +23,15 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ThemeSyncTest do
     source = File.read!(@layout_path)
 
     assert source =~ "let currentPageTheme = \"system\""
-    assert source =~ "role=\"status\""
-    assert source =~ "aria-live=\"polite\""
+    assert source =~ "data-lockspire-theme-status role=\"status\" aria-live=\"polite\""
     assert source =~ "Your saved theme preference could not be read."
-    assert source =~ "Your theme is applied for this page, but the saved preference was not updated."
-    assert source =~ "Your theme is applied for this page, but the saved preference was not cleared."
+
+    assert source =~
+             "Your theme is applied for this page, but the saved preference was not updated."
+
+    assert source =~
+             "Your theme is applied for this page, but the saved preference was not cleared."
+
     refute source =~ "${_error.message}"
   end
 end

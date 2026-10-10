@@ -73,24 +73,32 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           }
         };
 
-        const syncThemeSelects = () => {
+        const syncShellThemeState = () => {
           document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
-            select.value = savedTheme;
+            select.value = currentPageTheme;
           });
+
+          const status = document.querySelector("[data-lockspire-theme-status]");
+          if (status) status.textContent = statusMessage;
         };
 
         let savedTheme = "system";
+        let currentPageTheme = "system";
+        let statusMessage = "";
         try {
           savedTheme = window.localStorage.getItem(storageKey) || "system";
-        } catch (_error) {}
+          currentPageTheme = savedTheme;
+        } catch (_error) {
+          statusMessage = "Your saved theme preference could not be read.";
+        }
 
-        applyTheme(savedTheme);
-        syncThemeSelects();
+        applyTheme(currentPageTheme);
+        syncShellThemeState();
 
         // The shell select appears after this script and can be replaced during LiveView patches.
         // Keep its displayed choice tied to the same stored preference as the effective theme.
         const shellObserver = new MutationObserver((mutations) => {
-          syncThemeSelects();
+          syncShellThemeState();
 
           for (const mutation of mutations) {
             for (const node of mutation.addedNodes) {
@@ -119,17 +127,23 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           if (!select) return;
 
           const nextTheme = select.value;
-          savedTheme = nextTheme;
+          currentPageTheme = nextTheme;
+          applyTheme(currentPageTheme);
           try {
             if (nextTheme === "system") {
               window.localStorage.removeItem(storageKey);
             } else {
               window.localStorage.setItem(storageKey, nextTheme);
             }
-          } catch (_error) {}
+            savedTheme = nextTheme;
+            statusMessage = "";
+          } catch (_error) {
+            statusMessage = nextTheme === "system"
+              ? "Your theme is applied for this page, but the saved preference was not cleared."
+              : "Your theme is applied for this page, but the saved preference was not updated.";
+          }
 
-          applyTheme(nextTheme);
-          syncThemeSelects();
+          syncShellThemeState();
         });
       })();
     </script>
@@ -149,6 +163,7 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </select>
+            <p data-lockspire-theme-status role="status" aria-live="polite"></p>
           </div>
         </div>
       </header>
