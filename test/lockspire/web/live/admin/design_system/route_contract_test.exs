@@ -8,7 +8,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
     RouteAssertions.assert_mounted_routes!()
   end
 
-  test "Phase 144 browser inventory remains covered by current router workflows" do
+  test "browser inventory remains covered by current router workflows" do
     inventory_path =
       Path.join([
         File.cwd!(),
