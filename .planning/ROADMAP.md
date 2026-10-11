@@ -16,7 +16,7 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
 
 ## Phases
 
-- [ ] **Phase 148: User-Facing Admin Language** — Rewrite existing admin UI copy around user goals and mental models without losing protocol precision or truthful outcomes.
+- [x] **Phase 148: User-Facing Admin Language** — Rewrite existing admin UI copy around user goals and mental models without losing protocol precision or truthful outcomes.
 - [ ] **Phase 149: Repository Ownership and Lifecycle** — Make the purpose and lifecycle of major repository areas clear; move or remove content only after ownership and reference checks prove it safe.
 - [ ] **Phase 150: Adopter and Maintainer Documentation** — Give Phoenix teams a clear, accurate path through fit, installation, verification, and ongoing use.
 
@@ -34,19 +34,19 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
   4. Success and failure copy reports only confirmed outcomes and offers a useful next action where one exists; changed wording preserves redaction and behavior.
   5. Existing automated checks cover recurring high-risk language/outcome rules, while relevant changed-page and rendered checks pass without new UI behavior or dependencies.
 
-**Plans**: 7 plans
+**Plans**: 7/7 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 148-01-PLAN.md — Shared language tracer, overview, and route-inventory test repair
+- [x] 148-01-PLAN.md — Shared language tracer, overview, and route-inventory test repair
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 148-02-PLAN.md — Client detail, edit, credential, and logout-workflow copy
-- [ ] 148-03-PLAN.md — DCR onboarding and Initial Access Token copy
-- [ ] 148-04-PLAN.md — Issuer policy index, DCR, and PAR copy
-- [ ] 148-05-PLAN.md — Issuer DPoP and security-profile copy
-- [ ] 148-06-PLAN.md — Consent and token investigation/revocation copy
-- [ ] 148-07-PLAN.md — Key lifecycle and read-only operations copy
+- [x] 148-02-PLAN.md — Client detail, edit, credential, and logout-workflow copy
+- [x] 148-03-PLAN.md — DCR onboarding and Initial Access Token copy
+- [x] 148-04-PLAN.md — Issuer policy index, DCR, and PAR copy
+- [x] 148-05-PLAN.md — Issuer DPoP and security-profile copy
+- [x] 148-06-PLAN.md — Consent and token investigation/revocation copy
+- [x] 148-07-PLAN.md — Key lifecycle and read-only operations copy
 
 **UI hint**: yes
 
@@ -85,7 +85,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 148. User-Facing Admin Language | v1.41 | 0/7 | Not started | — |
+| 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
 | 149. Repository Ownership and Lifecycle | v1.41 | 0/TBD | Not started | — |
 | 150. Adopter and Maintainer Documentation | v1.41 | 0/TBD | Not started | — |
 
