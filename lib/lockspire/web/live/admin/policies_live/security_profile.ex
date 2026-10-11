@@ -196,13 +196,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
         </div>
 
         <p
-          :if={@summary && @summary.fapi_2_0_message_signing == 0 and @summary.fapi_2_0_security == 0 and @summary.none == 0}
+          :if={not is_nil(@summary) and @summary.fapi_2_0_message_signing == 0 and @summary.fapi_2_0_security == 0 and @summary.none == 0}
           class="lockspire-admin-empty-notice"
         >
           No client security profile overrides yet. All clients currently inherit the global security profile.
         </p>
         <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
-          Client override counts are unavailable. Reload this page to try again.
+          Client override counts are unavailable.
         </p>
       </AdminComponents.section_card>
       </div>

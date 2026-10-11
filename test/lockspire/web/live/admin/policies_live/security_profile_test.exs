@@ -124,6 +124,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     end
   end
 
+  test "unavailable client counts do not promise a retry control" do
+    assert {:ok, socket} =
+             SecurityProfile.mount(%{}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :index, __changed__: %{}}
+             })
+
+    socket = Phoenix.Component.assign(socket, :summary, nil)
+    html = rendered_to_string(SecurityProfile.render(socket.assigns))
+
+    assert html =~ "Client override counts are unavailable."
+    refute html =~ "Reload this page to try again."
+  end
+
   test "failed strict-readiness read is unavailable instead of a confirmed prerequisite gap" do
     prior_repo = Application.get_env(:lockspire, :repo)
 

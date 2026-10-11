@@ -52,7 +52,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Review key lifecycle"
-        body="Generate an upcoming signing or encryption key, publish it in JWKS for verifier overlap, then activate it for use. Retiring a key removes it from JWKS."
+        body="Generate an upcoming signing or encryption key, publish it in JWKS so verifiers can prepare, then activate it. The previous key stays in JWKS during overlap; retire it to remove it."
       />
 
       <AdminComponents.section_card
@@ -135,17 +135,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
                 <%= for entry <- @keys do %>
                   <AdminComponents.resource_item
                     href={key_show_path(entry.key.id)}
-                    title="Review key lifecycle"
+                    title={"Key #{Redaction.handle(:kid, entry.key.kid)}"}
                     subtitle={"#{entry.key.alg} / #{entry.key.kty}"}
                   >
                     <:meta>
-                      <span>
-                        Key
-                        <AdminComponents.long_value
-                          value={Redaction.handle(:kid, entry.key.kid)}
-                          kind={:id}
-                        />
-                      </span>
                       <span>Use <AdminComponents.long_value value={entry.key.use} kind={:text} /></span>
                       <span>Published <AdminComponents.long_value value={format_datetime(entry.key.published_at)} kind={:timestamp} /></span>
                       <span>Activated <AdminComponents.long_value value={format_datetime(entry.key.activated_at)} kind={:timestamp} /></span>

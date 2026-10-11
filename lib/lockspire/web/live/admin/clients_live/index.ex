@@ -154,6 +154,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </div>
           </:fields>
           <:help>
+            <p>“Self-registered” means a partner submitted a registration request; “Added directly” means a client was created here.</p>
             <p :if={@inventory_state == :loaded}>{client_count_label(@matching_clients)} of {@total_clients} total clients</p>
             <p :if={@inventory_state == :error}>Matching count unavailable while the client inventory is unavailable.</p>
           </:help>

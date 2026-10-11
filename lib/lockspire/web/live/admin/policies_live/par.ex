@@ -165,11 +165,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Par do
           </div>
         </div>
 
-        <p :if={@summary && @summary.required == 0 and @summary.optional == 0} class="lockspire-admin-empty-notice">
+        <p :if={not is_nil(@summary) and @summary.required == 0 and @summary.optional == 0} class="lockspire-admin-empty-notice">
           No client PAR overrides yet. All clients currently inherit the global PAR policy.
         </p>
         <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
-          Client override counts are unavailable. Reload this page to try again.
+          Client override counts are unavailable.
         </p>
       </AdminComponents.section_card>
       </div>

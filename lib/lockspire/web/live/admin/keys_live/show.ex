@@ -304,11 +304,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
 
   defp detail_body(:missing),
     do:
-      "No signing key matches the selected safe handle. Return to the inventory to choose another key."
+      "No signing key matches the selected key identifier. Return to the inventory to choose another key."
 
   defp detail_body(:error),
     do:
-      "Lockspire could not read this signing key. The selected handle is retained, and no missing-key or lifecycle claim is shown."
+      "Lockspire could not read this signing key. The selected key identifier is retained, but its status could not be confirmed."
 
   defp detail_body(_state), do: "Lockspire could not read this signing key."
 

@@ -108,6 +108,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     end
   end
 
+  test "unavailable client counts do not promise a retry control" do
+    assert {:ok, socket} =
+             Par.mount(%{}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :index, __changed__: %{}}
+             })
+
+    socket = Phoenix.Component.assign(socket, :summary, nil)
+    html = rendered_to_string(Par.render(socket.assigns))
+
+    assert html =~ "Client override counts are unavailable."
+    refute html =~ "Reload this page to try again."
+  end
+
   test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 PAR posture explains global scope before save" do
     assert {:ok, _policy} = ServerPolicy.put_server_policy(:required)
 

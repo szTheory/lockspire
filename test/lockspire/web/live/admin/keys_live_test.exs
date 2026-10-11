@@ -87,6 +87,16 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Key lifecycle posture"
     assert html =~ "lockspire-admin-resource-list__item"
     assert html =~ "lockspire-admin-long-value"
+
+    titles =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query("a.lockspire-admin-resource-list__title")
+      |> Enum.map(&LazyHTML.text/1)
+
+    assert length(titles) == 4
+    assert length(Enum.uniq(titles)) == 4
+    assert Enum.all?(titles, &String.starts_with?(&1, "Key "))
     assert html =~ "Active"
     assert html =~ "Upcoming"
     assert html =~ "Retiring"
@@ -125,6 +135,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Next safe action"
     assert html =~ "Publish key for verification overlap"
     assert html =~ "Retire key to remove it from JWKS"
+
+    assert html =~
+             "The previous key stays in JWKS during overlap; retire it to remove it."
+
     assert html =~ "Clients"
     assert html =~ "Consents"
     assert html =~ "Tokens"
@@ -315,8 +329,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     html = rendered_to_string(Show.render(socket.assigns))
     assert html =~ "Retire key"
 
-    assert html =~ "Remove this key from the published JWKS set."
-    refute html =~ "only after verifiers have moved off publication overlap"
+    assert html =~
+             "Remove this key from JWKS only after systems that rely on it have switched to its replacement."
+
     refute_unsupported_verifier_promise(html)
 
     assert html =~ "name=\"retire[confirm]\""
@@ -405,9 +420,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute_forbidden_key_copy(html)
   end
 
-  test "key detail distinguishes missing from failed reads and keeps a safe selected handle", %{
-    upcoming_key: upcoming_key
-  } do
+  test "key detail distinguishes missing from failed reads and keeps the selected key identifier",
+       %{
+         upcoming_key: upcoming_key
+       } do
     missing_id = upcoming_key.id + 10_000
     assert {:ok, missing_socket} = Show.mount(%{"id" => missing_id}, %{}, socket_for(:show))
 
@@ -421,6 +437,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     missing_html = rendered_to_string(Show.render(missing_socket.assigns))
     assert missing_socket.assigns.detail_state == :missing
     assert missing_html =~ "Signing key not found"
+    assert missing_html =~ "selected key identifier"
     assert missing_html =~ "Return to key inventory"
     refute missing_html =~ "Signing key details are unavailable"
 
@@ -440,6 +457,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert failed_socket.assigns.detail_state == :error
     assert failed_socket.assigns.key_id == upcoming_key.id
     assert failed_html =~ "Signing key details are unavailable"
+
+    assert failed_html =~
+             "The selected key identifier is retained, but its status could not be confirmed."
+
     assert failed_html =~ "Return to key inventory"
     assert failed_html =~ "Try loading key details again"
     assert failed_html =~ "key_"

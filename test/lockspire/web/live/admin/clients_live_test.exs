@@ -219,6 +219,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ ~s(option value="operator" selected)
     assert html =~ "Added directly"
     assert html =~ "Self-registered"
+
+    assert html =~
+             "“Self-registered” means a partner submitted a registration request; “Added directly” means a client was created here."
+
     assert html =~ "Matching clients: 1"
     assert html =~ "Total clients: 3"
     assert html =~ "Filter clients"

@@ -81,7 +81,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
               <span>
-                Remove this key from the published JWKS set.
+                Remove this key from JWKS only after systems that rely on it have switched to its replacement.
               </span>
             </label>
             <AdminComponents.action_bar>
