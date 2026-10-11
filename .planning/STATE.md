@@ -1,19 +1,18 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.41
-milestone_name: Product Language & Repository Clarity
-status: Awaiting next milestone
+status: "v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending"
 stopped_at: v1.41 archived — next milestone scope not selected
-last_updated: "2026-10-11T12:48:29.663Z"
+last_updated: "2026-10-11T14:54:26.081Z"
 last_activity: 2026-10-11
-last_activity_desc: Milestone v1.41 completed and archived
-state_head: e92b8cb5383ad5e2859a2c05c6e37fb97b34ed09
+state_head: 87c546abbb65c0e40fa5bb5a465f2b8b94e93f8a
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 10
   completed_plans: 10
   percent: 100
+milestone_name: Product Language & Repository Clarity
 current_phase: null
 ---
 
@@ -31,8 +30,8 @@ See: .planning/PROJECT.md (updated 2026-10-11 after v1.41 completion)
 
 Phase: —
 Plan: —
-Status: Milestone v1.41 archived; awaiting next milestone scope
-Last activity: 2026-10-11 — Milestone v1.41 completed and archived
+Status: v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending
+Last activity: 2026-10-11
 
 ## Accumulated Context
 
