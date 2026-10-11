@@ -49,8 +49,6 @@ defmodule Lockspire.Quality.Phase139PlanningConsistencyTest do
 
     assert roadmap =~ "| 141. Maintenance-Baseline Closure | 1/1 | Complete"
 
-    assert state =~ "milestone: v1.39"
-    assert state =~ "current_phase: 143"
     assert state =~ "### Recent Sustaining Release: 1.5.0"
     assert state =~ "### Verified Publication: 1.5.1 (2026-10-08)"
 

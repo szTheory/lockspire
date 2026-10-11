@@ -579,7 +579,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     host_local_position = docs_position!(docs, "## Run It Host-Local")
 
     assert docker_position < host_local_position
-    assert docs =~ "Docker is the default maintainer path"
+    assert docs =~ "Docker is the recommended way to run the example."
     assert docs =~ "Host-local Mix/Postgres remains a fallback"
     assert docs =~ "make demo"
     assert docs =~ "examples/adoption_demo/bin/docker-up"

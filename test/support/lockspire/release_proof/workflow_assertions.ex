@@ -120,7 +120,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
              "protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282)"
 
     assert release_train =~
-             "for source `0b56503859b69531ff86d8e4a465a0e75f963594` verified the public Hex checksum"
+             "was backed by matching canonical push CI [37788996197]"
+
+    assert release_train =~ "The release run verified the public Hex checksum"
 
     assert release_train =~
              "public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`"

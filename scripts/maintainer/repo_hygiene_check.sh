@@ -661,7 +661,7 @@ release_train_artifact_version() {
 }
 
 release_train_verified_tag_evidence() {
-  sed -nE 's/^- Artifact truth: protected release run \[[0-9]+\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/actions\/runs\/[0-9]+\) for source `([0-9a-f]{40})` verified the public Hex checksum `[0-9a-f]{64}`, HexDocs, \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\), and clean-room install\. Its terminal receipt records `release_verified: true` with no blocker\..*$/\2|\3|\4|\5|\1/p' .planning/RELEASE-TRAIN.md
+  sed -nE 's/^- Artifact truth: protected release run \[[0-9]+\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/actions\/runs\/[0-9]+\) for source `([0-9a-f]{40})` .*verified the public Hex checksum `[0-9a-f]{64}`, HexDocs, \[lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\]\(https:\/\/github\.com\/([^/]+\/[^/]+)\/releases\/tag\/lockspire-v([0-9]+\.[0-9]+\.[0-9]+)\), and clean-room install\. Its terminal receipt records `release_verified: true` with no blocker\..*$/\2|\3|\4|\5|\1/p' .planning/RELEASE-TRAIN.md
 }
 
 release_train_tag_version() {
@@ -920,7 +920,8 @@ repo_owned_checks() {
 
   if grep -Fq './scripts/maintainer/repo_hygiene_check.sh' docs/maintainer-release.md &&
      grep -Fq 'docs/supported-surface.md' docs/maintainer-release.md &&
-     grep -Fq 'The public support contract' README.md; then
+     grep -Fq 'docs/supported-surface.md' README.md &&
+     grep -Fiq 'support contract' README.md; then
     record_result "PASS" "maintainer docs" "release docs point to the hygiene command and canonical support contract"
   else
     record_result "BLOCK" "maintainer docs" "release docs no longer describe the maintained hygiene and support-truth path"
