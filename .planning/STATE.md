@@ -186,7 +186,7 @@ Last activity: 2026-10-11
 
 - [Phase 143]: Approve only the exact run and candidate covered by the user's publication decision; a failed attempt does not authorize a replacement run.
 
-- Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the historical attempt in `143-RESULT.md`.
+- Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the [historical Phase 143 result](milestones/v1.39-phases/143-publish-and-verify-lockspire-1-5-1/143-RESULT.md).
 - [Phase 144]: Keep the stable preview, disposable demo checks, and root ExUnit database on separate named projects, ports, and volumes because demo startup can drop its configured database.
 - [Phase 144]: Treat UIB-02/03 evidence in plan 144-01 as baseline contribution only; later Phase 144 plans must establish representative improvements and final proof.
 - [Phase 144]: Keep preview LiveView bootstrap and direct guarded route mounts demo-owned; preserve the public library router and host seam.

@@ -56,7 +56,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert script =~ "repo_hygiene_check.sh [--ci] [--project NAME]"
     assert ci =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
     assert ci =~ "python3 scripts/demo/adoption_smoke.py"
-    assert adoption_docs =~ "repo-local adopter proof"
+    assert adoption_docs =~ "black-box OAuth/OIDC proof"
     assert adoption_docs =~ "not a production deployment guide"
     refute ci =~ "docker compose"
     refute ci =~ "docker-compose"
