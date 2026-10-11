@@ -17,7 +17,7 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
 ## Phases
 
 - [x] **Phase 148: User-Facing Admin Language** — Rewrite existing admin UI copy around user goals and mental models without losing protocol precision or truthful outcomes.
-- [ ] **Phase 149: Repository Ownership and Lifecycle** — Make the purpose and lifecycle of major repository areas clear; move or remove content only after ownership and reference checks prove it safe.
+- [x] **Phase 149: Repository Ownership and Lifecycle** — Make the purpose and lifecycle of major repository areas clear; move or remove content only after ownership and reference checks prove it safe. (completed 2026-10-10)
 - [ ] **Phase 150: Adopter and Maintainer Documentation** — Give Phoenix teams a clear, accurate path through fit, installation, verification, and ongoing use.
 
 ## v1.41 Product Language & Repository Clarity
@@ -62,10 +62,10 @@ Planning note: Use Impeccable `clarify` to review complete page and task paths, 
   2. Every proposed move or removal has an ownership and lifecycle finding plus checks of active worktrees and CI, test, package, generator, and documentation references before mutation.
   3. Any evidence-backed cleanup is narrow and passes the affected checks; ambiguous or still-used content remains in place with its status made clear.
 
-**Plans**: 1 plan
+**Plans**: 1/1 plans complete
 
 Plans:
-- [ ] 149-01-PLAN.md — Contributor lifecycle map and evidence-gated worktree administration
+- [x] 149-01-PLAN.md — Contributor lifecycle map and evidence-gated worktree administration
 
 Planning note: Inventory first. Age, names, or apparent generated status do not prove an item is stale. Do not reorganize paths for appearance alone.
 
@@ -89,7 +89,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
-| 149. Repository Ownership and Lifecycle | v1.41 | 0/1 | Planned | — |
+| 149. Repository Ownership and Lifecycle | v1.41 | 1/1 | Complete    | 2026-10-10 |
 | 150. Adopter and Maintainer Documentation | v1.41 | 0/TBD | Not started | — |
 
 ## Backlog
