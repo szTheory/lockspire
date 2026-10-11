@@ -681,8 +681,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     assert docs =~ "scripts/demo/adoption_smoke.sh"
     assert docs =~ "delegates to `scripts/demo/adoption_smoke.py`"
-    assert docs =~ "anonymous admin login redirect"
-    assert docs =~ "non-operator denial"
+    assert docs =~ "the admin sign-in redirect"
+    assert docs =~ "denial for staff without admin access"
     assert docs =~ "examples/adoption_demo/bin/docker-info"
 
     refute docs =~
