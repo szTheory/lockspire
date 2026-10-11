@@ -108,8 +108,6 @@ defmodule Lockspire.Web.Live.Admin.IatLive.Index do
   defp safely_list_iats do
     case InitialAccessTokens.list_iats() do
       {:ok, tokens} when is_list(tokens) -> {:ok, tokens}
-      {:error, reason} -> {:error, reason}
-      _unexpected_result -> {:error, :unavailable}
     end
   rescue
     _exception -> {:error, :unavailable}

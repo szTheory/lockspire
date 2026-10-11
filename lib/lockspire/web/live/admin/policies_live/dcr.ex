@@ -119,17 +119,6 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
           private_key_jwt_truth: nil,
           client_secret_jwt_truth: nil
         )
-
-      _result ->
-        assign(socket,
-          policy: nil,
-          policy_state: :unavailable,
-          form: nil,
-          form_errors: [],
-          save_notice: nil,
-          private_key_jwt_truth: nil,
-          client_secret_jwt_truth: nil
-        )
     end
   end
 

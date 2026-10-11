@@ -100,7 +100,6 @@ defmodule Lockspire.Admin.Tokens do
     case Repository.fetch_lifecycle_token_by_id(token_id) do
       {:ok, nil} -> {:error, :not_found}
       {:ok, %Token{} = token} -> {:ok, token}
-      {:error, reason} -> {:error, reason}
     end
   rescue
     error -> {:error, error}
