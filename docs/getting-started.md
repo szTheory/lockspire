@@ -1,6 +1,6 @@
 # Getting Started
 
-Lockspire is for Phoenix teams that want to offer OAuth/OIDC from an existing product while keeping their own accounts, sign-in, branding, and product policy.
+Lockspire lets partner apps request access to a Phoenix app with OAuth 2.0 and sign users in with OpenID Connect (OIDC). The host app keeps its accounts, sign-in, branding, and product rules.
 
 First, check the [supported capabilities and limits](supported-surface.md). If you want a plain-language introduction to OAuth/OIDC roles, tokens, and consent, read [OAuth/OIDC for Phoenix adopters](oauth-oidc-for-phoenix-adopters.md).
 

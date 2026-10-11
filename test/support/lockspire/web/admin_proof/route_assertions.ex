@@ -47,10 +47,10 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     guide = File.read!(Paths.operator_admin_doc())
 
     assert guide =~
-             "Lockspire owns protocol and operator state after the request reaches its LiveViews"
+             "Lockspire owns protocol and related admin state after a request reaches its LiveViews"
 
     assert guide =~
-             "the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+             "The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
   end
 
   def assert_read_only_operate_surfaces! do

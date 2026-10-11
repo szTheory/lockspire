@@ -5,11 +5,11 @@
 [![CI](https://github.com/szTheory/lockspire/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/lockspire/actions/workflows/ci.yml)
 [![License](https://img.shields.io/hexpm/l/lockspire.svg)](https://github.com/szTheory/lockspire/blob/main/LICENSE)
 
-Lockspire is an embedded OAuth/OIDC authorization server for Phoenix and Elixir. It lets a SaaS team offer OAuth/OIDC to third-party apps from its existing product. Lockspire provides the protocol and token flows; your app keeps its accounts, sign-in, branding, and product policy.
+Lockspire lets partner apps request access to your APIs with OAuth 2.0 and sign in with OpenID Connect (OIDC), all from your existing Phoenix app. Your app keeps its accounts, login, branding, and product rules; Lockspire handles the protocol and tokens.
 
 ## Is Lockspire a fit?
 
-Lockspire is for teams with an existing Phoenix app that want to provide OAuth/OIDC without moving user accounts or login into a separate service. Before relying on a feature or deployment shape, check the [supported capabilities and limits](docs/supported-surface.md). That page is the support contract; this README does not repeat its capability list.
+Lockspire fits teams that want to connect partner apps without moving user accounts or login into a separate service. Before relying on a feature or deployment shape, check the [supported capabilities and limits](docs/supported-surface.md). That page is the support contract; this README does not repeat its capability list.
 
 ## Install in your Phoenix app
 

@@ -253,6 +253,24 @@ defmodule Lockspire.DocumentationContractTest do
     end
   end
 
+  test "adopter and admin guides do not depend on repository planning files" do
+    guide_paths = [
+      @readme_path,
+      @getting_started_path,
+      @install_path,
+      Path.join(@repo_root, "docs/saas-adoption-recipe.md"),
+      Path.join(@repo_root, "docs/adoption-demo.md"),
+      Path.join(@repo_root, "docs/operator-admin.md")
+    ]
+
+    for path <- guide_paths do
+      guide = File.read!(path)
+
+      refute guide =~ ".planning/",
+             "reader-facing guide links to repository planning material: #{Path.relative_to(path, @repo_root)}"
+    end
+  end
+
   defp fenced_blocks(markdown, language) do
     ~r/^```#{Regex.escape(language)}\s*\n(.*?)^```\s*$/ms
     |> Regex.scan(markdown, capture: :all_but_first)
