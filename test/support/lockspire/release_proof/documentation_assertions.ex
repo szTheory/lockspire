@@ -13,9 +13,9 @@ defmodule Lockspire.TestSupport.ReleaseProof.DocumentationAssertions do
     operator = Paths.read!("docs/operator-admin.md")
     supported_surface = Paths.read!("docs/supported-surface.md")
 
-    assert readme =~ "inside its existing app"
-    assert readme =~ "not a hosted auth service"
-    assert onboarding =~ "Lockspire stays embedded inside your host app"
+    assert readme =~ "from your existing Phoenix app"
+    assert readme =~ "without moving user accounts or login into a separate service"
+    assert onboarding =~ "Lockspire runs inside your app"
     assert onboarding =~ "host-owned seams"
     assert operator =~ "host owns staff sessions, MFA, role checks"
 
