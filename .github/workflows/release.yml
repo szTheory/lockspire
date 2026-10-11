@@ -332,8 +332,9 @@ jobs:
           private-key: ${{ secrets.LOCKSPIRE_RELEASE_FREEZE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
           repositories: ${{ github.event.repository.name }}
-          permission-administration: write
-          permission-actions: read
+          # This pinned action does not expose the repository Variables permission.
+          # Omit permission filters so the token inherits only this installation's
+          # grants: Administration: write, Actions: read, and Variables: read.
       - name: Freeze main updates for the protected publish window
         id: release-freeze
         env:
@@ -534,15 +535,20 @@ jobs:
             --tar "release-input/$package_name" \
             --manifest release-input/release-manifest.json \
             --source-sha "$VERIFIED_SHA"
-          jq -e --arg stage prepublish --slurpfile manifest release-input/release-manifest.json '
+          jq -e --slurpfile manifest release-input/release-manifest.json '
             . == {
               schema_version: 1,
-              stage: $stage,
+              stage: "prepublish",
               source_sha: $manifest[0].source_sha,
               package: $manifest[0].package,
               version: $manifest[0].version,
               sha256: $manifest[0].artifact.sha256,
-              status: "verified"
+              status: "verified",
+              publisher_compatibility: {
+                hex_version: $manifest[0].runtime.publisher_hex,
+                api_export: true,
+                exact_byte_fixture: true
+              }
             }
           ' release-input/prepublish-receipt.json >/dev/null
           mkdir -p retained-release-evidence
@@ -716,6 +722,13 @@ jobs:
             404) docs_presence=absent ;;
           esac
 
+          docs_stage=unknown
+          case "$docs_presence" in
+            present) docs_stage=passed ;;
+            absent) docs_stage=failed ;;
+            unknown) docs_stage=unknown ;;
+          esac
+
           hex_stage="$(step_state "$HEX_PUBLISH_OUTPUT" "$PUBLISH_RESULT")"
           github_release_stage="$(step_state "$GITHUB_RELEASE_OUTPUT" "$PUBLISH_RESULT")"
           tag_stage="$(step_state "$TAG_OUTPUT" "$PUBLISH_RESULT")"
@@ -732,7 +745,7 @@ jobs:
             --arg hex_publish "$hex_stage" \
             --arg github_release "$github_release_stage" \
             --arg tag "$tag_stage" \
-            --arg docs "$docs_presence" \
+            --arg docs "$docs_stage" \
             --arg install "$install_state" \
             --arg hex_presence "$hex_presence" \
             --arg hex_checksum "$hex_checksum" \

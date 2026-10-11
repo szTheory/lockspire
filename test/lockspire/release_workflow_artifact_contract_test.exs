@@ -200,6 +200,14 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert postpublish =~ "release-input/release-manifest.json"
     assert postpublish =~ "postpublish-receipt.json"
     assert postpublish =~ "retained-release-evidence"
+
+    evidence_retention =
+      step!(postpublish, "Prepare bounded retained evidence", "Upload bounded release evidence")
+
+    assert evidence_retention =~ "publisher_compatibility: {"
+    assert evidence_retention =~ "hex_version: $manifest[0].runtime.publisher_hex"
+    assert evidence_retention =~ "api_export: true"
+    assert evidence_retention =~ "exact_byte_fixture: true"
     assert postpublish =~ "retention-days: 90"
     refute postpublish =~ "environment: hex-publish"
     refute postpublish =~ "HEX_API_KEY"
@@ -250,6 +258,13 @@ defmodule Lockspire.ReleaseWorkflowArtifactContractTest do
     assert collector =~ "git ls-remote"
     assert collector =~ "needs.publish.result"
     assert collector =~ "needs.post-publish-install-truth.result"
+    assert collector =~ "case \"$docs_presence\" in"
+    assert collector =~ "present) docs_stage=passed ;;"
+    assert collector =~ "absent) docs_stage=failed ;;"
+    assert collector =~ "unknown) docs_stage=unknown ;;"
+    assert collector =~ "--arg docs \"$docs_stage\""
+    assert collector =~ "docs_presence: $docs_presence"
+    refute collector =~ "--arg docs \"$docs_presence\""
     refute collector =~ "HEX_API_KEY"
 
     upload = final_step!(collector, "Upload the terminal outcome receipt")

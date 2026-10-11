@@ -39,6 +39,9 @@ validate_ruleset() {
   ruleset="$(gh api "repos/$expected_repo/rulesets/$ruleset_id?includes_parents=false")" ||
     fail "could not read the temporary release tag freeze"
 
+  # GitHub's repository-ruleset readback omits the default-false fetch/merge
+  # parameter. Require false when the API returns it, while still requiring
+  # the exact update and deletion rules, scope, and empty bypass list.
   jq -e \
     --argjson id "$ruleset_id" \
     --arg name "$name" \
@@ -55,7 +58,13 @@ validate_ruleset() {
       .conditions.ref_name.include == [$tag_ref] and
       (.conditions.ref_name.exclude // []) == [] and
       (.rules | length) == 2 and
-      any(.rules[]; .type == "update" and .parameters.update_allows_fetch_and_merge == false) and
+      any(.rules[];
+        .type == "update" and
+        (
+          (has("parameters") | not) or
+          (.parameters.update_allows_fetch_and_merge == false)
+        )
+      ) and
       any(.rules[]; .type == "deletion")
     ' <<< "$ruleset" >/dev/null || fail "tag freeze is not the exact active no-bypass update/deletion lock"
 

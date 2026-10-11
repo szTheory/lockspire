@@ -7,7 +7,7 @@ defmodule Lockspire.ReleaseMainFreezeTest do
   @freeze_name "Lockspire protected release main freeze"
   @repo "szTheory/lockspire"
 
-  test "preflight accepts only the active no-bypass main freeze and an exact current SHA" do
+  test "preflight accepts GitHub's default-false update-rule readback and an exact current SHA" do
     {output, status} = run_preflight()
 
     assert status == 0
@@ -17,6 +17,36 @@ defmodule Lockspire.ReleaseMainFreezeTest do
   test "preflight rejects a freeze with a bypass actor" do
     {output, status} =
       run_preflight(%{bypass_actors: [%{actor_id: 1, actor_type: "User", bypass_mode: "always"}]})
+
+    assert status != 0
+    assert output =~ "no-bypass main update lock"
+  end
+
+  test "preflight accepts an explicit false upstream fetch-and-merge parameter" do
+    {output, status} =
+      run_preflight(%{
+        rules: [
+          %{
+            "type" => "update",
+            "parameters" => %{"update_allows_fetch_and_merge" => false}
+          }
+        ]
+      })
+
+    assert status == 0
+    assert output =~ "frozen main matches the exact authorized release SHA"
+  end
+
+  test "preflight rejects an update rule that allows upstream fetch and merge" do
+    {output, status} =
+      run_preflight(%{
+        rules: [
+          %{
+            "type" => "update",
+            "parameters" => %{"update_allows_fetch_and_merge" => true}
+          }
+        ]
+      })
 
     assert status != 0
     assert output =~ "no-bypass main update lock"
@@ -57,12 +87,7 @@ defmodule Lockspire.ReleaseMainFreezeTest do
         "enforcement" => Map.get(overrides, :enforcement, "active"),
         "bypass_actors" => Map.get(overrides, :bypass_actors, []),
         "conditions" => %{"ref_name" => %{"include" => ["refs/heads/main"], "exclude" => []}},
-        "rules" => [
-          %{
-            "type" => "update",
-            "parameters" => %{"update_allows_fetch_and_merge" => false}
-          }
-        ]
+        "rules" => Map.get(overrides, :rules, [%{"type" => "update"}])
       }
 
     effective_rules = [

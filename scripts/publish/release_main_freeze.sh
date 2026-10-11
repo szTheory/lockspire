@@ -39,7 +39,13 @@ validate_ruleset() {
       (.conditions.ref_name.exclude // []) == [] and
       (.rules | length) == 1 and
       .rules[0].type == "update" and
-      .rules[0].parameters.update_allows_fetch_and_merge == false
+      (
+        # The repository ruleset API omits the default-false parameter from
+        # readback. Require false when GitHub returns the parameter, and still
+        # require the active update rule and empty bypass list above.
+        (.rules[0] | has("parameters") | not) or
+        (.rules[0].parameters.update_allows_fetch_and_merge == false)
+      )
     ' <<< "$ruleset" >/dev/null || fail "freeze ruleset is not the exact active no-bypass main update lock"
 
   effective_rules="$(gh api "repos/$expected_repo/rules/branches/main")" ||
