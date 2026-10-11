@@ -1,23 +1,23 @@
-# Operator And Admin Guide
+# Admin Guide
 
-Lockspire ships a library-owned operator surface for protocol state, while the host app keeps ownership of account UX.
+Use this guide to mount and maintain Lockspire's admin pages. Lockspire manages protocol state; your Phoenix app keeps ownership of accounts, sign-in, and staff access.
 
-For the canonical advanced-setup support contract, see `docs/supported-surface.md`. This guide stays subordinate to that contract and should not be read as a second support matrix.
+For exact capabilities and limits, see the [supported surface](supported-surface.md). This guide does not define a separate support contract. For the canonical mount and host-access setup, see the [install and onboarding guide](install-and-onboard.md).
 
-## Lockspire-owned operator journeys
+## Find the admin task you need
 
-Lockspire groups the admin surface by operator intent:
+The admin pages group common tasks by the same labels used in the interface:
 
-- **Orient**: use `/admin` or `/admin/overview` as the operator cockpit for client posture, security posture, key readiness, support incidents, and live protocol work.
+- **Orient**: use `/admin` or `/admin/overview` to see client and security status, key readiness, support incidents, and current protocol work.
 - **Configure**: use `/admin/clients`, `/admin/policies`, `/admin/keys`, and `/admin/dcr` to manage client setup, issuer posture, key lifecycle, and partner intake.
 - **Support**: use `/admin/consents` and `/admin/tokens` to investigate durable grant, token, refresh-family, account, client, and status questions.
 - **Operate**: use `/admin/interactions`, `/admin/device_authorizations`, and `/admin/logouts` to inspect live authorization work, device flow requests, and logout delivery pressure.
 
-These routes live under the embedded Lockspire router and are meant for application operators.
+These routes live under the embedded Lockspire router. Your host app controls which staff members can access them.
 
 ## Mounting the admin surface
 
-Mount the operator UI behind your host application's operator-auth pipeline. Lockspire does not authenticate your staff or decide who counts as an operator.
+Mount the admin pages behind your host application's staff sign-in and access checks. Lockspire does not sign in staff or decide who can access these pages.
 
 The generated router mounts `Lockspire.Web.AdminRouter` at `/lockspire/admin` before the general `Lockspire.Web.Router` forward:
 
@@ -32,7 +32,7 @@ scope "/" do
 end
 ```
 
-Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
+Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and related admin state after a request reaches its LiveViews. The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to these routes.
 
 ## Admin navigation model
 
