@@ -42,7 +42,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
 
       <AdminComponents.pane
         title="Recorded interactions"
-        subtitle="Each row shows the saved interaction status, prompt, client, subject, and request times."
+        subtitle="Read-only records show saved interaction status, prompt, client, subject, and request times."
       >
         <AdminComponents.metric_grid :if={@interaction_read_state == :loaded}>
           <AdminComponents.summary_stat

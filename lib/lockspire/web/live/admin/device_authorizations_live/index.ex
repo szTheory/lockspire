@@ -42,7 +42,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
 
       <AdminComponents.pane
         title="Recorded device authorizations"
-        subtitle="Each row shows the saved request status, client, subject, expiry, and polling context."
+        subtitle="Read-only records show saved request status, client, subject, expiry, and polling context."
       >
         <AdminComponents.metric_grid :if={@device_read_state == :loaded}>
           <AdminComponents.summary_stat

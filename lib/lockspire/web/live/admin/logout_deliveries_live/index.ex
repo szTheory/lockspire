@@ -43,7 +43,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
       <AdminComponents.pane
         title="Recorded logout deliveries"
-        subtitle="Each row shows its channel, endpoint, attempt count, and recorded status. This page only reports delivery evidence."
+        subtitle="Read-only records show channel, endpoint, attempt count, and recorded status. This page reports delivery evidence only."
       >
         <AdminComponents.metric_grid :if={@delivery_read_state == :loaded}>
           <AdminComponents.summary_stat value={@delivery_metrics.queued} label="Queued" />
