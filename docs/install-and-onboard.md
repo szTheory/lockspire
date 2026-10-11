@@ -1,6 +1,6 @@
 # Install And Onboard
 
-The canonical onboarding path is Phoenix-first and generator-first. Lockspire stays embedded inside your host app; the host continues to own accounts, login UX, layouts, branding, and product policy. For the full 1.0 GA support contract, see `docs/supported-surface.md`.
+This guide is the canonical path for installing Lockspire in an existing Phoenix app. Lockspire runs inside your app; your team keeps its accounts, sign-in pages, layouts, branding, and product policy. Check the [supported capabilities and limits](supported-surface.md) before relying on a feature or deployment shape.
 
 If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, bounded reactive rollover truth, and runtime remote-key diagnosis path.
 
@@ -85,7 +85,7 @@ end
 lockspire_routes()
 ```
 
-The generated route helper separates host-owned account routes, an admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your operator pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not authenticate your staff; your host app owns operator sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin LiveViews. `mix lockspire.verify` proves compiled mount shape and order only; add host request tests that prove unauthenticated users cannot reach the admin mount.
+The generated route helper separates host-owned account routes, an admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your host-owned `:require_operator` pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not sign in or authorize your staff. Your host app must enforce staff sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin pages. `mix lockspire.verify` checks the compiled mount shape and order; add host request tests to prove that unauthenticated or unauthorized staff cannot reach the admin mount.
 
 The generated macro mounts the host-owned `/verify` and `/authorized-apps`
 routes, then the generated `lockspire_consent_live.ex` seam, then the guarded
@@ -177,16 +177,20 @@ Run:
 mix lockspire.verify
 ```
 
-This is the canonical post-install diagnostics step. It checks every item in
-one run, so fix every `ERROR` line before continuing:
+This check validates the required Lockspire configuration, compiles the host
+seams, checks the compiled route wiring, and checks migration state. Fix every
+`ERROR` before continuing. It does not prove that your host signs users in
+correctly or enforces staff access policy. Cover those behaviors with request
+tests in your host app.
 
 - each required `:lockspire` runtime key: `repo`, `account_resolver`, `issuer`,
   `mount_path`, `logout_path`, and the Lockspire Oban runtime contract
 - the generated account-resolver and interaction-handler modules
 - compiled host `/verify`, `/authorized-apps`, and consent routes
-- the compiled generated admin forward, its named host-owned operator pipeline,
+- the compiled generated admin forward, its named host-owned `:require_operator`
+  pipeline,
   and its position before the public Lockspire forward at your configured
-  mount path (your host request tests still prove the pipeline's policy)
+  mount path
 - the packaged migration inventory in host `priv/repo/migrations` and its
   applied database state
 

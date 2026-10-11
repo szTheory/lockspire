@@ -1,32 +1,9 @@
 # Getting Started
 
-Lockspire is for Phoenix teams that need to become an OAuth/OIDC provider inside an existing product.
+Lockspire is for Phoenix teams that want to offer OAuth/OIDC from an existing product while keeping their own accounts, sign-in, branding, and product policy.
 
-If the OAuth/OIDC words are still fuzzy, start with
-[OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.md). It uses the
-Billingo demo to explain the roles, flow, tokens, scopes, consent, and host
-boundary before you install anything.
+First, check the [supported capabilities and limits](supported-surface.md). If you want a plain-language introduction to OAuth/OIDC roles, tokens, and consent, read [OAuth/OIDC for Phoenix adopters](oauth-oidc-for-phoenix-adopters.md).
 
-Use it when:
+When you're ready to install, follow the [canonical install and onboarding guide](install-and-onboard.md). It is the single source for setup commands, generated host files, migrations, `mix lockspire.verify`, and the host checks that verifier cannot replace.
 
-- Your product already owns accounts and login UX.
-- You need OAuth/OIDC for third-party clients.
-- You want protocol correctness and operator workflows without standing up a separate auth service.
-
-Do not use Lockspire as:
-
-- A hosted identity platform
-- A replacement for your account system
-- A SAML, LDAP, or generic federation suite
-
-## Install shape
-
-1. Add the dependency.
-2. Run `mix lockspire.install`.
-3. Review and wire the generated host-owned files.
-4. Run migrations. New generated installs keep Lockspire-owned tables in the `lockspire` Postgres schema unless you explicitly pass `--storage-prefix public --oban-prefix public`.
-5. Register a client (manually or via DCR) and prove the flow with discovery, JWKS, and an authorization-code + PKCE or Device Flow exchange.
-
-The generated files stay host-owned by design. Lockspire provides the protocol core; your app keeps ownership of login UX, branding, policy, and account data.
-
-For a practical install-to-first-client checklist, see `docs/saas-adoption-recipe.md`.
+For a practical first-client example after installation, see the [SaaS adoption recipe](saas-adoption-recipe.md). The [adoption demo](adoption-demo.md) is a local example that uses synthetic Billingo data.
