@@ -34,7 +34,7 @@ defmodule Lockspire.DocumentationContractTest do
     upgrade = Keyword.fetch!(groups, :Upgrade)
     maintain = Keyword.fetch!(groups, :Maintain)
 
-    assert_in_order(Enum.join(evaluate, "\n"), [
+    assert_in_order(Enum.join(extras, "\n"), [
       "docs/install-and-onboard.md",
       "docs/saas-adoption-recipe.md",
       "docs/adoption-demo.md"
