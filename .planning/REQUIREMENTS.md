@@ -20,8 +20,8 @@
 
 ### Repository clarity and verified cleanup
 
-- [ ] **REPO-01**: Contributors can identify the purpose and lifecycle of major repository areas, including maintained documentation, generated output, fixtures, brand assets, and planning records.
-- [ ] **REPO-02**: Any moved or removed repository content has verified ownership and lifecycle, with active worktree, CI, test, package, generator, and documentation references checked before the change and relevant verification passing afterward.
+- [x] **REPO-01**: Contributors can identify the purpose and lifecycle of major repository areas, including maintained documentation, generated output, fixtures, brand assets, and planning records.
+- [x] **REPO-02**: Any moved or removed repository content has verified ownership and lifecycle, with active worktree, CI, test, package, generator, and documentation references checked before the change and relevant verification passing afterward.
 
 ## Delivery and verification rules
 
@@ -55,8 +55,8 @@ Each requirement maps to exactly one v1.41 phase.
 | LANG-01 | Phase 148 | Complete |
 | LANG-02 | Phase 148 | Complete |
 | LANG-03 | Phase 148 | Complete |
-| REPO-01 | Phase 149 | Not started |
-| REPO-02 | Phase 149 | Not started |
+| REPO-01 | Phase 149 | Complete |
+| REPO-02 | Phase 149 | Complete |
 | DOC-01 | Phase 150 | Not started |
 | DOC-02 | Phase 150 | Not started |
 | DOC-03 | Phase 150 | Not started |
