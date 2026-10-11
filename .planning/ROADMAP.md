@@ -81,6 +81,8 @@ Planning note: Inventory first. Age, names, or apparent generated status do not 
   4. Existing docs and build checks provide deterministic evidence for changed links, navigation, setup instructions, and published guide structure; no manual handoff duplicates proof they establish.
 
 **Plans**: TBD
+- [x] 150-01-PLAN.md
+- [ ] 150-02-PLAN.md
 
 Planning note: Keep the README an orientation and routing page; let focused guides explain the steps. Reuse existing ExDoc and docs-check infrastructure.
 
@@ -90,7 +92,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 |-------|-----------|----------------|--------|-----------|
 | 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
 | 149. Repository Ownership and Lifecycle | v1.41 | 1/1 | Complete    | 2026-10-10 |
-| 150. Adopter and Maintainer Documentation | v1.41 | 0/TBD | Not started | — |
+| 150. Adopter and Maintainer Documentation | v1.41 | 1/2 | In Progress | — |
 
 ## Backlog
 
