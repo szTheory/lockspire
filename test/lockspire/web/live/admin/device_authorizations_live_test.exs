@@ -101,7 +101,8 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
     assert page_html =~ "Operate"
     assert page_html =~ "Device authorization queue"
-    assert page_html =~ "Review device authorizations"
+    assert page_html =~ "Recorded device authorizations"
+    assert page_html =~ "saved request status, client, subject, expiry, and polling context"
     assert page_html =~ "Pending"
     assert page_html =~ "Approved"
     assert page_html =~ "Denied"
@@ -130,13 +131,13 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
              "Approved, waiting for token polling to consume the authorization."
 
     assert page_html =~
-             "Denied before completion; preserve the durable handle for support follow-up."
+             "The request was denied before completion. Its recorded details remain available for follow-up."
 
     assert page_html =~
-             "Expired before completion; no device authorization action is exposed from this page."
+             "The request expired before completion. Its recorded details remain available for review."
 
     assert page_html =~
-             "Consumed by the token flow; use the record as read-only support truth."
+             "Token polling consumed this authorization. Its recorded status and timing remain available for review."
 
     assert page_html =~ "Client"
     assert page_html =~ "Subject"
@@ -171,11 +172,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     refute_unsupported_queue_controls(page_html)
   end
 
-  test "device authorization empty state names operator review without controls" do
+  test "device authorization empty state names the absent records and next route" do
     html = render_queue(:loaded, [])
 
-    assert html =~ "No device authorizations waiting for review"
-    assert html =~ "There are no device authorization records waiting for operator review."
+    assert html =~ "No device authorization records"
+    assert html =~ "No device authorization records are currently stored."
+    assert html =~ "Return to overview"
+    assert html =~ ~s(href="/admin/overview")
+    refute html =~ "operator"
     assert rendered_text(html) =~ "0 device authorizations recorded"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
@@ -188,7 +192,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     loading_text = rendered_text(loading_html)
 
     assert loading_text =~ "Loading device authorizations"
-    refute loading_text =~ "No device authorizations waiting for review"
+    refute loading_text =~ "No device authorization records"
     refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)
 
     with_failed_read(fn ->
@@ -207,7 +211,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       assert failed_text =~ "the current results are unavailable"
       refute failed_text =~ "No count or empty result"
       assert failed_text =~ "Try loading device authorizations again"
-      refute failed_text =~ "No device authorizations waiting for review"
+      refute failed_text =~ "No device authorization records"
       refute failed_text =~ "0 device authorizations recorded"
       HtmlAssertions.assert_has_link(failed_html, "/admin/device_authorizations")
 
@@ -277,7 +281,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       "backend storage"
     ])
 
-    assert page_html =~ "Review device authorizations"
+    assert page_html =~ "Recorded device authorizations"
     assert page_html =~ "Pending device authorization"
     assert page_html =~ "Approved device authorization"
     assert page_html =~ "Denied device authorization"
@@ -287,12 +291,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "Waiting for the user to finish verification before expiry."
 
     assert page_html =~
-             "Denied before completion; preserve the durable handle for support follow-up."
+             "The request was denied before completion. Its recorded details remain available for follow-up."
 
     assert page_html =~
-             "Expired before completion; no device authorization action is exposed from this page."
+             "The request expired before completion. Its recorded details remain available for review."
 
-    assert page_html =~ "Consumed by the token flow; use the record as read-only support truth."
+    assert page_html =~
+             "Token polling consumed this authorization. Its recorded status and timing remain available for review."
+
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
     assert rendered_text(page_html) =~ pending.client_id

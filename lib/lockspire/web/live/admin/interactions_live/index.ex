@@ -37,12 +37,12 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
       <AdminComponents.page_hero
         eyebrow="Operate"
         title="Authorization interaction queue"
-        body="Review authorization interaction state by status, client, subject, age, expiration, and safe review context."
+        body="See recorded interaction status, prompt, client, subject, and timing. Use the client link to inspect the client's details."
       />
 
       <AdminComponents.pane
-        title="Review interactions"
-        subtitle="Read-only interaction rows expose status pressure, prompt, client, subject, and durable review context."
+        title="Recorded interactions"
+        subtitle="Each row shows the saved interaction status, prompt, client, subject, and request times."
       >
         <AdminComponents.metric_grid :if={@interaction_read_state == :loaded}>
           <AdminComponents.summary_stat
@@ -163,16 +163,16 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
     do: "Waiting for consent; the account has not completed the prompt yet."
 
   defp interaction_pressure(%{status: :completed}),
-    do: "Interaction completed; preserve the durable handle for support follow-up."
+    do: "The interaction is complete; use its recorded details for follow-up."
 
   defp interaction_pressure(%{status: :denied}),
-    do:
-      "Denied before completion; review prompt and subject context without changing queue state."
+    do: "The request was denied. Its prompt and subject context remain available for follow-up."
 
   defp interaction_pressure(%{status: :expired}),
-    do: "Expired before completion; no interaction action is exposed from this page."
+    do:
+      "The interaction expired before completion. Its recorded details remain available for review."
 
-  defp interaction_pressure(_interaction), do: "Review durable interaction state."
+  defp interaction_pressure(_interaction), do: "Review the recorded interaction status."
 
   defp interaction_activity_timestamp(%{status: :pending_login} = interaction),
     do: interaction.login_required_at

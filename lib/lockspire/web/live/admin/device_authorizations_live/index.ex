@@ -37,12 +37,12 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
       <AdminComponents.page_hero
         eyebrow="Operate"
         title="Device authorization queue"
-        body="Triage pending, approved, denied, expired, and completed device-flow state without exposing device or user code material."
+        body="See each device authorization's recorded status, client, subject, expiry, and polling details without showing device or user codes."
       />
 
       <AdminComponents.pane
-        title="Review device authorizations"
-        subtitle="Read-only queue rows expose client, status, subject, expiration, and durable non-secret identifiers."
+        title="Recorded device authorizations"
+        subtitle="Each row shows the saved request status, client, subject, expiry, and polling context."
       >
         <AdminComponents.metric_grid :if={@device_read_state == :loaded}>
           <AdminComponents.summary_stat
@@ -90,9 +90,15 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
             </AdminComponents.empty_state>
           <% @device_authorizations == [] -> %>
           <AdminComponents.empty_state
-            title="No device authorizations waiting for review"
-            body="There are no device authorization records waiting for operator review."
-          />
+            title="No device authorization records"
+            body="No device authorization records are currently stored. Return to the overview to choose another investigation."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={admin_path("/overview")}>
+                Return to overview
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
           <% true -> %>
           <AdminComponents.resource_list>
             <%= for auth <- @device_authorizations do %>
@@ -163,15 +169,18 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     do: "Approved, waiting for token polling to consume the authorization."
 
   defp device_authorization_pressure(%{status: :denied}),
-    do: "Denied before completion; preserve the durable handle for support follow-up."
+    do:
+      "The request was denied before completion. Its recorded details remain available for follow-up."
 
   defp device_authorization_pressure(%{status: :expired}),
-    do: "Expired before completion; no device authorization action is exposed from this page."
+    do: "The request expired before completion. Its recorded details remain available for review."
 
   defp device_authorization_pressure(%{status: :consumed}),
-    do: "Consumed by the token flow; use the record as read-only support truth."
+    do:
+      "Token polling consumed this authorization. Its recorded status and timing remain available for review."
 
-  defp device_authorization_pressure(_auth), do: "Review durable device authorization state."
+  defp device_authorization_pressure(_auth),
+    do: "Review the recorded device authorization status."
 
   defp safe_identifier(nil), do: "Not recorded"
   defp safe_identifier(value) when is_binary(value), do: value

@@ -82,7 +82,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
     assert page_html =~ "Operate"
     assert page_html =~ "Authorization interaction queue"
-    assert page_html =~ "Review interactions"
+    assert page_html =~ "Recorded interactions"
+    assert page_html =~ "recorded interaction status, prompt, client, subject, and timing"
     assert page_html =~ "Pending login"
     assert page_html =~ "Pending consent"
     assert page_html =~ "Completed"
@@ -110,13 +111,13 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "Waiting for consent; the account has not completed the prompt yet."
 
     assert page_html =~
-             "Interaction completed; preserve the durable handle for support follow-up."
+             "The interaction is complete; use its recorded details for follow-up."
 
     assert page_html =~
-             "Denied before completion; review prompt and subject context without changing queue state."
+             "The request was denied. Its prompt and subject context remain available for follow-up."
 
     assert page_html =~
-             "Expired before completion; no interaction action is exposed from this page."
+             "The interaction expired before completion. Its recorded details remain available for review."
 
     assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
     assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
@@ -144,7 +145,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "Pending login"
   end
 
-  test "interactions empty state names operator review without controls" do
+  test "interactions empty state names the absent records without controls" do
     html =
       %{
         current_section: :interactions,
@@ -159,6 +160,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
     assert html =~ "No authorization interactions recorded"
     assert html =~ "No authorization interactions are currently recorded."
+    refute html =~ "operator"
     assert html =~ "Return to overview"
     assert html =~ ~s(href="/lockspire/admin/overview")
     refute html =~ "phx-click"
@@ -286,7 +288,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       "raw params"
     ])
 
-    assert page_html =~ "Review interactions"
+    assert page_html =~ "Recorded interactions"
     assert page_html =~ "Pending login"
     assert page_html =~ "Pending consent"
     assert page_html =~ "Completed"
