@@ -2,37 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.41
 milestone_name: Product Language & Repository Clarity
-current_phase: 150
-status: completed
-stopped_at: Phase 150 complete — all phases complete
-last_updated: "2026-10-11T12:28:07.002Z"
+status: Awaiting next milestone
+stopped_at: v1.41 archived — next milestone scope not selected
+last_updated: "2026-10-11T12:48:29.663Z"
 last_activity: 2026-10-11
-last_activity_desc: Phase 150 complete
-state_head: 1aae1354a12fb423db404abc6fcd48e6ded492cf
+last_activity_desc: Milestone v1.41 completed and archived
+state_head: e92b8cb5383ad5e2859a2c05c6e37fb97b34ed09
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 10
   completed_plans: 10
   percent: 100
+current_phase: null
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10 after Phase 148)
+See: .planning/PROJECT.md (updated 2026-10-11 after v1.41 completion)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 150 — Adopter and Maintainer Documentation
+**Current focus:** Planning next milestone with `$gsd-new-milestone`
 
 ## Current Position
 
-Phase: 150
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-10-11 — Phase 150 complete
+Phase: —
+Plan: —
+Status: Milestone v1.41 archived; awaiting next milestone scope
+Last activity: 2026-10-11 — Milestone v1.41 completed and archived
 
 ## Accumulated Context
 
@@ -292,6 +292,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | verification_gaps | 145/145-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | deferred_items | 145/deferred-items.md: Phase 145 Plan 02's existing compiler/type warnings outside its ownership | acknowledged | 2026-10-10 | v1.40 |
+| deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
 
 ## Session Continuity
 
@@ -398,8 +399,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- v1.40 Admin Operator UI Refinement is archived: Phase 147 was the final phase; all 21 plans and 47 tasks are complete.
-- Closeout type is `override_closeout`. GSD freshness was 0/4 at close: Phases 144, 145, and 147 were stale after covered-source edits; Phase 146 remains `human_needed`. Their reports preserve their original verdicts; see the archived audit.
-- The late policy/client readiness fix passed 35 focused tests and a clean code review. Billingo is synthetic demo-adopter data, not a real customer.
-- Next command: `$gsd-new-milestone` to select the next milestone focus. Phase 999.1 Repository Readability & Docs Polish remains backlog and was not promoted.
-- CR-01 private-key-at-rest remains separate security work and is not accepted as release-ready.
+- Start the next milestone with $gsd-new-milestone

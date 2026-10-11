@@ -20,9 +20,9 @@
     }
   ],
   "next": {
-    "command": "/gsd:new-milestone",
-    "label": "Start a new milestone",
-    "reason": "All phases complete — start a new milestone"
+    "command": "/gsd:progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-11T12:28:07.015Z"
+  "updated_at": "2026-10-11T12:48:29.683Z"
 }

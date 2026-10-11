@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.41 Product Language & Repository Clarity (Completed: 2026-10-11)
+
+**Delivered:** Admin pages now use task- and object-centered language while preserving OAuth/OIDC distinctions and truthful outcomes. Contributors have a source-backed repository lifecycle map, and Phoenix adopters and maintainers have a clear route through product fit, canonical installation, verification, and task guides. This was planning and documentation work; it did not publish a package.
+
+**Phases completed:** 3 phases (148–150), 10 plans, 24 tasks; all 8 requirements are satisfied.
+
+**Key accomplishments:**
+- Reframed admin copy around the user's task, object, decision, and confirmed outcome without changing protocol behavior or security claims.
+- Preserved distinct consent and token revocation scopes, redaction, unavailable-read states, and key lifecycle evidence in the user-facing language.
+- Added a contributor lifecycle map grounded in current package, CI, generator, and evidence consumers; retained ambiguous worktree records until ownership is known.
+- Routed adopters from product fit to the supported-surface contract, canonical install and verification, then their next task guide.
+- Grouped ExDoc navigation by reader task and added deterministic checks for routes, commands, package contents, generated docs, and public-guide boundaries.
+- Identified Billingo as synthetic demo data, not a production integration.
+
+**Known verification overrides: 1 newly acknowledged, 8 carried forward from prior closes (see STATE.md Deferred Items).** The compiler/type warnings are outside Phase 148's copy-only scope; their source report remains unchanged. Phase verification for all three v1.41 phases passed.
+
+**Accepted maintenance debt:** Preserve three ambiguous Git worktree administrative records until ownership is established; one recorded target still exists, so blanket pruning was unsafe.
+
+**Audit:** [v1.41 milestone audit](milestones/v1.41-MILESTONE-AUDIT.md) (`tech_debt`; no blockers; acknowledged closeout).
+
+**Archives:** `milestones/v1.41-ROADMAP.md`, `milestones/v1.41-REQUIREMENTS.md`, `milestones/v1.41-MILESTONE-AUDIT.md`, `milestones/v1.41-phases/` · **GSD milestone tag:** `v1.41` (planning milestone; not a package release).
+
+---
+
 ## v1.40 Admin Operator UI Refinement (Completed: 2026-10-10)
 
 **Delivered:** Refined the existing Phoenix LiveView operator surface across Configure, Support, Orient, and read-only Operate. The work improves client, policy, credential, key, token, consent, device, interaction, logout, and overview journeys while preserving Lockspire's embedded-library and host-owned UX boundaries.

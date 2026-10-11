@@ -8,7 +8,7 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## Current Milestone: v1.41 Product Language & Repository Clarity
+## Completed Milestone: v1.41 Product Language & Repository Clarity (Completed 2026-10-11)
 
 **Goal:** Make Lockspire's admin UI language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
 
@@ -17,7 +17,9 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - Use the reviewed vocabulary to improve the README and canonical adopter/maintainer documentation; verify navigation, setup steps, links, and claims against current code and `docs/supported-surface.md`.
 - Clarify repository directory ownership and lifecycle, and move or remove clutter only after verifying it is stale, unowned, and unused by CI, tests, packaging, or maintained workflows.
 
-This scope refines language, documentation, repository navigation, and verified cleanup; it does not add protocol features or expand UI behavior.
+**Delivered:** Phases 148–150 completed 10 plans and 24 tasks. Admin pages now use task- and object-centered language while preserving OAuth/OIDC distinctions and truthful outcomes. Contributors have a source-backed repository lifecycle map; Phoenix adopters and maintainers have a direct path through product fit, canonical installation, verification, and task guides. All eight requirements passed verification, the cross-phase audit found no broken flows, and no manual UAT was needed for the covered facts.
+
+**Closeout:** The audit records one acknowledged copy-scope compiler-warning follow-up and three ambiguous Git worktree records preserved until ownership is established. This was planning and documentation work; Lockspire 1.5.1 remains the latest public package. See the [v1.41 audit](milestones/v1.41-MILESTONE-AUDIT.md), [roadmap](milestones/v1.41-ROADMAP.md), and [requirements](milestones/v1.41-REQUIREMENTS.md).
 
 ## Verification and Automation Default
 
@@ -77,7 +79,7 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-The v1.41 Product Language & Repository Clarity milestone has delivered the planned UI language, repository lifecycle map, and adopter/maintainer documentation across Phases 148–150. The current project step is milestone audit and archival; the promoted Phase 999.1 backlog scope has been delivered.
+v1.41 Product Language & Repository Clarity is complete and archived. Phases 148–150 delivered all eight requirements in 10 plans and 24 tasks; the milestone audit found no unsatisfied requirements or broken flows. The Phase 999.1 repository readability/docs-polish scope was delivered through these phases and should not be run again.
 
 The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 24 requirements and eight reviewed flows satisfied across Phases 144–147 (21 plans). The override closeout records three phase reports as stale after covered-source edits and Phase 146 as `human_needed`; original verification reports were preserved. The late policy/client readiness changes passed 35 focused tests and a clean code review. The audit makes no claim that every phase currently has fresh verification.
 
@@ -86,6 +88,10 @@ Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is
 Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; v1.40 neither resolves nor accepts it as safe for release.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
+
+## Next Milestone Goals
+
+No next milestone scope has been selected. Run `$gsd-new-milestone` to choose the next project direction. Carry forward the embedded-library boundary, plain user-facing language, and shift-left verification default; reconcile preserved worktree records only when ownership is established.
 
 ## Completed Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
