@@ -120,7 +120,7 @@ Run:
 make demo-smoke
 ```
 
-The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, anonymous admin login redirect, operator admin access, non-operator denial, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
+The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, the admin sign-in redirect, access for the seeded admin account, denial for staff without admin access, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
 
 The explicit smoke commands remain:
 

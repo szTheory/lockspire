@@ -45,13 +45,13 @@ The admin UI uses the same four top-level journey labels as the embedded admin l
 
 This organization is deliberate: Orient, Configure, Support, and Operate are separate journeys even when they reference the same client.
 
-The v1.29 proof artifacts under `.planning/phases/110-demo-state-screenshots-docs-and-regression-proof/` record screenshot inventory and browser evidence for this route surface. Those artifacts are maintainer evidence only; runtime code and operator docs do not depend on screenshot files.
+The v1.29 proof artifacts under `.planning/phases/110-demo-state-screenshots-docs-and-regression-proof/` record screenshot inventory and browser evidence for this route surface. Those artifacts are maintainer evidence only; runtime code and admin docs do not depend on screenshot files.
 
 ## Design system workflow and proof boundary
 
-The admin UI uses Lockspire-owned design tokens and shared Phoenix components for its operator surface. The runtime tokens intentionally mirror `brandbook/tokens/` so maintainers can audit brand drift without introducing a second styling system or a public component API.
+The admin UI uses Lockspire-owned design tokens and shared Phoenix components. The runtime tokens intentionally mirror `brandbook/tokens/` so maintainers can audit brand drift without introducing a second styling system or a public component API.
 
-Shared primitives cover the common operator building blocks: page heroes, section cards, action groups, status badges, alerts, resource lists, summaries, long identifiers, copy-once secret panels, confirmation panels, form fields, and error summaries. When adding or revising admin routes, prefer these primitives over page-local class assemblies and keep each change tied to the Orient, Configure, Support, or Operate job it serves.
+Shared components cover common admin needs: page headers, section cards, action groups, status badges, alerts, resource lists, summaries, long identifiers, copy-once secret panels, confirmation panels, form fields, and error summaries. When adding or revising admin routes, prefer these components over page-local class assemblies and keep each change tied to the Orient, Configure, Support, or Operate task it serves.
 
 The component lab and stress surface are internal maintainer proof only. They render real admin primitives and hostile redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRouter`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
 
@@ -65,9 +65,9 @@ Theme behavior is intentionally narrow:
 
 Maintainer verification should keep this boundary intact: source contracts check shared primitives, token drift, focus, responsive behavior, theme modes, reduced motion, route links, docs truth, and redaction; manual evidence, when captured, remains maintainer proof and must not include secrets or copy-once plaintext. These checks do not make browser tooling, screenshots, lab routes, or theming overrides part of the public support contract.
 
-This section is maintainer-facing operator guidance. It keeps the public support ceiling in `docs/supported-surface.md` while internal proof artifacts, package contents, and admin route behavior remain bounded.
+This section is maintainer guidance. It keeps the public support ceiling in `docs/supported-surface.md` while internal proof artifacts, package contents, and admin route behavior remain bounded.
 
-Lockspire owns protocol and operator state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
+Lockspire owns protocol and related admin state after the request reaches its LiveViews; the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to those routes.
 
 Route groups remain concrete entries inside those journeys:
 
@@ -86,7 +86,7 @@ Before page edits, review the scorecard fields in order: persona, JTBD, top task
 
 Scorecards and any lab/stress/browser/judge notes are maintainer evidence only. They do not create supported admin routes, public APIs, host extension points, theming interfaces, browser-testing products, Hex package surface, or public support claims. Do not preserve secrets, copy-once values, screenshots with plaintext credentials, traces, reports, cookies, token-looking strings, auth codes, private keys, verifier material, user codes, or production-looking identifiers as evidence; prefer deterministic Mix guardrails and redaction-safe fixture notes.
 
-The same host seam applies to scorecard work: Lockspire owns protocol and operator state after the request reaches the host-guarded admin router, while the host owns staff sessions, MFA, role checks, tenant policy, outer layouts, branding, product-specific authorization, IP policy, and audit framing. Keep this guide subordinate to `docs/supported-surface.md`; scorecards explain maintainer judgment workflow and do not raise the public support ceiling.
+The same host seam applies to scorecard work: Lockspire owns protocol and related admin state after the request reaches the host-guarded admin router, while the host owns staff sessions, MFA, role checks, tenant policy, outer layouts, branding, product-specific authorization, IP policy, and audit framing. Keep this guide subordinate to `docs/supported-surface.md`; scorecards explain maintainer judgment workflow and do not raise the public support ceiling.
 
 ## DCR onboarding and DCR policy
 
@@ -95,11 +95,11 @@ Keep DCR onboarding separate from DCR policy:
 - **DCR onboarding** lives primarily at `/admin/dcr`, `/admin/iats`, `/admin/iats/new`, self-registered client detail, and `/admin/clients/:client_id/rotate-registration-access-token`. It covers partner intake, short-lived Initial Access Tokens, self-registered clients, and registration access token support.
 - **DCR policy** lives at `/admin/policies/dcr`. It covers issuer registration posture, allowed registration methods, and whether registration is disabled, IAT-gated, or open.
 
-These workflows are connected, but they are not the same job. Operators may start in DCR onboarding, discover that issuer policy blocks the intake path, and pivot to DCR policy before returning to the onboarding route.
+These workflows are connected, but they are not the same job. Admin users may start in DCR onboarding, find that issuer policy blocks registration, then update the policy before returning to onboarding.
 
 ## Logout propagation workflow
 
-Operators now have two separate logout-related surfaces on each client:
+Each client has two separate logout-related settings:
 
 - **Post-logout redirect URIs**: browser destinations the RP may use after RP-initiated logout completes. Edit them at `/admin/clients/:client_id/logout-uris`.
 - **Logout propagation URIs**: RP cleanup endpoints for back-channel and front-channel logout propagation. Edit them at `/admin/clients/:client_id/edit?workflow=logout-propagation`.
@@ -110,11 +110,11 @@ Lockspire's shipped truth model is:
 
 - Back-channel logout is the durable path. After the host app clears its own browser session and returns to `/end_session/complete`, Lockspire persists delivery intent, then Oban runs Req-based POST delivery out of band.
 - Front-channel logout is best effort only. Lockspire renders invisible iframes and a bounded continue page, but it does not claim remote success.
-- Dynamic Client Registration now manages the same existing logout propagation metadata for eligible self-service clients. Operators still have an explicit admin workflow for review, correction, and support-driven updates.
+- Dynamic Client Registration now manages the same existing logout propagation metadata for eligible self-service clients. Admin users still have a separate workflow to review, correct, or update these settings when supporting a client.
 
 ## PAR Policy Management
 
-Operators can control whether PAR is required for authorization requests:
+Set whether PAR is required for authorization requests:
 
 - **Global PAR policy**: The default requirement for all clients (Required or Optional).
 - **Client PAR override**: A per-client setting that can override the global default.
@@ -138,12 +138,12 @@ Lockspire owns:
 
 - Protocol correctness
 - Durable client, consent, token, interaction, and key state
-- Admin workflows for operators
+- Client, consent, token, and key management
 
 The host app owns:
 
 - Accounts and sessions
-- Operator authentication and authorization before the admin router
+- Staff sign-in and access checks before the admin router
 - Login UX and MFA
 - Layouts and branding
 - Product policy and authorization framing
