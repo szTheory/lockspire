@@ -11,7 +11,7 @@
     {
       "number": "149",
       "name": "Repository Ownership and Lifecycle",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "150",
@@ -21,8 +21,8 @@
   ],
   "next": {
     "command": "/gsd:progress --next",
-    "label": "Advance to the next step (plan phase 149)",
-    "reason": "Phase 149 of 3 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 149 of 3 · 33% · executing"
   },
-  "updated_at": "2026-10-11T00:49:18.627Z"
+  "updated_at": "2026-10-11T02:38:46.643Z"
 }
