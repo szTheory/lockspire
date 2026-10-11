@@ -222,31 +222,35 @@ defmodule Lockspire.MixProject do
         "docs/sigra-companion-host.md"
       ],
       groups_for_extras: [
-        Guides: [
+        "Evaluate and install": [
           "docs/ecosystem-overview.md",
           "docs/oauth-oidc-for-phoenix-adopters.md",
-          "docs/architecture.md",
-          "docs/code-walkthrough.md",
           "docs/getting-started.md",
+          "docs/install-and-onboard.md",
           "docs/saas-adoption-recipe.md",
           "docs/adoption-demo.md",
-          "docs/install-and-onboard.md",
+          "docs/supported-surface.md"
+        ],
+        Integrate: [
           "docs/protect-phoenix-api-routes.md",
           "docs/device-flow-host-guide.md",
           "docs/private-key-jwt-host-guide.md",
           "docs/client-secret-jwt-host-guide.md",
           "docs/rar-consent-host-guide.md",
-          "docs/operator-admin.md",
           "docs/dynamic-registration.md",
-          "docs/telemetry.md",
-          "docs/supported-surface.md",
+          "docs/operator-admin.md",
           "docs/sigra-companion-host.md"
         ],
-        Upgrading: [
+        "Understand Lockspire": [
+          "docs/architecture.md",
+          "docs/code-walkthrough.md",
+          "docs/telemetry.md"
+        ],
+        Upgrade: [
           "docs/upgrading/v1.27.md",
           "docs/upgrading/storage-prefix.md"
         ],
-        Maintainers: [
+        Maintain: [
           "CHANGELOG.md",
           "SECURITY.md",
           "docs/maintainer-conformance.md",

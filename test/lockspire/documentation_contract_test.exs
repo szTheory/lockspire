@@ -8,21 +8,46 @@ defmodule Lockspire.DocumentationContractTest do
   @getting_started_path Path.join(@repo_root, "docs/getting-started.md")
   @install_path Path.join(@repo_root, "docs/install-and-onboard.md")
 
-  test "architecture and walkthrough are wired into ExDoc, README, and package inputs" do
+  test "every maintained guide appears once in a reader-task ExDoc group and package" do
     docs = Mix.Project.config() |> Keyword.fetch!(:docs)
     extras = Keyword.fetch!(docs, :extras)
     groups = Keyword.fetch!(docs, :groups_for_extras)
     package_files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files)
     grouped_extras = groups |> Keyword.values() |> List.flatten()
+    expected_extras = Enum.reject(extras, &(&1 == "README.md"))
 
-    assert "docs/architecture.md" in extras
-    assert "docs/code-walkthrough.md" in extras
-    assert "docs/architecture.md" in grouped_extras
-    assert "docs/code-walkthrough.md" in grouped_extras
+    assert Enum.sort(grouped_extras) == Enum.sort(expected_extras)
+    assert length(grouped_extras) == length(Enum.uniq(grouped_extras))
+    assert Enum.all?(extras, &(&1 in package_files))
 
-    assert "docs/architecture.md" in package_files
-    assert "docs/code-walkthrough.md" in package_files
     assert "brandbook/logo/lockspire-favicon.svg" in package_files
+    refute "CONTRIBUTING.md" in extras
+    refute "CONTRIBUTING.md" in package_files
+
+    for extra <- expected_extras do
+      assert File.exists?(Path.join(@repo_root, extra)), "missing ExDoc extra: #{extra}"
+    end
+
+    evaluate = Keyword.fetch!(groups, :"Evaluate and install")
+    integrate = Keyword.fetch!(groups, :Integrate)
+    understand = Keyword.fetch!(groups, :"Understand Lockspire")
+    upgrade = Keyword.fetch!(groups, :Upgrade)
+    maintain = Keyword.fetch!(groups, :Maintain)
+
+    assert_in_order(Enum.join(evaluate, "\n"), [
+      "docs/install-and-onboard.md",
+      "docs/saas-adoption-recipe.md",
+      "docs/adoption-demo.md"
+    ])
+
+    assert "docs/supported-surface.md" in evaluate
+    assert "docs/operator-admin.md" in integrate
+    assert "docs/sigra-companion-host.md" in integrate
+    assert "docs/architecture.md" in understand
+    assert "docs/code-walkthrough.md" in understand
+    assert "docs/maintainer-conformance.md" in maintain
+    assert "docs/maintainer-release.md" in maintain
+    assert "docs/upgrading/v1.27.md" in upgrade
   end
 
   test "README and getting-started route readers to canonical sources and task guides" do
