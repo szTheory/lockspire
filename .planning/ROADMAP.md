@@ -18,7 +18,7 @@ Make Lockspire's admin UI language useful to the people doing the work, then mak
 
 - [x] **Phase 148: User-Facing Admin Language** — Rewrite existing admin UI copy around user goals and mental models without losing protocol precision or truthful outcomes.
 - [x] **Phase 149: Repository Ownership and Lifecycle** — Make the purpose and lifecycle of major repository areas clear; move or remove content only after ownership and reference checks prove it safe. (completed 2026-10-10)
-- [ ] **Phase 150: Adopter and Maintainer Documentation** — Give Phoenix teams a clear, accurate path through fit, installation, verification, and ongoing use.
+- [x] **Phase 150: Adopter and Maintainer Documentation** — Give Phoenix teams a clear, accurate path through fit, installation, verification, and ongoing use.
 
 ## v1.41 Product Language & Repository Clarity
 
@@ -80,7 +80,7 @@ Planning note: Inventory first. Age, names, or apparent generated status do not 
   3. `docs/supported-surface.md` remains the single canonical capability/non-claim contract, and all changed setup steps, commands, links, and claims match source.
   4. Existing docs and build checks provide deterministic evidence for changed links, navigation, setup instructions, and published guide structure; no manual handoff duplicates proof they establish.
 
-**Plans**: TBD
+**Plans**: 2/2 plans complete
 - [x] 150-01-PLAN.md
 - [x] 150-02-PLAN.md
 
@@ -92,7 +92,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 |-------|-----------|----------------|--------|-----------|
 | 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
 | 149. Repository Ownership and Lifecycle | v1.41 | 1/1 | Complete    | 2026-10-10 |
-| 150. Adopter and Maintainer Documentation | v1.41 | 2/2 | In Progress | — |
+| 150. Adopter and Maintainer Documentation | v1.41 | 2/2 | Complete    | 2026-10-11 |
 
 ## Backlog
 
