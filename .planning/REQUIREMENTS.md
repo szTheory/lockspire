@@ -14,9 +14,9 @@
 
 ### Adopter and maintainer documentation
 
-- [ ] **DOC-01**: The README routes adopters and maintainers through product fit and boundaries, Phoenix installation, verification, and the relevant next guide.
-- [ ] **DOC-02**: README and generated HexDocs navigation make maintained guides findable by task; `docs/supported-surface.md` remains the canonical capability and non-claim contract.
-- [ ] **DOC-03**: Maintained setup steps, commands, links, and capability claims match the current code and are checkable through existing documentation verification.
+- [x] **DOC-01**: The README routes adopters and maintainers through product fit and boundaries, Phoenix installation, verification, and the relevant next guide.
+- [x] **DOC-02**: README and generated HexDocs navigation make maintained guides findable by task; `docs/supported-surface.md` remains the canonical capability and non-claim contract.
+- [x] **DOC-03**: Maintained setup steps, commands, links, and capability claims match the current code and are checkable through existing documentation verification.
 
 ### Repository clarity and verified cleanup
 
@@ -57,9 +57,9 @@ Each requirement maps to exactly one v1.41 phase.
 | LANG-03 | Phase 148 | Complete |
 | REPO-01 | Phase 149 | Complete |
 | REPO-02 | Phase 149 | Complete |
-| DOC-01 | Phase 150 | Not started |
-| DOC-02 | Phase 150 | Not started |
-| DOC-03 | Phase 150 | Not started |
+| DOC-01 | Phase 150 | Complete |
+| DOC-02 | Phase 150 | Complete |
+| DOC-03 | Phase 150 | Complete |
 
 **Coverage:** 8 total; 8 mapped; 0 unmapped.
 

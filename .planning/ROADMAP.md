@@ -82,7 +82,7 @@ Planning note: Inventory first. Age, names, or apparent generated status do not 
 
 **Plans**: TBD
 - [x] 150-01-PLAN.md
-- [ ] 150-02-PLAN.md
+- [x] 150-02-PLAN.md
 
 Planning note: Keep the README an orientation and routing page; let focused guides explain the steps. Reuse existing ExDoc and docs-check infrastructure.
 
@@ -92,7 +92,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 |-------|-----------|----------------|--------|-----------|
 | 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
 | 149. Repository Ownership and Lifecycle | v1.41 | 1/1 | Complete    | 2026-10-10 |
-| 150. Adopter and Maintainer Documentation | v1.41 | 1/2 | In Progress | — |
+| 150. Adopter and Maintainer Documentation | v1.41 | 2/2 | In Progress | — |
 
 ## Backlog
 
