@@ -56,9 +56,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
           <form class="lockspire-admin-form-stack" phx-submit="activate_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="activate[confirm]" value="true" />
-              <span>
-                Use this key to sign new tokens. The previous active key moves to retiring.
-              </span>
+              <span>{activation_consequence(@key_detail.key.use)}</span>
             </label>
             <AdminComponents.action_bar>
               <AdminComponents.admin_button
@@ -101,4 +99,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
     </div>
     """
   end
+
+  defp activation_consequence(:sig),
+    do: "Use this key to sign new tokens. The previous signing key moves to retiring."
+
+  defp activation_consequence(:enc),
+    do: "Use this key for encryption. The previous encryption key moves to retiring."
+
+  defp activation_consequence(_use),
+    do: "Make this the active key for its use. The previous active key moves to retiring."
 end

@@ -109,7 +109,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert LazyHTML.text(primary_action_group) =~ "Generate signing key"
     refute LazyHTML.text(primary_action_group) =~ "Generate encryption key"
     assert LazyHTML.text(secondary_action_group) =~ "Generate encryption key"
-    assert html =~ "Key generation actions"
+
+    assert html =~
+             "Generation creates an upcoming key. Publish it separately to add it to JWKS while the active key remains in use."
+
     assert html =~ "phx-disable-with=\"Generating signing key…\""
     assert html =~ "phx-disable-with=\"Generating encryption key…\""
     assert html =~ "Served in JWKS"
@@ -121,7 +124,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute html =~ "ui-retired"
     assert html =~ "Next safe action"
     assert html =~ "Publish key for verification overlap"
-    assert html =~ "Retire key after verifier overlap"
+    assert html =~ "Retire key to remove it from JWKS"
     assert html =~ "Clients"
     assert html =~ "Consents"
     assert html =~ "Tokens"
@@ -263,7 +266,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
              "Key is now served in JWKS; the current signer remains active."
 
     html = rendered_to_string(Show.render(socket.assigns))
-    assert html =~ "Use this key to sign new tokens. The previous active key moves to retiring."
+    assert html =~ "Use this key to sign new tokens. The previous signing key moves to retiring."
     refute html =~ "only when verifiers can accept the cutover signer"
     refute_unsupported_verifier_promise(html)
     assert html =~ "name=\"activate[confirm]\""
@@ -372,6 +375,33 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute html =~ ~s(phx-submit="publish_key")
     refute html =~ ~s(phx-submit="activate_key")
     refute html =~ ~s(phx-submit="retire_key")
+    refute_forbidden_key_copy(html)
+  end
+
+  test "encryption key activation names its use without claiming a signer switch", %{now: now} do
+    {:ok, encryption_key} =
+      Repository.publish_key(
+        signing_key("ui-upcoming-encryption", :upcoming, now,
+          use: :enc,
+          published_at: now
+        )
+      )
+
+    assert {:ok, socket} =
+             Show.mount(%{"id" => Integer.to_string(encryption_key.id)}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"id" => Integer.to_string(encryption_key.id)},
+               "/lockspire/admin/keys/#{encryption_key.id}",
+               socket
+             )
+
+    html = rendered_to_string(Show.render(socket.assigns))
+
+    assert html =~ "Use this key for encryption. The previous encryption key moves to retiring."
+    refute html =~ "Use this key to sign new tokens."
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
   end
 

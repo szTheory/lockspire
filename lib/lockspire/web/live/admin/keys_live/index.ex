@@ -52,12 +52,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
       <AdminComponents.page_hero
         eyebrow="Configure"
         title="Review key lifecycle"
-        body="Review issuer key posture, publication overlap, rollover readiness, and safe lifecycle actions without exposing non-public key material."
+        body="Generate an upcoming signing or encryption key, publish it in JWKS for verifier overlap, then activate it for use. Retiring a key removes it from JWKS."
       />
 
       <AdminComponents.section_card
         title="Key lifecycle posture"
-        subtitle="Inspect upcoming, active, retiring, and retired keys without exposing raw status editing."
+        subtitle="Each key shows its lifecycle status and whether Lockspire currently serves it in JWKS."
       >
         <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
           <AdminComponents.summary_stat value={@lifecycle_metrics.active} label="Active" />
@@ -270,16 +270,18 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
 
   defp count_keys(keys, status), do: Enum.count(keys, &(&1.key.status == status))
 
-  defp key_generation_group_copy(_metrics), do: "Key generation actions"
+  defp key_generation_group_copy(_metrics),
+    do:
+      "Generation creates an upcoming key. Publish it separately to add it to JWKS while the active key remains in use."
 
   defp key_next_action_summary(%{next_actions: [:publish]}),
     do: "Publish key for verification overlap"
 
   defp key_next_action_summary(%{next_actions: [:activate]}),
-    do: "Activate key for signer cutover"
+    do: "Activate key for its use"
 
   defp key_next_action_summary(%{next_actions: [:retire]}),
-    do: "Retire key after verifier overlap"
+    do: "Retire key to remove it from JWKS"
 
   defp key_next_action_summary(%{next_actions: []}), do: "No lifecycle action available"
 

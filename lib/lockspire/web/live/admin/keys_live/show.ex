@@ -206,7 +206,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
 
       <AdminComponents.section_card
         title={@key_detail.key.handle}
-        subtitle="Key detail shows public metadata, lifecycle truth, and the next safe operator action."
+        subtitle="Check public metadata, current JWKS availability, and the supported next action. Only public key metadata is shown here."
       >
         <AdminComponents.description_list>
           <:item label="Status">
