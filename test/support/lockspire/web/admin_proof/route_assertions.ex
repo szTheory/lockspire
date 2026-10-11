@@ -91,7 +91,7 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     for action <- [
           "Rotate client secret",
           "Rotate registration access token",
-          "Mint initial access token",
+          "Create an Initial Access Token",
           "Generate signing key",
           "Save global DCR policy"
         ] do

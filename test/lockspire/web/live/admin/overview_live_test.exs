@@ -299,14 +299,14 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
   test "security and DCR landing pages orient related workflows" do
     assert {:ok, _security_view, security_html} = live(conn_for_admin(), "/admin/policies")
 
-    assert security_html =~ "Policy posture"
+    assert security_html =~ "Issuer policy settings"
     assert security_html =~ "Dynamic Client Registration"
     assert security_html =~ "/admin/policies/dcr"
 
     assert {:ok, _dcr_view, dcr_html} = live(conn_for_admin(), "/admin/dcr")
 
-    assert dcr_html =~ "DCR onboarding"
-    assert dcr_html =~ "Create initial access token"
+    assert dcr_html =~ "Prepare a partner registration"
+    assert dcr_html =~ "Create an Initial Access Token"
     assert dcr_html =~ "Review self-registered clients"
     assert dcr_html =~ "Overview Client"
   end
