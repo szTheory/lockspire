@@ -6,7 +6,7 @@ current_phase: 149
 current_phase_name: Repository Ownership and Lifecycle
 status: planning
 stopped_at: Phase 148 complete, ready to plan Phase 149
-last_updated: "2026-10-11T00:49:18.615Z"
+last_updated: "2026-10-11T00:53:46Z"
 last_activity: 2026-10-10
 last_activity_desc: Phase 148 complete, transitioned to Phase 149
 state_head: ff7276e56d879e159501b3bf2f2f6d4e4cdff9e9
@@ -22,7 +22,7 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-10 at v1.41 kickoff)
+See: .planning/PROJECT.md (updated 2026-10-10 after Phase 148)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
@@ -33,7 +33,7 @@ See: .planning/PROJECT.md (updated 2026-10-10 at v1.41 kickoff)
 Phase: 149 — Repository Ownership and Lifecycle
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-10-10 — Phase 148 complete, transitioned to Phase 149
+Last activity: 2026-10-10 — Phase 148 complete; Phase 149 is ready to discuss
 
 ## Accumulated Context
 
@@ -237,7 +237,9 @@ Last activity: 2026-10-10 — Phase 148 complete, transitioned to Phase 149
 - [Phase 147]: Use an isolated same-origin iframe to replay the production theme shell with deterministic storage failures installed before initialization.
 - [Phase 147]: Refresh the Phase 144 preview only after the database, volume, mount, and normalized synthetic data fingerprint matched.
 - [Phase 147]: Keep the historical 29-route sweep at a3409cfa and report targeted current-source evidence separately at 59d79140.
-- [Phase 148]: Write visible admin copy for the intended user’s goal and mental model; translate internal labels, preserve precise protocol terms when they support safe decisions, and do not label users as operators. — This is the user-approved direction for v1.41’s language-first phase.
+- [Phase 148]: Write visible admin copy for the intended user’s goal and mental model; translate internal labels, preserve precise protocol terms when they support safe decisions, and do not label users as operators. — Carry the reviewed vocabulary into Phase 150 docs.
+- [Phase 148]: Keep consent, token-family, key-lifecycle, and logout language tied to stored scope and confirmed outcomes; do not imply host-owned UX or remote system results.
+- [Phase 148 verification]: Rendered copy, state, and redaction claims have automated LiveView coverage; 33/33 must-haves passed, with no claim of observed user comprehension.
 
 ### Pending Todos
 
@@ -290,9 +292,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-10T22:38:23.176Z
+Last session: 2026-10-11T00:53:46Z
 Stopped at: Phase 148 complete, ready to plan Phase 149
-Resume file: .planning/phases/148-user-facing-admin-language/148-UI-SPEC.md
+Resume file: None
 
 ## Performance Metrics
 

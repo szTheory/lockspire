@@ -253,7 +253,6 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Establish and apply concise, plain-language operator terminology without changing protocol meanings, security consequences, or host-owned UX boundaries.
 - [ ] Align adopter and maintainer documentation with the reviewed vocabulary and verify setup instructions, navigation, links, and supported-surface claims against source truth.
 - [ ] Make repository ownership and lifecycle easier to understand, changing or removing paths only when active ownership and all CI, test, packaging, and workflow references have been checked.
 
@@ -261,6 +260,7 @@ The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40
 
 ### Validated
 
+- ✓ Existing admin pages use task-focused, plain language while preserving protocol meanings, security consequences, redaction, and host-owned UX boundaries — v1.41, Phase 148; verifier 33/33, 215 focused tests, and responsive review at desktop, tablet, and mobile sizes. No user-comprehension claim is made.
 - ✓ Current mounted preview, refreshed route/state inventory, and shared improvements demonstrated in representative whole workflows — v1.40, Phases 144 and 147; GSD freshness limitations are recorded in the milestone audit.
 - ✓ Consistent client, onboarding, credential, key, and security-policy configuration journeys — v1.40, Phase 145; visual coverage gaps remain disclosed.
 - ✓ Clear token/consent investigation, truthful observation failures, and readable read-only operations — v1.40, Phase 146; functional truths passed, visual backstops remain `human_needed`.
@@ -371,7 +371,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Start v1.41 with a plain-language operator-copy pass before README and guide rewrites | The user reports that existing UI wording still feels like boilerplate and jargon; reviewed terms should anchor the documentation pass while preserving protocol accuracy and operator consequences | Adopted 2026-10-10; Impeccable `clarify` guidance informs the bounded copy review |
+| Start v1.41 with a plain-language admin UI copy pass before README and guide rewrites | The user reports that existing UI wording feels like boilerplate and jargon; reviewed terms should anchor the documentation pass while preserving protocol meaning and action consequences | Adopted 2026-10-10; delivered in Phase 148 with 33/33 must-haves verified, 215 focused tests, and responsive inspection; Impeccable `clarify` guidance informed the bounded copy review |
 | Keep synthetic adopter fixtures visibly distinct from real customers | Demo data must help adopters explore real journeys without implying a production integration or account | Applied to the v1.40 Billingo preview and its retained screenshots/records |
 | Render failed admin reads as unavailable and preserve healthy emptiness as a separate state | Operators must not mistake an unknown observation for zero records or confirmed missing prerequisites | Implemented and regression-tested across overview, policy, and client readiness surfaces; v1.40 audit records current freshness limits |
 | Keep revocation scopes and read-only operational queues explicit | Safe operator actions need accurate, separate consequences; queues must not imply unsupported controls | Preserved throughout the v1.40 Support and Operate journeys |
@@ -444,4 +444,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-10 after v1.41 Product Language & Repository Clarity kickoff*
+*Last updated: 2026-10-10 after Phase 148*

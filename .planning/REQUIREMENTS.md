@@ -8,9 +8,9 @@
 
 ### Plain, accurate admin UI language
 
-- [ ] **LANG-01**: Existing admin pages use concise, task- and object-centered labels, headings, and help text shaped by the user's goals, familiarity, mental model, questions, and decisions. Translate internal concepts into helpful user-facing language; avoid implementation jargon, repetitive boilerplate, and persona labels. “Operator” is internal planning language and must not be used as visible UI audience copy or generic UI filler.
-- [ ] **LANG-02**: User-facing language preserves OAuth/OIDC meanings and security distinctions, including client IDs versus secrets, consent grants versus host consent UX, access tokens versus refresh tokens and token families, Initial Access Tokens versus Registration Access Tokens, and logout redirects versus propagation endpoints. When a precise protocol term is necessary but unfamiliar to the intended reader, explain it in the task context instead of exposing unexplained internal wording.
-- [ ] **LANG-03**: Validation, empty, unavailable, loading, confirmation, success, and failure messages state what happened and its real consequence, with a useful next action where one exists. Copy does not invent causes or claim unproven outcomes.
+- [x] **LANG-01**: Existing admin pages use concise, task- and object-centered labels, headings, and help text shaped by the user's goals, familiarity, mental model, questions, and decisions. Translate internal concepts into helpful user-facing language; avoid implementation jargon, repetitive boilerplate, and persona labels. “Operator” is internal planning language and must not be used as visible UI audience copy or generic UI filler.
+- [x] **LANG-02**: User-facing language preserves OAuth/OIDC meanings and security distinctions, including client IDs versus secrets, consent grants versus host consent UX, access tokens versus refresh tokens and token families, Initial Access Tokens versus Registration Access Tokens, and logout redirects versus propagation endpoints. When a precise protocol term is necessary but unfamiliar to the intended reader, explain it in the task context instead of exposing unexplained internal wording.
+- [x] **LANG-03**: Validation, empty, unavailable, loading, confirmation, success, and failure messages state what happened and its real consequence, with a useful next action where one exists. Copy does not invent causes or claim unproven outcomes.
 
 ### Adopter and maintainer documentation
 
@@ -52,9 +52,9 @@ Each requirement maps to exactly one v1.41 phase.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LANG-01 | Phase 148 | Not started |
-| LANG-02 | Phase 148 | Not started |
-| LANG-03 | Phase 148 | Not started |
+| LANG-01 | Phase 148 | Complete |
+| LANG-02 | Phase 148 | Complete |
+| LANG-03 | Phase 148 | Complete |
 | REPO-01 | Phase 149 | Not started |
 | REPO-02 | Phase 149 | Not started |
 | DOC-01 | Phase 150 | Not started |
