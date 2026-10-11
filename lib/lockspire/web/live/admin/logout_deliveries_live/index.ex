@@ -38,19 +38,21 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
       <AdminComponents.page_hero
         eyebrow="Operate"
         title="Logout propagation queue"
-        body="Triage waiting, retrying, failed, discarded, and completed logout delivery work without adding worker controls."
+        body="Back-channel delivery uses a durable queue; front-channel logout is best-effort browser work. These records show saved outcomes, not proof that a relying party ended its session."
       />
 
       <AdminComponents.pane
-        title="Review logout deliveries"
-        subtitle="Read-only delivery rows expose status pressure, client, endpoint, attempts, and durable delivery context."
+        title="Recorded logout deliveries"
+        subtitle="Each row shows its channel, endpoint, attempt count, and recorded status. This page only reports delivery evidence."
       >
         <AdminComponents.metric_grid :if={@delivery_read_state == :loaded}>
-          <AdminComponents.summary_stat value={@delivery_metrics.waiting} label="Waiting" />
-          <AdminComponents.summary_stat value={@delivery_metrics.retrying} label="Retrying" />
-          <AdminComponents.summary_stat value={@delivery_metrics.failed} label="Failed" />
+          <AdminComponents.summary_stat value={@delivery_metrics.queued} label="Queued" />
+          <AdminComponents.summary_stat value={@delivery_metrics.attempted} label="Attempted" />
+          <AdminComponents.summary_stat value={@delivery_metrics.retryable} label="Retryable" />
           <AdminComponents.summary_stat value={@delivery_metrics.discarded} label="Discarded" />
-          <AdminComponents.summary_stat value={@delivery_metrics.completed} label="Completed" />
+          <AdminComponents.summary_stat value={@delivery_metrics.skipped} label="Skipped" />
+          <AdminComponents.summary_stat value={@delivery_metrics.accepted} label="Endpoint accepted" />
+          <AdminComponents.summary_stat value={@delivery_metrics.rendered} label="Browser page rendered" />
         </AdminComponents.metric_grid>
 
         <p :if={@delivery_read_state == :loaded} role="status">
@@ -145,11 +147,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
   defp delivery_metrics(deliveries) do
     %{
-      waiting: Enum.count(deliveries, &(&1.status in [:pending, :enqueued])),
-      retrying: Enum.count(deliveries, &(&1.status == :attempted)),
-      failed: Enum.count(deliveries, &(&1.status == :retryable)),
-      discarded: Enum.count(deliveries, &(&1.status in [:discarded, :skipped])),
-      completed: Enum.count(deliveries, &(&1.status in [:succeeded, :rendered]))
+      queued: Enum.count(deliveries, &(&1.status in [:pending, :enqueued])),
+      attempted: Enum.count(deliveries, &(&1.status == :attempted)),
+      retryable: Enum.count(deliveries, &(&1.status == :retryable)),
+      discarded: Enum.count(deliveries, &(&1.status == :discarded)),
+      skipped: Enum.count(deliveries, &(&1.status == :skipped)),
+      accepted: Enum.count(deliveries, &(&1.status == :succeeded)),
+      rendered: Enum.count(deliveries, &(&1.status == :rendered))
     }
   end
 
@@ -189,30 +193,36 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
     |> String.capitalize()
   end
 
-  defp delivery_pressure(%{status: status}) when status in [:pending, :enqueued],
-    do: "Waiting for the protocol worker to attempt delivery."
+  defp delivery_pressure(%{status: :pending, channel: :backchannel}),
+    do: "Back-channel delivery is pending enqueue; no endpoint attempt is recorded."
 
-  defp delivery_pressure(%{status: :attempted}),
-    do: "Delivery has been attempted and remains under observation."
+  defp delivery_pressure(%{status: :enqueued, channel: :backchannel}),
+    do: "Back-channel work is durably queued for a worker; no endpoint response is recorded yet."
 
-  defp delivery_pressure(%{status: :retryable}),
-    do: "Retryable failure; verify the RP endpoint and preserve the delivery record."
+  defp delivery_pressure(%{status: :attempted, channel: :backchannel}),
+    do: "A back-channel request attempt is recorded; no response outcome is recorded yet."
 
-  defp delivery_pressure(%{status: :discarded}),
-    do: "Terminal queue outcome; discarded after retry exhaustion and kept as support truth."
+  defp delivery_pressure(%{status: :retryable, channel: :backchannel}),
+    do:
+      "The back-channel request has a recorded retryable failure; review its response and failure details."
+
+  defp delivery_pressure(%{status: :discarded, channel: :backchannel}),
+    do:
+      "The back-channel delivery was discarded. Its recorded response does not confirm session termination."
 
   defp delivery_pressure(%{status: :skipped}),
-    do: "Terminal queue outcome; skipped because no delivery action was required."
+    do: "No endpoint or browser work was recorded as required for this delivery."
 
-  defp delivery_pressure(%{status: :succeeded}),
+  defp delivery_pressure(%{status: :succeeded, channel: :backchannel}),
     do:
-      "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
+      "The back-channel endpoint accepted the request; relying-party session termination is not confirmed."
 
-  defp delivery_pressure(%{status: :rendered}),
+  defp delivery_pressure(%{status: :rendered, channel: :frontchannel}),
     do:
-      "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
+      "Front-channel logout was rendered for best-effort browser delivery; relying-party session termination is not confirmed."
 
-  defp delivery_pressure(_delivery), do: "Review durable delivery state."
+  defp delivery_pressure(_delivery),
+    do: "Review the recorded delivery status; no remote logout result is inferred."
 
   defp delivery_failure_context(delivery) do
     [http_status_context(delivery.http_status), failure_class_context(delivery.failure_reason)]
@@ -286,7 +296,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
 
   defp delivery_support_note(_delivery),
     do:
-      "Support note: use client, endpoint, attempts, and timestamp to triage without exposing secrets."
+      "Support note: review the client, endpoint, attempt count, and timestamp without exposing credentials."
 
   defp formatted_timestamp(nil), do: "Not recorded"
 

@@ -48,6 +48,15 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
         timestamp: now
       },
       %{
+        delivery_id: "test-delivery-enqueued",
+        client_id: "test-client-enqueued",
+        channel: "backchannel",
+        target_uri: "https://rp.test.invalid/logout/enqueued",
+        status: "enqueued",
+        attempt_count: 0,
+        timestamp: DateTime.add(now, -1, :second)
+      },
+      %{
         delivery_id: "test-delivery-attempted",
         client_id: "test-client-attempted",
         channel: "backchannel",
@@ -215,18 +224,24 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     assert page_html =~ "Operate"
     assert page_html =~ "Logout propagation queue"
-    assert page_html =~ "Review logout deliveries"
-    assert page_html =~ "Waiting"
-    assert page_html =~ "Retrying"
-    assert page_html =~ "Failed"
+    assert page_html =~ "Recorded logout deliveries"
+    assert page_html =~ "Back-channel delivery uses a durable queue"
+    assert page_html =~ "front-channel logout is best-effort browser work"
+    assert page_html =~ "Queued"
+    assert page_html =~ "Attempted"
+    assert page_html =~ "Retryable"
     assert page_html =~ "Discarded"
-    assert page_html =~ "Completed"
-    assert summary_stat?(page_html, "Waiting", 1)
-    assert summary_stat?(page_html, "Retrying", 1)
-    assert summary_stat?(page_html, "Failed", 1)
-    assert summary_stat?(page_html, "Discarded", 2)
-    assert summary_stat?(page_html, "Completed", 2)
-    assert page_html =~ "7 logout deliveries recorded"
+    assert page_html =~ "Skipped"
+    assert page_html =~ "Endpoint accepted"
+    assert page_html =~ "Browser page rendered"
+    assert summary_stat?(page_html, "Queued", 2)
+    assert summary_stat?(page_html, "Attempted", 1)
+    assert summary_stat?(page_html, "Retryable", 1)
+    assert summary_stat?(page_html, "Discarded", 1)
+    assert summary_stat?(page_html, "Skipped", 1)
+    assert summary_stat?(page_html, "Endpoint accepted", 1)
+    assert summary_stat?(page_html, "Browser page rendered", 1)
+    assert page_html =~ "8 logout deliveries recorded"
     assert page_html =~ "lockspire-admin-pane"
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
@@ -241,6 +256,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     for delivery_id <- [
           "test-delivery-pending",
+          "test-delivery-enqueued",
           "test-delivery-attempted",
           "test-delivery-retryable",
           "test-delivery-discarded",
@@ -262,18 +278,26 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
     assert page_html =~ "Succeeded"
-    assert page_html =~ "Waiting for the protocol worker to attempt delivery."
-    assert page_html =~ "Delivery has been attempted and remains under observation."
-    assert page_html =~ "Retryable failure"
+
+    assert page_html =~
+             "Back-channel delivery is pending enqueue; no endpoint attempt is recorded."
+
+    assert page_html =~
+             "Back-channel work is durably queued for a worker; no endpoint response is recorded yet."
+
+    assert page_html =~
+             "A back-channel request attempt is recorded; no response outcome is recorded yet."
+
+    assert page_html =~ "The back-channel request has a recorded retryable failure"
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Failure class Request failed / timeout"
-    assert page_html =~ "Terminal queue outcome"
+    assert page_html =~ "The back-channel delivery was discarded."
 
     assert page_html =~
-             "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
+             "The back-channel endpoint accepted the request; relying-party session termination is not confirmed."
 
     assert page_html =~
-             "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
+             "Front-channel logout was rendered for best-effort browser delivery; relying-party session termination is not confirmed."
 
     refute page_html =~ "<table"
     refute page_html =~ "lockspire-admin-table-wrap"
@@ -289,7 +313,15 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
         page_title: "Logout deliveries",
         delivery_read_state: :loaded,
         deliveries: [],
-        delivery_metrics: %{waiting: 0, retrying: 0, failed: 0, discarded: 0, completed: 0},
+        delivery_metrics: %{
+          queued: 0,
+          attempted: 0,
+          retryable: 0,
+          discarded: 0,
+          skipped: 0,
+          accepted: 0,
+          rendered: 0
+        },
         delivery_count: 0,
         __changed__: %{}
       }
@@ -321,7 +353,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     assert page_html =~ "Logout propagation queue"
     assert page_html =~ "Loading logout deliveries…"
-    refute page_html =~ "Waiting"
+    refute page_html =~ "Queued"
     refute page_html =~ "No logout deliveries recorded"
     refute page_html =~ "logout deliveries recorded"
   end
@@ -345,7 +377,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       refute page_html =~ "No count or empty result"
       assert page_html =~ "Try loading logout deliveries again"
       assert page_html =~ ~s(href="/lockspire/admin/logouts")
-      refute page_html =~ "Waiting"
+      refute page_html =~ "Queued"
       refute page_html =~ "No logout deliveries waiting for review"
       refute page_html =~ "0 logout deliveries recorded"
     end)
@@ -365,7 +397,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     assert socket.assigns.delivery_read_state == :loaded
     assert page_html =~ "0 logout deliveries recorded"
-    assert summary_stat?(page_html, "Waiting", 0)
+    assert summary_stat?(page_html, "Queued", 0)
     assert page_html =~ "No logout deliveries recorded"
     assert page_html =~ "No logout deliveries are currently recorded."
     refute page_html =~ "Could not load logout deliveries"
@@ -425,28 +457,30 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       "worker internals"
     ])
 
-    assert page_html =~ "Review logout deliveries"
-    assert page_html =~ "Waiting"
-    assert page_html =~ "Retrying"
-    assert page_html =~ "Failed"
+    assert page_html =~ "Recorded logout deliveries"
+    assert page_html =~ "Queued"
+    assert page_html =~ "Attempted"
+    assert page_html =~ "Retryable"
     assert page_html =~ "Discarded"
-    assert page_html =~ "Completed"
+    assert page_html =~ "Skipped"
+    assert page_html =~ "Endpoint accepted"
+    assert page_html =~ "Browser page rendered"
     assert page_html =~ "Pending"
     assert page_html =~ "Attempted"
     assert page_html =~ "Retryable"
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
     assert page_html =~ "Succeeded"
-    assert page_html =~ "Retryable failure"
+    assert page_html =~ "The back-channel request has a recorded retryable failure"
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Failure class Request failed / timeout"
-    assert page_html =~ "Terminal queue outcome"
+    assert page_html =~ "The back-channel delivery was discarded."
 
     assert page_html =~
-             "Back-channel endpoint accepted the request; end-user session termination is not confirmed."
+             "The back-channel endpoint accepted the request; relying-party session termination is not confirmed."
 
     assert page_html =~
-             "Front-channel logout was rendered for browser delivery; end-user session termination is not confirmed."
+             "Front-channel logout was rendered for best-effort browser delivery; relying-party session termination is not confirmed."
 
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ long_endpoint
