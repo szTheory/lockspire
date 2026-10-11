@@ -62,7 +62,10 @@ Planning note: Use Impeccable `clarify` to review complete page and task paths, 
   2. Every proposed move or removal has an ownership and lifecycle finding plus checks of active worktrees and CI, test, package, generator, and documentation references before mutation.
   3. Any evidence-backed cleanup is narrow and passes the affected checks; ambiguous or still-used content remains in place with its status made clear.
 
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 149-01-PLAN.md — Contributor lifecycle map and evidence-gated worktree administration
 
 Planning note: Inventory first. Age, names, or apparent generated status do not prove an item is stale. Do not reorganize paths for appearance alone.
 
@@ -86,7 +89,7 @@ Planning note: Keep the README an orientation and routing page; let focused guid
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 148. User-Facing Admin Language | v1.41 | 7/7 | Complete    | 2026-10-10 |
-| 149. Repository Ownership and Lifecycle | v1.41 | 0/TBD | Not started | — |
+| 149. Repository Ownership and Lifecycle | v1.41 | 0/1 | Planned | — |
 | 150. Adopter and Maintainer Documentation | v1.41 | 0/TBD | Not started | — |
 
 ## Backlog
