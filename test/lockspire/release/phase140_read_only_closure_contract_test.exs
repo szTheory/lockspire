@@ -232,6 +232,16 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
       )
     end)
 
+    Enum.each(@conditional_planning_records, fn relative ->
+      target = Path.join(repository, relative)
+      File.mkdir_p!(Path.dirname(target))
+
+      File.write!(
+        target,
+        git!(repo_root, ["show", "#{@pre_terminal_planning_commit}:#{relative}"])
+      )
+    end)
+
     protected_baseline_blobs = %{
       ".planning/phases/138-baseline-inventory-evidence-taxonomy/baseline-inventory-2026-08-28.md" =>
         "171d46351f804951e8a13c82173113662bb14c1c",

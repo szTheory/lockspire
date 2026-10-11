@@ -1,5 +1,77 @@
 # Milestones
 
+## v1.41 Product Language & Repository Clarity (Completed: 2026-10-11)
+
+**Delivered:** Admin pages now use task- and object-centered language while preserving OAuth/OIDC distinctions and truthful outcomes. Contributors have a source-backed repository lifecycle map, and Phoenix adopters and maintainers have a clear route through product fit, canonical installation, verification, and task guides. This was planning and documentation work; it did not publish a package.
+
+**Phases completed:** 3 phases (148–150), 10 plans, 24 tasks; all 8 requirements are satisfied.
+
+**Key accomplishments:**
+- Reframed admin copy around the user's task, object, decision, and confirmed outcome without changing protocol behavior or security claims.
+- Preserved distinct consent and token revocation scopes, redaction, unavailable-read states, and key lifecycle evidence in the user-facing language.
+- Added a contributor lifecycle map grounded in current package, CI, generator, and evidence consumers; retained ambiguous worktree records until ownership is known.
+- Routed adopters from product fit to the supported-surface contract, canonical install and verification, then their next task guide.
+- Grouped ExDoc navigation by reader task and added deterministic checks for routes, commands, package contents, generated docs, and public-guide boundaries.
+- Identified Billingo as synthetic demo data, not a production integration.
+
+**Known verification overrides: 1 newly acknowledged, 8 carried forward from prior closes (see STATE.md Deferred Items).** The compiler/type warnings are outside Phase 148's copy-only scope; their source report remains unchanged. Phase verification for all three v1.41 phases passed.
+
+**Accepted maintenance debt:** Preserve three ambiguous Git worktree administrative records until ownership is established; one recorded target still exists, so blanket pruning was unsafe.
+
+**Audit:** [v1.41 milestone audit](milestones/v1.41-MILESTONE-AUDIT.md) (`tech_debt`; no blockers; acknowledged closeout).
+
+**Archives:** `milestones/v1.41-ROADMAP.md`, `milestones/v1.41-REQUIREMENTS.md`, `milestones/v1.41-MILESTONE-AUDIT.md`, `milestones/v1.41-phases/` · **GSD milestone tag:** `v1.41` (planning milestone; not a package release).
+
+---
+
+## v1.40 Admin Operator UI Refinement (Completed: 2026-10-10)
+
+**Delivered:** Refined the existing Phoenix LiveView operator surface across Configure, Support, Orient, and read-only Operate. The work improves client, policy, credential, key, token, consent, device, interaction, logout, and overview journeys while preserving Lockspire's embedded-library and host-owned UX boundaries.
+
+**Phases completed:** 4 phases (144–147), 21 plans, 47 tasks; all 24 requirements and eight reviewed operator flows are satisfied.
+
+**Key accomplishments:**
+- Established a stable synthetic-data preview, current 29-route inventory, redaction-safe comparison evidence, and a risk-selected 48-image responsive/zoom matrix. Billingo is a synthetic demo adopter, not a real customer or account.
+- Improved client configuration, DCR/IAT onboarding, credentials, keys, and security-policy workflows with clearer hierarchy, retained safe input, explicit failure states, and copy-once secret handoffs.
+- Made token, consent, overview, device, interaction, and logout views distinguish unavailable data from healthy emptiness, preserve investigation context, and report supported consequences truthfully.
+- Added focused regression coverage for late policy/client readiness fixes; 35 focused tests passed and the final code review found no issues.
+- Recorded current-source verification freshness and visual-coverage limits without relabeling phase reports or claiming a clean all-phase pass.
+
+**Known verification overrides: 4 newly acknowledged, 4 carried forward from a prior close (see STATE.md Deferred Items).** Closeout is `override_closeout`: GSD reports Phases 144, 145, and 147 stale after covered-source edits, and Phase 146 `human_needed`. The reports retain their original verdicts; the milestone audit records the exact limits.
+
+**Audit:** [v1.40 milestone audit](milestones/v1.40-MILESTONE-AUDIT.md) (`tech_debt`; override closeout).
+
+**Archives:** `milestones/v1.40-ROADMAP.md`, `milestones/v1.40-REQUIREMENTS.md`, `milestones/v1.40-MILESTONE-AUDIT.md`, `milestones/v1.40-phases/` · **GSD milestone tag:** `v1.40`.
+
+---
+
+## v1.39 Verified 1.5.1 Release (Completed: 2026-10-08)
+
+**Delivered:** Lockspire 1.5.1 was published and verified from exact source `0b56503859b69531ff86d8e4a465a0e75f963594`, with matching canonical CI, protected run, package checksum, GitHub release/tag, docs, and clean-room install proof.
+
+**Phases:** 2 (Phase 142 verification passed; Phase 143 executed with its verification gap acknowledged at closeout) · **Plans:** 10 · **Tasks:** 14.
+
+**Key accomplishments:**
+- Corrected and verified the main release baseline and exact-SHA readiness evidence.
+- Bound the protected publication to one manifest-verified Hex archive and checked its source, checksum, release/tag target, docs, and public install journey.
+- Added exact GitHub tag-target checks, manifest-bound publisher validation, and per-stage terminal receipts for complete and partial release outcomes.
+- Kept the later bounded evidence-retention failure visible even though the protected run's public release checks passed and the terminal receipt was retained.
+
+**Known verification overrides: 1 newly acknowledged, 3 carried forward (see STATE.md Deferred Items).** Phase 143 remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap as non-blocking for forward development. The separate protected publication approval does not establish PR merge authorization.
+
+### Known Gaps
+
+- **REL-01:** Retained records do not establish an exact-head maintainer merge decision for PR #119. The protected 1.5.1 publication proof is verified; its environment approval is separate from merge authorization.
+- **REL-02 and REL-03:** The archived requirements remain unchecked under the milestone audit's three-source rule because Phase 143 is `gaps_found`. The Phase 143 requirements table directly records both as satisfied, and the public artifact and truthful terminal-receipt outcomes are verified; these pending rows do not indicate a missing release artifact.
+
+**Audit:** [v1.39 milestone audit](milestones/v1.39-MILESTONE-AUDIT.md) (`gaps_found`; closeout proceeded with the accepted exception).
+
+**Release proof:** canonical CI `37788996197`; protected publish run `37795671282`; public checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`.
+
+**Archives:** `milestones/v1.39-ROADMAP.md`, `milestones/v1.39-REQUIREMENTS.md`, `milestones/v1.39-MILESTONE-AUDIT.md`, `milestones/v1.39-phases/` · **Package release:** Lockspire 1.5.1.
+
+---
+
 ## v1.38 Repository Baseline & Reconciliation (Completed: 2026-10-06)
 
 **Delivered:** Closed the maintenance baseline with a dated, source-linked handoff, reconciled Phase 140's terminal exact-SHA acceptance, and returned Lockspire to its sustaining GA release train. This is planning completion only; it did not publish a package.

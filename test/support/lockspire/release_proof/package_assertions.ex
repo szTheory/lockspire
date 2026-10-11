@@ -56,7 +56,7 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert script =~ "repo_hygiene_check.sh [--ci] [--project NAME]"
     assert ci =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
     assert ci =~ "python3 scripts/demo/adoption_smoke.py"
-    assert adoption_docs =~ "repo-local adopter proof"
+    assert adoption_docs =~ "black-box OAuth/OIDC proof"
     assert adoption_docs =~ "not a production deployment guide"
     refute ci =~ "docker compose"
     refute ci =~ "docker-compose"
@@ -128,9 +128,22 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     metadata_line = "- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->"
 
     public_line =
-      "- Latest public package: Hex lists `1.5.0` as latest at the 2026-10-05 closure observation; the exact `1.5.1` release query returned HTTP 404. Release Please metadata above is not publication proof."
+      "- Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08. Release Please metadata above is not publication proof."
+
+    artifact_line =
+      "- Artifact truth: protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282) for source `0b56503859b69531ff86d8e4a465a0e75f963594` was backed by matching canonical push CI [37788996197](https://github.com/szTheory/lockspire/actions/runs/37788996197), whose seven required jobs passed on that exact SHA. The release run verified the public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`, HexDocs, [lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1), and clean-room install. Its terminal receipt records `release_verified: true` with no blocker. The overall run failed only in bounded evidence retention; PR #120 fixed the receipt validator."
 
     source = File.read!(release_train_path)
+
+    for historical_value <- [
+          "Previous release: source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
+          "33141161205",
+          "33141484467",
+          "lockspire-v1.5.0",
+          "30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de"
+        ] do
+      assert source =~ historical_value
+    end
 
     cases = [
       {"missing Release Please metadata", String.replace(source, metadata_line <> "\n", "")},
@@ -151,43 +164,58 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        String.replace(
          source,
          public_line,
-         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `latest`")
+         String.replace(public_line, "Hex `1.5.1`", "Hex `latest`")
        )},
-      {"misleading unpublished public package",
+      {"public package disagrees with Release Please metadata",
        String.replace(
          source,
          public_line,
-         String.replace(public_line, "Hex lists `1.5.0`", "Hex lists `1.5.1`")
+         String.replace(public_line, "Hex `1.5.1`", "Hex `1.5.2`")
        )},
-      {"public release query disagrees with Release Please metadata",
+      {"public package source disagrees with protected release proof",
        String.replace(
          source,
-         "exact `1.5.1` release query",
-         "exact `1.5.2` release query"
+         public_line,
+         String.replace(
+           public_line,
+           "0b56503859b69531ff86d8e4a465a0e75f963594",
+           "1b56503859b69531ff86d8e4a465a0e75f963594"
+         )
        )},
-      {"artifact disagrees with public package",
+      {"missing artifact proof", String.replace(source, artifact_line <> "\n", "")},
+      {"duplicate artifact proof",
+       String.replace(source, artifact_line, artifact_line <> "\n" <> artifact_line)},
+      {"malformed artifact checksum",
        String.replace(
          source,
-         "lockspire-1.5.0` package checksum",
-         "lockspire-1.5.1` package checksum"
+         artifact_line,
+         String.replace(
+           artifact_line,
+           "c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3",
+           "invalid"
+         )
        )},
-      {"tag disagrees with public package",
+      {"artifact tag disagrees with public package",
        String.replace(
          source,
-         "lockspire-v1.5.0](https://github.com",
-         "lockspire-v1.5.1](https://github.com"
+         artifact_line,
+         String.replace(artifact_line, "lockspire-v1.5.1", "lockspire-v1.5.0")
        )},
       {"GitHub release URL disagrees with its label",
        String.replace(
          source,
-         "/tag/lockspire-v1.5.0)",
-         "/tag/lockspire-v1.5.1)"
+         artifact_line,
+         String.replace(artifact_line, "/tag/lockspire-v1.5.1)", "/tag/lockspire-v1.5.2)")
        )},
       {"GitHub release URL points to another repository",
        String.replace(
          source,
-         "https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.0",
-         "https://github.com/another-owner/another-repo/releases/tag/lockspire-v1.5.0"
+         artifact_line,
+         String.replace(
+           artifact_line,
+           "https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1",
+           "https://github.com/another-owner/another-repo/releases/tag/lockspire-v1.5.1"
+         )
        )},
       {"legacy release label cannot replace metadata",
        String.replace(source, metadata_line, "- Latest released version: `1.5.1`")}

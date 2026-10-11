@@ -1315,6 +1315,26 @@ defmodule Lockspire.Web.Admin.CSS do
     padding: 0;
   }
 
+  .lockspire-admin-token-inventory__results {
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+  }
+
+  .lockspire-admin-token-inventory__results .lockspire-admin-empty__actions,
+  .lockspire-admin-token-inventory__results .lockspire-admin-dense-resource-row__actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+    min-width: 0;
+  }
+
+  .lockspire-admin-token-inventory__results .lockspire-admin-dense-resource-row__main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
   .lockspire-admin-key-list {
     margin-top: var(--ls-space-4);
   }
@@ -1388,6 +1408,28 @@ defmodule Lockspire.Web.Admin.CSS do
     gap: var(--ls-space-2);
   }
 
+  .lockspire-admin-client-inventory__results {
+    display: grid;
+    gap: var(--ls-space-4);
+    min-width: 0;
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-resource-list {
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-resource-list__actions,
+  .lockspire-admin-client-inventory__recovery {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--ls-space-3);
+  }
+
+  .lockspire-admin-client-inventory__results .lockspire-admin-alert p {
+    margin: 0;
+  }
+
   .lockspire-admin-long-value {
     display: inline-block;
     max-width: 100%;
@@ -1404,10 +1446,14 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-client-workspace {
     display: grid;
     gap: var(--ls-space-6);
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
     max-width: 100%;
     min-width: 0;
     margin-bottom: var(--ls-space-6);
+  }
+
+  .lockspire-admin-client-workspace > :first-child {
+    grid-column: 1 / -1;
   }
 
   .lockspire-admin-client-workspace > * {
@@ -1593,7 +1639,7 @@ defmodule Lockspire.Web.Admin.CSS do
     border-color: var(--ls-status-danger-border);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 800px) {
     .lockspire-admin-header,
     .lockspire-admin-body,
     .lockspire-admin-nav {

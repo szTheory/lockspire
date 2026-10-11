@@ -71,32 +71,79 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           } else {
             root.removeAttribute("data-theme");
           }
+        };
+
+        const syncShellThemeState = () => {
           document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
-            select.value = theme || "system";
+            if (select.value !== currentPageTheme) select.value = currentPageTheme;
           });
+
+          const status = document.querySelector("[data-lockspire-theme-status]");
+          if (status && status.textContent !== statusMessage) status.textContent = statusMessage;
         };
 
         let savedTheme = "system";
+        let currentPageTheme = "system";
+        let statusMessage = "";
         try {
           savedTheme = window.localStorage.getItem(storageKey) || "system";
-        } catch (_error) {}
+          currentPageTheme = savedTheme;
+        } catch (_error) {
+          statusMessage = "Your saved theme preference could not be read.";
+        }
 
-        applyTheme(savedTheme);
+        applyTheme(currentPageTheme);
+        syncShellThemeState();
+
+        // The shell select appears after this script and can be replaced during LiveView patches.
+        // Keep its displayed choice tied to the same stored preference as the effective theme.
+        const shellObserver = new MutationObserver((mutations) => {
+          syncShellThemeState();
+
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              const focusTarget = node.matches?.("[data-lockspire-focus-on-insert]")
+                ? node
+                : node.querySelector?.("[data-lockspire-focus-on-insert]");
+
+              if (focusTarget) {
+                requestAnimationFrame(() => {
+                  if (focusTarget.isConnected) focusTarget.focus();
+                });
+                return;
+              }
+            }
+          }
+        });
+        shellObserver.observe(root, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ["selected", "data-lockspire-theme-select"]
+        });
 
         document.addEventListener("change", (event) => {
           const select = event.target.closest("[data-lockspire-theme-select]");
           if (!select) return;
 
           const nextTheme = select.value;
+          currentPageTheme = nextTheme;
+          applyTheme(currentPageTheme);
           try {
             if (nextTheme === "system") {
               window.localStorage.removeItem(storageKey);
             } else {
               window.localStorage.setItem(storageKey, nextTheme);
             }
-          } catch (_error) {}
+            savedTheme = nextTheme;
+            statusMessage = "";
+          } catch (_error) {
+            statusMessage = nextTheme === "system"
+              ? "Your theme is applied for this page, but the saved preference was not cleared."
+              : "Your theme is applied for this page, but the saved preference was not updated.";
+          }
 
-          applyTheme(nextTheme);
+          syncShellThemeState();
         });
       })();
     </script>
@@ -116,11 +163,12 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
               <option value="light">Light</option>
               <option value="dark">Dark</option>
             </select>
+            <p data-lockspire-theme-status role="status" aria-live="polite"></p>
           </div>
         </div>
       </header>
 
-      <nav aria-label="Operator navigation" class="lockspire-admin-nav">
+      <nav aria-label="Admin navigation" class="lockspire-admin-nav">
         <%= for group <- @nav_groups do %>
           <section class="lockspire-admin-nav-group" aria-label={group.label}>
             <span class="lockspire-admin-nav-group-label">{group.label}</span>

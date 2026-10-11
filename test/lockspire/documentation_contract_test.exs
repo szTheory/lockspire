@@ -5,34 +5,111 @@ defmodule Lockspire.DocumentationContractTest do
   @architecture_path Path.join(@repo_root, "docs/architecture.md")
   @walkthrough_path Path.join(@repo_root, "docs/code-walkthrough.md")
   @readme_path Path.join(@repo_root, "README.md")
+  @getting_started_path Path.join(@repo_root, "docs/getting-started.md")
+  @install_path Path.join(@repo_root, "docs/install-and-onboard.md")
 
-  test "architecture and walkthrough are wired into ExDoc, README, and package inputs" do
+  test "every maintained guide appears once in a reader-task ExDoc group and package" do
     docs = Mix.Project.config() |> Keyword.fetch!(:docs)
     extras = Keyword.fetch!(docs, :extras)
-    guides = docs |> Keyword.fetch!(:groups_for_extras) |> Keyword.fetch!(:Guides)
+    groups = Keyword.fetch!(docs, :groups_for_extras)
     package_files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files)
-    readme = File.read!(@readme_path)
+    grouped_extras = groups |> Keyword.values() |> List.flatten()
+    expected_extras = Enum.reject(extras, &(&1 == "README.md"))
 
-    expected_order = [
-      "docs/oauth-oidc-for-phoenix-adopters.md",
-      "docs/architecture.md",
-      "docs/code-walkthrough.md",
-      "docs/getting-started.md"
-    ]
+    assert Enum.sort(grouped_extras) == Enum.sort(expected_extras)
+    assert length(grouped_extras) == length(Enum.uniq(grouped_extras))
+    assert Enum.all?(extras, &(&1 in package_files))
 
-    assert consecutive_slice?(extras, expected_order)
-    assert consecutive_slice?(guides, expected_order)
+    assert "brandbook/logo/lockspire-favicon.svg" in package_files
+    refute "CONTRIBUTING.md" in extras
+    refute "CONTRIBUTING.md" in package_files
 
-    assert_in_order(readme, [
-      "[OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md)",
-      "[Architecture](docs/architecture.md)",
-      "[Code walkthrough](docs/code-walkthrough.md)",
-      "[Getting started](docs/getting-started.md)"
+    for extra <- expected_extras do
+      assert File.exists?(Path.join(@repo_root, extra)), "missing ExDoc extra: #{extra}"
+    end
+
+    evaluate = Keyword.fetch!(groups, :"Evaluate and install")
+    integrate = Keyword.fetch!(groups, :Integrate)
+    understand = Keyword.fetch!(groups, :"Understand Lockspire")
+    upgrade = Keyword.fetch!(groups, :Upgrade)
+    maintain = Keyword.fetch!(groups, :Maintain)
+
+    assert_in_order(Enum.join(extras, "\n"), [
+      "docs/install-and-onboard.md",
+      "docs/saas-adoption-recipe.md",
+      "docs/adoption-demo.md"
     ])
 
-    assert "docs/architecture.md" in package_files
-    assert "docs/code-walkthrough.md" in package_files
-    assert "brandbook/logo/lockspire-favicon.svg" in package_files
+    assert "docs/supported-surface.md" in evaluate
+    assert "docs/operator-admin.md" in integrate
+    assert "docs/sigra-companion-host.md" in integrate
+    assert "docs/architecture.md" in understand
+    assert "docs/code-walkthrough.md" in understand
+    assert "docs/maintainer-conformance.md" in maintain
+    assert "docs/maintainer-release.md" in maintain
+    assert "docs/upgrading/v1.27.md" in upgrade
+  end
+
+  test "README and getting-started route readers to canonical sources and task guides" do
+    readme = File.read!(@readme_path)
+    getting_started = File.read!(@getting_started_path)
+    docs = Mix.Project.config() |> Keyword.fetch!(:docs)
+    extras = Keyword.fetch!(docs, :extras)
+    package_files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files)
+
+    required_routes = [
+      "docs/supported-surface.md",
+      "docs/install-and-onboard.md",
+      "docs/saas-adoption-recipe.md",
+      "docs/device-flow-host-guide.md",
+      "docs/operator-admin.md",
+      "docs/maintainer-release.md",
+      "CONTRIBUTING.md"
+    ]
+
+    for route <- required_routes do
+      assert readme =~ route
+    end
+
+    assert readme =~ "https://github.com/szTheory/lockspire/blob/main/CONTRIBUTING.md"
+    assert "CONTRIBUTING.md" not in extras
+    assert "CONTRIBUTING.md" not in package_files
+
+    assert getting_started =~ "[canonical install and onboarding guide](install-and-onboard.md)"
+
+    for relative_path <- [
+          "docs/supported-surface.md",
+          "docs/install-and-onboard.md",
+          "docs/saas-adoption-recipe.md",
+          "docs/device-flow-host-guide.md",
+          "docs/operator-admin.md",
+          "docs/maintainer-release.md",
+          "CONTRIBUTING.md"
+        ] do
+      assert File.exists?(Path.join(@repo_root, relative_path))
+    end
+  end
+
+  test "canonical install keeps current command anchors and explains verifier limits" do
+    install = File.read!(@install_path)
+    install_task = File.read!(Path.join(@repo_root, "lib/mix/tasks/lockspire.install.ex"))
+    verify_task = File.read!(Path.join(@repo_root, "lib/mix/tasks/lockspire.verify.ex"))
+    commands = install |> fenced_blocks("bash") |> Enum.join("\n")
+
+    assert_in_order(commands, [
+      "mix lockspire.install",
+      "mix ecto.migrate",
+      "mix lockspire.verify"
+    ])
+
+    assert install_task =~ "defmodule Mix.Tasks.Lockspire.Install"
+    assert verify_task =~ "defmodule Mix.Tasks.Lockspire.Verify"
+    assert install =~ "supported-surface.md"
+    assert install =~ "does not prove"
+    assert install =~ "staff access policy"
+    assert install =~ "host app"
+    assert install =~ "host request tests"
+    assert Code.ensure_loaded?(Mix.Tasks.Ecto.Migrate)
   end
 
   test "HTML docs use the Lockspire favicon and pinned theme-aware Mermaid hook" do
@@ -176,16 +253,28 @@ defmodule Lockspire.DocumentationContractTest do
     end
   end
 
+  test "adopter and admin guides do not depend on repository planning files" do
+    guide_paths = [
+      @readme_path,
+      @getting_started_path,
+      @install_path,
+      Path.join(@repo_root, "docs/saas-adoption-recipe.md"),
+      Path.join(@repo_root, "docs/adoption-demo.md"),
+      Path.join(@repo_root, "docs/operator-admin.md")
+    ]
+
+    for path <- guide_paths do
+      guide = File.read!(path)
+
+      refute guide =~ ".planning/",
+             "reader-facing guide links to repository planning material: #{Path.relative_to(path, @repo_root)}"
+    end
+  end
+
   defp fenced_blocks(markdown, language) do
     ~r/^```#{Regex.escape(language)}\s*\n(.*?)^```\s*$/ms
     |> Regex.scan(markdown, capture: :all_but_first)
     |> List.flatten()
-  end
-
-  defp consecutive_slice?(list, expected) do
-    list
-    |> Enum.chunk_every(length(expected), 1, :discard)
-    |> Enum.any?(&(&1 == expected))
   end
 
   defp assert_in_order(text, needles) do

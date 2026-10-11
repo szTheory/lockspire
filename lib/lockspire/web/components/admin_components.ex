@@ -239,13 +239,19 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:action, :string, required: true)
   attr(:method, :string, default: "get")
   attr(:class, :string, default: "")
+  attr(:phx_submit, :string, default: nil)
   slot(:fields, required: true)
   slot(:help)
   slot(:actions)
 
   def filter_bar(assigns) do
     ~H"""
-    <form method={@method} action={@action} class={["lockspire-admin-filter-bar", @class]}>
+    <form
+      method={@method}
+      action={@action}
+      class={["lockspire-admin-filter-bar", @class]}
+      phx-submit={@phx_submit}
+    >
       <div class="lockspire-admin-filter-bar__fields">
         {render_slot(@fields)}
       </div>
@@ -329,7 +335,13 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   def error_summary(assigns) do
     ~H"""
-    <section :if={@errors != []} class="lockspire-admin-error-summary" role="alert" tabindex="-1">
+    <section
+      :if={@errors != []}
+      class="lockspire-admin-error-summary"
+      role="alert"
+      tabindex="-1"
+      data-lockspire-focus-on-insert="true"
+    >
       <h2>{@title}</h2>
       <ul>
         <%= for error <- @errors do %>
@@ -691,7 +703,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
     do: %{
       label: status_label(status),
       tone: :warning,
-      title: "Operator attention may be required"
+      title: "Attention may be needed"
     }
 
   defp status_metadata(status, _domain) when status in [:reuse_detected, :discarded, :revoked],
@@ -734,6 +746,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp status_tone_class(_tone), do: "lockspire-admin-badge-disabled"
 
   defp status_label(:reuse_detected), do: "Reuse detected"
+  defp status_label(:operator), do: "Added directly"
   defp status_label(:self_registered), do: "Self-registered"
   defp status_label(:self_registered_client), do: "Self-registered client"
   defp status_label(:host_app), do: "Host app"
@@ -787,6 +800,8 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   defp format_datetime(nil), do: "Not recorded"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
+
+  defp format_error(%{message: message}) when is_binary(message), do: message
 
   defp format_error(%{field: field, reason: reason, detail: detail}) do
     "#{field} #{reason} #{inspect(detail)}"

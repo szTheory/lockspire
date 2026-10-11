@@ -39,7 +39,7 @@ defmodule Lockspire.Admin.Tokens do
   @spec get_token(integer()) :: {:ok, token_detail() | nil} | {:error, term()}
   def get_token(token_id) when is_integer(token_id) do
     with {:ok, token} <- Repository.fetch_lifecycle_token_by_id(token_id) do
-      {:ok, build_detail(token)}
+      build_detail(token)
     end
   end
 
@@ -74,28 +74,25 @@ defmodule Lockspire.Admin.Tokens do
     attrs = normalize_revoke_attrs(attrs)
     revoked_reason = Map.get(attrs, :revoked_reason)
 
-    with {:ok, %Token{} = token} <- fetch_existing_token(token_id) do
-      case token.family_id do
-        family_id when is_binary(family_id) ->
-          {:ok, {count, detail}} =
-            transact_with_audit(
-              fn -> revoke_token_family_detail(family_id, token_id) end,
-              fn {count, _detail} ->
-                revoke_family_audit_event(token, actor, count, revoked_reason)
-              end
-            )
+    with {:ok, %Token{} = token} <- fetch_existing_token(token_id),
+         family_id when is_binary(family_id) <- token.family_id,
+         {:ok, {count, detail}} <-
+           transact_with_audit(
+             fn -> revoke_token_family_detail(family_id, token_id) end,
+             fn {count, _detail} ->
+               revoke_family_audit_event(token, actor, count, revoked_reason)
+             end
+           ) do
+      emit(:token, :family_revoked, token, actor, %{
+        family_id: family_id,
+        revoked_count: count,
+        reason_code: revoked_reason || :token_family_revoked
+      })
 
-          emit(:token, :family_revoked, token, actor, %{
-            family_id: family_id,
-            revoked_count: count,
-            reason_code: revoked_reason || :token_family_revoked
-          })
-
-          {:ok, %{count: count, token: detail}}
-
-        nil ->
-          {:error, :no_family}
-      end
+      {:ok, %{count: count, token: detail}}
+    else
+      nil -> {:error, :no_family}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -104,6 +101,8 @@ defmodule Lockspire.Admin.Tokens do
       {:ok, nil} -> {:error, :not_found}
       {:ok, %Token{} = token} -> {:ok, token}
     end
+  rescue
+    error -> {:error, error}
   end
 
   defp revoke_token_detail(%Token{} = token, token_id, revoked_at) do
@@ -121,26 +120,28 @@ defmodule Lockspire.Admin.Tokens do
     end
   end
 
-  defp build_detail(nil), do: nil
+  defp build_detail(nil), do: {:ok, nil}
 
   defp build_detail(%Token{} = token) do
     client = fetch_client(token.client_id)
-    family_tokens = load_family_tokens(token)
 
-    %{
-      token: token_detail_view(token, client),
-      client: client,
-      status: token_status(token),
-      family_tokens: family_tokens,
-      family_status: family_status(family_tokens),
-      family_revoked_count: Enum.count(family_tokens, &token_entry_revoked?/1),
-      family_active_count: Enum.count(family_tokens, &(&1.status == :active)),
-      family_reuse_detected_at:
-        family_tokens
-        |> Enum.map(& &1.token.reuse_detected_at)
-        |> Enum.reject(&is_nil/1)
-        |> Enum.max_by(&DateTime.to_unix/1, fn -> nil end)
-    }
+    with {:ok, family_tokens} <- load_family_tokens(token) do
+      {:ok,
+       %{
+         token: token_detail_view(token, client),
+         client: client,
+         status: token_status(token),
+         family_tokens: family_tokens,
+         family_status: family_status(family_tokens),
+         family_revoked_count: Enum.count(family_tokens, &token_entry_revoked?/1),
+         family_active_count: Enum.count(family_tokens, &(&1.status == :active)),
+         family_reuse_detected_at:
+           family_tokens
+           |> Enum.map(& &1.token.reuse_detected_at)
+           |> Enum.reject(&is_nil/1)
+           |> Enum.max_by(&DateTime.to_unix/1, fn -> nil end)
+       }}
+    end
   end
 
   defp enrich_token(%Token{} = token) do
@@ -160,6 +161,8 @@ defmodule Lockspire.Admin.Tokens do
       account_handle: optional_handle(:account, token.account_id),
       token_type: token.token_type,
       generation: token.generation,
+      consent_grant_id: token.consent_grant_id,
+      sid: optional_handle(:session, token.sid),
       expires_at: token.expires_at,
       revoked_at: token.revoked_at,
       reuse_detected_at: token.reuse_detected_at,
@@ -266,12 +269,12 @@ defmodule Lockspire.Admin.Tokens do
 
   defp load_family_tokens(%Token{family_id: family_id} = token) when is_binary(family_id) do
     case Repository.list_token_family(family_id) do
-      {:ok, tokens} -> Enum.map(tokens, &token_family_entry(&1, token.id))
-      {:error, _reason} -> [token_family_entry(token, token.id)]
+      {:ok, tokens} -> {:ok, Enum.map(tokens, &token_family_entry(&1, token.id))}
+      {:error, reason} -> {:error, reason}
     end
   end
 
-  defp load_family_tokens(%Token{} = token), do: [token_family_entry(token, token.id)]
+  defp load_family_tokens(%Token{} = token), do: {:ok, [token_family_entry(token, token.id)]}
 
   defp append_audit_event(build_audit_event, result) do
     case Repository.append_audit_event(build_audit_event.(result)) do

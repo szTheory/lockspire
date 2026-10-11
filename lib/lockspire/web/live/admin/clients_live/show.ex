@@ -9,6 +9,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Protocol.MessageSigningProfile
+  alias Lockspire.Protocol.DpopPolicy
   alias Lockspire.Protocol.ParPolicy
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Web.Components.AdminComponents
@@ -23,13 +24,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     {:ok,
      socket
      |> assign(
-       page_title: "Client detail",
+       page_title: "Client configuration",
+       task_title: "Client configuration",
+       task_body:
+         "Review this client's identity, effective policy, credentials, and registered endpoints.",
        current_section: :clients,
        client_id: client_id,
        form_mode: nil,
        client: nil,
+       client_load_state: :loading,
+       form_params: nil,
+       save_notice: nil,
        effective_par_policy: nil,
+       effective_dpop_policy: nil,
        effective_security_profile: nil,
+       policy_load_state: :unavailable,
        strict_readiness: default_readiness(),
        private_key_jwt_truth: nil,
        remote_jwks_summary: nil,
@@ -47,17 +56,35 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def handle_params(params, _uri, socket) do
     action = normalize_action(socket.assigns.live_action || :show)
     form_mode = resolve_form_mode(action, params)
+    {task_title, task_body} = client_task_copy(action, form_mode)
 
     {:noreply,
      socket
      |> assign(
        action: action,
        form_mode: form_mode,
+       page_title: task_title,
+       task_title: task_title,
+       task_body: task_body,
+       form_params: nil,
+       save_notice: if(form_mode, do: nil, else: socket.assigns.save_notice),
        form_errors: [],
        rotation_errors: [],
-       lifecycle_errors: []
+       lifecycle_errors: [],
+       revealed_secret: nil,
+       revealed_rat: nil
      )
      |> load_client(Map.get(params, "client_id", socket.assigns.client_id))}
+  end
+
+  @impl true
+  def handle_event(
+        "preview_client_policy",
+        %{"client" => params},
+        %{assigns: %{form_mode: mode}} = socket
+      )
+      when mode in [:edit, :par_policy, :security_profile] do
+    {:noreply, assign(socket, form_params: safe_form_params(params, mode))}
   end
 
   @impl true
@@ -70,75 +97,136 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
     case result do
       {:ok, %Client{} = client} ->
-        server_policy = server_policy()
+        updated_socket =
+          assign(socket,
+            client: client,
+            client_load_state: :loaded,
+            strict_readiness: strict_readiness(),
+            remote_jwks_summary: AdminClients.remote_jwks_summary(client),
+            form_errors: [],
+            form_params: nil,
+            save_notice:
+              if(socket.assigns.form_mode == :edit, do: "Client changes saved.", else: nil)
+          )
+          |> assign(policy_view_assigns(client))
 
-        {:noreply,
-         assign(socket,
-           client: client,
-           effective_par_policy: resolve_effective_par_policy(client),
-           effective_security_profile: resolve_effective_security_profile(client),
-           strict_readiness: strict_readiness(),
-           remote_jwks_summary: AdminClients.remote_jwks_summary(client),
-           global_access_token_format: global_access_token_format(server_policy),
-           effective_access_token_format:
-             resolve_effective_access_token_format(server_policy, client),
-           form_errors: []
-         )}
+        if socket.assigns.form_mode == :edit do
+          {:noreply, push_patch(updated_socket, to: show_path(client.client_id, :show))}
+        else
+          {:noreply, updated_socket}
+        end
 
       {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, form_errors: errors)}
+        {:noreply,
+         assign(socket,
+           form_errors: errors,
+           form_params: safe_form_params(params, socket.assigns.form_mode),
+           save_notice: nil
+         )}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, form_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           form_errors: [%{field: :base, reason: :request_failed, detail: nil}],
+           form_params: safe_form_params(params, socket.assigns.form_mode),
+           save_notice: nil
+         )}
     end
   end
 
-  def handle_event("rotate_secret", %{"rotate" => %{"confirm" => "true"}}, socket) do
+  def handle_event(
+        "rotate_secret",
+        %{"rotate" => %{"confirm" => "true"}},
+        %{assigns: %{action: :rotate_secret, revealed_secret: nil}} = socket
+      ) do
     case Admin.rotate_client_secret(socket.assigns.client_id, %{
            actor: %{type: :operator, id: "admin-ui"}
          }) do
       {:ok, %{client: client, client_secret: secret}} ->
-        {:noreply, assign(socket, client: client, revealed_secret: secret, rotation_errors: [])}
-
-      {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, rotation_errors: errors)}
+        {:noreply,
+         assign(socket,
+           client: client,
+           revealed_secret: secret,
+           revealed_rat: nil,
+           rotation_errors: []
+         )}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, rotation_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           revealed_secret: nil,
+           revealed_rat: nil,
+           rotation_errors: [client_secret_rotation_error()]
+         )}
     end
   end
 
-  def handle_event("rotate_secret", _params, socket) do
+  def handle_event(
+        "rotate_secret",
+        _params,
+        %{assigns: %{action: :rotate_secret, revealed_secret: nil}} = socket
+      ) do
     {:noreply,
      assign(socket,
        rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
      )}
   end
 
-  def handle_event("rotate_rat", %{"rotate" => %{"confirm" => "true"}}, socket) do
+  def handle_event(
+        "rotate_rat",
+        %{"rotate" => %{"confirm" => "true"}},
+        %{
+          assigns: %{
+            action: :rotate_registration_access_token,
+            client: %Client{provenance: :self_registered},
+            revealed_rat: nil
+          }
+        } = socket
+      ) do
     case Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(
            socket.assigns.client
          ) do
       {:ok, plaintext, updated_client} ->
         {:noreply,
-         assign(socket, client: updated_client, revealed_rat: plaintext, rotation_errors: [])}
-
-      {:error, errors} when is_list(errors) ->
-        {:noreply, assign(socket, rotation_errors: errors)}
+         assign(socket,
+           client: updated_client,
+           revealed_secret: nil,
+           revealed_rat: plaintext,
+           rotation_errors: []
+         )}
 
       {:error, _reason} ->
         {:noreply,
-         assign(socket, rotation_errors: [%{field: :base, reason: :request_failed, detail: nil}])}
+         assign(socket,
+           revealed_secret: nil,
+           revealed_rat: nil,
+           rotation_errors: [registration_token_rotation_error()]
+         )}
     end
   end
 
-  def handle_event("rotate_rat", _params, socket) do
+  def handle_event(
+        "rotate_rat",
+        _params,
+        %{
+          assigns: %{
+            action: :rotate_registration_access_token,
+            client: %Client{provenance: :self_registered},
+            revealed_rat: nil
+          }
+        } = socket
+      ) do
     {:noreply,
      assign(socket,
        rotation_errors: [%{field: :confirm, reason: :required, detail: "confirmation required"}]
      )}
+  end
+
+  def handle_event("rotate_secret", _params, socket), do: {:noreply, socket}
+  def handle_event("rotate_rat", _params, socket), do: {:noreply, socket}
+
+  def handle_event("acknowledge_secret", _params, socket) do
+    {:noreply, assign(socket, revealed_secret: nil)}
   end
 
   def handle_event("acknowledge_rat", _params, socket) do
@@ -167,13 +255,44 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   @impl true
+  def render(%{client: nil, client_load_state: :error} = assigns) do
+    ~H"""
+    <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert variant={:danger} title="Could not load client">
+        <p>The client result is unavailable. Reload this view or return to the client inventory.</p>
+        <div class="lockspire-admin-client-inventory__recovery">
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={show_path(@client_id, :show)}
+          >
+            Reload this view
+          </.link>
+          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_index_path()}>
+            Return to client inventory
+          </.link>
+        </div>
+      </AdminComponents.alert>
+      </AdminLayoutLive.shell>
+    """
+  end
+
+  @impl true
   def render(%{client: nil} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.empty_state
         title="Client not found"
-        body="Lockspire could not load that client from durable storage."
-      />
+        body="No client has this identifier. Return to the inventory and choose a current client."
+      >
+        <:actions>
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={client_index_path()}
+          >
+            Return to client inventory
+          </.link>
+        </:actions>
+      </AdminComponents.empty_state>
     </AdminLayoutLive.shell>
     """
   end
@@ -181,17 +300,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
+      <AdminComponents.alert :if={@save_notice} variant={:success} title={@save_notice}>
+        The saved client configuration is shown below.
+      </AdminComponents.alert>
+
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Review client configuration"
-        body="Review identity, effective posture, credentials, endpoints, DCR context, and lifecycle actions for this client."
+        title={@task_title}
+        body={@task_body}
       />
 
       <div class="lockspire-admin-client-workspace">
         <AdminComponents.entity_header
           eyebrow="Client workspace"
           title={@client.name || @client.client_id}
-          subtitle="Identity, posture, credentials, endpoints, DCR context, support pivots, and lifecycle actions for this client."
+          subtitle="Registered application and the settings that shape its OAuth/OIDC behavior."
           identifier={@client.client_id}
         >
           <:status>
@@ -234,18 +357,27 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Effective posture"
-          subtitle="Issuer defaults and client overrides shown together."
+          subtitle="Issuer defaults and this client's overrides determine its effective behavior."
         >
+          <AdminComponents.alert
+            :if={@policy_load_state == :unavailable}
+            variant={:warning}
+            title="Issuer policy is unavailable"
+          >
+            <p>
+              The client overrides are still shown, but issuer defaults and effective behavior could not be loaded.
+            </p>
+          </AdminComponents.alert>
           <:status>
             <AdminComponents.status_cluster>
               <span>Security: {security_verdict_for(@effective_security_profile)}</span>
               <span>PAR: {verdict_for(@effective_par_policy)}</span>
-              <span>Access tokens: {@effective_access_token_format}</span>
+              <span>Access tokens: {policy_value_label(@effective_access_token_format)}</span>
             </AdminComponents.status_cluster>
           </:status>
           <AdminComponents.description_list>
             <:item label="Global security profile">
-              <code>{security_profile_label(@effective_security_profile.global_profile)}</code>
+              <code>{security_global_profile_label(@effective_security_profile)}</code>
             </:item>
             <:item label="Client security override">
               <code>{security_profile_label(@client.security_profile)}</code>
@@ -254,7 +386,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <strong>{security_verdict_for(@effective_security_profile)}</strong>
             </:item>
             <:item label="Global PAR policy">
-              <code>{par_policy_label(@effective_par_policy.global_policy)}</code>
+              <code>{par_global_policy_label(@effective_par_policy)}</code>
             </:item>
             <:item label="Client PAR override">
               <code>{par_policy_label(@client.par_policy)}</code>
@@ -263,13 +395,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <strong>{verdict_for(@effective_par_policy)}</strong>
             </:item>
             <:item label="Global access token format">
-              <code>{@global_access_token_format}</code>
+              <code>{policy_value_label(@global_access_token_format)}</code>
             </:item>
             <:item label="Client access token override">
               <code>{access_token_format_override_label(@client.access_token_format)}</code>
             </:item>
             <:item label="Effective access token format">
-              <strong>{@effective_access_token_format}</strong>
+              <strong>{policy_value_label(@effective_access_token_format)}</strong>
+            </:item>
+            <:item label="Global DPoP policy">
+              <code>{dpop_policy_label(global_dpop_policy(@effective_dpop_policy))}</code>
+            </:item>
+            <:item label="Client DPoP override">
+              <code>{dpop_policy_label(@client.dpop_policy)}</code>
+            </:item>
+            <:item label="Effective DPoP behavior">
+              <strong>{dpop_policy_label(effective_dpop_policy(@effective_dpop_policy))}</strong>
             </:item>
           </AdminComponents.description_list>
 
@@ -292,7 +433,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               This client is using the explicit mixed-mode escape hatch. Strict message-signing
               enforcement does not apply to this client even though the issuer is stricter.
             </p>
-            <ul :if={@strict_readiness.remediation != [] and @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
+            <ul
+              :if={
+                @strict_readiness.remediation != [] and
+                  (@effective_security_profile.fapi_2_0_message_signing? or
+                     @strict_readiness.status == :unavailable)
+              }
+              class="lockspire-admin-errors"
+            >
               <%= for item <- @strict_readiness.remediation do %>
                 <li>{item}</li>
               <% end %>
@@ -323,7 +471,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Credentials and assertion keys"
-          subtitle="Credential rotation and assertion-key posture without exposing raw credential material."
+          subtitle="Review credential status and assertion-key configuration. Secret values stay redacted."
         >
           <AdminComponents.description_list>
             <:item label="Current secret">
@@ -410,8 +558,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Endpoints and logout"
-          subtitle="Browser destinations are separate from RP cleanup endpoints."
+          title="Redirects and logout"
+          subtitle="Authorization and post-logout browser destinations are separate from logout propagation endpoints."
         >
           <AdminComponents.description_list>
             <:item label="Redirect URIs">
@@ -476,15 +624,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="DCR and RAT context"
-          subtitle="DCR onboarding, self-registered provenance, allowed scopes, and RAT handling."
+          title="Registration details"
+          subtitle="Dynamic client registration (DCR) creates self-registered clients; a Registration Access Token manages one."
         >
           <:status>
             <AdminComponents.status_badge status={@client.provenance} />
           </:status>
           <AdminComponents.description_list>
             <:item label="Provenance">
-              <code>{@client.provenance}</code>
+              <code>{client_provenance_label(@client.provenance)}</code>
             </:item>
             <:item :if={@client.provenance == :self_registered} label="Registration Client URI">
               <AdminComponents.long_value
@@ -504,7 +652,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:item>
           </AdminComponents.description_list>
           <p :if={@client.provenance == :self_registered} class="lockspire-admin-help">
-            Self-registered client (DCR). Registration access token rotation is grouped with credential actions above.
+            This client was registered through DCR. Its Registration Access Token manages this client at the Registration Client URI.
           </p>
           <AdminComponents.action_group>
             <:secondary>
@@ -514,17 +662,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Support pivots"
-          subtitle="Use stable identifiers to review adjacent support and operate surfaces without inventing new filters."
+          title="Related records"
+          subtitle="Use this client ID to match records in the token, consent, and logout-delivery inventories."
         >
           <AdminComponents.description_list>
-            <:item label="Client pivot">
+            <:item label="Client ID">
               <AdminComponents.long_value value={@client.client_id} kind={:id} />
             </:item>
-            <:item label="Review context">
+            <:item label="Finding related records">
               <span>
-                Use this client ID when reviewing token, consent, and logout delivery surfaces.
-                No client-specific support mutation is introduced here.
+                These links open the full inventories. Match records there by this client ID.
               </span>
             </:item>
           </AdminComponents.description_list>
@@ -539,7 +686,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Lifecycle and destructive actions"
-          subtitle="Client availability changes are explicit and keep the existing toggle event."
+          subtitle="Disabling blocks future OAuth/OIDC requests; enabling lets configured use resume."
         >
           <:status>
             <AdminComponents.status_badge status={status_for(@client)} />
@@ -570,7 +717,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                     <%= if @client.active do %>
                       Disable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
-                      so future OAuth/OIDC requests for this client are blocked until an operator enables it again.
+                      so future OAuth/OIDC requests for this client stay blocked until it is enabled again.
                     <% else %>
                       Enable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
@@ -594,29 +741,41 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={not is_nil(@form_mode)}
-        title="Safe edit workflow"
-        subtitle="Only the allowed shape for this workflow is editable."
+        title="Client settings"
+        subtitle="Change the values for this task; other client settings stay as they are."
       >
         <FormComponent.client_form
           mode={@form_mode}
           client={@client}
           effective_par_policy={@effective_par_policy}
+          effective_dpop_policy={@effective_dpop_policy}
           effective_security_profile={@effective_security_profile}
+          global_access_token_format={@global_access_token_format}
+          policy_load_state={@policy_load_state}
           strict_readiness={@strict_readiness}
           errors={@form_errors}
+          params={@form_params}
         />
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
-        title="Rotate registration access token"
-        subtitle="Rotation is explicit: the previous RAT stops being current and plaintext is shown once."
+        title="Rotate Registration Access Token"
+        subtitle="This replaces the credential used to manage this registered client. The new token is shown once after confirmed rotation."
       >
         <section class="lockspire-admin-form-shell">
           <header>
             <p>
-              Plaintext is shown once. The previous RAT stops being current after rotation;
-              Lockspire keeps only the durable redacted state.
+              A Registration Access Token manages this client at its Registration Client URI.
+              The previous token stops being current after rotation. Lockspire keeps only the
+              durable redacted state.
+            </p>
+            <p>
+              <strong>Registration Client URI:</strong>
+              <AdminComponents.long_value
+                value={value_or_not_configured(@client.registration_client_uri)}
+                kind={:url}
+              />
             </p>
           </header>
 
@@ -643,7 +802,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </label>
 
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:danger}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:danger}
+                phx-disable-with="Rotating Registration Access Token…"
+              >
                 Rotate registration access token
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -653,8 +816,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={@action == :rotate_secret}
-        title="Secret rotation"
-        subtitle="Rotation is explicit and reveals the new secret once."
+        title="Rotate client secret"
+        subtitle="This replaces the confidential client's current credential. The new secret is shown once after confirmed rotation."
       >
         <RotateSecretComponent.rotation_panel
           errors={@rotation_errors}
@@ -668,8 +831,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp load_client(socket, nil) do
     assign(socket,
       client: nil,
+      client_load_state: :not_found,
       effective_par_policy: nil,
+      effective_dpop_policy: nil,
       effective_security_profile: nil,
+      policy_load_state: :unavailable,
       strict_readiness: default_readiness(),
       private_key_jwt_truth: nil,
       remote_jwks_summary: nil,
@@ -681,28 +847,40 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp load_client(socket, client_id) do
     case Admin.get_client(client_id) do
       {:ok, %Client{} = client} ->
-        server_policy = server_policy()
-
         assign(socket,
           client_id: client_id,
           client: client,
-          effective_par_policy: resolve_effective_par_policy(client),
-          effective_security_profile: resolve_effective_security_profile(client),
+          client_load_state: :loaded,
           strict_readiness: strict_readiness(),
-          private_key_jwt_truth:
-            AdminServerPolicy.private_key_jwt_registration_truth(server_policy),
-          remote_jwks_summary: AdminClients.remote_jwks_summary(client),
-          global_access_token_format: global_access_token_format(server_policy),
-          effective_access_token_format:
-            resolve_effective_access_token_format(server_policy, client)
+          remote_jwks_summary: AdminClients.remote_jwks_summary(client)
+        )
+        |> assign(policy_view_assigns(client))
+
+      {:error, :not_found} ->
+        assign(socket,
+          client_id: client_id,
+          client: nil,
+          client_load_state: :not_found,
+          effective_par_policy: nil,
+          effective_dpop_policy: nil,
+          effective_security_profile: nil,
+          policy_load_state: :unavailable,
+          strict_readiness: default_readiness(),
+          private_key_jwt_truth: nil,
+          remote_jwks_summary: nil,
+          global_access_token_format: nil,
+          effective_access_token_format: nil
         )
 
       {:error, _reason} ->
         assign(socket,
           client_id: client_id,
           client: nil,
+          client_load_state: :error,
           effective_par_policy: nil,
+          effective_dpop_policy: nil,
           effective_security_profile: nil,
+          policy_load_state: :unavailable,
           strict_readiness: default_readiness(),
           private_key_jwt_truth: nil,
           remote_jwks_summary: nil,
@@ -738,13 +916,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp edit_attrs(params, %Client{} = client) do
     %{
       name: Map.get(params, "name", client.name),
-      allowed_scopes: split_csv(params["allowed_scopes"]),
-      dpop_policy: params["dpop_policy"],
-      access_token_format: params["access_token_format"],
-      contacts: split_csv(params["contacts"]),
-      logo_uri: params["logo_uri"],
-      tos_uri: params["tos_uri"],
-      policy_uri: params["policy_uri"]
+      allowed_scopes:
+        if(Map.has_key?(params, "allowed_scopes"),
+          do: split_csv(params["allowed_scopes"]),
+          else: client.allowed_scopes
+        ),
+      dpop_policy: Map.get(params, "dpop_policy", client.dpop_policy),
+      access_token_format: Map.get(params, "access_token_format", client.access_token_format),
+      contacts:
+        if(Map.has_key?(params, "contacts"),
+          do: split_csv(params["contacts"]),
+          else: client.contacts
+        ),
+      logo_uri: Map.get(params, "logo_uri", client.logo_uri),
+      tos_uri: Map.get(params, "tos_uri", client.tos_uri),
+      policy_uri: Map.get(params, "policy_uri", client.policy_uri)
     }
   end
 
@@ -794,6 +980,55 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp resolve_form_mode(_action, _params), do: nil
 
+  defp client_task_copy(:show, _form_mode) do
+    {"Client configuration",
+     "Review this client's identity, effective policy, credentials, and registered endpoints."}
+  end
+
+  defp client_task_copy(:edit, :logout_propagation) do
+    {"Update logout propagation settings",
+     "Set this client's logout notification endpoints. Back-channel delivery is durable; front-channel browser cleanup is best effort."}
+  end
+
+  defp client_task_copy(:edit, :edit) do
+    {"Edit client settings",
+     "Update this client's name, scopes, descriptive details, and token policies."}
+  end
+
+  defp client_task_copy(:redirects, :redirects) do
+    {"Update redirect URIs",
+     "Set callback URIs for authorization responses. Lockspire matches each registered URI exactly."}
+  end
+
+  defp client_task_copy(:logout_uris, :logout_uris) do
+    {"Update post-logout redirect URIs",
+     "Set browser destinations allowed after RP-initiated logout. These are separate from logout propagation endpoints."}
+  end
+
+  defp client_task_copy(:par_policy, :par_policy) do
+    {"Set client PAR policy",
+     "Choose whether this client requires Pushed Authorization Requests (PAR), may omit them, or inherits the issuer default."}
+  end
+
+  defp client_task_copy(:security_profile, :security_profile) do
+    {"Update client security profile",
+     "Choose this client's FAPI/OIDC requirements or inherit the issuer's security profile."}
+  end
+
+  defp client_task_copy(:rotate_registration_access_token, _form_mode) do
+    {"Rotate Registration Access Token",
+     "Replace the credential used to manage this registered client. The new token is shown once only after confirmed rotation."}
+  end
+
+  defp client_task_copy(:rotate_secret, _form_mode) do
+    {"Rotate client secret",
+     "Replace this confidential client's current credential. The new client secret is shown once only after confirmed rotation."}
+  end
+
+  defp client_provenance_label(:operator), do: "Added directly"
+  defp client_provenance_label(:self_registered), do: "Self-registered"
+  defp client_provenance_label(_provenance), do: "Unknown"
+
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
 
@@ -810,6 +1045,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp show_path(client_id, :rotate_registration_access_token),
     do: show_path(client_id, :show) <> "/rotate-registration-access-token"
+
+  defp client_index_path, do: Lockspire.mount_path() <> "/admin/clients"
+
+  defp safe_form_params(params, mode) when is_map(params) do
+    Map.take(params, form_param_keys(mode))
+  end
+
+  defp form_param_keys(:edit),
+    do:
+      ~w(name allowed_scopes dpop_policy access_token_format contacts logo_uri tos_uri policy_uri)
+
+  defp form_param_keys(:redirects), do: ~w(redirect_uris)
+  defp form_param_keys(:logout_uris), do: ~w(post_logout_redirect_uris)
+
+  defp form_param_keys(:logout_propagation),
+    do:
+      ~w(backchannel_logout_uri backchannel_logout_session_required frontchannel_logout_uri frontchannel_logout_session_required)
+
+  defp form_param_keys(:par_policy), do: ~w(par_policy)
+
+  defp form_param_keys(:security_profile),
+    do: ~w(security_profile authorization_signed_response_alg)
+
+  defp form_param_keys(_mode), do: []
 
   defp split_csv(value) when is_binary(value) do
     value
@@ -830,18 +1089,32 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp status_for(%Client{active: true}), do: :active
   defp status_for(%Client{}), do: :disabled
 
-  defp resolve_effective_par_policy(%Client{} = client) do
-    ParPolicy.resolve_effective_policy(server_policy(), client)
-  end
-
-  defp resolve_effective_security_profile(%Client{} = client) do
-    SecurityProfile.resolve_effective_profile(server_policy(), client)
-  end
-
-  defp server_policy do
+  defp policy_view_assigns(%Client{} = client) do
     case Admin.get_server_policy() do
-      {:ok, %ServerPolicy{} = policy} -> policy
-      {:error, _reason} -> %ServerPolicy{}
+      {:ok, %ServerPolicy{} = policy} ->
+        {:ok, effective_dpop_policy} = DpopPolicy.resolve_effective_policy(policy, client)
+
+        %{
+          policy_load_state: :loaded,
+          effective_par_policy: ParPolicy.resolve_effective_policy(policy, client),
+          effective_dpop_policy: effective_dpop_policy,
+          effective_security_profile: SecurityProfile.resolve_effective_profile(policy, client),
+          strict_readiness: strict_readiness(),
+          private_key_jwt_truth: AdminServerPolicy.private_key_jwt_registration_truth(policy),
+          global_access_token_format: global_access_token_format(policy),
+          effective_access_token_format: resolve_effective_access_token_format(policy, client)
+        }
+
+      {:error, _reason} ->
+        %{
+          policy_load_state: :unavailable,
+          effective_par_policy: nil,
+          effective_dpop_policy: nil,
+          effective_security_profile: nil,
+          private_key_jwt_truth: nil,
+          global_access_token_format: nil,
+          effective_access_token_format: nil
+        }
     end
   end
 
@@ -868,13 +1141,38 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     Atom.to_string(policy)
   end
 
+  defp par_policy_label(nil), do: "Unavailable"
+
+  defp par_global_policy_label(nil), do: "Unavailable"
+  defp par_global_policy_label(%{global_policy: policy}), do: par_policy_label(policy)
+
+  defp dpop_policy_label(policy) when policy in [:inherit, :bearer, :dpop],
+    do: Atom.to_string(policy)
+
+  defp dpop_policy_label(nil), do: "Unavailable"
+  defp global_dpop_policy(nil), do: nil
+  defp global_dpop_policy(%{global_policy: policy}), do: policy
+  defp effective_dpop_policy(nil), do: nil
+  defp effective_dpop_policy(%{effective_policy: policy}), do: policy
+
+  defp security_global_profile_label(nil), do: "Unavailable"
+
+  defp security_global_profile_label(%{global_profile: profile}),
+    do: security_profile_label(profile)
+
   defp security_profile_label(profile)
        when profile in [:inherit, :fapi_2_0_message_signing, :fapi_2_0_security, :none] do
     Atom.to_string(profile)
   end
 
+  defp security_profile_label(nil), do: "Unavailable"
+
+  defp policy_value_label(nil), do: "Unavailable"
+  defp policy_value_label(value), do: value
+
   defp verdict_for(%{par_required?: true}), do: "Required"
   defp verdict_for(%{par_required?: false}), do: "Not required"
+  defp verdict_for(nil), do: "Unavailable"
 
   defp security_verdict_for(%{effective_profile: :fapi_2_0_message_signing}),
     do: "FAPI 2.0 Message Signing"
@@ -883,6 +1181,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     do: "FAPI 2.0 Security Profile"
 
   defp security_verdict_for(%{effective_profile: :none}), do: "None (Standard OIDC)"
+  defp security_verdict_for(nil), do: "Unavailable"
 
   defp mixed_mode_override?(%{
          global_profile: :fapi_2_0_message_signing,
@@ -908,6 +1207,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp strict_posture_label(resolved) when is_map(resolved),
     do: "Mixed-mode escape hatch"
+
+  defp strict_readiness_label(_resolved, %{status: :unavailable}),
+    do: "Issuer readiness unavailable"
 
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, %{ready?: true}), do: "Ready"
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, _readiness), do: "Blocked"
@@ -937,6 +1239,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     Enum.join(algorithms, ", ")
   end
 
+  defp client_secret_rotation_error do
+    %{
+      field: :base,
+      reason: :request_failed,
+      detail: nil,
+      message:
+        "Rotation was not confirmed. No new client secret is shown. Check the client before retrying."
+    }
+  end
+
+  defp registration_token_rotation_error do
+    %{
+      field: :base,
+      reason: :request_failed,
+      detail: nil,
+      message:
+        "Rotation was not confirmed. No new Registration Access Token is shown. Review the client before retrying."
+    }
+  end
+
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
 
@@ -949,16 +1271,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp strict_readiness do
     case MessageSigningProfile.readiness() do
       readiness when is_map(readiness) ->
-        readiness
+        Map.put(readiness, :status, :available)
 
       {:error, _reason} ->
-        %{default_readiness() | remediation: ["Unable to load strict message-signing readiness."]}
+        %{
+          default_readiness()
+          | status: :unavailable,
+            remediation: ["Unable to load strict message-signing readiness."]
+        }
     end
   end
 
   defp default_readiness do
     %{
       ready?: false,
+      status: :unavailable,
       profile: :fapi_2_0_message_signing,
       prerequisite_reasons: [],
       remediation: []

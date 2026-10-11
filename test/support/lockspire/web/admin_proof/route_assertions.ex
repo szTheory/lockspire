@@ -6,10 +6,12 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
   alias Lockspire.Web.AdminProof.Paths
 
   @operate_sources %{
-    "/interactions" => "lib/lockspire/web/live/admin/interactions_live/index.ex",
+    "/interactions" =>
+      {"lib/lockspire/web/live/admin/interactions_live/index.ex", "redacted_handle(:account"},
     "/device_authorizations" =>
-      "lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
-    "/logouts" => "lib/lockspire/web/live/admin/logout_deliveries_live/index.ex"
+      {"lib/lockspire/web/live/admin/device_authorizations_live/index.ex",
+       "Redaction.handle(:account"},
+    "/logouts" => {"lib/lockspire/web/live/admin/logout_deliveries_live/index.ex", nil}
   }
 
   @configure_sources [
@@ -45,22 +47,26 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     guide = File.read!(Paths.operator_admin_doc())
 
     assert guide =~
-             "Lockspire owns protocol and operator state after the request reaches its LiveViews"
+             "Lockspire owns protocol and related admin state after a request reaches its LiveViews"
 
     assert guide =~
-             "the host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+             "The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
   end
 
   def assert_read_only_operate_surfaces! do
     router = File.read!(Paths.admin_router())
 
-    for {route, relative_path} <- @operate_sources do
+    for {route, {relative_path, redaction_contract}} <- @operate_sources do
       source = source(relative_path)
 
       assert router =~ String.replace_prefix(route, "/admin", "")
       assert source =~ "Operate"
       assert source =~ "Read-only"
-      assert source =~ "redacted_handle"
+
+      if redaction_contract do
+        assert source =~ redaction_contract
+      end
+
       refute source =~ "def handle_event"
       refute source =~ ~r/phx-(click|submit)=/
       refute source =~ "<table"
@@ -85,7 +91,7 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     for action <- [
           "Rotate client secret",
           "Rotate registration access token",
-          "Mint initial access token",
+          "Create an Initial Access Token",
           "Generate signing key",
           "Save global DCR policy"
         ] do
@@ -115,7 +121,7 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
           "private_key",
           "verifier_material"
         ] do
-      for {route, relative_path} <- @operate_sources do
+      for {route, {relative_path, _redaction_contract}} <- @operate_sources do
         refute source(relative_path) =~ forbidden, "#{route} renders #{forbidden}"
       end
     end

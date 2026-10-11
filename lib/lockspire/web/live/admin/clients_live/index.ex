@@ -17,47 +17,85 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
        page_title: "Clients",
        current_section: :clients,
        clients: [],
-       matching_clients: 0,
-       total_clients: 0,
+       matching_clients: nil,
+       total_clients: nil,
+       inventory_state: :loading,
        filters: %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"},
        form_errors: [],
-       created_result: nil
+       create_params: nil,
+       created_result: nil,
+       created_secret_hidden?: false
      )}
   end
 
   @impl true
   def handle_params(params, _uri, socket) do
     filters = normalize_filters(params)
-    clients = load_clients(filters)
-    total_clients = load_clients(base_filters()) |> length()
 
     {:noreply,
-     assign(socket,
-       filters: filters,
-       clients: paginate(clients, filters),
-       matching_clients: length(clients),
-       total_clients: total_clients
+     socket
+     |> assign_inventory(filters)
+     |> assign(
+       form_errors: [],
+       create_params: nil,
+       created_result: nil,
+       created_secret_hidden?: false
      )}
   end
 
   @impl true
+  def handle_event("filter_inventory", params, socket) do
+    filters = normalize_filters(params)
+
+    {:noreply, push_patch(socket, to: clients_index_path(filters))}
+  end
+
+  @impl true
+  def handle_event("validate_client", %{"client" => client_params}, socket) do
+    {:noreply, assign(socket, create_params: safe_create_params(client_params), form_errors: [])}
+  end
+
+  @impl true
   def handle_event("save_client", %{"client" => client_params}, socket) do
+    safe_params = safe_create_params(client_params)
+
     case Admin.create_client(create_attrs(client_params)) do
       {:ok, result} ->
         filters = socket.assigns.filters
 
         {:noreply,
          socket
+         |> assign_inventory(filters)
          |> assign(
            created_result: result,
-           form_errors: [],
-           clients: paginate(load_clients(filters), filters),
-           matching_clients: length(load_clients(filters)),
-           total_clients: load_clients(base_filters()) |> length()
+           created_secret_hidden?: false,
+           create_params: nil,
+           form_errors: []
          )}
 
       {:error, errors} ->
-        {:noreply, assign(socket, form_errors: errors, created_result: nil)}
+        {:noreply,
+         assign(socket,
+           form_errors: errors,
+           create_params: safe_params,
+           created_result: nil,
+           created_secret_hidden?: false
+         )}
+    end
+  end
+
+  @impl true
+  def handle_event("hide_created_secret", _params, socket) do
+    case socket.assigns.created_result do
+      %{client_secret: secret} = result when is_binary(secret) ->
+        {:noreply,
+         assign(socket,
+           created_result: %{result | client_secret: nil},
+           created_secret_hidden?: true
+         )}
+
+      _other ->
+        {:noreply, socket}
     end
   end
 
@@ -67,23 +105,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
         eyebrow="Configure"
-        title="Client inventory"
-        body="Filter clients, choose the right workspace, or create a client while keeping credential handoff copy-once."
-      />
-
-      <AdminComponents.section_card
-        title="Selected client context"
-        subtitle="Current filters and inventory counts are shown before dense client rows."
+        title="Clients"
+        body="Find a client, check how it was added, or create one."
       >
-        <div class="lockspire-admin-detail-section">
-          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
-          <p>Status: {@filters["status"]}</p>
-          <p>Provenance: {@filters["provenance"]}</p>
-          <p>Matching clients: {@matching_clients}</p>
-          <p>Total clients: {@total_clients}</p>
-        </div>
+        <:actions>
+          <AdminComponents.admin_button
+            :if={@inventory_state == :loaded and not first_use_empty?(@filters, @total_clients)}
+            href="#client-create-form"
+            variant={:secondary}
+          >
+            Create client
+          </AdminComponents.admin_button>
+        </:actions>
+      </AdminComponents.page_hero>
 
-        <AdminComponents.filter_bar action={clients_index_path()}>
+      <AdminComponents.section_card title="Find a client" subtitle="Search by name or filter by status and registration source.">
+        <AdminComponents.filter_bar action={clients_index_path()} phx_submit="filter_inventory">
           <:fields>
             <div class="lockspire-admin-field">
               <label for="client_search">Search</label>
@@ -106,69 +143,158 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             </div>
 
             <div class="lockspire-admin-field">
-              <label for="client_provenance">Provenance</label>
+              <label for="client_provenance">Registration source</label>
               <select id="client_provenance" name="provenance">
-                <option value="all" selected={@filters["provenance"] == "all"}>All</option>
-                <option value="operator" selected={@filters["provenance"] == "operator"}>Operator</option>
+                <option value="all" selected={@filters["provenance"] == "all"}>All sources</option>
+                <option value="operator" selected={@filters["provenance"] == "operator"}>Added directly</option>
                 <option value="self_registered" selected={@filters["provenance"] == "self_registered"}>
-                  Self-Registered
+                  Self-registered
                 </option>
               </select>
             </div>
           </:fields>
           <:help>
-            <p>Matching clients: {@matching_clients} of {@total_clients}</p>
+            <p>“Self-registered” means a partner submitted a registration request; “Added directly” means a client was created here.</p>
+            <p :if={@inventory_state == :loaded}>{client_count_label(@matching_clients)} of {@total_clients} total clients</p>
+            <p :if={@inventory_state == :error}>Matching count unavailable while the client inventory is unavailable.</p>
           </:help>
           <:actions>
-            <AdminComponents.admin_button variant={:secondary} type="submit">
+            <AdminComponents.admin_button
+              variant={:secondary}
+              type="submit"
+              phx-disable-with="Filtering clients…"
+            >
               Filter clients
             </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.filter_bar>
 
-        <%= if @clients == [] do %>
+        <div class="lockspire-admin-client-inventory__results" aria-live="polite">
+          <p :if={@inventory_state == :loading} role="status">Loading client inventory…</p>
+
+          <AdminComponents.alert
+            :if={@inventory_state == :error}
+            variant={:danger}
+            title="Could not load clients"
+          >
+            <p>No matching-client result is available until this read succeeds. Reload this view or return to the inventory and try again.</p>
+            <div class="lockspire-admin-client-inventory__recovery">
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path(@filters)}>
+                Reload this view
+              </.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path()}>
+                Return to the inventory
+              </.link>
+            </div>
+          </AdminComponents.alert>
+
           <AdminComponents.empty_state
-            title="No clients match this view"
-            body="Adjust the search or status filter, or register a new client."
-          />
-        <% else %>
-          <AdminComponents.resource_list>
+            :if={@inventory_state == :loaded and @clients == []}
+            title={
+              if first_use_empty?(@filters, @total_clients),
+                do: "No clients yet",
+                else: "No matching clients"
+            }
+            body={
+              if first_use_empty?(@filters, @total_clients),
+                do: "Create a client to begin connecting applications.",
+                else: "Change or clear the filters to see other records."
+            }
+          >
+            <:actions>
+              <.link
+                :if={first_use_empty?(@filters, @total_clients)}
+                class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                href="#client-create-form"
+              >
+                Create client
+              </.link>
+              <.link
+                :if={!first_use_empty?(@filters, @total_clients)}
+                class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                href={clients_index_path()}
+              >
+                Clear filters
+              </.link>
+            </:actions>
+          </AdminComponents.empty_state>
+
+          <AdminComponents.resource_list :if={@inventory_state == :loaded and @clients != []}>
             <%= for client <- @clients do %>
               <AdminComponents.resource_item
-                href={client_show_path(client.client_id)}
                 title={client.name || client.client_id}
                 subtitle={client.client_id}
               >
-                <:meta>
+                <:status>
                   <AdminComponents.status_badge status={status_for(client)} />
                   <AdminComponents.status_badge status={client.provenance} />
-                </:meta>
+                </:status>
+                <:actions>
+                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id)}>
+                    View client
+                  </.link>
+                </:actions>
               </AdminComponents.resource_item>
             <% end %>
           </AdminComponents.resource_list>
-        <% end %>
+        </div>
+      </AdminComponents.section_card>
+
+      <AdminComponents.section_card
+        title="Selected client context"
+        subtitle="The URL keeps your current filters while you review matching clients."
+      >
+        <div class="lockspire-admin-detail-section">
+          <p>Search: {selected_filter_label(@filters["q"], "all clients")}</p>
+          <p>Status: {@filters["status"]}</p>
+          <p>Registration source: {provenance_filter_label(@filters["provenance"])}</p>
+          <p :if={@inventory_state == :loaded}>Matching clients: {@matching_clients}</p>
+          <p :if={@inventory_state == :loaded}>Total clients: {@total_clients}</p>
+        </div>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
         title="Create client"
-        subtitle="Create a client through the existing Lockspire Admin API and copy any plaintext secret before leaving this state."
+        subtitle="Register an application with its exact browser redirect destinations and allowed scopes."
       >
-        <FormComponent.client_form mode={:new} errors={@form_errors} />
+        <FormComponent.client_form mode={:new} errors={@form_errors} params={@create_params} />
 
         <div :if={@created_result}>
           <p>Client ID: <code>{@created_result.client.client_id}</code></p>
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            href={client_show_path(@created_result.client.client_id)}
+          >
+            View client details
+          </.link>
           <AdminComponents.copy_once_secret_panel
-            title="Client created"
+            title={
+              cond do
+                @created_secret_hidden? -> "Client secret hidden"
+                @created_result.client_secret -> "Copy this client secret now"
+                true -> "Client created"
+              end
+            }
             body={
-              if @created_result.client_secret,
-                do:
-                  "Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response.",
-                else: "This public client does not use a client secret."
+              cond do
+                @created_secret_hidden? -> "Credential hidden. It will not be shown again."
+                @created_result.client_secret ->
+                  "This secret authenticates the confidential client at the token endpoint. Plaintext is shown once. Lockspire stores only the hash and does not re-show it after this response."
+                true -> "This public client does not use a client secret."
+              end
             }
             label="Client secret"
             value={@created_result.client_secret}
             redacted={is_nil(@created_result.client_secret)}
           />
+          <AdminComponents.admin_button
+            :if={@created_result.client_secret}
+            type="button"
+            variant={:secondary}
+            phx-click="hide_created_secret"
+          >
+            Hide credential
+          </AdminComponents.admin_button>
         </div>
       </AdminComponents.section_card>
     </AdminLayoutLive.shell>
@@ -182,8 +308,30 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
       |> put_provenance_filter(filters["provenance"])
 
     case Admin.list_clients(opts) do
-      {:ok, clients} -> clients
-      {:error, _reason} -> []
+      {:ok, clients} -> {:ok, clients}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp assign_inventory(socket, filters) do
+    with {:ok, clients} <- load_clients(filters),
+         {:ok, all_clients} <- load_clients(base_filters()) do
+      assign(socket,
+        filters: filters,
+        clients: paginate(clients, filters),
+        matching_clients: length(clients),
+        total_clients: length(all_clients),
+        inventory_state: :loaded
+      )
+    else
+      {:error, _reason} ->
+        assign(socket,
+          filters: filters,
+          clients: [],
+          matching_clients: nil,
+          total_clients: nil,
+          inventory_state: :error
+        )
     end
   end
 
@@ -226,8 +374,37 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp status_for(%{active: true}), do: :active
   defp status_for(_client), do: :disabled
 
-  defp clients_index_path, do: Lockspire.mount_path() <> "/admin/clients"
+  defp clients_index_path(filters \\ nil)
+  defp clients_index_path(nil), do: Lockspire.mount_path() <> "/admin/clients"
+
+  defp clients_index_path(filters),
+    do: Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(filters)
+
   defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+
+  defp first_use_empty?(filters, 0) do
+    filters["q"] in [nil, ""] and filters["status"] == "all" and
+      filters["provenance"] == "all" and filters["page"] == "1"
+  end
+
+  defp first_use_empty?(_filters, _total_clients), do: false
+
+  defp safe_create_params(params) do
+    Map.take(params, [
+      "name",
+      "client_type",
+      "token_endpoint_auth_method",
+      "redirect_uris",
+      "allowed_scopes"
+    ])
+  end
+
+  defp client_count_label(1), do: "1 matching client"
+  defp client_count_label(count), do: "#{count} matching clients"
+
+  defp provenance_filter_label("operator"), do: "Added directly"
+  defp provenance_filter_label("self_registered"), do: "Self-registered"
+  defp provenance_filter_label(_provenance), do: "All sources"
 
   defp put_status_filter(opts, "active"), do: Keyword.put(opts, :active, true)
   defp put_status_filter(opts, "disabled"), do: Keyword.put(opts, :active, false)

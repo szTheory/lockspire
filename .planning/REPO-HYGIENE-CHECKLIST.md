@@ -30,8 +30,8 @@ Use this before starting a new milestone, before merging a milestone PR, and bef
 
 - Run `/gsd-progress`.
 - Confirm there is no active phase unless intentionally mid-milestone.
-- Confirm `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` say v1.38 and Phase 140 are the current planning truth, with Phase 140 planning gated on the Phase 139 exact-SHA receipt.
-- Confirm `.planning/MILESTONES.md` and `.planning/RELEASE-TRAIN.md` say v1.37 and Lockspire 1.5.0 remain the latest shipped truth. Active planning and latest-shipped history are coherent precisely because they describe different states.
+- Confirm `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` agree on the active milestone and phase, and that completed phases have their required verification evidence.
+- Confirm `.planning/MILESTONES.md` preserves shipped history and `.planning/RELEASE-TRAIN.md` identifies the latest public package from matching protected release proof. The v1.37/1.5.0 line and Phase 141's baseline are dated historical observations; use newer release truth only when its public proof is recorded.
 - Confirm pending todos, debug sessions, and handoff/checkpoint files are either clear or explicitly documented.
 
 ## Release Readiness

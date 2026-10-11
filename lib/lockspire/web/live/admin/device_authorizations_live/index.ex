@@ -14,13 +14,20 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
      assign(socket,
        page_title: "Device Authorizations",
        current_section: :device_authorizations,
-       device_authorizations: load_device_authorizations()
+       device_read_state: :loading,
+       device_authorizations: []
      )}
   end
 
   @impl true
   def handle_params(_params, _uri, socket) do
-    {:noreply, assign(socket, device_authorizations: load_device_authorizations())}
+    {read_state, authorizations} = load_device_authorizations()
+
+    {:noreply,
+     assign(socket,
+       device_read_state: read_state,
+       device_authorizations: authorizations
+     )}
   end
 
   @impl true
@@ -30,14 +37,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
       <AdminComponents.page_hero
         eyebrow="Operate"
         title="Device authorization queue"
-        body="Triage pending, approved, denied, expired, and completed device-flow state without exposing device or user code material."
+        body="See each device authorization's recorded status, client, subject, expiry, and polling details without showing device or user codes."
       />
 
       <AdminComponents.pane
-        title="Review device authorizations"
-        subtitle="Read-only queue rows expose client, status, subject, expiration, and durable non-secret identifiers."
+        title="Recorded device authorizations"
+        subtitle="Read-only records show saved request status, client, subject, expiry, and polling context."
       >
-        <AdminComponents.metric_grid>
+        <AdminComponents.metric_grid :if={@device_read_state == :loaded}>
           <AdminComponents.summary_stat
             value={count_status(@device_authorizations, :pending)}
             label="Pending"
@@ -60,12 +67,39 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
           />
         </AdminComponents.metric_grid>
 
-        <%= if @device_authorizations == [] do %>
+        <p :if={@device_read_state == :loaded} role="status">
+          {device_authorization_count_copy(length(@device_authorizations))}
+        </p>
+
+        <%= cond do %>
+          <% @device_read_state == :loading -> %>
+            <p role="status">Loading device authorizations…</p>
+          <% @device_read_state == :unavailable -> %>
+            <AdminComponents.empty_state
+              title="Could not load device authorizations"
+              body="Lockspire could not read device authorization records, so the current results are unavailable."
+            >
+              <:actions>
+                <AdminComponents.admin_button href={device_authorizations_path()}>
+                  Try loading device authorizations again
+                </AdminComponents.admin_button>
+                <AdminComponents.admin_button href={admin_path("/overview")}>
+                  Return to overview
+                </AdminComponents.admin_button>
+              </:actions>
+            </AdminComponents.empty_state>
+          <% @device_authorizations == [] -> %>
           <AdminComponents.empty_state
-            title="No device authorizations waiting for review"
-            body="There are no device authorization records waiting for operator review."
-          />
-        <% else %>
+            title="No device authorization records"
+            body="No device authorization records are currently stored. Return to the overview to choose another investigation."
+          >
+            <:actions>
+              <AdminComponents.admin_button href={admin_path("/overview")}>
+                Return to overview
+              </AdminComponents.admin_button>
+            </:actions>
+          </AdminComponents.empty_state>
+          <% true -> %>
           <AdminComponents.resource_list>
             <%= for auth <- @device_authorizations do %>
               <AdminComponents.dense_resource_row
@@ -73,8 +107,9 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
                 subtitle={device_authorization_pressure(auth)}
               >
                 <:meta>
-                  <span>Client <AdminComponents.long_value value={redacted_handle(:client, auth.client_id)} kind={:id} /></span>
-                  <span>Subject <AdminComponents.long_value value={redacted_handle(:account, auth.subject_id)} kind={:id} /></span>
+                  <span>Request ID <AdminComponents.long_value value={safe_identifier(auth.id)} kind={:id} /></span>
+                  <span>Client <AdminComponents.long_value value={safe_identifier(auth.client_id)} kind={:id} /></span>
+                  <span>Subject <AdminComponents.long_value value={redacted_subject_identifier(auth.subject_id)} kind={:id} /></span>
                   <span>Handle <AdminComponents.long_value value={redacted_authorization_handle(auth)} kind={:id} /></span>
                   <span>Expires <AdminComponents.long_value value={formatted_timestamp(auth.expires_at)} kind={:timestamp} /></span>
                   <span>Poll interval {poll_interval_label(auth.effective_poll_interval_seconds)}</span>
@@ -86,6 +121,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
                 <:status>
                   <AdminComponents.status_badge status={auth.status} domain={:device_authorization} />
                 </:status>
+                <:actions>
+                  <AdminComponents.admin_button
+                    :if={client_detail_path_available?(auth)}
+                    href={client_detail_path(auth.client_id)}
+                  >
+                    View client details
+                  </AdminComponents.admin_button>
+                </:actions>
               </AdminComponents.dense_resource_row>
             <% end %>
           </AdminComponents.resource_list>
@@ -97,9 +140,11 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
 
   defp load_device_authorizations do
     case Admin.list_device_authorizations() do
-      {:ok, auths} -> auths
-      {:error, _reason} -> []
+      {:ok, auths} when is_list(auths) -> {:loaded, auths}
+      _other -> {:unavailable, []}
     end
+  rescue
+    _error -> {:unavailable, []}
   end
 
   defp count_status(auths, status), do: Enum.count(auths, &(&1.status == status))
@@ -111,6 +156,12 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   defp device_authorization_title(%{status: :consumed}), do: "Completed device authorization"
   defp device_authorization_title(_auth), do: "Device authorization"
 
+  defp device_authorization_count_copy(0), do: "0 device authorizations recorded"
+  defp device_authorization_count_copy(1), do: "1 device authorization recorded"
+
+  defp device_authorization_count_copy(count),
+    do: "#{count} device authorizations recorded"
+
   defp device_authorization_pressure(%{status: :pending}),
     do: "Waiting for the user to finish verification before expiry."
 
@@ -118,18 +169,26 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     do: "Approved, waiting for token polling to consume the authorization."
 
   defp device_authorization_pressure(%{status: :denied}),
-    do: "Denied before completion; preserve the durable handle for support follow-up."
+    do:
+      "The request was denied before completion. Its recorded details remain available for follow-up."
 
   defp device_authorization_pressure(%{status: :expired}),
-    do: "Expired before completion; no device authorization action is exposed from this page."
+    do: "The request expired before completion. Its recorded details remain available for review."
 
   defp device_authorization_pressure(%{status: :consumed}),
-    do: "Consumed by the token flow; use the record as read-only support truth."
+    do:
+      "Token polling consumed this authorization. Its recorded status and timing remain available for review."
 
-  defp device_authorization_pressure(_auth), do: "Review durable device authorization state."
+  defp device_authorization_pressure(_auth),
+    do: "Review the recorded device authorization status."
 
-  defp redacted_handle(_type, nil), do: "Not recorded"
-  defp redacted_handle(type, value), do: Redaction.handle(type, value)
+  defp safe_identifier(nil), do: "Not recorded"
+  defp safe_identifier(value) when is_binary(value), do: value
+  defp safe_identifier(value) when is_integer(value), do: Integer.to_string(value)
+  defp safe_identifier(value), do: to_string(value)
+
+  defp redacted_subject_identifier(nil), do: "Not recorded"
+  defp redacted_subject_identifier(value), do: Redaction.handle(:account, value)
 
   defp redacted_authorization_handle(%{verification_handle: handle})
        when is_binary(handle) and handle != "" do
@@ -174,4 +233,16 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
 
   defp formatted_timestamp(value), do: to_string(value)
+
+  defp client_detail_path_available?(%{client_id: client_id})
+       when is_binary(client_id) and byte_size(client_id) <= 64,
+       do: true
+
+  defp client_detail_path_available?(_auth), do: false
+
+  defp client_detail_path(client_id),
+    do: admin_path("/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1))
+
+  defp device_authorizations_path, do: admin_path("/device_authorizations")
+  defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 end

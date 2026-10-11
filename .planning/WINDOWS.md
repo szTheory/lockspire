@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 0
+open_count: 1
 waived_count: 0
 fixed_count: 9
-total_count: 9
-last_updated: 2026-09-12T00:29:32.780Z
+total_count: 10
+last_updated: 2026-10-09T21:35:14.803Z
 ---
 
 # Broken Windows Ledger
@@ -24,6 +24,7 @@ last_updated: 2026-09-12T00:29:32.780Z
 | 7 | 138 | deviation | test/support/lockspire/release_proof/package_assertions.ex |  | Raised async contention sentinel deadline for the expanded process matrix | fixed |  | 2026-09-10T01:22:43.612Z | 2026-09-10T01:23:56.845Z |
 | 8 | 138 | deviation | scripts/maintainer/baseline_inventory.sh |  | Task 2 external per-field matcher caused contract timeouts; replaced by bounded Bash matching in fa1b8c46 | fixed |  | 2026-09-10T18:31:35.339Z | 2026-09-10T18:32:02.104Z |
 | 9 | 139 | deviation | test/support/lockspire/release_proof/package_assertions.ex |  | Added explicit real linked-worktree rejection coverage after the initial GREEN fixture | fixed |  | 2026-09-12T00:29:10.877Z | 2026-09-12T00:29:32.780Z |
+| 10 | 145 | unrun-verify | .planning/phases/145-configure-and-onboard/145-CREDENTIAL-BROWSER.md |  | Browser credential-changing handoff and narrow/200% zoom/reduced-motion states were intentionally left unobserved; ExUnit covers secret lifecycle and the remaining visual limits are documented. | open |  | 2026-10-09T21:35:14.803Z |  |
 
 ````json
 [
@@ -135,6 +136,19 @@ last_updated: 2026-09-12T00:29:32.780Z
     "recorded_at": "2026-09-12T00:29:10.877Z",
     "resolved_at": "2026-09-12T00:29:32.780Z",
     "milestone": "v1.38"
+  },
+  {
+    "id": 10,
+    "kind": "unrun-verify",
+    "phase": "145",
+    "file": ".planning/phases/145-configure-and-onboard/145-CREDENTIAL-BROWSER.md",
+    "line": null,
+    "description": "Browser credential-changing handoff and narrow/200% zoom/reduced-motion states were intentionally left unobserved; ExUnit covers secret lifecycle and the remaining visual limits are documented.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-09T21:35:14.803Z",
+    "resolved_at": null,
+    "milestone": "v1.40"
   }
 ]
 ````

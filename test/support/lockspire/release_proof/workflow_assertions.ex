@@ -112,14 +112,49 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     assert milestones =~ "## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)"
     assert milestones =~ "public package `1.5.0`"
     assert release_train =~ "Release Please version metadata: `1.5.1`"
-    assert release_train =~ "Latest public package: Hex lists `1.5.0`"
+
+    assert release_train =~
+             "Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08."
+
+    assert release_train =~
+             "protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282)"
+
+    assert release_train =~
+             "was backed by matching canonical push CI [37788996197]"
+
+    assert release_train =~ "The release run verified the public Hex checksum"
+
+    assert release_train =~
+             "public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`"
+
+    assert release_train =~
+             "[lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1)"
+
+    for historical_value <- [
+          "Previous release: source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
+          "33141161205",
+          "33141484467",
+          "lockspire-v1.5.0",
+          "30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de"
+        ] do
+      assert release_train =~ historical_value
+    end
 
     assert hygiene =~
              "bash ./scripts/maintainer/repo_hygiene_check.sh --accept-sha <40-lowercase-hex-current-main-sha> --format json"
 
     assert hygiene =~ "Every `WARN` requires one explicit `--warn-disposition CODE=DISPOSITION`"
     assert hygiene =~ ~s(`"warn_dispositions": []`)
-    assert hygiene =~ "v1.37 and Lockspire 1.5.0 remain the latest shipped truth"
+
+    assert hygiene =~
+             "- Confirm `.planning/PROJECT.md`, `.planning/ROADMAP.md`, and `.planning/STATE.md` agree on the active milestone and phase, and that completed phases have their required verification evidence."
+
+    assert hygiene =~
+             "preserves shipped history and `.planning/RELEASE-TRAIN.md` identifies the latest public package from matching protected release proof."
+
+    assert hygiene =~
+             "dated historical observations; use newer release truth only when its public proof is recorded."
+
     refute hygiene =~ "latest `main` CI"
 
     assert oidf_workflow =~ "name: Supplemental OIDF Conformance"

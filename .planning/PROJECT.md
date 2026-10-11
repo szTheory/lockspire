@@ -2,17 +2,38 @@
 
 ## What This Is
 
-Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It helps Phoenix SaaS teams turn an existing app into a trustworthy OAuth/OIDC provider for third-party developers without standing up a separate auth service or assembling protocol-sensitive pieces by hand. The host app owns accounts, login UX, layouts, branding, and product policy; Lockspire owns protocol correctness, token and consent domain logic, operator tooling, telemetry, and install flow.
+Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir. It helps Phoenix SaaS teams turn an existing app into a trustworthy OAuth/OIDC provider for third-party developers without standing up a separate auth service or assembling protocol-sensitive pieces by hand. The host app owns accounts, login UX, layouts, branding, and product policy; Lockspire owns protocol correctness, token and consent domain logic, admin tools, telemetry, and install flow.
 
 ## Core Value
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
+
+## Completed Milestone: v1.41 Product Language & Repository Clarity (Completed 2026-10-11)
+
+**Goal:** Make Lockspire's admin UI language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
+
+**Target features:**
+- Review and simplify admin UI labels, headings, instructions, errors, empty/success states, and confirmations from the perspective of the people using them: their goals, familiarity, mental models, questions, and decisions. Translate internal concepts into user-facing language that helps them act; preserve protocol meanings, security distinctions, and truthful consequences. Name the task or object; do not use “operator” as visible audience copy or generic UI filler.
+- Use the reviewed vocabulary to improve the README and canonical adopter/maintainer documentation; verify navigation, setup steps, links, and claims against current code and `docs/supported-surface.md`.
+- Clarify repository directory ownership and lifecycle, and move or remove clutter only after verifying it is stale, unowned, and unused by CI, tests, packaging, or maintained workflows.
+
+**Delivered:** Phases 148–150 completed 10 plans and 24 tasks. Admin pages now use task- and object-centered language while preserving OAuth/OIDC distinctions and truthful outcomes. Contributors have a source-backed repository lifecycle map; Phoenix adopters and maintainers have a direct path through product fit, canonical installation, verification, and task guides. All eight requirements passed verification, the cross-phase audit found no broken flows, and no manual UAT was needed for the covered facts.
+
+**Closeout:** The audit records one acknowledged copy-scope compiler-warning follow-up and three ambiguous Git worktree records preserved until ownership is established. This was planning and documentation work; Lockspire 1.5.1 remains the latest public package. See the [v1.41 audit](milestones/v1.41-MILESTONE-AUDIT.md), [roadmap](milestones/v1.41-ROADMAP.md), and [requirements](milestones/v1.41-REQUIREMENTS.md).
 
 ## Verification and Automation Default
 
 Treat executable verification as the default. For each feature or maintenance change, identify the highest-value unit, integration, end-to-end, smoke, and seam checks; automate them and run them as early as practical. Put checks in CI when they provide recurring value and can run reliably there. Aim for zero human UAT or verification handoffs: reserve maintainer attention for the judgment, access, or real-world observation that cannot be established safely and reliably by automation. Prefer deterministic evidence that fails visibly and explains what remains unverified.
 
 Once a repeatable check is automated and required CI proves it, do not add a manual UAT/signoff step for the same property or reopen that choice without new evidence that automation cannot establish it. Keep human approval for genuinely consequential external actions, such as a specifically identified ref update, separate from verification.
+
+Before presenting a UAT checkpoint, map each criterion to current focused tests, end-to-end/smoke/seam checks, and required CI evidence. Add only missing deterministic checks with recurring regression value. If rendered or subjective acceptance belongs to a later phase, record that owner and reason instead of handing the same check to the user.
+
+## Recent Milestone: v1.40 Admin Operator UI Refinement (Completed 2026-10-10)
+
+**Goal:** Refine Lockspire's existing operator UI into a calm, coherent interface for configuration, investigation, and operations, with a working preview and bounded automated/browser verification.
+
+**Delivered:** Phases 144–147 completed 21 plans across the mounted synthetic preview, Configure/onboarding, Support/Orient/read-only operations, and cross-surface refinement. All 24 milestone requirements and eight reviewed operator flows are satisfied. The GSD closeout is an override because three phase reports are stale after covered-source edits and Phase 146 remains `human_needed`; the original report verdicts were preserved. Billingo is synthetic demo-adopter data, not a real customer or account. See the [archived requirements](milestones/v1.40-REQUIREMENTS.md), [roadmap](milestones/v1.40-ROADMAP.md), and [audit](milestones/v1.40-MILESTONE-AUDIT.md).
 
 ## Completed Milestone: v1.38 Repository Baseline & Reconciliation
 
@@ -25,7 +46,7 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 **Delivered:** Phases 138-141 closed the repository evidence baseline, exact-SHA required CI and Release no-publish acceptance, and a sustaining-train handoff. This v1.38 completion archives planning only and publishes no package; Lockspire 1.5.0 remains the latest public release. Three audit items were acknowledged at closeout: one halted Phase 139 verification-repair task and the `gaps_found` reports for Phases 139 and 140. See [MILESTONES.md](MILESTONES.md) and [STATE.md](STATE.md).
 
-## Current Milestone: v1.39 Verified 1.5.1 Release
+## Completed Milestone: v1.39 Verified 1.5.1 Release
 
 **Goal:** Correct the release record on `main`, land the reviewed Phase 141 baseline, and publish Lockspire 1.5.1 only after exact-main checks and protected artifact verification pass.
 
@@ -36,6 +57,8 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 - If any gate fails, preserve the evidence, record the blocker, and make no claim that 1.5.1 shipped.
 
 **Verification:** Use the existing required CI, repository-hygiene, protected publish, and public install checks as the acceptance evidence. Do not add a manual UAT step for a property those checks prove.
+
+**Delivered:** Phase 142 corrected and verified the main baseline. Phase 143 published and verified Lockspire 1.5.1 from `0b56503859b69531ff86d8e4a465a0e75f963594`, with canonical CI, protected run, package checksum, release/tag target, docs, and clean-room install evidence joined in the release receipt. The Phase 143 verifier remains `gaps_found` (16/18) because retained records do not establish an exact-head maintainer merge decision for PR #119. The user acknowledged this historical provenance gap for forward development; no approval is inferred from the separate publication approval. See the [milestone audit](milestones/v1.39-MILESTONE-AUDIT.md) and [milestone history](MILESTONES.md).
 
 ## Completed Milestone: v1.37 Prime-Time Readiness Ratchet
 
@@ -56,23 +79,19 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 ## Current State
 
-v1.39 requirements are defined and its two-phase roadmap is proposed for review. The Phase 141 branch has corrected release-truth records but is not yet merged to `main`; current remote `main` still incorrectly labels 1.5.1 as released. Hex and GitHub evidence show 1.5.0 is the latest public release. The milestone must merge the correction, establish fresh exact-current-main release gates, and publish 1.5.1 through the protected workflow only if every gate passes.
+v1.41 Product Language & Repository Clarity is complete and archived. Phases 148–150 delivered all eight requirements in 10 plans and 24 tasks; the milestone audit found no unsatisfied requirements or broken flows. The Phase 999.1 repository readability/docs-polish scope was delivered through these phases and should not be run again.
 
-The completed v1.38 planning milestone returned the repository to its sustaining GA release train without publishing a package. Its Phase 140 post-summary terminal receipt and read-only verifier accept source SHA `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`; CI-06 and CI-07 pass for that synchronized source tree. The linked Phase 141 baseline records its local CI and hygiene results, same-SHA required CI and Release no-publish evidence, current public-package chain, and retained Phase 140 dispositions. The Phase 140 receipt does not accept the later Phase 141 documentation commits.
+The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 24 requirements and eight reviewed flows satisfied across Phases 144–147 (21 plans). The override closeout records three phase reports as stale after covered-source edits and Phase 146 as `human_needed`; original verification reports were preserved. The late policy/client readiness changes passed 35 focused tests and a clean code review. The audit makes no claim that every phase currently has fresh verification.
 
-At the 2026-10-05 closure observation, Hex lists `1.5.0` as the latest public package. GitHub's `lockspire-v1.5.0` tag and release identify source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`; canonical CI run `33141161205` and protected publication run `33141484467` succeeded for that source, and Hex reports checksum `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`. The `1.5.1` value in release metadata is not proof of a published package. Phase 140's supplemental OIDF/FAPI results remain redacted, non-certifying follow-up evidence, not a release gate or certification claim. The current and historical source identities and evidence links are in the [Phase 141 baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md).
+Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-The implemented milestone makes packaged installation executable, aligns the supported client/resource-server surface with runtime truth, proves the separate-origin SaaS journey, enforces acyclic/cohesive internals, restores high-signal static analysis, aggregates truthful complete-suite coverage above 84%, pins external conformance inputs, and binds release proof to one manifest-verified tar. Generated routes and consent, collision-safe migrations, semantic access-token readers, capability-aware registration, durable DPoP replay defaults, and host-owned authorization boundaries remain verified and security-audited.
+Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; v1.40 neither resolves nor accepts it as safe for release.
 
-Lockspire now supports a full embedded-provider-to-resource-server path: authorization code + PKCE, PAR, JAR request objects (including JWE decryption), DCR with logout propagation metadata management, device authorization, OIDC discovery/JWKS/userinfo, revocation, introspection, refresh rotation, DPoP with nonce-backed retry on shipped surfaces, strict FAPI 2.0 security mode, Token Exchange, OIDC CIBA (Poll, Ping, and Push), Resource Indicators, RAR, guarded remote `jwks_uri` resolution, `private_key_jwt`, narrow `client_secret_jwt` on shipped direct-client endpoints, mTLS client authentication, certificate-bound tokens, JARM, JWT introspection responses, and host Phoenix route protection for Lockspire-issued bearer, DPoP-bound, and MTLS-bound access tokens.
+The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
-Between feature milestones, Lockspire's default posture remains a sustaining GA release train: keep `main` green, keep release-truth artifacts aligned, and let patch-eligible merged changes flow toward the next patch release through the maintained automated lane. Future feature milestones run on milestone branches and merge through one PR to `main` as described in `.planning/DEVELOPMENT-TRAIN.md`.
+## Next Milestone Goals
 
-The most recently shipped work, v1.37 / Lockspire 1.5.0, turned those foundations into an executable packaged-provider journey and a checksum-bound public release with canonical CI, conformance receipts, HexDocs, and clean-room install proof.
-
-Within v1.32 work, Phases 121-125 are complete. Phase 121 locked deterministic admin route scorecards and the Page/Section/Action/Component Group judgment rubric. Phase 122 polished Support investigation flows so token and consent index/detail pages lead with decision summaries, dense redaction-safe rows or detail panes, exact consequence copy, and verified closed-state behavior. Phase 123 polished Operate queue flows so interactions, device authorizations, and logout deliveries now scan by pressure, safe pivots, lifecycle context, and support notes while preserving existing routes, read-only boundaries, non-table layouts, redaction, mobile wrapping, focus, theme, and reduced-motion proof. Phase 124 propagated the proven page-first Configure model into clients, DCR/IAT onboarding, keys, and policy pages with copy-once handoffs, confirmation-backed risky actions, source/stress contracts, and no public route, API, schema, package, theming, lab, or host-owned seam expansion. Phase 125 closed the milestone with shared fixture and component stress proof, deterministic rendered-HTML guardrails, route-family proof for Support, Operate, Configure, Orient, and Policy pages, maintainer-only browser/manual evidence, operator docs, and adversarial proof artifacts.
-
-The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for endpoint URL generation, Lockspire issuer, seeded local URLs, developer callback output, startup output, docs, and smoke proof, with Docker listener binding split into explicit `LOCKSPIRE_DEMO_BIND_IP`. The default Docker path starts Phoenix/Bandit plus PostgreSQL without host Postgres, uses project-scoped volumes, prepares the database idempotently, supports conflict-resistant project/port and optional Traefik hostname routing, prints redacted startup information through `docker-info`, exposes a wrapper-driven maintainer smoke command, and documents Docker-first maintainer workflows. The lifecycle lane now includes scoped stop, reset, cleanup, and hygiene checks that preserve useful admin UI evidence and keep CI Docker-daemon-free.
+No next milestone scope has been selected. Run `$gsd-new-milestone` to choose the next project direction. Carry forward the embedded-library boundary, plain user-facing language, and shift-left verification default; reconcile preserved worktree records only when ownership is established.
 
 ## Completed Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
@@ -240,11 +259,22 @@ The adoption demo now has one canonical `LOCKSPIRE_DEMO_BASE_URL` contract for e
 
 ### Active
 
-- [ ] The protected release workflow publishes one manifest-verified 1.5.1 artifact and proves its public checksum, matching GitHub release, and clean-room install journey.
-- [ ] Any failed release gate stops publication or completion, preserves its evidence, and records the blocker without claiming 1.5.1 shipped.
+No active v1.41 requirements remain; the milestone scope is validated below.
+
+The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40-REQUIREMENTS.md](milestones/v1.40-REQUIREMENTS.md).
 
 ### Validated
 
+- ✓ Existing admin pages use task-focused, plain language while preserving protocol meanings, security consequences, redaction, and host-owned UX boundaries — v1.41, Phase 148; verifier 33/33, 215 focused tests, and responsive review at desktop, tablet, and mobile sizes. No user-comprehension claim is made.
+- ✓ Contributors can identify the purpose and lifecycle of repository areas, and cleanup decisions are backed by ownership/reference evidence — v1.41, Phase 149; ambiguous worktree and retained artifacts were preserved.
+- ✓ Phoenix adopters and maintainers can follow task-oriented README/HexDocs routes through canonical installation and verification; setup claims match source, and published guide/package boundaries are automated — v1.41, Phase 150; verifier 7/7, focused docs contract, docs build, package build, and regression checks pass.
+- ✓ Current mounted preview, refreshed route/state inventory, and shared improvements demonstrated in representative whole workflows — v1.40, Phases 144 and 147; GSD freshness limitations are recorded in the milestone audit.
+- ✓ Consistent client, onboarding, credential, key, and security-policy configuration journeys — v1.40, Phase 145; visual coverage gaps remain disclosed.
+- ✓ Clear token/consent investigation, truthful observation failures, and readable read-only operations — v1.40, Phase 146; functional truths passed, visual backstops remain `human_needed`.
+- ✓ Coherent responsive, accessible, theme-aware, and reduced-motion behavior across the existing admin surface — v1.40, Phase 147; bounded evidence and freshness limitations are recorded in the audit.
+- ✓ Bounded visual refinement and meaningful automated regression evidence, with a stable preview for optional user feedback — v1.40, Phases 144–147; Billingo preview data is synthetic demo-adopter data.
+- ✓ The protected release workflow published one manifest-verified 1.5.1 artifact with matching public checksum, GitHub release/tag, docs, and clean-room install proof — Phase 143; source `0b56503859b69531ff86d8e4a465a0e75f963594`, CI `37788996197`, protected run `37795671282`, checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`. The phase audit still records the separate PR #119 merge-authorization gap.
+- ✓ Failed release attempts preserve per-stage evidence and distinguish public package presence from complete verification — Phase 143; the first failed attempt and the later evidence-retention failure are recorded without inferring a successful workflow or inventing missing evidence.
 - ✓ The corrected Phase 141 release record is merged through a reviewed PR, and 1.5.0 remains the latest-release claim until public 1.5.1 proof exists — Phase 142; PR #113 merged at `6f1a19b39999f96eb24352c75c2a0628375175ae`, with public Hex/GitHub checks confirming no 1.5.1 release or tag.
 - ✓ Required CI and repository hygiene pass for the exact current `main` revision before release dispatch — Phase 142; all seven canonical jobs passed on the accepted SHA and the private receipt records 24 PASS, 0 WARN, 0 BLOCK.
 - Phase 132 aligned the public client and resource-server contract with shipped behavior: semantic `AccessToken` readers, shared capability-aware registration, exact redirect enforcement, durable fail-closed DPoP replay storage, truthful generated examples, and 16/16 modeled threats are verified.
@@ -348,11 +378,20 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Bind protected publication to an active main-only update freeze and repeat exact-SHA checks immediately before package upload | Closes the interval where `main` could move after recovery validation but before upload; fail closed if the freeze or read-back cannot be established | Adopted and verified in Phase 142 via PR #113; publication remains Phase 143 work |
+| Start v1.41 with a plain-language admin UI copy pass before README and guide rewrites | The user reports that existing UI wording feels like boilerplate and jargon; reviewed terms should anchor the documentation pass while preserving protocol meaning and action consequences | Adopted 2026-10-10; delivered in Phase 148 with 33/33 must-haves verified, 215 focused tests, and responsive inspection; Impeccable `clarify` guidance informed the bounded copy review |
+| Keep reader guides task-focused, preserve `docs/supported-surface.md` as the single capability contract, and prove recurring documentation properties with deterministic checks | Adopters need clear next steps and accurate boundaries without duplicate capability promises or manual verification of properties the build and tests can prove | Adopted and delivered in Phase 150; five ExDoc groups, an 8-test contract, warning-free docs build, package build, and Phase 148/149 regressions passed |
+| Keep repository planning paths out of public adopter/admin guides | Repository-only evidence can disappear from published HexDocs and distract adopters from their tasks | Adopted in Phase 150; an executable contract checks the README and five adopter/admin guides |
+| Keep synthetic adopter fixtures visibly distinct from real customers | Demo data must help adopters explore real journeys without implying a production integration or account | Applied to the v1.40 Billingo preview and its retained screenshots/records |
+| Render failed admin reads as unavailable and preserve healthy emptiness as a separate state | Operators must not mistake an unknown observation for zero records or confirmed missing prerequisites | Implemented and regression-tested across overview, policy, and client readiness surfaces; v1.40 audit records current freshness limits |
+| Keep revocation scopes and read-only operational queues explicit | Safe operator actions need accurate, separate consequences; queues must not imply unsupported controls | Preserved throughout the v1.40 Support and Operate journeys |
+| Use stable synthetic preview data and separate disposable mutation targets | Repeatable visual comparison should not risk changing the preview data used for optional feedback | Applied and recorded in the v1.40 preview receipts |
+| Treat automated evidence as the default and preserve only genuinely unautomated visual judgment as `human_needed` | Avoid repeated manual UAT for behavior already established by deterministic tests, while stating exact remaining coverage | Applied during v1.40 closeout; stale/human-needed reports remain unchanged and acknowledged for forward progress |
+| Bind protected publication to an active main-only update freeze and repeat exact-SHA checks immediately before package upload | Closes the interval where `main` could move after recovery validation but before upload; fail closed if the freeze or read-back cannot be established | Adopted and verified across Phases 142–143; Lockspire 1.5.1 was published from exact source `0b56503859b69531ff86d8e4a465a0e75f963594` |
+| Keep PR merge authorization separate from protected publication approval | A deployment approval for one exact source SHA does not establish that a source PR's exact head was approved for merge | Adopted in Phase 143; the missing PR #119 merge record remains an acknowledged verification gap and is not inferred from the publication approval |
 | Bind baseline acceptance to the exact accepted source SHA and identify later documentation commits separately | Preserve the evidence boundary when planning and release records are reconciled after source acceptance | Adopted in Phase 141; documented in the [maintenance baseline](milestones/v1.38-phases/141-maintenance-baseline-closure/141-BASELINE.md) |
-| Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141; Lockspire 1.5.0 remains the latest public package |
+| Reconcile public-package publication separately from milestone completion | Keep latest-release claims tied to Hex and GitHub evidence and condition future patch cuts on the standing GA gates | Adopted in Phase 141 and verified in Phase 143; public Lockspire 1.5.1 is confirmed while the separate PR #119 provenance gap remains explicit |
 | Use the Lockspire milestone roadmap ratchet prompt as a durable decision aid, not a commitment list | Preserve the project's quality, release, and roadmap-selection posture with explicit Lockspire boundaries and provenance | Adapted 2026-09-27; see `docs/lockspire-milestone-roadmap-ratchet-prompt.txt`; roadmap horizons remain hypotheses |
-| Shift verification left and make automation the default phase-closure path | Repeatable acceptance seams belong in focused tests and required CI when they catch recurring regressions; human attention should be reserved for subjective judgment or external boundaries automation cannot reach | Adopted 2026-09-24; apply by default in future GSD discussion, planning, execution, and verification |
+| Shift verification left and make automation the default phase-closure path | Map UAT claims to existing executable checks before creating human checkpoints; add missing repeatable tests and required CI only when they catch recurring regressions. Reserve human attention for genuinely subjective judgment or external boundaries automation cannot reach. | Adopted 2026-09-24; reaffirmed in Phase 145 (10 semantic checks closed from automated evidence; visual acceptance assigned to Phase 147); apply by default in future GSD discussion, planning, execution, and verification |
 | Keep the v1.38 baseline immutable and proposal-only, with lifecycle movement authorized by exact receipts and semantic classifiers | Reconciliation needs a stable evidence boundary without mistaking publication for cleanup authority or treating ordinary GSD bookkeeping as evidence drift | Adopted and verified in Phase 138; Phase 139 consumes ledger `b8b9ad75` |
 | Start v1.37 as a prime-time readiness ratchet with additive-only public API changes | Research found concrete generated-install, migration, consent, resource-server, architecture, CI, and conformance gaps; one clean-room SaaS journey provides a higher-value acceptance spine than more protocol breadth or another isolated cleanup pass | Adopted 2026-08-26; planned across Phases 131-137 |
 | Start v1.36 as a structural quality ratchet | Audit evidence found high-leverage release-integrity, storage-boundary, static-analysis, compatibility, and readability gaps that can be fixed without adding product surface | Adopted and delivered across Phases 126-130; archived 2026-08-26 |
@@ -393,6 +432,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start and complete v1.31 as an admin design-system stress test | v1.29 made the admin UI coherent and v1.30 made the demo easier to inspect; the next leverage point was making shared components, fixtures, page IA, browser proof, and docs compound without protocol/storage/host-seam creep. | Adopted at v1.31 milestone start (2026-06-25); archived 2026-06-26 |
 | Start and complete v1.32 as a page-first admin IA and interaction-model polish milestone | v1.31 strengthened foundations and broad weak-page coverage; the remaining quality gap was judgment-level page composition, user-flow hierarchy, copy, and component-group polish under ugly Support/Operate data before wider Configure propagation and final proof ratchets. | Adopted 2026-06-28; shipped and archived 2026-06-30 |
 | Run repo hygiene before future milestones and releases | Clean local git/worktrees, triaged GitHub PRs/issues, green CI, current GSD state, and release-truth notes keep Lockspire ready for the next scoped adventure without starting from a dirty repo state. | Adopted 2026-07-01; documented in `.planning/REPO-HYGIENE-CHECKLIST.md` |
+| Start v1.40 as Admin Operator UI Refinement using the existing design system | The user requested a coherent, conventional operator experience, approved the Impeccable audience/code-first defaults, and selected this scope over the earlier docs backlog. Reuse prior UI work and sibling lessons; evaluate complete jobs in the actual browser with bounded review. | Milestone direction confirmed 2026-10-09; detailed roadmap approval tracked in STATE.md |
 
 ## Evolution
 
@@ -413,4 +453,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-07 after completing Phase 142*
+*Last updated: 2026-10-11 after Phase 150*

@@ -1,33 +1,22 @@
 # SaaS Adoption Recipe
 
-Use this when you are wiring Lockspire into a real Phoenix SaaS for the first time.
+Use this recipe to register a partner client and prove its first OAuth flow in your Phoenix app.
 
-If you want the OAuth/OIDC mental model before the checklist, read
-[OAuth/OIDC For Phoenix Adopters](oauth-oidc-for-phoenix-adopters.md) first. This
-recipe assumes you already understand clients, redirect URIs, scopes, consent,
-tokens, and the host-owned account seam at a high level.
+First, complete the [canonical install and verification guide](install-and-onboard.md). It covers
+installation, migrations, routes, and `mix lockspire.verify`; this recipe starts after that setup.
 
-## 1. Install and mount
+For an OAuth/OIDC overview before configuring a client, read
+[OAuth/OIDC for Phoenix adopters](oauth-oidc-for-phoenix-adopters.md).
 
-Run `mix lockspire.install`, import `config/lockspire.exs`, run migrations, and call the generated `lockspire_routes/0` helper from your host router.
+## 1. Keep host and protocol routes separate
 
-New generated installs use a dedicated Postgres schema by default:
-
-```elixir
-config :lockspire,
-  storage_prefix: "lockspire",
-  oban_prefix: "lockspire"
-```
-
-Use `--storage-prefix public --oban-prefix public` only when you explicitly want Lockspire tables in the default/public schema.
-
-Keep three boundaries separate:
+The install guide shows how to mount these routes. Keep their responsibilities separate:
 
 - Host account routes such as `/verify` and `/authorized-apps` stay inside your normal browser/session pipeline.
-- `Lockspire.Web.AdminRouter` must be mounted behind your operator-auth pipeline.
+- `Lockspire.Web.AdminRouter` must be mounted behind the host's staff sign-in and access checks.
 - `Lockspire.Web.Router` exposes the public OAuth/OIDC protocol surface.
 
-## 2. Resolve accounts and claims
+## 2. Resolve accounts and choose claims
 
 Implement the generated `AccountResolver` before shipping.
 

@@ -1,3 +1,7 @@
+defmodule Lockspire.Admin.KeysTest.FailingPolicyReadRepo do
+  def one(_query, _opts), do: raise("synthetic server policy read failure")
+end
+
 defmodule Lockspire.Admin.KeysTest do
   use ExUnit.Case, async: false
 
@@ -51,6 +55,75 @@ defmodule Lockspire.Admin.KeysTest do
     assert upcoming_entry.key.status == :upcoming
     refute upcoming_entry.publishable
     assert upcoming_entry.next_actions == [:publish]
+  end
+
+  test "list views remove private JWK members even if they appear in public metadata", %{now: now} do
+    {:ok, key} =
+      Repository.publish_key(
+        signing_key("kid-private-members", :upcoming, now,
+          public_jwk: %{
+            "kid" => "kid-private-members",
+            "alg" => "RS256",
+            "kty" => "RSA",
+            "n" => "public-modulus",
+            "d" => "fixture-private-value",
+            "p" => "fixture-private-value",
+            "q" => "fixture-private-value"
+          }
+        )
+      )
+
+    assert {:ok, entries} = Keys.list_keys()
+    entry = Enum.find(entries, &(&1.key.id == key.id))
+    refute Map.has_key?(entry.key.public_jwk, "d")
+    refute Map.has_key?(entry.key.public_jwk, "p")
+    refute Map.has_key?(entry.key.public_jwk, "q")
+    assert entry.key.public_jwk["n"] == "public-modulus"
+    assert is_nil(entry.key.private_jwk_encrypted)
+  end
+
+  test "published visibility exactly matches the served JWKS query and excludes retired history",
+       %{
+         now: now
+       } do
+    {:ok, retiring_key} =
+      Repository.publish_key(
+        signing_key("kid-retiring", :retiring, now, published_at: now, retiring_at: now)
+      )
+
+    {:ok, published_upcoming_key} =
+      Repository.publish_key(
+        signing_key("kid-upcoming-published", :upcoming, now, published_at: now)
+      )
+
+    {:ok, retired_key} =
+      Repository.publish_key(
+        signing_key("kid-retired-history", :retired, now,
+          published_at: now,
+          retired_at: now
+        )
+      )
+
+    assert {:ok, served_keys} = Repository.list_publishable_keys()
+    served_ids = MapSet.new(served_keys, & &1.id)
+    assert {:ok, entries} = Keys.list_keys()
+
+    for entry <- entries do
+      assert entry.publishable == MapSet.member?(served_ids, entry.key.id)
+    end
+
+    retired_entry = Enum.find(entries, &(&1.key.id == retired_key.id))
+    refute retired_entry.publishable
+    assert retired_entry.published
+
+    assert Enum.any?(entries, &(&1.key.id == retiring_key.id and &1.publishable))
+
+    assert Enum.any?(
+             entries,
+             &(&1.key.id == published_upcoming_key.id and &1.publishable)
+           )
+
+    refute Enum.any?(served_keys, &(&1.id == retired_key.id))
   end
 
   test "publish, activate, and retire enforce guided transitions", %{
@@ -130,6 +203,16 @@ defmodule Lockspire.Admin.KeysTest do
     assert enc_view.key.status == :upcoming
     assert enc_view.key.kty == :RSA
     assert enc_view.key.alg == "RS256"
+  end
+
+  test "generate_key returns server policy read failures instead of raising" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    Application.put_env(:lockspire, :repo, Lockspire.Admin.KeysTest.FailingPolicyReadRepo)
+
+    on_exit(fn -> Application.put_env(:lockspire, :repo, prior_repo) end)
+
+    assert {:error, %RuntimeError{message: "synthetic server policy read failure"}} =
+             Keys.generate_key(:sig)
   end
 
   test "generate_key defaults to a FAPI-compliant signing key when the server profile requires it" do

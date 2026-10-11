@@ -1,8 +1,8 @@
 # Adoption Demo
 
-Lockspire includes a small Phoenix host app at `examples/adoption_demo`. The host app is branded as **Billingo**, a fictional subscription billing SaaS, so maintainers can launch a realistic product shell, open the Lockspire operator UI, and smoke the OAuth/OIDC path without wiring a separate project.
+Try Lockspire in the repo-local Phoenix example at `examples/adoption_demo`. It uses **Billingo**, a fictional subscription billing app, with synthetic demo accounts and clients. Billingo is not a real customer or production integration. To install Lockspire in your own Phoenix app, start with the [canonical install and verification guide](install-and-onboard.md).
 
-Docker is the default maintainer path. It starts Phoenix/Bandit plus PostgreSQL, keeps state scoped to one Compose project, and prints the URLs worth opening. The demo is repo-local adopter proof, not a production deployment guide, not hosted authentication, and not an expansion beyond `docs/supported-surface.md`. The canonical support contract still lives in `docs/supported-surface.md`.
+Docker is the recommended way to run the example. It starts Phoenix/Bandit and PostgreSQL, keeps state scoped to one Compose project, and prints the URLs to open. This local example is not a production deployment guide or hosted authentication service. See the [supported surface](supported-surface.md) for the canonical list of capabilities and limits.
 
 The normal browser path uses Traefik hostname routing instead of a fixed localhost port. Do not open `127.0.0.1:4100` unless you intentionally started direct mode and the launcher printed that exact URL.
 
@@ -36,9 +36,9 @@ make demo-stop
 
 ## What Starts
 
-The demo starts Billingo, a Phoenix SaaS host with Lockspire mounted as the embedded provider. Billingo owns the customer-facing dashboard, developer app, login, authorized-apps, device verification, consent, and callback pages. Lockspire owns the protocol and operator surfaces under `/lockspire`. The ready output leads with the operator job:
+The demo starts Billingo, a Phoenix host app with Lockspire mounted as the embedded provider. Billingo owns the dashboard, developer app, sign-in, authorized apps, device verification, consent, and callback pages. Lockspire owns the protocol and admin pages under `/lockspire`. The ready output shows the admin URL first:
 
-- Operator admin: `http://lockspire-demo.localhost/lockspire/admin`
+- Admin pages: `http://lockspire-demo.localhost/lockspire/admin`
 - Login: `ops` if prompted
 - Smoke: `make demo-smoke`
 - Logs: `make demo-logs`
@@ -49,7 +49,7 @@ Additional routes are available through `make demo-info`:
 | Job | URL | Login |
 | --- | --- | --- |
 | Home | `http://lockspire-demo.localhost` | none |
-| Operator admin | `http://lockspire-demo.localhost/lockspire/admin` | `ops` |
+| Admin pages | `http://lockspire-demo.localhost/lockspire/admin` | `ops` |
 | Developer apps | `http://lockspire-demo.localhost/developer/apps` | `alice` |
 | Device verification | `http://lockspire-demo.localhost/verify` | `alice` or `bob` |
 
@@ -59,7 +59,7 @@ Seeded accounts:
 | --- | --- | --- |
 | `alice` | Billingo user | `alice@billingo.test` |
 | `bob` | Customer user | `bob@northstar.test` |
-| `ops` | Operator | `ops@billingo.test` |
+| `ops` | Billingo admin | `ops@billingo.test` |
 
 Seeded OAuth clients include `billingo-dashboard-public`, `billingo-display-device`, and `billingo-reports-backend`.
 
@@ -67,7 +67,7 @@ Seeded OAuth clients include `billingo-dashboard-public`, `billingo-display-devi
 
 | Command | Use When | Effect |
 | --- | --- | --- |
-| `make demo` | Start the UI | Starts detached, waits for readiness, prints admin-first URLs. |
+| `make demo` | Start the example | Starts detached, waits for readiness, and prints useful URLs. |
 | `make demo-info` | You need the routes again | Reprints URLs, seeded accounts, client shapes, and smoke commands. |
 | `make demo-smoke` | You want proof | Runs `scripts/demo/adoption_smoke.sh` against the running demo URL. |
 | `make demo-logs` | Startup or runtime looks odd | Follows the demo web logs. |
@@ -120,7 +120,7 @@ Run:
 make demo-smoke
 ```
 
-The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, anonymous admin login redirect, operator admin access, non-operator denial, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
+The wrapper delegates to `scripts/demo/adoption_smoke.py`, which remains the black-box OAuth/OIDC proof. It checks discovery, JWKS, the admin sign-in redirect, access for the seeded admin account, denial for staff without admin access, authorization code + PKCE, device authorization, userinfo, and the protected demo API.
 
 The explicit smoke commands remain:
 

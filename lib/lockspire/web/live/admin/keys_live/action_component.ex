@@ -12,8 +12,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
   def lifecycle_actions(assigns) do
     ~H"""
     <div>
-      <p :if={@action_error}>{@action_error}</p>
-      <p :if={@action_notice}>{@action_notice}</p>
+      <ul :if={@action_error} class="lockspire-admin-errors" role="alert">
+        <li>{@action_error}</li>
+      </ul>
+      <p :if={@action_notice} role="status" class="lockspire-admin-help lockspire-admin-help-block">
+        {@action_notice}
+      </p>
 
       <p :if={@key_detail.next_actions == []}>
         No lifecycle action is available for this key right now.
@@ -28,13 +32,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
               <span>
-                Publish this public key for verification overlap before activation.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes visible in JWKS while the current signer remains active.
+                Make this public key available for verifier overlap. The current signing key remains active.
               </span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:primary}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:primary}
+                phx-disable-with="Publishing key…"
+              >
                 Publish key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -50,14 +56,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
           <form class="lockspire-admin-form-stack" phx-submit="activate_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="activate[confirm]" value="true" />
-              <span>
-                Activate this public key only when verifiers can accept the cutover signer.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                becomes active and the previous active signer moves into retiring overlap.
-              </span>
+              <span>{activation_consequence(@key_detail.key.use)}</span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:primary}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:primary}
+                phx-disable-with="Activating key…"
+              >
                 Activate key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -75,13 +81,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
               <span>
-                Retire this public key only after verifiers have moved off publication overlap.
-                Key <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
-                leaves JWKS once retirement succeeds.
+                Remove this key from JWKS only after systems that rely on it have switched to its replacement.
               </span>
             </label>
             <AdminComponents.action_bar>
-              <AdminComponents.admin_button type="submit" variant={:danger}>
+              <AdminComponents.admin_button
+                type="submit"
+                variant={:danger}
+                phx-disable-with="Retiring key…"
+              >
                 Retire key
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
@@ -91,4 +99,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
     </div>
     """
   end
+
+  defp activation_consequence(:sig),
+    do: "Use this key to sign new tokens. The previous signing key moves to retiring."
+
+  defp activation_consequence(:enc),
+    do: "Use this key for encryption. The previous encryption key moves to retiring."
+
+  defp activation_consequence(_use),
+    do: "Make this the active key for its use. The previous active key moves to retiring."
 end

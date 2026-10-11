@@ -73,11 +73,53 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dpop")
 
     assert html =~ "Global DPoP policy"
+    assert html =~ "DPoP (Demonstrating Proof of Possession)"
     assert html =~ "Save global DPoP policy"
-    assert html =~ "Current mode is bearer"
+    assert html =~ "Current choice is Bearer allowed"
+    assert html =~ "Access token requirement"
+    assert html =~ "Issuer DPoP choice"
+    assert html =~ "Bearer access tokens allowed"
+    assert html =~ "DPoP-bound access tokens required"
     assert html =~ "client inherits"
     assert html =~ "client uses bearer"
     assert html =~ "client requires DPoP"
+  end
+
+  test "failed policy read is shown as unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/dpop")
+
+      assert html =~ "Could not load global DPoP policy"
+      assert html =~ "Reload policy"
+      refute html =~ ~s(name="policy[dpop_policy]")
+      refute html =~ "Save global DPoP policy"
+
+      Application.put_env(:lockspire, :repo, prior_repo)
+      html = render_click(view, "reload_policy")
+
+      assert html =~ "Global DPoP policy"
+      assert html =~ "Save global DPoP policy"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
+  test "unavailable client counts do not promise a retry control" do
+    assert {:ok, socket} =
+             Dpop.mount(%{}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :index, __changed__: %{}}
+             })
+
+    socket = Phoenix.Component.assign(socket, :summary, nil)
+    html = rendered_to_string(Dpop.render(socket.assigns))
+
+    assert html =~ "Client override counts are unavailable."
+    refute html =~ "Reload this page to try again."
   end
 
   test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 DPoP posture explains global sender constraint scope" do
@@ -93,13 +135,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
 
     assert html =~ "Configure"
     assert html =~ "Global DPoP policy"
-    assert html =~ "Sender constraint posture"
+    assert html =~ "Access token requirement"
     assert html =~ "Clients that inherit"
     assert html =~ "Next safe action"
     assert html =~ "Save global DPoP policy"
-    assert html =~ "global issuer DPoP default"
-    assert html =~ "future token-bound requests"
-    assert html =~ "Existing client overrides stay on their client policy routes."
+    assert html =~ "Clients without a DPoP choice of their own use this issuer setting."
+    assert html =~ "must provide a valid DPoP proof when requesting tokens"
+    assert html =~ "Issued access tokens are bound to the proof key."
 
     for href <- policy_nav_hrefs() do
       HtmlAssertions.assert_has_link(html, href)
@@ -154,10 +196,31 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
       view
       |> render_submit("save_policy", %{policy: %{dpop_policy: "invalid"}})
 
-    assert html =~ "dpop_policy"
-    assert html =~ "invalid_dpop_policy"
+    assert html =~
+             "Choose whether clients that inherit issuer policy may use bearer access tokens or require DPoP."
+
+    refute html =~ "invalid_dpop_policy"
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
     assert {:ok, %{dpop_policy: :bearer}} = ServerPolicy.get_server_policy()
+  end
+
+  test "failed global DPoP policy save stays unconfirmed" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dpop")
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicySaveRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+      html = render_submit(view, "save_policy", %{policy: %{dpop_policy: "dpop"}})
+
+      assert html =~ "The DPoP policy change could not be confirmed."
+      assert html =~ "Reload the policy to check its current value."
+      refute html =~ "request_failed"
+      refute html =~ "UnavailablePolicySaveRepo"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   defp conn_for_admin do

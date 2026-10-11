@@ -1,23 +1,28 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.39",
+  "milestone": "v1.41 — Product Language & Repository Clarity",
   "phases": [
     {
-      "number": "142",
-      "name": "Merge the Corrected Main Baseline",
+      "number": "148",
+      "name": "User-Facing Admin Language",
       "status": "complete"
     },
     {
-      "number": "143",
-      "name": "Publish and Verify Lockspire 1.5.1",
-      "status": "in_progress"
+      "number": "149",
+      "name": "Repository Ownership and Lifecycle",
+      "status": "complete"
+    },
+    {
+      "number": "150",
+      "name": "Adopter and Maintainer Documentation",
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd:progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 143 of 2 · executing"
+    "command": "/gsd:progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-07T17:56:19.791Z"
+  "updated_at": "2026-10-11T12:48:29.683Z"
 }

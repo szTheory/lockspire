@@ -22,7 +22,7 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   @allowed_journeys ["Orient", "Configure", "Support", "Operate", "Internal lab"]
   @allowed_themes ["light", "dark", "system"]
   @allowed_motion ["default", "reduced-motion"]
-  @allowed_viewports ["320px", "390px", "768px", "1024px", "1440px"]
+  @allowed_viewports ["320px", "390px", "768px", "799px", "800px", "801px", "1024px", "1440px"]
 
   def required_columns, do: @required_columns
 
@@ -62,6 +62,8 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
       {"plaintext credential",
        ~r/\b(?:client_secret|password|plaintext[_ -]?password)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
       {"private key", ~r/-----BEGIN [A-Z ]*PRIVATE KEY-----/},
+      {"authorization credential",
+       ~r/\b(?:proxy-)?authorization\s*:\s*(?:bearer|basic)\s+\S{8,}/i},
       {"verifier material",
        ~r/\b(?:code_verifier|verifier_material)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i},
       {"device or user code", ~r/\b(?:device_code|user_code)=["']?[A-Za-z0-9._~+%\/=-]{4,}/i},
@@ -137,6 +139,7 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
     validate_in!("Theme", row["Theme"], @allowed_themes)
     validate_in!("Motion", row["Motion"], @allowed_motion)
     validate_in!("Result", row["Result"], @allowed_results)
+    validate_no_document_overflow!(row)
     validate_route!(row["Route / Surface"])
 
     for column <- @required_columns do
@@ -157,6 +160,18 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
     row
   end
 
+  defp validate_no_document_overflow!(%{
+         "Result" => "pass",
+         "scrollWidth" => scroll_width,
+         "clientWidth" => client_width
+       })
+       when scroll_width > client_width do
+    raise ArgumentError,
+          "passing browser evidence cannot report document-level horizontal overflow"
+  end
+
+  defp validate_no_document_overflow!(_row), do: :ok
+
   defp parse_width!(column, value) do
     value = trim_backticks(value)
 
@@ -175,7 +190,8 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   end
 
   defp validate_route!(route) do
-    unless String.starts_with?(route, "/admin") or route == "AdminLab.StressSurface" do
+    unless route == "/admin" or String.starts_with?(route, "/admin/") or
+             route == "AdminLab.StressSurface" do
       raise ArgumentError, "malformed Route / Surface #{inspect(route)}"
     end
   end
@@ -190,17 +206,18 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
           row["Viewport"],
           row["Theme"],
           row["Motion"],
-          row["Focus path"]
+          row["Focus path"],
+          row["State"]
         }
       end)
       |> Enum.frequencies()
       |> Enum.find(fn {_key, count} -> count > 1 end)
 
     if duplicate do
-      {{route, journey, viewport, theme, motion, focus_path}, _count} = duplicate
+      {{route, journey, viewport, theme, motion, focus_path, state}, _count} = duplicate
 
       raise ArgumentError,
-            "duplicate evidence row for #{route} #{journey} #{viewport} #{theme} #{motion} #{focus_path}"
+            "duplicate evidence row for #{route} #{journey} #{viewport} #{theme} #{motion} #{focus_path} #{state}"
     end
 
     rows

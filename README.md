@@ -5,65 +5,25 @@
 [![CI](https://github.com/szTheory/lockspire/actions/workflows/ci.yml/badge.svg)](https://github.com/szTheory/lockspire/actions/workflows/ci.yml)
 [![License](https://img.shields.io/hexpm/l/lockspire.svg)](https://github.com/szTheory/lockspire/blob/main/LICENSE)
 
-Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and Elixir applications.
+Lockspire lets partner apps request access to your APIs with OAuth 2.0 and sign in with OpenID Connect (OIDC), all from your existing Phoenix app. Your app keeps its accounts, login, branding, and product rules; Lockspire handles the protocol and tokens.
 
-It lets a Phoenix SaaS team become an OAuth/OIDC provider inside its existing app without moving accounts, login UX, branding, or product policy into a separate auth service.
+## Is Lockspire a fit?
 
-The public support contract for the current release lives in [`docs/supported-surface.md`](docs/supported-surface.md).
+Lockspire fits teams that want to connect partner apps without moving user accounts or login into a separate service. Before relying on a feature or deployment shape, check the [supported capabilities and limits](docs/supported-surface.md). That page is the support contract; this README does not repeat its capability list.
 
-## Current release posture
+## Install in your Phoenix app
 
-Lockspire is on a GA release line for the embedded Phoenix library wedge documented in [`docs/supported-surface.md`](docs/supported-surface.md). That file is the authoritative support contract and proof boundary for the current release.
+Follow the [canonical install and onboarding guide](docs/install-and-onboard.md). It covers the generated host files, migrations, `mix lockspire.verify`, and the host checks still needed after installation. If the OAuth/OIDC concepts or host responsibilities are new to you, start with [OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md).
 
-Normal sustaining releases ride the repo-owned automated release lane from `main`; maintainers verify train readiness with `./scripts/maintainer/repo_hygiene_check.sh` and close each publish with install-truth verification.
+## Choose your next task
 
-## Orientation
+- Register a first client: [SaaS adoption recipe](docs/saas-adoption-recipe.md)
+- Protect Phoenix API routes: [route protection guide](docs/protect-phoenix-api-routes.md)
+- Set up device login: [device flow host guide](docs/device-flow-host-guide.md)
+- Review the admin pages: [admin guide](docs/operator-admin.md)
+- Use the local example: [adoption demo](docs/adoption-demo.md), which uses synthetic Billingo data
+- Maintain a release: [maintainer and release guide](docs/maintainer-release.md)
 
-- Embedded OAuth/OIDC provider behavior inside an existing Phoenix app, not a hosted auth service or separate control plane
-- Generator-backed install and onboarding with host-owned login, account, branding, and product-policy seams
-- Core OAuth/OIDC surface for the documented embedded wedge, with exact supported and unsupported claims defined in the canonical support contract
-- Maintainer and operator workflows that stay subordinate to the same repo-proven support boundary
+## Work on the Lockspire repository
 
-## What Lockspire is not
-
-- Hosted auth as a separate service
-- SAML or LDAP federation
-- A full CIAM suite
-- Lockspire-owned account tables or login UX
-
-For exact scope, non-claims, and repo-owned proof, read [`docs/supported-surface.md`](docs/supported-surface.md) before relying on a feature or topology.
-
-## Launch The Admin UI Locally
-
-From the repo root:
-
-```sh
-make demo
-```
-
-Open `http://lockspire-demo.localhost/lockspire/admin` and log in as `ops` if prompted.
-Do not use `127.0.0.1:4100` unless the launcher explicitly started direct mode on that port; hostname routing avoids collisions with other local Phoenix demos.
-
-Useful follow-ups:
-
-```sh
-make demo-smoke
-make demo-logs
-make demo-stop
-```
-
-## Guides
-
-- [OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md)
-- [Architecture](docs/architecture.md)
-- [Code walkthrough](docs/code-walkthrough.md)
-- [Getting started](docs/getting-started.md)
-- [Install and onboard](docs/install-and-onboard.md)
-- [SaaS adoption recipe](docs/saas-adoption-recipe.md)
-- [Adoption demo](docs/adoption-demo.md)
-- [Private key JWT host guide](docs/private-key-jwt-host-guide.md)
-- [Operator and admin guide](docs/operator-admin.md)
-- [Supported surface and GA contract](docs/supported-surface.md)
-- [Maintainer and release guide](docs/maintainer-release.md)
-- [Sigra companion host](docs/sigra-companion-host.md)
-- [Security policy](SECURITY.md)
+For repository ownership, local checks, and contributor workflow, see [`CONTRIBUTING.md`](https://github.com/szTheory/lockspire/blob/main/CONTRIBUTING.md). It applies to this repository and is not part of the Hex package documentation.

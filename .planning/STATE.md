@@ -1,49 +1,69 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.39
-current_phase: 143
-current_phase_name: Publish and Verify Lockspire 1.5.1
-current_plan: 4
-status: executing
-stopped_at: Completed 143-03-PLAN.md
-last_updated: "2026-10-07T17:55:50.000Z"
-last_activity: 2026-10-07
-last_activity_desc: Phase 143 Plan 03 completed; Plan 04 is next
-state_head: d00b34b15bbb46cf9df60316f07ad1a747ab7259
+milestone: v1.41
+status: "v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending"
+stopped_at: v1.41 archived — next milestone scope not selected
+last_updated: "2026-10-11T14:54:26.081Z"
+last_activity: 2026-10-11
+state_head: 87c546abbb65c0e40fa5bb5a465f2b8b94e93f8a
 progress:
-  total_phases: 2
-  completed_phases: 1
+  total_phases: 3
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 8
-milestone_name: Verified 1.5.1 Release
+  completed_plans: 10
+  percent: 100
+milestone_name: Product Language & Repository Clarity
+current_phase: null
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-07)
+See: .planning/PROJECT.md (updated 2026-10-11 after v1.41 completion)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 143 — Publish and Verify Lockspire 1.5.1
+**Current focus:** Planning next milestone with `$gsd-new-milestone`
 
 ## Current Position
 
-Current Plan: 4
-Total Plans in Phase: 6
-Phase: 143 (Publish and Verify Lockspire 1.5.1) — IN PROGRESS
-Plan: 4 of 6
-Status: Ready to execute
-Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
+Phase: —
+Plan: —
+Status: v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending
+Last activity: 2026-10-11
 
 ## Accumulated Context
+
+### v1.41 Milestone Direction
+
+- The user promoted Phase 999.1 Repository Readability & Docs Polish and added a plain-language operator UI copy pass before rewriting the README and guides. Confirmed scope: establish concise, accurate operator terminology; carry it into adopter/maintainer docs; verify documentation claims and navigation against current source and `docs/supported-surface.md`; clarify directory ownership and remove only proven stale, unowned, unused clutter.
+- Preserve protocol meaning, security distinctions, actual action consequences, host-owned UX boundaries, and the embedded-library shape. No protocol feature or UI behavior expansion is in scope.
+- Impeccable `clarify` guidance is the method for copy review; the milestone does not call for a visual redesign.
+- Continue phase numbering after Phase 147. No matching planted seed was found; the separate theme-caret seed remains dormant.
+- Bounded primary-source and local research is recorded in [.planning/research/v1.41-language-docs/SUMMARY.md](research/v1.41-language-docs/SUMMARY.md): reuse the current stack, preserve standards meanings, keep the supported-surface contract canonical, and perform cleanup only after a full ownership/reference check.
+
+### v1.40 UI Milestone Direction
+
+- User invoked `$gsd-new-milestone Admin Operator UI Refinement` after approving the Impeccable audience and code-first setup. Read root PRODUCT.md and .planning/UI-MILESTONE-PREFLIGHT.md; do not repeat those initialization questions.
+- Reuse the completed source stocktake and sibling-project research for this milestone; no new ecosystem research pass or change to the standing research preference. Fresh browser inspection is still required in Phase 144.
+- Continue numbering after Phase 143. The GSD init helper reports v1.37 as latest completed because newer archive headings use Completed; MILESTONES.md and the v1.39 archive establish that v1.40 starts at Phase 144.
+- User’s `$gsd-plan-phase 144` instruction confirmed the detailed requirements and roadmap. Configured auto-advance then executed all four Phase 144 plans; independent verification passed. The current implementation, browser proof, and explicit coverage limits are retained in the Phase 144 artifacts.
+- Approved sequence: Phase 144 proves shared improvements on mounted client-configuration and token/consent-investigation workflows; Phase 145 carries them through Configure/onboarding; Phase 146 covers Support, Orient, and read-only Operate including failed/unknown observations; Phase 147 owns bounded cross-surface acceptance and a stable optional-feedback preview. Every v1.40 requirement maps once; Phase 144 planning is authorized.
+- At v1.40 close, the earlier docs-backlog direction had been superseded and Phase 999.1 remained backlog. The subsequent v1.41 milestone explicitly promotes its repository/docs scope. Historical v1.39 exceptions remain acknowledged and non-blocking.
 
 ### Recent Sustaining Release: 1.5.0
 
 - Release PR #93 merged the 1.5.0 bookkeeping at `02e74366`; release automation hardening #94 produced source SHA `5d10ce2219c2e687cf9573c8b280abfb118a47d8`.
 - Canonical `main` CI run `33141161205` passed at that SHA; protected release run `33141484467` published and re-verified the exact tar (SHA-256 `30c1f56f0f356be727269ba1a6c1b6be85a3c6c6bc224d781a7c136241ed90de`).
 - Supplemental OIDF run `33139876101` retained redacted, non-certifying suite-failure evidence; it is not a release gate or certification claim.
+
+### Verified Publication: 1.5.1 (2026-10-08)
+
+- Published source SHA: `0b56503859b69531ff86d8e4a465a0e75f963594`; Hex package SHA-256: `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`.
+- Protected run `37795671282` published and independently verified Hex checksum, docs, GitHub release/tag target, and clean-room install. Its terminal receipt says `release_verified: true`; the overall run failed only at bounded evidence retention.
+- PR #119 fixed the pinned GitHub App token input; PR #120 fixed receipt retention and merged as current `main` `ef6e33be2d8bc8ac438390495990b231b475466c`. Main CI `37800419349` and Release push `37800419385` passed.
+- This publication record supersedes the historical no-publish observations below. The active release-train and roadmap records have been reconciled locally; commit and merge them through the normal project flow before milestone archival.
 
 ### Decisions
 
@@ -142,7 +162,7 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 - [Phase 138]: Compose Phase 139 fixture labels from semantic phase attributes so repository proof remains phase-neutral without weakening assertions. — The user-authorized repair restores the existing active proof-label hygiene contract while preserving generated fixture semantics.
 - [Phase 139]: Keep repository-owned proof separate from live external acceptance. The exact synchronized-main receipt passed at `7ab6e495fbd89bc2c5d71862c86ac9ce6ab1fea9`; CI-06 and CI-07 remain assigned to Phase 140 until its verification closes them.
 - [Operating default]: Shift verification left into the earliest reliable automated layer; add repeatable integration, end-to-end, smoke, and seam checks to required CI when they provide recurring regression value. Treat passing automated evidence as satisfying UAT and hand off only subjective judgment or a truly unreachable external boundary, with its machine-owned lifecycle gate named.
-- [Operating default, reaffirmed 2026-10-05]: This is the standing GSD default. Once a repeatable check is automated and required CI proves it, do not add manual UAT/signoff for the same property or reopen the choice without new evidence that automation cannot establish it. Separate authorization for consequential external actions from verification.
+- [Operating default, reaffirmed 2026-10-09]: Before presenting UAT, map each criterion to current tests and required-CI evidence; add only missing deterministic checks with recurring value. Passing automation satisfies UAT. Defer subjective work only to a named phase with its reason recorded, and keep consequential action authorization separate from verification. Phase 145 applied this to its pending UAT set.
 - [Phase 138/139 verification]: Phase 138's 100 executable UAT checks pass and #100 remains explicitly deferred until the authorized live snapshot refresh; Phase 139's three focused lifecycle relation tests pass serially. Both phase reports record zero human verification required.
 - [Phase 140]: Keep fresh inventory and candidate outcomes proposal-only where origin refresh or maintained-source classification is incomplete. — The collector reported origin refresh unavailable and the active-record family ambiguous; treating those gaps as complete could authorize destructive or misleading maintenance.
 - [Phase 140]: Phase 140 Plan 02: assess only source-identifiable archived findings; do not fabricate missing identities or equate grouped counts with records.
@@ -161,6 +181,68 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 - [Phase 143]: The protected Hex publisher installs the manifest's `runtime.publisher_hex`, which must equal builder `runtime.hex`; prepublish proof records API export and exact-byte fixture success for this selected archive only.
 - [Phase 143]: Terminal receipts preserve per-stage `passed`/`failed`/`not_run`/`unknown` state and separate public Hex presence from complete verification; missing checksums and tag targets remain unknown.
 
+- [Phase 143]: Phase 143 Plan 04 merged reviewed PR #114 at exact head 0d8b8db3e9625b9934122abd8a72d181b716cd0e; current main e9e44667d0ee04e8978d14e007d6bc23666d29eb has matching successful CI and hygiene evidence, and the Release push ended no_publish.
+- [Phase 143, first attempt]: Release Please auto-merge was disabled and one-use authorization cleared after run 37689835922. PR merge approval did not authorize publication; automation was restored only after the later exact-candidate publication proof.
+
+- [Phase 143]: Approve only the exact run and candidate covered by the user's publication decision; a failed attempt does not authorize a replacement run.
+
+- Phase 143 first attempt: workflow run 37689835922 passed exact-source prepublish proof for e9e44667d0ee04e8978d14e007d6bc23666d29eb, but failed before upload at release-freeze token setup; its receipt-retention failure also prevented an artifact. The missing configuration and schema issues were subsequently corrected, and run 37795671282 published and verified 1.5.1. See the current verified publication record above and the [historical Phase 143 result](milestones/v1.39-phases/143-publish-and-verify-lockspire-1-5-1/143-RESULT.md).
+- [Phase 144]: Keep the stable preview, disposable demo checks, and root ExUnit database on separate named projects, ports, and volumes because demo startup can drop its configured database.
+- [Phase 144]: Treat UIB-02/03 evidence in plan 144-01 as baseline contribution only; later Phase 144 plans must establish representative improvements and final proof.
+- [Phase 144]: Keep preview LiveView bootstrap and direct guarded route mounts demo-owned; preserve the public library router and host seam.
+- [Phase 144]: Defer the forwarded AdminRouter full-host LiveView join mismatch for separate library-level resolution.
+- [Phase 144]: Keep the operator lifecycle on access and refresh tokens; authorization codes use distinct redeem semantics and remain outside this UI/API boundary.
+- [Phase 144]: Avoid repeating unusually long raw client IDs in detail URLs; keep the redacted client handle visible.
+- [Phase 144]: Keep consent navigation separate from consent revocation; token detail links only to the existing consent-grant route.
+- [Phase 144]: A consent-grant revoke reports prevention of future remembered-consent reuse for that grant only.
+- [Phase 144]: Keep route identity and error context on failed reads; never render a failed read as zero results.
+- [Phase 144]: Wrap operator navigation at 800px after native 200% zoom exposed a clipped focused link at the prior 720px breakpoint.
+- [Phase 145]: Keep generated client secrets within the successful copy-once handoff and clear them on acknowledgement or navigation. — This limits plaintext credential exposure to the intended operator handoff.
+- [Phase 145]: Keep browser redirects, post-logout redirects, and logout propagation endpoints in distinct fields and groups. — Each destination has a different consumer and operator task.
+- [Phase 145]: Increase the client workspace grid minimum column size from 260px to 400px after mounted inspection showed cramped summary panels. — The observed two-column desktop rendering improves readability while retaining the existing responsive breakpoint.
+- [Phase 145]: Client override previews reuse existing policy resolution and Admin operations; unavailable issuer-policy reads stay unavailable.
+- [Phase 145]: Client secret and Registration Access Token values remain temporary handoff assigns and clear on acknowledgement, failure, or route change.
+- [Phase 145]: Plan 02 completes UIC-03 and UIC-04 only; UIC-05 and UIC-06 remain pending for later plans despite the repeated phase-wide IDs in plan frontmatter.
+- [Phase 145]: Keep policy, client, and IAT observations independent; failures remain unavailable rather than fabricated disabled or zero states.
+- [Phase 145]: Keep DCR policy, IAT, RAT, and client-secret purposes distinct; do not change public protocol or domain behavior.
+- [Phase 145]: Keep issuer policy saves automated-only in browser verification because they change registration admission policy; ExUnit covers save outcomes.
+- [Phase 145]: Preserve the single-use IAT and 30-day defaults, and reject missing, malformed, or non-positive expiry before mint.
+- [Phase 145]: Keep IAT authority within issuer DCR policy; do not present an IAT as an OAuth access token or invent OAuth scopes.
+- [Phase 145]: Keep IAT mint and revoke out of mounted browser checks; use automated tests for mutations and inspect synthetic reads only.
+- [Phase 145]: Derive served-JWKS visibility from the same status/publication predicate used by the repository query; historical publication does not make a retired key served.
+- [Phase 145]: Preserve separate publish, activate, and retire confirmations and report only the returned local lifecycle state.
+- [Phase 145]: Keep private JWK members out of Admin list/detail views and mounted evidence.
+- [Phase 145]: Keep mounted browser inspection read-only for key lifecycle operations; cover mutations in automated tests.
+- [Phase 145 verification]: All 10 semantic acceptance checks were satisfied by executable tests; the one cross-surface visual judgment is explicitly owned by Phase 147. Do not re-present already automated checks as human UAT unless new evidence shows automation cannot establish the property.
+- [Phase 145 automation]: The focused suite passed 105 tests and the Phase 144 regression gate passed 87. Existing required CI runs the recurring tests and adoption smoke; no new browser stack was justified for this bounded phase.
+- [Phase 146]: Propagate refresh-family read and transaction failures; never substitute one selected token for unavailable family evidence or report success before commit. — Family-wide operator claims must match the actual complete read and confirmed transaction, preserving the separate token-only action.
+- [Phase 146]: Keep token investigation filters in the local detail, retry, and return route query. — URL-backed account, client, and status filters restore the operator investigation through navigation and browser history without accepting arbitrary return destinations.
+- [Phase 146]: Keep normalized consent filters in the local inventory/detail/retry/return URL query; default unfiltered routes remain concise. — URL-backed account, client, and status filters restore the support investigation through navigation and browser history without accepting arbitrary return destinations.
+- [Phase 146]: Render complete consent grant, account, and client IDs as safe diagnostic evidence while continuing to redact credentials. — The approved Phase 146 UI-SPEC requires complete matchable safe IDs and distinguishes them from credential values.
+- [Phase 146]: A repeated revoke against an already-revoked grant returns its current state without issuing another mutation. — The LiveView must remain safe for duplicate or stale submissions while preserving the actual grant state.
+- [Phase 146]: Only a returned revoked grant can produce a consent-revocation success notice. — Operator feedback must follow the authoritative Admin result rather than a submitted action.
+- [Phase 146]: Each overview source reports measured, loading, or unavailable independently; one failure does not erase successful siblings. — The cockpit should remain useful during a partial outage without implying source completeness.
+- [Phase 146]: Treat a missing policy row as configured defaults only after a successful read; keep policy read errors unavailable. — The repository returns a default policy struct only for a successful missing-row result.
+- [Phase 146]: Show full safe device record/client/subject IDs but keep the verification capability and protocol credentials redacted. — Operators need matchable records, while the verification handle can authorize protocol actions and remains secret material.
+- [Phase 146]: Keep device queues read-only and offer a same-route reload plus existing client/overview pivots. — Queue recovery must restore observation without adding approve, deny, consume, retry, or other protocol controls.
+- [Phase 146]: Keep interaction and logout queue reads truthful and read-only. — Operators need successful evidence distinct from unavailable reads; recorded logout delivery acceptance or rendering does not prove an end-user session ended.
+- [Phase 147]: Keep the Theme control synchronized with the saved System/Light/Dark choice after LiveView patches and reloads; the effective appearance alone does not prove the visible preference is accurate.
+- [Phase 147]: After an invalid keyboard form submit, move focus to the newly rendered error summary while preserving field-level label and error association.
+- [Phase 147]: Phase 147: Keep earlier-source responsive/native-risk observations distinct from the final-source 29-route evidence; make no unmatched before/after claim.
+- [Phase 147]: Fast ExUnit partition passed, but the wrapper missed its coverage artifact; the overall Fast Checks lane is not green.
+- [Phase 147]: Stable-preview feedback remains optional; Phase 147 does not require user UAT.
+- [Phase 147]: Keep current-page theme appearance separate from saved preference and report persistence outcomes accurately.
+- [Phase 147]: Use an isolated same-origin iframe to replay the production theme shell with deterministic storage failures installed before initialization.
+- [Phase 147]: Refresh the Phase 144 preview only after the database, volume, mount, and normalized synthetic data fingerprint matched.
+- [Phase 147]: Keep the historical 29-route sweep at a3409cfa and report targeted current-source evidence separately at 59d79140.
+- [Phase 148]: Write visible admin copy for the intended user’s goal and mental model; translate internal labels, preserve precise protocol terms when they support safe decisions, and do not label users as operators. — Carry the reviewed vocabulary into Phase 150 docs.
+- [Phase 148]: Keep consent, token-family, key-lifecycle, and logout language tied to stored scope and confirmed outcomes; do not imply host-owned UX or remote system results.
+- [Phase 148 verification]: Rendered copy, state, and redaction claims have automated LiveView coverage; 33/33 must-haves passed, with no claim of observed user comprehension.
+- [Phase 150]: Phase 150-01: link repository-only CONTRIBUTING.md through GitHub so ExDoc builds cleanly and the file stays outside HexDocs.
+- [Phase 150]: Phase 150-01: describe mix lockspire.verify as configuration, compiled-seam, route, and migration checks; keep host login and staff policy proof in host request tests.
+- [Phase 150]: Group every published guide by reader task and keep the canonical install page ahead of scenario guides.
+- [Phase 150]: Keep CONTRIBUTING.md repository-only; preserve stable HexDocs page paths and use existing deterministic docs/package checks.
+
 ### Pending Todos
 
 - Phase 138: UAT #100 remains pending an authorized live snapshot refresh; current inventory dispositions remain proposal-only until exact-target revalidation and action authority.
@@ -170,12 +252,13 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 ### Blockers/Concerns
 
 - Phase 140 is complete through the post-summary exact-SHA receipt for `877a0f758aa0bbd5433cbe3d70f1476fa0e12223`. The tracked 30/32 verification result remains a historical pre-terminal record; its two CI truths have private terminal evidence linked from the Phase 141 baseline. The live `5259a654` post-transition probe remains a failed historical observation with its original disposition; do not broaden the historical classifier.
-- The 1.5.0 publication chain remains the latest public release. Phase 141 and its documentation commits are planning records; they did not publish a package or change release-owned metadata.
+- Phase 141 and its documentation commits were planning records and did not publish a package or change release-owned metadata. The latest public release is now 1.5.1 as recorded above.
+- Phase 143 verification remains `gaps_found` at 16/18. The published 1.5.1 artifact is verified, but the final publication source includes PR #119 without a retained exact-head maintainer merge decision. The user acknowledged this exception for forward project development; do not infer historical merge authorization from the separate deployment approval.
 - Supported receipt supersession archived predecessor `cfab9f9ea553a9cce0ee7db54aa128acbf66710d4faf7d17a37780fbaf881f4d` and wrote pending recovery-v2 `59df9121aa8680f29c856a78f51608b34e8d84d4497ad63e4b092a019728093c`. The live post-transition probe at `5259a654` still failed before the no-publish barrier because the strict classifier accepts only the historical planning prefix. Preserve both receipts and the failure; Plan 140-14 proves the proper historical entry point without broadening production authority.
 - Review WR-01 is deferred with a recurrence trigger: the standalone sealed Release Please relation rejection did not reproduce in complete CI, its isolated selector, or the clean full hygiene replay at seed 924694. Its cause remains unknown. Reopen with stage-specific evidence if that exact rejection recurs.
 - Phase 138 UAT #100 remains skipped pending an authorized live snapshot refresh. Dated inventory and disposition rows remain proposal-only before any exact-target revalidation and action authority.
 - The historical 1.5.0 release chain and all four protected execution-entry files remain unchanged. Supplemental OIDF/FAPI findings remain redacted, non-certifying future bounded conformance work.
-- Phase 142 completed against exact current `main` SHA `6f1a19b39999f96eb24352c75c2a0628375175ae`: PR #113 and all seven CI jobs passed, exact-source hygiene was 24 PASS / 0 WARN / 0 BLOCK, and Release ended `no_publish`. Public Hex/GitHub truth remains 1.5.0 with no 1.5.1 release or tag. Phase 143 must revalidate its current source and controls; this completion does not authorize publication. A failed freeze setup that returns no usable ruleset ID may require administrator cleanup, but it fails closed.
+- Plan 147-07 halted: native 200% Chrome UI zoom was confirmed, but browser screenshot export and the OS screenshot fallback were unavailable; the matched comparison and 48 current-source risk captures could not be retained. Phase 144 stable preview/database preserved; no refresh performed.
 
 ### Quick Tasks Completed
 
@@ -185,20 +268,35 @@ Last activity: 2026-10-07 — Phase 143 Plan 03 completed; Plan 04 is next
 | 2 | 260925-x8y: classify structurally valid status: testing UAT as active evidence | 2026-09-26 | f0270d2d | — |
 | 260926-c7l | Refresh Phase 139 verification across all 13 plans | 2026-09-26 | 285c6c62 | [260926-c7l-refresh-phase-139-s-canonical-verificati](./quick/260926-c7l-refresh-phase-139-s-canonical-verificati/) |
 
+### Roadmap Evolution
+
+- Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
+- v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
+
 ## Deferred Items
 
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start |
-| Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start |
-| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 |
-| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
-| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 |
+Items acknowledged and deferred at milestone close; acknowledgment preserves the source report's status and is not a pass.
+
+| Category | Item | Status | Deferred At | Milestone |
+|----------|------|--------|-------------|-----------|
+| Conformance | Supplemental OIDF/FAPI findings | Future bounded conformance milestone; non-certifying | v1.38 start | v1.38 |
+| Repository automation | Additional drift checks | Only if a repeatable repository-owned gap is demonstrated | v1.38 start | v1.38 |
+| Quick task | 260925-t6x — repair Phase 139's stale verification report | Halted; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 139 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
+| Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 | v1.39 |
+| Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 | v1.40 |
+| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review | v1.40 |
+| seeds | SEED-261010-zzo — inset operator theme-select caret | dormant | 2026-10-10 | v1.40 |
+| verification_gaps | 145/145-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
+| verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
+| deferred_items | 145/deferred-items.md: Phase 145 Plan 02's existing compiler/type warnings outside its ownership | acknowledged | 2026-10-10 | v1.40 |
+| deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
 
 ## Session Continuity
 
-Last session: 2026-10-07T17:31:17.279Z
-Stopped at: Completed 143-01-PLAN.md
+Last session: 2026-10-11T11:49:07.202Z
+Stopped at: Phase 150 complete — all phases complete
 Resume file: None
 
 ## Performance Metrics
@@ -275,7 +373,29 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 143 P01 | 10min | 2 tasks | 4 files |
 | Phase 143 P02 | 7min | 2 tasks | 5 files |
 | Phase 143 P03 | 14min | 3 tasks | 6 files |
+| Phase 144 P01 | 20min | 2 tasks | 11 files |
+| Phase 144 P02 | 2580 | 3 tasks | 20 files |
+| Phase 144 P03 | 42min | 2 tasks | 8 files |
+| Phase 144 P04 | 87min | 2 tasks | 8 files |
+| Phase 145 P01 | 20min | 3 tasks | 8 files |
+| Phase 145 P02 | 14min | 3 tasks | 6 files |
+| Phase 145 P03 | 25min | 3 tasks | 8 files |
+| Phase 145 P04 | 22min | 3 tasks | 6 files |
+| Phase 145 P05 | 17min | 3 tasks | 7 files |
+| Phase 146 P01 | 6min | 2 tasks | 5 files |
+| Phase 146 P02 | 6min | 2 tasks | 3 files |
+| Phase 146 P03 | 5min | 2 tasks | 4 files |
+| Phase 146 P04 | 4 | 2 tasks | 4 files |
+| Phase 147 P01 | 8min | 2 tasks | 4 files |
+| Phase 147 P2 | 35min | 2 tasks | 53 files |
+| Phase 147 P3 | 4min | 2 tasks | 2 files |
+| Phase 147 P4 | 2min | 2 tasks | 4 files |
+| Phase 147 P05 | 47 | 2 tasks | 42 files |
+| Phase 147 P06 | 24m | 2 tasks | 12 files |
+| Phase 147 P08 | 46 | 3 tasks | 61 files |
+| Phase 150 P01 | 6min | 2 tasks | 4 files |
+| Phase 150 P02 | 9min | 2 tasks | 5 files |
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Start the next milestone with $gsd-new-milestone

@@ -56,7 +56,41 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert html =~ "Global DCR policy"
     assert html =~ "Save global DCR policy"
-    assert html =~ "Current mode is initial_access_token"
+    assert html =~ "Current registration gate: Initial access token required"
+    assert html =~ "future Dynamic Client Registration requests"
+
+    assert html =~
+             "Registration requires a valid Initial Access Token before client metadata is accepted."
+  end
+
+  test "disabled registration is named as a closed issuer gate" do
+    assert {:ok, _policy} = ServerPolicy.put_dcr_policy(%{registration_policy: :disabled})
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    assert html =~ "Current registration gate: Disabled"
+    assert html =~ "No new clients can register through Dynamic Client Registration."
+  end
+
+  test "failed policy read is unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+      text = rendered_text(html)
+
+      assert text =~ "Could not load DCR policy"
+      assert text =~ "Reload DCR policy"
+      refute text =~ "Registration gate"
+      refute text =~ "Disabled"
+      refute text =~ "Save global DCR policy"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   test "global DCR policy page renders one grouped workflow form with unchanged fields" do
@@ -101,10 +135,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert occurrence_count(html, "lockspire-admin-workflow-shell") >= 5
     assert html =~ "Disabled"
+    assert html =~ "Registration policy"
     assert html =~ "Initial Access Token"
     assert html =~ "Open registration"
+
+    assert html =~
+             "No Initial Access Token is required. Unauthenticated requests may register clients within issuer metadata allowlists and lifetime limits."
+
     assert html =~ "private_key_jwt posture"
     assert html =~ "client_secret_jwt posture"
+    refute html =~ "operators expect"
     refute html =~ "extreme caution"
   end
 
@@ -144,7 +184,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     )
 
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Current mode is open"
+    assert html =~ "Current registration gate: Open registration"
     assert html =~ "Open registration"
     assert html =~ "partner.deep.audit.read"
     assert html =~ long_host
@@ -152,8 +192,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "private_key_jwt"
     assert html =~ "client_secret_jwt"
     assert html =~ "client_secret_basic"
-    assert html =~ "This page is descriptive only for this slice."
-    assert html =~ "does not create a remote key-fetch or algorithm-management workflow"
+
+    assert html =~
+             "This policy does not change remote JWKS fetching or supported signing algorithms."
+
     refute html =~ "self-service"
   end
 
@@ -163,7 +205,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
     assert html =~ "Save global DCR policy"
     assert html =~ "future Dynamic Client Registration requests"
-    assert html =~ "existing client records keep their stored configuration"
+    assert html =~ "Existing client records keep their stored configuration."
     assert html =~ "does not mint Initial Access Tokens"
     assert html =~ "rotate registration access tokens"
     assert html =~ "update existing client records"
@@ -232,15 +274,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dcr")
 
-    view
-    |> form("form[phx-submit=save_policy]", %{
-      policy: %{
-        registration_policy: "open",
-        dcr_allowed_scopes: "openid, email",
-        dcr_allowed_token_endpoint_auth_methods: "private_key_jwt, client_secret_basic"
-      }
-    })
-    |> render_submit()
+    html =
+      view
+      |> form("form#dcr-policy-form", %{
+        policy: %{
+          registration_policy: "open",
+          dcr_allowed_scopes: "openid, email",
+          dcr_allowed_token_endpoint_auth_methods: "private_key_jwt, client_secret_basic"
+        }
+      })
+      |> render_submit()
+
+    text = rendered_text(html)
+    assert text =~ "Global Dynamic Client Registration policy saved."
+    assert text =~ "This change applies to future registrations only"
+    assert text =~ "Existing client records keep their stored configuration."
 
     assert {:ok, policy} = ServerPolicy.get_server_policy()
     assert policy.registration_policy == :open
@@ -261,8 +309,14 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
         policy: %{registration_policy: "open", dcr_default_client_lifetime_seconds: "-100"}
       })
 
-    assert html =~ "must be greater than or equal to 0"
-    assert html =~ "dcr_default_client_lifetime_seconds"
+    text = rendered_text(html)
+    assert text =~ "must be zero or greater"
+    assert html =~ ~s(id="dcr_default_client_lifetime_seconds-error")
+    client_lifetime_control = policy_control(html, "dcr_default_client_lifetime_seconds")
+    assert client_lifetime_control =~ ~s(value="-100")
+
+    assert client_lifetime_control =~
+             ~s(aria-describedby="dcr_default_client_lifetime_seconds-error")
 
     HtmlAssertions.assert_no_text(html, [
       "Ecto.Changeset",
@@ -271,6 +325,35 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       "constraint",
       "stacktrace"
     ])
+  end
+
+  test "failed policy save keeps submitted values and says policy was not saved" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicySaveRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      html =
+        render_submit(view, "save_policy", %{
+          policy: %{
+            registration_policy: "open",
+            dcr_allowed_scopes: "openid, partner.audit.read",
+            dcr_default_client_lifetime_seconds: "3600"
+          }
+        })
+
+      text = rendered_text(html)
+      assert text =~ "DCR policy was not saved"
+      assert policy_control(html, "dcr_allowed_scopes") =~ ~s(value="openid, partner.audit.read")
+      assert policy_control(html, "dcr_default_client_lifetime_seconds") =~ ~s(value="3600")
+      refute text =~ "Global Dynamic Client Registration policy saved"
+      refute text =~ "UndefinedFunctionError"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   defp conn_for_admin do
@@ -282,6 +365,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     |> String.split(pattern)
     |> length()
     |> Kernel.-(1)
+  end
+
+  defp rendered_text(html) do
+    html
+    |> String.replace(~r/<style\b[^>]*>.*?<\/style>/s, " ")
+    |> String.replace(~r/<script\b[^>]*>.*?<\/script>/s, " ")
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace(~r/\s+/, " ")
+  end
+
+  defp policy_control(html, id) do
+    case Regex.run(~r/<(?:input|select)\b[^>]*\bid="#{Regex.escape(id)}"[^>]*>/, html) do
+      [tag] -> tag
+      _ -> ""
+    end
   end
 
   defp render_policy_html do

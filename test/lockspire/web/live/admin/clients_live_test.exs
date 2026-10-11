@@ -8,6 +8,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.AdminProof.HtmlAssertions
+  alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.Show
   alias Lockspire.Web.Live.Admin.OverviewLive
@@ -120,6 +121,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
            )
   end
 
+  test "shared warning status copy does not expose the internal operator role" do
+    html =
+      render_component(&AdminComponents.status_badge/1, status: :retryable)
+
+    assert html =~ ~s(title="Attention may be needed")
+    refute html =~ "Operator"
+  end
+
   test "clients index renders durable client truth and URL-driven filters" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
 
@@ -128,7 +137,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
-    assert html =~ "Client inventory"
+    assert html =~ "Clients"
     assert html =~ "Alpha Client"
     assert html =~ "Keys"
     assert html =~ "Overview"
@@ -150,6 +159,47 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute html =~ "Beta Client"
   end
 
+  test "client filter submit keeps the native GET fallback and emits busy copy" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} = Index.handle_params(%{}, "/admin/clients", socket)
+
+    {:noreply, submitted} =
+      Index.handle_event(
+        "filter_inventory",
+        %{"q" => "alpha", "status" => "all", "provenance" => "all"},
+        socket
+      )
+
+    assert submitted.assigns.clients == socket.assigns.clients
+
+    assert {:live, :patch, %{to: "/admin/clients?page=1&provenance=all&q=alpha&status=all"}} =
+             submitted.redirected
+
+    html = rendered_to_string(Index.render(socket.assigns))
+    assert html =~ ~s(method="get")
+    assert html =~ ~s(action="/admin/clients")
+    assert html =~ ~s(phx-submit="filter_inventory")
+    assert html =~ ~s(phx-disable-with="Filtering clients…")
+  end
+
+  test "client filter submit patches the URL and resets pagination" do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients?page=3")
+    assert html =~ ~s(phx-disable-with="Filtering clients…")
+
+    view
+    |> form("form[phx-submit=filter_inventory]", %{
+      "q" => "alpha",
+      "status" => "all",
+      "provenance" => "all"
+    })
+    |> render_submit()
+
+    assert_patch(view, "/admin/clients?page=1&provenance=all&q=alpha&status=all")
+    assert render(view) =~ "Search: alpha"
+    assert render(view) =~ "Matching clients: 1"
+  end
+
   test "clients index renders Configure filter context and copy-once client-secret handoff" do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients?q=Alpha&status=active&provenance=operator")
@@ -160,11 +210,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
 
     assert html =~ "Configure"
-    assert html =~ "Client inventory"
+    assert html =~ "Clients"
     assert html =~ "Selected client context"
     assert html =~ "Search: Alpha"
     assert html =~ "Status: active"
-    assert html =~ "Provenance: operator"
+    assert html =~ "Registration source: Added directly"
+    assert html =~ ~s(aria-label="Admin navigation")
+    assert html =~ ~s(option value="operator" selected)
+    assert html =~ "Added directly"
+    assert html =~ "Self-registered"
+
+    assert html =~
+             "“Self-registered” means a partner submitted a registration request; “Added directly” means a client was created here."
+
     assert html =~ "Matching clients: 1"
     assert html =~ "Total clients: 3"
     assert html =~ "Filter clients"
@@ -187,7 +245,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     created_html = render(view)
 
-    assert created_html =~ "Client created"
+    assert created_html =~ "Copy this client secret now"
+    assert created_html =~ "View client details"
     assert created_html =~ "Client secret"
     assert created_html =~ "Plaintext is shown once"
     assert created_html =~ "Lockspire stores only the hash and does not re-show it"
@@ -195,8 +254,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     plaintext_secret = extract_copy_once_value(created_html)
 
+    created_client_id = extract_created_client_id(created_html)
+    assert created_html =~ ~s(href="/admin/clients/#{created_client_id}")
+
     {:ok, _detail_view, durable_detail_html} =
-      live(conn_for_admin(), "/admin/clients/#{extract_created_client_id(created_html)}")
+      live(conn_for_admin(), "/admin/clients/#{created_client_id}")
 
     HtmlAssertions.assert_no_text(durable_detail_html, [
       plaintext_secret,
@@ -210,6 +272,120 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _index_view, durable_index_html} = live(conn_for_admin(), "/admin/clients")
     HtmlAssertions.assert_no_text(durable_index_html, [plaintext_secret, "client_secret_hash"])
+  end
+
+  test "rejected client creation retains safe input and associates actionable field errors" do
+    submitted_name = "Partner Portal 🚀"
+    submitted_redirect = "https://*.partner.example/callback"
+
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients")
+    assert html =~ ~s(id="client-create-form")
+    assert html =~ ~s(phx-disable-with="Creating client…")
+
+    view
+    |> form("#client-create-form", %{
+      client: %{
+        name: submitted_name,
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: submitted_redirect,
+        allowed_scopes: "email, profile"
+      }
+    })
+    |> render_submit()
+
+    html = render(view)
+
+    assert html =~ "Client was not created. Review the marked fields and try again."
+    assert html =~ "Client name"
+    assert html =~ "Token endpoint authentication"
+    assert html =~ "Separate OAuth scope names with commas."
+    assert html =~ "Enter one callback URI per line."
+    assert html =~ ~s(value="#{submitted_name}")
+    assert html =~ submitted_redirect
+    assert html =~ ~s(value="email, profile")
+
+    assert html =~
+             "Enter a valid callback URI that exactly matches the value sent in an authorization request."
+
+    assert html =~ ~s(id="client_redirect_uris-error")
+    assert html =~ ~s(aria-invalid="true")
+    assert html =~ ~s(role="alert" tabindex="-1")
+    refute html =~ "invalid_redirect_uri"
+    refute html =~ "Client created"
+    refute html =~ "Client secret"
+  end
+
+  test "created client secret is cleared on acknowledgement and inventory filter change" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients")
+
+    view
+    |> form("#client-create-form", %{
+      client: %{
+        name: "One-time Secret Client",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://one-time.example.com/callback",
+        allowed_scopes: "email"
+      }
+    })
+    |> render_submit()
+
+    created_html = render(view)
+    secret = extract_copy_once_value(created_html)
+    assert created_html =~ secret
+
+    view
+    |> element("button[phx-click=hide_created_secret]")
+    |> render_click()
+
+    hidden_html = render(view)
+    assert hidden_html =~ "Credential hidden. It will not be shown again."
+    assert hidden_html =~ "Redacted"
+    refute hidden_html =~ secret
+
+    view
+    |> form("form[phx-submit=save_client]", %{
+      client: %{
+        name: "One-time Secret Client Two",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://one-time-two.example.com/callback",
+        allowed_scopes: "email"
+      }
+    })
+    |> render_submit()
+
+    second_secret = extract_copy_once_value(render(view))
+    refute second_secret == secret
+
+    view
+    |> form("form[phx-submit=filter_inventory]", %{
+      "q" => "One-time Secret Client",
+      "status" => "all",
+      "provenance" => "all"
+    })
+    |> render_submit()
+
+    filtered_html = render(view)
+    refute filtered_html =~ second_secret
+    refute filtered_html =~ "Client created"
+  end
+
+  test "client inventory distinguishes first-use empty from filtered empty" do
+    assert {3, nil} = Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.ClientRecord)
+    assert {:ok, []} = Repository.list_clients()
+
+    assert {:ok, _view, empty_html} = live(conn_for_admin(), "/admin/clients")
+    assert empty_html =~ "No clients yet"
+    assert empty_html =~ "Create client"
+    refute empty_html =~ "No matching clients"
+
+    assert {:ok, _filtered_view, filtered_html} =
+             live(conn_for_admin(), "/admin/clients?q=missing")
+
+    assert filtered_html =~ "No matching clients"
+    refute filtered_html =~ "No clients yet"
   end
 
   test "clients index proves empty, disabled, many-count, and long-value Configure states" do
@@ -272,10 +448,64 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert empty_html =~ "Search: does-not-exist"
     assert empty_html =~ "Matching clients: 0"
     assert empty_html =~ "Total clients: 4"
-    assert empty_html =~ "No clients match this view"
-    assert empty_html =~ "Adjust the search or status filter"
+    assert empty_html =~ "No matching clients"
+    assert empty_html =~ "Change or clear the filters to see other records."
 
     HtmlAssertions.assert_no_generic_cta_text(empty_html)
+  end
+
+  test "client inventory leads with filters and safe detail actions, with truthful empty and failure states" do
+    assert {:ok, _view, populated_html} = live(conn_for_admin(), "/admin/clients")
+
+    assert populated_html =~ "View client"
+    assert populated_html =~ "3 matching clients"
+    assert populated_html =~ "alpha-client"
+    assert populated_html =~ "Active"
+    HtmlAssertions.assert_has_link(populated_html, "#client-create-form")
+
+    assert match_at(populated_html, "Filter clients") <
+             match_at(populated_html, "Selected client context")
+
+    assert {:ok, _empty_view, empty_html} =
+             live(conn_for_admin(), "/admin/clients?q=does-not-exist&status=active")
+
+    assert empty_html =~ "No matching clients"
+    assert empty_html =~ "Change or clear the filters to see other records."
+    assert empty_html =~ ~s(value="does-not-exist")
+    assert empty_html =~ ~s(value="active" selected)
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailableRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+      assert {:noreply, socket} =
+               Index.handle_params(
+                 %{"q" => "alpha", "status" => "disabled", "page" => "3"},
+                 "/admin/clients?q=alpha&status=disabled&page=3",
+                 socket
+               )
+
+      error_html = rendered_to_string(Index.render(socket.assigns))
+
+      assert error_html =~ "Could not load clients"
+      assert error_html =~ "No matching-client result is available until this read succeeds."
+      assert error_html =~ "Reload this view"
+
+      assert [_, reload_href] =
+               Regex.run(~r/href="([^"]*page=3[^"]*)"/, error_html)
+
+      assert reload_href =~ "q=alpha"
+      assert reload_href =~ "status=disabled"
+      assert error_html =~ ~s(value="alpha")
+      assert error_html =~ ~s(value="disabled" selected)
+      refute error_html =~ "No matching clients"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   test "client detail shows self-registered panel for DCR clients" do
@@ -310,16 +540,31 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     gamma_html = rendered_to_string(Show.render(gamma_socket.assigns))
 
-    assert gamma_html =~ "Self-registered client (DCR)"
+    assert gamma_html =~ "This client was registered through DCR."
     assert gamma_html =~ "Rotate registration access token"
   end
 
-  test "register client form presents client_secret_jwt as the narrow HS256-backed option" do
+  test "client settings form names the task and explains supported authentication" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients")
+
+    assert html =~
+             "Enter this client&#39;s name, token endpoint authentication method, callback URI, and allowed scopes."
+
+    assert html =~
+             "Separate OAuth scope names with commas. Only these scopes may be requested for this client."
 
     assert html =~ "client_secret_jwt"
     assert html =~ "HS256"
-    refute html =~ "generic signing algorithm editor"
+    assert html =~ "direct-client"
+
+    assert {:ok, _edit_view, edit_html} =
+             live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    assert edit_html =~ "Edit client settings"
+    assert edit_html =~ "Client name"
+    assert edit_html =~ "Issuer default:"
+    assert edit_html =~ "Selected client override:"
+    refute edit_html =~ "operator-safe metadata"
   end
 
   test "RAT rotation workflow renders plaintext copy-once and explicit clear" do
@@ -332,8 +577,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     rat_prompt_html = render(view)
 
     assert rat_prompt_html =~ "Rotate registration access token"
-    assert rat_prompt_html =~ "previous RAT stops being current"
-    assert rat_prompt_html =~ "Plaintext is shown once"
+    assert rat_prompt_html =~ "previous token stops being current after rotation"
+    assert rat_prompt_html =~ "shown once only after confirmed rotation"
     refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm
@@ -525,7 +770,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ frontchannel_logout_uri
     assert html =~ "Back-channel logout URI"
     assert html =~ "Front-channel logout URI"
-    assert html =~ "Save logout propagation"
+    assert html =~ "Save logout propagation settings"
+    assert html =~ "These endpoints receive logout notifications."
+    assert html =~ "separate from post-logout browser destinations"
+    assert html =~ "records propagation intent and enqueues durable back-channel delivery"
+    assert html =~ "Front-channel logout is best effort"
 
     HtmlAssertions.assert_no_generic_cta_text(html)
 
@@ -563,6 +812,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
   end
+
+  defp match_at(string, fragment), do: string |> :binary.match(fragment) |> elem(0)
 
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])

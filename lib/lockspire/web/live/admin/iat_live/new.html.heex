@@ -1,67 +1,71 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
   <Lockspire.Web.Components.AdminComponents.page_hero
     eyebrow="Configure"
-    title="Mint initial access token"
-    body="Create a DCR onboarding intake token. DCR policy controls issuer registration posture; this token is the partner handoff credential."
+    title="Create an Initial Access Token"
+    body="Use this single-use token to authorize a partner's initial client registration request. Issuer DCR policy still controls which registrations are accepted."
   />
 
   <Lockspire.Web.Components.AdminComponents.workflow_shell
-    title="Mint initial access token"
-    help="Use short-lived, scoped intake tokens for partner onboarding. Plaintext is not stored or shown again as plaintext."
+    title="Choose an expiry"
+    help="This registration credential is not an OAuth access token and has no OAuth scopes."
   >
     <%= if @iat_secret do %>
       <Lockspire.Web.Components.AdminComponents.copy_once_secret_panel
-        title="Initial access token minted"
-        body="Plaintext is shown once. Lockspire stores only the hash and redacted durable state after this response."
-        label="Initial access token"
+        title="Copy this Initial Access Token now"
+        body="This single-use token authorizes one initial client registration request under issuer DCR policy. Its plaintext is shown only here."
+        label="Initial Access Token"
         value={@iat_secret}
       />
       <Lockspire.Web.Components.AdminComponents.action_bar>
         <Lockspire.Web.Components.AdminComponents.admin_button
           phx-click="acknowledge_copy"
-          variant={:primary}
+          variant={:secondary}
         >
-          I have copied this secret
+          Hide credential
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% else %>
-      <form phx-submit="mint" class="lockspire-admin-form-stack">
-        <Lockspire.Web.Components.AdminComponents.form_field
-          id="iat_single_use"
-          label="Single use"
-          help="Keep partner intake to one registration unless a deliberate multi-use handoff is required."
-        >
-          <select id="iat_single_use" name="single_use">
-            <option value="true" selected={@form["single_use"].value == "true"}>Yes (Recommended)</option>
-            <option value="false" selected={@form["single_use"].value == "false"}>No (Multi-use)</option>
-          </select>
-        </Lockspire.Web.Components.AdminComponents.form_field>
+      <p :if={@iat_acknowledged?} role="status" aria-live="polite">
+        Credential hidden. It will not be shown again.
+      </p>
+      <Lockspire.Web.Components.AdminComponents.error_summary
+        title="Review Initial Access Token details"
+        errors={@form_errors}
+      />
 
+      <form id="iat_mint_form" phx-submit="mint" class="lockspire-admin-form-stack">
         <Lockspire.Web.Components.AdminComponents.form_field
           id="iat_expires_in_days"
           label="Expires in days"
-          help="Bound how long this DCR onboarding credential can be used."
+          help="This token expires after the number of days you enter. Issuer DCR policy still applies."
           required
+          errors={if(@expiry_error, do: [%{message: @expiry_error}], else: [])}
         >
           <input
             id="iat_expires_in_days"
             type="number"
             name="expires_in_days"
-            value={@form["expires_in_days"].value || "30"}
+            value={@form["expires_in_days"].value || ""}
             required
             min="1"
+            aria-invalid={if(@expiry_error, do: "true", else: nil)}
+            aria-describedby={expiry_describedby(@expiry_error)}
           />
         </Lockspire.Web.Components.AdminComponents.form_field>
 
         <Lockspire.Web.Components.AdminComponents.action_bar>
-          <Lockspire.Web.Components.AdminComponents.admin_button variant={:primary} type="submit">
-            Mint initial access token
+          <Lockspire.Web.Components.AdminComponents.admin_button
+            variant={:primary}
+            type="submit"
+            phx-disable-with="Creating Initial Access Token…"
+          >
+            Create an Initial Access Token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             href={iat_index_path()}
             variant={:secondary}
           >
-            Review initial access tokens
+            Review Initial Access Tokens
           </Lockspire.Web.Components.AdminComponents.admin_button>
         </Lockspire.Web.Components.AdminComponents.action_bar>
       </form>

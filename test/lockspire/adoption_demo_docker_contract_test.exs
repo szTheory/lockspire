@@ -579,7 +579,7 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     host_local_position = docs_position!(docs, "## Run It Host-Local")
 
     assert docker_position < host_local_position
-    assert docs =~ "Docker is the default maintainer path"
+    assert docs =~ "Docker is the recommended way to run the example."
     assert docs =~ "Host-local Mix/Postgres remains a fallback"
     assert docs =~ "make demo"
     assert docs =~ "examples/adoption_demo/bin/docker-up"
@@ -681,8 +681,8 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
 
     assert docs =~ "scripts/demo/adoption_smoke.sh"
     assert docs =~ "delegates to `scripts/demo/adoption_smoke.py`"
-    assert docs =~ "anonymous admin login redirect"
-    assert docs =~ "non-operator denial"
+    assert docs =~ "the admin sign-in redirect"
+    assert docs =~ "denial for staff without admin access"
     assert docs =~ "examples/adoption_demo/bin/docker-info"
 
     refute docs =~

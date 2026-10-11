@@ -89,16 +89,73 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "Security Profile"
     assert html =~ "DPoP"
     assert html =~ "DCR"
-    assert html =~ "Strict message-signing readiness"
+    assert html =~ "Signing-key prerequisites for FAPI 2.0 Message Signing."
     assert html =~ "FAPI 2.0 Message Signing"
     assert html =~ "client requires strict message signing"
     assert html =~ "client inherits"
     assert html =~ "client requires FAPI 2.0"
     assert html =~ "client forces None"
     assert html =~ "Publish an ES256 or PS256 issuer signing key"
+    assert html =~ "Key prerequisites missing"
+    assert html =~ "Readiness details:"
   end
 
-  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 security profile posture explains strict readiness and host boundary" do
+  test "failed policy read is shown as unavailable and can be reloaded" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicyReadRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+      assert html =~ "Could not load global security profile"
+      assert html =~ "Reload policy"
+      refute html =~ ~s(name="policy[security_profile]")
+      refute html =~ "Save global security profile"
+
+      Application.put_env(:lockspire, :repo, prior_repo)
+      html = render_click(view, "reload_policy")
+
+      assert html =~ "Global security profile"
+      assert html =~ "Save global security profile"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
+  test "unavailable client counts do not promise a retry control" do
+    assert {:ok, socket} =
+             SecurityProfile.mount(%{}, %{}, %Phoenix.LiveView.Socket{
+               assigns: %{live_action: :index, __changed__: %{}}
+             })
+
+    socket = Phoenix.Component.assign(socket, :summary, nil)
+    html = rendered_to_string(SecurityProfile.render(socket.assigns))
+
+    assert html =~ "Client override counts are unavailable."
+    refute html =~ "Reload this page to try again."
+  end
+
+  test "failed strict-readiness read is unavailable instead of a confirmed prerequisite gap" do
+    prior_repo = Application.get_env(:lockspire, :repo)
+
+    try do
+      Application.put_env(:lockspire, :repo, __MODULE__.ReadinessFailureRepo)
+
+      assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+      assert html =~ "Status:</strong> Unavailable"
+      assert html =~ "The signing-key check could not be completed. Readiness is unknown."
+      assert html =~ "Unable to load strict message-signing readiness."
+      refute html =~ "Key prerequisites missing"
+      refute html =~ "The key check below identifies what is missing"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
+  end
+
+  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 security profile copy explains exact scope and key prerequisites" do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
@@ -115,12 +172,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert html =~ "Clients that inherit"
     assert html =~ "Next safe action"
     assert html =~ "Save global security profile"
-    assert html =~ "global issuer security profile default"
-    assert html =~ "future requests from inheriting clients"
-    assert html =~ "issuer signing-key readiness"
-    assert html =~ "Existing client overrides stay on their client policy routes."
-    assert html =~ "Not ready yet"
-    assert html =~ "Issuer prerequisites are not complete yet."
+    assert html =~ "clients without a security-profile choice of their own"
+    assert html =~ "PAR, DPoP-bound access tokens, and S256 PKCE"
+
+    assert html =~
+             "a JWT introspection response selected with `Accept: application/token-introspection+jwt`"
+
+    assert html =~ "Signing-key prerequisites for FAPI 2.0 Message Signing."
+    assert html =~ "Key prerequisites missing"
+
+    assert html =~
+             "The key check below identifies what is missing before FAPI 2.0 Message Signing can be enabled."
+
+    refute String.downcase(html) =~ "operator"
 
     for href <- policy_nav_hrefs() do
       HtmlAssertions.assert_has_link(html, href)
@@ -195,9 +259,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
              live(conn_for_admin(), "/admin/policies/security-profile")
 
     assert html =~ "Current profile is FAPI 2.0 Message Signing"
-    assert html =~ "Status:"
-    assert html =~ "Ready"
-    assert html =~ "Strict message signing is active"
+    assert html =~ "Status:</strong> Active; key prerequisites met"
+    assert html =~ "FAPI 2.0 Message Signing is active."
   end
 
   test "invalid global security profile values return field errors" do
@@ -207,10 +270,63 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       view
       |> render_submit("save_policy", %{policy: %{security_profile: "invalid"}})
 
-    assert html =~ "security_profile"
-    assert html =~ "invalid_security_profile"
+    assert html =~
+             "Choose None (Standard OIDC), FAPI 2.0 Security Profile, or FAPI 2.0 Message Signing."
+
+    refute html =~ "invalid_security_profile"
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
     assert {:ok, %{security_profile: :none}} = Admin.get_server_policy()
+  end
+
+  test "message-signing save names the signing-key prerequisite" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+    html =
+      render_submit(view, "save_policy", %{
+        policy: %{security_profile: "fapi_2_0_message_signing"}
+      })
+
+    assert html =~
+             "Publish an ES256 or PS256 issuer signing key before enabling FAPI 2.0 Message Signing."
+
+    refute html =~ "missing_compliant_publishable_key"
+  end
+
+  test "FAPI security save keeps its signing-key prerequisite distinct from message signing" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+    html =
+      render_submit(view, "save_policy", %{
+        policy: %{security_profile: "fapi_2_0_security"}
+      })
+
+    assert html =~
+             "Publish an ES256 or PS256 issuer signing key before enabling FAPI 2.0 Security Profile."
+
+    refute html =~ "before enabling FAPI 2.0 Message Signing."
+  end
+
+  test "failed global security profile save stays unconfirmed" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/security-profile")
+
+    prior_repo = Application.get_env(:lockspire, :repo)
+    unavailable_repo = Module.concat(__MODULE__, "UnavailablePolicySaveRepo")
+
+    try do
+      Application.put_env(:lockspire, :repo, unavailable_repo)
+
+      html =
+        render_submit(view, "save_policy", %{
+          policy: %{security_profile: "none"}
+        })
+
+      assert html =~ "The security profile change could not be confirmed."
+      assert html =~ "Reload the policy to check its current value."
+      refute html =~ "request_failed"
+      refute html =~ "UnavailablePolicySaveRepo"
+    after
+      Application.put_env(:lockspire, :repo, prior_repo)
+    end
   end
 
   defp conn_for_admin do
@@ -253,4 +369,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
   defp live_route?(route, path, view) do
     route.path == path and match?({^view, _, _, _}, route.metadata[:phoenix_live_view])
   end
+end
+
+defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest.ReadinessFailureRepo do
+  def all(
+        %Ecto.Query{from: %{source: {_table, Lockspire.Storage.Ecto.SigningKeyRecord}}},
+        _opts
+      ) do
+    raise "simulated signing-key read failure"
+  end
+
+  def all(query, opts) do
+    Lockspire.TestRepo.all(query, opts)
+  end
+
+  def one(query, opts \\ []), do: Lockspire.TestRepo.one(query, opts)
 end
