@@ -9,6 +9,10 @@
 - **D-05 — Give action styles a stable meaning:** Primary marks the page's principal safe task; secondary marks supporting navigation, recovery, or alternate actions; danger marks a consequential destructive action and retains its existing consequence text and confirmation. Do not alter action handlers or OAuth behavior to change visual emphasis.
 - **D-06 — Prove the complete registration journey:** Cover route resolution and ordering, one title and concise explanation, return navigation with filters, invalid and failed submission states, successful creation with the copy-once secret still on the registration route, and secret clearing on acknowledgement or route departure with existing automated tests. Keep verification redaction-safe.
 
+## Existing evidence
+
+- The Impeccable review found the shared primary/secondary/danger distinction mostly purposeful across the reviewed admin routes. The client inventory's Create client action is the clear mismatch: it is the principal safe task on that page but currently uses secondary styling. Client form submits are already primary, and destructive client changes already use danger styling with confirmation.
+
 ## Deferred Ideas
 
 - Route-wide overview, queue, support, and general copy/layout changes belong to their mapped v1.42 phases, not Phase 151.
