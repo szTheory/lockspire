@@ -304,17 +304,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         The saved client configuration is shown below.
       </AdminComponents.alert>
 
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title={@task_title}
-        body={@task_body}
-      />
+      <AdminComponents.entity_header
+        :if={@action != :show}
+        data-client-task-context
+        title={@client.name || @client.client_id}
+        subtitle={@task_body}
+        identifier={@client.client_id}
+      >
+        <:actions>
+          <.link
+            class="lockspire-admin-btn lockspire-admin-btn-secondary"
+            patch={show_path(@client.client_id, :show)}
+          >
+            Return to client
+          </.link>
+        </:actions>
+      </AdminComponents.entity_header>
 
-      <div class="lockspire-admin-client-workspace">
+      <div :if={@action == :show} class="lockspire-admin-client-workspace">
         <AdminComponents.entity_header
           eyebrow="Client workspace"
           title={@client.name || @client.client_id}
-          subtitle="Registered application and the settings that shape its OAuth/OIDC behavior."
+          subtitle={@task_body}
           identifier={@client.client_id}
         >
           <:status>
@@ -331,6 +342,14 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                   Edit client metadata
                 </.link>
               </:primary>
+              <:secondary>
+                <.link
+                  class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                  href={client_index_path()}
+                >
+                  Return to client inventory
+                </.link>
+              </:secondary>
             </AdminComponents.action_group>
           </:actions>
         </AdminComponents.entity_header>
@@ -982,7 +1001,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp client_task_copy(:show, _form_mode) do
     {"Client configuration",
-     "Review this client's identity, effective policy, credentials, and registered endpoints."}
+     "Review settings, credentials, and registered destinations for this client."}
   end
 
   defp client_task_copy(:edit, :logout_propagation) do

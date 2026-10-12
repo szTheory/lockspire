@@ -124,6 +124,8 @@ The admin UI uses Lockspire-owned design tokens and shared Phoenix components. R
 
 Shared components cover common admin needs: page headers, section cards, action groups, status badges, alerts, resource lists, summaries, long identifiers, copy-once secret panels, confirmation panels, form fields, and error summaries. When adding or revising admin routes, prefer these components over page-local class assemblies and tie each change to the Orient, Configure, Support, or Operate task it serves.
 
+Use the shared button variants consistently: **primary** marks the page's main safe action, **secondary** marks navigation, support, recovery, or an alternate action, and **danger** marks a consequential destructive action. A danger style does not replace the consequence text or confirmation step. Keep task-return links secondary and form saves primary; confirmed client disable and credential rotation actions remain danger-styled.
+
 The component lab and stress surface are internal maintainer proof only. They render real admin primitives and redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRouter`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
 
 Theme behavior is intentionally narrow:

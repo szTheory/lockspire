@@ -118,7 +118,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              })
 
     routes = [
-      {"/admin/clients/#{client.client_id}", "Client configuration", "registered endpoints"},
+      {"/admin/clients/#{client.client_id}", "Client configuration", "registered destinations"},
       {"/admin/clients/#{client.client_id}/edit", "Edit client settings",
        "scopes, descriptive details, and token policies"},
       {"/admin/clients/#{client.client_id}/edit?workflow=logout-propagation",
@@ -157,8 +157,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       else
         assert html =~ ~s(data-client-task-context)
         assert html =~ ~s(href="/admin/clients/#{route_client.client_id}")
+        assert html =~ "lockspire-admin-btn-secondary"
         refute visible_text =~ "Client workspace"
-        refute html =~ "lockspire-admin-page-hero"
+        refute html =~ ~s(class="lockspire-admin-hero lockspire-admin-page-hero")
+
+        if String.contains?(path, "rotate-") do
+          assert html =~ "lockspire-admin-btn-danger"
+        else
+          assert html =~ "lockspire-admin-btn-primary"
+        end
       end
     end)
 
@@ -485,6 +492,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ ~s(name="toggle[confirm]")
     assert html =~ "Confirm client disable"
     assert html =~ "Disable client"
+    assert html =~ "lockspire-admin-btn-danger"
 
     assert html =~
              "future OAuth/OIDC requests for this client stay blocked until it is enabled again"

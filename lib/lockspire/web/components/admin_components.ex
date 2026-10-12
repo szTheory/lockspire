@@ -272,6 +272,9 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:rest, :global)
   slot(:inner_block, required: true)
 
+  # Keep these variants semantic across routes: primary is the page's principal
+  # safe action, secondary is navigation/support/recovery, and danger is a
+  # consequential destructive action whose consequence and confirmation remain visible.
   def admin_button(assigns) do
     assigns = assign(assigns, :class, button_class(assigns.variant))
 
