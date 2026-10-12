@@ -142,6 +142,24 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       visible_text = text_content(html)
       assert visible_text =~ title
       assert visible_text =~ explanation
+
+      route_client =
+        if String.contains?(path, registered_client.client_id),
+          do: registered_client,
+          else: client
+
+      assert visible_text =~ route_client.name
+      assert visible_text =~ route_client.client_id
+
+      if path == "/admin/clients/#{client.client_id}" do
+        assert html =~ ~s(href="/admin/clients")
+        assert visible_text =~ "Return to client inventory"
+      else
+        assert html =~ ~s(data-client-task-context)
+        assert html =~ ~s(href="/admin/clients/#{route_client.client_id}")
+        refute visible_text =~ "Client workspace"
+        refute html =~ "lockspire-admin-page-hero"
+      end
     end)
 
     detail_html = render_show_html(client.client_id)
