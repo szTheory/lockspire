@@ -26,23 +26,6 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
     refute workflow =~ "skipping dependency review"
   end
 
-  test "fast and minimum-version suites use the tracked GSD lifecycle fixture" do
-    workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
-
-    fixture =
-      "${{ github.workspace }}/tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-core/bin/gsd-tools.cjs"
-
-    for job <- ["fast", "compatibility"] do
-      [[source]] =
-        Regex.scan(~r/^  #{job}:\n(.*?)(?=^  [a-z0-9-]+:|\z)/ms, workflow,
-          capture: :all_but_first
-        )
-
-      assert source =~ "GSD_TOOLS: #{fixture}",
-             "#{job} must not depend on a user-installed GSD runtime"
-    end
-  end
-
   test "fast checks run the admin control script tests" do
     workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
 
@@ -53,8 +36,7 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
              "run: node --test test/browser/admin_multi_value_test.mjs"
   end
 
-  @tag :phase139_gap_closure
-  test "release hygiene runs the combined phase-finalizer lifecycle exactly once in protected order" do
+  test "release hygiene runs its steps in protected order" do
     workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
     assert length(Regex.scan(~r/^permissions:\s*\n  contents: read\s*$/m, workflow)) == 1
 
@@ -74,40 +56,9 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
              "Check out repository",
              "Verify repo-owned release hygiene contract",
              "Lint workflows and maintained shell scripts",
-             "Verify portable phase-finalizer lifecycle",
              "Verify and audit Release Please runtime dependencies",
              "Verify dependency setup did not rewrite locks"
            ]
-
-    combined_command =
-      "LOCKSPIRE_SKIP_BEAM_INTEGRATION=1 LOCKSPIRE_GSD_HOST_FIXTURE=tools/gsd-capabilities/lockspire-phase-finalizer/fixtures/gsd-host-contract.json node --test tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs"
-
-    lifecycle_step = step_source(job, "Verify portable phase-finalizer lifecycle")
-
-    assert length(:binary.matches(lifecycle_step, combined_command)) == 1
-
-    assert length(
-             :binary.matches(
-               lifecycle_step,
-               "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-command-router.test.cjs"
-             )
-           ) == 1
-
-    assert length(
-             :binary.matches(
-               lifecycle_step,
-               "tools/gsd-capabilities/lockspire-phase-finalizer/lockspire-finalize-lifecycle.test.cjs"
-             )
-           ) == 1
-
-    lint_position = :binary.match(job, "Lint workflows and maintained shell scripts") |> elem(0)
-    lifecycle_position = :binary.match(job, combined_command) |> elem(0)
-
-    release_audit_position =
-      :binary.match(job, "Verify and audit Release Please runtime dependencies") |> elem(0)
-
-    assert lint_position < lifecycle_position
-    assert lifecycle_position < release_audit_position
   end
 
   test "immutable action references include the repository-controlled composite exactly once" do

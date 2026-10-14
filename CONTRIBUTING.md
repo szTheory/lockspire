@@ -16,7 +16,7 @@ Lockspire is an embedded OAuth/OIDC library for Phoenix applications. This guide
 | `tmp/` | Temporary work and retained evidence | Mixed lifecycle: `tmp/admin-ui-polish/` contains retained milestone screenshots governed by `docs/maintainer-release.md`; other contents are not automatically disposable. |
 | `.planning/` | Active project records and milestone history | Mixed lifecycle: current planning records and retained historical evidence have different owners and retention needs. |
 | `.claude/worktrees/` and Git's linked-worktree registry | Checkouts used for concurrent work | Git-managed worktrees have branch and local-change state separate from tracked repository files. A tracked worktree-shaped snapshot is not the same thing as a registered worktree. |
-| Ignored local inputs such as `prompts/` | Checkout-specific material | Local does not mean unused: `scripts/maintainer/baseline_inventory.sh` references a prompt path. Check consumers before changing or removing local inputs. |
+| Ignored local inputs such as `prompts/` | Checkout-specific material | Local does not mean unused. Check consumers before changing or removing local inputs. |
 | Remote CI artifacts | Run-associated test or release evidence | Retained by the workflow for its configured period; distinct from retained evidence tracked in this repository. |
 
 Use the current consumers as the source of truth: `mix.exs` defines package files and ExDoc output, CI workflows identify maintained fixtures and examples, generator code consumes `priv/templates/`, and the maintainer guide records retained repository evidence. A directory name, age, or ignore rule alone does not establish that its contents are disposable.
