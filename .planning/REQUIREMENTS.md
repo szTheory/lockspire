@@ -1,67 +1,61 @@
-# Requirements: Lockspire v1.41 Product Language & Repository Clarity
+# Requirements: Lockspire v1.42 Admin UI Clarity & Workflow Refinement
 
-**Defined:** 2026-10-10
+**Defined:** 2026-10-12
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
-**Status:** Approved for planning by the user's confirmation on 2026-10-10.
+**Status:** Approved for execution from the user's explicit request for a systematic admin UI cleanup pass.
 
-## v1.41 Requirements
+## v1.42 Requirements
 
-### Plain, accurate admin UI language
+### Clear, focused admin tasks
 
-- [x] **LANG-01**: Existing admin pages use concise, task- and object-centered labels, headings, and help text shaped by the user's goals, familiarity, mental model, questions, and decisions. Translate internal concepts into helpful user-facing language; avoid implementation jargon, repetitive boilerplate, and persona labels. “Operator” is internal planning language and must not be used as visible UI audience copy or generic UI filler.
-- [x] **LANG-02**: User-facing language preserves OAuth/OIDC meanings and security distinctions, including client IDs versus secrets, consent grants versus host consent UX, access tokens versus refresh tokens and token families, Initial Access Tokens versus Registration Access Tokens, and logout redirects versus propagation endpoints. When a precise protocol term is necessary but unfamiliar to the intended reader, explain it in the task context instead of exposing unexplained internal wording.
-- [x] **LANG-03**: Validation, empty, unavailable, loading, confirmation, success, and failure messages state what happened and its real consequence, with a useful next action where one exists. Copy does not invent causes or claim unproven outcomes.
+- [ ] **UI-01**: Each of the 29 existing admin route scorecards and the Phase 151 `/admin/clients/new` route has a clearly identifiable user job, a useful page title, and an information order that puts the decision or next task before secondary context. Review all 30 current paths; remove duplicate page/section titles and generic introductions when they repeat information.
+- [ ] **UI-02**: User-facing labels and help use plain, consistent language grounded in staff users' goals. Remove backend/provenance commentary that does not help a decision; explain necessary protocol terms in context, and describe unfamiliar state in terms of its supported consequence and next action. Do not use “operator” as visible audience copy or generic UI filler.
+- [ ] **UI-03**: Overview metrics and queue labels accurately match the records and filters they describe. Explain token reuse and logout-delivery outcomes without implying compromise or claiming unsupported controls. A failed read remains distinct from an empty or healthy result.
+- [ ] **UI-04**: Client registration is a dedicated route with one title, one concise explanation, focused form context, and a clear return path to the client inventory. Other client task routes show the relevant client identity and task without making the user scan the full unrelated workspace first.
+- [ ] **UI-05**: Primary, secondary, and destructive action emphasis follows a consistent, documented rule across the admin surface. The main task action is easiest to identify; supporting navigation and recovery actions remain quieter; destructive actions retain explicit consequence and confirmation.
+- [ ] **UI-06**: Pages use the existing components and design tokens to improve hierarchy, spacing, scanability, and control affordances. Remove metric rows, nested containers, and helper text that do not help the current task. Correct the theme selector's demonstrated right-edge caret spacing.
+- [ ] **UI-07**: Changed views remain usable at narrow widths and 200% zoom, with light/dark/system theme parity, readable text contrast, visible keyboard focus, labeled controls, reduced-motion support, and no clipped content or actions.
 
-### Adopter and maintainer documentation
+### Automated evidence and safety boundaries
 
-- [x] **DOC-01**: The README routes adopters and maintainers through product fit and boundaries, Phoenix installation, verification, and the relevant next guide.
-- [x] **DOC-02**: README and generated HexDocs navigation make maintained guides findable by task; `docs/supported-surface.md` remains the canonical capability and non-claim contract.
-- [x] **DOC-03**: Maintained setup steps, commands, links, and capability claims match the current code and are checkable through existing documentation verification.
+- [ ] **PROOF-01**: All 29 admin route scorecards and the Phase 151 `/admin/clients/new` route receive redaction-safe baseline and final rendered captures (30 current paths). Capture each full page; when a full-page image is too tall or unreadable, capture each meaningful section. Focused tests and browser checks verify affected tasks, state labels, action hierarchy, responsive layout, and theme control. Add checks to CI only when they provide reliable recurring regression value.
+- [ ] **SAFE-01**: The cleanup preserves OAuth/OIDC behavior, security defaults, credential redaction and copy-once behavior, confirmation semantics, and distinct revocation scopes. Interaction, device-authorization, and logout queues remain read-only. The host app retains account, login, layout, branding, and product-policy ownership. Do not add dependencies or expose private key material in browser evidence.
 
-### Repository clarity and verified cleanup
+## Delivery Rules
 
-- [x] **REPO-01**: Contributors can identify the purpose and lifecycle of major repository areas, including maintained documentation, generated output, fixtures, brand assets, and planning records.
-- [x] **REPO-02**: Any moved or removed repository content has verified ownership and lifecycle, with active worktree, CI, test, package, generator, and documentation references checked before the change and relevant verification passing afterward.
-
-## Delivery and verification rules
-
-- Complete the empathetic, persona- and task-aware admin UI language review first; use its approved terms when revising the README and guides.
-- Preserve protocol meaning, security boundaries, truthful action outcomes, host-owned UX boundaries, and Lockspire's embedded-library shape. Do not add protocol features or expand UI behavior.
-- Follow Impeccable's `clarify` guidance for copy review. This milestone does not require a visual redesign or a new design system.
-- Keep `docs/supported-surface.md` canonical for supported capabilities and explicit non-claims. Verify all changed setup steps, commands, links, and claims against source and existing checks.
-- Do not move or remove content until ownership, active worktree use, and CI/test/package/generator/documentation references have been checked. Prefer a clear ownership map over churn.
-- Apply the project verification default: add or update deterministic checks where they have recurring value, run checks as early as practical, and avoid handing off mechanically verifiable work for manual UAT.
-
-## Future Requirements
-
-- A later UI refinement based on feedback after this milestone is complete.
+- Inspect the current mounted demo and all route scorecards before broad edits. Keep screenshots synthetic, redaction-safe, and tied to the same served source being reviewed.
+- Use Impeccable in Operate mode and Emil Kowalski's design-engineering guidance for clarity and interaction details. Refine the current Signal Cyan identity and existing component/token system; do not replace the design system or add motion without a real interaction need.
+- Use contextual help only when it answers a decision question. Do not move low-value provenance into a tooltip; remove it. Tooltips must remain available to keyboard and assistive-technology users when they carry necessary information.
+- Apply consistent action semantics: primary for the principal safe task on a page, secondary for navigation/supporting/recovery actions, and danger for consequential destructive actions. Do not show competing primary actions without a user-task reason.
+- Treat UI-state contradictions as correctness issues. Verify status labels and counts against query/filter semantics before changing copy.
+- Shift verification left. Prefer existing ExUnit/LiveView, HTML contracts, and the current demo proof lane; add a browser check only when it proves a recurring rendered behavior those tests cannot establish.
+- Preserve CR-01 (plaintext private signing-key material at rest) as a separate, critical, unresolved security issue requiring its own design. This UI milestone does not accept or resolve it.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| New OAuth/OIDC protocol capabilities or changed security defaults | This milestone clarifies existing behavior and documentation only. |
-| Host-owned account, login, consent, layout, branding, or product-policy UX | These remain the embedding application's responsibility. |
-| Broad visual redesign or design-system replacement | The requested work is language and repository clarity, not visual refinement. |
-| Unverified cleanup, bulk path changes, or speculative repository reorganization | Changes require ownership and reference evidence plus passing relevant checks. |
-| New dependencies for copy or documentation maintenance | Existing language and documentation tools are sufficient unless research proves otherwise. |
+| Private signing-key encryption at rest (CR-01) | Requires a separate security design and operational decision; visual work cannot resolve it. |
+| New OAuth/OIDC capabilities, changed security defaults, or new queue controls | This milestone refines existing presentation and focused task flow only. |
+| Host-owned account, login, consent, outer layout, branding, or product policy | These remain the embedding application's responsibility. |
+| Wholesale visual identity or design-system replacement | The existing Signal Cyan identity, shared components, and tokens are the starting point. |
+| New UI dependencies, paid visual-judge APIs, or open-ended critique loops | Prefer the current stack and bounded local/browser evidence. |
+| Repeating v1.41 documentation/repository cleanup | That scope is complete and archived. |
 
 ## Traceability
 
-Each requirement maps to exactly one v1.41 phase.
+Every requirement maps to exactly one v1.42 phase; the roadmap will assign phase numbers and status.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LANG-01 | Phase 148 | Complete |
-| LANG-02 | Phase 148 | Complete |
-| LANG-03 | Phase 148 | Complete |
-| REPO-01 | Phase 149 | Complete |
-| REPO-02 | Phase 149 | Complete |
-| DOC-01 | Phase 150 | Complete |
-| DOC-02 | Phase 150 | Complete |
-| DOC-03 | Phase 150 | Complete |
+| UI-01 | Phase 153 | Pending |
+| UI-02 | Phase 153 | Pending |
+| UI-03 | Phase 152 | Pending |
+| UI-04 | Phase 151 | Pending |
+| UI-05 | Phase 151 | Pending |
+| UI-06 | Phase 153 | Pending |
+| UI-07 | Phase 154 | Pending |
+| PROOF-01 | Phase 154 | Pending |
+| SAFE-01 | Phase 154 | Pending |
 
-**Coverage:** 8 total; 8 mapped; 0 unmapped.
-
----
-*Requirements defined: 2026-10-10*
+**Coverage:** 9 total; 9 mapped exactly once; 0 unmapped.

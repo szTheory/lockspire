@@ -1,0 +1,9 @@
+TAP version 13
+ok 1 - test overview renders task-centered status and journey links at both entry routes # SKIP excluded
+ok 2 - test overview counts use accurate zero, one, and many copy # SKIP excluded
+ok 3 - test security and DCR landing pages orient related workflows # SKIP excluded
+ok 4 - test overview uses one title and concise, decision-focused copy # SKIP excluded
+ok 5 - test overview shows policy values and keeps read failure distinct # SKIP excluded
+ok 6 - test router exposes source-derived overview routes # SKIP excluded
+ok 7 - test overview starts in loading state and keeps each failed source independent
+1..7

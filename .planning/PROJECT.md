@@ -85,13 +85,23 @@ The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 2
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; v1.40 neither resolves nor accepts it as safe for release.
+Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; this UI milestone neither resolves nor accepts it as safe for release.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
-## Next Milestone Goals
+## Current Milestone: v1.42 Admin UI Clarity & Workflow Refinement
 
-No next milestone scope has been selected. Run `$gsd-new-milestone` to choose the next project direction. Carry forward the embedded-library boundary, plain user-facing language, and shift-left verification default; reconcile preserved worktree records only when ownership is established.
+**Goal:** Make Lockspire's existing admin pages easier to scan and safer to use by removing low-value copy, clarifying outcomes, and making common tasks feel focused and consistent.
+
+**Target features:**
+- Review all 29 existing admin route scorecards and inspect complete page sections in the mounted synthetic demo; use Impeccable's critique and Operate guidance to ground changes in the actual work.
+- Simplify labels and explanations around the staff user's decision. Remove implementation provenance and duplicated copy when they do not change a decision; explain necessary protocol terms in context and describe supported consequences plainly.
+- Move client creation to a dedicated page and give task pages one clear title, concise task context, relevant client identity, and a clear way back.
+- Apply a consistent primary, secondary, and destructive-action hierarchy; reduce repetitive metrics and card scaffolding where it adds noise.
+- Correct demonstrated control-spacing and contrast issues using the existing Signal Cyan tokens and component system. Preserve responsive layout, light/dark/system themes, keyboard access, and reduced-motion behavior.
+- Add focused regression checks and redaction-safe before/after browser evidence for the routes and states changed.
+
+The milestone is limited to admin presentation and task flow. OAuth/OIDC behavior, security policy, the embedded-library boundary, host-owned UX, and intentionally read-only queues remain unchanged. Keep CR-01 tracked as a separate unresolved security issue.
 
 ## Completed Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
@@ -373,6 +383,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 - **Host seam**: Host apps own accounts, login UX, layouts, branding, and policy — Lockspire must not take over the host's authentication model.
 - **Release quality**: Executable docs, warnings-as-errors, CI/CD, changelog hygiene, and publish-from-release discipline are part of the product — release trust is a core feature for an auth library.
 - **Verification posture**: Default phase closure to executable proof in tests and CI. Start from observable acceptance paths, shift checks left into the earliest reliable layer, and add recurring integration, end-to-end, smoke, or seam coverage to required CI when its repeat value justifies the cost. Prefer deterministic, hermetic checks; avoid duplicative or flaky automation without recurring value. Passing automated evidence satisfies UAT without a human confirmation round. Hand off only a genuinely subjective judgment or a boundary automation cannot reach, and name the exact reason and machine-owned follow-up gate. Never ask the user to confirm a fact that repository checks, CI, or an available supported lifecycle can establish.
+- **UI refinement posture**: Extrapolate user feedback across equivalent workflows and shared components. Default to a bounded autonomous source/rendered review, one coherent fix batch, and desktop/mobile confirmation with durable findings and evidence. Check useful copy, hierarchy, spacing, control choice, validation, focus and terminal states before returning for optional feedback. Add cheap deterministic regressions to existing CI when they catch recurring failures. Do not make the user rediscover routine defects, silently change backend/security behavior, or create an endless cosmetic review loop. Adopted in Phase 153 on 2026-10-13; see `153-AUTOMATED-UX-SWEEP.md`.
 
 ## Key Decisions
 

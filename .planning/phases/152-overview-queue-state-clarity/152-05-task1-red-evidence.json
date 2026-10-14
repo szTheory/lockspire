@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 elixir -r /private/tmp/LockspireTapFormatter.exs -S mix test test/lockspire/web/live/admin/overview_live_test.exs --only overview_summary_copy --formatter LockspireTapFormatter --no-color",
+  "exitCode": 2,
+  "output": "TAP version 13\nok 1 - test overview starts in loading state and keeps each failed source independent # SKIP excluded\nok 2 - test overview renders task-centered status and journey links at both entry routes # SKIP excluded\nok 3 - test router exposes source-derived overview routes # SKIP excluded\nok 4 - test overview distinguishes configured policy defaults, stored policy, and read failure # SKIP excluded\nok 5 - test overview counts use measured zero, one, and many copy # SKIP excluded\nok 6 - test security and DCR landing pages orient related workflows # SKIP excluded\nnot ok 7 - test overview uses one title and concise, decision-focused copy\n1..7\n",
+  "targetTest": "test overview uses one title and concise, decision-focused copy",
+  "targetFile": "test/lockspire/web/live/admin/overview_live_test.exs",
+  "expected": "The overview exposes a single Overview heading, concise task-oriented intro, accurate review labels, and no redundant provenance or overview copy.",
+  "actual": "The named LiveView test ran against the existing Provider overview content and failed its assertion for the new single-title contract.",
+  "semanticAssessment": "Valid RED: the named overview presentation test was discovered and executed, and the TAP result shows that exact test failing while other tests were excluded. The observed implementation still renders Provider overview and the long generic introduction."
+}

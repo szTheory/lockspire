@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 elixir -r /private/tmp/LockspireTapFormatter.exs -S mix test test/lockspire/web/live/admin/overview_live_test.exs --only overview_read_states --formatter LockspireTapFormatter --no-color --no-compile",
+  "exitCode": 2,
+  "output": "TAP version 13\nok 1 - test router exposes source-derived overview routes # SKIP excluded\nok 2 - test overview counts use accurate zero, one, and many copy # SKIP excluded\nok 3 - test overview renders task-centered status and journey links at both entry routes # SKIP excluded\nok 4 - test security and DCR landing pages orient related workflows # SKIP excluded\nok 5 - test overview uses one title and concise, decision-focused copy # SKIP excluded\nok 6 - test overview shows policy values and keeps read failure distinct # SKIP excluded\nnot ok 7 - test overview starts in loading state and keeps each failed source independent\n1..7\n",
+  "targetTest": "test overview starts in loading state and keeps each failed source independent",
+  "targetFile": "test/lockspire/web/live/admin/overview_live_test.exs",
+  "expected": "Each failed overview source names the records that could not load and says current results are unavailable; loaded sibling sources and exact pivots remain visible.",
+  "actual": "The client read failure renders Unavailable and Client records unavailable rather than the approved actionable recovery copy.",
+  "semanticAssessment": "Valid RED: the named overview source-isolation test executed and failed the planned assertion on the old unavailable message. The failure is not caused by test discovery, loading, setup, or an unrelated assertion."
+}
