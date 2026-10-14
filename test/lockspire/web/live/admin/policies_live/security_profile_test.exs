@@ -80,24 +80,31 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
   test "global security profile page renders current mode nav and override summary" do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
 
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
-    assert html =~ "Global security profile"
-    assert html =~ "Save global security profile"
-    assert html =~ "Current profile is None (Standard OIDC)"
+    assert html =~ "Default for apps"
+    assert html =~ "Save security settings"
+    refute html =~ "Current choice:"
+
+    assert has_element?(
+             view,
+             ~s(input[type="radio"][name="policy[security_profile]"][value="none"][checked])
+           )
+
     assert html =~ "PAR"
     assert html =~ "Security Profile"
     assert html =~ "DPoP"
-    assert html =~ "DCR"
-    assert html =~ "Signing-key prerequisites for FAPI 2.0 Message Signing."
+    assert html =~ "App registration"
+    assert html =~ "Signing key check"
+    assert html =~ "signing key only"
     assert html =~ "FAPI 2.0 Message Signing"
-    assert html =~ "client requires strict message signing"
-    assert html =~ "client inherits"
-    assert html =~ "client requires FAPI 2.0"
-    assert html =~ "client forces None"
-    assert html =~ "Publish an ES256 or PS256 issuer signing key"
-    assert html =~ "Key prerequisites missing"
-    assert html =~ "Readiness details:"
+    assert html =~ "app requires signed responses"
+    assert html =~ "app uses provider default"
+    assert html =~ "app requires FAPI 2.0"
+    assert html =~ "app uses standard OIDC"
+    assert html =~ "Publish an ES256 or PS256 Lockspire signing key"
+    assert html =~ "Signing key not ready"
+    assert html =~ "What we checked:"
   end
 
   test "failed policy read is shown as unavailable and can be reloaded" do
@@ -109,16 +116,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
       assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
-      assert html =~ "Could not load global security profile"
-      assert html =~ "Reload policy"
+      assert html =~ "Could not load security settings"
+      assert html =~ "Reload settings"
       refute html =~ ~s(name="policy[security_profile]")
-      refute html =~ "Save global security profile"
+      refute html =~ "Save security settings"
 
       Application.put_env(:lockspire, :repo, prior_repo)
       html = render_click(view, "reload_policy")
 
-      assert html =~ "Global security profile"
-      assert html =~ "Save global security profile"
+      assert html =~ "Default for apps"
+      assert html =~ "Save security settings"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
@@ -133,7 +140,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     socket = Phoenix.Component.assign(socket, :summary, nil)
     html = rendered_to_string(SecurityProfile.render(socket.assigns))
 
-    assert html =~ "Client override counts are unavailable."
+    assert html =~ "App settings are unavailable."
     refute html =~ "Reload this page to try again."
   end
 
@@ -146,16 +153,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
       assert html =~ "Status:</strong> Unavailable"
-      assert html =~ "The signing-key check could not be completed. Readiness is unknown."
-      assert html =~ "Unable to load strict message-signing readiness."
-      refute html =~ "Key prerequisites missing"
-      refute html =~ "The key check below identifies what is missing"
+      assert html =~ "The signing-key check could not be completed. Its result is unknown."
+      assert html =~ "Could not check the signing key. Reload this page to try again."
+      refute html =~ "Signing key not ready"
+      refute html =~ "Activate and publish an ES256 or PS256 Lockspire signing key"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
   end
 
-  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 security profile copy explains exact scope and key prerequisites" do
+  test "security settings explain app scope and the signing-key check" do
     assert {:ok, _policy} = Admin.put_security_profile(:none)
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
@@ -166,23 +173,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
 
-    assert html =~ "Configure"
-    assert html =~ "Global security profile"
-    assert html =~ "Strict readiness"
-    assert html =~ "Clients that inherit"
-    assert html =~ "Next safe action"
-    assert html =~ "Save global security profile"
-    assert html =~ "clients without a security-profile choice of their own"
-    assert html =~ "PAR, DPoP-bound access tokens, and S256 PKCE"
-
-    assert html =~
-             "a JWT introspection response selected with `Accept: application/token-introspection+jwt`"
-
-    assert html =~ "Signing-key prerequisites for FAPI 2.0 Message Signing."
-    assert html =~ "Key prerequisites missing"
-
-    assert html =~
-             "The key check below identifies what is missing before FAPI 2.0 Message Signing can be enabled."
+    assert html =~ "Default security settings"
+    assert html =~ "Save security settings"
+    assert html =~ "Apps may have their own setting."
+    assert html =~ "PAR, key-bound access tokens (DPoP), and S256 PKCE"
+    assert html =~ "signed authorization and introspection responses"
+    assert html =~ "Signing key check"
+    assert html =~ "Activate and publish an ES256 or PS256 Lockspire signing key"
 
     refute String.downcase(html) =~ "operator"
 
@@ -199,9 +196,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       "Tenant policy editor",
       "host-owned product policy",
       "developer portal",
-      "Create client",
-      "Disable client",
-      "Enable client",
+      "Add app",
+      "Disable app",
+      "Enable app",
       "Rotate client secret",
       "Rotate registration access token",
       "Reset nonce",
@@ -258,9 +255,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
     assert {:ok, _reloaded_view, html} =
              live(conn_for_admin(), "/admin/policies/security-profile")
 
-    assert html =~ "Current profile is FAPI 2.0 Message Signing"
-    assert html =~ "Status:</strong> Active; key prerequisites met"
-    assert html =~ "FAPI 2.0 Message Signing is active."
+    assert has_element?(view, ~s(input[type="radio"][value="fapi_2_0_message_signing"][checked]))
+    assert html =~ "Status:</strong> Ready"
+    assert html =~ "signed authorization and introspection responses"
   end
 
   test "invalid global security profile values return field errors" do
@@ -287,7 +284,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       })
 
     assert html =~
-             "Publish an ES256 or PS256 issuer signing key before enabling FAPI 2.0 Message Signing."
+             "Publish an ES256 or PS256 Lockspire signing key before choosing FAPI 2.0 Message Signing."
 
     refute html =~ "missing_compliant_publishable_key"
   end
@@ -301,7 +298,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       })
 
     assert html =~
-             "Publish an ES256 or PS256 issuer signing key before enabling FAPI 2.0 Security Profile."
+             "Publish an ES256 or PS256 Lockspire signing key before choosing FAPI 2.0 Security Profile."
 
     refute html =~ "before enabling FAPI 2.0 Message Signing."
   end
@@ -320,8 +317,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
           policy: %{security_profile: "none"}
         })
 
-      assert html =~ "The security profile change could not be confirmed."
-      assert html =~ "Reload the policy to check its current value."
+      assert html =~ "Security settings could not be confirmed."
+      assert html =~ "Reload this page to check the saved value."
       refute html =~ "request_failed"
       refute html =~ "UnavailablePolicySaveRepo"
     after

@@ -71,7 +71,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/keys/:id", Show))
   end
 
-  test "D-01/D-03/D-04/D-09/D-10 key index renders posture, safe generation grouping, and public lifecycle rows" do
+  test "D-01/D-03/D-04/D-09/D-10 key index renders key state, safe generation grouping, and public lifecycle rows" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
     assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
 
@@ -83,8 +83,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     HtmlAssertions.assert_no_token_like_text(html)
 
     assert html =~ "Configure"
-    assert html =~ "Review key lifecycle"
-    assert html =~ "Key lifecycle posture"
+    assert html =~ "Key inventory"
+    refute html =~ "posture"
     assert html =~ "lockspire-admin-resource-list__item"
     assert html =~ "lockspire-admin-long-value"
 
@@ -98,10 +98,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert length(Enum.uniq(titles)) == 4
     assert Enum.all?(titles, &String.starts_with?(&1, "Key "))
     assert html =~ "Active"
-    assert html =~ "Upcoming"
+    assert html =~ "Prepared (upcoming)"
     assert html =~ "Retiring"
     assert html =~ "Retired"
-    assert html =~ "Total keys"
+    refute html =~ "Total keys"
     assert html =~ "lockspire-admin-action-group"
 
     [primary_action_group] =
@@ -110,41 +110,35 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
       |> LazyHTML.query(".lockspire-admin-action-group__primary")
       |> Enum.to_list()
 
-    [secondary_action_group] =
-      html
-      |> HtmlAssertions.document()
-      |> LazyHTML.query(".lockspire-admin-action-group__secondary")
-      |> Enum.to_list()
-
     assert LazyHTML.text(primary_action_group) =~ "Generate signing key"
     refute LazyHTML.text(primary_action_group) =~ "Generate encryption key"
-    assert LazyHTML.text(secondary_action_group) =~ "Generate encryption key"
+    assert html =~ "Encryption keys"
+    assert html =~ "It decrypts those requests; it does not sign tokens."
+    assert html =~ "Generate encryption key"
 
-    assert html =~
-             "Generation creates an upcoming key. Publish it separately to add it to JWKS while the active key remains in use."
+    refute html =~ "Generation creates an upcoming key"
 
     assert html =~ "phx-disable-with=\"Generating signing key…\""
     assert html =~ "phx-disable-with=\"Generating encryption key…\""
-    assert html =~ "Served in JWKS"
-    assert html =~ "Not served in JWKS"
+    assert html =~ "Published to connected apps"
+    assert html =~ "Not published to connected apps"
     assert html =~ "kid_"
     refute html =~ "ui-active"
     refute html =~ "ui-upcoming"
     refute html =~ "ui-retiring"
     refute html =~ "ui-retired"
-    assert html =~ "Next safe action"
-    assert html =~ "Publish key for verification overlap"
-    assert html =~ "Retire key to remove it from JWKS"
+    refute html =~ "Recommended next step"
+    assert html =~ "Publish key so apps can prepare to trust it"
+    assert html =~ "Retire key to stop publishing it"
 
-    assert html =~
-             "The previous key stays in JWKS during overlap; retire it to remove it."
+    refute html =~ "JWKS"
 
-    assert html =~ "Clients"
+    assert html =~ "Apps"
     assert html =~ "Consents"
     assert html =~ "Tokens"
     assert html =~ "Keys"
     assert html =~ "Overview"
-    assert html =~ "DCR"
+    assert html =~ "App registration"
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
   end
@@ -204,6 +198,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert socket.assigns.inventory_state == :loaded
     assert socket.assigns.total_keys == 5
     assert socket.assigns.generation_notice =~ "Signing key generated"
+    assert socket.assigns.generation_notice =~ "not active yet"
+    assert socket.assigns.generated_key_path =~ "/admin/keys/"
     assert is_nil(socket.assigns.generation_error)
 
     Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_signing_keys", [])
@@ -240,17 +236,25 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_token_like_text(html)
 
-    assert html =~ "Review key lifecycle"
-    assert html =~ "Lifecycle actions"
+    assert html =~ "Key status"
+    assert html =~ "<h1>Key details</h1>"
+    assert html =~ "Key actions"
     assert html =~ "Publish key"
-    assert html =~ "Public JWK metadata"
-    assert html =~ "Next safe action"
-    assert html =~ "Key handle"
+    assert html =~ "Public key settings"
+    assert html =~ "Next step"
+    assert html =~ "Key ID"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "kid_"
-    assert html =~ "Database handle"
-    assert html =~ "Make this public key available for verifier overlap."
-    assert html =~ "The current signing key remains active."
+    refute html =~ "Published at"
+    refute html =~ "Activated at"
+    refute html =~ "Retiring at"
+    refute html =~ "Retired at"
+    refute html =~ "Database handle"
+
+    assert html =~
+             "Publish this key so connected apps can recognize it before the signing key changes."
+
+    assert html =~ "The current key remains active."
     refute html =~ "becomes available to verifiers"
     refute_unsupported_verifier_promise(html)
     assert html =~ "name=\"publish[confirm]\""
@@ -259,7 +263,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute html =~ "Retire key"
     refute html =~ "ui-upcoming"
     refute html =~ ~r/>\s*#{upcoming_key.id}\s*</
-    assert_before(html, "Public JWK metadata", "Lifecycle actions")
+    assert_before(html, "Public key settings", "Key actions")
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
 
@@ -277,10 +281,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert socket.assigns.key_detail.key.handle =~ "kid_"
 
     assert socket.assigns.action_notice ==
-             "Key is now served in JWKS; the current signer remains active."
+             "This key is now shared with connected apps. The current signing key remains active."
 
     html = rendered_to_string(Show.render(socket.assigns))
-    assert html =~ "Use this key to sign new tokens. The previous signing key moves to retiring."
+
+    assert html =~
+             "New tokens will use this key. The previous key stays available to apps while they switch."
+
     refute html =~ "only when verifiers can accept the cutover signer"
     refute_unsupported_verifier_promise(html)
     assert html =~ "name=\"activate[confirm]\""
@@ -293,13 +300,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
              Show.handle_event("publish_key", %{"publish" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.action_error ==
-             "This key is already published. Review its current JWKS state below."
+             "This key is already shared with connected apps. Review its current status below."
 
     assert is_nil(socket.assigns.action_notice)
 
     assert {:noreply, socket} = Show.handle_event("activate_key", %{}, socket)
 
-    assert socket.assigns.action_error =~ "Confirm activation before changing the active signer."
+    assert socket.assigns.action_error =~
+             "Confirm activation before changing which key signs new tokens."
+
     assert is_nil(socket.assigns.action_notice)
 
     assert {:ok, not_activated_key} = Repository.fetch_signing_key_by_id(upcoming_key.id)
@@ -311,7 +320,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert socket.assigns.key_detail.key.status == :active
 
     assert socket.assigns.action_notice ==
-             "Key is now the active signer, and the previous signer moved to retiring overlap."
+             "This key now signs new tokens. The previous key remains available while apps switch."
 
     assert {:ok, retiring_key} = Repository.fetch_signing_key_by_id(active_key.id)
     assert retiring_key.status == :retiring
@@ -330,7 +339,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Retire key"
 
     assert html =~
-             "Remove this key from JWKS only after systems that rely on it have switched to its replacement."
+             "Remove this key from the public list only after connected apps have switched to its replacement."
 
     refute_unsupported_verifier_promise(html)
 
@@ -343,7 +352,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert {:noreply, socket} = Show.handle_event("retire_key", %{}, socket)
 
     assert socket.assigns.action_error ==
-             "Confirm retirement before removing publication overlap."
+             "Confirm retirement before removing this key from the public list."
 
     assert {:ok, still_retiring_key} = Repository.fetch_signing_key_by_id(active_key.id)
     assert still_retiring_key.status == :retiring
@@ -352,7 +361,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
              Show.handle_event("retire_key", %{"retire" => %{"confirm" => "true"}}, socket)
 
     assert socket.assigns.key_detail.key.status == :retired
-    assert socket.assigns.action_notice == "Key is no longer served in JWKS."
+    assert socket.assigns.action_notice == "This key is no longer shared with connected apps."
     refute socket.assigns.key_detail.publishable
   end
 
@@ -376,12 +385,19 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     HtmlAssertions.assert_no_token_like_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
 
-    assert html =~ "Review key lifecycle"
-    assert html =~ "Public JWK metadata"
-    assert html =~ "No lifecycle action available"
+    assert html =~ "Key status"
+    assert html =~ "Public key settings"
+    refute html =~ "No further action is available"
+    refute html =~ "Next step"
+    refute html =~ "Key actions"
+    assert html =~ "Published at"
+    assert html =~ "Activated at"
+    assert html =~ "Retiring at"
+    assert html =~ "Retired at"
     assert html =~ "kid_"
     assert html =~ "Retired"
-    assert html =~ "Not served in JWKS"
+    assert html =~ "Published to connected apps"
+    assert html =~ "<strong>No</strong>"
     refute socket.assigns.key_detail.publishable
     refute html =~ "ui-retired"
     refute html =~ "Publish key"
@@ -414,10 +430,71 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
-    assert html =~ "Use this key for encryption. The previous encryption key moves to retiring."
-    refute html =~ "Use this key to sign new tokens."
+    assert html =~
+             "New encrypted data will use this key. The previous key stays available to decrypt existing data."
+
+    refute html =~ "New tokens will use this key."
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
     refute_forbidden_key_copy(html)
+  end
+
+  test "encryption key publish and activation feedback keep encryption separate from signing", %{
+    now: now
+  } do
+    {:ok, encryption_key} =
+      Repository.publish_key(signing_key("ui-unpublished-encryption", :upcoming, now, use: :enc))
+
+    assert {:ok, socket} =
+             Show.mount(%{"id" => Integer.to_string(encryption_key.id)}, %{}, socket_for(:show))
+
+    assert {:noreply, socket} =
+             Show.handle_params(
+               %{"id" => Integer.to_string(encryption_key.id)},
+               "/lockspire/admin/keys/#{encryption_key.id}",
+               socket
+             )
+
+    html = rendered_to_string(Show.render(socket.assigns))
+    assert html =~ "<h1>Key details</h1>"
+    assert html =~ "Publish this encryption key"
+    assert html =~ "encrypt authorization requests"
+    assert html =~ "The current encryption key remains active."
+    refute html =~ "before the signing key changes"
+    refute html =~ "Activate key to sign new tokens"
+    refute html =~ "Published at"
+
+    assert {:noreply, published_socket} =
+             Show.handle_event("publish_key", %{"publish" => %{"confirm" => "true"}}, socket)
+
+    assert published_socket.assigns.key_detail.key.status == :upcoming
+    assert published_socket.assigns.action_notice =~ "current encryption key remains active"
+    published_html = rendered_to_string(Show.render(published_socket.assigns))
+    assert published_html =~ "Published at"
+    assert published_html =~ "Activate key for encrypted authorization requests"
+    refute published_html =~ "Activated at"
+
+    assert {:noreply, unchecked_socket} = Show.handle_event("activate_key", %{}, published_socket)
+
+    assert unchecked_socket.assigns.action_error ==
+             "Confirm activation before changing the active encryption key."
+
+    assert unchecked_socket.assigns.key_detail.key.status == :upcoming
+
+    assert {:noreply, activated_socket} =
+             Show.handle_event(
+               "activate_key",
+               %{"activate" => %{"confirm" => "true"}},
+               published_socket
+             )
+
+    assert activated_socket.assigns.key_detail.key.use == :enc
+    assert activated_socket.assigns.key_detail.key.status == :active
+    assert activated_socket.assigns.action_notice =~ "active for encrypted authorization requests"
+    refute activated_socket.assigns.action_notice =~ "signs new tokens"
+    activated_html = rendered_to_string(Show.render(activated_socket.assigns))
+    assert activated_html =~ "Activated at"
+    assert activated_html =~ activated_socket.assigns.action_notice
+    HtmlAssertions.assert_no_text(activated_html, forbidden_key_material_samples())
   end
 
   test "key detail distinguishes missing from failed reads and keeps the selected key identifier",
@@ -436,10 +513,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     missing_html = rendered_to_string(Show.render(missing_socket.assigns))
     assert missing_socket.assigns.detail_state == :missing
-    assert missing_html =~ "Signing key not found"
-    assert missing_html =~ "selected key identifier"
+    assert missing_html =~ "Key not found"
+    assert missing_html =~ "Key ID:"
     assert missing_html =~ "Return to key inventory"
-    refute missing_html =~ "Signing key details are unavailable"
+    refute missing_html =~ "Key details are unavailable"
 
     assert {:ok, failed_socket} =
              Show.mount(%{"id" => upcoming_key.id}, %{}, socket_for(:show))
@@ -456,10 +533,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     failed_html = rendered_to_string(Show.render(failed_socket.assigns))
     assert failed_socket.assigns.detail_state == :error
     assert failed_socket.assigns.key_id == upcoming_key.id
-    assert failed_html =~ "Signing key details are unavailable"
+    assert failed_html =~ "Key details are unavailable"
 
-    assert failed_html =~
-             "The selected key identifier is retained, but its status could not be confirmed."
+    assert failed_html =~ "could not load this key, so its current status is unknown."
 
     assert failed_html =~ "Return to key inventory"
     assert failed_html =~ "Try loading key details again"
@@ -489,7 +565,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert is_nil(socket.assigns.action_notice)
     html = rendered_to_string(Show.render(socket.assigns))
     assert html =~ "Only upcoming keys can be published."
-    assert html =~ "Key detail"
+    assert html =~ "Key actions"
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
   end
 
@@ -533,7 +609,6 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     for forbidden <- [
           "private jwk",
-          "private key",
           "private_jwk",
           "export key",
           "fetch remote key",

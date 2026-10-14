@@ -71,16 +71,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
   test "global PAR policy page renders current mode and override summary" do
     assert {:ok, _policy} = ServerPolicy.put_server_policy(:optional)
 
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/par")
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/par")
 
-    assert html =~ "Global PAR policy"
-    assert html =~ "Save global PAR policy"
-    assert html =~ "Current mode is optional"
+    assert html =~ "Default for apps"
+    assert html =~ "Save request settings"
+    refute html =~ "Current choice:"
+
+    assert has_element?(
+             view,
+             ~s(input[type="radio"][name="policy[par_policy]"][value="optional"][checked])
+           )
 
     # Summary counts
-    assert html =~ "client inherits"
-    assert html =~ "client requires PAR"
-    assert html =~ "client marks PAR optional"
+    assert html =~ "app uses provider default"
+    assert html =~ "app requires PAR"
+    assert html =~ "app allows direct requests"
   end
 
   test "failed policy read is shown as unavailable and can be reloaded" do
@@ -92,17 +97,17 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
 
       assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/par")
 
-      assert html =~ "Could not load global PAR policy"
-      assert html =~ "Reload PAR policy"
-      assert html =~ "Pushed Authorization Requests policy is unavailable"
+      assert html =~ "Could not load request settings"
+      assert html =~ "Reload settings"
+      assert html =~ "could not confirm the saved default"
       refute html =~ ~s(name="policy[par_policy]")
-      refute html =~ "Save global PAR policy"
+      refute html =~ "Save request settings"
 
       Application.put_env(:lockspire, :repo, prior_repo)
       html = render_click(view, "reload_policy")
 
-      assert html =~ "Global PAR policy"
-      assert html =~ "Save global PAR policy"
+      assert html =~ "Default for apps"
+      assert html =~ "Save request settings"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
@@ -117,11 +122,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     socket = Phoenix.Component.assign(socket, :summary, nil)
     html = rendered_to_string(Par.render(socket.assigns))
 
-    assert html =~ "Client override counts are unavailable."
+    assert html =~ "App settings are unavailable."
     refute html =~ "Reload this page to try again."
   end
 
-  test "CONFIG-01 CONFIG-03 D-03 D-04 D-05 D-09 D-10 PAR posture explains global scope before save" do
+  test "PAR setting explains its effect for apps using the provider default" do
     assert {:ok, _policy} = ServerPolicy.put_server_policy(:required)
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/par")
@@ -132,29 +137,24 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
 
-    assert html =~ "Configure"
-    assert html =~ "Pushed Authorization Requests (PAR)"
-    assert html =~ "send authorization parameters to /par first"
-    assert html =~ "returned request_uri at /authorize"
-    assert html =~ "Global posture"
-    assert html =~ "Clients that inherit"
-    assert html =~ "Next safe action"
-    assert html =~ "Save global PAR policy"
-    assert html =~ "global issuer PAR default"
-    assert html =~ "future authorization requests"
-    assert html =~ "Client-level PAR settings can override the global default."
-    assert html =~ "Clients can use PAR, while direct"
-    assert html =~ "Clients that inherit this policy must use PAR"
-    assert html =~ "Existing client overrides stay on their client policy routes."
+    assert html =~ "Authorization request settings"
+    assert html =~ "PAR lets an app send its authorization request to Lockspire"
+
+    assert html =~
+             "Optional allows direct requests. Required rejects them for apps using this default."
+
+    assert html =~ "Save request settings"
+    assert html =~ "Apps may have their own setting."
+    assert html =~ "App settings"
 
     for href <- policy_nav_hrefs() do
       HtmlAssertions.assert_has_link(html, href)
     end
 
     HtmlAssertions.assert_no_text(html, [
-      "Create client",
-      "Disable client",
-      "Enable client",
+      "Add app",
+      "Disable app",
+      "Enable app",
       "Rotate client secret",
       "Rotate registration access token",
       "Reset nonce",
@@ -165,7 +165,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       "Raw proof",
       "Per-client mutation",
       "mutate existing clients",
-      "update existing client records",
+      "update existing app records",
       "host tenant policy",
       "host-owned product policy",
       "Tenant policy editor",
@@ -192,8 +192,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       |> form("form[phx-submit=save_policy]", %{policy: %{par_policy: "required"}})
       |> render_submit()
 
-    assert html =~ "Global PAR policy saved."
-    assert html =~ "future authorization requests from clients that inherit issuer policy"
+    assert html =~ "Request policy saved."
+    assert html =~ "Apps with their own setting are unchanged."
 
     assert {:ok, %{par_policy: :required}} = ServerPolicy.get_server_policy()
   end
@@ -210,9 +210,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
 
       html = render_submit(view, "save_policy", %{policy: %{par_policy: "required"}})
 
-      assert html =~ "The PAR policy change could not be confirmed."
-      assert html =~ "Reload the policy to check its current value."
-      refute html =~ "Global PAR policy saved."
+      assert html =~ "The request settings could not be confirmed."
+      assert html =~ "Reload this page to check the saved value."
+      refute html =~ "Request policy saved."
       refute html =~ "request_failed"
       refute html =~ "UnavailablePolicySaveRepo"
     after
@@ -228,6 +228,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
       |> render_submit("save_policy", %{policy: %{par_policy: "invalid"}})
 
     assert html =~ "Enforcement mode: choose Optional or Required."
+
+    assert has_element?(
+             view,
+             ~s(#par_policy-required[aria-invalid="true"][aria-describedby="par_policy-help par_policy-error"])
+           )
+
     refute html =~ "invalid_par_policy"
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
 

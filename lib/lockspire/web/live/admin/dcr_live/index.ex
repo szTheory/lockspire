@@ -14,7 +14,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
     {:ok,
      socket
      |> assign(
-       page_title: "Dynamic Client Registration",
+       page_title: "App registration",
        current_section: :dcr,
        policy_observation: %{state: :loading, policy: nil},
        client_observation: %{state: :loading, clients: nil, count: nil},
@@ -42,85 +42,51 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Prepare a partner registration"
-        body="Dynamic Client Registration (DCR) lets a partner request client registration. Issuer policy determines whether a request can proceed and which requested client metadata is accepted. When policy requires one, an Initial Access Token authorizes the initial registration request. A Registration Access Token manages one registered client's configuration endpoint; a client secret authenticates a confidential client at the token endpoint."
-      >
+      <AdminComponents.page_hero body="Choose who can register apps, create a setup token, or review apps registered by their teams.">
         <:actions>
           <AdminComponents.admin_button type="button" phx-click="reload_dcr_status">
-            Reload DCR status
+            Reload status
           </AdminComponents.admin_button>
         </:actions>
-        <:summary>
-          <AdminComponents.decision_summary>
-            <:item
-              :for={item <- decision_summary_items(@policy_observation, @iat_observation, @client_observation)}
-              label={item.label}
-              value={item.value}
-              detail={item.detail}
-              tone={item.tone}
-            >
-            </:item>
-          </AdminComponents.decision_summary>
-        </:summary>
       </AdminComponents.page_hero>
-
-      <AdminComponents.metric_grid>
-        <AdminComponents.summary_stat
-          value={policy_metric(@policy_observation)}
-          label="DCR policy"
-        />
-        <AdminComponents.summary_stat
-          value={active_iat_metric(@iat_observation)}
-          label="active Initial Access Tokens"
-        />
-        <AdminComponents.summary_stat
-          value={client_metric(@client_observation)}
-          label="self-registered clients"
-        />
-      </AdminComponents.metric_grid>
 
       <div class="lockspire-admin-dashboard-grid">
         <AdminComponents.section_card
-          title="DCR policy"
-          subtitle="Issuer policy controls whether future registration requests are accepted and which requested metadata is allowed. Changing it does not update existing clients."
+          title="Who can register apps?"
+          subtitle="This affects new apps only; existing apps stay as they are."
         >
           <AdminComponents.alert
             :if={@policy_observation.state == :unavailable}
             variant={:danger}
-            title="Registration policy unavailable"
+            title="Could not load registration rules"
           >
-            Lockspire could not confirm the current DCR policy. No registration mode is assumed; reload this status or review issuer policy before preparing a partner registration.
+            Lockspire could not check whether new apps can register. Reload this page to try again.
           </AdminComponents.alert>
 
           <div :if={@policy_observation.state == :loaded}>
             <p class="lockspire-admin-help">
-              Current DCR policy: <strong>{registration_policy_label(@policy_observation.policy.registration_policy)}</strong>.
+              <strong>{registration_policy_summary(@policy_observation.policy.registration_policy)}</strong>
               {registration_policy_detail(@policy_observation.policy.registration_policy)}
-            </p>
-            <p class="lockspire-admin-help">
-              Open registration still follows issuer metadata allowlists and configured lifetimes.
             </p>
           </div>
 
           <AdminComponents.action_bar>
             <AdminComponents.admin_button href={admin_path("/policies/dcr")}>
-              Edit DCR policy
+              Change registration rules
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </AdminComponents.section_card>
 
         <AdminComponents.section_card
-          title="Initial Access Token inventory"
-          subtitle="An Initial Access Token authorizes an initial registration request; it does not manage an existing client."
+          title="App setup tokens"
+          subtitle="A one-time token lets an app register. It cannot change an existing app."
         >
           <AdminComponents.alert
             :if={@iat_observation.state == :unavailable}
             variant={:danger}
-            title="Initial Access Token inventory unavailable"
+            title="Could not load setup token status"
           >
-            Lockspire could not read Initial Access Token status, so no count is shown. Review the inventory or reload this status before handing a token to a partner.
+            Lockspire could not read token status, so no count is shown. Check before sharing a token.
           </AdminComponents.alert>
 
           <dl
@@ -143,24 +109,31 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
 
           <AdminComponents.action_bar>
             <AdminComponents.admin_button href={admin_path("/iats")}>
-              Review Initial Access Tokens
+              Review setup tokens
             </AdminComponents.admin_button>
-            <AdminComponents.admin_button href={admin_path("/iats/new")} variant={:primary}>
-              Create an Initial Access Token
+            <AdminComponents.admin_button
+              :if={
+                @policy_observation.state == :loaded and
+                  @policy_observation.policy.registration_policy == :initial_access_token
+              }
+              href={admin_path("/iats/new")}
+              variant={:primary}
+            >
+              Create setup token
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </AdminComponents.section_card>
 
         <AdminComponents.section_card
-          title="Review self-registered clients"
-          subtitle="Registration Access Tokens manage one registered client's configuration endpoint. Open a client record to review its safe identity and supported follow-up actions."
+          title="Apps registered by their teams"
+          subtitle="Open an app to check the settings saved during registration."
         >
           <AdminComponents.alert
             :if={@client_observation.state == :unavailable}
             variant={:danger}
-            title="Self-registered client inventory unavailable"
+            title="Could not load registered apps"
           >
-            Lockspire could not read the client inventory, so no count or empty state is shown. Reload this status to try again.
+            Lockspire could not read the app list, so no count or empty state is shown. Reload this page to try again.
           </AdminComponents.alert>
 
           <div
@@ -181,8 +154,8 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
 
           <AdminComponents.empty_state
             :if={@client_observation.state == :loaded and @client_observation.clients == []}
-            title="No self-registered clients yet"
-            body="When DCR creates clients, review each registered client's details here."
+            title="No apps have registered here yet"
+            body="Apps registered through this page will appear here."
           />
         </AdminComponents.section_card>
       </div>
@@ -245,161 +218,23 @@ defmodule Lockspire.Web.Live.Admin.DcrLive.Index do
     _kind, _reason -> {:error, :unavailable}
   end
 
-  defp decision_summary_items(policy, iats, clients) do
-    [
-      %{
-        label: "DCR policy",
-        value: policy_metric(policy),
-        detail: policy_detail(policy),
-        tone: policy_tone(policy)
-      },
-      %{
-        label: "Initial Access Tokens",
-        value: active_iat_metric(iats),
-        detail: iat_detail(iats),
-        tone: iat_tone(iats)
-      },
-      %{
-        label: "Self-registered clients",
-        value: client_metric(clients),
-        detail: client_detail(clients),
-        tone: client_tone(clients)
-      },
-      %{
-        label: "Next safe action",
-        value: next_safe_action(policy, iats, clients),
-        detail: next_safe_action_detail(policy, iats, clients),
-        tone: :info
-      }
-    ]
-  end
-
-  defp policy_metric(%{state: :loaded, policy: %ServerPolicy{registration_policy: mode}}),
-    do: registration_policy_label(mode)
-
-  defp policy_metric(_policy), do: "Unavailable"
-
-  defp active_iat_metric(%{state: :loaded, counts: %{active: count}}), do: count
-  defp active_iat_metric(_iats), do: "Unavailable"
-
-  defp client_metric(%{state: :loaded, count: count}), do: count
-  defp client_metric(_clients), do: "Unavailable"
-
-  defp policy_detail(%{state: :loaded, policy: %ServerPolicy{registration_policy: mode}}),
-    do: registration_policy_detail(mode)
-
-  defp policy_detail(_policy),
-    do: "The issuer gate could not be read; confirm it before partner onboarding."
-
-  defp iat_detail(%{state: :loaded, counts: counts}) do
-    "#{counts.revoked} revoked, #{counts.closed} expired or used. An IAT authorizes initial registration only."
-  end
-
-  defp iat_detail(_iats), do: "The inventory could not be read; no token count is assumed."
-
-  defp client_detail(%{state: :loaded, count: count}) do
-    "#{count} self-registered #{if count == 1, do: "client is", else: "clients are"} available for client-detail review."
-  end
-
-  defp client_detail(_clients), do: "The client inventory could not be read; no count is assumed."
-
-  defp policy_tone(%{
-         state: :loaded,
-         policy: %ServerPolicy{registration_policy: :initial_access_token}
-       }),
-       do: :success
-
-  defp policy_tone(%{state: :loaded, policy: %ServerPolicy{registration_policy: :open}}),
-    do: :warning
-
-  defp policy_tone(%{state: :loaded}), do: nil
-  defp policy_tone(_policy), do: nil
-
-  defp iat_tone(%{state: :loaded, counts: %{active: active}}) when active > 0, do: :success
-  defp iat_tone(%{state: :loaded}), do: :info
-  defp iat_tone(_iats), do: nil
-
-  defp client_tone(%{state: :loaded, count: count}) when count > 0, do: :success
-  defp client_tone(%{state: :loaded}), do: :info
-  defp client_tone(_clients), do: nil
-
-  defp next_safe_action(%{state: :unavailable}, _iats, _clients), do: "Review issuer policy"
-
-  defp next_safe_action(
-         %{state: :loaded, policy: %{registration_policy: :disabled}},
-         _iats,
-         _clients
-       ),
-       do: "Edit DCR policy"
-
-  defp next_safe_action(
-         %{state: :loaded, policy: %{registration_policy: :open}},
-         _iats,
-         _clients
-       ),
-       do: "Review DCR policy"
-
-  defp next_safe_action(
-         %{state: :loaded, policy: %{registration_policy: :initial_access_token}},
-         %{state: :loaded, counts: %{active: active}},
-         _clients
-       )
-       when active > 0,
-       do: "Review Initial Access Tokens"
-
-  defp next_safe_action(%{state: :loaded}, %{state: :unavailable}, _clients),
-    do: "Review Initial Access Token inventory"
-
-  defp next_safe_action(_policy, _iats, %{state: :loaded, count: count}) when count > 0,
-    do: "Review self-registered clients"
-
-  defp next_safe_action(_policy, _iats, _clients), do: "Create an Initial Access Token"
-
-  defp next_safe_action_detail(%{state: :unavailable}, _iats, _clients),
-    do: "Confirm the issuer's DCR policy before preparing a partner registration."
-
-  defp next_safe_action_detail(
-         %{state: :loaded, policy: %{registration_policy: :disabled}},
-         _iats,
-         _clients
-       ),
-       do: "Registration is disabled until issuer policy is intentionally changed."
-
-  defp next_safe_action_detail(
-         %{state: :loaded, policy: %{registration_policy: :open}},
-         _iats,
-         _clients
-       ),
-       do:
-         "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
-
-  defp next_safe_action_detail(_policy, %{state: :unavailable}, _clients),
-    do: "Initial Access Token status is unavailable; verify it before a partner handoff."
-
-  defp next_safe_action_detail(_policy, _iats, %{state: :loaded, count: count}) when count > 0,
-    do: "Open a self-registered client record for safe identity and supported follow-up actions."
-
-  defp next_safe_action_detail(_policy, _iats, _clients),
-    do: "Create a bounded Initial Access Token, then review self-registered clients here."
-
-  defp registration_policy_label(:initial_access_token), do: "Initial Access Token required"
-  defp registration_policy_label(:open), do: "Open registration"
-  defp registration_policy_label(:disabled), do: "Registration disabled"
-  defp registration_policy_label(_policy), do: "Registration mode unknown"
+  defp registration_policy_summary(:initial_access_token), do: "A setup token is required."
+  defp registration_policy_summary(:open), do: "App registration is open."
+  defp registration_policy_summary(:disabled), do: "Apps cannot register right now."
+  defp registration_policy_summary(_policy), do: "Registration rules are unavailable."
 
   defp registration_policy_detail(:initial_access_token),
-    do:
-      "Partners need a short-lived Initial Access Token before dynamic registration can create clients."
+    do: "Create one for an app that needs to register."
 
   defp registration_policy_detail(:open),
     do:
-      "Unauthenticated registration requests are accepted within issuer metadata allowlists and lifetime settings."
+      "Apps can register without a setup token; allowed app details and expiry limits still apply."
 
   defp registration_policy_detail(:disabled),
-    do: "Dynamic registration is closed until the DCR policy is intentionally changed."
+    do: "Turn registration on before sharing a setup token."
 
   defp registration_policy_detail(_policy),
-    do: "Review issuer policy before partner registration."
+    do: "Registration settings are unavailable."
 
   defp iat_status(token) do
     InitialAccessTokens.lifecycle_status(token)

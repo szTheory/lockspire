@@ -4,8 +4,6 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   use Phoenix.LiveView
 
   alias Lockspire.Admin
-  alias Lockspire.Admin.InitialAccessTokens
-  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.AdminLayoutLive
 
@@ -28,154 +26,117 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Overview"
-        title="Provider overview"
-        body="Review client registrations, security policy, signing keys, and current authorization activity. Use the linked pages to review settings or investigate a specific record."
-      >
-        <:actions>
-          <AdminComponents.admin_button href={admin_path("/clients")} variant={:primary}>
-            Review clients
-          </AdminComponents.admin_button>
-        </:actions>
-      </AdminComponents.page_hero>
-
-      <AdminComponents.metric_grid wide>
-        <div>
-          <AdminComponents.summary_stat
-            value={observation_value(@summary.clients, :total)}
-            label={count_label(@summary.clients, :total, "client", "clients")}
-          />
-          <p role="status">{observation_note(@summary.clients, "client inventory")}</p>
-        </div>
-        <div>
-          <AdminComponents.summary_stat
-            value={observation_value(@summary.clients, :self_registered)}
-            label={
-              count_label(
-                @summary.clients,
-                :self_registered,
-                "self-registered client",
-                "self-registered clients"
-              )
-            }
-          />
-          <p role="status">{observation_note(@summary.clients, "client inventory")}</p>
-        </div>
-        <div>
-          <AdminComponents.summary_stat
-            value={observation_value(@summary.tokens, :reuse_detected)}
-            label={count_label(@summary.tokens, :reuse_detected, "reuse incident", "reuse incidents")}
-          />
-          <p role="status">{observation_note(@summary.tokens, "token inventory")}</p>
-        </div>
-        <div>
-          <AdminComponents.summary_stat
-            value={observation_value(@summary.logouts, :failed)}
-            label={count_label(@summary.logouts, :failed, "logout failure", "logout failures")}
-          />
-          <p role="status">{observation_note(@summary.logouts, "logout delivery inventory")}</p>
-        </div>
-      </AdminComponents.metric_grid>
-
-      <div class="lockspire-admin-dashboard-grid">
-        <AdminComponents.section_card
-          title="Security posture"
-          subtitle="Issuer-wide defaults and client overrides that shape protocol behavior."
-        >
-          <p role="status">{policy_observation_note(@summary.policy)}</p>
-          <dl class="lockspire-admin-description-list">
-            <div>
-              <dt>PAR</dt>
-              <dd>{policy_value(@summary.policy, :par_policy)}</dd>
+      <div class="lockspire-admin-dashboard-grid lockspire-admin-overview-grid">
+        <AdminComponents.section_card title="Security events">
+          <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
+            <div class="lockspire-admin-overview-review-row">
+              <a href={admin_path("/tokens?status=reuse_detected")}>
+                <span>Refresh tokens used more than once</span>
+                <strong>{observation_value(@summary.tokens, :reuse_detected)}</strong>
+                <small :if={@summary.tokens.state == :loaded}>
+                  {if observation_value(@summary.tokens, :reuse_detected) > 0, do: "Related tokens revoked", else: "No repeat use detected"}
+                </small>
+                <small :if={@summary.tokens.state != :loaded} role="status">
+                  {observation_note(@summary.tokens, "refresh token records")}
+                </small>
+              </a>
+              <AdminComponents.info_tooltip :if={@summary.tokens.state == :loaded} id="refresh-token-reuse-help" label="About refresh token reuse">
+                Refresh tokens let apps keep access. Reuse after replacement can indicate theft or a repeated app request; it does not prove theft.
+                <%= if observation_value(@summary.tokens, :reuse_detected) > 0 do %>
+                  Lockspire revoked every token in its family. Open the records to investigate.
+                <% else %>
+                  Lockspire revokes related tokens when this happens.
+                <% end %>
+                The count includes past detections, not just unresolved cases.
+              </AdminComponents.info_tooltip>
             </div>
-            <div>
-              <dt>DPoP</dt>
-              <dd>{policy_value(@summary.policy, :dpop_policy)}</dd>
-            </div>
-            <div>
-              <dt>Security profile</dt>
-              <dd>{policy_value(@summary.policy, :security_profile)}</dd>
-            </div>
-            <div>
-              <dt>Access token format</dt>
-              <dd>{policy_value(@summary.policy, :access_token_format)}</dd>
-            </div>
-          </dl>
-          <AdminComponents.action_bar>
-            <AdminComponents.admin_button href={admin_path("/policies")}>
-              Open security
-            </AdminComponents.admin_button>
-          </AdminComponents.action_bar>
+          </div>
         </AdminComponents.section_card>
 
-        <AdminComponents.section_card
-          title="Key readiness"
-          subtitle="Published signing keys and rollover state."
-        >
-          <p role="status">{observation_note(@summary.keys, "signing-key inventory")}</p>
-          <dl class="lockspire-admin-description-list">
-            <div>
-              <dt>Active keys</dt>
-              <dd>{observation_value(@summary.keys, :active)}</dd>
+        <AdminComponents.section_card title="Sign-out problems">
+          <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
+            <div class="lockspire-admin-overview-review-row">
+              <a href={admin_path("/logouts?status=needs_review")}>
+                <span>Unconfirmed app sign-outs</span>
+                <strong>{observation_value(@summary.logouts, :failed)}</strong>
+                <small :if={@summary.logouts.state == :loaded}>
+                  {if observation_value(@summary.logouts, :failed) > 0, do: "Sign-out notices failed or were discarded", else: "No failed notices"}
+                </small>
+                <small :if={@summary.logouts.state != :loaded} role="status">
+                  {observation_note(@summary.logouts, "logout delivery records")}
+                </small>
+              </a>
+              <AdminComponents.info_tooltip :if={@summary.logouts.state == :loaded} id="logout-delivery-help" label="About app sign-out problems">
+                <%= if observation_value(@summary.logouts, :failed) > 0 do %>
+                  These notices could not be delivered successfully. An app session may still be open.
+                <% else %>
+                  Sign-out notices ask apps to end their local session when a user signs out.
+                <% end %>
+                Failed notices may be retried; discarded notices will not be sent again.
+                Open the delivery records to identify the app and the failure.
+                This count includes retained failures, not a count of users still signed in.
+              </AdminComponents.info_tooltip>
             </div>
-            <div>
-              <dt>Upcoming keys</dt>
-              <dd>{observation_value(@summary.keys, :upcoming)}</dd>
-            </div>
-            <div>
-              <dt>Retiring keys</dt>
-              <dd>{observation_value(@summary.keys, :retiring)}</dd>
-            </div>
-          </dl>
-          <AdminComponents.action_bar>
-            <AdminComponents.admin_button href={admin_path("/keys")}>Manage keys</AdminComponents.admin_button>
-          </AdminComponents.action_bar>
+          </div>
         </AdminComponents.section_card>
 
-        <AdminComponents.section_card
-          title="Support queue"
-          subtitle="Review refresh-token reuse, consent grants, and logout deliveries."
-        >
+        <AdminComponents.section_card title="Waiting for users" subtitle="Sign-in, consent, and device approval happen in your app.">
           <div class="lockspire-admin-resource-list">
-            <a href={admin_path("/tokens?status=reuse_detected")}>
-              <span>Refresh reuse incidents</span>
-              <strong>{observation_value(@summary.tokens, :reuse_detected)}</strong>
-              <small>{observation_note(@summary.tokens, "token inventory")}</small>
+            <a href={admin_path("/interactions?status=pending")}>
+              <span>{count_label(@summary.interactions, :open, "Sign-in or consent request", "Sign-in or consent requests")}</span>
+              <strong>{observation_value(@summary.interactions, :open)}</strong>
+              <small :if={@summary.interactions.state != :loaded} role="status">
+                {observation_note(@summary.interactions, "sign-in requests")}
+              </small>
             </a>
-            <a href={admin_path("/consents?status=active")}>
-              <span>Active consent grants</span>
-              <strong>{observation_value(@summary.consents, :active)}</strong>
-              <small>{observation_note(@summary.consents, "consent inventory")}</small>
-            </a>
-            <a href={admin_path("/logouts")}>
-              <span>Retryable or discarded logouts</span>
-              <strong>{observation_value(@summary.logouts, :failed)}</strong>
-              <small>{observation_note(@summary.logouts, "logout delivery inventory")}</small>
+            <a href={admin_path("/device_authorizations?status=pending")}>
+              <span>{count_label(@summary.devices, :pending, "Device sign-in waiting for approval", "Device sign-ins waiting for approval")}</span>
+              <strong>{observation_value(@summary.devices, :pending)}</strong>
+              <small :if={@summary.devices.state != :loaded} role="status">
+                {observation_note(@summary.devices, "device authorization requests")}
+              </small>
             </a>
           </div>
         </AdminComponents.section_card>
 
-        <AdminComponents.section_card
-          title="Live operations"
-          subtitle="Review pending interactions, device requests, and initial access tokens."
-        >
-          <div class="lockspire-admin-resource-list">
-            <a href={admin_path("/interactions")}>
-              <span>Open interactions</span>
-              <strong>{observation_value(@summary.interactions, :open)}</strong>
-              <small>{observation_note(@summary.interactions, "interaction inventory")}</small>
+        <AdminComponents.section_card title="Apps and access">
+          <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
+            <a href={admin_path("/clients")}>
+              <span>{count_label(@summary.clients, :total, "Registered app", "Registered apps")}</span>
+              <strong>{observation_value(@summary.clients, :total)}</strong>
+              <small :if={@summary.clients.state != :loaded} role="status">
+                {observation_note(@summary.clients, "app records")}
+              </small>
             </a>
-            <a href={admin_path("/device_authorizations")}>
-              <span>Pending device requests</span>
-              <strong>{observation_value(@summary.devices, :pending)}</strong>
-              <small>{observation_note(@summary.devices, "device authorization inventory")}</small>
-            </a>
-            <a href={admin_path("/dcr")}>
-              <span>Active initial access tokens</span>
-              <strong>{observation_value(@summary.iats, :active)}</strong>
-              <small>{observation_note(@summary.iats, "Initial Access Token inventory")}</small>
-            </a>
+            <div class="lockspire-admin-overview-review-row">
+              <a href={admin_path("/consents?status=active")}>
+                <span>{count_label(@summary.consents, :active, "Active consent grant", "Active consent grants")}</span>
+                <strong>{observation_value(@summary.consents, :active)}</strong>
+                <small :if={@summary.consents.state != :loaded} role="status">
+                  {observation_note(@summary.consents, "consent grants")}
+                </small>
+              </a>
+              <AdminComponents.info_tooltip id="consent-grant-help" label="About consent grants">
+                Each grant records a user's permission for an app to access specific data.
+                Open a grant to inspect or revoke that permission.
+              </AdminComponents.info_tooltip>
+            </div>
+            <div class="lockspire-admin-overview-review-row">
+              <a href={admin_path("/keys")}>
+                <span>{count_label(@summary.keys, :active, "Active token-signing key", "Active token-signing keys")}</span>
+                <strong>{observation_value(@summary.keys, :active)}</strong>
+                <small :if={@summary.keys.state == :loaded && observation_value(@summary.keys, :active) == 0}>
+                  Review key setup before issuing tokens
+                </small>
+                <small :if={@summary.keys.state != :loaded} role="status">
+                  {observation_note(@summary.keys, "signing keys")}
+                </small>
+              </a>
+              <AdminComponents.info_tooltip id="signing-key-help" label="About token-signing keys">
+                Apps use a signing key's public part to verify that a token came from your server.
+                Open Keys to manage keys and review upcoming or retiring keys.
+              </AdminComponents.info_tooltip>
+            </div>
           </div>
         </AdminComponents.section_card>
       </div>
@@ -184,20 +145,16 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
   end
 
   defp load_summary do
+    now = DateTime.utc_now()
+
     %{
       clients:
         observe_list(fn -> Admin.list_clients() end, fn clients ->
-          %{
-            total: length(clients),
-            self_registered: Enum.count(clients, &(&1.provenance == :self_registered))
-          }
+          %{total: length(clients)}
         end),
       tokens:
         observe_list(fn -> Admin.list_tokens() end, fn tokens ->
-          %{
-            active: Enum.count(tokens, &(&1.status == :active)),
-            reuse_detected: Enum.count(tokens, &(&1.status == :reuse_detected))
-          }
+          %{reuse_detected: Enum.count(tokens, &(&1.status == :reuse_detected))}
         end),
       consents:
         observe_list(fn -> Admin.list_consents() end, fn consents ->
@@ -205,31 +162,33 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
         end),
       keys:
         observe_list(fn -> Admin.list_keys() end, fn keys ->
-          %{
-            active: count_keys(keys, :active),
-            upcoming: count_keys(keys, :upcoming),
-            retiring: count_keys(keys, :retiring)
-          }
-        end),
-      iats:
-        observe_list(fn -> Lockspire.Admin.InitialAccessTokens.list_iats() end, fn iats ->
-          now = DateTime.utc_now()
-
-          %{active: Enum.count(iats, &(InitialAccessTokens.lifecycle_status(&1, now) == :active))}
+          %{active: Enum.count(keys, &(&1.key.status == :active && &1.key.use == :sig))}
         end),
       interactions:
         observe_list(fn -> Admin.list_interactions() end, fn interactions ->
-          %{open: Enum.count(interactions, &(&1.status in [:pending_login, :pending_consent]))}
+          %{
+            open:
+              Enum.count(
+                interactions,
+                &(&1.status in [:pending_login, :pending_consent] &&
+                    DateTime.compare(&1.expires_at, now) == :gt)
+              )
+          }
         end),
       devices:
         observe_list(fn -> Admin.list_device_authorizations() end, fn device_authorizations ->
-          %{pending: Enum.count(device_authorizations, &(&1.status == :pending))}
+          %{
+            pending:
+              Enum.count(
+                device_authorizations,
+                &(&1.status == :pending && DateTime.compare(&1.expires_at, now) == :gt)
+              )
+          }
         end),
       logouts:
         observe_list(fn -> Admin.list_logout_deliveries() end, fn logouts ->
           %{failed: Enum.count(logouts, &(&1.status in [:retryable, :discarded]))}
-        end),
-      policy: observe_policy()
+        end)
     }
   end
 
@@ -241,11 +200,9 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
       tokens: loading,
       consents: loading,
       keys: loading,
-      iats: loading,
       interactions: loading,
       devices: loading,
-      logouts: loading,
-      policy: loading
+      logouts: loading
     }
   end
 
@@ -258,56 +215,20 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
     _error -> %{state: :unavailable}
   end
 
-  defp observe_policy do
-    case Admin.get_server_policy() do
-      {:ok, %ServerPolicy{} = policy} ->
-        %{
-          state: :loaded,
-          provenance: if(is_nil(policy.id), do: :configured_default, else: :stored),
-          values: %{
-            par_policy: policy.par_policy,
-            dpop_policy: policy.dpop_policy,
-            security_profile: policy.security_profile,
-            access_token_format: policy.access_token_format
-          }
-        }
-
-      _other ->
-        %{state: :unavailable}
-    end
-  rescue
-    _error -> %{state: :unavailable}
-  end
-
   defp observation_value(%{state: :loaded, values: values}, key), do: Map.fetch!(values, key)
   defp observation_value(%{state: :loading}, _key), do: "Loading"
   defp observation_value(_observation, _key), do: "Unavailable"
 
-  defp observation_note(%{state: :loaded}, source), do: "Measured from #{source}."
   defp observation_note(%{state: :loading}, source), do: "Loading #{source}…"
-  defp observation_note(_observation, source), do: "#{String.capitalize(source)} unavailable."
 
-  defp policy_value(%{state: :loaded, values: values}, key), do: Map.fetch!(values, key)
-  defp policy_value(%{state: :loading}, _key), do: "Loading"
-  defp policy_value(_observation, _key), do: "Unavailable"
-
-  defp policy_observation_note(%{state: :loading}), do: "Loading server policy…"
-
-  defp policy_observation_note(%{state: :loaded, provenance: :configured_default}),
-    do: "Configured defaults; no stored server policy row was found."
-
-  defp policy_observation_note(%{state: :loaded, provenance: :stored}),
-    do: "Stored server policy."
-
-  defp policy_observation_note(_observation), do: "Security policy unavailable."
+  defp observation_note(_observation, source),
+    do: "Could not load #{source}. The current results are unavailable."
 
   defp count_label(%{state: :loaded, values: values}, key, singular, plural) do
     if Map.fetch!(values, key) == 1, do: singular, else: plural
   end
 
   defp count_label(_observation, _key, _singular, plural), do: plural
-
-  defp count_keys(keys, status), do: Enum.count(keys, &(&1.key.status == status))
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 end

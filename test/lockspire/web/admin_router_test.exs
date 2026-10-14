@@ -18,6 +18,13 @@ defmodule Lockspire.Web.AdminRouterTest do
 
     assert %{
              plug: Phoenix.LiveView.Plug,
+             log_module: Lockspire.Web.Live.Admin.ClientsLive.Index,
+             phoenix_live_view: {_, :new, _, _}
+           } =
+             Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/clients/new", "")
+
+    assert %{
+             plug: Phoenix.LiveView.Plug,
              log_module: Lockspire.Web.Live.Admin.PoliciesLive.Index,
              phoenix_live_view: {_, :index, _, _}
            } =

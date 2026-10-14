@@ -1,77 +1,26 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
   <%= if @policy_state == :unavailable do %>
-    <Lockspire.Web.Components.AdminComponents.page_hero
-      eyebrow="Configure"
-      title="DCR policy unavailable"
-      body="Lockspire could not confirm the current registration gate. No policy values are shown until this issuer policy can be read."
+    <Lockspire.Web.Components.AdminComponents.alert
+      variant={:danger}
+      title="Could not load app registration settings"
     >
-      <:actions>
+      <p>Lockspire could not confirm the saved settings. No registration mode is assumed.</p>
+      <Lockspire.Web.Components.AdminComponents.action_bar>
         <Lockspire.Web.Components.AdminComponents.admin_button
           type="button"
           phx-click="reload_policy"
           variant={:primary}
         >
-          Reload DCR policy
+          Reload settings
         </Lockspire.Web.Components.AdminComponents.admin_button>
-      </:actions>
-    </Lockspire.Web.Components.AdminComponents.page_hero>
-
-    <Lockspire.Web.Components.AdminComponents.alert
-      variant={:danger}
-      title="Could not load DCR policy"
-    >
-      The registration gate and its settings are unavailable. Reload this view to try again; no
-      registration mode is assumed.
+      </Lockspire.Web.Components.AdminComponents.action_bar>
     </Lockspire.Web.Components.AdminComponents.alert>
   <% else %>
-    <Lockspire.Web.Components.AdminComponents.page_hero
-      eyebrow="Configure"
-      title="Global DCR policy"
-      body={"Current registration gate: #{registration_policy_label(@policy.registration_policy)}. These issuer settings bound metadata accepted in future Dynamic Client Registration requests."}
-    >
-      <:summary>
-        <Lockspire.Web.Components.AdminComponents.decision_summary>
-          <:item
-            label="Registration gate"
-            value={registration_policy_label(@policy.registration_policy)}
-            tone={registration_policy_tone(@policy.registration_policy)}
-            detail={registration_policy_detail(@policy.registration_policy)}
-          >
-          </:item>
-          <:item
-            label="Metadata allowlists"
-            value={allowlist_summary(@policy)}
-            tone={:info}
-            detail="Scopes, grants, responses, redirect schemes, and hosts bound requested metadata."
-          >
-          </:item>
-          <:item
-            label="Token auth methods"
-            value={auth_methods_summary(@policy)}
-            tone={:info}
-            detail="This allowlist controls what self-registered clients may request."
-          >
-          </:item>
-          <:item
-            label="Default lifetimes"
-            value={lifetime_summary(@policy)}
-            tone={:info}
-            detail="Applies only to clients and credentials created through DCR."
-          >
-          </:item>
-        </Lockspire.Web.Components.AdminComponents.decision_summary>
-      </:summary>
-    </Lockspire.Web.Components.AdminComponents.page_hero>
+    <Lockspire.Web.Components.AdminComponents.policy_nav current={:dcr} />
 
-    <Lockspire.Web.Components.AdminComponents.policy_nav />
-
-    <Lockspire.Web.Components.AdminComponents.section_card
-      title="Edit future registration policy"
-      subtitle="Changing this policy affects future registration requests only. Existing client records keep their stored configuration. Open registration still follows issuer metadata allowlists and lifetime limits."
-    >
       <Lockspire.Web.Components.AdminComponents.error_summary
-        :if={@form_errors != []}
-        title="Review DCR policy errors"
+        :if={@show_error_summary and @form_errors != []}
+        title="Review app registration settings"
         errors={@form_errors}
       />
 
@@ -79,249 +28,200 @@
         {@save_notice}
       </p>
 
-      <form id="dcr-policy-form" class="lockspire-admin-form-stack" phx-submit="save_policy">
+      <form
+        id="dcr-policy-form"
+        class="lockspire-admin-form-stack lockspire-admin-registration-settings"
+        phx-change={Phoenix.LiveView.JS.push("preview_policy", page_loading: true)}
+        phx-debounce="500"
+        phx-submit={Phoenix.LiveView.JS.push("save_policy", page_loading: true)}
+      >
         <Lockspire.Web.Components.AdminComponents.workflow_shell
-          title="Registration gate"
-          help="Choose whether clients can register, must present an Initial Access Token, or can register without one within issuer metadata limits."
+          title="Who can register"
         >
-          <Lockspire.Web.Components.AdminComponents.form_field
+          <Lockspire.Web.Components.AdminComponents.radio_group
             id="registration_policy"
-            label="Registration policy"
-            help="Choose between disabled registration, an Initial Access Token gate, and open registration within issuer metadata limits."
+            name="policy[registration_policy]"
+            label="Registration access"
+            value={@form[:registration_policy].value}
             errors={field_errors(@form_errors, :registration_policy)}
           >
-            <select
-              id="registration_policy"
-              name="policy[registration_policy]"
-              aria-invalid={field_errors(@form_errors, :registration_policy) != []}
-              aria-describedby={field_error_attrs("registration_policy", @form_errors)}
-            >
-              <option value="disabled" selected={@form[:registration_policy].value in [:disabled, "disabled"]}>
-                Disabled
-              </option>
-              <option value="initial_access_token" selected={@form[:registration_policy].value in [:initial_access_token, "initial_access_token"]}>
-                Initial Access Token
-              </option>
-              <option value="open" selected={@form[:registration_policy].value in [:open, "open"]}>
-                Open
-              </option>
-            </select>
-            <p class="lockspire-admin-help">
-              <strong>Disabled:</strong> No new clients can register through Dynamic Client Registration.
-              <br />
-              <strong>Initial Access Token:</strong> Registration requires a valid Initial Access Token before client metadata is accepted.
-              <br />
-              <strong>Open registration:</strong> No Initial Access Token is required. Unauthenticated requests may register clients within issuer metadata allowlists and lifetime limits.
-            </p>
-          </Lockspire.Web.Components.AdminComponents.form_field>
+            <:option value="disabled" label="Disabled" help="Apps cannot register themselves." />
+            <:option value="initial_access_token" label="App setup token required" help="Apps need a one-time setup token to register." />
+            <:option value="open" label="Open" help="Apps can register without a setup token, within the configured limits." />
+
+          </Lockspire.Web.Components.AdminComponents.radio_group>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
         <Lockspire.Web.Components.AdminComponents.workflow_shell
-          title="Allowlist decisions"
-          help="Set which scopes, grant types, response types, and redirect URI metadata new registrations may request."
+          title="What apps may request"
         >
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_scopes"
-            label="Allowed scopes"
-            help="Comma-separated scopes new registrations may request."
+            label="Allowed permissions (OAuth scopes)"
+            help="Permissions an app may request."
             errors={field_errors(@form_errors, :dcr_allowed_scopes)}
           >
-            <input
-              type="text"
+            <Lockspire.Web.Components.AdminComponents.multi_value_control
               id="dcr_allowed_scopes"
               name="policy[dcr_allowed_scopes]"
-              value={comma_value(@form[:dcr_allowed_scopes].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_scopes) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_scopes", @form_errors)}
+              value={@form[:dcr_allowed_scopes].value}
+              suggestions={["openid", "profile", "email", "phone", "address", "offline_access"]}
+              errors={field_errors(@form_errors, :dcr_allowed_scopes)}
             />
           </Lockspire.Web.Components.AdminComponents.form_field>
 
-          <Lockspire.Web.Components.AdminComponents.form_field
-            id="dcr_allowed_grant_types"
-            label="Allowed grant types"
-            help="Comma-separated grant types accepted in registration metadata."
-            errors={field_errors(@form_errors, :dcr_allowed_grant_types)}
-          >
-            <input
-              type="text"
-              id="dcr_allowed_grant_types"
-              name="policy[dcr_allowed_grant_types]"
-              value={comma_value(@form[:dcr_allowed_grant_types].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_grant_types) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_grant_types", @form_errors)}
-            />
-          </Lockspire.Web.Components.AdminComponents.form_field>
+          <Lockspire.Web.Components.AdminComponents.checkbox_group
+            id="dcr_allowed_grant_types" name="policy[dcr_allowed_grant_types]"
+            label="Allowed OAuth flows" help="OAuth flows an app may use."
+            value={@form[:dcr_allowed_grant_types].value} choices={[{"authorization_code", "Authorization code"}, {"refresh_token", "Refresh token"}, {"urn:ietf:params:oauth:grant-type:device_code", "Device sign-in"}, {"urn:ietf:params:oauth:grant-type:token-exchange", "Token exchange"}]}
+            errors={field_errors(@form_errors, :dcr_allowed_grant_types)} />
 
-          <Lockspire.Web.Components.AdminComponents.form_field
-            id="dcr_allowed_response_types"
-            label="Allowed response types"
-            help="Comma-separated response types accepted in registration metadata."
-            errors={field_errors(@form_errors, :dcr_allowed_response_types)}
-          >
-            <input
-              type="text"
-              id="dcr_allowed_response_types"
-              name="policy[dcr_allowed_response_types]"
-              value={comma_value(@form[:dcr_allowed_response_types].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_response_types) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_response_types", @form_errors)}
-            />
-          </Lockspire.Web.Components.AdminComponents.form_field>
+
+          <Lockspire.Web.Components.AdminComponents.checkbox_group
+            id="dcr_allowed_response_types" name="policy[dcr_allowed_response_types]"
+            label="Allowed sign-in responses" help="Sign-in response types an app may use."
+            value={@form[:dcr_allowed_response_types].value} choices={[{"code", "Authorization code"}]}
+            errors={field_errors(@form_errors, :dcr_allowed_response_types)} />
+
 
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_redirect_uri_schemes"
-            label="Allowed redirect URI schemes"
-            help="Comma-separated URI schemes accepted for registered redirect URIs."
+            label="Allowed sign-in return URL schemes"
+            help="For example, https. Each app's exact sign-in return URLs are set in its settings."
             errors={field_errors(@form_errors, :dcr_allowed_redirect_uri_schemes)}
           >
-            <input
-              type="text"
+            <Lockspire.Web.Components.AdminComponents.multi_value_control
               id="dcr_allowed_redirect_uri_schemes"
               name="policy[dcr_allowed_redirect_uri_schemes]"
-              value={comma_value(@form[:dcr_allowed_redirect_uri_schemes].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_redirect_uri_schemes) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_redirect_uri_schemes", @form_errors)}
+              value={@form[:dcr_allowed_redirect_uri_schemes].value}
+              suggestions={["https", "http"]}
+              errors={field_errors(@form_errors, :dcr_allowed_redirect_uri_schemes)}
             />
           </Lockspire.Web.Components.AdminComponents.form_field>
 
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_allowed_redirect_uri_hosts"
-            label="Allowed redirect URI hosts"
-            help="Comma-separated host allowlist for registered redirect URIs."
+            label="Allowed sign-in return URL hosts"
+            help="Hosts that apps may use in their sign-in return URLs."
             errors={field_errors(@form_errors, :dcr_allowed_redirect_uri_hosts)}
           >
-            <input
-              type="text"
+            <Lockspire.Web.Components.AdminComponents.multi_value_control
               id="dcr_allowed_redirect_uri_hosts"
               name="policy[dcr_allowed_redirect_uri_hosts]"
-              value={comma_value(@form[:dcr_allowed_redirect_uri_hosts].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_redirect_uri_hosts) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_redirect_uri_hosts", @form_errors)}
+              value={@form[:dcr_allowed_redirect_uri_hosts].value}
+              suggestions={[]}
+              errors={field_errors(@form_errors, :dcr_allowed_redirect_uri_hosts)}
             />
           </Lockspire.Web.Components.AdminComponents.form_field>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
         <Lockspire.Web.Components.AdminComponents.workflow_shell
-          title="Lifetime defaults"
-          help="Set default registration and client lifetimes for clients created through Dynamic Client Registration."
+          title="Expiry limits"
         >
+          <p class="lockspire-admin-help">Enter times in seconds. These apply to apps that register from now on. Lockspire saves them but doesn't enforce any expiry yet.</p>
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_lifetime_seconds"
-            label="Default client lifetime (seconds)"
-            help="Optional lifetime applied to newly registered clients."
+            label="App lifetime (seconds)"
+            help="Leave blank unless your own code checks this value."
             errors={field_errors(@form_errors, :dcr_default_client_lifetime_seconds)}
           >
+            <:info label="About app lifetime">Lockspire saves this value but never disables an app when the time runs out.</:info>
             <input
               type="number"
+              min="0"
+              max={PolicyForm.maximum_lifetime_seconds()}
+              step="1"
+              inputmode="numeric"
               id="dcr_default_client_lifetime_seconds"
               name="policy[dcr_default_client_lifetime_seconds]"
               value={@form[:dcr_default_client_lifetime_seconds].value}
-              aria-invalid={field_errors(@form_errors, :dcr_default_client_lifetime_seconds) != []}
-              aria-describedby={field_error_attrs("dcr_default_client_lifetime_seconds", @form_errors)}
+              aria-invalid={if field_errors(@form_errors, :dcr_default_client_lifetime_seconds) != [], do: "true", else: "false"}
+              aria-describedby={lifetime_described_by("dcr_default_client_lifetime_seconds", @form_errors)}
             />
+            <p id="dcr_default_client_lifetime_seconds-duration" class="lockspire-admin-duration-hint" aria-live="polite">{LifetimeHint.describe(:dcr_default_client_lifetime_seconds, @form[:dcr_default_client_lifetime_seconds].value)}</p>
           </Lockspire.Web.Components.AdminComponents.form_field>
 
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_secret_lifetime_seconds"
-            label="Default client secret lifetime (seconds)"
-            help="Optional lifetime applied to generated client secrets."
+            label="Client secret lifetime (seconds)"
+            help="Tells each new app when its secret expires. Match how often secrets get replaced."
             errors={field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds)}
           >
+            <:info label="About client secret lifetime">For example, 2592000 is 30 days. If you leave this blank or enter 0, apps are told their secret has already expired. Lockspire still accepts a secret after its expiry date.</:info>
             <input
               type="number"
+              min="0"
+              max={PolicyForm.maximum_lifetime_seconds()}
+              step="1"
+              inputmode="numeric"
               id="dcr_default_client_secret_lifetime_seconds"
               name="policy[dcr_default_client_secret_lifetime_seconds]"
               value={@form[:dcr_default_client_secret_lifetime_seconds].value}
-              aria-invalid={field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds) != []}
-              aria-describedby={field_error_attrs("dcr_default_client_secret_lifetime_seconds", @form_errors)}
+              aria-invalid={if field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds) != [], do: "true", else: "false"}
+              aria-describedby={lifetime_described_by("dcr_default_client_secret_lifetime_seconds", @form_errors)}
             />
+            <p id="dcr_default_client_secret_lifetime_seconds-duration" class="lockspire-admin-duration-hint" aria-live="polite">{LifetimeHint.describe(:dcr_default_client_secret_lifetime_seconds, @form[:dcr_default_client_secret_lifetime_seconds].value)}</p>
           </Lockspire.Web.Components.AdminComponents.form_field>
 
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_registration_access_token_lifetime_seconds"
-            label="Default registration access token lifetime (seconds)"
-            help="Optional lifetime applied to Registration Access Tokens created for registered clients."
+            label="App management token lifetime (seconds)"
+            help="Apps use this token to update or delete their own registration. Leave blank so it keeps working."
             errors={field_errors(@form_errors, :dcr_default_registration_access_token_lifetime_seconds)}
           >
+            <:info label="About app management token lifetime">Lockspire saves this value but doesn't expire these tokens. To stop an app from changing its registration, replace its token or disable the app.</:info>
             <input
               type="number"
+              min="0"
+              max={PolicyForm.maximum_lifetime_seconds()}
+              step="1"
+              inputmode="numeric"
               id="dcr_default_registration_access_token_lifetime_seconds"
               name="policy[dcr_default_registration_access_token_lifetime_seconds]"
               value={@form[:dcr_default_registration_access_token_lifetime_seconds].value}
-              aria-invalid={field_errors(@form_errors, :dcr_default_registration_access_token_lifetime_seconds) != []}
-              aria-describedby={field_error_attrs("dcr_default_registration_access_token_lifetime_seconds", @form_errors)}
+              aria-invalid={if field_errors(@form_errors, :dcr_default_registration_access_token_lifetime_seconds) != [], do: "true", else: "false"}
+              aria-describedby={lifetime_described_by("dcr_default_registration_access_token_lifetime_seconds", @form_errors)}
             />
+            <p id="dcr_default_registration_access_token_lifetime_seconds-duration" class="lockspire-admin-duration-hint" aria-live="polite">{LifetimeHint.describe(:dcr_default_registration_access_token_lifetime_seconds, @form[:dcr_default_registration_access_token_lifetime_seconds].value)}</p>
           </Lockspire.Web.Components.AdminComponents.form_field>
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
         <Lockspire.Web.Components.AdminComponents.workflow_shell
-          title="Token endpoint auth methods"
-          help="Choose which token endpoint authentication methods new registrations may request."
+          title="How apps authenticate"
         >
-          <Lockspire.Web.Components.AdminComponents.form_field
-            id="dcr_allowed_token_endpoint_auth_methods"
-            label="Allowed token endpoint authentication methods"
-            help="Comma-separated methods accepted in registration metadata."
-            errors={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods)}
-          >
-            <input
-              type="text"
-              id="dcr_allowed_token_endpoint_auth_methods"
-              name="policy[dcr_allowed_token_endpoint_auth_methods]"
-              value={comma_value(@form[:dcr_allowed_token_endpoint_auth_methods].value)}
-              aria-invalid={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods) != []}
-              aria-describedby={field_error_attrs("dcr_allowed_token_endpoint_auth_methods", @form_errors)}
-            />
-            <p class="lockspire-admin-help">
-              <strong>private_key_jwt posture:</strong>
-              <%= if @private_key_jwt_truth.self_registration_allowed? do %>
-                Self-registered clients may use private_key_jwt when they register key material with inline <code>jwks</code> or a remote <code>jwks_uri</code>.
-              <% else %>
-                Self-registered clients may not use private_key_jwt until this auth method is present in the DCR allowlist.
-              <% end %>
-              <br />
-              Lockspire will accept JWT client assertions signed with <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code> under the current issuer security posture.
-              <br />
-              <strong>client_secret_jwt posture:</strong>
-              <%= cond do %>
-                <% @client_secret_jwt_truth.fapi_effective? -> %>
-                  FAPI-effective posture disables <code>client_secret_jwt</code>; Lockspire does not publish or accept the symmetric JWT slice there.
-                <% @client_secret_jwt_truth.self_registration_allowed? -> %>
-                  Self-registered clients may use <code>client_secret_jwt</code> on the shared direct-client token and revocation surfaces with explicit <code>{@client_secret_jwt_truth.signing_algorithm}</code>.
-                <% true -> %>
-                  Self-registered clients may not use <code>client_secret_jwt</code> until this auth method is present in the DCR allowlist.
-              <% end %>
-              <br />
-              This policy does not change remote JWKS fetching or supported signing algorithms.
-            </p>
-          </Lockspire.Web.Components.AdminComponents.form_field>
+          <Lockspire.Web.Components.AdminComponents.checkbox_group
+            id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]"
+            label="Allowed authentication methods" help="How an app proves its identity when requesting tokens."
+            value={@form[:dcr_allowed_token_endpoint_auth_methods].value} choices={[{"none", "Public app (no secret)"}, {"client_secret_basic", "Client secret over HTTP Basic"}, {"client_secret_post", "Client secret in request body"}, {"client_secret_jwt", "Client secret JWT (client_secret_jwt)"}, {"private_key_jwt", "Private key JWT (private_key_jwt)"}]}
+            errors={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods)} />
+            <div class="lockspire-admin-jwt-guidance">
+              <p class="lockspire-admin-help">
+                <strong>private_key_jwt:</strong> Apps sign assertions with a private key and provide a public key through <code>jwks</code> or <code>jwks_uri</code>. Supported signatures: <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code>.
+              </p>
+              <p class="lockspire-admin-help">
+                <strong>client_secret_jwt:</strong>
+                <%= if @client_secret_jwt_truth.fapi_effective? do %>
+                  Unavailable while FAPI security requirements are active.
+                <% else %>
+                  Apps sign assertions with their shared secret using <code>{@client_secret_jwt_truth.signing_algorithm}</code>.
+                <% end %>
+              </p>
+            </div>
+
         </Lockspire.Web.Components.AdminComponents.workflow_shell>
 
-        <Lockspire.Web.Components.AdminComponents.workflow_shell
-          title="Risk and posture"
-          help="Review what this issuer policy changes before saving."
-        >
-          <p class="lockspire-admin-help">
-            This policy does not mint Initial Access Tokens, rotate registration access tokens, update existing client records, or create credential material.
-          </p>
-          <p class="lockspire-admin-help">
-            An Initial Access Token authorizes an initial registration request. A Registration Access Token manages one registered client's configuration endpoint. Client secrets authenticate confidential clients at the token endpoint.
-          </p>
-          <p class="lockspire-admin-help">
-            Open registration still respects issuer metadata limits. Set allowlists and lifetimes to define what new registrations may request. Use the client settings workflow to change an existing client record.
-          </p>
-        </Lockspire.Web.Components.AdminComponents.workflow_shell>
+        <p class="lockspire-admin-help">These rules apply to new app registrations only. Existing apps and their credentials stay unchanged.</p>
+
 
         <Lockspire.Web.Components.AdminComponents.action_bar>
           <Lockspire.Web.Components.AdminComponents.admin_button
             type="submit"
             variant={:primary}
-            phx-disable-with="Saving DCR policy…"
+            phx-disable-with="Saving app registration settings…"
           >
-            Save global DCR policy
+            Save app registration settings
           </Lockspire.Web.Components.AdminComponents.admin_button>
         </Lockspire.Web.Components.AdminComponents.action_bar>
-      </form>
-    </Lockspire.Web.Components.AdminComponents.section_card>
+    </form>
   <% end %>
 </Lockspire.Web.Live.AdminLayoutLive.shell>

@@ -39,42 +39,32 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     :ok
   end
 
-  test "DCR hub separates issuer policy, IAT intake, and client credential jobs" do
+  test "app registration page separates registration rules, setup tokens, and registered apps" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
     text = rendered_text(html)
 
-    assert text =~ "Registration disabled"
-    assert text =~ "Prepare a partner registration"
-
-    assert text =~
-             "Dynamic Client Registration (DCR) lets a partner request client registration"
-
-    assert text =~
-             "Issuer policy determines whether a request can proceed and which requested client metadata is accepted"
-
-    assert text =~
-             "When policy requires one, an Initial Access Token authorizes the initial registration request"
-
-    assert text =~
-             "A Registration Access Token manages one registered client&#39;s configuration endpoint"
-
-    assert text =~ "a client secret authenticates a confidential client at the token endpoint"
-    assert text =~ "Changing it does not update existing clients."
-    refute html =~ "operator"
+    assert text =~ "App registration"
+    assert text =~ "Apps cannot register right now."
+    assert text =~ "Apps cannot register right now."
+    assert text =~ "App setup tokens"
+    assert text =~ "Apps registered by their teams"
+    refute text =~ "issuer"
+    refute text =~ "Initial Access Token"
+    refute text =~ "Dynamic Client Registration"
     assert html =~ ~s(href="/admin/policies/dcr")
-    assert html =~ ~s(href="/admin/iats/new")
     assert html =~ ~s(href="/admin/iats")
+    refute html =~ ~s(href="/admin/iats/new")
   end
 
-  test "successful empty inventories show measured zero and the supported next actions" do
+  test "successful empty inventories show an honest empty state and clear next actions" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
     text = rendered_text(html)
 
     assert text =~ "Active 0"
-    assert text =~ "0 self-registered clients"
-    assert text =~ "No self-registered clients yet"
-    assert text =~ "Create an Initial Access Token"
-    assert length(Regex.scan(~r/href="\/admin\/iats\/new"/, html)) == 1
+    assert text =~ "No apps have registered here yet"
+    assert text =~ "Apps cannot register right now."
+    refute text =~ "Create setup token"
+    refute html =~ ~s(href="/admin/iats/new")
     refute text =~ "unavailable"
   end
 
@@ -85,13 +75,25 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
     text = rendered_text(html)
 
-    assert text =~ "Next safe action"
-    assert text =~ "Review DCR policy"
+    assert text =~ "App registration is open."
+    assert text =~ "allowed app details and expiry limits still apply."
+    refute text =~ "Create setup token"
+    refute html =~ ~s(href="/admin/iats/new")
+  end
 
-    assert text =~
-             "Open registration does not require an Initial Access Token. Review issuer metadata allowlists before partner onboarding."
+  test "setup token creation appears when registration requires one" do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{
+               id: 1,
+               registration_policy: :initial_access_token
+             })
 
-    refute text =~ "Next safe action Create an Initial Access Token"
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
+    text = rendered_text(html)
+
+    assert text =~ "A setup token is required."
+    assert text =~ "Create setup token"
+    assert html =~ ~s(href="/admin/iats/new")
   end
 
   test "populated hub links safe self-registered identities to client detail" do
@@ -102,7 +104,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
     text = rendered_text(html)
 
-    assert text =~ "2 self-registered clients"
+    assert text =~ "Apps registered by their teams"
     assert text =~ "Northstar Reports"
     assert text =~ "Billing Console"
     assert text =~ "Active 1"
@@ -118,10 +120,11 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
       text = rendered_text(html)
 
-      assert text =~ "Registration policy unavailable"
+      assert text =~ "Could not load registration rules"
+      assert text =~ "could not check whether new apps can register."
       assert text =~ "Active 1"
-      assert text =~ "1 self-registered client"
-      refute text =~ "Registration disabled"
+      assert text =~ "Partner Console"
+      refute text =~ "Apps cannot register right now."
       refute text =~ "Active 0"
     end)
   end
@@ -133,10 +136,10 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
       text = rendered_text(html)
 
-      assert text =~ "Registration disabled"
+      assert text =~ "Apps cannot register right now."
       assert text =~ "Active 1"
-      assert text =~ "Self-registered client inventory unavailable"
-      refute text =~ "0 self-registered clients"
+      assert text =~ "Could not load registered apps"
+      refute text =~ "No apps have registered here yet"
     end)
   end
 
@@ -147,9 +150,9 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
       assert {:ok, _view, html} = live(conn_for_admin(), "/admin/dcr")
       text = rendered_text(html)
 
-      assert text =~ "Registration disabled"
-      assert text =~ "1 self-registered client"
-      assert text =~ "Initial Access Token inventory unavailable"
+      assert text =~ "Apps cannot register right now."
+      assert text =~ "Partner Console"
+      assert text =~ "Could not load setup token status"
       refute text =~ "Active 0"
     end)
   end

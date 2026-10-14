@@ -106,7 +106,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
-    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert_path_query(html, "/lockspire/admin/tokens/#{refresh_token.id}", %{
@@ -116,44 +115,33 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     })
 
     assert html =~ "Support"
-    assert html =~ "Token investigation"
+    assert html =~ "Tokens"
 
     assert html =~
-             "Review access and refresh tokens by account, client, status, refresh-family lineage"
+             "Find access or refresh tokens by account, app, or status"
 
-    assert html =~ "Filters stay in the URL so you can return to the same results."
-    assert html =~ "Selected account: account_"
-    assert html =~ "Selected status: active"
+    assert html =~ "Find tokens"
     assert html =~ "Filter tokens"
     assert html =~ "View token details"
-    assert html =~ "lockspire-admin-decision-summary"
+    refute html =~ ~s(<dl class="lockspire-admin-decision-summary)
     assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-long-value"
     assert html =~ "Token UI Client"
     assert html =~ "Account"
-    assert html =~ "Family"
-    assert html =~ "Expires"
+    refute rows =~ "Family"
+    refute rows =~ "Expires"
     assert html =~ "Keys"
     assert html =~ "Overview"
-    assert html =~ "DCR"
+    assert html =~ "App registration"
 
-    assert decision_summary =~ "Selected filters"
-    assert decision_summary =~ "Token health"
-    assert decision_summary =~ "Family pressure"
-    assert decision_summary =~ "Smallest safe action"
-    assert decision_summary =~ "account_"
-    refute decision_summary =~ "account-token-ui"
-
-    assert html_index(
-             html,
-             ~s(<form method="get" action="/lockspire/admin/tokens" class="lockspire-admin-filter-bar)
-           ) < html_index(html, ~s(<dl class="lockspire-admin-decision-summary))
+    assert html =~ ~s(value="account-token-ui")
+    assert html =~ ~s(value="active" selected)
 
     assert rows =~ "View token details"
     assert rows =~ Lockspire.Redaction.handle(:token, refresh_token.id)
     assert rows =~ "account_"
-    assert rows =~ "client_"
-    assert rows =~ "family_"
+    refute rows =~ "client_"
+    refute rows =~ "family_"
     refute visible_text(rows) =~ "account-token-ui"
     refute rows =~ "family-ui-123"
 
@@ -233,7 +221,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     zero_html = rendered_to_string(Index.render(zero_socket.assigns))
     assert zero_html =~ "Matching tokens: 0"
-    assert zero_html =~ "0 matching token lifecycle records in this support view."
+    assert zero_html =~ "No matching tokens"
+    refute zero_html =~ ~s(<dl class="lockspire-admin-decision-summary)
 
     assert {:noreply, one_socket} =
              Index.handle_params(
@@ -244,8 +233,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     one_html = rendered_to_string(Index.render(one_socket.assigns))
     assert one_html =~ "Matching token: 1"
-    assert one_html =~ "1 matching token lifecycle record in this support view."
-    refute one_html =~ "1 matching token lifecycle records"
+    refute one_html =~ ~s(<dl class="lockspire-admin-decision-summary)
 
     assert {:noreply, many_socket} =
              Index.handle_params(
@@ -256,7 +244,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     many_html = rendered_to_string(Index.render(many_socket.assigns))
     assert many_html =~ "Matching tokens: 2"
-    assert many_html =~ "2 matching token lifecycle records in this support view."
+    refute many_html =~ ~s(<dl class="lockspire-admin-decision-summary)
   end
 
   test "token index keeps failed reads distinct from successful empty results" do
@@ -338,14 +326,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     ])
 
     assert html =~ "Support"
-    assert html =~ "Token health decision"
-    assert html =~ "Access and refresh token values and stored hashes stay hidden"
+    assert html =~ "Token details"
+
+    assert html =~
+             "This token is active. Token values stay hidden."
+
     refute visible_text(html) =~ "Operator detail"
-    assert html =~ "lockspire-admin-decision-summary"
-    assert html =~ "Token identity and current state"
-    assert html =~ "Refresh family lineage"
-    assert html =~ "Corrective actions"
-    assert html =~ "lockspire-admin-entity-header"
+    refute html =~ ~s(<dl class="lockspire-admin-decision-summary)
+    assert html =~ "Record identifiers"
+    assert html =~ "Related tokens"
+    assert html =~ "Revoke access"
+    assert html =~ "lockspire-admin-token-detail"
     assert html =~ "lockspire-admin-pane"
     assert html =~ "lockspire-admin-dense-resource-row"
     assert html =~ "lockspire-admin-description-list"
@@ -360,14 +351,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert html =~ "lockspire-admin-confirmation-panel"
     assert html =~ ~s(phx-submit="revoke_token")
     assert html =~ ~s(phx-submit="revoke_family")
-    assert html =~ "Token health"
-    assert html =~ "Family lineage"
-    assert html =~ "Reuse pressure"
-    assert html =~ "Smallest safe action"
     assert html =~ "Revoke token"
     assert html =~ "Revoke token family"
-    assert html =~ "family-wide refresh-token invalidation"
-    assert html =~ "currently unrevoked tokens in the refresh family"
 
     assert html =~
              "Revoke this refresh token? This revokes only this token; other tokens in its refresh family remain unchanged."
@@ -383,15 +368,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute visible_text(html) =~ "account-token-ui"
     refute html =~ "Token ##{refresh_token.id}"
 
-    decision_summary = fragment_html(html, ".lockspire-admin-decision-summary")
-
-    assert decision_summary =~ "Token health"
-    assert decision_summary =~ "Family lineage"
-    assert decision_summary =~ "Reuse pressure"
-    assert decision_summary =~ "Smallest safe action"
-
-    assert html_index(html, ~s(<dl class="lockspire-admin-decision-summary)) <
-             html_index(html, "Token identity and current state")
+    assert html_index(html, "Record identifiers") < html_index(html, "Client handle")
 
     assert {:noreply, missing_token_socket} = Show.handle_event("revoke_token", %{}, socket)
 
@@ -465,7 +442,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert access_html =~
              "Revoke this access token? This revokes only this token; other tokens in its refresh family remain unchanged."
 
-    assert access_html =~ "View client details"
+    HtmlAssertions.assert_has_link(access_html, "/lockspire/admin/clients/token-ui-client")
     assert access_html =~ "View consent grant"
     refute access_html =~ "token-ui-access-only-hash-must-not-render"
 
@@ -480,7 +457,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     assert refresh_html =~ ~s(phx-disable-with="Revoking this refresh token…")
     assert refresh_html =~ ~s(phx-disable-with="Revoking this refresh token family…")
     refute refresh_html =~ "Current refresh_token token"
-    assert refresh_html =~ "Current refresh token generation"
+    assert refresh_html =~ "This refresh token"
+    assert refresh_html =~ "Generation 0"
     refute refresh_html =~ "This family-wide action revokes currently unrevoked tokens"
   end
 
@@ -522,7 +500,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     missing_html = rendered_to_string(Show.render(missing_socket.assigns))
     assert missing_html =~ "Token not found"
-    assert missing_html =~ "Review token investigation"
+    assert missing_html =~ "Back to tokens"
     assert missing_html =~ ~s(href="/lockspire/admin/tokens")
 
     original_repo = Application.fetch_env!(:lockspire, :repo)
@@ -567,7 +545,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
       html = rendered_to_string(Show.render(socket.assigns))
       assert html =~ "Could not load token details"
       assert html =~ "Try loading token details again"
-      refute html =~ "Refresh family lineage"
+      refute html =~ "Related refresh tokens"
       refute html =~ "Token not found"
       assert_path_query(html, "/lockspire/admin/tokens/#{id}", filters)
       assert_path_query(html, "/lockspire/admin/tokens", filters)
@@ -719,8 +697,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     {_socket, revoked_html} = render_show_for(revoked_token)
 
     assert revoked_html =~ "This token is already revoked. No further token action is available."
-    assert revoked_html =~ "Token already revoked"
-    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token already revoked/s
+    refute revoked_html =~ ~s(phx-submit="revoke_token")
+    refute revoked_html =~ ~s(phx-submit="revoke_family")
 
     expired_token =
       store_support_token!(
@@ -736,7 +714,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              "This token is expired. No active token remains because its expiration time has passed."
 
     assert expired_html =~ "Expired"
-    assert expired_html =~ ~r/<button[^>]*disabled[^>]*>.*Token expired/s
+    refute expired_html =~ ~s(phx-submit="revoke_token")
+    refute expired_html =~ ~s(phx-submit="revoke_family")
 
     no_family_token =
       store_support_token!(
@@ -746,10 +725,9 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     {_socket, no_family_html} = render_show_for(no_family_token)
 
-    assert no_family_html =~
-             "This token is not part of a refresh family, so family-wide revocation is unavailable."
-
-    assert no_family_html =~ ~r/<button[^>]*disabled[^>]*>.*Family-wide revocation unavailable/s
+    assert no_family_html =~ ~s(phx-submit="revoke_token")
+    refute no_family_html =~ ~s(phx-submit="revoke_family")
+    refute no_family_html =~ "Token history"
 
     reuse_revoked_token =
       store_support_token!(
@@ -761,14 +739,36 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     {_socket, reuse_revoked_html} = render_show_for(reuse_revoked_token)
 
-    assert reuse_revoked_html =~ "Reuse detected"
+    assert reuse_revoked_html =~ "Used after replacement"
+    assert reuse_revoked_html =~ "1 token in this family is revoked."
+    assert reuse_revoked_html =~ "No active tokens to revoke"
+    refute reuse_revoked_html =~ "No further action needed"
 
-    assert reuse_revoked_html =~
-             "This token is already revoked. No further token action is available."
+    refute reuse_revoked_html =~ ~s(phx-submit="revoke_token")
+    refute reuse_revoked_html =~ ~s(phx-submit="revoke_family")
 
-    assert reuse_revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token already revoked/s
-    assert reuse_revoked_html =~ "No currently unrevoked tokens remain in the refresh family."
-    assert reuse_revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Token family already revoked/s
+    reused_token_without_active_sibling =
+      store_support_token!(
+        token_hash: "token-ui-reuse-no-active-sibling-hash",
+        family_id: "family-ui-reuse-no-active-sibling",
+        reuse_detected_at: DateTime.utc_now()
+      )
+
+    {reused_socket, reused_without_active_sibling_html} =
+      render_show_for(reused_token_without_active_sibling)
+
+    assert reused_socket.assigns.token_detail.family_active_count == 0
+
+    assert reused_without_active_sibling_html =~
+             "No active tokens remain in this refresh-token family."
+
+    refute reused_without_active_sibling_html =~
+             "1 active token remains in this refresh-token family."
+
+    assert reused_without_active_sibling_html =~ "No active tokens to revoke"
+
+    refute reused_without_active_sibling_html =~ ~s(phx-submit="revoke_token")
+    refute reused_without_active_sibling_html =~ ~s(phx-submit="revoke_family")
 
     reusable_family_current =
       store_support_token!(
@@ -789,16 +789,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     {_socket, reusable_family_html} = render_show_for(reusable_family_current)
 
-    reusable_family_summary =
-      fragment_html(reusable_family_html, ".lockspire-admin-decision-summary")
+    assert reusable_family_html =~ "Revoke all active family tokens"
+    refute reusable_family_html =~ ~s(phx-submit="revoke_token")
+    assert reusable_family_html =~ ~s(phx-submit="revoke_family")
 
-    assert reusable_family_summary =~ "Smallest safe action"
-    assert reusable_family_summary =~ "Revoke token family"
-
-    assert reusable_family_summary =~
-             "Reuse evidence means family-wide revocation is the safest available token action."
-
-    assert reusable_family_html =~ "1 currently unrevoked tokens in the refresh family."
+    assert reusable_family_html =~ "1 active token remains in this refresh-token family."
     assert reusable_family_html =~ "Revoke token family"
     refute reusable_family_html =~ "Token family already revoked"
   end
@@ -897,7 +892,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     index_html = rendered_to_string(Index.render(index_socket.assigns))
-    decision_summary = fragment_html(index_html, ".lockspire-admin-decision-summary")
     rows = fragment_html(index_html, ".lockspire-admin-dense-resource-row")
 
     assert_support_route_guardrails(index_html, [
@@ -911,21 +905,13 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     HtmlAssertions.assert_label_targets_exist(index_html)
 
-    assert decision_summary =~ "Selected filters"
-    assert decision_summary =~ "Token health"
-    assert decision_summary =~ "Family pressure"
-    assert decision_summary =~ "Smallest safe action"
-    assert decision_summary =~ "2 active, 1 revoked, 1 expired, 1 reuse detected"
-    assert decision_summary =~ "Reuse evidence in matching family"
-    assert decision_summary =~ "Review affected token"
-    refute decision_summary =~ long_client_id
-    refute decision_summary =~ long_account_id
-    refute decision_summary =~ long_family_id
+    refute index_html =~ ~s(<dl class="lockspire-admin-decision-summary)
+    assert index_html =~ "Matching tokens: 5"
 
     assert rows =~ "Active refresh token"
     assert rows =~ "Revoked refresh token"
     assert rows =~ "Expired refresh token"
-    assert rows =~ "Reuse detected refresh token"
+    assert rows =~ "Refresh token used after replacement"
     assert rows =~ "Token Proof Client With Dense State"
     assert rows =~ "Not recorded"
     assert rows =~ "lockspire-admin-long-value"
@@ -935,7 +921,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
     refute rows =~ long_family_id
 
     {_detail_socket, detail_html} = render_show_for(reuse_token)
-    detail_summary = fragment_html(detail_html, ".lockspire-admin-decision-summary")
 
     assert_support_route_guardrails(detail_html, [
       "token-proof-reuse-hash-must-not-render",
@@ -947,16 +932,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
       long_family_id
     ])
 
-    assert detail_summary =~ "Token health"
-    assert detail_summary =~ "Reuse detected"
-    assert detail_summary =~ "Family lineage"
-    assert detail_summary =~ "Reuse pressure present"
-    assert detail_summary =~ "Smallest safe action"
-    assert detail_summary =~ "Revoke token family"
+    refute detail_html =~ ~s(<dl class="lockspire-admin-decision-summary)
+    assert detail_html =~ "Used after replacement"
+    assert detail_html =~ "Revoke all active family tokens"
+
     assert detail_html =~ long_scope
     assert detail_html =~ "lockspire-admin-long-value"
-    assert detail_html =~ "family-wide refresh-token invalidation"
-    assert detail_html =~ "does not expose token plaintext"
+
+    assert detail_html =~
+             "A refresh token was presented again after replacement or revocation."
+
+    assert detail_html =~ "These handles identify records without revealing token values."
     refute detail_html =~ "revokes every active token"
   end
 

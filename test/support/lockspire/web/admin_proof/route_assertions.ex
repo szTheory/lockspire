@@ -60,8 +60,6 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
       source = source(relative_path)
 
       assert router =~ String.replace_prefix(route, "/admin", "")
-      assert source =~ "Operate"
-      assert source =~ "Read-only"
 
       if redaction_contract do
         assert source =~ redaction_contract
@@ -90,10 +88,10 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
 
     for action <- [
           "Rotate client secret",
-          "Rotate registration access token",
-          "Create an Initial Access Token",
+          "Rotate app management token",
+          "Create app setup token",
           "Generate signing key",
-          "Save global DCR policy"
+          "Save app registration settings"
         ] do
       assert sources =~ action
     end

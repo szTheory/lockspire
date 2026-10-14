@@ -20,19 +20,20 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
       </p>
 
       <p :if={@key_detail.next_actions == []}>
-        No lifecycle action is available for this key right now.
+        No further action is available for this key.
       </p>
 
       <AdminComponents.confirmation_panel
         :if={:publish in @key_detail.next_actions}
         title="Publish key"
+        embedded={true}
       >
         <:body>
           <form class="lockspire-admin-form-stack" phx-submit="publish_key">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="publish[confirm]" value="true" />
               <span>
-                Make this public key available for verifier overlap. The current signing key remains active.
+                {publish_consequence(@key_detail.key.use)}
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -51,6 +52,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
       <AdminComponents.confirmation_panel
         :if={:activate in @key_detail.next_actions}
         title="Activate key"
+        embedded={true}
       >
         <:body>
           <form class="lockspire-admin-form-stack" phx-submit="activate_key">
@@ -74,6 +76,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
       <AdminComponents.confirmation_panel
         :if={:retire in @key_detail.next_actions}
         title="Retire key"
+        embedded={true}
         variant={:danger}
       >
         <:body>
@@ -81,7 +84,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="retire[confirm]" value="true" />
               <span>
-                Remove this key from JWKS only after systems that rely on it have switched to its replacement.
+                Remove this key from the public list only after connected apps have switched to its replacement.
               </span>
             </label>
             <AdminComponents.action_bar>
@@ -100,12 +103,27 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ActionComponent do
     """
   end
 
+  defp publish_consequence(:sig),
+    do:
+      "Publish this key so connected apps can recognize it before the signing key changes. The current key remains active."
+
+  defp publish_consequence(:enc),
+    do:
+      "Publish this encryption key so connected apps can prepare to encrypt authorization requests with it. The current encryption key remains active."
+
+  defp publish_consequence(_use),
+    do:
+      "Publish this key so connected apps can recognize it before activation. The current key remains active."
+
   defp activation_consequence(:sig),
-    do: "Use this key to sign new tokens. The previous signing key moves to retiring."
+    do:
+      "New tokens will use this key. The previous key stays available to apps while they switch."
 
   defp activation_consequence(:enc),
-    do: "Use this key for encryption. The previous encryption key moves to retiring."
+    do:
+      "New encrypted data will use this key. The previous key stays available to decrypt existing data."
 
   defp activation_consequence(_use),
-    do: "Make this the active key for its use. The previous active key moves to retiring."
+    do:
+      "Make this the active key for its purpose. The previous key stays available while apps switch."
 end

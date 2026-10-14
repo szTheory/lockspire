@@ -36,7 +36,6 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
       aria-label="Render stress surface"
     >
       <AdminComponents.page_hero
-        eyebrow="Component lab"
         title="Render stress surface"
         body="Component lab proof drifted from the design-system contract when required states are missing."
       >
@@ -124,7 +123,6 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
       </AdminComponents.pane>
 
       <AdminComponents.entity_header
-        eyebrow="Configure"
         title="Acme Ledger client"
         subtitle="Shared entity header proof with long identifiers, status, and actions."
         identifier="client_acme_ledger_public_01JZ2Z6GZ8T3D8QPMTZZZZZZZZ"
@@ -239,7 +237,7 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
           domain={:support}
           actor="redacted_actor_security_02"
           timestamp={~U[2026-06-25 20:00:00Z]}
-          consequence="Family-wide revocation is required when reuse is detected."
+          consequence="A refresh token was used again after replacement. Revoke every active token in the group to block further use."
         >
           <:actions>
             <AdminComponents.action_group>
@@ -315,6 +313,7 @@ defmodule Lockspire.Web.AdminLab.StressSurface do
       <AdminComponents.copy_once_secret_panel
         title="Copy-once credential"
         body="Copy this value now. Lockspire stores only the hash after this response."
+        label={@copy_once && @copy_once.label}
         value={@copy_once && @copy_once.value}
       />
 

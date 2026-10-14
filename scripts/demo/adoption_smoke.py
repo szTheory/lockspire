@@ -2,6 +2,7 @@
 import base64
 import hashlib
 import http.client
+import html
 import json
 import os
 import re
@@ -194,9 +195,16 @@ def exercise_discovery_and_admin():
     assert_contains(admin, "data-lockspire-theme-select", "admin theme selector")
     assert_contains(admin, "--ls-text-accent", "admin embedded semantic tokens")
     assert_contains(admin, "Lockspire Admin", "admin brand lockup")
+    assert_contains(admin, 'href="/lockspire-assets/lockspire-favicon.svg"', "admin favicon link")
+    favicon = browser.request("GET", "/lockspire-assets/lockspire-favicon.svg")
+    assert_status(favicon, 200, "admin favicon asset")
+    assert favicon["headers"].get("content-type", "").startswith("image/svg+xml")
+    assert_contains(favicon, 'aria-label="Lockspire"', "Lockspire favicon")
+    assert_contains(admin, "Lockspire revoked every token in its family", "refresh-token reuse consequence")
 
     for route in [
         "/lockspire/admin/clients",
+        "/lockspire/admin/clients/new",
         "/lockspire/admin/policies",
         "/lockspire/admin/keys",
         "/lockspire/admin/dcr",
@@ -209,6 +217,32 @@ def exercise_discovery_and_admin():
         page = browser.request("GET", route)
         assert_status(page, 200, f"operator admin route {route}")
         assert_contains(page, "lockspire-admin-shell", f"admin shell on {route}")
+
+        if route == "/lockspire/admin/clients/new":
+            assert_contains(page, "Create client", "dedicated client registration title")
+            assert_contains(page, "client-create-form", "dedicated client registration form")
+
+    reuse_inventory = browser.request("GET", "/lockspire/admin/tokens?status=reuse_detected")
+    assert_status(reuse_inventory, 200, "refresh-token reuse inventory")
+    reuse_link = re.search(
+        r'href="(/lockspire/admin/tokens/\d+\?[^\"]*status=reuse_detected[^\"]*)"',
+        reuse_inventory["body"],
+    )
+
+    if not reuse_link:
+        raise AssertionError("refresh-token reuse inventory: missing token detail link")
+
+    reuse_detail = browser.request("GET", html.unescape(reuse_link.group(1)))
+    assert_status(reuse_detail, 200, "refresh-token reuse detail")
+    assert_contains(reuse_detail, "2 tokens in this family are revoked.", "reused refresh-token family count")
+    assert_contains(reuse_detail, "No active tokens to revoke", "reused refresh-token action state")
+    assert_contains(reuse_detail, "Back to tokens", "filtered inventory return link")
+    for unavailable_action in ['phx-submit="revoke_token"', 'phx-submit="revoke_family"']:
+        if unavailable_action in reuse_detail["body"]:
+            raise AssertionError("reused refresh-token detail shows an unavailable revocation form")
+
+    if "1 active token remains in this refresh-token family." in reuse_detail["body"]:
+        raise AssertionError("reused refresh-token family detail reports a contradictory active-token count")
 
     non_operator = Browser(BASE_URL)
     logged_in = login(non_operator, "alice", "/lockspire/admin")

@@ -177,13 +177,13 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     }
   end
 
-  test "router exposes admin logout deliveries routes" do
+  test "router exposes admin app sign-out notices routes" do
     routes = Lockspire.Web.AdminRouteTestHelpers.admin_routes()
 
     assert Enum.any?(routes, &live_route?(&1, "/admin/logouts", Index))
   end
 
-  test "logout deliveries index renders operate queue buckets and resource rows", %{
+  test "app sign-out notices index renders operate queue buckets and resource rows", %{
     long_endpoint: long_endpoint
   } do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
@@ -218,15 +218,26 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       "worker internals"
     ])
 
+    HtmlAssertions.assert_no_text(page_html, [
+      "Logout propagation queue",
+      "Back-channel delivery uses a durable queue",
+      "front-channel logout is best-effort browser work",
+      "relying-party session termination",
+      "Support note:",
+      "Failure class",
+      "worker action is exposed"
+    ])
+
     HtmlAssertions.assert_no_interactive_controls(page_html,
       text: unsupported_worker_control_text()
     )
 
-    assert page_html =~ "Operate"
-    assert page_html =~ "Logout propagation queue"
-    assert page_html =~ "Recorded logout deliveries"
-    assert page_html =~ "Back-channel delivery uses a durable queue"
-    assert page_html =~ "front-channel logout is best-effort browser work"
+    assert page_html =~ "App sign-out notices"
+    assert page_html =~ "Delivery records"
+
+    assert page_html =~
+             "See which apps Lockspire notified during sign-out and what response it recorded."
+
     assert page_html =~ "Queued"
     assert page_html =~ "Attempted"
     assert page_html =~ "Retryable"
@@ -241,18 +252,18 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert summary_stat?(page_html, "Skipped", 1)
     assert summary_stat?(page_html, "Endpoint accepted", 1)
     assert summary_stat?(page_html, "Browser page rendered", 1)
-    assert page_html =~ "8 logout deliveries recorded"
+    assert page_html =~ "8 app sign-out notices recorded"
     assert page_html =~ "lockspire-admin-pane"
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ "Delivery"
-    assert page_html =~ "Client"
-    assert page_html =~ "Channel"
+    assert page_html =~ "Client ID"
+    assert page_html =~ "Sign-out method"
     assert page_html =~ "Endpoint"
     assert page_html =~ "Attempts"
     assert page_html =~ "Last activity"
-    assert page_html =~ "Support note"
+    assert page_html =~ "Client ID"
 
     for delivery_id <- [
           "test-delivery-pending",
@@ -269,6 +280,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
     assert page_html =~ "test-client-pending"
     assert page_html =~ ~s(href="/lockspire/admin/clients/test-client-pending")
+    assert page_html =~ "Review app settings"
 
     assert page_html =~ long_endpoint
     assert page_html =~ "Pending"
@@ -279,25 +291,25 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Rendered"
     assert page_html =~ "Succeeded"
 
-    assert page_html =~
-             "Back-channel delivery is pending enqueue; no endpoint attempt is recorded."
+    assert page_html =~ "Lockspire is preparing the request; it has not been sent yet."
 
     assert page_html =~
-             "Back-channel work is durably queued for a worker; no endpoint response is recorded yet."
+             "The request is ready to send; no response is recorded yet."
 
     assert page_html =~
-             "A back-channel request attempt is recorded; no response outcome is recorded yet."
+             "Lockspire began sending the request; no response is recorded."
 
-    assert page_html =~ "The back-channel request has a recorded retryable failure"
+    assert page_html =~ "The request failed and may be tried again automatically."
     assert page_html =~ "HTTP 503"
-    assert page_html =~ "Failure class Request failed / timeout"
-    assert page_html =~ "The back-channel delivery was discarded."
+    assert page_html =~ "Request failed: timeout"
+    assert page_html =~ "The app rejected the request, so Lockspire stopped trying."
+    assert page_html =~ "No server or browser sign-out request was recorded for this app."
 
     assert page_html =~
-             "The back-channel endpoint accepted the request; relying-party session termination is not confirmed."
+             "The app accepted the server request. This does not confirm the person was signed out."
 
     assert page_html =~
-             "Front-channel logout was rendered for best-effort browser delivery; relying-party session termination is not confirmed."
+             "Lockspire showed a sign-out page in the browser. This does not confirm the app signed the person out."
 
     refute page_html =~ "<table"
     refute page_html =~ "lockspire-admin-table-wrap"
@@ -306,12 +318,121 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     refute_unsupported_worker_controls(page_html)
   end
 
-  test "logout deliveries empty state names operator review without controls" do
+  test "needs-review filter shows only retryable and discarded deliveries" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"status" => "needs_review"},
+               "/lockspire/admin/logouts?status=needs_review",
+               socket
+             )
+
+    assert socket.assigns.delivery_filter == :needs_review
+
+    assert Enum.map(socket.assigns.deliveries, & &1.delivery_id) |> Enum.sort() ==
+             ["test-delivery-discarded", "test-delivery-retryable"]
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    text = rendered_text(page_html)
+    assert text =~ "2 app sign-out notices need review"
+    assert text =~ "test-delivery-retryable"
+    assert text =~ "test-delivery-discarded"
+
+    for excluded_id <- [
+          "test-delivery-pending",
+          "test-delivery-enqueued",
+          "test-delivery-attempted",
+          "test-delivery-skipped",
+          "test-delivery-rendered",
+          "test-delivery-succeeded"
+        ] do
+      refute text =~ excluded_id
+    end
+
+    assert page_html =~ "Delivery records"
+    assert page_html =~ "View all app sign-out notices"
+    assert page_html =~ ~s(href="/lockspire/admin/logouts")
+    refute summary_stat?(page_html, "Queued", 2)
+    refute page_html =~ "Skipped"
+
+    HtmlAssertions.assert_no_interactive_controls(page_html,
+      text: unsupported_worker_control_text()
+    )
+
+    refute_unsupported_worker_controls(page_html)
+  end
+
+  test "unknown logout status filters safely show the full history" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"status" => "unknown"},
+               "/lockspire/admin/logouts?status=unknown",
+               socket
+             )
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert socket.assigns.delivery_filter == :all
+    assert rendered_text(page_html) =~ "8 app sign-out notices recorded"
+
+    for delivery_id <- [
+          "test-delivery-pending",
+          "test-delivery-enqueued",
+          "test-delivery-attempted",
+          "test-delivery-retryable",
+          "test-delivery-discarded",
+          "test-delivery-skipped",
+          "test-delivery-rendered",
+          "test-delivery-succeeded"
+        ] do
+      assert page_html =~ delivery_id
+    end
+
+    assert summary_stat?(page_html, "Queued", 2)
+    refute page_html =~ "View all app sign-out notices"
+  end
+
+  test "empty needs-review view keeps its count and link to full history" do
+    page_html =
+      %{
+        current_section: :logouts,
+        page_title: "App sign-out notices",
+        delivery_read_state: :loaded,
+        delivery_filter: :needs_review,
+        deliveries: [],
+        delivery_metrics: nil,
+        __changed__: %{}
+      }
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert rendered_text(page_html) =~ "0 app sign-out notices need review"
+    assert page_html =~ "No app sign-out notices need review"
+    assert page_html =~ "View all app sign-out notices"
+    assert page_html =~ ~s(href="/lockspire/admin/logouts")
+    refute page_html =~ "lockspire-admin-summary-value"
+  end
+
+  test "app sign-out notices empty state names operator review without controls" do
     html =
       %{
         current_section: :logouts,
-        page_title: "Logout deliveries",
+        page_title: "App sign-out notices",
         delivery_read_state: :loaded,
+        delivery_filter: :all,
         deliveries: [],
         delivery_metrics: %{
           queued: 0,
@@ -329,11 +450,11 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert html =~ "No logout deliveries recorded"
-    assert html =~ "No logout deliveries are currently recorded."
+    assert html =~ "No app sign-out notices recorded"
+    assert html =~ "No app sign-out notices are currently recorded."
     assert html =~ "Return to overview"
     assert html =~ ~s(href="/lockspire/admin/overview")
-    assert html =~ "0 logout deliveries recorded"
+    assert html =~ "0 app sign-out notices recorded"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_worker_control_text())
@@ -351,11 +472,11 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert page_html =~ "Logout propagation queue"
-    assert page_html =~ "Loading logout deliveries…"
+    assert page_html =~ "App sign-out notices"
+    assert page_html =~ "Loading app sign-out notices…"
     refute page_html =~ "Queued"
-    refute page_html =~ "No logout deliveries recorded"
-    refute page_html =~ "logout deliveries recorded"
+    refute page_html =~ "No app sign-out notices recorded"
+    refute page_html =~ "app sign-out notices recorded"
   end
 
   test "failed logout reads show unavailable and a same-route retry" do
@@ -371,15 +492,34 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
         |> page_markup()
 
       assert socket.assigns.delivery_read_state == :unavailable
-      assert page_html =~ "Could not load logout deliveries"
-      assert page_html =~ "Lockspire could not read logout delivery records"
+      assert page_html =~ "Could not load app sign-out notices"
+      assert page_html =~ "Lockspire could not read app sign-out notice records"
       assert page_html =~ "the current results are unavailable"
       refute page_html =~ "No count or empty result"
-      assert page_html =~ "Try loading logout deliveries again"
+      assert page_html =~ "Reload app sign-out notices"
       assert page_html =~ ~s(href="/lockspire/admin/logouts")
       refute page_html =~ "Queued"
-      refute page_html =~ "No logout deliveries waiting for review"
-      refute page_html =~ "0 logout deliveries recorded"
+      refute page_html =~ "No app sign-out notices waiting for review"
+      refute page_html =~ "0 app sign-out notices recorded"
+
+      assert {:noreply, filtered_socket} =
+               Index.handle_params(
+                 %{"status" => "needs_review"},
+                 "/lockspire/admin/logouts?status=needs_review",
+                 socket
+               )
+
+      filtered_html =
+        filtered_socket.assigns
+        |> Index.render()
+        |> rendered_to_string()
+        |> page_markup()
+
+      assert filtered_socket.assigns.delivery_read_state == :unavailable
+      assert filtered_html =~ "Could not load app sign-out notices"
+      refute filtered_html =~ "0 app sign-out notices needing review"
+      refute filtered_html =~ "No app sign-out notices recorded"
+      assert filtered_html =~ ~s(href="/lockspire/admin/logouts?status=needs_review")
     end)
   end
 
@@ -396,11 +536,11 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> page_markup()
 
     assert socket.assigns.delivery_read_state == :loaded
-    assert page_html =~ "0 logout deliveries recorded"
+    assert page_html =~ "0 app sign-out notices recorded"
     assert summary_stat?(page_html, "Queued", 0)
-    assert page_html =~ "No logout deliveries recorded"
-    assert page_html =~ "No logout deliveries are currently recorded."
-    refute page_html =~ "Could not load logout deliveries"
+    assert page_html =~ "No app sign-out notices recorded"
+    assert page_html =~ "No app sign-out notices are currently recorded."
+    refute page_html =~ "Could not load app sign-out notices"
   end
 
   test "one logout delivery uses singular count copy and the supported client pivot", %{
@@ -422,7 +562,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "single-safe-delivery-id"
     assert page_html =~ "client-single"
     assert page_html =~ ~s(href="/lockspire/admin/clients/client-single")
-    refute page_html =~ "1 logout deliveries recorded"
+    refute page_html =~ "1 app sign-out notices recorded"
     refute_unsupported_worker_controls(page_html)
   end
 
@@ -457,7 +597,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       "worker internals"
     ])
 
-    assert page_html =~ "Recorded logout deliveries"
+    assert page_html =~ "Delivery records"
     assert page_html =~ "Queued"
     assert page_html =~ "Attempted"
     assert page_html =~ "Retryable"
@@ -471,16 +611,16 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
     assert page_html =~ "Succeeded"
-    assert page_html =~ "The back-channel request has a recorded retryable failure"
+    assert page_html =~ "The request failed and may be tried again automatically."
     assert page_html =~ "HTTP 503"
-    assert page_html =~ "Failure class Request failed / timeout"
-    assert page_html =~ "The back-channel delivery was discarded."
+    assert page_html =~ "Request failed: timeout"
+    assert page_html =~ "The app rejected the request, so Lockspire stopped trying."
 
     assert page_html =~
-             "The back-channel endpoint accepted the request; relying-party session termination is not confirmed."
+             "The app accepted the server request. This does not confirm the person was signed out."
 
     assert page_html =~
-             "Front-channel logout was rendered for best-effort browser delivery; relying-party session termination is not confirmed."
+             "Lockspire showed a sign-out page in the browser. This does not confirm the app signed the person out."
 
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ long_endpoint
@@ -489,6 +629,14 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
 
   defp socket_for(action) do
     %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+  end
+
+  defp rendered_text(html) do
+    html
+    |> String.replace(~r/<style\b[^>]*>.*?<\/style>/s, " ")
+    |> String.replace(~r/<script\b[^>]*>.*?<\/script>/s, " ")
+    |> String.replace(~r/<[^>]+>/, " ")
+    |> String.replace(~r/\s+/, " ")
   end
 
   defp clear_deliveries do

@@ -24,8 +24,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     {:ok,
      socket
      |> assign(
-       page_title: "Client configuration",
-       task_title: "Client configuration",
+       page_title: "App details",
+       task_title: "App details",
        task_body:
          "Review this client's identity, effective policy, credentials, and registered endpoints.",
        current_section: :clients,
@@ -258,8 +258,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   def render(%{client: nil, client_load_state: :error} = assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.alert variant={:danger} title="Could not load client">
-        <p>The client result is unavailable. Reload this view or return to the client inventory.</p>
+      <AdminComponents.alert variant={:danger} title="Could not load app">
+        <p>This app couldn't be loaded. Reload the page or go back to the app list.</p>
         <div class="lockspire-admin-client-inventory__recovery">
           <.link
             class="lockspire-admin-btn lockspire-admin-btn-secondary"
@@ -268,7 +268,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             Reload this view
           </.link>
           <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_index_path()}>
-            Return to client inventory
+            Back to apps
           </.link>
         </div>
       </AdminComponents.alert>
@@ -289,7 +289,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             class="lockspire-admin-btn lockspire-admin-btn-secondary"
             href={client_index_path()}
           >
-            Return to client inventory
+            Back to apps
           </.link>
         </:actions>
       </AdminComponents.empty_state>
@@ -316,14 +316,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             class="lockspire-admin-btn lockspire-admin-btn-secondary"
             patch={show_path(@client.client_id, :show)}
           >
-            Return to client
+            Back to app
           </.link>
         </:actions>
       </AdminComponents.entity_header>
 
       <div :if={@action == :show} class="lockspire-admin-client-workspace">
         <AdminComponents.entity_header
-          eyebrow="Client workspace"
           title={@client.name || @client.client_id}
           subtitle={@task_body}
           identifier={@client.client_id}
@@ -339,7 +338,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                   class="lockspire-admin-btn lockspire-admin-btn-secondary"
                   patch={show_path(@client.client_id, :edit)}
                 >
-                  Edit client metadata
+                  Edit app details
                 </.link>
               </:primary>
               <:secondary>
@@ -347,7 +346,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                   class="lockspire-admin-btn lockspire-admin-btn-secondary"
                   href={client_index_path()}
                 >
-                  Return to client inventory
+                  Back to apps
                 </.link>
               </:secondary>
             </AdminComponents.action_group>
@@ -356,18 +355,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Identity and current status"
-          subtitle="Stable identity, client class, and current availability."
+          subtitle="Client ID, app type, and whether the app is active."
         >
-          <:status>
-            <AdminComponents.status_badge status={status_for(@client)} />
-          </:status>
           <AdminComponents.description_list>
             <:item label="Client ID">
               <AdminComponents.long_value value={@client.client_id} kind={:id} />
             </:item>
-            <:item label="Type"><code>{@client.client_type}</code></:item>
-            <:item label="Token auth"><code>{@client.token_endpoint_auth_method}</code></:item>
-            <:item label="PKCE required"><code>{to_string(@client.pkce_required)}</code></:item>
+            <:item label="App type">{client_type_label(@client.client_type)}</:item>
+            <:item label="How the app authenticates">
+              {token_auth_method_label(@client.token_endpoint_auth_method)}
+            </:item>
+            <:item label="Code exchange protection (PKCE)">
+              {if @client.pkce_required, do: "Required", else: "Not required"}
+            </:item>
             <:item label="Created">
               <AdminComponents.long_value value={format_datetime(@client.created_at)} kind={:timestamp} />
             </:item>
@@ -375,82 +375,63 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Effective posture"
-          subtitle="Issuer defaults and this client's overrides determine its effective behavior."
+          title="Security settings"
+          subtitle="The default applies unless this app has its own setting. The values below show what this app uses."
         >
           <AdminComponents.alert
             :if={@policy_load_state == :unavailable}
             variant={:warning}
-            title="Issuer policy is unavailable"
+            title="Provider settings are unavailable"
           >
             <p>
-              The client overrides are still shown, but issuer defaults and effective behavior could not be loaded.
+              This app's saved settings are shown, but provider defaults and the resulting behavior could not be loaded.
             </p>
           </AdminComponents.alert>
-          <:status>
-            <AdminComponents.status_cluster>
-              <span>Security: {security_verdict_for(@effective_security_profile)}</span>
-              <span>PAR: {verdict_for(@effective_par_policy)}</span>
-              <span>Access tokens: {policy_value_label(@effective_access_token_format)}</span>
-            </AdminComponents.status_cluster>
-          </:status>
           <AdminComponents.description_list>
-            <:item label="Global security profile">
-              <code>{security_global_profile_label(@effective_security_profile)}</code>
-            </:item>
-            <:item label="Client security override">
-              <code>{security_profile_label(@client.security_profile)}</code>
-            </:item>
-            <:item label="Effective security profile">
+            <:item label="Security requirements">
               <strong>{security_verdict_for(@effective_security_profile)}</strong>
+              <p class="lockspire-admin-help">
+                Default: {security_global_profile_label(@effective_security_profile)} · This app: {security_profile_label(@client.security_profile)}
+              </p>
             </:item>
-            <:item label="Global PAR policy">
-              <code>{par_global_policy_label(@effective_par_policy)}</code>
-            </:item>
-            <:item label="Client PAR override">
-              <code>{par_policy_label(@client.par_policy)}</code>
-            </:item>
-            <:item label="Effective PAR requirement">
+            <:item label="Authorization requests">
               <strong>{verdict_for(@effective_par_policy)}</strong>
+              <p class="lockspire-admin-help">
+                Default: {par_global_policy_label(@effective_par_policy)} · This app: {par_policy_label(@client.par_policy)}
+              </p>
             </:item>
-            <:item label="Global access token format">
-              <code>{policy_value_label(@global_access_token_format)}</code>
-            </:item>
-            <:item label="Client access token override">
-              <code>{access_token_format_override_label(@client.access_token_format)}</code>
-            </:item>
-            <:item label="Effective access token format">
+            <:item label="Access token format">
               <strong>{policy_value_label(@effective_access_token_format)}</strong>
+              <p class="lockspire-admin-help">
+                Default: {policy_value_label(@global_access_token_format)} · This app: {access_token_format_override_label(@client.access_token_format)}
+              </p>
             </:item>
-            <:item label="Global DPoP policy">
-              <code>{dpop_policy_label(global_dpop_policy(@effective_dpop_policy))}</code>
-            </:item>
-            <:item label="Client DPoP override">
-              <code>{dpop_policy_label(@client.dpop_policy)}</code>
-            </:item>
-            <:item label="Effective DPoP behavior">
+            <:item label="Token proof">
               <strong>{dpop_policy_label(effective_dpop_policy(@effective_dpop_policy))}</strong>
+              <p class="lockspire-admin-help">
+                Default: {dpop_policy_label(global_dpop_policy(@effective_dpop_policy))} · This app: {dpop_policy_label(@client.dpop_policy)}
+              </p>
             </:item>
           </AdminComponents.description_list>
 
           <AdminComponents.alert
             :if={show_strict_message_signing_panel?(@effective_security_profile)}
             variant={if mixed_mode_override?(@effective_security_profile), do: :warning, else: :info}
-            title="Strict message-signing posture"
+            title="FAPI 2.0 message-signing rules"
           >
             <p>
-              <strong>Effective posture:</strong> {strict_posture_label(@effective_security_profile)}
+              <strong>App requirements:</strong> {strict_posture_label(@effective_security_profile)}
             </p>
             <p>
-              <strong>Issuer readiness:</strong> {strict_readiness_label(@effective_security_profile, @strict_readiness)}
+              <strong>Provider readiness:</strong> {strict_readiness_label(@effective_security_profile, @strict_readiness)}
             </p>
             <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
               `/authorize` requires an explicit JWT response mode and `/introspect` requires
               `Accept: application/token-introspection+jwt`.
             </p>
             <p :if={mixed_mode_override?(@effective_security_profile)}>
-              This client is using the explicit mixed-mode escape hatch. Strict message-signing
-              enforcement does not apply to this client even though the issuer is stricter.
+              This app has an explicit exception to the provider's message-signing requirement.
+              The provider's stricter setting does not apply to this app.
             </p>
             <ul
               :if={
@@ -470,27 +451,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             :if={mixed_mode_override?(@effective_security_profile)}
             variant={:warning}
             role="alert"
-            title="Warning: mixed-mode bypass"
+            title="Provider security defaults do not apply to this app"
           >
             <p>
-              This client overrides the global FAPI 2.0 Security Profile to None. FAPI 2.0
-              boundary checks (PAR, DPoP) will NOT be enforced for this client.
+              This app is excluded from FAPI 2.0 checks, including Pushed Authorization Requests
+              and DPoP. Review this exception before relying on the provider's security defaults.
             </p>
-            This is an intentional mixed-mode bypass. Confirm the client genuinely needs standard
-            OIDC.
           </AdminComponents.alert>
 
           <AdminComponents.action_group>
             <:primary>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit PAR policy</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit authorization request rules</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
             </:primary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Credentials and assertion keys"
-          subtitle="Review credential status and assertion-key configuration. Secret values stay redacted."
+          title="Secret and signing keys"
+          subtitle="Check this app's secret and the keys it signs requests with. Secret values stay hidden."
         >
           <AdminComponents.description_list>
             <:item label="Current secret">
@@ -505,16 +484,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </AdminComponents.description_list>
 
           <div :if={client_secret_jwt_client?(@client)} class="lockspire-admin-detail-section">
-            <h3>Shared JWT client secret posture</h3>
+            <h3>Signed client requests with a shared secret</h3>
             <p>
-              Stored auth method: <code>client_secret_jwt</code>
+              Authentication method: <code>client_secret_jwt</code>
             </p>
             <p>
               Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
             </p>
             <p class="lockspire-admin-help">
-              This slice is limited to the shared direct-client assertion surfaces. Lockspire
-              keeps <code>HS256</code> read-only here and never exposes secret-derived values.
+              Lockspire verifies HS256-signed client requests with this secret. The secret itself
+              is never shown here.
             </p>
           </div>
 
@@ -532,13 +511,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <code>{boolean_label(not is_nil(@client.jwks))}</code>
             </p>
             <p>
-              Issuer-supported assertion algorithms:
+              Accepted signing algorithms:
               <code>{supported_assertion_algorithms(@private_key_jwt_truth)}</code>
             </p>
             <p class="lockspire-admin-help">
-              This client uses <code>private_key_jwt</code>. Key material stays read-only in
-              this read-only view; verification and remote-fetch behavior are owned by Lockspire,
-              not by ad hoc admin actions.
+              Lockspire checks this app's signed requests against its public keys. Private keys
+              stay with the app and are never shown here.
             </p>
           </div>
 
@@ -570,27 +548,27 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:primary>
             <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.provenance == :self_registered} patch={show_path(@client.client_id, :rotate_registration_access_token)}>
-                Rotate registration access token
+                Rotate app management token
               </.link>
             </:secondary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Redirects and logout"
-          subtitle="Authorization and post-logout browser destinations are separate from logout propagation endpoints."
+          title="Sign-in and sign-out URLs"
+          subtitle="Review where users return and where this app receives sign-out notifications."
         >
           <AdminComponents.description_list>
-            <:item label="Redirect URIs">
+            <:item label="Sign-in return URLs">
               <ul class="lockspire-admin-value-list">
                 <%= for redirect_uri <- @client.redirect_uris do %>
                   <li><AdminComponents.long_value value={redirect_uri} kind={:url} /></li>
                 <% end %>
               </ul>
             </:item>
-            <:item label="Post-logout redirect URIs">
+            <:item label="Sign-out return URLs">
               <p class="lockspire-admin-help">
-                Post-logout redirect URIs are browser destinations after RP-initiated logout.
+                Where users may return after signing out.
               </p>
               <ul class="lockspire-admin-value-list">
                 <%= for uri <- @client.post_logout_redirect_uris do %>
@@ -598,45 +576,43 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                 <% end %>
               </ul>
             </:item>
-            <:item label="Back-channel logout URI">
+            <:item label="Server sign-out notification URL">
+              <p class="lockspire-admin-help">Lockspire sends this app a sign-out notification from the server.</p>
               <AdminComponents.long_value
                 value={value_or_not_configured(@client.backchannel_logout_uri)}
                 kind={:url}
               />
             </:item>
-            <:item label="Back-channel session required">
+            <:item label="Include session in server notification">
               <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
             </:item>
-            <:item label="Front-channel logout URI">
+            <:item label="Browser sign-out notification URL">
+              <p class="lockspire-admin-help">Lockspire notifies this app in the user's browser. Delivery is best effort.</p>
               <AdminComponents.long_value
                 value={value_or_not_configured(@client.frontchannel_logout_uri)}
                 kind={:url}
               />
             </:item>
-            <:item label="Front-channel session required">
+            <:item label="Include session in browser notification">
               <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
             </:item>
           </AdminComponents.description_list>
           <div class="lockspire-admin-help lockspire-admin-help-block">
-            <p>Logout propagation URIs are RP cleanup endpoints.</p>
-            <p>These logout propagation endpoints stay separate from browser destinations.</p>
             <p>
-              Back-channel delivery stays durable through the protocol-owned
-              <code>/end_session/complete</code>
-              flow.
+              Server notifications can be retried. Browser notifications are best effort and cannot
+              confirm that the app cleared its session.
             </p>
-            <p>Front-channel logout remains best effort browser cleanup. It does not prove remote success.</p>
           </div>
           <AdminComponents.action_group>
             <:primary>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit redirect URIs</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit sign-in return URLs</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
-                Edit post-logout redirect URIs
+                Edit sign-out return URLs
               </.link>
             </:primary>
             <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
-                Edit logout propagation URIs
+                Edit sign-out notifications
               </.link>
             </:secondary>
           </AdminComponents.action_group>
@@ -644,25 +620,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Registration details"
-          subtitle="Dynamic client registration (DCR) creates self-registered clients; a Registration Access Token manages one."
+          subtitle="Review how this app was added and which permissions it can request."
         >
-          <:status>
-            <AdminComponents.status_badge status={@client.provenance} />
-          </:status>
           <AdminComponents.description_list>
-            <:item label="Provenance">
-              <code>{client_provenance_label(@client.provenance)}</code>
-            </:item>
-            <:item :if={@client.provenance == :self_registered} label="Registration Client URI">
+            <:item :if={@client.provenance == :self_registered} label="Registration URL">
               <AdminComponents.long_value
                 value={@client.registration_client_uri || "N/A"}
                 kind={:url}
               />
             </:item>
-            <:item :if={@client.provenance == :self_registered} label="Registration access token">
+            <:item :if={@client.provenance == :self_registered} label="App management token">
               <AdminComponents.long_value value="redacted" kind={:token} redacted />
             </:item>
-            <:item label="Allowed scopes">
+            <:item label="Allowed permissions">
               <AdminComponents.badge_group>
                 <%= for scope <- @client.allowed_scopes do %>
                   <span class="lockspire-admin-badge lockspire-admin-badge-disabled">{scope}</span>
@@ -671,18 +641,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:item>
           </AdminComponents.description_list>
           <p :if={@client.provenance == :self_registered} class="lockspire-admin-help">
-            This client was registered through DCR. Its Registration Access Token manages this client at the Registration Client URI.
+            This app was registered through the API. It can update its details using the registration URL and token.
           </p>
           <AdminComponents.action_group>
             <:secondary>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/dcr"}>Review DCR onboarding</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/dcr"}>Review API registration</.link>
             </:secondary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
 
         <AdminComponents.pane
           title="Related records"
-          subtitle="Use this client ID to match records in the token, consent, and logout-delivery inventories."
+          subtitle="Use this client ID to find the app's tokens, consent grants, and sign-out notices."
         >
           <AdminComponents.description_list>
             <:item label="Client ID">
@@ -698,33 +668,29 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/tokens"}>Review tokens</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/consents"}>Review consent grants</.link>
-              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/logouts"}>Review logout deliveries</.link>
+              <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={Lockspire.mount_path() <> "/admin/logouts"}>Review sign-out notices</.link>
             </:secondary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
 
         <AdminComponents.pane
-          title="Lifecycle and destructive actions"
+          title="Disable or enable app"
           subtitle="Disabling blocks future OAuth/OIDC requests; enabling lets configured use resume."
         >
-          <:status>
-            <AdminComponents.status_badge status={status_for(@client)} />
-          </:status>
           <AdminComponents.lifecycle_row
-            title={if @client.active, do: "Disable client", else: "Enable client"}
-            state={status_for(@client)}
+            title={if @client.active, do: "Disable app", else: "Enable app"}
             timestamp={@client.disabled_at}
             actor={@client.disabled_by}
             consequence={
               if @client.active,
-                do: "Disabling this client blocks future OAuth/OIDC use until it is enabled again.",
-                else: "Enabling this client allows configured OAuth/OIDC use to resume."
+                do: "Disabling this app stops it from signing users in or getting tokens until you enable it again.",
+                else: "Enabling this app lets it sign users in and get tokens again."
             }
           >
           </AdminComponents.lifecycle_row>
 
           <AdminComponents.confirmation_panel
-            title={if @client.active, do: "Confirm client disable", else: "Confirm client enable"}
+            title={if @client.active, do: "Confirm disabling app", else: "Confirm enabling app"}
             variant={if @client.active, do: :danger, else: :warning}
             errors={@lifecycle_errors}
           >
@@ -736,7 +702,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                     <%= if @client.active do %>
                       Disable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
-                      so future OAuth/OIDC requests for this client stay blocked until it is enabled again.
+                      so this app can't sign users in or get tokens until you enable it again.
                     <% else %>
                       Enable
                       <AdminComponents.long_value value={@client.client_id} kind={:id} />
@@ -749,7 +715,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
                     type="submit"
                     variant={if @client.active, do: :danger, else: :secondary}
                   >
-                    {if @client.active, do: "Disable client", else: "Enable client"}
+                    {if @client.active, do: "Disable app", else: "Enable app"}
                   </AdminComponents.admin_button>
                 </AdminComponents.action_bar>
               </form>
@@ -760,8 +726,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
       <AdminComponents.section_card
         :if={not is_nil(@form_mode)}
-        title="Client settings"
-        subtitle="Change the values for this task; other client settings stay as they are."
+        title="App settings"
+        subtitle="Change the values for this task; other app settings stay as they are."
       >
         <FormComponent.client_form
           mode={@form_mode}
@@ -774,23 +740,23 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           strict_readiness={@strict_readiness}
           errors={@form_errors}
           params={@form_params}
+          show_heading={false}
         />
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
-        title="Rotate Registration Access Token"
-        subtitle="This replaces the credential used to manage this registered client. The new token is shown once after confirmed rotation."
+        title="Rotate app management token"
+        subtitle="This token lets the app update its registration. The current token stops working after rotation."
       >
         <section class="lockspire-admin-form-shell">
           <header>
             <p>
-              A Registration Access Token manages this client at its Registration Client URI.
-              The previous token stops being current after rotation. Lockspire keeps only the
-              durable redacted state.
+              Use this token to update the app's registration at this URL. The current token stops
+              working when you create a new one.
             </p>
             <p>
-              <strong>Registration Client URI:</strong>
+              <strong>Registration URL:</strong>
               <AdminComponents.long_value
                 value={value_or_not_configured(@client.registration_client_uri)}
                 kind={:url}
@@ -802,9 +768,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
           <div :if={@revealed_rat}>
             <AdminComponents.copy_once_secret_panel
-              title="New Registration Access Token"
-              body="Plaintext is shown once. Copy it now; Lockspire does not store or re-show plaintext tokens."
-              label="Registration access token"
+              title="New app management token"
+              body="Copy this token now. It is shown once, and Lockspire stores only a hash."
+              label="App management token"
               value={@revealed_rat}
             />
             <AdminComponents.action_bar>
@@ -817,16 +783,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           <form :if={is_nil(@revealed_rat)} phx-submit="rotate_rat">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="rotate[confirm]" value="true" />
-              <span>I understand the previous RAT stops being the current credential after rotation.</span>
+              <span>I understand the current token stops working after rotation.</span>
             </label>
 
             <AdminComponents.action_bar>
               <AdminComponents.admin_button
                 type="submit"
                 variant={:danger}
-                phx-disable-with="Rotating Registration Access Token…"
+                phx-disable-with="Rotating app management token…"
               >
-                Rotate registration access token
+                Rotate app management token
               </AdminComponents.admin_button>
             </AdminComponents.action_bar>
           </form>
@@ -836,9 +802,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       <AdminComponents.section_card
         :if={@action == :rotate_secret}
         title="Rotate client secret"
-        subtitle="This replaces the confidential client's current credential. The new secret is shown once after confirmed rotation."
+        subtitle="Update the app with the new secret before it requests tokens. Copy it when shown; Lockspire does not store or show it again."
       >
         <RotateSecretComponent.rotation_panel
+          show_heading={false}
           errors={@rotation_errors}
           revealed_secret={@revealed_secret}
         />
@@ -1000,53 +967,46 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp resolve_form_mode(_action, _params), do: nil
 
   defp client_task_copy(:show, _form_mode) do
-    {"Client configuration",
-     "Review settings, credentials, and registered destinations for this client."}
+    {"App details", "Review this app's settings, credentials, and sign-in destinations."}
   end
 
   defp client_task_copy(:edit, :logout_propagation) do
-    {"Update logout propagation settings",
-     "Set this client's logout notification endpoints. Back-channel delivery is durable; front-channel browser cleanup is best effort."}
+    {"Update sign-out notifications",
+     "Choose where this app receives sign-out notifications. Server delivery can be retried; browser delivery is best effort."}
   end
 
   defp client_task_copy(:edit, :edit) do
-    {"Edit client settings",
-     "Update this client's name, scopes, descriptive details, and token policies."}
+    {"Edit app settings", "Update this app's name, permissions, details, and token settings."}
   end
 
   defp client_task_copy(:redirects, :redirects) do
-    {"Update redirect URIs",
-     "Set callback URIs for authorization responses. Lockspire matches each registered URI exactly."}
+    {"Update sign-in return URLs", "Set the exact URLs where users return after signing in."}
   end
 
   defp client_task_copy(:logout_uris, :logout_uris) do
-    {"Update post-logout redirect URIs",
-     "Set browser destinations allowed after RP-initiated logout. These are separate from logout propagation endpoints."}
+    {"Update sign-out return URLs",
+     "Set the exact URLs where users may return after signing out."}
   end
 
   defp client_task_copy(:par_policy, :par_policy) do
-    {"Set client PAR policy",
-     "Choose whether this client requires Pushed Authorization Requests (PAR), may omit them, or inherits the issuer default."}
+    {"Set authorization request rules",
+     "Choose whether this app must use Pushed Authorization Requests (PAR) or follow the provider default."}
   end
 
   defp client_task_copy(:security_profile, :security_profile) do
-    {"Update client security profile",
-     "Choose this client's FAPI/OIDC requirements or inherit the issuer's security profile."}
+    {"Update app security requirements",
+     "Choose this app's FAPI and OIDC requirements or use the provider default."}
   end
 
   defp client_task_copy(:rotate_registration_access_token, _form_mode) do
-    {"Rotate Registration Access Token",
-     "Replace the credential used to manage this registered client. The new token is shown once only after confirmed rotation."}
+    {"Rotate app management token",
+     "Replace the token this app uses to update or delete its registration. The new token is shown once, right after you confirm."}
   end
 
   defp client_task_copy(:rotate_secret, _form_mode) do
     {"Rotate client secret",
-     "Replace this confidential client's current credential. The new client secret is shown once only after confirmed rotation."}
+     "Replace this app's client secret. The new secret is shown once, right after you confirm."}
   end
-
-  defp client_provenance_label(:operator), do: "Added directly"
-  defp client_provenance_label(:self_registered), do: "Self-registered"
-  defp client_provenance_label(_provenance), do: "Unknown"
 
   defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
@@ -1152,23 +1112,26 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp access_token_format_string(format), do: Atom.to_string(format)
 
-  # `nil` means inherit (no `:inherit` sentinel is stored), rendered as the word "inherit".
-  defp access_token_format_override_label(nil), do: "inherit"
-  defp access_token_format_override_label(format), do: Atom.to_string(format)
+  # `nil` means the app uses the provider setting (no `:inherit` sentinel is stored).
+  defp access_token_format_override_label(nil), do: "Use provider default"
+  defp access_token_format_override_label(format), do: policy_value_label(format)
 
-  defp par_policy_label(policy) when policy in [:inherit, :required, :optional] do
-    Atom.to_string(policy)
-  end
+  defp par_policy_label(:inherit), do: "Use provider default"
+  defp par_policy_label(:required), do: "Required"
+  defp par_policy_label(:optional), do: "Optional"
 
   defp par_policy_label(nil), do: "Unavailable"
+  defp par_policy_label(_policy), do: "Unavailable"
 
   defp par_global_policy_label(nil), do: "Unavailable"
   defp par_global_policy_label(%{global_policy: policy}), do: par_policy_label(policy)
 
-  defp dpop_policy_label(policy) when policy in [:inherit, :bearer, :dpop],
-    do: Atom.to_string(policy)
+  defp dpop_policy_label(:inherit), do: "Use provider default"
+  defp dpop_policy_label(:bearer), do: "Bearer tokens allowed"
+  defp dpop_policy_label(:dpop), do: "DPoP proof required"
 
   defp dpop_policy_label(nil), do: "Unavailable"
+  defp dpop_policy_label(_policy), do: "Unavailable"
   defp global_dpop_policy(nil), do: nil
   defp global_dpop_policy(%{global_policy: policy}), do: policy
   defp effective_dpop_policy(nil), do: nil
@@ -1179,15 +1142,21 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp security_global_profile_label(%{global_profile: profile}),
     do: security_profile_label(profile)
 
-  defp security_profile_label(profile)
-       when profile in [:inherit, :fapi_2_0_message_signing, :fapi_2_0_security, :none] do
-    Atom.to_string(profile)
-  end
+  defp security_profile_label(:inherit), do: "Use provider default"
+  defp security_profile_label(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
+  defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security"
+  defp security_profile_label(:none), do: "Standard OpenID Connect"
 
   defp security_profile_label(nil), do: "Unavailable"
+  defp security_profile_label(_profile), do: "Unavailable"
 
   defp policy_value_label(nil), do: "Unavailable"
-  defp policy_value_label(value), do: value
+  defp policy_value_label(:jwt), do: "JWT"
+  defp policy_value_label(:opaque), do: "Opaque token"
+  defp policy_value_label("jwt"), do: "JWT"
+  defp policy_value_label("opaque"), do: "Opaque token"
+  defp policy_value_label(value) when is_binary(value), do: value
+  defp policy_value_label(_value), do: "Unavailable"
 
   defp verdict_for(%{par_required?: true}), do: "Required"
   defp verdict_for(%{par_required?: false}), do: "Not required"
@@ -1199,7 +1168,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp security_verdict_for(%{effective_profile: :fapi_2_0_security}),
     do: "FAPI 2.0 Security Profile"
 
-  defp security_verdict_for(%{effective_profile: :none}), do: "None (Standard OIDC)"
+  defp security_verdict_for(%{effective_profile: :none}), do: "Standard OpenID Connect"
   defp security_verdict_for(nil), do: "Unavailable"
 
   defp mixed_mode_override?(%{
@@ -1222,24 +1191,35 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp show_strict_message_signing_panel?(resolved), do: mixed_mode_override?(resolved)
 
   defp strict_posture_label(%{fapi_2_0_message_signing?: true}),
-    do: "Strict message signing enforced"
+    do: "Required for this app"
 
   defp strict_posture_label(resolved) when is_map(resolved),
-    do: "Mixed-mode escape hatch"
+    do: "Provider requirement overridden"
 
   defp strict_readiness_label(_resolved, %{status: :unavailable}),
-    do: "Issuer readiness unavailable"
+    do: "Could not check provider requirements"
 
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, %{ready?: true}), do: "Ready"
   defp strict_readiness_label(%{fapi_2_0_message_signing?: true}, _readiness), do: "Blocked"
 
   defp strict_readiness_label(_resolved, %{ready?: true}),
-    do: "Issuer is ready, but this client opted out"
+    do: "Provider is ready, but this app is excluded"
 
-  defp strict_readiness_label(_resolved, _readiness), do: "Issuer prerequisites still missing"
+  defp strict_readiness_label(_resolved, _readiness), do: "Provider requirements still need setup"
 
   defp private_key_jwt_client?(%Client{token_endpoint_auth_method: :private_key_jwt}), do: true
   defp private_key_jwt_client?(_client), do: false
+
+  defp client_type_label(:confidential), do: "Server-side app"
+  defp client_type_label(:public), do: "Browser or mobile app"
+  defp client_type_label(_type), do: "Unknown"
+
+  defp token_auth_method_label(:client_secret_basic), do: "Client secret in the request header"
+  defp token_auth_method_label(:client_secret_post), do: "Client secret in the request body"
+  defp token_auth_method_label(:client_secret_jwt), do: "Signed client assertion (JWT)"
+  defp token_auth_method_label(:private_key_jwt), do: "Signed client assertion with app key"
+  defp token_auth_method_label(:none), do: "No client secret"
+  defp token_auth_method_label(_method), do: "Unknown"
 
   defp show_remote_jwks_summary?(%Client{jwks_uri: jwks_uri}, %{applicable?: true})
        when is_binary(jwks_uri) and jwks_uri != "",
@@ -1274,7 +1254,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       reason: :request_failed,
       detail: nil,
       message:
-        "Rotation was not confirmed. No new Registration Access Token is shown. Review the client before retrying."
+        "Rotation was not confirmed. No new app management token was created. Review this app before retrying."
     }
   end
 

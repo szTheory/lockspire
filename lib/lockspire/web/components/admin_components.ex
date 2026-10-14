@@ -47,8 +47,34 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
-  attr(:eyebrow, :string, required: true)
-  attr(:title, :string, required: true)
+  attr(:id, :string, required: true)
+  attr(:label, :string, required: true)
+  slot(:inner_block, required: true)
+
+  def info_tooltip(assigns) do
+    ~H"""
+    <span class="lockspire-admin-info" data-lockspire-info>
+      <button
+        type="button"
+        class="lockspire-admin-info-trigger"
+        aria-label={@label}
+        aria-describedby={@id}
+        aria-expanded="false"
+        data-lockspire-info-trigger
+      >
+        <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.75" />
+          <path d="M12 11v6M12 7v.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+        </svg>
+      </button>
+      <span id={@id} role="tooltip" class="lockspire-admin-info-tooltip">
+        {render_slot(@inner_block)}
+      </span>
+    </span>
+    """
+  end
+
+  attr(:title, :string, default: nil)
   attr(:body, :string, default: nil)
   attr(:class, :string, default: "")
   slot(:summary)
@@ -58,8 +84,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
     ~H"""
     <section class={["lockspire-admin-hero lockspire-admin-page-hero", @class]}>
       <div class="lockspire-admin-page-hero__main">
-        <p class="lockspire-admin-eyebrow">{@eyebrow}</p>
-        <h2>{@title}</h2>
+        <h2 :if={@title}>{@title}</h2>
         <p :if={@body}>{@body}</p>
         <div :if={@summary != []} class="lockspire-admin-page-hero__summary">
           {render_slot(@summary)}
@@ -96,7 +121,6 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
-  attr(:eyebrow, :string, default: nil)
   attr(:title, :string, required: true)
   attr(:subtitle, :string, default: nil)
   attr(:identifier, :any, default: nil)
@@ -110,7 +134,6 @@ defmodule Lockspire.Web.Components.AdminComponents do
     ~H"""
     <header class={["lockspire-admin-entity-header", @class]} {@rest}>
       <div class="lockspire-admin-entity-header__main">
-        <p :if={@eyebrow} class="lockspire-admin-eyebrow">{@eyebrow}</p>
         <h2>{@title}</h2>
         <p :if={@subtitle}>{@subtitle}</p>
         <.long_value
@@ -310,6 +333,10 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:class, :string, default: "")
   slot(:inner_block, required: true)
 
+  slot :info, doc: "Longer guidance behind an info button next to the label" do
+    attr(:label, :string, required: true)
+  end
+
   def form_field(assigns) do
     assigns =
       assigns
@@ -318,7 +345,16 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
     ~H"""
     <div class={["lockspire-admin-field", @errors != [] && "lockspire-admin-field-error", @class]}>
-      <label for={@id}>
+      <div :if={@info != []} class="lockspire-admin-field__label-row">
+        <label for={@id}>
+          {@label}
+          <span :if={@required} aria-hidden="true" class="lockspire-admin-required-marker">*</span>
+        </label>
+        <.info_tooltip :for={info <- @info} id={"#{@id}-info"} label={info.label}>
+          {render_slot(info)}
+        </.info_tooltip>
+      </div>
+      <label :if={@info == []} for={@id}>
         {@label}
         <span :if={@required} aria-hidden="true" class="lockspire-admin-required-marker">*</span>
       </label>
@@ -326,10 +362,181 @@ defmodule Lockspire.Web.Components.AdminComponents do
       {render_slot(@inner_block)}
       <ul :if={@errors != []} id={@error_id} class="lockspire-admin-field-errors">
         <%= for error <- @errors do %>
-          <li>{format_error(error)}</li>
+          <li>{format_field_error(error)}</li>
         <% end %>
       </ul>
     </div>
+    """
+  end
+
+  attr(:rest, :global,
+    include: ~w(name disabled multiple size required autocomplete form autofocus value)
+  )
+
+  slot(:inner_block, required: true)
+
+  def select_control(assigns) do
+    ~H"""
+    <div class="lockspire-admin-select-field">
+      <select {@rest}>{render_slot(@inner_block)}</select>
+      <svg :if={!Map.get(@rest, :multiple, false) and !Map.has_key?(@rest, :size)} aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none">
+        <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </div>
+    """
+  end
+
+  attr(:id, :string, required: true)
+  attr(:name, :string, required: true)
+  attr(:label, :string, required: true)
+  attr(:value, :any, required: true)
+  attr(:help, :string, default: nil)
+  attr(:errors, :list, default: [])
+  attr(:disabled, :boolean, default: false)
+
+  slot(:option, required: true) do
+    attr(:value, :string, required: true)
+    attr(:label, :string, required: true)
+    attr(:help, :string)
+  end
+
+  slot(:inner_block)
+
+  def radio_group(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :described_by,
+        [assigns.help && "#{assigns.id}-help", assigns.errors != [] && "#{assigns.id}-error"]
+        |> Enum.filter(& &1)
+        |> Enum.join(" ")
+        |> case do
+          "" -> nil
+          ids -> ids
+        end
+      )
+
+    ~H"""
+    <fieldset id={@id} class="lockspire-admin-radio-group" disabled={@disabled}>
+      <legend>{@label}</legend>
+      <div class="lockspire-admin-radio-group__body">
+        <div class="lockspire-admin-radio-group__options">
+          <label :for={option <- @option} for={"#{@id}-#{option.value}"} class="lockspire-admin-radio-choice">
+            <input type="radio" id={"#{@id}-#{option.value}"} name={@name} value={option.value}
+              checked={to_string(@value) == option.value} disabled={@disabled}
+              aria-labelledby={"#{@id}-#{option.value}-label"}
+              aria-invalid={if @errors != [], do: "true", else: "false"}
+              aria-describedby={Enum.join(Enum.reject([@described_by, Map.get(option, :help) && "#{@id}-#{option.value}-help"], &is_nil/1), " ")} />
+            <span class="lockspire-admin-radio-choice__text">
+              <span id={"#{@id}-#{option.value}-label"}>{option.label}</span>
+              <small :if={Map.get(option, :help)} id={"#{@id}-#{option.value}-help"}>{option.help}</small>
+            </span>
+          </label>
+        </div>
+        <p :if={@help} id={"#{@id}-help"} class="lockspire-admin-help">{@help}</p>
+        <ul :if={@errors != []} id={"#{@id}-error"} class="lockspire-admin-field-errors" role="alert">
+          <li :for={error <- @errors}>{format_field_error(error)}</li>
+        </ul>
+        {render_slot(@inner_block)}
+      </div>
+    </fieldset>
+    """
+  end
+
+  attr(:id, :string, required: true)
+  attr(:name, :string, required: true)
+  attr(:value, :any, default: "")
+  attr(:suggestions, :list, default: [])
+  attr(:required, :boolean, default: false)
+  attr(:disabled, :boolean, default: false)
+  attr(:errors, :list, default: [])
+  attr(:help, :boolean, default: true)
+
+  def multi_value_control(assigns) do
+    value =
+      if is_list(assigns.value),
+        do: Enum.join(assigns.value, ", "),
+        else: to_string(assigns.value || "")
+
+    described_by =
+      [
+        assigns.help && "#{assigns.id}-help",
+        "#{assigns.id}-entry-help",
+        assigns.errors != [] && "#{assigns.id}-error"
+      ]
+      |> Enum.filter(& &1)
+      |> Enum.join(" ")
+
+    assigns = assign(assigns, value: value, described_by: described_by)
+
+    saved_values =
+      value |> String.split(~r/[,\r\n]+/) |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == ""))
+
+    assigns = assign(assigns, :suggestions, Enum.uniq(assigns.suggestions ++ saved_values))
+
+    ~H"""
+    <div id={"#{@id}-control"} class="lockspire-admin-multi-value" phx-update="ignore"
+      data-lockspire-multi-value data-values={@value} data-suggestions={Jason.encode!(@suggestions)}
+      data-invalid={if @errors != [], do: "true", else: "false"} data-described-by={@described_by}>
+      <input type="text" id={@id} name={@name} value={@value}
+        data-lockspire-values-source required={@required} disabled={@disabled}
+        aria-invalid={if @errors != [], do: "true", else: "false"} aria-describedby={@described_by} />
+      <span id={"#{@id}-entry-help"} class="lockspire-admin-sr-only">
+        Type a value and press Enter or comma to add it. Backspace in an empty input removes the last value.
+        Use the remove buttons to remove individual values. Arrow keys browse suggestions when available.
+      </span>
+      <span data-lockspire-values-status class="lockspire-admin-sr-only" role="status" aria-live="polite"></span>
+    </div>
+    """
+  end
+
+  attr(:id, :string, required: true)
+  attr(:name, :string, required: true)
+  attr(:label, :string, required: true)
+  attr(:value, :any, default: [])
+  attr(:choices, :list, required: true)
+  attr(:help, :string, default: nil)
+  attr(:errors, :list, default: [])
+
+  def checkbox_group(assigns) do
+    values =
+      if is_list(assigns.value),
+        do: assigns.value,
+        else: String.split(to_string(assigns.value || ""), ",")
+
+    values = values |> Enum.map(&String.trim/1) |> Enum.reject(&(&1 == "")) |> Enum.uniq()
+    known = Enum.map(assigns.choices, &elem(&1, 0))
+    choices = assigns.choices ++ Enum.map(Enum.reject(values, &(&1 in known)), &{&1, &1})
+
+    described_by =
+      [assigns.help && "#{assigns.id}-help", assigns.errors != [] && "#{assigns.id}-error"]
+      |> Enum.filter(& &1)
+      |> Enum.join(" ")
+
+    assigns = assign(assigns, values: values, choices: choices, described_by: described_by)
+
+    ~H"""
+    <fieldset id={@id} class="lockspire-admin-radio-group" phx-update="ignore"
+      data-lockspire-checkbox-group data-values={Enum.join(@values, ", ")}
+      data-invalid={if @errors != [], do: "true", else: "false"} data-described-by={@described_by}>
+      <legend>{@label}</legend>
+      <div class="lockspire-admin-radio-group__body">
+        <p :if={@help} id={"#{@id}-help"} class="lockspire-admin-help">{@help}</p>
+        <input type="hidden" id={"#{@id}-source"} name={@name} value={Enum.join(@values, ", ")} data-lockspire-values-source />
+        <div data-lockspire-checkbox-options class="lockspire-admin-radio-group__options">
+          <label :for={{{value, label}, index} <- Enum.with_index(@choices)}
+            class="lockspire-admin-radio-choice" for={"#{@id}-option-#{index}"}>
+            <input id={"#{@id}-option-#{index}"} type="checkbox" value={value}
+              checked={value in @values} aria-describedby={@described_by}
+              aria-invalid={if @errors != [], do: "true", else: "false"} />
+            <span>{label}</span>
+          </label>
+        </div>
+      </div>
+    </fieldset>
+    <ul :if={@errors != []} id={"#{@id}-error"} class="lockspire-admin-field-errors" role="alert">
+      <li :for={error <- @errors}>{format_field_error(error)}</li>
+    </ul>
     """
   end
 
@@ -560,7 +767,11 @@ defmodule Lockspire.Web.Components.AdminComponents do
       <%= if @redacted do %>
         <span class="lockspire-admin-redacted-value">Redacted</span>
       <% else %>
-        {@value}
+        <%= if @kind == :timestamp and timestamp_value(@value) do %>
+          <.timestamp value={timestamp_value(@value)} />
+        <% else %>
+          {@value}
+        <% end %>
       <% end %>
     </span>
     """
@@ -600,6 +811,8 @@ defmodule Lockspire.Web.Components.AdminComponents do
   attr(:title, :string, required: true)
   attr(:variant, :atom, default: :warning)
   attr(:errors, :list, default: [])
+  attr(:show_heading, :boolean, default: true)
+  attr(:embedded, :boolean, default: false)
   slot(:body, required: true)
   slot(:actions)
 
@@ -607,8 +820,8 @@ defmodule Lockspire.Web.Components.AdminComponents do
     assigns = assign(assigns, :class, confirmation_panel_class(assigns.variant))
 
     ~H"""
-    <section class={@class}>
-      <header>
+    <section class={[@class, @embedded && "lockspire-admin-confirmation-panel-embedded"]}>
+      <header :if={@show_heading}>
         <h3>{@title}</h3>
       </header>
       <div class="lockspire-admin-confirmation-panel__body">
@@ -636,20 +849,31 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
+  attr(:current, :atom, required: true)
+
   def policy_nav(assigns) do
     assigns =
       assign(assigns, :items, [
-        %{label: "Overview", href: policy_path("")},
-        %{label: "PAR", href: policy_path("/par")},
-        %{label: "Security Profile", href: policy_path("/security-profile")},
-        %{label: "DPoP", href: policy_path("/dpop")},
-        %{label: "DCR", href: policy_path("/dcr")}
+        %{key: :index, label: "All settings", href: policy_path("")},
+        %{key: :par, label: "Authorization requests", href: policy_path("/par")},
+        %{
+          key: :security_profile,
+          label: "Security requirements",
+          href: policy_path("/security-profile")
+        },
+        %{key: :dpop, label: "Token proof", href: policy_path("/dpop")},
+        %{key: :dcr, label: "Registration rules", href: policy_path("/dcr")}
       ])
 
     ~H"""
-    <nav aria-label="Policy sections" class="lockspire-admin-secondary-nav">
+    <nav aria-label="Policy sections" class="lockspire-admin-secondary-nav" data-lockspire-preserve-scroll>
       <%= for item <- @items do %>
-        <.link href={item.href}>{item.label}</.link>
+        <.link
+          navigate={item.href}
+          aria-current={if item.key == @current, do: "page", else: nil}
+        >
+          {item.label}
+        </.link>
       <% end %>
     </nav>
     """
@@ -658,18 +882,38 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp policy_path(path), do: Lockspire.mount_path() <> "/admin/policies" <> path
 
   attr(:value, :any, default: nil)
+  attr(:format, :atom, default: :readable, values: [:iso, :readable])
 
   def timestamp(assigns) do
     ~H"""
-    <span class="lockspire-admin-tabular">{format_datetime(@value)}</span>
+    <button :if={@format == :readable and match?(%DateTime{}, @value)} type="button"
+      class="lockspire-admin-timestamp" data-lockspire-copy-timestamp={format_datetime(@value)}
+      aria-label={"Copy timestamp: #{format_datetime(@value)}"} title={"Copy #{format_datetime(@value)}"}>
+      <time datetime={format_datetime(@value)} data-lockspire-timestamp>
+        {Calendar.strftime(DateTime.shift_zone!(@value, "Etc/UTC"), "%b %-d, %Y, %H:%M:%S UTC")}
+      </time>
+    </button>
+    <span :if={@format != :readable or !match?(%DateTime{}, @value)} class="lockspire-admin-tabular">{format_datetime(@value)}</span>
     """
   end
 
+  defp timestamp_value(%DateTime{} = value), do: value
+
+  defp timestamp_value(value) when is_binary(value) do
+    case DateTime.from_iso8601(String.replace(value, " ", "T", global: false)) do
+      {:ok, timestamp, _offset} -> timestamp
+      _ -> nil
+    end
+  end
+
+  defp timestamp_value(_value), do: nil
+
   attr(:errors, :list, required: true)
+  attr(:announce, :boolean, default: true)
 
   def error_list(assigns) do
     ~H"""
-    <ul :if={@errors != []} class="lockspire-admin-errors">
+    <ul :if={@errors != []} class="lockspire-admin-errors" role={@announce && "alert"}>
       <%= for error <- @errors do %>
         <li>{format_error(error)}</li>
       <% end %>
@@ -735,7 +979,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
               :remembered,
               :initial_access_token
             ],
-       do: %{label: status_label(status), tone: :provenance, title: "Origin or provenance"}
+       do: %{label: status_label(status), tone: :provenance, title: "How this record was added"}
 
   defp status_metadata(status, _domain),
     do: %{label: status_label(status), tone: :disabled, title: "Unknown status"}
@@ -748,16 +992,16 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp status_tone_class(:provenance), do: "lockspire-admin-badge-provenance"
   defp status_tone_class(_tone), do: "lockspire-admin-badge-disabled"
 
-  defp status_label(:reuse_detected), do: "Reuse detected"
+  defp status_label(:reuse_detected), do: "Used after replacement"
   defp status_label(:operator), do: "Added directly"
-  defp status_label(:self_registered), do: "Self-registered"
-  defp status_label(:self_registered_client), do: "Self-registered client"
+  defp status_label(:self_registered), do: "Registered through API"
+  defp status_label(:self_registered_client), do: "Registered through API"
   defp status_label(:host_app), do: "Host app"
   defp status_label(:dcr), do: "DCR"
   defp status_label(:one_time), do: "One-time"
-  defp status_label(:initial_access_token), do: "Initial access token"
-  defp status_label(:pending_login), do: "Pending login"
-  defp status_label(:pending_consent), do: "Pending consent"
+  defp status_label(:initial_access_token), do: "App setup token"
+  defp status_label(:pending_login), do: "Waiting for sign-in"
+  defp status_label(:pending_consent), do: "Waiting for consent"
 
   defp status_label(value) when is_atom(value),
     do: value |> Atom.to_string() |> String.replace("_", " ") |> String.capitalize()
@@ -786,7 +1030,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp long_value_class(kind, class) do
     [
       "lockspire-admin-long-value",
-      kind in [:id, :url, :token, :timestamp, :mono] && "lockspire-admin-long-value-mono",
+      kind in [:id, :url, :token, :mono] && "lockspire-admin-long-value-mono",
       class
     ]
   end
@@ -811,4 +1055,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   end
 
   defp format_error(error), do: inspect(error)
+
+  defp format_field_error(%{inline_message: message}) when is_binary(message), do: message
+  defp format_field_error(error), do: format_error(error)
 end

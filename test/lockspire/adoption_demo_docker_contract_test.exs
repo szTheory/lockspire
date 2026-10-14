@@ -13,6 +13,10 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
   @docker_stop_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-stop")
   @docker_cleanup_path Path.join(@repo_root, "examples/adoption_demo/bin/docker-cleanup")
   @dockerignore_path Path.join(@repo_root, ".dockerignore")
+  @adoption_demo_router_path Path.join(
+                               @repo_root,
+                               "examples/adoption_demo/lib/adoption_demo_web/router.ex"
+                             )
   @adoption_smoke_wrapper_path Path.join(@repo_root, "scripts/demo/adoption_smoke.sh")
   @adoption_demo_docs_path Path.join(@repo_root, "docs/adoption-demo.md")
 
@@ -142,6 +146,18 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     assert source =~ "scripts/demo/admin-ui smoke"
     assert source =~ "scripts/demo/admin-ui stop"
     refute source =~ "docker compose"
+  end
+
+  test "adoption demo routes client creation before the dynamic client detail route" do
+    source = File.read!(@adoption_demo_router_path)
+    create_route = "live(\"/clients/new\", Lockspire.Web.Live.Admin.ClientsLive.Index, :new)"
+
+    detail_route =
+      "live(\"/clients/:client_id\", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)"
+
+    assert source =~ create_route
+    assert source =~ detail_route
+    assert :binary.match(source, create_route) < :binary.match(source, detail_route)
   end
 
   test "admin-ui wrapper owns simple detached lifecycle commands" do

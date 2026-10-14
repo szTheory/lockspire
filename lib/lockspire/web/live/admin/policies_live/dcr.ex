@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   alias Lockspire.Admin
   alias Lockspire.Admin.ServerPolicy, as: AdminServerPolicy
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHint
   alias Lockspire.Web.Live.Admin.PoliciesLive.Dcr.PolicyForm
 
   @impl true
@@ -13,12 +14,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
     {:ok,
      socket
      |> assign(
-       page_title: "Dynamic Client Registration policy",
+       page_title: "App registration settings",
        current_section: :policies,
        policy: nil,
        policy_state: :loading,
        form: nil,
        form_errors: [],
+       show_error_summary: false,
        save_notice: nil
      )
      |> load_policy()}
@@ -33,6 +35,25 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
   def handle_event("reload_policy", _params, socket) do
     {:noreply, load_policy(socket)}
   end
+
+  def handle_event(
+        "preview_policy",
+        %{"policy" => policy_params},
+        %{assigns: %{policy_state: :loaded}} = socket
+      ) do
+    params = Map.merge(socket.assigns.form.params, policy_params)
+    errors = params |> PolicyForm.changeset() |> format_changeset_errors()
+
+    {:noreply,
+     assign(socket,
+       form: to_form(params, as: :policy),
+       form_errors: errors,
+       show_error_summary: false,
+       save_notice: nil
+     )}
+  end
+
+  def handle_event("preview_policy", _params, socket), do: {:noreply, socket}
 
   def handle_event(
         "save_policy",
@@ -57,16 +78,17 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
              private_key_jwt_truth: dcr_private_key_jwt_truth(policy),
              client_secret_jwt_truth: dcr_client_secret_jwt_truth(policy),
              form_errors: [],
-             save_notice:
-               "Global Dynamic Client Registration policy saved. This change applies to future registrations only. Existing client records keep their stored configuration."
+             show_error_summary: false,
+             save_notice: "App registration settings saved. Existing apps are unchanged."
            )
-           |> put_flash(:info, "Global Dynamic Client Registration policy updated")}
+           |> put_flash(:info, "App registration settings saved")}
 
         {:error, errors} when is_list(errors) ->
           {:noreply,
            assign(socket,
              form: form,
              form_errors: safe_service_errors(errors),
+             show_error_summary: true,
              save_notice: nil
            )}
 
@@ -75,14 +97,20 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
            assign(socket,
              form: form,
              form_errors: [
-               %{field: :base, message: "DCR policy was not saved. Your changes are still here."}
+               %{
+                 field: :base,
+                 message: "App registration settings were not saved. Your changes are still here."
+               }
              ],
+             show_error_summary: true,
              save_notice: nil
            )}
       end
     else
       errors = format_changeset_errors(changeset)
-      {:noreply, assign(socket, form: form, form_errors: errors, save_notice: nil)}
+
+      {:noreply,
+       assign(socket, form: form, form_errors: errors, show_error_summary: true, save_notice: nil)}
     end
   end
 
@@ -90,8 +118,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
     {:noreply,
      assign(socket,
        form_errors: [
-         %{field: :base, message: "DCR policy is unavailable. Reload it before saving changes."}
+         %{
+           field: :base,
+           message: "App registration settings are unavailable. Reload before saving changes."
+         }
        ],
+       show_error_summary: true,
        save_notice: nil
      )}
   end
@@ -104,6 +136,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
           policy_state: :loaded,
           form: policy_form(policy),
           form_errors: [],
+          show_error_summary: false,
           save_notice: nil,
           private_key_jwt_truth: dcr_private_key_jwt_truth(policy),
           client_secret_jwt_truth: dcr_client_secret_jwt_truth(policy)
@@ -115,6 +148,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
           policy_state: :unavailable,
           form: nil,
           form_errors: [],
+          show_error_summary: false,
           save_notice: nil,
           private_key_jwt_truth: nil,
           client_secret_jwt_truth: nil
@@ -139,8 +173,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
       end)
 
     case safe_errors do
-      [] -> [%{field: :base, message: "DCR policy was not saved. Your changes are still here."}]
-      values -> values
+      [] ->
+        [
+          %{
+            field: :base,
+            message: "App registration settings were not saved. Your changes are still here."
+          }
+        ]
+
+      values ->
+        values
     end
   end
 
@@ -154,12 +196,33 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
 
   defp format_changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-      Enum.reduce(opts, msg, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
+      cond do
+        opts[:type] == :integer and opts[:validation] == :cast ->
+          "Enter a whole number of seconds, such as 60."
+
+        opts[:validation] == :number and opts[:kind] == :greater_than_or_equal_to ->
+          "Enter zero or a positive number of seconds."
+
+        opts[:validation] == :number and opts[:kind] == :less_than_or_equal_to ->
+          "Enter 2,147,483,647 seconds or less."
+
+        true ->
+          Enum.reduce(opts, msg, fn {key, value}, acc ->
+            String.replace(acc, "%{#{key}}", to_string(value))
+          end)
+      end
     end)
     |> Enum.map(fn {field, messages} ->
-      %{field: field, message: "#{field_label(field)}: #{Enum.join(messages, ", ")}"}
+      inline_message =
+        if field == :registration_policy,
+          do: "Choose who can register apps.",
+          else: Enum.join(messages, " ")
+
+      %{
+        field: field,
+        message: "#{field_label(field)}: #{inline_message}",
+        inline_message: inline_message
+      }
     end)
   end
 
@@ -169,10 +232,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
 
   def field_error_attrs(field_id, errors) do
     if field_errors(errors, field_id_to_field(field_id)) == [] do
-      nil
+      "#{field_id}-help"
     else
-      "#{field_id}-error"
+      "#{field_id}-help #{field_id}-error"
     end
+  end
+
+  def lifetime_described_by(field_id, errors) do
+    [
+      "#{field_id}-help",
+      "#{field_id}-info",
+      "#{field_id}-duration",
+      field_errors(errors, field_id_to_field(field_id)) != [] && "#{field_id}-error"
+    ]
+    |> Enum.filter(& &1)
+    |> Enum.join(" ")
   end
 
   defp field_id_to_field("registration_policy"), do: :registration_policy
@@ -199,93 +273,23 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr do
 
   defp field_id_to_field(_field_id), do: :base
 
-  defp field_label(:registration_policy), do: "Registration mode"
+  defp field_label(:registration_policy), do: "Registration access"
   defp field_label(:dcr_allowed_scopes), do: "Allowed scopes"
   defp field_label(:dcr_allowed_grant_types), do: "Allowed grant types"
   defp field_label(:dcr_allowed_response_types), do: "Allowed response types"
-  defp field_label(:dcr_allowed_redirect_uri_schemes), do: "Allowed redirect URI schemes"
-  defp field_label(:dcr_allowed_redirect_uri_hosts), do: "Allowed redirect URI hosts"
+  defp field_label(:dcr_allowed_redirect_uri_schemes), do: "Allowed sign-in return URL schemes"
+  defp field_label(:dcr_allowed_redirect_uri_hosts), do: "Allowed sign-in return URL hosts"
 
   defp field_label(:dcr_allowed_token_endpoint_auth_methods),
-    do: "Allowed token endpoint authentication methods"
+    do: "Allowed methods"
 
-  defp field_label(:dcr_default_client_lifetime_seconds), do: "Default client lifetime"
+  defp field_label(:dcr_default_client_lifetime_seconds), do: "App lifetime"
 
   defp field_label(:dcr_default_client_secret_lifetime_seconds),
-    do: "Default client secret lifetime"
+    do: "Client secret lifetime"
 
   defp field_label(:dcr_default_registration_access_token_lifetime_seconds),
-    do: "Default Registration Access Token lifetime"
+    do: "App management token lifetime"
 
-  defp field_label(_field), do: "DCR policy"
-
-  defp comma_value(value) when is_list(value), do: Enum.join(value, ", ")
-  defp comma_value(value) when is_binary(value), do: value
-  defp comma_value(_value), do: ""
-
-  defp registration_policy_label(:disabled), do: "Disabled"
-  defp registration_policy_label(:initial_access_token), do: "Initial access token required"
-  defp registration_policy_label(:open), do: "Open registration"
-  defp registration_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
-
-  defp registration_policy_tone(:disabled), do: :neutral
-  defp registration_policy_tone(:initial_access_token), do: :success
-  defp registration_policy_tone(:open), do: :warning
-  defp registration_policy_tone(_value), do: :info
-
-  defp registration_policy_detail(:disabled), do: "No new clients can self-register."
-
-  defp registration_policy_detail(:initial_access_token),
-    do: "Registration requires a valid Initial Access Token before client metadata is accepted."
-
-  defp registration_policy_detail(:open),
-    do:
-      "No Initial Access Token is required. Unauthenticated registration stays within issuer metadata allowlists and lifetimes."
-
-  defp registration_policy_detail(_value), do: "Issuer registration posture."
-
-  defp allowlist_summary(%ServerPolicy{} = policy) do
-    counts = [
-      {"scopes", policy.dcr_allowed_scopes},
-      {"grant types", policy.dcr_allowed_grant_types},
-      {"response types", policy.dcr_allowed_response_types},
-      {"schemes", policy.dcr_allowed_redirect_uri_schemes},
-      {"hosts", policy.dcr_allowed_redirect_uri_hosts}
-    ]
-
-    configured =
-      counts
-      |> Enum.filter(fn {_label, values} -> values not in [nil, []] end)
-      |> Enum.map(fn {label, values} -> "#{length(values)} #{label}" end)
-
-    case configured do
-      [] -> "No metadata allowlists"
-      values -> Enum.join(values, ", ")
-    end
-  end
-
-  defp auth_methods_summary(%ServerPolicy{dcr_allowed_token_endpoint_auth_methods: methods})
-       when methods in [nil, []],
-       do: "No auth methods allowed"
-
-  defp auth_methods_summary(%ServerPolicy{dcr_allowed_token_endpoint_auth_methods: methods}) do
-    Enum.join(methods, ", ")
-  end
-
-  defp lifetime_summary(%ServerPolicy{} = policy) do
-    values = [
-      policy.dcr_default_client_lifetime_seconds,
-      policy.dcr_default_client_secret_lifetime_seconds,
-      policy.dcr_default_registration_access_token_lifetime_seconds
-    ]
-
-    if Enum.any?(values, &configured_lifetime?/1) do
-      "Default lifetimes configured"
-    else
-      "No default expiry limits"
-    end
-  end
-
-  defp configured_lifetime?(value) when is_integer(value), do: value > 0
-  defp configured_lifetime?(_value), do: false
+  defp field_label(_field), do: "App registration settings"
 end

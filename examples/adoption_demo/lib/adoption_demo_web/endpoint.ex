@@ -24,7 +24,7 @@ defmodule AdoptionDemoWeb.Endpoint do
   plug(Plug.Static,
     at: "/lockspire-assets",
     from: :adoption_demo,
-    only: ~w(lockspire-admin-live-view.js)
+    only: ~w(lockspire-admin-live-view.js lockspire-favicon.svg)
   )
 
   plug(Plug.Parsers,

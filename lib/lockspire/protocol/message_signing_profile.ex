@@ -61,6 +61,6 @@ defmodule Lockspire.Protocol.MessageSigningProfile do
   end
 
   defp remediation(:missing_compliant_publishable_key) do
-    ["Publish an ES256 or PS256 issuer signing key before enabling strict message signing."]
+    ["Publish an ES256 or PS256 Lockspire signing key before enabling strict message signing."]
   end
 end

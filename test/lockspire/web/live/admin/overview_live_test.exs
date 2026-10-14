@@ -12,7 +12,6 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
   alias Lockspire.Domain.SigningKey
-  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Domain.Token
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
@@ -97,6 +96,20 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
         expires_at: DateTime.add(now, 600, :second)
       })
 
+    {:ok, _approved_auth} =
+      Repository.put_device_authorization(%DeviceAuthorization{
+        device_code_hash: "overview-approved-device",
+        user_code_hash: "overview-approved-user-code",
+        verification_handle: "overview-approved-device-handle",
+        client_id: "overview-approved-client",
+        status: :approved,
+        subject_id: "overview-approved-account",
+        approved_at: now,
+        effective_poll_interval_seconds: 5,
+        next_poll_allowed_at: now,
+        expires_at: DateTime.add(now, 600, :second)
+      })
+
     {:ok, _iat} =
       Repository.save_initial_access_token(%InitialAccessToken{
         token_hash: "overview-iat",
@@ -141,6 +154,19 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     })
     |> Lockspire.TestRepo.insert!()
 
+    %LogoutDeliveryRecord{}
+    |> LogoutDeliveryRecord.changeset(%LogoutDelivery{
+      delivery_id: "overview-succeeded-logout-delivery",
+      logout_event_id: logout_event.id,
+      client_id: "overview-succeeded-client",
+      channel: :backchannel,
+      target_uri: "https://example.com/succeeded-backchannel",
+      status: :succeeded,
+      attempt_count: 1,
+      delivered_at: now
+    })
+    |> Lockspire.TestRepo.insert!()
+
     :ok
   end
 
@@ -151,6 +177,87 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/overview", Index))
   end
 
+  @tag :overview_summary_copy
+  test "overview uses one title and concise, decision-focused copy" do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin")
+
+    assert html =~ "<h1>Overview</h1>"
+    refute html =~ "<h2>Overview</h2>"
+    refute html =~ "See what needs review and open the related records."
+    assert html =~ "Security events"
+    assert html =~ "Sign-out problems"
+    assert has_element?(view, "button[aria-describedby='refresh-token-reuse-help']", "")
+
+    assert has_element?(
+             view,
+             "#refresh-token-reuse-help[role='tooltip']",
+             "Lockspire revoked every token"
+           )
+
+    assert has_element?(view, "button[aria-describedby='logout-delivery-help']", "")
+
+    assert has_element?(
+             view,
+             "#logout-delivery-help[role='tooltip']",
+             "Failed notices may be retried"
+           )
+
+    refute has_element?(
+             view,
+             "a[href='/admin/tokens?status=reuse_detected']",
+             "A refresh token was presented"
+           )
+
+    refute has_element?(
+             view,
+             "a[href='/admin/logouts?status=needs_review']",
+             "Failed notices may be retried"
+           )
+
+    assert has_element?(
+             view,
+             "a[href='/admin/tokens?status=reuse_detected']",
+             "Related tokens revoked"
+           )
+
+    assert has_element?(
+             view,
+             "a[href='/admin/logouts?status=needs_review']",
+             "Sign-out notices failed or were discarded"
+           )
+
+    assert html =~ "Refresh tokens used more than once"
+    assert html =~ "Unconfirmed app sign-outs"
+
+    assert rendered_text(html) =~ "Lockspire revoked every token in its family."
+    assert rendered_text(html) =~ "it does not prove theft"
+    assert rendered_text(html) =~ "not just unresolved cases"
+
+    assert rendered_text(html) =~
+             "Failed notices may be retried; discarded notices will not be sent again."
+
+    refute html =~ "Provider overview"
+    refute html =~ "Review client registrations, security policy, signing keys"
+    refute html =~ "Measured from"
+    refute html =~ "self-registered client"
+    refute html =~ "was compromised"
+    refute html =~ "session ended"
+    refute html =~ "Security posture"
+    refute html =~ "Key readiness"
+    refute html =~ "Support queue"
+    refute html =~ "Live operations"
+
+    assert length(Regex.scan(~r/Refresh tokens used more than once/, html)) == 1
+    assert length(Regex.scan(~r/Unconfirmed app sign-outs/, html)) == 1
+
+    for href <- [
+          "/admin/tokens?status=reuse_detected",
+          "/admin/logouts?status=needs_review"
+        ] do
+      HtmlAssertions.assert_has_link(html, href)
+    end
+  end
+
   test "overview renders task-centered status and journey links at both entry routes" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin")
     assert {:ok, _overview_view, overview_html} = live(conn_for_admin(), "/admin/overview")
@@ -159,21 +266,30 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
 
-    assert html =~ "Provider overview"
-    assert overview_html =~ "Provider overview"
-
-    assert html =~
-             "Review client registrations, security policy, signing keys, and current authorization activity."
+    assert html =~ "<h1>Overview</h1>"
+    assert overview_html =~ "<h1>Overview</h1>"
+    refute html =~ "<h2>Overview</h2>"
+    refute overview_html =~ "<h2>Overview</h2>"
+    refute html =~ "See what needs review and open the related records."
+    refute html =~ "Provider overview"
+    refute overview_html =~ "Provider overview"
 
     refute html =~ "Operator cockpit"
     refute overview_html =~ "Operator cockpit"
-    assert html =~ "Security posture"
-    assert html =~ "Key readiness"
-    assert html =~ "Support queue"
-    assert html =~ "Live operations"
-    assert html =~ "Refresh reuse incidents"
-    assert html =~ "Active initial access tokens"
+    assert html =~ "Security events"
+    assert html =~ "Sign-out problems"
+    assert html =~ "Waiting for users"
+    assert html =~ "Apps and access"
+    refute html =~ "Provider defaults"
+    assert html =~ "Active token-signing key"
+    assert html =~ "Refresh tokens used more than once"
+    assert html =~ "Unconfirmed app sign-outs"
+    refute html =~ "Active app setup token"
     assert html =~ "/admin/dcr"
+    refute html =~ "Measured from"
+    refute html =~ "self-registered client"
+    refute html =~ "reuse incident"
+    refute html =~ "logout failure"
 
     for href <- [
           "/admin/clients",
@@ -181,13 +297,53 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
           "/admin/keys",
           "/admin/tokens?status=reuse_detected",
           "/admin/consents?status=active",
-          "/admin/logouts",
-          "/admin/interactions",
-          "/admin/device_authorizations",
+          "/admin/logouts?status=needs_review",
+          "/admin/interactions?status=pending",
+          "/admin/device_authorizations?status=pending",
           "/admin/dcr"
         ] do
       HtmlAssertions.assert_has_link(html, href)
     end
+
+    assert [_, "1"] =
+             Regex.run(
+               ~r{<a href="/admin/interactions\?status=pending">\s*<span>Sign-in or consent request</span>\s*<strong>(\d+)</strong>},
+               html
+             )
+
+    assert {:ok, _interactions_view, interactions_html} =
+             live(conn_for_admin(), "/admin/interactions?status=pending")
+
+    assert interactions_html =~ "1 request waiting for sign-in or consent"
+    assert interactions_html =~ "overview-interaction"
+    refute interactions_html =~ "Sign-in request queue"
+    refute interactions_html =~ "Active interactions"
+
+    assert [_, "1"] =
+             Regex.run(
+               ~r{<a href="/admin/device_authorizations\?status=pending">\s*<span>Device sign-in waiting for approval</span>\s*<strong>(\d+)</strong>},
+               html
+             )
+
+    assert {:ok, _devices_view, devices_html} =
+             live(conn_for_admin(), "/admin/device_authorizations?status=pending")
+
+    device_text = rendered_text(devices_html)
+    assert device_text =~ "overview-client"
+    refute device_text =~ "overview-approved-client"
+
+    assert [_, "1"] =
+             Regex.run(
+               ~r{<a href="/admin/logouts\?status=needs_review">\s*<span>Unconfirmed app sign-outs</span>\s*<strong>(\d+)</strong>},
+               html
+             )
+
+    assert {:ok, _logouts_view, logouts_html} =
+             live(conn_for_admin(), "/admin/logouts?status=needs_review")
+
+    logout_text = rendered_text(logouts_html)
+    assert logout_text =~ "overview-client"
+    refute logout_text =~ "overview-succeeded-client"
 
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
 
@@ -196,8 +352,8 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
       "Rotate registration access token",
       "Revoke token",
       "Revoke token family",
-      "Disable client",
-      "Enable client",
+      "Disable app",
+      "Enable app",
       "Retry logout delivery",
       "Discard logout delivery",
       "Approve DCR request",
@@ -210,27 +366,34 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     ])
   end
 
+  @tag :overview_read_states
   test "overview starts in loading state and keeps each failed source independent" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
     loading_html = rendered_to_string(Index.render(socket.assigns))
     loading_text = rendered_text(loading_html)
 
-    assert loading_text =~ "Provider overview"
-    assert loading_text =~ "Loading client inventory"
-    assert loading_text =~ "Loading server policy"
+    assert loading_text =~ "Overview"
+    assert loading_text =~ "Loading app records"
+    assert loading_text =~ "Loading signing keys"
+    refute loading_text =~ "Loading security settings"
     refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)
     refute loading_text =~ "No matching"
 
     sources = [
-      {:clients, "Client inventory unavailable", "/admin/clients"},
-      {:tokens, "Token inventory unavailable", "/admin/tokens?status=reuse_detected"},
-      {:consents, "Consent inventory unavailable", "/admin/consents?status=active"},
-      {:keys, "Signing-key inventory unavailable", "/admin/keys"},
-      {:iats, "Initial access token inventory unavailable", "/admin/dcr"},
-      {:interactions, "Interaction inventory unavailable", "/admin/interactions"},
-      {:devices, "Device authorization inventory unavailable", "/admin/device_authorizations"},
-      {:logouts, "Logout delivery inventory unavailable", "/admin/logouts"},
-      {:policy, "Security policy unavailable", "/admin/policies"}
+      {:clients, "Could not load app records. The current results are unavailable.",
+       "/admin/clients"},
+      {:tokens, "Could not load refresh token records. The current results are unavailable.",
+       "/admin/tokens?status=reuse_detected"},
+      {:consents, "Could not load consent grants. The current results are unavailable.",
+       "/admin/consents?status=active"},
+      {:keys, "Could not load signing keys. The current results are unavailable.", "/admin/keys"},
+      {:interactions, "Could not load sign-in requests. The current results are unavailable.",
+       "/admin/interactions?status=pending"},
+      {:devices,
+       "Could not load device authorization requests. The current results are unavailable.",
+       "/admin/device_authorizations?status=pending"},
+      {:logouts, "Could not load logout delivery records. The current results are unavailable.",
+       "/admin/logouts?status=needs_review"}
     ]
 
     for {source, unavailable_copy, pivot} <- sources do
@@ -238,76 +401,127 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
         failed_html = loaded_overview_html()
         failed_text = rendered_text(failed_html)
 
+        assert failed_text =~ "Unavailable"
         assert failed_text =~ unavailable_copy
-        assert failed_text =~ "Security posture"
-        assert failed_text =~ "Live operations"
+        assert failed_text =~ "Security events"
+        assert failed_text =~ "Apps and access"
         HtmlAssertions.assert_has_link(failed_html, pivot)
 
         if source != :clients do
-          assert failed_text =~ "1 client"
+          assert failed_text =~ "Registered app 1"
         end
       end)
     end
   end
 
-  test "overview counts use measured zero, one, and many copy" do
+  test "overview counts use accurate zero, one, and many copy" do
     with_read_override(:empty_clients, fn ->
       text = loaded_overview_html() |> rendered_text()
-      assert text =~ "0 clients"
-      assert text =~ "Measured from client inventory"
+      assert text =~ "Registered apps 0"
+      refute text =~ "Measured from"
     end)
 
     one_text = loaded_overview_html() |> rendered_text()
-    assert one_text =~ "1 client"
-    assert one_text =~ "1 self-registered client"
+    assert one_text =~ "Registered app 1"
+    refute one_text =~ "self-registered"
 
     register_overview_client("overview-client-two", :self_registered)
     many_text = loaded_overview_html() |> rendered_text()
-    assert many_text =~ "2 clients"
-    assert many_text =~ "2 self-registered clients"
+    assert many_text =~ "Registered apps 2"
+    refute many_text =~ "self-registered"
   end
 
-  test "overview distinguishes configured policy defaults, stored policy, and read failure" do
-    default_text = loaded_overview_html() |> rendered_text()
-    assert default_text =~ "Configured defaults"
-    assert default_text =~ "optional"
-    assert default_text =~ "bearer"
-    refute default_text =~ "Stored server policy"
+  test "overview leaves detailed configuration on its destination pages" do
+    for source <- [:policy, :iats] do
+      with_read_override({:fail, source}, fn ->
+        text = loaded_overview_html() |> rendered_text()
+        refute text =~ "Unavailable"
+        refute text =~ "Provider defaults"
+        refute text =~ "Request step"
+        refute text =~ "Standard OpenID Connect"
+        refute text =~ "Active app setup token"
+        assert text =~ "Registered app 1"
+      end)
+    end
+  end
 
-    assert {:ok, _stored_policy} =
-             Repository.put_server_policy(%ServerPolicy{
-               par_policy: :required,
-               dpop_policy: :dpop
+  test "overview active signing count excludes encryption keys" do
+    now = DateTime.utc_now()
+
+    assert {:ok, _} =
+             Repository.publish_key(%SigningKey{
+               kid: "overview-encryption-key",
+               kty: :RSA,
+               alg: "RSA-OAEP-256",
+               use: :enc,
+               public_jwk: %{"kty" => "RSA", "n" => "n", "e" => "AQAB"},
+               private_jwk_encrypted: <<1>>,
+               status: :active,
+               published_at: now,
+               activated_at: now
              })
 
-    stored_text = loaded_overview_html() |> rendered_text()
-    assert stored_text =~ "Stored server policy"
-    assert stored_text =~ "required"
-    assert stored_text =~ "dpop"
-    refute stored_text =~ "Configured defaults"
+    assert {:ok, view, _} = live(conn_for_admin(), "/admin")
+    assert has_element?(view, "a[href='/admin/keys']", "Active token-signing key")
+    assert has_element?(view, "a[href='/admin/keys'] strong", "1")
+    assert has_element?(view, "#signing-key-help", "verify that a token came from your server")
+  end
 
-    with_read_override({:fail, :policy}, fn ->
-      failed_text = loaded_overview_html() |> rendered_text()
-      assert failed_text =~ "Security policy unavailable"
-      assert failed_text =~ "1 client"
-      refute failed_text =~ "Configured defaults"
-      refute failed_text =~ "Stored server policy"
-      refute failed_text =~ "optional"
-    end)
+  test "expired pending records stay in inventories but not the waiting overview or pivots" do
+    now = DateTime.utc_now()
+
+    assert {:ok, _} =
+             Repository.put_interaction(%Interaction{
+               interaction_id: "overview-stale-interaction",
+               client_id: "overview-client",
+               return_to: "https://example.com/return",
+               status: :pending_login,
+               expires_at: DateTime.add(now, -60, :second)
+             })
+
+    assert {:ok, _} =
+             Repository.put_device_authorization(%DeviceAuthorization{
+               device_code_hash: "overview-stale-device",
+               user_code_hash: "overview-stale-code",
+               verification_handle: "overview-stale-handle",
+               client_id: "overview-stale-client",
+               status: :pending,
+               effective_poll_interval_seconds: 5,
+               next_poll_allowed_at: now,
+               expires_at: DateTime.add(now, -60, :second)
+             })
+
+    assert {:ok, view, _} = live(conn_for_admin(), "/admin")
+    assert has_element?(view, "a[href='/admin/interactions?status=pending'] strong", "1")
+    assert has_element?(view, "a[href='/admin/device_authorizations?status=pending'] strong", "1")
+
+    assert {:ok, _, pending_interactions} =
+             live(conn_for_admin(), "/admin/interactions?status=pending")
+
+    assert pending_interactions =~ "overview-interaction"
+    refute pending_interactions =~ "overview-stale-interaction"
+    assert {:ok, _, all_interactions} = live(conn_for_admin(), "/admin/interactions")
+    assert all_interactions =~ "overview-stale-interaction"
+
+    assert {:ok, _, pending_devices} =
+             live(conn_for_admin(), "/admin/device_authorizations?status=pending")
+
+    refute pending_devices =~ "overview-stale-client"
+    assert {:ok, _, all_devices} = live(conn_for_admin(), "/admin/device_authorizations")
+    assert all_devices =~ "overview-stale-client"
   end
 
   test "security and DCR landing pages orient related workflows" do
     assert {:ok, _security_view, security_html} = live(conn_for_admin(), "/admin/policies")
 
-    assert security_html =~ "Issuer policy settings"
-    assert security_html =~ "Dynamic Client Registration"
+    assert security_html =~ "Security settings"
+    assert security_html =~ "App self-registration"
     assert security_html =~ "/admin/policies/dcr"
 
     assert {:ok, _dcr_view, dcr_html} = live(conn_for_admin(), "/admin/dcr")
 
-    assert dcr_html =~ "Prepare a partner registration"
-    assert dcr_html =~ "Create an Initial Access Token"
-    assert dcr_html =~ "Review self-registered clients"
+    assert dcr_html =~ "App registration"
+    assert dcr_html =~ "Apps registered by their teams"
     assert dcr_html =~ "Overview Client"
   end
 

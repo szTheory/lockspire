@@ -56,7 +56,7 @@ defmodule AdoptionDemoWeb.SessionController do
           <dl class="data-list">
             <div class="data-row"><dt>alice</dt><dd>Billingo user</dd></div>
             <div class="data-row"><dt>bob</dt><dd>Customer user</dd></div>
-            <div class="data-row"><dt>ops</dt><dd>Operator with Lockspire admin access</dd></div>
+            <div class="data-row"><dt>ops</dt><dd>Lockspire admin access</dd></div>
           </dl>
         </div>
       </article>
