@@ -30,25 +30,25 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
         <AdminComponents.section_card title="Security events">
           <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
             <div class="lockspire-admin-overview-review-row">
-              <a href={admin_path("/tokens?status=reuse_detected")}>
-                <span>Refresh tokens used more than once</span>
-                <strong>{observation_value(@summary.tokens, :reuse_detected)}</strong>
-                <small :if={@summary.tokens.state == :loaded}>
-                  {if observation_value(@summary.tokens, :reuse_detected) > 0, do: "Related tokens revoked", else: "No repeat use detected"}
-                </small>
-                <small :if={@summary.tokens.state != :loaded} role="status">
-                  {observation_note(@summary.tokens, "refresh token records")}
-                </small>
-              </a>
-              <AdminComponents.info_tooltip :if={@summary.tokens.state == :loaded} id="refresh-token-reuse-help" label="About refresh token reuse">
-                Refresh tokens let apps keep access. Reuse after replacement can indicate theft or a repeated app request; it does not prove theft.
-                <%= if observation_value(@summary.tokens, :reuse_detected) > 0 do %>
-                  Lockspire revoked every token in its family. Open the records to investigate.
-                <% else %>
-                  Lockspire revokes related tokens when this happens.
-                <% end %>
-                The count includes past detections, not just unresolved cases.
-              </AdminComponents.info_tooltip>
+              <span class="lockspire-admin-overview-review-label">
+                <a href={admin_path("/tokens?status=reuse_detected")}>Refresh tokens used more than once</a>
+                <AdminComponents.info_tooltip :if={@summary.tokens.state == :loaded} id="refresh-token-reuse-help" label="About refresh token reuse">
+                  Refresh tokens let apps keep access. Reuse after replacement can indicate theft or a repeated app request; it does not prove theft.
+                  <%= if observation_value(@summary.tokens, :reuse_detected) > 0 do %>
+                    Lockspire revoked every token in its family. Open the records to investigate.
+                  <% else %>
+                    Lockspire revokes related tokens when this happens.
+                  <% end %>
+                  The count includes past detections, not just unresolved cases.
+                </AdminComponents.info_tooltip>
+              </span>
+              <strong>{observation_value(@summary.tokens, :reuse_detected)}</strong>
+              <small :if={@summary.tokens.state == :loaded}>
+                {if observation_value(@summary.tokens, :reuse_detected) > 0, do: "Related tokens revoked", else: "No repeat use detected"}
+              </small>
+              <small :if={@summary.tokens.state != :loaded} role="status">
+                {observation_note(@summary.tokens, "refresh token records")}
+              </small>
             </div>
           </div>
         </AdminComponents.section_card>
@@ -56,26 +56,26 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
         <AdminComponents.section_card title="Sign-out problems">
           <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
             <div class="lockspire-admin-overview-review-row">
-              <a href={admin_path("/logouts?status=needs_review")}>
-                <span>Unconfirmed app sign-outs</span>
-                <strong>{observation_value(@summary.logouts, :failed)}</strong>
-                <small :if={@summary.logouts.state == :loaded}>
-                  {if observation_value(@summary.logouts, :failed) > 0, do: "Sign-out notices failed or were discarded", else: "No failed notices"}
-                </small>
-                <small :if={@summary.logouts.state != :loaded} role="status">
-                  {observation_note(@summary.logouts, "logout delivery records")}
-                </small>
-              </a>
-              <AdminComponents.info_tooltip :if={@summary.logouts.state == :loaded} id="logout-delivery-help" label="About app sign-out problems">
-                <%= if observation_value(@summary.logouts, :failed) > 0 do %>
-                  These notices could not be delivered successfully. An app session may still be open.
-                <% else %>
-                  Sign-out notices ask apps to end their local session when a user signs out.
-                <% end %>
-                Failed notices may be retried; discarded notices will not be sent again.
-                Open the delivery records to identify the app and the failure.
-                This count includes retained failures, not a count of users still signed in.
-              </AdminComponents.info_tooltip>
+              <span class="lockspire-admin-overview-review-label">
+                <a href={admin_path("/logouts?status=needs_review")}>Unconfirmed app sign-outs</a>
+                <AdminComponents.info_tooltip :if={@summary.logouts.state == :loaded} id="logout-delivery-help" label="About app sign-out problems">
+                  <%= if observation_value(@summary.logouts, :failed) > 0 do %>
+                    These notices could not be delivered successfully. An app session may still be open.
+                  <% else %>
+                    Sign-out notices ask apps to end their local session when a user signs out.
+                  <% end %>
+                  Failed notices may be retried; discarded notices will not be sent again.
+                  Open the delivery records to identify the app and the failure.
+                  This count includes retained failures, not a count of users still signed in.
+                </AdminComponents.info_tooltip>
+              </span>
+              <strong>{observation_value(@summary.logouts, :failed)}</strong>
+              <small :if={@summary.logouts.state == :loaded}>
+                {if observation_value(@summary.logouts, :failed) > 0, do: "Sign-out notices failed or were discarded", else: "No failed notices"}
+              </small>
+              <small :if={@summary.logouts.state != :loaded} role="status">
+                {observation_note(@summary.logouts, "logout delivery records")}
+              </small>
             </div>
           </div>
         </AdminComponents.section_card>
@@ -109,33 +109,33 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
               </small>
             </a>
             <div class="lockspire-admin-overview-review-row">
-              <a href={admin_path("/consents?status=active")}>
-                <span>{count_label(@summary.consents, :active, "Active consent grant", "Active consent grants")}</span>
-                <strong>{observation_value(@summary.consents, :active)}</strong>
-                <small :if={@summary.consents.state != :loaded} role="status">
-                  {observation_note(@summary.consents, "consent grants")}
-                </small>
-              </a>
-              <AdminComponents.info_tooltip id="consent-grant-help" label="About consent grants">
-                Each grant records a user's permission for an app to access specific data.
-                Open a grant to inspect or revoke that permission.
-              </AdminComponents.info_tooltip>
+              <span class="lockspire-admin-overview-review-label">
+                <a href={admin_path("/consents?status=active")}>{count_label(@summary.consents, :active, "Active consent grant", "Active consent grants")}</a>
+                <AdminComponents.info_tooltip id="consent-grant-help" label="About consent grants">
+                  Each grant records a user's permission for an app to access specific data.
+                  Open a grant to inspect or revoke that permission.
+                </AdminComponents.info_tooltip>
+              </span>
+              <strong>{observation_value(@summary.consents, :active)}</strong>
+              <small :if={@summary.consents.state != :loaded} role="status">
+                {observation_note(@summary.consents, "consent grants")}
+              </small>
             </div>
             <div class="lockspire-admin-overview-review-row">
-              <a href={admin_path("/keys")}>
-                <span>{count_label(@summary.keys, :active, "Active token-signing key", "Active token-signing keys")}</span>
-                <strong>{observation_value(@summary.keys, :active)}</strong>
-                <small :if={@summary.keys.state == :loaded && observation_value(@summary.keys, :active) == 0}>
-                  Review key setup before issuing tokens
-                </small>
-                <small :if={@summary.keys.state != :loaded} role="status">
-                  {observation_note(@summary.keys, "signing keys")}
-                </small>
-              </a>
-              <AdminComponents.info_tooltip id="signing-key-help" label="About token-signing keys">
-                Apps use a signing key's public part to verify that a token came from your server.
-                Open Keys to manage keys and review upcoming or retiring keys.
-              </AdminComponents.info_tooltip>
+              <span class="lockspire-admin-overview-review-label">
+                <a href={admin_path("/keys")}>{count_label(@summary.keys, :active, "Active token-signing key", "Active token-signing keys")}</a>
+                <AdminComponents.info_tooltip id="signing-key-help" label="About token-signing keys">
+                  Apps use a signing key's public part to verify that a token came from your server.
+                  Open Keys to manage keys and review upcoming or retiring keys.
+                </AdminComponents.info_tooltip>
+              </span>
+              <strong>{observation_value(@summary.keys, :active)}</strong>
+              <small :if={@summary.keys.state == :loaded && observation_value(@summary.keys, :active) == 0}>
+                Review key setup before issuing tokens
+              </small>
+              <small :if={@summary.keys.state != :loaded} role="status">
+                {observation_note(@summary.keys, "signing keys")}
+              </small>
             </div>
           </div>
         </AdminComponents.section_card>

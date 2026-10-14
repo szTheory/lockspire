@@ -75,6 +75,8 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           if (open) {
             const trigger = info.querySelector("[data-lockspire-info-trigger]").getBoundingClientRect();
             const tooltip = info.querySelector('[role="tooltip"]');
+            const anchor = tooltip.offsetParent;
+            if (anchor) tooltip.style.setProperty("--ls-info-anchor-bottom", `${trigger.bottom - anchor.getBoundingClientRect().top}px`);
             const box = tooltip.getBoundingClientRect();
             const center = trigger.left + trigger.width / 2;
             const offset = getComputedStyle(tooltip).direction === "rtl" ? box.right - center : center - box.left;

@@ -1660,9 +1660,21 @@ defmodule Lockspire.Web.Admin.CSS do
     padding: var(--ls-space-3) 0;
   }
 
-  .lockspire-admin-overview-grid .lockspire-admin-overview-review-row > a:hover,
-  .lockspire-admin-overview-grid .lockspire-admin-resource-list > a:hover {
+  /* Overview rows sit flat inside their card, so hover marks only the row's
+     label as the link: accent plus underline, with the count and note unchanged. */
+  .lockspire-admin-overview-grid .lockspire-admin-resource-list > a:not(.lockspire-admin-btn):hover,
+  .lockspire-admin-overview-grid .lockspire-admin-overview-review-row:hover {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .lockspire-admin-overview-grid .lockspire-admin-resource-list > a:hover > span,
+  .lockspire-admin-overview-review-label > a:hover,
+  .lockspire-admin-overview-review-row:hover:not(:has(.lockspire-admin-info:hover)) .lockspire-admin-overview-review-label > a {
     color: var(--ls-text-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
   }
 
   .lockspire-admin-overview-grid .lockspire-admin-resource-list > a > small {
@@ -1874,48 +1886,82 @@ defmodule Lockspire.Web.Admin.CSS do
     text-decoration: none;
   }
 
-  .lockspire-admin-overview-review-row > a {
-    color: var(--ls-text-body);
-    text-decoration: none;
+  .lockspire-admin-overview-review-row {
     align-items: start;
     display: grid;
     gap: var(--ls-space-2) var(--ls-space-4);
     grid-template-columns: minmax(0, 1fr) auto;
-    background: none;
-    border: 0;
-    border-radius: 0;
-    min-height: 0;
-    padding: 0;
+    position: relative;
   }
 
-  /* Keep the first text line and count centered on the adjacent info trigger.
-     Padding stays on the first-row cells so wrapped labels retain this anchor. */
-  .lockspire-admin-overview-review-row > a > span,
-  .lockspire-admin-overview-review-row > a > strong {
+  .lockspire-admin-overview-review-row > strong {
+    grid-column: 2;
+    grid-row: 1;
     line-height: var(--ls-type-line-body);
     padding-block: var(--ls-space-1);
   }
 
-  .lockspire-admin-overview-review-row {
-    align-items: start;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    position: relative;
+  .lockspire-admin-overview-review-row > small {
+    grid-column: 1 / -1;
   }
 
-  .lockspire-admin-overview-review-row > .lockspire-admin-info {
+  /* The info trigger sits right after the label text. A button cannot live
+     inside a link, so the label link stretches over the whole row and the
+     trigger rises above it. */
+  .lockspire-admin-overview-review-label {
+    align-items: center;
+    display: flex;
+    gap: var(--ls-space-1);
+    line-height: var(--ls-type-line-body);
+    margin-block: calc(-1 * var(--ls-space-1));
+    min-width: 0;
+  }
+
+  .lockspire-admin-overview-review-label > a {
+    color: var(--ls-text-body);
+    padding-block: var(--ls-space-2);
+    text-decoration: none;
+  }
+
+  .lockspire-admin-overview-review-label > a::after {
+    content: "";
+    inset: 0;
+    position: absolute;
+  }
+
+  .lockspire-admin-overview-review-label > a:focus-visible {
+    outline: none;
+  }
+
+  .lockspire-admin-overview-review-label > a:focus-visible::after {
+    border-radius: var(--ls-radius-md);
+    outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color);
+    outline-offset: var(--ls-focus-ring-offset);
+  }
+
+  .lockspire-admin-overview-review-label > .lockspire-admin-info {
     position: static;
   }
 
-  .lockspire-admin-overview-review-row .lockspire-admin-info-tooltip {
-    inset-inline-end: var(--ls-space-4);
-    top: calc(var(--ls-space-3) + var(--ls-info-trigger-size) + var(--ls-info-gap));
-    width: min(20rem, calc(100% - 2 * var(--ls-space-4)));
+  .lockspire-admin-overview-review-label .lockspire-admin-info-trigger {
+    position: relative;
+    z-index: 1;
   }
 
-  .lockspire-admin-overview-review-list .lockspire-admin-overview-review-row > a:hover {
-    background: none;
-    box-shadow: none;
+  /* The explanation spans the row and opens just below the trigger; the admin
+     script measures the trigger so wrapped labels keep the pointer attached. */
+  .lockspire-admin-overview-review-label .lockspire-admin-info-tooltip {
+    inset-inline-end: auto;
+    inset-inline-start: 0;
+    top: calc(var(--ls-info-anchor-bottom, 100%) + var(--ls-info-gap));
+    width: min(24rem, 100%);
+  }
+
+  .lockspire-admin-overview-review-label .lockspire-admin-info-tooltip::after {
+    inset-inline-end: auto;
+    inset-inline-start: calc(
+      var(--ls-info-pointer-offset, calc(var(--ls-info-trigger-size) / 2)) - var(--ls-space-2) / 2 - 1px
+    );
   }
 
   .lockspire-admin-info {
@@ -1997,21 +2043,7 @@ defmodule Lockspire.Web.Admin.CSS do
     visibility: visible;
   }
 
-  .lockspire-admin-overview-review-list a > span {
-    min-width: 0;
-  }
-
-  .lockspire-admin-overview-review-list a > strong {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .lockspire-admin-overview-review-list a > small {
-    grid-column: 1 / -1;
-  }
-
   .lockspire-admin-resource-list > a:not(.lockspire-admin-btn):hover,
-  .lockspire-admin-overview-review-row:hover,
   .lockspire-admin-resource-list__item:hover {
     background: var(--ls-surface-panel);
     box-shadow: var(--ls-shadow-sm);

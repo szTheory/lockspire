@@ -216,15 +216,23 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     assert has_element?(
              view,
-             "a[href='/admin/tokens?status=reuse_detected']",
+             ".lockspire-admin-overview-review-row:has(a[href='/admin/tokens?status=reuse_detected']) small",
              "Related tokens revoked"
            )
 
     assert has_element?(
              view,
-             "a[href='/admin/logouts?status=needs_review']",
+             ".lockspire-admin-overview-review-row:has(a[href='/admin/logouts?status=needs_review']) small",
              "Sign-out notices failed or were discarded"
            )
+
+    # The info trigger sits beside the row label, outside the link.
+    assert has_element?(
+             view,
+             ".lockspire-admin-overview-review-label button[aria-describedby='logout-delivery-help']"
+           )
+
+    refute has_element?(view, "a button[aria-describedby='logout-delivery-help']")
 
     assert html =~ "Refresh tokens used more than once"
     assert html =~ "Unconfirmed app sign-outs"
@@ -334,7 +342,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     assert [_, "1"] =
              Regex.run(
-               ~r{<a href="/admin/logouts\?status=needs_review">\s*<span>Unconfirmed app sign-outs</span>\s*<strong>(\d+)</strong>},
+               ~r{<a href="/admin/logouts\?status=needs_review">Unconfirmed app sign-outs</a>.*?</span>\s*<strong>(\d+)</strong>}s,
                html
              )
 
@@ -463,7 +471,13 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     assert {:ok, view, _} = live(conn_for_admin(), "/admin")
     assert has_element?(view, "a[href='/admin/keys']", "Active token-signing key")
-    assert has_element?(view, "a[href='/admin/keys'] strong", "1")
+
+    assert has_element?(
+             view,
+             ".lockspire-admin-overview-review-row:has(a[href='/admin/keys']) > strong",
+             "1"
+           )
+
     assert has_element?(view, "#signing-key-help", "verify that a token came from your server")
   end
 
