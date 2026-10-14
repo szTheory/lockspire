@@ -161,6 +161,9 @@ jobs:
       - name: Verify Hex package
         run: mix package.build
 
+      - name: Verify admin multi-value controls
+        run: node --test test/browser/admin_multi_value_test.mjs
+
       - name: Run fast tests with built-in coverage
         run: bash scripts/ci/run_test_matrix.sh --fast .artifacts/ci/fast-timings.json .artifacts/ci/coverage/fast "${{ github.sha }}"
 

@@ -43,6 +43,16 @@ defmodule Lockspire.WorkflowSupplyChainContractTest do
     end
   end
 
+  test "fast checks run the admin control script tests" do
+    workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
+
+    [[job]] =
+      Regex.scan(~r/^  fast:\n(.*?)(?=^  [a-z0-9-]+:|\z)/ms, workflow, capture: :all_but_first)
+
+    assert step_source(job, "Verify admin multi-value controls") =~
+             "run: node --test test/browser/admin_multi_value_test.mjs"
+  end
+
   @tag :phase139_gap_closure
   test "release hygiene runs the combined phase-finalizer lifecycle exactly once in protected order" do
     workflow = File.read!(Path.expand("../../.github/workflows/ci.yml", __DIR__))
