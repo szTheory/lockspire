@@ -1,39 +1,44 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.41
-status: "v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending"
-stopped_at: v1.41 archived — next milestone scope not selected
-last_updated: "2026-10-11T14:54:26.081Z"
-last_activity: 2026-10-11
-state_head: 87c546abbb65c0e40fa5bb5a465f2b8b94e93f8a
+milestone: v1.42
+milestone_name: Admin UI Clarity & Workflow Refinement
+status: planning
+last_updated: "2026-10-14T00:34:01Z"
+last_activity: 2026-10-13
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
-milestone_name: Product Language & Repository Clarity
-current_phase: null
+  total_phases: 4
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-11 after v1.41 completion)
+See: .planning/PROJECT.md (updated 2026-10-12 for v1.42)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone with `$gsd-new-milestone`
+**Current focus:** v1.42 Admin UI Clarity & Workflow Refinement; roadmap created for Phases 151–154.
 
 ## Current Position
 
-Phase: —
-Plan: —
-Status: v1.39-v1.41 consolidated work shipped in PR #122; CI and review pending
-Last activity: 2026-10-11
+Phase: 153 of 154 — Configure & Support Page Refinement
+Plan: 00 complete; 01–06 implementation and review in progress (summaries pending)
+Status: Baseline complete; Phase 153 implementation is in progress
+Last activity: 2026-10-13 — Completed the bounded autonomous UX feedback sweep: practical lifetime guidance and actionable errors, shared client radios, terminal consent/key cleanup, scoped setup-token errors and shared spacing. Fresh proof: 305 Elixir / 6 Node tests, rebuilt demo smoke, final source detector, formatting and 30 desktop + 30 mobile route checks passed. Node regressions are wired into existing CI and validated locally; hosted CI has not run. Lifetime enforcement gaps are traced and retained as separate pending protocol work. Resume Phase 153 reviews/summaries and phase verification without repeating this batch.
 
 ## Accumulated Context
+
+### v1.42 Milestone Direction
+
+- The user requested a systematic follow-up to v1.40 and v1.41 UI work: inspect the current mounted interface, review all 29 route scorecards, use Impeccable and design-engineering judgment, then leave a cleaner baseline for optional user feedback. Their feedback prioritizes a dedicated client-creation page; concise, useful user-facing language; accurate explanation of token reuse and logout outcomes; less redundant headings and provenance copy; and purposeful button hierarchy.
+- Phase numbering continues after Phase 150. The roadmap assigns the nine v1.42 requirements exactly once across Phases 151–154: focused client registration and action semantics; overview and read-only queue accuracy; route-wide Configure/Support language and composition; responsive/theme and rendered proof.
+- The design direction refines the existing Signal Cyan identity, Phoenix LiveView components, and tokens. Preserve the embedded-library shape, host-owned UX, credentials and redaction rules, copy-once behavior, confirmation semantics, and read-only interaction/device/logout queues. No protocol behavior, security defaults, new UI dependencies, or new queue controls are in scope.
+- Keep CR-01 as a separate critical unresolved security issue; this milestone neither resolves nor accepts the plaintext private-key-at-rest finding. Do not move or archive existing `.planning/phases` artifacts: the directory contains older Phase 142/143 evidence for v1.39 and a `.gitkeep` backlog directory.
+- No source code was changed while creating the roadmap. The demo's synthetic Billingo data remains synthetic, not a real customer or integration.
 
 ### v1.41 Milestone Direction
 
@@ -272,6 +277,7 @@ Last activity: 2026-10-11
 
 - Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 - v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
+- v1.42 roadmap created: Phases 151–154 map all nine Admin UI Clarity & Workflow Refinement requirements exactly once. Existing Phase 142/143 historical evidence was left in place; CR-01 remains deferred and unresolved.
 
 ## Deferred Items
 
@@ -295,9 +301,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-11T11:49:07.202Z
-Stopped at: Phase 150 complete — all phases complete
-Resume file: None
+Last session: 2026-10-14T00:34:01Z
+Stopped at: Phase 153 autonomous feedback sweep verified and recorded in 153-AUTOMATED-UX-SWEEP.md. Outstanding phase plan review/summaries and phase verification remain before Phase 154.
+Resume file: .planning/phases/153-configure-support-page-refinement/153-UI-REVIEW-SNAPSHOT.md
 
 ## Performance Metrics
 
@@ -398,4 +404,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with $gsd-new-milestone
+- Resume remaining Phase 153 plan reviews/summaries and verification with $gsd-execute-phase 153. Consult 153-USER-FEEDBACK.md and 153-UI-REVIEW-SNAPSHOT.md; do not repeat implemented feedback or start a new milestone.

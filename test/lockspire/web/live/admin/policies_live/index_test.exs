@@ -43,44 +43,53 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
     assert Enum.any?(routes, &live_route?(&1, "/admin/policies", Index))
   end
 
-  test "CONFIG-01 policy overview uses route-specific policy review labels" do
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies")
+  test "provider settings show concise policy choices and useful destinations" do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies")
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
 
-    assert html =~ "Configure"
-    assert html =~ "Issuer policy settings"
-    assert html =~ "Each page changes its own issuer policy."
-    assert html =~ "Current issuer setting"
-    assert html =~ "Review issuer PAR defaults and client exceptions."
-    assert html =~ "Review inherited security profile settings and readiness."
-    assert html =~ "Review the DPoP default and client exceptions."
-    assert html =~ "Review future registration gates, metadata allowlists, and DCR lifetimes."
-    assert html =~ "0 clients require PAR; 0 mark it optional."
-    assert html =~ "0 self-registered clients; 0 active Initial Access Tokens."
+    assert html =~ "Security settings"
+    assert html =~ "Default for apps"
+    assert html =~ "Optional PAR"
+    assert html =~ "Bearer tokens"
+    refute has_element?(view, ".lockspire-admin-display-value")
+
+    assert html =~
+             "0 apps require PAR explicitly; 0 apps choose optional PAR."
+
+    assert html =~
+             "0 apps registered themselves through the API; 0 active setup tokens are stored."
+
+    assert has_element?(
+             view,
+             ~s(.lockspire-admin-secondary-nav a[href="/admin/policies"][aria-current="page"][data-phx-link="redirect"])
+           )
+
     refute html =~ "operator action surface"
 
     for {label, href} <- [
-          {"Review PAR policy", "/admin/policies/par"},
-          {"Review security profile", "/admin/policies/security-profile"},
-          {"Review DPoP policy", "/admin/policies/dpop"},
-          {"Review DCR policy", "/admin/policies/dcr"}
+          {"Authorization requests", "/admin/policies/par"},
+          {"Default security settings", "/admin/policies/security-profile"},
+          {"Token proof", "/admin/policies/dpop"},
+          {"App self-registration", "/admin/policies/dcr"}
         ] do
       assert html =~ label
       HtmlAssertions.assert_has_link(html, href)
+      assert has_element?(view, ~s(.lockspire-admin-policy-list__row h2 a[href="#{href}"]), label)
     end
 
+    refute has_element?(view, ".lockspire-admin-policy-list__row .lockspire-admin-btn")
     refute html =~ "Open workflow"
 
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())
 
     HtmlAssertions.assert_no_text(html, [
-      "Save global PAR policy",
+      "Save request settings",
       "Save global security profile",
-      "Save global DPoP policy",
-      "Save global DCR policy",
+      "Save token proof settings",
+      "Save app registration settings",
       "Rotate client secret",
       "Rotate registration access token",
       "Mint initial access token",
@@ -104,12 +113,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
 
       assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies")
 
-      assert html =~ "Current issuer setting"
+      assert html =~ "Default for apps"
       assert html =~ "Unavailable"
-      assert html =~ "Client counts are unavailable."
-      assert html =~ "Client and Initial Access Token counts are unavailable."
-      refute html =~ "0 clients require PAR"
-      refute html =~ "0 self-registered clients"
+      assert html =~ "App settings could not be loaded."
+      assert html =~ "App registration and setup-token counts could not be loaded."
+      refute html =~ "0 apps require the request step"
+      refute html =~ "0 apps registered themselves"
 
       for href <- ["/admin/policies/par", "/admin/policies/dpop", "/admin/policies/dcr"] do
         HtmlAssertions.assert_has_link(html, href)

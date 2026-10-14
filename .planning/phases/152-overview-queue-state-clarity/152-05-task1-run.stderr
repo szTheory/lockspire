@@ -1,0 +1,97 @@
+     warning: this clause of defp security_profile_tone/1 is never used (or it will always fail/warn when invoked)
+     │
+ 396 │   defp security_profile_tone(_profile), do: :info
+     │        ~
+     │
+     └─ lib/lockspire/web/live/admin/policies_live/security_profile.ex:396:8: Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile.security_profile_tone/1
+
+     warning: the following clause is redundant:
+
+         defp normalize_scalar(value) when is_boolean(value)
+
+     it has type:
+
+         dynamic(boolean())
+
+     previous clauses have already matched on the following types:
+
+         binary()
+         atom()
+         integer()
+         float()
+
+     │
+ 269 │   defp normalize_scalar(value) when is_boolean(value), do: to_string(value)
+     │        ~
+     │
+     └─ lib/lockspire/redaction.ex:269:8: Lockspire.Redaction.normalize_scalar/1
+
+     warning: the following clause is redundant:
+
+         defp normalize_scalar(nil)
+
+     it has type:
+
+         nil
+
+     previous clauses have already matched on the following types:
+
+         binary()
+         atom()
+         integer()
+         float()
+
+     │
+ 270 │   defp normalize_scalar(nil), do: nil
+     │        ~
+     │
+     └─ lib/lockspire/redaction.ex:270:8: Lockspire.Redaction.normalize_scalar/1
+
+     warning: this clause of defp profile_detail/1 is never used (or it will always fail/warn when invoked)
+     │
+ 671 │   defp profile_detail(:fapi_2_0_message_signing), do: :fapi_2_0_message_signing
+     │        ~
+     │
+     └─ lib/lockspire/admin/clients.ex:671:8: Lockspire.Admin.Clients.profile_detail/1
+
+     warning: the following clause will never match:
+
+         {:error, :unsupported_token_endpoint_auth_method} ->
+
+     because it attempts to match on the result of:
+
+         Lockspire.Security.Policy.ensure_supported_token_endpoint_auth_method(auth_method)
+
+     which has type:
+
+         dynamic(:ok)
+
+     type warning found at:
+     │
+ 187 │       {:error, :unsupported_token_endpoint_auth_method} ->
+     │       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     │
+     └─ lib/lockspire/protocol/client_auth.ex:187: Lockspire.Protocol.ClientAuth.validate_registered_auth_method/2
+
+     warning: this clause of defp ensure_authorization_details_shape/2 is never used (or it will always fail/warn when invoked)
+     │
+ 688 │   defp ensure_authorization_details_shape(_value, params),
+     │        ~
+     │
+     └─ lib/lockspire/protocol/authorization_request.ex:688:8: Lockspire.Protocol.AuthorizationRequest.ensure_authorization_details_shape/2
+
+     warning: the following clause is redundant:
+
+         nil ->
+
+     previous clauses have already matched on the following types:
+
+         atom()
+
+     type warning found at:
+     │
+ 727 │       nil ->
+     │           ~
+     │
+     └─ lib/lockspire/protocol/authorization_request.ex:727:11: Lockspire.Protocol.AuthorizationRequest.normalize_authorization_detail/4
+

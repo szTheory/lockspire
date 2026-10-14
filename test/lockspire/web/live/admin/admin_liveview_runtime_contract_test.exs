@@ -70,7 +70,7 @@ defmodule Lockspire.Web.Live.Admin.LiveViewRuntimeContractTest do
     assert endpoint_source =~ "only: ~w(phoenix.js)"
     assert endpoint_source =~ "from: :phoenix_live_view"
     assert endpoint_source =~ "only: ~w(phoenix_live_view.js)"
-    assert endpoint_source =~ "only: ~w(lockspire-admin-live-view.js)"
+    assert endpoint_source =~ "only: ~w(lockspire-admin-live-view.js lockspire-favicon.svg)"
     assert endpoint_source =~ "@session_options ["
     assert endpoint_source =~ "websocket: [connect_info: [session: @session_options]]"
     assert endpoint_source =~ "plug(Plug.Session, @session_options)"

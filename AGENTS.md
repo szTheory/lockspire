@@ -49,6 +49,13 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - No `alg=none`
 - Strong redaction in logs and operator surfaces
 
+## Admin UI Copy
+
+- Before writing or changing admin UI text, read the personas and vocabulary map in `PRODUCT.md` and write for the least technical persona who uses the page.
+- Use the "UI says" term from the vocabulary map. When a change introduces a new domain concept, add it to the map in the same change.
+- When you replace wording, add the old phrase to the retired-wording table; `test/lockspire/web/live/admin/vocabulary_contract_test.exs` enforces it.
+- Describe what Lockspire actually does, not what a setting's name implies.
+
 ## Planning References
 
 - `.planning/PROJECT.md`

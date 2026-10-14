@@ -99,10 +99,16 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       text: unsupported_queue_control_text()
     )
 
-    assert page_html =~ "Operate"
-    assert page_html =~ "Device authorization queue"
-    assert page_html =~ "Recorded device authorizations"
-    assert page_html =~ "saved request status, client, subject, expiry, and polling context"
+    assert page_html =~ "Activity"
+    assert page_html =~ "Device authorization requests"
+    assert page_html =~ "All requests"
+
+    assert page_html =~
+             "See which devices are waiting for the user to confirm sign-in and when each request expires."
+
+    refute page_html =~ "Device authorization queue"
+    refute page_html =~ "polling details"
+    refute page_html =~ "polling context"
     assert page_html =~ "Pending"
     assert page_html =~ "Approved"
     assert page_html =~ "Denied"
@@ -117,39 +123,32 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
     assert page_html =~ "lockspire-admin-long-value"
-    assert page_html =~ "Pending device authorization"
-    assert page_html =~ "Approved device authorization"
-    assert page_html =~ "Denied device authorization"
-    assert page_html =~ "Expired device authorization"
-    assert page_html =~ "Completed device authorization"
-    assert page_html =~ "Approved, waiting"
+    assert page_html =~ "Waiting for user confirmation"
+    assert page_html =~ "Approved by the user"
+    assert page_html =~ "Denied by the user"
+    assert page_html =~ "Expired before completion"
+    assert page_html =~ "Completed"
+    refute rendered_text(page_html) =~ "Consumed"
+    assert page_html =~ "The user still needs to confirm this request."
 
     assert page_html =~
-             "Waiting for the user to finish verification before expiry."
+             "The user approved this request. The app is waiting to receive the result."
 
-    assert page_html =~
-             "Approved, waiting for token polling to consume the authorization."
-
-    assert page_html =~
-             "The request was denied before completion. Its recorded details remain available for follow-up."
-
-    assert page_html =~
-             "The request expired before completion. Its recorded details remain available for review."
-
-    assert page_html =~
-             "Token polling consumed this authorization. Its recorded status and timing remain available for review."
+    assert page_html =~ "The user denied this request."
+    assert page_html =~ "This request expired before it was completed."
+    assert page_html =~ "The app received the result after the user approved it."
 
     assert page_html =~ "Client"
-    assert page_html =~ "Subject"
-    assert page_html =~ "Handle"
+    assert page_html =~ "Account"
+    assert page_html =~ "Request reference"
     assert page_html =~ "Expires"
-    assert page_html =~ "Poll interval"
-    assert page_html =~ "Next poll"
-    assert page_html =~ "Last activity"
+    assert page_html =~ "App check interval"
+    assert page_html =~ "App may check again"
+    assert page_html =~ "Last status change"
     assert page_html =~ "5 seconds"
     assert page_html =~ "10 seconds"
     assert page_html =~ "Not recorded"
-    assert rendered_text(page_html) =~ "5 device authorizations recorded"
+    assert rendered_text(page_html) =~ "Showing 5 device requests"
 
     assert rendered_text(page_html) =~ pending.client_id
     assert rendered_text(page_html) =~ approved.client_id
@@ -172,15 +171,79 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     refute_unsupported_queue_controls(page_html)
   end
 
+  test "pending filter shows only requests waiting for the user and links to full history", %{
+    authorizations: [pending, approved, denied, expired, consumed]
+  } do
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/device_authorizations?status=pending")
+
+    page_html = page_markup(html)
+    text = rendered_text(page_html)
+
+    assert text =~ "1 device request awaiting user approval"
+    assert text =~ pending.client_id
+
+    for authorization <- [approved, denied, expired, consumed] do
+      refute text =~ authorization.client_id
+    end
+
+    assert page_html =~ ~s(href="/admin/device_authorizations")
+    assert page_html =~ "View all device requests"
+    assert page_html =~ "Waiting for a user"
+    refute page_html =~ ~s(<div class="lockspire-admin-metric-grid")
+
+    HtmlAssertions.assert_no_interactive_controls(page_html,
+      text: unsupported_queue_control_text()
+    )
+
+    refute_unsupported_queue_controls(page_html)
+
+    assert {:ok, _view, all_html} = live(conn_for_admin(), "/admin/device_authorizations")
+    all_text = rendered_text(page_markup(all_html))
+
+    for authorization <- [pending, approved, denied, expired, consumed] do
+      assert all_text =~ authorization.client_id
+    end
+
+    assert all_text =~ "Showing 5 device requests"
+  end
+
+  test "unknown device status filters safely show the full history", %{
+    authorizations: authorizations
+  } do
+    assert {:ok, _view, html} =
+             live(conn_for_admin(), "/admin/device_authorizations?status=unknown")
+
+    page_html = page_markup(html)
+    text = rendered_text(page_html)
+
+    for authorization <- authorizations do
+      assert text =~ authorization.client_id
+    end
+
+    assert text =~ "Showing 5 device requests"
+    assert summary_stat?(page_html, "Pending", 1)
+  end
+
+  test "empty pending-device view keeps its count and link to full history" do
+    page_html = render_queue(:loaded, [], :pending)
+
+    assert rendered_text(page_html) =~ "0 device requests awaiting user approval"
+    assert page_html =~ "No requests waiting for a user"
+    assert page_html =~ "View all device requests"
+    assert page_html =~ ~s(href="/admin/device_authorizations")
+    refute page_html =~ "lockspire-admin-summary-value"
+  end
+
   test "device authorization empty state names the absent records and next route" do
     html = render_queue(:loaded, [])
 
-    assert html =~ "No device authorization records"
-    assert html =~ "No device authorization records are currently stored."
+    assert html =~ "No device authorization requests"
+    assert html =~ "There are no device requests to review."
     assert html =~ "Return to overview"
     assert html =~ ~s(href="/admin/overview")
     refute html =~ "operator"
-    assert rendered_text(html) =~ "0 device authorizations recorded"
+    assert rendered_text(html) =~ "Showing no device requests"
     refute html =~ "phx-click"
     refute html =~ "phx-submit"
     HtmlAssertions.assert_no_interactive_controls(html, text: unsupported_queue_control_text())
@@ -188,11 +251,13 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
 
   test "device queue loading and failed reads remain distinct from successful empty" do
     assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert socket.assigns.page_title == "Device authorization requests"
+
     loading_html = socket.assigns |> Index.render() |> rendered_to_string() |> page_markup()
     loading_text = rendered_text(loading_html)
 
-    assert loading_text =~ "Loading device authorizations"
-    refute loading_text =~ "No device authorization records"
+    assert loading_text =~ "Loading device requests"
+    refute loading_text =~ "No device authorization requests"
     refute Regex.match?(~r/summary-value\">\s*\d+/, loading_html)
 
     with_failed_read(fn ->
@@ -206,18 +271,36 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
         |> page_markup()
 
       failed_text = rendered_text(failed_html)
-      assert failed_text =~ "Could not load device authorizations"
-      assert failed_text =~ "Lockspire could not read device authorization records"
-      assert failed_text =~ "the current results are unavailable"
+      assert failed_text =~ "Could not load device requests"
+      assert failed_text =~ "The current results are unavailable"
       refute failed_text =~ "No count or empty result"
-      assert failed_text =~ "Try loading device authorizations again"
-      refute failed_text =~ "No device authorization records"
-      refute failed_text =~ "0 device authorizations recorded"
+      assert failed_text =~ "Reload device authorization requests"
+      refute failed_text =~ "No device authorization requests"
+      refute failed_text =~ "Showing no device requests"
       HtmlAssertions.assert_has_link(failed_html, "/admin/device_authorizations")
 
       HtmlAssertions.assert_no_interactive_controls(failed_html,
         text: unsupported_queue_control_text()
       )
+
+      assert {:noreply, filtered_failed_socket} =
+               Index.handle_params(
+                 %{"status" => "pending"},
+                 "/admin/device_authorizations?status=pending",
+                 socket
+               )
+
+      filtered_failed_html =
+        filtered_failed_socket.assigns
+        |> Index.render()
+        |> rendered_to_string()
+        |> page_markup()
+
+      assert filtered_failed_socket.assigns.device_read_state == :unavailable
+      assert filtered_failed_html =~ "Could not load device requests"
+      refute filtered_failed_html =~ "0 device requests waiting for a user"
+      refute filtered_failed_html =~ "No device authorization requests"
+      assert filtered_failed_html =~ ~s(href="/admin/device_authorizations?status=pending")
     end)
   end
 
@@ -227,9 +310,9 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     [pending | _rest] = authorizations
 
     for {records, expected} <- [
-          {[], "0 device authorizations recorded"},
-          {[pending], "1 device authorization recorded"},
-          {authorizations, "5 device authorizations recorded"}
+          {[], "Showing no device requests"},
+          {[pending], "Showing 1 device request"},
+          {authorizations, "Showing 5 device requests"}
         ] do
       html = render_queue(:loaded, records)
       assert rendered_text(html) =~ expected
@@ -281,23 +364,13 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       "backend storage"
     ])
 
-    assert page_html =~ "Recorded device authorizations"
-    assert page_html =~ "Pending device authorization"
-    assert page_html =~ "Approved device authorization"
-    assert page_html =~ "Denied device authorization"
-    assert page_html =~ "Expired device authorization"
-    assert page_html =~ "Completed device authorization"
-    assert page_html =~ "Approved, waiting"
-    assert page_html =~ "Waiting for the user to finish verification before expiry."
-
-    assert page_html =~
-             "The request was denied before completion. Its recorded details remain available for follow-up."
-
-    assert page_html =~
-             "The request expired before completion. Its recorded details remain available for review."
-
-    assert page_html =~
-             "Token polling consumed this authorization. Its recorded status and timing remain available for review."
+    assert page_html =~ "All requests"
+    assert page_html =~ "Waiting for user confirmation"
+    assert page_html =~ "Approved by the user"
+    assert page_html =~ "Denied by the user"
+    assert page_html =~ "Expired before completion"
+    assert page_html =~ "Completed"
+    assert page_html =~ "The app received the result after the user approved it."
 
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
@@ -471,11 +544,12 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     html
   end
 
-  defp render_queue(state, authorizations) do
+  defp render_queue(state, authorizations, filter \\ :all) do
     %{
       current_section: :device_authorizations,
-      page_title: "Device Authorizations",
+      page_title: "Device authorization requests",
       device_read_state: state,
+      device_authorization_filter: filter,
       device_authorizations: authorizations,
       __changed__: %{}
     }

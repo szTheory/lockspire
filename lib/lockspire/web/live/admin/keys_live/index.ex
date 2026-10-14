@@ -19,7 +19,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
        total_keys: nil,
        lifecycle_metrics: nil,
        generation_error: nil,
-       generation_notice: nil
+       generation_notice: nil,
+       generated_key_path: nil
      )}
   end
 
@@ -41,7 +42,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
     {:noreply,
      assign(socket,
        generation_error: "Choose signing or encryption key use before generating a key.",
-       generation_notice: nil
+       generation_notice: nil,
+       generated_key_path: nil
      )}
   end
 
@@ -49,62 +51,48 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Review key lifecycle"
-        body="Generate an upcoming signing or encryption key, publish it in JWKS so verifiers can prepare, then activate it. The previous key stays in JWKS during overlap; retire it to remove it."
-      />
-
-      <AdminComponents.section_card
-        title="Key lifecycle posture"
-        subtitle="Each key shows its lifecycle status and whether Lockspire currently serves it in JWKS."
-      >
+      <AdminComponents.page_hero body="Manage keys used to sign tokens or decrypt encrypted authorization requests." />
+      <section class="lockspire-admin-key-inventory" aria-label="Key inventory">
         <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
           <AdminComponents.summary_stat value={@lifecycle_metrics.active} label="Active" />
-          <AdminComponents.summary_stat value={@lifecycle_metrics.upcoming} label="Upcoming" />
+          <AdminComponents.summary_stat value={@lifecycle_metrics.upcoming} label="Prepared (upcoming)" />
           <AdminComponents.summary_stat value={@lifecycle_metrics.retiring} label="Retiring" />
           <AdminComponents.summary_stat value={@lifecycle_metrics.retired} label="Retired" />
-          <AdminComponents.summary_stat value={@lifecycle_metrics.total} label="Total keys" />
         </AdminComponents.metric_grid>
-
-        <p :if={@inventory_state == :loaded} class="lockspire-admin-help lockspire-admin-help-block">
-          {key_generation_group_copy(@lifecycle_metrics)}
-        </p>
-
-        <AdminComponents.action_group class="lockspire-admin-action-bar-compact">
-          <:primary>
-            <AdminComponents.admin_button
-              phx-click="generate"
-              phx-value-use="sig"
-              phx-disable-with="Generating signing key…"
-              variant={:primary}
-              disabled={@inventory_state != :loaded}
-            >
-              Generate signing key
-            </AdminComponents.admin_button>
-          </:primary>
-          <:secondary>
-            <AdminComponents.admin_button
-              phx-click="generate"
-              phx-value-use="enc"
-              phx-disable-with="Generating encryption key…"
-              disabled={@inventory_state != :loaded}
-            >
-              Generate encryption key
-            </AdminComponents.admin_button>
-          </:secondary>
-        </AdminComponents.action_group>
-
-        <p :if={@generation_notice} role="status" class="lockspire-admin-help lockspire-admin-help-block">
-          {@generation_notice}
-        </p>
-        <ul :if={@generation_error} class="lockspire-admin-errors" role="alert">
-          <li>{@generation_error}</li>
-        </ul>
-
-        <p :if={@inventory_state == :loaded} class="lockspire-admin-help lockspire-admin-help-block">
-          Total keys in durable storage: {@total_keys}
-        </p>
+        <details class="lockspire-admin-help-disclosure">
+          <summary>How key states work</summary>
+          <div>
+            <p><strong>Active:</strong> Used for signing tokens or decrypting requests, according to the key's use.</p>
+            <p><strong>Prepared (upcoming):</strong> Created but not active. Publish the key so apps can recognize it, then activate it when ready.</p>
+            <p><strong>Retiring:</strong> Replaced by a newer key. Still available while apps transition.</p>
+            <p><strong>Retired:</strong> No longer published to apps.</p>
+            <p>Counts include both signing and encryption keys. Each record identifies its use.</p>
+          </div>
+        </details>
+        <div class="lockspire-admin-key-generation">
+          <p>Create a signing key for initial setup or to replace your current key. Generation prepares it; publishing and activation are separate steps.</p>
+          <AdminComponents.action_group class="lockspire-admin-action-bar-compact">
+            <:primary>
+              <AdminComponents.admin_button phx-click="generate" phx-value-use="sig" phx-disable-with="Generating signing key…" variant={:primary} disabled={@inventory_state != :loaded}>
+                Generate signing key
+              </AdminComponents.admin_button>
+            </:primary>
+          </AdminComponents.action_group>
+          <details class="lockspire-admin-help-disclosure">
+            <summary>Encryption keys</summary>
+            <div>
+              <p>Use an encryption key when apps send encrypted authorization requests to Lockspire. It decrypts those requests; it does not sign tokens. Generate one for initial setup or replacement, then publish and activate it from its record.</p>
+              <AdminComponents.admin_button phx-click="generate" phx-value-use="enc" phx-disable-with="Generating encryption key…" disabled={@inventory_state != :loaded}>
+                Generate encryption key
+              </AdminComponents.admin_button>
+            </div>
+          </details>
+          <div :if={@generation_notice} class="lockspire-admin-key-generation__result">
+            <p role="status">{@generation_notice}</p>
+            <AdminComponents.admin_button :if={@generated_key_path} href={@generated_key_path}>Continue key setup</AdminComponents.admin_button>
+          </div>
+          <ul :if={@generation_error} class="lockspire-admin-errors" role="alert"><li>{@generation_error}</li></ul>
+        </div>
 
         <div aria-live="polite" aria-atomic="true">
           <%= case @inventory_state do %>
@@ -128,24 +116,25 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
             <% :loaded when @keys == [] -> %>
               <AdminComponents.empty_state
                 title="No signing keys are stored"
-                body="Generate signing or encryption key material before relying on JWKS publication."
+                body="Generate a signing key before Lockspire can sign tokens for connected apps."
               />
             <% :loaded -> %>
               <AdminComponents.resource_list>
                 <%= for entry <- @keys do %>
                   <AdminComponents.resource_item
                     href={key_show_path(entry.key.id)}
+                    class="lockspire-admin-key-record"
                     title={"Key #{Redaction.handle(:kid, entry.key.kid)}"}
                     subtitle={"#{entry.key.alg} / #{entry.key.kty}"}
                   >
                     <:meta>
-                      <span>Use <AdminComponents.long_value value={entry.key.use} kind={:text} /></span>
-                      <span>Published <AdminComponents.long_value value={format_datetime(entry.key.published_at)} kind={:timestamp} /></span>
-                      <span>Activated <AdminComponents.long_value value={format_datetime(entry.key.activated_at)} kind={:timestamp} /></span>
-                      <span>Retiring <AdminComponents.long_value value={format_datetime(entry.key.retiring_at)} kind={:timestamp} /></span>
-                      <span>Retired <AdminComponents.long_value value={format_datetime(entry.key.retired_at)} kind={:timestamp} /></span>
-                      <span>
-                        Next safe action <AdminComponents.long_value value={key_next_action_summary(entry)} kind={:text} />
+                      <span><strong>Use</strong><AdminComponents.long_value value={if entry.key.use == :sig, do: "Signing", else: "Encryption"} /></span>
+                      <span :if={entry.key.published_at}><strong>Published</strong><AdminComponents.timestamp value={entry.key.published_at} /></span>
+                      <span :if={entry.key.activated_at}><strong>Activated</strong><AdminComponents.timestamp value={entry.key.activated_at} /></span>
+                      <span :if={entry.key.retiring_at}><strong>Retiring since</strong><AdminComponents.timestamp value={entry.key.retiring_at} /></span>
+                      <span :if={entry.key.retired_at}><strong>Retired</strong><AdminComponents.timestamp value={entry.key.retired_at} /></span>
+                      <span :if={entry.next_actions != []} class="lockspire-admin-key-record__next-step">
+                        <AdminComponents.long_value value={key_next_action_summary(entry)} />
                       </span>
                     </:meta>
                     <:status>
@@ -154,7 +143,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
                         title={key_status_title(entry.key.status)}
                       />
                       <span class="lockspire-admin-help">
-                        {if entry.publishable, do: "Served in JWKS", else: "Not served in JWKS"}
+                        {if entry.publishable, do: "Published to connected apps", else: "Not published to connected apps"}
                       </span>
                     </:status>
                   </AdminComponents.resource_item>
@@ -162,7 +151,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
               </AdminComponents.resource_list>
           <% end %>
         </div>
-      </AdminComponents.section_card>
+      </section>
     </AdminLayoutLive.shell>
     """
   end
@@ -182,7 +171,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
       total_keys: nil,
       lifecycle_metrics: nil,
       generation_error: nil,
-      generation_notice: nil
+      generation_notice: nil,
+      generated_key_path: nil
     )
     |> assign_inventory_result(load_keys())
   end
@@ -218,14 +208,16 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
               {:noreply,
                assign(socket,
                  generation_error: nil,
-                 generation_notice: "#{key_label} key generated and confirmed in the inventory."
+                 generation_notice: "#{key_label} key generated. It is not active yet.",
+                 generated_key_path: key_show_path(generated_id)
                )}
             else
               {:noreply,
                assign(socket,
                  generation_error:
                    "The generated key was not present in the refreshed inventory. Reload before retrying.",
-                 generation_notice: nil
+                 generation_notice: nil,
+                 generated_key_path: nil
                )}
             end
 
@@ -236,7 +228,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
              assign(socket,
                generation_error:
                  "The key may have been generated, but Lockspire could not confirm it in the inventory. Reload before retrying.",
-               generation_notice: nil
+               generation_notice: nil,
+               generated_key_path: nil
              )}
         end
 
@@ -244,7 +237,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
         {:noreply,
          assign(socket,
            generation_error: "The #{String.downcase(key_label)} key could not be generated.",
-           generation_notice: nil
+           generation_notice: nil,
+           generated_key_path: nil
          )}
     end
   end
@@ -263,29 +257,25 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
 
   defp count_keys(keys, status), do: Enum.count(keys, &(&1.key.status == status))
 
-  defp key_generation_group_copy(_metrics),
-    do:
-      "Generation creates an upcoming key. Publish it separately to add it to JWKS while the active key remains in use."
-
   defp key_next_action_summary(%{next_actions: [:publish]}),
-    do: "Publish key for verification overlap"
+    do: "Publish key so apps can prepare to trust it"
 
   defp key_next_action_summary(%{next_actions: [:activate]}),
-    do: "Activate key for its use"
+    do: "Activate key for connected apps to use"
 
   defp key_next_action_summary(%{next_actions: [:retire]}),
-    do: "Retire key to remove it from JWKS"
+    do: "Retire key to stop publishing it"
 
-  defp key_next_action_summary(%{next_actions: []}), do: "No lifecycle action available"
+  defp key_next_action_summary(%{next_actions: []}), do: nil
 
   defp key_status_title(:active), do: "Current key selected for signing or decryption operations."
-  defp key_status_title(:upcoming), do: "Prepared key; publish it before activating the signer."
-  defp key_status_title(:retiring), do: "Previous key remains served during retirement overlap."
-  defp key_status_title(:retired), do: "Retired key is not included in the served JWKS."
-  defp key_status_title(_status), do: "Signing-key lifecycle state."
 
-  defp format_datetime(nil), do: "Not recorded"
+  defp key_status_title(:upcoming),
+    do: "Prepared key; publish it so apps can recognize it before activation."
 
-  defp format_datetime(%DateTime{} = value),
-    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
+  defp key_status_title(:retiring),
+    do: "Previous key remains available while apps switch to its replacement."
+
+  defp key_status_title(:retired), do: "Retired key is no longer shared with connected apps."
+  defp key_status_title(_status), do: "Signing key status."
 end

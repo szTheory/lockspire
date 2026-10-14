@@ -19,7 +19,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Token detail",
+       page_title: "Token details",
        current_section: :tokens,
        token_id: parse_id(id),
        filters: @default_filters,
@@ -126,7 +126,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
               Try loading token details again
             </AdminComponents.admin_button>
             <AdminComponents.admin_button href={tokens_index_path(@filters)}>
-              Review token investigation
+              Back to tokens
             </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.empty_state>
@@ -137,7 +137,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
         >
           <:actions>
             <AdminComponents.admin_button href={tokens_index_path(@filters)}>
-              Review token investigation
+              Back to tokens
             </AdminComponents.admin_button>
           </:actions>
         </AdminComponents.empty_state>
@@ -149,255 +149,105 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Support"
-        title="Token health decision"
-        body="Review durable token state, refresh-family context, and the smallest safe revocation path."
-      >
-        <:summary>
-          <span>Status: <AdminComponents.status_badge status={@token_detail.status} /></span>
-        </:summary>
-        <:actions>
-          <AdminComponents.admin_button href={tokens_index_path(@filters)}>
-            Review token investigation
-          </AdminComponents.admin_button>
-        </:actions>
-      </AdminComponents.page_hero>
+      <div class="lockspire-admin-token-detail">
+        <a class="lockspire-admin-back-link" href={tokens_index_path(@filters)}>Back to tokens</a>
 
-      <AdminComponents.entity_header
-        title={@token_detail.token.handle}
-        subtitle="Access and refresh token values and stored hashes stay hidden; this page shows their stored metadata."
-        identifier={@token_detail.token.handle}
-      >
-        <:status>
-          <AdminComponents.status_badge status={@token_detail.status} />
-          <AdminComponents.status_badge status={@token_detail.token.token_type} />
-        </:status>
-      </AdminComponents.entity_header>
+        <AdminComponents.pane title={token_type_title(@token_detail.token.token_type)}>
+          <:status><AdminComponents.status_badge status={@token_detail.status} /></:status>
+          <p class="lockspire-admin-token-detail__outcome" role="status">{token_outcome(@token_detail)}</p>
+          <p :if={reuse_recorded?(@token_detail)} class="lockspire-admin-help">
+            Repeat use can indicate theft or a repeated app request; it does not prove theft. Review the app and related records to investigate.
+          </p>
+          <AdminComponents.description_list>
+            <:item label="App">
+              <a :if={client_detail_path_available?(@token_detail)} href={client_detail_path(@token_detail.client.client_id)}>
+                {@token_detail.token.client_display}
+              </a>
+              <span :if={!client_detail_path_available?(@token_detail)}>{@token_detail.token.client_display}</span>
+            </:item>
+            <:item label="Account">
+              <AdminComponents.long_value value={@token_detail.token.account_handle || "Not recorded"} kind={:id} />
+            </:item>
+            <:item label="Expires at"><AdminComponents.timestamp format={:readable} value={@token_detail.token.expires_at} /></:item>
+            <:item :if={token_reuse_detected?(@token_detail)} label="Used again at">
+              <AdminComponents.timestamp format={:readable} value={@token_detail.token.reuse_detected_at} />
+            </:item>
+            <:item :if={token_revoked?(@token_detail)} label="Revoked at">
+              <AdminComponents.timestamp format={:readable} value={@token_detail.token.revoked_at} />
+            </:item>
+            <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
+            <:item :if={is_integer(@token_detail.token.consent_grant_id)} label="Consent grant">
+              <a href={consent_detail_path(@token_detail.token.consent_grant_id)}>View consent grant</a>
+            </:item>
+          </AdminComponents.description_list>
 
-      <AdminComponents.decision_summary>
-        <:item
-          label="Token health"
-          value={token_health_summary(@token_detail).value}
-          detail={token_health_summary(@token_detail).detail}
-          tone={token_health_summary(@token_detail).tone}
-        >
-        </:item>
-        <:item
-          label="Family lineage"
-          value={family_lineage_summary(@token_detail).value}
-          detail={family_lineage_summary(@token_detail).detail}
-          tone={family_lineage_summary(@token_detail).tone}
-        >
-        </:item>
-        <:item
-          label="Reuse pressure"
-          value={reuse_pressure_summary(@token_detail).value}
-          detail={reuse_pressure_summary(@token_detail).detail}
-          tone={reuse_pressure_summary(@token_detail).tone}
-        >
-        </:item>
-        <:item
-          label="Smallest safe action"
-          value={token_detail_smallest_safe_action(@token_detail).value}
-          detail={token_detail_smallest_safe_action(@token_detail).detail}
-          tone={token_detail_smallest_safe_action(@token_detail).tone}
-        >
-        </:item>
-      </AdminComponents.decision_summary>
+          <details class="lockspire-admin-record-details">
+            <summary>Record identifiers</summary>
+            <AdminComponents.description_list>
+              <:item label="Token"><AdminComponents.long_value value={@token_detail.token.handle} kind={:id} /></:item>
+              <:item label="Client handle"><AdminComponents.long_value value={@token_detail.token.client_handle} kind={:id} /></:item>
+              <:item label="Session ID"><AdminComponents.long_value value={Map.get(@token_detail.token, :sid) || "Not recorded"} kind={:id} /></:item>
+              <:item label="Family"><AdminComponents.long_value value={@token_detail.token.family_handle || "Not recorded"} kind={:id} /></:item>
+              <:item label="Generation">{@token_detail.token.generation}</:item>
+              <:item label="Parent token"><AdminComponents.long_value value={@token_detail.token.parent_handle || "Not recorded"} kind={:id} /></:item>
+            </AdminComponents.description_list>
+            <p class="lockspire-admin-help">These handles identify records without revealing token values.</p>
+          </details>
+        </AdminComponents.pane>
 
-      <AdminComponents.pane
-        title="Token identity and current state"
-        subtitle="Review the durable token pivots used by support without rendering hashes or plaintext token material."
-      >
-        <AdminComponents.description_list>
-          <:item label="Client">
-            <AdminComponents.long_value value={@token_detail.token.client_display} kind={:id} />
-          </:item>
-          <:item label="Client handle">
-            <AdminComponents.long_value value={@token_detail.token.client_handle} kind={:id} />
-            <AdminComponents.admin_button
-              :if={client_detail_path_available?(@token_detail)}
-              href={client_detail_path(@token_detail.client.client_id)}
-            >
-              View client details
-            </AdminComponents.admin_button>
-          </:item>
-          <:item label="Account">
-            <AdminComponents.long_value
-              value={@token_detail.token.account_handle || "Not recorded"}
-              kind={:id}
-            />
-          </:item>
-          <:item label="Type"><code>{@token_detail.token.token_type}</code></:item>
-          <:item label="Status"><AdminComponents.status_badge status={@token_detail.status} /></:item>
-          <:item label="Expires at">
-            <AdminComponents.timestamp value={@token_detail.token.expires_at} />
-          </:item>
-          <:item label="Revoked at">
-            <AdminComponents.timestamp value={@token_detail.token.revoked_at} />
-          </:item>
-          <:item label="Reuse detected at">
-            <AdminComponents.timestamp value={@token_detail.token.reuse_detected_at} />
-          </:item>
-          <:item label="Session ID">
-            <AdminComponents.long_value
-              value={Map.get(@token_detail.token, :sid) || "Not recorded"}
-              kind={:id}
-            />
-          </:item>
-          <:item label="Family">
-            <AdminComponents.long_value
-              value={@token_detail.token.family_handle || "Not recorded"}
-              kind={:id}
-            />
-          </:item>
-          <:item label="Generation"><code>{@token_detail.token.generation}</code></:item>
-          <:item label="Parent token">
-            <AdminComponents.long_value
-              value={@token_detail.token.parent_handle || "Not recorded"}
-              kind={:id}
-            />
-          </:item>
-          <:item label="Scopes">{Enum.join(@token_detail.token.scopes, ", ")}</:item>
-          <:item label="Consent grant">
-            <AdminComponents.admin_button
-              :if={is_integer(@token_detail.token.consent_grant_id)}
-              href={consent_detail_path(@token_detail.token.consent_grant_id)}
-            >
-              View consent grant
-            </AdminComponents.admin_button>
-            <span :if={!is_integer(@token_detail.token.consent_grant_id)}>Not recorded</span>
-          </:item>
-        </AdminComponents.description_list>
-      </AdminComponents.pane>
-
-      <AdminComponents.pane
-        title="Refresh family lineage"
-        subtitle="Family status is derived from the stored lineage used by refresh, revocation, and introspection."
-      >
-        <AdminComponents.description_list>
-          <:item label="Family status">
-            <AdminComponents.status_badge status={@token_detail.family_status} />
-          </:item>
-          <:item label="Active tokens in family">{@token_detail.family_active_count}</:item>
-          <:item label="Revoked tokens in family">{@token_detail.family_revoked_count}</:item>
-          <:item label="Family reuse signal">
-            <AdminComponents.timestamp value={@token_detail.family_reuse_detected_at} />
-          </:item>
-        </AdminComponents.description_list>
-
-        <AdminComponents.resource_list>
-          <%= for entry <- @token_detail.family_tokens do %>
-            <AdminComponents.dense_resource_row
-              title={
-                if(entry.current?,
-                  do:
-                    "Current #{token_kind_label(entry.token.token_type)} generation #{entry.token.generation}",
-                  else: entry.token.handle
-                )
-              }
-            >
-              <:meta>
-                <span>
-                  Token
-                  <AdminComponents.long_value value={entry.token.handle} kind={:id} />
-                </span>
-              </:meta>
-              <:status>
-                <AdminComponents.status_badge status={entry.status} />
-              </:status>
-            </AdminComponents.dense_resource_row>
-          <% end %>
-        </AdminComponents.resource_list>
-      </AdminComponents.pane>
-
-      <AdminComponents.pane
-        title="Corrective actions"
-        subtitle="Choose the smallest safe action first. Single-token revoke and family-wide refresh-token invalidation stay distinct."
-      >
-        <p :if={@family_notice}>{@family_notice}</p>
-
-        <AdminComponents.confirmation_panel
-          title="Revoke token"
-          variant={:danger}
-          errors={token_revoke_errors(@revoke_error)}
-        >
-          <:body>
-            <form class="lockspire-admin-form-stack" phx-submit="revoke_token">
-              <p :if={token_revoked?(@token_detail)}>{already_revoked_copy()}</p>
-              <p :if={token_expired?(@token_detail) and not token_revoked?(@token_detail)}>
-                {expired_copy()}
-              </p>
-              <label class="lockspire-admin-checkbox-field">
-                <input
-                  type="checkbox"
-                  name="revoke[confirm]"
-                  value="true"
-                  disabled={token_action_disabled?(@token_detail)}
-                />
-                <span>{single_token_confirmation(@token_detail)}</span>
-              </label>
-              <AdminComponents.action_bar>
-                <AdminComponents.admin_button
-                  type="submit"
-                  variant={:danger}
-                  disabled={token_action_disabled?(@token_detail)}
-                  phx-disable-with={token_pending_label(@token_detail)}
+        <AdminComponents.pane :if={refresh_family_present?(@token_detail)} title="Related tokens" subtitle={active_family_count_copy(@token_detail.family_active_count)}>
+          <details class="lockspire-admin-record-details">
+            <summary>Token history ({length(@token_detail.family_tokens)})</summary>
+            <AdminComponents.resource_list>
+              <%= for entry <- @token_detail.family_tokens do %>
+                <AdminComponents.dense_resource_row
+                  class="lockspire-admin-token-row"
+                  title={if(entry.current?, do: "This #{token_kind_label(entry.token.token_type)}", else: token_type_title(entry.token.token_type))}
+                  subtitle={"Generation #{entry.token.generation}"}
                 >
-                  {token_revoke_button_label(@token_detail)}
-                </AdminComponents.admin_button>
-              </AdminComponents.action_bar>
-            </form>
-          </:body>
-        </AdminComponents.confirmation_panel>
+                  <:meta><AdminComponents.long_value value={entry.token.handle} kind={:id} /></:meta>
+                  <:status><AdminComponents.status_badge status={entry.status} /></:status>
+                </AdminComponents.dense_resource_row>
+              <% end %>
+            </AdminComponents.resource_list>
+          </details>
+        </AdminComponents.pane>
 
-        <AdminComponents.confirmation_panel
-          title="Revoke token family"
-          variant={:danger}
-          errors={family_revoke_errors(@family_error)}
-        >
-          <:body>
-            <form class="lockspire-admin-form-stack" phx-submit="revoke_family">
-              <p :if={not refresh_family_present?(@token_detail)}>
-                {no_family_copy()}
-              </p>
-              <p :if={family_already_closed?(@token_detail)}>
-                This refresh family has no currently unrevoked tokens, so family-wide revocation is already closed.
-              </p>
-              <label class="lockspire-admin-checkbox-field">
-                <input
-                  type="checkbox"
-                  name="family[confirm]"
-                  value="true"
-                  disabled={family_action_disabled?(@token_detail)}
-                />
-                <span>
-                  Revoke this refresh token family? This revokes the currently unrevoked tokens in this family.
-                  Family
-                  <AdminComponents.long_value
-                    value={@token_detail.token.family_handle || "not recorded"}
-                    kind={:id}
-                  />
-                  for client {@token_detail.token.client_display} and subject
-                  {@token_detail.token.account_handle || "not recorded"}. This family-wide action
-                  is irreversible and does not expose token plaintext.
-                </span>
-              </label>
-              <AdminComponents.action_bar>
-                <AdminComponents.admin_button
-                  type="submit"
-                  variant={:danger}
-                  disabled={family_action_disabled?(@token_detail)}
-                  phx-disable-with="Revoking this refresh token family…"
-                >
-                  {family_revoke_button_label(@token_detail)}
-                </AdminComponents.admin_button>
-              </AdminComponents.action_bar>
-            </form>
-          </:body>
-        </AdminComponents.confirmation_panel>
-      </AdminComponents.pane>
+        <p :if={@family_notice} role="status">{@family_notice}</p>
+        <AdminComponents.pane :if={!token_action_disabled?(@token_detail) or !family_action_disabled?(@token_detail)} title="Revoke access" subtitle="Choose how much access to block. Revocation cannot be undone.">
+          <AdminComponents.confirmation_panel :if={!token_action_disabled?(@token_detail)} title="Revoke token" variant={:danger} errors={token_revoke_errors(@revoke_error)}>
+            <:body>
+              <form class="lockspire-admin-form-stack" phx-submit="revoke_token">
+                <label class="lockspire-admin-checkbox-field">
+                  <input type="checkbox" name="revoke[confirm]" value="true" />
+                  <span>{single_token_confirmation(@token_detail)}</span>
+                </label>
+                <AdminComponents.action_bar>
+                  <AdminComponents.admin_button type="submit" variant={:danger} phx-disable-with={token_pending_label(@token_detail)}>Revoke token</AdminComponents.admin_button>
+                </AdminComponents.action_bar>
+              </form>
+            </:body>
+          </AdminComponents.confirmation_panel>
+
+          <AdminComponents.confirmation_panel :if={!family_action_disabled?(@token_detail)} title="Revoke token family" variant={:danger} errors={family_revoke_errors(@family_error)}>
+            <:body>
+              <form class="lockspire-admin-form-stack" phx-submit="revoke_family">
+                <p>{active_family_count_copy(@token_detail.family_active_count)}</p>
+                <label class="lockspire-admin-checkbox-field">
+                  <input type="checkbox" name="family[confirm]" value="true" />
+                  <span>
+                    Revoke this refresh token family? This revokes the currently unrevoked tokens in this family.
+                    App {@token_detail.token.client_display}; account {@token_detail.token.account_handle || "not recorded"}.
+                  </span>
+                </label>
+                <AdminComponents.action_bar>
+                  <AdminComponents.admin_button type="submit" variant={:danger} phx-disable-with="Revoking this refresh token family…">Revoke token family</AdminComponents.admin_button>
+                </AdminComponents.action_bar>
+              </form>
+            </:body>
+          </AdminComponents.confirmation_panel>
+        </AdminComponents.pane>
+      </div>
     </AdminLayoutLive.shell>
     """
   end
@@ -447,10 +297,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   defp parse_id(_value), do: nil
 
-  defp already_revoked_copy, do: @already_revoked_copy
-  defp expired_copy, do: @expired_copy
-  defp no_family_copy, do: @no_family_copy
-
   defp token_revoked?(token_detail),
     do: match?(%DateTime{}, token_detail.token.revoked_at)
 
@@ -468,113 +314,67 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
     do: is_binary(token_detail.token.family_id) and token_detail.token.family_id != ""
 
   defp token_action_disabled?(token_detail),
-    do: token_revoked?(token_detail) or token_expired?(token_detail)
+    do:
+      token_revoked?(token_detail) or token_expired?(token_detail) or
+        token_reuse_detected?(token_detail)
 
   defp family_action_disabled?(token_detail),
-    do: not refresh_family_present?(token_detail) or family_already_closed?(token_detail)
+    do: not refresh_family_present?(token_detail) or family_has_no_active_tokens?(token_detail)
 
-  defp family_already_closed?(token_detail),
-    do: refresh_family_present?(token_detail) and family_unrevoked_count(token_detail) == 0
+  defp family_has_no_active_tokens?(token_detail),
+    do: refresh_family_present?(token_detail) and token_detail.family_active_count == 0
 
-  defp family_unrevoked_count(token_detail) do
-    Enum.count(token_detail.family_tokens, fn entry ->
-      not match?(%DateTime{}, Map.get(entry.token, :revoked_at))
-    end)
-  end
+  defp family_all_revoked?(token_detail),
+    do:
+      refresh_family_present?(token_detail) and
+        token_detail.family_revoked_count == length(token_detail.family_tokens)
 
-  defp token_health_summary(token_detail) do
+  defp family_revoked_summary_detail(%{family_revoked_count: 1}),
+    do: "1 token in this family is revoked."
+
+  defp family_revoked_summary_detail(%{family_revoked_count: count}),
+    do: "#{count} tokens in this family are revoked."
+
+  defp token_type_title(:refresh_token), do: "Refresh token"
+  defp token_type_title(:access_token), do: "Access token"
+  defp token_type_title(_type), do: "Token"
+
+  defp active_family_count_copy(0), do: "No active tokens remain in this refresh-token family."
+  defp active_family_count_copy(1), do: "1 active token remains in this refresh-token family."
+
+  defp active_family_count_copy(count),
+    do: "#{count} active tokens remain in this refresh-token family."
+
+  defp reuse_recorded?(detail),
+    do: token_reuse_detected?(detail) or match?(%DateTime{}, detail.family_reuse_detected_at)
+
+  @reuse_outcome_prefix "A refresh token was presented again after replacement or revocation."
+
+  defp token_outcome(detail) do
     cond do
-      token_revoked?(token_detail) ->
-        summary("Revoked", @already_revoked_copy, :danger)
-
-      token_expired?(token_detail) ->
-        summary("Expired", @expired_copy, :warning)
-
-      token_reuse_detected?(token_detail) ->
-        summary(
-          "Reuse detected",
-          "Reuse evidence is present; review family-wide revocation before metadata.",
-          :danger
-        )
-
-      true ->
-        summary("Active", "Token is not revoked or expired.", :success)
+      reuse_recorded?(detail) -> reuse_outcome(detail)
+      token_revoked?(detail) -> @already_revoked_copy
+      token_expired?(detail) -> @expired_copy
+      true -> "This token is active. Token values stay hidden."
     end
   end
 
-  defp family_lineage_summary(token_detail) do
+  defp reuse_outcome(detail) do
     cond do
-      not refresh_family_present?(token_detail) ->
-        summary("No refresh family", @no_family_copy, :warning)
+      not refresh_family_present?(detail) ->
+        @reuse_outcome_prefix <>
+          " This token is no longer active; no related token records are available."
 
-      family_already_closed?(token_detail) ->
-        summary(
-          "Family closed",
-          "No currently unrevoked tokens remain in the refresh family.",
-          :warning
-        )
+      detail.family_active_count > 0 ->
+        @reuse_outcome_prefix <>
+          " Revoke all active family tokens to block the remaining access."
 
-      token_detail.family_status == :reuse_detected ->
-        summary(
-          "Reuse evidence in family",
-          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
-          :danger
-        )
+      family_all_revoked?(detail) ->
+        @reuse_outcome_prefix <>
+          " " <> family_revoked_summary_detail(detail) <> " No active tokens to revoke."
 
       true ->
-        summary(
-          "Family present",
-          "#{family_unrevoked_count(token_detail)} currently unrevoked tokens in the refresh family.",
-          :info
-        )
-    end
-  end
-
-  defp reuse_pressure_summary(token_detail) do
-    if token_reuse_detected?(token_detail) or
-         match?(%DateTime{}, token_detail.family_reuse_detected_at) do
-      summary(
-        "Reuse pressure present",
-        "Reuse evidence means family-wide revocation is the safest available token action.",
-        :danger
-      )
-    else
-      summary("No reuse evidence", "No reuse signal is recorded for this token family.", :success)
-    end
-  end
-
-  defp token_detail_smallest_safe_action(token_detail) do
-    family_reuse? =
-      token_reuse_detected?(token_detail) or token_detail.family_status == :reuse_detected
-
-    cond do
-      family_reuse? and refresh_family_present?(token_detail) and
-          family_unrevoked_count(token_detail) > 0 ->
-        summary(
-          "Revoke token family",
-          "Reuse evidence means family-wide revocation is the safest available token action.",
-          :danger
-        )
-
-      token_revoked?(token_detail) ->
-        summary("No token action", @already_revoked_copy, :warning)
-
-      token_expired?(token_detail) ->
-        summary("No token action", @expired_copy, :warning)
-
-      not refresh_family_present?(token_detail) ->
-        summary(
-          "Revoke token only",
-          "Family-wide revocation is unavailable; only this token can be revoked if still active.",
-          :info
-        )
-
-      true ->
-        summary(
-          "Revoke token if needed",
-          "Start with this token before using family-wide revocation.",
-          :info
-        )
+        @reuse_outcome_prefix <> " No active tokens to revoke."
     end
   end
 
@@ -583,14 +383,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   defp family_revoke_errors(nil), do: []
   defp family_revoke_errors(error), do: [error]
-
-  defp token_revoke_button_label(token_detail) do
-    cond do
-      token_revoked?(token_detail) -> "Token already revoked"
-      token_expired?(token_detail) -> "Token expired"
-      true -> "Revoke token"
-    end
-  end
 
   defp single_token_confirmation(%{token: %{token_type: :access_token}}),
     do:
@@ -608,16 +400,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
 
   defp token_kind_label(:access_token), do: "access token"
   defp token_kind_label(:refresh_token), do: "refresh token"
-
-  defp family_revoke_button_label(token_detail) do
-    cond do
-      not refresh_family_present?(token_detail) -> "Family-wide revocation unavailable"
-      family_already_closed?(token_detail) -> "Token family already revoked"
-      true -> "Revoke token family"
-    end
-  end
-
-  defp summary(value, detail, tone), do: %{value: value, detail: detail, tone: tone}
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
 

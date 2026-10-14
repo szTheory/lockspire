@@ -13,6 +13,7 @@ defmodule Lockspire.Web.TestHostRouter do
     live("/", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
     live("/overview", Lockspire.Web.Live.Admin.OverviewLive.Index, :index)
     live("/clients", Lockspire.Web.Live.Admin.ClientsLive.Index, :index)
+    live("/clients/new", Lockspire.Web.Live.Admin.ClientsLive.Index, :new)
     live("/clients/:client_id", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)
     live("/consents", Lockspire.Web.Live.Admin.ConsentsLive.Index, :index)
     live("/consents/:id", Lockspire.Web.Live.Admin.ConsentsLive.Show, :show)

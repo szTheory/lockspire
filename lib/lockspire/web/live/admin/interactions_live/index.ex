@@ -12,19 +12,24 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Active interactions",
+       page_title: "Sign-in requests",
        current_section: :interactions,
        interaction_read_state: :loading,
+       interaction_filter: :all,
        interactions: []
      )}
   end
 
   @impl true
-  def handle_params(_params, _uri, socket) do
-    {read_state, interactions} = load_interactions()
+  def handle_params(params, _uri, socket) do
+    interaction_filter = interaction_filter(params)
+    {read_state, all_interactions} = load_interactions()
+    interactions = filter_interactions(all_interactions, interaction_filter)
 
     {:noreply,
      assign(socket,
+       page_title: "Sign-in requests",
+       interaction_filter: interaction_filter,
        interaction_read_state: read_state,
        interactions: interactions
      )}
@@ -35,23 +40,28 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
-        eyebrow="Operate"
-        title="Authorization interaction queue"
-        body="See recorded interaction status, prompt, client, subject, and timing. Use the client link to inspect the client's details."
+        body="See requests waiting for sign-in or consent, plus the results already recorded."
       />
 
       <AdminComponents.pane
-        title="Recorded interactions"
-        subtitle="Read-only records show saved interaction status, prompt, client, subject, and request times."
+        title={interaction_list_title(@interaction_filter)}
       >
-        <AdminComponents.metric_grid :if={@interaction_read_state == :loaded}>
+        <:actions :if={@interaction_filter == :pending}>
+          <AdminComponents.admin_button href={interactions_path(:all)}>
+            View all sign-in requests
+          </AdminComponents.admin_button>
+        </:actions>
+
+        <AdminComponents.metric_grid
+          :if={@interaction_read_state == :loaded and @interaction_filter == :all}
+        >
           <AdminComponents.summary_stat
             value={count_status(@interactions, :pending_login)}
-            label="Pending login"
+            label="Waiting for sign-in"
           />
           <AdminComponents.summary_stat
             value={count_status(@interactions, :pending_consent)}
-            label="Pending consent"
+            label="Waiting for consent"
           />
           <AdminComponents.summary_stat
             value={count_status(@interactions, :completed)}
@@ -65,20 +75,20 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
         </AdminComponents.metric_grid>
 
         <p :if={@interaction_read_state == :loaded} role="status">
-          {interaction_count_copy(length(@interactions))}
+          {interaction_count_copy(length(@interactions), @interaction_filter)}
         </p>
 
         <%= cond do %>
           <% @interaction_read_state == :loading -> %>
-            <p role="status">Loading authorization interactions…</p>
+            <p role="status">Loading sign-in requests…</p>
           <% @interaction_read_state == :unavailable -> %>
             <AdminComponents.empty_state
-              title="Could not load authorization interactions"
-              body="Lockspire could not read interaction records, so the current results are unavailable."
+              title="Could not load sign-in requests"
+              body="Lockspire could not read sign-in requests, so the current results are unavailable."
             >
               <:actions>
-                <AdminComponents.admin_button href={interactions_path()}>
-                  Try loading interactions again
+                <AdminComponents.admin_button href={interactions_path(@interaction_filter)}>
+                  Reload sign-in requests
                 </AdminComponents.admin_button>
                 <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
                   Return to overview
@@ -87,11 +97,20 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
             </AdminComponents.empty_state>
           <% @interaction_read_state == :loaded and @interactions == [] -> %>
           <AdminComponents.empty_state
-            title="No authorization interactions recorded"
-            body="No authorization interactions are currently recorded. Return to the overview to choose another investigation."
+            title={empty_interactions_title(@interaction_filter)}
+            body={empty_interactions_body(@interaction_filter)}
           >
             <:actions>
-              <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+              <AdminComponents.admin_button
+                :if={@interaction_filter == :pending}
+                href={interactions_path(:all)}
+              >
+                View all sign-in requests
+              </AdminComponents.admin_button>
+              <AdminComponents.admin_button
+                :if={@interaction_filter == :all}
+                href={Lockspire.mount_path() <> "/admin/overview"}
+              >
                 Return to overview
               </AdminComponents.admin_button>
             </:actions>
@@ -104,9 +123,9 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
                 subtitle={interaction_pressure(interaction)}
               >
                 <:meta>
-                  <span>Interaction <AdminComponents.long_value value={safe_identifier(interaction.interaction_id)} kind={:id} /></span>
-                  <span>Client <AdminComponents.long_value value={safe_identifier(interaction.client_id)} kind={:id} /></span>
-                  <span>Subject <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
+                  <span>Request ID <AdminComponents.long_value value={safe_identifier(interaction.interaction_id)} kind={:id} /></span>
+                  <span>Client ID <AdminComponents.long_value value={safe_identifier(interaction.client_id)} kind={:id} /></span>
+                  <span>Account <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
                   <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
                   <span>Created <AdminComponents.long_value value={formatted_timestamp(interaction.inserted_at)} kind={:timestamp} /></span>
                   <span>Last activity <AdminComponents.long_value value={formatted_timestamp(interaction_activity_timestamp(interaction))} kind={:timestamp} /></span>
@@ -120,7 +139,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
                     :if={client_detail_path_available?(interaction)}
                     href={client_detail_path(interaction.client_id)}
                   >
-                    View client details
+                    View app details
                   </AdminComponents.admin_button>
                 </:actions>
               </AdminComponents.dense_resource_row>
@@ -141,38 +160,74 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
     _error -> {:unavailable, []}
   end
 
+  defp interaction_filter(%{"status" => "pending"}), do: :pending
+  defp interaction_filter(_params), do: :all
+
+  defp filter_interactions(interactions, :pending) do
+    now = DateTime.utc_now()
+
+    Enum.filter(
+      interactions,
+      &(&1.status in [:pending_login, :pending_consent] &&
+          DateTime.compare(&1.expires_at, now) == :gt)
+    )
+  end
+
+  defp filter_interactions(interactions, :all), do: interactions
+
   defp count_status(interactions, status), do: Enum.count(interactions, &(&1.status == status))
 
-  defp interaction_count_copy(0), do: "0 authorization interactions recorded"
-  defp interaction_count_copy(1), do: "1 authorization interaction recorded"
+  defp interaction_count_copy(0, :all), do: "0 sign-in requests recorded"
+  defp interaction_count_copy(1, :all), do: "1 sign-in request recorded"
 
-  defp interaction_count_copy(count),
-    do: "#{count} authorization interactions recorded"
+  defp interaction_count_copy(count, :all),
+    do: "#{count} sign-in requests recorded"
 
-  defp interaction_title(%{status: :pending_login}), do: "Waiting for login interaction"
-  defp interaction_title(%{status: :pending_consent}), do: "Waiting for consent interaction"
-  defp interaction_title(%{status: :completed}), do: "Completed interaction"
-  defp interaction_title(%{status: :denied}), do: "Denied interaction"
-  defp interaction_title(%{status: :expired}), do: "Expired interaction"
-  defp interaction_title(_interaction), do: "Authorization interaction"
+  defp interaction_count_copy(0, :pending),
+    do: "0 requests waiting for sign-in or consent"
+
+  defp interaction_count_copy(1, :pending),
+    do: "1 request waiting for sign-in or consent"
+
+  defp interaction_count_copy(count, :pending),
+    do: "#{count} requests waiting for sign-in or consent"
+
+  defp interaction_list_title(:all), do: "Sign-in request history"
+  defp interaction_list_title(:pending), do: "Waiting for sign-in or consent"
+
+  defp empty_interactions_title(:all), do: "No sign-in requests recorded"
+  defp empty_interactions_title(:pending), do: "No requests waiting for sign-in or consent"
+
+  defp empty_interactions_body(:all),
+    do: "There are no recorded authorization requests to review."
+
+  defp empty_interactions_body(:pending),
+    do:
+      "There are no requests waiting for sign-in or consent. View the full sign-in request history."
+
+  defp interaction_title(%{status: :pending_login}), do: "Waiting for sign-in"
+  defp interaction_title(%{status: :pending_consent}), do: "Waiting for consent"
+  defp interaction_title(%{status: :completed}), do: "Completed sign-in request"
+  defp interaction_title(%{status: :denied}), do: "Denied sign-in request"
+  defp interaction_title(%{status: :expired}), do: "Expired sign-in request"
+  defp interaction_title(_interaction), do: "Sign-in request"
 
   defp interaction_pressure(%{status: :pending_login}),
-    do: "Waiting for login; host login must resolve the subject before consent or completion."
+    do: "The person must sign in before they can review the request."
 
   defp interaction_pressure(%{status: :pending_consent}),
-    do: "Waiting for consent; the account has not completed the prompt yet."
+    do: "The person has not responded to the consent request yet."
 
   defp interaction_pressure(%{status: :completed}),
-    do: "The interaction is complete; use its recorded details for follow-up."
+    do: "The request was completed."
 
   defp interaction_pressure(%{status: :denied}),
-    do: "The request was denied. Its prompt and subject context remain available for follow-up."
+    do: "The request was denied."
 
   defp interaction_pressure(%{status: :expired}),
-    do:
-      "The interaction expired before completion. Its recorded details remain available for review."
+    do: "The request expired before it was completed."
 
-  defp interaction_pressure(_interaction), do: "Review the recorded interaction status."
+  defp interaction_pressure(_interaction), do: "Review the recorded request status."
 
   defp interaction_activity_timestamp(%{status: :pending_login} = interaction),
     do: interaction.login_required_at
@@ -202,7 +257,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
       Lockspire.mount_path() <>
         "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
 
-  defp interactions_path, do: Lockspire.mount_path() <> "/admin/interactions"
+  defp interactions_path(:pending),
+    do: Lockspire.mount_path() <> "/admin/interactions?status=pending"
+
+  defp interactions_path(:all), do: Lockspire.mount_path() <> "/admin/interactions"
 
   defp safe_identifier(nil), do: "Not recorded"
   defp safe_identifier(value) when is_binary(value), do: value
@@ -220,7 +278,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   defp formatted_timestamp(nil), do: "Not recorded"
 
   defp formatted_timestamp(%DateTime{} = value),
-    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
+    do: value
 
   defp formatted_timestamp(value), do: to_string(value)
 end

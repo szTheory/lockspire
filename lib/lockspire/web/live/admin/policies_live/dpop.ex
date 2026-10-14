@@ -15,7 +15,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
     {:ok,
      socket
      |> assign(
-       page_title: "DPoP policy",
+       page_title: "Token proof settings",
        current_section: :policies,
        policy: nil,
        summary: %{inherit: 0, bearer: 0, dpop: 0},
@@ -46,7 +46,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
         {:noreply,
          socket
          |> assign(policy: policy, form_errors: [])
-         |> put_flash(:info, "Global DPoP policy saved")}
+         |> put_flash(:info, "Token proof settings saved")}
 
       {:error, errors} when is_list(errors) ->
         {:noreply, assign(socket, form_errors: policy_errors(errors))}
@@ -70,95 +70,66 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load global DPoP policy">
-        <p>The issuer DPoP setting could not be loaded, so its current value is unknown. Settings and save controls stay hidden until the stored policy can be confirmed.</p>
+      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load token proof settings">
+        <p>Lockspire could not confirm the saved default. Reload this page before changing it.</p>
         <AdminComponents.action_bar>
           <AdminComponents.admin_button type="button" variant={:secondary} phx-click="reload_policy">
-            Reload policy
+            Reload settings
           </AdminComponents.admin_button>
         </AdminComponents.action_bar>
       </AdminComponents.alert>
 
       <div :if={@policy}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Global DPoP policy"
-        body="DPoP (Demonstrating Proof of Possession) binds access tokens to the public key used in a DPoP proof. Choose whether clients that inherit issuer policy may use bearer access tokens or must use DPoP-bound access tokens. Client-specific choices stay on each client policy route."
-      >
-        <:summary>
-          <AdminComponents.decision_summary>
-            <:item
-              :for={item <- dpop_decision_summary_items(%{policy: @policy, summary: @summary})}
-              label={item.label}
-              value={item.value}
-              tone={item.tone}
-              detail={item.detail}
-            >
-            </:item>
-          </AdminComponents.decision_summary>
-        </:summary>
-      </AdminComponents.page_hero>
-
-      <AdminComponents.policy_nav />
+      <AdminComponents.policy_nav current={:dpop} />
 
       <AdminComponents.section_card
-        title="Global DPoP policy"
-        subtitle={"Current choice is #{dpop_policy_label(@policy.dpop_policy)}. #{policy_scope_copy(:dpop)}"}
+        title="Default for apps"
       >
-        <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
-
         <form class="lockspire-admin-form-stack" phx-submit="save_policy">
-          <div class="lockspire-admin-field">
-            <label for="dpop_policy">Access token requirement</label>
-            <select id="dpop_policy" name="policy[dpop_policy]">
-              <option value="bearer" selected={@policy.dpop_policy == :bearer}>Bearer access tokens allowed</option>
-              <option value="dpop" selected={@policy.dpop_policy == :dpop}>DPoP-bound access tokens required</option>
-            </select>
-            <p class="lockspire-admin-help">
-              <strong>Bearer access tokens allowed:</strong> Clients that inherit this setting may use bearer access tokens.
-              <br />
-              <strong>DPoP-bound access tokens required:</strong> Clients that inherit this setting must provide a valid DPoP proof when requesting tokens. Issued access tokens are bound to the proof key.
-            </p>
-          </div>
+          <AdminComponents.radio_group id="dpop_policy" name="policy[dpop_policy]"
+            label="Access token proof" value={@policy.dpop_policy} errors={@form_errors}
+            help="DPoP ties an access token to an app's public key. Apps using this default may use bearer tokens or must prove they hold the key, depending on the choice above. Apps may have their own setting.">
+            <:option value="bearer" label="Bearer access tokens allowed" />
+            <:option value="dpop" label="DPoP-bound access tokens required" />
+          </AdminComponents.radio_group>
 
           <AdminComponents.action_bar>
             <AdminComponents.admin_button type="submit" variant={:primary}>
-              Save global DPoP policy
+              Save token proof settings
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Client override summary"
-        subtitle="Counts by client choice: inherit the issuer setting, allow bearer access tokens, or require DPoP."
+        title="App settings"
       >
         <div :if={@summary} class="lockspire-admin-summary-grid">
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.inherit}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.inherit == 1, do: "client inherits", else: "clients inherit"}
+              {if @summary.inherit == 1, do: "app uses provider default", else: "apps use provider default"}
             </span>
           </div>
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.bearer}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.bearer == 1, do: "client uses bearer", else: "clients use bearer"}
+              {if @summary.bearer == 1, do: "app uses bearer tokens", else: "apps use bearer tokens"}
             </span>
           </div>
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.dpop}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.dpop == 1, do: "client requires DPoP", else: "clients require DPoP"}
+              {if @summary.dpop == 1, do: "app requires DPoP", else: "apps require DPoP"}
             </span>
           </div>
         </div>
 
         <p :if={not is_nil(@summary) and @summary.bearer == 0 and @summary.dpop == 0} class="lockspire-admin-empty-notice">
-          No client-specific DPoP choices are stored. Registered clients inherit the issuer setting.
+          All apps use the provider default.
         </p>
         <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
-          Client override counts are unavailable.
+          App settings are unavailable.
         </p>
       </AdminComponents.section_card>
       </div>
@@ -189,34 +160,6 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
     end
   end
 
-  defp dpop_decision_summary_items(%{policy: %ServerPolicy{} = policy, summary: summary}) do
-    [
-      %{
-        label: "Issuer DPoP choice",
-        value: dpop_policy_label(policy.dpop_policy),
-        tone: dpop_policy_tone(policy.dpop_policy),
-        detail: "Clients without a DPoP choice of their own use this issuer setting."
-      },
-      %{
-        label: "Clients that inherit",
-        value: inherited_clients_value(summary),
-        tone: :info,
-        detail:
-          "These clients use the global issuer DPoP default; client overrides stay on client policy routes."
-      },
-      %{
-        label: "Next safe action",
-        value: "Save global DPoP policy",
-        tone: :info,
-        detail: policy_scope_copy(:dpop)
-      }
-    ]
-  end
-
-  defp dpop_policy_label(:dpop), do: "DPoP required"
-  defp dpop_policy_label(:bearer), do: "Bearer allowed"
-  defp dpop_policy_label(value), do: value |> to_string() |> String.replace("_", " ")
-
   defp policy_errors(errors) do
     if Enum.any?(errors, fn
          %{reason: :invalid_dpop_policy} -> true
@@ -224,9 +167,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
        end) do
       [
         %{
-          field: "Access token requirement",
+          field: "Access token proof",
           message:
-            "Choose whether clients that inherit issuer policy may use bearer access tokens or require DPoP."
+            "Choose whether apps using the provider default may use bearer tokens or must prove key possession with DPoP."
         }
       ]
     else
@@ -236,21 +179,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
 
   defp save_uncertain_error do
     %{
-      field: "Access token requirement",
+      field: "Access token proof",
       message:
-        "The DPoP policy change could not be confirmed. Reload the policy to check its current value."
+        "Token proof settings could not be confirmed. Reload this page to check the saved value."
     }
-  end
-
-  defp dpop_policy_tone(:dpop), do: :warning
-  defp dpop_policy_tone(:bearer), do: :success
-  defp dpop_policy_tone(_value), do: :info
-
-  defp inherited_clients_value(%{inherit: 1}), do: "1 client"
-  defp inherited_clients_value(%{inherit: count}), do: "#{count} clients"
-  defp inherited_clients_value(_summary), do: "Unavailable"
-
-  defp policy_scope_copy(:dpop) do
-    "The issuer uses this setting for clients without a DPoP choice of their own. A client-specific choice takes precedence on that client's policy route."
   end
 end

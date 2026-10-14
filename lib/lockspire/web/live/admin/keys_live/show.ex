@@ -13,7 +13,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Key detail",
+       page_title: "Key details",
        current_section: :keys,
        key_id: parse_id(id),
        selected_key_handle: safe_key_handle(parse_id(id)),
@@ -56,14 +56,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
          assign(socket,
            key_detail: key_detail,
            detail_state: :loaded,
-           action_notice: key_transition_notice(:published),
+           action_notice: key_transition_notice(:published, key_detail.key.use),
            action_error: nil
          )}
 
       {:error, :already_published} ->
         {:noreply,
          assign(socket,
-           action_error: "This key is already published. Review its current JWKS state below.",
+           action_error:
+             "This key is already shared with connected apps. Review its current status below.",
            action_notice: nil
          )}
 
@@ -91,13 +92,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
          assign(socket,
            key_detail: key_detail,
            detail_state: :loaded,
-           action_notice: key_transition_notice(:activated),
+           action_notice: key_transition_notice(:activated, key_detail.key.use),
            action_error: nil
          )}
 
       {:error, :not_published} ->
-        {:noreply,
-         transition_error(socket, "Publish the upcoming key before cutover activation.")}
+        {:noreply, transition_error(socket, "Publish the upcoming key before activating it.")}
 
       {:error, :invalid_state} ->
         {:noreply, transition_error(socket, "Only published upcoming keys can be activated.")}
@@ -111,7 +111,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def handle_event("activate_key", _params, socket) do
     {:noreply,
      assign(socket,
-       action_error: "Confirm activation before changing the active signer.",
+       action_error: activation_confirmation_error(socket.assigns.key_detail),
        action_notice: nil
      )}
   end
@@ -123,14 +123,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
          assign(socket,
            key_detail: key_detail,
            detail_state: :loaded,
-           action_notice: key_transition_notice(:retired),
+           action_notice: key_transition_notice(:retired, key_detail.key.use),
            action_error: nil
          )}
 
       {:error, :already_retired} ->
         {:noreply,
          assign(socket,
-           action_error: "This key is already retired. Review its current JWKS state below.",
+           action_error: "This key is already retired. Review its current status below.",
            action_notice: nil
          )}
 
@@ -146,7 +146,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def handle_event("retire_key", _params, socket) do
     {:noreply,
      assign(socket,
-       action_error: "Confirm retirement before removing publication overlap.",
+       action_error: "Confirm retirement before removing this key from the public list.",
        action_notice: nil
      )}
   end
@@ -155,21 +155,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def render(%{detail_state: state} = assigns) when state != :loaded do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
+      <AdminComponents.section_card
         title={detail_title(@detail_state)}
-        body={detail_body(@detail_state)}
+        subtitle={detail_body(@detail_state)}
       >
-        <:summary>
-          <span>
-            Selected key
-            <AdminComponents.long_value value={@selected_key_handle} kind={:id} />
-          </span>
-        </:summary>
-      </AdminComponents.page_hero>
-
-      <AdminComponents.section_card title="Key detail status">
-        <p :if={@detail_state == :loading} role="status">Loading signing key details…</p>
+        <p>
+          Key ID:
+          <AdminComponents.long_value value={@selected_key_handle} kind={:id} />
+        </p>
 
         <ul :if={@action_error} class="lockspire-admin-errors" role="alert">
           <li>{@action_error}</li>
@@ -198,15 +191,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Review key lifecycle"
-        body="Review public key metadata, publication state, and lifecycle consequences without exposing non-public key material."
-      />
-
       <AdminComponents.section_card
-        title={@key_detail.key.handle}
-        subtitle="Check public metadata, current JWKS availability, and the supported next action. Only public key metadata is shown here."
+        title="Key status"
+        subtitle="Current status and the next available step."
       >
         <AdminComponents.description_list>
           <:item label="Status">
@@ -215,45 +202,37 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
               title={key_status_title(@key_detail.key.status)}
             />
           </:item>
-          <:item label="Key handle">
+          <:item label="Key ID">
             <AdminComponents.long_value value={@key_detail.key.handle} kind={:id} />
           </:item>
-          <:item label="Database handle">
-            <AdminComponents.long_value value={@key_detail.key.database_handle} kind={:id} />
-          </:item>
-          <:item label="Algorithm"><code>{@key_detail.key.alg}</code></:item>
-          <:item label="Key type"><code>{@key_detail.key.kty}</code></:item>
-          <:item label="Use"><code>{@key_detail.key.use}</code></:item>
-          <:item label="Served in JWKS">
+          <:item label="Published to connected apps">
             <strong>{jwks_state_label(@key_detail.publishable)}</strong>
           </:item>
-          <:item label="Next safe action">
+          <:item :if={@key_detail.next_actions != []} label="Next step">
             <AdminComponents.long_value value={key_next_action_summary(@key_detail)} kind={:text} />
           </:item>
-          <:item label="Published at"><AdminComponents.timestamp value={@key_detail.key.published_at} /></:item>
-          <:item label="Activated at"><AdminComponents.timestamp value={@key_detail.key.activated_at} /></:item>
-          <:item label="Retiring at"><AdminComponents.timestamp value={@key_detail.key.retiring_at} /></:item>
-          <:item label="Retired at"><AdminComponents.timestamp value={@key_detail.key.retired_at} /></:item>
+          <:item :if={@key_detail.key.published_at} label="Published at"><AdminComponents.timestamp value={@key_detail.key.published_at} /></:item>
+          <:item :if={@key_detail.key.activated_at} label="Activated at"><AdminComponents.timestamp value={@key_detail.key.activated_at} /></:item>
+          <:item :if={@key_detail.key.retiring_at} label="Retiring at"><AdminComponents.timestamp value={@key_detail.key.retiring_at} /></:item>
+          <:item :if={@key_detail.key.retired_at} label="Retired at"><AdminComponents.timestamp value={@key_detail.key.retired_at} /></:item>
         </AdminComponents.description_list>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Public JWK metadata"
-        subtitle="Only public members are shown here. Non-public key material stays hidden."
+        title="Public key settings"
+        subtitle="Connected apps receive these settings when the key is published. Private key material stays hidden."
       >
         <AdminComponents.description_list>
-          <:item label="kid">
-            <AdminComponents.long_value value={@key_detail.key.public_jwk["kid"]} kind={:id} />
-          </:item>
-          <:item label="alg"><code>{@key_detail.key.public_jwk["alg"]}</code></:item>
-          <:item label="kty"><code>{@key_detail.key.public_jwk["kty"]}</code></:item>
-          <:item label="use"><code>{@key_detail.key.public_jwk["use"]}</code></:item>
+          <:item label="Algorithm"><code>{@key_detail.key.alg}</code></:item>
+          <:item label="Key type"><code>{@key_detail.key.kty}</code></:item>
+          <:item label="Use">{key_use_label(@key_detail.key.use)}</:item>
         </AdminComponents.description_list>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Lifecycle actions"
-        subtitle="Publish, activate, and retire remain separate commands so rollover state stays truthful."
+        :if={@key_detail.next_actions != [] or !is_nil(@action_error) or !is_nil(@action_notice)}
+        title="Key actions"
+        subtitle="Publish a new key before activation; keep the previous key available while apps update."
       >
         <ActionComponent.lifecycle_actions
           key_detail={@key_detail}
@@ -296,47 +275,74 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Show do
   defp keys_index_path, do: Lockspire.mount_path() <> "/admin/keys"
 
   defp detail_title(:loading), do: "Loading key details"
-  defp detail_title(:missing), do: "Signing key not found"
-  defp detail_title(:error), do: "Signing key details are unavailable"
-  defp detail_title(_state), do: "Signing key details are unavailable"
+  defp detail_title(:missing), do: "Key not found"
+  defp detail_title(:error), do: "Key details are unavailable"
+  defp detail_title(_state), do: "Key details are unavailable"
 
-  defp detail_body(:loading), do: "Lockspire is loading this signing key from durable storage."
+  defp detail_body(:loading), do: "Loading this key…"
 
   defp detail_body(:missing),
-    do:
-      "No signing key matches the selected key identifier. Return to the inventory to choose another key."
+    do: "This key was not found. Return to the key list to choose another."
 
   defp detail_body(:error),
-    do:
-      "Lockspire could not read this signing key. The selected key identifier is retained, but its status could not be confirmed."
+    do: "Lockspire could not load this key, so its current status is unknown."
 
-  defp detail_body(_state), do: "Lockspire could not read this signing key."
+  defp detail_body(_state), do: "Lockspire could not read this key."
 
-  defp jwks_state_label(true), do: "Served in JWKS"
-  defp jwks_state_label(false), do: "Not served in JWKS"
+  defp jwks_state_label(true), do: "Yes"
+  defp jwks_state_label(false), do: "No"
 
   defp key_status_title(:active), do: "Current key selected for signing or decryption operations."
-  defp key_status_title(:upcoming), do: "Prepared key; publish it before activating the signer."
-  defp key_status_title(:retiring), do: "Previous key remains served during retirement overlap."
-  defp key_status_title(:retired), do: "Retired key is not included in the served JWKS."
-  defp key_status_title(_status), do: "Signing-key lifecycle state."
+
+  defp key_status_title(:upcoming),
+    do: "Prepared key; publish it so apps can recognize it before activation."
+
+  defp key_status_title(:retiring),
+    do: "Previous key remains available while apps switch to its replacement."
+
+  defp key_status_title(:retired), do: "Retired key is no longer shared with connected apps."
+  defp key_status_title(_status), do: "Key status."
+
+  defp key_use_label(:sig), do: "Signing"
+  defp key_use_label(:enc), do: "Encryption"
+  defp key_use_label(_use), do: "Not recorded"
+
+  defp key_next_action_summary(%{next_actions: [:publish], key: %{use: :enc}}),
+    do: "Publish key so apps can prepare to encrypt authorization requests"
 
   defp key_next_action_summary(%{next_actions: [:publish]}),
-    do: "Publish key for verification overlap"
+    do: "Publish key so apps can prepare to trust it"
+
+  defp key_next_action_summary(%{next_actions: [:activate], key: %{use: :enc}}),
+    do: "Activate key for encrypted authorization requests"
 
   defp key_next_action_summary(%{next_actions: [:activate]}),
-    do: "Activate key for signer cutover"
+    do: "Activate key to sign new tokens"
 
   defp key_next_action_summary(%{next_actions: [:retire]}),
-    do: "Retire key after verifier overlap"
+    do: "Retire key after apps switch to its replacement"
 
-  defp key_next_action_summary(%{next_actions: []}), do: "No lifecycle action available"
+  defp key_next_action_summary(%{next_actions: []}), do: "No further action is available"
 
-  defp key_transition_notice(:published),
-    do: "Key is now served in JWKS; the current signer remains active."
+  defp activation_confirmation_error(%{key: %{use: :enc}}),
+    do: "Confirm activation before changing the active encryption key."
 
-  defp key_transition_notice(:activated),
-    do: "Key is now the active signer, and the previous signer moved to retiring overlap."
+  defp activation_confirmation_error(_detail),
+    do: "Confirm activation before changing which key signs new tokens."
 
-  defp key_transition_notice(:retired), do: "Key is no longer served in JWKS."
+  defp key_transition_notice(:published, :enc),
+    do: "This key is now shared with connected apps. The current encryption key remains active."
+
+  defp key_transition_notice(:published, _use),
+    do: "This key is now shared with connected apps. The current signing key remains active."
+
+  defp key_transition_notice(:activated, :enc),
+    do:
+      "This key is now active for encrypted authorization requests. The previous key remains available to decrypt existing requests."
+
+  defp key_transition_notice(:activated, _use),
+    do: "This key now signs new tokens. The previous key remains available while apps switch."
+
+  defp key_transition_notice(:retired, _use),
+    do: "This key is no longer shared with connected apps."
 end

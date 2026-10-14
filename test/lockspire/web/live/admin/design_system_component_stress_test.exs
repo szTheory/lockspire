@@ -9,6 +9,34 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
   alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Components.AdminComponents
 
+  test "timestamps preserve the exact instant while showing readable UTC text" do
+    value = ~U[2026-10-13 17:04:12.268464Z]
+    html = render_component(&AdminComponents.timestamp/1, value: value)
+    assert html =~ ~s(datetime="2026-10-13T17:04:12.268464Z")
+    assert html =~ ~s(data-lockspire-copy-timestamp="2026-10-13T17:04:12.268464Z")
+    assert html =~ "Oct 13, 2026, 17:04:12 UTC"
+    HtmlAssertions.assert_links_have_hrefs(html)
+
+    legacy = render_component(&AdminComponents.long_value/1, value: value, kind: :timestamp)
+    assert legacy =~ ~s(data-lockspire-copy-timestamp="2026-10-13T17:04:12.268464Z")
+
+    placeholder =
+      render_component(&AdminComponents.long_value/1, value: "Not recorded", kind: :timestamp)
+
+    assert placeholder =~ "Not recorded"
+    refute placeholder =~ "data-lockspire-copy-timestamp"
+
+    redacted =
+      render_component(&AdminComponents.long_value/1,
+        value: value,
+        kind: :timestamp,
+        redacted: true
+      )
+
+    assert redacted =~ "Redacted"
+    refute redacted =~ "2026-10-13"
+  end
+
   @admin_css_path Path.expand("../../../../../lib/lockspire/web/admin_css.ex", __DIR__)
   @admin_router_path Path.expand("../../../../../lib/lockspire/web/admin_router.ex", __DIR__)
   @mix_path Path.expand("../../../../../mix.exs", __DIR__)
@@ -239,7 +267,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
           "Empty table/list alternative",
           "Workflow shell validation proof",
           "Approved, waiting",
-          "Initial access token",
+          "App setup token",
           "Unknown lab only"
         ] do
       assert html =~ phrase
@@ -300,12 +328,12 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
 
     for phrase <- [
           "Approved, waiting",
-          "Reuse detected",
+          "Used after replacement",
           "Revoked",
           "Completed",
-          "Initial access token",
+          "App setup token",
           "Unknown lab only",
-          "Family-wide revocation is required when reuse is detected.",
+          "A refresh token was used again after replacement. Revoke every active token in the group to block further use.",
           "Revoking this family invalidates all active refresh tokens",
           "Copy this value now. Lockspire stores only the hash after this response.",
           "Stored hash is shown for correlation only."
@@ -442,7 +470,7 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
 
   test "HTML proof helper fails form controls that lose IDs and labels" do
     html =
-      ~s(<form><label for="client-name">Client name</label><input id="client-name" name="client_name"><input name="redirect_uri" type="url"></form>)
+      ~s(<form><label for="client-name">App name</label><input id="client-name" name="client_name"><input name="redirect_uri" type="url"></form>)
 
     assert_raise ExUnit.AssertionError, ~r/every rendered form control to have a label/, fn ->
       HtmlAssertions.assert_label_targets_exist(html)

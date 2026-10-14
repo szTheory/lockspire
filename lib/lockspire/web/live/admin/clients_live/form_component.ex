@@ -16,6 +16,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   attr(:strict_readiness, :map, default: nil)
   attr(:errors, :list, default: [])
   attr(:params, :map, default: nil)
+  attr(:show_heading, :boolean, default: true)
 
   def client_form(assigns) do
     assigns =
@@ -32,7 +33,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
     ~H"""
     <section class="lockspire-admin-form-shell">
-      <header>
+      <header :if={@show_heading}>
         <h2>{@title}</h2>
         <p class="lockspire-admin-help">{subtitle_for(@mode)}</p>
       </header>
@@ -46,15 +47,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
       <form
         id={@form_id}
         class="lockspire-admin-form-stack"
-        phx-change={change_event(@mode)}
-        phx-submit="save_client"
+        phx-change={if change_event(@mode), do: Phoenix.LiveView.JS.push(change_event(@mode), page_loading: true)}
+        phx-submit={Phoenix.LiveView.JS.push("save_client", page_loading: true)}
       >
         <input type="hidden" name="client[mode]" value={Atom.to_string(@mode)} />
 
         <div :if={@mode == :new} class="lockspire-admin-fieldset">
           <AdminComponents.form_field
             id="client_name"
-            label="Client name"
+            label="App name"
             errors={field_errors(@display_errors, :name)}
           >
             <input
@@ -62,252 +63,158 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               name="client[name]"
               type="text"
               value={@defaults.name}
-              aria-invalid={field_errors(@display_errors, :name) != []}
+              aria-invalid={if field_errors(@display_errors, :name) != [], do: "true", else: "false"}
               aria-describedby={
                 if field_errors(@display_errors, :name) != [], do: "client_name-error"
               }
             />
           </AdminComponents.form_field>
 
-          <AdminComponents.form_field
-            id="client_type"
-            label="Client type"
-            errors={field_errors(@display_errors, :client_type)}
+          <AdminComponents.radio_group
+            id="client_type" name="client[client_type]" label="Client type"
+            value={@defaults.client_type} errors={field_errors(@display_errors, :client_type)}
           >
-            <select
-              id="client_type"
-              name="client[client_type]"
-              aria-invalid={field_errors(@display_errors, :client_type) != []}
-              aria-describedby={
-                if field_errors(@display_errors, :client_type) != [], do: "client_type-error"
-              }
-            >
-              <option value="confidential" selected={@defaults.client_type == "confidential"}>
-                Confidential
-              </option>
-              <option value="public" selected={@defaults.client_type == "public"}>Public</option>
-            </select>
-          </AdminComponents.form_field>
+            <:option value="confidential" label="Server-side app" help="Can keep a client secret secure." />
+            <:option value="public" label="Browser or mobile app" help="Cannot keep a client secret secure. Uses PKCE." />
+          </AdminComponents.radio_group>
 
-          <AdminComponents.form_field
-            id="client_auth_method"
-            label="Token endpoint authentication"
+          <AdminComponents.radio_group
+            id="client_auth_method" name="client[token_endpoint_auth_method]" label="How the app authenticates"
+            value={@defaults.token_endpoint_auth_method}
             errors={field_errors(@display_errors, :token_endpoint_auth_method)}
           >
-            <select
-              id="client_auth_method"
-              name="client[token_endpoint_auth_method]"
-              aria-invalid={field_errors(@display_errors, :token_endpoint_auth_method) != []}
-              aria-describedby={
-                if field_errors(@display_errors, :token_endpoint_auth_method) != [],
-                  do: "client_auth_method-error"
-              }
-            >
-              <option
-                value="client_secret_basic"
-                selected={@defaults.token_endpoint_auth_method == "client_secret_basic"}
-              >
-                client_secret_basic
-              </option>
-              <option
-                value="client_secret_post"
-                selected={@defaults.token_endpoint_auth_method == "client_secret_post"}
-              >
-                client_secret_post
-              </option>
-              <option
-                value="client_secret_jwt"
-                selected={@defaults.token_endpoint_auth_method == "client_secret_jwt"}
-              >
-                client_secret_jwt
-              </option>
-              <option value="none" selected={@defaults.token_endpoint_auth_method == "none"}>
-                none
-              </option>
-            </select>
-            <p class="lockspire-admin-help">
-              <code>client_secret_jwt</code> uses <code>HS256</code> on Lockspire's supported
-              direct-client endpoints.
-            </p>
-          </AdminComponents.form_field>
+            <:option value="client_secret_basic" label="Client secret in the request header" />
+            <:option value="client_secret_post" label="Client secret in the request body" />
+            <:option value="client_secret_jwt" label="Signed client assertion (JWT)" help="Uses the client secret to sign assertions with HS256." />
+            <:option value="none" label="No client secret" />
+          </AdminComponents.radio_group>
         </div>
 
         <div :if={@mode in [:new, :edit]} class="lockspire-admin-fieldset">
-          <h3 :if={@mode == :edit}>Client identity and access</h3>
+          <h3 :if={@mode == :edit}>App name and access</h3>
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_name"
-            label="Client name"
-            errors={field_errors(@errors, :name)}
+            label="App name"
+            errors={field_errors(@display_errors, :name)}
           >
             <input
               id="client_name"
               name="client[name]"
               type="text"
               value={@defaults.name}
-              aria-invalid={field_errors(@errors, :name) != []}
-              aria-describedby={if field_errors(@errors, :name) != [], do: "client_name-error"}
+              aria-invalid={if field_errors(@display_errors, :name) != [], do: "true", else: "false"}
+              aria-describedby={if field_errors(@display_errors, :name) != [], do: "client_name-error"}
             />
 
           </AdminComponents.form_field>
 
           <AdminComponents.form_field
             id="client_allowed_scopes"
-            label="Allowed scopes"
-            help="Separate OAuth scope names with commas. Only these scopes may be requested for this client."
+            label="Allowed permissions (OAuth scopes)"
+            help="Permissions this app may request."
             errors={field_errors(@display_errors, :allowed_scopes)}
           >
-            <input
+            <AdminComponents.multi_value_control
               id="client_allowed_scopes"
               name="client[allowed_scopes]"
-              type="text"
               value={@defaults.allowed_scopes}
               required={@mode == :new}
-              aria-invalid={field_errors(@display_errors, :allowed_scopes) != []}
-              aria-describedby={
-                if field_errors(@display_errors, :allowed_scopes) != [],
-                  do: "client_allowed_scopes-error"
-              }
+              suggestions={["openid", "profile", "email", "phone", "address", "offline_access"]}
+              errors={field_errors(@display_errors, :allowed_scopes)}
             />
           </AdminComponents.form_field>
 
           <h3 :if={@mode == :edit}>Effective security defaults</h3>
-          <AdminComponents.form_field
-            :if={@mode == :edit}
-            id="client_dpop_policy"
-            label="Client DPoP override"
-            errors={field_errors(@errors, :dpop_policy)}
+          <AdminComponents.radio_group
+            :if={@mode == :edit} id="client_dpop_policy" name="client[dpop_policy]"
+            label="Access token proof" value={@defaults.dpop_policy}
+            errors={field_errors(@display_errors, :dpop_policy)}
           >
-            <select
-              id="client_dpop_policy"
-              name="client[dpop_policy]"
-              aria-invalid={field_errors(@errors, :dpop_policy) != []}
-              aria-describedby={if field_errors(@errors, :dpop_policy) != [], do: "client_dpop_policy-error"}
-            >
-              <option value="inherit" selected={@defaults.dpop_policy == "inherit"}>
-                Inherit from global policy
-              </option>
-              <option value="bearer" selected={@defaults.dpop_policy == "bearer"}>
-                Use bearer access tokens
-              </option>
-              <option value="dpop" selected={@defaults.dpop_policy == "dpop"}>
-                Require DPoP-bound access tokens
-              </option>
-            </select>
+            <:option value="inherit" label="Use provider default" />
+            <:option value="bearer" label="Bearer access tokens" />
+            <:option value="dpop" label="Tokens tied to a key (DPoP)" />
             <div class="lockspire-admin-help">
-              <p><strong>Issuer default:</strong> {dpop_default_label(@effective_dpop_policy, @policy_load_state)}</p>
-              <p><strong>Selected client override:</strong> {dpop_choice_label(@defaults.dpop_policy)}</p>
-              <p>
-                <strong>Effective behavior if saved:</strong>
-                {dpop_effective_preview(@effective_dpop_policy, @defaults.dpop_policy, @policy_load_state)}
-              </p>
+              <p><strong>Provider default:</strong> {dpop_default_label(@effective_dpop_policy, @policy_load_state)}</p>
+              <p><strong>Result if saved:</strong> {dpop_effective_preview(@effective_dpop_policy, @defaults.dpop_policy, @policy_load_state)}</p>
             </div>
-          </AdminComponents.form_field>
+          </AdminComponents.radio_group>
 
-          <AdminComponents.form_field
-            :if={@mode == :edit}
-            id="client_access_token_format"
-            label="Access token format override"
-            errors={field_errors(@errors, :access_token_format)}
+          <AdminComponents.radio_group
+            :if={@mode == :edit} id="client_access_token_format" name="client[access_token_format]"
+            label="Access token format" value={@defaults.access_token_format}
+            help="JWTs let APIs verify tokens locally. Opaque tokens are checked with Lockspire."
+            errors={field_errors(@display_errors, :access_token_format)}
           >
-            <select
-              id="client_access_token_format"
-              name="client[access_token_format]"
-              aria-invalid={field_errors(@errors, :access_token_format) != []}
-              aria-describedby={
-                if field_errors(@errors, :access_token_format) != [],
-                  do: "client_access_token_format-error"
-              }
-            >
-              <option value="inherit" selected={@defaults.access_token_format == "inherit"}>
-                Inherit from server default
-              </option>
-              <option value="jwt" selected={@defaults.access_token_format == "jwt"}>
-                JWT (RFC 9068 at+jwt)
-              </option>
-              <option value="opaque" selected={@defaults.access_token_format == "opaque"}>
-                Opaque (Lockspire-stored)
-              </option>
-            </select>
+            <:option value="inherit" label="Use provider default" />
+            <:option value="jwt" label="JWT" />
+            <:option value="opaque" label="Opaque token" />
             <div class="lockspire-admin-help">
-              <p>
-                JWT (at+jwt) is the default and is what host Phoenix API routes verify. Opaque tokens
-                are Lockspire-stored and back /userinfo and /introspect — they are not interchangeable.
-                Leave this set to inherit unless a specific client needs opaque.
-              </p>
-              <p>
-                <a href="docs/protect-phoenix-api-routes.md">Learn when to choose JWT vs opaque</a>
-              </p>
-              <p><strong>Issuer default:</strong> {access_token_format_label(@global_access_token_format, @policy_load_state)}</p>
-              <p><strong>Selected client override:</strong> {access_token_format_choice_label(@defaults.access_token_format)}</p>
-              <p>
-                <strong>Effective behavior if saved:</strong>
-                {access_token_format_preview(@global_access_token_format, @defaults.access_token_format, @policy_load_state)}
-              </p>
+              <p><strong>Provider default:</strong> {access_token_format_label(@global_access_token_format, @policy_load_state)}</p>
+              <p><strong>Result if saved:</strong> {access_token_format_preview(@global_access_token_format, @defaults.access_token_format, @policy_load_state)}</p>
             </div>
-          </AdminComponents.form_field>
+          </AdminComponents.radio_group>
 
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_contacts"
             label="Contacts"
-            errors={field_errors(@errors, :contacts)}
+            errors={field_errors(@display_errors, :contacts)}
           >
-            <input
+            <AdminComponents.multi_value_control
               id="client_contacts"
               name="client[contacts]"
-              type="text"
               value={@defaults.contacts}
-              aria-invalid={field_errors(@errors, :contacts) != []}
-              aria-describedby={if field_errors(@errors, :contacts) != [], do: "client_contacts-error"}
+              help={false}
+              errors={field_errors(@display_errors, :contacts)}
             />
           </AdminComponents.form_field>
 
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_logo_uri"
-            label="Logo URI"
-            errors={field_errors(@errors, :logo_uri)}
+            label="Logo URL"
+            errors={field_errors(@display_errors, :logo_uri)}
           >
             <input
               id="client_logo_uri"
               name="client[logo_uri]"
               type="text"
               value={@defaults.logo_uri}
-              aria-invalid={field_errors(@errors, :logo_uri) != []}
-              aria-describedby={if field_errors(@errors, :logo_uri) != [], do: "client_logo_uri-error"}
+              aria-invalid={if field_errors(@display_errors, :logo_uri) != [], do: "true", else: "false"}
+              aria-describedby={if field_errors(@display_errors, :logo_uri) != [], do: "client_logo_uri-error"}
             />
           </AdminComponents.form_field>
 
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_tos_uri"
-            label="Terms of service URI"
-            errors={field_errors(@errors, :tos_uri)}
+            label="Terms of service URL"
+            errors={field_errors(@display_errors, :tos_uri)}
           >
             <input
               id="client_tos_uri"
               name="client[tos_uri]"
               type="text"
               value={@defaults.tos_uri}
-              aria-invalid={field_errors(@errors, :tos_uri) != []}
-              aria-describedby={if field_errors(@errors, :tos_uri) != [], do: "client_tos_uri-error"}
+              aria-invalid={if field_errors(@display_errors, :tos_uri) != [], do: "true", else: "false"}
+              aria-describedby={if field_errors(@display_errors, :tos_uri) != [], do: "client_tos_uri-error"}
             />
           </AdminComponents.form_field>
 
           <AdminComponents.form_field
             :if={@mode == :edit}
             id="client_policy_uri"
-            label="Policy URI"
-            errors={field_errors(@errors, :policy_uri)}
+            label="Privacy policy URL"
+            errors={field_errors(@display_errors, :policy_uri)}
           >
             <input
               id="client_policy_uri"
               name="client[policy_uri]"
               type="text"
               value={@defaults.policy_uri}
-              aria-invalid={field_errors(@errors, :policy_uri) != []}
-              aria-describedby={if field_errors(@errors, :policy_uri) != [], do: "client_policy_uri-error"}
+              aria-invalid={if field_errors(@display_errors, :policy_uri) != [], do: "true", else: "false"}
+              aria-describedby={if field_errors(@display_errors, :policy_uri) != [], do: "client_policy_uri-error"}
             />
           </AdminComponents.form_field>
         </div>
@@ -315,8 +222,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
         <AdminComponents.form_field
           :if={@mode in [:new, :redirects]}
           id="client_redirect_uris"
-          label="Redirect URIs"
-          help="Enter one callback URI per line. Each must exactly match the URI sent in an authorization request."
+          label="Sign-in return URLs"
+          help="Enter one exact URL per line. Lockspire sends users back to one of these URLs after sign-in."
           required={@mode == :new}
           errors={field_errors(@display_errors, :redirect_uris)}
         >
@@ -325,132 +232,72 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             name="client[redirect_uris]"
             rows="4"
             required={@mode == :new}
-            aria-invalid={field_errors(@display_errors, :redirect_uris) != []}
-            aria-describedby={
-              if field_errors(@display_errors, :redirect_uris) != [],
-                do: "client_redirect_uris-error"
-            }
+            aria-invalid={if field_errors(@display_errors, :redirect_uris) != [], do: "true", else: "false"}
+            aria-describedby={field_description("client_redirect_uris", field_errors(@display_errors, :redirect_uris))}
           ><%= @defaults.redirect_uris %></textarea>
         </AdminComponents.form_field>
 
         <AdminComponents.form_field
           :if={@mode == :logout_uris}
           id="client_post_logout_redirect_uris"
-          label="Post-logout redirect URIs"
-          help="Enter one browser destination per line after RP-initiated logout. These do not receive logout notifications."
+          label="Sign-out return URLs"
+          help="Enter one exact URL per line where users may return after signing out."
           errors={field_errors(@display_errors, :post_logout_redirect_uris)}
         >
           <textarea
             id="client_post_logout_redirect_uris"
             name="client[post_logout_redirect_uris]"
             rows="4"
-            aria-invalid={field_errors(@display_errors, :post_logout_redirect_uris) != []}
-            aria-describedby={
-              if field_errors(@display_errors, :post_logout_redirect_uris) != [],
-                do: "client_post_logout_redirect_uris-error"
-            }
+            aria-invalid={if field_errors(@display_errors, :post_logout_redirect_uris) != [], do: "true", else: "false"}
+            aria-describedby={field_description("client_post_logout_redirect_uris", field_errors(@display_errors, :post_logout_redirect_uris))}
           ><%= @defaults.post_logout_redirect_uris %></textarea>
         </AdminComponents.form_field>
 
-        <AdminComponents.form_field
-          :if={@mode == :par_policy}
-          id="client_par_policy"
-          label="Client PAR override"
+        <AdminComponents.radio_group
+          :if={@mode == :par_policy} id="client_par_policy" name="client[par_policy]"
+          label="Authorization request rule" value={@defaults.par_policy}
           errors={field_errors(@display_errors, :par_policy)}
         >
-          <select
-            id="client_par_policy"
-            name="client[par_policy]"
-            aria-invalid={field_errors(@display_errors, :par_policy) != []}
-            aria-describedby={
-              if field_errors(@display_errors, :par_policy) != [],
-                do: "client_par_policy-error"
-            }
-          >
-            <option value="inherit" selected={@defaults.par_policy == "inherit"}>
-              Inherit from global policy
-            </option>
-            <option value="required" selected={@defaults.par_policy == "required"}>
-              Require PAR for this client
-            </option>
-            <option value="optional" selected={@defaults.par_policy == "optional"}>
-              Mark PAR optional for this client
-            </option>
-          </select>
-
+          <:option value="inherit" label="Use provider default" />
+          <:option value="required" label="Require PAR for this app" />
+          <:option value="optional" label="Make PAR optional for this app" />
           <div class="lockspire-admin-help">
-            <p><strong>Issuer default:</strong> {par_default_label(@effective_par_policy, @policy_load_state)}</p>
-            <p><strong>Selected client override:</strong> {par_choice_label(@defaults.par_policy)}</p>
-            <p>
-              <strong>Effective behavior if saved:</strong>
-              {par_effective_preview(@effective_par_policy, @defaults.par_policy, @policy_load_state)}
-            </p>
+            <p><strong>Provider default:</strong> {par_default_label(@effective_par_policy, @policy_load_state)}</p>
+            <p><strong>Result if saved:</strong> {par_effective_preview(@effective_par_policy, @defaults.par_policy, @policy_load_state)}</p>
           </div>
-        </AdminComponents.form_field>
+        </AdminComponents.radio_group>
 
         <div :if={@mode == :security_profile} class="lockspire-admin-fieldset">
-          <AdminComponents.form_field
-            id="client_security_profile"
-            label="Client security profile override"
-            errors={field_errors(@display_errors, :security_profile)}
+          <AdminComponents.radio_group
+            id="client_security_profile" name="client[security_profile]" label="App security requirements"
+            value={@defaults.security_profile} errors={field_errors(@display_errors, :security_profile)}
           >
-            <select
-              id="client_security_profile"
-              name="client[security_profile]"
-              aria-invalid={field_errors(@display_errors, :security_profile) != []}
-              aria-describedby={
-                if field_errors(@display_errors, :security_profile) != [],
-                  do: "client_security_profile-error"
-              }
-            >
-              <option value="inherit" selected={@defaults.security_profile == "inherit"}>
-                Inherit from global policy
-              </option>
-              <option
-                value="fapi_2_0_message_signing"
-                selected={@defaults.security_profile == "fapi_2_0_message_signing"}
-              >
-                FAPI 2.0 Message Signing
-              </option>
-              <option
-                value="fapi_2_0_security"
-                selected={@defaults.security_profile == "fapi_2_0_security"}
-              >
-                FAPI 2.0 Security Profile
-              </option>
-              <option value="none" selected={@defaults.security_profile == "none"}>
-                None (Standard OIDC)
-              </option>
-            </select>
+            <:option value="inherit" label="Use provider default" />
+            <:option value="fapi_2_0_message_signing" label="FAPI 2.0 Message Signing" />
+            <:option value="fapi_2_0_security" label="FAPI 2.0 Security Profile" />
+            <:option value="none" label="Standard OAuth and OpenID Connect" />
             <div class="lockspire-admin-help">
-              <p>
-                <strong>Issuer default:</strong>
-                {security_default_label(@effective_security_profile, @policy_load_state)}
-              </p>
-              <p><strong>Selected client override:</strong> {security_choice_label(@defaults.security_profile)}</p>
-              <p>
-                <strong>Effective behavior if saved:</strong>
-                {security_effective_preview(@effective_security_profile, @defaults.security_profile, @policy_load_state)}
-              </p>
+              <p><strong>Provider default:</strong> {security_default_label(@effective_security_profile, @policy_load_state)}</p>
+              <p><strong>Result if saved:</strong> {security_effective_preview(@effective_security_profile, @defaults.security_profile, @policy_load_state)}</p>
             </div>
-          </AdminComponents.form_field>
+          </AdminComponents.radio_group>
 
           <AdminComponents.form_field
             id="client_authorization_signed_response_alg"
             label="Authorization response signing algorithm"
             errors={field_errors(@display_errors, :authorization_signed_response_alg)}
           >
-            <select
+            <AdminComponents.select_control
               id="client_authorization_signed_response_alg"
               name="client[authorization_signed_response_alg]"
-              aria-invalid={field_errors(@display_errors, :authorization_signed_response_alg) != []}
+              aria-invalid={if field_errors(@display_errors, :authorization_signed_response_alg) != [], do: "true", else: "false"}
               aria-describedby={
                 if field_errors(@display_errors, :authorization_signed_response_alg) != [],
                   do: "client_authorization_signed_response_alg-error"
               }
             >
               <option value="" selected={is_nil(@defaults.authorization_signed_response_alg)}>
-                Use legacy default / not set
+                Not set (use default)
               </option>
               <option
                 value="ES256"
@@ -476,31 +323,31 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               >
                 EdDSA
               </option>
-            </select>
+            </AdminComponents.select_control>
           </AdminComponents.form_field>
 
           <div :if={@effective_security_profile} class="lockspire-admin-help">
             <p>
-              <strong>Currently saved global policy:</strong>
-              {@effective_security_profile.global_profile}
+              <strong>Provider default:</strong>
+              {security_profile_name(@effective_security_profile.global_profile)}
             </p>
             <p>
-              <strong>Currently saved effective profile:</strong> {effective_profile_label(
+              <strong>This app currently uses:</strong> {effective_profile_label(
                 @effective_security_profile
               )}
             </p>
             <p>
-              <strong>Current strict readiness:</strong> {strict_readiness_label(
+              <strong>Signing key ready for message signing:</strong> {strict_readiness_label(
                 @effective_security_profile,
                 @strict_readiness
               )}
             </p>
             <p :if={@effective_security_profile.fapi_2_0_message_signing?}>
-              This stricter tier requires explicit JARM on `/authorize` and JWT negotiation on
-              `/introspect`.
+              Message signing requires signed authorization responses (JARM) and signed
+              introspection responses (JWT).
             </p>
             <p :if={mixed_mode_override?(@effective_security_profile)}>
-              This client is using the mixed-mode escape hatch under a stricter global profile.
+              This app opts out of the stricter provider default and uses standard OIDC.
             </p>
             <ul :if={@strict_readiness && @strict_readiness.remediation != [] && @effective_security_profile.fapi_2_0_message_signing?} class="lockspire-admin-errors">
               <%= for item <- @strict_readiness.remediation do %>
@@ -512,20 +359,20 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
         <div :if={@mode == :security_profile} class="lockspire-admin-help">
           <p>
-            <strong>None (Standard OIDC):</strong> compatibility-first OIDC behavior.
+            <strong>None (Standard OIDC):</strong> Standard OAuth and OIDC protections.
           </p>
           <p>
-            <strong>FAPI 2.0 Security Profile:</strong> PAR, DPoP, and FAPI baseline enforcement.
+            <strong>FAPI 2.0 Security Profile:</strong> Requires PAR, key-bound access tokens (DPoP), and S256 PKCE.
           </p>
           <p>
-            <strong>FAPI 2.0 Message Signing:</strong> baseline FAPI enforcement plus explicit JARM
-            and JWT-only introspection negotiation.
+            <strong>FAPI 2.0 Message Signing:</strong> Includes those requirements and signed
+            authorization and introspection responses.
           </p>
         </div>
 
         <div :if={@mode == :logout_propagation} class="lockspire-admin-fieldset">
           <div class="lockspire-admin-field">
-            <label for="client_backchannel_logout_uri">Back-channel logout URI</label>
+            <label for="client_backchannel_logout_uri">Server sign-out notification URL</label>
             <input
               id="client_backchannel_logout_uri"
               name="client[backchannel_logout_uri]"
@@ -543,12 +390,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               checked={@defaults.backchannel_logout_session_required}
             />
             <label for="client_backchannel_logout_session_required">
-              Include `sid` in back-channel logout tokens
+              Include a session ID in the server notification
             </label>
           </div>
 
           <div class="lockspire-admin-field">
-            <label for="client_frontchannel_logout_uri">Front-channel logout URI</label>
+            <label for="client_frontchannel_logout_uri">Browser sign-out notification URL</label>
             <input
               id="client_frontchannel_logout_uri"
               name="client[frontchannel_logout_uri]"
@@ -566,14 +413,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               checked={@defaults.frontchannel_logout_session_required}
             />
             <label for="client_frontchannel_logout_session_required">
-              Include `sid` in front-channel iframe requests
+              Include a session ID in the browser notification
             </label>
           </div>
 
           <div class="lockspire-admin-help">
-            <p>These endpoints receive logout notifications. They are separate from post-logout browser destinations.</p>
-            <p>After the host clears its browser session, <code>/end_session/complete</code> records propagation intent and enqueues durable back-channel delivery.</p>
-            <p>Front-channel logout is best effort because the browser may block cross-site cleanup.</p>
+            <p>These URLs tell Lockspire where this app receives sign-out notifications.</p>
+            <p>Server notifications are stored and retried. Browser notifications may be blocked and cannot confirm that this app cleared its session.</p>
           </div>
         </div>
 
@@ -585,7 +431,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
               cond do
                 @mode == :new -> "Creating client…"
                 @mode == :edit -> "Saving client changes…"
-                @mode == :par_policy -> "Saving PAR policy…"
+                @mode == :par_policy -> "Saving authorization request rules…"
                 @mode == :security_profile -> "Saving security profile…"
                 true -> nil
               end
@@ -598,7 +444,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             class="lockspire-admin-btn lockspire-admin-btn-secondary"
             href={client_detail_path(@client)}
           >
-            Return to client details
+            Back to app details
           </.link>
         </AdminComponents.action_bar>
       </form>
@@ -714,6 +560,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     Enum.filter(errors, &(is_map(&1) and Map.get(&1, :field) == field))
   end
 
+  defp field_description(id, errors) do
+    if errors == [], do: "#{id}-help", else: "#{id}-help #{id}-error"
+  end
+
   defp display_errors(errors) do
     Enum.map(errors, fn
       %{field: field, reason: reason} = error ->
@@ -725,24 +575,22 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   end
 
   defp error_message(:redirect_uris, :invalid_redirect_uri, :empty),
-    do: "Add at least one redirect URI."
+    do: "Add at least one sign-in return URL."
 
   defp error_message(:redirect_uris, :invalid_redirect_uri, _detail),
-    do:
-      "Enter a valid callback URI that exactly matches the value sent in an authorization request."
+    do: "Enter a valid URL for users to return to after sign-in."
 
   defp error_message(:post_logout_redirect_uris, :invalid_redirect_uri, _detail),
-    do:
-      "Enter a valid post-logout redirect URI that exactly matches the browser destination sent during logout."
+    do: "Enter a valid URL for users to return to after signing out."
 
   defp error_message(:allowed_scopes, :invalid_scope, :empty),
-    do: "Enter at least one allowed scope."
+    do: "Add at least one permission (OAuth scope)."
 
   defp error_message(:allowed_scopes, :invalid_scope, _detail),
-    do: "Enter valid OAuth scope names separated by commas."
+    do: "Use valid permission names."
 
   defp error_message(:token_endpoint_auth_method, :invalid_token_endpoint_auth_method, _detail),
-    do: "Choose an authentication method supported by the current security policy."
+    do: "Choose a supported sign-in method for this app."
 
   defp error_message(:token_endpoint_auth_method, _reason, _detail),
     do: "Choose a supported token endpoint authentication method."
@@ -772,7 +620,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   end
 
   defp error_title(:par_policy, _errors),
-    do: "Client PAR override was not saved. Review the selected value and try again."
+    do: "Authorization request setting was not saved. Review your choice and try again."
 
   defp error_title(:security_profile, _errors),
     do: "Client security profile was not saved. Review the selected value and try again."
@@ -790,13 +638,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp dpop_default_label(%{global_policy: :dpop}, :loaded), do: "DPoP-bound access tokens"
   defp dpop_default_label(_policy, _state), do: "Unavailable"
 
-  defp dpop_choice_label("inherit"), do: "Inherit from issuer"
-  defp dpop_choice_label("bearer"), do: "Use bearer access tokens"
-  defp dpop_choice_label("dpop"), do: "Require DPoP-bound access tokens"
-  defp dpop_choice_label(_value), do: "Review the selected value"
-
   defp dpop_effective_preview(_policy, _choice, state) when state != :loaded,
-    do: "Unavailable until issuer policy loads"
+    do: "Unavailable until provider settings load"
 
   defp dpop_effective_preview(%{global_policy: global}, "inherit", :loaded),
     do: dpop_default_label(%{global_policy: global}, :loaded)
@@ -811,13 +654,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp access_token_format_label("opaque", :loaded), do: "Opaque (Lockspire-stored)"
   defp access_token_format_label(_format, _state), do: "Unavailable"
 
-  defp access_token_format_choice_label("inherit"), do: "Inherit from issuer"
-  defp access_token_format_choice_label("jwt"), do: "JWT (RFC 9068 at+jwt)"
-  defp access_token_format_choice_label("opaque"), do: "Opaque (Lockspire-stored)"
-  defp access_token_format_choice_label(_value), do: "Review the selected value"
-
   defp access_token_format_preview(_global, _choice, state) when state != :loaded,
-    do: "Unavailable until issuer policy loads"
+    do: "Unavailable until provider settings load"
 
   defp access_token_format_preview(global, "inherit", :loaded),
     do: access_token_format_label(global, :loaded)
@@ -835,13 +673,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp par_default_label(%{global_policy: :optional}, :loaded), do: "Optional"
   defp par_default_label(_policy, _state), do: "Unavailable"
 
-  defp par_choice_label("inherit"), do: "Inherit from issuer"
-  defp par_choice_label("required"), do: "Require PAR for this client"
-  defp par_choice_label("optional"), do: "Allow requests without PAR for this client"
-  defp par_choice_label(_value), do: "Review the selected value"
-
   defp par_effective_preview(_policy, _choice, state) when state != :loaded,
-    do: "Unavailable until issuer policy loads"
+    do: "Unavailable until provider settings load"
 
   defp par_effective_preview(%{global_policy: global}, "inherit", :loaded),
     do: par_default_label(%{global_policy: global}, :loaded)
@@ -857,14 +690,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
   defp security_default_label(_profile, _state), do: "Unavailable"
 
-  defp security_choice_label("inherit"), do: "Inherit from issuer"
-  defp security_choice_label("fapi_2_0_message_signing"), do: "FAPI 2.0 Message Signing"
-  defp security_choice_label("fapi_2_0_security"), do: "FAPI 2.0 Security Profile"
-  defp security_choice_label("none"), do: "None (Standard OIDC)"
-  defp security_choice_label(_value), do: "Review the selected value"
-
   defp security_effective_preview(_profile, _choice, state) when state != :loaded,
-    do: "Unavailable until issuer policy loads"
+    do: "Unavailable until provider settings load"
 
   defp security_effective_preview(%{global_profile: global}, "inherit", :loaded),
     do: security_profile_name(global)
@@ -901,45 +728,42 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp format_default_for_select(nil), do: "inherit"
   defp format_default_for_select(format), do: Atom.to_string(format)
 
-  defp title_for(:new), do: "Create client"
+  defp title_for(:new), do: "New app"
   defp title_for(:edit), do: "Edit client settings"
-  defp title_for(:logout_propagation), do: "Update logout propagation settings"
-  defp title_for(:redirects), do: "Update redirect URIs"
-  defp title_for(:logout_uris), do: "Update post-logout redirect URIs"
-  defp title_for(:par_policy), do: "Set client PAR policy"
+  defp title_for(:logout_propagation), do: "Update sign-out notifications"
+  defp title_for(:redirects), do: "Update sign-in return URLs"
+  defp title_for(:logout_uris), do: "Update sign-out return URLs"
+  defp title_for(:par_policy), do: "Set authorization request rules"
   defp title_for(:security_profile), do: "Update client security profile"
 
   defp subtitle_for(:new),
-    do:
-      "Enter this client's name, token endpoint authentication method, callback URI, and allowed scopes."
+    do: "Add an app that will use Lockspire."
 
   defp subtitle_for(:edit),
-    do: "Update this client's name, scopes, descriptive details, and token policies."
+    do: "Update this app's name, access, and sign-in settings."
 
   defp subtitle_for(:logout_propagation),
     do:
-      "Set this client's logout notification endpoints. Back-channel delivery is durable; front-channel browser cleanup is best effort."
+      "Choose where this app receives sign-out notifications. Server delivery can be retried; browser delivery is best effort."
 
   defp subtitle_for(:redirects),
-    do:
-      "Set callback URIs for authorization responses. Lockspire matches each registered URI exactly."
+    do: "Set the exact URLs where users return after signing in."
 
   defp subtitle_for(:logout_uris),
-    do:
-      "Set browser destinations allowed after RP-initiated logout. These are separate from logout propagation endpoints."
+    do: "Set the exact URLs where users may return after signing out."
 
   defp subtitle_for(:par_policy),
     do:
-      "Choose whether this client requires Pushed Authorization Requests (PAR), may omit them, or inherits the issuer default."
+      "Choose whether this app must use Pushed Authorization Requests (PAR) or follow the provider default."
 
   defp subtitle_for(:security_profile),
-    do: "Choose this client's FAPI/OIDC requirements or inherit the issuer's security profile."
+    do: "Choose this app's FAPI and OIDC requirements or use the provider default."
 
-  defp button_for(:new), do: "Create client"
-  defp button_for(:edit), do: "Save client changes"
-  defp button_for(:logout_propagation), do: "Save logout propagation settings"
-  defp button_for(:redirects), do: "Save redirect URIs"
-  defp button_for(:logout_uris), do: "Save post-logout redirect URIs"
-  defp button_for(:par_policy), do: "Save PAR policy"
+  defp button_for(:new), do: "Add app"
+  defp button_for(:edit), do: "Save app changes"
+  defp button_for(:logout_propagation), do: "Save notification settings"
+  defp button_for(:redirects), do: "Save return URLs"
+  defp button_for(:logout_uris), do: "Save return URLs"
+  defp button_for(:par_policy), do: "Save authorization request rules"
   defp button_for(:security_profile), do: "Save security profile"
 end

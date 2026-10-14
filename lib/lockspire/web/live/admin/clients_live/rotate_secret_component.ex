@@ -7,16 +7,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
 
   attr(:errors, :list, default: [])
   attr(:revealed_secret, :string, default: nil)
+  attr(:show_heading, :boolean, default: true)
 
   def rotation_panel(assigns) do
     ~H"""
     <section class="lockspire-admin-form-shell">
-      <header>
+      <header :if={@show_heading}>
         <h2>Rotate client secret</h2>
         <p>
-          If rotation succeeds, the previous secret stops being the current credential. Use the
-          new client secret to authenticate this confidential client at the token endpoint.
-          Plaintext is shown once and is not stored or re-shown by Lockspire.
+          After rotation, the app must use the new secret to get tokens. The new secret is
+          shown once. Lockspire stores only a hash and can't show it again.
         </p>
       </header>
 
@@ -25,7 +25,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent do
       <AdminComponents.copy_once_secret_panel
         :if={@revealed_secret}
         title="New client secret"
-        body="Plaintext is shown once. Copy the client secret now; it is not stored or re-shown by Lockspire."
+        body="Copy this secret now. It is shown once, and Lockspire stores only a hash."
         label="Client secret"
         value={@revealed_secret}
       />

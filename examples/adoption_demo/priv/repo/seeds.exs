@@ -150,7 +150,7 @@ clients = [
     client_id: "northstar-payables-portal",
     client_secret_hash: Lockspire.Security.Policy.hash_client_secret("demo-rat-secret"),
     client_type: :confidential,
-    name: "Northstar Payables Portal (self-registered)",
+    name: "Northstar Payables Portal",
     redirect_uris: [
       "https://partners.northstar.example.com/oauth/callback",
       "https://partners.northstar.example.com/oauth/callback/backup"
@@ -320,6 +320,7 @@ tokens = [
     scopes: ["openid", "profile", "write:reports"],
     issued_at: DateTime.add(now, -7_200, :second),
     expires_at: DateTime.add(now, 86_400, :second),
+    revoked_at: DateTime.add(now, -1_800, :second),
     reuse_detected_at: DateTime.add(now, -1_200, :second)
   },
   %Token{
@@ -356,9 +357,31 @@ tokens = [
   }
 ]
 
-Enum.each(tokens, fn token ->
-  {:ok, _token} = Repository.store_token(token)
-end)
+stored_tokens =
+  Enum.map(tokens, fn token ->
+    {:ok, stored_token} = Repository.store_token(token)
+    stored_token
+  end)
+
+reused_refresh =
+  Enum.find(stored_tokens, fn token ->
+    token.token_hash == Lockspire.Security.Policy.hash_token("demo-refresh-reuse-detected")
+  end)
+
+{:ok, _revoked_replacement} =
+  Repository.store_token(%Token{
+    token_hash: Lockspire.Security.Policy.hash_token("demo-refresh-reuse-revoked-replacement"),
+    token_type: :refresh_token,
+    family_id: "family-demo-reuse",
+    generation: 3,
+    parent_token_id: reused_refresh.id,
+    client_id: "northstar-payables-portal",
+    account_id: "acct-bob",
+    scopes: ["openid", "profile", "write:reports"],
+    issued_at: DateTime.add(now, -1_800, :second),
+    expires_at: DateTime.add(now, 86_400, :second),
+    revoked_at: DateTime.add(now, -1_200, :second)
+  })
 
 Enum.each(
   [

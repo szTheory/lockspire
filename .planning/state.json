@@ -1,28 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.41 — Product Language & Repository Clarity",
-  "phases": [
-    {
-      "number": "148",
-      "name": "User-Facing Admin Language",
-      "status": "complete"
-    },
-    {
-      "number": "149",
-      "name": "Repository Ownership and Lifecycle",
-      "status": "complete"
-    },
-    {
-      "number": "150",
-      "name": "Adopter and Maintainer Documentation",
-      "status": "complete"
-    }
-  ],
+  "milestone": "v1.42",
+  "phases": [],
   "next": {
-    "command": "/gsd:progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd:execute-phase 153",
+    "label": "Resume Phase 153",
+    "reason": "Finish outstanding Phase 153 plan reviews/summaries and phase verification. The autonomous feedback sweep is implemented and verified: 305 Elixir / 6 Node tests, demo smoke and 30 desktop + 30 mobile route checks. Control tests are wired into existing CI and checked locally; hosted CI has not run. Read 153-AUTOMATED-UX-SWEEP.md and 153-USER-FEEDBACK.md; do not repeat verified feedback. Lifetime enforcement gaps are traced in 153-LIFETIME-TRUTH.md and retained as separate protocol work. Phase 154 acceptance remains pending."
   },
-  "updated_at": "2026-10-11T12:48:29.683Z"
+  "updated_at": "2026-10-14T00:34:01Z"
 }

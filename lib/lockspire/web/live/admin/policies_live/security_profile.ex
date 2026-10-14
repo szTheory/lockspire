@@ -15,7 +15,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     {:ok,
      socket
      |> assign(
-       page_title: "Security profile",
+       page_title: "Default security settings",
        current_section: :policies,
        policy: nil,
        summary: %{inherit: 0, fapi_2_0_message_signing: 0, fapi_2_0_security: 0, none: 0},
@@ -49,7 +49,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
          socket
          |> assign(policy: policy, form_errors: [])
          |> load_strict_readiness()
-         |> put_flash(:info, "Global security profile saved")}
+         |> put_flash(:info, "Default security settings saved")}
 
       {:error, errors} when is_list(errors) ->
         {:noreply, assign(socket, form_errors: policy_errors(errors))}
@@ -73,86 +73,55 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load global security profile">
-        <p>The issuer security profile could not be loaded, so its current value is unknown. Settings and save controls stay hidden until the stored profile can be confirmed.</p>
+      <AdminComponents.alert :if={is_nil(@policy)} variant={:danger} title="Could not load security settings">
+        <p>Lockspire could not confirm the saved default. Reload this page before changing it.</p>
         <AdminComponents.action_bar>
           <AdminComponents.admin_button type="button" variant={:secondary} phx-click="reload_policy">
-            Reload policy
+            Reload settings
           </AdminComponents.admin_button>
         </AdminComponents.action_bar>
       </AdminComponents.alert>
 
       <div :if={@policy}>
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Global security profile"
-        body="Choose the issuer security profile for clients that inherit policy. The check below reports signing-key prerequisites for FAPI 2.0 Message Signing; it does not confirm external verifier readiness. Client-specific choices remain separate."
-      >
-        <:summary>
-          <AdminComponents.decision_summary>
-            <:item
-              :for={
-                item <-
-                  security_profile_decision_summary_items(%{
-                    policy: @policy,
-                    summary: @summary,
-                    strict_readiness: @strict_readiness
-                  })
-              }
-              label={item.label}
-              value={item.value}
-              tone={item.tone}
-              detail={item.detail}
-            >
-            </:item>
-          </AdminComponents.decision_summary>
-        </:summary>
-      </AdminComponents.page_hero>
-
-      <AdminComponents.policy_nav />
+      <AdminComponents.policy_nav current={:security_profile} />
 
       <AdminComponents.section_card
-        title="Global security profile"
-        subtitle={"Current profile is #{security_profile_label(@policy.security_profile)}. #{policy_scope_copy(:security_profile)}"}
+        title="Default for apps"
       >
-        <AdminComponents.error_list :if={@form_errors != []} errors={@form_errors} />
-
         <form class="lockspire-admin-form-stack" phx-submit="save_policy">
-          <div class="lockspire-admin-field">
-            <label for="security_profile">Active profile</label>
-            <select id="security_profile" name="policy[security_profile]">
-              <option value="none" selected={@policy.security_profile == :none}>None (Standard OIDC)</option>
-              <option value="fapi_2_0_security" selected={@policy.security_profile == :fapi_2_0_security}>FAPI 2.0 Security Profile</option>
-              <option value="fapi_2_0_message_signing" selected={@policy.security_profile == :fapi_2_0_message_signing}>
-                FAPI 2.0 Message Signing
-              </option>
-            </select>
-            <p class="lockspire-admin-help">
-              <strong>None (Standard OIDC):</strong> Baseline OAuth 2.0 and OIDC behavior.
-              <br />
-              <strong>FAPI 2.0 Security Profile:</strong> Requires PAR, DPoP-bound access tokens, and S256 PKCE. Requests that do not meet these requirements are rejected.
-              <br />
-              <strong>FAPI 2.0 Message Signing:</strong> Includes the FAPI 2.0 Security Profile requirements. It also requires JARM on `/authorize` and a JWT introspection response selected with `Accept: application/token-introspection+jwt` on `/introspect`.
-            </p>
-          </div>
+          <AdminComponents.radio_group id="security_profile" name="policy[security_profile]"
+            label="Security requirements" value={@policy.security_profile} errors={@form_errors}
+            help="Apps may have their own setting.">
+            <:option value="none" label="None (Standard OIDC)" />
+            <:option value="fapi_2_0_security" label="FAPI 2.0 Security Profile" />
+            <:option value="fapi_2_0_message_signing" label="FAPI 2.0 Message Signing" />
+            <details class="lockspire-admin-help-disclosure">
+              <summary>Compare security requirements</summary>
+              <div>
+                <p><strong>None (Standard OIDC):</strong> Standard OAuth and OIDC protections.</p>
+                <p><strong>FAPI 2.0 Security Profile:</strong> Requires PAR, key-bound access tokens (DPoP), and S256 PKCE. Requests that miss a requirement are rejected.</p>
+                <p><strong>FAPI 2.0 Message Signing:</strong> Includes those requirements and signed authorization and introspection responses.</p>
+              </div>
+            </details>
+          </AdminComponents.radio_group>
 
           <AdminComponents.action_bar>
             <AdminComponents.admin_button type="submit" variant={:primary}>
-              Save global security profile
+              Save security settings
             </AdminComponents.admin_button>
           </AdminComponents.action_bar>
         </form>
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Strict readiness"
-        subtitle="Signing-key prerequisites for FAPI 2.0 Message Signing."
+        title="Signing key check"
+        subtitle="Checks Lockspire's signing key only; it does not test how apps handle these requirements."
       >
         <p>
           <strong>Status:</strong> {strict_readiness_status(@policy.security_profile, @strict_readiness)}
         </p>
         <p>
-          <strong>Readiness details:</strong> {strict_readiness_summary(@policy.security_profile, @strict_readiness)}
+          <strong>What we checked:</strong> {strict_readiness_summary(@policy.security_profile, @strict_readiness)}
         </p>
 
         <ul :if={@strict_readiness.remediation != []} class="lockspire-admin-errors">
@@ -163,34 +132,33 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
       </AdminComponents.section_card>
 
       <AdminComponents.section_card
-        title="Client override summary"
-        subtitle="Exceptions to the global security profile across all registered clients."
+        title="App settings"
       >
         <div :if={@summary} class="lockspire-admin-summary-grid">
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.inherit}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.inherit == 1, do: "client inherits", else: "clients inherit"}
+              {if @summary.inherit == 1, do: "app uses provider default", else: "apps use provider default"}
             </span>
           </div>
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.fapi_2_0_message_signing}</span>
             <span class="lockspire-admin-summary-label">
               {if @summary.fapi_2_0_message_signing == 1,
-                do: "client requires strict message signing",
-                else: "clients require strict message signing"}
+                do: "app requires signed responses",
+                else: "apps require signed responses"}
             </span>
           </div>
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.fapi_2_0_security}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.fapi_2_0_security == 1, do: "client requires FAPI 2.0", else: "clients require FAPI 2.0"}
+              {if @summary.fapi_2_0_security == 1, do: "app requires FAPI 2.0", else: "apps require FAPI 2.0"}
             </span>
           </div>
           <div class="lockspire-admin-summary-stat">
             <span class="lockspire-admin-summary-value">{@summary.none}</span>
             <span class="lockspire-admin-summary-label">
-              {if @summary.none == 1, do: "client forces None", else: "clients force None"}
+              {if @summary.none == 1, do: "app uses standard OIDC", else: "apps use standard OIDC"}
             </span>
           </div>
         </div>
@@ -199,10 +167,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
           :if={not is_nil(@summary) and @summary.fapi_2_0_message_signing == 0 and @summary.fapi_2_0_security == 0 and @summary.none == 0}
           class="lockspire-admin-empty-notice"
         >
-          No client security profile overrides yet. All clients currently inherit the global security profile.
+          All apps use the provider default.
         </p>
         <p :if={is_nil(@summary)} class="lockspire-admin-empty-notice">
-          Client override counts are unavailable.
+          App settings are unavailable.
         </p>
       </AdminComponents.section_card>
       </div>
@@ -210,7 +178,6 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     """
   end
 
-  defp security_profile_label(:none), do: "None (Standard OIDC)"
   defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
   defp security_profile_label(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
 
@@ -250,7 +217,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     %{
       field: "Active profile",
       message:
-        "The security profile change could not be confirmed. Reload the policy to check its current value."
+        "Security settings could not be confirmed. Reload this page to check the saved value."
     }
   end
 
@@ -258,7 +225,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     %{
       field: "Active profile",
       message:
-        "Activate an ES256 or PS256 issuer signing key before enabling #{security_profile_label(profile)}."
+        "Activate an ES256 or PS256 Lockspire signing key before choosing #{security_profile_label(profile)}."
     }
   end
 
@@ -266,7 +233,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     %{
       field: "Active profile",
       message:
-        "Publish an ES256 or PS256 issuer signing key before enabling #{security_profile_label(profile)}."
+        "Publish an ES256 or PS256 Lockspire signing key before choosing #{security_profile_label(profile)}."
     }
   end
 
@@ -309,7 +276,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
         %{
           default_readiness()
           | status: :unavailable,
-            remediation: ["Unable to load strict message-signing readiness."]
+            remediation: ["Could not check the signing key. Reload this page to try again."]
         }
     end
   end
@@ -326,86 +293,31 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
 
   defp strict_readiness_status(_profile, %{status: :unavailable}), do: "Unavailable"
 
-  defp strict_readiness_status(:fapi_2_0_message_signing, %{ready?: true}),
-    do: "Active; key prerequisites met"
+  defp strict_readiness_status(:fapi_2_0_message_signing, %{ready?: true}), do: "Ready"
 
   defp strict_readiness_status(:fapi_2_0_message_signing, _readiness),
-    do: "Selected; key prerequisites missing"
+    do: "Needs signing key"
 
-  defp strict_readiness_status(_profile, %{ready?: true}), do: "Key prerequisites met"
-  defp strict_readiness_status(_profile, _readiness), do: "Key prerequisites missing"
+  defp strict_readiness_status(_profile, %{ready?: true}), do: "Signing key ready"
+  defp strict_readiness_status(_profile, _readiness), do: "Signing key not ready"
 
   defp strict_readiness_summary(_profile, %{status: :unavailable}) do
-    "The signing-key check could not be completed. Readiness is unknown."
+    "The signing-key check could not be completed. Its result is unknown."
   end
 
   defp strict_readiness_summary(:fapi_2_0_message_signing, %{ready?: true}) do
-    "FAPI 2.0 Message Signing is active. `/authorize` requires JARM, and `/introspect` requires `Accept: application/token-introspection+jwt`."
+    "An active, published signing key is ready. The profile also requires signed authorization and introspection responses."
   end
 
   defp strict_readiness_summary(:fapi_2_0_message_signing, _readiness) do
-    "FAPI 2.0 Message Signing is selected, but the signing-key prerequisite shown below is missing."
+    "This profile is selected, but the required signing key is missing."
   end
 
   defp strict_readiness_summary(_profile, %{ready?: true}) do
-    "An ES256 or PS256 issuer signing key is active and publishable. This check covers signing-key prerequisites only."
+    "An ES256 or PS256 Lockspire signing key is active and published. This check covers the key only."
   end
 
   defp strict_readiness_summary(_profile, _readiness) do
-    "The key check below identifies what is missing before FAPI 2.0 Message Signing can be enabled."
-  end
-
-  defp security_profile_decision_summary_items(%{
-         policy: %ServerPolicy{} = policy,
-         summary: summary,
-         strict_readiness: readiness
-       }) do
-    [
-      %{
-        label: "Global security profile",
-        value: security_profile_label(policy.security_profile),
-        tone: security_profile_tone(policy.security_profile),
-        detail:
-          "This is the global issuer security profile default for clients that inherit security policy."
-      },
-      %{
-        label: "Strict readiness",
-        value: strict_readiness_status(policy.security_profile, readiness),
-        tone: strict_readiness_tone(policy.security_profile, readiness),
-        detail: "Checks only whether a compliant issuer signing key is active and publishable."
-      },
-      %{
-        label: "Clients that inherit",
-        value: inherited_clients_value(summary),
-        tone: :info,
-        detail:
-          "These clients use the global issuer security profile default; client overrides stay on client policy routes."
-      },
-      %{
-        label: "Next safe action",
-        value: "Save global security profile",
-        tone: :info,
-        detail: policy_scope_copy(:security_profile)
-      }
-    ]
-  end
-
-  defp security_profile_tone(:none), do: :neutral
-  defp security_profile_tone(:fapi_2_0_security), do: :warning
-  defp security_profile_tone(:fapi_2_0_message_signing), do: :warning
-  defp security_profile_tone(_profile), do: :info
-
-  defp strict_readiness_tone(_profile, %{status: :unavailable}), do: :warning
-  defp strict_readiness_tone(:fapi_2_0_message_signing, %{ready?: true}), do: :success
-  defp strict_readiness_tone(:fapi_2_0_message_signing, _readiness), do: :danger
-  defp strict_readiness_tone(_profile, %{ready?: true}), do: :success
-  defp strict_readiness_tone(_profile, _readiness), do: :warning
-
-  defp inherited_clients_value(%{inherit: 1}), do: "1 client"
-  defp inherited_clients_value(%{inherit: count}), do: "#{count} clients"
-  defp inherited_clients_value(_summary), do: "Unavailable"
-
-  defp policy_scope_copy(:security_profile) do
-    "The issuer uses this profile for clients without a security-profile choice of their own. A client-specific choice takes precedence on that client's policy route."
+    "Activate and publish an ES256 or PS256 Lockspire signing key before choosing this profile."
   end
 end

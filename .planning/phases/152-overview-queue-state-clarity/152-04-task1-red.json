@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec elixir -r /private/tmp/lockspire_tap_formatter.ex -S mix test test/lockspire/web/live/admin/logout_deliveries_live_test.exs --name-pattern 'needs-review filter shows only retryable and discarded deliveries' --formatter LockspireTAPFormatter --no-compile",
+  "exitCode": 2,
+  "output": "ok 1 - logout deliveries empty state names operator review without controls # SKIP \"due to test filter\"\nok 2 - logout delivery page shows loading before reading the queue # SKIP \"due to test filter\"\nok 3 - router exposes admin logout deliveries routes # SKIP \"due to test filter\"\nok 4 - logout delivery review keeps incident evidence sanitized and read-only # SKIP \"due to test filter\"\nok 5 - failed logout reads show unavailable and a same-route retry # SKIP \"due to test filter\"\nok 6 - unknown logout status filters safely show the full history # SKIP \"due to test filter\"\nok 7 - one logout delivery uses singular count copy and the supported client pivot # SKIP \"due to test filter\"\nok 8 - logout deliveries index renders operate queue buckets and resource rows # SKIP \"due to test filter\"\nok 9 - empty needs-review view keeps its count and link to full history # SKIP \"due to test filter\"\nok 10 - successful empty logout read shows measured zero # SKIP \"due to test filter\"\nnot ok 11 - needs-review filter shows only retryable and discarded deliveries\n1..11\n",
+  "targetTest": "needs-review filter shows only retryable and discarded deliveries",
+  "targetFile": "test/lockspire/web/live/admin/logout_deliveries_live_test.exs",
+  "expected": "The filtered logout records use the concise Delivery records heading.",
+  "actual": "The rendered filtered view still uses the current title Logout deliveries needing review.",
+  "semanticAssessment": "The planned target test executed and failed on the assertion for the changed heading; the test itself and its fixtures loaded successfully."
+}

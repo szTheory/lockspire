@@ -13,7 +13,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Security",
+       page_title: "Security settings",
        current_section: :policies,
        policy: load_policy(),
        summary: load_summary()
@@ -29,39 +29,30 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   def render(assigns) do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-      <AdminComponents.policy_nav />
+      <AdminComponents.policy_nav current={:index} />
+      <AdminComponents.page_hero body="Defaults apply when an app has no separate setting. Stronger security requirements can add restrictions." />
 
-      <AdminComponents.page_hero
-        eyebrow="Configure"
-        title="Issuer policy settings"
-        body="Choose the setting you need to review: PAR, security profile, DPoP, or Dynamic Client Registration. Each page changes its own issuer policy."
-      />
-
-      <div class="lockspire-admin-dashboard-grid">
+      <div class="lockspire-admin-policy-list">
         <.policy_card
-          route={:par}
-          title="PAR"
+          title="Authorization requests"
           value={policy_value(@policy, :par_policy)}
           detail={summary_detail(@summary.par, :par)}
           href={admin_path("/policies/par")}
         />
         <.policy_card
-          route={:security_profile}
-          title="Security profile"
+          title="Default security settings"
           value={policy_value(@policy, :security_profile)}
           detail={summary_detail(@summary.security, :security)}
           href={admin_path("/policies/security-profile")}
         />
         <.policy_card
-          route={:dpop}
-          title="DPoP"
+          title="Token proof"
           value={policy_value(@policy, :dpop_policy)}
           detail={summary_detail(@summary.dpop, :dpop)}
           href={admin_path("/policies/dpop")}
         />
         <.policy_card
-          route={:dcr}
-          title="Dynamic Client Registration"
+          title="App self-registration"
           value={policy_value(@policy, :registration_policy)}
           detail={summary_detail(@summary.dcr, :dcr)}
           href={admin_path("/policies/dcr")}
@@ -75,18 +66,19 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   attr(:value, :any, required: true)
   attr(:detail, :string, required: true)
   attr(:href, :string, required: true)
-  attr(:route, :atom, required: true)
 
   defp policy_card(assigns) do
     ~H"""
-    <AdminComponents.section_card title={@title} subtitle={@detail}>
-      <p class="lockspire-admin-kicker">Current issuer setting</p>
-      <p class="lockspire-admin-display-value">{@value}</p>
-      <p class="lockspire-admin-help">{policy_review_detail(@route)}</p>
-      <AdminComponents.action_bar>
-        <AdminComponents.admin_button href={@href}>{policy_review_label(@route)}</AdminComponents.admin_button>
-      </AdminComponents.action_bar>
-    </AdminComponents.section_card>
+    <section class="lockspire-admin-policy-list__row">
+      <div class="lockspire-admin-policy-list__main">
+        <h2><a href={@href}>{@title}</a></h2>
+        <p>{@detail}</p>
+      </div>
+      <dl class="lockspire-admin-policy-list__default">
+        <dt>Default for apps</dt>
+        <dd>{@value}</dd>
+      </dl>
+    </section>
     """
   end
 
@@ -153,59 +145,70 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
 
   defp token_counts(_tokens), do: nil
 
-  defp policy_value(%ServerPolicy{} = policy, field), do: Map.fetch!(policy, field)
+  defp policy_value(%ServerPolicy{} = policy, field),
+    do: policy_value_label(field, Map.fetch!(policy, field))
+
   defp policy_value(nil, _field), do: "Unavailable"
+
+  defp policy_value_label(:par_policy, :optional), do: "Optional PAR"
+  defp policy_value_label(:par_policy, :required), do: "PAR required"
+  defp policy_value_label(:security_profile, :none), do: "Standard OAuth and OpenID Connect"
+  defp policy_value_label(:security_profile, :fapi_2_0_security), do: "FAPI 2.0 Security Profile"
+
+  defp policy_value_label(:security_profile, :fapi_2_0_message_signing),
+    do: "FAPI 2.0 Message Signing"
+
+  defp policy_value_label(:dpop_policy, :bearer), do: "Bearer tokens"
+  defp policy_value_label(:dpop_policy, :dpop), do: "Key-bound tokens required (DPoP)"
+  defp policy_value_label(:registration_policy, :disabled), do: "Self-registration off"
+
+  defp policy_value_label(:registration_policy, :initial_access_token),
+    do: "App setup token required"
+
+  defp policy_value_label(:registration_policy, :open), do: "Open registration"
 
   defp summary_detail(%{required: required, optional: optional}, :par)
        when is_integer(required) and is_integer(optional),
-       do: "#{required} clients require PAR; #{optional} mark it optional."
+       do:
+         "#{counted(required, "app", "apps")} #{verb(required, "requires", "require")} PAR explicitly; #{counted(optional, "app", "apps")} #{verb(optional, "chooses", "choose")} optional PAR."
 
   defp summary_detail(%{fapi: fapi, message_signing: signing}, :security)
        when is_integer(fapi) and is_integer(signing),
-       do: "#{fapi} clients require FAPI; #{signing} require message signing."
+       do:
+         "#{counted(fapi, "app", "apps")} #{verb(fapi, "chooses", "choose")} stronger security checks; #{counted(signing, "app", "apps")} #{verb(signing, "requires", "require")} signed responses."
 
   defp summary_detail(%{dpop: dpop, bearer: bearer}, :dpop)
        when is_integer(dpop) and is_integer(bearer),
-       do: "#{dpop} clients require DPoP; #{bearer} force bearer."
+       do:
+         "#{counted(dpop, "app", "apps")} #{verb(dpop, "chooses", "choose")} key-bound tokens; #{counted(bearer, "app", "apps")} #{verb(bearer, "chooses", "choose")} bearer tokens."
 
   defp summary_detail(%{self_registered: registered, active_iats: iats}, :dcr) do
     case {registered, iats} do
       {registered, iats} when is_integer(registered) and is_integer(iats) ->
-        "#{registered} self-registered clients; #{iats} active Initial Access Tokens."
+        "#{counted(registered, "app", "apps")} #{verb(registered, "registered itself", "registered themselves")} through the API; #{counted(iats, "active setup token", "active setup tokens")} #{verb(iats, "is", "are")} stored."
 
       {nil, iats} when is_integer(iats) ->
-        "Self-registered client count is unavailable; #{iats} active Initial Access Tokens."
+        "The app registration count is unavailable; #{counted(iats, "active setup token", "active setup tokens")} #{verb(iats, "is", "are")} stored."
 
       {registered, nil} when is_integer(registered) ->
-        "#{registered} self-registered clients; Initial Access Token count is unavailable."
+        "#{counted(registered, "app", "apps")} #{verb(registered, "registered itself", "registered themselves")} through the API; active setup-token count unavailable."
 
       {nil, nil} ->
-        "Client and Initial Access Token counts are unavailable."
+        "App registration and setup-token counts could not be loaded."
     end
   end
 
-  defp summary_detail(_summary, _route), do: "Client counts are unavailable."
+  defp summary_detail(_summary, _route), do: "App settings could not be loaded."
+
+  defp counted(1, singular, _plural), do: "1 #{singular}"
+  defp counted(count, _singular, plural), do: "#{count} #{plural}"
+
+  defp verb(1, singular, _plural), do: singular
+  defp verb(_count, _singular, plural), do: plural
 
   defp iat_status(token) do
     InitialAccessTokens.lifecycle_status(token)
   end
-
-  defp policy_review_label(:par), do: "Review PAR policy"
-  defp policy_review_label(:security_profile), do: "Review security profile"
-  defp policy_review_label(:dpop), do: "Review DPoP policy"
-  defp policy_review_label(:dcr), do: "Review DCR policy"
-
-  defp policy_review_detail(:par),
-    do: "Review issuer PAR defaults and client exceptions."
-
-  defp policy_review_detail(:security_profile),
-    do: "Review inherited security profile settings and readiness."
-
-  defp policy_review_detail(:dpop),
-    do: "Review the DPoP default and client exceptions."
-
-  defp policy_review_detail(:dcr),
-    do: "Review future registration gates, metadata allowlists, and DCR lifetimes."
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 end

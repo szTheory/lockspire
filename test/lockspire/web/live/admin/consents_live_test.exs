@@ -93,12 +93,15 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert html =~ "Support"
-    assert html =~ "Consent grant investigation"
-    assert html =~ "Review stored consent grants by account, client, status, and scopes."
+    assert html =~ "Consent grants"
+    assert visible_text(html) =~ "Review saved permissions for an app"
     assert html =~ "Filters stay in the URL so you can return to the same results."
-    assert html =~ "Selected account: account-consent-ui"
-    assert html =~ "Selected client: consent-ui-client"
-    assert html =~ "Selected status: active"
+    refute visible_text(html) =~ "Selected account:"
+    refute visible_text(html) =~ "Selected client:"
+    refute visible_text(html) =~ "Selected status:"
+    assert html =~ ~s(value="account-consent-ui")
+    assert html =~ ~s(value="consent-ui-client")
+    assert html =~ ~s(value="active" selected)
     assert html =~ "Filter consent grants"
     assert html =~ "View consent grant details"
     assert html =~ "lockspire-admin-dense-resource-row"
@@ -108,7 +111,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert html =~ "openid, email"
     assert html =~ "Keys"
     assert html =~ "Overview"
-    assert html =~ "DCR"
+    assert html =~ "App registration"
 
     assert html_index(
              html,
@@ -163,7 +166,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       |> rendered_to_string()
       |> visible_text()
 
-    assert index_text =~ "Client description unavailable"
+    assert index_text =~ "App name unavailable"
     assert index_text =~ grant.client_id
     refute index_text =~ "Consent UI Client"
 
@@ -173,7 +176,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
       |> elem(1)
       |> visible_text()
 
-    assert detail_text =~ "Client description unavailable"
+    assert detail_text =~ "App name unavailable"
     assert detail_text =~ grant.client_id
     assert detail_text =~ Integer.to_string(grant.id)
   end
@@ -434,25 +437,39 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     assert html =~ "Support"
     assert html =~ "Consent grant details"
-    assert html =~ "stored permission decision and its current revocation status"
+    assert html =~ "Saved permissions for this account."
     assert html =~ "Grant context"
 
-    assert html =~
-             "Review the account and client details before choosing whether to revoke this grant."
+    assert html =~ "Grant context"
 
-    assert html =~ "Review stored grant"
+    assert html =~ "Back to consent grants"
 
     assert html =~
              ~s(href="/lockspire/admin/consents?account=account-consent-ui&amp;client=consent-ui-client&amp;status=active")
 
-    assert html =~ "View client details"
+    assert html =~ "View app details"
     assert html =~ ~s(href="/lockspire/admin/clients/consent-ui-client")
     assert html =~ "Revoke consent grant"
     assert html =~ "lockspire-admin-entity-header"
     assert html =~ "lockspire-admin-pane"
+    assert html =~ "lockspire-admin-detail-stack"
     assert html =~ ~s(phx-submit="revoke_consent")
     assert html =~ ~s(phx-disable-with="Revoking this consent grant…")
-    assert html =~ "This prevents future remembered-consent reuse for this grant."
+
+    context = fragment_html(html, ".lockspire-admin-description-list")
+    refute context =~ "Grant kind"
+    refute context =~ ">Status<"
+    refute context =~ "Revoked at"
+    refute context =~ "Revoked by"
+    refute context =~ "Revoked reason"
+
+    confirmation_panel = fragment_html(html, ".lockspire-admin-confirmation-panel")
+    refute confirmation_panel =~ "<h3>Revoke consent grant</h3>"
+    assert confirmation_panel =~ "lockspire-admin-confirmation-panel-embedded"
+
+    assert html =~
+             "The saved approval is removed, so the user may be asked again the next time this app requests these permissions."
+
     assert html =~ "openid, email"
     assert html =~ long_scope
     assert html =~ "lockspire-admin-long-value"
@@ -506,15 +523,14 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert socket.assigns.consent.grant.status == :revoked
 
     assert socket.assigns.revoke_notice =~
-             "This prevents future remembered-consent reuse for this grant."
+             "The saved approval is removed, so the user may be asked again the next time this app requests these permissions."
 
     revoked_html = rendered_to_string(Show.render(socket.assigns))
 
-    assert revoked_html =~
-             "This consent grant is already revoked. It cannot be reused for future remembered consent."
-
-    assert revoked_html =~ "Consent grant already revoked"
-    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
+    assert visible_text(revoked_html) =~ socket.assigns.revoke_notice
+    refute revoked_html =~ ~s(phx-submit="revoke_consent")
+    refute revoked_html =~ ~s(name="revoke[confirm]")
+    refute revoked_html =~ "Consent grant already revoked"
 
     original_repo = Application.fetch_env!(:lockspire, :repo)
 
@@ -529,7 +545,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
                )
 
       assert repeated_socket.assigns.consent.grant.status == :revoked
-      assert repeated_socket.assigns.revoke_notice =~ "already revoked"
+      assert repeated_socket.assigns.revoke_notice =~ "already been removed"
       assert repeated_socket.assigns.revoke_error == nil
     after
       Application.put_env(:lockspire, :repo, original_repo)
@@ -636,8 +652,11 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     assert visible_text(active_html) =~ Lockspire.Redaction.handle(:account, long_account_id)
     refute visible_text(active_html) =~ long_account_id
     assert visible_text(active_html) =~ Integer.to_string(active_grant.id)
-    assert active_html =~ "Not recorded"
-    assert active_html =~ "This prevents future remembered-consent reuse for this grant."
+    refute fragment_html(active_html, ".lockspire-admin-description-list") =~ "Not recorded"
+
+    assert active_html =~
+             "The saved approval is removed, so the user may be asked again the next time this app requests these permissions."
+
     assert active_html =~ "lockspire-admin-long-value"
 
     {_revoked_socket, revoked_html} = render_show_for(revoked_grant)
@@ -651,11 +670,16 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
     refute visible_text(revoked_html) =~ long_account_id
     assert visible_text(revoked_html) =~ Integer.to_string(revoked_grant.id)
 
-    assert revoked_html =~
-             "This consent grant is already revoked. It cannot be reused for future remembered consent."
+    assert revoked_html =~ "These saved permissions have already been removed."
+    refute revoked_html =~ "before choosing whether to revoke"
 
-    assert revoked_html =~ "Consent grant already revoked"
-    assert revoked_html =~ ~r/<button[^>]*disabled[^>]*>.*Consent grant already revoked/s
+    refute revoked_html =~ ~s(phx-submit="revoke_consent")
+    refute revoked_html =~ ~s(name="revoke[confirm]")
+    assert revoked_html =~ "Revoked at"
+    assert revoked_html =~ "Revoked by"
+    assert revoked_html =~ "Revoked reason"
+    assert revoked_html =~ "operator-proof-id"
+    refute revoked_html =~ "Consent grant already revoked"
   end
 
   defp socket_for(action) do

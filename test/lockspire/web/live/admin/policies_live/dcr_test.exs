@@ -10,6 +10,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
   @endpoint Lockspire.Web.Endpoint
 
+  @lifetime_fields [
+    :dcr_default_client_lifetime_seconds,
+    :dcr_default_client_secret_lifetime_seconds,
+    :dcr_default_registration_access_token_lifetime_seconds
+  ]
+
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "")
@@ -52,24 +58,34 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert {:ok, _policy} =
              ServerPolicy.put_dcr_policy(%{registration_policy: :initial_access_token})
 
-    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/dcr")
 
-    assert html =~ "Global DCR policy"
-    assert html =~ "Save global DCR policy"
-    assert html =~ "Current registration gate: Initial access token required"
-    assert html =~ "future Dynamic Client Registration requests"
+    assert html =~ "App registration settings"
+    assert html =~ "Registration rules"
+    assert html =~ "Save app registration settings"
+    assert html =~ "App setup token required"
+    assert html =~ "Apps need a one-time setup token to register."
 
-    assert html =~
-             "Registration requires a valid Initial Access Token before client metadata is accepted."
+    assert has_element?(
+             view,
+             ~s(.lockspire-admin-secondary-nav a[href="/admin/policies/dcr"][aria-current="page"][data-phx-link="redirect"])
+           )
+
+    assert has_element?(
+             view,
+             ~s(input[type="radio"][name="policy[registration_policy]"][value="initial_access_token"][checked])
+           )
+
+    refute html =~ "Review these settings"
   end
 
-  test "disabled registration is named as a closed issuer gate" do
+  test "disabled registration clearly says apps cannot register themselves" do
     assert {:ok, _policy} = ServerPolicy.put_dcr_policy(%{registration_policy: :disabled})
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
 
-    assert html =~ "Current registration gate: Disabled"
-    assert html =~ "No new clients can register through Dynamic Client Registration."
+    assert html =~ "Disabled"
+    assert html =~ "Apps cannot register themselves."
   end
 
   test "failed policy read is unavailable and can be reloaded" do
@@ -83,11 +99,11 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
 
       text = rendered_text(html)
 
-      assert text =~ "Could not load DCR policy"
-      assert text =~ "Reload DCR policy"
-      refute text =~ "Registration gate"
+      assert text =~ "Could not load app registration settings"
+      assert text =~ "Reload settings"
+      refute text =~ "Who can register"
       refute text =~ "Disabled"
-      refute text =~ "Save global DCR policy"
+      refute text =~ "Save app registration settings"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
@@ -102,9 +118,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     HtmlAssertions.assert_no_generic_cta_text(html)
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples())
 
-    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Save global DCR policy"
-    assert html =~ "Configure"
+    assert occurrence_count(html, ~s(id="dcr-policy-form")) == 1
+    assert html =~ "Save app registration settings"
+    assert html =~ "These rules apply to new app registrations only."
 
     for name <- [
           "policy[registration_policy]",
@@ -122,30 +138,90 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     end
 
     for heading <- [
-          "Registration gate",
-          "Metadata allowlists",
-          "Allowlist decisions",
-          "Default lifetimes",
-          "Lifetime defaults",
-          "Token endpoint auth methods",
-          "Risk and posture"
+          "Who can register",
+          "What apps may request",
+          "Expiry limits",
+          "How apps authenticate"
         ] do
       assert html =~ heading
     end
 
-    assert occurrence_count(html, "lockspire-admin-workflow-shell") >= 5
+    assert occurrence_count(html, "lockspire-admin-workflow-shell") >= 4
     assert html =~ "Disabled"
-    assert html =~ "Registration policy"
-    assert html =~ "Initial Access Token"
-    assert html =~ "Open registration"
+    assert html =~ "Registration access"
+    assert html =~ "App setup token required"
+    assert html =~ "Open"
+    assert html =~ "Apps can register without a setup token, within the configured limits."
 
-    assert html =~
-             "No Initial Access Token is required. Unauthenticated requests may register clients within issuer metadata allowlists and lifetime limits."
-
-    assert html =~ "private_key_jwt posture"
-    assert html =~ "client_secret_jwt posture"
+    assert html =~ "private_key_jwt"
+    assert html =~ "client_secret_jwt"
+    assert html =~ "Allowed permissions (OAuth scopes)"
+    assert html =~ "Allowed authentication methods"
+    refute String.downcase(rendered_text(html)) =~ "issuer"
+    refute String.downcase(rendered_text(html)) =~ "posture"
     refute html =~ "operators expect"
     refute html =~ "extreme caution"
+  end
+
+  test "registration policy preview reflects edits without saving them" do
+    assert {:ok, view, initial_html} = live(conn_for_admin(), "/admin/policies/dcr")
+    assert initial_html =~ "Apps cannot register themselves."
+
+    html =
+      view
+      |> render_change("preview_policy", %{
+        "policy" => %{
+          "registration_policy" => "open",
+          "dcr_allowed_scopes" => "email, profile",
+          "dcr_allowed_grant_types" => "authorization_code, refresh_token",
+          "dcr_allowed_response_types" => "code",
+          "dcr_allowed_redirect_uri_schemes" => "https",
+          "dcr_allowed_redirect_uri_hosts" => "apps.example.com",
+          "dcr_allowed_token_endpoint_auth_methods" => "none, client_secret_basic",
+          "dcr_default_client_lifetime_seconds" => "3600",
+          "dcr_default_client_secret_lifetime_seconds" => "7200",
+          "dcr_default_registration_access_token_lifetime_seconds" => "1800"
+        }
+      })
+
+    text = rendered_text(html)
+    assert text =~ "Apps can register without a setup token"
+    assert html =~ ~s(data-values="email, profile")
+    assert html =~ ~s(data-values="authorization_code, refresh_token")
+    assert html =~ ~s(data-values="code")
+    assert text =~ "Public app (no secret)"
+    assert text =~ "Client secret over HTTP Basic"
+    assert html =~ ~s(data-values="https")
+    assert html =~ ~s(data-values="apps.example.com")
+    assert policy_control(html, "dcr_default_client_secret_lifetime_seconds") =~ ~s(value="7200")
+
+    assert policy_control(html, "dcr_default_registration_access_token_lifetime_seconds") =~
+             ~s(value="1800")
+
+    refute html =~ "Review these settings"
+
+    assert {:ok, policy} = ServerPolicy.get_server_policy()
+    assert policy.registration_policy == :disabled
+
+    blank_limits_html =
+      render_change(view, "preview_policy", %{
+        "policy" => %{
+          "dcr_default_client_lifetime_seconds" => "",
+          "dcr_default_client_secret_lifetime_seconds" => " ",
+          "dcr_default_registration_access_token_lifetime_seconds" => ""
+        }
+      })
+
+    assert rendered_text(blank_limits_html) =~
+             "Lockspire saves this value but never disables an app"
+
+    assert rendered_text(blank_limits_html) =~
+             "Apps will be told their secret has already expired"
+
+    assert rendered_text(blank_limits_html) =~
+             "If you leave this blank or enter 0, apps are told their secret has already expired."
+
+    refute has_element?(view, ".lockspire-admin-field-errors")
   end
 
   test "global DCR policy page keeps long allowlists wrapped and public-only" do
@@ -183,18 +259,15 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       forbidden_secret_samples() ++ unsupported_policy_controls()
     )
 
-    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Current registration gate: Open registration"
-    assert html =~ "Open registration"
+    assert occurrence_count(html, ~s(id="dcr-policy-form")) == 1
+    assert html =~ "Registration access"
+    assert html =~ "Open"
     assert html =~ "partner.deep.audit.read"
     assert html =~ long_host
-    assert html =~ "Default lifetimes configured"
+    assert html =~ "Expiry limits"
     assert html =~ "private_key_jwt"
     assert html =~ "client_secret_jwt"
     assert html =~ "client_secret_basic"
-
-    assert html =~
-             "This policy does not change remote JWKS fetching or supported signing algorithms."
 
     refute html =~ "self-service"
   end
@@ -202,22 +275,20 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
   test "CONFIG-03 D-01 D-02 D-03 D-04 D-09 D-10 DCR policy scope stays global and future-only" do
     html = render_policy_html()
 
-    assert occurrence_count(html, ~s(phx-submit="save_policy")) == 1
-    assert html =~ "Save global DCR policy"
-    assert html =~ "future Dynamic Client Registration requests"
-    assert html =~ "Existing client records keep their stored configuration."
-    assert html =~ "does not mint Initial Access Tokens"
-    assert html =~ "rotate registration access tokens"
-    assert html =~ "update existing client records"
-    assert html =~ "create credential material"
+    assert occurrence_count(html, ~s(id="dcr-policy-form")) == 1
+    assert html =~ "Save app registration settings"
+    text = rendered_text(html)
+    assert text =~ "These rules apply to new app registrations only."
+    assert text =~ "Existing apps and their credentials stay unchanged."
+    assert text =~ "Apps can register without a setup token, within the configured limits."
 
     HtmlAssertions.assert_no_text(html, [
       "Mint initial access token",
       "Rotate registration access token",
       "Rotate client secret",
-      "Create client",
-      "Disable client",
-      "Enable client",
+      "Add app",
+      "Disable app",
+      "Enable app",
       "host tenant policy",
       "developer portal",
       "Reveal secret",
@@ -237,7 +308,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     ])
   end
 
-  test "global DCR policy page explains private_key_jwt registration posture and algorithms" do
+  test "app registration settings explain private-key client authentication" do
     assert {:ok, _policy} =
              ServerPolicy.put_dcr_policy(%{
                registration_policy: :open,
@@ -247,12 +318,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
 
     assert html =~ "private_key_jwt"
-    assert html =~ "Self-registered clients may use private_key_jwt"
+    assert html =~ "Apps sign assertions with a private key"
     assert html =~ "RS256, ES256, PS256, EdDSA"
     assert html =~ "jwks_uri"
   end
 
-  test "global DCR policy page explains the narrow client_secret_jwt posture" do
+  test "app registration settings explain shared-secret client authentication" do
     assert {:ok, _policy} =
              ServerPolicy.put_dcr_policy(%{
                registration_policy: :open,
@@ -265,7 +336,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
 
     assert html =~ "client_secret_jwt"
-    assert html =~ "shared direct-client token and revocation surfaces"
+    assert html =~ "Apps sign assertions with their shared secret"
     assert html =~ "HS256"
   end
 
@@ -279,16 +350,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       |> form("form#dcr-policy-form", %{
         policy: %{
           registration_policy: "open",
-          dcr_allowed_scopes: "openid, email",
-          dcr_allowed_token_endpoint_auth_methods: "private_key_jwt, client_secret_basic"
+          dcr_allowed_scopes: "openid, email"
         }
       })
-      |> render_submit()
+      |> render_submit(%{
+        policy: %{dcr_allowed_token_endpoint_auth_methods: "private_key_jwt, client_secret_basic"}
+      })
 
     text = rendered_text(html)
-    assert text =~ "Global Dynamic Client Registration policy saved."
-    assert text =~ "This change applies to future registrations only"
-    assert text =~ "Existing client records keep their stored configuration."
+    assert text =~ "App registration settings saved."
+    assert text =~ "Existing apps are unchanged."
 
     assert {:ok, policy} = ServerPolicy.get_server_policy()
     assert policy.registration_policy == :open
@@ -310,13 +381,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     text = rendered_text(html)
-    assert text =~ "must be zero or greater"
+    assert text =~ "Enter zero or a positive number of seconds."
     assert html =~ ~s(id="dcr_default_client_lifetime_seconds-error")
     client_lifetime_control = policy_control(html, "dcr_default_client_lifetime_seconds")
     assert client_lifetime_control =~ ~s(value="-100")
 
     assert client_lifetime_control =~
-             ~s(aria-describedby="dcr_default_client_lifetime_seconds-error")
+             ~s(aria-describedby="dcr_default_client_lifetime_seconds-help dcr_default_client_lifetime_seconds-info dcr_default_client_lifetime_seconds-duration dcr_default_client_lifetime_seconds-error")
 
     HtmlAssertions.assert_no_text(html, [
       "Ecto.Changeset",
@@ -327,7 +398,105 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     ])
   end
 
-  test "failed policy save keeps submitted values and says policy was not saved" do
+  test "lifetime inputs show a readable duration as the operator types" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    html =
+      render_change(view, "preview_policy", %{
+        "policy" => %{
+          "dcr_default_client_lifetime_seconds" => "86400",
+          "dcr_default_client_secret_lifetime_seconds" => "180000",
+          "dcr_default_registration_access_token_lifetime_seconds" => "7200"
+        }
+      })
+
+    assert duration_hint(html, "dcr_default_client_lifetime_seconds") == "1 day"
+    assert duration_hint(html, "dcr_default_client_secret_lifetime_seconds") == "≈ 2.1 days"
+
+    assert duration_hint(html, "dcr_default_registration_access_token_lifetime_seconds") ==
+             "2 hours"
+
+    html =
+      render_change(view, "preview_policy", %{
+        "policy" => %{"dcr_default_client_secret_lifetime_seconds" => "0"}
+      })
+
+    assert duration_hint(html, "dcr_default_client_secret_lifetime_seconds") ==
+             "Apps will be told their secret has already expired"
+
+    assert has_element?(
+             view,
+             "#dcr_default_client_secret_lifetime_seconds-info[role=tooltip]",
+             "still accepts a secret after its expiry date"
+           )
+  end
+
+  test "every lifetime rejects negative, fractional, malformed and overflowing values before saving" do
+    assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies/dcr")
+    assert {:ok, original_policy} = ServerPolicy.get_server_policy()
+
+    for field <- @lifetime_fields do
+      control = policy_control(html, Atom.to_string(field))
+      assert control =~ ~s(min="0")
+      assert control =~ ~s(max="2147483647")
+      assert control =~ ~s(step="1")
+      assert control =~ ~s(inputmode="numeric")
+
+      for {value, message} <- [
+            {"-1", "Enter zero or a positive number of seconds."},
+            {"1.5", "Enter a whole number of seconds, such as 60."},
+            {"not-a-number", "Enter a whole number of seconds, such as 60."},
+            {"2147483648", "Enter 2,147,483,647 seconds or less."}
+          ] do
+        params = lifetime_params(value, field)
+        changed = render_change(view, "preview_policy", %{"policy" => params})
+        assert changed =~ message
+        assert has_element?(view, "##{field}-error")
+        assert has_element?(view, "##{field}-error li", message)
+        refute has_element?(view, ".lockspire-admin-error-summary")
+        assert policy_control(changed, Atom.to_string(field)) =~ ~s(aria-invalid="true")
+
+        submitted = render_submit(view, "save_policy", %{"policy" => params})
+        assert submitted =~ message
+        assert has_element?(view, ".lockspire-admin-error-summary")
+        assert policy_control(submitted, Atom.to_string(field)) =~ ~s(value="#{value}")
+        assert {:ok, ^original_policy} = ServerPolicy.get_server_policy()
+      end
+
+      corrected =
+        render_change(view, "preview_policy", %{"policy" => lifetime_params("60", field)})
+
+      refute has_element?(view, "##{field}-error")
+      assert policy_control(corrected, Atom.to_string(field)) =~ ~s(aria-invalid="false")
+      assert {:ok, ^original_policy} = ServerPolicy.get_server_policy()
+    end
+  end
+
+  test "every lifetime preserves blank, zero and supported whole-number boundaries" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dcr")
+
+    for {value, expected} <- [{"", nil}, {"0", 0}, {"1", 1}, {"2147483647", 2_147_483_647}] do
+      params =
+        @lifetime_fields
+        |> Map.new(&{Atom.to_string(&1), value})
+        |> Map.put("registration_policy", "disabled")
+
+      html = render_submit(view, "save_policy", %{"policy" => params})
+      assert html =~ "App registration settings saved."
+      refute has_element?(view, ".lockspire-admin-field-errors")
+      assert {:ok, policy} = ServerPolicy.get_server_policy()
+      for field <- @lifetime_fields, do: assert(Map.fetch!(policy, field) == expected)
+    end
+  end
+
+  defp lifetime_params(value, selected_field) do
+    @lifetime_fields
+    |> Map.new(&{Atom.to_string(&1), ""})
+    |> Map.put("registration_policy", "disabled")
+    |> Map.put(Atom.to_string(selected_field), value)
+  end
+
+  test "failed settings save keeps submitted values and explains the result" do
     assert {:ok, view, _html} = live(conn_for_admin(), "/admin/policies/dcr")
 
     prior_repo = Application.get_env(:lockspire, :repo)
@@ -346,10 +515,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
         })
 
       text = rendered_text(html)
-      assert text =~ "DCR policy was not saved"
-      assert policy_control(html, "dcr_allowed_scopes") =~ ~s(value="openid, partner.audit.read")
+      assert text =~ "App registration settings were not saved"
+      assert html =~ ~s(data-values="openid, partner.audit.read")
       assert policy_control(html, "dcr_default_client_lifetime_seconds") =~ ~s(value="3600")
-      refute text =~ "Global Dynamic Client Registration policy saved"
+      refute text =~ "App registration settings saved"
       refute text =~ "UndefinedFunctionError"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
@@ -373,6 +542,14 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     |> String.replace(~r/<script\b[^>]*>.*?<\/script>/s, " ")
     |> String.replace(~r/<[^>]+>/, " ")
     |> String.replace(~r/\s+/, " ")
+  end
+
+  defp duration_hint(html, id) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("##{id}-duration")
+    |> LazyHTML.text()
+    |> String.trim()
   end
 
   defp policy_control(html, id) do
@@ -409,9 +586,9 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       "Mint initial access token",
       "Rotate registration access token",
       "Rotate client secret",
-      "Create client",
-      "Disable client",
-      "Enable client",
+      "Add app",
+      "Disable app",
+      "Enable app",
       "host tenant policy",
       "developer portal",
       "Reveal secret",

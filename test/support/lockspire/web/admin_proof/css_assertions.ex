@@ -128,6 +128,9 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     assert layout =~ ~s(<option value="light">Light</option>)
     assert layout =~ ~s(<option value="dark">Dark</option>)
     assert css =~ ".lockspire-admin-theme-control"
+
+    assert rule(css, ".lockspire-admin-theme-control select") =~
+             "padding: var(--ls-space-2) var(--ls-select-text-clearance) var(--ls-space-2) var(--ls-space-3)"
   end
 
   defp css, do: File.read!(Paths.admin_css())

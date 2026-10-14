@@ -131,7 +131,7 @@ defmodule Lockspire.Web.AdminLab.Fixtures do
       dcr_iat: [
         %{
           state: :copy_once,
-          label: "Initial access token",
+          label: "App setup token",
           value: "redacted_handle_copy_once_iat_placeholder"
         },
         %{

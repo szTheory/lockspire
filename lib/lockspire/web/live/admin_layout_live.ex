@@ -24,10 +24,10 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         %{
           label: "Configure",
           items: [
-            %{label: "Clients", key: :clients, href: admin_path("/clients"), enabled: true},
+            %{label: "Apps", key: :clients, href: admin_path("/clients"), enabled: true},
             %{label: "Security", key: :policies, href: admin_path("/policies"), enabled: true},
             %{label: "Keys", key: :keys, href: admin_path("/keys"), enabled: true},
-            %{label: "DCR", key: :dcr, href: admin_path("/dcr"), enabled: true}
+            %{label: "App registration", key: :dcr, href: admin_path("/dcr"), enabled: true}
           ]
         },
         %{
@@ -38,21 +38,26 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           ]
         },
         %{
-          label: "Operate",
+          label: "Activity",
           items: [
             %{
-              label: "Device Auth",
+              label: "Device authorization requests",
               key: :device_authorizations,
               href: admin_path("/device_authorizations"),
               enabled: true
             },
             %{
-              label: "Interactions",
+              label: "Sign-in requests",
               key: :interactions,
               href: admin_path("/interactions"),
               enabled: true
             },
-            %{label: "Logouts", key: :logouts, href: admin_path("/logouts"), enabled: true}
+            %{
+              label: "App sign-out notices",
+              key: :logouts,
+              href: admin_path("/logouts"),
+              enabled: true
+            }
           ]
         }
       ])
@@ -62,9 +67,63 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
       <%= Phoenix.HTML.raw(Lockspire.Web.Admin.CSS.get()) %>
     </style>
     <script>
+      <%= Phoenix.HTML.raw(Lockspire.Web.Admin.Controls.javascript()) %>
       (() => {
         const storageKey = "lockspire-admin-theme";
         const root = document.documentElement;
+        const setInfoOpen = (info, open) => {
+          if (open) {
+            const trigger = info.querySelector("[data-lockspire-info-trigger]").getBoundingClientRect();
+            const tooltip = info.querySelector('[role="tooltip"]');
+            const anchor = tooltip.offsetParent;
+            if (anchor) tooltip.style.setProperty("--ls-info-anchor-bottom", `${trigger.bottom - anchor.getBoundingClientRect().top}px`);
+            const box = tooltip.getBoundingClientRect();
+            const center = trigger.left + trigger.width / 2;
+            const offset = getComputedStyle(tooltip).direction === "rtl" ? box.right - center : center - box.left;
+            tooltip.style.setProperty("--ls-info-pointer-offset", `${offset}px`);
+          }
+          info.dataset.open = String(open);
+          info.querySelector("[data-lockspire-info-trigger]").setAttribute("aria-expanded", String(open));
+          if (!open) delete info.dataset.pinned;
+        };
+
+        document.addEventListener("mouseover", (event) => {
+          const info = event.target.closest("[data-lockspire-info]");
+          if (info && !info.contains(event.relatedTarget)) setInfoOpen(info, true);
+        });
+        document.addEventListener("mouseout", (event) => {
+          const info = event.target.closest("[data-lockspire-info]");
+          if (info && !info.contains(event.relatedTarget) && !info.dataset.pinned && !info.contains(document.activeElement)) {
+            setInfoOpen(info, false);
+          }
+        });
+        document.addEventListener("focusin", (event) => {
+          const info = event.target.closest("[data-lockspire-info]");
+          if (info) setInfoOpen(info, true);
+        });
+        document.addEventListener("focusout", (event) => {
+          const info = event.target.closest("[data-lockspire-info]");
+          if (info && !info.contains(event.relatedTarget) && !info.matches(":hover")) setInfoOpen(info, false);
+        });
+        document.addEventListener("click", (event) => {
+          const info = event.target.closest("[data-lockspire-info]");
+          document.querySelectorAll('[data-lockspire-info][data-open="true"]').forEach((other) => {
+            if (other !== info) setInfoOpen(other, false);
+          });
+          if (!event.target.closest("[data-lockspire-info-trigger]")) return;
+          const open = !info.dataset.pinned;
+          setInfoOpen(info, open);
+          if (open) info.dataset.pinned = "true";
+        });
+        document.addEventListener("keydown", (event) => {
+          if (event.key !== "Escape") return;
+          const openInfos = document.querySelectorAll('[data-lockspire-info][data-open="true"]');
+          if (openInfos.length) {
+            openInfos.forEach((info) => setInfoOpen(info, false));
+            event.preventDefault();
+          }
+        });
+
         const applyTheme = (theme) => {
           if (theme === "light" || theme === "dark") {
             root.dataset.theme = theme;
@@ -73,7 +132,53 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           }
         };
 
+        const timeStorageKey = "lockspire-admin-time-zone";
+        let currentTimeZone = "utc";
+        let timeStatus = "";
+        try {
+          currentTimeZone = window.localStorage.getItem(timeStorageKey) === "local" ? "local" : "utc";
+        } catch (_error) {
+          timeStatus = "Your saved time zone could not be read. Times use UTC.";
+        }
+        const syncTimestamps = () => {
+          document.querySelectorAll("[data-lockspire-time-zone]").forEach((select) => {
+            if (select.value !== currentTimeZone) select.value = currentTimeZone;
+          });
+          document.querySelectorAll("[data-lockspire-timestamp]").forEach((time) => {
+            const date = new Date(time.getAttribute("datetime"));
+            if (Number.isNaN(date.getTime())) return;
+            const options = { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false, timeZoneName: "short" };
+            if (currentTimeZone === "utc") options.timeZone = "UTC";
+            const formatted = new Intl.DateTimeFormat(undefined, options).format(date);
+            if (time.textContent !== formatted) time.textContent = formatted;
+          });
+          const status = document.querySelector("[data-lockspire-time-status]");
+          if (status && status.textContent !== timeStatus) status.textContent = timeStatus;
+        };
+        document.addEventListener("change", (event) => {
+          const select = event.target.closest("[data-lockspire-time-zone]");
+          if (!select) return;
+          currentTimeZone = select.value === "local" ? "local" : "utc";
+          timeStatus = "";
+          try { window.localStorage.setItem(timeStorageKey, currentTimeZone); }
+          catch (_error) { timeStatus = "Times changed for this page, but your preference could not be saved."; }
+          syncTimestamps();
+        });
+        document.addEventListener("click", async (event) => {
+          const button = event.target.closest("[data-lockspire-copy-timestamp]");
+          if (!button) return;
+          const exactTime = button.dataset.lockspireCopyTimestamp;
+          try {
+            await navigator.clipboard.writeText(exactTime);
+            timeStatus = "Timestamp copied (UTC).";
+          } catch (_error) {
+            timeStatus = "Could not copy the timestamp. Select and copy it manually: " + exactTime;
+          }
+          syncTimestamps();
+        });
+
         const syncShellThemeState = () => {
+          syncTimestamps();
           document.querySelectorAll("[data-lockspire-theme-select]").forEach((select) => {
             if (select.value !== currentPageTheme) select.value = currentPageTheme;
           });
@@ -156,14 +261,24 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
             </div>
             <h1>{@page_title}</h1>
           </div>
+          <div class="lockspire-admin-header-preferences">
           <div class="lockspire-admin-theme-control">
             <label for="lockspire-admin-theme-select">Theme</label>
-            <select id="lockspire-admin-theme-select" data-lockspire-theme-select>
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
-            </select>
+              <Lockspire.Web.Components.AdminComponents.select_control id="lockspire-admin-theme-select" data-lockspire-theme-select>
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </Lockspire.Web.Components.AdminComponents.select_control>
             <p data-lockspire-theme-status role="status" aria-live="polite"></p>
+          </div>
+          <div class="lockspire-admin-theme-control">
+            <label for="lockspire-admin-time-zone">Times</label>
+            <Lockspire.Web.Components.AdminComponents.select_control id="lockspire-admin-time-zone" data-lockspire-time-zone>
+              <option value="utc">UTC</option>
+              <option value="local">Local</option>
+            </Lockspire.Web.Components.AdminComponents.select_control>
+          </div>
+          <p class="lockspire-admin-time-status" data-lockspire-time-status role="status" aria-live="polite"></p>
           </div>
         </div>
       </header>

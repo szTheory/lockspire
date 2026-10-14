@@ -14,7 +14,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   def mount(_params, _session, socket) do
     {:ok,
      assign(socket,
-       page_title: "Consents",
+       page_title: "Consent grants",
        current_section: :consents,
        consents: [],
        consent_read_state: :loading,
@@ -44,16 +44,8 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
-        eyebrow="Support"
-        title="Consent grant investigation"
-        body="Review stored consent grants by account, client, status, and scopes. Open a grant to review its permissions or revoke it."
-      >
-        <:summary>
-          <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
-          <span>Selected client: {selected_filter(:client, @filters["client"])}</span>
-          <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
-        </:summary>
-      </AdminComponents.page_hero>
+        body="Review saved permissions for an app and its account. Revoke a grant if it should no longer be active."
+      />
 
       <AdminComponents.section_card
         title="Filter consent grants"
@@ -65,16 +57,16 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
               <input id="consent_account" name="account" type="text" value={@filters["account"]} />
             </AdminComponents.form_field>
 
-            <AdminComponents.form_field id="consent_client" label="Client">
+            <AdminComponents.form_field id="consent_client" label="App">
               <input id="consent_client" name="client" type="text" value={@filters["client"]} />
             </AdminComponents.form_field>
 
             <AdminComponents.form_field id="consent_status" label="Status">
-              <select id="consent_status" name="status">
+              <AdminComponents.select_control id="consent_status" name="status">
                 <option value="all" selected={@filters["status"] == "all"}>All</option>
                 <option value="active" selected={@filters["status"] == "active"}>Active</option>
                 <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
-              </select>
+              </AdminComponents.select_control>
             </AdminComponents.form_field>
           </:fields>
           <:help>
@@ -119,7 +111,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
           <% @consent_read_state == :loaded and @consents == [] -> %>
             <AdminComponents.empty_state
               title="No matching consent grants"
-              body="Adjust the account, client, or status filters to review another stored grant."
+              body="Adjust the account, app, or status filters to review another stored grant."
             />
           <% true -> %>
           <AdminComponents.resource_list>
@@ -137,7 +129,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
                     />
                   </span>
                   <span>
-                    Client
+                    Client ID
                     <AdminComponents.long_value
                       value={safe_identifier(consent.grant.client_id)}
                       kind={:id}
@@ -243,20 +235,13 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   defp matching_grant_metric_label(1), do: "Matching grant"
   defp matching_grant_metric_label(_count), do: "Matching grants"
 
-  defp selected_filter(_type, ""), do: "All"
-  defp selected_filter(_type, "all"), do: "All"
-
-  defp selected_filter(type, value) when type in [:account, :client], do: safe_identifier(value)
-
-  defp selected_filter(_type, value), do: value
-
   defp consent_row_title(consent),
     do: "#{status_label(consent.grant.status)} #{grant_kind_label(consent.grant.kind)} grant"
 
   defp consent_row_subtitle(consent) do
     case consent_title(consent) do
-      "Client description unavailable" = copy -> copy
-      title -> "Client #{title}"
+      "App name unavailable" = copy -> copy
+      title -> "App #{title}"
     end
   end
 
@@ -281,7 +266,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
     case consent.client do
       %{name: name} when is_binary(name) and name != "" -> name
       %{client_id: client_id} when is_binary(client_id) and client_id != "" -> client_id
-      _missing -> "Client description unavailable"
+      _missing -> "App name unavailable"
     end
   end
 
@@ -303,7 +288,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLive.Index do
   defp formatted_timestamp(nil), do: "Not recorded"
 
   defp formatted_timestamp(%DateTime{} = value),
-    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
+    do: value
 
   defp formatted_timestamp(value), do: to_string(value)
 

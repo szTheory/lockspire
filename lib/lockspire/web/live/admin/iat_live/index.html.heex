@@ -1,20 +1,14 @@
 <Lockspire.Web.Live.AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
-  <Lockspire.Web.Components.AdminComponents.page_hero
-    eyebrow="Configure"
-    title="Initial Access Token inventory"
-    body="Review each token's status, expiry, creator, and use limit. Token values are never shown in this inventory."
-  />
-
   <Lockspire.Web.Components.AdminComponents.pane
-    title="Review Initial Access Tokens"
-    subtitle="An Initial Access Token authorizes initial client registration under issuer DCR policy. It is not an OAuth access token, has no OAuth scopes, and cannot manage an existing client."
+    title="Token history"
+    subtitle="Each token can register one app. It cannot access user data or manage an existing app."
   >
     <p :if={@revoke_notice} class="lockspire-admin-help" role="status" aria-live="polite">
       {@revoke_notice}
     </p>
 
     <Lockspire.Web.Components.AdminComponents.alert
-      :if={@revoke_error}
+      :if={@revoke_error && is_nil(@revoke_error_token_id)}
       variant={:warning}
       title="Revocation not confirmed"
       role="alert"
@@ -24,14 +18,14 @@
 
     <%= if @inventory_state == :loading do %>
       <p class="lockspire-admin-help" role="status" aria-live="polite">
-        Loading Initial Access Token inventory…
+        Loading app setup tokens…
       </p>
     <% end %>
 
     <%= if @inventory_state == :unavailable do %>
       <Lockspire.Web.Components.AdminComponents.alert
         variant={:danger}
-        title="Initial Access Token inventory unavailable"
+        title="Could not load app setup tokens"
         role="alert"
       >
         {@inventory_error}
@@ -44,10 +38,10 @@
           phx-click="reload_iats"
           phx-disable-with="Reloading inventory…"
         >
-          Reload inventory
+          Reload tokens
         </Lockspire.Web.Components.AdminComponents.admin_button>
         <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()}>
-          Create an Initial Access Token
+          Create app setup token
         </Lockspire.Web.Components.AdminComponents.admin_button>
       </Lockspire.Web.Components.AdminComponents.action_bar>
     <% end %>
@@ -72,32 +66,32 @@
         />
         <Lockspire.Web.Components.AdminComponents.summary_stat
           value={@inventory_counts.total}
-          label="Total tokens"
+          label="Total"
         />
       </Lockspire.Web.Components.AdminComponents.metric_grid>
 
       <%= if @tokens == [] do %>
         <Lockspire.Web.Components.AdminComponents.empty_state
-          title="No Initial Access Tokens yet"
-          body="Create a single-use Initial Access Token for a partner's first registration request. Issuer DCR policy still applies."
+          title="No app setup tokens yet"
+          body="Create one when an app needs to register with this provider. Registration rules still apply."
         >
           <:actions>
             <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-              Create an Initial Access Token
+              Create app setup token
             </Lockspire.Web.Components.AdminComponents.admin_button>
           </:actions>
         </Lockspire.Web.Components.AdminComponents.empty_state>
       <% else %>
         <Lockspire.Web.Components.AdminComponents.action_bar>
           <Lockspire.Web.Components.AdminComponents.admin_button href={iat_new_path()} variant={:primary}>
-          Create an Initial Access Token
+          Create app setup token
           </Lockspire.Web.Components.AdminComponents.admin_button>
           <Lockspire.Web.Components.AdminComponents.admin_button
             type="button"
             phx-click="reload_iats"
             phx-disable-with="Reloading inventory…"
           >
-            Reload inventory
+            Reload tokens
           </Lockspire.Web.Components.AdminComponents.admin_button>
         </Lockspire.Web.Components.AdminComponents.action_bar>
 
@@ -105,7 +99,7 @@
           <%= for token <- @tokens do %>
             <Lockspire.Web.Components.AdminComponents.dense_resource_row
               title={token_title(token)}
-              subtitle="Authorizes initial client registration under issuer DCR policy"
+              subtitle="Allows one app registration"
             >
               <:meta>
                 <span>
@@ -143,9 +137,9 @@
               <:actions>
                 <%= if iat_status(token) == :active do %>
                   <Lockspire.Web.Components.AdminComponents.confirmation_panel
-                    title="Revoke Initial Access Token"
+                    title="Revoke app setup token"
                     variant={:danger}
-                    errors={iat_revoke_error(@revoke_error)}
+                    errors={iat_revoke_error(@revoke_error, @revoke_error_token_id, token.id)}
                   >
                     <:body>
                       <form class="lockspire-admin-form-stack" phx-submit="confirm_revoke_iat">
@@ -168,9 +162,9 @@
                           <Lockspire.Web.Components.AdminComponents.admin_button
                             type="submit"
                             variant={:danger}
-                            phx-disable-with="Revoking Initial Access Token…"
+                            phx-disable-with="Revoking token…"
                           >
-                            Revoke Initial Access Token
+                            Revoke token
                           </Lockspire.Web.Components.AdminComponents.admin_button>
                         </Lockspire.Web.Components.AdminComponents.action_bar>
                       </form>

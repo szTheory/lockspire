@@ -80,55 +80,50 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       text: unsupported_queue_control_text()
     )
 
-    assert page_html =~ "Operate"
-    assert page_html =~ "Authorization interaction queue"
-    assert page_html =~ "Recorded interactions"
-    assert page_html =~ "recorded interaction status, prompt, client, subject, and timing"
-    assert page_html =~ "Pending login"
-    assert page_html =~ "Pending consent"
+    assert page_html =~ "Activity"
+    assert page_html =~ "Sign-in requests"
+    assert page_html =~ "Sign-in request history"
+
+    assert page_html =~
+             "See requests waiting for sign-in or consent, plus the results already recorded."
+
+    assert page_html =~ "Waiting for sign-in"
+    assert page_html =~ "Waiting for consent"
     assert page_html =~ "Completed"
     assert page_html =~ "Denied"
     assert page_html =~ "Expired"
-    assert summary_stat?(page_html, "Pending login", 1)
-    assert summary_stat?(page_html, "Pending consent", 1)
+    assert summary_stat?(page_html, "Waiting for sign-in", 1)
+    assert summary_stat?(page_html, "Waiting for consent", 1)
     assert summary_stat?(page_html, "Completed", 1)
     assert summary_stat?(page_html, "Denied", 1)
     assert summary_stat?(page_html, "Expired", 1)
-    assert page_html =~ "5 authorization interactions recorded"
+    assert page_html =~ "5 sign-in requests recorded"
     assert page_html =~ "lockspire-admin-pane"
     assert page_html =~ "lockspire-admin-resource-list"
     assert page_html =~ "lockspire-admin-dense-resource-row"
     assert page_html =~ "lockspire-admin-long-value"
-    assert page_html =~ "Waiting for login interaction"
-    assert page_html =~ "Waiting for consent interaction"
-    assert page_html =~ "Completed interaction"
-    assert page_html =~ "Denied interaction"
-    assert page_html =~ "Expired interaction"
+    assert page_html =~ "Waiting for sign-in"
+    assert page_html =~ "Waiting for consent"
+    assert page_html =~ "Completed sign-in request"
+    assert page_html =~ "Denied sign-in request"
+    assert page_html =~ "Expired sign-in request"
 
-    assert page_html =~
-             "Waiting for login; host login must resolve the subject before consent or completion."
-
-    assert page_html =~ "Waiting for consent; the account has not completed the prompt yet."
-
-    assert page_html =~
-             "The interaction is complete; use its recorded details for follow-up."
-
-    assert page_html =~
-             "The request was denied. Its prompt and subject context remain available for follow-up."
-
-    assert page_html =~
-             "The interaction expired before completion. Its recorded details remain available for review."
+    assert page_html =~ "The person must sign in before they can review the request."
+    assert page_html =~ "The person has not responded to the consent request yet."
+    assert page_html =~ "The request was completed."
+    assert page_html =~ "The request was denied."
+    assert page_html =~ "The request expired before it was completed."
 
     assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
     assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
-    assert page_html =~ "View client details"
+    assert page_html =~ "View app details"
     assert page_html =~ "test-interaction-pending-consent"
     assert page_html =~ "test-interaction-completed"
     assert page_html =~ "test-interaction-denied"
     assert page_html =~ "test-interaction-expired"
-    assert page_html =~ "Interaction"
-    assert page_html =~ "Client"
-    assert page_html =~ "Subject"
+    assert page_html =~ "Request ID"
+    assert page_html =~ "Client ID"
+    assert page_html =~ "Account"
     assert page_html =~ "Prompt"
     assert page_html =~ "Created"
     assert page_html =~ "Last activity"
@@ -142,15 +137,110 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     refute page_html =~ "phx-click"
     refute page_html =~ "phx-submit"
     refute_unsupported_queue_controls(page_html)
-    assert page_html =~ "Pending login"
+    assert page_html =~ "Waiting for sign-in"
+  end
+
+  test "pending filter shows only requests waiting for sign-in or consent" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"status" => "pending"},
+               "/lockspire/admin/interactions?status=pending",
+               socket
+             )
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert socket.assigns.interactions
+           |> Enum.map(& &1.status)
+           |> Enum.sort() == [:pending_consent, :pending_login]
+
+    assert page_html =~ "2 requests waiting for sign-in or consent"
+    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+    assert page_html =~ "test-interaction-pending-consent"
+    refute page_html =~ "test-interaction-completed"
+    refute page_html =~ "test-interaction-denied"
+    refute page_html =~ "test-interaction-expired"
+    refute page_html =~ "Completed sign-in request"
+    refute page_html =~ "Denied sign-in request"
+    refute page_html =~ "Expired sign-in request"
+    refute summary_stat?(page_html, "Waiting for sign-in", 1)
+    refute summary_stat?(page_html, "Waiting for consent", 1)
+    refute summary_stat?(page_html, "Completed", 1)
+    refute summary_stat?(page_html, "Denied", 1)
+    refute summary_stat?(page_html, "Expired", 1)
+    assert page_html =~ "View all sign-in requests"
+    assert page_html =~ ~s(href="/lockspire/admin/interactions")
+    refute_unsupported_queue_controls(page_html)
+  end
+
+  test "unknown interaction status filters fall back to the full history" do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"status" => "completed"},
+               "/lockspire/admin/interactions?status=completed",
+               socket
+             )
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert length(socket.assigns.interactions) == 5
+    assert page_html =~ "5 sign-in requests recorded"
+    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+    assert page_html =~ "test-interaction-pending-consent"
+    assert page_html =~ "test-interaction-completed"
+    assert page_html =~ "test-interaction-denied"
+    assert page_html =~ "test-interaction-expired"
+    refute page_html =~ "View all sign-in requests"
+  end
+
+  test "empty pending filter shows its successful zero state and full-history route" do
+    clear_interactions()
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    interaction_fixture(:completed, now)
+
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+
+    assert {:noreply, socket} =
+             Index.handle_params(
+               %{"status" => "pending"},
+               "/lockspire/admin/interactions?status=pending",
+               socket
+             )
+
+    page_html =
+      socket.assigns
+      |> Index.render()
+      |> rendered_to_string()
+      |> page_markup()
+
+    assert page_html =~ "0 requests waiting for sign-in or consent"
+    assert page_html =~ "No requests waiting for sign-in or consent"
+    assert page_html =~ "There are no requests waiting for sign-in or consent."
+    assert page_html =~ "View all sign-in requests"
+    assert page_html =~ ~s(href="/lockspire/admin/interactions")
+    refute summary_stat?(page_html, "Completed", 1)
   end
 
   test "interactions empty state names the absent records without controls" do
     html =
       %{
         current_section: :interactions,
-        page_title: "Active interactions",
+        page_title: "Sign-in requests",
         interaction_read_state: :loaded,
+        interaction_filter: :all,
         interactions: [],
         __changed__: %{}
       }
@@ -158,8 +248,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert html =~ "No authorization interactions recorded"
-    assert html =~ "No authorization interactions are currently recorded."
+    assert html =~ "No sign-in requests recorded"
+    assert html =~ "There are no recorded authorization requests to review."
     refute html =~ "operator"
     assert html =~ "Return to overview"
     assert html =~ ~s(href="/lockspire/admin/overview")
@@ -179,11 +269,11 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert page_html =~ "Authorization interaction queue"
-    assert page_html =~ "Loading authorization interactions…"
-    refute page_html =~ "Pending login"
-    refute page_html =~ "No authorization interactions recorded"
-    refute page_html =~ "authorization interactions recorded"
+    assert page_html =~ "Sign-in requests"
+    assert page_html =~ "Loading sign-in requests…"
+    refute page_html =~ "Waiting for sign-in"
+    refute page_html =~ "No sign-in requests recorded"
+    refute page_html =~ "sign-in requests recorded"
   end
 
   test "failed interaction reads show unavailable and a same-route retry" do
@@ -200,15 +290,15 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
         |> page_markup()
 
       assert socket.assigns.interaction_read_state == :unavailable
-      assert page_html =~ "Could not load authorization interactions"
-      assert page_html =~ "Lockspire could not read interaction records"
+      assert page_html =~ "Could not load sign-in requests"
+      assert page_html =~ "Lockspire could not read sign-in requests"
       assert page_html =~ "the current results are unavailable"
       refute page_html =~ "No count or empty result"
-      assert page_html =~ "Try loading interactions again"
+      assert page_html =~ "Reload sign-in requests"
       assert page_html =~ ~s(href="/lockspire/admin/interactions")
-      refute page_html =~ "Pending login"
-      refute page_html =~ "No authorization interactions waiting for review"
-      refute page_html =~ "0 authorization interactions recorded"
+      refute page_html =~ "Waiting for sign-in"
+      refute page_html =~ "No sign-in requests waiting for review"
+      refute page_html =~ "0 sign-in requests recorded"
     end)
   end
 
@@ -226,11 +316,11 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> page_markup()
 
     assert socket.assigns.interaction_read_state == :loaded
-    assert page_html =~ "0 authorization interactions recorded"
-    assert summary_stat?(page_html, "Pending login", 0)
-    assert page_html =~ "No authorization interactions recorded"
-    assert page_html =~ "No authorization interactions are currently recorded."
-    refute page_html =~ "Could not load authorization interactions"
+    assert page_html =~ "0 sign-in requests recorded"
+    assert summary_stat?(page_html, "Waiting for sign-in", 0)
+    assert page_html =~ "No sign-in requests recorded"
+    assert page_html =~ "There are no recorded authorization requests to review."
+    refute page_html =~ "Could not load sign-in requests"
   end
 
   test "one interaction uses singular count copy and exposes the supported client pivot" do
@@ -254,10 +344,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert page_html =~ "1 authorization interaction recorded"
+    assert page_html =~ "1 sign-in request recorded"
     assert page_html =~ "one-safe-interaction-id"
     assert page_html =~ ~s(href="/lockspire/admin/clients/client-one")
-    refute page_html =~ "one authorization interactions recorded"
+    refute page_html =~ "one sign-in requests recorded"
     refute_unsupported_queue_controls(page_html)
   end
 
@@ -288,17 +378,17 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       "raw params"
     ])
 
-    assert page_html =~ "Recorded interactions"
-    assert page_html =~ "Pending login"
-    assert page_html =~ "Pending consent"
+    assert page_html =~ "Sign-in request history"
+    assert page_html =~ "Waiting for sign-in"
+    assert page_html =~ "Waiting for consent"
     assert page_html =~ "Completed"
     assert page_html =~ "Denied"
     assert page_html =~ "Expired"
-    assert page_html =~ "Waiting for login interaction"
-    assert page_html =~ "Waiting for consent interaction"
-    assert page_html =~ "Completed interaction"
-    assert page_html =~ "Denied interaction"
-    assert page_html =~ "Expired interaction"
+    assert page_html =~ "Waiting for sign-in"
+    assert page_html =~ "Waiting for consent"
+    assert page_html =~ "Completed sign-in request"
+    assert page_html =~ "Denied sign-in request"
+    assert page_html =~ "Expired sign-in request"
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
     assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"

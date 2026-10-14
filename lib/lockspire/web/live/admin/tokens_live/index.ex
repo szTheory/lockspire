@@ -19,8 +19,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
        tokens: [],
        inventory_state: :loading,
        filters: %{"account" => "", "client" => "", "status" => "all"},
-       total_tokens: nil,
-       token_metrics: token_metrics([])
+       total_tokens: nil
      )}
   end
 
@@ -43,20 +42,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero
-        eyebrow="Support"
-        title="Token investigation"
-        body="Review access and refresh tokens by account, client, status, refresh-family lineage, expiration, and revocation. Token values stay hidden."
-      >
-        <:summary>
-          <span>Selected account: {selected_filter(:account, @filters["account"])}</span>
-          <span>Selected client: {selected_filter(:client, @filters["client"])}</span>
-          <span>Selected status: {selected_filter(:status, @filters["status"])}</span>
-        </:summary>
-      </AdminComponents.page_hero>
+        body="Find access or refresh tokens by account, app, or status. Token values stay hidden."
+      />
 
       <AdminComponents.section_card
-        title="Filter token investigation"
-        subtitle="Filters stay in the URL so you can return to the same results. Rows show token state and redacted identifiers."
+        title="Find tokens"
       >
         <AdminComponents.filter_bar action={tokens_index_path()} phx_submit="filter_inventory">
           <:fields>
@@ -64,20 +54,20 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
               <input id="token_account" name="account" type="text" value={@filters["account"]} />
             </AdminComponents.form_field>
 
-            <AdminComponents.form_field id="token_client" label="Client">
+            <AdminComponents.form_field id="token_client" label="App">
               <input id="token_client" name="client" type="text" value={@filters["client"]} />
             </AdminComponents.form_field>
 
             <AdminComponents.form_field id="token_status" label="Status">
-              <select id="token_status" name="status">
+              <AdminComponents.select_control id="token_status" name="status">
                 <option value="all" selected={@filters["status"] == "all"}>All</option>
                 <option value="active" selected={@filters["status"] == "active"}>Active</option>
                 <option value="revoked" selected={@filters["status"] == "revoked"}>Revoked</option>
                 <option value="expired" selected={@filters["status"] == "expired"}>Expired</option>
                 <option value="reuse_detected" selected={@filters["status"] == "reuse_detected"}>
-                  Reuse detected
+                  Used after replacement
                 </option>
-              </select>
+              </AdminComponents.select_control>
             </AdminComponents.form_field>
           </:fields>
           <:help>
@@ -109,7 +99,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         <% :loaded when @tokens == [] -> %>
           <AdminComponents.empty_state
             title="No matching tokens"
-            body="No token records match the selected account, client, and status filters. Change a filter or clear the filters to search again."
+            body="No token records match the selected account, app, and status filters. Change a filter or clear the filters to search again."
           >
             <:actions>
               <AdminComponents.admin_button href={tokens_index_path()}>
@@ -123,44 +113,30 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
               <AdminComponents.dense_resource_row
                 title={token_row_title(entry)}
                 subtitle={token_row_subtitle(entry)}
+                class="lockspire-admin-token-row"
               >
                 <:meta>
-                  <span>
-                    Token
+                  <dl class="lockspire-admin-token-row__facts">
+                  <div>
+                    <dt>Token</dt>
+                    <dd>
                     <AdminComponents.long_value
                       value={Lockspire.Redaction.handle(:token, entry.token.id)}
                       kind={:id}
                     />
-                  </span>
-                  <span>
-                    Client
-                    <AdminComponents.long_value
-                      value={redacted_handle(:client, entry.token.client_id)}
-                      kind={:id}
-                    />
-                  </span>
-                  <span>
-                    Account
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Account</dt>
+                    <dd>
                     <AdminComponents.long_value
                       value={redacted_handle(:account, entry.token.account_id)}
                       kind={:id}
                     />
-                  </span>
-                  <span>
-                    Family
-                    <AdminComponents.long_value
-                      value={redacted_handle(:family, entry.token.family_id)}
-                      kind={:id}
-                    />
-                  </span>
-                  <span>
-                    Expires
-                    <AdminComponents.long_value value={formatted_timestamp(entry.token.expires_at)} kind={:timestamp} />
-                  </span>
+                    </dd>
+                  </div>
+                  </dl>
                 </:meta>
-                <:status>
-                  <AdminComponents.status_badge status={entry.status} />
-                </:status>
                 <:actions>
                   <AdminComponents.admin_button href={token_show_path(entry.token.id, @filters)}>
                     View token details
@@ -172,47 +148,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
         <% end %>
         </div>
 
-        <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
-          <AdminComponents.summary_stat value={@token_metrics.active} label="Active" />
-          <AdminComponents.summary_stat value={@token_metrics.revoked} label="Revoked" />
-          <AdminComponents.summary_stat value={@token_metrics.expired} label="Expired" />
-          <AdminComponents.summary_stat
-            value={@token_metrics.reuse_detected}
-            label="Reuse detected"
-          />
-        </AdminComponents.metric_grid>
       </AdminComponents.section_card>
 
-      <AdminComponents.decision_summary :if={@inventory_state == :loaded}>
-        <:item
-          label="Selected filters"
-          value={selected_filter_summary(@filters)}
-          detail="Filters remain in the URL and can be changed above."
-          tone={:info}
-        >
-        </:item>
-        <:item
-          label="Token health"
-          value={token_health_summary(@token_metrics)}
-          detail={matching_count_detail(@total_tokens)}
-          tone={token_health_tone(@token_metrics)}
-        >
-        </:item>
-        <:item
-          label="Family pressure"
-          value={family_pressure_summary(@tokens)}
-          detail="Refresh-family context appears as redacted handles in matching records."
-          tone={family_pressure_tone(@tokens)}
-        >
-        </:item>
-        <:item
-          label="Smallest safe action"
-          value={token_smallest_safe_action(@tokens)}
-          detail="Open one token before choosing any revocation path."
-          tone={if @tokens == [], do: :neutral, else: :info}
-        >
-        </:item>
-      </AdminComponents.decision_summary>
     </AdminLayoutLive.shell>
     """
   end
@@ -237,8 +174,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
           filters: filters,
           tokens: tokens,
           inventory_state: :loaded,
-          total_tokens: length(tokens),
-          token_metrics: token_metrics(tokens)
+          total_tokens: length(tokens)
         )
 
       {:error, _reason} ->
@@ -246,8 +182,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
           filters: filters,
           tokens: [],
           inventory_state: :error,
-          total_tokens: nil,
-          token_metrics: nil
+          total_tokens: nil
         )
     end
   end
@@ -276,111 +211,17 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
 
   defp normalize_status(_status), do: "all"
 
-  defp token_metrics(tokens) do
-    %{
-      active: Enum.count(tokens, &(&1.status == :active)),
-      revoked: Enum.count(tokens, &(&1.status == :revoked)),
-      expired: Enum.count(tokens, &(&1.status == :expired)),
-      reuse_detected: Enum.count(tokens, &(&1.status == :reuse_detected))
-    }
-  end
-
-  defp selected_filter(_type, ""), do: "All"
-  defp selected_filter(_type, "all"), do: "All"
-
-  defp selected_filter(type, value) when type in [:account, :client],
-    do: redacted_handle(type, value)
-
-  defp selected_filter(_type, value), do: value
-
-  defp selected_filter_summary(filters) do
-    [
-      selected_filter_part("Account", :account, filters["account"]),
-      selected_filter_part("Client", :client, filters["client"]),
-      selected_status_filter_part(filters["status"])
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> case do
-      [] -> "All token lifecycle records"
-      parts -> Enum.join(parts, " | ")
-    end
-  end
-
-  defp selected_filter_part(_label, _type, value) when value in [nil, "", "all"], do: nil
-
-  defp selected_filter_part(label, type, value),
-    do: "#{label} #{redacted_handle(type, value)}"
-
-  defp selected_status_filter_part(status) when status in [nil, "", "all"], do: nil
-  defp selected_status_filter_part(status), do: "Status #{status}"
-
-  defp token_health_summary(metrics) do
-    "#{metrics.active} active, #{metrics.revoked} revoked, #{metrics.expired} expired, #{metrics.reuse_detected} reuse detected"
-  end
-
   defp matching_count_label(1), do: "Matching token: 1"
   defp matching_count_label(count), do: "Matching tokens: #{count}"
 
-  defp matching_count_detail(1), do: "1 matching token lifecycle record in this support view."
-
-  defp matching_count_detail(count),
-    do: "#{count} matching token lifecycle records in this support view."
-
-  defp token_health_tone(%{reuse_detected: count}) when count > 0, do: :danger
-
-  defp token_health_tone(%{revoked: revoked, expired: expired}) when revoked + expired > 0,
-    do: :warning
-
-  defp token_health_tone(%{active: active}) when active > 0, do: :success
-  defp token_health_tone(_metrics), do: :neutral
-
-  defp family_pressure_summary([]), do: "No matching refresh families"
-
-  defp family_pressure_summary(tokens) do
-    cond do
-      Enum.any?(tokens, &(&1.status == :reuse_detected)) ->
-        "Reuse evidence in matching family"
-
-      family_count(tokens) == 0 ->
-        "No refresh families in matching records"
-
-      family_count(tokens) == 1 ->
-        "1 refresh family in view"
-
-      true ->
-        "#{family_count(tokens)} refresh families in view"
-    end
-  end
-
-  defp family_pressure_tone(tokens) do
-    cond do
-      Enum.any?(tokens, &(&1.status == :reuse_detected)) -> :danger
-      family_count(tokens) > 0 -> :info
-      true -> :neutral
-    end
-  end
-
-  defp family_count(tokens) do
-    tokens
-    |> Enum.map(& &1.token.family_id)
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
-    |> length()
-  end
-
-  defp token_smallest_safe_action([]), do: "Adjust filters"
-
-  defp token_smallest_safe_action(tokens) do
-    if Enum.any?(tokens, &(&1.status == :reuse_detected)),
-      do: "Review affected token",
-      else: "Review token"
-  end
+  defp token_row_title(%{status: :reuse_detected, token: token}),
+    do: "#{String.capitalize(token_type_label(token.token_type))} used after replacement"
 
   defp token_row_title(entry),
     do: "#{status_label(entry.status)} #{token_type_label(entry.token.token_type)}"
 
   defp token_row_subtitle(entry) do
-    "Client #{token_title(entry)}"
+    "App #{token_title(entry)}"
   end
 
   defp status_label(status) when is_atom(status) do
@@ -407,13 +248,6 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Index do
 
   defp redacted_handle(_type, nil), do: "Not recorded"
   defp redacted_handle(type, value), do: Redaction.handle(type, value)
-
-  defp formatted_timestamp(nil), do: "Not recorded"
-
-  defp formatted_timestamp(%DateTime{} = value),
-    do: Calendar.strftime(value, "%Y-%m-%d %H:%M:%SZ")
-
-  defp formatted_timestamp(value), do: to_string(value)
 
   defp tokens_index_path, do: Lockspire.mount_path() <> "/admin/tokens"
   defp tokens_index_path(filters), do: tokens_index_path() <> "?" <> URI.encode_query(filters)

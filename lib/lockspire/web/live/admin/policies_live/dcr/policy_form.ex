@@ -6,6 +6,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.PolicyForm do
   use Ecto.Schema
   import Ecto.Changeset
 
+  @lifetime_fields [
+    :dcr_default_client_lifetime_seconds,
+    :dcr_default_client_secret_lifetime_seconds,
+    :dcr_default_registration_access_token_lifetime_seconds
+  ]
+  # These values are persisted in PostgreSQL integer columns.
+  @maximum_lifetime_seconds 2_147_483_647
+
+  def maximum_lifetime_seconds, do: @maximum_lifetime_seconds
+
   @primary_key false
   embedded_schema do
     field(:registration_policy, Ecto.Enum, values: [:disabled, :initial_access_token, :open])
@@ -40,18 +50,21 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.PolicyForm do
       :dcr_default_registration_access_token_lifetime_seconds
     ])
     |> validate_required([:registration_policy])
-    |> validate_number(:dcr_default_client_lifetime_seconds,
-      greater_than_or_equal_to: 0,
-      message: "must be zero or greater"
-    )
-    |> validate_number(:dcr_default_client_secret_lifetime_seconds,
-      greater_than_or_equal_to: 0,
-      message: "must be zero or greater"
-    )
-    |> validate_number(:dcr_default_registration_access_token_lifetime_seconds,
-      greater_than_or_equal_to: 0,
-      message: "must be zero or greater"
-    )
+    |> validate_lifetimes()
+  end
+
+  defp validate_lifetimes(changeset) do
+    Enum.reduce(@lifetime_fields, changeset, fn field, acc ->
+      acc
+      |> validate_number(field,
+        greater_than_or_equal_to: 0,
+        message: "must be zero or greater"
+      )
+      |> validate_number(field,
+        less_than_or_equal_to: @maximum_lifetime_seconds,
+        message: "must be 2,147,483,647 seconds or less"
+      )
+    end)
   end
 
   defp prepare_array_fields(attrs) do
