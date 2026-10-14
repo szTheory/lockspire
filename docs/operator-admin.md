@@ -54,7 +54,7 @@ Route groups remain concrete entries inside those journeys:
 - **Consents** and **Tokens** belong to Support.
 - **Device authorization requests**, **Sign-in requests**, and **App sign-out notices** belong to Operate.
 
-The admin UI calls OAuth clients "apps" and keeps "client" for identifiers such as the client ID and client secret. The vocabulary map in [PRODUCT.md](../PRODUCT.md) lists the user-facing term for each protocol concept.
+The admin UI calls OAuth clients "apps" and keeps "client" for identifiers such as the client ID and client secret.
 
 ## DCR onboarding and DCR policy
 
