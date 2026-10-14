@@ -16,6 +16,36 @@ End users signing in, granting consent, authorizing a device, or managing connec
 
 The maintainer confirmed this audience priority on 2026-10-09.
 
+### Personas and jobs
+
+Last reviewed: 2026-10-14. Review at each milestone close and whenever an admin page gains a new audience or job. Facts marked *confirmed* come from the maintainer; facts marked *assumed* are working hypotheses to check against real adopters, and must not be cited as research.
+
+**Provider operator** (primary): an engineer or platform owner on the host team.
+
+- Knows: Phoenix, HTTP, the basics of OAuth (apps, scopes, tokens, sign-in redirects). *Confirmed.* May not know RFC names, FAPI, DPoP, PAR, or JARM by sight. *Assumed.*
+- Jobs: When a partner team needs access, I want to add their app and hand over its credentials, so they can integrate without waiting on me. When I change a provider-wide security default, I want to see which apps it affects before I save, so I don't break integrations. When a key or secret needs replacing, I want to rotate it with clear consequences, so nothing stops working by surprise.
+- Pages: Overview, Apps, App registration, Security, Keys.
+
+**Support teammate**: answers "why can't this customer connect?" tickets.
+
+- Knows: the product and its customers; little OAuth vocabulary. *Assumed.*
+- Jobs: When a customer reports a connection problem, I want to find their account's consent grants and tokens, so I can see what access exists. When access should end, I want to revoke the right thing, so I don't cut off more than intended.
+- Pages: Consents, Tokens, Sign-in requests, App sign-out notices.
+
+**Security reviewer**: checks posture and investigates incidents.
+
+- Knows: OAuth/OIDC threats and protocol terms well. *Assumed.*
+- Jobs: When refresh token reuse is reported, I want to see the affected token family and what Lockspire revoked, so I can judge whether it was theft. When auditing, I want to confirm which security requirements each app actually uses.
+- Pages: Overview, Tokens, Security, Keys.
+
+**Partner-onboarding operator**: manages app registration and setup tokens.
+
+- Knows: the partner program; some OAuth vocabulary. *Assumed.*
+- Jobs: When a partner is ready to self-register, I want to issue a setup token with the right limits, so their app can register itself safely.
+- Pages: App registration, App setup tokens, Apps.
+
+Write for the least technical persona who uses a page. Put protocol detail behind an info popover or in a secondary line for the personas who need it.
+
 ## Product Purpose
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
@@ -66,11 +96,66 @@ Use concrete, consistent operator language across navigation, headings, fields, 
 
 Important distinctions:
 
-- A **client** is a registered application; a client identifier and a client secret are different data with different disclosure rules.
+- A **client** in protocol terms is a registered application. The admin UI calls it an **app**; a client ID and a client secret are different data with different disclosure rules.
 - A **consent grant**, an **access token**, a **refresh token**, and a **refresh token family** represent different authorization and lifecycle concepts.
 - **Dynamic client registration (DCR) onboarding** and **DCR policy** are connected but separate jobs. Initial access tokens and registration access tokens have different purposes.
 - **Post-logout redirect URIs** are browser destinations; **logout propagation URIs** are relying-party cleanup endpoints. Back-channel delivery and best-effort front-channel behavior must not imply the same proof of remote success.
 - Requested, accepted, completed, failed, expired, revoked, empty, and unknown states must retain their actual meanings.
+
+### Vocabulary map
+
+Last reviewed: 2026-10-14. When an admin change introduces a domain concept, add it here in the same change. Labels and explanations use the "UI says" column; protocol terms may appear in info popovers or secondary lines for the personas who need them.
+
+| Internal or protocol term | UI says | Protocol term shown? |
+| --- | --- | --- |
+| client | app | Only in identifiers: Client ID, client secret |
+| `client_id` | Client ID | Yes, it is the identifier operators copy |
+| `client_secret` | client secret | Yes |
+| confidential client | server-side app | No |
+| public client | browser or mobile app | No |
+| `redirect_uri` | sign-in return URL | No |
+| `post_logout_redirect_uri` | sign-out return URL | No |
+| back-channel logout URI | server sign-out notification URL | No |
+| front-channel logout URI | browser sign-out notification URL | No |
+| logout delivery | app sign-out notice | No |
+| interaction | sign-in request | No |
+| login | sign-in (noun), sign in (verb) | No |
+| subject (`sub`) | account | No |
+| scope | permission | In the field label: "Allowed permissions (OAuth scopes)" |
+| initial access token | app setup token | In info popovers only |
+| registration access token | app management token: the token an app uses to update or delete its own registration | In info popovers only |
+| dynamic client registration (DCR) | app registration, apps that register themselves | Page-level context only |
+| consent grant | consent grant | Yes |
+| refresh token family | token family | Yes, on token details |
+| `client_secret_expires_at` | secret expiry date | No |
+| PAR, DPoP, FAPI, JARM, PKCE | the same abbreviation, explained in plain words beside it | Yes |
+| rotate (secret, key, token) | rotate | Yes, with a consequence line in plain words |
+
+### Retired wording
+
+The admin UI must not contain these phrases. `test/lockspire/web/live/admin/vocabulary_contract_test.exs` reads this table and fails CI when a phrase appears in admin source. Add a row whenever wording is replaced, so it cannot drift back.
+
+| Retired phrase | Use instead |
+| --- | --- |
+| registration token | app management token |
+| registration access token | app management token |
+| initial access token | app setup token |
+| callback URL | sign-in return URL |
+| confidential client | server-side app |
+| public client | browser or mobile app |
+| client inventory | app list |
+| ongoing app management | (say what the token does) |
+| interaction history | sign-in request history |
+| authorization interaction | sign-in request |
+| pending login | waiting for sign-in |
+| login or consent | sign-in or consent |
+| logout deliveries | sign-out notices |
+| client class | app type |
+| assertion-key | signing keys |
+| destructive actions | (name the action) |
+| legacy default | not set (use default) |
+| escape hatch | (say what the setting does) |
+| compatibility-first | (say what the protections are) |
 
 Voice is calm, direct, concise, and specific. Use domain nouns and clear verbs; avoid promotional filler, generic AI copy, exaggerated reassurance, and repeated explanations.
 

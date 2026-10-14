@@ -50,9 +50,11 @@ This organization is deliberate: Orient, Configure, Support, and Operate are sep
 Route groups remain concrete entries inside those journeys:
 
 - **Overview** belongs to Orient.
-- **Clients**, **Security**, **Keys**, and **DCR** belong to Configure.
+- **Apps**, **Security**, **Keys**, and **App registration** belong to Configure.
 - **Consents** and **Tokens** belong to Support.
-- **Device Auth**, **Interactions**, and **Logouts** belong to Operate.
+- **Device authorization requests**, **Sign-in requests**, and **App sign-out notices** belong to Operate.
+
+The admin UI calls OAuth clients "apps" and keeps "client" for identifiers such as the client ID and client secret. The vocabulary map in [PRODUCT.md](../PRODUCT.md) lists the user-facing term for each protocol concept.
 
 ## DCR onboarding and DCR policy
 
