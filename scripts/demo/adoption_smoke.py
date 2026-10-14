@@ -219,7 +219,7 @@ def exercise_discovery_and_admin():
         assert_contains(page, "lockspire-admin-shell", f"admin shell on {route}")
 
         if route == "/lockspire/admin/clients/new":
-            assert_contains(page, "Create client", "dedicated client registration title")
+            assert_contains(page, "New app", "dedicated app registration title")
             assert_contains(page, "client-create-form", "dedicated client registration form")
 
     reuse_inventory = browser.request("GET", "/lockspire/admin/tokens?status=reuse_detected")

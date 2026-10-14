@@ -145,22 +145,27 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
 
   defp token_counts(_tokens), do: nil
 
-  defp policy_value(%ServerPolicy{} = policy, field) do
-    case {field, Map.fetch!(policy, field)} do
-      {:par_policy, :optional} -> "Optional PAR"
-      {:par_policy, :required} -> "PAR required"
-      {:security_profile, :none} -> "Standard OAuth and OpenID Connect"
-      {:security_profile, :fapi_2_0_security} -> "FAPI 2.0 Security Profile"
-      {:security_profile, :fapi_2_0_message_signing} -> "FAPI 2.0 Message Signing"
-      {:dpop_policy, :bearer} -> "Bearer tokens"
-      {:dpop_policy, :dpop} -> "Key-bound tokens required (DPoP)"
-      {:registration_policy, :disabled} -> "Self-registration off"
-      {:registration_policy, :initial_access_token} -> "App setup token required"
-      {:registration_policy, :open} -> "Open registration"
-    end
-  end
+  defp policy_value(%ServerPolicy{} = policy, field),
+    do: policy_value_label(field, Map.fetch!(policy, field))
 
   defp policy_value(nil, _field), do: "Unavailable"
+
+  defp policy_value_label(:par_policy, :optional), do: "Optional PAR"
+  defp policy_value_label(:par_policy, :required), do: "PAR required"
+  defp policy_value_label(:security_profile, :none), do: "Standard OAuth and OpenID Connect"
+  defp policy_value_label(:security_profile, :fapi_2_0_security), do: "FAPI 2.0 Security Profile"
+
+  defp policy_value_label(:security_profile, :fapi_2_0_message_signing),
+    do: "FAPI 2.0 Message Signing"
+
+  defp policy_value_label(:dpop_policy, :bearer), do: "Bearer tokens"
+  defp policy_value_label(:dpop_policy, :dpop), do: "Key-bound tokens required (DPoP)"
+  defp policy_value_label(:registration_policy, :disabled), do: "Self-registration off"
+
+  defp policy_value_label(:registration_policy, :initial_access_token),
+    do: "App setup token required"
+
+  defp policy_value_label(:registration_policy, :open), do: "Open registration"
 
   defp summary_detail(%{required: required, optional: optional}, :par)
        when is_integer(required) and is_integer(optional),

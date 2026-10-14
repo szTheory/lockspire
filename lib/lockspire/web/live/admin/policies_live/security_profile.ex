@@ -178,7 +178,6 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
     """
   end
 
-  defp security_profile_label(:none), do: "None (Standard OIDC)"
   defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
   defp security_profile_label(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
 

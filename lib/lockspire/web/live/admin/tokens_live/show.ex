@@ -348,30 +348,33 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   defp reuse_recorded?(detail),
     do: token_reuse_detected?(detail) or match?(%DateTime{}, detail.family_reuse_detected_at)
 
+  @reuse_outcome_prefix "A refresh token was presented again after replacement or revocation."
+
   defp token_outcome(detail) do
     cond do
-      reuse_recorded?(detail) and not refresh_family_present?(detail) ->
-        "A refresh token was presented again after replacement or revocation. This token is no longer active; no related token records are available."
+      reuse_recorded?(detail) -> reuse_outcome(detail)
+      token_revoked?(detail) -> @already_revoked_copy
+      token_expired?(detail) -> @expired_copy
+      true -> "This token is active. Token values stay hidden."
+    end
+  end
 
-      reuse_recorded?(detail) and detail.family_active_count > 0 ->
-        "A refresh token was presented again after replacement or revocation. " <>
-          "Revoke all active family tokens to block the remaining access."
+  defp reuse_outcome(detail) do
+    cond do
+      not refresh_family_present?(detail) ->
+        @reuse_outcome_prefix <>
+          " This token is no longer active; no related token records are available."
 
-      reuse_recorded?(detail) and family_all_revoked?(detail) ->
-        "A refresh token was presented again after replacement or revocation. " <>
-          family_revoked_summary_detail(detail) <> " No active tokens to revoke."
+      detail.family_active_count > 0 ->
+        @reuse_outcome_prefix <>
+          " Revoke all active family tokens to block the remaining access."
 
-      reuse_recorded?(detail) ->
-        "A refresh token was presented again after replacement or revocation. No active tokens to revoke."
-
-      token_revoked?(detail) ->
-        @already_revoked_copy
-
-      token_expired?(detail) ->
-        @expired_copy
+      family_all_revoked?(detail) ->
+        @reuse_outcome_prefix <>
+          " " <> family_revoked_summary_detail(detail) <> " No active tokens to revoke."
 
       true ->
-        "This token is active. Token values stay hidden."
+        @reuse_outcome_prefix <> " No active tokens to revoke."
     end
   end
 
