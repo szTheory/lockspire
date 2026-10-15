@@ -61,6 +61,8 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     page_html = page_markup(html)
     [pending, approved, denied, _expired, consumed] = authorizations
 
+    HtmlAssertions.assert_page_contract!(html)
+
     HtmlAssertions.assert_no_duplicate_ids(page_html)
     HtmlAssertions.assert_describedby_targets_exist(page_html)
     HtmlAssertions.assert_no_generic_cta_text(page_html)

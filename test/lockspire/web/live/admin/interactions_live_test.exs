@@ -53,6 +53,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     html = rendered_to_string(Index.render(socket.assigns))
     page_html = page_markup(html)
 
+    HtmlAssertions.assert_page_contract!(html)
+
     HtmlAssertions.assert_no_duplicate_ids(page_html)
     HtmlAssertions.assert_describedby_targets_exist(page_html)
     HtmlAssertions.assert_no_generic_cta_text(page_html)
