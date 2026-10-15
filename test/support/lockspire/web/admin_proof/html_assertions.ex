@@ -81,7 +81,13 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
       |> LazyHTML.attribute("for")
       |> Enum.reject(&(&1 == ""))
 
-    assert label_targets != [], "expected rendered HTML to include explicit label[for] targets"
+    wrapped =
+      doc
+      |> LazyHTML.query("label input, label select, label textarea")
+      |> LazyHTML.attributes()
+
+    assert label_targets != [] or wrapped != [],
+           "expected rendered HTML to include explicit label[for] targets"
 
     missing =
       label_targets
@@ -96,7 +102,8 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
       |> LazyHTML.query("input, select, textarea")
       |> LazyHTML.attributes()
       |> Enum.reject(fn attrs ->
-        hidden_input?(attrs) or control_labelled?(attrs, label_targets, id_set)
+        hidden_input?(attrs) or attrs in wrapped or
+          control_labelled?(attrs, label_targets, id_set)
       end)
       |> Enum.map(fn attrs -> attribute_value(attrs, "id") || inspect(attrs) end)
 
@@ -128,7 +135,10 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     assert h1_count == 1, "expected exactly one h1, found #{h1_count}"
 
     has_labels? =
-      html |> document() |> LazyHTML.query("label[for]") |> Enum.count() > 0
+      html
+      |> document()
+      |> LazyHTML.query("label[for], label input, label select, label textarea")
+      |> Enum.count() > 0
 
     case Keyword.get(opts, :labels, :when_present) do
       :required -> assert_label_targets_exist(html)

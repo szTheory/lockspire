@@ -140,6 +140,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     Enum.each(routes, fn {path, title, explanation} ->
       assert {:ok, _view, html} = live(conn_for_admin(), path)
+
+      labels =
+        if Enum.any?(
+             ["/edit", "/logout-uris", "/par-policy", "/redirects", "/security-profile"],
+             &String.contains?(path, &1)
+           ),
+           do: :required,
+           else: :when_present
+
+      HtmlAssertions.assert_page_contract!(html, labels: labels)
       visible_text = text_content(html)
       assert visible_text =~ title
       assert visible_text =~ explanation
@@ -630,6 +640,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
 
+    HtmlAssertions.assert_page_contract!(html)
+
     assert html =~ "Rotate client secret"
     assert html =~ "previous secret stops being the current credential"
     assert html =~ "Copy it when shown"
@@ -724,6 +736,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     path = "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
     assert {:ok, view, html} = live(conn_for_admin(), path)
+    HtmlAssertions.assert_page_contract!(html)
 
     assert html =~ "Use this token to update the app&#39;s registration at this URL"
     assert html =~ self_registered_client.registration_client_uri
@@ -831,6 +844,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
   test "client lifecycle changes require explicit confirmation", %{client: client} do
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+    HtmlAssertions.assert_page_contract!(html)
 
     assert html =~ "Confirm disabling app"
 
@@ -1236,6 +1250,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _redirect_view, redirect_html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/redirects")
 
+    HtmlAssertions.assert_page_contract!(redirect_html, labels: :required)
+
     assert redirect_html =~ "Sign-in return URLs"
     assert redirect_html =~ "one exact URL per line"
 
@@ -1247,6 +1263,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _logout_view, logout_html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/logout-uris")
+
+    HtmlAssertions.assert_page_contract!(logout_html, labels: :required)
 
     assert logout_html =~ "Sign-out return URLs"
 
