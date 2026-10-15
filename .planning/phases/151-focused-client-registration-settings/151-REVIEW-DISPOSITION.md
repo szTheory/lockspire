@@ -25,19 +25,19 @@ findings:
     title: "Successful saves outside `:edit` give no confirmation"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Client IDs are concatenated into paths without encoding"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Action-group slot names and button styles disagree with the documented variant semantics"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Show page \"Back to apps\" drops the operator's inventory filters"
-open: 3
+open: 0
 total: 8
-recorded: 2026-10-15T20:21:09.469Z
+recorded: 2026-10-15T20:30:34.778Z
 ---
 
 # Phase 151: Code Review Disposition
@@ -49,9 +49,9 @@ recorded: 2026-10-15T20:21:09.469Z
 | WR-03 | warning | fixed | 151-REVIEW-FIX.md |
 | WR-04 | warning | fixed | 151-REVIEW-FIX.md |
 | WR-05 | warning | fixed | 151-REVIEW-FIX.md |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
+| IN-01 | info | fixed | 151-REVIEW-FIX.md |
+| IN-02 | info | fixed | 151-REVIEW-FIX.md |
+| IN-03 | info | fixed | 151-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
