@@ -93,14 +93,20 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     assert rule(css, ".lockspire-admin-long-value") =~ "overflow-wrap: anywhere"
     assert rule(css, ".lockspire-admin-responsive-table__list") =~ "display: none"
 
+    collapsed_nav = media_rule(css, "@media (max-width: 1119px)")
+
+    assert rule(collapsed_nav, ".lockspire-admin-nav-toggle") =~ "display: flex"
+    assert rule(collapsed_nav, ".lockspire-admin-nav-menu") =~ "display: none"
+
+    assert rule(
+             collapsed_nav,
+             ~s(.lockspire-admin-nav[data-open="true"] .lockspire-admin-nav-menu)
+           ) =~
+             "display: grid"
+
+    assert rule(collapsed_nav, ".lockspire-admin-nav-item") =~ "min-height: 2.75rem"
+
     mobile = media_rule(css, "@media (max-width: 800px)")
-
-    assert Regex.match?(
-             ~r/\.lockspire-admin-nav\s*\{[^}]*flex-wrap: wrap[^}]*overflow-x: visible/s,
-             mobile
-           )
-
-    assert rule(mobile, ".lockspire-admin-nav-group-items") =~ "flex-wrap: wrap"
 
     assert rule(mobile, ".lockspire-admin-responsive-table .lockspire-admin-table-wrap") =~
              "display: none"

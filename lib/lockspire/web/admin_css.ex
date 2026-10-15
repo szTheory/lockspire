@@ -182,15 +182,29 @@ defmodule Lockspire.Web.Admin.CSS do
     text-wrap: balance;
   }
 
+  /* The admin shell is a full-page app; drop the browser's default body
+     margin even when the host layout ships no CSS reset. */
+  body:has(.lockspire-admin-shell) {
+    margin: 0;
+  }
+
   .lockspire-admin-nav {
-    display: flex;
-    gap: var(--ls-space-8);
-    padding: var(--ls-space-3) var(--ls-space-8) 0;
+    padding: 0 var(--ls-space-8);
     background: var(--ls-surface-panel);
     border-bottom: 1px solid var(--ls-border-subtle);
-    overflow-x: auto;
     max-width: 100%;
+  }
+
+  .lockspire-admin-nav-menu {
+    display: flex;
+    gap: var(--ls-space-8);
+    padding-top: var(--ls-space-3);
+    overflow-x: auto;
     scrollbar-width: thin;
+  }
+
+  .lockspire-admin-nav-toggle {
+    display: none;
   }
 
   .lockspire-admin-nav-group {
@@ -251,6 +265,115 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-nav-item-disabled {
     opacity: 0.5;
     pointer-events: none;
+  }
+
+  /* Below the width where every section fits on one row, the nav collapses
+     into a disclosure that names the current page and opens a grouped menu. */
+  @media (max-width: 1119px) {
+    .lockspire-admin-nav-toggle {
+      align-items: center;
+      background: none;
+      border: 0;
+      color: var(--ls-text-strong);
+      cursor: pointer;
+      display: flex;
+      font: inherit;
+      gap: var(--ls-space-4);
+      justify-content: space-between;
+      min-height: 3rem;
+      padding: var(--ls-space-2) 0;
+      text-align: start;
+      width: 100%;
+    }
+
+    .lockspire-admin-nav-toggle:focus-visible {
+      outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color);
+      outline-offset: 2px;
+    }
+
+    .lockspire-admin-nav-toggle-location {
+      align-items: baseline;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ls-space-1) var(--ls-space-3);
+      min-width: 0;
+    }
+
+    .lockspire-admin-nav-toggle-page {
+      color: var(--ls-text-accent);
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .lockspire-admin-nav-toggle-action {
+      align-items: center;
+      color: var(--ls-text-muted);
+      display: inline-flex;
+      flex: 0 0 auto;
+      font-size: 0.875rem;
+      font-weight: 500;
+      gap: var(--ls-space-1);
+    }
+
+    .lockspire-admin-nav-toggle svg {
+      transition: transform var(--ls-transition-fast);
+    }
+
+    .lockspire-admin-nav-toggle[aria-expanded="true"] svg {
+      transform: rotate(180deg);
+    }
+
+    .lockspire-admin-nav-menu {
+      display: none;
+    }
+
+    .lockspire-admin-nav[data-open="true"] .lockspire-admin-nav-menu {
+      border-top: 1px solid var(--ls-border-subtle);
+      display: grid;
+      gap: var(--ls-space-5) var(--ls-space-6);
+      grid-template-columns: minmax(0, 1fr);
+      overflow: visible;
+      padding: var(--ls-space-4) 0 var(--ls-space-5);
+    }
+
+    .lockspire-admin-nav-group {
+      gap: var(--ls-space-2);
+    }
+
+    .lockspire-admin-nav-group-items {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .lockspire-admin-nav-item {
+      border-bottom: 0;
+      border-radius: var(--ls-radius-md);
+      margin-inline: calc(-1 * var(--ls-space-3));
+      min-height: 2.75rem;
+      padding: var(--ls-space-2) var(--ls-space-3);
+      transition-property: color, background-color;
+    }
+
+    .lockspire-admin-nav-item:hover {
+      background: var(--ls-surface-muted);
+    }
+
+    .lockspire-admin-nav-item-current {
+      background: color-mix(in srgb, var(--ls-text-accent) 12%, transparent);
+      font-weight: 600;
+    }
+  }
+
+  @media (min-width: 36rem) and (max-width: 1119px) {
+    .lockspire-admin-nav[data-open="true"] .lockspire-admin-nav-menu {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 52rem) and (max-width: 1119px) {
+    .lockspire-admin-nav[data-open="true"] .lockspire-admin-nav-menu {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
   }
 
   .lockspire-admin-header-row {
@@ -2679,26 +2802,6 @@ defmodule Lockspire.Web.Admin.CSS do
       font-size: 1rem;
     }
 
-    .lockspire-admin-nav {
-      flex-wrap: wrap;
-      gap: var(--ls-space-3) var(--ls-space-6);
-      overflow-x: visible;
-      padding-bottom: var(--ls-space-3);
-    }
-
-    .lockspire-admin-nav-group {
-      max-width: 100%;
-    }
-
-    .lockspire-admin-nav-group-items {
-      flex-wrap: wrap;
-      gap: var(--ls-space-3);
-    }
-
-    .lockspire-admin-nav-item {
-      padding-bottom: var(--ls-space-2);
-    }
-
     .lockspire-admin-hero {
       flex-direction: column;
     }
@@ -2787,6 +2890,42 @@ defmodule Lockspire.Web.Admin.CSS do
 
     .lockspire-admin-responsive-table__list {
       display: grid;
+    }
+  }
+
+  /* Phones: keep the header short so the page starts above the fold. Theme
+     and Times share one row with their labels stacked above the selects. */
+  @media (max-width: 640px) {
+    .lockspire-admin-header {
+      padding-bottom: var(--ls-space-4);
+      padding-top: var(--ls-space-4);
+    }
+
+    .lockspire-admin-brand {
+      margin-bottom: var(--ls-space-3);
+    }
+
+    .lockspire-admin-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .lockspire-admin-header-row {
+      gap: var(--ls-space-3);
+    }
+
+    .lockspire-admin-header-preferences {
+      display: grid;
+      gap: var(--ls-space-2) var(--ls-space-3);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lockspire-admin-theme-control {
+      gap: var(--ls-space-1);
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lockspire-admin-time-status {
+      grid-column: 1 / -1;
     }
   }
 

@@ -62,6 +62,13 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         }
       ])
 
+    assigns =
+      assign(
+        assigns,
+        :current_location,
+        current_location(assigns.nav_groups, assigns.current_section)
+      )
+
     ~H"""
     <style>
       <%= Phoenix.HTML.raw(Lockspire.Web.Admin.CSS.get()) %>
@@ -121,6 +128,27 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
           if (openInfos.length) {
             openInfos.forEach((info) => setInfoOpen(info, false));
             event.preventDefault();
+            return;
+          }
+          const nav = document.querySelector('#lockspire-admin-nav[data-open="true"]');
+          if (nav) {
+            setNavOpen(nav, false);
+            nav.querySelector("[data-lockspire-nav-toggle]").focus();
+          }
+        });
+
+        // The nav is phx-update="ignore", so its open state survives LiveView patches.
+        const setNavOpen = (nav, open) => {
+          nav.dataset.open = String(open);
+          nav.querySelector("[data-lockspire-nav-toggle]").setAttribute("aria-expanded", String(open));
+        };
+        document.addEventListener("click", (event) => {
+          const nav = document.getElementById("lockspire-admin-nav");
+          if (!nav) return;
+          if (event.target.closest("[data-lockspire-nav-toggle]")) {
+            setNavOpen(nav, nav.dataset.open !== "true");
+          } else if (nav.dataset.open === "true" && !nav.contains(event.target)) {
+            setNavOpen(nav, false);
           }
         });
 
@@ -283,17 +311,47 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         </div>
       </header>
 
-      <nav aria-label="Admin navigation" class="lockspire-admin-nav">
-        <%= for group <- @nav_groups do %>
-          <section class="lockspire-admin-nav-group" aria-label={group.label}>
-            <span class="lockspire-admin-nav-group-label">{group.label}</span>
-            <div class="lockspire-admin-nav-group-items">
-              <%= for item <- group.items do %>
-                <.nav_item item={item} current_section={@current_section} />
-              <% end %>
-            </div>
-          </section>
-        <% end %>
+      <nav
+        id="lockspire-admin-nav"
+        aria-label="Admin navigation"
+        class="lockspire-admin-nav"
+        data-open="false"
+        phx-update="ignore"
+      >
+        <button
+          type="button"
+          class="lockspire-admin-nav-toggle"
+          aria-expanded="false"
+          aria-controls="lockspire-admin-nav-menu"
+          data-lockspire-nav-toggle
+        >
+          <span class="lockspire-admin-nav-toggle-location">
+            <%= if @current_location do %>
+              <span class="lockspire-admin-nav-group-label">{@current_location.group}</span>
+              <span class="lockspire-admin-nav-toggle-page">{@current_location.label}</span>
+            <% else %>
+              <span class="lockspire-admin-nav-toggle-page">Admin</span>
+            <% end %>
+          </span>
+          <span class="lockspire-admin-nav-toggle-action">
+            Menu
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16">
+              <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+        </button>
+        <div id="lockspire-admin-nav-menu" class="lockspire-admin-nav-menu">
+          <%= for group <- @nav_groups do %>
+            <section class="lockspire-admin-nav-group" aria-label={group.label}>
+              <span class="lockspire-admin-nav-group-label">{group.label}</span>
+              <div class="lockspire-admin-nav-group-items">
+                <%= for item <- group.items do %>
+                  <.nav_item item={item} current_section={@current_section} />
+                <% end %>
+              </div>
+            </section>
+          <% end %>
+        </div>
       </nav>
 
       <div class="lockspire-admin-body">
@@ -329,6 +387,14 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
     do: "lockspire-admin-nav-item lockspire-admin-nav-item-current"
 
   defp nav_class(_item, _current_section), do: "lockspire-admin-nav-item"
+
+  defp current_location(nav_groups, current_section) do
+    Enum.find_value(nav_groups, fn group ->
+      Enum.find_value(group.items, fn item ->
+        if item.key == current_section, do: %{group: group.label, label: item.label}
+      end)
+    end)
+  end
 
   defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 
