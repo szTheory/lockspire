@@ -139,6 +139,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-select-icon-inset: var(--ls-space-4);
     --ls-select-text-clearance: var(--ls-space-10);
     --ls-info-gap: var(--ls-space-2);
+    scroll-padding-block: var(--ls-space-6);
   }
 
   /* Base Styles */
@@ -2830,6 +2831,12 @@ defmodule Lockspire.Web.Admin.CSS do
 
     .lockspire-admin-theme-control select {
       font-size: 1rem;
+    }
+
+    .lockspire-admin-secondary-nav {
+      flex-wrap: wrap;
+      gap: var(--ls-space-1) var(--ls-space-4);
+      overflow-x: visible;
     }
 
     .lockspire-admin-hero {

@@ -86,6 +86,9 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     assert css =~ "@media (prefers-reduced-motion: reduce)"
     assert css =~ "transition-duration: 0.01ms !important"
     assert css =~ "transform: none;"
+
+    # Keeps a keyboard-focused control and its ring clear of the viewport edge.
+    assert rule(css, ":root") =~ "scroll-padding-block: var(--ls-space-6)"
   end
 
   def assert_responsive_layout! do
@@ -119,6 +122,12 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
 
     assert rule(mobile, ".lockspire-admin-responsive-table__list") =~ "display: grid"
     assert rule(mobile, ".lockspire-admin-action-group__destructive") =~ "border-top:"
+
+    # Browsers only scroll a focused link into view when it is fully hidden, so a
+    # hidden-scrollbar nav would leave a partly clipped focus ring at narrow widths.
+    narrow_nav = rule(mobile, ".lockspire-admin-secondary-nav")
+    assert narrow_nav =~ "flex-wrap: wrap"
+    assert narrow_nav =~ "overflow-x: visible"
   end
 
   def assert_redaction_safe_presentation! do
