@@ -14,10 +14,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
+  alias Lockspire.Web.Live.Admin.ClientsLive.Index
   alias Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent
   alias Lockspire.Web.Live.AdminLayoutLive
 
-  @saveable_modes [:edit, :redirects, :logout_uris, :par_policy, :security_profile, :logout_propagation]
+  @saveable_modes [
+    :edit,
+    :redirects,
+    :logout_uris,
+    :par_policy,
+    :security_profile,
+    :logout_propagation
+  ]
 
   @impl true
   def mount(params, _session, socket) do
@@ -29,9 +37,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        page_title: "App details",
        task_title: "App details",
        task_body:
-         "Review this client's identity, effective policy, credentials, and registered endpoints.",
+         "Review this app's identity, effective policy, credentials, and registered endpoints.",
        current_section: :clients,
        client_id: client_id,
+       return_filters: Index.normalize_filters(if is_map(params), do: params, else: %{}),
        form_mode: nil,
        client: nil,
        client_load_state: :loading,
@@ -282,7 +291,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           >
             Reload this view
           </.link>
-          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_index_path()}>
+          <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_index_path(@return_filters)}>
             Back to apps
           </.link>
         </div>
@@ -296,13 +305,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.empty_state
-        title="Client not found"
-        body="No client has this identifier. Return to the inventory and choose a current client."
+        title="App not found"
+        body="No app has this Client ID. Return to the app list and choose a current app."
       >
         <:actions>
           <.link
             class="lockspire-admin-btn lockspire-admin-btn-secondary"
-            href={client_index_path()}
+            href={client_index_path(@return_filters)}
           >
             Back to apps
           </.link>
@@ -350,7 +359,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             <AdminComponents.action_group>
               <:primary>
                 <.link
-                  class="lockspire-admin-btn lockspire-admin-btn-secondary"
+                  class="lockspire-admin-btn lockspire-admin-btn-primary"
                   patch={show_path(@client.client_id, :edit)}
                 >
                   Edit app details
@@ -359,7 +368,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               <:secondary>
                 <.link
                   class="lockspire-admin-btn lockspire-admin-btn-secondary"
-                  href={client_index_path()}
+                  href={client_index_path(@return_filters)}
                 >
                   Back to apps
                 </.link>
@@ -475,10 +484,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </AdminComponents.alert>
 
           <AdminComponents.action_group>
-            <:primary>
+            <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :par_policy)}>Edit authorization request rules</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :security_profile)}>Edit security profile</.link>
-            </:primary>
+            </:secondary>
           </AdminComponents.action_group>
         </AdminComponents.pane>
 
@@ -499,7 +508,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </AdminComponents.description_list>
 
           <div :if={client_secret_jwt_client?(@client)} class="lockspire-admin-detail-section">
-            <h3>Signed client requests with a shared secret</h3>
+            <h3>Signed app requests with a shared secret</h3>
             <p>
               Authentication method: <code>client_secret_jwt</code>
             </p>
@@ -507,13 +516,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               Stored signing algorithm: <code>{value_or_not_configured(@client.token_endpoint_auth_signing_alg)}</code>
             </p>
             <p class="lockspire-admin-help">
-              Lockspire verifies HS256-signed client requests with this secret. The secret itself
+              Lockspire verifies HS256-signed app requests with this secret. The secret itself
               is never shown here.
             </p>
           </div>
 
           <div :if={private_key_jwt_client?(@client)} class="lockspire-admin-detail-section">
-            <h3>Client assertion keys</h3>
+            <h3>App signing keys</h3>
             <p>
               Remote JWKS URI configured:
               <AdminComponents.long_value
@@ -556,12 +565,10 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           </div>
 
           <AdminComponents.action_group>
-            <:primary>
+            <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.client_type == :confidential} patch={show_path(@client.client_id, :rotate_secret)}>
                 Rotate client secret
               </.link>
-            </:primary>
-            <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" :if={@client.provenance == :self_registered} patch={show_path(@client.client_id, :rotate_registration_access_token)}>
                 Rotate app management token
               </.link>
@@ -619,13 +626,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </p>
           </div>
           <AdminComponents.action_group>
-            <:primary>
+            <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :redirects)}>Edit sign-in return URLs</.link>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_uris)}>
                 Edit sign-out return URLs
               </.link>
-            </:primary>
-            <:secondary>
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" patch={show_path(@client.client_id, :logout_propagation)}>
                 Edit sign-out notifications
               </.link>
@@ -667,7 +672,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
         <AdminComponents.pane
           title="Related records"
-          subtitle="Use this client ID to find the app's tokens, consent grants, and sign-out notices."
+          subtitle="Use this Client ID to find the app's tokens, consent grants, and sign-out notices."
         >
           <AdminComponents.description_list>
             <:item label="Client ID">
@@ -675,7 +680,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </:item>
             <:item label="Finding related records">
               <span>
-                These links open the full inventories. Match records there by this client ID.
+                These links open the full inventories. Match records there by this Client ID.
               </span>
             </:item>
           </AdminComponents.description_list>
@@ -817,7 +822,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       <AdminComponents.section_card
         :if={@action == :rotate_secret}
         title="Rotate client secret"
-        subtitle="Update the app with the new secret before it requests tokens. Copy it when shown; Lockspire does not store or show it again."
+        subtitle="Update the app with the new secret before it requests tokens. Copy it when shown; Lockspire stores only a hash, so it cannot show the secret again."
       >
         <RotateSecretComponent.rotation_panel
           show_heading={false}
@@ -1032,7 +1037,11 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
      "Replace this app's client secret. The new secret is shown once, right after you confirm."}
   end
 
-  defp show_path(client_id, :show), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+  defp show_path(client_id, :show),
+    do:
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
+
   defp show_path(client_id, :edit), do: show_path(client_id, :show) <> "/edit"
 
   defp show_path(client_id, :logout_propagation),
@@ -1049,7 +1058,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp show_path(client_id, :rotate_registration_access_token),
     do: show_path(client_id, :show) <> "/rotate-registration-access-token"
 
-  defp client_index_path, do: Lockspire.mount_path() <> "/admin/clients"
+  defp client_index_path(filters), do: Index.index_path(filters)
 
   defp safe_form_params(params, mode) when is_map(params) do
     Map.take(params, form_param_keys(mode))

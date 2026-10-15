@@ -71,7 +71,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _missing_view, missing_html} =
              live(conn_for_admin(), "/admin/clients/not-a-current-client")
 
-    assert missing_html =~ "Client not found"
+    assert missing_html =~ "App not found"
     assert missing_html =~ "Back to apps"
     refute missing_html =~ "Could not load app"
 
@@ -87,7 +87,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       assert error_html =~ "Could not load app"
       assert error_html =~ "be loaded. Reload the page or go back to the app list."
       assert error_html =~ "Reload this view"
-      refute error_html =~ "Client not found"
+      refute error_html =~ "App not found"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
@@ -346,7 +346,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     invalid_security_html = render_invalid_security_profile_html(client.client_id)
 
     invalid_security_text = text_content(invalid_security_html)
-    assert invalid_security_text =~ "Client security profile was not saved."
+    assert invalid_security_text =~ "App security profile was not saved."
     assert invalid_security_text =~ "Review this value and try again."
     assert invalid_security_text =~ "security-show-client"
     assert invalid_security_html =~ ~s(aria-invalid="true")
@@ -602,7 +602,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "redacted"
     assert html =~ "App management token"
     assert html =~ "Review API registration"
-    assert html =~ "These links open the full inventories. Match records there by this client ID."
+    assert html =~ "These links open the full inventories. Match records there by this Client ID."
 
     html
     |> HtmlAssertions.assert_no_duplicate_ids()
@@ -633,7 +633,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "Rotate client secret"
     assert html =~ "previous secret stops being the current credential"
     assert html =~ "Copy it when shown"
-    assert html =~ "does not store or show it again"
+    assert html =~ "stores only a hash, so it cannot show the secret again"
     assert html =~ "before it requests tokens"
     assert html =~ ~s(phx-disable-with="Rotating client secret…")
     refute html =~ "sha256:show:hash"
@@ -948,7 +948,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{pkjwt_client.client_id}")
 
-    assert html =~ "Client assertion keys"
+    assert html =~ "App signing keys"
     assert html =~ "Remote JWKS URI configured"
     assert html =~ "https://client.example.com/.well-known/jwks.json"
     assert html =~ "Signed client assertion with app key"
@@ -1097,7 +1097,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{jwt_client.client_id}")
 
-    assert html =~ "Signed client requests with a shared secret"
+    assert html =~ "Signed app requests with a shared secret"
     assert html =~ "client_secret_jwt"
     assert html =~ "HS256"
     refute html =~ "verifier material"
@@ -1173,7 +1173,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       })
       |> render_submit()
 
-    assert error_html =~ "Client changes were not saved."
+    assert error_html =~ "App changes were not saved."
     assert error_html =~ ~s(role="alert")
     assert error_html =~ ~s(tabindex="-1")
     assert error_html =~ ~s(data-lockspire-focus-on-insert="true")

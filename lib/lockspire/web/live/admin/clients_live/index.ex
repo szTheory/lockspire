@@ -114,14 +114,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <p class="lockspire-admin-help">Add an app that will use this service.</p>
           </div>
 
-          <FormComponent.client_form
-            mode={:new}
-            errors={@form_errors}
-            params={@create_params}
-            show_heading={false}
-          />
-
-          <div :if={@created_result}>
+          <div :if={@created_result} id="client-created-result">
             <p>Client ID: <code>{@created_result.client.client_id}</code></p>
             <.link
               class="lockspire-admin-btn lockspire-admin-btn-secondary"
@@ -158,6 +151,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
               Hide credential
             </AdminComponents.admin_button>
           </div>
+
+          <FormComponent.client_form
+            mode={:new}
+            errors={@form_errors}
+            params={@create_params}
+            show_heading={false}
+          />
         </div>
       <% else %>
       <AdminComponents.page_hero
@@ -232,7 +232,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             variant={:danger}
             title="Could not load apps"
           >
-            <p>No matching-client result is available until this read succeeds. Reload this view or return to the inventory and try again.</p>
+            <p>The app list is not available until this read succeeds. Reload this view or return to the inventory and try again.</p>
             <div class="lockspire-admin-client-inventory__recovery">
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path(@filters)}>
                 Reload this view
@@ -247,12 +247,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             :if={@inventory_state == :loaded and @clients == []}
             title={
               if first_use_empty?(@filters, @total_clients),
-                do: "No clients yet",
+                do: "No apps yet",
                 else: "No matching apps"
             }
             body={
               if first_use_empty?(@filters, @total_clients),
-                do: "Create a client to begin connecting applications.",
+                do: "Add an app to let it sign people in through this service.",
                 else: "Change or clear the filters to see other records."
             }
           >
@@ -285,7 +285,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                   <AdminComponents.status_badge status={client.provenance} />
                 </:status>
                 <:actions>
-                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id)}>
+                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id, @filters)}>
                     View app
                   </.link>
                 </:actions>
@@ -360,7 +360,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     Enum.slice(clients, (page - 1) * @per_page, @per_page)
   end
 
-  defp normalize_filters(params) do
+  @doc false
+  # Shared with ClientsLive.Show so the details page can return to the same filtered list.
+  def normalize_filters(params) do
     %{
       "q" => normalize_query(Map.get(params, "q", "")),
       "status" => normalize_status(Map.get(params, "status", "all")),
@@ -415,10 +417,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp clients_index_path(filters),
     do: Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(filters)
 
+  @doc false
+  # Builds the list path from normalized filters, omitting the query when no filter is set.
+  def index_path(filters) do
+    if filters == base_filters(),
+      do: clients_index_path(nil),
+      else: clients_index_path(filters)
+  end
+
   defp client_create_path(filters),
     do: Lockspire.mount_path() <> "/admin/clients/new?" <> URI.encode_query(filters)
 
-  defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+  defp client_show_path(client_id, filters \\ nil)
+
+  defp client_show_path(client_id, filters) do
+    path =
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
+
+    if is_nil(filters) or filters == base_filters(),
+      do: path,
+      else: path <> "?" <> URI.encode_query(filters)
+  end
 
   defp first_use_empty?(filters, 0) do
     filters["q"] in [nil, ""] and filters["status"] == "all" and

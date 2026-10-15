@@ -1382,6 +1382,23 @@ defmodule Lockspire.Web.Admin.CSS do
     margin-block-start: calc(-1 * var(--ls-space-2));
   }
 
+  .lockspire-admin-client-create {
+    display: grid;
+    gap: var(--ls-space-4);
+    justify-items: start;
+  }
+
+  .lockspire-admin-client-create > form,
+  .lockspire-admin-client-create > #client-created-result {
+    justify-self: stretch;
+  }
+
+  #client-created-result {
+    display: grid;
+    gap: var(--ls-space-3);
+    justify-items: start;
+  }
+
   .lockspire-admin-help-block {
     display: grid;
     gap: var(--ls-space-2);

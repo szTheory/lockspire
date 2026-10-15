@@ -288,7 +288,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
-  attr(:variant, :atom, default: :secondary)
+  attr(:variant, :atom, default: :secondary, values: [:primary, :secondary, :danger])
   attr(:type, :string, default: "button")
   attr(:href, :string, default: nil)
   attr(:disabled, :boolean, default: false)
@@ -1010,7 +1010,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   defp button_class(:primary), do: "lockspire-admin-btn lockspire-admin-btn-primary"
   defp button_class(:danger), do: "lockspire-admin-btn lockspire-admin-btn-danger"
-  defp button_class(_variant), do: "lockspire-admin-btn lockspire-admin-btn-secondary"
+  defp button_class(:secondary), do: "lockspire-admin-btn lockspire-admin-btn-secondary"
 
   defp decision_summary_item_class(:danger),
     do: "lockspire-admin-decision-summary__item lockspire-admin-decision-summary__item-danger"

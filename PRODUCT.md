@@ -161,6 +161,15 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | Creating client | Creating app |
 | Saving client changes | Saving app changes |
 | Client changes saved | App changes saved |
+| No clients yet | No apps yet |
+| Client not found | App not found |
+| Client was not created | App was not created |
+| Client changes were not saved | App changes were not saved |
+| Client could not be saved | App could not be saved |
+| Client security profile | App security profile |
+| Edit client settings | Edit app settings |
+| Client assertion keys | App signing keys |
+| matching-client | (name the list) |
 
 Voice is calm, direct, concise, and specific. Use domain nouns and clear verbs; avoid promotional filler, generic AI copy, exaggerated reassurance, and repeated explanations.
 
