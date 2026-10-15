@@ -290,6 +290,8 @@ const SWEEP_SCRIPT = `(() => {
   for (const el of document.body.querySelectorAll("*")) {
     if (clipped.length >= 10) break;
     if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + 1) continue;
+    const box = el.getBoundingClientRect();
+    if (box.width <= 1 && box.height <= 1) continue; // visually-hidden helper (sr-only), clipped by design
     const ox = getComputedStyle(el).overflowX;
     if (ox !== "hidden" && ox !== "clip") continue;
     if (scrollerAllowed(el)) continue;
