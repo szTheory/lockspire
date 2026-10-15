@@ -2893,6 +2893,42 @@ defmodule Lockspire.Web.Admin.CSS do
     }
   }
 
+  /* Phones: keep the header short so the page starts above the fold. Theme
+     and Times share one row with their labels stacked above the selects. */
+  @media (max-width: 640px) {
+    .lockspire-admin-header {
+      padding-bottom: var(--ls-space-4);
+      padding-top: var(--ls-space-4);
+    }
+
+    .lockspire-admin-brand {
+      margin-bottom: var(--ls-space-3);
+    }
+
+    .lockspire-admin-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .lockspire-admin-header-row {
+      gap: var(--ls-space-3);
+    }
+
+    .lockspire-admin-header-preferences {
+      display: grid;
+      gap: var(--ls-space-2) var(--ls-space-3);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lockspire-admin-theme-control {
+      gap: var(--ls-space-1);
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lockspire-admin-time-status {
+      grid-column: 1 / -1;
+    }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .lockspire-admin-shell *,
     .lockspire-admin-shell *::before,
