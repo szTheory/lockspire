@@ -95,7 +95,8 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-surface-inverse: var(--ls-color-gray-950);
     --ls-text-strong: var(--ls-color-gray-950);
     --ls-text-body: var(--ls-color-gray-700);
-    --ls-text-muted: var(--ls-color-gray-500);
+    /* Slightly darker than gray-500 so muted text keeps 4.5:1 on --ls-surface-muted. */
+    --ls-text-muted: #5f6f84;
     --ls-text-accent: var(--ls-color-brand-600);
     --ls-border-subtle: var(--ls-color-gray-200);
     --ls-border-strong: var(--ls-color-gray-300);

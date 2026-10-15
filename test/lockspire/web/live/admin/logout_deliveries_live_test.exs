@@ -289,7 +289,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Discarded"
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
-    assert page_html =~ "Succeeded"
+    assert page_html =~ "Accepted by app"
 
     assert page_html =~ "Lockspire is preparing the request; it has not been sent yet."
 
@@ -610,7 +610,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Retryable"
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
-    assert page_html =~ "Succeeded"
+    assert page_html =~ "Accepted by app"
     assert page_html =~ "The request failed and may be tried again automatically."
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Request failed: timeout"

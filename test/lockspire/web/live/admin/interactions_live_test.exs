@@ -114,14 +114,23 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "The request was denied."
     assert page_html =~ "The request expired before it was completed."
 
-    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+    assert page_html =~
+             Lockspire.Redaction.handle(
+               :interaction,
+               "test-interaction-pending-login-with-a-long-safe-review-handle"
+             )
+
+    refute page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
     assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
     assert page_html =~ "View app details"
-    assert page_html =~ "test-interaction-pending-consent"
-    assert page_html =~ "test-interaction-completed"
-    assert page_html =~ "test-interaction-denied"
-    assert page_html =~ "test-interaction-expired"
-    assert page_html =~ "Request ID"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(:interaction, "test-interaction-pending-consent")
+
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-completed")
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-denied")
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-expired")
+    assert page_html =~ "Request reference"
     assert page_html =~ "Client ID"
     assert page_html =~ "Account"
     assert page_html =~ "Prompt"
@@ -161,11 +170,21 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
            |> Enum.sort() == [:pending_consent, :pending_login]
 
     assert page_html =~ "2 requests waiting for sign-in or consent"
-    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
-    assert page_html =~ "test-interaction-pending-consent"
-    refute page_html =~ "test-interaction-completed"
-    refute page_html =~ "test-interaction-denied"
-    refute page_html =~ "test-interaction-expired"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(
+               :interaction,
+               "test-interaction-pending-login-with-a-long-safe-review-handle"
+             )
+
+    refute page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(:interaction, "test-interaction-pending-consent")
+
+    refute page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-completed")
+    refute page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-denied")
+    refute page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-expired")
     refute page_html =~ "Completed sign-in request"
     refute page_html =~ "Denied sign-in request"
     refute page_html =~ "Expired sign-in request"
@@ -197,11 +216,21 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
 
     assert length(socket.assigns.interactions) == 5
     assert page_html =~ "5 sign-in requests recorded"
-    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
-    assert page_html =~ "test-interaction-pending-consent"
-    assert page_html =~ "test-interaction-completed"
-    assert page_html =~ "test-interaction-denied"
-    assert page_html =~ "test-interaction-expired"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(
+               :interaction,
+               "test-interaction-pending-login-with-a-long-safe-review-handle"
+             )
+
+    refute page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(:interaction, "test-interaction-pending-consent")
+
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-completed")
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-denied")
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "test-interaction-expired")
     refute page_html =~ "View all sign-in requests"
   end
 
@@ -345,7 +374,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
       |> page_markup()
 
     assert page_html =~ "1 sign-in request recorded"
-    assert page_html =~ "one-safe-interaction-id"
+    assert page_html =~ Lockspire.Redaction.handle(:interaction, "one-safe-interaction-id")
+    refute page_html =~ "one-safe-interaction-id"
     assert page_html =~ ~s(href="/lockspire/admin/clients/client-one")
     refute page_html =~ "one sign-in requests recorded"
     refute_unsupported_queue_controls(page_html)
@@ -391,7 +421,14 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
     assert page_html =~ "Expired sign-in request"
     assert page_html =~ "Not recorded"
     assert page_html =~ "lockspire-admin-long-value"
-    assert page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
+
+    assert page_html =~
+             Lockspire.Redaction.handle(
+               :interaction,
+               "test-interaction-pending-login-with-a-long-safe-review-handle"
+             )
+
+    refute page_html =~ "test-interaction-pending-login-with-a-long-safe-review-handle"
     assert page_html =~ "client-with-a-very-long-safe-fixture-value-pending-login"
     refute page_html =~ "account-with-a-very-long-safe-fixture-value"
     refute_protocol_field_context(page_html, "state")

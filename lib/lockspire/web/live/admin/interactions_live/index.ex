@@ -122,7 +122,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
                 subtitle={interaction_pressure(interaction)}
               >
                 <:meta>
-                  <span>Request ID <AdminComponents.long_value value={safe_identifier(interaction.interaction_id)} kind={:id} /></span>
+                  <span>Request reference <AdminComponents.long_value value={redacted_handle(:interaction, interaction.interaction_id)} kind={:id} /></span>
                   <span>Client ID <AdminComponents.long_value value={safe_identifier(interaction.client_id)} kind={:id} /></span>
                   <span>Account <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
                   <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
@@ -155,7 +155,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   defp load_interactions(filter) do
     case Admin.list_interactions() do
       {:ok, interactions} when is_list(interactions) ->
-        {:loaded, filter_interactions(interactions, filter)}
+        {:loaded, interactions |> filter_interactions(filter) |> Enum.map(&displayed_status/1)}
 
       _other ->
         {:unavailable, []}
@@ -188,6 +188,17 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
        do: DateTime.compare(expires_at, now) == :gt
 
   defp waiting?(_interaction, _now), do: false
+
+  # A waiting request past its expiry is shown as expired, even before the
+  # sweeper updates its stored status.
+  defp displayed_status(%{status: status} = interaction)
+       when status in [:pending_login, :pending_consent] do
+    if waiting?(interaction, DateTime.utc_now()),
+      do: interaction,
+      else: %{interaction | status: :expired}
+  end
+
+  defp displayed_status(interaction), do: interaction
 
   defp interaction_count_copy(0, :all), do: "0 sign-in requests recorded"
   defp interaction_count_copy(1, :all), do: "1 sign-in request recorded"

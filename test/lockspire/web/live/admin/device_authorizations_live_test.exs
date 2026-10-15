@@ -132,7 +132,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "The user still needs to confirm this request."
 
     assert page_html =~
-             "The user approved this request. The app is waiting to receive the result."
+             "The user approved this request. The app has not collected the result yet."
 
     assert page_html =~ "The user denied this request."
     assert page_html =~ "This request expired before it was completed."

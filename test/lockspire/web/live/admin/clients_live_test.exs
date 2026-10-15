@@ -353,7 +353,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     Application.put_env(
       :lockspire,
       Lockspire.Web.Endpoint,
-      Keyword.delete(endpoint_config, :secret_key_base)
+      # An empty key is checked before any inferred fallback, so sealing fails.
+      Keyword.put(endpoint_config, :secret_key_base, "")
     )
 
     on_exit(fn -> Application.put_env(:lockspire, Lockspire.Web.Endpoint, endpoint_config) end)

@@ -167,8 +167,11 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   # unavailable instead of crashing the page.
   defp load_device_authorizations(filter) do
     case Admin.list_device_authorizations() do
-      {:ok, auths} when is_list(auths) -> {:loaded, filter_device_authorizations(auths, filter)}
-      _other -> {:unavailable, []}
+      {:ok, auths} when is_list(auths) ->
+        {:loaded, auths |> filter_device_authorizations(filter) |> Enum.map(&displayed_status/1)}
+
+      _other ->
+        {:unavailable, []}
     end
   rescue
     _error -> {:unavailable, []}
@@ -206,6 +209,14 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
 
   defp waiting?(_auth, _now), do: false
 
+  # A pending request past its expiry is shown as expired, even before the
+  # sweeper updates its stored status.
+  defp displayed_status(%{status: :pending} = auth) do
+    if waiting?(auth, DateTime.utc_now()), do: auth, else: %{auth | status: :expired}
+  end
+
+  defp displayed_status(auth), do: auth
+
   defp filter_device_authorizations(authorizations, :all), do: authorizations
 
   defp device_authorization_count_copy(0, :all), do: "Showing no device requests"
@@ -242,7 +253,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     do: "The user still needs to confirm this request."
 
   defp device_authorization_pressure(%{status: :approved}),
-    do: "The user approved this request. The app is waiting to receive the result."
+    do: "The user approved this request. The app has not collected the result yet."
 
   defp device_authorization_pressure(%{status: :denied}),
     do: "The user denied this request."

@@ -1000,6 +1000,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp status_label(:dcr), do: "DCR"
   defp status_label(:one_time), do: "One-time"
   defp status_label(:initial_access_token), do: "App setup token"
+  defp status_label(:succeeded), do: "Accepted by app"
   defp status_label(:pending_login), do: "Waiting for sign-in"
   defp status_label(:pending_consent), do: "Waiting for consent"
 

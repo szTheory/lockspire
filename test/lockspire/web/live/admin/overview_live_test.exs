@@ -235,7 +235,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     refute has_element?(view, "a button[aria-describedby='logout-delivery-help']")
 
     assert html =~ "Refresh tokens used more than once"
-    assert html =~ "Unconfirmed app sign-outs"
+    assert html =~ "App sign-out notices needing review"
 
     assert rendered_text(html) =~ "Lockspire revoked every token in its family."
     assert rendered_text(html) =~ "it does not prove theft"
@@ -256,7 +256,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     refute html =~ "Live operations"
 
     assert length(Regex.scan(~r/Refresh tokens used more than once/, html)) == 1
-    assert length(Regex.scan(~r/Unconfirmed app sign-outs/, html)) == 1
+    assert length(Regex.scan(~r/App sign-out notices needing review/, html)) == 1
 
     for href <- [
           "/admin/tokens?status=reuse_detected",
@@ -291,7 +291,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     refute html =~ "Provider defaults"
     assert html =~ "Active token-signing key"
     assert html =~ "Refresh tokens used more than once"
-    assert html =~ "Unconfirmed app sign-outs"
+    assert html =~ "App sign-out notices needing review"
     refute html =~ "Active app setup token"
     assert html =~ "/admin/dcr"
     refute html =~ "Measured from"
@@ -323,7 +323,8 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
              live(conn_for_admin(), "/admin/interactions?status=pending")
 
     assert interactions_html =~ "1 request waiting for sign-in or consent"
-    assert interactions_html =~ "overview-interaction"
+    assert interactions_html =~ Lockspire.Redaction.handle(:interaction, "overview-interaction")
+    refute interactions_html =~ "overview-interaction"
     refute interactions_html =~ "Sign-in request queue"
     refute interactions_html =~ "Active interactions"
 
@@ -342,7 +343,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     assert [_, "1"] =
              Regex.run(
-               ~r{<a href="/admin/logouts\?status=needs_review">Unconfirmed app sign-outs</a>.*?</span>\s*<strong>(\d+)</strong>}s,
+               ~r{<a href="/admin/logouts\?status=needs_review">App sign-out notices needing review</a>.*?</span>\s*<strong>(\d+)</strong>}s,
                html
              )
 
@@ -512,10 +513,21 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     assert {:ok, _, pending_interactions} =
              live(conn_for_admin(), "/admin/interactions?status=pending")
 
-    assert pending_interactions =~ "overview-interaction"
-    refute pending_interactions =~ "overview-stale-interaction"
+    assert pending_interactions =~
+             Lockspire.Redaction.handle(:interaction, "overview-interaction")
+
+    refute pending_interactions =~ "overview-interaction"
+
+    refute pending_interactions =~
+             Lockspire.Redaction.handle(:interaction, "overview-stale-interaction")
+
     assert {:ok, _, all_interactions} = live(conn_for_admin(), "/admin/interactions")
-    assert all_interactions =~ "overview-stale-interaction"
+
+    assert all_interactions =~
+             Lockspire.Redaction.handle(:interaction, "overview-stale-interaction")
+
+    refute all_interactions =~ "overview-stale-interaction"
+    assert all_interactions =~ "Expired sign-in request"
 
     assert summary_stat(all_interactions, "Waiting for sign-in") +
              summary_stat(all_interactions, "Waiting for consent") == 1
@@ -526,6 +538,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     refute pending_devices =~ "overview-stale-client"
     assert {:ok, _, all_devices} = live(conn_for_admin(), "/admin/device_authorizations")
     assert all_devices =~ "overview-stale-client"
+    assert all_devices =~ "Expired before completion"
     assert summary_stat(all_devices, "Pending") == 1
   end
 
