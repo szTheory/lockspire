@@ -8,12 +8,12 @@
 
 ### Clear, focused admin tasks
 
-- [ ] **UI-01**: Each of the 29 existing admin route scorecards and the Phase 151 `/admin/clients/new` route has a clearly identifiable user job, a useful page title, and an information order that puts the decision or next task before secondary context. Review all 30 current paths; remove duplicate page/section titles and generic introductions when they repeat information.
-- [ ] **UI-02**: User-facing labels and help use plain, consistent language grounded in staff users' goals. Remove backend/provenance commentary that does not help a decision; explain necessary protocol terms in context, and describe unfamiliar state in terms of its supported consequence and next action. Do not use “operator” as visible audience copy or generic UI filler.
+- [x] **UI-01**: Each of the 29 existing admin route scorecards and the Phase 151 `/admin/clients/new` route has a clearly identifiable user job, a useful page title, and an information order that puts the decision or next task before secondary context. Review all 30 current paths; remove duplicate page/section titles and generic introductions when they repeat information.
+- [x] **UI-02**: User-facing labels and help use plain, consistent language grounded in staff users' goals. Remove backend/provenance commentary that does not help a decision; explain necessary protocol terms in context, and describe unfamiliar state in terms of its supported consequence and next action. Do not use “operator” as visible audience copy or generic UI filler.
 - [ ] **UI-03**: Overview metrics and queue labels accurately match the records and filters they describe. Explain token reuse and logout-delivery outcomes without implying compromise or claiming unsupported controls. A failed read remains distinct from an empty or healthy result.
 - [ ] **UI-04**: Client registration is a dedicated route with one title, one concise explanation, focused form context, and a clear return path to the client inventory. Other client task routes show the relevant client identity and task without making the user scan the full unrelated workspace first.
 - [ ] **UI-05**: Primary, secondary, and destructive action emphasis follows a consistent, documented rule across the admin surface. The main task action is easiest to identify; supporting navigation and recovery actions remain quieter; destructive actions retain explicit consequence and confirmation.
-- [ ] **UI-06**: Pages use the existing components and design tokens to improve hierarchy, spacing, scanability, and control affordances. Remove metric rows, nested containers, and helper text that do not help the current task. Correct the theme selector's demonstrated right-edge caret spacing.
+- [x] **UI-06**: Pages use the existing components and design tokens to improve hierarchy, spacing, scanability, and control affordances. Remove metric rows, nested containers, and helper text that do not help the current task. Correct the theme selector's demonstrated right-edge caret spacing.
 - [ ] **UI-07**: Changed views remain usable at narrow widths and 200% zoom, with light/dark/system theme parity, readable text contrast, visible keyboard focus, labeled controls, reduced-motion support, and no clipped content or actions.
 
 ### Automated evidence and safety boundaries
@@ -48,12 +48,12 @@ Every requirement maps to exactly one v1.42 phase; the roadmap will assign phase
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UI-01 | Phase 153 | Pending |
-| UI-02 | Phase 153 | Pending |
+| UI-01 | Phase 153 | Complete |
+| UI-02 | Phase 153 | Complete |
 | UI-03 | Phase 152 | Pending |
 | UI-04 | Phase 151 | Pending |
 | UI-05 | Phase 151 | Pending |
-| UI-06 | Phase 153 | Pending |
+| UI-06 | Phase 153 | Complete |
 | UI-07 | Phase 154 | Pending |
 | PROOF-01 | Phase 154 | Pending |
 | SAFE-01 | Phase 154 | Pending |

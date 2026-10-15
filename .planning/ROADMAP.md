@@ -22,7 +22,7 @@ v1.42 refines the existing admin UI around real staff tasks: focused client regi
 
 - [ ] **Phase 151: Focused Client Registration & Settings** — Give client creation its own route, make client task paths focused, and apply clear action emphasis.
 - [ ] **Phase 152: Overview & Queue State Clarity** — Make overview signals and read-only queue outcomes accurate, understandable, and actionable within their existing limits.
-- [ ] **Phase 153: Configure & Support Page Refinement** — Apply plain language, clear page hierarchy, and purposeful shared components across all 30 current admin paths.
+- [x] **Phase 153: Configure & Support Page Refinement** — Apply plain language, clear page hierarchy, and purposeful shared components across all 30 current admin paths.
 - [ ] **Phase 154: Responsive, Theme & Route Proof** — Finish changed views across viewport, zoom, theme, and keyboard states with redaction-safe rendered evidence and recurring automated checks.
 
 </details>
@@ -41,6 +41,7 @@ v1.42 refines the existing admin UI around real staff tasks: focused client regi
 ## v1.42 Admin UI Clarity & Workflow Refinement
 
 ### Phase 151: Focused Client Registration & Settings
+
 **Goal**: Staff can register a client and complete a client-specific task without wading through unrelated inventory content, while recognizing the page's main action.
 **Depends on**: Nothing (first phase of v1.42).
 **Requirements**: UI-04, UI-05
@@ -48,13 +49,16 @@ v1.42 refines the existing admin UI around real staff tasks: focused client regi
   1. From the client inventory, staff can open a dedicated registration page with one clear title, one concise explanation, a focused form, and a visible path back to the inventory.
   2. Client detail, edit, redirect, logout, policy, and credential tasks identify the client and the task at the top and provide a direct return path to its context.
   3. Across the admin routes, the principal safe task is visually primary, supporting navigation and recovery actions are quieter, and destructive actions state their consequence and require the existing confirmation.
+
 **Plans:** 2 plans
 Plans:
 - [ ] 151-01-PLAN.md — Dedicated client registration route and safe create outcomes
 - [ ] 151-02-PLAN.md — Focused client settings context and shared action hierarchy
+
 **UI hint**: yes
 
 ### Phase 152: Overview & Queue State Clarity
+
 **Goal**: Staff can understand current provider and queue signals without mistaking a failed read for an empty inventory or over-interpreting an event.
 **Depends on**: Phase 151.
 **Requirements**: UI-03
@@ -62,6 +66,7 @@ Plans:
   1. Overview counts and links describe the same underlying records and status filters that the linked inventory pages show.
   2. Token reuse copy identifies the recorded reuse and supported family-wide consequence without claiming compromise; logout delivery copy explains what was attempted or failed and where to investigate next.
   3. Interaction, device authorization, and logout queues remain read-only, show meaningful record states, and distinguish unavailable data from healthy zero or empty results.
+
 **Plans**: 5 plans
 Plans:
 - [ ] 152-01-PLAN.md — Exact waiting-interaction pivot and historical wording
@@ -69,9 +74,11 @@ Plans:
 - [ ] 152-03-PLAN.md — Device authorization request title and state clarity
 - [ ] 152-04-PLAN.md — Accurate logout-delivery outcomes
 - [ ] 152-05-PLAN.md — Plain overview facts and evidence-aware signal copy
+
 **UI hint**: yes
 
 ### Phase 153: Configure & Support Page Refinement
+
 **Goal**: Staff can scan each Configure and Support page by its actual task, understand necessary protocol language in context, and find the relevant decision or next action quickly.
 **Depends on**: Phases 151 and 152.
 **Requirements**: UI-01, UI-02, UI-06
@@ -79,18 +86,21 @@ Plans:
   1. A current review covers all 29 route scorecards plus `/admin/clients/new` (30 current paths); each page has a clear title, task-centered information order, and no duplicate heading or generic introduction that repeats it.
   2. Labels and help use consistent, user-facing language; low-value inventory provenance and implementation commentary are removed, and necessary OAuth/OIDC terms are explained where they affect a decision.
   3. The shared components and tokens create readable spacing, hierarchy, and control affordances without unnecessary metric rows or nested containers, and the theme selector caret has visible inset from the control edge.
-**Plans**: 7 plans
+
+**Plans**: 7/7 plans complete
 Plans:
 - [x] 153-00-PLAN.md — Redaction-safe visual baseline for all 30 current paths
-- [ ] 153-01-PLAN.md — Shared hierarchy, provider settings, and theme-select inset
-- [ ] 153-02-PLAN.md — Plain provider security and registration policy pages
-- [ ] 153-03-PLAN.md — Signing-key and adopter setup-token pages
-- [ ] 153-04-PLAN.md — Consent-grant and token support pages
-- [ ] 153-05-PLAN.md — Complete inherited hero caller migration and preserve client/queue contracts
-- [ ] 153-06-PLAN.md — Rendered review matrix for all 30 current admin paths
+- [x] 153-01-PLAN.md — Shared hierarchy, provider settings, and theme-select inset
+- [x] 153-02-PLAN.md — Plain provider security and registration policy pages
+- [x] 153-03-PLAN.md — Signing-key and adopter setup-token pages
+- [x] 153-04-PLAN.md — Consent-grant and token support pages
+- [x] 153-05-PLAN.md — Complete inherited hero caller migration and preserve client/queue contracts
+- [x] 153-06-PLAN.md — Rendered review matrix for all 30 current admin paths
+
 **UI hint**: yes
 
 ### Phase 154: Responsive, Theme & Route Proof
+
 **Goal**: Changed admin journeys remain usable across screen sizes and preferences, with repeatable evidence that preserves sensitive values and existing security behavior.
 **Depends on**: Phases 151–153.
 **Requirements**: UI-07, PROOF-01, SAFE-01
@@ -98,6 +108,7 @@ Plans:
   1. Changed pages remain readable and operable at narrow widths and 200% zoom in light, dark, and system themes, with sufficient contrast, labeled controls, visible keyboard focus, reduced-motion support, and no clipped content or actions.
   2. All 30 current paths have synthetic, redaction-safe baseline and final captures; capture each full page or, when a full-page image is too tall or unreadable, each meaningful section. Focused tests/browser checks prove affected tasks and recurring visual behavior.
   3. Automated checks confirm the cleanup leaves protocol behavior, security defaults, credential redaction and copy-once handling, revocation scopes, queue read-only boundaries, and host ownership unchanged; new checks join CI only when reliable and recurring.
+
 **Plans**: TBD
 **UI hint**: yes
 
@@ -107,7 +118,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 151. Focused Client Registration & Settings | 0/2 | Plans created | - |
 | 152. Overview & Queue State Clarity | 0/TBD | Not started | - |
-| 153. Configure & Support Page Refinement | 1/7 | Baseline captured; implementation next | - |
+| 153. Configure & Support Page Refinement | 7/7 | Complete    | 2026-10-15 |
 | 154. Responsive, Theme & Route Proof | 0/TBD | Not started | - |
 
 ## Completed Backlog Scope
