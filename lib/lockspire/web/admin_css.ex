@@ -303,6 +303,10 @@ defmodule Lockspire.Web.Admin.CSS do
       color: var(--ls-text-accent);
       font-size: 0.9375rem;
       font-weight: 600;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .lockspire-admin-nav-toggle-action {
@@ -1726,16 +1730,22 @@ defmodule Lockspire.Web.Admin.CSS do
   /* Sub-nav */
   .lockspire-admin-secondary-nav {
     display: flex;
-    flex-wrap: wrap;
     min-width: 0;
-    gap: var(--ls-space-2) var(--ls-space-4);
+    gap: var(--ls-space-4);
     margin-bottom: var(--ls-space-6);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
     border-bottom: 1px solid var(--ls-border-subtle);
   }
 
+  .lockspire-admin-secondary-nav::-webkit-scrollbar {
+    display: none;
+  }
+
   .lockspire-admin-secondary-nav a {
-    max-width: 100%;
-    overflow-wrap: anywhere;
+    flex: none;
+    white-space: nowrap;
     padding: var(--ls-space-2) 0;
     color: var(--ls-text-muted);
     text-decoration: none;

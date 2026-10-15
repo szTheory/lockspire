@@ -56,6 +56,16 @@ defmodule Lockspire.Web.Admin.Controls do
         rememberAnchor();
       });
     });
+    const revealCurrentSection = () => {
+      const current = nav();
+      const link = current?.querySelector('a[aria-current="page"]');
+      if (!link || current.scrollWidth <= current.clientWidth) return;
+      const start = link.offsetLeft - current.offsetLeft;
+      if (start < current.scrollLeft || start + link.offsetWidth > current.scrollLeft + current.clientWidth) {
+        current.scrollLeft = start - (current.clientWidth - link.offsetWidth) / 2;
+      }
+    };
+    window.addEventListener("phx:page-loading-stop", () => requestAnimationFrame(revealCurrentSection));
     let scrollTimer;
     window.addEventListener("scroll", () => {
       clearTimeout(scrollTimer);
