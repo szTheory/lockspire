@@ -52,6 +52,7 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
           "--ls-surface-page",
           "--ls-text-strong",
           "--ls-border-subtle",
+          "--ls-border-control",
           "--ls-status-success-bg",
           "--ls-focus-ring-color",
           "--ls-motion-duration-fast"
@@ -155,7 +156,7 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
   def assert_contrast_pairs! do
     themes = theme_tokens()
 
-    for {theme, tokens} <- themes, {fg, bg, minimum} <- contrast_pairs() do
+    for {theme, tokens} <- themes, {fg, bg, minimum} <- contrast_pairs(theme) do
       ratio = contrast_ratio(resolve_color(tokens, fg, theme), resolve_color(tokens, bg, theme))
 
       assert ratio >= minimum,
@@ -163,12 +164,38 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     end
   end
 
-  defp contrast_pairs do
-    [
-      # Visible control boundaries (WCAG 1.4.11).
-      {"--ls-border-control", "--ls-surface-panel", 3.0},
-      {"--ls-border-control", "--ls-surface-page", 3.0}
-    ]
+  defp contrast_pairs(theme) do
+    surfaces = ["--ls-surface-panel", "--ls-surface-page", "--ls-surface-muted"]
+
+    text =
+      for fg <- ["--ls-text-body", "--ls-text-muted"], bg <- surfaces, do: {fg, bg, 4.5}
+
+    accent =
+      for bg <- ["--ls-surface-panel", "--ls-surface-muted"], do: {"--ls-text-accent", bg, 4.5}
+
+    status =
+      for kind <- ["success", "warning", "danger", "info"],
+          do: {"--ls-status-#{kind}-text", "--ls-status-#{kind}-bg", 4.5}
+
+    # Primary button label: panel on brand-600 in light (.lockspire-admin-btn-primary),
+    # page on the accent in dark (@dark_btn).
+    primary_button =
+      case theme do
+        "light" -> {"--ls-surface-panel", "--ls-color-brand-600", 4.5}
+        "dark" -> {"--ls-surface-page", "--ls-text-accent", 4.5}
+      end
+
+    text ++
+      accent ++
+      status ++
+      [
+        primary_button,
+        {"--ls-focus-ring-color", "--ls-surface-panel", 3.0},
+        # Visible control boundaries (WCAG 1.4.11).
+        {"--ls-border-control", "--ls-surface-panel", 3.0},
+        {"--ls-border-control", "--ls-surface-page", 3.0},
+        {"--ls-border-control", "--ls-surface-muted", 3.0}
+      ]
   end
 
   defp theme_tokens do
