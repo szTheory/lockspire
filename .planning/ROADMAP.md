@@ -20,8 +20,8 @@ v1.42 refines the existing admin UI around real staff tasks: focused client regi
 <details open>
 <summary>🚧 v1.42 Admin UI Clarity & Workflow Refinement (Phases 151–154)</summary>
 
-- [ ] **Phase 151: Focused Client Registration & Settings** — Give client creation its own route, make client task paths focused, and apply clear action emphasis.
-- [ ] **Phase 152: Overview & Queue State Clarity** — Make overview signals and read-only queue outcomes accurate, understandable, and actionable within their existing limits.
+- [x] **Phase 151: Focused Client Registration & Settings** — Give client creation its own route, make client task paths focused, and apply clear action emphasis.
+- [x] **Phase 152: Overview & Queue State Clarity** — Make overview signals and read-only queue outcomes accurate, understandable, and actionable within their existing limits.
 - [x] **Phase 153: Configure & Support Page Refinement** — Apply plain language, clear page hierarchy, and purposeful shared components across all 30 current admin paths.
 - [ ] **Phase 154: Responsive, Theme & Route Proof** — Finish changed views across viewport, zoom, theme, and keyboard states with redaction-safe rendered evidence and recurring automated checks.
 

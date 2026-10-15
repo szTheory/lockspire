@@ -275,7 +275,8 @@ The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40
 
 ### Validated
 
-- ✓ App registration has its own focused route with a filter-preserving return, app task routes lead with the app and task, and primary/secondary/destructive action emphasis follows a documented rule (UI-04, UI-05) — v1.42, Phase 151; verifier 8/8, 55 focused tests, full fast suite green. Advisory UI review (17/24) and 5 code-review warnings remain open in the phase review ledger.
+- ✓ App registration has its own focused route with a filter-preserving return, app task routes lead with the app and task, and primary/secondary/destructive action emphasis follows a documented rule (UI-04, UI-05) — v1.42, Phase 151; verifier 8/8, 55 focused tests, full fast suite green. Code review (5 warnings, 3 info) and the UI review fixes were applied afterwards; the review ledger shows 0 open.
+- ✓ Overview counts and queue filters share one waiting rule, failed reads stay distinct from empty results, token-reuse and app sign-out notice copy avoids claiming compromise or a confirmed sign-out, and queue rows redact request identifiers (UI-03) — v1.42, Phase 152; verifier 3/3, 41 focused tests, full fast suite green. Code review (3 warnings, 3 info) and UI review fixes applied; review ledger 0 open.
 - ✓ Existing admin pages use task-focused, plain language while preserving protocol meanings, security consequences, redaction, and host-owned UX boundaries — v1.41, Phase 148; verifier 33/33, 215 focused tests, and responsive review at desktop, tablet, and mobile sizes. No user-comprehension claim is made.
 - ✓ Contributors can identify the purpose and lifecycle of repository areas, and cleanup decisions are backed by ownership/reference evidence — v1.41, Phase 149; ambiguous worktree and retained artifacts were preserved.
 - ✓ Phoenix adopters and maintainers can follow task-oriented README/HexDocs routes through canonical installation and verification; setup claims match source, and published guide/package boundaries are automated — v1.41, Phase 150; verifier 7/7, focused docs contract, docs build, package build, and regression checks pass.
@@ -465,4 +466,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-15 after Phase 151*
+*Last updated: 2026-10-15 after Phase 152*
