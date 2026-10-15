@@ -319,6 +319,17 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     end
   end
 
+  test "device rows omit the next-check line when no next check is recorded", %{
+    authorizations: authorizations
+  } do
+    [pending | _rest] = authorizations
+
+    refute render_queue(:loaded, [%{pending | next_poll_allowed_at: nil}]) =~
+             "App may check again"
+
+    assert render_queue(:loaded, [pending]) =~ "App may check again"
+  end
+
   test "device authorization review keeps queue evidence redaction-safe and read-only", %{
     authorizations: authorizations
   } do

@@ -558,7 +558,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert page_html =~ "1 logout delivery recorded"
+    assert page_html =~ "1 app sign-out notice recorded"
     assert page_html =~ "single-safe-delivery-id"
     assert page_html =~ "client-single"
     assert page_html =~ ~s(href="/lockspire/admin/clients/client-single")

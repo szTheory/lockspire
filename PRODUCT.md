@@ -170,6 +170,7 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | Edit client settings | Edit app settings |
 | Client assertion keys | App signing keys |
 | matching-client | (name the list) |
+| logout delivery | app sign-out notice |
 
 Voice is calm, direct, concise, and specific. Use domain nouns and clear verbs; avoid promotional filler, generic AI copy, exaggerated reassurance, and repeated explanations.
 

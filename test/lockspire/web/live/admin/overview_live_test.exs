@@ -400,7 +400,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
       {:devices,
        "Could not load device authorization requests. The current results are unavailable.",
        "/admin/device_authorizations?status=pending"},
-      {:logouts, "Could not load logout delivery records. The current results are unavailable.",
+      {:logouts, "Could not load app sign-out notices. The current results are unavailable.",
        "/admin/logouts?status=needs_review"}
     ]
 
@@ -517,12 +517,26 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     assert {:ok, _, all_interactions} = live(conn_for_admin(), "/admin/interactions")
     assert all_interactions =~ "overview-stale-interaction"
 
+    assert summary_stat(all_interactions, "Waiting for sign-in") +
+             summary_stat(all_interactions, "Waiting for consent") == 1
+
     assert {:ok, _, pending_devices} =
              live(conn_for_admin(), "/admin/device_authorizations?status=pending")
 
     refute pending_devices =~ "overview-stale-client"
     assert {:ok, _, all_devices} = live(conn_for_admin(), "/admin/device_authorizations")
     assert all_devices =~ "overview-stale-client"
+    assert summary_stat(all_devices, "Pending") == 1
+  end
+
+  defp summary_stat(html, label) do
+    [_, value] =
+      Regex.run(
+        ~r/lockspire-admin-summary-value">(\d+)<\/span>\s*<span class="lockspire-admin-summary-label">#{label}</,
+        html
+      )
+
+    String.to_integer(value)
   end
 
   test "security and DCR landing pages orient related workflows" do

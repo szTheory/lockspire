@@ -74,7 +74,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
                 {if observation_value(@summary.logouts, :failed) > 0, do: "Sign-out notices failed or were discarded", else: "No failed notices"}
               </small>
               <small :if={@summary.logouts.state != :loaded} role="status">
-                {observation_note(@summary.logouts, "logout delivery records")}
+                {observation_note(@summary.logouts, "app sign-out notices")}
               </small>
             </div>
           </div>
