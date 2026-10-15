@@ -17,6 +17,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   alias Lockspire.Web.Live.Admin.ClientsLive.RotateSecretComponent
   alias Lockspire.Web.Live.AdminLayoutLive
 
+  @saveable_modes [:edit, :redirects, :logout_uris, :par_policy, :security_profile, :logout_propagation]
+
   @impl true
   def mount(params, _session, socket) do
     client_id = if is_map(params), do: Map.get(params, "client_id"), else: nil
@@ -35,6 +37,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        client_load_state: :loading,
        form_params: nil,
        save_notice: nil,
+       save_notice_pending: false,
        effective_par_policy: nil,
        effective_dpop_policy: nil,
        effective_security_profile: nil,
@@ -67,7 +70,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
        task_title: task_title,
        task_body: task_body,
        form_params: nil,
-       save_notice: if(form_mode, do: nil, else: socket.assigns.save_notice),
+       save_notice:
+         if(socket.assigns.save_notice_pending and is_nil(form_mode),
+           do: socket.assigns.save_notice,
+           else: nil
+         ),
+       save_notice_pending: false,
        form_errors: [],
        rotation_errors: [],
        lifecycle_errors: [],
@@ -88,11 +96,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   end
 
   @impl true
-  def handle_event("save_client", %{"client" => params}, socket) do
+  def handle_event(
+        "save_client",
+        %{"client" => params},
+        %{assigns: %{form_mode: mode}} = socket
+      )
+      when mode in @saveable_modes do
     result =
       Admin.update_client(
         socket.assigns.client_id,
-        save_client_attrs(params, socket.assigns.client)
+        save_client_attrs(mode, params, socket.assigns.client)
       )
 
     case result do
@@ -105,12 +118,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             remote_jwks_summary: AdminClients.remote_jwks_summary(client),
             form_errors: [],
             form_params: nil,
-            save_notice:
-              if(socket.assigns.form_mode == :edit, do: "Client changes saved.", else: nil)
+            save_notice: "App changes saved.",
+            save_notice_pending: mode == :edit
           )
           |> assign(policy_view_assigns(client))
 
-        if socket.assigns.form_mode == :edit do
+        if mode == :edit do
           {:noreply, push_patch(updated_socket, to: show_path(client.client_id, :show))}
         else
           {:noreply, updated_socket}
@@ -120,7 +133,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         {:noreply,
          assign(socket,
            form_errors: errors,
-           form_params: safe_form_params(params, socket.assigns.form_mode),
+           form_params: safe_form_params(params, mode),
            save_notice: nil
          )}
 
@@ -128,11 +141,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         {:noreply,
          assign(socket,
            form_errors: [%{field: :base, reason: :request_failed, detail: nil}],
-           form_params: safe_form_params(params, socket.assigns.form_mode),
+           form_params: safe_form_params(params, mode),
            save_notice: nil
          )}
     end
   end
+
+  def handle_event("save_client", _params, socket), do: {:noreply, socket}
 
   def handle_event(
         "rotate_secret",
@@ -301,7 +316,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.alert :if={@save_notice} variant={:success} title={@save_notice}>
-        The saved client configuration is shown below.
+        The saved app settings are shown below.
       </AdminComponents.alert>
 
       <AdminComponents.entity_header
@@ -895,7 +910,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
         )
 
       {:error, _reason} ->
-        socket
+        assign(socket,
+          lifecycle_errors: [
+            %{
+              field: :base,
+              reason: :request_failed,
+              detail: nil,
+              message: "The app was not changed. Reload the page and try again."
+            }
+          ]
+        )
     end
   end
 
@@ -1291,25 +1315,25 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     }
   end
 
-  defp save_client_attrs(%{"mode" => "edit"} = params, client) do
+  defp save_client_attrs(:edit, params, client) do
     edit_attrs(params, client) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
   end
 
-  defp save_client_attrs(%{"mode" => "redirects"} = params, client) do
+  defp save_client_attrs(:redirects, params, client) do
     redirect_attrs(params, client, :redirects)
     |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
   end
 
-  defp save_client_attrs(%{"mode" => "logout_uris"} = params, client) do
+  defp save_client_attrs(:logout_uris, params, client) do
     redirect_attrs(params, client, :logout_uris)
     |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
   end
 
-  defp save_client_attrs(%{"mode" => "par_policy"} = params, _client) do
+  defp save_client_attrs(:par_policy, params, _client) do
     %{par_policy: params["par_policy"], actor: %{type: :operator, id: "admin-ui"}}
   end
 
-  defp save_client_attrs(%{"mode" => "security_profile"} = params, _client) do
+  defp save_client_attrs(:security_profile, params, _client) do
     %{
       security_profile: params["security_profile"],
       authorization_signed_response_alg: params["authorization_signed_response_alg"],
@@ -1317,7 +1341,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
     }
   end
 
-  defp save_client_attrs(%{"mode" => "logout_propagation"} = params, _client) do
+  defp save_client_attrs(:logout_propagation, params, _client) do
     logout_propagation_attrs(params) |> Map.put(:actor, %{type: :operator, id: "admin-ui"})
   end
 end
