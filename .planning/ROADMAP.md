@@ -111,13 +111,21 @@ Plans:
 
 **Plans**: 7 plans
 Plans:
+**Wave 1**
 - [ ] 154-01-PLAN.md — Local route-proof harness (agent-browser, local-only) and BrowserEvidence viewport widths
 - [ ] 154-02-PLAN.md — Shared control-border token and computed WCAG contrast contract
 - [ ] 154-03-PLAN.md — Bundled page contract on Orient and client-task routes
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 154-04-PLAN.md — Page contract on Configure policy/registration/key routes; keys_live warning fix
 - [ ] 154-05-PLAN.md — Page contract on Support/Operate routes; device-authorization warning fix
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 154-06-PLAN.md — 30-path responsive, theme, reduced-motion and keyboard sweep with shared fixes
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 154-07-PLAN.md — Final 30-path captures, browser evidence, and SAFE-01 gate
+
 **UI hint**: yes
 
 ### Progress
