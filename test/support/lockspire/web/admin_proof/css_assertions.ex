@@ -150,6 +150,85 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
              "inset-inline-end: var(--ls-select-icon-inset)"
   end
 
+  # Computed WCAG contrast over the compiled stylesheet. Token values are read
+  # from the :root block (light) and the dark theme block merged over it.
+  def assert_contrast_pairs! do
+    themes = theme_tokens()
+
+    for {theme, tokens} <- themes, {fg, bg, minimum} <- contrast_pairs() do
+      ratio = contrast_ratio(resolve_color(tokens, fg, theme), resolve_color(tokens, bg, theme))
+
+      assert ratio >= minimum,
+             "#{theme} theme: #{fg} on #{bg} is #{format_ratio(ratio)}:1, needs at least #{minimum}:1"
+    end
+  end
+
+  defp contrast_pairs do
+    [
+      # Visible control boundaries (WCAG 1.4.11).
+      {"--ls-border-control", "--ls-surface-panel", 3.0},
+      {"--ls-border-control", "--ls-surface-page", 3.0}
+    ]
+  end
+
+  defp theme_tokens do
+    css = Lockspire.Web.Admin.CSS.get()
+    light = css |> declaration_block(~r/(?:^|\n)\s*:root\s*\{([^}]*)\}/) |> parse_tokens()
+
+    dark =
+      css
+      |> declaration_block(~r/:root\[data-theme="dark"\]\s*\{([^}]*)\}/)
+      |> parse_tokens()
+
+    [{"light", light}, {"dark", Map.merge(light, dark)}]
+  end
+
+  defp declaration_block(css, regex) do
+    [_, body] = Regex.run(regex, css)
+    body
+  end
+
+  defp parse_tokens(block) do
+    ~r/(--ls-[a-z0-9-]+)\s*:\s*([^;]+);/
+    |> Regex.scan(block)
+    |> Map.new(fn [_, name, value] -> {name, String.trim(value)} end)
+  end
+
+  defp resolve_color(tokens, name, theme, depth \\ 0) do
+    value = Map.get(tokens, name) || flunk("#{theme} theme: token #{name} is not defined")
+
+    cond do
+      depth > 8 ->
+        flunk("#{theme} theme: token #{name} has a reference loop")
+
+      Regex.match?(~r/\A#[0-9a-fA-F]{6}\z/, value) ->
+        value
+
+      match = Regex.run(~r/\Avar\((--ls-[a-z0-9-]+)\)\z/, value) ->
+        resolve_color(tokens, Enum.at(match, 1), theme, depth + 1)
+
+      true ->
+        flunk("#{theme} theme: token #{name} is not a #rrggbb color (#{value})")
+    end
+  end
+
+  defp relative_luminance("#" <> hex) do
+    [r, g, b] =
+      for <<channel::binary-size(2) <- hex>> do
+        c = String.to_integer(channel, 16) / 255
+        if c <= 0.04045, do: c / 12.92, else: :math.pow((c + 0.055) / 1.055, 2.4)
+      end
+
+    0.2126 * r + 0.7152 * g + 0.0722 * b
+  end
+
+  defp contrast_ratio(a, b) do
+    {la, lb} = {relative_luminance(a), relative_luminance(b)}
+    (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+  end
+
+  defp format_ratio(ratio), do: :erlang.float_to_binary(ratio, decimals: 2)
+
   defp css, do: File.read!(Paths.admin_css())
   defp components, do: File.read!(Paths.admin_components())
 

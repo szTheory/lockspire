@@ -32,6 +32,10 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.CssContractTest do
     CssAssertions.assert_redaction_safe_presentation!()
   end
 
+  test "theme colors keep readable text and visible control boundaries" do
+    CssAssertions.assert_contrast_pairs!()
+  end
+
   test "the admin shell exposes system, light, and dark themes" do
     CssAssertions.assert_theme_control!()
   end
