@@ -24,13 +24,13 @@ Verification ran in the main checkout (`workflow.use_worktrees` is false). Phase
 
 ## Fixed Issues
 
-### WR-01: Apps list has no pagination controls
+### WR-01: Apps list has no pagination controls, so apps past the first 10 are unreachable from the UI
 
 **Files modified:** `lib/lockspire/web/live/admin/clients_live/index.ex`, `test/lockspire/web/live/admin/clients_live_test.exs`
 **Commit:** ded415d4 (shared with WR-02, both touch the same files)
 **Applied fix:** Added a "Previous apps" / "Next apps" pager nav under the list. Links are built from the normalized filters and only appear when another page exists. Regression test registers 12 apps and checks both pages.
 
-### WR-02: Non-string `q` crashes the LiveView
+### WR-02: Non-string `q` (for example `?q[]=a`) crashes the LiveView
 
 **Files modified:** `lib/lockspire/web/live/admin/clients_live/index.ex`, `test/lockspire/web/live/admin/clients_live_test.exs`
 **Commit:** ded415d4
@@ -42,7 +42,7 @@ Verification ran in the main checkout (`workflow.use_worktrees` is false). Phase
 **Commit:** bad55fcf (shared with WR-04, WR-05)
 **Applied fix:** The `{:error, _}` branch of `apply_toggle/2` now sets `lifecycle_errors` with "The app was not changed. Reload the page and try again." Regression test deletes the app, submits a confirmed toggle and asserts the message.
 
-### WR-04: `save_client` trusts client-supplied `mode`
+### WR-04: `save_client` trusts a client-supplied `mode` and crashes when it is missing or unknown
 
 **Files modified:** `lib/lockspire/web/live/admin/clients_live/show.ex`, `test/lockspire/web/live/admin/clients_live/show_test.exs`
 **Commit:** bad55fcf
