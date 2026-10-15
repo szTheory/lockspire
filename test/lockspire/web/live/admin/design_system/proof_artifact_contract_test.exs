@@ -128,6 +128,24 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
     assert length(BrowserEvidence.parse!(distinct_states)) == 6
   end
 
+  test "browser evidence accepts zoom-equivalent and nav-boundary widths" do
+    header =
+      "| Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |\n|---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|\n"
+
+    row = fn width ->
+      "| `/admin/overview` | Orient | #{width}px | light | default | page load | width #{width} | #{width} | #{width} | pass | synthetic local observation | passed denylist | none | contract test pass |\n"
+    end
+
+    widths = [640, 720, 1119, 1120, 1261, 1280]
+    rows = BrowserEvidence.parse!(header <> Enum.map_join(widths, &row.(&1)))
+
+    assert Enum.map(rows, & &1["Viewport"]) == Enum.map(widths, &"#{&1}px")
+
+    assert_raise ArgumentError, ~r/invalid Viewport/, fn ->
+      BrowserEvidence.parse!(header <> row.(641))
+    end
+  end
+
   defp valid_evidence do
     """
     | Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |
