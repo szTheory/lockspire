@@ -109,7 +109,7 @@ Plans:
   2. All 30 current paths have synthetic, redaction-safe baseline and final captures; capture each full page or, when a full-page image is too tall or unreadable, each meaningful section. Focused tests/browser checks prove affected tasks and recurring visual behavior.
   3. Automated checks confirm the cleanup leaves protocol behavior, security defaults, credential redaction and copy-once handling, revocation scopes, queue read-only boundaries, and host ownership unchanged; new checks join CI only when reliable and recurring.
 
-**Plans**: 4/7 plans executed
+**Plans**: 5/7 plans executed
 Plans:
 **Wave 1**
 - [x] 154-01-PLAN.md — Local route-proof harness (agent-browser, local-only) and BrowserEvidence viewport widths
@@ -118,7 +118,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 154-04-PLAN.md — Page contract on Configure policy/registration/key routes; keys_live warning fix
-- [ ] 154-05-PLAN.md — Page contract on Support/Operate routes; device-authorization warning fix
+- [x] 154-05-PLAN.md — Page contract on Support/Operate routes; device-authorization warning fix
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 154-06-PLAN.md — 30-path responsive, theme, reduced-motion and keyboard sweep with shared fixes
@@ -135,7 +135,7 @@ Plans:
 | 151. Focused Client Registration & Settings | 2/2 | Complete    | 2026-10-15 |
 | 152. Overview & Queue State Clarity | 5/5 | Complete    | 2026-10-15 |
 | 153. Configure & Support Page Refinement | 7/7 | Complete    | 2026-10-15 |
-| 154. Responsive, Theme & Route Proof | 4/7 | In Progress | - |
+| 154. Responsive, Theme & Route Proof | 5/7 | In Progress | - |
 
 ## Completed Backlog Scope
 
