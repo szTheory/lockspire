@@ -157,6 +157,9 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | escape hatch | (say what the setting does) |
 | compatibility-first | (say what the protections are) |
 | Client created | App created |
+| Filtering clients | Filtering apps |
+| Creating client | Creating app |
+| Saving client changes | Saving app changes |
 
 Voice is calm, direct, concise, and specific. Use domain nouns and clear verbs; avoid promotional filler, generic AI copy, exaggerated reassurance, and repeated explanations.
 

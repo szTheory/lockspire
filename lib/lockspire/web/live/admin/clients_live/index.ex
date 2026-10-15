@@ -217,7 +217,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <AdminComponents.admin_button
               variant={:secondary}
               type="submit"
-              phx-disable-with="Filtering clients…"
+              phx-disable-with="Filtering apps…"
             >
               Filter apps
             </AdminComponents.admin_button>

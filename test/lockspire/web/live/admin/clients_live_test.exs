@@ -181,12 +181,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ ~s(method="get")
     assert html =~ ~s(action="/admin/clients")
     assert html =~ ~s(phx-submit="filter_inventory")
-    assert html =~ ~s(phx-disable-with="Filtering clients…")
+    assert html =~ ~s(phx-disable-with="Filtering apps…")
   end
 
   test "client filter submit patches the URL and resets pagination" do
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients?page=3")
-    assert html =~ ~s(phx-disable-with="Filtering clients…")
+    assert html =~ ~s(phx-disable-with="Filtering apps…")
 
     view
     |> form("form[phx-submit=filter_inventory]", %{
@@ -353,7 +353,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/new")
     assert html =~ ~s(id="client-create-form")
-    assert html =~ ~s(phx-disable-with="Creating client…")
+    assert html =~ ~s(phx-disable-with="Creating app…")
 
     view
     |> form("#client-create-form", %{

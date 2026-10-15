@@ -429,8 +429,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             variant={:primary}
             phx-disable-with={
               cond do
-                @mode == :new -> "Creating client…"
-                @mode == :edit -> "Saving client changes…"
+                @mode == :new -> "Creating app…"
+                @mode == :edit -> "Saving app changes…"
                 @mode == :par_policy -> "Saving authorization request rules…"
                 @mode == :security_profile -> "Saving security profile…"
                 true -> nil
