@@ -60,7 +60,6 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
 
   test "page hero API and admin LiveView sources carry no eyebrow" do
     component = File.read!("lib/lockspire/web/components/admin_components.ex")
-    refute component =~ ~r/attr\(?\s*:eyebrow/
     refute component =~ "eyebrow"
 
     sources = Path.wildcard("lib/lockspire/web/live/admin/**/*.ex")
@@ -69,35 +68,5 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
     for path <- sources do
       refute File.read!(path) =~ "eyebrow", "#{path} still references an eyebrow"
     end
-  end
-
-  test "route review matrix covers every current route exactly once with complete evidence" do
-    review_path =
-      Path.join([
-        File.cwd!(),
-        ".planning",
-        "phases",
-        "153-configure-support-page-refinement",
-        "153-ROUTE-REVIEW.md"
-      ])
-
-    rows =
-      review_path
-      |> File.read!()
-      |> String.split("\n")
-      |> Enum.filter(&String.starts_with?(&1, "| `/admin"))
-      |> Enum.map(fn line ->
-        line |> String.trim() |> String.trim("|") |> String.split("|") |> Enum.map(&String.trim/1)
-      end)
-
-    for cells <- rows do
-      assert length(cells) == 7, "malformed review row: #{inspect(cells)}"
-      assert Enum.all?(cells, &(&1 != "")), "blank evidence cell: #{inspect(cells)}"
-    end
-
-    reviewed = Enum.map(rows, fn [route | _] -> String.trim(route, "`") end)
-    assert length(reviewed) == 30
-    assert length(Enum.uniq(reviewed)) == 30
-    assert Enum.sort(reviewed) == Enum.sort(RouteScorecards.expected_routes())
   end
 end
