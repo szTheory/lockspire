@@ -67,13 +67,13 @@ Plans:
   2. Token reuse copy identifies the recorded reuse and supported family-wide consequence without claiming compromise; logout delivery copy explains what was attempted or failed and where to investigate next.
   3. Interaction, device authorization, and logout queues remain read-only, show meaningful record states, and distinguish unavailable data from healthy zero or empty results.
 
-**Plans**: 5 plans
+**Plans**: 5/5 plans complete
 Plans:
-- [ ] 152-01-PLAN.md — Exact waiting-interaction pivot and historical wording
-- [ ] 152-02-PLAN.md — Exact pending-device and logout-review pivots
-- [ ] 152-03-PLAN.md — Device authorization request title and state clarity
-- [ ] 152-04-PLAN.md — Accurate logout-delivery outcomes
-- [ ] 152-05-PLAN.md — Plain overview facts and evidence-aware signal copy
+- [x] 152-01-PLAN.md — Exact waiting-interaction pivot and historical wording
+- [x] 152-02-PLAN.md — Exact pending-device and logout-review pivots
+- [x] 152-03-PLAN.md — Device authorization request title and state clarity
+- [x] 152-04-PLAN.md — Accurate logout-delivery outcomes
+- [x] 152-05-PLAN.md — Plain overview facts and evidence-aware signal copy
 
 **UI hint**: yes
 
@@ -117,7 +117,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 151. Focused Client Registration & Settings | 2/2 | Complete    | 2026-10-15 |
-| 152. Overview & Queue State Clarity | 0/TBD | Not started | - |
+| 152. Overview & Queue State Clarity | 5/5 | Complete    | 2026-10-15 |
 | 153. Configure & Support Page Refinement | 7/7 | Complete    | 2026-10-15 |
 | 154. Responsive, Theme & Route Proof | 0/TBD | Not started | - |
 
