@@ -50,10 +50,10 @@ v1.42 refines the existing admin UI around real staff tasks: focused client regi
   2. Client detail, edit, redirect, logout, policy, and credential tasks identify the client and the task at the top and provide a direct return path to its context.
   3. Across the admin routes, the principal safe task is visually primary, supporting navigation and recovery actions are quieter, and destructive actions state their consequence and require the existing confirmation.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 151-01-PLAN.md — Dedicated client registration route and safe create outcomes
-- [ ] 151-02-PLAN.md — Focused client settings context and shared action hierarchy
+- [x] 151-01-PLAN.md — Dedicated client registration route and safe create outcomes
+- [x] 151-02-PLAN.md — Focused client settings context and shared action hierarchy
 
 **UI hint**: yes
 
@@ -116,7 +116,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 151. Focused Client Registration & Settings | 0/2 | Plans created | - |
+| 151. Focused Client Registration & Settings | 2/2 | Complete    | 2026-10-15 |
 | 152. Overview & Queue State Clarity | 0/TBD | Not started | - |
 | 153. Configure & Support Page Refinement | 7/7 | Complete    | 2026-10-15 |
 | 154. Responsive, Theme & Route Proof | 0/TBD | Not started | - |
