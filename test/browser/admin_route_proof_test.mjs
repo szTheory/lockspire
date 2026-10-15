@@ -126,3 +126,8 @@ test("sectionPlan returns one slice per heading group", () => {
   assert.ok(slices.every((s) => s.height === 900 && s.scrollY >= 0));
   assert.equal(sectionPlan(1800, 900, []).length, 2);
 });
+
+test("scanSensitive allows reserved example domains but flags real-looking hosts", () => {
+  assert.deepEqual(scanSensitive("Endpoint https://partners.northstar.example.com/backchannel-logout"), []);
+  assert.ok(scanSensitive("Endpoint https://auth.acme-corp.com/callback").includes("production-looking hostname"));
+});

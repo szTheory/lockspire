@@ -199,8 +199,11 @@ export function collectScanText({ innerText = "", fieldValues = [], dataAttribut
 
 export function scanSensitive(text) {
   const hits = [];
+  // RFC 2606 reserved example domains are the synthetic demo's own hostnames, not production ones.
+  const withoutReserved = text.replace(/\b(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/gi, "reserved-host");
   for (const [label, pattern] of SENSITIVE_PATTERNS) {
-    if (pattern.test(text)) hits.push(label);
+    const subject = label === "production-looking hostname" ? withoutReserved : text;
+    if (pattern.test(subject)) hits.push(label);
   }
   return hits;
 }
@@ -273,6 +276,7 @@ export function routeSlug(template) {
 const SWEEP_SCRIPT = `(() => {
   const root = document.documentElement;
   const describe = (el) => el.tagName.toLowerCase() + (el.className && typeof el.className === "string" ? "." + el.className.trim().split(/\\s+/).slice(0, 2).join(".") : "");
+  const describeClip = (el) => describe(el) + (el.name ? "[" + el.name + "]" : el.id ? "#" + el.id : "") + " " + el.clientWidth + "<" + el.scrollWidth;
   const visible = (el) => {
     const r = el.getBoundingClientRect();
     const s = getComputedStyle(el);
@@ -292,10 +296,11 @@ const SWEEP_SCRIPT = `(() => {
     if (el.clientWidth === 0 || el.scrollWidth <= el.clientWidth + 1) continue;
     const box = el.getBoundingClientRect();
     if (box.width <= 1 && box.height <= 1) continue; // visually-hidden helper (sr-only), clipped by design
+    if (el.matches("input, textarea")) continue; // a long value scrolling inside a text field is not clipped content
     const ox = getComputedStyle(el).overflowX;
     if (ox !== "hidden" && ox !== "clip") continue;
     if (scrollerAllowed(el)) continue;
-    clipped.push(describe(el));
+    clipped.push(describeClip(el));
   }
   const unlabeled = [];
   for (const el of document.querySelectorAll("input, select, textarea")) {
@@ -354,15 +359,30 @@ const SWEEP_SCRIPT = `(() => {
 const FOCUS_SCRIPT = `(() => {
   const el = document.activeElement;
   if (!el || el === document.body) return JSON.stringify({ tag: "body" });
+  // Headless Chrome may not advance the animation clock; settle focus transitions so the end state is measured.
+  document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
   const cs = getComputedStyle(el);
   const r = el.getBoundingClientRect();
   const name = el.getAttribute("aria-label") || (el.labels && el.labels[0] && el.labels[0].textContent) || el.textContent || el.getAttribute("title") || "";
+  const hasRing = (node) => {
+    const c = getComputedStyle(node);
+    const outline = c.outlineStyle !== "none" && parseFloat(c.outlineWidth) > 0;
+    const shadow = c.boxShadow && c.boxShadow !== "none" && !/^rgba\\(0, 0, 0, 0\\) 0px 0px 0px 0px/.test(c.boxShadow);
+    return outline || Boolean(shadow);
+  };
+  // A composite control may show its ring on the focus-within wrapper rather than the input itself.
+  let indicator = hasRing(el);
+  for (let n = el.parentElement, d = 0; !indicator && n && n !== document.body && d < 3; n = n.parentElement, d += 1) {
+    if (n.matches(":focus-within") && hasRing(n)) indicator = true;
+  }
   return JSON.stringify({
     tag: el.tagName.toLowerCase(),
     name: name.trim().replace(/\\s+/g, " ").slice(0, 60),
+    indicator,
     outlineWidth: cs.outlineWidth,
     outlineStyle: cs.outlineStyle,
     boxShadow: cs.boxShadow,
+    rect: [Math.round(r.left), Math.round(r.top), Math.round(r.right), Math.round(r.bottom)],
     inViewport: r.top >= 0 && r.left >= 0 && r.bottom <= window.innerHeight && r.right <= window.innerWidth
   });
 })()`;
@@ -442,6 +462,7 @@ function keyboardSweep(session) {
   const stops = [];
   for (let i = 0; i < 40; i += 1) {
     browser(session, "press", "Tab");
+    browser(session, "wait", "500"); // let scroll-into-view settle before measuring
     const stop = browserJson(session, FOCUS_SCRIPT);
     if (stop.tag === "body") break;
     stops.push(stop);
@@ -449,9 +470,7 @@ function keyboardSweep(session) {
   const before = browserJson(session, DISCLOSURE_SCRIPT).open;
   browser(session, "press", "Escape");
   const after = browserJson(session, DISCLOSURE_SCRIPT).open;
-  const indicated = stops.filter(
-    (s) => (s.outlineStyle !== "none" && parseFloat(s.outlineWidth) > 0) || (s.boxShadow && s.boxShadow !== "none")
-  ).length;
+  const indicated = stops.filter((s) => s.indicator).length;
   const offscreen = stops.filter((s) => !s.inViewport).length;
   return { stops, indicated, offscreen, disclosuresBefore: before, disclosuresAfter: after };
 }
