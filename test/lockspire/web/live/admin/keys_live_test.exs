@@ -77,6 +77,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
+    HtmlAssertions.assert_page_contract!(html)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
@@ -231,6 +232,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    HtmlAssertions.assert_page_contract!(html)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)

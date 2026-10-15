@@ -7,6 +7,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.InitialAccessToken
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Storage.Ecto.Repository
 
   @endpoint Lockspire.Web.Endpoint
@@ -53,6 +54,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
     refute text =~ "Dynamic Client Registration"
     assert html =~ ~s(href="/admin/policies/dcr")
     assert html =~ ~s(href="/admin/iats")
+    HtmlAssertions.assert_page_contract!(html)
     refute html =~ ~s(href="/admin/iats/new")
   end
 
