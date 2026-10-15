@@ -133,7 +133,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-z-modal: 100;
     --ls-info-trigger-size: var(--ls-space-8);
     --ls-select-icon-size: var(--ls-space-4);
-    --ls-select-icon-inset: var(--ls-space-3);
+    --ls-select-icon-inset: var(--ls-space-4);
     --ls-select-text-clearance: var(--ls-space-10);
     --ls-info-gap: var(--ls-space-2);
   }

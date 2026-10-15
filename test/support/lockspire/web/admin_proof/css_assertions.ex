@@ -142,6 +142,11 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
 
     assert rule(css, ".lockspire-admin-theme-control select") =~
              "padding: var(--ls-space-2) var(--ls-select-text-clearance) var(--ls-space-2) var(--ls-space-3)"
+
+    # 153-01: the caret keeps at least 16px (--ls-space-4) from the right border.
+    assert css =~ "--ls-select-icon-inset: var(--ls-space-4);"
+    assert rule(css, ".lockspire-admin-select-field svg") =~
+             "inset-inline-end: var(--ls-select-icon-inset)"
   end
 
   defp css, do: File.read!(Paths.admin_css())
