@@ -128,6 +128,23 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     narrow_nav = rule(mobile, ".lockspire-admin-secondary-nav")
     assert narrow_nav =~ "flex-wrap: wrap"
     assert narrow_nav =~ "overflow-x: visible"
+
+    # The fixed 6rem status column leaves too little room for a provenance badge at
+    # phone widths, so the app inventory cluster wraps instead.
+    [_, inventory_narrow] =
+      Regex.run(
+        ~r/@media \(max-width: 640px\) \{\s*\.lockspire-admin-key-record \.lockspire-admin-resource-list__meta(.*)\z/s,
+        css
+      )
+
+    narrow_cluster =
+      rule(
+        inventory_narrow,
+        ".lockspire-admin-client-inventory__results .lockspire-admin-status-cluster"
+      )
+
+    assert narrow_cluster =~ "display: flex"
+    assert narrow_cluster =~ "flex-wrap: wrap"
   end
 
   def assert_redaction_safe_presentation! do

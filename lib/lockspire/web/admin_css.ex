@@ -2577,6 +2577,12 @@ defmodule Lockspire.Web.Admin.CSS do
       grid-column: 1;
       grid-row: 3;
     }
+
+    .lockspire-admin-client-inventory__results .lockspire-admin-status-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ls-space-2);
+    }
   }
 
   .lockspire-admin-client-inventory__results .lockspire-admin-resource-list__actions,
