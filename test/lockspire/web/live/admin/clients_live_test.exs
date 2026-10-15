@@ -680,6 +680,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
   test "client inventory leads with filters and safe detail actions, with truthful empty and failure states" do
     assert {:ok, _view, populated_html} = live(conn_for_admin(), "/admin/clients")
+    HtmlAssertions.assert_page_contract!(populated_html)
 
     assert populated_html =~ "View app"
     assert populated_html =~ "3 matching apps"
@@ -771,6 +772,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
   test "client registration form uses clear, task-focused language" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/new")
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
 
     assert html =~ "Add an app that will use this service."
 
@@ -793,6 +795,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert {:ok, _edit_view, edit_html} =
              live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    HtmlAssertions.assert_page_contract!(edit_html, labels: :required)
 
     assert edit_html =~ "Edit app settings"
     assert edit_html =~ "App name"
@@ -971,11 +975,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         String.duplicate("frontchannel/logout/path/", 6) <>
         "browser-cleanup"
 
-    assert {:ok, view, _html} =
+    assert {:ok, view, workflow_html} =
              live(
                conn_for_admin(),
                "/admin/clients/alpha-client/edit?workflow=logout-propagation"
              )
+
+    HtmlAssertions.assert_page_contract!(workflow_html, labels: :required)
 
     view
     |> form(".lockspire-admin-form-shell form", %{

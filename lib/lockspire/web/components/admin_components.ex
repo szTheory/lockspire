@@ -426,7 +426,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
               checked={to_string(@value) == option.value} disabled={@disabled}
               aria-labelledby={"#{@id}-#{option.value}-label"}
               aria-invalid={if @errors != [], do: "true", else: "false"}
-              aria-describedby={Enum.join(Enum.reject([@described_by, Map.get(option, :help) && "#{@id}-#{option.value}-help"], &is_nil/1), " ")} />
+              aria-describedby={radio_option_described_by(@described_by, option, @id)} />
             <span class="lockspire-admin-radio-choice__text">
               <span id={"#{@id}-#{option.value}-label"}>{option.label}</span>
               <small :if={Map.get(option, :help)} id={"#{@id}-#{option.value}-help"}>{option.help}</small>
@@ -877,6 +877,15 @@ defmodule Lockspire.Web.Components.AdminComponents do
       <% end %>
     </nav>
     """
+  end
+
+  defp radio_option_described_by(described_by, option, id) do
+    help_id = if Map.get(option, :help), do: "#{id}-#{option.value}-help"
+
+    case Enum.reject([described_by, help_id], &(is_nil(&1) or &1 == "")) do
+      [] -> nil
+      ids -> Enum.join(ids, " ")
+    end
   end
 
   defp policy_path(path), do: Lockspire.mount_path() <> "/admin/policies" <> path
