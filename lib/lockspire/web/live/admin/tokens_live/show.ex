@@ -49,6 +49,11 @@ defmodule Lockspire.Web.Live.Admin.TokensLive.Show do
   end
 
   @impl true
+  def handle_event(event, _params, %{assigns: %{token_id: token_id}} = socket)
+      when event in ["revoke_token", "revoke_family"] and not is_integer(token_id) do
+    {:noreply, assign(socket, revoke_error: @revocation_failure, family_notice: nil)}
+  end
+
   def handle_event("revoke_token", %{"revoke" => %{"confirm" => "true"}}, socket) do
     case Admin.revoke_token(socket.assigns.token_id, %{revoked_by: "operator"}) do
       {:ok, detail} ->

@@ -600,6 +600,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
       assert socket.assigns.token_id == nil
       assert socket.assigns.detail_state == :missing
       assert rendered_to_string(Show.render(socket.assigns)) =~ "Token not found"
+
+      for {event, params} <- [
+            {"revoke_token", %{"revoke" => %{"confirm" => "true"}}},
+            {"revoke_family", %{"family" => %{"confirm" => "true"}}}
+          ] do
+        assert {:noreply, socket} = Show.handle_event(event, params, socket)
+        assert socket.assigns.revoke_error =~ "Revocation could not be confirmed"
+      end
     end
   end
 

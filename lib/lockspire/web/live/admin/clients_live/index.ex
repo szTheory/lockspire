@@ -134,7 +134,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                 cond do
                   @created_secret_hidden? -> "Client secret hidden"
                   @created_result.client_secret -> "Copy this client secret now"
-                  true -> "Client created"
+                  true -> "App created"
                 end
               }
               body={
