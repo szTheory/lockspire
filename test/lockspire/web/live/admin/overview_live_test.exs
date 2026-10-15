@@ -266,6 +266,22 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     end
   end
 
+  test "page contract rejects pages without exactly one h1" do
+    assert_raise ExUnit.AssertionError, ~r/found 0/, fn ->
+      HtmlAssertions.assert_page_contract!("<main><p>none</p></main>")
+    end
+
+    assert_raise ExUnit.AssertionError, ~r/found 2/, fn ->
+      HtmlAssertions.assert_page_contract!("<h1>One</h1><h1>Two</h1>")
+    end
+
+    assert_raise ExUnit.AssertionError, fn ->
+      HtmlAssertions.assert_page_contract!("<h1>One</h1>", labels: :required)
+    end
+
+    assert "<h1>One</h1>" == HtmlAssertions.assert_page_contract!("<h1>One</h1>")
+  end
+
   test "overview renders task-centered status and journey links at both entry routes" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin")
     assert {:ok, _overview_view, overview_html} = live(conn_for_admin(), "/admin/overview")
@@ -273,6 +289,8 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
+    HtmlAssertions.assert_page_contract!(html)
+    HtmlAssertions.assert_page_contract!(overview_html)
 
     assert html =~ "<h1>Overview</h1>"
     assert overview_html =~ "<h1>Overview</h1>"

@@ -106,6 +106,38 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     html
   end
 
+  @doc """
+  Bundled structural contract for a rendered admin page.
+
+  Checks unique IDs, resolvable ARIA targets, hrefs on every link, no token-like
+  text, exactly one h1, and explicit label targets. The h1 is rendered by the
+  admin shell, so it is present in the HTML returned by `live/2`.
+
+  Options: `:labels` is `:when_present` (default; label check runs only when the
+  page has `label[for]`) or `:required`. Returns `html` for piping.
+  """
+  def assert_page_contract!(html, opts \\ []) do
+    assert_no_duplicate_ids(html)
+    assert_describedby_targets_exist(html)
+    assert_aria_targets_exist(html, "aria-labelledby")
+    assert_aria_targets_exist(html, "aria-controls")
+    assert_links_have_hrefs(html)
+    html |> strip_liveview_plumbing() |> assert_no_token_like_text()
+
+    h1_count = html |> document() |> LazyHTML.query("h1") |> Enum.count()
+    assert h1_count == 1, "expected exactly one h1, found #{h1_count}"
+
+    has_labels? =
+      html |> document() |> LazyHTML.query("label[for]") |> Enum.count() > 0
+
+    case Keyword.get(opts, :labels, :when_present) do
+      :required -> assert_label_targets_exist(html)
+      :when_present -> if has_labels?, do: assert_label_targets_exist(html)
+    end
+
+    html
+  end
+
   def assert_has_selector(html, selector) when is_binary(selector) do
     matches =
       html
@@ -218,6 +250,14 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     end
 
     html
+  end
+
+  # live/2 output carries Phoenix-signed data-phx-session/static tokens on the
+  # LiveView root. They are framework plumbing, not leaked secrets.
+  defp strip_liveview_plumbing(html) do
+    html
+    |> html_source()
+    |> String.replace(~r/\sdata-phx-(?:session|static|parent-id|main)="[^"]*"/, "")
   end
 
   defp id_set(doc) do
