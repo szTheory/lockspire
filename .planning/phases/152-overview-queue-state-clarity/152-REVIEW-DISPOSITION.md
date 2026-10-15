@@ -5,43 +5,43 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Filter step runs outside the rescue in `handle_params` (interactions and device pages)"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Summary \"Pending\" and \"Waiting\" counts include expired requests, while the pending filter and overview exclude them"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Logout deliveries `load_deliveries` relies on CaseClauseError being rescued"
   - id: IN-01
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Device \"App may check again\" shows \"Not recorded\" when nothing is recorded"
   - id: IN-02
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Inconsistent copy and duplicated helpers across the pages"
   - id: IN-03
     severity: info
-    disposition: open
+    disposition: fixed
     title: "Inconsistent path construction"
-open: 6
+open: 0
 total: 6
-recorded: 2026-10-15T20:40:34.731Z
+recorded: 2026-10-15T20:44:29.107Z
 ---
 
 # Phase 152: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| IN-01 | info | open | - |
-| IN-02 | info | open | - |
-| IN-03 | info | open | - |
+| WR-01 | warning | fixed | 152-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 152-REVIEW-FIX.md |
+| WR-03 | warning | fixed | 152-REVIEW-FIX.md |
+| IN-01 | info | fixed | 152-REVIEW-FIX.md |
+| IN-02 | info | fixed | 152-REVIEW-FIX.md |
+| IN-03 | info | fixed | 152-REVIEW-FIX.md |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
