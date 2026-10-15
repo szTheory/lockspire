@@ -5,11 +5,11 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Apps list has no pagination controls, so apps past the first 10 are unreachable from the UI"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Non-string `q` (for example `?q[]=a`) crashes the LiveView"
   - id: WR-03
     severity: warning
@@ -17,7 +17,7 @@ findings:
     title: "Disable/enable failure is silent"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "`save_client` trusts a client-supplied `mode` and crashes when it is missing or unknown"
   - id: WR-05
     severity: warning
@@ -35,19 +35,19 @@ findings:
     severity: info
     disposition: open
     title: "Show page \"Back to apps\" drops the operator's inventory filters"
-open: 6
+open: 3
 total: 8
-recorded: 2026-10-15T20:20:52.604Z
+recorded: 2026-10-15T20:21:09.469Z
 ---
 
 # Phase 151: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
+| WR-01 | warning | fixed | 151-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 151-REVIEW-FIX.md |
 | WR-03 | warning | fixed | 151-REVIEW-FIX.md |
-| WR-04 | warning | open | - |
+| WR-04 | warning | fixed | 151-REVIEW-FIX.md |
 | WR-05 | warning | fixed | 151-REVIEW-FIX.md |
 | IN-01 | info | open | - |
 | IN-02 | info | open | - |
