@@ -93,6 +93,11 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     assert rule(css, ".lockspire-admin-long-value") =~ "overflow-wrap: anywhere"
     assert rule(css, ".lockspire-admin-responsive-table__list") =~ "display: none"
 
+    secondary_nav = rule(css, ".lockspire-admin-secondary-nav")
+    assert secondary_nav =~ "overflow-x: auto"
+    refute secondary_nav =~ "flex-wrap: wrap"
+    assert rule(css, ".lockspire-admin-secondary-nav a") =~ "white-space: nowrap"
+
     collapsed_nav = media_rule(css, "@media (max-width: 1119px)")
 
     assert rule(collapsed_nav, ".lockspire-admin-nav-toggle") =~ "display: flex"
