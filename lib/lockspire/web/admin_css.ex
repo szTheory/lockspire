@@ -100,6 +100,8 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-text-accent: var(--ls-color-brand-600);
     --ls-border-subtle: var(--ls-color-gray-200);
     --ls-border-strong: var(--ls-color-gray-300);
+    /* Control boundaries need 3:1 (WCAG 1.4.11); decorative borders stay subtle/strong. */
+    --ls-border-control: var(--ls-color-gray-500);
     --ls-status-success-bg: var(--ls-color-success-bg);
     --ls-status-success-text: var(--ls-color-success-text);
     --ls-status-success-border: var(--ls-color-success-border);
@@ -412,7 +414,7 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-theme-control select {
     appearance: none;
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     color: var(--ls-text-body);
     font-family: var(--ls-font-sans);
@@ -1088,7 +1090,7 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-multi-value--enhanced {
     align-items: center;
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     display: flex;
     flex-wrap: wrap;
@@ -1241,7 +1243,7 @@ defmodule Lockspire.Web.Admin.CSS do
     max-width: 100%;
     padding: var(--ls-control-padding-y) var(--ls-control-padding-x);
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     font-family: inherit;
     font-size: 0.875rem;
@@ -2991,6 +2993,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-text-accent: var(--ls-color-brand-500);
     --ls-border-subtle: #1e293b;
     --ls-border-strong: #334155;
+    --ls-border-control: #7c8aa0;
 
     --ls-status-success-bg: var(--ls-color-success-bg-dark);
     --ls-status-success-text: var(--ls-color-success-text-dark);
