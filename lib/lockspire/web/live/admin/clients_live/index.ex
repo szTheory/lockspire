@@ -292,6 +292,27 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
               </AdminComponents.resource_item>
             <% end %>
           </AdminComponents.resource_list>
+
+          <nav
+            :if={@inventory_state == :loaded and (has_previous_page?(@filters) or has_next_page?(@filters, @matching_clients))}
+            class="lockspire-admin-client-inventory__pager"
+            aria-label="App list pages"
+          >
+            <.link
+              :if={has_previous_page?(@filters)}
+              class="lockspire-admin-btn lockspire-admin-btn-secondary"
+              href={clients_index_path(page_filters(@filters, -1))}
+            >
+              Previous apps
+            </.link>
+            <.link
+              :if={has_next_page?(@filters, @matching_clients)}
+              class="lockspire-admin-btn lockspire-admin-btn-secondary"
+              href={clients_index_path(page_filters(@filters, 1))}
+            >
+              Next apps
+            </.link>
+          </nav>
         </div>
       </AdminComponents.section_card>
 
@@ -341,12 +362,27 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
   defp normalize_filters(params) do
     %{
-      "q" => Map.get(params, "q", ""),
+      "q" => normalize_query(Map.get(params, "q", "")),
       "status" => normalize_status(Map.get(params, "status", "all")),
       "provenance" => normalize_provenance(Map.get(params, "provenance", "all")),
       "page" => Integer.to_string(parse_page(Map.get(params, "page", "1")))
     }
   end
+
+  defp has_previous_page?(filters), do: parse_page(filters["page"]) > 1
+
+  defp has_next_page?(filters, matching_clients) when is_integer(matching_clients),
+    do: parse_page(filters["page"]) * @per_page < matching_clients
+
+  defp has_next_page?(_filters, _matching_clients), do: false
+
+  defp page_filters(filters, delta) do
+    page = max(parse_page(filters["page"]) + delta, 1)
+    Map.put(filters, "page", Integer.to_string(page))
+  end
+
+  defp normalize_query(q) when is_binary(q), do: q
+  defp normalize_query(_q), do: ""
 
   defp base_filters do
     %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"}

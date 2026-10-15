@@ -439,6 +439,51 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute filtered_html =~ "Client created"
   end
 
+  test "non-string search params are treated as an empty search instead of crashing" do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients?q[]=x")
+    assert html =~ "of 3 total apps"
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients?q[a]=b")
+    assert html =~ "of 3 total apps"
+  end
+
+  test "inventory pagination links reach apps beyond the first page" do
+    for n <- 1..9 do
+      {:ok, _client} =
+        Repository.register_client(%Client{
+          client_id: "paged-client-#{n}",
+          client_secret_hash: "sha256:paged:#{n}",
+          client_type: :confidential,
+          name: "Paged app #{n}",
+          redirect_uris: ["https://paged.example.test/callback"],
+          allowed_scopes: ["email"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          active: true,
+          created_at: DateTime.utc_now(),
+          metadata: %{}
+        })
+    end
+
+    {:ok, _view, page_one} = live(conn_for_admin(), "/admin/clients")
+    assert page_one =~ "12 matching apps"
+    assert page_one =~ "Next apps"
+    refute page_one =~ "Previous apps"
+
+    assert page_one =~
+             ~s(href="/admin/clients?page=2&amp;provenance=all&amp;q=&amp;status=all")
+
+    {:ok, _view, page_two} = live(conn_for_admin(), "/admin/clients?page=2")
+    assert page_two =~ "Previous apps"
+    refute page_two =~ "Next apps"
+
+    assert page_two =~
+             ~s(href="/admin/clients?page=1&amp;provenance=all&amp;q=&amp;status=all")
+  end
+
   test "client inventory distinguishes first-use empty from filtered empty" do
     assert {3, nil} = Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.ClientRecord)
     assert {:ok, []} = Repository.list_clients()
