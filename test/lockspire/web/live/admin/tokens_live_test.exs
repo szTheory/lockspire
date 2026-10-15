@@ -106,6 +106,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert_path_query(html, "/lockspire/admin/tokens/#{refresh_token.id}", %{
@@ -313,6 +314,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
     assert_path_query(html, "/lockspire/admin/tokens", filters)
+
+    HtmlAssertions.assert_page_contract!(html)
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
