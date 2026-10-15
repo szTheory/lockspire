@@ -46,6 +46,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
   test "provider settings show concise policy choices and useful destinations" do
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/policies")
 
+    HtmlAssertions.assert_page_contract!(html)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)

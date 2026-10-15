@@ -112,6 +112,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
   test "global DCR policy page renders one grouped workflow form with unchanged fields" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/dcr")
 
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
     HtmlAssertions.assert_label_targets_exist(html)

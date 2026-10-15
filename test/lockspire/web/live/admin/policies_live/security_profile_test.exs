@@ -167,6 +167,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/policies/security-profile")
 
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_label_targets_exist(html)
