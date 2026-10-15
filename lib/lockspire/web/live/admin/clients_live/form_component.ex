@@ -564,8 +564,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     if errors == [], do: "#{id}-help", else: "#{id}-help #{id}-error"
   end
 
+  # Errors are normally a list of field errors, but a storage failure can surface
+  # as a single term (for example a rescued exception); show it as a form-level error.
   defp display_errors(errors) do
-    Enum.map(errors, fn
+    errors
+    |> List.wrap()
+    |> Enum.map(fn
       %{field: field, reason: reason} = error ->
         Map.put(error, :message, error_message(field, reason, Map.get(error, :detail)))
 

@@ -3,6 +3,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
   use Phoenix.LiveView
 
+  require Logger
+
   alias Lockspire.Admin
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
@@ -76,6 +78,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
          )}
 
       {:error, errors} ->
+        log_unexpected_create_error(errors)
+
         {:noreply,
          assign(socket,
            form_errors: errors,
@@ -388,6 +392,18 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
   defp base_filters do
     %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"}
+  end
+
+  defp log_unexpected_create_error(errors) when is_list(errors), do: :ok
+
+  defp log_unexpected_create_error(%{__exception__: true} = exception) do
+    Logger.error("Lockspire admin could not create an app: " <> Exception.message(exception))
+  end
+
+  defp log_unexpected_create_error(_reason) do
+    Logger.error(
+      "Lockspire admin could not create an app because storage returned an unexpected error"
+    )
   end
 
   defp create_attrs(params) do

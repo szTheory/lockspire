@@ -347,6 +347,42 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert submit_class == "lockspire-admin-btn lockspire-admin-btn-primary"
   end
 
+  test "app creation shows a form error instead of crashing when storage raises" do
+    endpoint_config = Application.get_env(:lockspire, Lockspire.Web.Endpoint)
+
+    Application.put_env(
+      :lockspire,
+      Lockspire.Web.Endpoint,
+      Keyword.delete(endpoint_config, :secret_key_base)
+    )
+
+    on_exit(fn -> Application.put_env(:lockspire, Lockspire.Web.Endpoint, endpoint_config) end)
+
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/new")
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        html =
+          view
+          |> form("#client-create-form", %{
+            client: %{
+              name: "Missing Key App",
+              client_type: "confidential",
+              token_endpoint_auth_method: "client_secret_basic",
+              redirect_uris: "https://missing-key.example.com/callback",
+              allowed_scopes: "email"
+            }
+          })
+          |> render_submit()
+
+        assert html =~ "App was not created."
+        assert html =~ "Missing Key App"
+      end)
+
+    assert log =~ "Lockspire admin could not create an app"
+    assert render(view) =~ "App was not created."
+  end
+
   test "rejected client creation retains safe input and associates actionable field errors" do
     submitted_name = "Partner Portal 🚀"
     submitted_redirect = "https://*.partner.example/callback"
