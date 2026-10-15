@@ -266,8 +266,6 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   defp key_next_action_summary(%{next_actions: [:retire]}),
     do: "Retire key to stop publishing it"
 
-  defp key_next_action_summary(%{next_actions: []}), do: nil
-
   defp key_status_title(:active), do: "Current key selected for signing or decryption operations."
 
   defp key_status_title(:upcoming),
