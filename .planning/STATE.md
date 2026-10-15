@@ -5,16 +5,16 @@ milestone_name: Admin UI Clarity & Workflow Refinement
 current_phase: 154
 current_phase_name: Responsive, Theme & Route Proof
 status: executing
-stopped_at: Completed 154-05-PLAN.md
-last_updated: "2026-10-15T21:55:44.245Z"
+stopped_at: Completed 154-06-PLAN.md
+last_updated: "2026-10-15T23:05:10.979Z"
 last_activity: 2026-10-15
 last_activity_desc: Phase 154 execution started
-state_head: ca0e3197f79554eb40ebc6fed1784469f48b82e2
+state_head: 8efc8463cf48ea3442307a69fd0f6ffc757166d2
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
   percent: 75
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-12 for v1.42)
 ## Current Position
 
 Phase: 154 (Responsive, Theme & Route Proof) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Status: Ready to execute
 Last activity: 2026-10-15 — Phase 154 execution started
 
@@ -257,6 +257,8 @@ Last activity: 2026-10-15 — Phase 154 execution started
 - [Phase 154]: Page contract ignores data-phx-* LiveView tokens and accepts label-wrapped controls
 - [Phase 154]: 154-04: removed only unreachable key_next_action_summary empty-list clause; next-step text pinned by test
 - [Phase 154]: Plan 05: grouped filter_device_authorizations clauses as a pure move; page contract applied to 7 Support/Operate routes
+- [Phase 154]: Secondary nav wraps at 800px and below (instead of hidden-scrollbar scroll) so keyboard focus is never partly clipped; guarded by assert_responsive_layout!
+- [Phase 154]: Root scroll-padding-block keeps focused controls and rings off the viewport edge; 1100px spot check summarized in prose because BrowserEvidence rejects 1100px
 
 ### Pending Todos
 
@@ -311,8 +313,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-15T21:55:44.094Z
-Stopped at: Completed 154-05-PLAN.md
+Last session: 2026-10-15T23:05:10.863Z
+Stopped at: Completed 154-06-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -416,6 +418,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P03 | 10 min | 3 tasks | 5 files |
 | Phase 154 P04 | 5 min | 3 tasks | 9 files |
 | Phase 154 P05 | 10 min | 3 tasks | 6 files |
+| Phase 154 P06 | 115 min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 
