@@ -1,0 +1,63 @@
+---
+phase: 151-focused-client-registration-settings
+fixed_at: 2026-10-15T00:00:00Z
+review_path: .planning/phases/151-focused-client-registration-settings/151-REVIEW.md
+iteration: 1
+findings_in_scope: 5
+fixed: 5
+skipped: 0
+status: all_fixed
+---
+
+# Phase 151: Code Review Fix Report
+
+**Fixed at:** 2026-10-15
+**Source review:** .planning/phases/151-focused-client-registration-settings/151-REVIEW.md
+**Iteration:** 1
+
+**Summary:**
+- Findings in scope: 5
+- Fixed: 5
+- Skipped: 0
+
+Verification ran in the main checkout (`workflow.use_worktrees` is false). Phase test files plus the vocabulary contract test: 61 passed. `mix test.fast`: 1546 passed, 6 skipped, 0 failures.
+
+## Fixed Issues
+
+### WR-01: Apps list has no pagination controls
+
+**Files modified:** `lib/lockspire/web/live/admin/clients_live/index.ex`, `test/lockspire/web/live/admin/clients_live_test.exs`
+**Commit:** ded415d4 (shared with WR-02, both touch the same files)
+**Applied fix:** Added a "Previous apps" / "Next apps" pager nav under the list. Links are built from the normalized filters and only appear when another page exists. Regression test registers 12 apps and checks both pages.
+
+### WR-02: Non-string `q` crashes the LiveView
+
+**Files modified:** `lib/lockspire/web/live/admin/clients_live/index.ex`, `test/lockspire/web/live/admin/clients_live_test.exs`
+**Commit:** ded415d4
+**Applied fix:** `normalize_filters/1` now coerces any non-binary `q` to an empty string. Regression test loads `?q[]=x` and `?q[a]=b`.
+
+### WR-03: Disable/enable failure is silent
+
+**Files modified:** `lib/lockspire/web/live/admin/clients_live/show.ex`, `test/lockspire/web/live/admin/clients_live/show_test.exs`
+**Commit:** bad55fcf (shared with WR-04, WR-05)
+**Applied fix:** The `{:error, _}` branch of `apply_toggle/2` now sets `lifecycle_errors` with "The app was not changed. Reload the page and try again." Regression test deletes the app, submits a confirmed toggle and asserts the message.
+
+### WR-04: `save_client` trusts client-supplied `mode`
+
+**Files modified:** `lib/lockspire/web/live/admin/clients_live/show.ex`, `test/lockspire/web/live/admin/clients_live/show_test.exs`
+**Commit:** bad55fcf
+**Applied fix:** The handler is guarded on `form_mode in @saveable_modes` and derives attrs from the route's `form_mode` (`save_client_attrs/3` takes the atom mode). The posted `mode` is ignored. A catch-all clause no-ops for the read-only details page or malformed payloads. Regression test sends a bogus mode, an empty payload, and a save from the details page, and confirms nothing changes and nothing crashes.
+**Status note:** Logic change, so it should get a human glance: requires human verification.
+
+### WR-05: Successful saves outside `:edit` give no confirmation
+
+**Files modified:** `lib/lockspire/web/live/admin/clients_live/show.ex`, `test/lockspire/web/live/admin/clients_live/show_test.exs`, `PRODUCT.md`
+**Commit:** bad55fcf
+**Applied fix:** Every mode now sets the success notice "App changes saved." (was "Client changes saved." and edit-only; copy changed to the "app" term, with the old phrase added to the retired-wording table in `PRODUCT.md`; body text now reads "The saved app settings are shown below."). Deviation from the suggested fix: non-edit modes stay on their form with the notice visible, rather than patching to the details page. Existing tests and the security profile flow rely on staying on the form, and the notice addresses the reported ambiguity. Stale notice fixed: a `save_notice_pending` flag keeps the notice only for the immediate edit-to-details patch, so later visits to the details page no longer show it. Regression test saves redirect URIs and checks the notice, then reloads the details page and checks it is gone.
+**Status note:** Logic change: requires human verification.
+
+---
+
+_Fixed: 2026-10-15_
+_Fixer: Claude (gsd-code-fixer)_
+_Iteration: 1_
