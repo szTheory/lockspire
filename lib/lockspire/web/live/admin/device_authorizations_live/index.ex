@@ -197,6 +197,8 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     Enum.filter(authorizations, &waiting?(&1, now))
   end
 
+  defp filter_device_authorizations(authorizations, :all), do: authorizations
+
   # Matches the overview and the pending filter: a request past its expiry is no
   # longer waiting, even before its status is swept to expired.
   defp count_waiting(auths) do
@@ -216,8 +218,6 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   end
 
   defp displayed_status(auth), do: auth
-
-  defp filter_device_authorizations(authorizations, :all), do: authorizations
 
   defp device_authorization_count_copy(0, :all), do: "Showing no device requests"
   defp device_authorization_count_copy(1, :all), do: "Showing 1 device request"
