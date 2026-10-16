@@ -144,7 +144,16 @@ Plans:
 - 157-04: Upgrade and rotation docs, warnings, architecture/walkthrough/SECURITY updates, release-note text (DOC-01). Split candidate if the phase overruns (R7).
 
 **SAFE-01 constraint**: owns the final SAFE-01 proof for the whole milestone; no new admin copy (KEY-UI-01 deferred), so PRODUCT.md vocabulary is unchanged.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+**Wave 1**
+- [ ] 157-01-PLAN.md — Redaction sweep: sensitive key-column queries and column-free JWKS selects, `redact: true` + `put_change`, Redaction drop keys and envelope guard, `PrivateJwk.to_jwk/1` across six consumers, single leak matcher sweep (RED-01)
+- [ ] 157-02-PLAN.md — Host surfaces: install step 9 runtime KEK block, config error text, adoption demo KEK + public-API seeds, clean-room per-run KEK under `:reject` (HOST-01)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 157-03-PLAN.md — Upgrade journey integration test for six consumers, demo and clean-room `--check`/doctor CI checks, SAFE-01 gate recorded (PROOF-01, SAFE-01)
+- [ ] 157-04-PLAN.md — `docs/upgrading/signing-key-encryption.md` + contract test, telemetry/SECURITY/architecture/walkthrough/install docs, release-note file (DOC-01)
 
 ### Coverage
 
