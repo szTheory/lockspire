@@ -34,9 +34,10 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
     with {:ok, signing_key} <- fetch_key(key_store, alg, effective_security_profile),
          :ok <- ensure_allowed_alg(signing_key.alg, effective_security_profile),
          {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
          claims <- build_claims(issuer, caller_client_id, issued_at, payload),
          protected_header <- protected_header(signing_key),
-         {:ok, compact} <- sign_compact_jwt(jwk_map, protected_header, claims) do
+         {:ok, compact} <- sign_compact_jwt(jwk, protected_header, claims) do
       {:ok, compact}
     else
       {:error, reason} -> {:error, reason}
@@ -95,9 +96,9 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
     |> Kernel.||("RS256")
   end
 
-  defp sign_compact_jwt(jwk_map, protected_header, claims) do
+  defp sign_compact_jwt(jwk, protected_header, claims) do
     {:ok,
-     JOSE.JWK.from_map(jwk_map)
+     jwk
      |> JOSE.JWT.sign(protected_header, claims)
      |> JOSE.JWS.compact()
      |> elem(1)}

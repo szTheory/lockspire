@@ -33,10 +33,11 @@ defmodule Lockspire.Protocol.LogoutToken do
 
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
          {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
          {:ok, claims} <- build_claims(issuer, logout_event, delivery, issued_at),
          {_, compact} <-
            JOSE.JWT.sign(
-             JOSE.JWK.from_map(jwk_map),
+             jwk,
              %{"alg" => alg, "kid" => kid, "typ" => "logout+jwt"},
              claims
            )

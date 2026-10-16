@@ -195,6 +195,11 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
                LogoutToken.sign(logout_params(legacy_key(keys, "kid-lo")))
     end
 
+    test "malformed sealed key returns invalid_signing_key without raising" do
+      key = malformed_sealed_key("kid-lo")
+      assert {:error, :invalid_signing_key} = LogoutToken.sign(logout_params(key))
+    end
+
     test "unconfigured KEK returns invalid_signing_key" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-lo")
       KeyEncryptionHelpers.put_key_encryption(nil)
@@ -232,6 +237,11 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       keys = JarTestHelpers.generate_keys()
       reject_mode()
       assert {:error, :invalid_signing_key} = jarm_sign(legacy_key(keys, "kid-jarm"))
+    end
+
+    test "malformed sealed key returns invalid_signing_key without raising" do
+      key = malformed_sealed_key("kid-jarm", "RS256")
+      assert {:error, :invalid_signing_key} = jarm_sign(key)
     end
 
     test "unconfigured KEK returns invalid_signing_key" do
@@ -272,6 +282,11 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       keys = JarTestHelpers.generate_keys()
       reject_mode()
       assert {:error, :invalid_signing_key} = introspection_sign(legacy_key(keys, "kid-intro"))
+    end
+
+    test "malformed sealed key returns invalid_signing_key without raising" do
+      key = malformed_sealed_key("kid-intro")
+      assert {:error, :invalid_signing_key} = introspection_sign(key)
     end
 
     test "unconfigured KEK returns invalid_signing_key" do
@@ -325,6 +340,14 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
                issue(legacy_key(keys, "kid-at"))
     end
 
+    test "malformed sealed key returns the existing server_error without raising" do
+      key = malformed_sealed_key("kid-at")
+
+      assert {:error,
+              %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}} =
+               issue(key)
+    end
+
     test "unconfigured KEK returns the existing server_error" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-at")
       KeyEncryptionHelpers.put_key_encryption(nil)
@@ -360,6 +383,15 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
     test "tampered envelope collapses to decryption_failed" do
       {compact, key} = jar_fixture()
       assert {:error, :decryption_failed} = Jar.decrypt(compact, [tamper(key)])
+    end
+
+    test "malformed sealed key collapses to decryption_failed without raising" do
+      {compact, _key} = jar_fixture()
+
+      key =
+        struct(Lockspire.Domain.SigningKey, malformed_sealed_key("kid-jar", "RSA-OAEP"))
+
+      assert {:error, :decryption_failed} = Jar.decrypt(compact, [key])
     end
 
     test "unconfigured KEK collapses to decryption_failed" do

@@ -53,11 +53,12 @@ defmodule Lockspire.Protocol.Jarm do
       true ->
         with {:ok, signing_key} <- fetch_key(key_store, alg, security_profile),
              {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+             {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
              claims <- build_claims(response_params, issuer, client.client_id),
              protected_header <-
                %{"alg" => signing_key.alg, "kid" => signing_key.kid, "typ" => "JWT"},
              {_, compact} <-
-               JOSE.JWT.sign(JOSE.JWK.from_map(jwk_map), protected_header, claims)
+               JOSE.JWT.sign(jwk, protected_header, claims)
                |> JOSE.JWS.compact() do
           {:ok, compact}
         else
