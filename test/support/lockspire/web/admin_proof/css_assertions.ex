@@ -151,6 +151,9 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     # Text fields keep a readable line length on pages without the form shell.
     assert block_rule!(css, ".lockspire-admin-field textarea") =~ "max-width: min(100%, 600px)"
 
+    assert block_rule!(css, ".lockspire-admin-multi-value--enhanced") =~
+             "max-width: min(100%, 600px)"
+
     # A closed tooltip must not extend the page past the admin background.
     assert block_rule!(css, ".lockspire-admin-info-tooltip") =~ "display: none"
     refute block_rule!(css, ".lockspire-admin-info-tooltip") =~ "visibility: hidden"

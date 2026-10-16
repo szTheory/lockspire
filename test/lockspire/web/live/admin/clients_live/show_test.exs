@@ -351,7 +351,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              ~s(input[type="radio"][name="client[security_profile]"][value="none"][checked])
            )
 
-    assert changed_security_text =~ "Result if saved: None (Standard OIDC)"
+    assert changed_security_text =~ "Result if saved: Standard OAuth and OpenID Connect"
 
     invalid_security_html = render_invalid_security_profile_html(client.client_id)
 

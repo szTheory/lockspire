@@ -192,14 +192,14 @@
           <Lockspire.Web.Components.AdminComponents.checkbox_group
             id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]"
             label="Allowed authentication methods" help="How an app proves its identity when requesting tokens."
-            value={@form[:dcr_allowed_token_endpoint_auth_methods].value} choices={[{"none", "No client secret"}, {"client_secret_basic", "Client secret in the request header"}, {"client_secret_post", "Client secret in the request body"}, {"client_secret_jwt", "Signed client assertion (client_secret_jwt)"}, {"private_key_jwt", "Signed client assertion with app key (private_key_jwt)"}]}
+            value={@form[:dcr_allowed_token_endpoint_auth_methods].value} choices={[{"none", "No client secret"}, {"client_secret_basic", "Client secret in the request header"}, {"client_secret_post", "Client secret in the request body"}, {"client_secret_jwt", "Signed client assertion (JWT)"}, {"private_key_jwt", "Signed client assertion with app key"}]}
             errors={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods)} />
             <div class="lockspire-admin-jwt-guidance">
               <p class="lockspire-admin-help">
-                <strong>private_key_jwt:</strong> Apps sign assertions with a private key and provide a public key through <code>jwks</code> or <code>jwks_uri</code>. Supported signatures: <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code>.
+                <strong>Signed client assertion with app key (private_key_jwt):</strong> Apps sign assertions with a private key and provide a public key through <code>jwks</code> or <code>jwks_uri</code>. Supported signatures: <code>{Enum.join(@private_key_jwt_truth.supported_assertion_signing_algorithms, ", ")}</code>.
               </p>
               <p class="lockspire-admin-help">
-                <strong>client_secret_jwt:</strong>
+                <strong>Signed client assertion (JWT) (client_secret_jwt):</strong>
                 <%= if @client_secret_jwt_truth.fapi_effective? do %>
                   Unavailable while FAPI security requirements are active.
                 <% else %>

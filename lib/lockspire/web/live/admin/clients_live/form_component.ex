@@ -359,7 +359,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
         <div :if={@mode == :security_profile} class="lockspire-admin-help">
           <p>
-            <strong>None (Standard OIDC):</strong> Standard OAuth and OIDC protections.
+            <strong>Standard OAuth and OpenID Connect:</strong> Lockspire's default protections, including S256 PKCE and exact sign-in return URL matching, without the extra FAPI 2.0 requirements.
           </p>
           <p>
             <strong>FAPI 2.0 Security Profile:</strong> Requires PAR, key-bound access tokens (DPoP), and S256 PKCE.
@@ -482,7 +482,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp effective_profile_label(%{effective_profile: :fapi_2_0_security}),
     do: "FAPI 2.0 Security Profile"
 
-  defp effective_profile_label(_resolved), do: "None (Standard OIDC)"
+  defp effective_profile_label(_resolved), do: "Standard OAuth and OpenID Connect"
 
   defp defaults_for(:new, _client) do
     %{
@@ -706,14 +706,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp security_effective_preview(_profile, "fapi_2_0_security", :loaded),
     do: "FAPI 2.0 Security Profile"
 
-  defp security_effective_preview(_profile, "none", :loaded), do: "None (Standard OIDC)"
+  defp security_effective_preview(_profile, "none", :loaded),
+    do: "Standard OAuth and OpenID Connect"
 
   defp security_effective_preview(_profile, _choice, :loaded),
     do: "Unavailable until the selection is valid"
 
   defp security_profile_name(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
   defp security_profile_name(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
-  defp security_profile_name(:none), do: "None (Standard OIDC)"
+  defp security_profile_name(:none), do: "Standard OAuth and OpenID Connect"
   defp security_profile_name(_profile), do: "Unavailable"
 
   defp form_id(:new), do: "client-create-form"

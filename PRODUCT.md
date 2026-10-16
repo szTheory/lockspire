@@ -152,6 +152,7 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | Client secret over HTTP Basic | Client secret in the request header |
 | Client secret in request body | Client secret in the request body |
 | Standard OpenID Connect | Standard OAuth and OpenID Connect |
+| None (Standard OIDC) | Standard OAuth and OpenID Connect |
 | login or consent | sign-in or consent |
 | logout deliveries | sign-out notices |
 | client class | app type |

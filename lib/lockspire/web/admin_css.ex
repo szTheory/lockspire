@@ -1090,6 +1090,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-multi-value--enhanced {
+    max-width: min(100%, 600px);
     align-items: center;
     background: var(--ls-surface-panel);
     border: 1px solid var(--ls-border-control);

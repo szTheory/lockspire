@@ -269,7 +269,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
       |> render_submit("save_policy", %{policy: %{security_profile: "invalid"}})
 
     assert html =~
-             "Choose None (Standard OIDC), FAPI 2.0 Security Profile, or FAPI 2.0 Message Signing."
+             "Choose Standard OAuth and OpenID Connect, FAPI 2.0 Security Profile, or FAPI 2.0 Message Signing."
 
     refute html =~ "invalid_security_profile"
     HtmlAssertions.assert_no_text(html, forbidden_secret_samples() ++ backend_leak_samples())

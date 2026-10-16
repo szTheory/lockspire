@@ -92,13 +92,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
           <AdminComponents.radio_group id="security_profile" name="policy[security_profile]"
             label="Security requirements" value={@policy.security_profile} errors={@form_errors}
             help="Apps may have their own setting.">
-            <:option value="none" label="None (Standard OIDC)" />
+            <:option value="none" label="Standard OAuth and OpenID Connect" />
             <:option value="fapi_2_0_security" label="FAPI 2.0 Security Profile" />
             <:option value="fapi_2_0_message_signing" label="FAPI 2.0 Message Signing" />
             <details class="lockspire-admin-help-disclosure">
               <summary>Compare security requirements</summary>
               <div>
-                <p><strong>None (Standard OIDC):</strong> Standard OAuth and OIDC protections.</p>
+                <p><strong>Standard OAuth and OpenID Connect:</strong> Lockspire's default protections, including S256 PKCE and exact sign-in return URL matching, without the extra FAPI 2.0 requirements.</p>
                 <p><strong>FAPI 2.0 Security Profile:</strong> Requires PAR, key-bound access tokens (DPoP), and S256 PKCE. Requests that miss a requirement are rejected.</p>
                 <p><strong>FAPI 2.0 Message Signing:</strong> Includes those requirements and signed authorization and introspection responses.</p>
               </div>
@@ -199,7 +199,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile do
           %{
             field: "Active profile",
             message:
-              "Choose None (Standard OIDC), FAPI 2.0 Security Profile, or FAPI 2.0 Message Signing."
+              "Choose Standard OAuth and OpenID Connect, FAPI 2.0 Security Profile, or FAPI 2.0 Message Signing."
           }
         ]
 
