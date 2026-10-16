@@ -328,12 +328,50 @@
 
 ---
 
+## Milestone: v1.42 — Admin UI Clarity & Workflow Refinement
+
+**Shipped:** 2026-10-15
+**Phases:** 4 | **Plans:** 21
+
+### What Was Built
+- A dedicated app registration page and focused app task pages under a primary/secondary/danger action rule (Phase 151).
+- Overview counts that open exact read-only queue subsets, with hedged token-reuse and sign-out evidence (Phase 152).
+- Plain-language, single-hierarchy Configure and Support pages across all 30 admin paths, with retired wording enforced by test (Phase 153).
+- 3:1 control contrast, visible field focus, narrow-width fixes and a local-only browser harness with 928 redaction-safe checks across 7 widths and 3 themes (Phase 154).
+
+### What Worked
+- Deterministic contracts (page contract, computed WCAG contrast, harness route parity) caught regressions in CI while slow browser runs stayed local.
+- Stopping evidence runs on the first finding (F-03, F-04) and fixing at the source before retaking evidence kept final captures tied to one frozen source SHA.
+- The retired-wording table in PRODUCT.md made copy unification enforceable instead of advisory.
+
+### What Was Inefficient
+- Phase 153 was largely a close-out of work already landed in PR #123, so its validation and security audits were only finished at milestone close.
+- Phase 154 edited shared CSS and components, which marked Phases 151–153 verification stale and needed a re-verification pass at close.
+- Label unification took three passes (d653d963, 3e31d401, 70f2671c) because no test pinned the same label across form, detail, verdict and policy pages.
+
+### Patterns Established
+- Navigate-only browser automation: submit only the synthetic sign-in form and never press Enter or Space on actions.
+- Add a "UI says" vocabulary row whenever a new label is introduced, not only a retired-wording row.
+- Re-verify earlier phases at close when a later phase touches shared presentation files.
+
+### Key Lessons
+1. Run validate-phase and secure-phase for close-out phases immediately, not at milestone close.
+2. When one domain value is labelled on several pages, pin it with one shared label function or a cross-page test.
+3. Keep screenshot output paths phase-agnostic; legacy browser tests still write into archived phase folders.
+
+### Cost Observations
+- Model mix and session count: not recorded.
+- Notable: the evidence matrix grew to 840 rows once "system" theme rows ran under both light and dark.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.42 | N/A | 4 | Admin UI clarity backed by CI page/contrast contracts plus a local-only, navigate-only browser evidence harness. |
 | v1.39 | N/A | 2 | Verified the public 1.5.1 artifact across exact-source CI, protected publication, and install proof while retaining a separate accepted merge-provenance gap. |
 | v1.38 | N/A | 4 | Exact-source maintenance evidence and automated closeout returned the project to its sustaining release train. |
 | v1.37 | N/A | 7 | Packaged adoption, real SaaS integration, architecture quality, conformance evidence, and exact-artifact release proof converged into one acceptance spine. |
@@ -348,6 +386,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.42 | 1573 fast-suite tests; page contract on every admin route; computed contrast contract; 928 local browser checks | High | Page contract helper, contrast assertions, local agent-browser route-proof harness |
 | v1.39 | Focused release contracts, exact-main CI, package checksum, tag/docs/install, and terminal receipt | N/A (release-engineering milestone) | Manifest-bound publisher, exact tag checks, per-stage terminal release receipts |
 | v1.38 | Exact-source CI/release proof and portable lifecycle contracts | N/A (maintenance milestone) | Repository inventory and closeout automation |
 | v1.37 | Canonical CI, clean-room provider/client/resource journey, dual-router Sobelow, architecture/quality gates, OIDF receipts, and protected public release proof | 84%+ complete suite | Semantic token readers, neutral client lifecycle, aggregate stores, typed token collaborators, immutable evidence scripts |
