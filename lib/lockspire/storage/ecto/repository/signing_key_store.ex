@@ -104,7 +104,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
   def fetch_signing_key_by_id(repo, id) when is_integer(id) do
     SigningKeyRecord
     |> where([key], key.id == ^id)
-    |> then(&Support.one(repo, &1))
+    |> then(&Support.one(repo, &1, sensitive: true))
     |> then(&{:ok, maybe_map(&1)})
   rescue
     error -> {:error, error}

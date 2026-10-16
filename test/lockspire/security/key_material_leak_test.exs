@@ -9,6 +9,10 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
   alias Lockspire.Security.KeyEncryption
   alias Lockspire.Security.KeyEncryption.KeySet
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Host.Claims
+  alias Lockspire.Protocol.IdToken
+  alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.KeyMaterialMatcher
   alias Lockspire.TestSupport.TelemetryCapture
 
   @sentinel_d "SENTINEL-PRIVATE-D-0001"
@@ -204,8 +208,10 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
         inspect({md[:params], md[:cast_params], md[:result]}, limit: :infinity)
       end)
 
-    refute key_event_text =~ "LSK"
-    refute repo_param_text =~ "LSK"
+    secrets = [@sentinel_d, @kek_one, @kek_two, @kek_one_bytes, @kek_two_bytes]
+
+    KeyMaterialMatcher.refute_leak!("key telemetry", key_events_received, secrets)
+    KeyMaterialMatcher.refute_leak!("repo events", repo_events, secrets)
 
     # The query log lines must exist before their absence of key material means anything.
     assert log =~ ~r/QUERY (OK|ERROR)/,
@@ -232,7 +238,118 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
     end
 
     for {surface, text} <- [{"captured log", log}, {"audit rows", audit_rows}] do
-      refute String.contains?(text, "LSK"), "envelope bytes leaked into #{surface}"
+      KeyMaterialMatcher.refute_leak!(surface, text, secrets)
+    end
+  end
+
+  describe "matcher" do
+    @canary "CANARY-PRIVATE-D-9999"
+
+    test "flags the raw secret inside a nested map" do
+      assert_raise ExUnit.AssertionError, ~r/matched secret/, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", %{a: [%{b: @canary}]}, [@canary])
+      end
+    end
+
+    test "flags the base64url form of a secret" do
+      assert_raise ExUnit.AssertionError, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", "x " <> Base.url_encode64(@canary) <> " y", [
+          @canary
+        ])
+      end
+    end
+
+    test "flags the hex form of a secret" do
+      assert_raise ExUnit.AssertionError, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", Base.encode16(@canary, case: :lower), [@canary])
+      end
+    end
+
+    test "flags the inspect byte-list form of an envelope" do
+      envelope = <<"LSK", 1, 0, 1, 2, 3>>
+
+      assert_raise ExUnit.AssertionError, ~r/envelope_header_inspect/, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", inspect(envelope), [])
+      end
+    end
+
+    test "flags an envelope binary buried in tuples and improper lists" do
+      envelope = <<"LSK", 1, 9, 9>>
+
+      assert_raise ExUnit.AssertionError, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", {:ok, [:a | envelope]}, [])
+      end
+    end
+
+    test "flags the base64 envelope header" do
+      assert_raise ExUnit.AssertionError, fn ->
+        KeyMaterialMatcher.refute_leak!("canary", "prefix TFNLAQ suffix", [])
+      end
+    end
+
+    test "passes a map holding only operator ids and counts" do
+      assert :ok =
+               KeyMaterialMatcher.refute_leak!(
+                 "clean",
+                 %{kid: "leak-1", kek_id: "leak-1", previous_kek_id: nil, count: 3},
+                 [@canary]
+               )
+    end
+  end
+
+  describe "tracer: sealed key read by id signs an ID token" do
+    test "nothing leaks through the log, repo events or the result" do
+      configure("leak-1", :allow)
+
+      valid = Helpers.legacy_json_row("leak-tracer", status: :active)
+      jwk = Jason.decode!(valid.private_jwk_encrypted)
+
+      {:ok, envelope} =
+        KeyEncryption.seal(sentinel_keyset("leak-1"), "leak-tracer", valid.private_jwk_encrypted)
+
+      # Seed before any handler is attached or log is captured.
+      stored = Helpers.insert_signing_key_row!(%{valid | private_jwk_encrypted: envelope})
+
+      repo_query = (Lockspire.TestRepo.config()[:telemetry_prefix] || []) ++ [:query]
+      TelemetryCapture.attach_many([repo_query])
+
+      secrets = [jwk["d"], jwk["p"], jwk["q"], @kek_one, @kek_two, @kek_one_bytes, @kek_two_bytes]
+
+      log =
+        capture_log([level: :debug], fn ->
+          # A non-sensitive query keeps the repo log and telemetry channels provably live.
+          assert {:ok, _refs} = Repository.list_signing_key_refs(0, 10)
+
+          assert {:ok, %{kid: "leak-tracer"} = fetched} =
+                   Repository.fetch_signing_key_by_id(stored.id)
+
+          assert {:ok, jwt} =
+                   IdToken.sign(%{
+                     client_id: "client-123",
+                     issuer: "https://example.test/lockspire",
+                     host_claims: %Claims{subject: "sub-1", id_token: %{}, userinfo: %{}},
+                     interaction_nonce: "nonce-123",
+                     access_token: "access-token-123",
+                     issued_at: ~U[2026-04-28 15:00:00Z],
+                     signing_key: fetched
+                   })
+
+          Process.put(:tracer_jwt, jwt)
+        end)
+
+      jwt = Process.get(:tracer_jwt)
+      events = drain()
+
+      assert log =~ ~r/QUERY (OK|ERROR)/,
+             "repo query logging is not active, so the leak check would be vacuous"
+
+      assert Enum.any?(events, fn {event, _m, _md} -> event == repo_query end),
+             "no repo query event arrived, so the leak check would be vacuous"
+
+      KeyMaterialMatcher.refute_leak!("captured log", log, secrets)
+      KeyMaterialMatcher.refute_leak!("repo events", events, secrets)
+      KeyMaterialMatcher.refute_leak!("signed token", jwt, secrets)
+      refute log =~ "private_jwk_encrypted"
     end
   end
 end
