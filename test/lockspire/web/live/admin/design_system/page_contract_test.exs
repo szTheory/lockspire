@@ -94,6 +94,44 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.PageContractTest do
     assert HtmlAssertions.assert_page_contract!(html, labels: :required) == html
   end
 
+  test "a wrapping label exempts only the control it wraps, not an identical one outside it" do
+    html = """
+    <h1>A</h1>
+    <label><input type="checkbox" name="x[]"> First</label>
+    <input type="checkbox" name="x[]">
+    """
+
+    error =
+      assert_raise ExUnit.AssertionError, fn ->
+        HtmlAssertions.assert_page_contract!(html, labels: :required)
+      end
+
+    assert error.message =~ "non-empty label[for] or wrapping label"
+  end
+
+  test "an empty label does not label a control" do
+    for html <- [
+          ~s(<h1>A</h1><label><input type="checkbox" name="confirm"></label>),
+          ~s(<h1>A</h1><label for="name"> </label><input id="name" name="name">)
+        ] do
+      assert_raise ExUnit.AssertionError, fn ->
+        HtmlAssertions.assert_page_contract!(html, labels: :required)
+      end
+    end
+  end
+
+  test "a wrapping label with a for attribute labels only the control it names" do
+    html =
+      ~s(<h1>A</h1><label for="other">Name <input id="name" name="name"></label><input id="other">)
+
+    error =
+      assert_raise ExUnit.AssertionError, fn ->
+        HtmlAssertions.assert_page_contract!(html, labels: :required)
+      end
+
+    assert error.message =~ ~s("name")
+  end
+
   test "route proof harness lists exactly the mounted admin routes" do
     source = File.read!(@harness)
 
