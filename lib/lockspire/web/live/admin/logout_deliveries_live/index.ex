@@ -85,7 +85,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
                 <AdminComponents.admin_button href={logout_deliveries_path(@delivery_filter)}>
                   Reload app sign-out notices
                 </AdminComponents.admin_button>
-                <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+                <AdminComponents.admin_button href={admin_path("/overview")}>
                   Return to overview
                 </AdminComponents.admin_button>
               </:actions>
@@ -104,7 +104,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
               </AdminComponents.admin_button>
               <AdminComponents.admin_button
                 :if={@delivery_filter == :all}
-                href={Lockspire.mount_path() <> "/admin/overview"}
+                href={admin_path("/overview")}
               >
                 Return to overview
               </AdminComponents.admin_button>
@@ -152,9 +152,8 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
   end
 
   defp load_deliveries do
-    case Admin.list_logout_deliveries() do
-      {:ok, deliveries} when is_list(deliveries) -> {:loaded, deliveries}
-    end
+    {:ok, deliveries} = Admin.list_logout_deliveries()
+    {:loaded, deliveries}
   rescue
     _error -> {:unavailable, []}
   end
@@ -168,7 +167,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
   defp filter_deliveries(deliveries, :all), do: deliveries
 
   defp delivery_count_copy(0, :all), do: "0 app sign-out notices recorded"
-  defp delivery_count_copy(1, :all), do: "1 logout delivery recorded"
+  defp delivery_count_copy(1, :all), do: "1 app sign-out notice recorded"
 
   defp delivery_count_copy(count, :all), do: "#{count} app sign-out notices recorded"
 
@@ -176,7 +175,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
     do: "0 app sign-out notices need review"
 
   defp delivery_count_copy(1, :needs_review),
-    do: "1 logout delivery needs review"
+    do: "1 app sign-out notice needs review"
 
   defp delivery_count_copy(count, :needs_review),
     do: "#{count} app sign-out notices need review"
@@ -223,6 +222,8 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
     do: Lockspire.mount_path() <> "/admin/logouts?status=needs_review"
 
   defp logout_deliveries_path(_filter), do: Lockspire.mount_path() <> "/admin/logouts"
+
+  defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 
   defp safe_identifier(nil), do: "Not recorded"
   defp safe_identifier(value) when is_binary(value), do: value

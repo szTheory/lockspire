@@ -70,9 +70,13 @@ config :lockspire,
   known_scopes: ["openid", "email", "profile", "read:billing", "write:reports"],
   account_resolver: AdoptionDemo.Lockspire.AccountResolver,
   signing_alg: System.get_env("LOCKSPIRE_DEMO_SIGNING_ALG", "RS256"),
+  oban: [queues: false, plugins: false]
+
+# Admin and API writes that run outside a request (for example creating a
+# server-side app in the admin UI) read the key from here.
+config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base:
     System.get_env("SECRET_KEY_BASE") ||
-      "a3e20c7a13116f2415ef29e0714cc5901d0d0ed48390b78781625d0ef4dbfd328ed05f017f89cc3c0eb579d9fb3af16b",
-  oban: [queues: false, plugins: false]
+      "a3e20c7a13116f2415ef29e0714cc5901d0d0ed48390b78781625d0ef4dbfd328ed05f017f89cc3c0eb579d9fb3af16b"
 
 config :phoenix, :json_library, Jason

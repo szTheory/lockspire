@@ -57,7 +57,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
           <div class="lockspire-admin-resource-list lockspire-admin-overview-review-list">
             <div class="lockspire-admin-overview-review-row">
               <span class="lockspire-admin-overview-review-label">
-                <a href={admin_path("/logouts?status=needs_review")}>Unconfirmed app sign-outs</a>
+                <a href={admin_path("/logouts?status=needs_review")}>App sign-out notices needing review</a>
                 <AdminComponents.info_tooltip :if={@summary.logouts.state == :loaded} id="logout-delivery-help" label="About app sign-out problems">
                   <%= if observation_value(@summary.logouts, :failed) > 0 do %>
                     These notices could not be delivered successfully. An app session may still be open.
@@ -74,7 +74,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLive.Index do
                 {if observation_value(@summary.logouts, :failed) > 0, do: "Sign-out notices failed or were discarded", else: "No failed notices"}
               </small>
               <small :if={@summary.logouts.state != :loaded} role="status">
-                {observation_note(@summary.logouts, "logout delivery records")}
+                {observation_note(@summary.logouts, "app sign-out notices")}
               </small>
             </div>
           </div>

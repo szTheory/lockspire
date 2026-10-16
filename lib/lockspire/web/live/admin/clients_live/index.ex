@@ -3,6 +3,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
 
   use Phoenix.LiveView
 
+  require Logger
+
   alias Lockspire.Admin
   alias Lockspire.Web.Components.AdminComponents
   alias Lockspire.Web.Live.Admin.ClientsLive.FormComponent
@@ -76,6 +78,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
          )}
 
       {:error, errors} ->
+        log_unexpected_create_error(errors)
+
         {:noreply,
          assign(socket,
            form_errors: errors,
@@ -114,14 +118,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <p class="lockspire-admin-help">Add an app that will use this service.</p>
           </div>
 
-          <FormComponent.client_form
-            mode={:new}
-            errors={@form_errors}
-            params={@create_params}
-            show_heading={false}
-          />
-
-          <div :if={@created_result}>
+          <div :if={@created_result} id="client-created-result">
             <p>Client ID: <code>{@created_result.client.client_id}</code></p>
             <.link
               class="lockspire-admin-btn lockspire-admin-btn-secondary"
@@ -134,7 +131,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                 cond do
                   @created_secret_hidden? -> "Client secret hidden"
                   @created_result.client_secret -> "Copy this client secret now"
-                  true -> "Client created"
+                  true -> "App created"
                 end
               }
               body={
@@ -158,6 +155,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
               Hide credential
             </AdminComponents.admin_button>
           </div>
+
+          <FormComponent.client_form
+            mode={:new}
+            errors={@form_errors}
+            params={@create_params}
+            show_heading={false}
+          />
         </div>
       <% else %>
       <AdminComponents.page_hero
@@ -217,7 +221,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             <AdminComponents.admin_button
               variant={:secondary}
               type="submit"
-              phx-disable-with="Filtering clients…"
+              phx-disable-with="Filtering apps…"
             >
               Filter apps
             </AdminComponents.admin_button>
@@ -232,7 +236,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             variant={:danger}
             title="Could not load apps"
           >
-            <p>No matching-client result is available until this read succeeds. Reload this view or return to the inventory and try again.</p>
+            <p>The app list is not available until this read succeeds. Reload this view or return to the inventory and try again.</p>
             <div class="lockspire-admin-client-inventory__recovery">
               <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={clients_index_path(@filters)}>
                 Reload this view
@@ -247,12 +251,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
             :if={@inventory_state == :loaded and @clients == []}
             title={
               if first_use_empty?(@filters, @total_clients),
-                do: "No clients yet",
+                do: "No apps yet",
                 else: "No matching apps"
             }
             body={
               if first_use_empty?(@filters, @total_clients),
-                do: "Create a client to begin connecting applications.",
+                do: "Add an app to let it sign people in through this service.",
                 else: "Change or clear the filters to see other records."
             }
           >
@@ -285,13 +289,34 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                   <AdminComponents.status_badge status={client.provenance} />
                 </:status>
                 <:actions>
-                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id)}>
+                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id, @filters)}>
                     View app
                   </.link>
                 </:actions>
               </AdminComponents.resource_item>
             <% end %>
           </AdminComponents.resource_list>
+
+          <nav
+            :if={@inventory_state == :loaded and (has_previous_page?(@filters) or has_next_page?(@filters, @matching_clients))}
+            class="lockspire-admin-client-inventory__pager"
+            aria-label="App list pages"
+          >
+            <.link
+              :if={has_previous_page?(@filters)}
+              class="lockspire-admin-btn lockspire-admin-btn-secondary"
+              href={clients_index_path(page_filters(@filters, -1))}
+            >
+              Previous apps
+            </.link>
+            <.link
+              :if={has_next_page?(@filters, @matching_clients)}
+              class="lockspire-admin-btn lockspire-admin-btn-secondary"
+              href={clients_index_path(page_filters(@filters, 1))}
+            >
+              Next apps
+            </.link>
+          </nav>
         </div>
       </AdminComponents.section_card>
 
@@ -339,17 +364,46 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
     Enum.slice(clients, (page - 1) * @per_page, @per_page)
   end
 
-  defp normalize_filters(params) do
+  @doc false
+  # Shared with ClientsLive.Show so the details page can return to the same filtered list.
+  def normalize_filters(params) do
     %{
-      "q" => Map.get(params, "q", ""),
+      "q" => normalize_query(Map.get(params, "q", "")),
       "status" => normalize_status(Map.get(params, "status", "all")),
       "provenance" => normalize_provenance(Map.get(params, "provenance", "all")),
       "page" => Integer.to_string(parse_page(Map.get(params, "page", "1")))
     }
   end
 
+  defp has_previous_page?(filters), do: parse_page(filters["page"]) > 1
+
+  defp has_next_page?(filters, matching_clients) when is_integer(matching_clients),
+    do: parse_page(filters["page"]) * @per_page < matching_clients
+
+  defp has_next_page?(_filters, _matching_clients), do: false
+
+  defp page_filters(filters, delta) do
+    page = max(parse_page(filters["page"]) + delta, 1)
+    Map.put(filters, "page", Integer.to_string(page))
+  end
+
+  defp normalize_query(q) when is_binary(q), do: q
+  defp normalize_query(_q), do: ""
+
   defp base_filters do
     %{"q" => "", "status" => "all", "provenance" => "all", "page" => "1"}
+  end
+
+  defp log_unexpected_create_error(errors) when is_list(errors), do: :ok
+
+  defp log_unexpected_create_error(%{__exception__: true} = exception) do
+    Logger.error("Lockspire admin could not create an app: " <> Exception.message(exception))
+  end
+
+  defp log_unexpected_create_error(_reason) do
+    Logger.error(
+      "Lockspire admin could not create an app because storage returned an unexpected error"
+    )
   end
 
   defp create_attrs(params) do
@@ -379,10 +433,28 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
   defp clients_index_path(filters),
     do: Lockspire.mount_path() <> "/admin/clients?" <> URI.encode_query(filters)
 
+  @doc false
+  # Builds the list path from normalized filters, omitting the query when no filter is set.
+  def index_path(filters) do
+    if filters == base_filters(),
+      do: clients_index_path(nil),
+      else: clients_index_path(filters)
+  end
+
   defp client_create_path(filters),
     do: Lockspire.mount_path() <> "/admin/clients/new?" <> URI.encode_query(filters)
 
-  defp client_show_path(client_id), do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+  defp client_show_path(client_id, filters \\ nil)
+
+  defp client_show_path(client_id, filters) do
+    path =
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
+
+    if is_nil(filters) or filters == base_filters(),
+      do: path,
+      else: path <> "?" <> URI.encode_query(filters)
+  end
 
   defp first_use_empty?(filters, 0) do
     filters["q"] in [nil, ""] and filters["status"] == "all" and

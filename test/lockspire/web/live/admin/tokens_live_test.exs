@@ -106,6 +106,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
              )
 
     html = rendered_to_string(Index.render(socket.assigns))
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
     rows = fragment_html(html, ".lockspire-admin-dense-resource-row")
 
     assert_path_query(html, "/lockspire/admin/tokens/#{refresh_token.id}", %{
@@ -313,6 +314,8 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
     assert_path_query(html, "/lockspire/admin/tokens", filters)
+
+    HtmlAssertions.assert_page_contract!(html)
 
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_describedby_targets_exist(html)
@@ -600,6 +603,14 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
       assert socket.assigns.token_id == nil
       assert socket.assigns.detail_state == :missing
       assert rendered_to_string(Show.render(socket.assigns)) =~ "Token not found"
+
+      for {event, params} <- [
+            {"revoke_token", %{"revoke" => %{"confirm" => "true"}}},
+            {"revoke_family", %{"family" => %{"confirm" => "true"}}}
+          ] do
+        assert {:noreply, socket} = Show.handle_event(event, params, socket)
+        assert socket.assigns.revoke_error =~ "Revocation could not be confirmed"
+      end
     end
   end
 

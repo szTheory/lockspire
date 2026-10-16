@@ -23,8 +23,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     interaction_filter = interaction_filter(params)
-    {read_state, all_interactions} = load_interactions()
-    interactions = filter_interactions(all_interactions, interaction_filter)
+    {read_state, interactions} = load_interactions(interaction_filter)
 
     {:noreply,
      assign(socket,
@@ -56,11 +55,11 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
           :if={@interaction_read_state == :loaded and @interaction_filter == :all}
         >
           <AdminComponents.summary_stat
-            value={count_status(@interactions, :pending_login)}
+            value={count_waiting(@interactions, :pending_login)}
             label="Waiting for sign-in"
           />
           <AdminComponents.summary_stat
-            value={count_status(@interactions, :pending_consent)}
+            value={count_waiting(@interactions, :pending_consent)}
             label="Waiting for consent"
           />
           <AdminComponents.summary_stat
@@ -90,7 +89,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
                 <AdminComponents.admin_button href={interactions_path(@interaction_filter)}>
                   Reload sign-in requests
                 </AdminComponents.admin_button>
-                <AdminComponents.admin_button href={Lockspire.mount_path() <> "/admin/overview"}>
+                <AdminComponents.admin_button href={admin_path("/overview")}>
                   Return to overview
                 </AdminComponents.admin_button>
               </:actions>
@@ -109,7 +108,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
               </AdminComponents.admin_button>
               <AdminComponents.admin_button
                 :if={@interaction_filter == :all}
-                href={Lockspire.mount_path() <> "/admin/overview"}
+                href={admin_path("/overview")}
               >
                 Return to overview
               </AdminComponents.admin_button>
@@ -123,7 +122,7 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
                 subtitle={interaction_pressure(interaction)}
               >
                 <:meta>
-                  <span>Request ID <AdminComponents.long_value value={safe_identifier(interaction.interaction_id)} kind={:id} /></span>
+                  <span>Request reference <AdminComponents.long_value value={redacted_handle(:interaction, interaction.interaction_id)} kind={:id} /></span>
                   <span>Client ID <AdminComponents.long_value value={safe_identifier(interaction.client_id)} kind={:id} /></span>
                   <span>Account <AdminComponents.long_value value={redacted_handle(:account, interaction.account_id)} kind={:id} /></span>
                   <span>Prompt <AdminComponents.long_value value={prompt_label(interaction.prompt)} kind={:text} /></span>
@@ -151,10 +150,15 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
     """
   end
 
-  defp load_interactions do
+  # Filtering runs inside the rescue so a malformed row shows the read as
+  # unavailable instead of crashing the page.
+  defp load_interactions(filter) do
     case Admin.list_interactions() do
-      {:ok, interactions} when is_list(interactions) -> {:loaded, interactions}
-      _other -> {:unavailable, []}
+      {:ok, interactions} when is_list(interactions) ->
+        {:loaded, interactions |> filter_interactions(filter) |> Enum.map(&displayed_status/1)}
+
+      _other ->
+        {:unavailable, []}
     end
   rescue
     _error -> {:unavailable, []}
@@ -165,17 +169,36 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
 
   defp filter_interactions(interactions, :pending) do
     now = DateTime.utc_now()
-
-    Enum.filter(
-      interactions,
-      &(&1.status in [:pending_login, :pending_consent] &&
-          DateTime.compare(&1.expires_at, now) == :gt)
-    )
+    Enum.filter(interactions, &waiting?(&1, now))
   end
 
   defp filter_interactions(interactions, :all), do: interactions
 
   defp count_status(interactions, status), do: Enum.count(interactions, &(&1.status == status))
+
+  # Matches the overview and the pending filter: a request past its expiry is no
+  # longer waiting, even before its status is swept to expired.
+  defp count_waiting(interactions, status) do
+    now = DateTime.utc_now()
+    Enum.count(interactions, &(&1.status == status and waiting?(&1, now)))
+  end
+
+  defp waiting?(%{status: status, expires_at: %DateTime{} = expires_at}, now)
+       when status in [:pending_login, :pending_consent],
+       do: DateTime.compare(expires_at, now) == :gt
+
+  defp waiting?(_interaction, _now), do: false
+
+  # A waiting request past its expiry is shown as expired, even before the
+  # sweeper updates its stored status.
+  defp displayed_status(%{status: status} = interaction)
+       when status in [:pending_login, :pending_consent] do
+    if waiting?(interaction, DateTime.utc_now()),
+      do: interaction,
+      else: %{interaction | status: :expired}
+  end
+
+  defp displayed_status(interaction), do: interaction
 
   defp interaction_count_copy(0, :all), do: "0 sign-in requests recorded"
   defp interaction_count_copy(1, :all), do: "1 sign-in request recorded"
@@ -261,6 +284,8 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLive.Index do
     do: Lockspire.mount_path() <> "/admin/interactions?status=pending"
 
   defp interactions_path(:all), do: Lockspire.mount_path() <> "/admin/interactions"
+
+  defp admin_path(path), do: Lockspire.mount_path() <> "/admin" <> path
 
   defp safe_identifier(nil), do: "Not recorded"
   defp safe_identifier(value) when is_binary(value), do: value

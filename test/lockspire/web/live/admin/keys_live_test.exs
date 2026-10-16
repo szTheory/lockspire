@@ -77,6 +77,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Index.render(socket.assigns))
 
+    HtmlAssertions.assert_page_contract!(html)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)
@@ -130,6 +131,23 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     refute html =~ "Recommended next step"
     assert html =~ "Publish key so apps can prepare to trust it"
     assert html =~ "Retire key to stop publishing it"
+
+    next_steps =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query(".lockspire-admin-key-record__next-step")
+      |> Enum.map(&(&1 |> LazyHTML.text() |> String.trim()))
+
+    assert next_steps != []
+    assert length(next_steps) < length(titles)
+
+    assert Enum.all?(next_steps, fn step ->
+             step in [
+               "Publish key so apps can prepare to trust it",
+               "Activate key for connected apps to use",
+               "Retire key to stop publishing it"
+             ]
+           end)
 
     refute html =~ "JWKS"
 
@@ -231,6 +249,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
 
     html = rendered_to_string(Show.render(socket.assigns))
 
+    HtmlAssertions.assert_page_contract!(html)
     HtmlAssertions.assert_no_duplicate_ids(html)
     HtmlAssertions.assert_links_have_hrefs(html)
     HtmlAssertions.assert_no_generic_cta_text(html)

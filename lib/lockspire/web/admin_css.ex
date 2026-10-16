@@ -95,10 +95,14 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-surface-inverse: var(--ls-color-gray-950);
     --ls-text-strong: var(--ls-color-gray-950);
     --ls-text-body: var(--ls-color-gray-700);
-    --ls-text-muted: var(--ls-color-gray-500);
+    /* Slightly darker than gray-500 so muted text keeps 4.5:1 on --ls-surface-muted. */
+    --ls-text-muted: #5f6f84;
     --ls-text-accent: var(--ls-color-brand-600);
     --ls-border-subtle: var(--ls-color-gray-200);
     --ls-border-strong: var(--ls-color-gray-300);
+    /* Control boundaries need 3:1 (WCAG 1.4.11); decorative borders stay subtle/strong. */
+    --ls-border-control: var(--ls-color-gray-500);
+    --ls-border-control-invalid: var(--ls-color-danger-text);
     --ls-status-success-bg: var(--ls-color-success-bg);
     --ls-status-success-text: var(--ls-color-success-text);
     --ls-status-success-border: var(--ls-color-success-border);
@@ -133,9 +137,10 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-z-modal: 100;
     --ls-info-trigger-size: var(--ls-space-8);
     --ls-select-icon-size: var(--ls-space-4);
-    --ls-select-icon-inset: var(--ls-space-3);
+    --ls-select-icon-inset: var(--ls-space-4);
     --ls-select-text-clearance: var(--ls-space-10);
     --ls-info-gap: var(--ls-space-2);
+    scroll-padding-block: var(--ls-space-6);
   }
 
   /* Base Styles */
@@ -411,7 +416,7 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-theme-control select {
     appearance: none;
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     color: var(--ls-text-body);
     font-family: var(--ls-font-sans);
@@ -439,7 +444,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-theme-control select:hover {
-    border-color: var(--ls-text-muted);
+    border-color: var(--ls-text-strong);
   }
 
   .lockspire-admin-theme-control [data-lockspire-theme-status] {
@@ -1085,9 +1090,10 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-multi-value--enhanced {
+    max-width: min(100%, 600px);
     align-items: center;
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     display: flex;
     flex-wrap: wrap;
@@ -1204,7 +1210,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-multi-value[data-invalid="true"] {
-    border-color: var(--ls-status-danger-border);
+    border-color: var(--ls-border-control-invalid);
   }
 
   .lockspire-admin-radio-choice > input:focus-visible {
@@ -1237,10 +1243,10 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field textarea {
     min-height: var(--ls-control-height);
     min-width: 0;
-    max-width: 100%;
+    max-width: min(100%, 600px);
     padding: var(--ls-control-padding-y) var(--ls-control-padding-x);
     background: var(--ls-surface-panel);
-    border: 1px solid var(--ls-border-strong);
+    border: 1px solid var(--ls-border-control);
     border-radius: var(--ls-radius-md);
     font-family: inherit;
     font-size: 0.875rem;
@@ -1253,7 +1259,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field input:focus-visible,
   .lockspire-admin-field select:focus-visible,
   .lockspire-admin-field textarea:focus-visible {
-    outline: none;
+    outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color);
+    outline-offset: var(--ls-focus-ring-offset);
     border-color: var(--ls-focus-ring-color);
     box-shadow: var(--ls-focus-ring-shadow);
   }
@@ -1298,8 +1305,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field input[aria-invalid="true"],
   .lockspire-admin-field select[aria-invalid="true"],
   .lockspire-admin-field textarea[aria-invalid="true"] {
-    border-color: var(--ls-status-danger-border);
-    box-shadow: 0 0 0 1px var(--ls-status-danger-border);
+    border-color: var(--ls-border-control-invalid);
+    box-shadow: 0 0 0 1px var(--ls-border-control-invalid);
   }
 
   .lockspire-admin-field-errors {
@@ -1380,6 +1387,23 @@ defmodule Lockspire.Web.Admin.CSS do
   /* Stays mounted so the live region announces the first value; it just takes no space. */
   .lockspire-admin-duration-hint:empty {
     margin-block-start: calc(-1 * var(--ls-space-2));
+  }
+
+  .lockspire-admin-client-create {
+    display: grid;
+    gap: var(--ls-space-4);
+    justify-items: start;
+  }
+
+  .lockspire-admin-client-create > form,
+  .lockspire-admin-client-create > #client-created-result {
+    justify-self: stretch;
+  }
+
+  #client-created-result {
+    display: grid;
+    gap: var(--ls-space-3);
+    justify-items: start;
   }
 
   .lockspire-admin-help-block {
@@ -2144,7 +2168,7 @@ defmodule Lockspire.Web.Admin.CSS do
     position: absolute;
     text-align: start;
     top: calc(100% + var(--ls-info-gap));
-    visibility: hidden;
+    display: none;
     width: min(20rem, calc(100vw - 4rem));
     z-index: var(--ls-z-overlay);
   }
@@ -2173,7 +2197,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-info[data-open="true"] .lockspire-admin-info-tooltip {
-    visibility: visible;
+    display: block;
   }
 
   .lockspire-admin-resource-list > a:not(.lockspire-admin-btn):hover,
@@ -2556,6 +2580,12 @@ defmodule Lockspire.Web.Admin.CSS do
       grid-column: 1;
       grid-row: 3;
     }
+
+    .lockspire-admin-client-inventory__results .lockspire-admin-status-cluster {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--ls-space-2);
+    }
   }
 
   .lockspire-admin-client-inventory__results .lockspire-admin-resource-list__actions,
@@ -2587,6 +2617,7 @@ defmodule Lockspire.Web.Admin.CSS do
     display: grid;
     gap: var(--ls-space-6);
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    align-items: start;
     max-width: 100%;
     min-width: 0;
     margin-bottom: var(--ls-space-6);
@@ -2812,6 +2843,12 @@ defmodule Lockspire.Web.Admin.CSS do
       font-size: 1rem;
     }
 
+    .lockspire-admin-secondary-nav {
+      flex-wrap: wrap;
+      gap: var(--ls-space-1) var(--ls-space-4);
+      overflow-x: visible;
+    }
+
     .lockspire-admin-hero {
       flex-direction: column;
     }
@@ -2973,6 +3010,8 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-text-accent: var(--ls-color-brand-500);
     --ls-border-subtle: #1e293b;
     --ls-border-strong: #334155;
+    --ls-border-control: #7c8aa0;
+    --ls-border-control-invalid: var(--ls-color-danger-border-dark);
 
     --ls-status-success-bg: var(--ls-color-success-bg-dark);
     --ls-status-success-text: var(--ls-color-success-text-dark);

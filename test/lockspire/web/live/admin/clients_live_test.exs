@@ -181,12 +181,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert html =~ ~s(method="get")
     assert html =~ ~s(action="/admin/clients")
     assert html =~ ~s(phx-submit="filter_inventory")
-    assert html =~ ~s(phx-disable-with="Filtering clients…")
+    assert html =~ ~s(phx-disable-with="Filtering apps…")
   end
 
   test "client filter submit patches the URL and resets pagination" do
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients?page=3")
-    assert html =~ ~s(phx-disable-with="Filtering clients…")
+    assert html =~ ~s(phx-disable-with="Filtering apps…")
 
     view
     |> form("form[phx-submit=filter_inventory]", %{
@@ -347,13 +347,50 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     assert submit_class == "lockspire-admin-btn lockspire-admin-btn-primary"
   end
 
+  test "app creation shows a form error instead of crashing when storage raises" do
+    endpoint_config = Application.get_env(:lockspire, Lockspire.Web.Endpoint)
+
+    Application.put_env(
+      :lockspire,
+      Lockspire.Web.Endpoint,
+      # An empty key is checked before any inferred fallback, so sealing fails.
+      Keyword.put(endpoint_config, :secret_key_base, "")
+    )
+
+    on_exit(fn -> Application.put_env(:lockspire, Lockspire.Web.Endpoint, endpoint_config) end)
+
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/new")
+
+    log =
+      ExUnit.CaptureLog.capture_log(fn ->
+        html =
+          view
+          |> form("#client-create-form", %{
+            client: %{
+              name: "Missing Key App",
+              client_type: "confidential",
+              token_endpoint_auth_method: "client_secret_basic",
+              redirect_uris: "https://missing-key.example.com/callback",
+              allowed_scopes: "email"
+            }
+          })
+          |> render_submit()
+
+        assert html =~ "App was not created."
+        assert html =~ "Missing Key App"
+      end)
+
+    assert log =~ "Lockspire admin could not create an app"
+    assert render(view) =~ "App was not created."
+  end
+
   test "rejected client creation retains safe input and associates actionable field errors" do
     submitted_name = "Partner Portal 🚀"
     submitted_redirect = "https://*.partner.example/callback"
 
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/new")
     assert html =~ ~s(id="client-create-form")
-    assert html =~ ~s(phx-disable-with="Creating client…")
+    assert html =~ ~s(phx-disable-with="Creating app…")
 
     view
     |> form("#client-create-form", %{
@@ -369,7 +406,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     html = render(view)
 
-    assert html =~ "Client was not created. Review the marked fields and try again."
+    assert html =~ "App was not created. Review the marked fields and try again."
     assert html =~ "App name"
     assert html =~ "How the app authenticates"
     assert html =~ "Permissions this app may request."
@@ -439,12 +476,128 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     refute filtered_html =~ "Client created"
   end
 
+  test "created client secret appears above the reset registration form" do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/new")
+
+    view
+    |> form("#client-create-form", %{
+      client: %{
+        name: "Panel Order Client",
+        client_type: "confidential",
+        token_endpoint_auth_method: "client_secret_basic",
+        redirect_uris: "https://panel-order.example.com/callback",
+        allowed_scopes: "email"
+      }
+    })
+    |> render_submit()
+
+    html = render(view)
+    {result_at, _} = :binary.match(html, ~s(id="client-created-result"))
+    {form_at, _} = :binary.match(html, ~s(id="client-create-form"))
+    assert result_at < form_at
+  end
+
+  test "app details return to the filtered list the operator came from" do
+    {:ok, _view, list_html} = live(conn_for_admin(), "/admin/clients?q=Alpha&status=active")
+
+    assert list_html =~
+             ~s(href="/admin/clients/alpha-client?page=1&amp;provenance=all&amp;q=Alpha&amp;status=active")
+
+    {:ok, _view, show_html} =
+      live(
+        conn_for_admin(),
+        "/admin/clients/alpha-client?page=1&provenance=all&q=Alpha&status=active"
+      )
+
+    assert show_html =~
+             ~s(href="/admin/clients?page=1&amp;provenance=all&amp;q=Alpha&amp;status=active")
+
+    {:ok, _view, unfiltered_html} = live(conn_for_admin(), "/admin/clients")
+    assert unfiltered_html =~ ~s(href="/admin/clients/alpha-client")
+
+    {:ok, _view, plain_show_html} = live(conn_for_admin(), "/admin/clients/alpha-client")
+    assert plain_show_html =~ ~s(href="/admin/clients")
+    refute plain_show_html =~ ~s(href="/admin/clients?)
+  end
+
+  test "client IDs with reserved URL characters are encoded in app links" do
+    {:ok, _client} =
+      Repository.register_client(%Client{
+        client_id: "odd/id?x#y",
+        client_secret_hash: "sha256:odd",
+        client_type: :confidential,
+        name: "Odd id app",
+        redirect_uris: ["https://odd.example.test/callback"],
+        allowed_scopes: ["email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        active: true,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    {:ok, _view, html} = live(conn_for_admin(), "/admin/clients?q=Odd")
+    assert html =~ ~s(href="/admin/clients/odd%2Fid%3Fx%23y?)
+
+    {:ok, _view, show_html} = live(conn_for_admin(), "/admin/clients/odd%2Fid%3Fx%23y")
+    assert show_html =~ "Odd id app"
+    assert show_html =~ ~s(href="/admin/clients/odd%2Fid%3Fx%23y/edit")
+  end
+
+  test "non-string search params are treated as an empty search instead of crashing" do
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients?q[]=x")
+    assert html =~ "of 3 total apps"
+
+    assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients?q[a]=b")
+    assert html =~ "of 3 total apps"
+  end
+
+  test "inventory pagination links reach apps beyond the first page" do
+    for n <- 1..9 do
+      {:ok, _client} =
+        Repository.register_client(%Client{
+          client_id: "paged-client-#{n}",
+          client_secret_hash: "sha256:paged:#{n}",
+          client_type: :confidential,
+          name: "Paged app #{n}",
+          redirect_uris: ["https://paged.example.test/callback"],
+          allowed_scopes: ["email"],
+          allowed_grant_types: ["authorization_code"],
+          allowed_response_types: ["code"],
+          token_endpoint_auth_method: :client_secret_basic,
+          pkce_required: true,
+          subject_type: :public,
+          active: true,
+          created_at: DateTime.utc_now(),
+          metadata: %{}
+        })
+    end
+
+    {:ok, _view, page_one} = live(conn_for_admin(), "/admin/clients")
+    assert page_one =~ "12 matching apps"
+    assert page_one =~ "Next apps"
+    refute page_one =~ "Previous apps"
+
+    assert page_one =~
+             ~s(href="/admin/clients?page=2&amp;provenance=all&amp;q=&amp;status=all")
+
+    {:ok, _view, page_two} = live(conn_for_admin(), "/admin/clients?page=2")
+    assert page_two =~ "Previous apps"
+    refute page_two =~ "Next apps"
+
+    assert page_two =~
+             ~s(href="/admin/clients?page=1&amp;provenance=all&amp;q=&amp;status=all")
+  end
+
   test "client inventory distinguishes first-use empty from filtered empty" do
     assert {3, nil} = Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.ClientRecord)
     assert {:ok, []} = Repository.list_clients()
 
     assert {:ok, _view, empty_html} = live(conn_for_admin(), "/admin/clients")
-    assert empty_html =~ "No clients yet"
+    assert empty_html =~ "No apps yet"
     assert empty_html =~ "Add app"
 
     assert empty_html =~
@@ -456,7 +609,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
              live(conn_for_admin(), "/admin/clients?q=missing")
 
     assert filtered_html =~ "No matching apps"
-    refute filtered_html =~ "No clients yet"
+    refute filtered_html =~ "No apps yet"
   end
 
   test "clients index proves empty, disabled, many-count, and long-value Configure states" do
@@ -527,6 +680,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
   test "client inventory leads with filters and safe detail actions, with truthful empty and failure states" do
     assert {:ok, _view, populated_html} = live(conn_for_admin(), "/admin/clients")
+    HtmlAssertions.assert_page_contract!(populated_html)
 
     assert populated_html =~ "View app"
     assert populated_html =~ "3 matching apps"
@@ -564,7 +718,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
       error_html = rendered_to_string(Index.render(socket.assigns))
 
       assert error_html =~ "Could not load apps"
-      assert error_html =~ "No matching-client result is available until this read succeeds."
+      assert error_html =~ "The app list is not available until this read succeeds."
       assert error_html =~ "Reload this view"
 
       assert [_, reload_href] =
@@ -618,6 +772,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
   test "client registration form uses clear, task-focused language" do
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/new")
+    HtmlAssertions.assert_page_contract!(html, labels: :required)
 
     assert html =~ "Add an app that will use this service."
 
@@ -640,6 +795,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     assert {:ok, _edit_view, edit_html} =
              live(conn_for_admin(), "/admin/clients/alpha-client/edit")
+
+    HtmlAssertions.assert_page_contract!(edit_html, labels: :required)
 
     assert edit_html =~ "Edit app settings"
     assert edit_html =~ "App name"
@@ -818,11 +975,13 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
         String.duplicate("frontchannel/logout/path/", 6) <>
         "browser-cleanup"
 
-    assert {:ok, view, _html} =
+    assert {:ok, view, workflow_html} =
              live(
                conn_for_admin(),
                "/admin/clients/alpha-client/edit?workflow=logout-propagation"
              )
+
+    HtmlAssertions.assert_page_contract!(workflow_html, labels: :required)
 
     view
     |> form(".lockspire-admin-form-shell form", %{

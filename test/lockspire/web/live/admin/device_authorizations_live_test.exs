@@ -61,6 +61,8 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     page_html = page_markup(html)
     [pending, approved, denied, _expired, consumed] = authorizations
 
+    HtmlAssertions.assert_page_contract!(html)
+
     HtmlAssertions.assert_no_duplicate_ids(page_html)
     HtmlAssertions.assert_describedby_targets_exist(page_html)
     HtmlAssertions.assert_no_generic_cta_text(page_html)
@@ -132,7 +134,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
     assert page_html =~ "The user still needs to confirm this request."
 
     assert page_html =~
-             "The user approved this request. The app is waiting to receive the result."
+             "The user approved this request. The app has not collected the result yet."
 
     assert page_html =~ "The user denied this request."
     assert page_html =~ "This request expired before it was completed."
@@ -317,6 +319,17 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLiveTest do
       html = render_queue(:loaded, records)
       assert rendered_text(html) =~ expected
     end
+  end
+
+  test "device rows omit the next-check line when no next check is recorded", %{
+    authorizations: authorizations
+  } do
+    [pending | _rest] = authorizations
+
+    refute render_queue(:loaded, [%{pending | next_poll_allowed_at: nil}]) =~
+             "App may check again"
+
+    assert render_queue(:loaded, [pending]) =~ "App may check again"
   end
 
   test "device authorization review keeps queue evidence redaction-safe and read-only", %{

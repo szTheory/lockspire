@@ -307,6 +307,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
 
       {:ok, view, html} = live(conn_for_admin(), "/admin/iats")
 
+      HtmlAssertions.assert_page_contract!(html)
       HtmlAssertions.assert_no_duplicate_ids(html)
       HtmlAssertions.assert_describedby_targets_exist(html)
       HtmlAssertions.assert_no_generic_cta_text(html)
@@ -520,6 +521,7 @@ defmodule Lockspire.Web.Live.Admin.IatLiveTest do
       # Initial state should have no secret
       initial_html = render(view)
 
+      HtmlAssertions.assert_page_contract!(initial_html, labels: :required)
       HtmlAssertions.assert_no_duplicate_ids(initial_html)
       HtmlAssertions.assert_describedby_targets_exist(initial_html)
       HtmlAssertions.assert_label_targets_exist(initial_html)

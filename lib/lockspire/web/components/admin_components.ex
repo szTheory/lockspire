@@ -288,7 +288,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
-  attr(:variant, :atom, default: :secondary)
+  attr(:variant, :atom, default: :secondary, values: [:primary, :secondary, :danger])
   attr(:type, :string, default: "button")
   attr(:href, :string, default: nil)
   attr(:disabled, :boolean, default: false)
@@ -426,7 +426,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
               checked={to_string(@value) == option.value} disabled={@disabled}
               aria-labelledby={"#{@id}-#{option.value}-label"}
               aria-invalid={if @errors != [], do: "true", else: "false"}
-              aria-describedby={Enum.join(Enum.reject([@described_by, Map.get(option, :help) && "#{@id}-#{option.value}-help"], &is_nil/1), " ")} />
+              aria-describedby={radio_option_described_by(@described_by, option, @id)} />
             <span class="lockspire-admin-radio-choice__text">
               <span id={"#{@id}-#{option.value}-label"}>{option.label}</span>
               <small :if={Map.get(option, :help)} id={"#{@id}-#{option.value}-help"}>{option.help}</small>
@@ -879,6 +879,15 @@ defmodule Lockspire.Web.Components.AdminComponents do
     """
   end
 
+  defp radio_option_described_by(described_by, option, id) do
+    help_id = if Map.get(option, :help), do: "#{id}-#{option.value}-help"
+
+    case Enum.reject([described_by, help_id], &(is_nil(&1) or &1 == "")) do
+      [] -> nil
+      ids -> Enum.join(ids, " ")
+    end
+  end
+
   defp policy_path(path), do: Lockspire.mount_path() <> "/admin/policies" <> path
 
   attr(:value, :any, default: nil)
@@ -1000,6 +1009,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
   defp status_label(:dcr), do: "DCR"
   defp status_label(:one_time), do: "One-time"
   defp status_label(:initial_access_token), do: "App setup token"
+  defp status_label(:succeeded), do: "Accepted by app"
   defp status_label(:pending_login), do: "Waiting for sign-in"
   defp status_label(:pending_consent), do: "Waiting for consent"
 
@@ -1010,7 +1020,7 @@ defmodule Lockspire.Web.Components.AdminComponents do
 
   defp button_class(:primary), do: "lockspire-admin-btn lockspire-admin-btn-primary"
   defp button_class(:danger), do: "lockspire-admin-btn lockspire-admin-btn-danger"
-  defp button_class(_variant), do: "lockspire-admin-btn lockspire-admin-btn-secondary"
+  defp button_class(:secondary), do: "lockspire-admin-btn lockspire-admin-btn-secondary"
 
   defp decision_summary_item_class(:danger),
     do: "lockspire-admin-decision-summary__item lockspire-admin-decision-summary__item-danger"

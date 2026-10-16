@@ -71,7 +71,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _missing_view, missing_html} =
              live(conn_for_admin(), "/admin/clients/not-a-current-client")
 
-    assert missing_html =~ "Client not found"
+    assert missing_html =~ "App not found"
     assert missing_html =~ "Back to apps"
     refute missing_html =~ "Could not load app"
 
@@ -87,7 +87,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       assert error_html =~ "Could not load app"
       assert error_html =~ "be loaded. Reload the page or go back to the app list."
       assert error_html =~ "Reload this view"
-      refute error_html =~ "Client not found"
+      refute error_html =~ "App not found"
     after
       Application.put_env(:lockspire, :repo, prior_repo)
     end
@@ -140,6 +140,16 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     Enum.each(routes, fn {path, title, explanation} ->
       assert {:ok, _view, html} = live(conn_for_admin(), path)
+
+      labels =
+        if Enum.any?(
+             ["/edit", "/logout-uris", "/par-policy", "/redirects", "/security-profile"],
+             &String.contains?(path, &1)
+           ),
+           do: :required,
+           else: :when_present
+
+      HtmlAssertions.assert_page_contract!(html, labels: labels)
       visible_text = text_content(html)
       assert visible_text =~ title
       assert visible_text =~ explanation
@@ -341,12 +351,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
              ~s(input[type="radio"][name="client[security_profile]"][value="none"][checked])
            )
 
-    assert changed_security_text =~ "Result if saved: None (Standard OIDC)"
+    assert changed_security_text =~ "Result if saved: Standard OAuth and OpenID Connect"
 
     invalid_security_html = render_invalid_security_profile_html(client.client_id)
 
     invalid_security_text = text_content(invalid_security_html)
-    assert invalid_security_text =~ "Client security profile was not saved."
+    assert invalid_security_text =~ "App security profile was not saved."
     assert invalid_security_text =~ "Review this value and try again."
     assert invalid_security_text =~ "security-show-client"
     assert invalid_security_html =~ ~s(aria-invalid="true")
@@ -602,7 +612,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert html =~ "redacted"
     assert html =~ "App management token"
     assert html =~ "Review API registration"
-    assert html =~ "These links open the full inventories. Match records there by this client ID."
+    assert html =~ "These links open the full inventories. Match records there by this Client ID."
 
     html
     |> HtmlAssertions.assert_no_duplicate_ids()
@@ -630,10 +640,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, view, html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/rotate-secret")
 
+    HtmlAssertions.assert_page_contract!(html)
+
     assert html =~ "Rotate client secret"
     assert html =~ "previous secret stops being the current credential"
     assert html =~ "Copy it when shown"
-    assert html =~ "does not store or show it again"
+    assert html =~ "stores only a hash, so it cannot show the secret again"
     assert html =~ "before it requests tokens"
     assert html =~ ~s(phx-disable-with="Rotating client secret…")
     refute html =~ "sha256:show:hash"
@@ -724,6 +736,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     path = "/admin/clients/#{self_registered_client.client_id}/rotate-registration-access-token"
     assert {:ok, view, html} = live(conn_for_admin(), path)
+    HtmlAssertions.assert_page_contract!(html)
 
     assert html =~ "Use this token to update the app&#39;s registration at this URL"
     assert html =~ self_registered_client.registration_client_uri
@@ -831,6 +844,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
   test "client lifecycle changes require explicit confirmation", %{client: client} do
     assert {:ok, view, html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+    HtmlAssertions.assert_page_contract!(html)
 
     assert html =~ "Confirm disabling app"
 
@@ -856,6 +870,61 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert disabled_html =~ "Enable app"
     assert disabled_html =~ "configured OAuth/OIDC use can resume"
     HtmlAssertions.assert_no_text(disabled_html, ["data-confirm", "force enable"])
+  end
+
+  test "a failed lifecycle change shows an error and leaves the app unchanged", %{client: client} do
+    assert {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+
+    assert {1, nil} = Lockspire.TestRepo.delete_all(Lockspire.Storage.Ecto.ClientRecord)
+
+    html =
+      view
+      |> form("form[phx-submit=toggle_client]", %{toggle: %{confirm: "true"}})
+      |> render_submit()
+
+    assert html =~ "The app was not changed."
+  end
+
+  test "saves outside the details form show a success notice that does not linger", %{
+    client: client
+  } do
+    assert {:ok, _stored_client} =
+             Admin.update_client(client.client_id, %{
+               post_logout_redirect_uris: ["https://client.example.com/signed-out"]
+             })
+
+    assert {:ok, view, _html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/redirects")
+
+    view
+    |> form("#client-redirect-uris-form", %{
+      client: %{redirect_uris: "https://client.example.com/new-callback"}
+    })
+    |> render_submit()
+
+    assert render(view) =~ "App changes saved."
+    assert {:ok, saved} = Admin.get_client(client.client_id)
+    assert saved.redirect_uris == ["https://client.example.com/new-callback"]
+
+    {:ok, view, _html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+    refute render(view) =~ "App changes saved."
+  end
+
+  test "save_client ignores a missing or mismatched mode and does not crash", %{client: client} do
+    assert {:ok, view, _html} =
+             live(conn_for_admin(), "/admin/clients/#{client.client_id}/par-policy")
+
+    render_hook(view, "save_client", %{"client" => %{"mode" => "bogus", "name" => "Hijacked"}})
+    render_hook(view, "save_client", %{"client" => %{}})
+    assert render(view) =~ "Security Show Client"
+
+    assert {:ok, unchanged} = Admin.get_client(client.client_id)
+    assert unchanged.name == "Security Show Client"
+
+    assert {:ok, show_view, _html} = live(conn_for_admin(), "/admin/clients/#{client.client_id}")
+    render_hook(show_view, "save_client", %{"client" => %{"mode" => "edit", "name" => "Nope"}})
+    assert {:ok, still_unchanged} = Admin.get_client(client.client_id)
+    assert still_unchanged.name == "Security Show Client"
   end
 
   test "client detail support pivots link to supported logout queue route", %{client: client} do
@@ -893,7 +962,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{pkjwt_client.client_id}")
 
-    assert html =~ "Client assertion keys"
+    assert html =~ "App signing keys"
     assert html =~ "Remote JWKS URI configured"
     assert html =~ "https://client.example.com/.well-known/jwks.json"
     assert html =~ "Signed client assertion with app key"
@@ -1042,7 +1111,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _view, html} = live(conn_for_admin(), "/admin/clients/#{jwt_client.client_id}")
 
-    assert html =~ "Signed client requests with a shared secret"
+    assert html =~ "Signed app requests with a shared secret"
     assert html =~ "client_secret_jwt"
     assert html =~ "HS256"
     refute html =~ "verifier material"
@@ -1084,7 +1153,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert updated_client.access_token_format == :opaque
 
     html_after = render(view)
-    assert html_after =~ "Client changes saved."
+    assert html_after =~ "App changes saved."
     assert html_after =~ "App details"
     refute html_after =~ "Save app changes"
   end
@@ -1118,7 +1187,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
       })
       |> render_submit()
 
-    assert error_html =~ "Client changes were not saved."
+    assert error_html =~ "App changes were not saved."
     assert error_html =~ ~s(role="alert")
     assert error_html =~ ~s(tabindex="-1")
     assert error_html =~ ~s(data-lockspire-focus-on-insert="true")
@@ -1181,6 +1250,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
     assert {:ok, _redirect_view, redirect_html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/redirects")
 
+    HtmlAssertions.assert_page_contract!(redirect_html, labels: :required)
+
     assert redirect_html =~ "Sign-in return URLs"
     assert redirect_html =~ "one exact URL per line"
 
@@ -1192,6 +1263,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, _logout_view, logout_html} =
              live(conn_for_admin(), "/admin/clients/#{client.client_id}/logout-uris")
+
+    HtmlAssertions.assert_page_contract!(logout_html, labels: :required)
 
     assert logout_html =~ "Sign-out return URLs"
 

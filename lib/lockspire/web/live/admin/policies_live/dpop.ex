@@ -88,7 +88,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dpop do
         <form class="lockspire-admin-form-stack" phx-submit="save_policy">
           <AdminComponents.radio_group id="dpop_policy" name="policy[dpop_policy]"
             label="Access token proof" value={@policy.dpop_policy} errors={@form_errors}
-            help="DPoP ties an access token to an app's public key. Apps using this default may use bearer tokens or must prove they hold the key, depending on the choice above. Apps may have their own setting.">
+            help="DPoP ties an access token to an app's public key. Apps using this default may use bearer tokens or must prove they hold the key, depending on which option you choose. Apps may have their own setting.">
             <:option value="bearer" label="Bearer access tokens allowed" />
             <:option value="dpop" label="DPoP-bound access tokens required" />
           </AdminComponents.radio_group>

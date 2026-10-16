@@ -114,11 +114,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
           "device_code=ABCD-EFGH-IJKL",
           "Authorization: Bearer abcdefghijklmnop",
           "proxy-authorization: basic c2VydmljZTpwYXNzd29yZA==",
-          "https://accounts.lockspire.com/admin"
+          "https://accounts.lockspire.com/admin",
+          "https://api.acme.co/x",
+          "https://auth.acme.ai/cb",
+          "https://auth.acme-example.com/cb"
         ] do
       assert_raise ArgumentError, ~r/sensitive evidence/, fn ->
         BrowserEvidence.assert_redaction_safe!(sensitive)
       end
+    end
+
+    # RFC 2606 / RFC 6761 names are the synthetic demo's own hosts.
+    for reserved <- [
+          "https://partners.northstar.example.com/backchannel-logout",
+          "http://lockspire-ui-review.localhost/lockspire",
+          "https://billingo.test/callback"
+        ] do
+      assert BrowserEvidence.assert_redaction_safe!(reserved) == reserved
     end
 
     distinct_states =
@@ -126,6 +138,24 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
         "| `/admin` | Orient | 390px | light | default | overview nav | validation error state | 390 | 390 | pass | synthetic local observation | passed denylist | none | contract test pass |\n"
 
     assert length(BrowserEvidence.parse!(distinct_states)) == 6
+  end
+
+  test "browser evidence accepts zoom-equivalent and nav-boundary widths" do
+    header =
+      "| Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |\n|---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|\n"
+
+    row = fn width ->
+      "| `/admin/overview` | Orient | #{width}px | light | default | page load | width #{width} | #{width} | #{width} | pass | synthetic local observation | passed denylist | none | contract test pass |\n"
+    end
+
+    widths = [640, 720, 1119, 1120, 1261, 1280]
+    rows = BrowserEvidence.parse!(header <> Enum.map_join(widths, &row.(&1)))
+
+    assert Enum.map(rows, & &1["Viewport"]) == Enum.map(widths, &"#{&1}px")
+
+    assert_raise ArgumentError, ~r/invalid Viewport/, fn ->
+      BrowserEvidence.parse!(header <> row.(641))
+    end
   end
 
   defp valid_evidence do

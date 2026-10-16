@@ -1,12 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.42",
-  "phases": [],
+  "milestone": "v1.42 — Admin UI Clarity & Workflow Refinement",
+  "phases": [
+    {
+      "number": "151",
+      "name": "Focused Client Registration & Settings",
+      "status": "complete"
+    },
+    {
+      "number": "152",
+      "name": "Overview & Queue State Clarity",
+      "status": "complete"
+    },
+    {
+      "number": "153",
+      "name": "Configure & Support Page Refinement",
+      "status": "complete"
+    },
+    {
+      "number": "154",
+      "name": "Responsive, Theme & Route Proof",
+      "status": "complete"
+    }
+  ],
   "next": {
-    "command": "/gsd:execute-phase 153",
-    "label": "Resume Phase 153",
-    "reason": "Finish outstanding Phase 153 plan reviews/summaries and phase verification. The autonomous feedback sweep is implemented and verified: 305 Elixir / 6 Node tests, demo smoke and 30 desktop + 30 mobile route checks. Control tests are wired into existing CI and checked locally; hosted CI has not run. Read 153-AUTOMATED-UX-SWEEP.md and 153-USER-FEEDBACK.md; do not repeat verified feedback. Lifetime enforcement gaps are traced in 153-LIFETIME-TRUTH.md and retained as separate protocol work. Phase 154 acceptance remains pending."
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-14T00:34:01Z"
+  "updated_at": "2026-10-16T01:26:04.611Z"
 }

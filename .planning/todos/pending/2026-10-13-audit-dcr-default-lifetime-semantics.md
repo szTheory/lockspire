@@ -12,6 +12,9 @@ files:
   - lib/lockspire/protocol/registration_management.ex
   - lib/lockspire/storage/ecto/repository/client_store.ex
   - lib/lockspire/web/registration_json.ex
+audit_acknowledged:
+  milestone: v1.42
+  at: 2026-10-15
 ---
 
 ## Problem

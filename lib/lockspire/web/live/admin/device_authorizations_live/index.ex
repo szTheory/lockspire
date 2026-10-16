@@ -23,8 +23,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   @impl true
   def handle_params(params, _uri, socket) do
     device_authorization_filter = device_authorization_filter(params)
-    {read_state, all_authorizations} = load_device_authorizations()
-    authorizations = filter_device_authorizations(all_authorizations, device_authorization_filter)
+    {read_state, authorizations} = load_device_authorizations(device_authorization_filter)
 
     {:noreply,
      assign(socket,
@@ -55,7 +54,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
           :if={@device_read_state == :loaded and @device_authorization_filter == :all}
         >
           <AdminComponents.summary_stat
-            value={count_status(@device_authorizations, :pending)}
+            value={count_waiting(@device_authorizations)}
             label="Pending"
           />
           <AdminComponents.summary_stat
@@ -164,10 +163,15 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     """
   end
 
-  defp load_device_authorizations do
+  # Filtering runs inside the rescue so a malformed row shows the read as
+  # unavailable instead of crashing the page.
+  defp load_device_authorizations(filter) do
     case Admin.list_device_authorizations() do
-      {:ok, auths} when is_list(auths) -> {:loaded, auths}
-      _other -> {:unavailable, []}
+      {:ok, auths} when is_list(auths) ->
+        {:loaded, auths |> filter_device_authorizations(filter) |> Enum.map(&displayed_status/1)}
+
+      _other ->
+        {:unavailable, []}
     end
   rescue
     _error -> {:unavailable, []}
@@ -190,14 +194,30 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
 
   defp filter_device_authorizations(authorizations, :pending) do
     now = DateTime.utc_now()
-
-    Enum.filter(
-      authorizations,
-      &(&1.status == :pending && DateTime.compare(&1.expires_at, now) == :gt)
-    )
+    Enum.filter(authorizations, &waiting?(&1, now))
   end
 
   defp filter_device_authorizations(authorizations, :all), do: authorizations
+
+  # Matches the overview and the pending filter: a request past its expiry is no
+  # longer waiting, even before its status is swept to expired.
+  defp count_waiting(auths) do
+    now = DateTime.utc_now()
+    Enum.count(auths, &waiting?(&1, now))
+  end
+
+  defp waiting?(%{status: :pending, expires_at: %DateTime{} = expires_at}, now),
+    do: DateTime.compare(expires_at, now) == :gt
+
+  defp waiting?(_auth, _now), do: false
+
+  # A pending request past its expiry is shown as expired, even before the
+  # sweeper updates its stored status.
+  defp displayed_status(%{status: :pending} = auth) do
+    if waiting?(auth, DateTime.utc_now()), do: auth, else: %{auth | status: :expired}
+  end
+
+  defp displayed_status(auth), do: auth
 
   defp device_authorization_count_copy(0, :all), do: "Showing no device requests"
   defp device_authorization_count_copy(1, :all), do: "Showing 1 device request"
@@ -233,7 +253,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
     do: "The user still needs to confirm this request."
 
   defp device_authorization_pressure(%{status: :approved}),
-    do: "The user approved this request. The app is waiting to receive the result."
+    do: "The user approved this request. The app has not collected the result yet."
 
   defp device_authorization_pressure(%{status: :denied}),
     do: "The user denied this request."
@@ -272,7 +292,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   defp poll_interval_label(value), do: to_string(value)
 
   defp next_poll_context(%{status: status, next_poll_allowed_at: next_poll_allowed_at})
-       when status in [:pending, :approved] do
+       when status in [:pending, :approved] and not is_nil(next_poll_allowed_at) do
     formatted_timestamp(next_poll_allowed_at)
   end
 
@@ -300,7 +320,7 @@ defmodule Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index do
   defp formatted_timestamp(value), do: to_string(value)
 
   defp client_detail_path_available?(%{client_id: client_id})
-       when is_binary(client_id) and byte_size(client_id) <= 64,
+       when is_binary(client_id) and byte_size(client_id) > 0 and byte_size(client_id) <= 64,
        do: true
 
   defp client_detail_path_available?(_auth), do: false

@@ -82,7 +82,7 @@ defmodule Lockspire.Admin.Clients do
   end
 
   @spec create_client(map() | keyword()) ::
-          {:ok, RegistrationResult.t()} | {:error, [Clients.error_detail()]}
+          {:ok, RegistrationResult.t()} | {:error, [Clients.error_detail()] | term()}
   def create_client(attrs) when is_list(attrs) do
     create_client(Enum.into(attrs, %{}))
   end

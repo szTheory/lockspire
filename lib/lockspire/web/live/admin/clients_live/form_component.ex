@@ -71,7 +71,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
           </AdminComponents.form_field>
 
           <AdminComponents.radio_group
-            id="client_type" name="client[client_type]" label="Client type"
+            id="client_type" name="client[client_type]" label="App type"
             value={@defaults.client_type} errors={field_errors(@display_errors, :client_type)}
           >
             <:option value="confidential" label="Server-side app" help="Can keep a client secret secure." />
@@ -359,7 +359,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
 
         <div :if={@mode == :security_profile} class="lockspire-admin-help">
           <p>
-            <strong>None (Standard OIDC):</strong> Standard OAuth and OIDC protections.
+            <strong>Standard OAuth and OpenID Connect:</strong> Lockspire's default protections, including S256 PKCE and exact sign-in return URL matching, without the extra FAPI 2.0 requirements.
           </p>
           <p>
             <strong>FAPI 2.0 Security Profile:</strong> Requires PAR, key-bound access tokens (DPoP), and S256 PKCE.
@@ -429,8 +429,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
             variant={:primary}
             phx-disable-with={
               cond do
-                @mode == :new -> "Creating client…"
-                @mode == :edit -> "Saving client changes…"
+                @mode == :new -> "Creating app…"
+                @mode == :edit -> "Saving app changes…"
                 @mode == :par_policy -> "Saving authorization request rules…"
                 @mode == :security_profile -> "Saving security profile…"
                 true -> nil
@@ -482,7 +482,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp effective_profile_label(%{effective_profile: :fapi_2_0_security}),
     do: "FAPI 2.0 Security Profile"
 
-  defp effective_profile_label(_resolved), do: "None (Standard OIDC)"
+  defp effective_profile_label(_resolved), do: "Standard OAuth and OpenID Connect"
 
   defp defaults_for(:new, _client) do
     %{
@@ -564,13 +564,17 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     if errors == [], do: "#{id}-help", else: "#{id}-help #{id}-error"
   end
 
+  # Errors are normally a list of field errors, but a storage failure can surface
+  # as a single term (for example a rescued exception); show it as a form-level error.
   defp display_errors(errors) do
-    Enum.map(errors, fn
+    errors
+    |> List.wrap()
+    |> Enum.map(fn
       %{field: field, reason: reason} = error ->
         Map.put(error, :message, error_message(field, reason, Map.get(error, :detail)))
 
       _error ->
-        %{field: :base, message: "The client could not be saved. Try again."}
+        %{field: :base, message: "The app could not be saved. Try again."}
     end)
   end
 
@@ -598,24 +602,24 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp error_message(:client_type, _reason, _detail), do: "Choose public or confidential."
 
   defp error_message(:base, _reason, _detail),
-    do: "The client could not be saved. Your information is still here; try again."
+    do: "The app could not be saved. Your information is still here; try again."
 
   defp error_message(_field, _reason, _detail),
     do: "Review this value and try again."
 
   defp error_title(:new, errors) do
     if Enum.any?(errors, &(Map.get(&1, :field) == :base)) do
-      "Client was not created. Your information is still here; try again."
+      "App was not created. Your information is still here; try again."
     else
-      "Client was not created. Review the marked fields and try again."
+      "App was not created. Review the marked fields and try again."
     end
   end
 
   defp error_title(:edit, errors) do
     if Enum.any?(errors, &(Map.get(&1, :field) == :base)) do
-      "Client changes were not saved. Your information is still here; try again."
+      "App changes were not saved. Your information is still here; try again."
     else
-      "Client changes were not saved. Review the marked fields and try again."
+      "App changes were not saved. Review the marked fields and try again."
     end
   end
 
@@ -623,7 +627,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
     do: "Authorization request setting was not saved. Review your choice and try again."
 
   defp error_title(:security_profile, _errors),
-    do: "Client security profile was not saved. Review the selected value and try again."
+    do: "App security profile was not saved. Review the selected value and try again."
 
   defp error_title(_mode, _errors), do: "Review the highlighted fields."
 
@@ -702,14 +706,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp security_effective_preview(_profile, "fapi_2_0_security", :loaded),
     do: "FAPI 2.0 Security Profile"
 
-  defp security_effective_preview(_profile, "none", :loaded), do: "None (Standard OIDC)"
+  defp security_effective_preview(_profile, "none", :loaded),
+    do: "Standard OAuth and OpenID Connect"
 
   defp security_effective_preview(_profile, _choice, :loaded),
     do: "Unavailable until the selection is valid"
 
   defp security_profile_name(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
   defp security_profile_name(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
-  defp security_profile_name(:none), do: "None (Standard OIDC)"
+  defp security_profile_name(:none), do: "Standard OAuth and OpenID Connect"
   defp security_profile_name(_profile), do: "Unavailable"
 
   defp form_id(:new), do: "client-create-form"
@@ -721,7 +726,9 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp form_id(:security_profile), do: "client-security-profile-form"
 
   defp client_detail_path(%Client{client_id: client_id}),
-    do: Lockspire.mount_path() <> "/admin/clients/" <> client_id
+    do:
+      Lockspire.mount_path() <>
+        "/admin/clients/" <> URI.encode(client_id, &URI.char_unreserved?/1)
 
   # `nil` means inherit (no `:inherit` sentinel is stored), so the inherit option
   # must pre-select for a nil override. Unlike `dpop_policy`, which stores a real atom.
@@ -729,12 +736,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.FormComponent do
   defp format_default_for_select(format), do: Atom.to_string(format)
 
   defp title_for(:new), do: "New app"
-  defp title_for(:edit), do: "Edit client settings"
+  defp title_for(:edit), do: "Edit app settings"
   defp title_for(:logout_propagation), do: "Update sign-out notifications"
   defp title_for(:redirects), do: "Update sign-in return URLs"
   defp title_for(:logout_uris), do: "Update sign-out return URLs"
   defp title_for(:par_policy), do: "Set authorization request rules"
-  defp title_for(:security_profile), do: "Update client security profile"
+  defp title_for(:security_profile), do: "Update app security profile"
 
   defp subtitle_for(:new),
     do: "Add an app that will use Lockspire."

@@ -51,7 +51,7 @@ defmodule Lockspire.Admin do
   """
   @spec create_client(map() | keyword()) ::
           {:ok, Lockspire.Clients.RegistrationResult.t()}
-          | {:error, [Lockspire.Clients.error_detail()]}
+          | {:error, [Lockspire.Clients.error_detail()] | term()}
   defdelegate create_client(attrs), to: Clients
 
   @doc """

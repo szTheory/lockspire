@@ -198,6 +198,8 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     html = rendered_to_string(Index.render(socket.assigns))
     page_html = page_markup(html)
 
+    HtmlAssertions.assert_page_contract!(html)
+
     HtmlAssertions.assert_no_duplicate_ids(page_html)
     HtmlAssertions.assert_describedby_targets_exist(page_html)
     HtmlAssertions.assert_no_generic_cta_text(page_html)
@@ -289,7 +291,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Discarded"
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
-    assert page_html =~ "Succeeded"
+    assert page_html =~ "Accepted by app"
 
     assert page_html =~ "Lockspire is preparing the request; it has not been sent yet."
 
@@ -558,7 +560,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
       |> rendered_to_string()
       |> page_markup()
 
-    assert page_html =~ "1 logout delivery recorded"
+    assert page_html =~ "1 app sign-out notice recorded"
     assert page_html =~ "single-safe-delivery-id"
     assert page_html =~ "client-single"
     assert page_html =~ ~s(href="/lockspire/admin/clients/client-single")
@@ -610,7 +612,7 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLiveTest do
     assert page_html =~ "Retryable"
     assert page_html =~ "Skipped"
     assert page_html =~ "Rendered"
-    assert page_html =~ "Succeeded"
+    assert page_html =~ "Accepted by app"
     assert page_html =~ "The request failed and may be tried again automatically."
     assert page_html =~ "HTTP 503"
     assert page_html =~ "Request failed: timeout"

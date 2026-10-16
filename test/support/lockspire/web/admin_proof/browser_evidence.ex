@@ -22,7 +22,22 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   @allowed_journeys ["Orient", "Configure", "Support", "Operate", "Internal lab"]
   @allowed_themes ["light", "dark", "system"]
   @allowed_motion ["default", "reduced-motion"]
-  @allowed_viewports ["320px", "390px", "768px", "799px", "800px", "801px", "1024px", "1440px"]
+  @allowed_viewports [
+    "320px",
+    "390px",
+    "640px",
+    "720px",
+    "768px",
+    "799px",
+    "800px",
+    "801px",
+    "1024px",
+    "1119px",
+    "1120px",
+    "1261px",
+    "1280px",
+    "1440px"
+  ]
 
   def required_columns, do: @required_columns
 
@@ -42,8 +57,12 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
   end
 
   def assert_redaction_safe!(source) when is_binary(source) do
+    without_reserved = Regex.replace(reserved_example_host(), source, "reserved-host")
+
     for {label, pattern} <- sensitive_patterns() do
-      if Regex.match?(pattern, source) do
+      subject = if label == "production-looking hostname", do: without_reserved, else: source
+
+      if Regex.match?(pattern, subject) do
         raise ArgumentError, "sensitive evidence #{label} detected"
       end
     end
@@ -51,6 +70,10 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
     source
   end
 
+  # Kept source-for-source with SENSITIVE_PATTERNS in admin_route_proof.mjs;
+  # admin_route_proof_test.mjs fails on any drift. The hostname rule names the
+  # common generic and country TLDs; .localhost, .test, .example and .invalid
+  # are reserved and deliberately absent.
   defp sensitive_patterns do
     [
       {"cookie", ~r/\b(?:cookie|session|session_id)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i},
@@ -70,8 +93,15 @@ defmodule Lockspire.Web.AdminProof.BrowserEvidence do
       {"copy-once secret",
        ~r/(?:copy[- ]once\s+(?:secret|plaintext|value|credential)|(?:secret|credential).{0,24}copy[- ]once)/i},
       {"production-looking hostname",
-       ~r/\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud)(?::\d+)?(?:\/|\b)/i}
+       ~r/\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud|co|ai|us|uk|de|eu|ca|au|fr|nl|in|jp|me|tv|xyz|tech|biz|info)(?::\d+)?(?:\/|\b)/i}
     ]
+  end
+
+  # RFC 2606 example.com/.net/.org hosts are the synthetic demo's own names.
+  # "example" must be a whole DNS label, so acme-example.com stays flagged.
+  # Kept source-for-source with RESERVED_EXAMPLE_HOST in admin_route_proof.mjs.
+  defp reserved_example_host do
+    ~r/(?<![A-Za-z0-9.-])(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/i
   end
 
   defp evidence_tables!(markdown) do

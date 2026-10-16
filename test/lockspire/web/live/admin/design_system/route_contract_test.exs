@@ -57,4 +57,16 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.RouteContractTest do
   test "public package inputs exclude internal proof surfaces" do
     RouteAssertions.assert_public_package_ceiling!()
   end
+
+  test "page hero API and admin LiveView sources carry no eyebrow" do
+    component = File.read!("lib/lockspire/web/components/admin_components.ex")
+    refute component =~ "eyebrow"
+
+    sources = Path.wildcard("lib/lockspire/web/live/admin/**/*.ex")
+    assert sources != []
+
+    for path <- sources do
+      refute File.read!(path) =~ "eyebrow", "#{path} still references an eyebrow"
+    end
+  end
 end

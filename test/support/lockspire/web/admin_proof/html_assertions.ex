@@ -74,17 +74,18 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
   def assert_label_targets_exist(html) do
     doc = document(html)
     id_set = id_set(doc)
+    {labels, controls} = labels_and_controls(doc)
 
-    label_targets =
-      doc
-      |> LazyHTML.query("label[for]")
-      |> LazyHTML.attribute("for")
-      |> Enum.reject(&(&1 == ""))
+    all_targets = for %{for: target} <- labels, is_binary(target) and target != "", do: target
 
-    assert label_targets != [], "expected rendered HTML to include explicit label[for] targets"
+    labelling_targets =
+      for %{for: target, text?: true} <- labels, is_binary(target) and target != "", do: target
+
+    assert all_targets != [] or Enum.any?(controls, & &1.wrapped?),
+           "expected rendered HTML to include a label: a label[for] target or a control wrapped in a label"
 
     missing =
-      label_targets
+      all_targets
       |> Enum.reject(&MapSet.member?(id_set, &1))
       |> Enum.uniq()
 
@@ -92,16 +93,99 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
            "expected every label[for] target to reference an existing ID, missing: #{inspect(missing)}"
 
     unlabeled =
-      doc
-      |> LazyHTML.query("input, select, textarea")
-      |> LazyHTML.attributes()
-      |> Enum.reject(fn attrs ->
-        hidden_input?(attrs) or control_labelled?(attrs, label_targets, id_set)
+      controls
+      |> Enum.reject(fn %{attrs: attrs, wrapped?: wrapped?} ->
+        hidden_input?(attrs) or wrapped? or
+          control_labelled?(attrs, labelling_targets, id_set)
       end)
-      |> Enum.map(fn attrs -> attribute_value(attrs, "id") || inspect(attrs) end)
+      |> Enum.map(fn %{attrs: attrs} -> attribute_value(attrs, "id") || inspect(attrs) end)
 
     assert unlabeled == [],
-           "expected every rendered form control to have a label or ARIA label, missing: #{inspect(unlabeled)}"
+           "expected every rendered form control to have a label (a non-empty label[for] or wrapping label) " <>
+             "or an ARIA label, missing: #{inspect(unlabeled)}"
+
+    html
+  end
+
+  # One walk over the parsed tree, so each control is judged as its own node
+  # rather than by an attribute list that an identical control elsewhere could
+  # share. A label counts only when it has text of its own; a wrapping label
+  # with a `for` attribute labels only the control that `for` names.
+  defp labels_and_controls(doc) do
+    {labels, controls} = doc |> LazyHTML.to_tree() |> walk_labels(nil, {[], []})
+    {Enum.reverse(labels), Enum.reverse(controls)}
+  end
+
+  defp walk_labels(nodes, label, acc) when is_list(nodes) do
+    Enum.reduce(nodes, acc, &walk_label_node(&1, label, &2))
+  end
+
+  defp walk_label_node({"label", attrs, children}, _label, {labels, controls}) do
+    label = %{for: attribute_value(attrs, "for"), text?: label_text(children) != ""}
+    walk_labels(children, label, {[label | labels], controls})
+  end
+
+  defp walk_label_node({tag, attrs, children}, label, {labels, controls})
+       when tag in ["input", "select", "textarea"] do
+    control = %{attrs: attrs, wrapped?: wraps?(label, attrs)}
+    walk_labels(children, label, {labels, [control | controls]})
+  end
+
+  defp walk_label_node({_tag, _attrs, children}, label, acc),
+    do: walk_labels(children, label, acc)
+
+  defp walk_label_node(_text_or_comment, _label, acc), do: acc
+
+  defp wraps?(nil, _attrs), do: false
+  defp wraps?(%{text?: false}, _attrs), do: false
+  defp wraps?(%{for: target}, _attrs) when target in [nil, ""], do: true
+  defp wraps?(%{for: target}, attrs), do: attribute_value(attrs, "id") == target
+
+  defp label_text(children) do
+    children
+    |> Enum.map_join(" ", fn
+      text when is_binary(text) -> text
+      {tag, _attrs, _children} when tag in ["input", "select", "textarea"] -> ""
+      {_tag, _attrs, nested} -> label_text(nested)
+      _comment -> ""
+    end)
+    |> String.trim()
+  end
+
+  @doc """
+  Bundled structural contract for a rendered admin page.
+
+  Checks unique IDs, resolvable ARIA targets, hrefs on every link, no token-like
+  text, exactly one h1, and explicit label targets. The h1 is rendered by the
+  admin shell, so it is present in the HTML returned by `live/2`.
+
+  Options: `:labels` is `:when_present` (default; label check runs when the
+  page renders any visible form control) or `:required`. Returns `html` for
+  piping.
+  """
+  def assert_page_contract!(html, opts \\ []) do
+    assert_no_duplicate_ids(html)
+    assert_describedby_targets_exist(html)
+    assert_aria_targets_exist(html, "aria-labelledby")
+    assert_aria_targets_exist(html, "aria-controls")
+    assert_links_have_hrefs(html)
+    html |> strip_liveview_plumbing() |> assert_no_token_like_text()
+
+    h1_count = html |> document() |> LazyHTML.query("h1") |> Enum.count()
+    assert h1_count == 1, "expected exactly one h1, found #{h1_count}"
+
+    # Decided by the rendered controls, not by labels: a page whose controls
+    # have no labels at all is exactly the case the label check must catch.
+    has_controls? =
+      html
+      |> document()
+      |> LazyHTML.query("input:not([type=hidden]), select, textarea")
+      |> Enum.count() > 0
+
+    case Keyword.get(opts, :labels, :when_present) do
+      :required -> assert_label_targets_exist(html)
+      :when_present -> if has_controls?, do: assert_label_targets_exist(html)
+    end
 
     html
   end
@@ -218,6 +302,14 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     end
 
     html
+  end
+
+  # live/2 output carries Phoenix-signed data-phx-session/static tokens on the
+  # LiveView root. They are framework plumbing, not leaked secrets.
+  defp strip_liveview_plumbing(html) do
+    html
+    |> html_source()
+    |> String.replace(~r/\sdata-phx-(?:session|static|parent-id|main)="[^"]*"/, "")
   end
 
   defp id_set(doc) do

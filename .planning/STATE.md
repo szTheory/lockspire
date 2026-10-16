@@ -2,33 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.42
 milestone_name: Admin UI Clarity & Workflow Refinement
-status: planning
-last_updated: "2026-10-14T00:34:01Z"
-last_activity: 2026-10-13
+status: Awaiting next milestone
+stopped_at: Milestone v1.42 completed and archived
+last_updated: "2026-10-16T01:26:04.600Z"
+last_activity: 2026-10-15
+last_activity_desc: Milestone v1.42 completed and archived
+state_head: f4d8ced613ecac12787c772bb483b3b991f3dc20
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 4
+  total_plans: 21
+  completed_plans: 21
+  percent: 100
+current_phase: 154
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-12 for v1.42)
+See: .planning/PROJECT.md (updated 2026-10-15 after v1.42)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.42 Admin UI Clarity & Workflow Refinement; roadmap created for Phases 151–154.
+**Current focus:** Planning next milestone (v1.42 shipped 2026-10-15)
 
 ## Current Position
 
-Phase: 153 of 154 — Configure & Support Page Refinement
-Plan: 00 complete; 01–06 implementation and review in progress (summaries pending)
-Status: Baseline complete; Phase 153 implementation is in progress
-Last activity: 2026-10-13 — Completed the bounded autonomous UX feedback sweep: practical lifetime guidance and actionable errors, shared client radios, terminal consent/key cleanup, scoped setup-token errors and shared spacing. Fresh proof: 305 Elixir / 6 Node tests, rebuilt demo smoke, final source detector, formatting and 30 desktop + 30 mobile route checks passed. Node regressions are wired into existing CI and validated locally; hosted CI has not run. Lifetime enforcement gaps are traced and retained as separate pending protocol work. Resume Phase 153 reviews/summaries and phase verification without repeating this batch.
+Phase: Milestone v1.42 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-15 — Milestone v1.42 completed and archived
 
 ## Accumulated Context
 
@@ -247,6 +251,16 @@ Last activity: 2026-10-13 — Completed the bounded autonomous UX feedback sweep
 - [Phase 150]: Phase 150-01: describe mix lockspire.verify as configuration, compiled-seam, route, and migration checks; keep host login and staff policy proof in host request tests.
 - [Phase 150]: Group every published guide by reader task and keep the canonical install page ahead of scenario guides.
 - [Phase 150]: Keep CONTRIBUTING.md repository-only; preserve stable HexDocs page paths and use existing deterministic docs/package checks.
+- [Phase 154]: Route proof harness is local-only; redaction scan covers text, field values and data-* attributes before any screenshot
+- [Phase 154]: Control-boundary token --ls-border-control: light gray-500, dark #7c8aa0; decorative borders unchanged
+- [Phase 154]: Page contract ignores data-phx-* LiveView tokens and accepts label-wrapped controls
+- [Phase 154]: 154-04: removed only unreachable key_next_action_summary empty-list clause; next-step text pinned by test
+- [Phase 154]: Plan 05: grouped filter_device_authorizations clauses as a pure move; page contract applied to 7 Support/Operate routes
+- [Phase 154]: Secondary nav wraps at 800px and below (instead of hidden-scrollbar scroll) so keyboard focus is never partly clipped; guarded by assert_responsive_layout!
+- [Phase 154]: Root scroll-padding-block keeps focused controls and rings off the viewport edge; 1100px spot check summarized in prose because BrowserEvidence rejects 1100px
+- [Phase 154]: Desktop final captures use 1261x900 at DPR 2 to match the 2522 px baseline width
+- [Phase 154]: Locked-console browser capture uses --disable-gpu-vsync and --disable-frame-rate-limit (frame pacing only)
+- [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
 
 ### Pending Todos
 
@@ -298,12 +312,14 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | deferred_items | 145/deferred-items.md: Phase 145 Plan 02's existing compiler/type warnings outside its ownership | acknowledged | 2026-10-10 | v1.40 |
 | deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
+| todos | 2026-10-13-audit-dcr-default-lifetime-semantics.md | (presence-only) | 2026-10-15 | v1.42 |
+| todos | 2026-10-14-bump-bandit-in-demo-and-clean-room-hosts.md | (presence-only) | 2026-10-15 | v1.42 |
 
 ## Session Continuity
 
-Last session: 2026-10-14T00:34:01Z
-Stopped at: Phase 153 autonomous feedback sweep verified and recorded in 153-AUTOMATED-UX-SWEEP.md. Outstanding phase plan review/summaries and phase verification remain before Phase 154.
-Resume file: .planning/phases/153-configure-support-page-refinement/153-UI-REVIEW-SNAPSHOT.md
+Last session: 2026-10-16T00:00:21.547Z
+Stopped at: Phase 154 complete — all phases complete
+Resume file: None
 
 ## Performance Metrics
 
@@ -401,7 +417,14 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 147 P08 | 46 | 3 tasks | 61 files |
 | Phase 150 P01 | 6min | 2 tasks | 4 files |
 | Phase 150 P02 | 9min | 2 tasks | 5 files |
+| Phase 154 P01 | 25 min | 3 tasks | 4 files |
+| Phase 154 P02 | 12 min | 2 tasks | 4 files |
+| Phase 154 P03 | 10 min | 3 tasks | 5 files |
+| Phase 154 P04 | 5 min | 3 tasks | 9 files |
+| Phase 154 P05 | 10 min | 3 tasks | 6 files |
+| Phase 154 P06 | 115 min | 3 tasks | 5 files |
+| Phase 154 P07 | 95 min | 3 tasks | 4 files |
 
 ## Operator Next Steps
 
-- Resume remaining Phase 153 plan reviews/summaries and verification with $gsd-execute-phase 153. Consult 153-USER-FEEDBACK.md and 153-UI-REVIEW-SNAPSHOT.md; do not repeat implemented feedback or start a new milestone.
+- Start the next milestone with /gsd-new-milestone

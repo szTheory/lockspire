@@ -8,6 +8,24 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Completed Milestone: v1.42 Admin UI Clarity & Workflow Refinement (Completed 2026-10-15)
+
+**Goal:** Make Lockspire's existing admin pages easier to scan and safer to use by removing low-value copy, clarifying outcomes, and making common tasks feel focused and consistent.
+
+**Target features:**
+- Review all 29 existing admin route scorecards and inspect complete page sections in the mounted synthetic demo; use Impeccable's critique and Operate guidance to ground changes in the actual work.
+- Simplify labels and explanations around the staff user's decision. Remove implementation provenance and duplicated copy when they do not change a decision; explain necessary protocol terms in context and describe supported consequences plainly.
+- Move client creation to a dedicated page and give task pages one clear title, concise task context, relevant client identity, and a clear way back.
+- Apply a consistent primary, secondary, and destructive-action hierarchy; reduce repetitive metrics and card scaffolding where it adds noise.
+- Correct demonstrated control-spacing and contrast issues using the existing Signal Cyan tokens and component system. Preserve responsive layout, light/dark/system themes, keyboard access, and reduced-motion behavior.
+- Add focused regression checks and redaction-safe before/after browser evidence for the routes and states changed.
+
+The milestone is limited to admin presentation and task flow. OAuth/OIDC behavior, security policy, the embedded-library boundary, host-owned UX, and intentionally read-only queues remain unchanged. Keep CR-01 tracked as a separate unresolved security issue.
+
+**Delivered:** Phases 151–154 completed 21 plans and satisfied all nine requirements. App registration has its own page and app task pages are focused; overview counts open exact read-only queue subsets; all 30 admin paths use the PRODUCT.md vocabulary and one page-hero contract; controls meet 3:1 contrast with visible focus in light and dark themes; and a local-only, navigate-only browser harness produced 928 passing redaction-safe checks across 7 widths and 3 themes. Phases 151–153 were re-verified at HEAD during closeout after Phase 154 edited shared files.
+
+**Closeout:** Audit `tech_debt`, no blockers. Accepted: four deferred layout-polish items, the "Add app" path when the inventory read fails, emulated rather than native 200% zoom, and a possible keyboard-harness flake. Two out-of-scope todos (DCR default lifetime semantics; Bandit bump in demo hosts) were acknowledged. No protocol, storage or security code changed and no package was published. See the [v1.42 audit](milestones/v1.42-MILESTONE-AUDIT.md), [roadmap](milestones/v1.42-ROADMAP.md), and [requirements](milestones/v1.42-REQUIREMENTS.md).
+
 ## Completed Milestone: v1.41 Product Language & Repository Clarity (Completed 2026-10-11)
 
 **Goal:** Make Lockspire's admin UI language plain, accurate, and consistent, then give adopters and maintainers a clear route through the repository and trustworthy documentation.
@@ -79,29 +97,17 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
+v1.42 Admin UI Clarity & Workflow Refinement is complete and archived (2026-10-15). Phases 151–154 delivered all nine requirements in 21 plans; every phase is verified, Nyquist-validated and security-audited, and the full suite passes (1573 tests). No milestone is active; the next one starts with `/gsd-new-milestone`.
+
 v1.41 Product Language & Repository Clarity is complete and archived. Phases 148–150 delivered all eight requirements in 10 plans and 24 tasks; the milestone audit found no unsatisfied requirements or broken flows. The Phase 999.1 repository readability/docs-polish scope was delivered through these phases and should not be run again.
 
 The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 24 requirements and eight reviewed flows satisfied across Phases 144–147 (21 plans). The override closeout records three phase reports as stale after covered-source edits and Phase 146 as `human_needed`; original verification reports were preserved. The late policy/client readiness changes passed 35 focused tests and a clean code review. The audit makes no claim that every phase currently has fresh verification.
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; this UI milestone neither resolves nor accepts it as safe for release.
+Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; neither UI milestone (v1.40, v1.42) resolves or accepts it as safe for release.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
-
-## Current Milestone: v1.42 Admin UI Clarity & Workflow Refinement
-
-**Goal:** Make Lockspire's existing admin pages easier to scan and safer to use by removing low-value copy, clarifying outcomes, and making common tasks feel focused and consistent.
-
-**Target features:**
-- Review all 29 existing admin route scorecards and inspect complete page sections in the mounted synthetic demo; use Impeccable's critique and Operate guidance to ground changes in the actual work.
-- Simplify labels and explanations around the staff user's decision. Remove implementation provenance and duplicated copy when they do not change a decision; explain necessary protocol terms in context and describe supported consequences plainly.
-- Move client creation to a dedicated page and give task pages one clear title, concise task context, relevant client identity, and a clear way back.
-- Apply a consistent primary, secondary, and destructive-action hierarchy; reduce repetitive metrics and card scaffolding where it adds noise.
-- Correct demonstrated control-spacing and contrast issues using the existing Signal Cyan tokens and component system. Preserve responsive layout, light/dark/system themes, keyboard access, and reduced-motion behavior.
-- Add focused regression checks and redaction-safe before/after browser evidence for the routes and states changed.
-
-The milestone is limited to admin presentation and task flow. OAuth/OIDC behavior, security policy, the embedded-library boundary, host-owned UX, and intentionally read-only queues remain unchanged. Keep CR-01 tracked as a separate unresolved security issue.
 
 ## Completed Milestone: v1.32 Admin Page IA & Interaction Model Polish
 
@@ -269,12 +275,16 @@ The milestone is limited to admin presentation and task flow. OAuth/OIDC behavio
 
 ### Active
 
-No active v1.41 requirements remain; the milestone scope is validated below.
+No active requirements. v1.42 is validated below; the next milestone defines new ones.
 
 The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40-REQUIREMENTS.md](milestones/v1.40-REQUIREMENTS.md).
 
 ### Validated
 
+- ✓ All 30 admin paths use plain, task-focused language and one page hierarchy, with retired wording enforced by `vocabulary_contract_test.exs` (UI-01, UI-02, UI-06) — v1.42, Phase 153; verifier 3/3 (re-verified at HEAD), 219 mapped tests, security 12/12.
+- ✓ Changed pages stay usable at 7 widths in light, dark and system themes with 3:1 control contrast, visible focus and reduced motion; redaction-safe browser evidence and a bundled page contract on every admin route; security defaults, redaction, copy-once, revocation scopes and read-only queues proven unchanged (UI-07, PROOF-01, SAFE-01) — v1.42, Phase 154; verifier 3/3, 928 browser checks, security 22/22.
+- ✓ App registration has its own focused route with a filter-preserving return, app task routes lead with the app and task, and primary/secondary/destructive action emphasis follows a documented rule (UI-04, UI-05) — v1.42, Phase 151; verifier 8/8, 55 focused tests, full fast suite green. Code review (5 warnings, 3 info) and the UI review fixes were applied afterwards; the review ledger shows 0 open.
+- ✓ Overview counts and queue filters share one waiting rule, failed reads stay distinct from empty results, token-reuse and app sign-out notice copy avoids claiming compromise or a confirmed sign-out, and queue rows redact request identifiers (UI-03) — v1.42, Phase 152; verifier 3/3, 41 focused tests, full fast suite green. Code review (3 warnings, 3 info) and UI review fixes applied; review ledger 0 open.
 - ✓ Existing admin pages use task-focused, plain language while preserving protocol meanings, security consequences, redaction, and host-owned UX boundaries — v1.41, Phase 148; verifier 33/33, 215 focused tests, and responsive review at desktop, tablet, and mobile sizes. No user-comprehension claim is made.
 - ✓ Contributors can identify the purpose and lifecycle of repository areas, and cleanup decisions are backed by ownership/reference evidence — v1.41, Phase 149; ambiguous worktree and retained artifacts were preserved.
 - ✓ Phoenix adopters and maintainers can follow task-oriented README/HexDocs routes through canonical installation and verification; setup claims match source, and published guide/package boundaries are automated — v1.41, Phase 150; verifier 7/7, focused docs contract, docs build, package build, and regression checks pass.
@@ -444,6 +454,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Start and complete v1.32 as a page-first admin IA and interaction-model polish milestone | v1.31 strengthened foundations and broad weak-page coverage; the remaining quality gap was judgment-level page composition, user-flow hierarchy, copy, and component-group polish under ugly Support/Operate data before wider Configure propagation and final proof ratchets. | Adopted 2026-06-28; shipped and archived 2026-06-30 |
 | Run repo hygiene before future milestones and releases | Clean local git/worktrees, triaged GitHub PRs/issues, green CI, current GSD state, and release-truth notes keep Lockspire ready for the next scoped adventure without starting from a dirty repo state. | Adopted 2026-07-01; documented in `.planning/REPO-HYGIENE-CHECKLIST.md` |
 | Start v1.40 as Admin Operator UI Refinement using the existing design system | The user requested a coherent, conventional operator experience, approved the Impeccable audience/code-first defaults, and selected this scope over the earlier docs backlog. Reuse prior UI work and sibling lessons; evaluate complete jobs in the actual browser with bounded review. | Milestone direction confirmed 2026-10-09; detailed roadmap approval tracked in STATE.md |
+| Keep the v1.42 browser-proof harness local-only and navigate-only | Real-browser runs are slow and need a live demo; recurring value lives in deterministic contracts (page contract, CSS contrast, route parity) that run in CI, while screenshots stay in ignored `tmp/` | ✓ Good — adopted in Phase 154 (D-05/D-06) |
+| Re-verify earlier phases at milestone close when a later phase edits shared files | Stale digests from Phase 154 CSS/component edits would otherwise force an override closeout | ✓ Good — v1.42 closed as verified |
 
 ## Evolution
 
@@ -464,4 +476,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-11 after Phase 150*
+*Last updated: 2026-10-15 after v1.42 milestone*
