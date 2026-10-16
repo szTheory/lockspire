@@ -144,7 +144,7 @@ defmodule Lockspire.Integration.SigningKeyUpgradeJourneyTest do
     assert length(rotated) == 4
     kek_ids = Enum.map(rotated, &KeyEncryption.envelope_kek_id(&1.private_jwk_encrypted))
     assert Enum.all?(kek_ids, &(&1 == {:ok, "test-2"}))
-    assert Enum.count(kek_ids, &(&1 == {:ok, "test-1"})) == 0
+    refute Enum.any?(kek_ids, &(&1 == {:ok, "test-1"}))
 
     for row <- rotated do
       assert_sealed(row.private_jwk_encrypted, original, "test-2")
