@@ -170,7 +170,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Index do
   defp summary_detail(%{required: required, optional: optional}, :par)
        when is_integer(required) and is_integer(optional),
        do:
-         "#{counted(required, "app", "apps")} #{verb(required, "requires", "require")} PAR explicitly; #{counted(optional, "app", "apps")} #{verb(optional, "chooses", "choose")} optional PAR."
+         "With PAR, an app sends its sign-in request details to Lockspire directly before redirecting the browser. #{counted(required, "app", "apps")} #{verb(required, "requires", "require")} PAR; #{counted(optional, "app", "apps")} #{verb(optional, "chooses", "choose")} it."
 
   defp summary_detail(%{fapi: fapi, message_signing: signing}, :security)
        when is_integer(fapi) and is_integer(signing),

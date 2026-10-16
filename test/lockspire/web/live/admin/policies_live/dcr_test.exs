@@ -190,8 +190,8 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ ~s(data-values="email, profile")
     assert html =~ ~s(data-values="authorization_code, refresh_token")
     assert html =~ ~s(data-values="code")
-    assert text =~ "Public app (no secret)"
-    assert text =~ "Client secret over HTTP Basic"
+    assert text =~ "No client secret"
+    assert text =~ "Client secret in the request header"
     assert html =~ ~s(data-values="https")
     assert html =~ ~s(data-values="apps.example.com")
     assert policy_control(html, "dcr_default_client_secret_lifetime_seconds") =~ ~s(value="7200")

@@ -192,7 +192,7 @@
           <Lockspire.Web.Components.AdminComponents.checkbox_group
             id="dcr_allowed_token_endpoint_auth_methods" name="policy[dcr_allowed_token_endpoint_auth_methods]"
             label="Allowed authentication methods" help="How an app proves its identity when requesting tokens."
-            value={@form[:dcr_allowed_token_endpoint_auth_methods].value} choices={[{"none", "Public app (no secret)"}, {"client_secret_basic", "Client secret over HTTP Basic"}, {"client_secret_post", "Client secret in request body"}, {"client_secret_jwt", "Client secret JWT (client_secret_jwt)"}, {"private_key_jwt", "Private key JWT (private_key_jwt)"}]}
+            value={@form[:dcr_allowed_token_endpoint_auth_methods].value} choices={[{"none", "No client secret"}, {"client_secret_basic", "Client secret in the request header"}, {"client_secret_post", "Client secret in the request body"}, {"client_secret_jwt", "Signed client assertion (client_secret_jwt)"}, {"private_key_jwt", "Signed client assertion with app key (private_key_jwt)"}]}
             errors={field_errors(@form_errors, :dcr_allowed_token_endpoint_auth_methods)} />
             <div class="lockspire-admin-jwt-guidance">
               <p class="lockspire-admin-help">

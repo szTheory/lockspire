@@ -58,7 +58,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.IndexTest do
     refute has_element?(view, ".lockspire-admin-display-value")
 
     assert html =~
-             "0 apps require PAR explicitly; 0 apps choose optional PAR."
+             "0 apps require PAR; 0 apps choose it."
 
     assert html =~
              "0 apps registered themselves through the API; 0 active setup tokens are stored."

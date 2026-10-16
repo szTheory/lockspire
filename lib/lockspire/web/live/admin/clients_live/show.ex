@@ -532,7 +532,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
             </p>
             <p>
               Inline JWKS configured:
-              <code>{boolean_label(not is_nil(@client.jwks))}</code>
+              {boolean_label(not is_nil(@client.jwks))}
             </p>
             <p>
               Accepted signing algorithms:
@@ -606,7 +606,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               />
             </:item>
             <:item label="Include session in server notification">
-              <code>{boolean_label(@client.backchannel_logout_session_required)}</code>
+              {boolean_label(@client.backchannel_logout_session_required)}
             </:item>
             <:item label="Browser sign-out notification URL">
               <p class="lockspire-admin-help">Lockspire notifies this app in the user's browser. Delivery is best effort.</p>
@@ -616,7 +616,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
               />
             </:item>
             <:item label="Include session in browser notification">
-              <code>{boolean_label(@client.frontchannel_logout_session_required)}</code>
+              {boolean_label(@client.frontchannel_logout_session_required)}
             </:item>
           </AdminComponents.description_list>
           <div class="lockspire-admin-help lockspire-admin-help-block">
@@ -1178,7 +1178,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp security_profile_label(:inherit), do: "Use provider default"
   defp security_profile_label(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
   defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security"
-  defp security_profile_label(:none), do: "Standard OpenID Connect"
+  defp security_profile_label(:none), do: "Standard OAuth and OpenID Connect"
 
   defp security_profile_label(nil), do: "Unavailable"
   defp security_profile_label(_profile), do: "Unavailable"
@@ -1201,7 +1201,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp security_verdict_for(%{effective_profile: :fapi_2_0_security}),
     do: "FAPI 2.0 Security Profile"
 
-  defp security_verdict_for(%{effective_profile: :none}), do: "Standard OpenID Connect"
+  defp security_verdict_for(%{effective_profile: :none}), do: "Standard OAuth and OpenID Connect"
   defp security_verdict_for(nil), do: "Unavailable"
 
   defp mixed_mode_override?(%{
@@ -1294,8 +1294,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp format_datetime(nil), do: "Never"
   defp format_datetime(%DateTime{} = value), do: DateTime.to_iso8601(value)
 
-  defp boolean_label(true), do: "true"
-  defp boolean_label(false), do: "false"
+  defp boolean_label(true), do: "Yes"
+  defp boolean_label(false), do: "No"
 
   defp value_or_not_configured(nil), do: "Not configured"
   defp value_or_not_configured(value), do: value
