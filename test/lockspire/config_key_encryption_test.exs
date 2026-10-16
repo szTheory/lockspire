@@ -80,6 +80,13 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
     end
   end
 
+  test "invalid key error names both generation commands and warns about phx.gen.secret" do
+    msg = message(keys: [{"a", Base.encode64(:crypto.strong_rand_bytes(31))}], current: "a")
+    assert msg =~ "openssl rand -base64 32"
+    assert msg =~ "Base.encode64(:crypto.strong_rand_bytes(32))"
+    assert msg =~ "phx.gen.secret"
+  end
+
   test "invalid: key lengths, weak and duplicate material, duplicate ids" do
     for len <- [31, 33] do
       assert message(keys: [{"a", Base.encode64(:crypto.strong_rand_bytes(len))}], current: "a") =~

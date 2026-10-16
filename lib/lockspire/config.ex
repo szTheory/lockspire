@@ -285,7 +285,10 @@ defmodule Lockspire.Config do
     raise ArgumentError,
           "invalid config :key_encryption (#{inspect(config_key)}: #{reason}) for :lockspire. " <>
             "Each key must be base64 of 32 random bytes; generate one with " <>
-            "`openssl rand -base64 32` and set it in config/runtime.exs."
+            "`openssl rand -base64 32` or " <>
+            "`elixir -e 'IO.puts(Base.encode64(:crypto.strong_rand_bytes(32)))'` " <>
+            "and set it in config/runtime.exs. " <>
+            "Note that `mix phx.gen.secret` output is not 32 bytes of base64 and will not work."
   end
 
   defp fetch_required!(key) do

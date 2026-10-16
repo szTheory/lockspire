@@ -122,6 +122,9 @@ defmodule Lockspire.Generators.Install do
   end
 
   defp instructions(assigns) do
+    kek_id = Calendar.strftime(DateTime.utc_now(), "%Y-%m")
+    dev_kek = Base.encode64(:crypto.strong_rand_bytes(32))
+
     """
 
     Lockspire canonical onboarding next steps:
@@ -133,6 +136,28 @@ defmodule Lockspire.Generators.Install do
       6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
       7. Run `mix ecto.migrate`, create a client, and run `mix test test/#{assigns.app_path}/lockspire_smoke_e2e_test.exs` to verify discovery, JWKS, and an auth-code + PKCE flow.
       8. If you explicitly operate a FAPI 2.0 security profile, generate its isolated proof with `mix lockspire.install --with-fapi-smoke`, then run `mix test test/#{assigns.app_path}/lockspire_fapi_smoke_e2e.exs --include fapi`.
+      9. Encrypt signing keys at rest. Add this block to `config/runtime.exs` (prod fails closed when the variable is missing):
+
+           if config_env() == :prod do
+             config :lockspire, :key_encryption,
+               keys: [
+                 {"#{kek_id}",
+                  System.get_env("LOCKSPIRE_KEY_ENCRYPTION_KEY") ||
+                    raise("LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: openssl rand -base64 32")}
+               ],
+               current: "#{kek_id}",
+               legacy_plaintext: :reject
+           end
+
+         And this block to `config/dev.exs` and `config/test.exs`:
+
+           # dev/test only - never reuse in prod
+           config :lockspire, :key_encryption,
+             keys: [{"#{kek_id}", System.get_env("LOCKSPIRE_KEY_ENCRYPTION_KEY", "#{dev_kek}")}],
+             current: "#{kek_id}",
+             legacy_plaintext: :reject
+
+         Upgrading an app that already has signing keys? Start with `legacy_plaintext: :allow` and follow docs/upgrading/signing-key-encryption.md.
     """
   end
 
