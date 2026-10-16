@@ -1,13 +1,12 @@
 defmodule Lockspire.KeyEncryptionHelpers do
-  @moduledoc """
-  Test helpers for the `:key_encryption` seam. For `async: false` tests only.
-
-  Cache-isolation rule: absent-KEK tests MUST call `put_key_encryption(nil)`.
-  It clears both the `:key_encryption` app env and the `:persistent_term` cache.
-  Deleting the env through `Lockspire.ConfigCase` (or a bare app-env delete) does
-  NOT clear the cache, so `Lockspire.Config.key_encryption_keyset/0` would keep
-  returning the boot-time key set and the test would silently see a configured KEK.
-  """
+  # Test helpers for the `:key_encryption` seam. For `async: false` tests only.
+  #
+  # Cache-isolation rule: absent-KEK tests MUST call `put_key_encryption(nil)`.
+  # It clears both the `:key_encryption` app env and the `:persistent_term` cache.
+  # Deleting the env through `Lockspire.ConfigCase` (or a bare app-env delete) does
+  # NOT clear the cache, so `Lockspire.Config.key_encryption_keyset/0` would keep
+  # returning the boot-time key set and the test would silently see a configured KEK.
+  @moduledoc false
 
   alias Lockspire.Config
   alias Lockspire.Domain.SigningKey

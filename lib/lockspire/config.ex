@@ -245,12 +245,11 @@ defmodule Lockspire.Config do
 
   @key_encryption_cache_key {Lockspire, :key_encryption}
 
-  @doc """
-  Validates the `:key_encryption` block fresh from app env.
-
-  Returns nil when the block is absent, a resolved key set when valid, and raises
-  `ArgumentError` naming only config keys (never values) when invalid.
-  """
+  # Validates the `:key_encryption` block fresh from app env.
+  #
+  # Returns nil when the block is absent, a resolved key set when valid, and raises
+  # `ArgumentError` naming only config keys (never values) when invalid.
+  @doc false
   @spec key_encryption!() :: KeySet.t() | nil
   def key_encryption! do
     case Application.get_env(@app, :key_encryption) do
@@ -265,9 +264,8 @@ defmodule Lockspire.Config do
     end
   end
 
-  @doc """
-  Returns the cached key set (populated at boot), falling back to fresh validation.
-  """
+  # Returns the cached key set (populated at boot), falling back to fresh validation.
+  @doc false
   @spec key_encryption_keyset() :: KeySet.t() | nil
   def key_encryption_keyset do
     case :persistent_term.get(@key_encryption_cache_key, :miss) do
