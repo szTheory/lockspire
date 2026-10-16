@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 155
 current_phase_name: Crypto Core, Config Seam & Bandit Baseline
 status: executing
-stopped_at: Completed 155-02-PLAN.md
-last_updated: "2026-10-16T03:30:32.450Z"
+stopped_at: Completed 155-03-PLAN.md
+last_updated: "2026-10-16T03:38:45.655Z"
 last_activity: 2026-10-15
 last_activity_desc: Phase 155 execution started
-state_head: baa3e955693301fd312dd18adf19cbd96de29338
+state_head: 6c0c4f8dd533fdfadeaa5b395d9714b02989ece0
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-10-15 — Phase 155 execution started
 
@@ -273,6 +273,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
 - [Phase 155]: Pin bandit == 1.13.1 in demo and clean-room hosts; prune unused bandit/thousand_island from compat lock (D-15/16/17)
 - [Phase 155]: KEK envelope parse binds exact 12-byte IV and 16-byte tag before :crypto (truncated tags accepted by :crypto); empty keys block is invalid
+- [Phase 155]: PrivateJwk.decode/1 is map-form only; legacy rows get no kid check until Phase 156
 
 ### Pending Todos
 
@@ -330,8 +331,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T03:30:32.430Z
-Stopped at: Completed 155-02-PLAN.md
+Last session: 2026-10-16T03:38:45.634Z
+Stopped at: Completed 155-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -439,6 +440,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P07 | 95 min | 3 tasks | 4 files |
 | Phase 155 P01 | 40 min | 2 tasks | 7 files |
 | Phase 155 P02 | 35 min | 3 tasks | 11 files |
+| Phase 155 P03 | 25 min | 3 tasks | 12 files |
 
 ## Operator Next Steps
 
