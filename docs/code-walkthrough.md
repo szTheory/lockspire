@@ -460,14 +460,17 @@ from being committed without the token set the response claims to have issued.
 boundary. Client policy may choose JWT or opaque format. In the JWT branch, the
 active server key supplies `alg` and `kid`; client input never does.
 
+The stored private key is an envelope opened by `PrivateJwk` only for the duration of the signature, and the `to_jwk` helper turns any malformed key into `:invalid_signing_key` without exposing key bytes.
+
 ```elixir
 defp sign_jwt(claims, request) do
-  with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}} <-
+  with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: _private_jwk} = signing_key} <-
          fetch_signing_key(request),
-       {:ok, jwk_map} <- decode_private_jwk(private_jwk) do
+       {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+       {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map) do
     {_, compact} =
       JOSE.JWT.sign(
-        JOSE.JWK.from_map(jwk_map),
+        jwk,
         %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
         claims
       )

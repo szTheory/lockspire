@@ -6,7 +6,7 @@ All core domain events are emitted using the internal `Lockspire.Observability.e
 
 ## Event Structure
 
-Every operator and protocol event emitted through `Lockspire.Observability.emit/4` produces two paths. The one exception is the pair of signing-path key events listed under [Signing Key](#signing-key-lockspire-key-), which are emitted directly on the standard path only and have no audit mirror:
+Every operator and protocol event emitted through `Lockspire.Observability.emit/4` produces two paths. The one exception is the pair of signing-path key events listed in the Signing Key section below, which are emitted directly on the standard path only and have no audit mirror:
 
 1. **Standard Telemetry Path:** `[:lockspire, <entity>, <action>]`
 2. **Audit Mirror Path:** `[:lockspire, :audit, <entity>, <action>]`

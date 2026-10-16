@@ -328,7 +328,7 @@ Lockspire's component boundaries exist to make these invariants enforceable:
 | Required runtime identity | Repository, resolver, issuer, mount, and Oban configuration fail early rather than during a partial grant. |
 | Safe redirects | Client lookup and exact redirect matching happen before an OAuth error may leave through that redirect. |
 | PKCE S256 by default | The canonical authorization value always carries an S256 challenge, and token exchange checks the verifier. |
-| Bounded plaintext | Client secrets, authorization codes, and opaque tokens are hashed at rest; raw values exist only at creation and presentation edges. |
+| Bounded plaintext | Client secrets, authorization codes, and opaque tokens are hashed at rest; raw values exist only at creation and presentation edges. Private signing keys are stored only as envelopes sealed under a key-encryption key the host app holds. |
 | Single-use credentials | Codes and refresh generations are redeemed under row locks and transactions. |
 | Atomic evidence | Security-sensitive state changes and their durable audit records share a transaction when the store supports it. |
 | Sender binding | `cnf`, DPoP proof state, and mTLS certificate facts are validated at the token or protected-resource boundary. |
@@ -351,8 +351,9 @@ The model is easier to remember as clusters of facts than as tables.
 **Runtime and registration facts** bind an issuer, mount, repository, server
 policy, and registered clients. Client records hold redirect URIs, allowed grant
 and response types, scopes, authentication method, sender-constraint posture,
-and optional advanced-protocol settings. Secret material is stored as hashes or
-encrypted key material where appropriate.
+and optional advanced-protocol settings. Secret material is stored as hashes, and
+signing keys are stored as AES-256-GCM envelopes bound to their key ID and opened only
+at signing time, with no decrypted-key cache.
 
 **Human-interaction facts** connect a validated authorization request to a
 subject and consent decision. Interactions move through pending login, pending

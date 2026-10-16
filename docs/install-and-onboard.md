@@ -140,6 +140,29 @@ If you plan to support device login, keep that host-owned `/verify` seam paired 
 - `POST /token` accepts `grant_type=urn:ietf:params:oauth:grant-type:device_code`, returns `authorization_pending` while approval is still pending, and returns `slow_down` when the client polls too aggressively.
 - Approval still happens only through the host-owned `/verify` seam; Lockspire does not take over your browser UX.
 
+### Protect signing keys with a key-encryption key
+
+Lockspire stores private signing keys as sealed envelopes under a key-encryption key (KEK) that your app provides at runtime. The install command prints the blocks below; add them yourself, because Lockspire never writes your secrets. Generate the value with `openssl rand -base64 32` and keep it in your secret manager, separately from database backups.
+
+In `config/runtime.exs`, where production fails closed if the variable is missing:
+
+```elixir
+if config_env() == :prod do
+  config :lockspire, :key_encryption,
+    keys: [
+      {"2026-01",
+       System.get_env("LOCKSPIRE_KEY_ENCRYPTION_KEY") ||
+         raise("LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: openssl rand -base64 32")}
+    ],
+    current: "2026-01",
+    legacy_plaintext: :reject
+end
+```
+
+In `config/dev.exs` and `config/test.exs`, use a throwaway value that is never reused in production (the install output prints a fresh random one).
+
+If your app already has signing keys from an earlier version, do not start with `:reject`. Follow the [signing key encryption upgrade note](upgrading/signing-key-encryption.md) instead.
+
 ## 4. Run host migrations
 
 Generated new installs set:

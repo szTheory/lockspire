@@ -48,6 +48,15 @@ defmodule Lockspire.UpgradeGuideContractTest do
     end
   end
 
+  test "architecture and install docs describe envelope storage" do
+    architecture = File.read!(Path.join(@repo_root, "docs/architecture.md"))
+    install = File.read!(Path.join(@repo_root, "docs/install-and-onboard.md"))
+
+    assert install =~ "LOCKSPIRE_KEY_ENCRYPTION_KEY"
+    assert install =~ "upgrading/signing-key-encryption.md"
+    refute architecture =~ "encrypted key material where appropriate"
+  end
+
   test "the guide stays version-agnostic and free of local paths", %{guide: guide} do
     refute guide =~ ".planning/"
     refute guide =~ "/Users/"
