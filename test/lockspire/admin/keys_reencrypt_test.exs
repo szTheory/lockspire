@@ -223,6 +223,10 @@ defmodule Lockspire.Admin.KeysReencryptTest do
     test "pages visit every row exactly once" do
       for n <- 1..5, do: Helpers.insert_signing_key_row!(Helpers.legacy_json_row("kid-page-#{n}"))
 
+      for bad <- [0, -1, "10", nil, 1.5] do
+        assert {:error, :invalid_option} = Admin.reencrypt(page_size: bad)
+      end
+
       assert {:ok, report} = Admin.reencrypt(page_size: 2)
       assert report.scanned == 5
       assert report.encrypted == 5

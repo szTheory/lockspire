@@ -197,9 +197,10 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
   defp decide_and_apply(repo, record, decide, opts) do
     key = SigningKeyRecord.to_domain(record)
 
-    # Test seam: runs after the row lock is held and before the decision.
+    # Test seam: runs after the row lock is held and before the decision. It sees the kid only,
+    # never the stored key bytes.
     case Keyword.get(opts, :after_lock) do
-      hook when is_function(hook, 1) -> hook.(key)
+      hook when is_function(hook, 1) -> hook.(%{kid: key.kid})
       _other -> :ok
     end
 

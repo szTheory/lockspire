@@ -221,7 +221,8 @@ defmodule Lockspire.Admin.Keys do
   rows already on the current key are counted as `already_current`.
 
   Options: `:dry_run` (default `false`) classifies every row and writes nothing, and `:actor`
-  (a map with `:type`, `:id` and `:display`) is recorded on each audit entry.
+  (a map with `:type`, `:id` and `:display`) is recorded on each audit entry. No other option
+  is supported; `:page_size` and `:after_lock` are internal test seams and may change.
 
   The repo must already be started. On a running release node, call this through
   `bin/app rpc` instead of a separate process.
@@ -229,9 +230,13 @@ defmodule Lockspire.Admin.Keys do
   @spec reencrypt(keyword()) ::
           {:ok, reencrypt_report()}
           | {:error,
-             :key_encryption_not_configured | :repo_not_started | {:invalid_config, String.t()}}
+             :key_encryption_not_configured
+             | :repo_not_started
+             | :invalid_option
+             | {:invalid_config, String.t()}}
   def reencrypt(opts \\ []) when is_list(opts) do
-    with {:ok, keyset} <- fresh_keyset(),
+    with :ok <- validate_reencrypt_opts(opts),
+         {:ok, keyset} <- fresh_keyset(),
          :ok <- ensure_repo_started() do
       actor = actor_from_attrs(%{actor: Keyword.get(opts, :actor)})
       {:ok, Reencrypt.run(keyset, actor, opts)}
@@ -280,6 +285,14 @@ defmodule Lockspire.Admin.Keys do
       },
       %{current_kek_id: status.current_kek_id, actor_type: actor[:type], actor_id: actor[:id]}
     )
+  end
+
+  defp validate_reencrypt_opts(opts) do
+    case Keyword.fetch(opts, :page_size) do
+      :error -> :ok
+      {:ok, size} when is_integer(size) and size > 0 -> :ok
+      {:ok, _invalid} -> {:error, :invalid_option}
+    end
   end
 
   defp status_keyset do
