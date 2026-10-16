@@ -144,7 +144,7 @@ Plans:
 - 157-04: Upgrade and rotation docs, warnings, architecture/walkthrough/SECURITY updates, release-note text (DOC-01). Split candidate if the phase overruns (R7).
 
 **SAFE-01 constraint**: owns the final SAFE-01 proof for the whole milestone; no new admin copy (KEY-UI-01 deferred), so PRODUCT.md vocabulary is unchanged.
-**Plans**: 3/6 plans executed
+**Plans**: 4/6 plans executed
 
 Plans:
 **Wave 1**
@@ -154,7 +154,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 157-04-PLAN.md — `docs/upgrading/signing-key-encryption.md` + contract test, telemetry/SECURITY/architecture/walkthrough/install docs, release-note file (DOC-01)
-- [ ] 157-06-PLAN.md — Redaction proof tail: malformed-key leg of the canary sweep across six consumers and the Oban logout worker errors proof (RED-01)
+- [x] 157-06-PLAN.md — Redaction proof tail: malformed-key leg of the canary sweep across six consumers and the Oban logout worker errors proof (RED-01)
 
 **Wave 3** *(blocked on Wave 2 completion; runs last so the SAFE-01 gate covers the final tree)*
 - [ ] 157-03-PLAN.md — Upgrade journey integration test for six consumers, demo and clean-room `--check`/doctor CI checks, SAFE-01 gate recorded (PROOF-01, SAFE-01)
@@ -175,7 +175,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | Complete    | 2026-10-16 |
 | 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 3/3 | Complete    | 2026-10-16 |
-| 157. Host Surfaces, Redaction Sweep & Release Proof | 3/6 | In Progress | - |
+| 157. Host Surfaces, Redaction Sweep & Release Proof | 4/6 | In Progress | - |
 
 ## Completed Backlog Scope
 
