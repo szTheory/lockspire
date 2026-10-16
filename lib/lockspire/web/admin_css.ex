@@ -1242,7 +1242,7 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field textarea {
     min-height: var(--ls-control-height);
     min-width: 0;
-    max-width: 100%;
+    max-width: min(100%, 600px);
     padding: var(--ls-control-padding-y) var(--ls-control-padding-x);
     background: var(--ls-surface-panel);
     border: 1px solid var(--ls-border-control);
@@ -2167,7 +2167,7 @@ defmodule Lockspire.Web.Admin.CSS do
     position: absolute;
     text-align: start;
     top: calc(100% + var(--ls-info-gap));
-    visibility: hidden;
+    display: none;
     width: min(20rem, calc(100vw - 4rem));
     z-index: var(--ls-z-overlay);
   }
@@ -2196,7 +2196,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-info[data-open="true"] .lockspire-admin-info-tooltip {
-    visibility: visible;
+    display: block;
   }
 
   .lockspire-admin-resource-list > a:not(.lockspire-admin-btn):hover,
@@ -2616,6 +2616,7 @@ defmodule Lockspire.Web.Admin.CSS do
     display: grid;
     gap: var(--ls-space-6);
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    align-items: start;
     max-width: 100%;
     min-width: 0;
     margin-bottom: var(--ls-space-6);

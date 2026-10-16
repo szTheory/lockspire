@@ -79,6 +79,8 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
         const storageKey = "lockspire-admin-theme";
         const root = document.documentElement;
         const setInfoOpen = (info, open) => {
+          // Open first: a closed tooltip is display: none and has no box to measure.
+          info.dataset.open = String(open);
           if (open) {
             const trigger = info.querySelector("[data-lockspire-info-trigger]").getBoundingClientRect();
             const tooltip = info.querySelector('[role="tooltip"]');
@@ -89,7 +91,6 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
             const offset = getComputedStyle(tooltip).direction === "rtl" ? box.right - center : center - box.left;
             tooltip.style.setProperty("--ls-info-pointer-offset", `${offset}px`);
           }
-          info.dataset.open = String(open);
           info.querySelector("[data-lockspire-info-trigger]").setAttribute("aria-expanded", String(open));
           if (!open) delete info.dataset.pinned;
         };
