@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.42 Admin UI Clarity & Workflow Refinement (Completed: 2026-10-15)
+
+**Delivered:** The admin UI now follows real staff tasks: apps are registered and edited on focused pages, overview counts open the exact read-only queue subsets they describe, every page uses the PRODUCT.md vocabulary with a clear hierarchy, and all 30 admin paths stay usable at 7 widths in light, dark and system themes. No OAuth/OIDC behaviour, storage or security default changed; no package was published.
+
+**Phases completed:** 4 phases (151–154), 21 plans; all 9 requirements (UI-01–UI-07, PROOF-01, SAFE-01) are satisfied.
+
+**Key accomplishments:**
+- App registration has its own `/admin/clients/new` page; app task pages lead with the selected app and return to it, under a primary/secondary/danger action rule.
+- Overview counts open exact read-only subsets of the sign-in request, device and sign-out notice queues, with hedged token-reuse and delivery wording.
+- Configure and Support pages use plain language and one page-hero contract across all 30 paths; retired wording is enforced by `vocabulary_contract_test.exs`.
+- Form controls meet WCAG 3:1 contrast in both themes, fields keep a visible focus ring, and narrow-width overflow, nav wrapping and tooltip gaps were fixed.
+- A local-only, navigate-only browser harness produced 928 passing redaction-safe checks; every admin page runs a bundled page contract in the test suite.
+- Security defaults, redaction, copy-once handling, revocation scopes and read-only queues were proven unchanged (SAFE-01 gate; full suite 1573 passed).
+
+**Known verification overrides: 2 newly acknowledged, 3 carried forward from prior closes (see STATE.md Deferred Items).** The two pending todos (DCR default lifetime semantics; Bandit bump in demo and clean-room hosts) are outside this UI milestone. Phases 151–153 were re-verified at HEAD during the close because Phase 154 edited shared files; all four phases passed.
+
+**Accepted debt:** four deferred layout-polish items, the "Add app" path when the inventory read fails, emulated rather than native 200% zoom, a possible keyboard-harness flake, and pre-existing items (six compile warnings, undocumented host `secret_key_base`, demo migration log error). CR-01 remains a separate unresolved critical security issue.
+
+**Audit:** [v1.42 milestone audit](milestones/v1.42-MILESTONE-AUDIT.md) (`tech_debt`; no blockers; acknowledged closeout).
+
+**Archives:** `milestones/v1.42-ROADMAP.md`, `milestones/v1.42-REQUIREMENTS.md`, `milestones/v1.42-MILESTONE-AUDIT.md`, `milestones/v1.42-phases/` · **GSD milestone tag:** `v1.42` (planning milestone; not a package release).
+
+---
+
 ## v1.41 Product Language & Repository Clarity (Completed: 2026-10-11)
 
 **Delivered:** Admin pages now use task- and object-centered language while preserving OAuth/OIDC distinctions and truthful outcomes. Contributors have a source-backed repository lifecycle map, and Phoenix adopters and maintainers have a clear route through product fit, canonical installation, verification, and task guides. This was planning and documentation work; it did not publish a package.

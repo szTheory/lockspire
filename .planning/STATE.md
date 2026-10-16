@@ -2,37 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.42
 milestone_name: Admin UI Clarity & Workflow Refinement
-current_phase: 154
-status: completed
-stopped_at: Phase 154 complete — all phases complete
-last_updated: "2026-10-16T01:07:54.449Z"
+status: Awaiting next milestone
+stopped_at: Milestone v1.42 completed and archived
+last_updated: "2026-10-16T01:26:04.600Z"
 last_activity: 2026-10-15
-last_activity_desc: Phase 154 complete
-state_head: 5e95ba8efccae97f90f5078344271d2af6ef9690
+last_activity_desc: Milestone v1.42 completed and archived
+state_head: f4d8ced613ecac12787c772bb483b3b991f3dc20
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 21
   completed_plans: 21
   percent: 100
+current_phase: 154
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-12 for v1.42)
+See: .planning/PROJECT.md (updated 2026-10-15 after v1.42)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 154 — Responsive, Theme & Route Proof
+**Current focus:** Planning next milestone (v1.42 shipped 2026-10-15)
 
 ## Current Position
 
-Phase: 154
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-10-15 — Phase 154 complete
+Phase: Milestone v1.42 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-15 — Milestone v1.42 completed and archived
 
 ## Accumulated Context
 
@@ -312,6 +312,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | deferred_items | 145/deferred-items.md: Phase 145 Plan 02's existing compiler/type warnings outside its ownership | acknowledged | 2026-10-10 | v1.40 |
 | deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
+| todos | 2026-10-13-audit-dcr-default-lifetime-semantics.md | (presence-only) | 2026-10-15 | v1.42 |
+| todos | 2026-10-14-bump-bandit-in-demo-and-clean-room-hosts.md | (presence-only) | 2026-10-15 | v1.42 |
 
 ## Session Continuity
 
@@ -425,4 +427,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Resume remaining Phase 153 plan reviews/summaries and verification with $gsd-execute-phase 153. Consult 153-USER-FEEDBACK.md and 153-UI-REVIEW-SNAPSHOT.md; do not repeat implemented feedback or start a new milestone.
+- Start the next milestone with /gsd-new-milestone
