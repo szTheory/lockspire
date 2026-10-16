@@ -8,9 +8,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const outputDir = path.join(
+// Captures are throwaway run output, so they go under the git-ignored tmp/ by default.
+const outputDir = path.resolve(
   repoRoot,
-  ".planning/phases/147-surface-coherence-and-working-preview/captures/gap-closure"
+  process.env.LOCKSPIRE_THEME_FAILURE_OUT || "tmp/admin-theme-storage-failure"
 );
 const layoutPath = path.join(repoRoot, "lib/lockspire/web/live/admin_layout_live.ex");
 const browserSession = "lockspire-p147-theme-storage-failure";
