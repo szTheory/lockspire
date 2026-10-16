@@ -6,7 +6,7 @@ tags: [final-captures, browser-evidence, redaction, safe-gate, responsive, theme
 requires: ["154-06"]
 provides:
   - "154-FINAL-CAPTURES.md: 154-FINAL-01..30 desktop manifest beside the 153 baselines, plus 72 mobile/reflow/zoom/theme images for the 12 changed pages"
-  - "154-BROWSER-EVIDENCE.md: 681 BrowserEvidence rows (630-cell matrix, 30 desktop-size, 7 reduced-motion, 14 keyboard), all pass"
+  - "154-BROWSER-EVIDENCE.md: 928 BrowserEvidence rows on post-review source 3e31d401 (840-cell matrix with system under light and dark media, 60 desktop-size, 14 reduced-motion, 14 keyboard), all pass; replaces the original 681-row set"
   - "154-SAFE-GATE.md: SAFE-01 command outcomes (a)-(j), PR #123 allowlist, invariant map"
 affects: [phase-154-verification, milestone-v1.42-audit]
 tech-stack:
@@ -114,6 +114,68 @@ None.
 ## Threat Flags
 
 None. No source, endpoint, auth path, or schema was touched by this plan.
+
+## Post-review evidence refresh
+
+The code review and UI review changed CSS, copy and the harness after the first final captures. D-06 and UI-SPEC Fix Rule 4 require the final evidence to come from the frozen post-review source, so every capture, the full matrix and the SAFE-01 gate were retaken. Plan 07 still edited no source.
+
+**Source changes since the `d3b2fec2` captures**
+- `e427f3af`: focus ring on fields, `--ls-border-control-invalid`, theme-select hover border.
+- `53ce5423`: fields capped at 600 px, closed tooltips use `display: none`, app detail cards top-aligned.
+- `d653d963`: one label per auth method and security profile, PAR explained in plain words.
+- `8776458a`..`078fcc68`: harness hardening, including the tightened WR-04 focus rules and IN-06 system rows under light and dark media (`--matrix-size` is now 840).
+- `bbeabdbd`: CSS guards.
+- `3e31d401`: chip-field cap (F-04, below) and the remaining security-profile and DCR label fixes.
+
+**F-04 (stopped, fixed outside Plan 07)**
+- The first refresh on `bbeabdbd` measured the three chip fields on `/admin/policies/dcr` at 832 px. The plain-field cap did not reach `.lockspire-admin-multi-value--enhanced`, which still had `max-width: none`.
+- Plan 07 stopped and reported it without editing source. The orchestrator fixed it in `3e31d401` and extended the CSS guard.
+- That refresh's images were moved to `final-prefix2-stale/`, and everything was retaken.
+
+**Refresh on `3e31d401`**
+- Froze the source with `lib/` and `test/` clean and regenerated `source-sha256.json`. Restarted the container at 2026-10-16T00:39:49Z and the smoke test passed. The served CSS has `--ls-border-control-invalid`, the 600 px field cap, and the chip-field cap; the driver checks this on every page.
+- **Images:**
+  - 30 desktop pages at 1261x900, DPR 2, 2522 px wide (44 files with section slices).
+  - 72 changed-page images.
+  - 4 focus screenshots.
+  - 0 denylist hits across 102 page loads.
+- **Eye review:** all 30 desktop and all 72 changed-page full-page images: Pass.
+  - App detail cards are top-aligned.
+  - The tooltip band at the bottom of overview at 390 px is gone.
+  - Fields and chip fields stop at 600 px.
+  - The app form and `/admin/policies/dcr` use the same labels.
+  - "Standard OAuth and OpenID Connect" appears in every security-profile spot.
+- **Evidence:** 928 rows, all pass, 0 fail, 0 blocked.
+  - 840/840 matrix rows (210 system-light, 210 system-dark).
+  - 60/60 at 1261 px.
+  - 14/14 reduced motion.
+  - 14/14 keyboard.
+  - `BrowserEvidence.parse!/1` accepts `154-BROWSER-EVIDENCE.md` (928 rows) and `154-FINAL-CAPTURES.md` (30 rows). The manifest now carries the 30 harness rows for the desktop capture size, so it parses.
+- **Keyboard abort, re-run:** one keyboard run (`/admin/device_authorizations`, 1280 px) failed closed on the harness hostname check, and wrote nothing.
+  - A read-only probe of the same scan text over 9 fresh loads found no match.
+  - The unchanged harness was re-run twice, and both runs passed with 30/30 focus indicators.
+  - This is recorded in `154-BROWSER-EVIDENCE.md`.
+- **Read-only scans:**
+  - The width scan of all 30 paths at 1280 and 1261 px finds 0 controls wider than 600 px.
+  - The card-escape scan at 7 widths in light, plus 320 px dark, finds 0 escapes.
+  - Every focus ring checked on clients-new and client-edit is a solid 2 px ring with a 3 px offset, and `:focus-visible` matches.
+- **SAFE-01, re-run on `3e31d401`:**
+  - (a) 537 passed.
+  - (b) `mix test.fast`: 1573 passed, 6 skipped.
+  - (c) format is clean.
+  - (d) `git diff --check ef6043ec` is clean.
+  - (e) 0 compile warnings under `lib/lockspire/web/`; the same 6 older warnings exist outside it.
+  - (f) node tests: 27/27.
+  - (g) the allowlist since `e67a4898` is unchanged.
+  - (h) the phase-local protected diff since `ef6043ec` is empty.
+  - (i) no private key text found.
+  - (j) CI runs only `admin_multi_value_test.mjs` from `test/browser/`.
+- `154-RESPONSIVE-SWEEP.md` now notes that this final matrix supersedes it.
+
+**Superseded image folders (never mixed into the manifest)**
+- `final-prefix-stale/`: `768b3a61`.
+- `final-prereview-stale/`: `d3b2fec2`.
+- `final-prefix2-stale/`: `bbeabdbd`.
 
 ## Self-Check: PASSED
 

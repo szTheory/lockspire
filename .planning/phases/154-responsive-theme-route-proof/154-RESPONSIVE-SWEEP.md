@@ -131,3 +131,7 @@ Native browser zoom at 200% on `/admin/clients/new`, `/admin/overview`, and `/ad
 ## Evidence locations and final source
 
 Full 630-row matrices: `tmp/admin-ui-polish/v1.42/sweep/full/` (pre-fix) and `tmp/admin-ui-polish/v1.42/sweep/post/full/` (post-fix), git-ignored. This is the last source edit of the phase; the final source commit for Plan 07 capture is `677c1430386a861b27a397d52b7110d8bb5b1e6c` (`lib/lockspire/web/admin_css.ex`).
+
+## Superseded by the final matrix after the review fixes
+
+This sweep ran on Plan 06 source. The code review and UI review then changed CSS, copy and the harness: `e427f3af`, `53ce5423`, `d653d963`, `8776458a`..`078fcc68`, `bbeabdbd`, and `3e31d401` (chip fields capped at 600 px, F-04). The final matrix in `154-BROWSER-EVIDENCE.md` was re-run on the frozen post-review source `3e31d401` with the hardened harness: 840 rows, with `system` under both light and dark media. It supersedes the counts above for the shipped UI. This document stays as the record of the Plan 06 sweep, its fixes, and its dispositions; the allowed dispositions above still apply.
