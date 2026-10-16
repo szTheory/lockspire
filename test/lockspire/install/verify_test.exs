@@ -183,7 +183,15 @@ defmodule Lockspire.Install.VerifyTest do
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban, :key_encryption],
+      for key <- [
+            :repo,
+            :account_resolver,
+            :issuer,
+            :mount_path,
+            :logout_path,
+            :oban,
+            :key_encryption
+          ],
           into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
