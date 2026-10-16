@@ -200,7 +200,12 @@ export function collectScanText({ innerText = "", fieldValues = [], dataAttribut
 export function scanSensitive(text) {
   const hits = [];
   // RFC 2606 reserved example domains are the synthetic demo's own hostnames, not production ones.
-  const withoutReserved = text.replace(/\b(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/gi, "reserved-host");
+  // The lookbehind anchors the match to a whole hostname, so "example" must be a full DNS label:
+  // "acme-example.com" and "notexample.com" are ordinary registrable domains and stay flagged.
+  const withoutReserved = text.replace(
+    /(?<![A-Za-z0-9.-])(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/gi,
+    "reserved-host"
+  );
   for (const [label, pattern] of SENSITIVE_PATTERNS) {
     const subject = label === "production-looking hostname" ? withoutReserved : text;
     if (pattern.test(subject)) hits.push(label);

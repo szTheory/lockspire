@@ -132,6 +132,19 @@ test("scanSensitive allows reserved example domains but flags real-looking hosts
   assert.ok(scanSensitive("Endpoint https://auth.acme-corp.com/callback").includes("production-looking hostname"));
 });
 
+test("the example-domain exemption only applies when example is a whole DNS label", () => {
+  assert.deepEqual(scanSensitive("https://example.com/cb and billing.example.org"), []);
+  for (const host of [
+    "https://auth.acme-example.com/cb",
+    "https://login.my-example.org",
+    "acme-example.com",
+    "notexample.com",
+    "https://example.com.attacker.io/cb"
+  ]) {
+    assert.ok(scanSensitive(host).includes("production-looking hostname"), `${host} is flagged`);
+  }
+});
+
 test("harness source never clicks, types, or submits anything but the synthetic login", async () => {
   const { readFile } = await import("node:fs/promises");
   const source = await readFile(new URL("./admin_route_proof.mjs", import.meta.url), "utf8");
