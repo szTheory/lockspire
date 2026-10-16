@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 156
 current_phase_name: Legacy Migration, KEK Rotation & Plaintext Refusal
 status: executing
-stopped_at: Phase 156 context gathered (assumptions mode)
-last_updated: "2026-10-16T13:38:51.326Z"
+stopped_at: Completed 156-01-PLAN.md
+last_updated: "2026-10-16T13:52:29.838Z"
 last_activity: 2026-10-16
-last_activity_desc: Phase 155 complete, transitioned to Phase 156
-state_head: e12e1a4ffd814e252dc4bbd9a4e19f142da8ac89
+last_activity_desc: Phase 156 execution started
+state_head: 1d9d250c17e532ccb869e19f0978eac23412bc99
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
+  completed_plans: 6
   percent: 33
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 155 — Crypto Core, Config Seam & Bandit Baseline
+**Current focus:** Phase 156 — Legacy Migration, KEK Rotation & Plaintext Refusal
 
 ## Current Position
 
-Phase: 156 (Legacy Migration, KEK Rotation & Plaintext Refusal) — READY TO EXECUTE
-Plan: Not started
+Phase: 156 (Legacy Migration, KEK Rotation & Plaintext Refusal) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-10-16 — Phase 155 complete, transitioned to Phase 156
+Last activity: 2026-10-16 — Phase 156 execution started
 
 Progress: [███░░░░░░░] 33%
 
@@ -276,6 +276,7 @@ Progress: [███░░░░░░░] 33%
 - [Phase 155]: PrivateJwk.decode/1 is map-form only; legacy rows get no kid check until Phase 156
 - [Phase 155]: 155-04: generate_key resolves KeySet before any JWK/DB work and refuses with :key_encryption_not_configured; clean-room KEK clean-room-1 lands in the same commit
 - [Phase 155]: 155-05: diagnostics validate fresh via Config.key_encryption!/0; absent-KEK tests use put_key_encryption(nil) only
+- [Phase 156]: 156-01: store callbacks list_signing_key_refs/2 and reencrypt_signing_key/3; assess/2 is the single sealability rule; vanished or CAS-lost rows count as conflicted
 
 ### Pending Todos
 
@@ -333,9 +334,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T12:37:30.736Z
-Stopped at: Phase 156 context gathered (assumptions mode)
-Resume file: .planning/phases/156-legacy-migration-kek-rotation-plaintext-refusal/156-CONTEXT.md
+Last session: 2026-10-16T13:52:29.773Z
+Stopped at: Completed 156-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -445,6 +446,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 155 P03 | 25 min | 3 tasks | 12 files |
 | Phase 155 P04 | 20 min | 2 tasks | 6 files |
 | Phase 155 P05 | 40min | 3 tasks | 8 files |
+| Phase 156 P01 | 25 min | 3 tasks | 11 files |
 
 ## Operator Next Steps
 
