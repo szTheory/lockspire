@@ -188,7 +188,8 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
         raise_if_failed(
           true,
           failed,
-          "were not re-encrypted. All other keys were saved; rerunning is safe."
+          {"was not re-encrypted. All other keys were saved; rerunning is safe.",
+           "were not re-encrypted. All other keys were saved; rerunning is safe."}
         )
 
       true ->
@@ -201,10 +202,12 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
 
   defp raise_if_failed(false, _count, _tail), do: :ok
 
-  defp raise_if_failed(true, count, tail) do
-    noun = if count == 1, do: "key", else: "keys"
+  defp raise_if_failed(true, count, {singular, plural}) do
+    {noun, tail} = if count == 1, do: {"key", singular}, else: {"keys", plural}
     Mix.raise("#{count} #{noun} #{tail}")
   end
+
+  defp raise_if_failed(true, count, tail), do: raise_if_failed(true, count, {tail, tail})
 
   defp summary_line(:dry_run, report) do
     "scanned=#{report.scanned} would_encrypt=#{report.encrypted} would_rewrap=#{report.rewrapped} " <>

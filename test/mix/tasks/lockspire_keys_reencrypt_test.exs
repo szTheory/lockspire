@@ -176,6 +176,7 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptE2ETest do
 
     assert output =~ "failed  key=#{gone} reason=unknown_kek kek=gone-1"
     assert output =~ "fix:"
+    assert message =~ "1 key was not re-encrypted"
     assert message =~ "All other keys were saved"
     assert message =~ "rerunning is safe"
 
