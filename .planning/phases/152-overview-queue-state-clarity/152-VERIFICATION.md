@@ -1,6 +1,6 @@
 ---
 phase: 152-overview-queue-state-clarity
-verified: 2026-10-15T17:00:00Z
+verified: 2026-10-15T21:25:00Z
 status: passed
 score: 3/3 must-haves verified
 covered_files:
@@ -24,17 +24,35 @@ covered_files:
   - test/lockspire/web/live/admin/interactions_live_test.exs
   - test/lockspire/web/live/admin/logout_deliveries_live_test.exs
   - test/lockspire/web/live/admin/overview_live_test.exs
-covered_digest: "v3:sha256:6a0cc7121183ff84efe247078fe025df1436401a23a07a9b404c25e0440d27a2"
+covered_digest: "v3:sha256:764887f92104601733126edeca9ebdef4044b34cd65a1bff69c5386552cc0e63"
 behavior_unverified: 0
 overrides_applied: 0
+re_verification:
+  previous_status: passed
+  previous_score: 3/3
+  head: 70f2671c
+  reason: "Stale fingerprint: covered files changed after the original verification (phase 154 CSS and component commits, 5e44fe5d, page-contract test additions)"
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 152: Overview & Queue State Clarity Verification Report
 
 **Phase Goal:** Staff can understand current provider and queue signals without mistaking a failed read for an empty inventory or over-interpreting an event.
-**Verified:** 2026-10-15
+**Verified:** 2026-10-15 (re-verification at HEAD 70f2671c)
 **Status:** passed
-**Re-verification:** No (initial verification), checked against HEAD including code-review fix commit ce2a8bb0 and UI-review fix commit 8213cbc8 (re-verified after it).
+**Re-verification:** Yes. The earlier report (initial verification after ce2a8bb0 and 8213cbc8) went stale because covered files changed later. This pass re-checks every truth and UI-03 against HEAD 70f2671c on branch gsd/phase-153-closeout.
+
+## Changes Since the Original Verification
+
+`git diff 8213cbc8 70f2671c` on the covered files:
+
+- `lib/lockspire/web/admin_css.ex` (5507c7ee, 677c1430, d3b2fec2, e427f3af, 53ce5423, 3e31d401): a 3:1 control-border token, a visible focus ring, a 600px field width cap, closed tooltips moved from `visibility: hidden` to `display: none`, card top alignment, phone-width secondary nav wrap, and client inventory badge wrap. Presentation only. The overview tooltips still render their copy in the DOM, linked through `aria-describedby` and opened by the existing `data-open` toggle.
+- `lib/lockspire/web/components/admin_components.ex` (6a073af8 area): radio-option `aria-describedby` moved into the `radio_option_described_by/3` helper, which drops empty ids. It does not touch the overview or queue pages.
+- `lib/lockspire/web/live/admin/device_authorizations_live/index.ex` (5e44fe5d): the `filter_device_authorizations(_, :all)` clause moved next to the `:pending` clause. Pattern match order is the same (`:pending`, then `:all`), so behavior does not change. `waiting?/2`, `count_waiting/1` and `displayed_status/1` are unchanged.
+- Interactions, logout deliveries and overview LiveViews: unchanged.
+- Tests (267aff90, 68da9ab8): `assert_page_contract!` (exactly one h1) was added to the overview and to all three queue render tests, plus a negative test for the contract helper. No existing assertion was removed or weakened.
 
 ## Observable Truths (ROADMAP success criteria)
 
@@ -50,6 +68,14 @@ overrides_applied: 0
 
 Waiting rows past expiry now display as expired (`displayed_status/1`) in the interactions and device lists. The filter, the overview count and the pivots still share the `waiting?/2` predicate, so count-to-destination correspondence holds. Interactions show a hashed "Request reference", not the raw interaction ID. The overview label is "App sign-out notices needing review". Device approved copy no longer says the app is waiting. The four phase test files pass (41 passed). No must-have regressed. Minor note: a swept-late expired row can show "Not recorded" for its expired time, which is truthful.
 
+## Re-check at HEAD 70f2671c
+
+- Truth 1: the overview links still point to `/interactions?status=pending`, `/device_authorizations?status=pending`, `/logouts?status=needs_review` and `/tokens?status=reuse_detected`. Interactions (L172-190) and devices (L195-212) still share the `waiting?/2` predicate between the filter and the count. VERIFIED.
+- Truth 2: the reuse tooltip copy (overview L36-42) and the sign-out problem copy (L62-69) are unchanged. VERIFIED.
+- Truth 3: there is still no `phx-click`, `phx-submit` or `handle_event` in the three queue index modules. The loading, unavailable, empty and filtered-empty tests pass. VERIFIED.
+- Four phase test files: 42 passed, 0 failures (41 before, plus the new page-contract negative test).
+- No TBD, FIXME or XXX markers in the covered source files.
+
 ## Plan must-haves (01-05)
 
 - 01: waiting-interaction pivot and full-history default. VERIFIED (`interaction_filter/1` allowlist, `View all sign-in requests` link, full-history metrics hidden when filtered, `Authorization interactions` title).
@@ -64,14 +90,14 @@ Waiting rows past expiry now display as expired (`displayed_status/1`) in the in
 |-------------|--------------|--------|----------|
 | UI-03 | 01, 02, 03, 04, 05 (all declare it) | SATISFIED | See truths 1-3. No orphaned requirements: REQUIREMENTS.md maps only UI-03 to Phase 152. |
 
-Note: REQUIREMENTS.md still shows UI-03 as `[ ]` and "Pending", and ROADMAP.md shows Phase 152 and its five plans unchecked. These are tracking updates for the orchestrator, not code gaps.
+REQUIREMENTS.md now shows UI-03 as `[x]` and "Complete" for Phase 152.
 
 ## Behavioral Spot-Checks
 
 | Check | Command | Result | Status |
 |-------|---------|--------|--------|
-| Four phase LiveView test files | `mix test` on overview, interactions, device_authorizations, logout_deliveries tests | 41 passed, 0 failures | PASS |
-| Full fast suite (reported by caller) | `mix test.fast` | 1551 passed, 0 failures | PASS (not re-run) |
+| Four phase LiveView test files (HEAD 70f2671c) | `MIX_ENV=test mix test` on overview, interactions, device_authorizations, logout_deliveries tests | 42 passed, 0 failures | PASS |
+| Four phase LiveView test files (original, after 8213cbc8) | same | 41 passed, 0 failures | PASS (superseded) |
 
 Probe execution: none declared. Skipped.
 
@@ -87,9 +113,9 @@ None blocking. Visual and responsive proof belongs to Phase 154.
 
 ## Gaps Summary
 
-No gaps. The phase goal is achieved at HEAD.
+No gaps. The phase goal is still achieved at HEAD 70f2671c. Every change since the original verification is presentation-only CSS, a behavior-neutral reorder of a clause, an accessibility helper outside the phase pages, or an added test assertion. Nothing regressed.
 
 ---
 
-_Verified: 2026-10-15_
+_Verified: 2026-10-15 (re-verification at 70f2671c)_
 _Verifier: Claude (gsd-verifier)_
