@@ -19,7 +19,7 @@ defmodule CleanRoomConfidentialClient.MixProject do
       {:phoenix, "== 1.8.13"},
       {:ecto_sql, "== 3.13.5"},
       {:postgrex, "== 0.22.4"},
-      {:bandit, "== 1.12.5"},
+      {:bandit, "== 1.13.1"},
       {:jose, "== 1.11.12"},
       {:jason, "== 1.4.5"}
     ]
