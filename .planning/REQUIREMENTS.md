@@ -14,7 +14,7 @@
 ### Key-encryption config
 
 - [x] **KEK-01**: A host configures `config :lockspire, :key_encryption, keys: [{id, base64_32_bytes}, ...], current: id, legacy_plaintext: :allow | :reject` in runtime config. Invalid config (bad base64, wrong length, duplicate ids or material, unknown `current`, unknown mode, `:reject` without keys) fails boot with an error naming the config key and never the value. No `secret_key_base` fallback and no compile-time config.
-- [x] **KEK-02**: With the config absent, the app boots and existing keys keep signing; generating a key returns `{:error, :key_encryption_not_configured}` and never writes plaintext; a boot warning, the doctor check and `Install.Verify` report the gap loudly. The upgrade stays non-breaking for existing 1.x installs (user decision 2026-10-15).
+- [ ] **KEK-02**: With the config absent, the app boots and existing keys keep signing; generating a key returns `{:error, :key_encryption_not_configured}` and never writes plaintext; a boot warning, the doctor check and `Install.Verify` report the gap loudly. The upgrade stays non-breaking for existing 1.x installs (user decision 2026-10-15).
 
 ### Encryption
 
@@ -66,7 +66,7 @@
 |-------------|-------|--------|
 | DEP-01 | Phase 155 | Complete |
 | KEK-01 | Phase 155 | Complete |
-| KEK-02 | Phase 155 | Complete |
+| KEK-02 | Phase 155 | Pending |
 | ENC-01 | Phase 155 | Pending |
 | ENC-02 | Phase 155 | Pending |
 | ENC-03 | Phase 155 | Complete |
