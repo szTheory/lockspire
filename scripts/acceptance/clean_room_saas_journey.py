@@ -864,6 +864,10 @@ def main(argv: list[str]) -> int:
     signal.signal(signal.SIGTERM, interruption_handler)
     redactor = Redactor(SentinelSet.for_run())
     ACTIVE_REDACTOR = redactor
+    # Random per run; it must never be written to evidence, so it is a registered secret.
+    kek = base64.b64encode(os.urandom(32)).decode("ascii")
+    os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"] = kek
+    register_secret(kek)
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
