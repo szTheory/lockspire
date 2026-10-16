@@ -9,6 +9,7 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
   # report, a log line or an audit entry by accident.
 
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.Observability
   alias Lockspire.Protocol.PrivateJwk
   alias Lockspire.Security.KeyEncryption
   alias Lockspire.Security.KeyEncryption.KeySet
@@ -16,21 +17,69 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
 
   @default_page_size 100
 
+  # One measurement schema for the completed event in every mode, so dashboards see the same
+  # keys whether the run applied changes, previewed them or only checked readiness.
+  @completed_measurements ~w(scanned encrypted rewrapped already_current no_private_key
+                             conflicted failed pending stranded_retired duration)a
+
   @spec run(KeySet.t(), map(), keyword()) :: map()
   def run(%KeySet{} = keyset, actor, opts) when is_map(actor) and is_list(opts) do
+    started = System.monotonic_time()
+    dry_run? = Keyword.get(opts, :dry_run, false)
     decide = fn key -> decide(key, keyset, actor) end
     report = new_report(keyset)
 
     report =
-      if Keyword.get(opts, :dry_run, false) do
+      if dry_run? do
         dry_run(%{report | dry_run: true}, decide)
       else
-        page_size = Keyword.get(opts, :page_size, @default_page_size)
-        store_opts = Keyword.take(opts, [:after_lock])
-        walk_pages(report, 0, page_size, decide, store_opts)
+        context = %{
+          decide: decide,
+          actor: actor,
+          store_opts: Keyword.take(opts, [:after_lock]),
+          page_size: Keyword.get(opts, :page_size, @default_page_size)
+        }
+
+        walk_pages(report, 0, context)
       end
 
-    finalize(report)
+    report = finalize(report)
+    mode = if dry_run?, do: :dry_run, else: :apply
+
+    emit_completed(
+      mode,
+      completed_counts(report, System.monotonic_time() - started),
+      %{current_kek_id: report.current_kek_id, actor_type: actor[:type], actor_id: actor[:id]}
+    )
+
+    report
+  end
+
+  # Emits the run summary. Keys outside the shared schema are dropped and missing keys are
+  # zero-filled, so every mode produces an identical measurement key set.
+  @doc false
+  @spec emit_completed(atom(), map(), map()) :: :ok
+  def emit_completed(mode, counts, metadata)
+      when is_atom(mode) and is_map(counts) and is_map(metadata) do
+    measurements =
+      @completed_measurements
+      |> Map.new(&{&1, 0})
+      |> Map.merge(Map.take(counts, @completed_measurements))
+
+    Observability.emit(:key, :reencrypt_completed, measurements, Map.put(metadata, :mode, mode))
+  end
+
+  defp completed_counts(report, duration) do
+    report
+    |> Map.take([
+      :scanned,
+      :encrypted,
+      :rewrapped,
+      :already_current,
+      :no_private_key,
+      :conflicted
+    ])
+    |> Map.merge(%{failed: length(report.failed), duration: duration})
   end
 
   # The single sealability rule. The engine and the readiness status both classify rows here,
@@ -195,15 +244,15 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
     %{report | failed: Enum.reverse(report.failed), changes: Enum.reverse(report.changes)}
   end
 
-  defp walk_pages(report, cursor, page_size, decide, store_opts) do
-    case Repository.list_signing_key_refs(cursor, page_size) do
+  defp walk_pages(report, cursor, context) do
+    case Repository.list_signing_key_refs(cursor, context.page_size) do
       {:ok, []} ->
         report
 
       {:ok, refs} ->
-        report = Enum.reduce(refs, report, &process_ref(&1, &2, decide, store_opts))
+        report = Enum.reduce(refs, report, &process_ref(&1, &2, context))
         {last_id, _kid} = List.last(refs)
-        walk_pages(report, last_id, page_size, decide, store_opts)
+        walk_pages(report, last_id, context)
 
       {:error, _reason} ->
         listing_failure(report)
@@ -213,13 +262,50 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
   defp listing_failure(report),
     do: add_failure(report, %{kid: nil, reason: :storage_error, kek_id: nil, status: nil})
 
-  defp process_ref({id, kid}, report, decide, store_opts) do
+  defp process_ref({id, kid}, report, context) do
     report = Map.update!(report, :scanned, &(&1 + 1))
 
-    case Repository.reencrypt_signing_key(id, decide, store_opts) do
-      {:ok, outcome} -> apply_outcome(report, kid, outcome)
-      {:error, _reason} -> add_failure(report, storage_failure(kid))
-    end
+    outcome =
+      case Repository.reencrypt_signing_key(id, context.decide, context.store_opts) do
+        {:ok, outcome} ->
+          outcome
+
+        {:error, _reason} ->
+          {:failed, :storage_error,
+           %{key_id: id, kid: kid, kek_id: nil, status: nil, source: nil}}
+      end
+
+    emit_row_event(outcome, context.actor)
+    apply_outcome(report, kid, outcome)
+  end
+
+  # Row events fire after the row transaction has committed, never from inside the decision.
+  defp emit_row_event({:replaced, info}, actor) do
+    metadata =
+      maybe_put(row_metadata(info, actor), :previous_kek_id, info.previous_kek_id)
+
+    Observability.emit(:key, info.action, %{}, metadata)
+  end
+
+  defp emit_row_event({:failed, reason, info}, _actor) do
+    Observability.emit(:key, :reencrypt_failed, %{}, %{
+      kid: info.kid,
+      key_id: info.key_id,
+      reason: reason
+    })
+  end
+
+  defp emit_row_event(_outcome, _actor), do: :ok
+
+  defp row_metadata(info, actor) do
+    %{
+      actor_type: actor[:type],
+      actor_id: actor[:id],
+      key_id: info.key_id,
+      kid: info.kid,
+      status: info.status,
+      kek_id: info.kek_id
+    }
   end
 
   defp apply_outcome(report, _kid, {:kept, %{class: :no_private_key}}),
@@ -246,8 +332,6 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
 
   defp apply_outcome(report, _kid, outcome) when outcome in [:conflict, :not_found],
     do: Map.update!(report, :conflicted, &(&1 + 1))
-
-  defp storage_failure(kid), do: %{kid: kid, reason: :storage_error, kek_id: nil, status: nil}
 
   defp add_failure(report, entry), do: Map.update!(report, :failed, &[entry | &1])
 

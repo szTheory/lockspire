@@ -9,6 +9,7 @@ defmodule Lockspire.Admin.KeysReencryptTest do
   alias Lockspire.Security.KeyEncryption
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -355,6 +356,75 @@ defmodule Lockspire.Admin.KeysReencryptTest do
     end
   end
 
+  describe "operator telemetry" do
+    @actions [:encrypted, :rewrapped, :reencrypt_failed, :reencrypt_completed]
+    @measurement_schema ~w(already_current conflicted count duration encrypted failed
+                           no_private_key pending rewrapped scanned stranded_retired)a
+
+    setup do
+      events =
+        Enum.flat_map(@actions, fn action ->
+          [[:lockspire, :key, action], [:lockspire, :audit, :key, action]]
+        end)
+
+      TelemetryCapture.attach_many(events)
+
+      Helpers.insert_signing_key_row!(Helpers.legacy_json_row("t-legacy"))
+      Helpers.insert_signing_key_row!(Helpers.sealed_row("t-stale", "test-2"))
+      Helpers.insert_signing_key_row!(Helpers.sealed_row("t-gone", "gone-1"))
+      :ok
+    end
+
+    test "apply mode emits exact allowlisted metadata for each event" do
+      actor = %{type: :operator, id: "test-operator"}
+      assert {:ok, _report} = Admin.reencrypt(actor: actor)
+
+      events = drain_events()
+
+      assert [encrypted] = events_named(events, [:lockspire, :key, :encrypted])
+      assert metadata_keys(encrypted) == [:actor_id, :actor_type, :kek_id, :key_id, :kid, :status]
+
+      assert [rewrapped] = events_named(events, [:lockspire, :key, :rewrapped])
+
+      assert metadata_keys(rewrapped) ==
+               [:actor_id, :actor_type, :kek_id, :key_id, :kid, :previous_kek_id, :status]
+
+      assert [failed] = events_named(events, [:lockspire, :key, :reencrypt_failed])
+      assert metadata_keys(failed) == [:key_id, :kid, :reason]
+      assert elem(failed, 2) |> Map.fetch!(:reason) == :unknown_kek
+
+      assert [completed] = events_named(events, [:lockspire, :key, :reencrypt_completed])
+      assert metadata_keys(completed) == [:actor_id, :actor_type, :current_kek_id, :mode]
+      assert Enum.sort(Map.keys(elem(completed, 1))) == @measurement_schema
+      assert elem(completed, 1).scanned == 3
+      assert elem(completed, 1).failed == 1
+      assert elem(completed, 2).mode == :apply
+
+      for action <- @actions do
+        assert length(events_named(events, [:lockspire, :audit, :key, action])) ==
+                 length(events_named(events, [:lockspire, :key, action]))
+      end
+
+      refute_sensitive(events)
+    end
+
+    test "dry-run emits only the completed event with the same measurement schema" do
+      actor = %{type: :operator, id: "test-operator"}
+      assert {:ok, _report} = Admin.reencrypt(dry_run: true, actor: actor)
+
+      events = drain_events()
+      assert events_named(events, [:lockspire, :key, :encrypted]) == []
+      assert events_named(events, [:lockspire, :key, :rewrapped]) == []
+      assert events_named(events, [:lockspire, :key, :reencrypt_failed]) == []
+
+      assert [completed] = events_named(events, [:lockspire, :key, :reencrypt_completed])
+      assert Enum.sort(Map.keys(elem(completed, 1))) == @measurement_schema
+      assert elem(completed, 1).encrypted == 1
+      assert elem(completed, 1).rewrapped == 1
+      assert elem(completed, 2).mode == :dry_run
+    end
+  end
+
   describe "assess/2" do
     alias Lockspire.Admin.Keys.Reencrypt
 
@@ -384,6 +454,26 @@ defmodule Lockspire.Admin.KeysReencryptTest do
     test "a nil key set cannot open any envelope" do
       assert Reencrypt.assess(Helpers.sealed_row("a", "test-2"), nil) ==
                {:unsealable, :unknown_kek, "test-2"}
+    end
+  end
+
+  defp drain_events(acc \\ []) do
+    receive do
+      {:telemetry_event, event, measurements, metadata} ->
+        drain_events([{event, measurements, metadata} | acc])
+    after
+      0 -> Enum.reverse(acc)
+    end
+  end
+
+  defp events_named(events, name), do: Enum.filter(events, fn {event, _, _} -> event == name end)
+
+  defp metadata_keys({_event, _measurements, metadata}), do: metadata |> Map.keys() |> Enum.sort()
+
+  defp refute_sensitive(events) do
+    for {_event, _measurements, metadata} <- events, {_key, value} <- metadata do
+      refute is_binary(value) and String.contains?(value, "LSK")
+      refute is_binary(value) and byte_size(value) > 64
     end
   end
 
