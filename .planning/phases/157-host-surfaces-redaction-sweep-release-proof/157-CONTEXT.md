@@ -165,6 +165,14 @@ Out of scope for this phase:
 
   Only 157-04 touches `mix.exs` and the `docs/` files. 157-02 may edit `docs/adoption-demo*.md` prose only where seeds change kids; otherwise leave doc edits to 157-04 to avoid conflicts. R7 split candidate: if 157-04 overruns, split the guide from the architecture, walkthrough and SECURITY updates.
 
+### Post-research resolutions (orchestrator, 2026-10-16)
+- **D-18:** D-01 extends to `list_active_keys` and `list_publishable_keys`, the JWKS hot path, which RESEARCH confirmed leak the column into `[:repo, :query]`. These two queries never need private material, so they **omit `private_jwk_encrypted` via `select`**. That keeps Ecto query logs and telemetry on the hot path, and those queries never load the private column at all. Fall back to `sensitive: true` only if a caller is found to need the column. All other key-material paths use `sensitive: true` as in D-01.
+- **D-19:** D-02's proof tests `SigningKeyRecord.changeset/2` directly, for example with a `validate_required` failure, because a `kid` conflict is unreachable through `generate_key` (it upserts on a random kid). Apply the column with `put_change`, not `cast`, as RESEARCH F-recommendation describes.
+- **D-20:** The D-05 matcher must also match the `inspect` byte-list form (`<<76, 83, 75, 1`) and walk binary leaves structurally. The existing `refute =~ "LSK"` checks are insufficient.
+- **D-21:** **Version-agnostic docs.** The upgrade guide and the rollback warning do not hard-code a version number. They say "the release that adds signing-key encryption" and "earlier versions", and link the CHANGELOG. Release PR #121 (`release 1.6.0`, v1.42-only) is open but not set to auto-merge. Whether it ships first decides 1.6.0 vs 1.7.0, and that call is made at ship time, not in this phase. 157-04 writes the release-note file with a `{VERSION}` placeholder, and the D-16 version claim becomes "next minor".
+- **D-22:** The Release Please squash body is made of concatenated commit messages, and the PR description is not parsed. The SAFE-01 or ship gate includes `git log origin/main..HEAD --format=%B | grep -E "BREAKING|^[a-z]+(\(.*\))?!:"`, which must be empty.
+- **D-23:** Clean-room KEK delivery follows RESEARCH: set `os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"]` once in `main()` from `base64(os.urandom(32))`, then call `register_secret` on it, and update `check_bootstrap` in the same commit. This achieves D-10's intent.
+
 ### Claude's Discretion
 - The helper name and module placement for D-04 and for the D-05 sentinel matcher.
 - The exact printed wording of the D-07 next step, within the shape above.
