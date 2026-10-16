@@ -20,15 +20,6 @@ defmodule Lockspire.Protocol.PrivateJwk do
     end
   end
 
-  # Transitional bare-binary clause; removed once every consumer passes the key map.
-  def decode(binary) when is_binary(binary) do
-    decode_legacy(binary)
-  rescue
-    _exception -> {:error, :invalid_signing_key}
-  catch
-    _kind, _reason -> {:error, :invalid_signing_key}
-  end
-
   def decode(_value), do: {:error, :invalid_signing_key}
 
   @doc false

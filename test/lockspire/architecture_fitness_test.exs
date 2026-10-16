@@ -42,6 +42,31 @@ defmodule Lockspire.ArchitectureFitnessTest do
     end
   end
 
+  test "JWKS, discovery and KeyCache never decrypt private keys" do
+    root = Path.expand("../../lib/lockspire", __DIR__)
+
+    files =
+      Enum.map(
+        [
+          "key_cache.ex",
+          "protocol/jwks.ex",
+          "protocol/discovery.ex",
+          "web/controllers/jwks_controller.ex",
+          "web/controllers/jwks_json.ex",
+          "web/controllers/discovery_controller.ex",
+          "web/controllers/discovery_json.ex"
+        ],
+        &Path.join(root, &1)
+      )
+
+    for path <- files, token <- forbidden_decrypt_tokens() do
+      refute File.read!(path) =~ token, "#{path} references #{token}"
+    end
+  end
+
+  defp forbidden_decrypt_tokens,
+    do: ["PrivateJwk", "KeyEncryption", "key_encryption_keyset", "private_jwk_encrypted"]
+
   test "LiveViews do not reach through to the Ecto adapter" do
     for path <- @admin_live_files do
       refute ast_contains?(parse!(path), fn
