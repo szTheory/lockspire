@@ -66,6 +66,7 @@ Not in this phase: generator output and `:reject` default for fresh installs, de
   - real run: exits 1 if any row failed or conflicted; the message says the other rows were saved and a rerun is safe.
   - `--dry-run`: exits 0 even with pending rows; exits 1 only if a row would fail.
   - `--check`: exits 1 unless `ready?`; it fails when no KEK is configured, and does not require `:reject` to be set (it is the gate before setting it).
+  - Clarified after code review (WR-03): failures on `retired` rows with an unsealable reason (the D-11a `stranded_retired` set) are still printed with the retired fix line but do not make the real run or `--dry-run` exit 1. All other failures and conflicts still do.
 - **D-16:** `--check` is a mode of this task that reads `encryption_status/0`: it takes no locks and writes nothing. It answers "can I set `:reject` now / remove the old KEK?"
 - **D-17:** Output is human `key=value` lines in the doctor style:
   - a header line: `current_kek=… legacy_plaintext=…`
