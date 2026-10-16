@@ -89,7 +89,7 @@ jobs:
 
       - name: Upload redacted Phase 37 receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: supplemental-phase37-${{ github.run_id }}
           path: .artifacts/conformance/phase37/receipt.json
@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload redacted FAPI 2.0 receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: supplemental-fapi2-${{ github.run_id }}
           path: .artifacts/conformance/fapi2/receipt.json
@@ -220,7 +220,7 @@ jobs:
 
       - name: Upload redacted hosted receipt
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: supplemental-phase37-hosted-${{ github.run_id }}
           path: .artifacts/conformance/phase37/receipt.json
