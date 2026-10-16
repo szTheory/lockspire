@@ -100,6 +100,27 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-env") |> tamper()
       assert {:error, :invalid_signing_key} = IdToken.sign(id_token_params(key))
     end
+
+    test "under :reject a legacy row returns invalid_signing_key and an envelope row signs" do
+      keys = JarTestHelpers.generate_keys()
+
+      legacy = %{
+        kid: "kid-legacy",
+        alg: "RS256",
+        private_jwk_encrypted: Jason.encode!(keys.priv_jwk_map)
+      }
+
+      sealed = sealed_key(keys, "kid-env")
+
+      KeyEncryptionHelpers.put_key_encryption(
+        keys: KeyEncryptionHelpers.config_keys(),
+        current: "test-1",
+        legacy_plaintext: :reject
+      )
+
+      assert {:error, :invalid_signing_key} = IdToken.sign(id_token_params(legacy))
+      assert {:ok, _jwt} = IdToken.sign(id_token_params(sealed))
+    end
   end
 
   describe "logout token" do

@@ -38,6 +38,17 @@ defmodule Lockspire.KeyEncryptionHelpers do
     :ok
   end
 
+  @doc "Erases the once-per-node log flags kept for signing-key decode warnings."
+  @spec reset_decode_warnings() :: :ok
+  def reset_decode_warnings do
+    for {{Lockspire, :key_decode_warned, _kid, _reason} = key, _value} <-
+          :persistent_term.get() do
+      :persistent_term.erase(key)
+    end
+
+    :ok
+  end
+
   @doc "Seals a private JWK map for `kid` with the cached key set."
   @spec seal_private_jwk(String.t(), map()) :: binary()
   def seal_private_jwk(kid, jwk_map) do

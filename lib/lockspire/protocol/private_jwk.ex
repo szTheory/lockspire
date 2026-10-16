@@ -2,6 +2,7 @@ defmodule Lockspire.Protocol.PrivateJwk do
   @moduledoc false
 
   alias Lockspire.Config
+  alias Lockspire.Redaction
   alias Lockspire.Security.KeyEncryption
   alias Lockspire.Security.KeyEncryption.KeySet
 
@@ -12,12 +13,18 @@ defmodule Lockspire.Protocol.PrivateJwk do
           | :malformed_envelope
           | :decryption_failed
           | :kid_mismatch
+          | :plaintext_key_refused
 
   @spec decode(term()) :: {:ok, map()} | {:error, :invalid_signing_key}
-  def decode(%{kid: kid, private_jwk_encrypted: bin}) when is_binary(kid) and is_binary(bin) do
-    case decode_with_reason(%{kid: kid, private_jwk_encrypted: bin}) do
-      {:ok, jwk} -> {:ok, jwk}
-      {:error, _reason} -> {:error, :invalid_signing_key}
+  def decode(%{kid: kid, private_jwk_encrypted: bin} = row)
+      when is_binary(kid) and is_binary(bin) do
+    case decode_stored(row, Config.key_encryption_keyset()) do
+      {:ok, jwk, _source} ->
+        {:ok, jwk}
+
+      {:error, reason} ->
+        emit_decode_failed(kid, bin, reason)
+        {:error, :invalid_signing_key}
     end
   end
 
@@ -27,13 +34,42 @@ defmodule Lockspire.Protocol.PrivateJwk do
   @spec decode_with_reason(term()) :: {:ok, map()} | {:error, reason()}
   def decode_with_reason(%{kid: kid, private_jwk_encrypted: bin} = row)
       when is_binary(kid) and is_binary(bin) do
-    case read_stored(row, Config.key_encryption_keyset()) do
+    case decode_stored(row, Config.key_encryption_keyset()) do
       {:ok, jwk, _source} -> {:ok, jwk}
       {:error, reason} -> {:error, reason}
     end
   end
 
   def decode_with_reason(_value), do: {:error, :invalid_signing_key}
+
+  # Under legacy_plaintext: :reject a non-envelope value is refused before any parser
+  # runs, so a hostile or malformed legacy payload never reaches Jason or the term decoder.
+  defp decode_stored(%{private_jwk_encrypted: bin} = row, keyset) do
+    if refuse_plaintext?(keyset, bin),
+      do: {:error, :plaintext_key_refused},
+      else: read_stored(row, keyset)
+  end
+
+  defp refuse_plaintext?(%KeySet{legacy_plaintext: :reject}, bin),
+    do: KeyEncryption.classify(bin) == :legacy
+
+  defp refuse_plaintext?(_keyset, _bin), do: false
+
+  # Signing-path event: it must not go through the shared operator emit helper, because
+  # the signing path writes no audit record and must not double-emit an audit-prefixed copy.
+  defp emit_decode_failed(kid, bin, reason) do
+    metadata =
+      case KeyEncryption.envelope_kek_id(bin) do
+        {:ok, kek_id} -> %{kid: kid, reason: reason, kek_id: kek_id}
+        _other -> %{kid: kid, reason: reason}
+      end
+
+    :telemetry.execute(
+      [:lockspire, :key, :decode_failed],
+      %{count: 1},
+      Redaction.for_telemetry(metadata)
+    )
+  end
 
   # Only the protocol decoder and the admin re-encryption engine may call this reader.
   # It takes the key set explicitly, applies no legacy-plaintext policy and emits no
