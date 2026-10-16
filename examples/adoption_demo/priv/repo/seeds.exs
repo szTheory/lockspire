@@ -6,7 +6,6 @@ alias Lockspire.Domain.Interaction
 alias Lockspire.Domain.LogoutDelivery
 alias Lockspire.Domain.LogoutEvent
 alias Lockspire.Domain.ServerPolicy
-alias Lockspire.Domain.SigningKey
 alias Lockspire.Domain.Token
 alias Lockspire.Storage.Ecto.Repository
 alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
@@ -75,27 +74,26 @@ lockspire_base_url = demo_base_url <> "/lockspire"
     dcr_allowed_token_endpoint_auth_methods: ["none", "client_secret_basic"]
   })
 
-key = JOSE.JWK.generate_key({:rsa, 2048})
-{_fields, jwk} = JOSE.JWK.to_map(key)
+# Signing keys go through the public admin API so every private key is sealed
+# under the configured key-encryption key. K1 ends retired, K2 retiring, K3 active,
+# K4 upcoming. Kids are random per database.
+seed_key! = fn ->
+  {:ok, %{key: key}} = Lockspire.Admin.generate_key(:sig)
+  {:ok, _published} = Lockspire.Admin.publish_key(key.id)
+  key
+end
 
-{:ok, _key} =
-  Repository.publish_key(%SigningKey{
-    kid: "adoption-demo-rs256",
-    kty: :RSA,
-    alg: "RS256",
-    use: "sig",
-    public_jwk:
-      jwk
-      |> Map.take(["kty", "n", "e"])
-      |> Map.put("kid", "adoption-demo-rs256")
-      |> Map.put("alg", "RS256")
-      |> Map.put("use", "sig"),
-    private_jwk_encrypted: :erlang.term_to_binary(Map.put(jwk, "kid", "adoption-demo-rs256")),
-    status: :active,
-    published_at: now,
-    activated_at: now,
-    metadata: %{"demo" => true}
-  })
+key_one = seed_key!.()
+{:ok, _active} = Lockspire.Admin.activate_key(key_one.id)
+
+key_two = seed_key!.()
+{:ok, _active} = Lockspire.Admin.activate_key(key_two.id)
+{:ok, _retired} = Lockspire.Admin.retire_key(key_one.id)
+
+key_three = seed_key!.()
+{:ok, _active} = Lockspire.Admin.activate_key(key_three.id)
+
+{:ok, %{key: _upcoming}} = Lockspire.Admin.generate_key(:sig)
 
 clients = [
   %Client{
@@ -205,58 +203,6 @@ clients = [
 Enum.each(clients, fn client ->
   {:ok, _client} = Repository.register_client(client)
 end)
-
-Enum.each(
-  [
-    %SigningKey{
-      kid: "adoption-demo-es256-upcoming",
-      kty: :EC,
-      alg: "ES256",
-      use: :sig,
-      public_jwk: %{
-        "kty" => "EC",
-        "crv" => "P-256",
-        "x" => "demo-x",
-        "y" => "demo-y",
-        "kid" => "adoption-demo-es256-upcoming",
-        "alg" => "ES256",
-        "use" => "sig"
-      },
-      private_jwk_encrypted: <<1>>,
-      status: :upcoming,
-      metadata: %{"demo" => true}
-    },
-    %SigningKey{
-      kid: "adoption-demo-rs256-retiring",
-      kty: :RSA,
-      alg: "RS256",
-      use: :sig,
-      public_jwk: %{"kty" => "RSA", "n" => "demo-n", "e" => "AQAB"},
-      private_jwk_encrypted: <<1>>,
-      status: :retiring,
-      published_at: DateTime.add(now, -172_800, :second),
-      activated_at: DateTime.add(now, -86_400, :second),
-      retiring_at: now,
-      metadata: %{"demo" => true}
-    },
-    %SigningKey{
-      kid: "adoption-demo-rs256-retired",
-      kty: :RSA,
-      alg: "RS256",
-      use: :sig,
-      public_jwk: %{"kty" => "RSA", "n" => "demo-retired-n", "e" => "AQAB"},
-      private_jwk_encrypted: <<1>>,
-      status: :retired,
-      published_at: DateTime.add(now, -604_800, :second),
-      activated_at: DateTime.add(now, -518_400, :second),
-      retired_at: DateTime.add(now, -86_400, :second),
-      metadata: %{"demo" => true}
-    }
-  ],
-  fn signing_key ->
-    {:ok, _key} = Repository.publish_key(signing_key)
-  end
-)
 
 # Consent grants are keyed by the subject Lockspire records during a real
 # authorization (`AdoptionDemo.Lockspire.AccountResolver.subject_for/1`), not by

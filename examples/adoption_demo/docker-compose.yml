@@ -27,6 +27,10 @@ services:
       LOCKSPIRE_DEMO_DB_NAME: "lockspire_adoption_demo"
       LOCKSPIRE_DEMO_DB_USER: "lockspire"
       LOCKSPIRE_DEMO_DB_PASSWORD: "lockspire"
+      # Demo-only. Set LOCKSPIRE_KEY_ENCRYPTION_KEY to your own 32-byte base64 value
+      # (openssl rand -base64 32) when you adapt this file; without it the demo falls
+      # back to a public literal in config/runtime.exs that must never be used in production.
+      # LOCKSPIRE_KEY_ENCRYPTION_KEY: "${LOCKSPIRE_KEY_ENCRYPTION_KEY}"
 
   db:
     image: postgres:14

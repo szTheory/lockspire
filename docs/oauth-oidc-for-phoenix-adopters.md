@@ -329,7 +329,7 @@ signed tokens.
 
 ```text
 ID token says:
-  signed with key id "adoption-demo-rs256"
+  signed with the demo's active ES256 key (its key id is random per database)
 
 Client fetches JWKS:
   find public key with that key id
