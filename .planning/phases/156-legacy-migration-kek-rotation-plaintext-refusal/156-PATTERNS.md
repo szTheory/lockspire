@@ -1,8 +1,8 @@
 # Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal - Pattern Map
 
 **Mapped:** 2026-10-16
-**Files analyzed:** 20 (7 new, 13 modified/extended)
-**Analogs found:** 19 / 20 (all analog paths verified git-tracked; no mirror paths)
+**Files analyzed:** 22 (9 new, 13 modified/extended)
+**Analogs found:** 21 / 22 (all analog paths verified git-tracked; no mirror paths)
 
 CONTEXT D-xx and RESEARCH pattern numbers are not repeated here. This file only points the planner at concrete excerpts. Reminder: `ReadabilityContractTest` forbids planning markers (`Phase N`, `D-NN`, `WR-NN`) in any `lib/**` text, including `@moduledoc` and Mix task help.
 
@@ -15,6 +15,8 @@ CONTEXT D-xx and RESEARCH pattern numbers are not repeated here. This file only 
 | `lib/lockspire/storage/ecto/repository/signing_key_store.ex` (+impl) | store | CRUD, row-lock txn | same file `activate_signing_key/3` + `locked_key/2` | exact |
 | `lib/lockspire/admin/keys.ex` (+`reencrypt/1`, `encryption_status/0`) | service | batch / transform | same file `transact_with_audit` + `key_audit_event` + `emit` | exact |
 | `lib/lockspire/admin/keys/reencrypt.ex` (new, optional helper, `@moduledoc false`) | service helper | batch / transform | `lib/lockspire/protocol/private_jwk.ex` (classify/open style) | role-match |
+| `lib/lockspire/admin/keys/encryption_status.ex` (new, `@moduledoc false`, pure `build/2`) | service helper | transform (fold over rows) | `lib/lockspire/admin/keys/reencrypt.ex` `assess/2` (156-01) for classification; `lib/lockspire/admin/keys.ex` `list_keys/1` for the `Repository.list_signing_keys` read shape | role-match |
+| `lib/lockspire/install/repo_runner.ex` (new, `@moduledoc false`) | install helper | request-response | `lib/lockspire/install/verify.ex` `migration_status/2` (368-375) for `with_repo`, plus the "Repo lifecycle guard" shared pattern below | role-match |
 | `lib/lockspire/admin.ex` (+2 `defdelegate`) | facade | request-response | same file lines 193-231 | exact |
 | `lib/lockspire/protocol/private_jwk.ex` (refusal, `read_stored/2`, hot-path telemetry) | utility | transform / event-driven | same file; telemetry from `plug/verify_token.ex:478-496` | exact |
 | `lib/mix/tasks/lockspire.keys.reencrypt.ex` (new) | mix task | batch, CLI | `lib/mix/tasks/lockspire.upgrade.ex` (+ `ecto.migrate` for `with_repo`) | role-match |
@@ -300,6 +302,10 @@ Seeds for audit/telemetry assertions: `Lockspire.TestSupport.TelemetryCapture.at
 
 ### Repo lifecycle guard
 **Source:** `Install.Verify.migration_status/2` (verify.ex:368-375) uses `Ecto.Migrator.with_repo`, which restarts an already-running repo. Apply `if Process.whereis(repo), do: fun.(repo), else: Ecto.Migrator.with_repo(repo, fun, mode: :temporary)` in doctor and Verify; the Mix task itself uses `with_repo` unconditionally.
+**Home:** the new file `lib/lockspire/install/repo_runner.ex` (`Lockspire.Install.RepoRunner.run/2`, created in 156-02; it does not exist before this phase), shared by doctor, the Verify `:key_storage` check and Verify's migration status.
+
+### Readiness status builder
+**Source:** no existing status-fold module. `Lockspire.Admin.Keys.EncryptionStatus` is new in 156-02. It must classify rows only through `Lockspire.Admin.Keys.Reencrypt.assess/2` (156-01), so the readiness status and the engine share one sealability rule. Retired rows that `assess/2` reports unsealable go to `stranded_retired` (D-11a). Keep it pure (`build(keyset_or_nil, rows)`) so most cases are unit-tested without a DB, following the injectable-status style Verify uses for `key_storage_status`.
 
 ### Architecture fitness constraints
 **Source:** `test/lockspire/architecture_fitness_test.exs` (84-100 facade completeness and no Ecto in `repository.ex`; 50-69 JWKS/discovery/KeyCache never mention `PrivateJwk`/`KeyEncryption`; 294 protocol files never reference `Admin`/`Web`). Extend with a test that `read_stored(` callers are limited to `protocol/private_jwk.ex` and `admin/keys*.ex`.

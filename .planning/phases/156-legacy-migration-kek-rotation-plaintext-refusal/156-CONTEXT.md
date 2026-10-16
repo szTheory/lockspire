@@ -44,6 +44,12 @@ Not in this phase: generator output and `:reject` default for fresh installs, de
   - It reads rows via the existing `list_signing_keys/1`, so it needs no new storage method.
   - It **opens every envelope and discards the plaintext**, so it catches same-id/wrong-material (C4), which header-only counts cannot. Tens of rows make the cost trivial; nothing is cached.
   - `ready?` requires: configured, `legacy == 0`, every material row on current, `unknown_kek` and `undecryptable` empty.
+- **D-11a (resolved during plan check, 2026-10-16):** Readiness is gated on rows that signing or decryption can reach: statuses `upcoming|active|retiring`.
+  - **Stranded retired rows.** A `retired` row the engine cannot seal (unreadable legacy, legacy `kid_mismatch`, malformed or undecryptable envelope, unknown KEK) is reported as a visible `stranded_retired` count with its kids. It does not block `ready?`, `--check`, doctor or Verify, because no consumer reads retired material.
+  - **Operator route** for an unsealable row that is still reachable: retire it and generate a replacement, after which it moves to `stranded_retired`.
+  - **Wording.** Fix lines and `--check` output state that the row's bytes remain stored, and that deleting them is the host's database decision, because Lockspire adds no key-deletion path in this phase.
+  - **Empty table.** With a KEK configured and zero material rows, `ready?` is true.
+  - **Why.** Lockspire-generated keys have always carried a matching `"kid"` (since 2026-04-23). Unsealable rows therefore come only from host-inserted or corrupted data, and a new destructive delete API would widen this security milestone.
 - **D-12:** Both functions get `@doc` + `@spec` + `defdelegate` in `Lockspire.Admin` (`admin.ex:193-231` pattern). Any new `Lockspire.Config` export must be added to `test/support/architecture/public_compatibility_manifest.ex`.
 - **D-13:** No `Lockspire.Release` module. A running node uses `bin/app rpc '…Lockspire.Admin.Keys.reencrypt()…'`. The fresh-VM `MyApp.Release` snippet (`load_app` + `Ecto.Migrator.with_repo`) is documented in Phase 157, which must state that a bare `bin/app eval "Lockspire.Admin.Keys.reencrypt()"` does not start the repo.
 
