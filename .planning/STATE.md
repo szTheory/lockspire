@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 155
 current_phase_name: Crypto Core, Config Seam & Bandit Baseline
 status: executing
-stopped_at: Phase 155 context gathered (assumptions mode)
-last_updated: "2026-10-16T03:14:07.684Z"
+stopped_at: Completed 155-01-PLAN.md
+last_updated: "2026-10-16T03:23:37.241Z"
 last_activity: 2026-10-15
-last_activity_desc: v1.43 roadmap created (Phases 155–157, 16/16 requirements mapped)
-state_head: cf2dda739c004a07e176d0338752170ee38e14f6
+last_activity_desc: Phase 155 execution started
+state_head: d88387a40f1f44f6ffd6feae693c48e4ebf96cab
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.43 Signing Key Encryption at Rest — Phase 155 (Crypto Core, Config Seam & Bandit Baseline)
+**Current focus:** Phase 155 — Crypto Core, Config Seam & Bandit Baseline
 
 ## Current Position
 
-Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — READY TO EXECUTE
-Plan: —
+Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-10-15 — v1.43 roadmap created (Phases 155–157, 16/16 requirements mapped)
+Last activity: 2026-10-15 — Phase 155 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -271,6 +271,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 154]: Desktop final captures use 1261x900 at DPR 2 to match the 2522 px baseline width
 - [Phase 154]: Locked-console browser capture uses --disable-gpu-vsync and --disable-frame-rate-limit (frame pacing only)
 - [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
+- [Phase 155]: Pin bandit == 1.13.1 in demo and clean-room hosts; prune unused bandit/thousand_island from compat lock (D-15/16/17)
 
 ### Pending Todos
 
@@ -328,9 +329,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T02:42:13.897Z
-Stopped at: Phase 155 context gathered (assumptions mode)
-Resume file: .planning/phases/155-crypto-core-config-seam-bandit-baseline/155-CONTEXT.md
+Last session: 2026-10-16T03:23:37.220Z
+Stopped at: Completed 155-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -435,6 +436,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P05 | 10 min | 3 tasks | 6 files |
 | Phase 154 P06 | 115 min | 3 tasks | 5 files |
 | Phase 154 P07 | 95 min | 3 tasks | 4 files |
+| Phase 155 P01 | 40 min | 2 tasks | 7 files |
 
 ## Operator Next Steps
 

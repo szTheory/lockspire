@@ -9,7 +9,7 @@
 
 ### Host dependency
 
-- [ ] **DEP-01**: The adoption demo and both clean-room hosts run Bandit 1.13.1 (CVE fix; `mix deps.update bandit thousand_island hpax`) and their end-to-end checks pass, landed before any encryption change.
+- [x] **DEP-01**: The adoption demo and both clean-room hosts run Bandit 1.13.1 (CVE fix; `mix deps.update bandit thousand_island hpax`) and their end-to-end checks pass, landed before any encryption change.
 
 ### Key-encryption config
 
@@ -64,7 +64,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEP-01 | Phase 155 | Pending |
+| DEP-01 | Phase 155 | Complete |
 | KEK-01 | Phase 155 | Pending |
 | KEK-02 | Phase 155 | Pending |
 | ENC-01 | Phase 155 | Pending |
