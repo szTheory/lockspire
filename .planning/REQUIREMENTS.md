@@ -24,11 +24,11 @@
 
 ### Migration and operations
 
-- [x] **MIG-01**: An operator encrypts existing legacy rows with `Lockspire.Admin.Keys.reencrypt/1` (release-eval callable) or `mix lockspire.keys.reencrypt`, with `--dry-run`, counts (scanned, encrypted, already current, failed by `kid`), idempotent re-runs, and safety under concurrent runs (row lock plus compare-and-swap on only the ciphertext column).
-- [x] **MIG-02**: An operator verifies readiness with `--check` (non-zero exit while any legacy row remains) and a doctor `key_encryption` check that reports row counts per KEK id and legacy rows.
+- [x] **MIG-01**: An operator encrypts existing legacy rows with `Lockspire.Admin.Keys.reencrypt/1` (callable on a running node via `bin/app rpc`) or `mix lockspire.keys.reencrypt`, with `--dry-run`, counts (scanned, encrypted, already current, failed by `kid`), idempotent re-runs, and safety under concurrent runs (row lock plus compare-and-swap on only the ciphertext column).
+- [x] **MIG-02**: An operator verifies readiness with `--check` (non-zero exit while any row the task can re-encrypt is not yet on the current key-encryption key, whatever its status, or while an upcoming, active or retiring key cannot be re-encrypted; retired keys that cannot be re-encrypted are listed as stranded and do not block it) and a doctor `key_encryption` check that reports row counts per KEK id and legacy rows.
 - [ ] **MIG-03**: With `legacy_plaintext: :reject`, any non-envelope row is refused at read (`:plaintext_key_refused` internally) without trying the legacy parsers.
 - [x] **OPS-01**: An operator rotates the key-encryption key by adding a new `current`, re-encrypting, confirming zero rows remain on the old id, and removing it, without reissuing signing keys; a test matrix covers legacy, old-KEK and new-KEK rows against each current key.
-- [ ] **OPS-02**: Encrypt, re-wrap, legacy-read, refusal and decryption-failure events emit audit records and telemetry carrying only ids, counts and reasons.
+- [ ] **OPS-02**: Encrypt and re-wrap write durable audit records and telemetry; legacy-read, refusal and decryption-failure emit telemetry only; all carry only ids, counts and reasons.
 
 ### Redaction, host surfaces, proof and docs
 

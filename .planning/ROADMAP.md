@@ -98,16 +98,16 @@ Plans:
 **Depends on**: Phase 155 (envelope format, KEK set, map-form decoder and sealing test helpers).
 **Requirements**: MIG-01, MIG-02, MIG-03, OPS-01, OPS-02
 **Success Criteria** (what must be TRUE):
-  1. `mix lockspire.keys.reencrypt` and `Lockspire.Admin.Keys.reencrypt/1` (release `eval`) encrypt every legacy row, including retired and `use: :enc` rows; `--dry-run` changes nothing; output reports scanned, encrypted, already current and failed-by-`kid`; a second run and two concurrent runs both finish with no double-wrap and no lost row.
-  2. `--check` exits non-zero while any legacy or old-KEK row remains and zero once none do; the doctor `key_encryption` check reports row counts per KEK id and legacy rows.
+  1. `mix lockspire.keys.reencrypt` and `Lockspire.Admin.Keys.reencrypt/1` (callable on a running node via `bin/app rpc`; the Mix task covers a stopped VM) encrypt every legacy row, including retired and `use: :enc` rows; `--dry-run` changes nothing; output reports scanned, encrypted, already current and failed-by-`kid`; a second run and two concurrent runs both finish with no double-wrap and no lost row.
+  2. `--check` exits non-zero while any legacy or old-KEK row remains and zero once none do; every key the task can re-encrypt blocks it until re-encrypted, whatever its status, and retired keys that cannot be re-encrypted are listed as stranded and do not block it; the doctor `key_encryption` check reports row counts per KEK id and legacy rows.
   3. Under `legacy_plaintext: :reject`, a non-envelope row fails signing with `:invalid_signing_key` (internally `:plaintext_key_refused`) without the legacy parsers running, while envelope rows keep signing.
   4. An operator adds a new `current` KEK, re-encrypts, sees zero rows on the old id, removes the old key and keeps signing with the same `kid`s; the matrix of legacy, old-KEK and new-KEK rows against each current key passes.
-  5. Encrypt, re-wrap, legacy-read, refusal and decryption-failure events emit audit records and telemetry containing only `kid`, KEK id, counts and reason atoms.
+  5. Encrypt and re-wrap write durable audit records and telemetry; legacy-read, refusal and decryption-failure emit telemetry only (no durable write on the signing path and no audit mirror); all carry only `kid`, KEK id, counts and reason atoms.
 
 **Pitfalls owned**: C4 KEK loss or mismatch (distinct reasons, per-KEK-id doctor counts, `:unknown_kek`); C5 rolling-deploy ordering (no generation mid-rollout; reject only after `--check`); C6 concurrent re-encrypt races (`SELECT … FOR UPDATE`, re-classify after lock, round-trip verify, CAS on only the ciphertext column and `updated_at`); C7 strict mode too early (`--check` and doctor gate, no boot-time DB scan per R3).
 **Research flags**: 156-01 — lock and CAS semantics against existing `signing_key_store` transactions (activate, retire, `publish_key` upserts) before choosing batch size and isolation. 156-02 is a standard pattern; match existing telemetry/audit naming.
 **Suggested plans**:
-- 156-01: Re-encryption engine shared by legacy migration and KEK rotation; `SigningKeyStore` locked-batch callback plus repository delegate; `mix lockspire.keys.reencrypt` with `--dry-run` and `--check`; concurrency and rotation-matrix tests (MIG-01, OPS-01, `--check` half of MIG-02).
+- 156-01: Re-encryption engine shared by legacy migration and KEK rotation; `SigningKeyStore` per-row locked-transaction callback plus repository delegate; `mix lockspire.keys.reencrypt` with `--dry-run` and `--check`; concurrency and rotation-matrix tests (MIG-01, OPS-01, `--check` half of MIG-02).
 - 156-02: `:reject` refusal in the decoder; `Keys.encryption_status/0`; doctor `key_encryption` check and `Install.Verify` extension; per-row `key_encrypted`/`key_rewrapped` audit; telemetry for legacy reads, refusals and decrypt failures (MIG-02, MIG-03, OPS-02).
 
 **SAFE-01 constraint**: re-encryption updates only the existing column (no migration, no `kek_id` column); refusal is opt-in, so default protocol behavior is unchanged; no decrypt-to-plaintext path.
