@@ -23,7 +23,7 @@ defmodule Lockspire.Protocol.IdToken do
           interaction_nonce: nonce,
           access_token: access_token,
           issued_at: %DateTime{} = issued_at,
-          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: _private_jwk} = signing_key
         } = params
       )
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
@@ -33,7 +33,7 @@ defmodule Lockspire.Protocol.IdToken do
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
          {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
          sid <- Map.get(params, :sid),
-         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
          claims <-
            build_claims(
              host_claims,
