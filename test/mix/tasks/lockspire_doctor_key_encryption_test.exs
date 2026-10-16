@@ -39,14 +39,8 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryptionTest do
   end
 
   test "raises a name-only error for invalid config without leaking material" do
-    original = Application.fetch_env(:lockspire, :key_encryption)
-
-    on_exit(fn ->
-      case original do
-        {:ok, v} -> Application.put_env(:lockspire, :key_encryption, v)
-        :error -> Application.delete_env(:lockspire, :key_encryption)
-      end
-    end)
+    # Registers env + cache restoration on exit, then the invalid env is set directly.
+    KeyEncryptionHelpers.put_key_encryption(Application.fetch_env!(:lockspire, :key_encryption))
 
     Application.put_env(:lockspire, :key_encryption, keys: [{"bad", @sentinel}], current: "bad")
 
