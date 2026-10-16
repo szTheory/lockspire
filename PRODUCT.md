@@ -18,7 +18,7 @@ The maintainer confirmed this audience priority on 2026-10-09.
 
 ### Personas and jobs
 
-Last reviewed: 2026-10-14. Review at each milestone close and whenever an admin page gains a new audience or job. Facts marked *confirmed* come from the maintainer; facts marked *assumed* are working hypotheses to check against real adopters, and must not be cited as research.
+Last reviewed: 2026-10-15. Review at each milestone close and whenever an admin page gains a new audience or job. Facts marked *confirmed* come from the maintainer; facts marked *assumed* are working hypotheses to check against real adopters, and must not be cited as research.
 
 **Provider operator** (primary): an engineer or platform owner on the host team.
 
@@ -129,6 +129,13 @@ Last reviewed: 2026-10-14. When an admin change introduces a domain concept, add
 | refresh token family | token family | Yes, on token details |
 | `client_secret_expires_at` | secret expiry date | No |
 | PAR, DPoP, FAPI, JARM, PKCE | the same abbreviation, explained in plain words beside it | Yes |
+| `token_endpoint_auth_method` | how the app authenticates | In option help text only |
+| `client_secret_basic` / `client_secret_post` | client secret in the request header / body | No |
+| `client_secret_jwt` | signed client assertion (JWT) | Yes, in help text |
+| `private_key_jwt` | signed client assertion with app key | Yes, in help text |
+| auth method `none` | no client secret | No |
+| security profile `none` | Standard OAuth and OpenID Connect | No |
+| `fapi_2_0_security` / `fapi_2_0_message_signing` | FAPI 2.0 Security Profile / FAPI 2.0 Message Signing | Yes |
 | rotate (secret, key, token) | rotate | Yes, with a consequence line in plain words |
 
 ### Retired wording

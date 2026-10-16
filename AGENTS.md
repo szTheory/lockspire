@@ -26,7 +26,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - Phoenix LiveView `1.1.28`
 - Ecto SQL `3.13.5`
 - PostgreSQL `14+`
-- Bandit `1.6.1`
+- Bandit (host apps, the adoption demo and clean-room hosts only; not a Lockspire dependency)
 - Oban `2.21.x`
 - OpenTelemetry `1.6.0`
 

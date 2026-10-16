@@ -1177,7 +1177,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp security_profile_label(:inherit), do: "Use provider default"
   defp security_profile_label(:fapi_2_0_message_signing), do: "FAPI 2.0 Message Signing"
-  defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security"
+  defp security_profile_label(:fapi_2_0_security), do: "FAPI 2.0 Security Profile"
   defp security_profile_label(:none), do: "Standard OAuth and OpenID Connect"
 
   defp security_profile_label(nil), do: "Unavailable"
