@@ -1,26 +1,21 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.42 — Admin UI Clarity & Workflow Refinement",
+  "milestone": "v1.43 — Signing Key Encryption at Rest",
   "phases": [
     {
-      "number": "151",
-      "name": "Focused Client Registration & Settings",
+      "number": "155",
+      "name": "Crypto Core, Config Seam & Bandit Baseline",
       "status": "complete"
     },
     {
-      "number": "152",
-      "name": "Overview & Queue State Clarity",
+      "number": "156",
+      "name": "Legacy Migration, KEK Rotation & Plaintext Refusal",
       "status": "complete"
     },
     {
-      "number": "153",
-      "name": "Configure & Support Page Refinement",
-      "status": "complete"
-    },
-    {
-      "number": "154",
-      "name": "Responsive, Theme & Route Proof",
+      "number": "157",
+      "name": "Host Surfaces, Redaction Sweep & Release Proof",
       "status": "complete"
     }
   ],
@@ -29,5 +24,5 @@
     "label": "Show progress",
     "reason": "Unsure of state — showing progress"
   },
-  "updated_at": "2026-10-16T01:26:04.611Z"
+  "updated_at": "2026-10-16T19:25:01.277Z"
 }

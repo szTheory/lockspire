@@ -6,8 +6,12 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
-  alias Lockspire.Storage.Ecto.Repository.{Support, TransactionStore}
+  alias Lockspire.Storage.Ecto.Repository.{AuditStore, Support, TransactionStore}
   alias Lockspire.Storage.Ecto.SigningKeyRecord
+
+  # The public reads below select every column except the sealed private key, so the key bytes
+  # never enter the query text, the query result or the returned struct.
+  @public_fields SigningKeyRecord.__schema__(:fields) -- [:private_jwk_encrypted]
 
   def publish_key(repo, %SigningKey{} = key) do
     %SigningKeyRecord{}
@@ -15,7 +19,8 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     |> then(
       &Support.insert(repo, &1,
         on_conflict: {:replace_all_except, [:id, :inserted_at]},
-        conflict_target: [:kid]
+        conflict_target: [:kid],
+        sensitive: true
       )
     )
     |> map_one()
@@ -25,6 +30,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     SigningKeyRecord
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
+    |> select([key], struct(key, ^@public_fields))
     |> then(&Support.all(repo, &1))
     |> Enum.map(&(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))
     |> then(&{:ok, &1})
@@ -36,7 +42,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     SigningKeyRecord
     |> maybe_filter_status(Keyword.get(opts, :status))
     |> order_by([key], desc: key.inserted_at, desc: key.id)
-    |> then(&Support.all(repo, &1))
+    |> then(&Support.all(repo, &1, sensitive: Keyword.get(opts, :sensitive, true)))
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> then(&{:ok, &1})
   rescue
@@ -51,6 +57,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
         (key.status == :upcoming and not is_nil(key.published_at))
     )
     |> order_by([key], asc: key.inserted_at)
+    |> select([key], struct(key, ^@public_fields))
     |> then(&Support.all(repo, &1))
     |> Enum.map(&(SigningKeyRecord.to_domain(&1) |> strip_private_key_material()))
     |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
@@ -64,7 +71,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     |> where([key], key.use == :enc)
     |> where([key], key.status in [:active, :retiring])
     |> order_by([key], asc: key.inserted_at)
-    |> then(&Support.all(repo, &1))
+    |> then(&Support.all(repo, &1, sensitive: true))
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> then(&{:ok, &1})
   rescue
@@ -91,7 +98,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     |> where([key], key.status == :active)
     |> where([key], key.use == :sig)
     |> order_by([key], asc: key.inserted_at)
-    |> then(&Support.all(repo, &1))
+    |> then(&Support.all(repo, &1, sensitive: true))
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> filter_keys_for_security_profile(Keyword.get(opts, :security_profile, :none))
     |> filter_keys_for_alg(Keyword.get(opts, :alg))
@@ -104,7 +111,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
   def fetch_signing_key_by_id(repo, id) when is_integer(id) do
     SigningKeyRecord
     |> where([key], key.id == ^id)
-    |> then(&Support.one(repo, &1))
+    |> then(&Support.one(repo, &1, sensitive: true))
     |> then(&{:ok, maybe_map(&1)})
   rescue
     error -> {:error, error}
@@ -171,6 +178,84 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     end)
   end
 
+  def list_signing_key_refs(repo, after_id, limit)
+      when is_integer(after_id) and is_integer(limit) and limit > 0 do
+    SigningKeyRecord
+    |> where([key], key.id > ^after_id)
+    |> order_by([key], asc: key.id)
+    |> limit(^limit)
+    |> select([key], {key.id, key.kid})
+    |> then(&Support.all(repo, &1))
+    |> then(&{:ok, &1})
+  rescue
+    error -> {:error, error}
+  end
+
+  def reencrypt_signing_key(repo, id, decide, opts)
+      when is_integer(id) and is_function(decide, 1) and is_list(opts) do
+    TransactionStore.transact(repo, fn ->
+      case sensitive_locked_key(repo, id) do
+        nil -> :not_found
+        %SigningKeyRecord{} = record -> decide_and_apply(repo, record, decide, opts)
+      end
+    end)
+  end
+
+  defp decide_and_apply(repo, record, decide, opts) do
+    key = SigningKeyRecord.to_domain(record)
+
+    # Test seam: runs after the row lock is held and before the decision. It sees the kid only,
+    # never the stored key bytes.
+    case Keyword.get(opts, :after_lock) do
+      hook when is_function(hook, 1) -> hook.(%{kid: key.kid})
+      _other -> :ok
+    end
+
+    case decide.(key) do
+      {:keep, info} ->
+        {:kept, info}
+
+      {:fail, reason, info} ->
+        {:failed, reason, info}
+
+      {:replace, new_binary, audit_event, info} ->
+        replace_material(repo, record, new_binary, audit_event, info)
+    end
+  end
+
+  defp replace_material(repo, record, new_binary, audit_event, info) do
+    # The compare-and-set binds the previous stored bytes, which may be legacy plaintext, so
+    # `sensitive: true` turns off query logging and the repo query telemetry event.
+    result =
+      Support.update_all(
+        repo,
+        from(key in SigningKeyRecord,
+          where:
+            key.id == ^record.id and key.private_jwk_encrypted == ^record.private_jwk_encrypted
+        ),
+        [set: [private_jwk_encrypted: new_binary, updated_at: DateTime.utc_now()]],
+        sensitive: true
+      )
+
+    case result do
+      {1, _} ->
+        case AuditStore.append_audit_event(repo, audit_event) do
+          {:ok, _event} -> {:replaced, info}
+          {:error, reason} -> TransactionStore.rollback(repo, reason)
+        end
+
+      {0, _} ->
+        :conflict
+    end
+  end
+
+  defp sensitive_locked_key(repo, id),
+    do:
+      SigningKeyRecord
+      |> where([key], key.id == ^id)
+      |> lock("FOR UPDATE")
+      |> then(&Support.one(repo, &1, sensitive: true))
+
   defp activate_selected(repo, selected, activated_at) do
     case active_keys_for_update(repo, selected.use) do
       [] ->
@@ -192,14 +277,14 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
       SigningKeyRecord
       |> where([key], key.id == ^id)
       |> lock("FOR UPDATE")
-      |> then(&Support.one(repo, &1))
+      |> then(&Support.one(repo, &1, sensitive: true))
 
   defp active_keys_for_update(repo, use),
     do:
       SigningKeyRecord
       |> where([key], key.status == :active and key.use == ^use)
       |> lock("FOR UPDATE")
-      |> then(&Support.all(repo, &1))
+      |> then(&Support.all(repo, &1, sensitive: true))
 
   defp promote(repo, record, at),
     do:

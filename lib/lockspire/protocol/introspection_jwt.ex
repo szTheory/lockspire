@@ -33,10 +33,11 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
 
     with {:ok, signing_key} <- fetch_key(key_store, alg, effective_security_profile),
          :ok <- ensure_allowed_alg(signing_key.alg, effective_security_profile),
-         {:ok, jwk_map} <- PrivateJwk.decode(signing_key.private_jwk_encrypted),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
          claims <- build_claims(issuer, caller_client_id, issued_at, payload),
          protected_header <- protected_header(signing_key),
-         {:ok, compact} <- sign_compact_jwt(jwk_map, protected_header, claims) do
+         {:ok, compact} <- sign_compact_jwt(jwk, protected_header, claims) do
       {:ok, compact}
     else
       {:error, reason} -> {:error, reason}
@@ -95,13 +96,12 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
     |> Kernel.||("RS256")
   end
 
-  defp sign_compact_jwt(jwk_map, protected_header, claims) do
-    {:ok,
-     JOSE.JWK.from_map(jwk_map)
-     |> JOSE.JWT.sign(protected_header, claims)
-     |> JOSE.JWS.compact()
-     |> elem(1)}
-  rescue
-    ErlangError -> {:error, :unsupported_signing_algorithm}
+  # A signing failure here is almost always an alg/key mismatch, which this module has
+  # always reported as :unsupported_signing_algorithm.
+  defp sign_compact_jwt(jwk, protected_header, claims) do
+    case PrivateJwk.sign(jwk, protected_header, claims) do
+      {:ok, compact} -> {:ok, compact}
+      {:error, _reason} -> {:error, :unsupported_signing_algorithm}
+    end
   end
 end

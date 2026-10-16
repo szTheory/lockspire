@@ -23,7 +23,7 @@ defmodule Lockspire.Protocol.IdToken do
           interaction_nonce: nonce,
           access_token: access_token,
           issued_at: %DateTime{} = issued_at,
-          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: _private_jwk} = signing_key
         } = params
       )
       when is_binary(client_id) and is_binary(issuer) and is_binary(access_token) do
@@ -33,7 +33,8 @@ defmodule Lockspire.Protocol.IdToken do
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
          {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
          sid <- Map.get(params, :sid),
-         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
          claims <-
            build_claims(
              host_claims,
@@ -45,13 +46,8 @@ defmodule Lockspire.Protocol.IdToken do
              auth_time,
              sid
            ),
-         {_, compact} <-
-           JOSE.JWT.sign(
-             JOSE.JWK.from_map(jwk_map),
-             %{"alg" => alg, "kid" => kid, "typ" => "JWT"},
-             claims
-           )
-           |> JOSE.JWS.compact() do
+         {:ok, compact} <-
+           PrivateJwk.sign(jwk, %{"alg" => alg, "kid" => kid, "typ" => "JWT"}, claims) do
       {:ok, compact}
     else
       {:error, reason} -> {:error, reason}

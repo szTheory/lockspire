@@ -3,6 +3,7 @@ defmodule Lockspire.Config do
   Runtime configuration helpers for the embedded Lockspire library.
   """
 
+  alias Lockspire.Security.KeyEncryption.KeySet
   alias Lockspire.Security.Policy
 
   @app :lockspire
@@ -240,6 +241,52 @@ defmodule Lockspire.Config do
   @spec mtls_issuer() :: String.t() | nil
   def mtls_issuer do
     Application.get_env(@app, :mtls_issuer)
+  end
+
+  @key_encryption_cache_key {Lockspire, :key_encryption}
+
+  # Validates the `:key_encryption` block fresh from app env.
+  #
+  # Returns nil when the block is absent, a resolved key set when valid, and raises
+  # `ArgumentError` naming only config keys (never values) when invalid.
+  @doc false
+  @spec key_encryption!() :: KeySet.t() | nil
+  def key_encryption! do
+    case Application.get_env(@app, :key_encryption) do
+      nil ->
+        nil
+
+      config ->
+        case KeySet.new(config) do
+          {:ok, %KeySet{} = keyset} -> keyset
+          {:error, {config_key, reason}} -> fail_key_encryption!(config_key, reason)
+        end
+    end
+  end
+
+  # Returns the cached key set (populated at boot), falling back to fresh validation.
+  @doc false
+  @spec key_encryption_keyset() :: KeySet.t() | nil
+  def key_encryption_keyset do
+    case :persistent_term.get(@key_encryption_cache_key, :miss) do
+      %KeySet{} = keyset -> keyset
+      :unconfigured -> nil
+      _miss -> key_encryption!()
+    end
+  end
+
+  @doc false
+  @spec key_encryption_cache_key() :: {Lockspire, :key_encryption}
+  def key_encryption_cache_key, do: @key_encryption_cache_key
+
+  defp fail_key_encryption!(config_key, reason) when is_atom(config_key) and is_atom(reason) do
+    raise ArgumentError,
+          "invalid config :key_encryption (#{inspect(config_key)}: #{reason}) for :lockspire. " <>
+            "Each key must be base64 of 32 random bytes; generate one with " <>
+            "`openssl rand -base64 32` or " <>
+            "`elixir -e 'IO.puts(Base.encode64(:crypto.strong_rand_bytes(32)))'` " <>
+            "and set it in config/runtime.exs. " <>
+            "Note that `mix phx.gen.secret` output is not 32 bytes of base64 and will not work."
   end
 
   defp fetch_required!(key) do

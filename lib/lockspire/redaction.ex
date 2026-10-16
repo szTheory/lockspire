@@ -6,6 +6,15 @@ defmodule Lockspire.Redaction do
   @type metadata :: map()
 
   @telemetry_drop_keys MapSet.new([
+                         :private_jwk_encrypted,
+                         :private_jwk,
+                         :private_key,
+                         :jwk,
+                         :kek,
+                         :key_encryption,
+                         :key_encryption_key,
+                         :envelope,
+                         :ciphertext,
                          :access_token,
                          :authorization,
                          :authorization_code,
@@ -43,6 +52,15 @@ defmodule Lockspire.Redaction do
                          :state,
                          :token,
                          :token_hash,
+                         "private_jwk_encrypted",
+                         "private_jwk",
+                         "private_key",
+                         "jwk",
+                         "kek",
+                         "key_encryption",
+                         "key_encryption_key",
+                         "envelope",
+                         "ciphertext",
                          "access_token",
                          "authorization",
                          "authorization_code",
@@ -83,6 +101,15 @@ defmodule Lockspire.Redaction do
                        ])
 
   @audit_drop_keys MapSet.new([
+                     :private_jwk_encrypted,
+                     :private_jwk,
+                     :private_key,
+                     :jwk,
+                     :kek,
+                     :key_encryption,
+                     :key_encryption_key,
+                     :envelope,
+                     :ciphertext,
                      :access_token,
                      :authorization,
                      :authorization_code,
@@ -120,6 +147,15 @@ defmodule Lockspire.Redaction do
                      :state,
                      :token,
                      :token_hash,
+                     "private_jwk_encrypted",
+                     "private_jwk",
+                     "private_key",
+                     "jwk",
+                     "kek",
+                     "key_encryption",
+                     "key_encryption_key",
+                     "envelope",
+                     "ciphertext",
                      "access_token",
                      "authorization",
                      "authorization_code",
@@ -201,6 +237,9 @@ defmodule Lockspire.Redaction do
   defp sanitize_value(%_{} = value, _surface) do
     inspect(value)
   end
+
+  # Sealed key envelopes start with this header and are never valid metadata.
+  defp sanitize_value(<<"LSK", 1, _rest::binary>>, _surface), do: :drop
 
   defp sanitize_value(value, surface) when is_map(value) do
     sanitized =

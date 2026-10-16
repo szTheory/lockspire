@@ -40,8 +40,8 @@ defmodule Lockspire.Protocol.Jar do
     if length(String.split(jwt, ".")) == 5 do
       Enum.reduce_while(decryption_keys, {:error, :decryption_failed}, fn key, _acc ->
         try do
-          with {:ok, jwk_map} <- PrivateJwk.decode(key.private_jwk_encrypted),
-               jwk <- JOSE.JWK.from_map(jwk_map),
+          with {:ok, jwk_map} <- PrivateJwk.decode(key),
+               {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
                {plain_text, %JOSE.JWE{}} <- JOSE.JWK.block_decrypt(jwt, jwk) do
             {:halt, {:ok, plain_text}}
           else

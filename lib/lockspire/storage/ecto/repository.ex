@@ -531,6 +531,16 @@ defmodule Lockspire.Storage.Ecto.Repository do
       when is_integer(id) and is_struct(retired_at, DateTime),
       do: EctoSigningKeyStore.retire_signing_key(repo(), id, retired_at)
 
+  @impl KeyStore
+  def list_signing_key_refs(after_id, limit)
+      when is_integer(after_id) and is_integer(limit) and limit > 0,
+      do: EctoSigningKeyStore.list_signing_key_refs(repo(), after_id, limit)
+
+  @impl KeyStore
+  def reencrypt_signing_key(id, decide, opts)
+      when is_integer(id) and is_function(decide, 1) and is_list(opts),
+      do: EctoSigningKeyStore.reencrypt_signing_key(repo(), id, decide, opts)
+
   @impl TokenStore
   def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
       when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do

@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.43 Signing Key Encryption at Rest (Completed: 2026-10-16)
+
+**Delivered:** Closes CR-01. Private signing keys are no longer stored as plaintext. Every new key is sealed as an AES-256-GCM `LSK\x01` envelope under a host-supplied, rotatable key-encryption key (KEK) from `runtime.exs`. Existing installs upgrade in place: legacy rows stay readable, `mix lockspire.keys.reencrypt` migrates them and rotates KEKs, `--check` proves readiness, and opt-in `legacy_plaintext: :reject` refuses plaintext. No new dependency, no schema migration and no OAuth/OIDC behaviour change (SAFE-01). The demo and clean-room hosts moved to Bandit 1.13.1 first. The package release is left to Release Please.
+
+**Phases completed:** 3 phases (155–157), 14 plans, 52 tasks; all 16 requirements are satisfied.
+
+**Key accomplishments:**
+- Pure AES-256-GCM envelope cipher with a never-raising `open/3`, a strictly validated `:key_encryption` config that cannot leak the KEK, and boot-time validation; `generate_key` seals every new key or refuses with `{:error, :key_encryption_not_configured}`.
+- `PrivateJwk` opens envelopes with a post-decrypt kid check and still reads legacy JSON/ETF rows; `PrivateJwk.to_jwk/1` gives all six signing/decrypting consumers one guarded path, so a malformed key cannot raise with private bytes in the exception.
+- Per-row locked, CAS-guarded re-encryption (legacy to envelope, old KEK to current KEK) with dry-run, durable audit, operator telemetry and real-concurrency proofs; `encryption_status/0` is the single readiness truth behind `--check`, doctor row counts and `Install.Verify`.
+- `legacy_plaintext: :reject` refuses non-envelope keys before any parser runs, with allowlisted `legacy_read`/`decode_failed` telemetry and one log line per node per kid and reason.
+- Every signing-key column read is silent at the repo boundary; one structural matcher sweeps admin, consumer, operator and debug-log surfaces and finds no key material.
+- Install prints a fail-closed `runtime.exs` KEK block plus a per-install dev/test literal; an upgrade-journey test, demo and clean-room `--check`/doctor CI checks, and a HexDocs upgrade guide (rotation, rollback, KEK loss) prove the upgrade end to end.
+
+**Known verification overrides: 1 newly acknowledged, 4 carried forward from prior closes (see STATE.md Deferred Items).** The pending todo "DB-touching Mix tasks do not start the repo" (install-dx, unconfirmed) is outside this milestone. Phases 155 and 156 closed as `override_closeout`: their verification reports read stale only because later in-milestone work (156, 157 and review fixes) edited files they covered; 157 passed verification and the audit integration check passed 15/15.
+
+**Accepted debt:** unpaged `--dry-run`; rolling-restart ordering for KEK rotation and `:reject` relies on documentation (AR-156-01); the admin key-generation error does not name a missing KEK; `PrivateJwk.decode_with_reason/1` is test-only; `list_keys` loads ciphertext before stripping it; about 14 legacy-plaintext test fixtures; the envelope value guard only catches envelopes; the upgrade guide's CHANGELOG link resolves only on HexDocs; review findings IN-01..03.
+
+**Audit:** [v1.43 milestone audit](milestones/v1.43-MILESTONE-AUDIT.md) (`tech_debt`; 16/16 requirements, 15/15 integration, 4/4 flows; Nyquist and security compliant for all phases).
+
+**Archives:** `milestones/v1.43-ROADMAP.md`, `milestones/v1.43-REQUIREMENTS.md`, `milestones/v1.43-MILESTONE-AUDIT.md`, `milestones/v1.43-phases/` · **GSD milestone tag:** `v1.43` (planning milestone; package release via Release Please).
+
+---
+
 ## v1.42 Admin UI Clarity & Workflow Refinement (Completed: 2026-10-15)
 
 **Delivered:** The admin UI now follows real staff tasks: apps are registered and edited on focused pages, overview counts open the exact read-only queue subsets they describe, every page uses the PRODUCT.md vocabulary with a clear hierarchy, and all 30 admin paths stay usable at 7 widths in light, dark and system themes. No OAuth/OIDC behaviour, storage or security default changed; no package was published.

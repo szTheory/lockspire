@@ -446,7 +446,7 @@ defmodule Lockspire.Audit.AuditWriterTest do
     assert active_key.id == seeded_key.id
 
     assert {:ok, private_jwk} =
-             Lockspire.Protocol.PrivateJwk.decode(active_key.private_jwk_encrypted)
+             Lockspire.Protocol.PrivateJwk.decode(active_key)
 
     assert %JOSE.JWK{} = JOSE.JWK.from_map(private_jwk)
   end

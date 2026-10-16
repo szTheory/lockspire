@@ -297,6 +297,50 @@ defmodule Lockspire.InstallGeneratorTest do
     assert output =~ "--with-fapi-smoke"
   end
 
+  describe "key encryption next step" do
+    test "prints runtime and dev/test blocks with a literal KeySet accepts, differing per run" do
+      first = capture_io(fn -> install_fixture!() end)
+      reset_fixture!()
+      second = capture_io(fn -> install_fixture!() end)
+
+      month = Calendar.strftime(DateTime.utc_now(), "%Y-%m")
+
+      for needle <- [
+            "LOCKSPIRE_KEY_ENCRYPTION_KEY",
+            "config/runtime.exs",
+            "if config_env() == :prod",
+            "legacy_plaintext: :reject",
+            "openssl rand -base64 32",
+            "config/dev.exs",
+            "config/test.exs",
+            "dev/test only",
+            "\"#{month}\""
+          ] do
+        assert first =~ needle
+      end
+
+      literal = extract_dev_literal!(first)
+      assert byte_size(Base.decode64!(literal)) == 32
+
+      assert {:ok, _keyset} =
+               Lockspire.Security.KeyEncryption.KeySet.new(
+                 keys: [{month, literal}],
+                 current: month,
+                 legacy_plaintext: :reject
+               )
+
+      refute literal == extract_dev_literal!(second)
+      assert first =~ "8. If you explicitly operate a FAPI 2.0 security profile"
+    end
+
+    test "never records the key block in the install manifest" do
+      capture_io(fn -> install_fixture!() end)
+
+      refute File.read!(Path.join(@fixture_root, ".lockspire/install_manifest.json")) =~
+               "LOCKSPIRE_KEY_ENCRYPTION_KEY"
+    end
+  end
+
   test "the default install emits only the default-profile smoke while FAPI proof is explicit" do
     capture_io(fn ->
       install_fixture!()
@@ -663,6 +707,16 @@ defmodule Lockspire.InstallGeneratorTest do
       "--scope",
       "GeneratedHostApp.Lockspire"
     ]
+  end
+
+  defp extract_dev_literal!(output) do
+    [_, literal] =
+      Regex.run(
+        ~r/System\.get_env\("LOCKSPIRE_KEY_ENCRYPTION_KEY", "([A-Za-z0-9+\/]{43}=)"\)/,
+        output
+      )
+
+    literal
   end
 
   defp reset_fixture! do

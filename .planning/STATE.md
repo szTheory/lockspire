@@ -1,40 +1,47 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.42
-milestone_name: Admin UI Clarity & Workflow Refinement
+milestone: v1.43
+milestone_name: Signing Key Encryption at Rest
 status: Awaiting next milestone
-stopped_at: Milestone v1.42 completed and archived
-last_updated: "2026-10-16T01:26:04.600Z"
-last_activity: 2026-10-15
-last_activity_desc: Milestone v1.42 completed and archived
-state_head: f4d8ced613ecac12787c772bb483b3b991f3dc20
+stopped_at: Phase 157 complete — all phases complete
+last_updated: "2026-10-16T19:25:01.260Z"
+last_activity: 2026-10-16
+last_activity_desc: Milestone v1.43 completed and archived
+state_head: 2db11cd74a5cc9809aa5a66e572830facf55080a
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 21
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 14
+  completed_plans: 14
   percent: 100
-current_phase: 154
+current_phase: 157
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-15 after v1.42)
+See: .planning/PROJECT.md (updated 2026-10-16 after v1.43)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone (v1.42 shipped 2026-10-15)
+**Current focus:** Planning next milestone (v1.43 complete)
 
 ## Current Position
 
-Phase: Milestone v1.42 complete
+Phase: Milestone v1.43 complete
 Plan: —
 Status: Awaiting next milestone
-Last activity: 2026-10-15 — Milestone v1.42 completed and archived
+Last activity: 2026-10-16 — Milestone v1.43 completed and archived
 
 ## Accumulated Context
+
+### v1.43 Milestone Direction
+
+- The user accepted the recommendation to close CR-01 as a tight milestone: genuine encryption of private signing JWKs at rest (AES-256-GCM via OTP `:crypto`, no new dependency), a dedicated host-supplied rotatable key-encryption key (not derived from `secret_key_base`), a safe legacy-plaintext migration and strict mode, key-encryption-key rotation, redaction and end-to-end signing proof, plus the now-unblocked Bandit 1.13.1 bump in the demo and clean-room hosts.
+- The user asked for upstream scoping to the point of diminishing returns so downstream discuss/plan/execute work is well directed; research runs before requirements.
+- Source facts: `lib/lockspire/admin/keys.ex:62` is the only writer and stores `Jason.encode!(private_jwk_map)` in `private_jwk_encrypted`; `Lockspire.Protocol.PrivateJwk.decode/1` is the shared read seam used by JAR, JARM, introspection JWT, ID/logout tokens and token exchange signers.
+- The DCR default lifetime semantics todo stays deferred to a later protocol milestone. Phase numbering continues at 155. Per the standing rule, the older `.planning/phases` artifacts (142/143, 999.1) were not moved or archived, so `phases.clear` was skipped.
 
 ### v1.42 Milestone Direction
 
@@ -261,6 +268,21 @@ Last activity: 2026-10-15 — Milestone v1.42 completed and archived
 - [Phase 154]: Desktop final captures use 1261x900 at DPR 2 to match the 2522 px baseline width
 - [Phase 154]: Locked-console browser capture uses --disable-gpu-vsync and --disable-frame-rate-limit (frame pacing only)
 - [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
+- [Phase 155]: Pin bandit == 1.13.1 in demo and clean-room hosts; prune unused bandit/thousand_island from compat lock (D-15/16/17)
+- [Phase 155]: KEK envelope parse binds exact 12-byte IV and 16-byte tag before :crypto (truncated tags accepted by :crypto); empty keys block is invalid
+- [Phase 155]: PrivateJwk.decode/1 is map-form only; legacy rows get no kid check until Phase 156
+- [Phase 155]: 155-04: generate_key resolves KeySet before any JWK/DB work and refuses with :key_encryption_not_configured; clean-room KEK clean-room-1 lands in the same commit
+- [Phase 155]: 155-05: diagnostics validate fresh via Config.key_encryption!/0; absent-KEK tests use put_key_encryption(nil) only
+- [Phase 156]: 156-01: store callbacks list_signing_key_refs/2 and reencrypt_signing_key/3; assess/2 is the single sealability rule; vanished or CAS-lost rows count as conflicted
+- [Phase 156]: 156-02: unsealable retired rows are stranded_retired and never block readiness; sealable retired rows still block until sealed
+- [Phase 156]: 156-02: Install.Verify :key_storage is :error only for unknown_kek, undecryptable, or :reject with legacy rows; DB problems give a skipped :ok
+- [Phase 156]: 156-03: legacy_plaintext reject refuses non-envelope rows before any parser; hot-path legacy_read/decode_failed are telemetry only with once-per-node log lines
+- [Phase 157]: 157-01: JWKS reads select every column except private_jwk_encrypted via struct/2 (no sensitive fallback); cast params exclude the key column and bytes applied with put_change
+- [Phase 157]: Host KEK delivered via config/runtime.exs reading LOCKSPIRE_KEY_ENCRYPTION_KEY; generator prints, never writes; demo and clean-room KEKs never in compile-time config
+- [Phase 157]: 157-05: PrivateJwk.to_jwk/1 drops JOSE exceptions (to_public probe) and all six key consumers route through it
+- [Phase 157]: 157-06: malformed-key worker proof swaps the active key via update_all and asserts the real {:discard, :invalid_signing_key}; no lib/ leak found
+- [Phase 157]: 157-04: signing-key encryption guide is version-agnostic; per-row re-encrypt telemetry documented as encrypted/rewrapped
+- [Phase 157]: 157-03: upgrade journey derives verify key from the seeded legacy private JWK; separate CI steps for --check and doctor
 
 ### Pending Todos
 
@@ -291,6 +313,7 @@ Last activity: 2026-10-15 — Milestone v1.42 completed and archived
 
 - Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 - v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
+- v1.43 roadmap created: Phases 155–157 map all 16 Signing Key Encryption at Rest requirements exactly once (155: DEP/KEK/ENC; 156: MIG/OPS; 157: RED/HOST/PROOF/DOC/SAFE). SAFE-01 constrains every phase; Phase 157 owns its final proof. Research flags: 155-01 Bandit changelog, 155-02 `:crypto` AEAD prototype, 156-01 lock/CAS semantics. Older `.planning/phases` dirs (142/143/999.1) left untouched.
 - v1.42 roadmap created: Phases 151–154 map all nine Admin UI Clarity & Workflow Refinement requirements exactly once. Existing Phase 142/143 historical evidence was left in place; CR-01 remains deferred and unresolved.
 
 ## Deferred Items
@@ -306,7 +329,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
 | Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 | v1.39 |
 | Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 | v1.40 |
-| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review | v1.40 |
+| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. Resolved in v1.43 (envelope encryption at rest, 2026-10-16). | Phase 145 code review | v1.40 |
 | seeds | SEED-261010-zzo — inset operator theme-select caret | dormant | 2026-10-10 | v1.40 |
 | verification_gaps | 145/145-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
@@ -314,11 +337,14 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
 | todos | 2026-10-13-audit-dcr-default-lifetime-semantics.md | (presence-only) | 2026-10-15 | v1.42 |
 | todos | 2026-10-14-bump-bandit-in-demo-and-clean-room-hosts.md | (presence-only) | 2026-10-15 | v1.42 |
+| todos | 2026-10-16-mix-tasks-start-repo.md | (presence-only) | 2026-10-16 | v1.43 |
+| verification_override | 155/155-VERIFICATION.md | passed at execution; stale after in-milestone 156/157 edits; override_closeout | 2026-10-16 | v1.43 |
+| verification_override | 156/156-VERIFICATION.md | passed at execution; stale after in-milestone 157 edits; override_closeout | 2026-10-16 | v1.43 |
 
 ## Session Continuity
 
-Last session: 2026-10-16T00:00:21.547Z
-Stopped at: Phase 154 complete — all phases complete
+Last session: 2026-10-16T16:44:22.228Z
+Stopped at: Milestone v1.43 completed and archived
 Resume file: None
 
 ## Performance Metrics
@@ -424,6 +450,20 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P05 | 10 min | 3 tasks | 6 files |
 | Phase 154 P06 | 115 min | 3 tasks | 5 files |
 | Phase 154 P07 | 95 min | 3 tasks | 4 files |
+| Phase 155 P01 | 40 min | 2 tasks | 7 files |
+| Phase 155 P02 | 35 min | 3 tasks | 11 files |
+| Phase 155 P03 | 25 min | 3 tasks | 12 files |
+| Phase 155 P04 | 20 min | 2 tasks | 6 files |
+| Phase 155 P05 | 40min | 3 tasks | 8 files |
+| Phase 156 P01 | 25 min | 3 tasks | 11 files |
+| Phase 156 P02 | 45 min | 3 tasks | 12 files |
+| Phase 156 P03 | 14 min | 3 tasks | 10 files |
+| Phase 157 P01 | 25 min | 3 tasks | 7 files |
+| Phase 157 P02 | 35 min | 3 tasks | 10 files |
+| Phase 157 P05 | 12 min | 2 tasks | 9 files |
+| Phase 157 P06 | 12 min | 2 tasks | 2 files |
+| Phase 157 P04 | 25 min | 3 tasks | 9 files |
+| Phase 157 P03 | 25 min | 3 tasks | 4 files |
 
 ## Operator Next Steps
 

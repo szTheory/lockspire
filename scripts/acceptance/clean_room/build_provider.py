@@ -8,6 +8,10 @@ facades.  It never imports a protocol/storage implementation from the checkout.
 from __future__ import annotations
 
 import argparse
+import base64
+import inspect
+import os
+import re
 from pathlib import Path
 import shutil
 import socket
@@ -72,6 +76,20 @@ config :lockspire,
   oban_prefix: \"lockspire\"
 config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
+"""
+    )
+    # The child runs under the default dev env, so the generator's prod guard is omitted;
+    # the body is the fail-closed block `mix lockspire.install` prints.
+    (child / "config" / "runtime.exs").write_text(
+        """import Config
+
+config :lockspire, :key_encryption,
+  keys: [
+    {\"clean-room-1\",
+     System.get_env(\"LOCKSPIRE_KEY_ENCRYPTION_KEY\") || raise(\"LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: openssl rand -base64 32\")}
+  ],
+  current: \"clean-room-1\",
+  legacy_plaintext: :reject
 """
     )
     (child / "lib" / "clean_room_provider" / "repo.ex").write_text(
@@ -221,9 +239,13 @@ def prepare_provider(
     # can create its managed and host-owned files without an overwrite refusal.
     shutil.rmtree(child / "lib")
     write_host_runtime(child, database_url)
+    # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
+    # so a standalone caller needs one in the inherited environment before any child runs.
+    os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
     dependency_cache = cache_root or run_root / "deps-cache"
     verify_child("provider_host", child, dependency_cache)
     environment = locked_environment(child, "provider_host", dependency_cache)
+    environment.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
     environment.update(
         {
             "DATABASE_URL": database_url,
@@ -359,6 +381,20 @@ def check_bootstrap() -> None:
     )
     if any(item not in bootstrap for item in required_bootstrap):
         raise PackageInputError("provider bootstrap is missing a public enrollment or secret-boundary step")
+    host_runtime_source = inspect.getsource(write_host_runtime)
+    required_runtime = (
+        "runtime.exs",
+        "config :lockspire, :key_encryption",
+        "LOCKSPIRE_KEY_ENCRYPTION_KEY",
+        "|| raise(",
+        "legacy_plaintext: :reject",
+    )
+    if any(item not in host_runtime_source for item in required_runtime):
+        raise PackageInputError("provider host runtime config is missing the env-sourced key_encryption block under :reject")
+    if "key_encryption:" in host_runtime_source or "legacy_plaintext: :allow" in host_runtime_source:
+        raise PackageInputError("provider host must not carry key_encryption in compile-time config or allow plaintext rows")
+    if re.search(r"[A-Za-z0-9+/]{43}=", host_runtime_source):
+        raise PackageInputError("provider host source must not contain a literal key-encryption key")
     if "dpop_replay_store" in router:
         raise PackageInputError("provider route must use the configured durable DPoP store")
 

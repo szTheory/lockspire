@@ -33,6 +33,14 @@ config :lockspire,
   issuer: "https://example.test/lockspire",
   logout_path: "/sign-out"
 
+config :lockspire, :key_encryption,
+  keys: [
+    {"test-1", :crypto.hash(:sha256, "lockspire-test-kek-1") |> Base.encode64()},
+    {"test-2", :crypto.hash(:sha256, "lockspire-test-kek-2") |> Base.encode64()}
+  ],
+  current: "test-1",
+  legacy_plaintext: :allow
+
 config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: String.duplicate("a", 64),
   live_view: [signing_salt: "lockspire_salt"]

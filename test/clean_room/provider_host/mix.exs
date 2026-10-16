@@ -19,7 +19,7 @@ defmodule CleanRoomProvider.MixProject do
       {:phoenix_live_view, "== 1.2.10"},
       {:ecto_sql, "== 3.13.5"},
       {:postgrex, "== 0.22.4"},
-      {:bandit, "== 1.12.5"}
+      {:bandit, "== 1.13.1"}
     ]
   end
 end

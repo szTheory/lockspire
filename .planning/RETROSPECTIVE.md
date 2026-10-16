@@ -365,12 +365,49 @@
 
 ---
 
+## Milestone: v1.43 — Signing Key Encryption at Rest
+
+**Shipped:** 2026-10-16
+**Phases:** 3 | **Plans:** 14
+
+### What Was Built
+- Bandit 1.13.1 in the demo and clean-room hosts, an AES-256-GCM `LSK\x01` envelope cipher, a strictly validated rotatable KEK config, and sealed key generation that refuses without a KEK (Phase 155).
+- Locked, CAS-guarded legacy migration and KEK rotation through `mix lockspire.keys.reencrypt`, `--check` readiness, and opt-in `legacy_plaintext: :reject` (Phase 156).
+- A fail-closed install KEK block, a structural key-material matcher swept across admin, telemetry, logs and operator output, one guarded `PrivateJwk.to_jwk/1` path for all six consumers, an upgrade-journey test, and a HexDocs upgrade guide (Phase 157).
+
+### What Worked
+- Binding research decisions (R1–R8) and one cross-cutting SAFE-01 constraint kept three phases aligned with no new dependency, migration or protocol change.
+- Code review caught a real leak that the plan's threat model missed: `sensitive: true` silenced Logger but Ecto query telemetry still carried selected key bytes in `result` (156 CR-01). The fix (`telemetry_event: nil`) and a sentinel test that inspects `result` closed it.
+- One structural matcher reused by every leak test made "nothing leaks" a single provable property instead of per-surface assertions.
+
+### What Was Inefficient
+- Phase 156's validation and security audits were still drafts at the first milestone audit and had to be finished before a re-audit — the same pattern v1.42 named as a lesson.
+- Phase 157 grew to six plans; plans 05 and 06 closed a review finding (a malformed sealed key could raise with private bytes in the exception text) that a consumer-level threat entry would have caught earlier.
+- Later phases edited files covered by Phase 155 and 156 verification, so both reports went stale and the milestone closed as an override.
+
+### Patterns Established
+- Sensitive repo reads pass `sensitive: true`, which sets both `log: false` and `telemetry_event: nil`; leak tests inspect query `result`, `params` and `cast_params`.
+- Operator tasks that touch the DB start their repo with `Ecto.Migrator.with_repo/3` rather than relying on `app.config`.
+- Config-mode switches that change read behaviour ship with a `--check` gate and documented deploy order (AR-156-01).
+
+### Key Lessons
+1. Run validate-phase and secure-phase as part of execute-phase close, not at milestone audit; this is now a two-milestone lesson.
+2. For secret-handling work, the threat model must cover every telemetry and exception channel of the libraries in the path, not only Logger.
+3. When later phases are planned to edit earlier phases' seams, budget a re-verification pass or accept an override closeout up front.
+
+### Cost Observations
+- Model mix and session count: not recorded.
+- Notable: 141 commits over two days; most rework came from review findings, not plan defects.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.43 | N/A | 3 | Closed CR-01 with envelope encryption at rest, a checked migration path, and one structural leak matcher shared by every redaction test. |
 | v1.42 | N/A | 4 | Admin UI clarity backed by CI page/contrast contracts plus a local-only, navigate-only browser evidence harness. |
 | v1.39 | N/A | 2 | Verified the public 1.5.1 artifact across exact-source CI, protected publication, and install proof while retaining a separate accepted merge-provenance gap. |
 | v1.38 | N/A | 4 | Exact-source maintenance evidence and automated closeout returned the project to its sustaining release train. |
@@ -386,6 +423,7 @@
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.43 | Sentinel key-material leak tests across repo telemetry, logs, admin and operator output; real-concurrency reencrypt proofs; upgrade-journey integration test; demo and clean-room `--check`/doctor CI checks | High | OTP `:crypto` envelope cipher, key-material matcher, reencrypt engine |
 | v1.42 | 1573 fast-suite tests; page contract on every admin route; computed contrast contract; 928 local browser checks | High | Page contract helper, contrast assertions, local agent-browser route-proof harness |
 | v1.39 | Focused release contracts, exact-main CI, package checksum, tag/docs/install, and terminal receipt | N/A (release-engineering milestone) | Manifest-bound publisher, exact tag checks, per-stage terminal release receipts |
 | v1.38 | Exact-source CI/release proof and portable lifecycle contracts | N/A (maintenance milestone) | Repository inventory and closeout automation |

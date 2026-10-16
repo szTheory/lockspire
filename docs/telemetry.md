@@ -6,7 +6,7 @@ All core domain events are emitted using the internal `Lockspire.Observability.e
 
 ## Event Structure
 
-Every event emitted by Lockspire produces two paths:
+Every operator and protocol event emitted through `Lockspire.Observability.emit/4` produces two paths. The one exception is the pair of signing-path key events listed in the Signing Key section below, which are emitted directly on the standard path only and have no audit mirror:
 
 1. **Standard Telemetry Path:** `[:lockspire, <entity>, <action>]`
 2. **Audit Mirror Path:** `[:lockspire, :audit, <entity>, <action>]`
@@ -79,6 +79,42 @@ Below is an exhaustive list of the telemetry events emitted by Lockspire, catego
 
 ### Introspection (`[:lockspire, :introspection, ...]`)
 - `[:lockspire, :introspection, :failed]`
+
+### Signing Key (`[:lockspire, :key, ...]`)
+
+Operator events go through `Lockspire.Observability.emit/4`, so each one also has an audit mirror at `[:lockspire, :audit, :key, <action>]`. They carry no key material.
+
+| Event | Audit mirror | When |
+| --- | --- | --- |
+| `[:lockspire, :key, :generated]` | yes | A signing key was generated. |
+| `[:lockspire, :key, :published]` | yes | A key was published to the JWKS. |
+| `[:lockspire, :key, :activated]` | yes | A key became the active signing key. |
+| `[:lockspire, :key, :retired]` | yes | A key was retired. |
+| `[:lockspire, :key, :encrypted]` | yes | Re-encryption sealed a plaintext key (one event per key, after its row commits). |
+| `[:lockspire, :key, :rewrapped]` | yes | Re-encryption moved a sealed key to the current key-encryption key (one event per key). |
+| `[:lockspire, :key, :reencrypt_failed]` | yes | A key could not be re-encrypted. Metadata: `kid`, `key_id`, `reason`. |
+| `[:lockspire, :key, :reencrypt_completed]` | yes | A re-encryption run, dry run or `--check` finished. |
+
+The lifecycle and per-key events carry `key_id`, `kid`, `status` and the acting `actor_type` and `actor_id`; `encrypted` and `rewrapped` also carry `kek_id` (the id the key is now sealed under), and `rewrapped` adds `previous_kek_id`. `reencrypt_completed` carries `current_kek_id`, `actor_type`, `actor_id` and `mode` (`apply`, `dry_run` or `check`) in metadata, and the same measurement keys in every mode: `scanned`, `encrypted`, `rewrapped`, `already_current`, `no_private_key`, `conflicted`, `failed`, `pending`, `stranded_retired` and `duration`.
+
+Two events fire on the request path whenever Lockspire reads a stored signing key to sign. They are telemetry only: there is no audit mirror and no persisted audit record, so a busy node does not write a record per signature.
+
+| Event | Audit mirror | When |
+| --- | --- | --- |
+| `[:lockspire, :key, :legacy_read]` | no | A signing key stored as legacy plaintext was read while `legacy_plaintext: :allow` is set. Metadata: `kid`, `legacy_plaintext`. Alert on this to find keys that still need `mix lockspire.keys.reencrypt`. |
+| `[:lockspire, :key, :decode_failed]` | no | A stored signing key could not be read. Metadata: `kid`, `reason`, and `kek_id` when the stored envelope names one. |
+
+`decode_failed` reasons:
+
+- `invalid_signing_key`: the stored value is not a usable key
+- `kek_not_configured`: no key-encryption key is configured
+- `unknown_kek`: the envelope names a key id that is not configured
+- `malformed_envelope`: the envelope is damaged
+- `decryption_failed`: the configured key material does not open the envelope
+- `kid_mismatch`: the envelope belongs to a different key row
+- `plaintext_key_refused`: the value is plaintext and `legacy_plaintext: :reject` is set
+
+Plaintext refusal surfaces as a `decode_failed` event with reason `plaintext_key_refused`; it has no event of its own. Each `decode_failed` and `legacy_read` condition is also logged once per key and reason on a node, without key material. The reader used by re-encryption (`read_stored/2`) emits no hot-path event, so a re-encryption run never produces `legacy_read` or `decode_failed`.
 
 ### Backchannel Logout (`[:lockspire, :logout, ...]`)
 - `[:lockspire, :logout, :requested]`

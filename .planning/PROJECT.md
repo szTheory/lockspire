@@ -8,6 +8,24 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Completed Milestone: v1.43 Signing Key Encryption at Rest (Completed 2026-10-16)
+
+**Goal:** Close CR-01: private signing keys are genuinely encrypted at rest, existing installs upgrade safely, and the host-facing experience stays calm.
+
+**Target features:**
+- Real envelope encryption of private JWKs with AES-256-GCM from OTP `:crypto` (no new dependency), using a versioned ciphertext format tagged with the wrapping-key ID, applied at the single write seam (`Admin.Keys`) and the single read seam (`PrivateJwk.decode`).
+- An explicit host-supplied key-encryption key configured as a rotatable list, not derived from `secret_key_base`; startup fails fast when it is missing or malformed, with install-generator and docs guidance.
+- A safe upgrade path for existing installs: legacy plaintext rows stay readable, an idempotent re-encryption task migrates them, and a strict mode refuses plaintext once migration is complete.
+- Rotation of the key-encryption key that re-wraps signing keys while the old key still decrypts, without reissuing signing keys.
+- Proven redaction and end-to-end signing: no private material or encryption key in logs, telemetry, admin pages, or errors; signing and verification proven across ID tokens, JARM, introspection JWTs, and token exchange; CI asserts no plaintext JWK at rest.
+- Housekeeping: bump Bandit to 1.13.1 (CVE fix) in the adoption demo lock and both clean-room host pins.
+
+OAuth/OIDC behavior and existing security defaults stay the same, and the library remains embedded. The DCR default lifetime semantics todo is deferred to a later protocol milestone.
+
+**Delivered:** Phases 155–157 completed 14 plans and satisfied all 16 requirements, closing CR-01. New private signing keys are sealed as AES-256-GCM `LSK\x01` envelopes under a host-supplied KEK list in `runtime.exs` (no `secret_key_base` fallback). Without a KEK the app still boots and signs with existing keys, but key generation refuses with `{:error, :key_encryption_not_configured}`. `mix lockspire.keys.reencrypt` migrates legacy rows and rotates KEKs with per-row locking and CAS, `--check` gates the opt-in `legacy_plaintext: :reject` mode, and all six signing/decrypting consumers read through one guarded `PrivateJwk` path. A structural matcher sweep found no key material in admin, telemetry, log or operator output. Install prints a fail-closed KEK block, the demo and clean-room hosts run encrypted on Bandit 1.13.1, and a HexDocs upgrade guide covers rotation, rollback and KEK loss. No new dependency, no schema migration, no protocol change (SAFE-01).
+
+**Closeout:** Audit `tech_debt`, no blockers (16/16 requirements, 15/15 integration, 4/4 flows; every phase Nyquist-compliant and security-verified). Override closeout: the Phase 155 and 156 verification reports went stale only because later in-milestone work edited files they covered. The DB-touching Mix task todo was acknowledged as out of scope. Accepted debt includes the unpaged `--dry-run`, rolling-restart ordering for KEK rotation and `:reject` (documented, AR-156-01), and generic admin copy when key generation lacks a KEK. The package release goes through Release Please. See the [v1.43 audit](milestones/v1.43-MILESTONE-AUDIT.md), [roadmap](milestones/v1.43-ROADMAP.md), and [requirements](milestones/v1.43-REQUIREMENTS.md).
+
 ## Completed Milestone: v1.42 Admin UI Clarity & Workflow Refinement (Completed 2026-10-15)
 
 **Goal:** Make Lockspire's existing admin pages easier to scan and safer to use by removing low-value copy, clarifying outcomes, and making common tasks feel focused and consistent.
@@ -97,7 +115,9 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-v1.42 Admin UI Clarity & Workflow Refinement is complete and archived (2026-10-15). Phases 151–154 delivered all nine requirements in 21 plans; every phase is verified, Nyquist-validated and security-audited, and the full suite passes (1573 tests). No milestone is active; the next one starts with `/gsd-new-milestone`.
+v1.43 Signing Key Encryption at Rest is complete and archived (2026-10-16). Phases 155–157 delivered all 16 requirements in 14 plans and closed CR-01: private signing keys are encrypted at rest under a rotatable host KEK, existing installs have a checked migration path, and redaction is proven across every surface. The release (a minor bump with an upgrade guide) is pending through Release Please. No milestone is active; the next one starts with `/gsd-new-milestone`.
+
+v1.42 Admin UI Clarity & Workflow Refinement is complete and archived (2026-10-15). Phases 151–154 delivered all nine requirements in 21 plans; every phase is verified, Nyquist-validated and security-audited, and the full suite passes (1573 tests).
 
 v1.41 Product Language & Repository Clarity is complete and archived. Phases 148–150 delivered all eight requirements in 10 plans and 24 tasks; the milestone audit found no unsatisfied requirements or broken flows. The Phase 999.1 repository readability/docs-polish scope was delivered through these phases and should not be run again.
 
@@ -105,7 +125,7 @@ The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 2
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The separate CR-01 private-key-at-rest finding is unresolved and needs its own security design; neither UI milestone (v1.40, v1.42) resolves or accepts it as safe for release.
+Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The CR-01 private-key-at-rest finding, left open by the UI milestones (v1.40, v1.42), was resolved in v1.43.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
@@ -275,12 +295,18 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No active requirements. v1.42 is validated below; the next milestone defines new ones.
+No milestone is active; the next one defines fresh requirements via `/gsd-new-milestone`. The completed v1.43 requirements are archived in [v1.43-REQUIREMENTS.md](milestones/v1.43-REQUIREMENTS.md).
 
-The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40-REQUIREMENTS.md](milestones/v1.40-REQUIREMENTS.md).
+Carry-forward candidates (not committed):
+- v1.43 future requirements: read-only "Key protection" line on admin Keys pages (KEY-UI-01), `mix lockspire.gen.kek` (KEK-03), KMS/Vault key-set provider (KEK-04), `{:system, "ENV"}` KEK resolution (KEK-05), re-seal the `client_secret_jwt` verifier with a dedicated key (SEC-01).
+- v1.43 accepted debt: paged `--dry-run`, an admin error that names a missing KEK, and the remaining legacy-plaintext test fixtures.
+- Pending todos: DB-touching Mix tasks do not start the repo (install-dx, unconfirmed); DCR default lifetime semantics (DCR-01).
 
 ### Validated
 
+- ✓ Demo and clean-room hosts on Bandit 1.13.1; strictly validated `:key_encryption` KEK list in runtime config with no `secret_key_base` fallback; every new private signing key sealed as an AES-256-GCM `LSK\x01` envelope bound to its kid; missing KEK keeps boot and existing signing working while generation refuses (DEP-01, KEK-01, KEK-02, ENC-01..03) — v1.43, Phase 155; verifier 5/5.
+- ✓ Locked, CAS-guarded `mix lockspire.keys.reencrypt` legacy migration and KEK rotation with dry-run, `--check` readiness and durable audit; opt-in `legacy_plaintext: :reject` refuses plaintext before any parser runs (MIG-01..03, OPS-01, OPS-02) — v1.43, Phase 156; verifier 5/5, security 19/19.
+- ✓ No key material in admin, telemetry, log, error or operator output; fail-closed install KEK block; upgrade-journey and CI `--check` proof; HexDocs upgrade guide; SAFE-01 gate green against v1.42 (RED-01, HOST-01, PROOF-01, DOC-01, SAFE-01) — v1.43, Phase 157; verifier passed.
 - ✓ All 30 admin paths use plain, task-focused language and one page hierarchy, with retired wording enforced by `vocabulary_contract_test.exs` (UI-01, UI-02, UI-06) — v1.42, Phase 153; verifier 3/3 (re-verified at HEAD), 219 mapped tests, security 12/12.
 - ✓ Changed pages stay usable at 7 widths in light, dark and system themes with 3:1 control contrast, visible focus and reduced motion; redaction-safe browser evidence and a bundled page contract on every admin route; security defaults, redaction, copy-once, revocation scopes and read-only queues proven unchanged (UI-07, PROOF-01, SAFE-01) — v1.42, Phase 154; verifier 3/3, 928 browser checks, security 22/22.
 - ✓ App registration has its own focused route with a filter-preserving return, app task routes lead with the app and task, and primary/secondary/destructive action emphasis follows a documented rule (UI-04, UI-05) — v1.42, Phase 151; verifier 8/8, 55 focused tests, full fast suite green. Code review (5 warnings, 3 info) and the UI review fixes were applied afterwards; the review ledger shows 0 open.
@@ -455,7 +481,11 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Run repo hygiene before future milestones and releases | Clean local git/worktrees, triaged GitHub PRs/issues, green CI, current GSD state, and release-truth notes keep Lockspire ready for the next scoped adventure without starting from a dirty repo state. | Adopted 2026-07-01; documented in `.planning/REPO-HYGIENE-CHECKLIST.md` |
 | Start v1.40 as Admin Operator UI Refinement using the existing design system | The user requested a coherent, conventional operator experience, approved the Impeccable audience/code-first defaults, and selected this scope over the earlier docs backlog. Reuse prior UI work and sibling lessons; evaluate complete jobs in the actual browser with bounded review. | Milestone direction confirmed 2026-10-09; detailed roadmap approval tracked in STATE.md |
 | Keep the v1.42 browser-proof harness local-only and navigate-only | Real-browser runs are slow and need a live demo; recurring value lives in deterministic contracts (page contract, CSS contrast, route parity) that run in CI, while screenshots stay in ignored `tmp/` | ✓ Good — adopted in Phase 154 (D-05/D-06) |
-| Re-verify earlier phases at milestone close when a later phase edits shared files | Stale digests from Phase 154 CSS/component edits would otherwise force an override closeout | ✓ Good — v1.42 closed as verified |
+| Re-verify earlier phases at milestone close when a later phase edits shared files | Stale digests from Phase 154 CSS/component edits would otherwise force an override closeout | ✓ Good — v1.42 closed as verified; v1.43 chose an override instead because the milestone audit's integration check and full suite already covered the later edits |
+| Use a dedicated host-supplied, rotatable KEK list for signing-key encryption, never derived from `secret_key_base` | Rotating `secret_key_base` would silently strand every signing key; the host owns secret custody | ✓ Good — shipped in v1.43 (R1–R8 research decisions) |
+| Keep the v1.43 upgrade non-breaking: a missing KEK warns loudly and refuses key generation instead of failing boot | Existing 1.x installs must keep signing across the upgrade; doctor, Verify and boot warnings make the gap visible | ✓ Good — user decision 2026-10-15 (KEK-02) |
+| Encrypt in place with a self-describing envelope header and no schema migration or decrypted-key cache | Avoids host migration cost and keeps plaintext out of memory caches; the `private_jwk_encrypted` name becomes true | ✓ Good — SAFE-01 gate green |
+| Enforce `legacy_plaintext: :reject` and KEK rotation with each node's boot-cached key set, with ordering documented rather than coordinated | Avoids a cross-node coordination mechanism; `--check` and the upgrade guide gate the switch | ⚠️ Revisit — accepted risk AR-156-01 if operators report rolling-restart issues |
 
 ## Evolution
 
@@ -476,4 +506,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-15 after v1.42 milestone*
+*Last updated: 2026-10-16 after v1.43 milestone*

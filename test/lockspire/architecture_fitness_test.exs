@@ -42,6 +42,51 @@ defmodule Lockspire.ArchitectureFitnessTest do
     end
   end
 
+  test "JWKS, discovery and KeyCache never decrypt private keys" do
+    root = Path.expand("../../lib/lockspire", __DIR__)
+
+    files =
+      Enum.map(
+        [
+          "key_cache.ex",
+          "protocol/jwks.ex",
+          "protocol/discovery.ex",
+          "web/controllers/jwks_controller.ex",
+          "web/controllers/jwks_json.ex",
+          "web/controllers/discovery_controller.ex",
+          "web/controllers/discovery_json.ex"
+        ],
+        &Path.join(root, &1)
+      )
+
+    for path <- files, token <- forbidden_decrypt_tokens() do
+      refute File.read!(path) =~ token, "#{path} references #{token}"
+    end
+  end
+
+  test "only the protocol decoder and the admin re-encryption engine call the stored-key reader" do
+    root = Path.expand("../../lib", __DIR__)
+    decoder = Path.join(root, "lockspire/protocol/private_jwk.ex")
+    admin_keys = Path.join(root, "lockspire/admin/keys")
+    admin_keys_file = Path.join(root, "lockspire/admin/keys.ex")
+
+    callers =
+      root
+      |> Path.join("**/*.ex")
+      |> Path.wildcard()
+      |> Enum.filter(&(File.read!(&1) =~ "read_stored("))
+
+    for path <- callers do
+      assert path in [decoder, admin_keys_file] or String.starts_with?(path, admin_keys <> "/"),
+             "#{path} calls PrivateJwk.read_stored/2; only the decoder and Admin.Keys may"
+    end
+
+    assert decoder in callers
+  end
+
+  defp forbidden_decrypt_tokens,
+    do: ["PrivateJwk", "KeyEncryption", "key_encryption_keyset", "private_jwk_encrypted"]
+
   test "LiveViews do not reach through to the Ecto adapter" do
     for path <- @admin_live_files do
       refute ast_contains?(parse!(path), fn

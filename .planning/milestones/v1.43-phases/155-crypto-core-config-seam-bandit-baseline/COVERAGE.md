@@ -1,0 +1,1 @@
+No external API integration: Phase 155 bumps existing host Hex dependencies (Bandit, thousand_island, hpax, mint) and adds internal envelope encryption on OTP `:crypto`, a config seam, and diagnostics; "Admin API" in the plans refers to Lockspire's own `Lockspire.Admin` facade, not an external service.

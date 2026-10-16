@@ -864,6 +864,10 @@ def main(argv: list[str]) -> int:
     signal.signal(signal.SIGTERM, interruption_handler)
     redactor = Redactor(SentinelSet.for_run())
     ACTIVE_REDACTOR = redactor
+    # Random per run; it must never be written to evidence, so it is a registered secret.
+    kek = base64.b64encode(os.urandom(32)).decode("ascii")
+    os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"] = kek
+    register_secret(kek)
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
@@ -916,6 +920,8 @@ def main(argv: list[str]) -> int:
             run_child_command(provider_child, provider_environment, "compile", "--warnings-as-errors")
             run_child_command(provider_child, provider_environment, "lockspire.verify")
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
+            run_child_command(provider_child, provider_environment, "lockspire.keys.reencrypt", "--check")
+            run_child_command(provider_child, provider_environment, "lockspire.doctor", "key_encryption")
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
             client_child, client_environment = prepare_client(

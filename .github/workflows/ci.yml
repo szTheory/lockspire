@@ -486,3 +486,11 @@ jobs:
             cat tmp/adoption_demo.log
             exit "$smoke_status"
           fi
+
+      - name: Check demo signing keys are sealed
+        working-directory: examples/adoption_demo
+        run: mix lockspire.keys.reencrypt --check
+
+      - name: Doctor key encryption
+        working-directory: examples/adoption_demo
+        run: mix lockspire.doctor key_encryption
