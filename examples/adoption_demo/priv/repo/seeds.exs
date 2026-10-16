@@ -76,24 +76,29 @@ lockspire_base_url = demo_base_url <> "/lockspire"
 
 # Signing keys go through the public admin API so every private key is sealed
 # under the configured key-encryption key. K1 ends retired, K2 retiring, K3 active,
-# K4 upcoming. Kids are random per database.
+# K4 upcoming. Kids are random per database, so the keys are only seeded when the
+# database has none yet. Re-running the seeds leaves the existing key lifecycle alone.
 seed_key! = fn ->
   {:ok, %{key: key}} = Lockspire.Admin.generate_key(:sig)
   {:ok, _published} = Lockspire.Admin.publish_key(key.id)
   key
 end
 
-key_one = seed_key!.()
-{:ok, _active} = Lockspire.Admin.activate_key(key_one.id)
+{:ok, existing_keys} = Lockspire.Admin.list_keys()
 
-key_two = seed_key!.()
-{:ok, _active} = Lockspire.Admin.activate_key(key_two.id)
-{:ok, _retired} = Lockspire.Admin.retire_key(key_one.id)
+if existing_keys == [] do
+  key_one = seed_key!.()
+  {:ok, _active} = Lockspire.Admin.activate_key(key_one.id)
 
-key_three = seed_key!.()
-{:ok, _active} = Lockspire.Admin.activate_key(key_three.id)
+  key_two = seed_key!.()
+  {:ok, _active} = Lockspire.Admin.activate_key(key_two.id)
+  {:ok, _retired} = Lockspire.Admin.retire_key(key_one.id)
 
-{:ok, %{key: _upcoming}} = Lockspire.Admin.generate_key(:sig)
+  key_three = seed_key!.()
+  {:ok, _active} = Lockspire.Admin.activate_key(key_three.id)
+
+  {:ok, %{key: _upcoming}} = Lockspire.Admin.generate_key(:sig)
+end
 
 clients = [
   %Client{
