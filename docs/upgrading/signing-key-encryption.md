@@ -22,7 +22,7 @@ Follow this note in order. Each step says what to run and what you should see. D
 
 2. Store the KEK in your secret manager, separately from your database backups. A KEK kept next to the data it protects protects nothing.
 3. Take a fresh database backup.
-4. Do not generate, publish or activate signing keys until step 4 below is done. During a rolling deploy some nodes have the KEK and some do not, and a key written by one kind of node can be unreadable to the other.
+4. Avoid generating, publishing or activating signing keys while a deploy is rolling out. Once a KEK is configured, any node that has it seals new keys, even in allow mode. A node that does not have the KEK yet, or that still runs the earlier version, cannot read those sealed keys. Wait until every node runs the new version with the KEK, then generate keys.
 
 ## Upgrade in four steps
 
@@ -102,7 +102,7 @@ Change `legacy_plaintext: :allow` to `legacy_plaintext: :reject`, deploy every n
 mix lockspire.doctor key_encryption
 ```
 
-Expected: `legacy_plaintext=reject`, `legacy=0` on the `rows:` line, exit 0. Generating, publishing and activating signing keys now works. From this point a stored value that is not a sealed envelope is refused before it is parsed.
+Expected: `legacy_plaintext=reject`, `legacy=0` on the `rows:` line, exit 0. New signing keys are sealed in every mode, so generating, publishing and activating keys is safe once every node has the KEK. From this point a stored value that is not a sealed envelope is refused before it is parsed.
 
 A `legacy_plaintext` change takes effect on each node's next boot.
 
