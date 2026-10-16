@@ -492,6 +492,11 @@ defmodule Lockspire.Install.Verify do
       DBConnection.ConnectionError,
       Postgrex.Error
     ] ->
-      {:error, Exception.message(error)}
+      {:error, safe_message(error)}
   end
+
+  # `Exception.message/1` of a `MatchError` inspects the unmatched term, which could hold
+  # connection options or key rows, so that one error gets a fixed message.
+  defp safe_message(%MatchError{}), do: "unexpected result"
+  defp safe_message(error), do: Exception.message(error)
 end
