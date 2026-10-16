@@ -429,4 +429,312 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
       assert Enum.any?(drain(), fn {event, _m, _md} -> event == repo_query end)
     end
   end
+
+  describe "full sweep" do
+    alias Lockspire.Domain.Client
+    alias Lockspire.Domain.LogoutDelivery
+    alias Lockspire.Domain.LogoutEvent
+    alias Lockspire.Domain.ServerPolicy
+    alias Lockspire.Domain.Token
+    alias Lockspire.Protocol.AccessTokenSigner
+    alias Lockspire.Protocol.IntrospectionJwt
+    alias Lockspire.Protocol.Jar
+    alias Lockspire.Protocol.Jarm
+    alias Lockspire.Protocol.LogoutToken
+    alias Lockspire.Storage.Ecto.SigningKeyRecord
+    alias Lockspire.Web.Live.Admin.KeysLive
+    alias Lockspire.Web.Live.Admin.OverviewLive
+
+    import ExUnit.CaptureIO
+    import Phoenix.LiveViewTest, only: [rendered_to_string: 1]
+
+    defmodule PolicyStore do
+      @moduledoc false
+      def get_server_policy, do: {:ok, %ServerPolicy{access_token_format: :jwt}}
+    end
+
+    setup do
+      previous_mount_path = Application.get_env(:lockspire, :mount_path)
+      Application.put_env(:lockspire, :mount_path, "/lockspire")
+
+      on_exit(fn ->
+        if previous_mount_path,
+          do: Application.put_env(:lockspire, :mount_path, previous_mount_path),
+          else: Application.delete_env(:lockspire, :mount_path)
+      end)
+
+      for name <- ["lockspire.doctor", "lockspire.doctor.key_encryption"] do
+        Mix.Task.reenable(name)
+        on_exit(fn -> Mix.Task.reenable(name) end)
+      end
+
+      :ok
+    end
+
+    defp sealed_valid(kid, kek_id, opts) do
+      row = Helpers.legacy_json_row(kid, opts)
+      jwk = Jason.decode!(row.private_jwk_encrypted)
+
+      {:ok, envelope} =
+        KeyEncryption.seal(sentinel_keyset(kek_id), kid, row.private_jwk_encrypted)
+
+      {%{row | private_jwk_encrypted: envelope}, jwk}
+    end
+
+    defp socket_for(action) do
+      %Phoenix.LiveView.Socket{assigns: %{live_action: action, __changed__: %{}}}
+    end
+
+    defp page(module, params, path) do
+      assert {:ok, socket} = module.mount(params, %{}, socket_for(:index))
+      assert {:noreply, socket} = module.handle_params(params, path, socket)
+      {socket.assigns, rendered_to_string(module.render(socket.assigns))}
+    end
+
+    test "no admin call, operator task, consumer read, changeset or admin page shows key material" do
+      configure("leak-1", :allow)
+
+      {sig_row, sig_jwk} = sealed_valid("sweep-sig", "leak-1", status: :active)
+      {enc_row, _} = sealed_valid("sweep-enc", "leak-1", status: :active, use: :enc)
+      enc_row = %{enc_row | alg: "RSA-OAEP"}
+
+      # Seed before any handler is attached or log is captured.
+      sig = Helpers.insert_signing_key_row!(sig_row)
+      _enc = Helpers.insert_signing_key_row!(enc_row)
+      _legacy = Helpers.insert_signing_key_row!(sentinel_row("sweep-legacy"))
+
+      repo_query = (Lockspire.TestRepo.config()[:telemetry_prefix] || []) ++ [:query]
+
+      key_events =
+        for e <- @key_events, prefix <- [[:lockspire, :key], [:lockspire, :audit, :key]] do
+          prefix ++ [e]
+        end
+
+      admin_events =
+        for e <- [:generated, :published, :activated, :retired],
+            do: [:lockspire, :key, e]
+
+      TelemetryCapture.attach_many([repo_query | key_events ++ admin_events])
+
+      issued_at = ~U[2026-04-28 15:00:00Z]
+      issuer = "https://example.test/lockspire"
+      results = :ets.new(:sweep_results, [:public])
+      doctor_output = :ets.new(:sweep_doctor, [:public])
+
+      log =
+        capture_log([level: :debug], fn ->
+          # Six consumers, each reading a valid sealed key through the repository.
+          assert {:ok, active} = Repository.fetch_active_signing_key(alg: "RS256")
+
+          assert {:ok, id_token} =
+                   IdToken.sign(%{
+                     client_id: "client-123",
+                     issuer: issuer,
+                     host_claims: %Claims{subject: "sub-1", id_token: %{}, userinfo: %{}},
+                     interaction_nonce: "nonce-123",
+                     access_token: "access-token-123",
+                     issued_at: issued_at,
+                     signing_key: active
+                   })
+
+          assert {:ok, logout_token, _jti} =
+                   LogoutToken.sign(%{
+                     issuer: issuer,
+                     logout_event: %LogoutEvent{event_id: "evt-1", sid: "sid-1", subject: "sub-1"},
+                     delivery: %LogoutDelivery{
+                       delivery_id: "d-1",
+                       client_id: "client-1",
+                       channel: :backchannel,
+                       target_uri: "https://snapshot.example.com/backchannel-logout",
+                       session_required: true
+                     },
+                     issued_at: issued_at,
+                     signing_key: active
+                   })
+
+          assert {:ok, jarm} =
+                   Jarm.sign(%{code: "c1"}, %{
+                     client: %Client{
+                       client_id: "client-1",
+                       authorization_signed_response_alg: :RS256,
+                       security_profile: :none
+                     },
+                     issuer: "https://auth.example.com",
+                     key_store: Repository
+                   })
+
+          assert {:ok, introspection} =
+                   IntrospectionJwt.sign(%{
+                     issuer: "https://auth.example.com",
+                     issued_at: issued_at,
+                     success: %{
+                       payload: %{
+                         active: true,
+                         client_id: "tc",
+                         token_type: "access_token",
+                         sub: "a"
+                       },
+                       caller: %Client{client_id: "rs-client", security_profile: :none},
+                       security_profile: :none
+                     },
+                     key_store: Repository
+                   })
+
+          assert {:ok, access_token, _hash} =
+                   AccessTokenSigner.issue(
+                     %Token{
+                       token_hash: "placeholder",
+                       token_type: :access_token,
+                       client_id: "test_client",
+                       account_id: "account-123",
+                       scopes: ["read"],
+                       audience: [],
+                       expires_at: DateTime.add(DateTime.utc_now(), 3600, :second)
+                     },
+                     %Client{
+                       client_id: "test_client",
+                       allowed_grant_types: ["authorization_code"]
+                     },
+                     %{opts: [key_store: Repository, server_policy_store: PolicyStore]}
+                   )
+
+          assert {:ok, decryption_keys} = Repository.list_decryption_keys()
+
+          jwe =
+            sig_jwk
+            |> JOSE.JWK.from_map()
+            |> JOSE.JWE.block_encrypt("payload", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+            |> JOSE.JWE.compact()
+            |> elem(1)
+
+          assert {:ok, "payload"} = Jar.decrypt(jwe, decryption_keys)
+
+          # Admin lifecycle.
+          assert {:ok, generated} = Lockspire.Admin.generate_key(:sig)
+          generated_id = generated.key.id
+          assert {:ok, _} = Lockspire.Admin.publish_key(generated_id)
+          assert {:ok, _} = Lockspire.Admin.activate_key(generated_id)
+          assert {:ok, listed} = Lockspire.Admin.list_keys()
+          assert {:ok, _detail} = Lockspire.Admin.get_key(sig.id)
+
+          # Operator readiness and re-encryption (the pool must stay up under the sandbox).
+          assert {:ok, status} = Keys.encryption_status()
+          assert {:ok, report} = Keys.reencrypt()
+
+          doctor =
+            capture_io(fn ->
+              try do
+                Mix.Task.run("lockspire.doctor", ["key_encryption"])
+              rescue
+                error in Mix.Error -> IO.puts(Exception.message(error))
+              end
+            end)
+
+          # A changeset error.
+          changeset =
+            SigningKeyRecord.changeset(%SigningKeyRecord{}, %{
+              sig_row
+              | kid: nil,
+                private_jwk_encrypted: sig_row.private_jwk_encrypted
+            })
+
+          # Rescued exception messages.
+          rescued =
+            try do
+              Repository.fetch_signing_key_by_id(:not_an_id)
+            rescue
+              error -> Exception.message(error)
+            end
+
+          :ets.insert(
+            results,
+            {:all,
+             %{
+               tokens: [id_token, logout_token, jarm, introspection, access_token],
+               generated_id: generated_id,
+               listed: listed,
+               status: status,
+               report: report,
+               changeset: changeset,
+               rescued: rescued
+             }}
+          )
+
+          :ets.insert(doctor_output, {:doctor, doctor})
+        end)
+
+      [{:all, swept}] = :ets.lookup(results, :all)
+      [{:doctor, doctor}] = :ets.lookup(doctor_output, :doctor)
+      events = drain()
+
+      assert log =~ ~r/QUERY (OK|ERROR)/,
+             "repo query logging is not active, so the sweep would be vacuous"
+
+      {repo_events, other_events} =
+        Enum.split_with(events, fn {e, _m, _md} -> e == repo_query end)
+
+      assert repo_events != [], "repo query telemetry received nothing"
+      assert other_events != [], "no key telemetry arrived"
+
+      # The key generated by the sweep is sealed; learn its private values so they are searched.
+      assert {:ok, generated_record} = Repository.fetch_signing_key_by_id(swept.generated_id)
+      assert {:ok, generated_jwk} = PrivateJwk.decode(generated_record)
+
+      secrets =
+        [sig_jwk, generated_jwk]
+        |> Enum.flat_map(&[&1["d"], &1["p"], &1["q"], &1["dp"], &1["dq"], &1["qi"]])
+        |> Enum.reject(&is_nil/1)
+        |> Kernel.++([@sentinel_d, @kek_one, @kek_two, @kek_one_bytes, @kek_two_bytes])
+
+      audit_rows = inspect(Lockspire.TestRepo.all(AuditEventRecord, log: false), limit: :infinity)
+
+      {keys_assigns, keys_html} = page(KeysLive.Index, %{}, "/lockspire/admin/keys")
+      {overview_assigns, overview_html} = page(OverviewLive.Index, %{}, "/lockspire/admin")
+
+      {show_assigns, show_html} =
+        begin_show(KeysLive.Show, swept.generated_id)
+
+      surfaces = [
+        {"debug log", log},
+        {"repo events", repo_events},
+        {"key telemetry", other_events},
+        {"audit rows", audit_rows},
+        {"doctor output", doctor},
+        {"changeset params", swept.changeset.params},
+        {"changeset errors", swept.changeset.errors},
+        {"changeset inspect", inspect(swept.changeset)},
+        {"signed outputs", swept.tokens},
+        {"admin key list", swept.listed},
+        {"encryption status", swept.status},
+        {"re-encryption report", swept.report},
+        {"rescued message", swept.rescued},
+        {"SigningKey inspect", inspect(generated_record, limit: :infinity)},
+        {"SigningKeyRecord inspect",
+         inspect(struct(SigningKeyRecord, Map.from_struct(generated_record)), limit: :infinity)},
+        {"KeySet inspect", inspect(sentinel_keyset("leak-1"), limit: :infinity)},
+        {"KeysLive assigns", keys_assigns},
+        {"KeysLive html", keys_html},
+        {"KeysLive show assigns", show_assigns},
+        {"KeysLive show html", show_html},
+        {"OverviewLive assigns", overview_assigns},
+        {"OverviewLive html", overview_html}
+      ]
+
+      for {label, subject} <- surfaces do
+        KeyMaterialMatcher.refute_leak!(label, subject, secrets)
+      end
+
+      refute log =~ "private_jwk_encrypted"
+    end
+
+    defp begin_show(module, id) do
+      params = %{"id" => Integer.to_string(id)}
+      assert {:ok, socket} = module.mount(params, %{}, socket_for(:show))
+
+      assert {:noreply, socket} =
+               module.handle_params(params, "/lockspire/admin/keys/#{id}", socket)
+
+      {socket.assigns, rendered_to_string(module.render(socket.assigns))}
+    end
+  end
 end
