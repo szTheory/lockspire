@@ -144,12 +144,12 @@ Plans:
 - 157-04: Upgrade and rotation docs, warnings, architecture/walkthrough/SECURITY updates, release-note text (DOC-01). Split candidate if the phase overruns (R7).
 
 **SAFE-01 constraint**: owns the final SAFE-01 proof for the whole milestone; no new admin copy (KEY-UI-01 deferred), so PRODUCT.md vocabulary is unchanged.
-**Plans**: 1/6 plans executed
+**Plans**: 2/6 plans executed
 
 Plans:
 **Wave 1**
 - [x] 157-01-PLAN.md — Redaction (storage and metadata): sensitive key-column queries and column-free JWKS selects, `redact: true` + `put_change`, Redaction drop keys and envelope guard, single leak matcher and canary sweep across admin, tasks and LiveViews (RED-01)
-- [ ] 157-02-PLAN.md — Host surfaces: install step 9 runtime KEK block, config error text, adoption demo KEK in `config/runtime.exs` + public-API seeds, clean-room per-run KEK via host `config/runtime.exs` under `:reject` (HOST-01)
+- [x] 157-02-PLAN.md — Host surfaces: install step 9 runtime KEK block, config error text, adoption demo KEK in `config/runtime.exs` + public-API seeds, clean-room per-run KEK via host `config/runtime.exs` under `:reject` (HOST-01)
 - [ ] 157-05-PLAN.md — Redaction (decode guard): `PrivateJwk.to_jwk/1` across six consumers with unchanged error contracts and a malformed-key case per consumer (RED-01)
 
 **Wave 2** *(blocked on Wave 1 completion)*
@@ -175,7 +175,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | Complete    | 2026-10-16 |
 | 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 3/3 | Complete    | 2026-10-16 |
-| 157. Host Surfaces, Redaction Sweep & Release Proof | 1/6 | In Progress | - |
+| 157. Host Surfaces, Redaction Sweep & Release Proof | 2/6 | In Progress | - |
 
 ## Completed Backlog Scope
 

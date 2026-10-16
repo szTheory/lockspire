@@ -5,17 +5,17 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 157
 current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
 status: executing
-stopped_at: Completed 157-01-PLAN.md
-last_updated: "2026-10-16T16:10:27.248Z"
+stopped_at: Completed 157-02-PLAN.md
+last_updated: "2026-10-16T16:15:15.595Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 157 execution started
-state_head: 48152dcff2fd37de29e6b0a8f3d05bc46bc8ba2b
+state_head: 04cbf58b22e521d404b28e9ae24178105267abd0
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 9
-  percent: 64
+  completed_plans: 10
+  percent: 67
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-10-16 — Phase 157 execution started
 
-Progress: [██████░░░░] 64%
+Progress: [███████░░░] 67%
 
 ## Accumulated Context
 
@@ -281,6 +281,7 @@ Progress: [██████░░░░] 64%
 - [Phase 156]: 156-02: Install.Verify :key_storage is :error only for unknown_kek, undecryptable, or :reject with legacy rows; DB problems give a skipped :ok
 - [Phase 156]: 156-03: legacy_plaintext reject refuses non-envelope rows before any parser; hot-path legacy_read/decode_failed are telemetry only with once-per-node log lines
 - [Phase 157]: 157-01: JWKS reads select every column except private_jwk_encrypted via struct/2 (no sensitive fallback); cast params exclude the key column and bytes applied with put_change
+- [Phase 157]: Host KEK delivered via config/runtime.exs reading LOCKSPIRE_KEY_ENCRYPTION_KEY; generator prints, never writes; demo and clean-room KEKs never in compile-time config
 
 ### Pending Todos
 
@@ -338,8 +339,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T16:10:27.111Z
-Stopped at: Completed 157-01-PLAN.md
+Last session: 2026-10-16T16:15:15.475Z
+Stopped at: Completed 157-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -454,6 +455,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 156 P02 | 45 min | 3 tasks | 12 files |
 | Phase 156 P03 | 14 min | 3 tasks | 10 files |
 | Phase 157 P01 | 25 min | 3 tasks | 7 files |
+| Phase 157 P02 | 35 min | 3 tasks | 10 files |
 
 ## Operator Next Steps
 
