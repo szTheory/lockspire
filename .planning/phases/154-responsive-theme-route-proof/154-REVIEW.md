@@ -259,6 +259,43 @@ has_controls? =
 - option help only;
 - group help plus errors: ids are ordered and space-joined.
 
+## Fix Status
+
+All 14 findings are fixed.
+
+| Finding | Status | Commit | Notes |
+|---|---|---|---|
+| CR-01 | fixed | `e427f3af` | Field `:focus-visible` uses the shared outline ring. A CSS contract assertion checks it. |
+| WR-01 | fixed | `8776458a` | The example-domain exemption is anchored to a whole DNS label. Node tests cover `acme-example.com`, `my-example.org`, `notexample.com` and `example.com.attacker.io`. |
+| WR-02 | fixed | `7e68d87f` | The scan now covers hidden text (a text-node walk that skips `<script>`/`<style>`) and the `title`, `aria-label`, `alt` and `href` values. It re-runs after the keyboard sweep, before every full-page and section screenshot, over the focus-stop names, and over the evidence row and observation JSON before they are written. |
+| WR-03 | fixed | `3b3cffc6` | Submits `document.querySelector("#login").form` after checking it posts to `/login`. Refuses to run or sign in unless the host is `localhost`, `127.0.0.1`, `*.localhost` or `*.test`. |
+| WR-04 | fixed | `143f6918` | A row fails on a missing focus indicator, an offscreen focus stop, an h1 count other than 1, or a disclosure still open after Escape. A ring counts only when painted on the focused element, or drawn on an ancestor by a matching `:focus-within` rule. Transparent outlines and shadows do not count. No pass row in `154-BROWSER-EVIDENCE.md` or `154-RESPONSIVE-SWEEP.md` would fail under these rules (see below). |
+| WR-05 | fixed | `4f2538ff` | `:when_present` now runs the label check whenever a visible form control renders. New negative tests are in `page_contract_test.exs`. |
+| WR-06 | fixed | `e427f3af` | Invalid fields use `--ls-border-control-invalid`, and the contrast contract checks it at 3:1. |
+| IN-01 | fixed | `833e377e` | `media_block/3` extracts the balanced block of the media-query occurrence that holds a given selector. `block_rule!/2` matches the whole selector only. |
+| IN-02 | fixed | `f5b7be61` | Labels are checked in one walk over the parsed tree, so each control is judged by its own node. Empty labels do not count, a wrapping label with a `for` labels only the control that `for` names, and the failure messages name both label forms. |
+| IN-03 | fixed | `33cda6d7` | The JS and Elixir pattern lists are identical source for source, and a node test fails on any drift. Elixir applies the same exemption. The hostname rule adds `.co`, `.ai` and other common TLDs. `.localhost`, `.test`, `.example` and `.invalid` stay exempt. |
+| IN-04 | fixed | `e427f3af` | The theme-select hover border now uses `--ls-text-strong`. |
+| IN-05 | fixed | `cfd8517a` | Removed `pad()` and the no-op `continue`. A sensitive hit now aborts the whole run. A bare `--width` or `--height`, or a width `BrowserEvidence` rejects, exits with code 2. |
+| IN-06 | fixed | `078fcc68` | Matrix `system` rows run under both light and dark media, and the State cell names the media. Older `system` rows are documented as system-light. A 12-row system-dark run of the changed pages at 390 px is recorded in `154-BROWSER-EVIDENCE.md`, and all 12 rows pass. The full matrix was not re-run. |
+| IN-07 | fixed | `6a073af8` | Component tests cover four cases: no help (attribute absent), option help only, error only, and group help plus errors (ordered, space-joined). |
+
+**WR-04 check against recorded evidence.** I re-read the stored keyboard observations (`tmp/admin-ui-polish/v1.42/final/keyboard/`, `sweep/kb`, `sweep/post/kb`).
+- Every final keyboard row reports `indicator N/N`, `offscreen 0`, `h1=1`, and no disclosure open after Escape.
+- The only ancestor-drawn indicators are the three multi-value inputs. Their ring comes from `.lockspire-admin-multi-value--enhanced:focus-within`.
+- The two `offscreen 1`/`offscreen 2` rows in `154-RESPONSIVE-SWEEP.md` are pre-fix rows, already marked `fail`.
+- Every row in both files has `h1=1`.
+- A re-run with the tightened harness on `/admin/policies/dcr` and `/admin/clients/:client_id/edit` at 1280 px still reports 40/40 and 28/28.
+
+**Verification (main checkout, `workflow.use_worktrees: false`):**
+- `mix format --check-formatted` passes.
+- `mix test test/lockspire/web/live/admin`: 277 passed.
+- `mix test.fast`: 1573 passed, 6 skipped. That is the baseline of 1563 plus 10 new tests.
+- `node --test test/browser/admin_route_proof_test.mjs test/browser/admin_multi_value_test.mjs`: 27 passed.
+- Local harness smoke runs against `http://lockspire-ui-review.localhost/lockspire/admin`, all pass:
+  - `--matrix --width 390 --route /admin/clients,/admin/policies/dcr --screenshot`: 8 rows, including system under light and dark media.
+  - `--route /admin/clients/new --width 390 --keyboard --screenshot`: 10/10 focus stops have an indicator, 0 offscreen.
+
 ---
 
 _Reviewed: 2026-10-15T00:00:00Z_
