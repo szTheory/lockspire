@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 157
 current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
 status: executing
-stopped_at: Completed 157-02-PLAN.md
-last_updated: "2026-10-16T16:15:15.595Z"
+stopped_at: Completed 157-05-PLAN.md
+last_updated: "2026-10-16T16:18:46.377Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 157 execution started
-state_head: 04cbf58b22e521d404b28e9ae24178105267abd0
+state_head: 37fc37cc1d4ea88d021f7c28b6d6f44b605a00be
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 10
+  completed_plans: 11
   percent: 67
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-10-16 — Phase 157 execution started
 
@@ -282,6 +282,7 @@ Progress: [███████░░░] 67%
 - [Phase 156]: 156-03: legacy_plaintext reject refuses non-envelope rows before any parser; hot-path legacy_read/decode_failed are telemetry only with once-per-node log lines
 - [Phase 157]: 157-01: JWKS reads select every column except private_jwk_encrypted via struct/2 (no sensitive fallback); cast params exclude the key column and bytes applied with put_change
 - [Phase 157]: Host KEK delivered via config/runtime.exs reading LOCKSPIRE_KEY_ENCRYPTION_KEY; generator prints, never writes; demo and clean-room KEKs never in compile-time config
+- [Phase 157]: 157-05: PrivateJwk.to_jwk/1 drops JOSE exceptions (to_public probe) and all six key consumers route through it
 
 ### Pending Todos
 
@@ -339,8 +340,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T16:15:15.475Z
-Stopped at: Completed 157-02-PLAN.md
+Last session: 2026-10-16T16:18:46.254Z
+Stopped at: Completed 157-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -456,6 +457,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 156 P03 | 14 min | 3 tasks | 10 files |
 | Phase 157 P01 | 25 min | 3 tasks | 7 files |
 | Phase 157 P02 | 35 min | 3 tasks | 10 files |
+| Phase 157 P05 | 12 min | 2 tasks | 9 files |
 
 ## Operator Next Steps
 
