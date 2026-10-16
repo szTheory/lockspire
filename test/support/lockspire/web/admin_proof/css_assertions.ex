@@ -108,46 +108,42 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     refute secondary_nav =~ "flex-wrap: wrap"
     assert rule(css, ".lockspire-admin-secondary-nav a") =~ "white-space: nowrap"
 
-    collapsed_nav = media_rule(css, "@media (max-width: 1119px)")
+    # Each media assertion is tied to the one block that should carry the rule,
+    # chosen by a selector it contains, so a rule that moves out of its media
+    # query (or into a different one) fails.
+    collapsed_nav = media_block(css, "@media (max-width: 1119px)", ".lockspire-admin-nav-toggle")
 
-    assert rule(collapsed_nav, ".lockspire-admin-nav-toggle") =~ "display: flex"
-    assert rule(collapsed_nav, ".lockspire-admin-nav-menu") =~ "display: none"
+    assert block_rule!(collapsed_nav, ".lockspire-admin-nav-toggle") =~ "display: flex"
+    assert block_rule!(collapsed_nav, ".lockspire-admin-nav-menu") =~ "display: none"
 
-    assert rule(
+    assert block_rule!(
              collapsed_nav,
              ~s(.lockspire-admin-nav[data-open="true"] .lockspire-admin-nav-menu)
            ) =~
              "display: grid"
 
-    assert rule(collapsed_nav, ".lockspire-admin-nav-item") =~ "min-height: 2.75rem"
+    assert block_rule!(collapsed_nav, ".lockspire-admin-nav-item") =~ "min-height: 2.75rem"
 
-    mobile = media_rule(css, "@media (max-width: 800px)")
+    mobile = media_block(css, "@media (max-width: 800px)", ".lockspire-admin-secondary-nav")
 
-    assert rule(mobile, ".lockspire-admin-responsive-table .lockspire-admin-table-wrap") =~
+    assert block_rule!(mobile, ".lockspire-admin-responsive-table .lockspire-admin-table-wrap") =~
              "display: none"
 
-    assert rule(mobile, ".lockspire-admin-responsive-table__list") =~ "display: grid"
-    assert rule(mobile, ".lockspire-admin-action-group__destructive") =~ "border-top:"
+    assert block_rule!(mobile, ".lockspire-admin-responsive-table__list") =~ "display: grid"
+    assert block_rule!(mobile, ".lockspire-admin-action-group__destructive") =~ "border-top:"
 
     # Browsers only scroll a focused link into view when it is fully hidden, so a
     # hidden-scrollbar nav would leave a partly clipped focus ring at narrow widths.
-    narrow_nav = rule(mobile, ".lockspire-admin-secondary-nav")
+    narrow_nav = block_rule!(mobile, ".lockspire-admin-secondary-nav")
     assert narrow_nav =~ "flex-wrap: wrap"
     assert narrow_nav =~ "overflow-x: visible"
 
     # The fixed 6rem status column leaves too little room for a provenance badge at
     # phone widths, so the app inventory cluster wraps instead.
-    [_, inventory_narrow] =
-      Regex.run(
-        ~r/@media \(max-width: 640px\) \{\s*\.lockspire-admin-key-record \.lockspire-admin-resource-list__meta(.*)\z/s,
-        css
-      )
+    cluster = ".lockspire-admin-client-inventory__results .lockspire-admin-status-cluster"
 
     narrow_cluster =
-      rule(
-        inventory_narrow,
-        ".lockspire-admin-client-inventory__results .lockspire-admin-status-cluster"
-      )
+      css |> media_block("@media (max-width: 640px)", cluster) |> block_rule!(cluster)
 
     assert narrow_cluster =~ "display: flex"
     assert narrow_cluster =~ "flex-wrap: wrap"
@@ -292,10 +288,51 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
   defp css, do: File.read!(Paths.admin_css())
   defp components, do: File.read!(Paths.admin_components())
 
-  defp media_rule(css, media_query) do
-    [_, body] = Regex.run(~r/#{Regex.escape(media_query)}\s*\{(.*)\z/s, css)
-    body
+  @doc """
+  Returns the balanced body of the `media_query` block that has a rule for
+  `selector`. The stylesheet may repeat a media query, so the selector picks the
+  intended occurrence; the body stops at the block's closing brace.
+  """
+  def media_block(css, media_query, selector) do
+    ~r/#{Regex.escape(media_query)}\s*\{/
+    |> Regex.scan(css, return: :index)
+    |> Enum.map(fn [{start, length}] ->
+      offset = start + length
+      rest = binary_part(css, offset, byte_size(css) - offset)
+      binary_part(rest, 0, block_length(rest, 1, 0))
+    end)
+    |> Enum.find(&block_rule(&1, selector)) ||
+      flunk("no #{media_query} block has a #{selector} rule")
   end
+
+  @doc """
+  Returns the declarations of the rule whose whole selector is `selector`
+  inside `block`, or flunks. A longer selector that merely ends in `selector`
+  does not match.
+  """
+  def block_rule!(block, selector) do
+    block_rule(block, selector) || flunk("expected a #{selector} rule in the block")
+  end
+
+  defp block_rule(block, selector) do
+    case Regex.run(~r/(?:\A|[{};,])\s*#{Regex.escape(selector)}\s*\{([^}]*)\}/s, block) do
+      [_, body] -> body
+      nil -> nil
+    end
+  end
+
+  defp block_length(<<"{", rest::binary>>, depth, length),
+    do: block_length(rest, depth + 1, length + 1)
+
+  defp block_length(<<"}", _rest::binary>>, 1, length), do: length
+
+  defp block_length(<<"}", rest::binary>>, depth, length),
+    do: block_length(rest, depth - 1, length + 1)
+
+  defp block_length(<<_byte, rest::binary>>, depth, length),
+    do: block_length(rest, depth, length + 1)
+
+  defp block_length(<<>>, _depth, _length), do: flunk("unbalanced braces after a media query")
 
   defp rule(css, selector) do
     [_, body] = Regex.run(~r/#{Regex.escape(selector)}\s*\{([^}]*)\}/s, css)

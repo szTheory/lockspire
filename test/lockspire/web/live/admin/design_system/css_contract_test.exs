@@ -23,6 +23,35 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.CssContractTest do
     CssAssertions.assert_responsive_layout!()
   end
 
+  test "media assertions read only the balanced block that holds the selector" do
+    css = """
+    .nav { display: block; }
+    @media (max-width: 800px) {
+      .card { padding: 0; }
+    }
+    .after { color: red; }
+    @media (max-width: 800px) {
+      @supports (display: grid) { .grid { display: grid; } }
+      .nav { display: none; }
+    }
+    .x .nav { display: inline; }
+    """
+
+    block = CssAssertions.media_block(css, "@media (max-width: 800px)", ".nav")
+    assert CssAssertions.block_rule!(block, ".nav") =~ "display: none"
+    assert CssAssertions.block_rule!(block, ".grid") =~ "display: grid"
+    refute block =~ ".x .nav"
+
+    first = CssAssertions.media_block(css, "@media (max-width: 800px)", ".card")
+    refute first =~ ".after"
+
+    assert_raise ExUnit.AssertionError, fn -> CssAssertions.block_rule!(first, ".after") end
+
+    assert_raise ExUnit.AssertionError, fn ->
+      CssAssertions.media_block(css, "@media (max-width: 800px)", ".after")
+    end
+  end
+
   test "client detail identity and edit action span the summary grid" do
     assert Lockspire.Web.Admin.CSS.get() =~
              ~r/\.lockspire-admin-client-workspace\s*>\s*:first-child\s*\{\s*grid-column:\s*1\s*\/\s*-1;/
