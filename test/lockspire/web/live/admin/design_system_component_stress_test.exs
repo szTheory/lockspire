@@ -509,6 +509,67 @@ defmodule Lockspire.Web.Live.Admin.DesignSystemComponentStressTest do
     refute File.exists?(Path.expand("../../../../../package.json", __DIR__))
   end
 
+  describe "radio_group option aria-describedby" do
+    test "is omitted when there is no help text and no error" do
+      html = radio_group_html(%{help: nil, errors: [], option_help: nil})
+
+      assert radio_described_by(html) == %{"mode-a" => nil, "mode-b" => nil}
+      refute html =~ "aria-describedby"
+      HtmlAssertions.assert_describedby_targets_exist(html)
+    end
+
+    test "points only at the option's own hint when just that option has help" do
+      html = radio_group_html(%{help: nil, errors: [], option_help: "Hint for B"})
+
+      assert radio_described_by(html) == %{"mode-a" => nil, "mode-b" => "mode-b-help"}
+      HtmlAssertions.assert_describedby_targets_exist(html)
+    end
+
+    test "lists group help, then errors, then the option hint, space-separated" do
+      html =
+        radio_group_html(%{
+          help: "Pick one.",
+          errors: [%{message: "Choose a mode."}],
+          option_help: "Hint for B"
+        })
+
+      assert radio_described_by(html) == %{
+               "mode-a" => "mode-help mode-error",
+               "mode-b" => "mode-help mode-error mode-b-help"
+             }
+
+      HtmlAssertions.assert_describedby_targets_exist(html)
+    end
+
+    test "points at the error alone when the group has only an error" do
+      html =
+        radio_group_html(%{help: nil, errors: [%{message: "Choose a mode."}], option_help: nil})
+
+      assert radio_described_by(html) == %{"mode-a" => "mode-error", "mode-b" => "mode-error"}
+      HtmlAssertions.assert_describedby_targets_exist(html)
+    end
+  end
+
+  defp radio_group_html(assigns) do
+    rendered_to_string(~H"""
+    <AdminComponents.radio_group id="mode" name="mode" label="Mode" value="a" help={@help} errors={@errors}>
+      <:option value="a" label="Option A" />
+      <:option :if={is_nil(@option_help)} value="b" label="Option B" />
+      <:option :if={@option_help} value="b" label="Option B" help={@option_help} />
+    </AdminComponents.radio_group>
+    """)
+  end
+
+  defp radio_described_by(html) do
+    html
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("input[type=radio]")
+    |> Map.new(fn input ->
+      [id] = LazyHTML.attribute(input, "id")
+      {id, input |> LazyHTML.attribute("aria-describedby") |> List.first()}
+    end)
+  end
+
   defp configure_stress_html do
     assigns = %{
       copy_once_value:
