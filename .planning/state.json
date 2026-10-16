@@ -21,13 +21,13 @@
     {
       "number": "154",
       "name": "Responsive, Theme & Route Proof",
-      "status": "in_progress"
+      "status": "complete"
     }
   ],
   "next": {
-    "command": "/gsd-progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 4 of 4 · 75% · ready to verify"
+    "command": "/gsd-new-milestone",
+    "label": "Start a new milestone",
+    "reason": "All phases complete — start a new milestone"
   },
-  "updated_at": "2026-10-16T00:00:20.224Z"
+  "updated_at": "2026-10-16T01:07:54.462Z"
 }
