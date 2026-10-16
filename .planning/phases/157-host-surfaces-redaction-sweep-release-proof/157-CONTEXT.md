@@ -173,6 +173,25 @@ Out of scope for this phase:
 - **D-22:** The Release Please squash body is made of concatenated commit messages, and the PR description is not parsed. The SAFE-01 or ship gate includes `git log origin/main..HEAD --format=%B | grep -E "BREAKING|^[a-z]+(\(.*\))?!:"`, which must be empty.
 - **D-23:** Clean-room KEK delivery follows RESEARCH: set `os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"]` once in `main()` from `base64(os.urandom(32))`, then call `register_secret` on it, and update `check_bootstrap` in the same commit. This achieves D-10's intent.
 
+### Plan-check resolutions (orchestrator, 2026-10-16, revision 2)
+- **D-24 (refines D-09 and D-10):** **The demo and clean-room KEKs live in `config/runtime.exs`, not `config.exs`.**
+  - This honors the cross-cutting SAFE-01 rule "no KEK in compile-time config" (ROADMAP, PITFALLS C9) without an exemption.
+  - Adoption demo: add `examples/adoption_demo/config/runtime.exs` using the same block shape the generator prints (D-07), with the demo-only literal fallback for the env var, marked demo-only. That way the demo shows adopters exactly the pattern they are told to paste.
+  - Clean-room harness: write the KEK into the host's `config/runtime.exs`, using the generator's printed block as closely as feasible. The real-host journey then proves the printed snippet boots under `:reject`.
+  - The D-23 per-run env delivery and `register_secret` are unchanged. Update the `check_bootstrap` source assertion accordingly.
+- **D-25 (refines D-13):** **The proof plan (157-03) runs last.**
+  - It depends on 157-01, 157-02, 157-04, 157-05 and 157-06, so its SAFE-01 gate and full-suite run cover the final tree. That makes it wave 3.
+  - The phase-verification SAFE-01 recording in D-13 is unchanged.
+- **D-26 (refines D-05 and D-11):** **A leak found by the sweep is fixed in the same plan.**
+  - Any `lib/` leak that the D-05 sweep or the 157-06 malformed-key leg finds is a RED-01 defect. The executing plan fixes it in `lib/` (a security-correctness deviation, in scope) and adds the regression assertion. It is never left as a SUMMARY note.
+  - The plan's tasks must not report done while the sweep fails.
+- **D-27 (refines D-05, Oban leg):** **The Oban proof asserts real behavior.**
+  - It asserts the worker's real outcome: the `{:discard, :invalid_signing_key}` tuple and the recorded reason string, both passed through `KeyMaterialMatcher`.
+  - No synthetic exception is formatted. If a formatted-error proof is added, it must come from a real raise (a consumer stub) and format the real `unsaved_error`.
+- **D-28 (refines D-15):** **`docs/telemetry.md` documents exactly the key events the code emits** (`[:lockspire, :key, :legacy_read]`, `[:lockspire, :key, :decode_failed]` and its reason atoms, including whether plaintext refusal surfaces as a `decode_failed` reason or emits no event), each with its audit-mirror status. The executor verifies this against `lib/lockspire/protocol/private_jwk.ex` and its callers; the doc never names an event that does not exist.
+- **D-29:** **The demo seed rewrite needs real verification.** If Postgres is unavailable locally, the task is blocked, not done. The CI `adoption-demo` job (157-03) is the required gate. A recorded skip is never a pass.
+- **D-30:** **`T-157-SC` appears exactly once, at phase level**, in 157-01's threat register. Other plans reference it by ID and do not duplicate it.
+
 ### Claude's Discretion
 - The helper name and module placement for D-04 and for the D-05 sentinel matcher.
 - The exact printed wording of the D-07 next step, within the shape above.

@@ -520,15 +520,15 @@ Not a rename/migration phase; the only runtime state touched is operator-owned d
 | A5 | `sensitive: true` for the two extra list queries is acceptable to the user (loses JWKS-path Ecto query log lines) versus a column-omitting `select` | F1, C1 | User may prefer `select`; both pass the sweep, small rework |
 | A6 | A hidden test file name for the KeyCache public-only guard (`key_cache_test.exs`) exists as named | F11 | Gate command needs the actual file; planner should grep |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Release Please PR #121 and the "1.6.0" label.**
+1. **Release Please PR #121 and the "1.6.0" label.** RESOLVED by CONTEXT D-21: the docs are version-agnostic, the release note uses `{VERSION}`, and sequencing is a ship-time decision recorded as a note in 157-04 (no checkpoint task).
    - Known: #121 (1.6.0, v1.42 only) is open, auto-merge is enabled, the v1.43 commits are unpushed.
    - Unclear: whether the user will hold or close #121, or accept encryption shipping as 1.7.0.
    - Recommendation: add a `checkpoint:human-action` task in 157-04 before the squash merge: confirm release sequencing; keep the version number out of the guide body except one clearly marked sentence plus the release-note file. This does not re-litigate D-16 (`feat` not breaking); it protects the label.
-2. **Should the two extra list queries use `sensitive: true` or `select`?** Default to `sensitive: true`; ask only if the user objects to losing Ecto query lines on JWKS (A5).
-3. **Dev/test `legacy_plaintext` for the printed variant** (`:reject` recommended, with an upgrade comment). Within discretion.
-4. **Where in the clean-room sequence to run `--check`** (recommend after `provision!`).
+2. **Should the two extra list queries use `sensitive: true` or `select`?** RESOLVED by CONTEXT D-18: a column-omitting `select`, with `sensitive: true` as the fallback. Default to `sensitive: true`; ask only if the user objects to losing Ecto query lines on JWKS (A5).
+3. **Dev/test `legacy_plaintext` for the printed variant** RESOLVED by 157-02 Task 1: `:reject`. (`:reject` recommended, with an upgrade comment). Within discretion.
+4. **Where in the clean-room sequence to run `--check`** RESOLVED by 157-03 Task 3: after `provision!`. (recommend after `provision!`).
 
 ## Environment Availability
 
