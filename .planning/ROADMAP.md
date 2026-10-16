@@ -74,7 +74,7 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
 - 155-03: `Admin.Keys.generate_key/1` seals or refuses; map-form-only `PrivateJwk.decode` (remove `decode/1`) across the six read sites; distinct internal reasons collapsed to `:invalid_signing_key`; `seeding_helpers.ex` and `token_exchange_case.ex` seal; `@derive {Inspect, except: [:private_jwk_encrypted]}` on `SigningKey` and `SigningKeyRecord`; minimal doctor and `Install.Verify` KEK-presence check (KEK-02, ENC-01, ENC-02).
 
 **SAFE-01 constraint**: no protocol response changes, no new deps, no migration; verify `KeyCache` holds no private material.
-**Plans**: 3/5 plans executed
+**Plans**: 4/5 plans executed
 
 Plans:
 **Wave 1**
@@ -87,7 +87,7 @@ Plans:
 - [x] 155-03-PLAN.md — map-form `PrivateJwk.decode` across the six consumers, per-consumer error shapes, JWKS/discovery fitness guard (ENC-02; wave 3)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 155-04-PLAN.md — `generate_key` seal-or-refuse + clean-room KEK (one commit), sealed shared seeders (ENC-01, KEK-02, ENC-02; wave 4)
+- [x] 155-04-PLAN.md — `generate_key` seal-or-refuse + clean-room KEK (one commit), sealed shared seeders (ENC-01, KEK-02, ENC-02; wave 4)
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 155-05-PLAN.md — `Install.Verify` `:key_encryption` check, `mix lockspire.doctor key_encryption`, Inspect derives, phase gate (KEK-02, ENC-01; wave 5)
@@ -150,7 +150,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 155. Crypto Core, Config Seam & Bandit Baseline | 3/5 | In Progress | - |
+| 155. Crypto Core, Config Seam & Bandit Baseline | 4/5 | In Progress | - |
 | 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 0/2 | Not started | - |
 | 157. Host Surfaces, Redaction Sweep & Release Proof | 0/4 | Not started | - |
 
