@@ -46,14 +46,16 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
     key-encryption key are re-wrapped under the current one. The key itself never changes.
 
     Options:
-      --dry-run   Show what would change. Writes nothing. Exits 1 only if a key would fail.
+      --dry-run   Show what would change. Writes nothing. Exits 1 only if a key would fail
+                  (stranded retired keys do not count).
       --check     Report whether every key is ready. Takes no locks and writes nothing.
                   Exits 1 until every key is sealed with the current key-encryption key.
       --help      Show this text.
 
     Run it only after every node runs this release with the same config for :key_encryption.
     It is safe to run again: keys already on the current key are left untouched. A failed key
-    does not stop the others, which are saved. The exit code is 1 when any key failed.
+    does not stop the others, which are saved. The exit code is 1 when any key failed,
+    except stranded retired keys, which are listed but never fail the command.
 
     Upgrading from plaintext signing keys:
       - Deploy this release with config :lockspire, :key_encryption to every node.
@@ -167,16 +169,19 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
     Enum.each(report.failed, &report_failed/1)
 
     info(summary_line(mode, report))
-    failed = length(report.failed) + report.conflicted
+    # Stranded retired rows are listed with their fix line but never fail the run: a rerun can
+    # not clear them and nothing reads retired material.
+    blocking = Enum.reject(report.failed, &stranded?/1)
+    failed = length(blocking) + report.conflicted
 
     cond do
       mode == :dry_run ->
         info("Dry run complete. Run without --dry-run to apply.")
 
-        if report.failed != [] do
+        if blocking != [] do
           Mix.raise(
             failure_message(
-              failed,
+              length(blocking),
               {"would not be re-encrypted. Follow the fix lines above, then rerun.",
                "would not be re-encrypted. Follow the fix lines above, then rerun."}
             )
@@ -186,8 +191,7 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
       failed > 0 ->
         info(
           "Next: follow the fix lines above, then run `mix lockspire.keys.reencrypt --check`, " <>
-            "which reports whether the failed keys block readiness. Retired keys that fail are " <>
-            "stranded and do not block it."
+            "which reports whether the failed keys block readiness."
         )
 
         Mix.raise(
@@ -201,8 +205,22 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
       true ->
         info(
           "Next: run `mix lockspire.keys.reencrypt --check`, then set legacy_plaintext: :reject " <>
-            "once it passes."
+            "once it passes." <> stranded_note(report)
         )
+    end
+  end
+
+  defp stranded?(%{status: :retired, reason: reason}) when reason in @unsealable_reasons,
+    do: true
+
+  defp stranded?(_failed), do: false
+
+  defp stranded_note(report) do
+    if Enum.any?(report.failed, &stranded?/1) do
+      " Retired keys listed as failed above are stranded: they do not block readiness and " <>
+        "do not fail this command."
+    else
+      ""
     end
   end
 

@@ -253,8 +253,9 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptE2ETest do
       Helpers.legacy_json_row(prefix <> "-legacy")
     ])
 
-    assert {output, {:error, %Mix.Error{}}} = run_task([])
+    assert {output, :ok} = run_task([])
     assert output =~ "failed  key=#{stranded} reason=unreadable_legacy kek=none"
+    assert output =~ "stranded: they do not block readiness and do not fail this command"
     assert output =~ "already retired"
     assert output =~ "does not block readiness"
     assert output =~ "host database decision"
@@ -270,6 +271,38 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptE2ETest do
     assert output =~ "stranded  key=#{stranded} status=retired"
     assert output =~ "stored bytes remain"
     assert output =~ "host database decision"
+  end
+
+  test "dry-run exits zero for a stranded retired row but one when another row would fail",
+       %{prefix: prefix} do
+    stranded = prefix <> "-stranded"
+    seed([Helpers.unreadable_legacy_row(stranded, status: :retired)])
+
+    assert {output, :ok} = run_task(["--dry-run"])
+    assert output =~ "failed  key=#{stranded} reason=unreadable_legacy"
+
+    active = prefix <> "-active"
+    seed([Helpers.unreadable_legacy_row(active, status: :active)])
+
+    assert {output, {:error, %Mix.Error{message: message}}} = run_task(["--dry-run"])
+    assert output =~ "failed  key=#{stranded} reason=unreadable_legacy"
+    assert output =~ "failed  key=#{active} reason=unreadable_legacy"
+    assert message =~ "1 key would not be re-encrypted"
+  end
+
+  test "a real run still fails when a non-retired row cannot be sealed", %{prefix: prefix} do
+    stranded = prefix <> "-stranded"
+    active = prefix <> "-active"
+
+    seed([
+      Helpers.unreadable_legacy_row(stranded, status: :retired),
+      Helpers.unreadable_legacy_row(active, status: :active)
+    ])
+
+    assert {output, {:error, %Mix.Error{message: message}}} = run_task([])
+    assert message =~ "1 key was not re-encrypted"
+    assert output =~ "failed  key=#{active} reason=unreadable_legacy"
+    assert output =~ "failed  key=#{stranded} reason=unreadable_legacy"
   end
 
   test "an active unreadable row blocks until it is retired", %{prefix: prefix} do
