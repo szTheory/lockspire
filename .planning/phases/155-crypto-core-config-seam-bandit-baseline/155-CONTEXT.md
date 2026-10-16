@@ -42,6 +42,13 @@ Not in this phase: re-encrypt task, `--check`, `:reject` enforcement at read, KE
 ### Bandit baseline (plan 155-01, first and standalone)
 - **D-15:** Pin `bandit == 1.13.1` in `examples/adoption_demo/mix.exs:33` (currently `~> 1.11`), `test/clean_room/provider_host/mix.exs:22` and `test/clean_room/confidential_client/mix.exs:22` (currently `== 1.12.5`), and run `mix deps.update bandit thousand_island hpax` in each. The compatibility fixture has no direct bandit dep: only refresh its lock (`compatibility/phoenix_1_8_live_view_1_1/mix.lock`, deps_path `../../tmp/lockspire-compatibility-fixture/deps`). Root `mix.exs` / `mix.lock` are unchanged. Green on adoption-demo, compatibility, clean-room e2e and the `ci.yml:75` lock-drift guard.
 
+### Resolved during plan-phase research (2026-10-15)
+- **D-16:** Plan 155-01 also bumps `mint` 1.9.3 → 1.11.0 (the version root `mix.lock` already uses) in the adoption demo and both clean-room host locks (`mix deps.update mint`), clearing the two MEDIUM `mix hex.audit` advisories in the same CVE-hygiene commit. Bandit resolves with `thousand_island ~> 1.6` and `hpax ~> 1.1`; pin 1.13.1, never 1.13.0.
+- **D-17:** The compatibility fixture lock's `bandit`/`thousand_island` entries are unused (`mix deps.unlock --check-unused`); "refresh" means `mix deps.unlock bandit thousand_island` there (plus `mint` update if it is a used dep), not a version pin.
+- **D-18:** A present `:key_encryption` block with `keys: []` is invalid config (fails boot), same as `:reject` without keys.
+- **D-19:** Envelope parsing binds `iv::binary-size(12)` and `tag::binary-size(16)` exactly before calling `:crypto` (OTP 27–29 accept truncated tags and 8-byte IVs); `open` also rescues `ErlangError` so bad key/IV sizes become an internal reason, never a raise. The truncated-tag test cuts inside the tag region.
+- **D-20:** Config validators return `{:ok, _} | {:error, reason}`, use non-bang `Base.decode64/2`, and raise only via a helper that receives key names and reason atoms, never raw values (no `FunctionClauseError`/`MatchError`/`WithClauseError` paths that print values). A sentinel-value test proves the boot error and verify `details` never contain the configured material.
+
 ### Claude's Discretion
 - Module names and file layout for the cipher (`Lockspire.Security.KeyEncryption` suggested) and the resolved key-set struct.
 - Exact internal reason atoms (`:unknown_kek`, `:tag_mismatch`, `:kid_mismatch`, `:malformed_envelope`, etc.) as long as they collapse per D-02 externally.
