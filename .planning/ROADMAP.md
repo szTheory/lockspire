@@ -65,20 +65,31 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
   3. Each invalid config case (bad base64, wrong length, duplicate id or material, unknown `current`, unknown mode, `:reject` without keys) stops boot with an error naming the config key and never containing the value.
   4. With no `:key_encryption` config, the app boots, existing legacy keys keep signing, `generate_key` returns `{:error, :key_encryption_not_configured}` without writing a row, and a boot warning, the doctor and `Install.Verify` each report the missing KEK.
   5. Tests reject tampered ciphertext, a ciphertext swapped between rows, an unconfigured KEK id and a truncated tag (all surfacing as `:invalid_signing_key`), and a property test shows random binaries and legacy JSON/ETF never classify as envelopes; JWKS and discovery never decrypt.
+
 **Pitfalls owned**: C1 prefix ambiguity (strict prefix dispatch, no fall-through); C2 row swap (AAD binds header and `kid`, plus post-decrypt `kid` check); C3 nonce reuse (fresh 12-byte IV per seal); C9 KEK in compile-time config (runtime only, `:persistent_term` struct with redacted `Inspect`); C10 plaintext test fixtures (shared seeding helpers seal).
 **Research flags**: 155-01 — read the Bandit 1.12.x → 1.13.1 changelog and deprecated endpoint options (not 1.13.0). 155-02 — prototype `:crypto.crypto_one_time_aead/7` tag-mismatch and wrong-size behavior on the CI OTP before fixing the open/error contract.
 **Suggested plans** (original roadmapper split; superseded by the 5 plans below — see 155-CONTEXT.md):
 - 155-01: Bandit 1.13.1 bump in `examples/adoption_demo`, both `test/clean_room/*` hosts and the compatibility fixture lock; green on its own (DEP-01).
 - 155-02: `Lockspire.Security.KeyEncryption` (seal/open/classify, takes a resolved key set, never reads app env); `Config.key_encryption!/0` validation per R1/R8; boot validation and missing-config warning in `Application.start/2`; fixed test KEKs in `config/test.exs`; tamper/swap/unknown-KEK/short-tag tests and the classify property test (KEK-01, ENC-03).
 - 155-03: `Admin.Keys.generate_key/1` seals or refuses; map-form-only `PrivateJwk.decode` (remove `decode/1`) across the six read sites; distinct internal reasons collapsed to `:invalid_signing_key`; `seeding_helpers.ex` and `token_exchange_case.ex` seal; `@derive {Inspect, except: [:private_jwk_encrypted]}` on `SigningKey` and `SigningKeyRecord`; minimal doctor and `Install.Verify` KEK-presence check (KEK-02, ENC-01, ENC-02).
+
 **SAFE-01 constraint**: no protocol response changes, no new deps, no migration; verify `KeyCache` holds no private material.
 **Plans**: 5 plans
 
 Plans:
+**Wave 1**
 - [ ] 155-01-PLAN.md — Bandit 1.13.1 + mint 1.11.0 in demo and clean-room hosts, compat lock pruned (DEP-01; wave 1)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 155-02-PLAN.md — KeyEncryption cipher + KeySet, `Config.key_encryption!/0`, boot validate/cache/warn, test KEKs, ENC-03 tests (KEK-01, ENC-03; wave 2)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 155-03-PLAN.md — map-form `PrivateJwk.decode` across the six consumers, per-consumer error shapes, JWKS/discovery fitness guard (ENC-02; wave 3)
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 155-04-PLAN.md — `generate_key` seal-or-refuse + clean-room KEK (one commit), sealed shared seeders (ENC-01, KEK-02, ENC-02; wave 4)
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 155-05-PLAN.md — `Install.Verify` `:key_encryption` check, `mix lockspire.doctor key_encryption`, Inspect derives, phase gate (KEK-02, ENC-01; wave 5)
 
 ### Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal
@@ -92,11 +103,13 @@ Plans:
   3. Under `legacy_plaintext: :reject`, a non-envelope row fails signing with `:invalid_signing_key` (internally `:plaintext_key_refused`) without the legacy parsers running, while envelope rows keep signing.
   4. An operator adds a new `current` KEK, re-encrypts, sees zero rows on the old id, removes the old key and keeps signing with the same `kid`s; the matrix of legacy, old-KEK and new-KEK rows against each current key passes.
   5. Encrypt, re-wrap, legacy-read, refusal and decryption-failure events emit audit records and telemetry containing only `kid`, KEK id, counts and reason atoms.
+
 **Pitfalls owned**: C4 KEK loss or mismatch (distinct reasons, per-KEK-id doctor counts, `:unknown_kek`); C5 rolling-deploy ordering (no generation mid-rollout; reject only after `--check`); C6 concurrent re-encrypt races (`SELECT … FOR UPDATE`, re-classify after lock, round-trip verify, CAS on only the ciphertext column and `updated_at`); C7 strict mode too early (`--check` and doctor gate, no boot-time DB scan per R3).
 **Research flags**: 156-01 — lock and CAS semantics against existing `signing_key_store` transactions (activate, retire, `publish_key` upserts) before choosing batch size and isolation. 156-02 is a standard pattern; match existing telemetry/audit naming.
 **Suggested plans**:
 - 156-01: Re-encryption engine shared by legacy migration and KEK rotation; `SigningKeyStore` locked-batch callback plus repository delegate; `mix lockspire.keys.reencrypt` with `--dry-run` and `--check`; concurrency and rotation-matrix tests (MIG-01, OPS-01, `--check` half of MIG-02).
 - 156-02: `:reject` refusal in the decoder; `Keys.encryption_status/0`; doctor `key_encryption` check and `Install.Verify` extension; per-row `key_encrypted`/`key_rewrapped` audit; telemetry for legacy reads, refusals and decrypt failures (MIG-02, MIG-03, OPS-02).
+
 **SAFE-01 constraint**: re-encryption updates only the existing column (no migration, no `kek_id` column); refusal is opt-in, so default protocol behavior is unchanged; no decrypt-to-plaintext path.
 **Plans**: TBD
 
@@ -111,6 +124,7 @@ Plans:
   3. CI signs end to end from encrypted rows for ID token, logout token, JARM, introspection JWT, token exchange and JAR, asserts every stored `private_jwk_encrypted` begins with the envelope prefix and holds no plaintext `d`/`k`, and runs the upgrade path plaintext rows → re-encrypt → `--check` → `:reject`.
   4. Docs give the four-step upgrade order, KEK rotation runbook, backup-remanence and rollback warnings and separate KEK backup guidance; `docs/code-walkthrough.md`, `docs/architecture.md` and SECURITY.md describe envelope storage, and release-note text is ready for the squash title.
   5. The SAFE-01 gate passes: no new Hex deps, no migration, no column rename, no decrypted-key cache, and the existing security-default and protocol suites pass unchanged.
+
 **Pitfalls owned**: C8 leakage via `Inspect`, changesets, logs, telemetry, admin HTML and crash dumps (full sweep; document crash-dump hygiene rather than `Process.flag(:sensitive, true)`); final closure of C5/C7 in docs (do not generate keys mid-rollout; rollback to pre-1.43 breaks signing once rows are encrypted).
 **Research flags**: none (standard patterns). Close plan-time gaps: residual app-env exposure of the raw KEK (document; `{:system, "ENV"}` is KEK-05) and whether LiveDashboard's environment page could display app env.
 **Suggested plans**:
@@ -118,6 +132,7 @@ Plans:
 - 157-02: Install generator snippet, demo seeds via the public API, clean-room provider host KEK, demo compose documents a demo-only KEK (HOST-01).
 - 157-03: End-to-end signing proof, no-plaintext DB assertion, upgrade-path and rotation proof in CI; SAFE-01 gate (PROOF-01, SAFE-01).
 - 157-04: Upgrade and rotation docs, warnings, architecture/walkthrough/SECURITY updates, release-note text (DOC-01). Split candidate if the phase overruns (R7).
+
 **SAFE-01 constraint**: owns the final SAFE-01 proof for the whole milestone; no new admin copy (KEY-UI-01 deferred), so PRODUCT.md vocabulary is unchanged.
 **Plans**: TBD
 
