@@ -1,12 +1,28 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.43",
-  "phases": [],
+  "milestone": "v1.43 — Signing Key Encryption at Rest",
+  "phases": [
+    {
+      "number": "155",
+      "name": "Crypto Core, Config Seam & Bandit Baseline",
+      "status": "complete"
+    },
+    {
+      "number": "156",
+      "name": "Legacy Migration, KEK Rotation & Plaintext Refusal",
+      "status": "pending"
+    },
+    {
+      "number": "157",
+      "name": "Host Surfaces, Redaction Sweep & Release Proof",
+      "status": "pending"
+    }
+  ],
   "next": {
-    "command": "/gsd-discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step (plan phase 156)",
+    "reason": "Phase 2 of 3 — needs a plan"
   },
-  "updated_at": "2026-10-16T02:12:34.881Z"
+  "updated_at": "2026-10-16T04:12:37.305Z"
 }
