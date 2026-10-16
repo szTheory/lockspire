@@ -11,6 +11,7 @@ import {
   collectScanText,
   concretePath,
   formatEvidenceRow,
+  isLocalDevHost,
   matrixSize,
   routeTemplates,
   scanSensitive,
@@ -187,5 +188,29 @@ test("harness source never clicks, types, or submits anything but the synthetic 
   assert.doesNotMatch(source, /\.click\(|dispatchEvent\(|\.submit\(\)/);
   const submits = source.match(/requestSubmit\(/g) ?? [];
   assert.equal(submits.length, 1, "only the login form is submitted");
-  assert.match(source, /querySelector\("#login"\)\.value = "ops"; document\.querySelector\("form"\)\.requestSubmit\(\)/);
+  assert.match(source, /document\.querySelector\("#login"\)\?\.form;/);
+  assert.match(source, /f\.matches\(\\'form\[action\$="\/login"\]\\'\)/);
+  assert.match(source, /f\.requestSubmit\(\)/);
+  assert.doesNotMatch(source, /document\.querySelector\("form"\)/);
+});
+
+test("isLocalDevHost allows only local dev hosts", () => {
+  for (const url of [
+    "http://localhost:4000/lockspire",
+    "http://127.0.0.1:4000/lockspire",
+    "http://lockspire-ui-review.localhost/lockspire",
+    "https://demo.lockspire.test/lockspire"
+  ]) {
+    assert.ok(isLocalDevHost(url), `${url} is local`);
+  }
+  for (const url of [
+    "https://auth.acme-corp.com/lockspire",
+    "https://localhost.acme-corp.com/",
+    "https://test.example.com/",
+    "http://192.168.1.10/",
+    "http://evil.localhost.io/",
+    "not a url"
+  ]) {
+    assert.ok(!isLocalDevHost(url), `${url} is refused`);
+  }
 });

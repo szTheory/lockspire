@@ -427,6 +427,28 @@ function baseUrl() {
   return (process.env.LOCKSPIRE_PROOF_BASE_URL || DEFAULT_BASE_URL).replace(/\/+$/, "");
 }
 
+// The harness signs in as a synthetic account, so it only ever talks to a local
+// dev host: localhost, 127.0.0.1, or a name under the reserved .localhost or
+// .test TLDs.
+export function isLocalDevHost(url) {
+  let hostname;
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:localhost|test)$/.test(hostname)
+  );
+}
+
+// Submits the form that owns the #login control, never "the first form", so a
+// sign-out or theme form added to the demo layout can never be submitted.
+const LOGIN_SCRIPT =
+  'const f = document.querySelector("#login")?.form; if (!f || !f.matches(\'form[action$="/login"]\')) throw new Error("no synthetic login form"); f.querySelector("#login").value = "ops"; f.requestSubmit(); "submitted"';
+
 function browser(session, ...args) {
   return execFileSync("agent-browser", ["--session", session, ...args], {
     cwd: repoRoot,
@@ -463,12 +485,11 @@ function ensureOpsSession(session, url) {
   browser(session, "open", url);
   let current = new URL(browser(session, "get", "url"));
   if (current.pathname.endsWith("/login")) {
+    if (!isLocalDevHost(current.href)) {
+      throw new Error(`refusing to sign in on ${current.hostname}: not a local dev host`);
+    }
     // The synthetic login form is the only form this script ever submits.
-    browser(
-      session,
-      "eval",
-      'document.querySelector("#login").value = "ops"; document.querySelector("form").requestSubmit(); "submitted"'
-    );
+    browser(session, "eval", LOGIN_SCRIPT);
     browser(session, "wait", "2000");
     browser(session, "open", url);
     current = new URL(browser(session, "get", "url"));
@@ -656,6 +677,11 @@ function main(argv) {
   if (args["matrix-size"]) {
     console.log(String(matrixSize()));
     return 0;
+  }
+
+  if (!isLocalDevHost(baseUrl())) {
+    console.error(`refusing to run against ${baseUrl()}: the harness only drives a local dev host (localhost, 127.0.0.1, *.localhost, *.test)`);
+    return 2;
   }
 
   const out = path.resolve(repoRoot, args.out && args.out !== true ? args.out : DEFAULT_OUT);
