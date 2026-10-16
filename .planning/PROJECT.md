@@ -8,6 +8,20 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.43 Signing Key Encryption at Rest
+
+**Goal:** Close CR-01: private signing keys are genuinely encrypted at rest, existing installs upgrade safely, and the host-facing experience stays calm.
+
+**Target features:**
+- Real envelope encryption of private JWKs with AES-256-GCM from OTP `:crypto` (no new dependency), using a versioned ciphertext format tagged with the wrapping-key ID, applied at the single write seam (`Admin.Keys`) and the single read seam (`PrivateJwk.decode`).
+- An explicit host-supplied key-encryption key configured as a rotatable list, not derived from `secret_key_base`; startup fails fast when it is missing or malformed, with install-generator and docs guidance.
+- A safe upgrade path for existing installs: legacy plaintext rows stay readable, an idempotent re-encryption task migrates them, and a strict mode refuses plaintext once migration is complete.
+- Rotation of the key-encryption key that re-wraps signing keys while the old key still decrypts, without reissuing signing keys.
+- Proven redaction and end-to-end signing: no private material or encryption key in logs, telemetry, admin pages, or errors; signing and verification proven across ID tokens, JARM, introspection JWTs, and token exchange; CI asserts no plaintext JWK at rest.
+- Housekeeping: bump Bandit to 1.13.1 (CVE fix) in the adoption demo lock and both clean-room host pins.
+
+OAuth/OIDC behavior and existing security defaults stay the same, and the library remains embedded. The DCR default lifetime semantics todo is deferred to a later protocol milestone.
+
 ## Completed Milestone: v1.42 Admin UI Clarity & Workflow Refinement (Completed 2026-10-15)
 
 **Goal:** Make Lockspire's existing admin pages easier to scan and safer to use by removing low-value copy, clarifying outcomes, and making common tasks feel focused and consistent.
@@ -275,7 +289,7 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No active requirements. v1.42 is validated below; the next milestone defines new ones.
+v1.43 Signing Key Encryption at Rest: requirements are defined in `.planning/REQUIREMENTS.md` (encrypt private signing keys at rest, host-supplied rotatable key-encryption key, safe legacy migration, redaction and end-to-end signing proof, Bandit 1.13.1 housekeeping).
 
 The completed v1.40 acceptance criteria and phase mapping are archived in [v1.40-REQUIREMENTS.md](milestones/v1.40-REQUIREMENTS.md).
 
@@ -476,4 +490,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-15 after v1.42 milestone*
+*Last updated: 2026-10-15 after starting v1.43 milestone*

@@ -1,40 +1,43 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.42
-milestone_name: Admin UI Clarity & Workflow Refinement
-status: Awaiting next milestone
-stopped_at: Milestone v1.42 completed and archived
-last_updated: "2026-10-16T01:26:04.600Z"
+milestone: v1.43
+milestone_name: Signing Key Encryption at Rest
+status: planning
+last_updated: "2026-10-16T02:12:34.879Z"
 last_activity: 2026-10-15
-last_activity_desc: Milestone v1.42 completed and archived
-state_head: f4d8ced613ecac12787c772bb483b3b991f3dc20
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 21
-  completed_plans: 21
-  percent: 100
-current_phase: 154
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-15 after v1.42)
+See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone (v1.42 shipped 2026-10-15)
+**Current focus:** v1.43 Signing Key Encryption at Rest — defining requirements
 
 ## Current Position
 
-Phase: Milestone v1.42 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-15 — Milestone v1.42 completed and archived
+Status: Defining requirements
+Last activity: 2026-10-15 — Milestone v1.43 started
 
 ## Accumulated Context
+
+### v1.43 Milestone Direction
+
+- The user accepted the recommendation to close CR-01 as a tight milestone: genuine encryption of private signing JWKs at rest (AES-256-GCM via OTP `:crypto`, no new dependency), a dedicated host-supplied rotatable key-encryption key (not derived from `secret_key_base`), a safe legacy-plaintext migration and strict mode, key-encryption-key rotation, redaction and end-to-end signing proof, plus the now-unblocked Bandit 1.13.1 bump in the demo and clean-room hosts.
+- The user asked for upstream scoping to the point of diminishing returns so downstream discuss/plan/execute work is well directed; research runs before requirements.
+- Source facts: `lib/lockspire/admin/keys.ex:62` is the only writer and stores `Jason.encode!(private_jwk_map)` in `private_jwk_encrypted`; `Lockspire.Protocol.PrivateJwk.decode/1` is the shared read seam used by JAR, JARM, introspection JWT, ID/logout tokens and token exchange signers.
+- The DCR default lifetime semantics todo stays deferred to a later protocol milestone. Phase numbering continues at 155. Per the standing rule, the older `.planning/phases` artifacts (142/143, 999.1) were not moved or archived, so `phases.clear` was skipped.
 
 ### v1.42 Milestone Direction
 
