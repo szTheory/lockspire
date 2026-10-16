@@ -920,6 +920,8 @@ def main(argv: list[str]) -> int:
             run_child_command(provider_child, provider_environment, "compile", "--warnings-as-errors")
             run_child_command(provider_child, provider_environment, "lockspire.verify")
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
+            run_child_command(provider_child, provider_environment, "lockspire.keys.reencrypt", "--check")
+            run_child_command(provider_child, provider_environment, "lockspire.doctor", "key_encryption")
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
             client_child, client_environment = prepare_client(
