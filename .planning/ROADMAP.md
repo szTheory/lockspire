@@ -67,7 +67,7 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
   5. Tests reject tampered ciphertext, a ciphertext swapped between rows, an unconfigured KEK id and a truncated tag (all surfacing as `:invalid_signing_key`), and a property test shows random binaries and legacy JSON/ETF never classify as envelopes; JWKS and discovery never decrypt.
 **Pitfalls owned**: C1 prefix ambiguity (strict prefix dispatch, no fall-through); C2 row swap (AAD binds header and `kid`, plus post-decrypt `kid` check); C3 nonce reuse (fresh 12-byte IV per seal); C9 KEK in compile-time config (runtime only, `:persistent_term` struct with redacted `Inspect`); C10 plaintext test fixtures (shared seeding helpers seal).
 **Research flags**: 155-01 — read the Bandit 1.12.x → 1.13.1 changelog and deprecated endpoint options (not 1.13.0). 155-02 — prototype `:crypto.crypto_one_time_aead/7` tag-mismatch and wrong-size behavior on the CI OTP before fixing the open/error contract.
-**Suggested plans**:
+**Suggested plans** (original roadmapper split; superseded by the 5 plans below — see 155-CONTEXT.md):
 - 155-01: Bandit 1.13.1 bump in `examples/adoption_demo`, both `test/clean_room/*` hosts and the compatibility fixture lock; green on its own (DEP-01).
 - 155-02: `Lockspire.Security.KeyEncryption` (seal/open/classify, takes a resolved key set, never reads app env); `Config.key_encryption!/0` validation per R1/R8; boot validation and missing-config warning in `Application.start/2`; fixed test KEKs in `config/test.exs`; tamper/swap/unknown-KEK/short-tag tests and the classify property test (KEK-01, ENC-03).
 - 155-03: `Admin.Keys.generate_key/1` seals or refuses; map-form-only `PrivateJwk.decode` (remove `decode/1`) across the six read sites; distinct internal reasons collapsed to `:invalid_signing_key`; `seeding_helpers.ex` and `token_exchange_case.ex` seal; `@derive {Inspect, except: [:private_jwk_encrypted]}` on `SigningKey` and `SigningKeyRecord`; minimal doctor and `Install.Verify` KEK-presence check (KEK-02, ENC-01, ENC-02).
@@ -129,7 +129,7 @@ Plans:
 | MIG-01, MIG-02, MIG-03, OPS-01, OPS-02 | 156 |
 | RED-01, HOST-01, PROOF-01, DOC-01, SAFE-01 | 157 |
 
-16/16 v1.43 requirements mapped; no orphans or duplicates. Two deliberate early touches do not move ownership: the fixed test KEKs (part of HOST-01) land in 155-02 because sealing tests need them, and the `Inspect` derive on the key structs (part of RED-01) lands in 155-03 with the structs.
+16/16 v1.43 requirements mapped; no orphans or duplicates. Two deliberate early touches do not move ownership: the fixed test KEKs (part of HOST-01) land in 155-02 because sealing tests need them, and the `Inspect` derive on the key structs (part of RED-01) lands in 155-05 with the structs; the clean-room provider KEK (part of HOST-01) lands in 155-04 with the `generate_key` refusal so CI stays green.
 
 ### Progress
 
