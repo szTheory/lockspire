@@ -4,17 +4,17 @@ milestone: v1.42
 milestone_name: Admin UI Clarity & Workflow Refinement
 current_phase: 154
 current_phase_name: Responsive, Theme & Route Proof
-status: executing
-stopped_at: Completed 154-06-PLAN.md
-last_updated: "2026-10-15T23:05:10.979Z"
+status: verifying
+stopped_at: Completed 154-07-PLAN.md
+last_updated: "2026-10-16T00:00:21.680Z"
 last_activity: 2026-10-15
 last_activity_desc: Phase 154 execution started
-state_head: 8efc8463cf48ea3442307a69fd0f6ffc757166d2
+state_head: 77945913266fe9be55cbd379e7e5ed944fee6c36
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
   percent: 75
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-12 for v1.42)
 
 Phase: 154 (Responsive, Theme & Route Proof) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-15 — Phase 154 execution started
 
 ## Accumulated Context
@@ -259,6 +259,9 @@ Last activity: 2026-10-15 — Phase 154 execution started
 - [Phase 154]: Plan 05: grouped filter_device_authorizations clauses as a pure move; page contract applied to 7 Support/Operate routes
 - [Phase 154]: Secondary nav wraps at 800px and below (instead of hidden-scrollbar scroll) so keyboard focus is never partly clipped; guarded by assert_responsive_layout!
 - [Phase 154]: Root scroll-padding-block keeps focused controls and rings off the viewport edge; 1100px spot check summarized in prose because BrowserEvidence rejects 1100px
+- [Phase 154]: Desktop final captures use 1261x900 at DPR 2 to match the 2522 px baseline width
+- [Phase 154]: Locked-console browser capture uses --disable-gpu-vsync and --disable-frame-rate-limit (frame pacing only)
+- [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
 
 ### Pending Todos
 
@@ -313,8 +316,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-15T23:05:10.863Z
-Stopped at: Completed 154-06-PLAN.md
+Last session: 2026-10-16T00:00:21.547Z
+Stopped at: Completed 154-07-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -419,6 +422,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P04 | 5 min | 3 tasks | 9 files |
 | Phase 154 P05 | 10 min | 3 tasks | 6 files |
 | Phase 154 P06 | 115 min | 3 tasks | 5 files |
+| Phase 154 P07 | 95 min | 3 tasks | 4 files |
 
 ## Operator Next Steps
 
