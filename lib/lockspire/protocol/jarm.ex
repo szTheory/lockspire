@@ -57,9 +57,7 @@ defmodule Lockspire.Protocol.Jarm do
              claims <- build_claims(response_params, issuer, client.client_id),
              protected_header <-
                %{"alg" => signing_key.alg, "kid" => signing_key.kid, "typ" => "JWT"},
-             {_, compact} <-
-               JOSE.JWT.sign(jwk, protected_header, claims)
-               |> JOSE.JWS.compact() do
+             {:ok, compact} <- PrivateJwk.sign(jwk, protected_header, claims) do
           {:ok, compact}
         else
           {:error, reason} -> {:error, reason}

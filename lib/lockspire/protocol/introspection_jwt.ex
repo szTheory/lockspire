@@ -96,13 +96,12 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
     |> Kernel.||("RS256")
   end
 
+  # A signing failure here is almost always an alg/key mismatch, which this module has
+  # always reported as :unsupported_signing_algorithm.
   defp sign_compact_jwt(jwk, protected_header, claims) do
-    {:ok,
-     jwk
-     |> JOSE.JWT.sign(protected_header, claims)
-     |> JOSE.JWS.compact()
-     |> elem(1)}
-  rescue
-    ErlangError -> {:error, :unsupported_signing_algorithm}
+    case PrivateJwk.sign(jwk, protected_header, claims) do
+      {:ok, compact} -> {:ok, compact}
+      {:error, _reason} -> {:error, :unsupported_signing_algorithm}
+    end
   end
 end

@@ -46,13 +46,8 @@ defmodule Lockspire.Protocol.IdToken do
              auth_time,
              sid
            ),
-         {_, compact} <-
-           JOSE.JWT.sign(
-             jwk,
-             %{"alg" => alg, "kid" => kid, "typ" => "JWT"},
-             claims
-           )
-           |> JOSE.JWS.compact() do
+         {:ok, compact} <-
+           PrivateJwk.sign(jwk, %{"alg" => alg, "kid" => kid, "typ" => "JWT"}, claims) do
       {:ok, compact}
     else
       {:error, reason} -> {:error, reason}

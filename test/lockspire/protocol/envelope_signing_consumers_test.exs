@@ -1,6 +1,8 @@
 defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
+
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.LogoutDelivery
   alias Lockspire.Domain.LogoutEvent
@@ -16,6 +18,7 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
   alias Lockspire.Protocol.Jarm
   alias Lockspire.Protocol.LogoutToken
   alias Lockspire.Protocol.TokenExchange.Error
+  alias Lockspire.TestSupport.KeyMaterialMatcher
 
   @issued_at ~U[2026-04-28 15:00:00Z]
 
@@ -355,6 +358,104 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       assert {:error,
               %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}} =
                issue(key)
+    end
+  end
+
+  describe "signing failures do not leak key material" do
+    # A public-only map has no private member, and an EC key labelled RS256 fails inside the
+    # JOSE signing call. Both must collapse to the consumer's existing error, and neither the
+    # result nor the log may carry the private value.
+    defp public_only_key(keys, kid) do
+      jwk = Map.put(keys.pub_jwk_map, "kid", kid)
+
+      %{
+        kid: kid,
+        alg: "RS256",
+        private_jwk_encrypted: KeyEncryptionHelpers.seal_private_jwk(kid, jwk)
+      }
+    end
+
+    defp mismatched_key(kid) do
+      ec = JarTestHelpers.generate_ec_keys()
+      jwk = Map.put(ec.priv_jwk_map, "kid", kid)
+
+      key = %{
+        kid: kid,
+        alg: "RS256",
+        private_jwk_encrypted: KeyEncryptionHelpers.seal_private_jwk(kid, jwk)
+      }
+
+      {key, ec.priv_jwk_map}
+    end
+
+    defp secrets_of(map) do
+      d = Map.fetch!(map, "d")
+      [d, Base.url_decode64!(d, padding: false)]
+    end
+
+    defp assert_no_leak(label, fun, secrets) do
+      result_ref = make_ref()
+
+      log =
+        capture_log(fn ->
+          send(self(), {result_ref, fun.()})
+        end)
+
+      assert_received {^result_ref, result}
+      KeyMaterialMatcher.refute_leak!(label <> " result", result, secrets)
+      KeyMaterialMatcher.refute_leak!(label <> " log", log, secrets)
+      result
+    end
+
+    @server_error %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}
+
+    test "public-only maps return the existing error from every consumer" do
+      keys = JarTestHelpers.generate_keys()
+      secrets = secrets_of(keys.priv_jwk_map)
+
+      cases = [
+        {"id token", fn k -> IdToken.sign(id_token_params(k)) end,
+         {:error, :invalid_signing_key}},
+        {"logout token", fn k -> LogoutToken.sign(logout_params(k)) end,
+         {:error, :invalid_signing_key}},
+        {"jarm", &jarm_sign/1, {:error, :invalid_signing_key}},
+        {"introspection jwt", &introspection_sign/1, {:error, :invalid_signing_key}}
+      ]
+
+      for {label, run, expected} <- cases do
+        key = public_only_key(keys, "kid-pub")
+        assert expected == assert_no_leak(label, fn -> run.(key) end, secrets)
+      end
+
+      key = public_only_key(keys, "kid-pub")
+      result = assert_no_leak("access token", fn -> issue(key) end, secrets)
+      assert {:error, %Error{status: 500, error: "server_error"} = error} = result
+      assert error.reason_code == @server_error.reason_code
+    end
+
+    test "a failure inside the JOSE signing call returns the existing error from every consumer" do
+      {key, priv_map} = mismatched_key("kid-mismatch")
+      secrets = secrets_of(priv_map)
+
+      cases = [
+        {"id token", fn -> IdToken.sign(id_token_params(key)) end,
+         {:error, :invalid_signing_key}},
+        {"logout token", fn -> LogoutToken.sign(logout_params(key)) end,
+         {:error, :invalid_signing_key}},
+        {"jarm", fn -> jarm_sign(key) end, {:error, :invalid_signing_key}},
+        {"introspection jwt", fn -> introspection_sign(key) end,
+         {:error, :unsupported_signing_algorithm}}
+      ]
+
+      for {label, run, expected} <- cases do
+        assert expected == assert_no_leak(label, run, secrets)
+      end
+
+      result = assert_no_leak("access token", fn -> issue(key) end, secrets)
+
+      assert {:error,
+              %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}} =
+               result
     end
   end
 

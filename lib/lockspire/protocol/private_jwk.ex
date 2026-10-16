@@ -40,12 +40,17 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   # Malformed key material can make the JOSE library raise with decoded private bytes in
   # the exception message, so the exception is dropped here and only a reason atom leaves
-  # this function.
+  # this function. A map with no private member (`d` for RSA, EC and OKP) is refused up
+  # front, because it cannot sign or decrypt and would only fail later. Symmetric (oct)
+  # keys are already refused by the to_public step above.
   @spec to_jwk(term()) :: {:ok, JOSE.JWK.t()} | {:error, :invalid_signing_key}
   def to_jwk(jwk_map) when is_map(jwk_map) do
     jwk = JOSE.JWK.from_map(jwk_map)
     _public = JOSE.JWK.to_public(jwk)
-    {:ok, jwk}
+
+    if private_member?(jwk),
+      do: {:ok, jwk},
+      else: {:error, :invalid_signing_key}
   rescue
     _ -> {:error, :invalid_signing_key}
   catch
@@ -53,6 +58,35 @@ defmodule Lockspire.Protocol.PrivateJwk do
   end
 
   def to_jwk(_value), do: {:error, :invalid_signing_key}
+
+  # Signs `claims` with the private key and returns the compact JWT. This is the single
+  # place the protocol layer hands private key bytes to JOSE.JWT.sign. A failure inside the
+  # crypto code can carry the private key tuple in its message or stacktrace, so the
+  # exception is dropped without being bound and only a reason atom leaves this function.
+  @spec sign(JOSE.JWK.t(), map(), map()) :: {:ok, String.t()} | {:error, :invalid_signing_key}
+  def sign(%JOSE.JWK{} = jwk, header, claims) when is_map(header) and is_map(claims) do
+    {_, compact} = jwk |> JOSE.JWT.sign(header, claims) |> JOSE.JWS.compact()
+
+    if is_binary(compact),
+      do: {:ok, compact},
+      else: {:error, :invalid_signing_key}
+  rescue
+    _ -> {:error, :invalid_signing_key}
+  catch
+    _, _ -> {:error, :invalid_signing_key}
+  end
+
+  def sign(_jwk, _header, _claims), do: {:error, :invalid_signing_key}
+
+  defp private_member?(%JOSE.JWK{} = jwk) do
+    case JOSE.JWK.to_map(jwk) do
+      {_meta, %{"kty" => kty, "d" => d}} when kty in ["RSA", "EC", "OKP"] ->
+        is_binary(d) and d != ""
+
+      _other ->
+        false
+    end
+  end
 
   @doc false
   @spec decode_with_reason(term()) :: {:ok, map()} | {:error, reason()}

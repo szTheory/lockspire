@@ -206,15 +206,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
     with {:ok, %{kid: kid, alg: alg, private_jwk_encrypted: _private_jwk} = signing_key} <-
            fetch_signing_key(key_store),
          {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
-         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map) do
-      {_, compact} =
-        JOSE.JWT.sign(
-          jwk,
-          %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"},
-          claims
-        )
-        |> JOSE.JWS.compact()
-
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
+         {:ok, compact} <-
+           PrivateJwk.sign(jwk, %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"}, claims) do
       {:ok, compact, Policy.hash_token(compact)}
     else
       {:error, reason} ->

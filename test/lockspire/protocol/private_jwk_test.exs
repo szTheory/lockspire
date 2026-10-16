@@ -40,6 +40,34 @@ defmodule Lockspire.Protocol.PrivateJwkTest do
       end
     end
 
+    test "rejects maps with no private member" do
+      for generator <- [{:rsa, 2048}, {:ec, "P-256"}, {:okp, :Ed25519}] do
+        jwk = JOSE.JWK.generate_key(generator)
+        {_meta, public} = JOSE.JWK.to_public_map(jwk)
+        assert {:error, :invalid_signing_key} = PrivateJwk.to_jwk(public)
+      end
+    end
+  end
+
+  describe "sign/3" do
+    test "returns a compact JWT for a valid key" do
+      jwk = JOSE.JWK.generate_key({:rsa, 2048})
+
+      assert {:ok, compact} =
+               PrivateJwk.sign(jwk, %{"alg" => "RS256", "typ" => "JWT"}, %{"a" => 1})
+
+      assert [_, _, _] = String.split(compact, ".")
+    end
+
+    test "returns invalid_signing_key without raising when the signer fails" do
+      jwk = JOSE.JWK.generate_key({:ec, "P-256"})
+
+      assert {:error, :invalid_signing_key} =
+               PrivateJwk.sign(jwk, %{"alg" => "RS256", "typ" => "JWT"}, %{"a" => 1})
+
+      assert {:error, :invalid_signing_key} = PrivateJwk.sign(nil, %{}, %{})
+    end
+
     test "returns invalid_signing_key without raising for malformed input" do
       {_meta, rsa} = {:rsa, 2048} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
       {_meta, ec} = {:ec, "P-256"} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
