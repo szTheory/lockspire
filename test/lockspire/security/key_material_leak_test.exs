@@ -155,6 +155,10 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
           assert {:error, :invalid_signing_key} = PrivateJwk.decode(row)
         end
 
+        # the read-only paths select every stored key row, so they must be silent too
+        assert {:ok, _preview} = Keys.reencrypt(dry_run: true)
+        assert {:ok, _status} = Keys.encryption_status()
+
         # encrypt and re-wrap, then re-wrap again after switching the current key
         assert {:ok, first} = Keys.reencrypt()
         configure("leak-2", :allow)
@@ -197,7 +201,7 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
     repo_param_text =
       repo_events
       |> Enum.map_join("\n", fn {_e, _m, md} ->
-        inspect({md[:params], md[:cast_params]}, limit: :infinity)
+        inspect({md[:params], md[:cast_params], md[:result]}, limit: :infinity)
       end)
 
     refute key_event_text =~ "LSK"
@@ -207,8 +211,13 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
     assert log =~ ~r/QUERY (OK|ERROR)/,
            "repo query logging is not active, so the leak check would be vacuous"
 
-    assert log =~ ~s(FROM "lockspire_signing_keys"),
-           "the re-encryption run was not captured in the log"
+    # Any query that touches the stored key column is sensitive, so none may reach either channel.
+    refute log =~ "private_jwk_encrypted", "key column queries reached the query log"
+
+    refute Enum.any?(repo_events, fn {_e, _m, md} ->
+             String.contains?(to_string(md[:query]), "private_jwk_encrypted")
+           end),
+           "key column queries reached the repo query telemetry event"
 
     surfaces = [
       {"key telemetry", key_event_text},
