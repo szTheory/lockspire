@@ -192,15 +192,13 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
 
     key_event_text =
       key_events_received
-      |> Enum.map(fn {_e, m, md} -> inspect({m, md}, limit: :infinity) end)
-      |> Enum.join("\n")
+      |> Enum.map_join("\n", fn {_e, m, md} -> inspect({m, md}, limit: :infinity) end)
 
     repo_param_text =
       repo_events
-      |> Enum.map(fn {_e, _m, md} ->
+      |> Enum.map_join("\n", fn {_e, _m, md} ->
         inspect({md[:params], md[:cast_params]}, limit: :infinity)
       end)
-      |> Enum.join("\n")
 
     refute key_event_text =~ "LSK"
     refute repo_param_text =~ "LSK"

@@ -138,6 +138,7 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
   defp finish(mode, {:ok, report}), do: report_run(mode, report)
   defp finish(_mode, {:error, reason}), do: raise_error(reason)
 
+  @spec raise_error(term()) :: no_return()
   defp raise_error(:key_encryption_not_configured) do
     Mix.raise(
       "config :lockspire, :key_encryption is not set. Add keys: [{id, base64 of 32 random bytes}], " <>
@@ -172,11 +173,15 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
       mode == :dry_run ->
         info("Dry run complete. Run without --dry-run to apply.")
 
-        raise_if_failed(
-          report.failed != [],
-          failed,
-          "would not be re-encrypted. Follow the fix lines above, then rerun."
-        )
+        if report.failed != [] do
+          Mix.raise(
+            failure_message(
+              failed,
+              {"would not be re-encrypted. Follow the fix lines above, then rerun.",
+               "would not be re-encrypted. Follow the fix lines above, then rerun."}
+            )
+          )
+        end
 
       failed > 0 ->
         info(
@@ -185,11 +190,12 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
             "stranded and do not block it."
         )
 
-        raise_if_failed(
-          true,
-          failed,
-          {"was not re-encrypted. All other keys were saved; rerunning is safe.",
-           "were not re-encrypted. All other keys were saved; rerunning is safe."}
+        Mix.raise(
+          failure_message(
+            failed,
+            {"was not re-encrypted. All other keys were saved; rerunning is safe.",
+             "were not re-encrypted. All other keys were saved; rerunning is safe."}
+          )
         )
 
       true ->
@@ -200,14 +206,8 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
     end
   end
 
-  defp raise_if_failed(false, _count, _tail), do: :ok
-
-  defp raise_if_failed(true, count, {singular, plural}) do
-    {noun, tail} = if count == 1, do: {"key", singular}, else: {"keys", plural}
-    Mix.raise("#{count} #{noun} #{tail}")
-  end
-
-  defp raise_if_failed(true, count, tail), do: raise_if_failed(true, count, {tail, tail})
+  defp failure_message(1, {singular, _plural}), do: "1 key #{singular}"
+  defp failure_message(count, {_singular, plural}), do: "#{count} keys #{plural}"
 
   defp summary_line(:dry_run, report) do
     "scanned=#{report.scanned} would_encrypt=#{report.encrypted} would_rewrap=#{report.rewrapped} " <>
