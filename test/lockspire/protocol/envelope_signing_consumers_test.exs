@@ -35,6 +35,22 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
     %{key | private_jwk_encrypted: <<head::binary, Bitwise.bxor(last, 1)>>}
   end
 
+  defp legacy_key(keys, kid, alg \\ "RS256") do
+    %{
+      kid: kid,
+      alg: alg,
+      private_jwk_encrypted: Jason.encode!(Map.put(keys.priv_jwk_map, "kid", kid))
+    }
+  end
+
+  defp reject_mode do
+    KeyEncryptionHelpers.put_key_encryption(
+      keys: KeyEncryptionHelpers.config_keys(),
+      current: "test-1",
+      legacy_plaintext: :reject
+    )
+  end
+
   defmodule KeyStore do
     @moduledoc false
     def fetch_active_signing_key(opts) do
@@ -151,6 +167,14 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       assert {:error, :invalid_signing_key} = LogoutToken.sign(logout_params(key))
     end
 
+    test "under :reject a legacy row returns invalid_signing_key" do
+      keys = JarTestHelpers.generate_keys()
+      reject_mode()
+
+      assert {:error, :invalid_signing_key} =
+               LogoutToken.sign(logout_params(legacy_key(keys, "kid-lo")))
+    end
+
     test "unconfigured KEK returns invalid_signing_key" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-lo")
       KeyEncryptionHelpers.put_key_encryption(nil)
@@ -182,6 +206,12 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
     test "tampered envelope returns invalid_signing_key" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-jarm") |> tamper()
       assert {:error, :invalid_signing_key} = jarm_sign(key)
+    end
+
+    test "under :reject a legacy row returns invalid_signing_key" do
+      keys = JarTestHelpers.generate_keys()
+      reject_mode()
+      assert {:error, :invalid_signing_key} = jarm_sign(legacy_key(keys, "kid-jarm"))
     end
 
     test "unconfigured KEK returns invalid_signing_key" do
@@ -216,6 +246,12 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
     test "tampered envelope returns invalid_signing_key" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-intro") |> tamper()
       assert {:error, :invalid_signing_key} = introspection_sign(key)
+    end
+
+    test "under :reject a legacy row returns invalid_signing_key" do
+      keys = JarTestHelpers.generate_keys()
+      reject_mode()
+      assert {:error, :invalid_signing_key} = introspection_sign(legacy_key(keys, "kid-intro"))
     end
 
     test "unconfigured KEK returns invalid_signing_key" do
@@ -260,6 +296,15 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
                issue(key)
     end
 
+    test "under :reject a legacy row returns the existing server_error (token exchange signer)" do
+      keys = JarTestHelpers.generate_keys()
+      reject_mode()
+
+      assert {:error,
+              %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}} =
+               issue(legacy_key(keys, "kid-at"))
+    end
+
     test "unconfigured KEK returns the existing server_error" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-at")
       KeyEncryptionHelpers.put_key_encryption(nil)
@@ -301,6 +346,47 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
       {compact, key} = jar_fixture()
       KeyEncryptionHelpers.put_key_encryption(nil)
       assert {:error, :decryption_failed} = Jar.decrypt(compact, [key])
+    end
+
+    defp jar_key(kid, map, opts \\ []) do
+      jwk = Map.put(map, "kid", kid)
+
+      stored =
+        if Keyword.get(opts, :legacy, false),
+          do: Jason.encode!(jwk),
+          else: KeyEncryptionHelpers.seal_private_jwk(kid, jwk)
+
+      %Lockspire.Domain.SigningKey{kid: kid, alg: "RSA-OAEP", private_jwk_encrypted: stored}
+    end
+
+    defp jar_encrypt(enc) do
+      jwe = JOSE.JWE.block_encrypt(enc, "payload", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      {_, compact} = JOSE.JWE.compact(jwe)
+      compact
+    end
+
+    test "under :reject a legacy enc key fails and JAR moves on to an envelope key" do
+      enc_a = JOSE.JWK.generate_key({:rsa, 2048})
+      enc_b = JOSE.JWK.generate_key({:rsa, 2048})
+      {_, map_a} = JOSE.JWK.to_map(enc_a)
+      {_, map_b} = JOSE.JWK.to_map(enc_b)
+      legacy = jar_key("kid-a", map_a, legacy: true)
+      sealed = jar_key("kid-b", map_b)
+
+      reject_mode()
+      assert {:error, :decryption_failed} = Jar.decrypt(jar_encrypt(enc_a), [legacy])
+      assert {:ok, "payload"} = Jar.decrypt(jar_encrypt(enc_b), [legacy, sealed])
+    end
+
+    test "a JWE addressed to another key emits no decode_failed for a readable key" do
+      enc_a = JOSE.JWK.generate_key({:rsa, 2048})
+      other = JOSE.JWK.generate_key({:rsa, 2048})
+      {_, map_a} = JOSE.JWK.to_map(enc_a)
+      sealed = jar_key("kid-a", map_a)
+
+      Lockspire.TestSupport.TelemetryCapture.attach([:lockspire, :key, :decode_failed])
+      assert {:error, :decryption_failed} = Jar.decrypt(jar_encrypt(other), [sealed])
+      refute_received {:telemetry_event, _, _, _}
     end
   end
 end

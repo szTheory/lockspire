@@ -1,6 +1,8 @@
 defmodule Lockspire.Protocol.PrivateJwkTest do
   use ExUnit.Case, async: false
 
+  @moduletag :capture_log
+
   alias Lockspire.KeyEncryptionHelpers
   alias Lockspire.Protocol.PrivateJwk
   alias Lockspire.TestSupport.TelemetryCapture

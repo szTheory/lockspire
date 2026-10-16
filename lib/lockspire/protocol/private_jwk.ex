@@ -1,6 +1,8 @@
 defmodule Lockspire.Protocol.PrivateJwk do
   @moduledoc false
 
+  require Logger
+
   alias Lockspire.Config
   alias Lockspire.Redaction
   alias Lockspire.Security.KeyEncryption
@@ -18,8 +20,14 @@ defmodule Lockspire.Protocol.PrivateJwk do
   @spec decode(term()) :: {:ok, map()} | {:error, :invalid_signing_key}
   def decode(%{kid: kid, private_jwk_encrypted: bin} = row)
       when is_binary(kid) and is_binary(bin) do
-    case decode_stored(row, Config.key_encryption_keyset()) do
-      {:ok, jwk, _source} ->
+    keyset = Config.key_encryption_keyset()
+
+    case decode_stored(row, keyset) do
+      {:ok, jwk, :legacy} ->
+        emit_legacy_read(kid, keyset)
+        {:ok, jwk}
+
+      {:ok, jwk, _envelope} ->
         {:ok, jwk}
 
       {:error, reason} ->
@@ -57,6 +65,23 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   # Signing-path event: it must not go through the shared operator emit helper, because
   # the signing path writes no audit record and must not double-emit an audit-prefixed copy.
+  defp emit_legacy_read(kid, keyset) do
+    :telemetry.execute(
+      [:lockspire, :key, :legacy_read],
+      %{count: 1},
+      Redaction.for_telemetry(%{kid: kid, legacy_plaintext: :allow})
+    )
+
+    if keyset do
+      log_once(kid, :legacy_read, fn ->
+        Logger.warning(
+          "Signing key #{kid} is stored as legacy plaintext; " <>
+            "run mix lockspire.keys.reencrypt to encrypt it"
+        )
+      end)
+    end
+  end
+
   defp emit_decode_failed(kid, bin, reason) do
     metadata =
       case KeyEncryption.envelope_kek_id(bin) do
@@ -69,6 +94,24 @@ defmodule Lockspire.Protocol.PrivateJwk do
       %{count: 1},
       Redaction.for_telemetry(metadata)
     )
+
+    log_once(kid, reason, fn ->
+      Logger.error("Signing key #{kid} could not be read (reason: #{reason})")
+    end)
+  end
+
+  # The flag key holds only the public kid and a reason atom, never key material. It is
+  # written once per kid and reason, so the global cost of a persistent_term write is paid
+  # at most once for each pair on a node.
+  defp log_once(kid, reason, log_fun) do
+    flag = {Lockspire, :key_decode_warned, kid, reason}
+
+    unless :persistent_term.get(flag, false) do
+      :persistent_term.put(flag, true)
+      log_fun.()
+    end
+
+    :ok
   end
 
   # Only the protocol decoder and the admin re-encryption engine may call this reader.
