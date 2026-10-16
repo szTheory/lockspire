@@ -35,7 +35,7 @@
 - [x] **RED-01**: Private key material, envelope ciphertext and KEK values never appear in logs, telemetry, audit records, `inspect` output (`SigningKey`, `SigningKeyRecord`, the KEK set), changeset errors, admin pages or LiveView assigns; `Lockspire.Redaction` covers the new fields.
 - [x] **HOST-01**: The install generator emits the `runtime.exs` key-encryption config (fresh installs default to `:reject`, key from an environment variable); the test setup provides fixed test KEKs; the adoption demo seeds and the clean-room provider host are configured and store envelopes.
 - [ ] **PROOF-01**: CI proves end-to-end signing from encrypted rows for every token type, asserts no stored row holds a plaintext JWK, and runs an upgrade path from plaintext rows through re-encrypt, `--check` and `:reject`.
-- [ ] **DOC-01**: Docs give the four-step upgrade order, the KEK rotation runbook, the backup remanence warning (old backups, WAL and replicas still hold usable plaintext keys; rotate signing keys if exposure is possible), the rollback warning (pre-1.43 code cannot read envelopes), separate KEK backup guidance, and the release-note text; `docs/code-walkthrough.md`, `docs/architecture.md` and SECURITY.md reflect the new storage.
+- [x] **DOC-01**: Docs give the four-step upgrade order, the KEK rotation runbook, the backup remanence warning (old backups, WAL and replicas still hold usable plaintext keys; rotate signing keys if exposure is possible), the rollback warning (pre-1.43 code cannot read envelopes), separate KEK backup guidance, and the release-note text; `docs/code-walkthrough.md`, `docs/architecture.md` and SECURITY.md reflect the new storage.
 - [ ] **SAFE-01**: No new Hex dependencies, no schema migration, no rename of `private_jwk_encrypted`, no decrypted-key caching, no OAuth/OIDC behavior change; PKCE S256, exact redirect matching, hashed client secrets, single-use short-lived codes, refresh rotation with family revocation, no implicit flow, no `alg=none`, and strong redaction are preserved.
 
 ## Future Requirements
@@ -78,7 +78,7 @@
 | RED-01 | Phase 157 | Complete |
 | HOST-01 | Phase 157 | Complete |
 | PROOF-01 | Phase 157 | Pending |
-| DOC-01 | Phase 157 | Pending |
+| DOC-01 | Phase 157 | Complete |
 | SAFE-01 | Phase 157 | Pending |
 
 **Coverage:**

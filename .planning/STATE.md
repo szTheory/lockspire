@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 157
 current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
 status: executing
-stopped_at: Completed 157-06-PLAN.md
-last_updated: "2026-10-16T16:27:51.181Z"
+stopped_at: Completed 157-04-PLAN.md
+last_updated: "2026-10-16T16:32:34.614Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 157 execution started
-state_head: f11d290470d4ae2f0c1b47d9876fe36c090ff57d
+state_head: 536e9d55a450a011b609fedec83355ed0342511a
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 12
+  completed_plans: 13
   percent: 67
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-10-16 — Phase 157 execution started
 
@@ -284,6 +284,7 @@ Progress: [███████░░░] 67%
 - [Phase 157]: Host KEK delivered via config/runtime.exs reading LOCKSPIRE_KEY_ENCRYPTION_KEY; generator prints, never writes; demo and clean-room KEKs never in compile-time config
 - [Phase 157]: 157-05: PrivateJwk.to_jwk/1 drops JOSE exceptions (to_public probe) and all six key consumers route through it
 - [Phase 157]: 157-06: malformed-key worker proof swaps the active key via update_all and asserts the real {:discard, :invalid_signing_key}; no lib/ leak found
+- [Phase 157]: 157-04: signing-key encryption guide is version-agnostic; per-row re-encrypt telemetry documented as encrypted/rewrapped
 
 ### Pending Todos
 
@@ -341,8 +342,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T16:27:51.061Z
-Stopped at: Completed 157-06-PLAN.md
+Last session: 2026-10-16T16:32:34.483Z
+Stopped at: Completed 157-04-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -460,6 +461,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 157 P02 | 35 min | 3 tasks | 10 files |
 | Phase 157 P05 | 12 min | 2 tasks | 9 files |
 | Phase 157 P06 | 12 min | 2 tasks | 2 files |
+| Phase 157 P04 | 25 min | 3 tasks | 9 files |
 
 ## Operator Next Steps
 
