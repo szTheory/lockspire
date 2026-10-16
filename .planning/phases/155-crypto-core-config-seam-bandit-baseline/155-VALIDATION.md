@@ -2,9 +2,9 @@
 phase: "155"
 slug: "crypto-core-config-seam-bandit-baseline"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-15"
 ---
 
@@ -44,30 +44,30 @@ Filled by the planner/executor per task. Requirement → test anchors:
 
 | Requirement | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |-------------|-----------------|-----------|-------------------|-------------|--------|
-| DEP-01 | Hosts on bandit 1.13.1 / thousand_island 1.6.x / hpax 1.1.x, mint 1.11.0; e2e green | e2e + lock | `mix test.clean-room.e2e`; per-host `mix deps.get --check-locked` | existing CI | ⬜ pending |
-| KEK-01 | Invalid config raises naming key only (sentinel absent) | unit | `MIX_ENV=test mix test test/lockspire/config_key_encryption_test.exs` | ❌ W0 | ⬜ pending |
-| KEK-01 | Boot validates + caches; invalid raises | unit (non-async) | `MIX_ENV=test mix test test/lockspire/application_key_encryption_test.exs` | ❌ W0 | ⬜ pending |
-| KEK-02 | Absent KEK: generate refuses, no row, legacy still signs, boot warning | integration | `MIX_ENV=test mix test test/lockspire/admin/keys_test.exs` | extend | ⬜ pending |
-| KEK-02 | Verify `:key_encryption` check ok/absent/invalid | unit | `MIX_ENV=test mix test test/lockspire/install/verify_test.exs` | extend | ⬜ pending |
-| KEK-02 | Doctor `key_encryption` subcommand | mix task | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_key_encryption_test.exs` | ❌ W0 | ⬜ pending |
-| ENC-01 | New row is `LSK\x01` envelope for current KEK id; fresh IV | unit + integration | `MIX_ENV=test mix test test/lockspire/security/key_encryption_test.exs test/lockspire/admin/keys_test.exs` | ❌ W0 + extend | ⬜ pending |
-| ENC-02 | All six consumers read envelope + legacy; per-consumer error shape | unit/integration | `MIX_ENV=test mix test test/lockspire/protocol` | extend | ⬜ pending |
-| ENC-02 | JWKS/discovery/KeyCache never decrypt | structural | `MIX_ENV=test mix test test/lockspire/architecture_fitness_test.exs` | extend | ⬜ pending |
-| ENC-03 | Tamper/swap/forged kid/unknown KEK/truncated tag rejected; classify property | unit + property | `MIX_ENV=test mix test test/lockspire/security/key_encryption_test.exs` | ❌ W0 | ⬜ pending |
-| D-10 | `inspect` omits `private_jwk_encrypted` and KEK bytes | unit | `MIX_ENV=test mix test test/lockspire/domain/signing_key_inspect_test.exs` | ❌ W0 | ⬜ pending |
+| DEP-01 | Hosts on bandit 1.13.1 / thousand_island 1.6.x / hpax 1.1.x, mint 1.11.0; e2e green | e2e + lock | `mix test.clean-room.e2e`; per-host `mix deps.get --check-locked` | existing CI | ✅ green |
+| KEK-01 | Invalid config raises naming key only (sentinel absent) | unit | `MIX_ENV=test mix test test/lockspire/config_key_encryption_test.exs` | ✅ W0 | ✅ green |
+| KEK-01 | Boot validates + caches; invalid raises | unit (non-async) | `MIX_ENV=test mix test test/lockspire/application_key_encryption_test.exs` | ✅ W0 | ✅ green |
+| KEK-02 | Absent KEK: generate refuses, no row, legacy still signs, boot warning | integration | `MIX_ENV=test mix test test/lockspire/admin/keys_test.exs` | extend | ✅ green |
+| KEK-02 | Verify `:key_encryption` check ok/absent/invalid | unit | `MIX_ENV=test mix test test/lockspire/install/verify_test.exs` | extend | ✅ green |
+| KEK-02 | Doctor `key_encryption` subcommand | mix task | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_key_encryption_test.exs` | ✅ W0 | ✅ green |
+| ENC-01 | New row is `LSK\x01` envelope for current KEK id; fresh IV | unit + integration | `MIX_ENV=test mix test test/lockspire/security/key_encryption_test.exs test/lockspire/admin/keys_test.exs` | ✅ W0 + extend | ✅ green |
+| ENC-02 | All six consumers read envelope + legacy; per-consumer error shape | unit/integration | `MIX_ENV=test mix test test/lockspire/protocol` | extend | ✅ green |
+| ENC-02 | JWKS/discovery/KeyCache never decrypt | structural | `MIX_ENV=test mix test test/lockspire/architecture_fitness_test.exs` | extend | ✅ green |
+| ENC-03 | Tamper/swap/forged kid/unknown KEK/truncated tag rejected; classify property | unit + property | `MIX_ENV=test mix test test/lockspire/security/key_encryption_test.exs` | ✅ W0 | ✅ green |
+| D-10 | `inspect` omits `private_jwk_encrypted` and KEK bytes | unit | `MIX_ENV=test mix test test/lockspire/domain/signing_key_inspect_test.exs` | ✅ W0 | ✅ green |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: ✅ green · ✅ green · ❌ red · ⚠️ flaky*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `test/lockspire/security/key_encryption_test.exs` — ENC-01/03 incl. first `ExUnitProperties` use
-- [ ] `test/lockspire/config_key_encryption_test.exs` — KEK-01 matrix with sentinel-leak assertions
-- [ ] `test/lockspire/application_key_encryption_test.exs` — boot raise/warn/cache seam
-- [ ] `test/mix/tasks/lockspire_doctor_key_encryption_test.exs` — D-07
-- [ ] `test/lockspire/domain/signing_key_inspect_test.exs` — D-10
-- [ ] `test/support/key_encryption_helpers.ex` — `put_key_encryption/1` (env + persistent_term + on_exit restore) and sealing helper for shared seeders
+- [x] `test/lockspire/security/key_encryption_test.exs` — ENC-01/03 incl. first `ExUnitProperties` use
+- [x] `test/lockspire/config_key_encryption_test.exs` — KEK-01 matrix with sentinel-leak assertions
+- [x] `test/lockspire/application_key_encryption_test.exs` — boot raise/warn/cache seam
+- [x] `test/mix/tasks/lockspire_doctor_key_encryption_test.exs` — D-07
+- [x] `test/lockspire/domain/signing_key_inspect_test.exs` — D-10
+- [x] `test/support/key_encryption_helpers.ex` — `put_key_encryption/1` (env + persistent_term + on_exit restore) and sealing helper for shared seeders
 
 No framework install needed.
 
@@ -81,11 +81,19 @@ All phase behaviors have automated verification.
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-10-16 (CI toolchain Elixir 1.19.5/OTP 28.1: targeted 107 tests + 2 properties green; full test.fast 1655 tests, test.integration 102 tests, clean-room e2e green per 155-05-SUMMARY)
+
+## Validation Audit 2026-10-16
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
