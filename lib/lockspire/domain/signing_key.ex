@@ -26,6 +26,7 @@ defmodule Lockspire.Domain.SigningKey do
           updated_at: DateTime.t() | nil
         }
 
+  @derive {Inspect, except: [:private_jwk_encrypted]}
   defstruct [
     :id,
     :kid,

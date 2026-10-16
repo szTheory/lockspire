@@ -9,6 +9,7 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
 
   @timestamps_opts [type: :utc_datetime_usec]
 
+  @derive {Inspect, except: [:private_jwk_encrypted]}
   schema "lockspire_signing_keys" do
     field(:kid, :string)
     field(:kty, Ecto.Enum, values: [:RSA, :EC, :OKP])
