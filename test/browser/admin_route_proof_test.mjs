@@ -131,3 +131,23 @@ test("scanSensitive allows reserved example domains but flags real-looking hosts
   assert.deepEqual(scanSensitive("Endpoint https://partners.northstar.example.com/backchannel-logout"), []);
   assert.ok(scanSensitive("Endpoint https://auth.acme-corp.com/callback").includes("production-looking hostname"));
 });
+
+test("harness source never clicks, types, or submits anything but the synthetic login", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("./admin_route_proof.mjs", import.meta.url), "utf8");
+
+  const verbs = new Set([...source.matchAll(/browser\(session, "([a-z]+)"/g)].map((m) => m[1]));
+  const allowed = new Set(["open", "get", "eval", "set", "wait", "press", "reload", "screenshot", "close"]);
+  for (const verb of verbs) assert.ok(allowed.has(verb), `unexpected agent-browser verb: ${verb}`);
+  const dynamic = source.match(/(?<!function )browser\(session(?!, ")/g) ?? [];
+  assert.equal(dynamic.length, 0, "every browser call names a literal verb");
+  assert.equal((source.match(/execFileSync\("agent-browser"/g) ?? []).length, 1, "agent-browser runs only through the wrapper");
+
+  const keys = [...source.matchAll(/browser\(session, "press", "([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual([...new Set(keys)].sort(), ["Escape", "Tab"]);
+
+  assert.doesNotMatch(source, /\.click\(|dispatchEvent\(|\.submit\(\)/);
+  const submits = source.match(/requestSubmit\(/g) ?? [];
+  assert.equal(submits.length, 1, "only the login form is submitted");
+  assert.match(source, /querySelector\("#login"\)\.value = "ops"; document\.querySelector\("form"\)\.requestSubmit\(\)/);
+});
