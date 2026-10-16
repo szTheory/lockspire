@@ -3,9 +3,11 @@ defmodule Lockspire.Admin.Keys do
   Operator-facing query and command boundary for guided signing-key lifecycle work.
   """
 
+  alias Lockspire.Config
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Observability
   alias Lockspire.Redaction
+  alias Lockspire.Security.KeyEncryption
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -34,8 +36,16 @@ defmodule Lockspire.Admin.Keys do
     end
   end
 
-  @spec generate_key(SigningKey.use_type()) :: {:ok, key_view()} | {:error, term()}
+  @spec generate_key(SigningKey.use_type()) ::
+          {:ok, key_view()} | {:error, :key_encryption_not_configured | term()}
   def generate_key(use \\ :sig) do
+    case Config.key_encryption_keyset() do
+      nil -> {:error, :key_encryption_not_configured}
+      keyset -> generate_sealed_key(use, keyset)
+    end
+  end
+
+  defp generate_sealed_key(use, keyset) do
     with {:ok, server_policy} <- Repository.get_server_policy() do
       {jwk, kty, alg} =
         signing_key_defaults(server_policy.security_profile, use)
@@ -53,21 +63,22 @@ defmodule Lockspire.Admin.Keys do
 
       private_jwk_map = Map.put(private_jwk_map, "kid", kid)
 
-      key = %SigningKey{
-        kid: kid,
-        kty: kty,
-        alg: alg,
-        use: use,
-        public_jwk: public_jwk_map,
-        private_jwk_encrypted: Jason.encode!(private_jwk_map),
-        status: :upcoming,
-        inserted_at: DateTime.utc_now(),
-        updated_at: DateTime.utc_now()
-      }
-
-      with {:ok, published_key} <-
+      with {:ok, sealed} <- KeyEncryption.seal(keyset, kid, Jason.encode!(private_jwk_map)),
+           {:ok, published_key} <-
              transact_with_audit(
-               fn -> Repository.publish_key(key) end,
+               fn ->
+                 Repository.publish_key(%SigningKey{
+                   kid: kid,
+                   kty: kty,
+                   alg: alg,
+                   use: use,
+                   public_jwk: public_jwk_map,
+                   private_jwk_encrypted: sealed,
+                   status: :upcoming,
+                   inserted_at: DateTime.utc_now(),
+                   updated_at: DateTime.utc_now()
+                 })
+               end,
                fn %SigningKey{} = k ->
                  key_audit_event(:key_generated, k, actor_from_attrs(%{}), %{use: use})
                end

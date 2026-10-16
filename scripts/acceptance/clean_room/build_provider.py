@@ -8,6 +8,7 @@ facades.  It never imports a protocol/storage implementation from the checkout.
 from __future__ import annotations
 
 import argparse
+import inspect
 from pathlib import Path
 import shutil
 import socket
@@ -69,7 +70,12 @@ config :lockspire,
   mount_path: \"/lockspire\",
   logout_path: \"/logout\",
   storage_prefix: \"lockspire\",
-  oban_prefix: \"lockspire\"
+  oban_prefix: \"lockspire\",
+  key_encryption: [
+    keys: [{\"clean-room-1\", \"j/nnbOESQTiY8IQZNzKyN8nhCngcI5f1GboKyJoePfQ=\"}],
+    current: \"clean-room-1\",
+    legacy_plaintext: :allow
+  ]
 config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
 """
@@ -359,6 +365,9 @@ def check_bootstrap() -> None:
     )
     if any(item not in bootstrap for item in required_bootstrap):
         raise PackageInputError("provider bootstrap is missing a public enrollment or secret-boundary step")
+    host_runtime_source = inspect.getsource(write_host_runtime)
+    if "key_encryption:" not in host_runtime_source or "clean-room-1" not in host_runtime_source:
+        raise PackageInputError("provider host config is missing the clean-room key_encryption KEK")
     if "dpop_replay_store" in router:
         raise PackageInputError("provider route must use the configured durable DPoP store")
 

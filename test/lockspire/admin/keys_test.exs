@@ -10,6 +10,11 @@ defmodule Lockspire.Admin.KeysTest do
   alias Lockspire.Admin.Keys
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Domain.ServerPolicy
+  alias Lockspire.KeyEncryptionHelpers
+  alias Lockspire.Protocol.IdToken
+  alias Lockspire.Protocol.PrivateJwk
+  alias Lockspire.Security.KeyEncryption
+  alias Lockspire.Host.Claims
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
 
@@ -205,6 +210,76 @@ defmodule Lockspire.Admin.KeysTest do
     assert enc_view.key.alg == "RS256"
   end
 
+  test "generate_key stores a sealed envelope under the current KEK that decodes and signs" do
+    for use <- [:sig, :enc] do
+      assert {:ok, view} = Keys.generate_key(use)
+      assert {:ok, %SigningKey{} = row} = Repository.fetch_signing_key_by_id(view.key.id)
+
+      assert <<"LSK", 1, 6, "test-1", _rest::binary>> = row.private_jwk_encrypted
+      assert {:ok, "test-1"} = KeyEncryption.envelope_kek_id(row.private_jwk_encrypted)
+      refute String.contains?(row.private_jwk_encrypted, "\"d\":")
+
+      assert {:ok, %{"kid" => kid}} = PrivateJwk.decode(row)
+      assert kid == row.kid
+    end
+
+    assert {:ok, view} = Keys.generate_key(:sig)
+    assert {:ok, row} = Repository.fetch_signing_key_by_id(view.key.id)
+
+    assert {:ok, _jwt} =
+             IdToken.sign(%{
+               client_id: "client-123",
+               issuer: "https://example.test/lockspire",
+               host_claims: %Claims{subject: "subject-123", id_token: %{}, userinfo: %{}},
+               interaction_nonce: "nonce-123",
+               access_token: "access-token-123",
+               issued_at: DateTime.utc_now(),
+               signing_key: row
+             })
+  end
+
+  test "generate_key refuses without writing when no KEK is configured" do
+    KeyEncryptionHelpers.put_key_encryption(nil)
+    assert Lockspire.Config.key_encryption_keyset() == nil
+
+    rows_before = Lockspire.TestRepo.aggregate(Lockspire.Storage.Ecto.SigningKeyRecord, :count)
+    audits_before = key_generated_audit_count()
+
+    assert {:error, :key_encryption_not_configured} = Keys.generate_key(:sig)
+
+    assert Lockspire.TestRepo.aggregate(Lockspire.Storage.Ecto.SigningKeyRecord, :count) ==
+             rows_before
+
+    assert key_generated_audit_count() == audits_before
+  end
+
+  test "legacy plaintext rows keep signing when no KEK is configured" do
+    KeyEncryptionHelpers.put_key_encryption(nil)
+    assert Lockspire.Config.key_encryption_keyset() == nil
+
+    jwk = JOSE.JWK.generate_key({:rsa, 2048})
+    {_, private_map} = JOSE.JWK.to_map(jwk)
+    kid = "legacy-kid"
+
+    {:ok, legacy} =
+      Repository.publish_key(
+        signing_key(kid, :active, DateTime.utc_now(),
+          private_jwk_encrypted: Jason.encode!(Map.put(private_map, "kid", kid))
+        )
+      )
+
+    assert {:ok, _jwt} =
+             IdToken.sign(%{
+               client_id: "client-123",
+               issuer: "https://example.test/lockspire",
+               host_claims: %Claims{subject: "subject-123", id_token: %{}, userinfo: %{}},
+               interaction_nonce: "nonce-123",
+               access_token: "access-token-123",
+               issued_at: DateTime.utc_now(),
+               signing_key: legacy
+             })
+  end
+
   test "generate_key returns server policy read failures instead of raising" do
     prior_repo = Application.get_env(:lockspire, :repo)
     Application.put_env(:lockspire, :repo, Lockspire.Admin.KeysTest.FailingPolicyReadRepo)
@@ -322,6 +397,13 @@ defmodule Lockspire.Admin.KeysTest do
         order_by: [desc: audit.id],
         limit: 1
       )
+    )
+  end
+
+  defp key_generated_audit_count do
+    Lockspire.TestRepo.aggregate(
+      from(a in AuditEventRecord, where: a.action == "key_generated"),
+      :count
     )
   end
 
