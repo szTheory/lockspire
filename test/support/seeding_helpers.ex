@@ -24,7 +24,8 @@ defmodule Lockspire.SeedingHelpers do
           |> Map.put("kid", kid)
           |> Map.put("alg", "RS256")
           |> Map.put("use", "sig"),
-        private_jwk_encrypted: Jason.encode!(Map.put(jwk, "kid", kid)),
+        private_jwk_encrypted:
+          Lockspire.KeyEncryptionHelpers.seal_private_jwk(kid, Map.put(jwk, "kid", kid)),
         status: :active,
         published_at: DateTime.utc_now(),
         activated_at: DateTime.utc_now(),
