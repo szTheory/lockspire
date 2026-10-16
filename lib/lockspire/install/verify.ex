@@ -52,8 +52,43 @@ defmodule Lockspire.Install.Verify do
       config_check(:issuer, "issuer", &issuer_value/0),
       config_check(:mount_path, "mount_path", &Lockspire.Config.mount_path/0),
       config_check(:logout_path, "logout_path", &Lockspire.Config.logout_path/0),
-      config_check(:oban, "oban", &Lockspire.Oban.runtime_config!/0)
+      config_check(:oban, "oban", &Lockspire.Oban.runtime_config!/0),
+      key_encryption_check()
     ]
+  end
+
+  # Validates fresh (never the cached accessor, D-05). Details carry key ids,
+  # the current id and the legacy mode only, never key material (D-06).
+  defp key_encryption_check do
+    case safely(&Lockspire.Config.key_encryption!/0) do
+      {:ok, %Lockspire.Security.KeyEncryption.KeySet{} = keyset} ->
+        Check.ok(
+          :key_encryption,
+          "Runtime config :key_encryption is present",
+          "current=#{keyset.current_id} ids=#{Enum.join(keyset.ids, ",")} legacy_plaintext=#{keyset.legacy_plaintext}",
+          "Keep :key_encryption in config/runtime.exs and retain every key id still referenced by stored signing keys."
+        )
+
+      {:ok, nil} ->
+        Check.error(
+          :key_encryption,
+          "Runtime config :key_encryption is missing",
+          "config :lockspire, :key_encryption is not set",
+          key_encryption_fix()
+        )
+
+      {:error, message} ->
+        Check.error(
+          :key_encryption,
+          "Runtime config :key_encryption is invalid",
+          message,
+          key_encryption_fix()
+        )
+    end
+  end
+
+  defp key_encryption_fix do
+    "Add config :lockspire, :key_encryption with keys: [{id, base64 of 32 random bytes}], current: id in config/runtime.exs (create a key with `openssl rand -base64 32`), then rerun `mix lockspire.verify`."
   end
 
   defp config_check(id, key, fetch) do

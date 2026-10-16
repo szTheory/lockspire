@@ -2,6 +2,7 @@ defmodule Lockspire.Install.VerifyTest do
   use ExUnit.Case, async: false
 
   alias Lockspire.Install.Verify
+  alias Lockspire.KeyEncryptionHelpers
 
   defmodule Scope.AccountResolver do
     @behaviour Lockspire.Host.AccountResolver
@@ -182,7 +183,7 @@ defmodule Lockspire.Install.VerifyTest do
 
   setup do
     original_env =
-      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban],
+      for key <- [:repo, :account_resolver, :issuer, :mount_path, :logout_path, :oban, :key_encryption],
           into: %{} do
         {key, Application.get_env(:lockspire, key)}
       end
@@ -259,6 +260,7 @@ defmodule Lockspire.Install.VerifyTest do
              [
                :account_resolver,
                :issuer,
+               :key_encryption,
                :logout_path,
                :migrations,
                :mount_path,
@@ -284,6 +286,56 @@ defmodule Lockspire.Install.VerifyTest do
              Enum.find(result.checks, &(&1.id == :interaction_handler_module))
 
     assert handler_details =~ "MissingInteractionHandler"
+  end
+
+  describe ":key_encryption check" do
+    @sentinel "SENTINEL-KEK-MATERIAL"
+
+    defp verify_opts do
+      [
+        router: Web.Router,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire"
+      ]
+    end
+
+    defp kek_check(result), do: Enum.find(result.checks, &(&1.id == :key_encryption))
+
+    test "is ok with ids, current and mode details for the valid test KEK" do
+      result = Verify.run(verify_opts())
+      assert %{status: :ok, details: details} = kek_check(result)
+      assert details =~ "current=test-1"
+      assert details =~ "ids=test-1,test-2"
+      assert details =~ "legacy_plaintext=allow"
+      assert result.ok?
+    end
+
+    test "errors when the KEK is absent" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      result = Verify.run(verify_opts())
+
+      refute result.ok?
+      assert %{status: :error, details: details, fix: fix} = kek_check(result)
+      assert details =~ ":key_encryption"
+      assert fix =~ "config/runtime.exs"
+      assert fix =~ "openssl rand -base64 32"
+    end
+
+    test "errors on invalid config without leaking the sentinel" do
+      Application.put_env(:lockspire, :key_encryption,
+        keys: [{"bad", @sentinel}],
+        current: "bad"
+      )
+
+      result = Verify.run(verify_opts())
+      refute result.ok?
+      check = kek_check(result)
+      assert check.status == :error
+      assert check.details =~ ":key_encryption"
+      refute inspect(check) =~ @sentinel
+    end
   end
 
   test "reports missing generated authorized-app and consent routes together" do
