@@ -295,6 +295,65 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptE2ETest do
     assert output =~ "stranded  key=#{unreadable} status=retired"
   end
 
+  test "--check, doctor and Verify agree on the same fixture set", %{prefix: prefix} do
+    gone = prefix <> "-gone"
+
+    seed([
+      Helpers.legacy_json_row(prefix <> "-legacy"),
+      Helpers.sealed_row(prefix <> "-other", "test-2"),
+      Helpers.sealed_row(prefix <> "-current", "test-1"),
+      Helpers.sealed_row(gone, "gone-1")
+    ])
+
+    assert {:ok, status} = with_repo(fn -> Keys.encryption_status() end)
+
+    assert {_output, {:error, _}} = run_task(["--check"])
+    assert {doctor_output, {:error, _}} = run_doctor()
+    assert doctor_output =~ "total=4 on_current=1 other_kek=1 legacy=1"
+    assert doctor_output =~ "unknown_kek=#{Enum.sum(Map.values(status.unknown_kek))}"
+    assert doctor_output =~ "unknown_kek=gone-1 rows=1"
+    assert %{status: :error} = key_storage_check()
+
+    with_repo(fn ->
+      {:ok, rows} = Repository.list_signing_keys()
+      row = Enum.find(rows, &(&1.kid == gone))
+      delete_ids([row.id])
+    end)
+
+    assert {_output, :ok} = run_task([])
+
+    assert {_output, :ok} = run_task(["--check"])
+    assert {_output, :ok} = run_doctor()
+    assert %{status: :ok} = key_storage_check()
+  end
+
+  defp run_doctor do
+    Mix.Task.reenable("lockspire.doctor")
+    Mix.Task.reenable("lockspire.doctor.key_encryption")
+    test_pid = self()
+
+    output =
+      capture_io(fn ->
+        result =
+          try do
+            Mix.Task.run("lockspire.doctor", ["key_encryption"])
+            :ok
+          rescue
+            error in Mix.Error -> {:error, error}
+          end
+
+        send(test_pid, {:doctor_result, result})
+      end)
+
+    assert_received {:doctor_result, result}
+    {output, result}
+  end
+
+  defp key_storage_check do
+    result = Lockspire.Install.Verify.run(repo: Lockspire.TestRepo, project_root: File.cwd!())
+    Enum.find(result.checks, &(&1.id == :key_storage))
+  end
+
   defp run_task(args) do
     Mix.Task.reenable(@task)
     test_pid = self()

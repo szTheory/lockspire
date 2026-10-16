@@ -8,6 +8,7 @@ defmodule Lockspire.Install.Verify do
   """
 
   alias Lockspire.Install.Migrations
+  alias Lockspire.Install.RepoRunner
   alias Lockspire.Install.Verify.Check
 
   @host_routes [
@@ -40,7 +41,11 @@ defmodule Lockspire.Install.Verify do
     checks =
       config_checks() ++
         seam_module_checks(resolver_module, interaction_handler_module) ++
-        [router_check(router, mount_path), migrations_check(repo, project_root)]
+        [
+          router_check(router, mount_path),
+          migrations_check(repo, project_root),
+          key_storage_check(repo, opts)
+        ]
 
     %{ok?: Enum.all?(checks, &(&1.status == :ok)), checks: checks}
   end
@@ -366,18 +371,126 @@ defmodule Lockspire.Install.Verify do
     do: ["configured :repo is missing or invalid"]
 
   defp migration_status(repo, migration_path) do
-    {:ok, statuses, _apps} =
-      Ecto.Migrator.with_repo(repo, fn started_repo ->
+    result =
+      RepoRunner.run(repo, fn started_repo ->
         Ecto.Migrator.migrations(started_repo, migration_path, skip_table_creation: true)
       end)
 
-    statuses
+    case result do
+      {:ok, statuses} -> statuses
+      {:error, :repo_unavailable} -> raise "the database is not reachable"
+    end
+  end
+
+  # Reports only what is broken now. Rows that still need re-encryption are fine while the
+  # decoder may read them, so legacy rows are an error only under `legacy_plaintext: :reject`.
+  # A database that cannot be read is a skipped check: the migrations check already reports it.
+  defp key_storage_check(repo, opts) do
+    status_fun =
+      Keyword.get(opts, :key_storage_status, fn -> default_key_storage_status(repo) end)
+
+    case safe_status(status_fun) do
+      {:ok, status} -> key_storage_result(status)
+      {:error, _reason} -> key_storage_skipped()
+    end
+  end
+
+  defp safe_status(status_fun) do
+    case status_fun.() do
+      {:ok, %{} = status} -> {:ok, status}
+      _other -> {:error, :unavailable}
+    end
+  rescue
+    _error -> {:error, :unavailable}
+  catch
+    _kind, _reason -> {:error, :unavailable}
+  end
+
+  defp default_key_storage_status(repo) do
+    case RepoRunner.run(repo, fn _repo -> Lockspire.Admin.Keys.encryption_status() end) do
+      {:ok, {:ok, status}} -> {:ok, status}
+      _other -> {:error, :unavailable}
+    end
+  end
+
+  defp key_storage_skipped do
+    Check.ok(
+      :key_storage,
+      "Stored signing keys were not inspected",
+      "skipped: database unreadable, migrations pending, or key encryption config invalid; " <>
+        "see the migrations and key_encryption checks",
+      key_storage_fix()
+    )
+  end
+
+  defp key_storage_result(status) do
+    stranded = stranded_details(status.stranded_retired)
+
+    cond do
+      status.unknown_kek != %{} or status.undecryptable > 0 ->
+        Check.error(
+          :key_storage,
+          "Stored signing keys use an unknown key-encryption key or cannot be decrypted",
+          "unknown_kek=#{kek_counts(status.unknown_kek)} undecryptable=#{status.undecryptable}" <>
+            stranded,
+          key_storage_fix()
+        )
+
+      status.legacy_plaintext == :reject and status.legacy > 0 ->
+        Check.error(
+          :key_storage,
+          "legacy_plaintext is :reject but #{status.legacy} stored signing keys are still legacy",
+          key_storage_counts(status) <> stranded,
+          key_storage_fix()
+        )
+
+      true ->
+        Check.ok(
+          :key_storage,
+          "Stored signing keys can be read",
+          key_storage_counts(status) <> stranded,
+          key_storage_fix()
+        )
+    end
+  end
+
+  defp key_storage_counts(status) do
+    on_current = Map.get(status.by_kek_id, status.current_kek_id, 0)
+    other = status.by_kek_id |> Map.drop([status.current_kek_id]) |> Map.values() |> Enum.sum()
+
+    "total=#{status.total} on_current=#{on_current} other_kek=#{other} legacy=#{status.legacy} " <>
+      "legacy_plaintext=#{status.legacy_plaintext}"
+  end
+
+  defp kek_counts(counts) when counts == %{}, do: "none"
+
+  defp kek_counts(counts),
+    do: counts |> Enum.sort() |> Enum.map_join(",", fn {id, count} -> "#{id}(#{count})" end)
+
+  defp stranded_details(%{count: 0}), do: ""
+
+  defp stranded_details(%{count: count, kids: kids}) do
+    " stranded_retired=#{count} kids=#{Enum.join(kids, ",")}; these retired keys do not block " <>
+      "readiness"
+  end
+
+  defp key_storage_fix do
+    "Add back any missing key-encryption key id to :keys, or run `mix lockspire.keys.reencrypt` " <>
+      "and then `mix lockspire.keys.reencrypt --check` before setting `legacy_plaintext: :reject`."
   end
 
   defp safely(fun) do
     {:ok, fun.()}
   rescue
-    error in [ArgumentError, RuntimeError, UndefinedFunctionError, FunctionClauseError] ->
+    error in [
+      ArgumentError,
+      RuntimeError,
+      UndefinedFunctionError,
+      FunctionClauseError,
+      MatchError,
+      DBConnection.ConnectionError,
+      Postgrex.Error
+    ] ->
       {:error, Exception.message(error)}
   end
 end
