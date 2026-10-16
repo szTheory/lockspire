@@ -111,7 +111,7 @@ Plans:
 - 156-02: `:reject` refusal in the decoder; `Keys.encryption_status/0`; doctor `key_encryption` check and `Install.Verify` extension; per-row `key_encrypted`/`key_rewrapped` audit; telemetry for legacy reads, refusals and decrypt failures (MIG-02, MIG-03, OPS-02).
 
 **SAFE-01 constraint**: re-encryption updates only the existing column (no migration, no `kek_id` column); refusal is opt-in, so default protocol behavior is unchanged; no decrypt-to-plaintext path.
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -121,7 +121,7 @@ Plans:
 - [x] 156-02-PLAN.md — Readiness and CLI: `Admin.Keys.encryption_status/0`, `mix lockspire.keys.reencrypt [--dry-run | --check]`, doctor row counts, `Install.Verify` `:key_storage` check (MIG-01, MIG-02, OPS-01)
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 156-03-PLAN.md — `:reject` refusal, hot-path telemetry and deduplicated logging, sentinel leak test, ROADMAP/REQUIREMENTS wording fixes, phase gate (MIG-03, OPS-02)
+- [x] 156-03-PLAN.md — `:reject` refusal, hot-path telemetry and deduplicated logging, sentinel leak test, ROADMAP/REQUIREMENTS wording fixes, phase gate (MIG-03, OPS-02)
 
 ### Phase 157: Host Surfaces, Redaction Sweep & Release Proof
 
@@ -161,7 +161,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | Complete    | 2026-10-16 |
-| 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 2/3 | In Progress | - |
+| 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 3/3 | In Progress | - |
 | 157. Host Surfaces, Redaction Sweep & Release Proof | 0/4 | Not started | - |
 
 ## Completed Backlog Scope

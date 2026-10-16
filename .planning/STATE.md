@@ -4,17 +4,17 @@ milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
 current_phase: 156
 current_phase_name: Legacy Migration, KEK Rotation & Plaintext Refusal
-status: executing
-stopped_at: Completed 156-02-PLAN.md
-last_updated: "2026-10-16T14:04:21.649Z"
+status: verifying
+stopped_at: Completed 156-03-PLAN.md
+last_updated: "2026-10-16T14:17:23.987Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 156 execution started
-state_head: 76dcfc8e0ba61db8a0539a6be59e137a950fd226
+state_head: c53da30f6acffe97cf546d89bf8580cc1f96797f
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 8
-  completed_plans: 7
+  completed_plans: 8
   percent: 33
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 Phase: 156 (Legacy Migration, KEK Rotation & Plaintext Refusal) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-16 — Phase 156 execution started
 
 Progress: [███░░░░░░░] 33%
@@ -279,6 +279,7 @@ Progress: [███░░░░░░░] 33%
 - [Phase 156]: 156-01: store callbacks list_signing_key_refs/2 and reencrypt_signing_key/3; assess/2 is the single sealability rule; vanished or CAS-lost rows count as conflicted
 - [Phase 156]: 156-02: unsealable retired rows are stranded_retired and never block readiness; sealable retired rows still block until sealed
 - [Phase 156]: 156-02: Install.Verify :key_storage is :error only for unknown_kek, undecryptable, or :reject with legacy rows; DB problems give a skipped :ok
+- [Phase 156]: 156-03: legacy_plaintext reject refuses non-envelope rows before any parser; hot-path legacy_read/decode_failed are telemetry only with once-per-node log lines
 
 ### Pending Todos
 
@@ -336,8 +337,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T14:04:21.581Z
-Stopped at: Completed 156-02-PLAN.md
+Last session: 2026-10-16T14:17:23.919Z
+Stopped at: Completed 156-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -450,6 +451,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 155 P05 | 40min | 3 tasks | 8 files |
 | Phase 156 P01 | 25 min | 3 tasks | 11 files |
 | Phase 156 P02 | 45 min | 3 tasks | 12 files |
+| Phase 156 P03 | 14 min | 3 tasks | 10 files |
 
 ## Operator Next Steps
 
