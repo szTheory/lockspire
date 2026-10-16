@@ -132,4 +132,39 @@ defmodule Lockspire.RedactionTest do
       assert Lockspire.Redaction.for_audit(%{"iat" => "secret_iat", "a" => 1}) == %{"a" => 1}
     end
   end
+
+  describe "key material" do
+    @key_names ~w(private_jwk_encrypted private_jwk private_key jwk kek key_encryption
+                  key_encryption_key envelope ciphertext)
+    @envelope <<"LSK", 1, 5, 5, 5>>
+
+    for surface <- [:for_telemetry, :for_audit] do
+      test "#{surface} drops every key material name in atom and string form" do
+        for name <- @key_names do
+          atom_map = %{String.to_atom(name) => "secret", kept: 1}
+          string_map = %{name => "secret", "kept" => 1}
+
+          assert apply(Redaction, unquote(surface), [atom_map]) == %{kept: 1}, "atom #{name}"
+
+          assert apply(Redaction, unquote(surface), [string_map]) == %{"kept" => 1},
+                 "string #{name}"
+        end
+      end
+
+      test "#{surface} drops a value that starts with the sealed envelope header" do
+        result =
+          apply(Redaction, unquote(surface), [
+            %{note: @envelope, nested: %{blob: @envelope, ok: "fine"}, list: [@envelope, "fine"]}
+          ])
+
+        assert result == %{nested: %{ok: "fine"}, list: ["fine"]}
+      end
+
+      test "#{surface} keeps operator key identifiers" do
+        metadata = %{kid: "k-1", kek_id: "kek-1", previous_kek_id: "kek-0", key_id: "key-1"}
+
+        assert apply(Redaction, unquote(surface), [metadata]) == metadata
+      end
+    end
+  end
 end

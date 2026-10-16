@@ -352,4 +352,79 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
       refute log =~ "private_jwk_encrypted"
     end
   end
+
+  describe "store paths" do
+    defp sealed_valid_row(kid, kek_id, opts) do
+      row = Helpers.legacy_json_row(kid, opts)
+      jwk = Jason.decode!(row.private_jwk_encrypted)
+
+      {:ok, envelope} =
+        KeyEncryption.seal(sentinel_keyset(kek_id), kid, row.private_jwk_encrypted)
+
+      {%{row | private_jwk_encrypted: envelope}, jwk}
+    end
+
+    test "no key column query reaches repo telemetry or the log, and the JWKS reads omit the column" do
+      configure("leak-1", :allow)
+      repo_query = (Lockspire.TestRepo.config()[:telemetry_prefix] || []) ++ [:query]
+
+      {active_row, jwk} = sealed_valid_row("store-active", "leak-1", status: :active)
+      {next_row, _} = sealed_valid_row("store-next", "leak-1", [])
+      {enc_row, _} = sealed_valid_row("store-enc", "leak-2", status: :active, use: :enc)
+
+      secrets = [jwk["d"], jwk["p"], jwk["q"], @kek_one, @kek_two, @kek_one_bytes, @kek_two_bytes]
+
+      # Seeding goes through publish_key, which must itself be silent; handlers attach first
+      # so a leaking insert would be caught.
+      TelemetryCapture.attach_many([repo_query])
+      now = DateTime.utc_now()
+
+      log =
+        capture_log([level: :debug], fn ->
+          active = Helpers.insert_signing_key_row!(active_row)
+          next = Helpers.insert_signing_key_row!(next_row)
+          _enc = Helpers.insert_signing_key_row!(enc_row)
+
+          assert {:ok, [_ | _]} = Repository.list_signing_keys()
+          assert {:ok, [_ | _]} = Repository.list_decryption_keys()
+          assert {:ok, %{kid: "store-active"}} = Repository.fetch_active_signing_key()
+          assert {:ok, %{kid: "store-next"}} = Repository.fetch_signing_key_by_id(next.id)
+          assert {:ok, _} = Repository.publish_signing_key(next.id, now)
+          assert {:ok, _} = Repository.activate_signing_key(next.id, now)
+          assert {:ok, _} = Repository.retire_signing_key(active.id, now)
+        end)
+
+      sensitive_events = drain()
+
+      refute Enum.any?(sensitive_events, fn {event, _m, _md} -> event == repo_query end),
+             "a key column query reached the repo query telemetry event"
+
+      KeyMaterialMatcher.refute_leak!("store log", log, secrets)
+      KeyMaterialMatcher.refute_leak!("store events", sensitive_events, secrets)
+      refute log =~ "private_jwk_encrypted"
+
+      # The JWKS reads keep their query telemetry but never select the column.
+      public_log =
+        capture_log([level: :debug], fn ->
+          assert {:ok, [%{private_jwk_encrypted: nil} | _]} = Repository.list_active_keys()
+          assert {:ok, [%{private_jwk_encrypted: nil} | _]} = Repository.list_publishable_keys()
+        end)
+
+      public_events = drain()
+
+      assert length(public_events) >= 2, "JWKS reads lost their repo query telemetry"
+
+      for {_event, _m, md} <- public_events do
+        refute to_string(md[:query]) =~ "private_jwk_encrypted"
+      end
+
+      KeyMaterialMatcher.refute_leak!("jwks events", public_events, secrets)
+      KeyMaterialMatcher.refute_leak!("jwks log", public_log, secrets)
+      assert public_log =~ ~r/QUERY OK/
+
+      # An explicit sensitive: false is still honoured.
+      assert {:ok, [_ | _]} = Repository.list_signing_keys(sensitive: false)
+      assert Enum.any?(drain(), fn {event, _m, _md} -> event == repo_query end)
+    end
+  end
 end
