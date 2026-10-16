@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
-current_phase: 155
-current_phase_name: Crypto Core, Config Seam & Bandit Baseline
-status: verifying
-stopped_at: Completed 155-05-PLAN.md
-last_updated: "2026-10-16T03:59:47.511Z"
-last_activity: 2026-10-15
-last_activity_desc: Phase 155 execution started
-state_head: ef5d24b3092cbfc47ba489434b42dce1fab90391
+current_phase: 156
+current_phase_name: Legacy Migration, KEK Rotation & Plaintext Refusal
+status: planning
+stopped_at: Phase 155 complete, ready to plan Phase 156
+last_updated: "2026-10-16T04:12:37.294Z"
+last_activity: 2026-10-16
+last_activity_desc: Phase 155 complete, transitioned to Phase 156
+state_head: e8ea6b490f219880d19794ff937b659e3fe2a754
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
   completed_plans: 5
-  percent: 0
+  percent: 33
 ---
 
 # Project State
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 ## Current Position
 
-Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
-Last activity: 2026-10-15 — Phase 155 execution started
+Phase: 156 — Legacy Migration, KEK Rotation & Plaintext Refusal
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-16 — Phase 155 complete, transitioned to Phase 156
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## Accumulated Context
 
@@ -334,7 +334,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-16T03:59:47.487Z
-Stopped at: Completed 155-05-PLAN.md
+Stopped at: Phase 155 complete, ready to plan Phase 156
 Resume file: None
 
 ## Performance Metrics

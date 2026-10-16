@@ -74,7 +74,7 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
 - 155-03: `Admin.Keys.generate_key/1` seals or refuses; map-form-only `PrivateJwk.decode` (remove `decode/1`) across the six read sites; distinct internal reasons collapsed to `:invalid_signing_key`; `seeding_helpers.ex` and `token_exchange_case.ex` seal; `@derive {Inspect, except: [:private_jwk_encrypted]}` on `SigningKey` and `SigningKeyRecord`; minimal doctor and `Install.Verify` KEK-presence check (KEK-02, ENC-01, ENC-02).
 
 **SAFE-01 constraint**: no protocol response changes, no new deps, no migration; verify `KeyCache` holds no private material.
-**Plans**: 5/5 plans executed
+**Plans**: 5/5 plans complete
 
 Plans:
 **Wave 1**
@@ -150,7 +150,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | In Progress | - |
+| 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | Complete    | 2026-10-16 |
 | 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 0/2 | Not started | - |
 | 157. Host Surfaces, Redaction Sweep & Release Proof | 0/4 | Not started | - |
 

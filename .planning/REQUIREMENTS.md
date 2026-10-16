@@ -14,12 +14,12 @@
 ### Key-encryption config
 
 - [x] **KEK-01**: A host configures `config :lockspire, :key_encryption, keys: [{id, base64_32_bytes}, ...], current: id, legacy_plaintext: :allow | :reject` in runtime config. Invalid config (bad base64, wrong length, duplicate ids or material, unknown `current`, unknown mode, `:reject` without keys) fails boot with an error naming the config key and never the value. No `secret_key_base` fallback and no compile-time config.
-- [ ] **KEK-02**: With the config absent, the app boots and existing keys keep signing; generating a key returns `{:error, :key_encryption_not_configured}` and never writes plaintext; a boot warning, the doctor check and `Install.Verify` report the gap loudly. The upgrade stays non-breaking for existing 1.x installs (user decision 2026-10-15).
+- [x] **KEK-02**: With the config absent, the app boots and existing keys keep signing; generating a key returns `{:error, :key_encryption_not_configured}` and never writes plaintext; a boot warning, the doctor check and `Install.Verify` report the gap loudly. The upgrade stays non-breaking for existing 1.x installs (user decision 2026-10-15).
 
 ### Encryption
 
-- [ ] **ENC-01**: Every newly generated private signing key is stored as an AES-256-GCM envelope (`<<"LSK", 1, kek_id_len, kek_id, iv, tag, ct>>`) sealed with the current key, a fresh random IV, and AAD binding the header and the key's `kid`. Plaintext key material is never written.
-- [ ] **ENC-02**: Every signing or decrypting consumer (ID token, logout token, JARM, introspection JWT, token exchange, JAR) reads envelopes and, under `:allow`, legacy JSON/ETF rows through the map-form `PrivateJwk.decode`. Distinct internal failure reasons collapse to the existing `:invalid_signing_key`, so protocol behavior is unchanged; JWKS and discovery never decrypt.
+- [x] **ENC-01**: Every newly generated private signing key is stored as an AES-256-GCM envelope (`<<"LSK", 1, kek_id_len, kek_id, iv, tag, ct>>`) sealed with the current key, a fresh random IV, and AAD binding the header and the key's `kid`. Plaintext key material is never written.
+- [x] **ENC-02**: Every signing or decrypting consumer (ID token, logout token, JARM, introspection JWT, token exchange, JAR) reads envelopes and, under `:allow`, legacy JSON/ETF rows through the map-form `PrivateJwk.decode`. Distinct internal failure reasons collapse to the existing `:invalid_signing_key`, so protocol behavior is unchanged; JWKS and discovery never decrypt.
 - [x] **ENC-03**: Tests prove rejection of tampered ciphertext, ciphertext swapped between rows (AAD plus post-decrypt `kid` check), an unconfigured KEK id, and a truncated tag, and that random binaries and legacy formats never classify as envelopes.
 
 ### Migration and operations
@@ -66,9 +66,9 @@
 |-------------|-------|--------|
 | DEP-01 | Phase 155 | Complete |
 | KEK-01 | Phase 155 | Complete |
-| KEK-02 | Phase 155 | Pending |
-| ENC-01 | Phase 155 | Pending |
-| ENC-02 | Phase 155 | Pending |
+| KEK-02 | Phase 155 | Complete |
+| ENC-01 | Phase 155 | Complete |
+| ENC-02 | Phase 155 | Complete |
 | ENC-03 | Phase 155 | Complete |
 | MIG-01 | Phase 156 | Pending |
 | MIG-02 | Phase 156 | Pending |
