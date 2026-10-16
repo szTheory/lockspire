@@ -204,7 +204,7 @@ defmodule Lockspire.Admin.Keys.Reencrypt do
   end
 
   defp dry_run(report, decide) do
-    case Repository.list_signing_keys() do
+    case Repository.list_signing_keys(sensitive: true) do
       {:ok, keys} ->
         keys
         |> Enum.sort_by(& &1.id)

@@ -33,6 +33,9 @@ defmodule Lockspire.Storage.RepositoryTest do
 
   test "keeps sensitive Ecto options at the repository support boundary" do
     assert Support.repo_options(sensitive: true)[:log] == false
+    assert Keyword.has_key?(Support.repo_options(sensitive: true), :telemetry_event)
+    assert Support.repo_options(sensitive: true)[:telemetry_event] == nil
+    refute Keyword.has_key?(Support.repo_options([]), :telemetry_event)
     assert Support.repo_options([]) == Lockspire.Storage.Ecto.Prefix.prefix_opts()
   end
 

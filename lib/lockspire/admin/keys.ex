@@ -289,7 +289,7 @@ defmodule Lockspire.Admin.Keys do
   end
 
   defp status_rows do
-    case Repository.list_signing_keys() do
+    case Repository.list_signing_keys(sensitive: true) do
       {:ok, rows} -> {:ok, rows}
       {:error, _exception} -> {:error, :storage_unavailable}
     end

@@ -36,7 +36,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
     SigningKeyRecord
     |> maybe_filter_status(Keyword.get(opts, :status))
     |> order_by([key], desc: key.inserted_at, desc: key.id)
-    |> then(&Support.all(repo, &1))
+    |> then(&Support.all(repo, &1, sensitive: Keyword.get(opts, :sensitive, false)))
     |> Enum.map(&SigningKeyRecord.to_domain/1)
     |> then(&{:ok, &1})
   rescue
@@ -217,7 +217,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
 
   defp replace_material(repo, record, new_binary, audit_event, info) do
     # The compare-and-set binds the previous stored bytes, which may be legacy plaintext, so
-    # query logging and the repo query telemetry event are both turned off for this call only.
+    # `sensitive: true` turns off query logging and the repo query telemetry event.
     result =
       Support.update_all(
         repo,
@@ -226,8 +226,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
             key.id == ^record.id and key.private_jwk_encrypted == ^record.private_jwk_encrypted
         ),
         [set: [private_jwk_encrypted: new_binary, updated_at: DateTime.utc_now()]],
-        sensitive: true,
-        telemetry_event: nil
+        sensitive: true
       )
 
     case result do

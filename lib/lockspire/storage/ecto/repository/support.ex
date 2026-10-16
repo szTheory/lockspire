@@ -37,7 +37,14 @@ defmodule Lockspire.Storage.Ecto.Repository.Support do
     |> Keyword.merge(Lockspire.Storage.Ecto.Prefix.prefix_opts())
   end
 
+  # `sensitive: true` silences BOTH query channels: the Logger line (`log: false`) and the
+  # `[:repo, :query]` telemetry event (`telemetry_event: nil`). The event carries the selected
+  # rows in `result`, so one without the other would still leak stored key bytes.
   defp maybe_disable_sensitive_logging(options, opts) do
-    if Keyword.get(opts, :sensitive, false), do: Keyword.put(options, :log, false), else: options
+    if Keyword.get(opts, :sensitive, false) do
+      options |> Keyword.put(:log, false) |> Keyword.put(:telemetry_event, nil)
+    else
+      options
+    end
   end
 end
