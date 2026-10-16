@@ -647,18 +647,22 @@ No new rescue list for `safely/1` is strictly needed for the new check, but wide
 | A6 | Unit-suite `Install.Verify` and doctor tests tolerate a DB read against committed state | Pitfall 10 | Spurious red tests if integration leftovers exist; mitigated by injectable status for Verify |
 | A7 | Page size ~100 is irrelevant at tens of rows | Engine | None functionally |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **OQ-1: Second `KeyStore` callback for id paging.**
+1. **OQ-1: Second `KeyStore` callback for id paging. (RESOLVED)**
    - Known: D-01 says candidate ids are read in keyset pages; no existing store method returns ids; `list_signing_keys/1` returns whole rows.
    - Unclear: whether to add a trivial `list_signing_key_ids/2` callback (+ delegate) or list rows once.
    - Recommendation: add the callback (honours D-01, costs ~10 lines, covered automatically by the architecture "behavior-complete facade" test). If the planner prefers fewer moving parts, `list_signing_keys/0` + `Enum.map(& &1.id)` is functionally equivalent at tens of rows; note it as a deliberate D-01 simplification.
-2. **OQ-2: Count for a row that vanishes between id listing and the lock (`:not_found`).**
+   - RESOLVED: add the callback, named `list_signing_key_refs(after_id, limit)` and returning `{id, kid}` pairs in ascending id order, with a `Repository` delegate (156-01 Task 1).
+2. **OQ-2: Count for a row that vanishes between id listing and the lock (`:not_found`). (RESOLVED)**
    - Recommendation: count it in `conflicted` (rerun is safe, row is gone or changed).
-3. **OQ-3: `Lockspire.Admin` doctests/`@spec` for `reencrypt/1` report type.**
+   - RESOLVED: a vanished row (`:not_found`) increments `conflicted` (156-01 Task 2 report rules).
+3. **OQ-3: `Lockspire.Admin` doctests/`@spec` for `reencrypt/1` report type. (RESOLVED)**
    - Recommendation: define `@type reencrypt_report` and `@type encryption_status` in `Admin.Keys` and reference them from `Admin` defdelegate specs.
-4. **OQ-4: Whether to also fix the same `with_repo` restart behaviour in `migration_status/2`.**
+   - RESOLVED: `@type reencrypt_report` (156-01) and `@type encryption_status` (156-02) live in `Lockspire.Admin.Keys`; the `Lockspire.Admin` delegates reference them.
+4. **OQ-4: Whether to also fix the same `with_repo` restart behaviour in `migration_status/2`. (RESOLVED)**
    - Recommendation: yes, reuse the shared guard in the same plan (same function being touched for `safely/1`).
+   - RESOLVED: the shared `Lockspire.Install.RepoRunner.run/2` guard is used by doctor, Verify's `:key_storage` check and Verify's existing `migration_status/2` (156-02 Task 3).
 
 ## Environment Availability
 
