@@ -16,6 +16,10 @@ defmodule Mix.Tasks.Lockspire.Doctor do
     Mix.Task.run("lockspire.doctor.token_format", rest)
   end
 
+  def run(["key_encryption" | rest]) do
+    Mix.Task.run("lockspire.doctor.key_encryption", rest)
+  end
+
   def run(_args) do
     Mix.raise("""
     Unknown doctor command.
@@ -23,6 +27,7 @@ defmodule Mix.Tasks.Lockspire.Doctor do
     Supported commands:
       mix lockspire.doctor remote-jwks --client CLIENT_ID
       mix lockspire.doctor token_format
+      mix lockspire.doctor key_encryption
     """)
   end
 end
