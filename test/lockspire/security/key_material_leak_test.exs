@@ -430,6 +430,211 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
     end
   end
 
+  describe "malformed key sweep" do
+    alias Lockspire.Domain.Client
+    alias Lockspire.Domain.LogoutDelivery
+    alias Lockspire.Domain.LogoutEvent
+    alias Lockspire.Domain.ServerPolicy
+    alias Lockspire.Domain.SigningKey
+    alias Lockspire.Domain.Token
+    alias Lockspire.Protocol.AccessTokenSigner
+    alias Lockspire.Protocol.IntrospectionJwt
+    alias Lockspire.Protocol.Jar
+    alias Lockspire.Protocol.Jarm
+    alias Lockspire.Protocol.LogoutToken
+    alias Lockspire.Protocol.TokenExchange.Error
+
+    defmodule MalformedKeyStore do
+      @moduledoc false
+      def fetch_active_signing_key(opts) do
+        key = Process.get(:malformed_key)
+        {:ok, %{key | alg: Keyword.get(opts, :alg, key.alg)}}
+      end
+    end
+
+    defmodule MalformedPolicyStore do
+      @moduledoc false
+      def get_server_policy, do: {:ok, %ServerPolicy{access_token_format: :jwt}}
+    end
+
+    defp malformed_key(kid, alg) do
+      {_meta, map} = {:okp, :Ed25519} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+
+      jwk =
+        map
+        |> Map.put("kid", kid)
+        |> Map.put("d", Base.url_encode64(@sentinel_d, padding: false))
+
+      %SigningKey{
+        kid: kid,
+        alg: alg,
+        private_jwk_encrypted: Helpers.seal_private_jwk(kid, jwk)
+      }
+    end
+
+    defp existing_error?(
+           :server_error,
+           {:error,
+            %Error{status: 500, error: "server_error", reason_code: :token_signing_failed}}
+         ),
+         do: true
+
+    defp existing_error?(expected, result), do: expected == result
+
+    # Runs one consumer call, returning {result, rescued_exception_messages}.
+    defp guarded(fun) do
+      {fun.(), []}
+    rescue
+      error -> {:raised, [Exception.message(error)]}
+    end
+
+    test "a sealed OKP wrong-length-d key leaks nothing through any of the six consumers" do
+      configure("leak-1", :allow)
+      issued_at = ~U[2026-04-28 15:00:00Z]
+      issuer = "https://example.test/lockspire"
+
+      eddsa = malformed_key("malformed-eddsa", "EdDSA")
+      rs256 = malformed_key("malformed-rs", "RS256")
+      jar_key = malformed_key("malformed-jar", "RSA-OAEP")
+
+      enc = JOSE.JWK.generate_key({:rsa, 2048})
+
+      {_, jwe} =
+        enc
+        |> JOSE.JWE.block_encrypt("payload", %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+        |> JOSE.JWE.compact()
+
+      repo_query = (Lockspire.TestRepo.config()[:telemetry_prefix] || []) ++ [:query]
+      key_events = for e <- @key_events, do: [:lockspire, :key, e]
+      TelemetryCapture.attach_many([repo_query | key_events])
+
+      outcomes = :ets.new(:malformed_outcomes, [:public])
+
+      log =
+        capture_log([level: :debug], fn ->
+          # A non-sensitive query keeps the repo log and telemetry channels provably live.
+          assert {:ok, _refs} = Repository.list_signing_key_refs(0, 10)
+
+          calls = [
+            {:id_token, {:error, :invalid_signing_key},
+             fn ->
+               IdToken.sign(%{
+                 client_id: "client-123",
+                 issuer: issuer,
+                 host_claims: %Claims{subject: "sub-1", id_token: %{}, userinfo: %{}},
+                 interaction_nonce: "nonce-123",
+                 access_token: "access-token-123",
+                 issued_at: issued_at,
+                 signing_key: eddsa
+               })
+             end},
+            {:logout_token, {:error, :invalid_signing_key},
+             fn ->
+               LogoutToken.sign(%{
+                 issuer: issuer,
+                 logout_event: %LogoutEvent{event_id: "evt-1", sid: "sid-1", subject: "sub-1"},
+                 delivery: %LogoutDelivery{
+                   delivery_id: "d-1",
+                   client_id: "client-1",
+                   channel: :backchannel,
+                   target_uri: "https://snapshot.example.com/backchannel-logout",
+                   session_required: true
+                 },
+                 issued_at: issued_at,
+                 signing_key: eddsa
+               })
+             end},
+            {:jarm, {:error, :invalid_signing_key},
+             fn ->
+               Process.put(:malformed_key, rs256)
+
+               Jarm.sign(%{code: "c1"}, %{
+                 client: %Client{
+                   client_id: "client-1",
+                   authorization_signed_response_alg: :RS256,
+                   security_profile: :none
+                 },
+                 issuer: "https://auth.example.com",
+                 key_store: MalformedKeyStore
+               })
+             end},
+            {:introspection_jwt, {:error, :invalid_signing_key},
+             fn ->
+               Process.put(:malformed_key, eddsa)
+
+               IntrospectionJwt.sign(%{
+                 issuer: "https://auth.example.com",
+                 issued_at: issued_at,
+                 success: %{
+                   payload: %{active: true, client_id: "tc", token_type: "access_token", sub: "a"},
+                   caller: %Client{client_id: "rs-client", security_profile: :none},
+                   security_profile: :none
+                 },
+                 key_store: MalformedKeyStore
+               })
+             end},
+            {:access_token, :server_error,
+             fn ->
+               Process.put(:malformed_key, eddsa)
+
+               AccessTokenSigner.issue(
+                 %Token{
+                   token_hash: "placeholder",
+                   token_type: :access_token,
+                   client_id: "test_client",
+                   account_id: "account-123",
+                   scopes: ["read"],
+                   audience: [],
+                   expires_at: DateTime.add(DateTime.utc_now(), 3600, :second)
+                 },
+                 %Client{client_id: "test_client", allowed_grant_types: ["authorization_code"]},
+                 %{
+                   opts: [key_store: MalformedKeyStore, server_policy_store: MalformedPolicyStore]
+                 }
+               )
+             end},
+            {:jar, {:error, :decryption_failed}, fn -> Jar.decrypt(jwe, [jar_key]) end}
+          ]
+
+          collected =
+            for {name, expected, fun} <- calls do
+              {result, rescued} = guarded(fun)
+              {name, expected, result, rescued}
+            end
+
+          :ets.insert(outcomes, {:all, collected})
+        end)
+
+      [{:all, collected}] = :ets.lookup(outcomes, :all)
+      events = drain()
+
+      assert log =~ ~r/QUERY (OK|ERROR)/,
+             "repo query logging is not active, so the sweep would be vacuous"
+
+      assert Enum.any?(events, fn {event, _m, _md} -> event == repo_query end),
+             "no repo query event arrived, so the sweep would be vacuous"
+
+      secrets = [
+        @sentinel_d,
+        Base.url_encode64(@sentinel_d, padding: false),
+        @kek_one,
+        @kek_two,
+        @kek_one_bytes,
+        @kek_two_bytes
+      ]
+
+      for {name, expected, result, rescued} <- collected do
+        assert rescued == [], "#{name} raised"
+        assert existing_error?(expected, result), "#{name} did not return its existing error"
+        KeyMaterialMatcher.refute_leak!("#{name} result", result, secrets)
+        KeyMaterialMatcher.refute_leak!("#{name} rescued message", rescued, secrets)
+      end
+
+      KeyMaterialMatcher.refute_leak!("malformed sweep log", log, secrets)
+      KeyMaterialMatcher.refute_leak!("malformed sweep events", events, secrets)
+    end
+  end
+
   describe "full sweep" do
     alias Lockspire.Domain.Client
     alias Lockspire.Domain.LogoutDelivery
