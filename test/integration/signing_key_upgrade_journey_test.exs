@@ -72,6 +72,116 @@ defmodule Lockspire.Integration.SigningKeyUpgradeJourneyTest do
     assert read_back(kid).kid == kid
   end
 
+  test "legacy JSON and ETF rows for sig and enc survive migration, :reject and a KEK rotation",
+       %{prefix: prefix} do
+    Helpers.put_key_encryption(
+      keys: Helpers.config_keys(),
+      current: "test-1",
+      legacy_plaintext: :allow
+    )
+
+    kids = %{
+      sig_json: prefix <> "-sig-json",
+      sig_etf: prefix <> "-sig-etf",
+      enc_json: prefix <> "-enc-json",
+      enc_etf: prefix <> "-enc-etf"
+    }
+
+    rows = [
+      Helpers.legacy_json_row(kids.sig_json, use: :sig, status: :active),
+      Helpers.legacy_etf_row(kids.sig_etf, use: :sig),
+      Helpers.legacy_json_row(kids.enc_json, use: :enc),
+      Helpers.legacy_etf_row(kids.enc_etf, use: :enc)
+    ]
+
+    original = rows |> hd() |> Map.fetch!(:private_jwk_encrypted) |> Jason.decode!()
+    verify = verify_key(original)
+    seeded = seed(rows)
+    assert length(seeded) == 4
+
+    # Step 2: every consumer works from the legacy bytes under :allow.
+    assert_all_consumers(kids, verify)
+
+    # Step 3: migrate.
+    assert {_output, {:error, _}} = run_task(["--check"])
+    assert {_output, :ok} = run_task([])
+    assert {_output, :ok} = run_task(["--check"])
+
+    # Step 4: only current-KEK envelopes with no private members on disk.
+    stored_rows = stored(prefix)
+    assert length(stored_rows) == 4
+
+    for row <- stored_rows do
+      assert_sealed(row.private_jwk_encrypted, original, "test-1")
+    end
+
+    # Step 5: strict mode.
+    Helpers.put_key_encryption(
+      keys: Helpers.config_keys(),
+      current: "test-1",
+      legacy_plaintext: :reject
+    )
+
+    assert_all_consumers(kids, verify)
+
+    # Step 6: rotate to test-2 (add non-current, switch current, re-encrypt, check).
+    Helpers.put_key_encryption(
+      keys: Helpers.config_keys(["test-1", "test-2"]),
+      current: "test-1",
+      legacy_plaintext: :reject
+    )
+
+    Helpers.put_key_encryption(
+      keys: Helpers.config_keys(["test-1", "test-2"]),
+      current: "test-2",
+      legacy_plaintext: :reject
+    )
+
+    assert {_output, :ok} = run_task([])
+    assert {_output, :ok} = run_task(["--check"])
+
+    rotated = stored(prefix)
+    assert length(rotated) == 4
+    kek_ids = Enum.map(rotated, &KeyEncryption.envelope_kek_id(&1.private_jwk_encrypted))
+    assert Enum.all?(kek_ids, &(&1 == {:ok, "test-2"}))
+    assert Enum.count(kek_ids, &(&1 == {:ok, "test-1"})) == 0
+
+    for row <- rotated do
+      assert_sealed(row.private_jwk_encrypted, original, "test-2")
+    end
+
+    # The old key is removed; only test-2 remains.
+    Helpers.put_key_encryption(
+      keys: Helpers.config_keys(["test-2"]),
+      current: "test-2",
+      legacy_plaintext: :reject
+    )
+
+    # Step 7: same kids, still working.
+    assert_all_consumers(kids, verify)
+  end
+
+  # Reads every row back from the database, then drives all six consumers over each sig/enc pair.
+  defp assert_all_consumers(kids, verify) do
+    for sig_kid <- [kids.sig_json, kids.sig_etf], enc_kid <- [kids.enc_json, kids.enc_etf] do
+      sig = read_back(sig_kid)
+      enc = read_back(enc_kid)
+      assert sig.kid == sig_kid
+      assert enc.kid == enc_kid
+
+      results = SigningConsumers.sign_all(%{sig: sig, enc: enc, verify: verify})
+
+      assert results == %{
+               id_token: :ok,
+               logout_token: :ok,
+               jarm: :ok,
+               introspection_jwt: :ok,
+               access_token: :ok,
+               jar_decrypt: :ok
+             }
+    end
+  end
+
   defp id_token_from_storage(kid) do
     key = read_back(kid)
 
