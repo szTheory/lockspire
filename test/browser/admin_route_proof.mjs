@@ -13,6 +13,14 @@
 //
 // Safety rules: the only form ever submitted is the synthetic login form. No
 // control is clicked, and the keyboard sweep sends Tab and Escape only.
+//
+// Themes and prefers-color-scheme: "light" and "dark" rows store that theme
+// and emulate the matching media. A "system" row stores no theme, so the page
+// follows prefers-color-scheme; the matrix runs every "system" row twice, once
+// under light media and once under dark media, and the media is written into
+// the row's State cell ("synthetic default data; system light media"). Rows
+// recorded before this split, whose State is plain "synthetic default data",
+// were captured under light media only: there "system" means system-light.
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -161,22 +169,34 @@ export function journeyFor(template) {
   return hit ? hit[1] : "Configure";
 }
 
+export const SYSTEM_MEDIA = ["light", "dark"];
+
+// The prefers-color-scheme values a theme is captured under. An explicit theme
+// pins its own scheme; "system" follows the media, so it runs under each.
+export function mediaFor(theme, systemMedia = SYSTEM_MEDIA) {
+  if (theme === "light" || theme === "dark") return [theme];
+  return systemMedia;
+}
+
 export function buildMatrix({
   widths = DEFAULT_WIDTHS,
   themes = DEFAULT_THEMES,
   motions = ["default"],
-  routes = routeTemplates()
+  routes = routeTemplates(),
+  systemMedia = SYSTEM_MEDIA
 } = {}) {
   const seen = new Set();
   const entries = [];
   for (const route of routes) {
     for (const width of widths) {
       for (const theme of themes) {
-        for (const motion of motions) {
-          const key = `${route}|${width}|${theme}|${motion}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          entries.push({ route, width, theme, motion });
+        for (const media of mediaFor(theme, systemMedia)) {
+          for (const motion of motions) {
+            const key = `${route}|${width}|${theme}|${media}|${motion}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            entries.push({ route, width, theme, media, motion });
+          }
         }
       }
     }
@@ -185,7 +205,14 @@ export function buildMatrix({
 }
 
 export function matrixSize() {
-  return routeTemplates().length * DEFAULT_WIDTHS.length * DEFAULT_THEMES.length;
+  const variants = DEFAULT_THEMES.reduce((sum, theme) => sum + mediaFor(theme).length, 0);
+  return routeTemplates().length * DEFAULT_WIDTHS.length * variants;
+}
+
+// The State cell names the media for "system" rows, so the light and dark
+// captures of one path are distinct evidence rows.
+export function stateFor(entry) {
+  return entry.theme === "system" ? `synthetic default data; system ${entry.media} media` : "synthetic default data";
 }
 
 export function collectScanText({
@@ -558,17 +585,12 @@ function ensureOpsSession(session, url) {
   }
 }
 
-function mediaScheme(theme, mediaOption) {
-  return theme === "dark" ? "dark" : theme === "light" ? "light" : mediaOption || "light";
-}
-
-function applyEnvironment(session, { width, height, theme, motion, media }) {
+function applyEnvironment(session, { width, height, motion, media }) {
   browser(session, "set", "viewport", String(width), String(height));
-  const scheme = mediaScheme(theme, media);
   if (motion === "reduced-motion") {
-    browser(session, "set", "media", scheme, "reduced-motion");
+    browser(session, "set", "media", media, "reduced-motion");
   } else {
-    browser(session, "set", "media", scheme);
+    browser(session, "set", "media", media);
   }
 }
 
@@ -583,7 +605,8 @@ function applyTheme(session, theme) {
 }
 
 function fileStem(template, entry) {
-  return `${routeSlug(template)}-${entry.width}-${entry.theme}-${entry.motion}`;
+  const theme = entry.theme === "system" ? `system-${entry.media}` : entry.theme;
+  return `${routeSlug(template)}-${entry.width}-${theme}-${entry.motion}`;
 }
 
 function keyboardSweep(session) {
@@ -655,6 +678,7 @@ function observe(session, template, entry, options) {
     theme: entry.theme,
     motion: entry.motion,
     focusPath,
+    state: stateFor(entry),
     scrollWidth: sweep.scrollWidth,
     clientWidth: sweep.clientWidth,
     result,
@@ -756,12 +780,17 @@ function main(argv) {
     console.error(error.message);
     return 2;
   }
-  const media = args.media && args.media !== true ? args.media : "light";
+  if (args.media !== undefined && !SYSTEM_MEDIA.includes(args.media)) {
+    console.error("--media must be light or dark; it sets prefers-color-scheme for system rows");
+    return 2;
+  }
+  // Without --media, matrix "system" rows run under both schemes and a single
+  // capture runs under light.
+  const systemMedia = args.media ? [args.media] : args.matrix ? SYSTEM_MEDIA : ["light"];
   const motionArg = args.motion && args.motion !== true ? args.motion : "default";
   const options = {
     out,
     height,
-    media,
     screenshot: Boolean(args.screenshot),
     sections: Boolean(args.sections),
     keyboard: Boolean(args.keyboard)
@@ -775,23 +804,26 @@ function main(argv) {
       widths,
       themes: csv(args.theme, DEFAULT_THEMES),
       motions,
+      systemMedia,
       routes: args.changed ? CHANGED_PAGES : args.route && args.route !== true ? csv(args.route, []) : routeTemplates()
     });
   } else {
     const route = args.route && args.route !== true ? args.route : null;
     if (!route) {
-      console.error("usage: admin_route_proof.mjs --route <template-or-path> [--width N] [--theme light|dark|system] [--motion default|reduced-motion] [--keyboard] [--screenshot] [--sections] [--out DIR]");
+      console.error("usage: admin_route_proof.mjs --route <template-or-path> [--width N] [--theme light|dark|system] [--media light|dark] [--motion default|reduced-motion] [--keyboard] [--screenshot] [--sections] [--out DIR]");
       return 2;
     }
     if (widths.length > 1) {
       console.error("--width takes one value without --matrix");
       return 2;
     }
+    const theme = args.theme && args.theme !== true ? args.theme : "light";
     entries = [
       {
         route,
         width: widths[0],
-        theme: args.theme && args.theme !== true ? args.theme : "light",
+        theme,
+        media: mediaFor(theme, systemMedia)[0],
         motion: motionArg
       }
     ];
@@ -814,14 +846,14 @@ function main(argv) {
     const session = `lockspire-route-proof-${process.pid}-${theme}`;
     try {
       const first = themeEntries[0];
-      applyEnvironment(session, { ...first, height, media });
+      applyEnvironment(session, { ...first, height });
       ensureOpsSession(session, `${baseUrl()}/admin/overview`);
       applyTheme(session, theme);
       let lastEnv = null;
       for (const entry of themeEntries) {
-        const envKey = `${entry.width}|${entry.motion}`;
+        const envKey = `${entry.width}|${entry.media}|${entry.motion}`;
         if (envKey !== lastEnv) {
-          applyEnvironment(session, { ...entry, height, media });
+          applyEnvironment(session, { ...entry, height });
           lastEnv = envKey;
         }
         try {
@@ -830,7 +862,7 @@ function main(argv) {
           observations.push(observation);
           console.log(row);
         } catch (error) {
-          console.error(`FAILED ${entry.route} ${entry.width}px ${entry.theme}: ${error.message}`);
+          console.error(`FAILED ${entry.route} ${entry.width}px ${entry.theme} (${entry.media} media): ${error.message}`);
           exitCode = 1;
           // Sensitive material on one page means the demo data is not what the
           // harness assumes; stop the whole run rather than keep capturing.

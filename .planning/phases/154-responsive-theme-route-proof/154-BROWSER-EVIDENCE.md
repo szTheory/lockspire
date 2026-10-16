@@ -2,7 +2,9 @@
 
 These rows come from the tracked harness `test/browser/admin_route_proof.mjs`, run against the restarted review demo on source `d3b2fec2c9a66245933a33789b34cbd3ff6fcd8a` (last source commit `d3b2fec2`; container restarted 2026-10-15T23:40:30Z). The harness runs locally only, with `AGENT_BROWSER_ARGS=--disable-gpu-vsync,--disable-frame-rate-limit` (D-05). The table is validated once with `BrowserEvidence.parse!/1` and is not pinned by a test.
 
-**Row count:** 681 rows parse with `BrowserEvidence.parse!/1`: 630 full matrix, 30 desktop capture size, 7 reduced motion, 14 keyboard. Results: 681 pass, 0 fail, 0 blocked.
+**Row count:** 693 rows parse with `BrowserEvidence.parse!/1`: 630 full matrix, 30 desktop capture size, 7 reduced motion, 14 keyboard, 12 system-dark. Results: 693 pass, 0 fail, 0 blocked.
+
+**What "system" means here (code review IN-06):** every `system` row whose State is plain `synthetic default data` was captured under `prefers-color-scheme: light`, so in those rows "system" means system-light. The harness now runs matrix `system` rows under both light and dark media and writes the media into State. The system-dark section at the end covers the 12 changed pages at 390 px; the full matrix was not re-run.
 
 ## Full matrix: 30 paths x 320/390/640/768/1119/1120/1280 px x light/dark/system (630 rows)
 
@@ -710,3 +712,22 @@ These pages carry the animated surfaces: tooltips, tabs, confirmation panel, det
 | `/admin/device_authorizations` | Support | 390px | light | default | tab x21; indicator 21/21; offscreen 0 | synthetic default data | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
 | `/admin/policies/dcr` | Configure | 1280px | light | default | tab x40; indicator 40/40; offscreen 0 | synthetic default data | 1280 | 1280 | pass | h1=1; clipped=0; unlabeled=0; small-targets=13 | passed denylist | none | local route proof capture |
 | `/admin/policies/dcr` | Configure | 390px | light | default | tab x38; indicator 38/38; offscreen 0 | synthetic default data | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=13 | passed denylist | none | local route proof capture |
+
+## System theme under dark media: 12 changed pages at 390 px (12 rows)
+
+Added after code review (IN-06). Run on 2026-10-15 at harness commit `cfd8517a` plus the uncommitted system/media split, against the review demo as found (not restarted). Command: `node test/browser/admin_route_proof.mjs --matrix --changed --width 390 --theme system --media dark --out tmp/admin-ui-polish/v1.42/final/matrix/system-dark`. The emulated `prefers-color-scheme: dark` was confirmed with `matchMedia` in a separate navigate-only session.
+
+| Route / Surface | Journey | Viewport | Theme | Motion | Focus path | State | scrollWidth | clientWidth | Result | Scrubbed notes | Sensitive evidence check | Gap note | Deterministic command outcome |
+|---|---|---|---|---|---|---|---:|---:|---|---|---|---|---|
+| `/admin/clients` | Configure | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/clients/new` | Configure | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=6 | passed denylist | none | local route proof capture |
+| `/admin/clients/:client_id` | Configure | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=1 | passed denylist | none | local route proof capture |
+| `/admin/clients/:client_id/edit` | Configure | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=6 | passed denylist | none | local route proof capture |
+| `/admin/overview` | Orient | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/interactions` | Support | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/device_authorizations` | Support | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/logouts` | Support | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/policies` | Configure | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/keys` | Operate | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=4 | passed denylist | none | local route proof capture |
+| `/admin/consents` | Operate | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |
+| `/admin/tokens` | Operate | 390px | system | default | page load | synthetic default data; system dark media | 390 | 390 | pass | h1=1; clipped=0; unlabeled=0; small-targets=0 | passed denylist | none | local route proof capture |

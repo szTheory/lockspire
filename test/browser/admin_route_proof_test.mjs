@@ -17,7 +17,9 @@ import {
   formatEvidenceRow,
   isLocalDevHost,
   matrixSize,
+  mediaFor,
   parseWidths,
+  stateFor,
   routeTemplates,
   scanSensitive,
   sectionPlan
@@ -121,8 +123,9 @@ test("the harness re-scans the page after the keyboard sweep and before every sc
 });
 
 test("matrixSize and CHANGED_PAGES are derived, not hard-coded", () => {
-  assert.equal(matrixSize(), routeTemplates().length * DEFAULT_WIDTHS.length * DEFAULT_THEMES.length);
-  assert.equal(matrixSize(), 630);
+  assert.equal(matrixSize(), buildMatrix().length);
+  // light + dark + system under light media + system under dark media
+  assert.equal(matrixSize(), 30 * 7 * 4);
   assert.equal(CHANGED_PAGES.length, 12);
   const routes = routeTemplates();
   for (const page of CHANGED_PAGES) assert.ok(routes.includes(page), `${page} is a known template`);
@@ -304,4 +307,23 @@ test("ALLOWED_WIDTHS mirrors the BrowserEvidence viewport list", async () => {
   const viewports = [...block.matchAll(/"(\d+)px"/g)].map((m) => Number(m[1]));
   assert.deepEqual(ALLOWED_WIDTHS, viewports);
   for (const width of DEFAULT_WIDTHS) assert.ok(ALLOWED_WIDTHS.includes(width));
+});
+
+test("system rows run under both prefers-color-scheme values and say which", () => {
+  assert.deepEqual(mediaFor("light"), ["light"]);
+  assert.deepEqual(mediaFor("dark"), ["dark"]);
+  assert.deepEqual(mediaFor("system"), ["light", "dark"]);
+
+  const matrix = buildMatrix({ widths: [390], themes: ["light", "dark", "system"], routes: ["/admin"] });
+  assert.deepEqual(
+    matrix.map((e) => `${e.theme}/${e.media}`),
+    ["light/light", "dark/dark", "system/light", "system/dark"]
+  );
+  const onlyDark = buildMatrix({ widths: [390], themes: ["system"], routes: ["/admin"], systemMedia: ["dark"] });
+  assert.deepEqual(onlyDark.map((e) => e.media), ["dark"]);
+
+  const states = matrix.map(stateFor);
+  assert.equal(new Set(states).size, 3, "system light and system dark rows have distinct State cells");
+  assert.equal(stateFor({ theme: "system", media: "dark" }), "synthetic default data; system dark media");
+  assert.equal(stateFor({ theme: "dark", media: "dark" }), "synthetic default data");
 });

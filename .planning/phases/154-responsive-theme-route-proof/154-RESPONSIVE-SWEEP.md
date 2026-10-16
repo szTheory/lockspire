@@ -7,6 +7,7 @@
 - Source HEAD at sweep start: `b932385be37b7d42ada0ddc2c4b001ae91496b84`; `git status --porcelain` empty (clean) at that point.
 - Demo: container `lockspire-ui-review-web-1` restarted 2026-10-15T21:56:41Z, readiness polled until the site answered, `scripts/demo/admin-ui --project lockspire-ui-review smoke` passed (after a 10 s settle).
 - Widths: 320, 390, 640, 768, 1119, 1120, 1280 CSS px. Themes: light, dark, system. Motion: default, plus reduced-motion passes at 390.
+- "system" in this sweep means system-light: every `system` row was captured under `prefers-color-scheme: light` (code review IN-06). The harness now also runs `system` under dark media; see the system-dark section of `154-BROWSER-EVIDENCE.md`.
 - Zoom (D-02, WCAG 1.4.10 Reflow): 200% zoom at a 1280 px window equals a 640 px CSS viewport, and 400% equals 320 px, so the 640 and 320 columns are the 200% and 400% zoom proof. A native-zoom spot check is recorded separately below.
 - Allowed intentional scroll containers: `.lockspire-admin-secondary-nav` (overflow-x auto) and `.lockspire-admin-table-wrap` (data tables). Visually hidden helper text (`.lockspire-admin-sr-only`, 1x1 px by design) is not a clipped control.
 - Full rows and observation JSON live under git-ignored `tmp/admin-ui-polish/v1.42/sweep/`.
