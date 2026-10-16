@@ -4,17 +4,17 @@ milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
 current_phase: 155
 current_phase_name: Crypto Core, Config Seam & Bandit Baseline
-status: executing
-stopped_at: Completed 155-04-PLAN.md
-last_updated: "2026-10-16T03:46:12.740Z"
+status: verifying
+stopped_at: Completed 155-05-PLAN.md
+last_updated: "2026-10-16T03:59:47.511Z"
 last_activity: 2026-10-15
 last_activity_desc: Phase 155 execution started
-state_head: 762e519072bc5c3a7280addf90efc98659df6725
+state_head: ef5d24b3092cbfc47ba489434b42dce1fab90391
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-15 — Phase 155 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -275,6 +275,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 155]: KEK envelope parse binds exact 12-byte IV and 16-byte tag before :crypto (truncated tags accepted by :crypto); empty keys block is invalid
 - [Phase 155]: PrivateJwk.decode/1 is map-form only; legacy rows get no kid check until Phase 156
 - [Phase 155]: 155-04: generate_key resolves KeySet before any JWK/DB work and refuses with :key_encryption_not_configured; clean-room KEK clean-room-1 lands in the same commit
+- [Phase 155]: 155-05: diagnostics validate fresh via Config.key_encryption!/0; absent-KEK tests use put_key_encryption(nil) only
 
 ### Pending Todos
 
@@ -332,8 +333,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T03:46:12.705Z
-Stopped at: Completed 155-04-PLAN.md
+Last session: 2026-10-16T03:59:47.487Z
+Stopped at: Completed 155-05-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -443,6 +444,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 155 P02 | 35 min | 3 tasks | 11 files |
 | Phase 155 P03 | 25 min | 3 tasks | 12 files |
 | Phase 155 P04 | 20 min | 2 tasks | 6 files |
+| Phase 155 P05 | 40min | 3 tasks | 8 files |
 
 ## Operator Next Steps
 
