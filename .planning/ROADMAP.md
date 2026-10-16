@@ -114,8 +114,13 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
+**Wave 1**
 - [ ] 156-01-PLAN.md — Re-encryption engine: `KeyStore` per-row lock/CAS callbacks, `PrivateJwk.read_stored/2`, `Admin.Keys.reencrypt/1` with dry-run, durable audit and operator telemetry; rotation-matrix and real-concurrency tests (MIG-01, OPS-01, OPS-02)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 156-02-PLAN.md — Readiness and CLI: `Admin.Keys.encryption_status/0`, `mix lockspire.keys.reencrypt [--dry-run | --check]`, doctor row counts, `Install.Verify` `:key_storage` check (MIG-01, MIG-02, OPS-01)
+
+**Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 156-03-PLAN.md — `:reject` refusal, hot-path telemetry and deduplicated logging, sentinel leak test, ROADMAP/REQUIREMENTS wording fixes, phase gate (MIG-03, OPS-02)
 
 ### Phase 157: Host Surfaces, Redaction Sweep & Release Proof
