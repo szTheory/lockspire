@@ -171,7 +171,12 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
     cond do
       mode == :dry_run ->
         info("Dry run complete. Run without --dry-run to apply.")
-        raise_if_failed(report.failed != [], failed, "would not be re-encrypted. Fix")
+
+        raise_if_failed(
+          report.failed != [],
+          failed,
+          "would not be re-encrypted. Follow the fix lines above, then rerun."
+        )
 
       failed > 0 ->
         info(
