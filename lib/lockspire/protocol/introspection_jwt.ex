@@ -33,7 +33,7 @@ defmodule Lockspire.Protocol.IntrospectionJwt do
 
     with {:ok, signing_key} <- fetch_key(key_store, alg, effective_security_profile),
          :ok <- ensure_allowed_alg(signing_key.alg, effective_security_profile),
-         {:ok, jwk_map} <- PrivateJwk.decode(signing_key.private_jwk_encrypted),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
          claims <- build_claims(issuer, caller_client_id, issued_at, payload),
          protected_header <- protected_header(signing_key),
          {:ok, compact} <- sign_compact_jwt(jwk_map, protected_header, claims) do

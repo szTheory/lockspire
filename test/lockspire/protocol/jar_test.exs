@@ -24,6 +24,7 @@ defmodule Lockspire.Protocol.JarTest do
       {_, jwe_compact} = JOSE.JWE.compact(jwe)
 
       key = %Lockspire.Domain.SigningKey{
+        kid: "enc-kid",
         private_jwk_encrypted: :erlang.term_to_binary(JOSE.JWK.to_map(enc_jwk) |> elem(1))
       }
 
@@ -41,6 +42,7 @@ defmodule Lockspire.Protocol.JarTest do
       {_, jwe_compact} = JOSE.JWE.compact(jwe)
 
       key = %Lockspire.Domain.SigningKey{
+        kid: "enc-kid",
         private_jwk_encrypted: :erlang.term_to_binary(JOSE.JWK.to_map(other_enc_jwk) |> elem(1))
       }
 

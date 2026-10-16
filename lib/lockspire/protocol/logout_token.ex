@@ -16,7 +16,7 @@ defmodule Lockspire.Protocol.LogoutToken do
           logout_event: %LogoutEvent{} = logout_event,
           delivery: %LogoutDelivery{} = delivery,
           issued_at: %DateTime{} = issued_at,
-          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: private_jwk}
+          signing_key: %{kid: kid, alg: alg, private_jwk_encrypted: _private_jwk} = signing_key
         } = params
       )
       when is_binary(issuer) do
@@ -32,7 +32,7 @@ defmodule Lockspire.Protocol.LogoutToken do
       Lockspire.Protocol.SecurityProfile.allowed_signing_algorithms(effective_profile)
 
     with :ok <- ensure_allowed_alg(alg, allowed_algs),
-         {:ok, jwk_map} <- PrivateJwk.decode(private_jwk),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
          {:ok, claims} <- build_claims(issuer, logout_event, delivery, issued_at),
          {_, compact} <-
            JOSE.JWT.sign(
