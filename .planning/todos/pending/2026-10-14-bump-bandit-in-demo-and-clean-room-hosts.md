@@ -7,6 +7,9 @@ files:
   - examples/adoption_demo/mix.lock
   - test/clean_room/provider_host/mix.exs
   - test/clean_room/confidential_client/mix.exs
+audit_acknowledged:
+  milestone: v1.42
+  at: 2026-10-15
 ---
 
 ## Problem
