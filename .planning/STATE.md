@@ -5,17 +5,17 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 157
 current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
 status: executing
-stopped_at: Phase 157 context gathered (assumptions mode)
-last_updated: "2026-10-16T16:00:37.930Z"
+stopped_at: Completed 157-01-PLAN.md
+last_updated: "2026-10-16T16:10:27.248Z"
 last_activity: 2026-10-16
-last_activity_desc: Phase 156 complete, transitioned to Phase 157
-state_head: ee9d3658afaed77a8c2f0ac5e6ddfb84b146e963
+last_activity_desc: Phase 157 execution started
+state_head: 48152dcff2fd37de29e6b0a8f3d05bc46bc8ba2b
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 8
-  percent: 57
+  completed_plans: 9
+  percent: 64
 ---
 
 # Project State
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 ## Current Position
 
-Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — READY TO EXECUTE
-Plan: Not started
+Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-10-16 — Phase 156 complete, transitioned to Phase 157
+Last activity: 2026-10-16 — Phase 157 execution started
 
-Progress: [██████░░░░] 57%
+Progress: [██████░░░░] 64%
 
 ## Accumulated Context
 
@@ -280,6 +280,7 @@ Progress: [██████░░░░] 57%
 - [Phase 156]: 156-02: unsealable retired rows are stranded_retired and never block readiness; sealable retired rows still block until sealed
 - [Phase 156]: 156-02: Install.Verify :key_storage is :error only for unknown_kek, undecryptable, or :reject with legacy rows; DB problems give a skipped :ok
 - [Phase 156]: 156-03: legacy_plaintext reject refuses non-envelope rows before any parser; hot-path legacy_read/decode_failed are telemetry only with once-per-node log lines
+- [Phase 157]: 157-01: JWKS reads select every column except private_jwk_encrypted via struct/2 (no sensitive fallback); cast params exclude the key column and bytes applied with put_change
 
 ### Pending Todos
 
@@ -337,9 +338,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T14:57:13.626Z
-Stopped at: Phase 157 context gathered (assumptions mode)
-Resume file: .planning/phases/157-host-surfaces-redaction-sweep-release-proof/157-CONTEXT.md
+Last session: 2026-10-16T16:10:27.111Z
+Stopped at: Completed 157-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -452,6 +453,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 156 P01 | 25 min | 3 tasks | 11 files |
 | Phase 156 P02 | 45 min | 3 tasks | 12 files |
 | Phase 156 P03 | 14 min | 3 tasks | 10 files |
+| Phase 157 P01 | 25 min | 3 tasks | 7 files |
 
 ## Operator Next Steps
 

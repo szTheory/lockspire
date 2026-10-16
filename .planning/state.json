@@ -11,7 +11,7 @@
     {
       "number": "156",
       "name": "Legacy Migration, KEK Rotation & Plaintext Refusal",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "157",
@@ -21,8 +21,8 @@
   ],
   "next": {
     "command": "/gsd-progress --next",
-    "label": "Advance to the next step (plan phase 156)",
-    "reason": "Phase 2 of 3 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 3 of 3 · 64% · executing"
   },
-  "updated_at": "2026-10-16T04:12:37.305Z"
+  "updated_at": "2026-10-16T16:10:26.205Z"
 }
