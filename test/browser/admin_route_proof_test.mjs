@@ -5,6 +5,7 @@ import test from "node:test";
 
 import {
   CHANGED_PAGES,
+  assessObservation,
   DEFAULT_THEMES,
   DEFAULT_WIDTHS,
   buildMatrix,
@@ -213,4 +214,36 @@ test("isLocalDevHost allows only local dev hosts", () => {
   ]) {
     assert.ok(!isLocalDevHost(url), `${url} is refused`);
   }
+});
+
+test("assessObservation fails a row on every measured defect", () => {
+  const sweep = { pathname: "/lockspire/admin", scrollWidth: 390, clientWidth: 390, clipped: [], unlabeled: [], h1Count: 1 };
+  const stops = [{ indicator: true, inViewport: true }, { indicator: true, inViewport: true }];
+  const keyboard = { stops, indicated: 2, offscreen: 0, disclosuresBefore: 1, disclosuresAfter: 0 };
+  assert.deepEqual(assessObservation({ loaded: true, sweep, keyboard }), { result: "pass", gaps: [] });
+  assert.equal(assessObservation({ loaded: true, sweep }).result, "pass");
+
+  for (const [label, override] of [
+    ["missing indicator", { keyboard: { ...keyboard, indicated: 1 } }],
+    ["offscreen stop", { keyboard: { ...keyboard, offscreen: 1 } }],
+    ["open disclosure after Escape", { keyboard: { ...keyboard, disclosuresAfter: 1 } }],
+    ["no h1", { sweep: { ...sweep, h1Count: 0 } }],
+    ["two h1s", { sweep: { ...sweep, h1Count: 2 } }],
+    ["document overflow", { sweep: { ...sweep, scrollWidth: 400 } }],
+    ["clipped element", { sweep: { ...sweep, clipped: ["div.x 10<20"] } }],
+    ["unlabeled control", { sweep: { ...sweep, unlabeled: ["input[name]"] } }]
+  ]) {
+    const assessed = assessObservation({ loaded: true, sweep, keyboard, ...override });
+    assert.equal(assessed.result, "fail", label);
+    assert.equal(assessed.gaps.length, 1, label);
+  }
+  assert.equal(assessObservation({ loaded: false, sweep }).result, "blocked");
+});
+
+test("only the focused element or a :focus-within rule counts as a focus indicator", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("./admin_route_proof.mjs", import.meta.url), "utf8");
+  const [, body] = source.match(/const FOCUS_SCRIPT = `([\s\S]*?)`;\n/);
+  assert.match(body, /n\.matches\(":focus-within"\) && \(paintedOutline\(c\) \|\| paintedShadow\(c\)\) && focusWithinRuleMatches\(n\)/);
+  assert.match(body, /!transparent\(c\.outlineColor\)/);
 });

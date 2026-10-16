@@ -265,6 +265,24 @@ export function formatEvidenceRow({
   return `| ${cells.join(" | ")} |`;
 }
 
+// A row fails on any defect the harness measures; nothing measured is left as a
+// note only. `blocked` means the page never loaded, so nothing else is judged.
+export function assessObservation({ loaded, sweep, keyboard = null }) {
+  if (!loaded) return { result: "blocked", gaps: [`landed on ${sweep.pathname}`] };
+  const gaps = [];
+  if (sweep.scrollWidth > sweep.clientWidth) gaps.push("document overflow");
+  if (sweep.clipped.length) gaps.push(`clipped: ${sweep.clipped.slice(0, 3).join(", ")}`);
+  if (sweep.unlabeled.length) gaps.push(`unlabeled: ${sweep.unlabeled.slice(0, 3).join(", ")}`);
+  if (sweep.h1Count !== 1) gaps.push(`h1 count ${sweep.h1Count}`);
+  if (keyboard) {
+    const missing = keyboard.stops.length - keyboard.indicated;
+    if (missing > 0) gaps.push(`no focus indicator on ${missing} of ${keyboard.stops.length} focus stops`);
+    if (keyboard.offscreen > 0) gaps.push(`${keyboard.offscreen} focus stops outside the viewport`);
+    if (keyboard.disclosuresAfter > 0) gaps.push(`${keyboard.disclosuresAfter} disclosures still open after Escape`);
+  }
+  return { result: gaps.length ? "fail" : "pass", gaps };
+}
+
 export function sectionPlan(pageHeight, viewportHeight, headings) {
   if (!headings || headings.length === 0) {
     const slices = [];
@@ -398,21 +416,56 @@ const FOCUS_SCRIPT = `(() => {
   const cs = getComputedStyle(el);
   const r = el.getBoundingClientRect();
   const name = el.getAttribute("aria-label") || (el.labels && el.labels[0] && el.labels[0].textContent) || el.textContent || el.getAttribute("title") || "";
-  const hasRing = (node) => {
-    const c = getComputedStyle(node);
-    const outline = c.outlineStyle !== "none" && parseFloat(c.outlineWidth) > 0;
-    const shadow = c.boxShadow && c.boxShadow !== "none" && !/^rgba\\(0, 0, 0, 0\\) 0px 0px 0px 0px/.test(c.boxShadow);
-    return outline || Boolean(shadow);
+  // A layer counts only when it is painted: a non-transparent colour and a
+  // non-zero offset, blur or spread.
+  const transparent = (color) =>
+    color === "transparent" || /^rgba\\(([^,]*,){3}\\s*0(?:\\.0+)?\\)$/.test(color) || /\\/\\s*0(?:\\.0+)?\\)$/.test(color);
+  const paintedOutline = (c) => c.outlineStyle !== "none" && parseFloat(c.outlineWidth) > 0 && !transparent(c.outlineColor);
+  const paintedShadow = (c) => {
+    if (!c.boxShadow || c.boxShadow === "none") return false;
+    return c.boxShadow.split(/,(?![^(]*\\))/).some((layer) => {
+      const color = (layer.match(/(?:rgba?|hsla?|oklch|oklab|lab|lch|color)\\([^)]*\\)/) || [""])[0];
+      const lengths = (layer.replace(color, "").match(/-?[\\d.]+px/g) || []).map(parseFloat);
+      return color !== "" && !transparent(color) && lengths.some((n) => n !== 0);
+    });
   };
+  // An ancestor's ring counts only when a :focus-within rule draws it; an
+  // ordinary card or panel shadow on a wrapper is not a focus indicator.
+  const ringProps = ["outline", "outline-style", "outline-width", "outline-color", "box-shadow"];
+  const focusWithinRuleMatches = (node) => {
+    const visit = (rules) => {
+      for (const rule of rules) {
+        if (rule.selectorText && rule.selectorText.includes(":focus-within")) {
+          let hit = false;
+          try { hit = node.matches(rule.selectorText); } catch (e) { hit = false; }
+          if (hit && ringProps.some((prop) => rule.style.getPropertyValue(prop) !== "")) return true;
+        }
+        if (rule.cssRules && visit(rule.cssRules)) return true;
+      }
+      return false;
+    };
+    for (const sheet of document.styleSheets) {
+      let rules = null;
+      try { rules = sheet.cssRules; } catch (e) { rules = null; }
+      if (rules && visit(rules)) return true;
+    }
+    return false;
+  };
+  let indicator = paintedOutline(cs) || paintedShadow(cs);
+  let indicatorSource = indicator ? "self" : null;
   // A composite control may show its ring on the focus-within wrapper rather than the input itself.
-  let indicator = hasRing(el);
   for (let n = el.parentElement, d = 0; !indicator && n && n !== document.body && d < 3; n = n.parentElement, d += 1) {
-    if (n.matches(":focus-within") && hasRing(n)) indicator = true;
+    const c = getComputedStyle(n);
+    if (n.matches(":focus-within") && (paintedOutline(c) || paintedShadow(c)) && focusWithinRuleMatches(n)) {
+      indicator = true;
+      indicatorSource = "focus-within";
+    }
   }
   return JSON.stringify({
     tag: el.tagName.toLowerCase(),
     name: name.trim().replace(/\\s+/g, " ").slice(0, 60),
     indicator,
+    indicatorSource,
     outlineWidth: cs.outlineWidth,
     outlineStyle: cs.outlineStyle,
     boxShadow: cs.boxShadow,
@@ -569,16 +622,7 @@ function observe(session, template, entry, options) {
     focusPath = `tab x${keyboard.stops.length}; indicator ${keyboard.indicated}/${keyboard.stops.length}; offscreen ${keyboard.offscreen}`;
   }
 
-  const gaps = [];
-  if (!loaded) gaps.push(`landed on ${sweep.pathname}`);
-  if (sweep.scrollWidth > sweep.clientWidth) gaps.push("document overflow");
-  if (sweep.clipped.length) gaps.push(`clipped: ${sweep.clipped.slice(0, 3).join(", ")}`);
-  if (sweep.unlabeled.length) gaps.push(`unlabeled: ${sweep.unlabeled.slice(0, 3).join(", ")}`);
-  if (sweep.h1Count !== 1) gaps.push(`h1 count ${sweep.h1Count}`);
-
-  let result = "pass";
-  if (!loaded) result = "blocked";
-  else if (sweep.scrollWidth > sweep.clientWidth || sweep.clipped.length || sweep.unlabeled.length) result = "fail";
+  const { result, gaps } = assessObservation({ loaded, sweep, keyboard });
 
   const shots = [];
   if (options.screenshot) {
