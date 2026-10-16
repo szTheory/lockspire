@@ -2,6 +2,7 @@
 created: 2026-10-14T00:00:00Z
 title: Bump Bandit in demo and clean-room hosts after the fix ships
 area: deps
+resolves_phase: 155
 files:
   - examples/adoption_demo/mix.exs
   - examples/adoption_demo/mix.lock
