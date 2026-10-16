@@ -3,6 +3,7 @@ defmodule Lockspire.Admin.Keys do
   Operator-facing query and command boundary for guided signing-key lifecycle work.
   """
 
+  alias Lockspire.Admin.Keys.Reencrypt
   alias Lockspire.Config
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Observability
@@ -12,6 +13,27 @@ defmodule Lockspire.Admin.Keys do
   alias Lockspire.Storage.Ecto.Repository
 
   @type lifecycle_action :: :publish | :activate | :retire
+
+  @type reencrypt_report :: %{
+          dry_run: boolean(),
+          current_kek_id: String.t(),
+          scanned: non_neg_integer(),
+          encrypted: non_neg_integer(),
+          rewrapped: non_neg_integer(),
+          already_current: non_neg_integer(),
+          no_private_key: non_neg_integer(),
+          conflicted: non_neg_integer(),
+          by_source_kek: %{optional(String.t()) => non_neg_integer()},
+          failed: [
+            %{
+              kid: String.t() | nil,
+              reason: atom(),
+              kek_id: String.t() | nil,
+              status: SigningKey.status() | nil
+            }
+          ],
+          changes: [%{kid: String.t(), action: :encrypted | :rewrapped, from: String.t()}]
+        }
 
   @private_jwk_members MapSet.new(~w(d p q dp dq qi oth k))
 
@@ -162,6 +184,49 @@ defmodule Lockspire.Admin.Keys do
       emit(:key, :retired, key, actor)
       {:ok, to_detail_view(key)}
     end
+  end
+
+  @doc """
+  Converts stored signing-key material to the current key-encryption key.
+
+  Legacy JSON or term-encoded rows are sealed into the encrypted envelope, and rows sealed
+  under another configured key are re-wrapped under the current one. Rows already on the
+  current key are opened to prove they decrypt and are left untouched. Every status and both
+  key uses are covered, and no lifecycle column changes.
+
+  Each row is converted in its own transaction, so a row that cannot be converted is listed
+  under `failed` in the report while the other rows stay committed. Running it again is safe:
+  rows already on the current key are counted as `already_current`.
+
+  Options: `:dry_run` (default `false`) classifies every row and writes nothing, and `:actor`
+  (a map with `:type`, `:id` and `:display`) is recorded on each audit entry.
+
+  The repo must already be started. On a running release node, call this through
+  `bin/app rpc` instead of a separate process.
+  """
+  @spec reencrypt(keyword()) ::
+          {:ok, reencrypt_report()}
+          | {:error,
+             :key_encryption_not_configured | :repo_not_started | {:invalid_config, String.t()}}
+  def reencrypt(opts \\ []) when is_list(opts) do
+    with {:ok, keyset} <- fresh_keyset(),
+         :ok <- ensure_repo_started() do
+      actor = actor_from_attrs(%{actor: Keyword.get(opts, :actor)})
+      {:ok, Reencrypt.run(keyset, actor, opts)}
+    end
+  end
+
+  defp fresh_keyset do
+    case Config.key_encryption!() do
+      nil -> {:error, :key_encryption_not_configured}
+      keyset -> {:ok, keyset}
+    end
+  rescue
+    error in ArgumentError -> {:error, {:invalid_config, Exception.message(error)}}
+  end
+
+  defp ensure_repo_started do
+    if Process.whereis(Config.repo!()), do: :ok, else: {:error, :repo_not_started}
   end
 
   defp maybe_detail_view(nil), do: nil

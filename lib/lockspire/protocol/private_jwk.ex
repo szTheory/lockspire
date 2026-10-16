@@ -3,6 +3,7 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   alias Lockspire.Config
   alias Lockspire.Security.KeyEncryption
+  alias Lockspire.Security.KeyEncryption.KeySet
 
   @type reason ::
           :invalid_signing_key
@@ -24,11 +25,29 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   @doc false
   @spec decode_with_reason(term()) :: {:ok, map()} | {:error, reason()}
-  def decode_with_reason(%{kid: kid, private_jwk_encrypted: bin})
+  def decode_with_reason(%{kid: kid, private_jwk_encrypted: bin} = row)
       when is_binary(kid) and is_binary(bin) do
+    case read_stored(row, Config.key_encryption_keyset()) do
+      {:ok, jwk, _source} -> {:ok, jwk}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  def decode_with_reason(_value), do: {:error, :invalid_signing_key}
+
+  # Only the protocol decoder and the admin re-encryption engine may call this reader.
+  # It takes the key set explicitly, applies no legacy-plaintext policy and emits no
+  # telemetry or logs, so a migration can read rows that request paths would refuse.
+  @doc false
+  @spec read_stored(term(), KeySet.t() | nil) ::
+          {:ok, map(), :legacy | {:envelope, String.t()}} | {:error, reason()}
+  def read_stored(row, keyset), do: read_row(row, keyset)
+
+  defp read_row(%{kid: kid, private_jwk_encrypted: bin}, keyset)
+       when is_binary(kid) and is_binary(bin) do
     case KeyEncryption.classify(bin) do
-      :envelope -> decode_envelope(kid, bin)
-      :legacy -> decode_legacy(bin)
+      :envelope -> read_envelope(keyset, kid, bin)
+      :legacy -> read_legacy(bin)
       :invalid -> {:error, :invalid_signing_key}
     end
   rescue
@@ -37,15 +56,25 @@ defmodule Lockspire.Protocol.PrivateJwk do
     _kind, _reason -> {:error, :invalid_signing_key}
   end
 
-  def decode_with_reason(_value), do: {:error, :invalid_signing_key}
+  defp read_row(_value, _keyset), do: {:error, :invalid_signing_key}
 
-  defp decode_envelope(kid, bin) do
-    with {:ok, plaintext} <- KeyEncryption.open(Config.key_encryption_keyset(), kid, bin),
-         {:ok, %{} = jwk} <- Jason.decode(plaintext) do
-      if Map.get(jwk, "kid") == kid, do: {:ok, jwk}, else: {:error, :kid_mismatch}
+  defp read_envelope(keyset, kid, bin) do
+    with {:ok, plaintext} <- KeyEncryption.open(keyset, kid, bin),
+         {:ok, %{} = jwk} <- Jason.decode(plaintext),
+         {:ok, kek_id} <- KeyEncryption.envelope_kek_id(bin) do
+      if Map.get(jwk, "kid") == kid,
+        do: {:ok, jwk, {:envelope, kek_id}},
+        else: {:error, :kid_mismatch}
     else
       {:error, reason} when is_atom(reason) -> {:error, reason}
       _other -> {:error, :invalid_signing_key}
+    end
+  end
+
+  defp read_legacy(binary) do
+    case decode_legacy(binary) do
+      {:ok, jwk} -> {:ok, jwk, :legacy}
+      {:error, reason} -> {:error, reason}
     end
   end
 

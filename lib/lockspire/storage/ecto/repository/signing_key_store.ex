@@ -6,7 +6,7 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
   alias Lockspire.Domain.SigningKey
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
-  alias Lockspire.Storage.Ecto.Repository.{Support, TransactionStore}
+  alias Lockspire.Storage.Ecto.Repository.{AuditStore, Support, TransactionStore}
   alias Lockspire.Storage.Ecto.SigningKeyRecord
 
   def publish_key(repo, %SigningKey{} = key) do
@@ -170,6 +170,84 @@ defmodule Lockspire.Storage.Ecto.Repository.SigningKeyStore do
       end
     end)
   end
+
+  def list_signing_key_refs(repo, after_id, limit)
+      when is_integer(after_id) and is_integer(limit) and limit > 0 do
+    SigningKeyRecord
+    |> where([key], key.id > ^after_id)
+    |> order_by([key], asc: key.id)
+    |> limit(^limit)
+    |> select([key], {key.id, key.kid})
+    |> then(&Support.all(repo, &1))
+    |> then(&{:ok, &1})
+  rescue
+    error -> {:error, error}
+  end
+
+  def reencrypt_signing_key(repo, id, decide, opts)
+      when is_integer(id) and is_function(decide, 1) and is_list(opts) do
+    TransactionStore.transact(repo, fn ->
+      case sensitive_locked_key(repo, id) do
+        nil -> :not_found
+        %SigningKeyRecord{} = record -> decide_and_apply(repo, record, decide, opts)
+      end
+    end)
+  end
+
+  defp decide_and_apply(repo, record, decide, opts) do
+    key = SigningKeyRecord.to_domain(record)
+
+    # Test seam: runs after the row lock is held and before the decision.
+    case Keyword.get(opts, :after_lock) do
+      hook when is_function(hook, 1) -> hook.(key)
+      _other -> :ok
+    end
+
+    case decide.(key) do
+      {:keep, info} ->
+        {:kept, info}
+
+      {:fail, reason, info} ->
+        {:failed, reason, info}
+
+      {:replace, new_binary, audit_event, info} ->
+        replace_material(repo, record, new_binary, audit_event, info)
+    end
+  end
+
+  defp replace_material(repo, record, new_binary, audit_event, info) do
+    # The compare-and-set binds the previous stored bytes, which may be legacy plaintext, so
+    # query logging and the repo query telemetry event are both turned off for this call only.
+    result =
+      Support.update_all(
+        repo,
+        from(key in SigningKeyRecord,
+          where:
+            key.id == ^record.id and key.private_jwk_encrypted == ^record.private_jwk_encrypted
+        ),
+        [set: [private_jwk_encrypted: new_binary, updated_at: DateTime.utc_now()]],
+        sensitive: true,
+        telemetry_event: nil
+      )
+
+    case result do
+      {1, _} ->
+        case AuditStore.append_audit_event(repo, audit_event) do
+          {:ok, _event} -> {:replaced, info}
+          {:error, reason} -> TransactionStore.rollback(repo, reason)
+        end
+
+      {0, _} ->
+        :conflict
+    end
+  end
+
+  defp sensitive_locked_key(repo, id),
+    do:
+      SigningKeyRecord
+      |> where([key], key.id == ^id)
+      |> lock("FOR UPDATE")
+      |> then(&Support.one(repo, &1, sensitive: true))
 
   defp activate_selected(repo, selected, activated_at) do
     case active_keys_for_update(repo, selected.use) do

@@ -229,4 +229,15 @@ defmodule Lockspire.Admin do
   @spec retire_key(integer(), map() | keyword()) ::
           {:ok, Lockspire.Admin.Keys.key_view()} | {:error, term()}
   defdelegate retire_key(key_id, attrs \\ %{}), to: Keys
+
+  @doc """
+  Converts stored signing-key material to the current key-encryption key.
+
+  See `Lockspire.Admin.Keys.reencrypt/1` for options and behavior.
+  """
+  @spec reencrypt(keyword()) ::
+          {:ok, Lockspire.Admin.Keys.reencrypt_report()}
+          | {:error,
+             :key_encryption_not_configured | :repo_not_started | {:invalid_config, String.t()}}
+  defdelegate reencrypt(opts \\ []), to: Keys
 end
