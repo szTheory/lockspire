@@ -64,27 +64,29 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DEP-01 | — | Pending |
-| KEK-01 | — | Pending |
-| KEK-02 | — | Pending |
-| ENC-01 | — | Pending |
-| ENC-02 | — | Pending |
-| ENC-03 | — | Pending |
-| MIG-01 | — | Pending |
-| MIG-02 | — | Pending |
-| MIG-03 | — | Pending |
-| OPS-01 | — | Pending |
-| OPS-02 | — | Pending |
-| RED-01 | — | Pending |
-| HOST-01 | — | Pending |
-| PROOF-01 | — | Pending |
-| DOC-01 | — | Pending |
-| SAFE-01 | — | Pending |
+| DEP-01 | Phase 155 | Pending |
+| KEK-01 | Phase 155 | Pending |
+| KEK-02 | Phase 155 | Pending |
+| ENC-01 | Phase 155 | Pending |
+| ENC-02 | Phase 155 | Pending |
+| ENC-03 | Phase 155 | Pending |
+| MIG-01 | Phase 156 | Pending |
+| MIG-02 | Phase 156 | Pending |
+| MIG-03 | Phase 156 | Pending |
+| OPS-01 | Phase 156 | Pending |
+| OPS-02 | Phase 156 | Pending |
+| RED-01 | Phase 157 | Pending |
+| HOST-01 | Phase 157 | Pending |
+| PROOF-01 | Phase 157 | Pending |
+| DOC-01 | Phase 157 | Pending |
+| SAFE-01 | Phase 157 | Pending |
 
 **Coverage:**
 - v1.43 requirements: 16 total
-- Mapped to phases: 0 (filled by roadmap)
+- Mapped to phases: 16 (Phase 155: 6, Phase 156: 5, Phase 157: 5)
+- Unmapped: 0 ✓
+- SAFE-01 is a cross-cutting constraint on every phase; Phase 157 owns its final proof.
 
 ---
 *Requirements defined: 2026-10-15*
-*Last updated: 2026-10-15 after initial definition*
+*Last updated: 2026-10-15 after v1.43 roadmap creation (Phases 155–157)*

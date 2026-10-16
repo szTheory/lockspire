@@ -2,11 +2,11 @@
 gsd_state_version: "1.0"
 milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
-status: planning
+status: ready_to_plan
 last_updated: "2026-10-16T02:12:34.879Z"
 last_activity: 2026-10-15
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.43 Signing Key Encryption at Rest — defining requirements
+**Current focus:** v1.43 Signing Key Encryption at Rest — Phase 155 (Crypto Core, Config Seam & Bandit Baseline)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 155 of 157 (Crypto Core, Config Seam & Bandit Baseline) — not started; ready to discuss/plan
 Plan: —
-Status: Defining requirements
-Last activity: 2026-10-15 — Milestone v1.43 started
+Status: Ready to plan
+Last activity: 2026-10-15 — v1.43 roadmap created (Phases 155–157, 16/16 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -294,6 +296,7 @@ Last activity: 2026-10-15 — Milestone v1.43 started
 
 - Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 - v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
+- v1.43 roadmap created: Phases 155–157 map all 16 Signing Key Encryption at Rest requirements exactly once (155: DEP/KEK/ENC; 156: MIG/OPS; 157: RED/HOST/PROOF/DOC/SAFE). SAFE-01 constrains every phase; Phase 157 owns its final proof. Research flags: 155-01 Bandit changelog, 155-02 `:crypto` AEAD prototype, 156-01 lock/CAS semantics. Older `.planning/phases` dirs (142/143/999.1) left untouched.
 - v1.42 roadmap created: Phases 151–154 map all nine Admin UI Clarity & Workflow Refinement requirements exactly once. Existing Phase 142/143 historical evidence was left in place; CR-01 remains deferred and unresolved.
 
 ## Deferred Items
@@ -430,4 +433,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Discuss or plan Phase 155 with /gsd-discuss-phase 155 or /gsd-plan-phase 155

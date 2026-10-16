@@ -1,33 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.42 — Admin UI Clarity & Workflow Refinement",
-  "phases": [
-    {
-      "number": "151",
-      "name": "Focused Client Registration & Settings",
-      "status": "complete"
-    },
-    {
-      "number": "152",
-      "name": "Overview & Queue State Clarity",
-      "status": "complete"
-    },
-    {
-      "number": "153",
-      "name": "Configure & Support Page Refinement",
-      "status": "complete"
-    },
-    {
-      "number": "154",
-      "name": "Responsive, Theme & Route Proof",
-      "status": "complete"
-    }
-  ],
+  "milestone": "v1.43",
+  "phases": [],
   "next": {
-    "command": "/gsd-progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd-discuss-phase",
+    "label": "Discuss the first phase",
+    "reason": "Project initialized — plan your first phase"
   },
-  "updated_at": "2026-10-16T01:26:04.611Z"
+  "updated_at": "2026-10-16T02:12:34.881Z"
 }
