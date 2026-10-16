@@ -1,21 +1,16 @@
 defmodule Lockspire.ConfigKeyEncryptionTest do
   use ExUnit.Case, async: false
 
+  import Lockspire.KeyEncryptionHelpers
+
   alias Lockspire.Config
   alias Lockspire.Security.KeyEncryption.KeySet
 
   @sentinel "SENTINEL-KEK-VALUE"
 
   setup do
-    original = Application.fetch_env(:lockspire, :key_encryption)
-
-    on_exit(fn ->
-      case original do
-        {:ok, value} -> Application.put_env(:lockspire, :key_encryption, value)
-        :error -> Application.delete_env(:lockspire, :key_encryption)
-      end
-    end)
-
+    # Registers env + cache restoration on exit; tests then vary the env directly.
+    put_key_encryption(Application.get_env(:lockspire, :key_encryption))
     :ok
   end
 
@@ -31,7 +26,7 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
   end
 
   test "absent block returns nil" do
-    Application.delete_env(:lockspire, :key_encryption)
+    ExUnit.CaptureLog.capture_log(fn -> put_key_encryption(nil) end)
     assert Config.key_encryption!() == nil
   end
 

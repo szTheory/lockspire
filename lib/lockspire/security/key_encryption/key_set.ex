@@ -25,7 +25,7 @@ defmodule Lockspire.Security.KeyEncryption.KeySet do
 
   @spec new(term()) :: {:ok, t()} | {:error, {atom(), atom()}}
   def new(config) do
-    # Validators return tagged errors only and never carry the configured value (D-20).
+    # Validators return tagged errors only and never carry the configured value.
     with {:ok, opts} <- check_options(config),
          {:ok, entries} <- fetch_keys(opts),
          {:ok, keys} <- decode_entries(entries),
