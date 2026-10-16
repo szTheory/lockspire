@@ -176,8 +176,16 @@ export function matrixSize() {
   return routeTemplates().length * DEFAULT_WIDTHS.length * DEFAULT_THEMES.length;
 }
 
-export function collectScanText({ innerText = "", fieldValues = [], dataAttributes = [] } = {}) {
-  const parts = [innerText];
+export function collectScanText({
+  innerText = "",
+  textContent = "",
+  fieldValues = [],
+  dataAttributes = [],
+  attributeValues = []
+} = {}) {
+  // innerText is what is rendered; textContent also carries hidden text (closed
+  // tooltips, collapsed panels) that a focus or hover can reveal in a screenshot.
+  const parts = [innerText, textContent];
   for (const field of fieldValues) {
     if (typeof field === "string") {
       parts.push(field);
@@ -187,7 +195,7 @@ export function collectScanText({ innerText = "", fieldValues = [], dataAttribut
       }
     }
   }
-  for (const attribute of dataAttributes) {
+  for (const attribute of [...dataAttributes, ...attributeValues]) {
     if (typeof attribute === "string") {
       parts.push(attribute);
     } else if (attribute && typeof attribute.value === "string" && attribute.value !== "") {
@@ -322,20 +330,6 @@ const SWEEP_SCRIPT = `(() => {
       small.push(describe(el) + " " + Math.round(r.width) + "x" + Math.round(r.height));
     }
   }
-  const fieldValues = [];
-  for (const el of document.querySelectorAll("input, textarea, select")) {
-    const entry = { value: el.value == null ? "" : String(el.value), attr: el.getAttribute("value") || "" };
-    if (el.tagName === "SELECT" && el.selectedOptions && el.selectedOptions[0]) {
-      entry.optionText = el.selectedOptions[0].textContent || "";
-    }
-    fieldValues.push(entry);
-  }
-  const dataAttributes = [];
-  for (const el of document.querySelectorAll("*")) {
-    for (const attr of el.attributes) {
-      if (attr.name.startsWith("data-")) dataAttributes.push({ name: attr.name, value: attr.value });
-    }
-  }
   const themeEls = Array.from(document.querySelectorAll("[data-theme]")).map((el) => el.getAttribute("data-theme"));
   const select = document.querySelector("[data-lockspire-theme-select]");
   const headings = Array.from(document.querySelectorAll("main h2, h2")).map((h) => ({
@@ -352,12 +346,47 @@ const SWEEP_SCRIPT = `(() => {
     clipped,
     unlabeled,
     small,
-    innerText: document.body.innerText,
-    fieldValues,
-    dataAttributes,
     dataThemeValues: themeEls,
     themeSelectValue: select ? select.value : null,
     headings
+  });
+})()`;
+
+// Everything a screenshot or the observation JSON could expose: rendered and
+// hidden text, field values, data-* attributes, and the title / aria-label /
+// alt / href attributes. Inline <script> and <style> bodies are skipped: they
+// are never painted, and the stylesheet would otherwise dominate the text.
+const SCAN_SCRIPT = `(() => {
+  const textParts = [document.title];
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    const parent = node.parentElement;
+    if (parent && parent.closest("script, style")) continue;
+    textParts.push(node.nodeValue);
+  }
+  const fieldValues = [];
+  for (const el of document.querySelectorAll("input, textarea, select")) {
+    const entry = { value: el.value == null ? "" : String(el.value), attr: el.getAttribute("value") || "" };
+    if (el.tagName === "SELECT" && el.selectedOptions && el.selectedOptions[0]) {
+      entry.optionText = el.selectedOptions[0].textContent || "";
+    }
+    fieldValues.push(entry);
+  }
+  const dataAttributes = [];
+  const attributeValues = [];
+  const scanned = new Set(["title", "aria-label", "alt", "href"]);
+  for (const el of document.querySelectorAll("*")) {
+    for (const attr of el.attributes) {
+      if (attr.name.startsWith("data-")) dataAttributes.push({ name: attr.name, value: attr.value });
+      else if (scanned.has(attr.name)) attributeValues.push({ name: attr.name, value: attr.value });
+    }
+  }
+  return JSON.stringify({
+    innerText: document.body.innerText,
+    textContent: textParts.join("\\n"),
+    fieldValues,
+    dataAttributes,
+    attributeValues
   });
 })()`;
 
@@ -410,6 +439,24 @@ function browser(session, ...args) {
 function browserJson(session, script) {
   const first = JSON.parse(browser(session, "eval", script));
   return typeof first === "string" ? JSON.parse(first) : first;
+}
+
+class SensitiveEvidenceError extends Error {
+  constructor(hits, template, stage) {
+    super(`sensitive evidence ${hits.join(", ")} detected on ${template} ${stage}; capture aborted`);
+    this.sensitive = true;
+  }
+}
+
+// Throws before anything is captured or written. Only the pattern labels are
+// reported, never the matched text.
+function assertNoSensitiveText(text, template, stage) {
+  const hits = scanSensitive(text);
+  if (hits.length > 0) throw new SensitiveEvidenceError(hits, template, stage);
+}
+
+function assertNoSensitivePage(session, template, stage) {
+  assertNoSensitiveText(collectScanText(browserJson(session, SCAN_SCRIPT)), template, stage);
 }
 
 function ensureOpsSession(session, url) {
@@ -484,15 +531,8 @@ function observe(session, template, entry, options) {
   const concrete = concretePath(template);
   const url = `${baseUrl()}${concrete}`;
   browser(session, "open", url);
+  assertNoSensitivePage(session, template, "after load");
   const sweep = browserJson(session, SWEEP_SCRIPT);
-
-  const scanText = collectScanText(sweep);
-  const hits = scanSensitive(scanText);
-  if (hits.length > 0) {
-    const error = new Error(`sensitive evidence ${hits.join(", ")} detected on ${template}; screenshot skipped`);
-    error.sensitive = true;
-    throw error;
-  }
 
   const expectedPath = new URL(url).pathname;
   const loaded = sweep.pathname === expectedPath;
@@ -502,6 +542,9 @@ function observe(session, template, entry, options) {
   let keyboard = null;
   if (options.keyboard) {
     keyboard = keyboardSweep(session);
+    // Focus can reveal tooltips and popovers, and focus-stop names land in the observation JSON.
+    assertNoSensitivePage(session, template, "after keyboard sweep");
+    assertNoSensitiveText(keyboard.stops.map((stop) => stop.name).join("\n"), template, "in focus-stop names");
     focusPath = `tab x${keyboard.stops.length}; indicator ${keyboard.indicated}/${keyboard.stops.length}; offscreen ${keyboard.offscreen}`;
   }
 
@@ -522,6 +565,7 @@ function observe(session, template, entry, options) {
     mkdirSync(dir, { recursive: true });
     const stem = fileStem(template, entry);
     const full = path.join(dir, `${stem}.png`);
+    assertNoSensitivePage(session, template, "before full-page screenshot");
     browser(session, "screenshot", "--full", full);
     shots.push(full);
     if (options.sections || sweep.pageHeight > 4000) {
@@ -529,6 +573,7 @@ function observe(session, template, entry, options) {
       slices.forEach((slice, index) => {
         browser(session, "eval", `window.scrollTo(0, ${slice.scrollY}); "scrolled"`);
         const file = path.join(dir, `${stem}-section-${index + 1}.png`);
+        assertNoSensitivePage(session, template, `before section screenshot ${index + 1}`);
         browser(session, "screenshot", file);
         shots.push(file);
       });
@@ -550,28 +595,28 @@ function observe(session, template, entry, options) {
     gapNote: gaps.length ? gaps.join("; ") : "none"
   });
 
-  return {
-    row,
-    observation: {
-      route: template,
-      concretePath: concrete,
-      entry,
-      title: sweep.title,
-      pathname: sweep.pathname,
-      scrollWidth: sweep.scrollWidth,
-      clientWidth: sweep.clientWidth,
-      pageHeight: sweep.pageHeight,
-      h1Count: sweep.h1Count,
-      clipped: sweep.clipped,
-      unlabeled: sweep.unlabeled,
-      small: sweep.small,
-      dataThemeValues: sweep.dataThemeValues,
-      themeSelectValue: sweep.themeSelectValue,
-      keyboard,
-      screenshots: shots,
-      result
-    }
+  const observation = {
+    route: template,
+    concretePath: concrete,
+    entry,
+    title: sweep.title,
+    pathname: sweep.pathname,
+    scrollWidth: sweep.scrollWidth,
+    clientWidth: sweep.clientWidth,
+    pageHeight: sweep.pageHeight,
+    h1Count: sweep.h1Count,
+    clipped: sweep.clipped,
+    unlabeled: sweep.unlabeled,
+    small: sweep.small,
+    dataThemeValues: sweep.dataThemeValues,
+    themeSelectValue: sweep.themeSelectValue,
+    keyboard,
+    screenshots: shots,
+    result
   };
+  // Last gate before anything is printed or written to disk.
+  assertNoSensitiveText(`${row}\n${JSON.stringify(observation)}`, template, "in the evidence row or observation");
+  return { row, observation };
 }
 
 // ------------------------------------------------------------------------- CLI

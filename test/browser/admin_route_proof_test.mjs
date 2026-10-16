@@ -89,6 +89,31 @@ test("field values and data attributes are scanned even when visible text is cle
   assert.deepEqual(scanSensitive(clean), []);
 });
 
+test("hidden text and title, aria-label, alt and href values are scanned", () => {
+  const jwt = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhY2NvdW50LTEyMyJ9.signaturevalue1234567890";
+  const hidden = collectScanText({ innerText: "Clients", textContent: `Clients ${jwt}` });
+  assert.ok(scanSensitive(hidden).includes("JWT-looking token"));
+
+  for (const name of ["title", "aria-label", "alt", "href"]) {
+    const text = collectScanText({
+      innerText: "Clients",
+      attributeValues: [{ name, value: `https://auth.acme-corp.com/cb?access_token=${jwt}` }]
+    });
+    const hits = scanSensitive(text);
+    assert.ok(hits.includes("token parameter") && hits.includes("production-looking hostname"), `${name} is scanned`);
+  }
+});
+
+test("the harness re-scans the page after the keyboard sweep and before every screenshot", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const source = await readFile(new URL("./admin_route_proof.mjs", import.meta.url), "utf8");
+  const screenshots = source.match(/browser\(session, "screenshot"/g) ?? [];
+  const guarded = source.match(/assertNoSensitivePage\(session, template, [^\n]*\);\n\s*browser\(session, "screenshot"/g) ?? [];
+  assert.ok(screenshots.length > 0);
+  assert.equal(guarded.length, screenshots.length, "every screenshot is preceded by a page scan");
+  assert.match(source, /keyboard = keyboardSweep\(session\);\n\s*\/\/[^\n]*\n\s*assertNoSensitivePage\(session, template, "after keyboard sweep"\)/);
+});
+
 test("matrixSize and CHANGED_PAGES are derived, not hard-coded", () => {
   assert.equal(matrixSize(), routeTemplates().length * DEFAULT_WIDTHS.length * DEFAULT_THEMES.length);
   assert.equal(matrixSize(), 630);
