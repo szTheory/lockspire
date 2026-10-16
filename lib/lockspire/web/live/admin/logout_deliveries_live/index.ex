@@ -152,10 +152,8 @@ defmodule Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index do
   end
 
   defp load_deliveries do
-    case Admin.list_logout_deliveries() do
-      {:ok, deliveries} when is_list(deliveries) -> {:loaded, deliveries}
-      _other -> {:unavailable, []}
-    end
+    {:ok, deliveries} = Admin.list_logout_deliveries()
+    {:loaded, deliveries}
   rescue
     _error -> {:unavailable, []}
   end

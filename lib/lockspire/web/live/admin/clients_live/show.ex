@@ -1080,8 +1080,6 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
   defp form_param_keys(:security_profile),
     do: ~w(security_profile authorization_signed_response_alg)
 
-  defp form_param_keys(_mode), do: []
-
   defp split_csv(value) when is_binary(value) do
     value
     |> String.split(",", trim: true)
