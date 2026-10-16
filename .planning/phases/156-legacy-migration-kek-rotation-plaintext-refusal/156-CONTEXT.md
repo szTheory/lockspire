@@ -44,7 +44,9 @@ Not in this phase: generator output and `:reject` default for fresh installs, de
   - It reads rows via the existing `list_signing_keys/1`, so it needs no new storage method.
   - It **opens every envelope and discards the plaintext**, so it catches same-id/wrong-material (C4), which header-only counts cannot. Tens of rows make the cost trivial; nothing is cached.
   - `ready?` requires: configured, `legacy == 0`, every material row on current, `unknown_kek` and `undecryptable` empty.
-- **D-11a (resolved during plan check, 2026-10-16):** Readiness is gated on rows that signing or decryption can reach: statuses `upcoming|active|retiring`.
+- **D-11a (resolved during plan check, 2026-10-16; clarified in iteration 3):**
+  - **Sealable rows.** Every row the engine *can* seal blocks readiness until it is sealed, whatever its status (retired included). This keeps OPS-01's "zero rows on the old id" and "no plaintext left" literal. An engine-time `:roundtrip_failed`/`:storage_error` on such a row is a defect or transient fault, and its fix line is "rerun; if it repeats, report it".
+  - **Unsealable rows.** Those block readiness only when signing or decryption can reach them (statuses `upcoming|active|retiring`).
   - **Stranded retired rows.** A `retired` row the engine cannot seal (unreadable legacy, legacy `kid_mismatch`, malformed or undecryptable envelope, unknown KEK) is reported as a visible `stranded_retired` count with its kids. It does not block `ready?`, `--check`, doctor or Verify, because no consumer reads retired material.
   - **Operator route** for an unsealable row that is still reachable: retire it and generate a replacement, after which it moves to `stranded_retired`.
   - **Wording.** Fix lines and `--check` output state that the row's bytes remain stored, and that deleting them is the host's database decision, because Lockspire adds no key-deletion path in this phase.
