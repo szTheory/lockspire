@@ -16,7 +16,7 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
     field(:alg, :string)
     field(:use, Ecto.Enum, values: [:sig, :enc])
     field(:public_jwk, :map)
-    field(:private_jwk_encrypted, :binary)
+    field(:private_jwk_encrypted, :binary, redact: true)
     field(:status, Ecto.Enum, values: [:upcoming, :active, :retiring, :retired])
     field(:published_at, :utc_datetime_usec)
     field(:activated_at, :utc_datetime_usec)
@@ -30,13 +30,12 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
 
   def changeset(record, %SigningKey{} = key) do
     record
-    |> cast(Map.from_struct(key), [
+    |> cast(Map.delete(Map.from_struct(key), :private_jwk_encrypted), [
       :kid,
       :kty,
       :alg,
       :use,
       :public_jwk,
-      :private_jwk_encrypted,
       :status,
       :published_at,
       :activated_at,
@@ -45,9 +44,17 @@ defmodule Lockspire.Storage.Ecto.SigningKeyRecord do
       :tenant_id,
       :metadata
     ])
+    |> put_private_material(key.private_jwk_encrypted)
     |> validate_required([:kid, :kty, :alg, :use, :public_jwk, :status])
     |> unique_constraint(:kid)
   end
+
+  # The sealed key bytes are applied as a change rather than cast, and left out of the params
+  # handed to `cast`, so they never appear in the changeset's `params`.
+  defp put_private_material(changeset, bytes) when is_binary(bytes),
+    do: put_change(changeset, :private_jwk_encrypted, bytes)
+
+  defp put_private_material(changeset, _bytes), do: changeset
 
   def update_changeset(record, attrs) when is_map(attrs) do
     record

@@ -396,7 +396,9 @@ defmodule Lockspire.Security.KeyMaterialLeakTest do
 
       sensitive_events = drain()
 
-      refute Enum.any?(sensitive_events, fn {event, _m, _md} -> event == repo_query end),
+      refute Enum.any?(sensitive_events, fn {event, _m, md} ->
+               event == repo_query and to_string(md[:query]) =~ "private_jwk_encrypted"
+             end),
              "a key column query reached the repo query telemetry event"
 
       KeyMaterialMatcher.refute_leak!("store log", log, secrets)
