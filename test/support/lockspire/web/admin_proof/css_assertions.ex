@@ -87,6 +87,12 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
     assert css =~ "transition-duration: 0.01ms !important"
     assert css =~ "transform: none;"
 
+    # The darker resting border made a border-only focus change too subtle, so
+    # text fields carry the same outline ring as every other control.
+    field_focus = rule(css, ".lockspire-admin-field textarea:focus-visible")
+    assert field_focus =~ "outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color)"
+    refute field_focus =~ "outline: none"
+
     # Keeps a keyboard-focused control and its ring clear of the viewport edge.
     assert rule(css, ":root") =~ "scroll-padding-block: var(--ls-space-6)"
   end
@@ -220,7 +226,8 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
         # Visible control boundaries (WCAG 1.4.11).
         {"--ls-border-control", "--ls-surface-panel", 3.0},
         {"--ls-border-control", "--ls-surface-page", 3.0},
-        {"--ls-border-control", "--ls-surface-muted", 3.0}
+        {"--ls-border-control", "--ls-surface-muted", 3.0},
+        {"--ls-border-control-invalid", "--ls-surface-panel", 3.0}
       ]
   end
 

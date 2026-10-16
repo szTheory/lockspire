@@ -102,6 +102,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-border-strong: var(--ls-color-gray-300);
     /* Control boundaries need 3:1 (WCAG 1.4.11); decorative borders stay subtle/strong. */
     --ls-border-control: var(--ls-color-gray-500);
+    --ls-border-control-invalid: var(--ls-color-danger-text);
     --ls-status-success-bg: var(--ls-color-success-bg);
     --ls-status-success-text: var(--ls-color-success-text);
     --ls-status-success-border: var(--ls-color-success-border);
@@ -443,7 +444,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-theme-control select:hover {
-    border-color: var(--ls-text-muted);
+    border-color: var(--ls-text-strong);
   }
 
   .lockspire-admin-theme-control [data-lockspire-theme-status] {
@@ -1208,7 +1209,7 @@ defmodule Lockspire.Web.Admin.CSS do
   }
 
   .lockspire-admin-multi-value[data-invalid="true"] {
-    border-color: var(--ls-status-danger-border);
+    border-color: var(--ls-border-control-invalid);
   }
 
   .lockspire-admin-radio-choice > input:focus-visible {
@@ -1257,7 +1258,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field input:focus-visible,
   .lockspire-admin-field select:focus-visible,
   .lockspire-admin-field textarea:focus-visible {
-    outline: none;
+    outline: var(--ls-focus-ring-width) solid var(--ls-focus-ring-color);
+    outline-offset: var(--ls-focus-ring-offset);
     border-color: var(--ls-focus-ring-color);
     box-shadow: var(--ls-focus-ring-shadow);
   }
@@ -1302,8 +1304,8 @@ defmodule Lockspire.Web.Admin.CSS do
   .lockspire-admin-field input[aria-invalid="true"],
   .lockspire-admin-field select[aria-invalid="true"],
   .lockspire-admin-field textarea[aria-invalid="true"] {
-    border-color: var(--ls-status-danger-border);
-    box-shadow: 0 0 0 1px var(--ls-status-danger-border);
+    border-color: var(--ls-border-control-invalid);
+    box-shadow: 0 0 0 1px var(--ls-border-control-invalid);
   }
 
   .lockspire-admin-field-errors {
@@ -3007,6 +3009,7 @@ defmodule Lockspire.Web.Admin.CSS do
     --ls-border-subtle: #1e293b;
     --ls-border-strong: #334155;
     --ls-border-control: #7c8aa0;
+    --ls-border-control-invalid: var(--ls-color-danger-border-dark);
 
     --ls-status-success-bg: var(--ls-color-success-bg-dark);
     --ls-status-success-text: var(--ls-color-success-text-dark);
