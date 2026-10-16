@@ -5,6 +5,8 @@ import test from "node:test";
 
 import {
   CHANGED_PAGES,
+  RESERVED_EXAMPLE_HOST,
+  SENSITIVE_PATTERNS,
   assessObservation,
   DEFAULT_THEMES,
   DEFAULT_WIDTHS,
@@ -246,4 +248,38 @@ test("only the focused element or a :focus-within rule counts as a focus indicat
   const [, body] = source.match(/const FOCUS_SCRIPT = `([\s\S]*?)`;\n/);
   assert.match(body, /n\.matches\(":focus-within"\) && \(paintedOutline\(c\) \|\| paintedShadow\(c\)\) && focusWithinRuleMatches\(n\)/);
   assert.match(body, /!transparent\(c\.outlineColor\)/);
+});
+
+test("JS sensitive patterns match BrowserEvidence source for source", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const elixir = await readFile(
+    new URL("../support/lockspire/web/admin_proof/browser_evidence.ex", import.meta.url),
+    "utf8"
+  );
+  const list = elixir.slice(elixir.indexOf("defp sensitive_patterns do"));
+  const pairs = [...list.matchAll(/\{"([^"]+)",\s*~r\/((?:\\\/|[^/])*)\/([a-z]*)\}/g)].map((m) => [m[1], m[2], m[3]]);
+  assert.deepEqual(
+    pairs,
+    SENSITIVE_PATTERNS.map(([label, pattern]) => [label, pattern.source, pattern.flags])
+  );
+
+  const [, reservedSource, reservedFlags] = elixir.match(/defp reserved_example_host do\s*~r\/((?:\\\/|[^/])*)\/([a-z]*)/);
+  assert.equal(RESERVED_EXAMPLE_HOST.source, reservedSource);
+  assert.equal(RESERVED_EXAMPLE_HOST.flags.replace("g", ""), reservedFlags);
+});
+
+test("the hostname rule covers more production TLDs and keeps reserved names exempt", () => {
+  for (const host of ["https://api.acme.co/x", "acme.ai", "https://auth.acme.dev/cb", "billing.acme.co.uk", "login.acme.io:8443/"]) {
+    assert.ok(scanSensitive(host).includes("production-looking hostname"), `${host} is flagged`);
+  }
+  for (const host of [
+    "http://lockspire-ui-review.localhost/lockspire",
+    "https://billingo.test/callback",
+    "https://partners.northstar.example.com/cb",
+    "https://app.example/cb",
+    "https://bad.invalid/",
+    "admin_route_proof.mjs and 154-BROWSER-EVIDENCE.md"
+  ]) {
+    assert.deepEqual(scanSensitive(host), [], `${host} is not flagged`);
+  }
 });

@@ -114,11 +114,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.ProofArtifactContractTest do
           "device_code=ABCD-EFGH-IJKL",
           "Authorization: Bearer abcdefghijklmnop",
           "proxy-authorization: basic c2VydmljZTpwYXNzd29yZA==",
-          "https://accounts.lockspire.com/admin"
+          "https://accounts.lockspire.com/admin",
+          "https://api.acme.co/x",
+          "https://auth.acme.ai/cb",
+          "https://auth.acme-example.com/cb"
         ] do
       assert_raise ArgumentError, ~r/sensitive evidence/, fn ->
         BrowserEvidence.assert_redaction_safe!(sensitive)
       end
+    end
+
+    # RFC 2606 / RFC 6761 names are the synthetic demo's own hosts.
+    for reserved <- [
+          "https://partners.northstar.example.com/backchannel-logout",
+          "http://lockspire-ui-review.localhost/lockspire",
+          "https://billingo.test/callback"
+        ] do
+      assert BrowserEvidence.assert_redaction_safe!(reserved) == reserved
     end
 
     distinct_states =

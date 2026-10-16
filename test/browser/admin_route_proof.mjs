@@ -79,38 +79,48 @@ export const CHANGED_PAGES = [
 const SYNTHETIC_CLIENT = "billingo-reports-backend";
 const REGISTRATION_TOKEN_CLIENT = "northstar-payables-portal";
 
-// Mirrors Lockspire.Web.AdminProof.BrowserEvidence sensitive_patterns/0.
+// Mirrors Lockspire.Web.AdminProof.BrowserEvidence sensitive_patterns/0 and
+// reserved_example_host/0 source-for-source; admin_route_proof_test.mjs fails
+// on any drift. The hostname rule names the common generic and country TLDs;
+// the RFC 2606 / RFC 6761 names (.localhost, .test, .example, .invalid) are not
+// in the list, and example.com/.net/.org hosts are exempted below.
 export const SENSITIVE_PATTERNS = [
-  ["cookie", /\b(?:cookie|session|session_id)=["']?[A-Za-z0-9._~+%/=-]{12,}/i],
-  ["auth code", /\b(?:authorization_code|auth_code)=["']?[A-Za-z0-9._~+%/=-]{12,}/i],
+  ["cookie", /\b(?:cookie|session|session_id)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i],
+  ["auth code", /\b(?:authorization_code|auth_code)=["']?[A-Za-z0-9._~+%\/=-]{12,}/i],
   [
     "JWT-looking token",
     /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}(?:\.[A-Za-z0-9_-]{8,})?\b/
   ],
   [
     "token parameter",
-    /(?:^|[?&\s])(?:access_token|refresh_token|id_token)=["']?[A-Za-z0-9._~+%/=-]{8,}/i
+    /(?:^|[?&\s])(?:access_token|refresh_token|id_token)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i
   ],
   [
     "plaintext credential",
-    /\b(?:client_secret|password|plaintext[_ -]?password)=["']?[A-Za-z0-9._~+%/=-]{8,}/i
+    /\b(?:client_secret|password|plaintext[_ -]?password)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i
   ],
   ["private key", /-----BEGIN [A-Z ]*PRIVATE KEY-----/],
   [
     "authorization credential",
     /\b(?:proxy-)?authorization\s*:\s*(?:bearer|basic)\s+\S{8,}/i
   ],
-  ["verifier material", /\b(?:code_verifier|verifier_material)=["']?[A-Za-z0-9._~+%/=-]{8,}/i],
-  ["device or user code", /\b(?:device_code|user_code)=["']?[A-Za-z0-9._~+%/=-]{4,}/i],
+  ["verifier material", /\b(?:code_verifier|verifier_material)=["']?[A-Za-z0-9._~+%\/=-]{8,}/i],
+  ["device or user code", /\b(?:device_code|user_code)=["']?[A-Za-z0-9._~+%\/=-]{4,}/i],
   [
     "copy-once secret",
     /(?:copy[- ]once\s+(?:secret|plaintext|value|credential)|(?:secret|credential).{0,24}copy[- ]once)/i
   ],
   [
     "production-looking hostname",
-    /\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud)(?::\d+)?(?:\/|\b)/i
+    /\b(?:https?:\/\/)?(?:[a-z0-9-]+\.)+(?:com|net|org|io|dev|app|cloud|co|ai|us|uk|de|eu|ca|au|fr|nl|in|jp|me|tv|xyz|tech|biz|info)(?::\d+)?(?:\/|\b)/i
   ]
 ];
+
+// RFC 2606 reserved example domains are the synthetic demo's own hostnames, not
+// production ones. The lookbehind anchors the match to a whole hostname, so
+// "example" must be a full DNS label: "acme-example.com" and "notexample.com"
+// are ordinary registrable domains and stay flagged.
+export const RESERVED_EXAMPLE_HOST = /(?<![A-Za-z0-9.-])(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/gi;
 
 const JOURNEYS = [
   ["/admin/overview", "Orient"],
@@ -207,13 +217,7 @@ export function collectScanText({
 
 export function scanSensitive(text) {
   const hits = [];
-  // RFC 2606 reserved example domains are the synthetic demo's own hostnames, not production ones.
-  // The lookbehind anchors the match to a whole hostname, so "example" must be a full DNS label:
-  // "acme-example.com" and "notexample.com" are ordinary registrable domains and stay flagged.
-  const withoutReserved = text.replace(
-    /(?<![A-Za-z0-9.-])(?:[a-z0-9-]+\.)*example\.(?:com|net|org)\b/gi,
-    "reserved-host"
-  );
+  const withoutReserved = text.replace(RESERVED_EXAMPLE_HOST, "reserved-host");
   for (const [label, pattern] of SENSITIVE_PATTERNS) {
     const subject = label === "production-looking hostname" ? withoutReserved : text;
     if (pattern.test(subject)) hits.push(label);
