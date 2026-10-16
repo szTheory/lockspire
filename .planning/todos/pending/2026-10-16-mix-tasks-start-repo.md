@@ -6,6 +6,9 @@ files:
   - lib/mix/tasks/lockspire.client.create.ex
   - lib/mix/tasks/lockspire.doctor.token_format.ex
   - lib/mix/tasks/lockspire.doctor.remote_jwks.ex
+audit_acknowledged:
+  milestone: v1.43
+  at: 2026-10-16
 ---
 
 ## Problem

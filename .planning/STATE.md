@@ -2,39 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
-current_phase: 157
-status: completed
+status: Awaiting next milestone
 stopped_at: Phase 157 complete — all phases complete
-last_updated: "2026-10-16T17:01:55.997Z"
+last_updated: "2026-10-16T19:25:01.260Z"
 last_activity: 2026-10-16
-last_activity_desc: Phase 157 complete
-state_head: b132450871cdb200e16d1e54381f04b8870c7127
+last_activity_desc: Milestone v1.43 completed and archived
+state_head: 2db11cd74a5cc9809aa5a66e572830facf55080a
 progress:
   total_phases: 3
   completed_phases: 3
   total_plans: 14
   completed_plans: 14
   percent: 100
+current_phase: 157
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
+See: .planning/PROJECT.md (updated 2026-10-16 after v1.43)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 157 — Host Surfaces, Redaction Sweep & Release Proof
+**Current focus:** Planning next milestone (v1.43 complete)
 
 ## Current Position
 
-Phase: 157
-Plan: Not started
-Status: All phases complete
-Last activity: 2026-10-16 — Phase 157 complete
-
-Progress: [██████████] 100%
+Phase: Milestone v1.43 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-16 — Milestone v1.43 completed and archived
 
 ## Accumulated Context
 
@@ -331,7 +329,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | Verification gap | Phase 140 verification report | gaps_found; acknowledged at v1.38 closeout | 2026-10-06 | v1.38 |
 | Verification gap | Phase 143 PR #119 exact-head merge authorization | gaps_found (16/18); acknowledged as non-blocking for forward development; report remains unchanged | 2026-10-09 | v1.39 |
 | Phoenix integration | Public forwarded `Lockspire.Web.AdminRouter` LiveView joins with an inner-router signed path while the browser requests the full host mount path; Phase 144 adoption demo uses guarded direct mounts with route parity. Public forwarded integration remains unverified and needs a separate library-level fix. | Deferred; no public router/API repair in Phase 144 Plan 02 | 2026-10-09 | v1.40 |
-| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. | Phase 145 code review | v1.40 |
+| Security | CR-01: private signing-key JWK material is persisted as plaintext JSON despite the `private_jwk_encrypted` field name | Critical, pre-existing, unresolved; deferred and not accepted or closed. Requires a dedicated encryption design before key persistence is release-ready. Resolved in v1.43 (envelope encryption at rest, 2026-10-16). | Phase 145 code review | v1.40 |
 | seeds | SEED-261010-zzo — inset operator theme-select caret | dormant | 2026-10-10 | v1.40 |
 | verification_gaps | 145/145-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
 | verification_gaps | 146/146-VERIFICATION.md | human_needed | 2026-10-10 | v1.40 |
@@ -339,11 +337,14 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | deferred_items | 148/deferred-items.md: Existing compiler/type warnings outside Phase 148's copy-only scope | acknowledged; no change claimed | 2026-10-11 | v1.41 |
 | todos | 2026-10-13-audit-dcr-default-lifetime-semantics.md | (presence-only) | 2026-10-15 | v1.42 |
 | todos | 2026-10-14-bump-bandit-in-demo-and-clean-room-hosts.md | (presence-only) | 2026-10-15 | v1.42 |
+| todos | 2026-10-16-mix-tasks-start-repo.md | (presence-only) | 2026-10-16 | v1.43 |
+| verification_override | 155/155-VERIFICATION.md | passed at execution; stale after in-milestone 156/157 edits; override_closeout | 2026-10-16 | v1.43 |
+| verification_override | 156/156-VERIFICATION.md | passed at execution; stale after in-milestone 157 edits; override_closeout | 2026-10-16 | v1.43 |
 
 ## Session Continuity
 
 Last session: 2026-10-16T16:44:22.228Z
-Stopped at: Phase 157 complete — all phases complete
+Stopped at: Milestone v1.43 completed and archived
 Resume file: None
 
 ## Performance Metrics
@@ -466,4 +467,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Discuss or plan Phase 155 with /gsd-discuss-phase 155 or /gsd-plan-phase 155
+- Start the next milestone with /gsd-new-milestone
