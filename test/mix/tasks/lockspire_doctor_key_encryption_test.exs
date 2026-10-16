@@ -123,6 +123,20 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryptionTest do
       assert output =~ "2 rows still need re-encryption: run mix lockspire.keys.reencrypt"
     end
 
+    test "a legacy row under legacy_plaintext :reject fails" do
+      KeyEncryptionHelpers.put_key_encryption(
+        keys: KeyEncryptionHelpers.config_keys(),
+        current: "test-1",
+        legacy_plaintext: :reject
+      )
+
+      insert([KeyEncryptionHelpers.legacy_json_row("a-legacy")])
+
+      assert {output, {:error, %Mix.Error{}}} = doctor()
+      assert output =~ "legacy=1"
+      assert output =~ "legacy_plaintext=reject"
+    end
+
     test "an unknown-key row prints counts first and then fails" do
       insert([KeyEncryptionHelpers.sealed_row("a-gone", "gone-1")])
 

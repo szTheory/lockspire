@@ -40,6 +40,17 @@ defmodule Lockspire.Admin.Keys.EncryptionStatus do
     |> finalize()
   end
 
+  @doc """
+  True when stored keys are broken now: a reachable row uses an unknown key id or cannot be
+  decrypted, or `legacy_plaintext: :reject` is set while legacy rows remain. Doctor and
+  `Install.Verify` both gate on this one predicate.
+  """
+  @spec broken_now?(map()) :: boolean()
+  def broken_now?(status) do
+    status.unknown_kek != %{} or status.undecryptable > 0 or
+      (status.legacy_plaintext == :reject and status.legacy > 0)
+  end
+
   defp current_id(nil), do: nil
   defp current_id(%KeySet{} = keyset), do: elem(KeySet.current(keyset), 0)
 

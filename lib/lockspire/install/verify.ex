@@ -7,6 +7,7 @@ defmodule Lockspire.Install.Verify do
   the same edit cycle.
   """
 
+  alias Lockspire.Admin.Keys.EncryptionStatus
   alias Lockspire.Install.Migrations
   alias Lockspire.Install.RepoRunner
   alias Lockspire.Install.Verify.Check
@@ -427,6 +428,14 @@ defmodule Lockspire.Install.Verify do
     stranded = stranded_details(status.stranded_retired)
 
     cond do
+      not EncryptionStatus.broken_now?(status) ->
+        Check.ok(
+          :key_storage,
+          "Stored signing keys can be read",
+          key_storage_counts(status) <> stranded,
+          key_storage_fix()
+        )
+
       status.unknown_kek != %{} or status.undecryptable > 0 ->
         Check.error(
           :key_storage,
@@ -436,18 +445,10 @@ defmodule Lockspire.Install.Verify do
           key_storage_fix()
         )
 
-      status.legacy_plaintext == :reject and status.legacy > 0 ->
+      true ->
         Check.error(
           :key_storage,
           "legacy_plaintext is :reject but #{status.legacy} stored signing keys are still legacy",
-          key_storage_counts(status) <> stranded,
-          key_storage_fix()
-        )
-
-      true ->
-        Check.ok(
-          :key_storage,
-          "Stored signing keys can be read",
           key_storage_counts(status) <> stranded,
           key_storage_fix()
         )

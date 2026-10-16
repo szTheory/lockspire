@@ -8,12 +8,14 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryption do
   unknown and undecryptable rows. Output lists key ids, counts and the
   legacy-plaintext mode only; it never prints key material. The task exits non-zero
   when the config is absent or invalid, the database cannot be read, or a stored key
-  uses an unknown key id or cannot be decrypted.
+  uses an unknown key id or cannot be decrypted, or `legacy_plaintext: :reject` is set while
+  legacy rows remain (the same "broken now" check as `mix lockspire.install.verify`).
   """
 
   use Mix.Task
 
   alias Lockspire.Admin.Keys
+  alias Lockspire.Admin.Keys.EncryptionStatus
   alias Lockspire.Install.RepoRunner
   alias Lockspire.Security.KeyEncryption.KeySet
 
@@ -48,8 +50,9 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryption do
       - invalid: names the problem (never the key) and exits non-zero
 
     Legacy rows and rows on an older key id exit zero and print a hint to run
-    mix lockspire.keys.reencrypt. Rows with an unknown key id, rows that cannot be
-    decrypted, or an unreadable database exit non-zero.
+    mix lockspire.keys.reencrypt, unless legacy_plaintext is :reject: then legacy rows
+    cannot be read, so they exit non-zero. Rows with an unknown key id, rows that cannot
+    be decrypted, or an unreadable database also exit non-zero.
 
     Key material is never printed.
     """
@@ -88,7 +91,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryption do
       {:ok, status} ->
         print_rows(status)
 
-        if status.unknown_kek == %{} and status.undecryptable == 0, do: :ok, else: :broken
+        if EncryptionStatus.broken_now?(status), do: :broken, else: :ok
 
       :error ->
         Mix.shell().info("rows: not inspected (database unreadable)")
