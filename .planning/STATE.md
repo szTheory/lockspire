@@ -4,17 +4,17 @@ milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
 current_phase: 157
 current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
-status: executing
-stopped_at: Completed 157-04-PLAN.md
-last_updated: "2026-10-16T16:32:34.614Z"
+status: verifying
+stopped_at: Completed 157-03-PLAN.md
+last_updated: "2026-10-16T16:44:22.352Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 157 execution started
-state_head: 536e9d55a450a011b609fedec83355ed0342511a
+state_head: 50f860581296757447f43a24904e2a4fa82931f2
 progress:
   total_phases: 3
   completed_phases: 2
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
   percent: 67
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 Phase: 157 (Host Surfaces, Redaction Sweep & Release Proof) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-16 — Phase 157 execution started
 
 Progress: [███████░░░] 67%
@@ -285,6 +285,7 @@ Progress: [███████░░░] 67%
 - [Phase 157]: 157-05: PrivateJwk.to_jwk/1 drops JOSE exceptions (to_public probe) and all six key consumers route through it
 - [Phase 157]: 157-06: malformed-key worker proof swaps the active key via update_all and asserts the real {:discard, :invalid_signing_key}; no lib/ leak found
 - [Phase 157]: 157-04: signing-key encryption guide is version-agnostic; per-row re-encrypt telemetry documented as encrypted/rewrapped
+- [Phase 157]: 157-03: upgrade journey derives verify key from the seeded legacy private JWK; separate CI steps for --check and doctor
 
 ### Pending Todos
 
@@ -342,8 +343,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T16:32:34.483Z
-Stopped at: Completed 157-04-PLAN.md
+Last session: 2026-10-16T16:44:22.228Z
+Stopped at: Completed 157-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -462,6 +463,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 157 P05 | 12 min | 2 tasks | 9 files |
 | Phase 157 P06 | 12 min | 2 tasks | 2 files |
 | Phase 157 P04 | 25 min | 3 tasks | 9 files |
+| Phase 157 P03 | 25 min | 3 tasks | 4 files |
 
 ## Operator Next Steps
 
