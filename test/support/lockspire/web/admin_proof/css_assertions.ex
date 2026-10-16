@@ -147,6 +147,21 @@ defmodule Lockspire.Web.AdminProof.CssAssertions do
 
     assert narrow_cluster =~ "display: flex"
     assert narrow_cluster =~ "flex-wrap: wrap"
+
+    # Text fields keep a readable line length on pages without the form shell.
+    assert block_rule!(css, ".lockspire-admin-field textarea") =~ "max-width: min(100%, 600px)"
+
+    # A closed tooltip must not extend the page past the admin background.
+    assert block_rule!(css, ".lockspire-admin-info-tooltip") =~ "display: none"
+    refute block_rule!(css, ".lockspire-admin-info-tooltip") =~ "visibility: hidden"
+
+    assert block_rule!(
+             css,
+             ~s(.lockspire-admin-info[data-open="true"] .lockspire-admin-info-tooltip)
+           ) =~
+             "display: block"
+
+    assert block_rule!(css, ".lockspire-admin-client-workspace") =~ "align-items: start"
   end
 
   def assert_redaction_safe_presentation! do

@@ -9,7 +9,7 @@ created: "2026-10-15"
 
 # Phase 154 — UI Design Contract
 
-> Responsive, theme, accessibility, and rendered-evidence contract for the existing 30 admin paths. This is a proof and hardening phase: it adds no screens, no new design tokens beyond the shipped `--ls-border-control`, and no new copy unless a sweep finding forces it. Spacing, typography, color roles, and copy are inherited unchanged from `153-UI-SPEC.md` and `152-UI-SPEC.md`; where this file is silent, those contracts govern.
+> Responsive, theme, accessibility, and rendered-evidence contract for the existing 30 admin paths. This is a proof and hardening phase: it adds no screens, no new design tokens beyond the shipped `--ls-border-control` and its post-review companion `--ls-border-control-invalid`, and no new copy unless a sweep finding forces it. Spacing, typography, color roles, and copy are inherited unchanged from `153-UI-SPEC.md` and `152-UI-SPEC.md`; where this file is silent, those contracts govern.
 
 ## Design System
 
@@ -81,6 +81,7 @@ Inherited from 153. No new roles. The only token change this phase relies on is 
 | Accent | `--ls-text-accent` (`#0e7490` light; `#22d3ee` dark) | Principal safe action, current navigation, few meaningful links |
 | Destructive | Existing danger tokens | Confirmed consequential action and its state only |
 | Control boundary | `--ls-border-control` (gray-500 light; `#7c8aa0` dark) | Border of inputs, selects, textareas, multi-value container; never decorative card borders |
+| Invalid control boundary | `--ls-border-control-invalid` (`#991b1b` light; `#e35d6a` dark) | Border of invalid inputs, selects, textareas and multi-value container (added after code review WR-06, commit e427f3af) |
 
 Accent reserved for: primary safe action, current navigation item, current-page markers in the secondary nav (`.lockspire-admin-secondary-nav a[aria-current="page"]`), the selected multi-value suggestion, and the hovered overview review-row label. No 60/30/10 split is declared; 153 disclaims a literal split and this phase inherits that. Not applied to every interactive element.
 
@@ -90,7 +91,7 @@ Accent reserved for: primary safe action, current navigation item, current-page 
 |------|-----------|--------|
 | Body, muted (`#5f6f84` light / `#8a99ad` dark), accent, and status (success/warning/danger/info) text on panel, page, and muted surfaces | 4.5:1 (WCAG 1.4.3) | light, dark |
 | Primary button label on accent fill | 4.5:1 | light, dark |
-| Form control boundary `--ls-border-control` on panel surface | 3:1 (WCAG 1.4.11) | light, dark; system resolves to one of these via `prefers-color-scheme` |
+| Form control boundary `--ls-border-control` and `--ls-border-control-invalid` on panel surface | 3:1 (WCAG 1.4.11) | light, dark; system resolves to one of these via `prefers-color-scheme` |
 | Focus ring (2px, 3px offset) on panel/page | 3:1 | light, dark |
 | State badges and icons conveying status | 3:1 and always paired with text | light, dark |
 
