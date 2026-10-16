@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 156
 current_phase_name: Legacy Migration, KEK Rotation & Plaintext Refusal
 status: executing
-stopped_at: Completed 156-01-PLAN.md
-last_updated: "2026-10-16T13:52:29.838Z"
+stopped_at: Completed 156-02-PLAN.md
+last_updated: "2026-10-16T14:04:21.649Z"
 last_activity: 2026-10-16
 last_activity_desc: Phase 156 execution started
-state_head: 1d9d250c17e532ccb869e19f0978eac23412bc99
+state_head: 76dcfc8e0ba61db8a0539a6be59e137a950fd226
 progress:
   total_phases: 3
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 33
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 156 (Legacy Migration, KEK Rotation & Plaintext Refusal) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-10-16 — Phase 156 execution started
 
@@ -277,6 +277,8 @@ Progress: [███░░░░░░░] 33%
 - [Phase 155]: 155-04: generate_key resolves KeySet before any JWK/DB work and refuses with :key_encryption_not_configured; clean-room KEK clean-room-1 lands in the same commit
 - [Phase 155]: 155-05: diagnostics validate fresh via Config.key_encryption!/0; absent-KEK tests use put_key_encryption(nil) only
 - [Phase 156]: 156-01: store callbacks list_signing_key_refs/2 and reencrypt_signing_key/3; assess/2 is the single sealability rule; vanished or CAS-lost rows count as conflicted
+- [Phase 156]: 156-02: unsealable retired rows are stranded_retired and never block readiness; sealable retired rows still block until sealed
+- [Phase 156]: 156-02: Install.Verify :key_storage is :error only for unknown_kek, undecryptable, or :reject with legacy rows; DB problems give a skipped :ok
 
 ### Pending Todos
 
@@ -334,8 +336,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T13:52:29.773Z
-Stopped at: Completed 156-01-PLAN.md
+Last session: 2026-10-16T14:04:21.581Z
+Stopped at: Completed 156-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -447,6 +449,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 155 P04 | 20 min | 2 tasks | 6 files |
 | Phase 155 P05 | 40min | 3 tasks | 8 files |
 | Phase 156 P01 | 25 min | 3 tasks | 11 files |
+| Phase 156 P02 | 45 min | 3 tasks | 12 files |
 
 ## Operator Next Steps
 

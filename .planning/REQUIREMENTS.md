@@ -24,10 +24,10 @@
 
 ### Migration and operations
 
-- [ ] **MIG-01**: An operator encrypts existing legacy rows with `Lockspire.Admin.Keys.reencrypt/1` (release-eval callable) or `mix lockspire.keys.reencrypt`, with `--dry-run`, counts (scanned, encrypted, already current, failed by `kid`), idempotent re-runs, and safety under concurrent runs (row lock plus compare-and-swap on only the ciphertext column).
-- [ ] **MIG-02**: An operator verifies readiness with `--check` (non-zero exit while any legacy row remains) and a doctor `key_encryption` check that reports row counts per KEK id and legacy rows.
+- [x] **MIG-01**: An operator encrypts existing legacy rows with `Lockspire.Admin.Keys.reencrypt/1` (release-eval callable) or `mix lockspire.keys.reencrypt`, with `--dry-run`, counts (scanned, encrypted, already current, failed by `kid`), idempotent re-runs, and safety under concurrent runs (row lock plus compare-and-swap on only the ciphertext column).
+- [x] **MIG-02**: An operator verifies readiness with `--check` (non-zero exit while any legacy row remains) and a doctor `key_encryption` check that reports row counts per KEK id and legacy rows.
 - [ ] **MIG-03**: With `legacy_plaintext: :reject`, any non-envelope row is refused at read (`:plaintext_key_refused` internally) without trying the legacy parsers.
-- [ ] **OPS-01**: An operator rotates the key-encryption key by adding a new `current`, re-encrypting, confirming zero rows remain on the old id, and removing it, without reissuing signing keys; a test matrix covers legacy, old-KEK and new-KEK rows against each current key.
+- [x] **OPS-01**: An operator rotates the key-encryption key by adding a new `current`, re-encrypting, confirming zero rows remain on the old id, and removing it, without reissuing signing keys; a test matrix covers legacy, old-KEK and new-KEK rows against each current key.
 - [ ] **OPS-02**: Encrypt, re-wrap, legacy-read, refusal and decryption-failure events emit audit records and telemetry carrying only ids, counts and reasons.
 
 ### Redaction, host surfaces, proof and docs
@@ -70,10 +70,10 @@
 | ENC-01 | Phase 155 | Complete |
 | ENC-02 | Phase 155 | Complete |
 | ENC-03 | Phase 155 | Complete |
-| MIG-01 | Phase 156 | Pending |
-| MIG-02 | Phase 156 | Pending |
+| MIG-01 | Phase 156 | Complete |
+| MIG-02 | Phase 156 | Complete |
 | MIG-03 | Phase 156 | Pending |
-| OPS-01 | Phase 156 | Pending |
+| OPS-01 | Phase 156 | Complete |
 | OPS-02 | Phase 156 | Pending |
 | RED-01 | Phase 157 | Pending |
 | HOST-01 | Phase 157 | Pending |
