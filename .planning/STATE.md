@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.43
 milestone_name: Signing Key Encryption at Rest
-current_phase: 156
-current_phase_name: Legacy Migration, KEK Rotation & Plaintext Refusal
-status: verifying
-stopped_at: Completed 156-03-PLAN.md
-last_updated: "2026-10-16T14:17:23.987Z"
+current_phase: 157
+current_phase_name: Host Surfaces, Redaction Sweep & Release Proof
+status: planning
+stopped_at: Phase 156 complete, ready to plan Phase 157
+last_updated: "2026-10-16T14:35:50.106Z"
 last_activity: 2026-10-16
-last_activity_desc: Phase 156 execution started
-state_head: c53da30f6acffe97cf546d89bf8580cc1f96797f
+last_activity_desc: Phase 156 complete, transitioned to Phase 157
+state_head: dfd0314775201eaef2c2e19e48f151d0022132de
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
   completed_plans: 8
-  percent: 33
+  percent: 67
 ---
 
 # Project State
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 156 — Legacy Migration, KEK Rotation & Plaintext Refusal
+**Current focus:** Phase 157 — Host Surfaces, Redaction Sweep & Release Proof
 
 ## Current Position
 
-Phase: 156 (Legacy Migration, KEK Rotation & Plaintext Refusal) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-10-16 — Phase 156 execution started
+Phase: 157 — Host Surfaces, Redaction Sweep & Release Proof
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-16 — Phase 156 complete, transitioned to Phase 157
 
-Progress: [███░░░░░░░] 33%
+Progress: [███████░░░] 67%
 
 ## Accumulated Context
 
@@ -338,7 +338,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-16T14:17:23.919Z
-Stopped at: Completed 156-03-PLAN.md
+Stopped at: Phase 156 complete, ready to plan Phase 157
 Resume file: None
 
 ## Performance Metrics

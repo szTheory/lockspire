@@ -21,8 +21,8 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
 <details open>
 <summary>🚧 v1.43 Signing Key Encryption at Rest (Phases 155–157)</summary>
 
-- [ ] **Phase 155: Crypto Core, Config Seam & Bandit Baseline** — Hosts are on Bandit 1.13.1; new signing keys are written only as KEK-sealed envelopes and every signer reads them.
-- [ ] **Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal** — Operators can encrypt legacy rows, rotate the KEK, verify readiness and switch on plaintext refusal safely.
+- [x] **Phase 155: Crypto Core, Config Seam & Bandit Baseline** — Hosts are on Bandit 1.13.1; new signing keys are written only as KEK-sealed envelopes and every signer reads them.
+- [x] **Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal** — Operators can encrypt legacy rows, rotate the KEK, verify readiness and switch on plaintext refusal safely.
 - [ ] **Phase 157: Host Surfaces, Redaction Sweep & Release Proof** — Fresh installs, demo and clean-room hosts ship encrypted by default, nothing leaks, and CI plus docs prove the upgrade end to end.
 
 </details>
@@ -111,7 +111,7 @@ Plans:
 - 156-02: `:reject` refusal in the decoder; `Keys.encryption_status/0`; doctor `key_encryption` check and `Install.Verify` extension; per-row `key_encrypted`/`key_rewrapped` audit; telemetry for legacy reads, refusals and decrypt failures (MIG-02, MIG-03, OPS-02).
 
 **SAFE-01 constraint**: re-encryption updates only the existing column (no migration, no `kek_id` column); refusal is opt-in, so default protocol behavior is unchanged; no decrypt-to-plaintext path.
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -161,7 +161,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 155. Crypto Core, Config Seam & Bandit Baseline | 5/5 | Complete    | 2026-10-16 |
-| 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 3/3 | In Progress | - |
+| 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 3/3 | Complete    | 2026-10-16 |
 | 157. Host Surfaces, Redaction Sweep & Release Proof | 0/4 | Not started | - |
 
 ## Completed Backlog Scope
