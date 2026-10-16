@@ -23,7 +23,7 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
 
 - [x] **Phase 155: Crypto Core, Config Seam & Bandit Baseline** — Hosts are on Bandit 1.13.1; new signing keys are written only as KEK-sealed envelopes and every signer reads them.
 - [x] **Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal** — Operators can encrypt legacy rows, rotate the KEK, verify readiness and switch on plaintext refusal safely.
-- [ ] **Phase 157: Host Surfaces, Redaction Sweep & Release Proof** — Fresh installs, demo and clean-room hosts ship encrypted by default, nothing leaks, and CI plus docs prove the upgrade end to end.
+- [x] **Phase 157: Host Surfaces, Redaction Sweep & Release Proof** — Fresh installs, demo and clean-room hosts ship encrypted by default, nothing leaks, and CI plus docs prove the upgrade end to end.
 
 </details>
 
