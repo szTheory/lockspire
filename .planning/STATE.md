@@ -5,16 +5,16 @@ milestone_name: Signing Key Encryption at Rest
 current_phase: 155
 current_phase_name: Crypto Core, Config Seam & Bandit Baseline
 status: executing
-stopped_at: Completed 155-01-PLAN.md
-last_updated: "2026-10-16T03:23:37.241Z"
+stopped_at: Completed 155-02-PLAN.md
+last_updated: "2026-10-16T03:30:32.450Z"
 last_activity: 2026-10-15
 last_activity_desc: Phase 155 execution started
-state_head: d88387a40f1f44f6ffd6feae693c48e4ebf96cab
+state_head: baa3e955693301fd312dd18adf19cbd96de29338
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-15 at v1.43 start)
 ## Current Position
 
 Phase: 155 (Crypto Core, Config Seam & Bandit Baseline) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-10-15 — Phase 155 execution started
 
@@ -272,6 +272,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 154]: Locked-console browser capture uses --disable-gpu-vsync and --disable-frame-rate-limit (frame pacing only)
 - [Phase 154]: Card-edge escape scan catches badge overflow that document-overflow checks miss (F-03)
 - [Phase 155]: Pin bandit == 1.13.1 in demo and clean-room hosts; prune unused bandit/thousand_island from compat lock (D-15/16/17)
+- [Phase 155]: KEK envelope parse binds exact 12-byte IV and 16-byte tag before :crypto (truncated tags accepted by :crypto); empty keys block is invalid
 
 ### Pending Todos
 
@@ -329,8 +330,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T03:23:37.220Z
-Stopped at: Completed 155-01-PLAN.md
+Last session: 2026-10-16T03:30:32.430Z
+Stopped at: Completed 155-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -437,6 +438,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 154 P06 | 115 min | 3 tasks | 5 files |
 | Phase 154 P07 | 95 min | 3 tasks | 4 files |
 | Phase 155 P01 | 40 min | 2 tasks | 7 files |
+| Phase 155 P02 | 35 min | 3 tasks | 11 files |
 
 ## Operator Next Steps
 

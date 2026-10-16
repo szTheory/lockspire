@@ -74,14 +74,14 @@ v1.43 closes CR-01: private signing JWKs stored as plaintext in `private_jwk_enc
 - 155-03: `Admin.Keys.generate_key/1` seals or refuses; map-form-only `PrivateJwk.decode` (remove `decode/1`) across the six read sites; distinct internal reasons collapsed to `:invalid_signing_key`; `seeding_helpers.ex` and `token_exchange_case.ex` seal; `@derive {Inspect, except: [:private_jwk_encrypted]}` on `SigningKey` and `SigningKeyRecord`; minimal doctor and `Install.Verify` KEK-presence check (KEK-02, ENC-01, ENC-02).
 
 **SAFE-01 constraint**: no protocol response changes, no new deps, no migration; verify `KeyCache` holds no private material.
-**Plans**: 1/5 plans executed
+**Plans**: 2/5 plans executed
 
 Plans:
 **Wave 1**
 - [x] 155-01-PLAN.md — Bandit 1.13.1 + mint 1.11.0 in demo and clean-room hosts, compat lock pruned (DEP-01; wave 1)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 155-02-PLAN.md — KeyEncryption cipher + KeySet, `Config.key_encryption!/0`, boot validate/cache/warn, test KEKs, ENC-03 tests (KEK-01, ENC-03; wave 2)
+- [x] 155-02-PLAN.md — KeyEncryption cipher + KeySet, `Config.key_encryption!/0`, boot validate/cache/warn, test KEKs, ENC-03 tests (KEK-01, ENC-03; wave 2)
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 155-03-PLAN.md — map-form `PrivateJwk.decode` across the six consumers, per-consumer error shapes, JWKS/discovery fitness guard (ENC-02; wave 3)
@@ -150,7 +150,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 155. Crypto Core, Config Seam & Bandit Baseline | 1/5 | In Progress | - |
+| 155. Crypto Core, Config Seam & Bandit Baseline | 2/5 | In Progress | - |
 | 156. Legacy Migration, KEK Rotation & Plaintext Refusal | 0/2 | Not started | - |
 | 157. Host Surfaces, Redaction Sweep & Release Proof | 0/4 | Not started | - |
 
