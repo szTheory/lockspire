@@ -64,6 +64,23 @@ defmodule Lockspire.Web.Live.Admin.DesignSystem.PageContractTest do
     end
   end
 
+  test "page contract rejects form controls that have no labels at all by default" do
+    for control <- [
+          ~s(<input id="q" name="q">),
+          ~s(<select name="s"></select>),
+          "<textarea></textarea>"
+        ] do
+      assert_raise ExUnit.AssertionError, fn ->
+        HtmlAssertions.assert_page_contract!("<h1>A</h1>#{control}")
+      end
+    end
+  end
+
+  test "page contract skips the label check by default when a page has no visible controls" do
+    html = ~s(<h1>A</h1><input type="hidden" name="_csrf_token" value="x">)
+    assert HtmlAssertions.assert_page_contract!(html) == html
+  end
+
   test "page contract rejects a label pointing at a missing control when labels are required" do
     assert_raise ExUnit.AssertionError, fn ->
       HtmlAssertions.assert_page_contract!(~s(<h1>A</h1><label for="ghost">Name</label>),

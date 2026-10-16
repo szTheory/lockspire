@@ -120,8 +120,9 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
   text, exactly one h1, and explicit label targets. The h1 is rendered by the
   admin shell, so it is present in the HTML returned by `live/2`.
 
-  Options: `:labels` is `:when_present` (default; label check runs only when the
-  page has `label[for]`) or `:required`. Returns `html` for piping.
+  Options: `:labels` is `:when_present` (default; label check runs when the
+  page renders any visible form control) or `:required`. Returns `html` for
+  piping.
   """
   def assert_page_contract!(html, opts \\ []) do
     assert_no_duplicate_ids(html)
@@ -134,15 +135,17 @@ defmodule Lockspire.Web.AdminProof.HtmlAssertions do
     h1_count = html |> document() |> LazyHTML.query("h1") |> Enum.count()
     assert h1_count == 1, "expected exactly one h1, found #{h1_count}"
 
-    has_labels? =
+    # Decided by the rendered controls, not by labels: a page whose controls
+    # have no labels at all is exactly the case the label check must catch.
+    has_controls? =
       html
       |> document()
-      |> LazyHTML.query("label[for], label input, label select, label textarea")
+      |> LazyHTML.query("input:not([type=hidden]), select, textarea")
       |> Enum.count() > 0
 
     case Keyword.get(opts, :labels, :when_present) do
       :required -> assert_label_targets_exist(html)
-      :when_present -> if has_labels?, do: assert_label_targets_exist(html)
+      :when_present -> if has_controls?, do: assert_label_targets_exist(html)
     end
 
     html
