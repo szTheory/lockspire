@@ -1,8 +1,8 @@
 ---
 phase: "153"
 slug: "configure-support-page-refinement"
-status: draft
-nyquist_compliant: false
+status: validated
+nyquist_compliant: true
 wave_0_complete: true
 created: "2026-10-12"
 ---
@@ -33,19 +33,19 @@ created: "2026-10-12"
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
 | 153-00-01 | 00 | 0 | UI-01/UI-02/UI-06 | Rendered screenshot baseline | Manual: verify all 30 route images and redaction checks in `153-BASELINE-SCREENSHOTS.md` | ✅ | ✅ passed |
-| 153-01-01 | 01 | 1 | UI-01/UI-02/UI-06 | LiveView render | `mix test test/lockspire/web/live/admin/policies_live/index_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-01-02 | 01 | 1 | UI-06 | CSS contract | `mix test test/lockspire/web/live/admin/design_system/css_contract_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-02-01 | 02 | 2 | UI-01/UI-02/UI-06 | LiveView integration | `mix test test/lockspire/web/live/admin/policies_live/par_test.exs test/lockspire/web/live/admin/policies_live/dpop_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-02-02 | 02 | 2 | UI-01/UI-02/UI-06 | LiveView integration | `mix test test/lockspire/web/live/admin/policies_live/security_profile_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-03-01 | 03 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/keys_live_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-03-02 | 03 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/dcr_live_test.exs test/lockspire/web/live/admin/iat_live_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-04-01 | 04 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/consents_live_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-04-02 | 04 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/tokens_live_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-05-01 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/clients_live_test.exs test/lockspire/web/live/admin/clients_live/show_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-05-02 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-05-03 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | Route contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-06-01 | 06 | 4 | UI-01/UI-02 | Route matrix contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ⬜ pending |
-| 153-06-02 | 06 | 4 | UI-01/UI-02 | Route matrix contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ⬜ pending |
+| 153-01-01 | 01 | 1 | UI-01/UI-02/UI-06 | LiveView render | `mix test test/lockspire/web/live/admin/policies_live/index_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-01-02 | 01 | 1 | UI-06 | CSS contract | `mix test test/lockspire/web/live/admin/design_system/css_contract_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-02-01 | 02 | 2 | UI-01/UI-02/UI-06 | LiveView integration | `mix test test/lockspire/web/live/admin/policies_live/par_test.exs test/lockspire/web/live/admin/policies_live/dpop_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-02-02 | 02 | 2 | UI-01/UI-02/UI-06 | LiveView integration | `mix test test/lockspire/web/live/admin/policies_live/security_profile_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-03-01 | 03 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/keys_live_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-03-02 | 03 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/dcr_live_test.exs test/lockspire/web/live/admin/iat_live_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-04-01 | 04 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/consents_live_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-04-02 | 04 | 2 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/tokens_live_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-05-01 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/clients_live_test.exs test/lockspire/web/live/admin/clients_live/show_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-05-02 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | LiveView integration | `mix test test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs test/lockspire/web/live/admin/logout_deliveries_live_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-05-03 | 05 | 3 | UI-01/UI-02/UI-06/SAFE-01 | Route contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-06-01 | 06 | 4 | UI-01/UI-02 | Route matrix contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ✅ green |
+| 153-06-02 | 06 | 4 | UI-01/UI-02 | Route matrix contract | `mix test test/lockspire/web/live/admin/design_system/route_contract_test.exs --max-failures 1` | ✅ | ✅ green |
 
 The command examples in this table omit the environment prefix for legibility. In this workspace use the full quick-run command above; `.hex` cannot write its default user-home cache here.
 
@@ -58,11 +58,19 @@ The command examples in this table omit the environment prefix for legibility. I
 
 ## Validation Sign-Off
 
-- [ ] Every plan task has an automated verification or a documented manual-only reason
+- [x] Every plan task has an automated verification or a documented manual-only reason
 - [x] Sampling continuity: no 3 consecutive tasks without automated verification
 - [x] Existing focused test and route-proof infrastructure covers the planned checks
 - [x] No watch-mode flags
-- [ ] Feedback latency confirmed by execution
-- [ ] `nyquist_compliant: true` after verification
+- [x] Feedback latency confirmed by execution (17 mapped modules, 219 tests, 2.9s after compile)
+- [x] `nyquist_compliant: true` after verification
 
-**Approval:** pending
+**Approval:** validated 2026-10-15 (retroactive audit at HEAD cff6ae4e; all mapped commands green)
+
+## Validation Audit 2026-10-16
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
