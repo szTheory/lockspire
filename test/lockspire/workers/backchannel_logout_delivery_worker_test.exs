@@ -17,6 +17,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
   alias Lockspire.Storage.Ecto.LogoutDeliveryRecord
   alias Lockspire.Storage.Ecto.LogoutEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.TestSupport.KeyMaterialMatcher
   alias Lockspire.TestSupport.TelemetryCapture
   alias Lockspire.Workers.BackchannelLogoutDeliveryWorker
 
@@ -198,6 +199,69 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
       assert %AuditEventRecord{} = discarded_audit = latest_audit!("logout_delivery_discarded")
       assert discarded_audit.outcome == "discarded"
       assert discarded_audit.metadata["http_status"] == 400
+    end
+
+    test "discards with invalid_signing_key for a malformed sealed active key and leaks no key bytes" do
+      %{delivery: delivery} = create_delivery_fixture()
+
+      sentinel_d = "WORKER-SENTINEL-D-0001-not-32-bytes"
+      kid = "kid-123"
+
+      {_meta, okp} = {:okp, :Ed25519} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+
+      malformed =
+        okp
+        |> Map.put("kid", kid)
+        |> Map.put("d", Base.url_encode64(sentinel_d, padding: false))
+
+      sealed = Lockspire.KeyEncryptionHelpers.seal_private_jwk(kid, malformed)
+
+      {1, _} =
+        Lockspire.Storage.Ecto.SigningKeyRecord
+        |> where([key], key.kid == ^kid)
+        |> Lockspire.TestRepo.update_all(set: [alg: "EdDSA", private_jwk_encrypted: sealed])
+
+      kek_material =
+        for {_id, material} <- Lockspire.KeyEncryptionHelpers.config_keys(), do: material
+
+      kek_raw = Enum.map(kek_material, &Base.decode64!/1)
+
+      secrets =
+        [sentinel_d, Base.url_encode64(sentinel_d, padding: false)] ++ kek_material ++ kek_raw
+
+      log =
+        ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+          result =
+            BackchannelLogoutDeliveryWorker.perform(%Oban.Job{
+              args: %{"logout_delivery_id" => delivery.id}
+            })
+
+          Process.put(:worker_result, result)
+        end)
+
+      result = Process.get(:worker_result)
+      assert {:discard, :invalid_signing_key} = result
+
+      stored_delivery = fetch_delivery!(delivery.id)
+      assert stored_delivery.status == :discarded
+      assert stored_delivery.failure_reason == "invalid_signing_key"
+
+      assert_receive {:telemetry_event, [:lockspire, :logout_delivery_discarded], %{count: 1},
+                      discarded_metadata}
+
+      assert discarded_metadata.failure_reason == "invalid_signing_key"
+
+      KeyMaterialMatcher.refute_leak!("worker result", result, secrets)
+
+      KeyMaterialMatcher.refute_leak!(
+        "recorded failure reason",
+        stored_delivery.failure_reason,
+        secrets
+      )
+
+      KeyMaterialMatcher.refute_leak!("stored delivery", stored_delivery, secrets)
+      KeyMaterialMatcher.refute_leak!("discard telemetry", discarded_metadata, secrets)
+      KeyMaterialMatcher.refute_leak!("captured log", log, secrets)
     end
 
     test "records attempted and succeeded as separate durable/auditable transitions" do
