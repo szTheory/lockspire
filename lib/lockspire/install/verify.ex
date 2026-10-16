@@ -57,8 +57,8 @@ defmodule Lockspire.Install.Verify do
     ]
   end
 
-  # Validates fresh (never the cached accessor, D-05). Details carry key ids,
-  # the current id and the legacy mode only, never key material (D-06).
+  # Validates fresh (never the cached accessor) so edits are seen. Details carry key ids,
+  # the current id and the legacy mode only, never key material.
   defp key_encryption_check do
     case safely(&Lockspire.Config.key_encryption!/0) do
       {:ok, %Lockspire.Security.KeyEncryption.KeySet{} = keyset} ->
