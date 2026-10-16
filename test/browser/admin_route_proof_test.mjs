@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  ALLOWED_WIDTHS,
   CHANGED_PAGES,
   RESERVED_EXAMPLE_HOST,
   SENSITIVE_PATTERNS,
@@ -16,6 +17,7 @@ import {
   formatEvidenceRow,
   isLocalDevHost,
   matrixSize,
+  parseWidths,
   routeTemplates,
   scanSensitive,
   sectionPlan
@@ -282,4 +284,24 @@ test("the hostname rule covers more production TLDs and keeps reserved names exe
   ]) {
     assert.deepEqual(scanSensitive(host), [], `${host} is not flagged`);
   }
+});
+
+test("parseWidths rejects a bare --width and widths BrowserEvidence would reject", () => {
+  assert.deepEqual(parseWidths(undefined, [390]), [390]);
+  assert.deepEqual(parseWidths("320,1280", []), [320, 1280]);
+  assert.deepEqual(parseWidths("390", []), [390]);
+  assert.throws(() => parseWidths(true, [390]), /needs a value/);
+  for (const bad of ["1", "641", "abc", "", "390,12"]) assert.throws(() => parseWidths(bad, [390]), /--width/);
+});
+
+test("ALLOWED_WIDTHS mirrors the BrowserEvidence viewport list", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const elixir = await readFile(
+    new URL("../support/lockspire/web/admin_proof/browser_evidence.ex", import.meta.url),
+    "utf8"
+  );
+  const [, block] = elixir.match(/@allowed_viewports \[([^\]]*)\]/);
+  const viewports = [...block.matchAll(/"(\d+)px"/g)].map((m) => Number(m[1]));
+  assert.deepEqual(ALLOWED_WIDTHS, viewports);
+  for (const width of DEFAULT_WIDTHS) assert.ok(ALLOWED_WIDTHS.includes(width));
 });

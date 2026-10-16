@@ -27,6 +27,8 @@ export const THEME_STORAGE_KEY = "lockspire-admin-theme";
 
 export const DEFAULT_WIDTHS = [320, 390, 640, 768, 1119, 1120, 1280];
 export const DEFAULT_THEMES = ["light", "dark", "system"];
+// Mirrors the Viewport values BrowserEvidence accepts.
+export const ALLOWED_WIDTHS = [320, 390, 640, 720, 768, 799, 800, 801, 1024, 1119, 1120, 1261, 1280, 1440];
 
 const ROUTE_TEMPLATES = [
   "/admin",
@@ -580,12 +582,8 @@ function applyTheme(session, theme) {
   browser(session, "wait", "500");
 }
 
-function pad(value) {
-  return String(value);
-}
-
 function fileStem(template, entry) {
-  return `${routeSlug(template)}-${pad(entry.width)}-${entry.theme}-${entry.motion}`;
+  return `${routeSlug(template)}-${entry.width}-${entry.theme}-${entry.motion}`;
 }
 
 function keyboardSweep(session) {
@@ -711,6 +709,19 @@ function csv(value, fallback) {
   return value && value !== true ? String(value).split(",").map((v) => v.trim()).filter(Boolean) : fallback;
 }
 
+// `--width` must carry a value; a bare flag would otherwise become Number(true)
+// = 1px. Every width must be one BrowserEvidence accepts.
+export function parseWidths(value, fallback) {
+  if (value === undefined) return fallback;
+  if (value === true) throw new Error("--width needs a value, for example --width 390 or --width 320,1280");
+  const widths = String(value).split(",").map((v) => v.trim()).filter(Boolean).map(Number);
+  const invalid = widths.filter((width) => !ALLOWED_WIDTHS.includes(width));
+  if (widths.length === 0 || invalid.length > 0) {
+    throw new Error(`--width must be one or more of ${ALLOWED_WIDTHS.join(", ")}`);
+  }
+  return widths;
+}
+
 function main(argv) {
   const args = parseArgs(argv);
 
@@ -733,7 +744,18 @@ function main(argv) {
   }
 
   const out = path.resolve(repoRoot, args.out && args.out !== true ? args.out : DEFAULT_OUT);
+  if (args.height === true) {
+    console.error("--height needs a value, for example --height 900");
+    return 2;
+  }
   const height = Number(args.height || 900);
+  let widths;
+  try {
+    widths = parseWidths(args.width, args.matrix ? DEFAULT_WIDTHS : [390]);
+  } catch (error) {
+    console.error(error.message);
+    return 2;
+  }
   const media = args.media && args.media !== true ? args.media : "light";
   const motionArg = args.motion && args.motion !== true ? args.motion : "default";
   const options = {
@@ -750,7 +772,7 @@ function main(argv) {
   if (args.matrix) {
     const motions = motionArg === "all" ? ["default", "reduced-motion"] : [motionArg];
     entries = buildMatrix({
-      widths: csv(args.width, DEFAULT_WIDTHS).map(Number),
+      widths,
       themes: csv(args.theme, DEFAULT_THEMES),
       motions,
       routes: args.changed ? CHANGED_PAGES : args.route && args.route !== true ? csv(args.route, []) : routeTemplates()
@@ -761,10 +783,14 @@ function main(argv) {
       console.error("usage: admin_route_proof.mjs --route <template-or-path> [--width N] [--theme light|dark|system] [--motion default|reduced-motion] [--keyboard] [--screenshot] [--sections] [--out DIR]");
       return 2;
     }
+    if (widths.length > 1) {
+      console.error("--width takes one value without --matrix");
+      return 2;
+    }
     entries = [
       {
         route,
-        width: Number(args.width || 390),
+        width: widths[0],
         theme: args.theme && args.theme !== true ? args.theme : "light",
         motion: motionArg
       }
@@ -782,7 +808,9 @@ function main(argv) {
   const observations = [];
   let exitCode = 0;
 
+  let aborted = false;
   for (const [theme, themeEntries] of byTheme) {
+    if (aborted) break;
     const session = `lockspire-route-proof-${process.pid}-${theme}`;
     try {
       const first = themeEntries[0];
@@ -804,12 +832,15 @@ function main(argv) {
         } catch (error) {
           console.error(`FAILED ${entry.route} ${entry.width}px ${entry.theme}: ${error.message}`);
           exitCode = 1;
-          if (error.sensitive) continue;
+          // Sensitive material on one page means the demo data is not what the
+          // harness assumes; stop the whole run rather than keep capturing.
+          if (error.sensitive) throw error;
         }
       }
     } catch (error) {
       console.error(`FAILED session ${theme}: ${error.message}`);
       exitCode = 1;
+      if (error.sensitive) aborted = true;
     } finally {
       try {
         // Restore system preference so no stored override survives the run.
@@ -823,6 +854,11 @@ function main(argv) {
         // best effort
       }
     }
+  }
+
+  if (aborted) {
+    console.error("run aborted on sensitive evidence; no rows or observations were written");
+    return 1;
   }
 
   if (args.matrix && rows.length > 0) {
