@@ -175,6 +175,12 @@ defmodule Lockspire.Install.VerifyTest do
     def delete(conn, _params), do: conn
   end
 
+  defmodule FailingRepo do
+    def config, do: []
+    def __adapter__, do: Ecto.Adapters.Postgres
+    def start_link(_opts), do: raise(DBConnection.ConnectionError, "connection refused")
+  end
+
   defmodule ConsentLive do
     use Phoenix.LiveView
 
@@ -223,7 +229,8 @@ defmodule Lockspire.Install.VerifyTest do
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
-        mount_path: "/lockspire"
+        mount_path: "/lockspire",
+        key_storage_status: fn -> {:ok, ready_status()} end
       )
 
     assert result.ok?
@@ -276,7 +283,8 @@ defmodule Lockspire.Install.VerifyTest do
                :repo,
                :resolver_module,
                :router,
-               :interaction_handler_module
+               :interaction_handler_module,
+               :key_storage
              ]
              |> Enum.sort()
 
@@ -344,6 +352,115 @@ defmodule Lockspire.Install.VerifyTest do
       assert check.details =~ ":key_encryption"
       refute inspect(check) =~ @sentinel
     end
+  end
+
+  describe ":key_storage check" do
+    defp storage_check(status_result, extra \\ []) do
+      opts =
+        [
+          router: Web.Router,
+          resolver_module: Scope.AccountResolver,
+          interaction_handler_module: Scope.InteractionHandler,
+          repo: Lockspire.TestRepo,
+          mount_path: "/lockspire",
+          key_storage_status: fn -> status_result end
+        ] ++ extra
+
+      Enum.find(Verify.run(opts).checks, &(&1.id == :key_storage))
+    end
+
+    test "is ok for a ready status" do
+      assert %{status: :ok, details: details} = storage_check({:ok, ready_status()})
+      assert details =~ "total=0"
+      refute details =~ "stranded_retired"
+    end
+
+    test "is ok with counts for legacy rows under :allow" do
+      status = %{ready_status() | legacy: 2, total: 2, ready?: false}
+
+      assert %{status: :ok, details: details} = storage_check({:ok, status})
+      assert details =~ "legacy=2"
+      assert details =~ "legacy_plaintext=allow"
+    end
+
+    test "is an error when an unknown key id holds rows" do
+      status = %{ready_status() | unknown_kek: %{"gone-1" => 2}, total: 2, ready?: false}
+
+      assert %{status: :error, details: details, fix: fix} = storage_check({:ok, status})
+      assert details =~ "gone-1"
+      assert fix =~ "mix lockspire.keys.reencrypt"
+    end
+
+    test "is an error when a row cannot be decrypted" do
+      status = %{ready_status() | undecryptable: 1, total: 1, ready?: false}
+      assert %{status: :error} = storage_check({:ok, status})
+    end
+
+    test "is an error for legacy rows under :reject" do
+      status = %{ready_status() | legacy: 1, total: 1, legacy_plaintext: :reject, ready?: false}
+      assert %{status: :error} = storage_check({:ok, status})
+    end
+
+    test "stranded retired rows are listed and never make it an error" do
+      status = %{ready_status() | stranded_retired: %{count: 2, kids: ["k-a", "k-b"]}}
+
+      assert %{status: :ok, details: details} = storage_check({:ok, status})
+      assert details =~ "stranded_retired=2"
+      assert details =~ "k-a"
+      assert details =~ "k-b"
+    end
+
+    test "is a skipped ok when the status cannot be read" do
+      assert %{status: :ok, details: details} = storage_check({:error, :storage_unavailable})
+      assert details =~ "skipped:"
+    end
+
+    test "is a skipped ok when the status function raises" do
+      opts = [key_storage_status: fn -> raise "boom" end]
+
+      check =
+        Enum.find(
+          Verify.run(
+            [
+              router: Web.Router,
+              resolver_module: Scope.AccountResolver,
+              interaction_handler_module: Scope.InteractionHandler,
+              repo: Lockspire.TestRepo,
+              mount_path: "/lockspire"
+            ] ++ opts
+          ).checks,
+          &(&1.id == :key_storage)
+        )
+
+      assert %{status: :ok, details: "skipped:" <> _} = check
+      refute inspect(check) =~ "boom"
+    end
+
+    test "a repo whose startup raises a connection error does not crash verification" do
+      result =
+        Verify.run(
+          router: Web.Router,
+          resolver_module: Scope.AccountResolver,
+          interaction_handler_module: Scope.InteractionHandler,
+          repo: Lockspire.Install.VerifyTest.FailingRepo,
+          mount_path: "/lockspire"
+        )
+
+      assert %{status: :error, details: details} =
+               Enum.find(result.checks, &(&1.id == :migrations))
+
+      assert details =~ "could not inspect database migration state"
+
+      assert %{status: :ok, details: "skipped:" <> _} =
+               Enum.find(result.checks, &(&1.id == :key_storage))
+    end
+  end
+
+  defp ready_status do
+    {:ok, status} =
+      {:ok, Lockspire.Admin.Keys.EncryptionStatus.build(KeyEncryptionHelpers.config_keyset(), [])}
+
+    status
   end
 
   test "reports missing generated authorized-app and consent routes together" do
