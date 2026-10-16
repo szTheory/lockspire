@@ -240,4 +240,14 @@ defmodule Lockspire.Admin do
           | {:error,
              :key_encryption_not_configured | :repo_not_started | {:invalid_config, String.t()}}
   defdelegate reencrypt(opts \\ []), to: Keys
+
+  @doc """
+  Reports how many stored signing keys still need re-encryption.
+
+  See `Lockspire.Admin.Keys.encryption_status/0`.
+  """
+  @spec encryption_status() ::
+          {:ok, Lockspire.Admin.Keys.encryption_status()}
+          | {:error, :repo_not_started | :storage_unavailable | {:invalid_config, String.t()}}
+  defdelegate encryption_status(), to: Keys
 end

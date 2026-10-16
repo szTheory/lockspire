@@ -3,6 +3,7 @@ defmodule Lockspire.Admin.Keys do
   Operator-facing query and command boundary for guided signing-key lifecycle work.
   """
 
+  alias Lockspire.Admin.Keys.EncryptionStatus
   alias Lockspire.Admin.Keys.Reencrypt
   alias Lockspire.Config
   alias Lockspire.Domain.SigningKey
@@ -33,6 +34,27 @@ defmodule Lockspire.Admin.Keys do
             }
           ],
           changes: [%{kid: String.t(), action: :encrypted | :rewrapped, from: String.t()}]
+        }
+
+  @type encryption_status :: %{
+          configured: boolean(),
+          current_kek_id: String.t() | nil,
+          configured_kek_ids: [String.t()],
+          legacy_plaintext: :allow | :reject,
+          total: non_neg_integer(),
+          no_private_key: non_neg_integer(),
+          legacy: non_neg_integer(),
+          by_kek_id: %{optional(String.t()) => non_neg_integer()},
+          unknown_kek: %{optional(String.t()) => non_neg_integer()},
+          undecryptable: non_neg_integer(),
+          stranded_retired: %{count: non_neg_integer(), kids: [String.t()]},
+          pending: [
+            %{
+              kid: String.t(),
+              state: :legacy | :unsealable_legacy | :other_kek | :unknown_kek | :undecryptable
+            }
+          ],
+          ready?: boolean()
         }
 
   @private_jwk_members MapSet.new(~w(d p q dp dq qi oth k))
@@ -213,6 +235,63 @@ defmodule Lockspire.Admin.Keys do
          :ok <- ensure_repo_started() do
       actor = actor_from_attrs(%{actor: Keyword.get(opts, :actor)})
       {:ok, Reencrypt.run(keyset, actor, opts)}
+    end
+  end
+
+  @doc """
+  Reports how far stored signing keys are from the current key-encryption key.
+
+  Every stored private key is opened with a freshly resolved key set and the plaintext is
+  discarded, so a row sealed under the same id with different material counts as `undecryptable`.
+  The result never contains stored bytes or key material.
+
+  `ready?` is true when a key-encryption key is configured, no legacy row remains, every row
+  sits on the current id, and no unknown or undecryptable row remains. Retired keys that cannot
+  be re-encrypted are listed under `stranded_retired` and never block readiness. This function
+  reads only: it takes no locks, writes nothing and emits no telemetry.
+  """
+  @spec encryption_status() ::
+          {:ok, encryption_status()}
+          | {:error, :repo_not_started | :storage_unavailable | {:invalid_config, String.t()}}
+  def encryption_status do
+    with {:ok, keyset} <- status_keyset(),
+         :ok <- ensure_repo_started(),
+         {:ok, rows} <- status_rows() do
+      {:ok, EncryptionStatus.build(keyset, rows)}
+    end
+  end
+
+  # Emits the completed event for a `--check` run. Kept apart from `encryption_status/0` so the
+  # status itself stays free of side effects for the doctor and install verification.
+  @doc false
+  @spec emit_check_completed(encryption_status(), map() | nil, integer()) :: :ok
+  def emit_check_completed(status, actor, duration) when is_map(status) do
+    actor = actor_from_attrs(%{actor: actor})
+
+    Reencrypt.emit_completed(
+      :check,
+      %{
+        scanned: status.total,
+        already_current: Map.get(status.by_kek_id, status.current_kek_id, 0),
+        no_private_key: status.no_private_key,
+        pending: length(status.pending),
+        stranded_retired: status.stranded_retired.count,
+        duration: duration
+      },
+      %{current_kek_id: status.current_kek_id, actor_type: actor[:type], actor_id: actor[:id]}
+    )
+  end
+
+  defp status_keyset do
+    {:ok, Config.key_encryption!()}
+  rescue
+    error in ArgumentError -> {:error, {:invalid_config, Exception.message(error)}}
+  end
+
+  defp status_rows do
+    case Repository.list_signing_keys() do
+      {:ok, rows} -> {:ok, rows}
+      {:error, _exception} -> {:error, :storage_unavailable}
     end
   end
 
