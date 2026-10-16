@@ -34,6 +34,7 @@ defmodule Lockspire.Protocol.IdToken do
          {:ok, auth_time} <- validate_auth_time(Map.get(params, :auth_time)),
          sid <- Map.get(params, :sid),
          {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
          claims <-
            build_claims(
              host_claims,
@@ -47,7 +48,7 @@ defmodule Lockspire.Protocol.IdToken do
            ),
          {_, compact} <-
            JOSE.JWT.sign(
-             JOSE.JWK.from_map(jwk_map),
+             jwk,
              %{"alg" => alg, "kid" => kid, "typ" => "JWT"},
              claims
            )

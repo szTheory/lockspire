@@ -27,6 +27,40 @@ defmodule Lockspire.Protocol.PrivateJwkTest do
     assert {:ok, %{kty: :RSA}} = PrivateJwk.decode(row(:erlang.term_to_binary(%{kty: :RSA})))
   end
 
+  describe "to_jwk/1" do
+    defp okp_wrong_length_d do
+      {_meta, map} = {:okp, :Ed25519} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+      Map.put(map, "d", Base.url_encode64("not-thirty-two-bytes", padding: false))
+    end
+
+    test "builds a key for valid RSA, EC and OKP private maps" do
+      for generator <- [{:rsa, 2048}, {:ec, "P-256"}, {:okp, :Ed25519}] do
+        {_meta, map} = generator |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+        assert {:ok, %JOSE.JWK{}} = PrivateJwk.to_jwk(map)
+      end
+    end
+
+    test "returns invalid_signing_key without raising for malformed input" do
+      {_meta, rsa} = {:rsa, 2048} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+      {_meta, ec} = {:ec, "P-256"} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+
+      malformed = [
+        %{},
+        %{"kty" => "nope"},
+        Map.put(rsa, "d", "abcde"),
+        Map.put(ec, "d", "!!junk!!"),
+        okp_wrong_length_d(),
+        nil,
+        "not a map",
+        [1, 2]
+      ]
+
+      for input <- malformed do
+        assert {:error, :invalid_signing_key} = PrivateJwk.to_jwk(input)
+      end
+    end
+  end
+
   test "decodes structs carrying kid and private_jwk_encrypted" do
     struct = %Lockspire.Domain.SigningKey{
       kid: "kid-1",

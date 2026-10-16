@@ -29,6 +29,21 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
     }
   end
 
+  defp malformed_sealed_key(kid, alg \\ "EdDSA") do
+    {_meta, map} = {:okp, :Ed25519} |> JOSE.JWK.generate_key() |> JOSE.JWK.to_map()
+
+    jwk =
+      map
+      |> Map.put("kid", kid)
+      |> Map.put("d", Base.url_encode64("not-thirty-two-bytes", padding: false))
+
+    %{
+      kid: kid,
+      alg: alg,
+      private_jwk_encrypted: KeyEncryptionHelpers.seal_private_jwk(kid, jwk)
+    }
+  end
+
   defp tamper(%{private_jwk_encrypted: bin} = key) do
     size = byte_size(bin) - 1
     <<head::binary-size(size), last>> = bin
@@ -114,6 +129,11 @@ defmodule Lockspire.Protocol.EnvelopeSigningConsumersTest do
 
     test "tampered envelope returns invalid_signing_key" do
       key = JarTestHelpers.generate_keys() |> sealed_key("kid-env") |> tamper()
+      assert {:error, :invalid_signing_key} = IdToken.sign(id_token_params(key))
+    end
+
+    test "malformed sealed key returns invalid_signing_key without raising" do
+      key = malformed_sealed_key("kid-env")
       assert {:error, :invalid_signing_key} = IdToken.sign(id_token_params(key))
     end
 

@@ -38,6 +38,22 @@ defmodule Lockspire.Protocol.PrivateJwk do
 
   def decode(_value), do: {:error, :invalid_signing_key}
 
+  # Malformed key material can make the JOSE library raise with decoded private bytes in
+  # the exception message, so the exception is dropped here and only a reason atom leaves
+  # this function.
+  @spec to_jwk(term()) :: {:ok, JOSE.JWK.t()} | {:error, :invalid_signing_key}
+  def to_jwk(jwk_map) when is_map(jwk_map) do
+    jwk = JOSE.JWK.from_map(jwk_map)
+    _public = JOSE.JWK.to_public(jwk)
+    {:ok, jwk}
+  rescue
+    _ -> {:error, :invalid_signing_key}
+  catch
+    _, _ -> {:error, :invalid_signing_key}
+  end
+
+  def to_jwk(_value), do: {:error, :invalid_signing_key}
+
   @doc false
   @spec decode_with_reason(term()) :: {:ok, map()} | {:error, reason()}
   def decode_with_reason(%{kid: kid, private_jwk_encrypted: bin} = row)
