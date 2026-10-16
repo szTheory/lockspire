@@ -63,6 +63,7 @@ Out of scope examples remain:
 - refresh-token family revocation on reuse
 - no implicit flow
 - no `alg=none`
+- private signing keys encrypted at rest (AES-256-GCM envelopes bound to each key's ID) under a key-encryption key the host app provides at runtime; see [docs/upgrading/signing-key-encryption.md](docs/upgrading/signing-key-encryption.md)
 - issuer-string `aud` for `private_key_jwt`
 - generic `invalid_client` wire failures with strong redaction of client assertions and JWKS bodies in logs and operator surfaces
 

@@ -32,6 +32,22 @@ defmodule Lockspire.UpgradeGuideContractTest do
     assert guide =~ "This is the required gate"
   end
 
+  test "the guide carries the rotation runbook and the data-safety warnings", %{guide: guide} do
+    for phrase <- [
+          "Rotate the key-encryption key",
+          "LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT",
+          "Never remove an old KEK before `--check` passes",
+          "Backup remanence",
+          "Rollback",
+          "earlier versions",
+          "ERL_CRASH_DUMP_SECONDS=0",
+          "env_keys",
+          "same location as its key"
+        ] do
+      assert String.downcase(guide) =~ String.downcase(phrase), "guide is missing: #{phrase}"
+    end
+  end
+
   test "the guide stays version-agnostic and free of local paths", %{guide: guide} do
     refute guide =~ ".planning/"
     refute guide =~ "/Users/"

@@ -105,3 +105,55 @@ mix lockspire.doctor key_encryption
 Expected: `legacy_plaintext=reject`, `legacy=0` on the `rows:` line, exit 0. Generating, publishing and activating signing keys now works. From this point a stored value that is not a sealed envelope is refused before it is parsed.
 
 A `legacy_plaintext` change takes effect on each node's next boot.
+
+## Rotate the key-encryption key
+
+Rotate on your own schedule, or at once if a KEK may have leaked. The order matters: every node must know the new key before any node starts writing with it.
+
+1. Add the new key as a second entry and keep `current` on the old id. Read the new value from `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT` (that name is only a convention; any name works). Deploy every node.
+
+   ```elixir
+   config :lockspire, :key_encryption,
+     keys: [
+       {"2026-01", System.fetch_env!("LOCKSPIRE_KEY_ENCRYPTION_KEY")},
+       {"2026-07", System.fetch_env!("LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT")}
+     ],
+     current: "2026-01",
+     legacy_plaintext: :reject
+   ```
+
+   Expected: `mix lockspire.doctor key_encryption` shows `ids=2026-01,2026-07` and all rows still under `kek=2026-01`.
+
+2. Set `current: "2026-07"` and deploy every node. Expected: doctor shows `current=2026-07`, and the rows under `kek=2026-01` are reported as needing re-encryption.
+3. Run `mix lockspire.keys.reencrypt` (or `bin/app rpc "Lockspire.Admin.Keys.reencrypt()"` on a release). Expected: `rewrapped=` equals the number of keys that were on the old id and `failed=0`. The signing keys themselves do not change, so tokens signed earlier keep verifying.
+4. Run `mix lockspire.keys.reencrypt --check`. Expected: `ready=true`, exit 0. Then run `mix lockspire.doctor key_encryption` and confirm there is no `kek=2026-01` line, which means zero rows remain on the old id.
+5. Remove the old key from `keys:` and deploy. Expected: doctor lists only the new id and exits 0.
+
+**Never remove an old KEK before `--check` passes, and keep it in your secret manager for as long as you keep any backup that was written under it.** A backup sealed under a key you no longer have cannot be restored to working signing keys.
+
+## Warnings
+
+### Backup remanence
+
+Backups, WAL archives, replicas, snapshots and database dumps taken before re-encryption still hold usable plaintext private keys. Encrypting the rows in place does not change them. Expire those copies on your normal retention schedule. The only full remedy after the switch to `:reject` is to generate new signing keys and retire the keys that were once stored as plaintext, so that anything leaked from an old copy no longer matters.
+
+If your database logs statement parameters (the PostgreSQL settings `log_statement` and `log_min_duration_statement` do, unless `log_parameter_max_length` is set to 0), log files written while keys were still plaintext may also contain key material. Check and expire them too.
+
+### Rollback
+
+Earlier versions of Lockspire cannot read sealed envelopes, and there is no task that turns them back into plaintext. Before you switch to `:reject`, roll back by setting `legacy_plaintext: :allow` again, never by removing the key-encryption config: removing it makes every sealed key unreadable. Rolling the application code itself back to an earlier version after step 2 is not supported without restoring a database backup taken before step 2.
+
+### Losing the KEK
+
+If every configured KEK is lost, the sealed signing keys cannot be recovered. Generate and activate new signing keys. Tokens signed with the lost keys stop verifying once those keys leave your JWKS, so clients must obtain new tokens.
+
+### Keep the KEK backup separate
+
+Keep a copy of every KEK that still protects data, and keep it away from the database backups. As GitLab puts it in its encryption guidance, storing encrypted information in the same location as its key defeats the purpose. Never put a KEK in the same backup, bucket or repository as the database it protects.
+
+## Operational hygiene
+
+- **Crash dumps.** An Erlang crash dump can contain `:persistent_term` values and the memory of every process, and that includes Lockspire's decoded key-encryption keys. Application environment tables are not written to the dump, but anything that copied the key into a process is. Restrict the dump file's permissions and location, or where policy forbids dumps set `ERL_CRASH_DUMP_SECONDS=0` (or `ERL_CRASH_DUMP_BYTES=0`) for the release.
+- **Remote shells and Observer.** The raw KEK stays in the application environment, so anyone with a remote shell (`bin/app remote`) or Observer access to the node can read it. Limit who has that access.
+- **LiveDashboard.** Never list `LOCKSPIRE_KEY_ENCRYPTION_KEY` (or the `_NEXT` variable) in the `env_keys` option of Phoenix LiveDashboard. It would show the value on the dashboard.
+- **Logs and operator pages.** Lockspire never prints key bytes or KEK values in task output, logs, telemetry or admin pages. Keep it that way in any host code that touches the same config.
