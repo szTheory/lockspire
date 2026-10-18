@@ -2,6 +2,7 @@
 
 ## Milestones
 
+- 🚧 **v1.44 Adopter Polish & Verified 1.6.0** — active; Phases 158–161; adopter polish on the v1.43 KEK work, then one verified 1.6.0 publish.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
 - ✅ [v1.42 Admin UI Clarity & Workflow Refinement](milestones/v1.42-ROADMAP.md) — completed 2026-10-15; Phases 151–154; no protocol changes or package release.
 - ✅ [v1.41 Product Language & Repository Clarity](milestones/v1.41-ROADMAP.md) — completed 2026-10-11; Phases 148–150; planning and documentation, no package release.
@@ -14,7 +15,69 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-No milestone is active. v1.43 closed CR-01 (private signing keys encrypted at rest under a rotatable host KEK). Start the next milestone with `/gsd-new-milestone`; carry-forward candidates are listed under Requirements → Active in [PROJECT.md](PROJECT.md).
+v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the three DB-touching Mix tasks that do not start the host repo, ships the cheap key-encryption-key setup wins (`mix lockspire.gen.kek`, `{:system, "VAR"}`), adds a read-only Key protection line and a missing-KEK error to the admin Keys page, then publishes and independently verifies Lockspire 1.6.0. The release runs last: Release Please PR #121 merges only after all v1.44 work is on `main` with CI green (one publish cycle carrying v1.43 + v1.44). SAFE-02 (no protocol, security-default, schema or dependency change; no key material in any output) constrains every phase; Phase 161 owns its final proof.
+
+## Active Milestone: v1.44 Adopter Polish & Verified 1.6.0
+
+- [ ] **Phase 158: Mix Task Repo Start** - `client.create`, `doctor.token_format` and `doctor.remote_jwks` start and stop the host repo themselves via `RepoRunner`, with real error reasons
+- [ ] **Phase 159: Key-Encryption Key Setup DX** - `mix lockspire.gen.kek`, `{:system, "VAR"}` runtime resolution, redacted `KeySet` inspect, and guidance that points to the new task
+- [ ] **Phase 160: Admin Key Protection & Missing-KEK Copy** - read-only Key protection line and a calm missing-encryption-key error on the Keys page, with vocabulary map updates
+- [ ] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources
+
+### Phase 158: Mix Task Repo Start
+**Goal**: A host developer can run every DB-touching Lockspire Mix task in a bare `mix` session and get either the intended result or the real failure reason.
+**Depends on**: Nothing (first phase of v1.44; builds on v1.43 main)
+**Requirements**: TASK-01, TASK-02, TASK-03
+**Success Criteria** (what must be TRUE):
+  1. The clean-room SaaS journey first reproduces the failure, then runs `mix lockspire.client.create`, `mix lockspire.doctor.token_format` and `mix lockspire.doctor.remote_jwks` against a real host whose repo is not running, and all three succeed.
+  2. Each task has a test that runs it with no pre-started repo, and a check that an already-running repo's pool pid is unchanged after the task runs (RepoRunner, not raw `with_repo`, not `app.start`).
+  3. A `client.create` validation or write failure shows the real reason (not "repo unavailable"), and a client secret is printed at most once, only after a successful write.
+  4. Doctor tasks keep their existing exit codes and output shape; no task output, error or log carries secret or key material (SAFE-02).
+**Plans**: TBD
+
+### Phase 159: Key-Encryption Key Setup DX
+**Goal**: A host developer can generate and wire up a key-encryption key without openssl and without risking a silent unencrypted fallback.
+**Depends on**: Phase 158 (clean-room harness changes land first; independent code seams)
+**Requirements**: KEK-03, KEK-05, KEK-06
+**Success Criteria** (what must be TRUE):
+  1. `mix lockspire.gen.kek` prints a fresh 32-byte base64 key and the same fail-closed `runtime.exs` snippet the installer prints (one shared snippet builder); `--id` validates the key ID (default `YYYY-MM` UTC), `--raw` prints only the value, and the output passes `KeySet` validation. The task writes no files, needs no repo, and emits no logs or telemetry.
+  2. A host configuring a key entry as `{:system, "VAR"}` boots with it resolved at runtime in `Lockspire.Config`; nothing is resolved at compile time or written back to app env.
+  3. With an unset or empty variable in a configured key list, boot fails with an error naming the variable and never its value, and never falls back to "not configured".
+  4. `inspect`ing or logging a key set shows no key bytes, and every guidance message that recommends generating a key (config errors, `mix lockspire.verify`, `mix lockspire.keys.reencrypt`, the upgrade guide) points to `mix lockspire.gen.kek` (SAFE-02).
+**Plans**: TBD
+
+### Phase 160: Admin Key Protection & Missing-KEK Copy
+**Goal**: An operator on the admin Keys page can tell at a glance whether signing keys are protected, and understands why key generation is refused when no encryption key is set up.
+**Depends on**: Phase 159 (shares the KEK config surface and `gen.kek` setup guidance)
+**Requirements**: KEY-UI-01, KEY-UI-02, KEY-UI-03
+**Success Criteria** (what must be TRUE):
+  1. The Keys page shows a read-only "Key protection" line naming the current encryption key ID when keys are encrypted, with distinct calm wording for older-key, unencrypted, unreadable, not-set-up, invalid-config and could-not-check states; "could not check" never reads as healthy.
+  2. A failed protection check leaves the key list visible; the line shows no per-encryption-key counts, no key material and no new controls (SAFE-02).
+  3. Trying to generate a signing key with no encryption key configured shows that none is set up, that Lockspire will not store signing keys unencrypted, and how to set one up; other generation errors keep their existing copy.
+  4. All new wording comes from the PRODUCT.md vocabulary map, new terms and retired phrases are added in the same change, and `vocabulary_contract_test.exs` passes.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 161: Docs & Verified 1.6.0 Release
+**Goal**: Adopters can read accurate guides for the new setup path and install a publicly verified Lockspire 1.6.0 that carries v1.43 and v1.44.
+**Depends on**: Phases 158, 159, 160 (release runs last: all v1.44 work on `main` with CI green)
+**Requirements**: DOC-02, REL-01, REL-02, SAFE-02
+**Success Criteria** (what must be TRUE):
+  1. The install, upgrade and operator guides describe `mix lockspire.gen.kek`, the `{:system, "VAR"}` option and the Key protection line, and `mix docs.verify` passes on CI Elixir 1.19.5 / OTP 28.
+  2. The milestone diff shows no protocol behavior, security default, schema or dependency change, and a final sweep finds no private key material or key-encryption key in task output (other than `gen.kek`'s own key), logs, telemetry, admin pages or errors.
+  3. After v1.44 is on `main` with CI green, the regenerated Release Please PR #121 is re-read, its version and changelog cover v1.40–v1.44, and it is squash-merged.
+  4. 1.6.0 is published through the protected exact-ref lane and independently verified: Hex API checksum matches the manifest and downloaded tarball, HexDocs serve 1.6.0, the `lockspire-v1.6.0` tag and GitHub release point at the published source SHA, and the tarball includes the new Mix tasks.
+  5. A clean-room host installs `{:lockspire, "== 1.6.0"}` from Hex in a fresh `HEX_HOME`, and the result is recorded in `.planning/RELEASE-TRAIN.md`.
+**Plans**: TBD
+
+### Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 158. Mix Task Repo Start | 0/TBD | Not started | - |
+| 159. Key-Encryption Key Setup DX | 0/TBD | Not started | - |
+| 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
+| 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
 
 ## Phases
 

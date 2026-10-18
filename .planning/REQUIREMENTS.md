@@ -57,24 +57,26 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TASK-01 | — | Pending |
-| TASK-02 | — | Pending |
-| TASK-03 | — | Pending |
-| KEK-03 | — | Pending |
-| KEK-05 | — | Pending |
-| KEK-06 | — | Pending |
-| KEY-UI-01 | — | Pending |
-| KEY-UI-02 | — | Pending |
-| KEY-UI-03 | — | Pending |
-| DOC-02 | — | Pending |
-| REL-01 | — | Pending |
-| REL-02 | — | Pending |
-| SAFE-02 | — | Pending |
+| TASK-01 | Phase 158 | Pending |
+| TASK-02 | Phase 158 | Pending |
+| TASK-03 | Phase 158 | Pending |
+| KEK-03 | Phase 159 | Pending |
+| KEK-05 | Phase 159 | Pending |
+| KEK-06 | Phase 159 | Pending |
+| KEY-UI-01 | Phase 160 | Pending |
+| KEY-UI-02 | Phase 160 | Pending |
+| KEY-UI-03 | Phase 160 | Pending |
+| DOC-02 | Phase 161 | Pending |
+| REL-01 | Phase 161 | Pending |
+| REL-02 | Phase 161 | Pending |
+| SAFE-02 | Phase 161 | Pending |
 
 **Coverage:**
 - v1.44 requirements: 13 total
-- Mapped to phases: 0 (roadmap pending)
+- Mapped to phases: 13
+- Unmapped: 0
+- SAFE-02 is owned by Phase 161 (final proof) and constrains Phases 158–160
 
 ---
 *Requirements defined: 2026-10-18*
-*Last updated: 2026-10-18 after initial definition*
+*Last updated: 2026-10-18 after v1.44 roadmap creation (Phases 158–161)*

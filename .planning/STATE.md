@@ -2,11 +2,11 @@
 gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
-status: planning
+status: ready_to_plan
 last_updated: "2026-10-18T23:38:39.702Z"
 last_activity: 2026-10-18
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.44 Adopter Polish & Verified 1.6.0 — defining requirements
+**Current focus:** v1.44 Adopter Polish & Verified 1.6.0 — Phase 158 Mix Task Repo Start
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 158 of 158–161 (Mix Task Repo Start)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-10-18 — Milestone v1.44 started
+Status: Ready to plan
+Last activity: 2026-10-18 — v1.44 roadmap created (Phases 158–161, 13/13 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -314,6 +316,7 @@ Last activity: 2026-10-18 — Milestone v1.44 started
 
 ### Roadmap Evolution
 
+- v1.44 roadmap created: Phases 158–161 map all 13 Adopter Polish & Verified 1.6.0 requirements exactly once (158: TASK; 159: KEK-03/05/06; 160: KEY-UI; 161: DOC-02/REL/SAFE-02). SAFE-02 constrains every phase; Phase 161 owns its final proof. Release runs last: PR #121 squash-merges only after all v1.44 work is on main with CI green. Research flags: 158 RepoRunner blanket rescue for writers; 161 `upload_hex_artifact.exs` vs current Hex client and PR #121 re-read. Older `.planning/phases` dirs (142/143/999.1) left untouched.
 - Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 - v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
 - v1.43 roadmap created: Phases 155–157 map all 16 Signing Key Encryption at Rest requirements exactly once (155: DEP/KEK/ENC; 156: MIG/OPS; 157: RED/HOST/PROOF/DOC/SAFE). SAFE-01 constrains every phase; Phase 157 owns its final proof. Research flags: 155-01 Bandit changelog, 155-02 `:crypto` AEAD prototype, 156-01 lock/CAS semantics. Older `.planning/phases` dirs (142/143/999.1) left untouched.
@@ -347,7 +350,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-16T16:44:22.228Z
-Stopped at: Milestone v1.43 completed and archived
+Stopped at: v1.44 roadmap created
 Resume file: None
 
 ## Performance Metrics
@@ -470,4 +473,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first v1.44 phase with /gsd-plan-phase 158
