@@ -1,40 +1,43 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.43
-milestone_name: Signing Key Encryption at Rest
-status: Awaiting next milestone
-stopped_at: Phase 157 complete — all phases complete
-last_updated: "2026-10-16T19:25:01.260Z"
-last_activity: 2026-10-16
-last_activity_desc: Milestone v1.43 completed and archived
-state_head: 2db11cd74a5cc9809aa5a66e572830facf55080a
+milestone: v1.44
+milestone_name: Adopter Polish & Verified 1.6.0
+status: planning
+last_updated: "2026-10-18T23:38:39.702Z"
+last_activity: 2026-10-18
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
-current_phase: 157
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-16 after v1.43)
+See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone (v1.43 complete)
+**Current focus:** v1.44 Adopter Polish & Verified 1.6.0 — defining requirements
 
 ## Current Position
 
-Phase: Milestone v1.43 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-16 — Milestone v1.43 completed and archived
+Status: Defining requirements
+Last activity: 2026-10-18 — Milestone v1.44 started
 
 ## Accumulated Context
+
+### v1.44 Milestone Direction
+
+- The user accepted the recommendation for a short adopter-polish milestone before publishing 1.6.0: confirm and fix the DB-touching Mix tasks that do not start the repo, ship the cheap KEK DX wins (KEK-03 `mix lockspire.gen.kek`, KEK-05 `{:system, "ENV"}`, KEY-UI-01 "Key protection" line, an admin error naming a missing KEK), then merge Release Please PR #121 and verify the published 1.6.0 as v1.39 did for 1.5.1.
+- The user chose to run research before requirements.
+- No protocol change, no new dependency, security defaults unchanged. DCR lifetime enforcement (DCR-01) gets its own later protocol milestone; KEK-04, SEC-01 and a paged `--dry-run` stay deferred.
+- Phase numbering continues at 158. Per the standing rule, the older `.planning/phases` artifacts (142/143, 999.1) are not moved or archived, so `phases.clear` is skipped.
 
 ### v1.43 Milestone Direction
 

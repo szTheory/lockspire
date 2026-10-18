@@ -8,6 +8,20 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.44 Adopter Polish & Verified 1.6.0
+
+**Goal:** Make the first encrypted-at-rest release easy to adopt, then publish and verify it end to end.
+
+**Target features:**
+- Confirm in a clean-room host, then fix, the DB-touching Mix tasks (`lockspire.client.create`, `lockspire.doctor.token_format`, `lockspire.doctor.remote_jwks`) that do not start the repo, using the `Ecto.Migrator.with_repo` pattern, with tests that run each task without a pre-started repo.
+- `mix lockspire.gen.kek` prints a fresh key-encryption key and the `runtime.exs` snippet (KEK-03).
+- `{:system, "ENV"}` key-encryption-key resolution (KEK-05).
+- A read-only "Key protection" line on the admin Keys pages showing whether keys are encrypted and under which key ID (KEY-UI-01), worded from the PRODUCT.md vocabulary map.
+- An admin key-generation error that names the missing key-encryption key instead of generic copy.
+- Merge Release Please PR #121 and verify the published lockspire 1.6.0 (Hex checksum, docs, GitHub release and tag, clean-room install), as v1.39 did for 1.5.1.
+
+No protocol change, no new dependency, and security defaults stay the same. Deferred: DCR lifetime enforcement (DCR-01, its own protocol milestone), KMS/Vault key-set provider (KEK-04), the dedicated `client_secret_jwt` verifier key (SEC-01), and a paged `--dry-run`.
+
 ## Completed Milestone: v1.43 Signing Key Encryption at Rest (Completed 2026-10-16)
 
 **Goal:** Close CR-01: private signing keys are genuinely encrypted at rest, existing installs upgrade safely, and the host-facing experience stays calm.
@@ -295,12 +309,13 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No milestone is active; the next one defines fresh requirements via `/gsd-new-milestone`. The completed v1.43 requirements are archived in [v1.43-REQUIREMENTS.md](milestones/v1.43-REQUIREMENTS.md).
+v1.44 Adopter Polish & Verified 1.6.0 (requirements in [REQUIREMENTS.md](REQUIREMENTS.md)):
+- DB-touching Mix tasks start the host repo and work in a real host.
+- `mix lockspire.gen.kek` generator (KEK-03) and `{:system, "ENV"}` KEK resolution (KEK-05).
+- Read-only "Key protection" line on admin Keys pages (KEY-UI-01) and an admin error that names a missing KEK.
+- Verified publication of lockspire 1.6.0.
 
-Carry-forward candidates (not committed):
-- v1.43 future requirements: read-only "Key protection" line on admin Keys pages (KEY-UI-01), `mix lockspire.gen.kek` (KEK-03), KMS/Vault key-set provider (KEK-04), `{:system, "ENV"}` KEK resolution (KEK-05), re-seal the `client_secret_jwt` verifier with a dedicated key (SEC-01).
-- v1.43 accepted debt: paged `--dry-run`, an admin error that names a missing KEK, and the remaining legacy-plaintext test fixtures.
-- Pending todos: DB-touching Mix tasks do not start the repo (install-dx, unconfirmed); DCR default lifetime semantics (DCR-01).
+Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures, DCR default lifetime semantics (DCR-01).
 
 ### Validated
 
@@ -506,4 +521,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-16 after v1.43 milestone*
+*Last updated: 2026-10-18 after starting v1.44 milestone*
