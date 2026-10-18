@@ -2,6 +2,7 @@
 created: 2026-10-16T00:00:00Z
 title: DB-touching Mix tasks do not start the repo
 area: install-dx
+resolves_phase: 158
 files:
   - lib/mix/tasks/lockspire.client.create.ex
   - lib/mix/tasks/lockspire.doctor.token_format.ex
