@@ -170,6 +170,49 @@ defmodule Mix.Tasks.Lockspire.Client.CreateColdTest do
     end
   end
 
+  test "control: the same insert is logged at debug when the guard is not in play",
+       %{prefix: prefix} do
+    client_id = prefix <> "-control"
+    original_repo_config = Application.get_env(:lockspire, Lockspire.TestRepo)
+    original_level = Logger.level()
+
+    Application.put_env(
+      :lockspire,
+      Lockspire.TestRepo,
+      Keyword.put(original_repo_config, :log, :debug)
+    )
+
+    Logger.configure(level: :debug)
+
+    on_exit(fn ->
+      Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
+      Logger.configure(level: original_level)
+    end)
+
+    {:ok, _apps} = Application.ensure_all_started(:plug_crypto)
+
+    log =
+      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+        with_temp_repo(fn ->
+          {:ok, _result} =
+            Lockspire.Clients.register_client(%{
+              client_id: client_id,
+              client_type: "public",
+              redirect_uris: ["https://client.example.com/callback"],
+              allowed_scopes: ["profile"],
+              allowed_grant_types: ["authorization_code"],
+              token_endpoint_auth_method: "none"
+            })
+        end)
+      end)
+
+    Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
+    Logger.configure(level: original_level)
+
+    # Without the TaskError guard the INSERT is visible, so the refutes above are not vacuous.
+    assert log =~ "INSERT"
+  end
+
   test "a public client is created with the repo stopped and prints no secret", %{prefix: prefix} do
     client_id = prefix <> "-pub"
 
