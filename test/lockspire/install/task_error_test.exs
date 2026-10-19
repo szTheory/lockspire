@@ -20,8 +20,31 @@ defmodule Lockspire.Install.TaskErrorTest do
       }
 
       phrase = TaskError.classify(error)
-      assert phrase =~ "unique_violation"
+
+      assert phrase ==
+               "the database rejected the request (unique_violation); check the application logs"
+
       refute phrase =~ "secret-detail"
+      refute phrase =~ "ecto.migrate"
+    end
+
+    test "undefined_column maps to the migrate phrase" do
+      assert TaskError.classify(%Postgrex.Error{postgres: %{code: :undefined_column}}) ==
+               @missing_tables
+    end
+
+    test "pool queue timeouts are not reported as unreachable" do
+      error = %DBConnection.ConnectionError{
+        message: "connection not available and request was dropped from queue after 50ms",
+        reason: :queue_timeout
+      }
+
+      phrase = TaskError.classify(error)
+
+      assert phrase ==
+               "the database connection pool timed out; rerun, and if it fails again check database load and config :lockspire, :repo"
+
+      refute phrase =~ "50ms"
     end
 
     test "connection errors become a fixed phrase without host details" do
@@ -32,7 +55,7 @@ defmodule Lockspire.Install.TaskErrorTest do
       phrase = TaskError.classify(error)
 
       assert phrase ==
-               "could not reach the database; check database connectivity and config :lockspire, :repo"
+               "could not reach the database or it timed out; check database connectivity and config :lockspire, :repo"
 
       refute phrase =~ "localhost"
     end

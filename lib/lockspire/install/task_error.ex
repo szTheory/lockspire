@@ -40,17 +40,23 @@ defmodule Lockspire.Install.TaskError do
   def classify({:error, inner}), do: classify(inner)
   def classify(:repo_unavailable), do: @repo_unavailable_phrase
 
-  def classify(%Postgrex.Error{postgres: %{code: :undefined_table}}) do
+  def classify(%Postgrex.Error{postgres: %{code: code}})
+      when code in [:undefined_table, :undefined_column] do
     "the Lockspire tables are missing; run mix ecto.migrate, then rerun"
   end
 
+  # Other Postgres codes (unique_violation, insufficient_privilege, ...) are not migration
+  # problems, so no migrate advice here. The code name is a fixed atom, never message text.
   def classify(%Postgrex.Error{postgres: %{code: code}}) when is_atom(code) do
-    "the database rejected the request (#{Atom.to_string(code)}); " <>
-      "check that mix ecto.migrate has run, then rerun"
+    "the database rejected the request (#{Atom.to_string(code)}); check the application logs"
+  end
+
+  def classify(%DBConnection.ConnectionError{reason: :queue_timeout}) do
+    "the database connection pool timed out; rerun, and if it fails again check database load and config :lockspire, :repo"
   end
 
   def classify(%DBConnection.ConnectionError{}) do
-    "could not reach the database; check database connectivity and config :lockspire, :repo"
+    "could not reach the database or it timed out; check database connectivity and config :lockspire, :repo"
   end
 
   def classify(%ArgumentError{message: message}) when is_binary(message) do
