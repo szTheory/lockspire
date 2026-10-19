@@ -130,6 +130,107 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
     end
   end
 
+  describe "{:system, var} entries" do
+    @var_a "LOCKSPIRE_TEST_KEK_ENV_A"
+    @var_b "LOCKSPIRE_TEST_KEK_ENV_B"
+    @var_s "LOCKSPIRE_TEST_KEK_ENV_S"
+
+    setup do
+      prior = for v <- [@var_a, @var_b, @var_s], do: {v, System.get_env(v)}
+      for v <- [@var_a, @var_b, @var_s], do: System.delete_env(v)
+
+      on_exit(fn ->
+        for {v, value} <- prior do
+          if value, do: System.put_env(v, value), else: System.delete_env(v)
+        end
+      end)
+
+      :ok
+    end
+
+    test "resolves a variable at runtime and leaves app env untouched" do
+      System.put_env(@var_a, b64("one"))
+      put(keys: [{"a", {:system, @var_a}}], current: "a")
+
+      expected = :crypto.hash(:sha256, "one")
+      assert %KeySet{keys: %{"a" => ^expected}} = Config.key_encryption!()
+
+      System.put_env(@var_a, b64("two"))
+      expected2 = :crypto.hash(:sha256, "two")
+      assert %KeySet{keys: %{"a" => ^expected2}} = Config.key_encryption!()
+
+      assert Application.get_env(:lockspire, :key_encryption)[:keys] == [{"a", {:system, @var_a}}]
+    end
+
+    test "mixed literal and variable entries keep configured order" do
+      System.put_env(@var_b, b64("two"))
+      put(keys: [{"a", b64("one")}, {"b", {:system, @var_b}}], current: "a")
+      assert %KeySet{ids: ["a", "b"]} = Config.key_encryption!()
+    end
+
+    test "unset variable raises missing_env naming only the variable" do
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid config :key_encryption"
+      assert msg =~ "missing_env"
+      assert msg =~ @var_a
+      assert msg =~ "mix lockspire.gen.kek"
+    end
+
+    test "empty variable is treated exactly like an unset one" do
+      unset = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      System.put_env(@var_a, "")
+      assert message(keys: [{"a", {:system, @var_a}}], current: "a") == unset
+    end
+
+    test "the first missing variable in configured order is the one named" do
+      msg = message(keys: [{"a", {:system, @var_a}}, {"b", {:system, @var_b}}], current: "a")
+      assert msg =~ @var_a
+      refute msg =~ @var_b
+    end
+
+    test "a valid variable's value never appears when another variable is missing" do
+      System.put_env(@var_s, Base.encode64(:crypto.hash(:sha256, @sentinel)))
+      msg = message(keys: [{"a", {:system, @var_s}}, {"b", {:system, @var_b}}], current: "a")
+      refute msg =~ Base.encode64(:crypto.hash(:sha256, @sentinel))
+      refute msg =~ @sentinel
+      assert msg =~ @var_b
+    end
+
+    test "two ids reading the same variable fail as duplicate material without the value" do
+      value = b64("same")
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}, {"b", {:system, @var_a}}], current: "a")
+      assert msg =~ "duplicate_key_material"
+      refute msg =~ value
+    end
+
+    test "a trailing newline is not trimmed and fails closed" do
+      value = b64("one") <> "\n"
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid_base64"
+      refute msg =~ value
+    end
+
+    test "a short value fails with invalid_key_length without the value" do
+      value = Base.encode64(:crypto.strong_rand_bytes(31))
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid_key_length"
+      refute msg =~ value
+    end
+
+    test "malformed system entries are classified by KeySet, not crashed on" do
+      for entry <- [{"a", {:system, :atom}}, {"a", {:system}}, {:system, @var_a}] do
+        assert message(keys: [entry], current: "a") =~ "invalid_key_entry"
+      end
+    end
+
+    test "empty keys still fail with missing_keys" do
+      assert message(keys: [], current: "a") =~ "missing_keys"
+    end
+  end
+
   test "static guard: no compile-time KEK read and no endpoint secret fallback" do
     for path <- Path.wildcard("lib/**/*.ex") do
       source = File.read!(path)
