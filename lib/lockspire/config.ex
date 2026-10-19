@@ -249,6 +249,9 @@ defmodule Lockspire.Config do
   #
   # Returns nil when the block is absent, a resolved key set when valid, and raises
   # `ArgumentError` naming only config keys (never values) when invalid.
+  #
+  # `{id, {:system, "VAR"}}` entries are read from the environment on each call; a
+  # missing or empty variable raises (it never degrades to "not configured").
   @doc false
   @spec key_encryption!() :: KeySet.t() | nil
   def key_encryption! do
@@ -257,12 +260,42 @@ defmodule Lockspire.Config do
         nil
 
       config ->
-        case KeySet.new(config) do
-          {:ok, %KeySet{} = keyset} -> keyset
+        with {:ok, resolved} <- resolve_env_entries(config),
+             {:ok, %KeySet{} = keyset} <- KeySet.new(resolved) do
+          keyset
+        else
           {:error, {config_key, reason}} -> fail_key_encryption!(config_key, reason)
+          {:error, {config_key, reason, var}} -> fail_key_encryption!(config_key, reason, var)
         end
     end
   end
+
+  @spec resolve_env_entries(term()) ::
+          {:ok, term()} | {:error, {:keys, :missing_env, String.t()}}
+  defp resolve_env_entries(config) when is_list(config) do
+    with true <- Keyword.keyword?(config),
+         keys when is_list(keys) <- Keyword.get(config, :keys) do
+      keys
+      |> Enum.reduce_while({:ok, []}, fn
+        {id, {:system, var}}, {:ok, acc} when is_binary(var) ->
+          case System.fetch_env(var) do
+            {:ok, value} when value != "" -> {:cont, {:ok, [{id, value} | acc]}}
+            _unset_or_empty -> {:halt, {:error, {:keys, :missing_env, var}}}
+          end
+
+        entry, {:ok, acc} ->
+          {:cont, {:ok, [entry | acc]}}
+      end)
+      |> case do
+        {:ok, acc} -> {:ok, Keyword.replace!(config, :keys, Enum.reverse(acc))}
+        {:error, _reason} = error -> error
+      end
+    else
+      _not_resolvable -> {:ok, config}
+    end
+  end
+
+  defp resolve_env_entries(config), do: {:ok, config}
 
   # Returns the cached key set (populated at boot), falling back to fresh validation.
   @doc false
@@ -278,6 +311,13 @@ defmodule Lockspire.Config do
   @doc false
   @spec key_encryption_cache_key() :: {Lockspire, :key_encryption}
   def key_encryption_cache_key, do: @key_encryption_cache_key
+
+  defp fail_key_encryption!(:keys, :missing_env, var) when is_binary(var) do
+    raise ArgumentError,
+          "invalid config :key_encryption (:keys: missing_env) for :lockspire. " <>
+            "Environment variable #{var} is unset or empty. Set it before the app boots; " <>
+            "generate a value with `mix lockspire.gen.kek`."
+  end
 
   defp fail_key_encryption!(config_key, reason) when is_atom(config_key) and is_atom(reason) do
     raise ArgumentError,
