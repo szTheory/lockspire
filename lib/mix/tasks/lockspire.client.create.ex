@@ -47,9 +47,17 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
         TaskError.run(repo, fn _repo -> opts |> build_attrs() |> Clients.register_client() end)
 
       case outcome do
-        {:ok, {:ok, result}} -> print_result({:ok, result})
-        {:ok, {:error, errors}} when is_list(errors) -> print_result({:error, errors})
-        {:error, phrase} -> Mix.raise("client registration failed: " <> phrase)
+        {:ok, {:ok, result}} ->
+          print_result({:ok, result})
+
+        {:ok, {:error, errors}} when is_list(errors) ->
+          print_result({:error, errors})
+
+        {:ok, _other} ->
+          Mix.raise("client registration failed: " <> TaskError.unexpected_phrase())
+
+        {:error, phrase} ->
+          Mix.raise("client registration failed: " <> phrase)
       end
     end
   end
