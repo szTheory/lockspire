@@ -58,15 +58,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
   # and TaskError.run/2 starts the host repo when it is not running (and leaves a running repo
   # untouched). The reads happen inside the runner; everything is printed after it returns.
   defp report do
-    repo = Lockspire.Config.repo!()
-
-    outcome =
-      TaskError.run(repo, fn _repo ->
-        with {:ok, policy} <- ServerPolicy.get_server_policy(),
-             {:ok, clients} <- Clients.list_clients() do
-          {:ok, {policy, clients}}
-        end
-      end)
+    outcome = inspect_clients()
 
     case outcome do
       {:ok, {:ok, {policy, clients}}} ->
@@ -78,6 +70,21 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
       {:error, phrase} ->
         Mix.shell().info("Could not inspect token formats: " <> phrase)
     end
+  end
+
+  # `Lockspire.Config.repo!/0` raises when :repo is unset; classify that like any other failure so
+  # the task still prints a calm line instead of crashing.
+  defp inspect_clients do
+    repo = Lockspire.Config.repo!()
+
+    TaskError.run(repo, fn _repo ->
+      with {:ok, policy} <- ServerPolicy.get_server_policy(),
+           {:ok, clients} <- Clients.list_clients() do
+        {:ok, {policy, clients}}
+      end
+    end)
+  rescue
+    error -> {:error, TaskError.classify(error)}
   end
 
   defp print_report(policy, clients) do

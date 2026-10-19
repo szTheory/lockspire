@@ -88,4 +88,15 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormatColdTest do
     assert output =~ @unavailable
     refute output =~ "%"
   end
+
+  test "an unset :repo config prints a calm line and does not raise" do
+    Application.delete_env(:lockspire, :repo)
+
+    {output, result} = run_task(@task, ["token_format"], [@leaf])
+
+    assert result == :ok
+
+    assert output =~
+             "Could not inspect token formats: missing required config :repo for :lockspire."
+  end
 end
