@@ -5,11 +5,11 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 159
 current_phase_name: Key-Encryption Key Setup DX
 status: planning
-stopped_at: Phase 158 complete, ready to plan Phase 159
-last_updated: "2026-10-19T04:00:45.113Z"
+stopped_at: Phase 159 context gathered (assumptions mode)
+last_updated: "2026-10-19T18:49:33.405Z"
 last_activity: 2026-10-19
 last_activity_desc: Phase 158 complete, transitioned to Phase 159
-state_head: d494e327637e235d03156504ace969966061542c
+state_head: 0f4c764c95e2a743484779805f4de0b6eca42a8f
 progress:
   total_phases: 4
   completed_phases: 1
@@ -357,9 +357,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T03:49:29.050Z
-Stopped at: Phase 158 complete, ready to plan Phase 159
-Resume file: None
+Last session: 2026-10-19T18:49:33.333Z
+Stopped at: Phase 159 context gathered (assumptions mode)
+Resume file: .planning/phases/159-key-encryption-key-setup-dx/159-CONTEXT.md
 
 ## Performance Metrics
 
