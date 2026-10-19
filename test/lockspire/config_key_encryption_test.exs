@@ -214,6 +214,17 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
       refute msg =~ value
     end
 
+    test "a whitespace-only variable fails naming the variable, not its value" do
+      for value <- [" ", "\n", " \t\n "] do
+        System.put_env(@var_a, value)
+        msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+        assert msg =~ "invalid config :key_encryption"
+        assert msg =~ "blank_env"
+        assert msg =~ @var_a
+        refute msg =~ inspect(value)
+      end
+    end
+
     test "a short value fails with invalid_key_length without the value" do
       value = Base.encode64(:crypto.strong_rand_bytes(31))
       System.put_env(@var_a, value)

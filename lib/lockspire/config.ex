@@ -271,7 +271,7 @@ defmodule Lockspire.Config do
   end
 
   @spec resolve_env_entries(term()) ::
-          {:ok, term()} | {:error, {:keys, :missing_env, String.t()}}
+          {:ok, term()} | {:error, {:keys, :missing_env | :blank_env, String.t()}}
   defp resolve_env_entries(config) when is_list(config) do
     with true <- Keyword.keyword?(config),
          keys when is_list(keys) <- Keyword.get(config, :keys) do
@@ -279,8 +279,17 @@ defmodule Lockspire.Config do
       |> Enum.reduce_while({:ok, []}, fn
         {id, {:system, var}}, {:ok, acc} when is_binary(var) ->
           case System.fetch_env(var) do
-            {:ok, value} when value != "" -> {:cont, {:ok, [{id, value} | acc]}}
-            _unset_or_empty -> {:halt, {:error, {:keys, :missing_env, var}}}
+            {:ok, value} when value != "" ->
+              # The value is passed through untrimmed (fail closed); a whitespace-only
+              # value is rejected here so the error names the variable.
+              if String.trim(value) == "" do
+                {:halt, {:error, {:keys, :blank_env, var}}}
+              else
+                {:cont, {:ok, [{id, value} | acc]}}
+              end
+
+            _unset_or_empty ->
+              {:halt, {:error, {:keys, :missing_env, var}}}
           end
 
         entry, {:ok, acc} ->
@@ -317,6 +326,13 @@ defmodule Lockspire.Config do
           "invalid config :key_encryption (:keys: missing_env) for :lockspire. " <>
             "Environment variable #{var} is unset or empty. Set it before the app boots; " <>
             "generate a value with `mix lockspire.gen.kek`."
+  end
+
+  defp fail_key_encryption!(:keys, :blank_env, var) when is_binary(var) do
+    raise ArgumentError,
+          "invalid config :key_encryption (:keys: blank_env) for :lockspire. " <>
+            "Environment variable #{var} contains only whitespace. Remove stray spaces or " <>
+            "newlines from the secret; generate a value with `mix lockspire.gen.kek`."
   end
 
   defp fail_key_encryption!(config_key, reason) when is_atom(config_key) and is_atom(reason) do
