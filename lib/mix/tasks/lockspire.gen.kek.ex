@@ -10,7 +10,8 @@ defmodule Mix.Tasks.Lockspire.Gen.Kek do
 
     * `--id ID` - the key id used in the config block (default: the current month in UTC, as
       `YYYY-MM`).
-    * `--raw` - print only the key, on one line.
+    * `--raw` - print only the key, on one line. The key id is not part of that output, so
+      `--id` has no effect with `--raw` (an invalid id is still rejected).
     * `--help` - show usage.
   """
 
@@ -45,7 +46,8 @@ defmodule Mix.Tasks.Lockspire.Gen.Kek do
     Options:
       --id ID   Key id used in the config block. Default: the current month in UTC, as
                 YYYY-MM. Use 1-32 characters from A-Z, a-z, 0-9, dot, underscore or dash.
-      --raw     Print only the key, on one line, for piping into a secret manager.
+      --raw     Print only the key, on one line, for piping into a secret manager. --id has no
+                effect with --raw.
       --help    Show this text.
 
     This task writes no files and needs no database. The key is shown only once, so store it
@@ -90,7 +92,7 @@ defmodule Mix.Tasks.Lockspire.Gen.Kek do
       "Add this block to config/runtime.exs. Production refuses to boot when the variable is missing:"
     )
 
-    Mix.shell().info(KekSnippet.prod_block(id, 2))
+    Mix.shell().info(String.trim_trailing(KekSnippet.prod_block(id, 2)))
 
     Mix.shell().info(
       "For dev and test, keep the throwaway key that mix lockspire.install printed for " <>
