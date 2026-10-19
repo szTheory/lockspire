@@ -4,17 +4,17 @@ milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 158
 current_phase_name: Mix Task Repo Start
-status: executing
-stopped_at: Completed 158-02-PLAN.md
-last_updated: "2026-10-19T03:41:01.778Z"
+status: verifying
+stopped_at: Completed 158-03-PLAN.md
+last_updated: "2026-10-19T03:49:29.073Z"
 last_activity: 2026-10-18
 last_activity_desc: Phase 158 execution started
-state_head: 74f684f977898848cde5526c8866905aabf601b3
+state_head: d78a34c3d6771df0cfb56e4ed7d12d98eae11a86
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 158 (Mix Task Repo Start) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-18 — Phase 158 execution started
 
 Progress: [░░░░░░░░░░] 0%
@@ -295,6 +295,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 157]: 157-03: upgrade journey derives verify key from the seeded legacy private JWK; separate CI steps for --check and doctor
 - [Phase 158]: TaskError.run/2 classifies failures inside the RepoRunner fun; client.create starts :plug_crypto under app.config
 - [Phase 158]: Doctor tasks resolve the repo outside TaskError.run and print or raise only after it returns; D-19: no audit telemetry in bare tasks, created_by is the CLI audit trail
+- [Phase 158]: client.create :base persistence errors render a fixed phrase; RegistrationResult inspect hides client_secret; D-11 log suppression via TaskError.run process level
 
 ### Pending Todos
 
@@ -356,8 +357,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T03:41:01.757Z
-Stopped at: Completed 158-02-PLAN.md
+Last session: 2026-10-19T03:49:29.050Z
+Stopped at: Completed 158-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -479,6 +480,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 157 P03 | 25 min | 3 tasks | 4 files |
 | Phase 158 P01 | 25 min | 2 tasks | 6 files |
 | Phase 158 P02 | 15 min | 3 tasks | 6 files |
+| Phase 158 P03 | 25 min | 3 tasks | 8 files |
 
 ## Operator Next Steps
 
