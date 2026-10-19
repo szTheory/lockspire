@@ -17,7 +17,9 @@ defmodule Mix.Tasks.Lockspire.Client.CreateColdTest do
   setup do
     assert_repo_stopped!()
 
-    assert foreign_client_count(@prefix_root) == 0,
+    sweep_stale_cold_clients!()
+
+    assert foreign_client_count() == 0,
            "the test database holds clients this test did not create; reset the committed test database"
 
     Mix.Task.reenable(@task)

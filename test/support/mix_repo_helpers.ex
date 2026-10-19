@@ -86,8 +86,24 @@ defmodule Lockspire.MixRepoHelpers do
     {output, result}
   end
 
-  def foreign_client_count(prefix_root) do
-    pattern = prefix_root <> "%"
+  # Every cold-test module prefixes its client ids with this root (mix-cold-create-,
+  # mix-cold-tokfmt-, mix-cold-rjwks-). Rows under it are known test leftovers.
+  @cold_root "mix-cold-"
+
+  @doc """
+  Deletes leftover rows from any cold-test module, so a crashed earlier run (on_exit never ran)
+  self-heals instead of failing every cold module. Rows outside the cold root are never touched.
+  """
+  def sweep_stale_cold_clients! do
+    cleanup_clients_by_prefix!(@cold_root)
+  end
+
+  @doc """
+  Counts client rows that no cold-test module owns. Run `sweep_stale_cold_clients!/0` first; a
+  nonzero result means genuinely foreign rows, which the cold tests must not delete.
+  """
+  def foreign_client_count do
+    pattern = @cold_root <> "%"
 
     with_temp_repo(fn ->
       Lockspire.TestRepo.aggregate(
