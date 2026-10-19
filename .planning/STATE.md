@@ -5,16 +5,16 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 159
 current_phase_name: Key-Encryption Key Setup DX
 status: executing
-stopped_at: Phase 159 context gathered (assumptions mode)
-last_updated: "2026-10-19T19:15:04.960Z"
+stopped_at: Completed 159-01-PLAN.md
+last_updated: "2026-10-19T19:23:45.745Z"
 last_activity: 2026-10-19
-last_activity_desc: Phase 158 complete, transitioned to Phase 159
-state_head: 31460578f47ea6dab668283ab915f2beaec0e5a8
+last_activity_desc: Phase 159 execution started
+state_head: 553e4018f2b42e48231e20bce8453c3d75d43df4
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 4
   percent: 25
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 158 — Mix Task Repo Start
+**Current focus:** Phase 159 — Key-Encryption Key Setup DX
 
 ## Current Position
 
-Phase: 159 (Key-Encryption Key Setup DX) — READY TO EXECUTE
-Plan: Not started
+Phase: 159 (Key-Encryption Key Setup DX) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-10-19 — Phase 158 complete, transitioned to Phase 159
+Last activity: 2026-10-19 — Phase 159 execution started
 
 Progress: [███░░░░░░░] 25%
 
@@ -296,6 +296,7 @@ Progress: [███░░░░░░░] 25%
 - [Phase 158]: TaskError.run/2 classifies failures inside the RepoRunner fun; client.create starts :plug_crypto under app.config
 - [Phase 158]: Doctor tasks resolve the repo outside TaskError.run and print or raise only after it returns; D-19: no audit telemetry in bare tasks, created_by is the CLI audit trail
 - [Phase 158]: client.create :base persistence errors render a fixed phrase; RegistrationResult inspect hides client_secret; D-11 log suppression via TaskError.run process level
+- [Phase 159]: KekSnippet is the single builder for KEK value, default id and prod runtime.exs block; installer and gen.kek share it
 
 ### Pending Todos
 
@@ -357,9 +358,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T18:49:33.333Z
-Stopped at: Phase 159 context gathered (assumptions mode)
-Resume file: .planning/phases/159-key-encryption-key-setup-dx/159-CONTEXT.md
+Last session: 2026-10-19T19:23:45.690Z
+Stopped at: Completed 159-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -481,6 +482,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 158 P01 | 25 min | 2 tasks | 6 files |
 | Phase 158 P02 | 15 min | 3 tasks | 6 files |
 | Phase 158 P03 | 25 min | 3 tasks | 8 files |
+| Phase 159 P01 | 12 min | 3 tasks | 8 files |
 
 ## Operator Next Steps
 
