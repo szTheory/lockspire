@@ -9,8 +9,6 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
-    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
-
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
@@ -119,6 +117,22 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
     assert output =~ "fails the current request closed"
     assert output =~ "Next step:"
     assert output =~ "If rotation is planned, publish the new key before first use"
+  end
+
+  test "leaves an already-running repo pool untouched" do
+    output =
+      Lockspire.MixRepoHelpers.assert_pool_untouched!(Lockspire.TestRepo, fn ->
+        capture_io(fn ->
+          Mix.Task.run("lockspire.doctor", [
+            "remote-jwks",
+            "--client",
+            "doctor-remote-jwks-client"
+          ])
+        end)
+      end)
+
+    assert output =~ "Client: doctor-remote-jwks-client"
+    assert output =~ "Status: supported"
   end
 
   defp signed_assertion(private_jwk, client_id, opts) do

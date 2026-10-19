@@ -7,6 +7,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwks do
 
   alias Lockspire.Admin.Clients
   alias Lockspire.Diagnostics.RemoteJwks
+  alias Lockspire.Install.TaskError
 
   @shortdoc "Diagnoses remote jwks_uri runtime incidents for one client"
   @requirements ["app.config"]
@@ -32,10 +33,12 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwks do
         Mix.raise("`--client` is required. See `mix lockspire.doctor remote-jwks --help`.")
 
       true ->
-        opts
-        |> Keyword.fetch!(:client)
-        |> Clients.get_client()
-        |> print_result()
+        client_id = Keyword.fetch!(opts, :client)
+        repo = Lockspire.Config.repo!()
+
+        outcome = TaskError.run(repo, fn _repo -> Clients.get_client(client_id) end)
+
+        print_result(outcome)
     end
   end
 
@@ -55,7 +58,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwks do
     """
   end
 
-  defp print_result({:ok, client}) do
+  defp print_result({:ok, {:ok, client}}) do
     summary = Clients.remote_jwks_summary(client)
 
     lines =
@@ -72,12 +75,16 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwks do
     Enum.each(lines, fn line -> Mix.shell().info(line) end)
   end
 
-  defp print_result({:error, :not_found}) do
+  defp print_result({:ok, {:error, :not_found}}) do
     Mix.raise("Client not found.")
   end
 
-  defp print_result({:error, reason}) do
-    Mix.raise("Could not inspect client: #{inspect(reason)}")
+  defp print_result({:ok, {:error, reason}}) do
+    Mix.raise("Could not inspect client: " <> TaskError.classify(reason))
+  end
+
+  defp print_result({:error, phrase}) when is_binary(phrase) do
+    Mix.raise("Could not inspect client: " <> phrase)
   end
 
   defp incident_lines(%{incident: nil}), do: []
