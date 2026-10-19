@@ -259,6 +259,7 @@ def prepare_provider(
         vendor = child / "vendor" / "lockspire"
         if inventory(vendor) != inventory(package_root):
             raise PackageInputError("provider vendor inventory drifted after installation")
+        assert_below(vendor, child, "provider vendor dependency")
         return child
 
     patch_jose_record_extractors(child, environment)
