@@ -310,7 +310,7 @@ defmodule Lockspire.InstallGeneratorTest do
             "config/runtime.exs",
             "if config_env() == :prod",
             "legacy_plaintext: :reject",
-            "openssl rand -base64 32",
+            "mix lockspire.gen.kek",
             "config/dev.exs",
             "config/test.exs",
             "dev/test only",
@@ -318,6 +318,8 @@ defmodule Lockspire.InstallGeneratorTest do
           ] do
         assert first =~ needle
       end
+
+      assert first =~ Lockspire.Generators.KekSnippet.prod_block(month, 11)
 
       literal = extract_dev_literal!(first)
       assert byte_size(Base.decode64!(literal)) == 32
