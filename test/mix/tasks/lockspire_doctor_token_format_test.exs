@@ -8,8 +8,6 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormatTest do
   alias Lockspire.Storage.Ecto.Repository
 
   setup_all do
-    Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
-
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
@@ -92,6 +90,17 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormatTest do
       |> Enum.find("", &(&1 =~ "doctor-token-format-nil"))
 
     assert nil_line_opaque =~ "doctor-token-format-nil: opaque"
+  end
+
+  test "leaves an already-running repo pool untouched" do
+    output =
+      Lockspire.MixRepoHelpers.assert_pool_untouched!(Lockspire.TestRepo, fn ->
+        capture_io(fn ->
+          Mix.Task.run("lockspire.doctor", ["token_format"])
+        end)
+      end)
+
+    assert output =~ "doctor-token-format-nil: jwt"
   end
 
   test "--help output documents the dispatcher command spelling" do

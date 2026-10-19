@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
   alias Lockspire.Admin.ServerPolicy
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.ServerPolicy, as: ServerPolicyStruct
+  alias Lockspire.Install.TaskError
 
   @shortdoc "Reports each client's effective access-token format (read-only)"
   @requirements ["app.config"]
@@ -53,15 +54,29 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormat do
     """
   end
 
-  # The report path must never crash: both admin reads return {:ok, _} | {:error, _}
-  # tuples, and an {:error, _} from either is surfaced calmly via Mix.shell().info.
+  # The report path must never crash: both admin reads return {:ok, _} | {:error, _} values,
+  # and TaskError.run/2 starts the host repo when it is not running (and leaves a running repo
+  # untouched). The reads happen inside the runner; everything is printed after it returns.
   defp report do
-    with {:ok, policy} <- ServerPolicy.get_server_policy(),
-         {:ok, clients} <- Clients.list_clients() do
-      print_report(policy, clients)
-    else
-      {:error, reason} ->
-        Mix.shell().info("Could not inspect token formats: #{inspect(reason)}")
+    repo = Lockspire.Config.repo!()
+
+    outcome =
+      TaskError.run(repo, fn _repo ->
+        with {:ok, policy} <- ServerPolicy.get_server_policy(),
+             {:ok, clients} <- Clients.list_clients() do
+          {:ok, {policy, clients}}
+        end
+      end)
+
+    case outcome do
+      {:ok, {:ok, {policy, clients}}} ->
+        print_report(policy, clients)
+
+      {:ok, {:error, reason}} ->
+        Mix.shell().info("Could not inspect token formats: " <> TaskError.classify(reason))
+
+      {:error, phrase} ->
+        Mix.shell().info("Could not inspect token formats: " <> phrase)
     end
   end
 
