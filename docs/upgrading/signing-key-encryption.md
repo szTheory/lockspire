@@ -114,7 +114,7 @@ A `legacy_plaintext` change takes effect on each node's next boot.
 
 Rotate on your own schedule, or at once if a KEK may have leaked. The order matters: every node must know the new key before any node starts writing with it.
 
-1. Add the new key as a second entry and keep `current` on the old id. Read the new value from `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT` (that name is only a convention; any name works). Generate the new value with `mix lockspire.gen.kek --id 2026-07`. Deploy every node.
+1. Add the new key as a second entry and keep `current` on the old id. Read the new value from `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT` (that name is only a convention; any name works). Generate the new value with `mix lockspire.gen.kek --raw`, which prints only the key. Store it as `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT`; do not copy the full output of `mix lockspire.gen.kek`, because its block names `LOCKSPIRE_KEY_ENCRYPTION_KEY` and would overwrite your current key's variable. Deploy every node.
 
    ```elixir
    config :lockspire, :key_encryption,
