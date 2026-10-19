@@ -1,0 +1,93 @@
+defmodule Lockspire.Install.TaskError do
+  @moduledoc false
+
+  # Shared failure handling for Lockspire Mix tasks that touch the host repo.
+  #
+  # `run/2` wraps `Lockspire.Install.RepoRunner.run/2`. RepoRunner converts anything raised inside
+  # its fun into `{:error, :repo_unavailable}`, which would mislabel a database or config failure
+  # as a repo start failure. `run/2` therefore classifies every exception, exit and throw raised
+  # inside the fun into a fixed, safe phrase first, so `RepoRunner` only reports
+  # `:repo_unavailable` when the repo itself did not start.
+  #
+  # Phrases never include the underlying exception text: Postgrex and DBConnection messages embed
+  # SQL, host and port, and other ArgumentErrors can embed argument values. Only
+  # Lockspire-authored config messages (they name config keys, never values) pass through.
+  #
+  # Nothing here prints or raises through Mix; callers print after `run/2` returns.
+
+  alias Lockspire.Install.RepoRunner
+
+  @repo_unavailable_phrase "could not start the repo; check database connectivity and config :lockspire, :repo"
+
+  @unexpected_phrase "an unexpected error stopped the task; details are withheld to keep secrets out of the output; rerun the task, and if it fails again check the application logs"
+
+  @config_message_prefixes [
+    "missing Lockspire endpoint secret_key_base",
+    "invalid :issuer for :lockspire.",
+    "invalid :signing_alg for :lockspire.",
+    "invalid config :key_encryption"
+  ]
+
+  @config_message_regex ~r/\Amissing required config :[a-z_]+ for :lockspire\./
+
+  @spec repo_unavailable_phrase() :: String.t()
+  def repo_unavailable_phrase, do: @repo_unavailable_phrase
+
+  @spec unexpected_phrase() :: String.t()
+  def unexpected_phrase, do: @unexpected_phrase
+
+  @spec classify(term()) :: String.t()
+  def classify({:error, inner}), do: classify(inner)
+  def classify(:repo_unavailable), do: @repo_unavailable_phrase
+
+  def classify(%Postgrex.Error{postgres: %{code: :undefined_table}}) do
+    "the Lockspire tables are missing; run mix ecto.migrate, then rerun"
+  end
+
+  def classify(%Postgrex.Error{postgres: %{code: code}}) when is_atom(code) do
+    "the database rejected the request (#{Atom.to_string(code)}); " <>
+      "check that mix ecto.migrate has run, then rerun"
+  end
+
+  def classify(%DBConnection.ConnectionError{}) do
+    "could not reach the database; check database connectivity and config :lockspire, :repo"
+  end
+
+  def classify(%ArgumentError{message: message}) when is_binary(message) do
+    if lockspire_config_message?(message), do: message, else: @unexpected_phrase
+  end
+
+  def classify(_other), do: @unexpected_phrase
+
+  @spec run(module(), (module() -> term())) :: {:ok, term()} | {:error, String.t()}
+  def run(repo, fun) when is_atom(repo) and is_function(fun, 1) do
+    case RepoRunner.run(repo, fn started_repo -> guarded(started_repo, fun) end) do
+      {:ok, {:__task_error__, phrase}} -> {:error, phrase}
+      {:ok, value} -> {:ok, value}
+      {:error, :repo_unavailable} -> {:error, @repo_unavailable_phrase}
+    end
+  end
+
+  defp guarded(repo, fun) do
+    previous_level = Logger.get_process_level(self())
+    Logger.put_process_level(self(), :info)
+
+    try do
+      fun.(repo)
+    rescue
+      error -> {:__task_error__, classify(error)}
+    catch
+      _kind, _reason -> {:__task_error__, @unexpected_phrase}
+    after
+      restore_level(previous_level)
+    end
+  end
+
+  defp restore_level(nil), do: Logger.delete_process_level(self())
+  defp restore_level(level), do: Logger.put_process_level(self(), level)
+
+  defp lockspire_config_message?(message) do
+    Enum.any?(@config_message_prefixes, &String.starts_with?(message, &1)) or
+      Regex.match?(@config_message_regex, message)
+  end
+end

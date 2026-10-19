@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
   @requirements ["app.config"]
 
   alias Lockspire.Clients
+  alias Lockspire.Install.TaskError
 
   @switches [
     client_id: :string,
@@ -34,10 +35,22 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
     if Keyword.get(opts, :help, false) do
       Mix.shell().info(help())
     else
-      opts
-      |> build_attrs()
-      |> Clients.register_client()
-      |> print_result()
+      # app.config loads config but starts no applications; sealing client secret material
+      # needs the plug_crypto key cache.
+      {:ok, _apps} = Application.ensure_all_started(:plug_crypto)
+
+      repo = Lockspire.Config.repo!()
+
+      # The fun only computes. Printing and raising happen after the runner returns, because the
+      # runner turns anything raised inside the fun into a repo failure.
+      outcome =
+        TaskError.run(repo, fn _repo -> opts |> build_attrs() |> Clients.register_client() end)
+
+      case outcome do
+        {:ok, {:ok, result}} -> print_result({:ok, result})
+        {:ok, {:error, errors}} when is_list(errors) -> print_result({:error, errors})
+        {:error, phrase} -> Mix.raise("client registration failed: " <> phrase)
+      end
     end
   end
 
@@ -56,6 +69,10 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
       --name NAME
       --token-endpoint-auth-method METHOD
       --created-by SUBJECT
+
+    The client secret is printed once, after the client is saved. If the task is interrupted
+    after saving, the client exists: rotate its secret from the admin Apps page instead of
+    rerunning, because a rerun creates a second client.
     """
   end
 
