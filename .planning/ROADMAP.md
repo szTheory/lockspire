@@ -66,7 +66,7 @@ Plans:
 - [x] 159-02-PLAN.md — `{:system, "VAR"}` runtime resolution in Lockspire.Config, fail-closed missing_env boot, redaction proof tests
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 159-03-PLAN.md — guidance sweep to `mix lockspire.gen.kek`, docs, pinned tests, D-10 guidance contract test, phase gate
+- [x] 159-03-PLAN.md — guidance sweep to `mix lockspire.gen.kek`, docs, pinned tests, D-10 guidance contract test, phase gate
 
 ### Phase 160: Admin Key Protection & Missing-KEK Copy
 
@@ -101,7 +101,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
-| 159. Key-Encryption Key Setup DX | 2/3 | In progress | - |
+| 159. Key-Encryption Key Setup DX | 3/3 | In progress | - |
 | 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
 | 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
 
