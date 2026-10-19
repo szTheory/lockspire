@@ -336,7 +336,8 @@ defmodule Lockspire.Install.VerifyTest do
       assert %{status: :error, details: details, fix: fix} = kek_check(result)
       assert details =~ ":key_encryption"
       assert fix =~ "config/runtime.exs"
-      assert fix =~ "openssl rand -base64 32"
+      assert fix =~ "mix lockspire.gen.kek"
+      refute fix =~ "openssl"
     end
 
     test "errors on invalid config without leaking the sentinel" do

@@ -94,7 +94,7 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp key_encryption_fix do
-    "Add config :lockspire, :key_encryption with keys: [{id, base64 of 32 random bytes}], current: id in config/runtime.exs (create a key with `openssl rand -base64 32`), then rerun `mix lockspire.verify`."
+    "Add config :lockspire, :key_encryption with keys: [{id, base64 of 32 random bytes}], current: id in config/runtime.exs (create a key with `mix lockspire.gen.kek`), then rerun `mix lockspire.verify`."
   end
 
   defp config_check(id, key, fetch) do
