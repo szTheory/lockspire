@@ -231,6 +231,92 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
     end
   end
 
+  describe "boot and redaction with {:system, var}" do
+    require Logger
+
+    @boot_var "LOCKSPIRE_TEST_KEK_BOOT_A"
+    @boot_var_b "LOCKSPIRE_TEST_KEK_BOOT_B"
+
+    setup do
+      prior = for v <- [@boot_var, @boot_var_b], do: {v, System.get_env(v)}
+      for v <- [@boot_var, @boot_var_b], do: System.delete_env(v)
+
+      on_exit(fn ->
+        for {v, value} <- prior do
+          if value, do: System.put_env(v, value), else: System.delete_env(v)
+        end
+      end)
+
+      :ok
+    end
+
+    defp forms(bytes, value) do
+      [
+        value,
+        bytes,
+        Base.url_encode64(bytes, padding: false),
+        Base.encode16(bytes, case: :lower)
+      ]
+    end
+
+    test "a configured block with an unset variable aborts boot validation" do
+      put(keys: [{"a", {:system, @boot_var}}], current: "a")
+      :persistent_term.erase(Config.key_encryption_cache_key())
+
+      assert_raise ArgumentError, ~r/missing_env/, fn ->
+        Lockspire.Application.validate_key_encryption!()
+      end
+
+      refute :persistent_term.get(Config.key_encryption_cache_key(), :miss) == :unconfigured
+      assert_raise ArgumentError, fn -> Config.key_encryption!() end
+    end
+
+    test "inspect, interpolation and logs of a resolved key set show no key material" do
+      bytes = :crypto.hash(:sha256, "redaction-one")
+      value = Base.encode64(bytes)
+      System.put_env(@boot_var, value)
+      put(keys: [{"a", {:system, @boot_var}}, {"b", b64("redaction-two")}], current: "a")
+      ks = Config.key_encryption!()
+
+      outputs = [
+        inspect(ks),
+        inspect(ks, limit: :infinity, pretty: true),
+        "#{inspect(ks)}",
+        ExUnit.CaptureLog.capture_log(fn -> Logger.error("keyset #{inspect(ks)}") end)
+      ]
+
+      for out <- outputs, form <- forms(bytes, value) do
+        refute out =~ form
+      end
+
+      assert hd(outputs) =~ "#Lockspire.KeyEncryption.KeySet<"
+      assert hd(outputs) =~ "a"
+      assert Enum.at(outputs, 3) =~ "keyset"
+    end
+
+    test "inspect of a system-resolved key set equals inspect of a literal one" do
+      value = b64("same-shape")
+      System.put_env(@boot_var, value)
+      put(keys: [{"a", {:system, @boot_var}}], current: "a")
+      system_ks = Config.key_encryption!()
+      put(keys: [{"a", value}], current: "a")
+      literal_ks = Config.key_encryption!()
+
+      assert inspect(system_ks) == inspect(literal_ks)
+    end
+
+    test "a missing variable message never carries another variable's value" do
+      sentinel_key = Base.encode64(:crypto.hash(:sha256, @sentinel))
+      System.put_env(@boot_var, sentinel_key)
+
+      msg =
+        message(keys: [{"a", {:system, @boot_var}}, {"b", {:system, @boot_var_b}}], current: "a")
+
+      refute msg =~ sentinel_key
+      assert msg =~ @boot_var_b
+    end
+  end
+
   test "static guard: no compile-time KEK read and no endpoint secret fallback" do
     for path <- Path.wildcard("lib/**/*.ex") do
       source = File.read!(path)

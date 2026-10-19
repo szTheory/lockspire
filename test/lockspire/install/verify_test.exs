@@ -354,6 +354,56 @@ defmodule Lockspire.Install.VerifyTest do
     end
   end
 
+  describe ":key_encryption check with {:system, var}" do
+    @unset_var "LOCKSPIRE_TEST_KEK_VERIFY_UNSET"
+    @set_var "LOCKSPIRE_TEST_KEK_VERIFY_SET"
+
+    setup do
+      prior = for v <- [@unset_var, @set_var], do: {v, System.get_env(v)}
+      System.delete_env(@unset_var)
+
+      # Registers env and cache restoration for the original block.
+      KeyEncryptionHelpers.put_key_encryption(Application.get_env(:lockspire, :key_encryption))
+
+      on_exit(fn ->
+        for {v, value} <- prior do
+          if value, do: System.put_env(v, value), else: System.delete_env(v)
+        end
+      end)
+
+      :ok
+    end
+
+    defp verify_kek_opts do
+      [
+        router: Web.Router,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire"
+      ]
+    end
+
+    test "errors with the variable name when a {:system, var} key is unset" do
+      secret = Base.encode64(:crypto.hash(:sha256, "verify-secret"))
+      System.put_env(@set_var, secret)
+
+      Application.put_env(:lockspire, :key_encryption,
+        keys: [{"a", {:system, @set_var}}, {"b", {:system, @unset_var}}],
+        current: "a"
+      )
+
+      result = Verify.run(verify_kek_opts())
+      refute result.ok?
+
+      check = Enum.find(result.checks, &(&1.id == :key_encryption))
+      assert check.status == :error
+      assert check.details =~ @unset_var
+      assert check.details =~ "missing_env"
+      refute inspect(check) =~ secret
+    end
+  end
+
   describe ":key_storage check" do
     defp storage_check(status_result, extra \\ []) do
       opts =
