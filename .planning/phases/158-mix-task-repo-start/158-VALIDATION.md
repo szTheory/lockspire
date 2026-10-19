@@ -2,9 +2,9 @@
 phase: "158"
 slug: "mix-task-repo-start"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-18"
 ---
 
@@ -42,17 +42,17 @@ Task IDs are filled in by the planner; the requirement → command map below is 
 
 | Requirement / SC | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |------------------|-----------------|-----------|-------------------|-------------|--------|
-| TASK-01 / SC1 client.create cold | repo started and stopped by task | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_client_create_cold_test.exs` | ❌ W0 | ⬜ pending |
-| TASK-01 / SC1 token_format cold | output names seeded client | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_token_format_cold_test.exs` | ❌ W0 | ⬜ pending |
-| TASK-01 / SC1 remote_jwks cold | not_applicable, exit 0 | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_remote_jwks_cold_test.exs` | ❌ W0 | ⬜ pending |
-| TASK-01 / SC1 clean room | reproduce then green, secret redacted | acceptance | `python3 scripts/acceptance/clean_room_saas_journey.py --only happy_path` | extend | ⬜ pending |
-| TASK-03 / SC2 pool untouched | whereis pid, lookup_meta pid, no :DOWN, row visible | unit | `MIX_ENV=test mix test test/lockspire/install/repo_runner_test.exs` | extend | ⬜ pending |
-| TASK-02 / SC3 real reason | fixed safe phrases, no "repo unavailable" for domain errors | unit | `MIX_ENV=test mix test test/lockspire/install/task_error_test.exs` | ❌ W0 | ⬜ pending |
-| TASK-02 / SC3 secret once | secret printed once after write; Inspect hides secret | unit | `MIX_ENV=test mix test test/lockspire/clients_test.exs` | extend | ⬜ pending |
-| SAFE-02 / SC4 log safety | no secret/hash/verifier in debug logs | integration | cold client.create module with `capture_log(level: :debug)` | ❌ W0 | ⬜ pending |
-| SC4 doctor semantics | exit codes/output shape unchanged | unit | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_token_format_test.exs test/mix/tasks/lockspire_doctor_remote_jwks_test.exs` | ✅ | ⬜ pending |
+| TASK-01 / SC1 client.create cold | repo started and stopped by task | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_client_create_cold_test.exs` | ✅ | ✅ green |
+| TASK-01 / SC1 token_format cold | output names seeded client | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_token_format_cold_test.exs` | ✅ | ✅ green |
+| TASK-01 / SC1 remote_jwks cold | not_applicable, exit 0 | integration | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_remote_jwks_cold_test.exs` | ✅ | ✅ green |
+| TASK-01 / SC1 clean room | reproduce then green, secret redacted | acceptance | `python3 scripts/acceptance/clean_room_saas_journey.py --only happy_path` | extend | ✅ green |
+| TASK-03 / SC2 pool untouched | whereis pid, lookup_meta pid, no :DOWN, row visible | unit | `MIX_ENV=test mix test test/lockspire/install/repo_runner_test.exs` | extend | ✅ green |
+| TASK-02 / SC3 real reason | fixed safe phrases, no "repo unavailable" for domain errors | unit | `MIX_ENV=test mix test test/lockspire/install/task_error_test.exs` | ✅ | ✅ green |
+| TASK-02 / SC3 secret once | secret printed once after write; Inspect hides secret | unit | `MIX_ENV=test mix test test/lockspire/clients_test.exs` | extend | ✅ green |
+| SAFE-02 / SC4 log safety | no secret/hash/verifier in debug logs | integration | cold client.create module with `capture_log(level: :debug)` | ✅ | ✅ green |
+| SC4 doctor semantics | exit codes/output shape unchanged | unit | `MIX_ENV=test mix test test/mix/tasks/lockspire_doctor_token_format_test.exs test/mix/tasks/lockspire_doctor_remote_jwks_test.exs` | ✅ | ✅ green |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: ✅ green · ✅ green · ❌ red · ⚠️ flaky*
 
 ---
 
