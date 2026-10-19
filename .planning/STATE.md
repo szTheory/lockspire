@@ -5,16 +5,16 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 159
 current_phase_name: Key-Encryption Key Setup DX
 status: executing
-stopped_at: Completed 159-01-PLAN.md
-last_updated: "2026-10-19T19:23:45.745Z"
+stopped_at: Completed 159-02-PLAN.md
+last_updated: "2026-10-19T19:28:57.509Z"
 last_activity: 2026-10-19
 last_activity_desc: Phase 159 execution started
-state_head: 553e4018f2b42e48231e20bce8453c3d75d43df4
+state_head: f00cf426304537c6b4b31f0a025e56415842481d
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 25
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 159 (Key-Encryption Key Setup DX) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-10-19 — Phase 159 execution started
 
@@ -297,6 +297,8 @@ Progress: [███░░░░░░░] 25%
 - [Phase 158]: Doctor tasks resolve the repo outside TaskError.run and print or raise only after it returns; D-19: no audit telemetry in bare tasks, created_by is the CLI audit trail
 - [Phase 158]: client.create :base persistence errors render a fixed phrase; RegistrationResult inspect hides client_secret; D-11 log suppression via TaskError.run process level
 - [Phase 159]: KekSnippet is the single builder for KEK value, default id and prod runtime.exs block; installer and gen.kek share it
+- [Phase 159]: Env values for {:system, var} key entries are never trimmed; trailing newline fails closed
+- [Phase 159]: missing_env is a Config-only 3-element reason; KeySet {atom, atom} contract unchanged
 
 ### Pending Todos
 
@@ -358,8 +360,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T19:23:45.690Z
-Stopped at: Completed 159-01-PLAN.md
+Last session: 2026-10-19T19:28:57.451Z
+Stopped at: Completed 159-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -483,6 +485,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 158 P02 | 15 min | 3 tasks | 6 files |
 | Phase 158 P03 | 25 min | 3 tasks | 8 files |
 | Phase 159 P01 | 12 min | 3 tasks | 8 files |
+| Phase 159 P02 | 12 min | 2 tasks | 3 files |
 
 ## Operator Next Steps
 
