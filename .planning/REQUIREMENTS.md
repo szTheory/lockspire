@@ -14,9 +14,9 @@
 
 ### Key-Encryption Key Setup
 
-- [ ] **KEK-03**: A host developer can run `mix lockspire.gen.kek` to print a freshly generated key-encryption key (32 random bytes, base64) and the same fail-closed `runtime.exs` snippet the installer prints. `--id` sets a validated key ID (default `YYYY-MM` UTC) and `--raw` prints only the key value. The task writes no files, needs no repo, and emits no logs or telemetry. Its output passes `KeySet` validation, and the installer and task share one snippet builder.
-- [ ] **KEK-05**: A host can configure a key-encryption key entry as `{:system, "VAR"}`; Lockspire resolves it at runtime in `Lockspire.Config` (never at compile time and never written back to app env). An unset or empty variable in a configured key list fails boot with an error naming the variable but never a value. It never falls back to "not configured".
-- [ ] **KEK-06**: Inspecting or logging a key set never shows key bytes, and every existing guidance message that recommends generating a key (config errors, `mix lockspire.verify`, `mix lockspire.keys.reencrypt`, the upgrade guide) points to `mix lockspire.gen.kek`.
+- [x] **KEK-03**: A host developer can run `mix lockspire.gen.kek` to print a freshly generated key-encryption key (32 random bytes, base64) and the same fail-closed `runtime.exs` snippet the installer prints. `--id` sets a validated key ID (default `YYYY-MM` UTC) and `--raw` prints only the key value. The task writes no files, needs no repo, and emits no logs or telemetry. Its output passes `KeySet` validation, and the installer and task share one snippet builder.
+- [x] **KEK-05**: A host can configure a key-encryption key entry as `{:system, "VAR"}`; Lockspire resolves it at runtime in `Lockspire.Config` (never at compile time and never written back to app env). An unset or empty variable in a configured key list fails boot with an error naming the variable but never a value. It never falls back to "not configured".
+- [x] **KEK-06**: Inspecting or logging a key set never shows key bytes, and every existing guidance message that recommends generating a key (config errors, `mix lockspire.verify`, `mix lockspire.keys.reencrypt`, the upgrade guide) points to `mix lockspire.gen.kek`.
 
 ### Admin Keys
 
@@ -60,9 +60,9 @@
 | TASK-01 | Phase 158 | Complete |
 | TASK-02 | Phase 158 | Complete |
 | TASK-03 | Phase 158 | Complete |
-| KEK-03 | Phase 159 | Pending |
-| KEK-05 | Phase 159 | Pending |
-| KEK-06 | Phase 159 | Pending |
+| KEK-03 | Phase 159 | Complete |
+| KEK-05 | Phase 159 | Complete |
+| KEK-06 | Phase 159 | Complete |
 | KEY-UI-01 | Phase 160 | Pending |
 | KEY-UI-02 | Phase 160 | Pending |
 | KEY-UI-03 | Phase 160 | Pending |

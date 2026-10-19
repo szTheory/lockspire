@@ -4,17 +4,17 @@ milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 159
 current_phase_name: Key-Encryption Key Setup DX
-status: executing
-stopped_at: Completed 159-02-PLAN.md
-last_updated: "2026-10-19T19:28:57.509Z"
+status: verifying
+stopped_at: Completed 159-03-PLAN.md
+last_updated: "2026-10-19T19:40:31.358Z"
 last_activity: 2026-10-19
 last_activity_desc: Phase 159 execution started
-state_head: f00cf426304537c6b4b31f0a025e56415842481d
+state_head: 18862fff994df5be52067e836d18a0a0172725fe
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 25
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 159 (Key-Encryption Key Setup DX) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-19 — Phase 159 execution started
 
 Progress: [███░░░░░░░] 25%
@@ -299,6 +299,7 @@ Progress: [███░░░░░░░] 25%
 - [Phase 159]: KekSnippet is the single builder for KEK value, default id and prod runtime.exs block; installer and gen.kek share it
 - [Phase 159]: Env values for {:system, var} key entries are never trimmed; trailing newline fails closed
 - [Phase 159]: missing_env is a Config-only 3-element reason; KeySet {atom, atom} contract unchanged
+- [Phase 159]: Plan 03: elixir -e fallback kept only in upgrade guide after gen.kek; config.ex names only gen.kek
 
 ### Pending Todos
 
@@ -360,8 +361,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T19:28:57.451Z
-Stopped at: Completed 159-02-PLAN.md
+Last session: 2026-10-19T19:40:31.311Z
+Stopped at: Completed 159-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -486,6 +487,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 158 P03 | 25 min | 3 tasks | 8 files |
 | Phase 159 P01 | 12 min | 3 tasks | 8 files |
 | Phase 159 P02 | 12 min | 2 tasks | 3 files |
+| Phase 159 P03 | 10 min | 3 tasks | 11 files |
 
 ## Operator Next Steps
 
