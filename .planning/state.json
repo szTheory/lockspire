@@ -6,7 +6,7 @@
     {
       "number": "158",
       "name": "Mix Task Repo Start",
-      "status": "in_progress"
+      "status": "complete"
     },
     {
       "number": "159",
@@ -26,8 +26,8 @@
   ],
   "next": {
     "command": "/gsd-progress --next",
-    "label": "Advance to the next step (verify)",
-    "reason": "Phase 1 of 4 · 0% · ready to verify"
+    "label": "Advance to the next step (plan phase 159)",
+    "reason": "Phase 2 of 4 — needs a plan"
   },
-  "updated_at": "2026-10-19T03:49:28.533Z"
+  "updated_at": "2026-10-19T04:00:45.126Z"
 }

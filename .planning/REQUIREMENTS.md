@@ -8,9 +8,9 @@
 
 ### Mix Tasks
 
-- [ ] **TASK-01**: A host developer can run `mix lockspire.client.create`, `mix lockspire.doctor.token_format`, and `mix lockspire.doctor.remote_jwks` in a host app whose repo is not already running, and each task starts and stops the host repo itself. The failure is first reproduced in the clean-room harness, and the fix routes through `Lockspire.Install.RepoRunner` (not raw `Ecto.Migrator.with_repo`, not `app.start`), so an already-running repo pool is left untouched.
-- [ ] **TASK-02**: When `mix lockspire.client.create` fails validation or a write, the developer sees the real reason (not "repo unavailable"), and a client secret is printed at most once, only after a successful write. Doctor tasks keep their existing exit semantics.
-- [ ] **TASK-03**: Each of the three tasks has a test that runs it with no pre-started repo (and a check that an already-started repo's pool is not restarted), and the clean-room SaaS journey invokes all three against a real host.
+- [x] **TASK-01**: A host developer can run `mix lockspire.client.create`, `mix lockspire.doctor.token_format`, and `mix lockspire.doctor.remote_jwks` in a host app whose repo is not already running, and each task starts and stops the host repo itself. The failure is first reproduced in the clean-room harness, and the fix routes through `Lockspire.Install.RepoRunner` (not raw `Ecto.Migrator.with_repo`, not `app.start`), so an already-running repo pool is left untouched.
+- [x] **TASK-02**: When `mix lockspire.client.create` fails validation or a write, the developer sees the real reason (not "repo unavailable"), and a client secret is printed at most once, only after a successful write. Doctor tasks keep their existing exit semantics.
+- [x] **TASK-03**: Each of the three tasks has a test that runs it with no pre-started repo (and a check that an already-started repo's pool is not restarted), and the clean-room SaaS journey invokes all three against a real host.
 
 ### Key-Encryption Key Setup
 
@@ -57,9 +57,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TASK-01 | Phase 158 | Pending |
-| TASK-02 | Phase 158 | Pending |
-| TASK-03 | Phase 158 | Pending |
+| TASK-01 | Phase 158 | Complete |
+| TASK-02 | Phase 158 | Complete |
+| TASK-03 | Phase 158 | Complete |
 | KEK-03 | Phase 159 | Pending |
 | KEK-05 | Phase 159 | Pending |
 | KEK-06 | Phase 159 | Pending |

@@ -19,7 +19,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
 
 ## Active Milestone: v1.44 Adopter Polish & Verified 1.6.0
 
-- [ ] **Phase 158: Mix Task Repo Start** - `client.create`, `doctor.token_format` and `doctor.remote_jwks` start and stop the host repo themselves via `RepoRunner`, with real error reasons
+- [x] **Phase 158: Mix Task Repo Start** - `client.create`, `doctor.token_format` and `doctor.remote_jwks` start and stop the host repo themselves via `RepoRunner`, with real error reasons (completed 2026-10-19)
 - [ ] **Phase 159: Key-Encryption Key Setup DX** - `mix lockspire.gen.kek`, `{:system, "VAR"}` runtime resolution, redacted `KeySet` inspect, and guidance that points to the new task
 - [ ] **Phase 160: Admin Key Protection & Missing-KEK Copy** - read-only Key protection line and a calm missing-encryption-key error on the Keys page, with vocabulary map updates
 - [ ] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources
@@ -35,7 +35,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
   3. A `client.create` validation or write failure shows the real reason (not "repo unavailable"), and a client secret is printed at most once, only after a successful write.
   4. Doctor tasks keep their existing exit codes and output shape; no task output, error or log carries secret or key material (SAFE-02).
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -92,7 +92,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 158. Mix Task Repo Start | 3/3 | In Progress | - |
+| 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 0/TBD | Not started | - |
 | 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
 | 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
