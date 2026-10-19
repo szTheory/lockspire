@@ -45,7 +45,7 @@ Plans:
 - [x] 158-02-PLAN.md — doctor token_format and remote-jwks via TaskError, cold + pool-untouched tests, clean-room journey green
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 158-03-PLAN.md — client.create real failure reasons, Inspect redaction, log-safety proof, RepoRunner comment and pool-check hardening, phase gate
+- [x] 158-03-PLAN.md — client.create real failure reasons, Inspect redaction, log-safety proof, RepoRunner comment and pool-check hardening, phase gate
 
 ### Phase 159: Key-Encryption Key Setup DX
 
@@ -92,7 +92,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 158. Mix Task Repo Start | 2/3 | In Progress | - |
+| 158. Mix Task Repo Start | 3/3 | In Progress | - |
 | 159. Key-Encryption Key Setup DX | 0/TBD | Not started | - |
 | 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
 | 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
