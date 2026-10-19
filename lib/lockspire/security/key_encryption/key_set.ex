@@ -23,6 +23,13 @@ defmodule Lockspire.Security.KeyEncryption.KeySet do
 
   def fetch_key(_keyset, _id), do: {:error, :unknown_kek}
 
+  @id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
+
+  @doc "Returns true when `id` satisfies the key id rule enforced by `new/1`."
+  @spec valid_id?(term()) :: boolean()
+  def valid_id?(id) when is_binary(id), do: Regex.match?(@id_pattern, id)
+  def valid_id?(_id), do: false
+
   @spec new(term()) :: {:ok, t()} | {:error, {atom(), atom()}}
   def new(config) do
     # Validators return tagged errors only and never carry the configured value.
@@ -45,7 +52,6 @@ defmodule Lockspire.Security.KeyEncryption.KeySet do
   end
 
   @allowed_options [:keys, :current, :legacy_plaintext]
-  @id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
 
   defp check_options(config) when is_list(config) do
     cond do
@@ -97,7 +103,7 @@ defmodule Lockspire.Security.KeyEncryption.KeySet do
   defp decode_entry(_entry, _acc), do: {:error, {:keys, :invalid_key_entry}}
 
   defp check_id(id) do
-    if Regex.match?(@id_pattern, id), do: :ok, else: {:error, {:keys, :invalid_key_id}}
+    if valid_id?(id), do: :ok, else: {:error, {:keys, :invalid_key_id}}
   end
 
   defp check_unique_id(id, acc) do
