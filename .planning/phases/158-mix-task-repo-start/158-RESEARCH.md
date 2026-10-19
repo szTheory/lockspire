@@ -267,10 +267,12 @@ ASVS applicability (`security_enforcement` not disabled in config assumptions):
 | A2 | Clean-room host `runtime.exs` maps `SECRET_KEY_BASE` so `client.create` can seal the verifier in a bare process | Clean-Room Harness | Medium: `client.create` would fail with the config ArgumentError phrase; the reproduce/fix run exposes it and may need a harness env tweak |
 | A3 | `mix ci` composition (credo/dialyzer) not inspected; gate commands listed from `test.fast`/CI matrix only | Validation | Low: planner should read `mix.exs` aliases for the exact gate |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `Observability.emit` produce audit telemetry in a bare task?** `:telemetry.execute` is safe with no handlers, but handlers are attached by `Lockspire.Application`, which `app.config` does not start. Resolve via the clean-room run (D-19); no code change in this phase.
+   **RESOLVED (CONTEXT D-19):** no telemetry handler changes this phase; lost CLI audit telemetry is acceptable because `created_by` is stored on the row. The clean-room run's observation is recorded in the plan SUMMARY as evidence (and noted in docs if loss is confirmed), not a gate.
 2. **Where should the classifier live?** Recommend `lib/lockspire/install/task_error.ex` (`@moduledoc false`), beside `RepoRunner`, so `verify.ex`/future tasks can reuse it. Discretion item.
+   **RESOLVED:** `lib/lockspire/install/task_error.ex` (`Lockspire.Install.TaskError`), as adopted by plan 158-01.
 
 ## Sources
 

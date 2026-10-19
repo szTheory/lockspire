@@ -25,6 +25,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
 - [ ] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources
 
 ### Phase 158: Mix Task Repo Start
+
 **Goal**: A host developer can run every DB-touching Lockspire Mix task in a bare `mix` session and get either the intended result or the real failure reason.
 **Depends on**: Nothing (first phase of v1.44; builds on v1.43 main)
 **Requirements**: TASK-01, TASK-02, TASK-03
@@ -33,9 +34,21 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
   2. Each task has a test that runs it with no pre-started repo, and a check that an already-running repo's pool pid is unchanged after the task runs (RepoRunner, not raw `with_repo`, not `app.start`).
   3. A `client.create` validation or write failure shows the real reason (not "repo unavailable"), and a client secret is printed at most once, only after a successful write.
   4. Doctor tasks keep their existing exit codes and output shape; no task output, error or log carries secret or key material (SAFE-02).
-**Plans**: TBD
+
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 158-01-PLAN.md — reproduce in the clean room first, then route client.create through TaskError + RepoRunner (tracer), shared test helpers, cold client.create test
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 158-02-PLAN.md — doctor token_format and remote-jwks via TaskError, cold + pool-untouched tests, clean-room journey green
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 158-03-PLAN.md — client.create real failure reasons, Inspect redaction, log-safety proof, RepoRunner comment and pool-check hardening, phase gate
 
 ### Phase 159: Key-Encryption Key Setup DX
+
 **Goal**: A host developer can generate and wire up a key-encryption key without openssl and without risking a silent unencrypted fallback.
 **Depends on**: Phase 158 (clean-room harness changes land first; independent code seams)
 **Requirements**: KEK-03, KEK-05, KEK-06
@@ -44,9 +57,11 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
   2. A host configuring a key entry as `{:system, "VAR"}` boots with it resolved at runtime in `Lockspire.Config`; nothing is resolved at compile time or written back to app env.
   3. With an unset or empty variable in a configured key list, boot fails with an error naming the variable and never its value, and never falls back to "not configured".
   4. `inspect`ing or logging a key set shows no key bytes, and every guidance message that recommends generating a key (config errors, `mix lockspire.verify`, `mix lockspire.keys.reencrypt`, the upgrade guide) points to `mix lockspire.gen.kek` (SAFE-02).
+
 **Plans**: TBD
 
 ### Phase 160: Admin Key Protection & Missing-KEK Copy
+
 **Goal**: An operator on the admin Keys page can tell at a glance whether signing keys are protected, and understands why key generation is refused when no encryption key is set up.
 **Depends on**: Phase 159 (shares the KEK config surface and `gen.kek` setup guidance)
 **Requirements**: KEY-UI-01, KEY-UI-02, KEY-UI-03
@@ -55,10 +70,12 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
   2. A failed protection check leaves the key list visible; the line shows no per-encryption-key counts, no key material and no new controls (SAFE-02).
   3. Trying to generate a signing key with no encryption key configured shows that none is set up, that Lockspire will not store signing keys unencrypted, and how to set one up; other generation errors keep their existing copy.
   4. All new wording comes from the PRODUCT.md vocabulary map, new terms and retired phrases are added in the same change, and `vocabulary_contract_test.exs` passes.
+
 **Plans**: TBD
 **UI hint**: yes
 
 ### Phase 161: Docs & Verified 1.6.0 Release
+
 **Goal**: Adopters can read accurate guides for the new setup path and install a publicly verified Lockspire 1.6.0 that carries v1.43 and v1.44.
 **Depends on**: Phases 158, 159, 160 (release runs last: all v1.44 work on `main` with CI green)
 **Requirements**: DOC-02, REL-01, REL-02, SAFE-02
@@ -68,6 +85,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
   3. After v1.44 is on `main` with CI green, the regenerated Release Please PR #121 is re-read, its version and changelog cover v1.40–v1.44, and it is squash-merged.
   4. 1.6.0 is published through the protected exact-ref lane and independently verified: Hex API checksum matches the manifest and downloaded tarball, HexDocs serve 1.6.0, the `lockspire-v1.6.0` tag and GitHub release point at the published source SHA, and the tarball includes the new Mix tasks.
   5. A clean-room host installs `{:lockspire, "== 1.6.0"}` from Hex in a fresh `HEX_HOME`, and the result is recorded in `.planning/RELEASE-TRAIN.md`.
+
 **Plans**: TBD
 
 ### Progress
