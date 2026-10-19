@@ -35,4 +35,15 @@ defmodule Lockspire.Integration.Phase133ProviderInstallTest do
     assert builder =~
              ~s("ecto.migrate",\n                "--migrations-path",\n                "priv/repo/migrations")
   end
+
+  @tag :gen_kek
+  @tag timeout: 600_000
+  test "gen.kek prints a valid key in a host whose runtime config raises without one" do
+    assert {output, 0} =
+             System.cmd("python3", [@builder, "--check-gen-kek"], stderr_to_stdout: true)
+
+    assert output =~ "gen.kek cold run verified"
+    assert output =~ "host runtime fails closed without the key"
+    refute Regex.match?(~r/[A-Za-z0-9+\/]{43}=/, output)
+  end
 end
