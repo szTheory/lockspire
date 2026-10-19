@@ -78,7 +78,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.KeyEncryption do
 
         Mix.raise(
           "config :lockspire, :key_encryption is not set. Add keys: [{id, base64 of 32 random bytes}], " <>
-            "current: id in config/runtime.exs (create a key with `openssl rand -base64 32`)."
+            "current: id in config/runtime.exs (create a key with `mix lockspire.gen.kek`)."
         )
 
       {:error, message} ->
