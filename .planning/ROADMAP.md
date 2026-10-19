@@ -39,10 +39,10 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
 
 Plans:
 **Wave 1**
-- [ ] 158-01-PLAN.md — reproduce in the clean room first, then route client.create through TaskError + RepoRunner (tracer), shared test helpers, cold client.create test
+- [x] 158-01-PLAN.md — reproduce in the clean room first, then route client.create through TaskError + RepoRunner (tracer), shared test helpers, cold client.create test
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 158-02-PLAN.md — doctor token_format and remote-jwks via TaskError, cold + pool-untouched tests, clean-room journey green
+- [x] 158-02-PLAN.md — doctor token_format and remote-jwks via TaskError, cold + pool-untouched tests, clean-room journey green
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 158-03-PLAN.md — client.create real failure reasons, Inspect redaction, log-safety proof, RepoRunner comment and pool-check hardening, phase gate
@@ -92,7 +92,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 158. Mix Task Repo Start | 0/TBD | Not started | - |
+| 158. Mix Task Repo Start | 2/3 | In Progress | - |
 | 159. Key-Encryption Key Setup DX | 0/TBD | Not started | - |
 | 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
 | 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
