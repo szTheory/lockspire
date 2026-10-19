@@ -276,7 +276,7 @@ def prepare_provider(
     return child
 
 
-def run_child_command(child: Path, environment: dict[str, str], *command: str) -> None:
+def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...]) -> bytes:
     completed = subprocess.run(
         ("mix", *command),
         cwd=child,
@@ -290,6 +290,15 @@ def run_child_command(child: Path, environment: dict[str, str], *command: str) -
     if completed.returncode != 0:
         details = completed.stdout.decode(errors="replace").splitlines()[-16:]
         raise PackageInputError(f"provider {' '.join(command)} failed: {' '.join(details)}")
+    return completed.stdout
+
+
+def run_child_command(child: Path, environment: dict[str, str], *command: str) -> None:
+    _run_mix(child, environment, command)
+
+
+def run_child_command_output(child: Path, environment: dict[str, str], *command: str) -> str:
+    return _run_mix(child, environment, command).decode(errors="replace")
 
 
 def allocate_port() -> int:
