@@ -74,9 +74,15 @@ defmodule Lockspire.Install.TaskError do
     end
   end
 
+  # Raising the calling process's level to :warning drops its :debug and :info events, which is
+  # where Ecto's query log (SQL and params, possibly sealed secret material) is emitted whether
+  # the host sets `log: :debug` or `log: :info`. Limitation: this only covers events logged by
+  # the calling process. Logs from the DBConnection and Postgrex connection processes (for
+  # example an unreachable-database host:port error) are not covered; that is a documented
+  # limitation, not something this guard can fix.
   defp guarded(repo, fun) do
     previous_level = Logger.get_process_level(self())
-    Logger.put_process_level(self(), :info)
+    Logger.put_process_level(self(), :warning)
 
     try do
       fun.(repo)

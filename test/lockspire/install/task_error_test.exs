@@ -145,7 +145,7 @@ defmodule Lockspire.Install.TaskErrorTest do
     test "the process log level is restored: nil stays nil" do
       Logger.delete_process_level(self())
 
-      assert {:ok, :info} =
+      assert {:ok, :warning} =
                TaskError.run(Lockspire.TestRepo, fn _ -> Logger.get_process_level(self()) end)
 
       assert Logger.get_process_level(self()) == nil
@@ -155,7 +155,7 @@ defmodule Lockspire.Install.TaskErrorTest do
       Logger.put_process_level(self(), :warning)
       on_exit(fn -> Logger.delete_process_level(self()) end)
 
-      assert {:ok, :info} =
+      assert {:ok, :warning} =
                TaskError.run(Lockspire.TestRepo, fn _ -> Logger.get_process_level(self()) end)
 
       assert Logger.get_process_level(self()) == :warning

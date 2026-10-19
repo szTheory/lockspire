@@ -124,45 +124,49 @@ defmodule Mix.Tasks.Lockspire.Client.CreateColdTest do
              "client registration failed: could not start the repo; check database connectivity and config :lockspire, :repo"
   end
 
-  test "debug query logs carry no insert statement or secret material", %{prefix: prefix} do
-    client_id = prefix <> "-log"
-    original_repo_config = Application.get_env(:lockspire, Lockspire.TestRepo)
-    original_level = Logger.level()
+  for ecto_level <- [:debug, :info] do
+    test "#{ecto_level} query logs carry no insert statement or secret material",
+         %{prefix: prefix} do
+      ecto_level = unquote(ecto_level)
+      client_id = prefix <> "-log-#{ecto_level}"
+      original_repo_config = Application.get_env(:lockspire, Lockspire.TestRepo)
+      original_level = Logger.level()
 
-    Application.put_env(
-      :lockspire,
-      Lockspire.TestRepo,
-      Keyword.put(original_repo_config, :log, :debug)
-    )
+      Application.put_env(
+        :lockspire,
+        Lockspire.TestRepo,
+        Keyword.put(original_repo_config, :log, ecto_level)
+      )
 
-    Logger.configure(level: :debug)
+      Logger.configure(level: :debug)
 
-    on_exit(fn ->
-      Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
-      Logger.configure(level: original_level)
-    end)
-
-    log =
-      ExUnit.CaptureLog.capture_log([level: :debug], fn ->
-        Logger.debug("lockspire-log-control")
-        {output, result} = run_task(@task, args(client_id))
-        send(self(), {:run, output, result})
+      on_exit(fn ->
+        Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
+        Logger.configure(level: original_level)
       end)
 
-    assert_received {:run, output, :ok}
-    Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
-    Logger.configure(level: original_level)
-    [_, secret] = Regex.run(~r/client_secret=(\S+)/, output)
+      log =
+        ExUnit.CaptureLog.capture_log([level: :debug], fn ->
+          Logger.debug("lockspire-log-control")
+          {output, result} = run_task(@task, args(client_id))
+          send(self(), {:run, output, result})
+        end)
 
-    assert log =~ "lockspire-log-control"
-    refute log =~ "INSERT"
-    refute log =~ secret
+      assert_received {:run, output, :ok}
+      Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
+      Logger.configure(level: original_level)
+      [_, secret] = Regex.run(~r/client_secret=(\S+)/, output)
 
-    assert [row] = fetch_row(client_id)
+      assert log =~ "lockspire-log-control"
+      refute log =~ "INSERT"
+      refute log =~ secret
 
-    for value <- [row.client_secret_hash, Map.get(row, :client_secret_jwt_verifier_encrypted)],
-        is_binary(value) do
-      refute log =~ value
+      assert [row] = fetch_row(client_id)
+
+      for value <- [row.client_secret_hash, Map.get(row, :client_secret_jwt_verifier_encrypted)],
+          is_binary(value) do
+        refute log =~ value
+      end
     end
   end
 
