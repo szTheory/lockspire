@@ -11,15 +11,14 @@ defmodule Lockspire.Install.RepoRunnerTest do
 
   test "calls the function directly and keeps the pool when the repo is already running" do
     start_supervised!(Lockspire.TestRepo)
-    pid = Process.whereis(Lockspire.TestRepo)
 
     assert {:ok, :ran} =
-             RepoRunner.run(Lockspire.TestRepo, fn repo ->
-               assert repo == Lockspire.TestRepo
-               :ran
+             Lockspire.MixRepoHelpers.assert_pool_untouched!(Lockspire.TestRepo, fn ->
+               RepoRunner.run(Lockspire.TestRepo, fn repo ->
+                 assert repo == Lockspire.TestRepo
+                 :ran
+               end)
              end)
-
-    assert Process.whereis(Lockspire.TestRepo) == pid
   end
 
   test "starts a stopped repo temporarily and stops it afterwards" do
