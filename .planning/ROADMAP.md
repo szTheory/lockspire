@@ -58,7 +58,15 @@ Plans:
   3. With an unset or empty variable in a configured key list, boot fails with an error naming the variable and never its value, and never falls back to "not configured".
   4. `inspect`ing or logging a key set shows no key bytes, and every guidance message that recommends generating a key (config errors, `mix lockspire.verify`, `mix lockspire.keys.reencrypt`, the upgrade guide) points to `mix lockspire.gen.kek` (SAFE-02).
 
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 159-01-PLAN.md — gen.kek task with shared KekSnippet builder (tracer), installer refactor, clean-room cold-run proof
+- [ ] 159-02-PLAN.md — `{:system, "VAR"}` runtime resolution in Lockspire.Config, fail-closed missing_env boot, redaction proof tests
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 159-03-PLAN.md — guidance sweep to `mix lockspire.gen.kek`, docs, pinned tests, D-10 guidance contract test, phase gate
 
 ### Phase 160: Admin Key Protection & Missing-KEK Copy
 
