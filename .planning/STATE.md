@@ -5,16 +5,16 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 158
 current_phase_name: Mix Task Repo Start
 status: executing
-stopped_at: Completed 158-01-PLAN.md
-last_updated: "2026-10-19T03:35:10.028Z"
+stopped_at: Completed 158-02-PLAN.md
+last_updated: "2026-10-19T03:41:01.778Z"
 last_activity: 2026-10-18
 last_activity_desc: Phase 158 execution started
-state_head: cbb64ab2f83a62cd1d571a56a4be536a3b6086c2
+state_head: 74f684f977898848cde5526c8866905aabf601b3
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 158 (Mix Task Repo Start) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-10-18 — Phase 158 execution started
 
@@ -294,6 +294,7 @@ Progress: [░░░░░░░░░░] 0%
 - [Phase 157]: 157-04: signing-key encryption guide is version-agnostic; per-row re-encrypt telemetry documented as encrypted/rewrapped
 - [Phase 157]: 157-03: upgrade journey derives verify key from the seeded legacy private JWK; separate CI steps for --check and doctor
 - [Phase 158]: TaskError.run/2 classifies failures inside the RepoRunner fun; client.create starts :plug_crypto under app.config
+- [Phase 158]: Doctor tasks resolve the repo outside TaskError.run and print or raise only after it returns; D-19: no audit telemetry in bare tasks, created_by is the CLI audit trail
 
 ### Pending Todos
 
@@ -355,8 +356,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-19T03:35:10.005Z
-Stopped at: Completed 158-01-PLAN.md
+Last session: 2026-10-19T03:41:01.757Z
+Stopped at: Completed 158-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -477,6 +478,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 157 P04 | 25 min | 3 tasks | 9 files |
 | Phase 157 P03 | 25 min | 3 tasks | 4 files |
 | Phase 158 P01 | 25 min | 2 tasks | 6 files |
+| Phase 158 P02 | 15 min | 3 tasks | 6 files |
 
 ## Operator Next Steps
 
