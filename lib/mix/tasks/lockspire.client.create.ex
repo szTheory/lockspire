@@ -70,9 +70,12 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
       --token-endpoint-auth-method METHOD
       --created-by SUBJECT
 
-    The client secret is printed once, after the client is saved. If the task is interrupted
-    after saving, the client exists: rotate its secret from the admin Apps page instead of
-    rerunning, because a rerun creates a second client.
+    The client secret is printed once, after the app is saved. If the task stops after saving
+    but before printing, the app exists: rotate its secret from the admin Apps page instead of
+    running the task again, because running it again creates a second app.
+
+    Lockspire audit events are not delivered from this command. The client's created_by value
+    records who registered it from the command line.
     """
   end
 
@@ -120,11 +123,29 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
   end
 
   defp print_result({:error, errors}) do
-    details =
-      Enum.map_join(errors, "; ", fn error ->
-        "#{error.field}:#{error.reason}(#{error.detail})"
-      end)
-
-    Mix.raise("client registration failed: #{details}")
+    Mix.raise(format_domain_errors(errors))
   end
+
+  defp format_domain_errors(errors) do
+    lines = Enum.map(errors, &error_line/1)
+    Enum.join(["client registration failed; nothing was saved:" | lines], "\n")
+  end
+
+  # A :base error carries an inspected store error as its detail; it is never shown.
+  defp error_line(%{field: :base}) do
+    "  - base: the client could not be saved; check database connectivity and that mix ecto.migrate has run"
+  end
+
+  defp error_line(%{field: field, reason: :persistence_failed, detail: detail}) do
+    "  - #{field}: #{detail_text(detail)}"
+  end
+
+  defp error_line(%{field: field, reason: reason, detail: detail}) do
+    "  - #{field}: #{reason} (#{detail_text(detail)})"
+  end
+
+  defp detail_text(detail) when is_binary(detail), do: detail
+  defp detail_text(nil), do: "invalid value"
+  defp detail_text(detail) when is_atom(detail) or is_number(detail), do: to_string(detail)
+  defp detail_text(_detail), do: "invalid value"
 end

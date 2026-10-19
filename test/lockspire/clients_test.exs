@@ -298,25 +298,27 @@ defmodule Lockspire.ClientsTest do
 
   test "mix lockspire.client.create prints the plaintext secret once and persists only the hash" do
     output =
-      capture_io(fn ->
-        Mix.Tasks.Lockspire.Client.Create.run([
-          "--client-id",
-          "cli_client",
-          "--name",
-          "CLI Client",
-          "--client-type",
-          "confidential",
-          "--redirect-uri",
-          "https://client.example.com/callback",
-          "--scope",
-          "profile",
-          "--grant-type",
-          "authorization_code"
-        ])
+      Lockspire.MixRepoHelpers.assert_pool_untouched!(Lockspire.TestRepo, fn ->
+        capture_io(fn ->
+          Mix.Tasks.Lockspire.Client.Create.run([
+            "--client-id",
+            "cli_client",
+            "--name",
+            "CLI Client",
+            "--client-type",
+            "confidential",
+            "--redirect-uri",
+            "https://client.example.com/callback",
+            "--scope",
+            "profile",
+            "--grant-type",
+            "authorization_code"
+          ])
+        end)
       end)
 
     assert output =~ "client_id=cli_client"
-    assert output =~ "client_secret="
+    assert length(String.split(output, "client_secret=")) - 1 == 1
     assert output =~ "token_endpoint_auth_method=client_secret_basic"
     assert output =~ "Next steps:"
     assert output =~ "Store any printed client_secret now"
@@ -326,6 +328,10 @@ defmodule Lockspire.ClientsTest do
     assert {:ok, %Client{} = client} = Repository.fetch_client_by_id("cli_client")
     assert client.client_secret_hash
     refute output =~ client.client_secret_hash
+  end
+
+  test "inspecting a registration result never shows the client secret" do
+    refute inspect(%Lockspire.Clients.RegistrationResult{client_secret: "s3cr3t"}) =~ "s3cr3t"
   end
 
   test "direct registration retains required scopes while DCR owns optional scope semantics" do

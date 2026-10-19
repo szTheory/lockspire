@@ -10,5 +10,6 @@ defmodule Lockspire.Clients.RegistrationResult do
           client_secret: String.t() | nil
         }
 
+  @derive {Inspect, except: [:client_secret]}
   defstruct [:client, :client_secret]
 end
