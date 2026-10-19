@@ -1,12 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.44",
-  "phases": [],
+  "milestone": "v1.44 — Adopter Polish & Verified 1.6.0",
+  "phases": [
+    {
+      "number": "158",
+      "name": "Mix Task Repo Start",
+      "status": "pending"
+    },
+    {
+      "number": "159",
+      "name": "Key-Encryption Key Setup DX",
+      "status": "pending"
+    },
+    {
+      "number": "160",
+      "name": "Admin Key Protection & Missing-KEK Copy",
+      "status": "pending"
+    },
+    {
+      "number": "161",
+      "name": "Docs & Verified 1.6.0 Release",
+      "status": "pending"
+    }
+  ],
   "next": {
-    "command": "/gsd-discuss-phase",
-    "label": "Discuss the first phase",
-    "reason": "Project initialized — plan your first phase"
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 1 of 4 · 0% · executing"
   },
-  "updated_at": "2026-10-18T23:38:39.705Z"
+  "updated_at": "2026-10-19T01:38:28.670Z"
 }
