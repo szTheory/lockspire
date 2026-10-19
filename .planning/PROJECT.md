@@ -310,7 +310,6 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 ### Active
 
 v1.44 Adopter Polish & Verified 1.6.0 (requirements in [REQUIREMENTS.md](REQUIREMENTS.md)):
-- DB-touching Mix tasks start the host repo and work in a real host.
 - `mix lockspire.gen.kek` generator (KEK-03) and `{:system, "ENV"}` KEK resolution (KEK-05).
 - Read-only "Key protection" line on admin Keys pages (KEY-UI-01) and an admin error that names a missing KEK.
 - Verified publication of lockspire 1.6.0.
@@ -319,6 +318,7 @@ Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-
 
 ### Validated
 
+- ✓ `mix lockspire.client.create`, `doctor token_format` and `doctor remote-jwks` start and stop the host repo themselves through `RepoRunner` (an already-running pool is left untouched), report real failure reasons as fixed secret-free phrases via `Lockspire.Install.TaskError`, print a client secret once only after a committed write, and are proven by cold tests plus the clean-room journey (TASK-01..03) — v1.44, Phase 158; verifier passed 4/4, security 15/15, code review 7/7 fixed. `keys.reencrypt` still on raw `with_repo` (follow-up todo).
 - ✓ Demo and clean-room hosts on Bandit 1.13.1; strictly validated `:key_encryption` KEK list in runtime config with no `secret_key_base` fallback; every new private signing key sealed as an AES-256-GCM `LSK\x01` envelope bound to its kid; missing KEK keeps boot and existing signing working while generation refuses (DEP-01, KEK-01, KEK-02, ENC-01..03) — v1.43, Phase 155; verifier 5/5.
 - ✓ Locked, CAS-guarded `mix lockspire.keys.reencrypt` legacy migration and KEK rotation with dry-run, `--check` readiness and durable audit; opt-in `legacy_plaintext: :reject` refuses plaintext before any parser runs (MIG-01..03, OPS-01, OPS-02) — v1.43, Phase 156; verifier 5/5, security 19/19.
 - ✓ No key material in admin, telemetry, log, error or operator output; fail-closed install KEK block; upgrade-journey and CI `--check` proof; HexDocs upgrade guide; SAFE-01 gate green against v1.42 (RED-01, HOST-01, PROOF-01, DOC-01, SAFE-01) — v1.43, Phase 157; verifier passed.
@@ -501,6 +501,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Keep the v1.43 upgrade non-breaking: a missing KEK warns loudly and refuses key generation instead of failing boot | Existing 1.x installs must keep signing across the upgrade; doctor, Verify and boot warnings make the gap visible | ✓ Good — user decision 2026-10-15 (KEK-02) |
 | Encrypt in place with a self-describing envelope header and no schema migration or decrypted-key cache | Avoids host migration cost and keeps plaintext out of memory caches; the `private_jwk_encrypted` name becomes true | ✓ Good — SAFE-01 gate green |
 | Enforce `legacy_plaintext: :reject` and KEK rotation with each node's boot-cached key set, with ordering documented rather than coordinated | Avoids a cross-node coordination mechanism; `--check` and the upgrade guide gate the switch | ⚠️ Revisit — accepted risk AR-156-01 if operators report rolling-restart issues |
+| Route bare-mix DB tasks through `TaskError.run/2` wrapping `RepoRunner.run/2`, with fixed classifier phrases instead of exception text | Real failure reasons without leaking SQL, host, values or secrets; reuses the pool when the host already runs it | ✓ Good — Phase 158; review fixes narrowed the migrate hint to undefined table/column and raised the log guard to `:warning` |
 
 ## Evolution
 
@@ -521,4 +522,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-18 after starting v1.44 milestone*
+*Last updated: 2026-10-19 after Phase 158*
