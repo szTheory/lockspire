@@ -5,8 +5,8 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-05 complete; proceeding to 161-06 safety rebinding and release PR verification"
-last_updated: "2026-10-20T18:31:14+00:00"
+stopped_at: "161-06 Task 3: awaiting release PR 121 squash merge approval"
+last_updated: "2026-10-20T18:34:35+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-05 complete; PR 132 squash-merged at db33c470
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
 Plan: 6 of 9
-Status: Executing safety rebinding and release PR verification
-Last activity: 2026-10-20 — PR #132 squash-merged at db33c470; proceeding to plan 06
+Status: Awaiting release PR #121 squash merge approval
+Last activity: 2026-10-20 — SAFE-02 rebound to db33c470; local planning work preserved; PR #121 at 14bb0835 passes exact-head hygiene and 13 contract tests
 
 Progress: [████████░░] 76%
 
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T18:31:14+00:00
-Stopped at: Plan 161-05 complete; PR #132 squash db33c470 verified. Proceeding to plan 161-06 Tasks 1–2 (safety rebind, safe local reset and #121 exact-head verification), then separate #121 merge checkpoint.
+Last session: 2026-10-20T18:34:35+00:00
+Stopped at: Plan 161-06 Task 3 — awaiting approval to squash-merge release PR #121 at 14bb083562a195e99feed679a08f74f0e9fc3e75. Exact-head hygiene 18 PASS / 0 BLOCK and 13 contract tests pass (evidence c2acbb4a). PR #132 merged as db33c470; backup and local planning replay complete.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
