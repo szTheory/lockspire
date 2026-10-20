@@ -11,7 +11,8 @@ defmodule Lockspire.KekGuidanceContractTest do
     "lib/mix/tasks/lockspire.doctor.key_encryption.ex",
     "lib/lockspire/generators/kek_snippet.ex",
     "docs/upgrading/signing-key-encryption.md",
-    "docs/install-and-onboard.md"
+    "docs/install-and-onboard.md",
+    "docs/operator-admin.md"
   ]
 
   defp scanned_files do
@@ -57,5 +58,31 @@ defmodule Lockspire.KekGuidanceContractTest do
     for rel <- @guidance_files do
       assert read(rel) =~ "mix lockspire.gen.kek", "#{rel} must name mix lockspire.gen.kek"
     end
+  end
+
+  test "the operator guide documents the read-only Key protection line" do
+    guide = read("docs/operator-admin.md")
+
+    labels =
+      ~r/value: "([^"]+)"/
+      |> Regex.scan(read("lib/lockspire/web/live/admin/keys_live/protection.ex"),
+        capture: :all_but_first
+      )
+      |> List.flatten()
+      |> Enum.uniq()
+
+    assert length(labels) == 7,
+           "expected 7 distinct state labels in protection.ex, got #{inspect(labels)}"
+
+    for label <- labels do
+      assert guide =~ "| #{label} |",
+             "docs/operator-admin.md must list the Key protection state #{inspect(label)} in its table"
+    end
+
+    assert guide =~ "### Key protection"
+    assert guide =~ "read-only"
+    assert guide =~ ~r/Unknown.*not a healthy result/s
+    assert guide =~ "mix lockspire.gen.kek"
+    assert guide =~ "upgrading/signing-key-encryption.md"
   end
 end
