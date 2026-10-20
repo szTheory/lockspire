@@ -5,7 +5,7 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-06 Task 3: awaiting release PR 121 squash merge approval"
+stopped_at: "161-06 Task 4: merge approved; required exact-head CI 39476538922 running"
 last_updated: "2026-10-20T18:34:35+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-05 complete; PR 132 squash-merged at db33c470
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
 Plan: 6 of 9
-Status: Awaiting release PR #121 squash merge approval
+Status: Approved merge awaiting required head CI run 39476538922
 Last activity: 2026-10-20 — SAFE-02 rebound to db33c470; local planning work preserved; PR #121 at 14bb0835 passes exact-head hygiene and 13 contract tests
 
 Progress: [████████░░] 76%
