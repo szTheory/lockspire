@@ -15,7 +15,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.44 is complete and archived. Lockspire 1.6.0 is publicly verified; see [the audit](milestones/v1.44-MILESTONE-AUDIT.md) for all 13 requirements and retained debt. Next: the bounded keys.reencrypt RepoRunner/TaskError follow-up, then a separately scoped DCR lifetime milestone. No new protocol scope is active.
+v1.44 is complete and archived. Lockspire 1.6.0 is publicly verified; see [the audit](milestones/v1.44-MILESTONE-AUDIT.md) for all 13 requirements and retained debt. The bounded keys.reencrypt RepoRunner/TaskError follow-up is shipped in verified1.6.1. DCR lifetimes remain a [separately scoped candidate](research/dcr-lifetimes/SCOPE.md); no new protocol scope is active.
 
 ## Phases
 

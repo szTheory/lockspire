@@ -131,7 +131,9 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is next; DCR lifetimes require their own protocol milestone.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). No new protocol milestone is active.
+
+v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes remain a scoped candidate for their own protocol milestone.
 
 v1.43 Signing Key Encryption at Rest is complete and archived (2026-10-16). Phases 155–157 delivered all 16 requirements in 14 plans and closed CR-01: private signing keys are encrypted at rest under a rotatable host KEK, existing installs have a checked migration path, and redaction is proven across every surface. This work is now publicly shipped in 1.6.0 together with v1.44 adopter polish.
 
@@ -143,7 +145,7 @@ The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 2
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.6.0 is the latest public package, verified through protected run 39481079989 and independently from public sources; checksum `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The CR-01 private-key-at-rest finding, left open by the UI milestones (v1.40, v1.42), was resolved in v1.43.
+Lockspire 1.6.1 is the latest public package, verified through protected run 39496849388 and independently from public sources; checksum `629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d`. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The CR-01 private-key-at-rest finding, left open by the UI milestones (v1.40, v1.42), was resolved in v1.43.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
@@ -323,7 +325,7 @@ Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-
 - ✓ Read-only Key protection states and specific missing-KEK generation guidance, with vocabulary contracts (KEY-UI-01..03) — v1.44, Phase 160; existing verified report plus current118-test cross-phase regression gate.
 - ✓ Task-focused install/upgrade/operator guides and executable label/pointer contracts (DOC-02), with warning-free CI docs builds — Phase 161.
 - ✓ Release Please1.6.0 coverage for v1.40–v1.44, protected exact-source publication, mandatory receipt/manifest evidence, independent public/fresh-install proof and release ledger on main (REL-01, REL-02, SAFE-02) — Phase 161; source428a9c53, protected run 39481079989.
-- ✓ `mix lockspire.client.create`, `doctor token_format` and `doctor remote-jwks` start and stop the host repo themselves through `RepoRunner` (an already-running pool is left untouched), report real failure reasons as fixed secret-free phrases via `Lockspire.Install.TaskError`, print a client secret once only after a committed write, and are proven by cold tests plus the clean-room journey (TASK-01..03) — v1.44, Phase 158; verifier passed 4/4, security 15/15, code review 7/7 fixed. `keys.reencrypt` still on raw `with_repo` (follow-up todo).
+- ✓ `mix lockspire.client.create`, `doctor token_format` and `doctor remote-jwks` start and stop the host repo themselves through `RepoRunner` (an already-running pool is left untouched), report real failure reasons as fixed secret-free phrases via `Lockspire.Install.TaskError`, print a client secret once only after a committed write, and are proven by cold tests plus the clean-room journey (TASK-01..03) — v1.44, Phase 158; verifier passed 4/4, security 15/15, code review 7/7 fixed. The `keys.reencrypt` follow-up was subsequently completed in PR135 and publicly shipped in verified1.6.1.
 - ✓ Demo and clean-room hosts on Bandit 1.13.1; strictly validated `:key_encryption` KEK list in runtime config with no `secret_key_base` fallback; every new private signing key sealed as an AES-256-GCM `LSK\x01` envelope bound to its kid; missing KEK keeps boot and existing signing working while generation refuses (DEP-01, KEK-01, KEK-02, ENC-01..03) — v1.43, Phase 155; verifier 5/5.
 - ✓ Locked, CAS-guarded `mix lockspire.keys.reencrypt` legacy migration and KEK rotation with dry-run, `--check` readiness and durable audit; opt-in `legacy_plaintext: :reject` refuses plaintext before any parser runs (MIG-01..03, OPS-01, OPS-02) — v1.43, Phase 156; verifier 5/5, security 19/19.
 - ✓ No key material in admin, telemetry, log, error or operator output; fail-closed install KEK block; upgrade-journey and CI `--check` proof; HexDocs upgrade guide; SAFE-01 gate green against v1.42 (RED-01, HOST-01, PROOF-01, DOC-01, SAFE-01) — v1.43, Phase 157; verifier passed.
@@ -532,4 +534,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-20 after v1.44 milestone closeout*
+*Last updated: 2026-10-20 after verified1.6.1 patch publication*
