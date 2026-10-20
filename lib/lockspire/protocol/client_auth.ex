@@ -45,7 +45,9 @@ defmodule Lockspire.Protocol.ClientAuth do
          attempted_method =
            resolve_implicit_method(raw_method, client.token_endpoint_auth_method, opts),
          :ok <- validate_registered_auth_method(client, attempted_method),
-         :ok <- validate_client_secret(client, attempted_method, client_secret, opts) do
+         :ok <- validate_client_secret(client, attempted_method, client_secret, opts),
+         :ok <- validate_client_lifetime_contract(client, opts),
+         :ok <- ensure_app_eligible(client, opts) do
       {:ok, client}
     end
   end
@@ -87,13 +89,15 @@ defmodule Lockspire.Protocol.ClientAuth do
   end
 
   defp evaluate_client_credentials(%{has_header?: true, body_client_secret: s})
-       when not is_nil(s), do: mixed_auth_error()
+       when not is_nil(s),
+       do: mixed_auth_error()
 
   defp evaluate_client_credentials(%{has_header?: true, client_assertion: a}) when not is_nil(a),
     do: mixed_auth_error()
 
   defp evaluate_client_credentials(%{body_client_secret: s, client_assertion: a})
-       when not is_nil(s) and not is_nil(a), do: mixed_auth_error()
+       when not is_nil(s) and not is_nil(a),
+       do: mixed_auth_error()
 
   defp evaluate_client_credentials(%{has_header?: true, authorization: auth}),
     do: parse_basic_authorization(auth)
@@ -199,6 +203,87 @@ defmodule Lockspire.Protocol.ClientAuth do
        "Unsupported token endpoint authentication method",
        :unsupported_token_endpoint_auth_method
      )}
+  end
+
+  defp validate_client_lifetime_contract(%Client{} = client, opts) do
+    case Keyword.get(opts, :client_lifetime) do
+      %Lockspire.Storage.ClientLifetime{client_store: client_store} ->
+        if client_store == Keyword.get(opts, :client_store) do
+          case Lockspire.Storage.ClientLifetime.validate_client(client) do
+            {:ok, _client} ->
+              :ok
+
+            {:error, _reason} ->
+              {:error,
+               oauth_error(
+                 500,
+                 "server_error",
+                 "Unable to validate client lifetime state",
+                 :client_lifetime_state_invalid
+               )}
+          end
+        else
+          {:error,
+           oauth_error(
+             500,
+             "server_error",
+             "Client lifetime configuration is unavailable",
+             :client_lifetime_unavailable
+           )}
+        end
+
+      nil ->
+        :ok
+
+      _other ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Client lifetime configuration is unavailable",
+           :client_lifetime_unavailable
+         )}
+    end
+  end
+
+  defp ensure_app_eligible(%Client{} = client, opts) do
+    case Client.app_eligibility(client, request_now(opts), :client_authentication) do
+      :ok ->
+        :ok
+
+      {:error, :disabled} ->
+        {:error, invalid_client("Client application is disabled", :client_app_disabled)}
+
+      {:error, :expired} ->
+        {:error, invalid_client("Client application has expired", :client_app_expired)}
+
+      {:error, :invalid_lifetime_state} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to validate client lifetime state",
+           :client_lifetime_state_invalid
+         )}
+    end
+  rescue
+    _error ->
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Unable to determine client application eligibility",
+         :client_lifetime_clock_failed
+       )}
+  end
+
+  defp request_now(opts) do
+    case Keyword.get(opts, :now) do
+      %DateTime{} = now -> now
+      now_fun when is_function(now_fun, 0) -> now_fun.()
+      nil -> DateTime.utc_now()
+      _other -> nil
+    end
   end
 
   defp validate_client_secret(

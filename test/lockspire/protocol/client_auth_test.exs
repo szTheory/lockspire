@@ -672,6 +672,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "test_client",
+         lifetime_version: 0,
          token_endpoint_auth_method: :private_key_jwt,
          jwks: Process.get(:inline_pub_jwk_map)
        }}
@@ -685,6 +686,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "secret_client",
+         lifetime_version: 0,
          client_type: :confidential,
          token_endpoint_auth_method: :client_secret_jwt,
          client_secret_jwt_verifier_encrypted:
@@ -698,6 +700,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "basic_client",
+         lifetime_version: 0,
          client_type: :confidential,
          token_endpoint_auth_method: :client_secret_basic,
          client_secret_hash: Lockspire.Security.Policy.hash_client_secret("basic-client-secret")
@@ -712,6 +715,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "remote_client",
+         lifetime_version: 0,
          token_endpoint_auth_method: :private_key_jwt,
          jwks_uri: "https://keys.example.test/client.jwks.json"
        }}
@@ -774,6 +778,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "mtls_client",
+         lifetime_version: 0,
          token_endpoint_auth_method: :tls_client_auth,
          tls_client_auth_subject_dn: "C=US,O=Test Org,CN=example.com"
        }}
@@ -783,6 +788,7 @@ defmodule Lockspire.Protocol.ClientAuthTest do
       {:ok,
        %Client{
          client_id: "self_signed_client",
+         lifetime_version: 0,
          token_endpoint_auth_method: :self_signed_tls_client_auth,
          jwks: Process.get(:self_signed_jwks)
        }}

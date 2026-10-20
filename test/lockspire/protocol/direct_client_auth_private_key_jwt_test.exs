@@ -19,6 +19,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
 
     Process.put(:direct_client_auth_client, %Client{
       client_id: "direct-client",
+      lifetime_version: 0,
       client_type: :confidential,
       token_endpoint_auth_method: :private_key_jwt,
       jwks: keys.pub_jwk_map,
