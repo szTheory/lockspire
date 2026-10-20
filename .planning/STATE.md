@@ -5,8 +5,8 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-06 complete; preparing exact-SHA publication authorization"
-last_updated: "2026-10-20T19:04:04+00:00"
+stopped_at: "161-07 Task 2: awaiting exact-SHA publication authorization"
+last_updated: "2026-10-20T19:05:19+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
 Plan: 7 of 9
-Status: Preparing publication authorization
+Status: Awaiting exact-SHA publication authorization
 Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
 
 Progress: [████████░░] 82%
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T18:34:35+00:00
-Stopped at: Plan 161-06 Task 3 — awaiting approval to squash-merge release PR #121 at 14bb083562a195e99feed679a08f74f0e9fc3e75. Exact-head hygiene 18 PASS / 0 BLOCK and 13 contract tests pass (evidence c2acbb4a). PR #132 merged as db33c470; backup and local planning replay complete.
+Last session: 2026-10-20T19:05:19+00:00
+Stopped at: Plan 161-07 Task 2 — awaiting authorization to set one-use SHA variable and dispatch protected publication for S 428a9c53e02bc573376d0fcac313f047fbbea81c with successful push CI 39478977350. No variable set or dispatch yet; version/tag absent and protected environment verified.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
