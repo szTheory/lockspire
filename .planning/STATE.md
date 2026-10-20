@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: Completed 161-03-PLAN.md
-last_updated: "2026-10-20T17:21:12.563Z"
+stopped_at: "161-05 Task 1: awaiting PR #122 changelog override approval"
+last_updated: "2026-10-20T18:12:44+00:00"
 last_activity: 2026-10-20
-last_activity_desc: Phase 161 execution started
+last_activity_desc: Plan 161-04 complete; PR 132 green at c12b2c65
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 11
-  percent: 65
+  completed_plans: 12
+  percent: 71
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 4 of 9
-Status: Ready to execute
-Last activity: 2026-10-20 — Phase 161 execution started
+Plan: 5 of 9
+Status: Awaiting PR #122 changelog override approval
+Last activity: 2026-10-20 — Plan 161-04 complete; PR #132 passes all eight checks at c12b2c65
 
-Progress: [███████░░░] 65%
+Progress: [███████░░░] 71%
 
 ## Accumulated Context
 
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T17:50:05+00:00
-Stopped at: 161-04 Task 3 — PR #132 open at d1c9c057; Dialyzer failed in client.create; awaiting scoped lib/ fix approval. Other CI jobs still running.
+Last session: 2026-10-20T18:12:44+00:00
+Stopped at: Plan 161-04 complete (summary 4969b5e9). PR #132 is green at c12b2c65; awaiting plan 161-05 Task 1 approval to append the prepared changelog override to merged PR #122.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics

@@ -106,14 +106,14 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 161-01-PLAN.md — operator guide Key protection subsection + contract test, install/upgrade drift audit, docs.verify (DOC-02)
-- [ ] 161-02-PLAN.md — release-train gate repair (metadata >= public), file-derived test helpers, simulated post-#121 proof (REL-01, D-16)
+- [x] 161-01-PLAN.md — operator guide Key protection subsection + contract test, install/upgrade drift audit, docs.verify (DOC-02)
+- [x] 161-02-PLAN.md — release-train gate repair (metadata >= public), file-derived test helpers, simulated post-#121 proof (REL-01, D-16)
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 161-03-PLAN.md — SAFE-02 evidence, full pre-push gate, v1.44 PR text and #122 override with offline parse proof
+- [x] 161-03-PLAN.md — SAFE-02 evidence, full pre-push gate, v1.44 PR text and #122 override with offline parse proof
 
 **Wave 3**
-- [ ] 161-04-PLAN.md — maintainer-gated push of milestone/v1.44 branch, open PR, all required checks green
+- [x] 161-04-PLAN.md — maintainer-gated push of milestone/v1.44 branch, open PR, all required checks green
 
 **Wave 4**
 - [ ] 161-05-PLAN.md — maintainer-gated #122 override edit, v1.44 squash merge as its own step (S1 recorded)
@@ -137,7 +137,7 @@ Plans:
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 3/3 | Complete    | 2026-10-19 |
 | 160. Admin Key Protection & Missing-KEK Copy | 2/2 | Complete    | 2026-10-19 |
-| 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
+| 161. Docs & Verified 1.6.0 Release | 4/9 | In progress | - |
 
 ## Phases
 
