@@ -12,9 +12,9 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 
 ### Semantics and compatibility design
 
-- [ ] **DCR-02**: A host maintainer can consult one selected decision matrix for unset, zero and positive values for all three lifetimes, clock precision, exact expiry boundaries, policy-change timing and rotation renewal rules.
-- [ ] **DCR-03**: A host maintainer can identify the selected effect of app expiry on every applicable authorization, token, refresh, management and issued-token path, including protocol error mappings and offline verification limits.
-- [ ] **DCR-04**: An upgrading host has a selected compatibility contract covering ambiguous legacy secret dates, custom storage, migration and activation ordering, mixed-version nodes and rollback limits before implementation planning begins.
+- [x] **DCR-02**: A host maintainer can consult one selected decision matrix for unset, zero and positive values for all three lifetimes, clock precision, exact expiry boundaries, policy-change timing and rotation renewal rules.
+- [x] **DCR-03**: A host maintainer can identify the selected effect of app expiry on every applicable authorization, token, refresh, management and issued-token path, including protocol error mappings and offline verification limits.
+- [x] **DCR-04**: An upgrading host has a selected compatibility contract covering ambiguous legacy secret dates, custom storage, migration and activation ordering, mixed-version nodes and rollback limits before implementation planning begins.
 
 ### App lifetime and host storage
 
@@ -73,9 +73,9 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DCR-02 | Phase 162 | Pending |
-| DCR-03 | Phase 162 | Pending |
-| DCR-04 | Phase 162 | Pending |
+| DCR-02 | Phase 162 | Complete |
+| DCR-03 | Phase 162 | Complete |
+| DCR-04 | Phase 162 | Complete |
 | DCR-05 | Phase 163 | Pending |
 | DCR-06 | Phase 163 | Pending |
 | DCR-13 | Phase 163 | Pending |

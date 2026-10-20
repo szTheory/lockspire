@@ -25,7 +25,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 
 ### v1.45 DCR Lifetime Enforcement — Approved
 
-- [ ] Phase 162: Lifetime Semantics & Upgrade Contract
+- [x] Phase 162: Lifetime Semantics & Upgrade Contract (completed 2026-10-20)
 - [ ] Phase 163: App Lifetime & Compatible Host Storage
 - [ ] Phase 164: Client-Secret Expiry & Atomic Rotation
 - [ ] Phase 165: Management-Token Lifecycle & Recovery
@@ -36,7 +36,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 **Goal:** Host maintainers have one selected, standards-grounded expiry and upgrade contract before implementation planning.
 **Depends on:** Approved v1.45 scope and focused research; no implementation dependency
 **Requirements:** DCR-02, DCR-03, DCR-04
-**Plans:** 1 (162-01 execution complete; independent verification pending)
+**Plans:** 1/1 complete; independently verified 2026-10-20 (design contract only)
 
 **Success criteria:**
 
@@ -104,14 +104,13 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 
 | Phase | Plans complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 162. Lifetime Semantics & Upgrade Contract | 1/1 | Ready for verification | — |
+| 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
 | 164. Client-Secret Expiry & Atomic Rotation | 0/TBD | Not started | — |
 | 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
 **Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. No requirement is complete.
-
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>

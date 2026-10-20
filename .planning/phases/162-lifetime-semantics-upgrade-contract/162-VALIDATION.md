@@ -42,11 +42,11 @@ Independent adversarial semantic review cross-checks selected decisions against 
 - [x] Every task has an automated command and observable failure direction.
 - [x] All 27 selected decisions and 3 requirements mapped to substantive sections and fixtures/reasoning.
 - [x] Validator exercised positive and meaningful negative cases.
-- [ ] Independent semantic review passed.
+- [x] Independent semantic review passed.
 - [x] Runtime/migration/race/security/CI claims remain assigned to 163–166.
 
-Automated design-contract validation passed for policy, consumers and complete stages. Independent adversarial semantic review remains pending as the separate Phase 162 verifier gate. No runtime conformance is claimed.
+Automated design-contract validation passed for policy, consumers and complete stages. Independent adversarial semantic review checked all D-01–D-27 mappings and the expired/disabled/unknown, introspection caller/target, management GET/DELETE/PUT, lost-response recovery, independent rotations, RAT-only legacy promotion, post-lock time, stale-hash, offline/cache and mixed-version rollback distinctions. It found and reported a contradictory enabled-state assumption in C-APP-16; the fixture and validator were corrected, and the focused negative mutation now rejects restoring that contradiction. Re-verification passed. No runtime conformance is claimed.
 
 ## Validation Audit
 
-2026-10-20: all3task commands verified green, all3design requirements automated,23meaningfulnegative mutations rejected. No missing automated coverage. Independent semantic review remains separate. Runtime proof is outside this validation scope.
+2026-10-20: all3task commands verified green, all3design requirements automated,24meaningfulnegative mutations rejected by the complete stage. Independent semantic review passed after the C-APP-16 correction. No missing automated design coverage. Runtime proof is outside this validation scope.
