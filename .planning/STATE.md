@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-06 Task 4: merge approved; required exact-head CI 39476538922 running"
-last_updated: "2026-10-20T18:34:35+00:00"
+stopped_at: "161-06 complete; preparing exact-SHA publication authorization"
+last_updated: "2026-10-20T19:04:04+00:00"
 last_activity: 2026-10-20
-last_activity_desc: Plan 161-05 complete; PR 132 squash-merged at db33c470
+last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 13
-  percent: 76
+  completed_plans: 14
+  percent: 82
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 6 of 9
-Status: Approved merge awaiting required head CI run 39476538922
-Last activity: 2026-10-20 — SAFE-02 rebound to db33c470; local planning work preserved; PR #121 at 14bb0835 passes exact-head hygiene and 13 contract tests
+Plan: 7 of 9
+Status: Preparing publication authorization
+Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
 
-Progress: [████████░░] 76%
+Progress: [████████░░] 82%
 
 ## Accumulated Context
 
