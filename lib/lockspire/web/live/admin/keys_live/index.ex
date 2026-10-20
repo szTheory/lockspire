@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   alias Lockspire.Admin
   alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
+  alias Lockspire.Web.Live.Admin.KeysLive.Protection
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
@@ -16,6 +17,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
        current_section: :keys,
        keys: [],
        inventory_state: :loading,
+       key_protection: nil,
        total_keys: nil,
        lifecycle_metrics: nil,
        generation_error: nil,
@@ -52,6 +54,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero body="Manage keys used to sign tokens or decrypt encrypted authorization requests." />
+      <section :if={@key_protection} class="lockspire-admin-key-protection" aria-label="Key protection">
+        <AdminComponents.decision_summary>
+          <:item label="Key protection" value={@key_protection.value} tone={@key_protection.tone} detail={@key_protection.detail}>
+            <p :if={@key_protection.command}><code>{@key_protection.command}</code></p>
+          </:item>
+        </AdminComponents.decision_summary>
+      </section>
       <section class="lockspire-admin-key-inventory" aria-label="Key inventory">
         <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
           <AdminComponents.summary_stat value={@lifecycle_metrics.active} label="Active" />
@@ -175,6 +184,22 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
       generated_key_path: nil
     )
     |> assign_inventory_result(load_keys())
+    |> assign(key_protection: load_key_protection())
+  end
+
+  # Only the status read is guarded: any raise or exit there reads as could-not-check, the safe
+  # direction. Nothing is logged because the message could carry config text. Summarizing runs
+  # unguarded so a defect in it is not silently hidden.
+  defp load_key_protection do
+    Protection.summarize(read_encryption_status())
+  end
+
+  defp read_encryption_status do
+    Admin.encryption_status()
+  rescue
+    _exception -> :error
+  catch
+    :exit, _reason -> :error
   end
 
   defp assign_inventory_result(socket, {:ok, keys}) do
@@ -198,8 +223,10 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   defp generate_key(socket, use, use_atom) do
     key_label = if use == "sig", do: "Signing", else: "Encryption"
 
-    case Admin.generate_key(use_atom) do
+    case safe_generate_key(use_atom) do
       {:ok, %{key: %{id: generated_id}}} ->
+        socket = assign(socket, key_protection: load_key_protection())
+
         case load_keys() do
           {:ok, keys} ->
             socket = assign_inventory_result(socket, {:ok, keys})
@@ -233,6 +260,22 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
              )}
         end
 
+      {:error, :key_encryption_not_configured} ->
+        {:noreply,
+         assign(socket,
+           generation_error: missing_key_encryption_error(key_label),
+           generation_notice: nil,
+           generated_key_path: nil
+         )}
+
+      {:error, :invalid_key_encryption_config} ->
+        {:noreply,
+         assign(socket,
+           generation_error: invalid_key_encryption_error(),
+           generation_notice: nil,
+           generated_key_path: nil
+         )}
+
       {:error, _reason} ->
         {:noreply,
          assign(socket,
@@ -241,6 +284,31 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
            generated_key_path: nil
          )}
     end
+  end
+
+  # Invalid key-encryption key config raises ArgumentError when the key set is resolved. The
+  # message can carry config text, so it is never echoed, logged or flashed.
+  defp safe_generate_key(use_atom) do
+    Admin.generate_key(use_atom)
+  rescue
+    ArgumentError -> {:error, :invalid_key_encryption_config}
+  end
+
+  defp invalid_key_encryption_error do
+    "The key-encryption key setup is not valid, so Lockspire cannot create a key. " <>
+      "Run mix lockspire.doctor.key_encryption for details."
+  end
+
+  defp missing_key_encryption_error("Signing") do
+    "No key-encryption key is set up, so Lockspire cannot create a signing key. " <>
+      "Lockspire will not store private keys unencrypted. " <>
+      "Create one with mix lockspire.gen.kek, add it to your app's configuration, and restart the app."
+  end
+
+  defp missing_key_encryption_error("Encryption") do
+    "No key-encryption key is set up, so Lockspire cannot create an encryption key. " <>
+      "Lockspire will not store private keys unencrypted. " <>
+      "Create one with mix lockspire.gen.kek, add it to your app's configuration, and restart the app."
   end
 
   defp key_show_path(id), do: Lockspire.mount_path() <> "/admin/keys/" <> Integer.to_string(id)

@@ -204,9 +204,12 @@ defmodule Lockspire.Admin do
 
   @doc """
   Generates a new signing key.
+
+  Returns `{:error, :key_encryption_not_configured}` when no key-encryption key is configured.
   """
   @spec generate_key(Lockspire.Domain.SigningKey.use_type()) ::
-          {:ok, Lockspire.Admin.Keys.key_view()} | {:error, term()}
+          {:ok, Lockspire.Admin.Keys.key_view()}
+          | {:error, :key_encryption_not_configured | term()}
   defdelegate generate_key(use \\ :sig), to: Keys
 
   @doc """

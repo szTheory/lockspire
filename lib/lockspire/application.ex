@@ -37,7 +37,7 @@ defmodule Lockspire.Application do
         Logger.warning(
           "Lockspire :key_encryption is not configured. Existing signing keys keep working, " <>
             "but new signing keys cannot be generated until config :lockspire, :key_encryption " <>
-            "is set in config/runtime.exs (create a key with `openssl rand -base64 32`)."
+            "is set in config/runtime.exs (create a key with `mix lockspire.gen.kek`)."
         )
     end
 

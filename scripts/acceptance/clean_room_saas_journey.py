@@ -30,7 +30,7 @@ CLEAN_ROOM_DIR = Path(__file__).resolve().parent / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
 from build_client import patch_jose_record_extractors
-from build_provider import prepare_provider, run_child_command
+from build_provider import prepare_provider, run_child_command, run_child_command_output
 from package_input import (
     PackageInputError,
     clean_room_database_url,
@@ -839,6 +839,41 @@ def browser_authorize_dpop(client: Browser, provider: Browser, authorization_loc
     return client.request("GET", callback), callback
 
 
+def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, str], redactor: Redactor) -> None:
+    """Run the DB-touching Lockspire tasks in bare mix processes and assert on their output."""
+    client_id = "clean-room-cli-" + uuid.uuid4().hex[:8]
+    created = run_child_command_output(
+        provider_child,
+        provider_environment,
+        "lockspire.client.create",
+        "--client-type", "confidential",
+        "--client-id", client_id,
+        "--name", "Clean Room CLI",
+        "--redirect-uri", "https://clean-room-cli.example/callback",
+        "--scope", "openid",
+        "--grant-type", "authorization_code",
+    )
+    secrets = re.findall(r"^client_secret=(\S+)$", created, re.MULTILINE)
+    if len(secrets) == 1:
+        register_secret(secrets[0])
+        assert_redaction_guard(redactor, secrets[0])
+    if len(secrets) != 1 or f"client_id={client_id}" not in created:
+        raise AssertionError("bare mix step failed: lockspire.client.create output")
+
+    token_format = run_child_command_output(provider_child, provider_environment, "lockspire.doctor", "token_format")
+    if f"{client_id}: " not in token_format or "Could not inspect token formats" in token_format:
+        tail = " | ".join(token_format.splitlines()[-8:])
+        raise AssertionError(f"bare mix step failed: lockspire.doctor token_format output {tail}")
+
+    remote_jwks = run_child_command_output(
+        provider_child, provider_environment, "lockspire.doctor", "remote-jwks", "--client", client_id
+    )
+    if "Status: not_applicable" not in remote_jwks:
+        tail = " | ".join(remote_jwks.splitlines()[-8:])
+        raise AssertionError(f"bare mix step failed: lockspire.doctor remote-jwks output {tail}")
+    print("bare mix tasks complete")
+
+
 def main(argv: list[str]) -> int:
     global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
@@ -922,6 +957,7 @@ def main(argv: list[str]) -> int:
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
             run_child_command(provider_child, provider_environment, "lockspire.keys.reencrypt", "--check")
             run_child_command(provider_child, provider_environment, "lockspire.doctor", "key_encryption")
+            assert_bare_mix_tasks(provider_child, provider_environment, redactor)
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
             client_child, client_environment = prepare_client(

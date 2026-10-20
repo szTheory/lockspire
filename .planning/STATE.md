@@ -1,40 +1,50 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.43
-milestone_name: Signing Key Encryption at Rest
-status: Awaiting next milestone
-stopped_at: Phase 157 complete — all phases complete
-last_updated: "2026-10-16T19:25:01.260Z"
-last_activity: 2026-10-16
-last_activity_desc: Milestone v1.43 completed and archived
-state_head: 2db11cd74a5cc9809aa5a66e572830facf55080a
+milestone: v1.44
+milestone_name: Adopter Polish & Verified 1.6.0
+current_phase: 161
+current_phase_name: Docs & Verified 1.6.0 Release
+status: executing
+stopped_at: Completed 161-03-PLAN.md
+last_updated: "2026-10-20T17:21:12.563Z"
+last_activity: 2026-10-20
+last_activity_desc: Phase 161 execution started
+state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 3
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
-current_phase: 157
+  total_plans: 17
+  completed_plans: 11
+  percent: 65
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-16 after v1.43)
+See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone (v1.43 complete)
+**Current focus:** Phase 161 — Docs & Verified 1.6.0 Release
 
 ## Current Position
 
-Phase: Milestone v1.43 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-16 — Milestone v1.43 completed and archived
+Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
+Plan: 4 of 9
+Status: Ready to execute
+Last activity: 2026-10-20 — Phase 161 execution started
+
+Progress: [███████░░░] 65%
 
 ## Accumulated Context
+
+### v1.44 Milestone Direction
+
+- The user accepted the recommendation for a short adopter-polish milestone before publishing 1.6.0: confirm and fix the DB-touching Mix tasks that do not start the repo, ship the cheap KEK DX wins (KEK-03 `mix lockspire.gen.kek`, KEK-05 `{:system, "ENV"}`, KEY-UI-01 "Key protection" line, an admin error naming a missing KEK), then merge Release Please PR #121 and verify the published 1.6.0 as v1.39 did for 1.5.1.
+- The user chose to run research before requirements.
+- No protocol change, no new dependency, security defaults unchanged. DCR lifetime enforcement (DCR-01) gets its own later protocol milestone; KEK-04, SEC-01 and a paged `--dry-run` stay deferred.
+- Phase numbering continues at 158. Per the standing rule, the older `.planning/phases` artifacts (142/143, 999.1) are not moved or archived, so `phases.clear` is skipped.
 
 ### v1.43 Milestone Direction
 
@@ -283,6 +293,17 @@ Last activity: 2026-10-16 — Milestone v1.43 completed and archived
 - [Phase 157]: 157-06: malformed-key worker proof swaps the active key via update_all and asserts the real {:discard, :invalid_signing_key}; no lib/ leak found
 - [Phase 157]: 157-04: signing-key encryption guide is version-agnostic; per-row re-encrypt telemetry documented as encrypted/rewrapped
 - [Phase 157]: 157-03: upgrade journey derives verify key from the seeded legacy private JWK; separate CI steps for --check and doctor
+- [Phase 158]: TaskError.run/2 classifies failures inside the RepoRunner fun; client.create starts :plug_crypto under app.config
+- [Phase 158]: Doctor tasks resolve the repo outside TaskError.run and print or raise only after it returns; D-19: no audit telemetry in bare tasks, created_by is the CLI audit trail
+- [Phase 158]: client.create :base persistence errors render a fixed phrase; RegistrationResult inspect hides client_secret; D-11 log suppression via TaskError.run process level
+- [Phase 159]: KekSnippet is the single builder for KEK value, default id and prod runtime.exs block; installer and gen.kek share it
+- [Phase 159]: Env values for {:system, var} key entries are never trimmed; trailing newline fails closed
+- [Phase 159]: missing_env is a Config-only 3-element reason; KeySet {atom, atom} contract unchanged
+- [Phase 159]: Plan 03: elixir -e fallback kept only in upgrade guide after gen.kek; config.ex names only gen.kek
+- [Phase 160]: Key protection presenter returns only state/tone/value/detail/command; check failures read Unknown, never healthy
+- [Phase 160]: Missing key-encryption key refusal is static vocabulary-map copy in the alert list; generate buttons stay enabled
+- [Phase 161]: D-16: ledger gate accepts metadata >= public; artifact/tag/SHA equality stays strict
+- [Phase 161]: 161-03: SAFE-02 PASS at 807802b6; v1.44 PR names repo-start change only for client.create, doctor token_format, doctor remote-jwks; #122 override proven offline
 
 ### Pending Todos
 
@@ -311,6 +332,7 @@ Last activity: 2026-10-16 — Milestone v1.43 completed and archived
 
 ### Roadmap Evolution
 
+- v1.44 roadmap created: Phases 158–161 map all 13 Adopter Polish & Verified 1.6.0 requirements exactly once (158: TASK; 159: KEK-03/05/06; 160: KEY-UI; 161: DOC-02/REL/SAFE-02). SAFE-02 constrains every phase; Phase 161 owns its final proof. Release runs last: PR #121 squash-merges only after all v1.44 work is on main with CI green. Research flags: 158 RepoRunner blanket rescue for writers; 161 `upload_hex_artifact.exs` vs current Hex client and PR #121 re-read. Older `.planning/phases` dirs (142/143/999.1) left untouched.
 - Phase 143 edited: Archived v1.39 after refreshing Phase 142 verification to passed 11/11; preserved Phase 143 gaps_found and its acknowledged PR #119 merge-provenance exception; compact roadmap keeps the backlog; next command is $gsd-new-milestone.
 - v1.40 roadmap approved: Phases 144–147 map all 24 UI requirements. The archived Phase 143 exception remains historical, and backlog Phase 999.1 remains unpromoted. The user invoked `$gsd-plan-phase 144` on 2026-10-09.
 - v1.43 roadmap created: Phases 155–157 map all 16 Signing Key Encryption at Rest requirements exactly once (155: DEP/KEK/ENC; 156: MIG/OPS; 157: RED/HOST/PROOF/DOC/SAFE). SAFE-01 constrains every phase; Phase 157 owns its final proof. Research flags: 155-01 Bandit changelog, 155-02 `:crypto` AEAD prototype, 156-01 lock/CAS semantics. Older `.planning/phases` dirs (142/143/999.1) left untouched.
@@ -343,9 +365,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-16T16:44:22.228Z
-Stopped at: Milestone v1.43 completed and archived
-Resume file: None
+Last session: 2026-10-20T17:50:05+00:00
+Stopped at: 161-04 Task 3 — PR #132 open at d1c9c057; Dialyzer failed in client.create; awaiting scoped lib/ fix approval. Other CI jobs still running.
+Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
 
@@ -464,7 +486,18 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 157 P06 | 12 min | 2 tasks | 2 files |
 | Phase 157 P04 | 25 min | 3 tasks | 9 files |
 | Phase 157 P03 | 25 min | 3 tasks | 4 files |
+| Phase 158 P01 | 25 min | 2 tasks | 6 files |
+| Phase 158 P02 | 15 min | 3 tasks | 6 files |
+| Phase 158 P03 | 25 min | 3 tasks | 8 files |
+| Phase 159 P01 | 12 min | 3 tasks | 8 files |
+| Phase 159 P02 | 12 min | 2 tasks | 3 files |
+| Phase 159 P03 | 10 min | 3 tasks | 11 files |
+| Phase 160 P01 | 20 min | 2 tasks | 5 files |
+| Phase 160 P02 | 25 min | 2 tasks | 3 files |
+| Phase 161 P01 | 10 min | 2 tasks | 4 files |
+| Phase 161 P02 | 25 min | 3 tasks | 3 files |
+| Phase 161 P03 | 25 min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- Plan the first v1.44 phase with /gsd-plan-phase 158

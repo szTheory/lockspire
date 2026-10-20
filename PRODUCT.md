@@ -104,7 +104,7 @@ Important distinctions:
 
 ### Vocabulary map
 
-Last reviewed: 2026-10-14. When an admin change introduces a domain concept, add it here in the same change. Labels and explanations use the "UI says" column; protocol terms may appear in info popovers or secondary lines for the personas who need them.
+Last reviewed: 2026-10-19. When an admin change introduces a domain concept, add it here in the same change. Labels and explanations use the "UI says" column; protocol terms may appear in info popovers or secondary lines for the personas who need them.
 
 | Internal or protocol term | UI says | Protocol term shown? |
 | --- | --- | --- |
@@ -137,6 +137,9 @@ Last reviewed: 2026-10-14. When an admin change introduces a domain concept, add
 | security profile `none` | Standard OAuth and OpenID Connect | No |
 | `fapi_2_0_security` / `fapi_2_0_message_signing` | FAPI 2.0 Security Profile / FAPI 2.0 Message Signing | Yes |
 | rotate (secret, key, token) | rotate | Yes, with a consequence line in plain words |
+| key-encryption key (`:key_encryption` config) | key-encryption key: the key that encrypts the private keys Lockspire stores | Command names only, for example `mix lockspire.gen.kek` |
+| signing-key encryption status (`Admin.encryption_status/0`) | Key protection | No |
+| key protection state (`:encrypted` / `:older_key` / `:unencrypted` / `:unreadable` / `:not_set_up` / `:invalid_config` / `:could_not_check`) | Encrypted / Encrypted, some with an older key-encryption key / Some keys are stored unencrypted / Some keys cannot be read / Not set up / Setup needs attention / Unknown | No |
 
 ### Retired wording
 

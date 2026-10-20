@@ -1,28 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.43 — Signing Key Encryption at Rest",
+  "milestone": "v1.44 — Adopter Polish & Verified 1.6.0",
   "phases": [
     {
-      "number": "155",
-      "name": "Crypto Core, Config Seam & Bandit Baseline",
+      "number": "158",
+      "name": "Mix Task Repo Start",
       "status": "complete"
     },
     {
-      "number": "156",
-      "name": "Legacy Migration, KEK Rotation & Plaintext Refusal",
-      "status": "complete"
+      "number": "159",
+      "name": "Key-Encryption Key Setup DX",
+      "status": "pending"
     },
     {
-      "number": "157",
-      "name": "Host Surfaces, Redaction Sweep & Release Proof",
-      "status": "complete"
+      "number": "160",
+      "name": "Admin Key Protection & Missing-KEK Copy",
+      "status": "pending"
+    },
+    {
+      "number": "161",
+      "name": "Docs & Verified 1.6.0 Release",
+      "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd-progress",
-    "label": "Show progress",
-    "reason": "Unsure of state — showing progress"
+    "command": "/gsd-progress --next",
+    "label": "Advance to the next step (plan phase 159)",
+    "reason": "Phase 2 of 4 — needs a plan"
   },
-  "updated_at": "2026-10-16T19:25:01.277Z"
+  "updated_at": "2026-10-19T04:00:45.126Z"
 }

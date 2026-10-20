@@ -17,6 +17,22 @@ The admin pages group common tasks by the same labels used in the interface:
 
 These routes live under the embedded Lockspire router. Your host app controls which staff members can access them.
 
+### Key protection
+
+The Keys page starts with a **Key protection** line. It tells you whether Lockspire is encrypting the private keys it stores. The line is read-only: it never changes anything, and the Keys page has no button for it. Lockspire encrypts those private keys with a key-encryption key that your app provides in its configuration.
+
+| The line says | What it means | What to do |
+| --- | --- | --- |
+| Encrypted | Every stored private key is encrypted with the current key-encryption key. | Nothing. |
+| Encrypted, some with an older key-encryption key | Lockspire can still read all keys. Some use an older key-encryption key. | Run `mix lockspire.keys.reencrypt` to move them to the current one. |
+| Some keys are stored unencrypted | Some private keys are stored without encryption, usually because an older Lockspire version created them. | Run `mix lockspire.keys.reencrypt`. |
+| Some keys cannot be read | Lockspire cannot open some stored keys with the key-encryption keys it has. | Do not delete them. Run `mix lockspire.doctor.key_encryption`. |
+| Not set up | No key-encryption key is set up, so Lockspire cannot create new keys. | Run `mix lockspire.gen.kek`, add the result to your app's configuration, and restart the app. See the [signing key encryption upgrade note](upgrading/signing-key-encryption.md). |
+| Setup needs attention | The key-encryption key setup is not valid. | Run `mix lockspire.doctor.key_encryption`. |
+| Unknown | Lockspire could not check right now. Unknown is not a healthy result. | Reload the page. If it stays Unknown, run `mix lockspire.doctor.key_encryption`. |
+
+If you try to create a key before a key-encryption key is set up, Lockspire refuses and the page tells you to run `mix lockspire.gen.kek`. It never stores a private key unencrypted.
+
 ## Mounting the admin surface
 
 Mount the admin pages behind your host application's staff sign-in and access checks. Lockspire does not sign in staff or decide who can access these pages.

@@ -86,7 +86,7 @@ config :lockspire, Lockspire.Web.Endpoint,
 config :lockspire, :key_encryption,
   keys: [
     {\"clean-room-1\",
-     System.get_env(\"LOCKSPIRE_KEY_ENCRYPTION_KEY\") || raise(\"LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: openssl rand -base64 32\")}
+     System.get_env(\"LOCKSPIRE_KEY_ENCRYPTION_KEY\") || raise(\"LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: mix lockspire.gen.kek\")}
   ],
   current: \"clean-room-1\",
   legacy_plaintext: :reject
@@ -254,7 +254,12 @@ def prepare_provider(
         }
     )
     if not install:
-        audit_boundary(child, package_root)
+        # No overlay is applied without the installer, so the overlay-based boundary audit does
+        # not apply; only the vendored package inventory is checked here.
+        vendor = child / "vendor" / "lockspire"
+        if inventory(vendor) != inventory(package_root):
+            raise PackageInputError("provider vendor inventory drifted after installation")
+        assert_below(vendor, child, "provider vendor dependency")
         return child
 
     patch_jose_record_extractors(child, environment)
@@ -276,7 +281,7 @@ def prepare_provider(
     return child
 
 
-def run_child_command(child: Path, environment: dict[str, str], *command: str) -> None:
+def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...]) -> bytes:
     completed = subprocess.run(
         ("mix", *command),
         cwd=child,
@@ -288,8 +293,20 @@ def run_child_command(child: Path, environment: dict[str, str], *command: str) -
     )
 
     if completed.returncode != 0:
-        details = completed.stdout.decode(errors="replace").splitlines()[-16:]
+        # lockspire.client.create prints client_secret=...; never let it reach an exception message
+        # or CI log if the task exits nonzero after printing. Scrub before slicing the tail.
+        lines = completed.stdout.decode(errors="replace").splitlines()
+        details = [re.sub(r"client_secret=\S*", "client_secret=[REDACTED]", line) for line in lines][-16:]
         raise PackageInputError(f"provider {' '.join(command)} failed: {' '.join(details)}")
+    return completed.stdout
+
+
+def run_child_command(child: Path, environment: dict[str, str], *command: str) -> None:
+    _run_mix(child, environment, command)
+
+
+def run_child_command_output(child: Path, environment: dict[str, str], *command: str) -> str:
+    return _run_mix(child, environment, command).decode(errors="replace")
 
 
 def allocate_port() -> int:
@@ -413,11 +430,77 @@ def check_bootstrap() -> None:
     print("separate secret handoffs verified")
     print("protected pipeline verified")
 
+_KEY_PATTERN = re.compile(r"[A-Za-z0-9+/]{43}=")
+
+
+def _scrub(text: str) -> str:
+    return _KEY_PATTERN.sub("[REDACTED]", text)
+
+
+def _gen_kek_failure(description: str, completed: "subprocess.CompletedProcess[str] | None" = None) -> PackageInputError:
+    if completed is None:
+        return PackageInputError(description)
+    tail = " ".join(_scrub(completed.stderr).splitlines()[-8:])
+    return PackageInputError(f"{description} (exit {completed.returncode}): {tail}")
+
+
+def check_gen_kek() -> None:
+    """Prove `mix lockspire.gen.kek` runs cold in a host whose runtime.exs raises without a key."""
+    with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-gen-kek-") as temporary:
+        child = prepare_provider(Path(temporary), clean_room_database_url("provider"), install=False)
+        environment = locked_environment(child, "provider_host", Path(temporary) / "deps-cache")
+        patch_jose_record_extractors(child, environment)
+        run_child_command(child, environment, "compile")
+
+        cold = dict(environment)
+        cold.pop("LOCKSPIRE_KEY_ENCRYPTION_KEY", None)
+
+        def mix(*command: str) -> "subprocess.CompletedProcess[str]":
+            return subprocess.run(
+                ("mix", *command),
+                cwd=child,
+                env=cold,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False,
+            )
+
+        raw = mix("lockspire.gen.kek", "--raw")
+        if raw.returncode != 0:
+            raise _gen_kek_failure("gen.kek --raw failed without the key variable", raw)
+        lines = raw.stdout.splitlines()
+        valid = False
+        if len(lines) == 1 and len(lines[0]) == 44:
+            try:
+                valid = len(base64.b64decode(lines[0], validate=True)) == 32
+            except ValueError:
+                valid = False
+        if not valid:
+            raise _gen_kek_failure("gen.kek --raw did not print one valid 44-character key", raw)
+
+        default = mix("lockspire.gen.kek")
+        if default.returncode != 0:
+            raise _gen_kek_failure("gen.kek failed without the key variable", default)
+        key_lines = [line for line in default.stdout.splitlines() if line.startswith("LOCKSPIRE_KEY_ENCRYPTION_KEY=")]
+        if len(key_lines) != 1 or "if config_env() == :prod" not in default.stdout:
+            raise _gen_kek_failure("gen.kek default output is missing the key line or the prod block", default)
+
+        config = mix("app.config")
+        combined = config.stdout + config.stderr
+        if config.returncode == 0 or "LOCKSPIRE_KEY_ENCRYPTION_KEY is missing" not in combined:
+            raise _gen_kek_failure("host runtime did not fail closed without the key", config)
+
+        print("gen.kek cold run verified")
+        print("host runtime fails closed without the key")
+
 
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--check-bootstrap", action="store_true")
+    parser.add_argument("--check-gen-kek", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.self_test:
@@ -426,7 +509,10 @@ def main(argv: list[str]) -> int:
         if args.check_bootstrap:
             check_bootstrap()
             return 0
-        raise PackageInputError("choose --self-test or --check-bootstrap")
+        if args.check_gen_kek:
+            check_gen_kek()
+            return 0
+        raise PackageInputError("choose --self-test, --check-bootstrap or --check-gen-kek")
     except PackageInputError as error:
         print(f"clean-room provider build failed: {error}", file=sys.stderr)
         return 1

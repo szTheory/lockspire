@@ -9,16 +9,18 @@ Follow this note in order. Each step says what to run and what you should see. D
 1. Generate a KEK. It must be exactly 32 random bytes, base64 encoded:
 
    ```bash
-   openssl rand -base64 32
+   mix lockspire.gen.kek
    ```
 
-   or, without OpenSSL:
+   This prints a fresh value once, together with the `config/runtime.exs` block that reads it. `--raw` prints only the value, for piping into a secret manager. On a release host without Mix, use this fallback instead:
 
    ```bash
    elixir -e 'IO.puts(Base.encode64(:crypto.strong_rand_bytes(32)))'
    ```
 
-   The output of `mix phx.gen.secret` is not 32 bytes and is rejected.
+   Store the value exactly as printed: a trailing newline makes it invalid, and Lockspire refuses to boot. The output of `mix phx.gen.secret` is not 32 bytes and is rejected.
+
+   Once a key-encryption key is configured, the Key protection line on the admin Keys page shows whether your stored signing keys are encrypted; see [Key protection](../operator-admin.md#key-protection).
 
 2. Store the KEK in your secret manager, separately from your database backups. A KEK kept next to the data it protects protects nothing.
 3. Take a fresh database backup.
@@ -33,11 +35,15 @@ Put this in `config/runtime.exs`. Use a short id that names the month you create
 ```elixir
 config :lockspire, :key_encryption,
   keys: [
-    {"2026-01", System.fetch_env!("LOCKSPIRE_KEY_ENCRYPTION_KEY")}
+    {"2026-01",
+     System.get_env("LOCKSPIRE_KEY_ENCRYPTION_KEY") ||
+       raise("LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: mix lockspire.gen.kek")}
   ],
   current: "2026-01",
   legacy_plaintext: :allow
 ```
+
+You can also write the entry as `{"2026-01", {:system, "LOCKSPIRE_KEY_ENCRYPTION_KEY"}}`. Lockspire reads the variable when the app boots and refuses to boot if it is unset or empty. The variable is read at boot, so changing it takes effect when the app restarts (each node reads it on its own start).
 
 Deploy every node, then run:
 
@@ -110,7 +116,7 @@ A `legacy_plaintext` change takes effect on each node's next boot.
 
 Rotate on your own schedule, or at once if a KEK may have leaked. The order matters: every node must know the new key before any node starts writing with it.
 
-1. Add the new key as a second entry and keep `current` on the old id. Read the new value from `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT` (that name is only a convention; any name works). Deploy every node.
+1. Add the new key as a second entry and keep `current` on the old id. Read the new value from `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT` (that name is only a convention; any name works). Generate the new value with `mix lockspire.gen.kek --raw`, which prints only the key. Store it as `LOCKSPIRE_KEY_ENCRYPTION_KEY_NEXT`; do not copy the full output of `mix lockspire.gen.kek`, because its block names `LOCKSPIRE_KEY_ENCRYPTION_KEY` and would overwrite your current key's variable. Deploy every node.
 
    ```elixir
    config :lockspire, :key_encryption,

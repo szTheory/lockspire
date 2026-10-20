@@ -80,11 +80,13 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
     end
   end
 
-  test "invalid key error names both generation commands and warns about phx.gen.secret" do
+  test "invalid key error points to gen.kek and warns about phx.gen.secret" do
     msg = message(keys: [{"a", Base.encode64(:crypto.strong_rand_bytes(31))}], current: "a")
-    assert msg =~ "openssl rand -base64 32"
-    assert msg =~ "Base.encode64(:crypto.strong_rand_bytes(32))"
+    assert msg =~ "mix lockspire.gen.kek"
     assert msg =~ "phx.gen.secret"
+    refute msg =~ "openssl"
+    refute msg =~ "elixir -e"
+    refute msg =~ "Base.encode64("
   end
 
   test "invalid: key lengths, weak and duplicate material, duplicate ids" do
@@ -127,6 +129,204 @@ defmodule Lockspire.ConfigKeyEncryptionTest do
           refute Exception.message(e) =~ @sentinel
           refute Exception.format(:error, e, __STACKTRACE__) =~ @sentinel
       end
+    end
+  end
+
+  describe "{:system, var} entries" do
+    @var_a "LOCKSPIRE_TEST_KEK_ENV_A"
+    @var_b "LOCKSPIRE_TEST_KEK_ENV_B"
+    @var_s "LOCKSPIRE_TEST_KEK_ENV_S"
+
+    setup do
+      prior = for v <- [@var_a, @var_b, @var_s], do: {v, System.get_env(v)}
+      for v <- [@var_a, @var_b, @var_s], do: System.delete_env(v)
+
+      on_exit(fn ->
+        for {v, value} <- prior do
+          if value, do: System.put_env(v, value), else: System.delete_env(v)
+        end
+      end)
+
+      :ok
+    end
+
+    test "resolves a variable at runtime and leaves app env untouched" do
+      System.put_env(@var_a, b64("one"))
+      put(keys: [{"a", {:system, @var_a}}], current: "a")
+
+      expected = :crypto.hash(:sha256, "one")
+      assert %KeySet{keys: %{"a" => ^expected}} = Config.key_encryption!()
+
+      System.put_env(@var_a, b64("two"))
+      expected2 = :crypto.hash(:sha256, "two")
+      assert %KeySet{keys: %{"a" => ^expected2}} = Config.key_encryption!()
+
+      assert Application.get_env(:lockspire, :key_encryption)[:keys] == [{"a", {:system, @var_a}}]
+    end
+
+    test "mixed literal and variable entries keep configured order" do
+      System.put_env(@var_b, b64("two"))
+      put(keys: [{"a", b64("one")}, {"b", {:system, @var_b}}], current: "a")
+      assert %KeySet{ids: ["a", "b"]} = Config.key_encryption!()
+    end
+
+    test "unset variable raises missing_env naming only the variable" do
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid config :key_encryption"
+      assert msg =~ "missing_env"
+      assert msg =~ @var_a
+      assert msg =~ "mix lockspire.gen.kek"
+    end
+
+    test "empty variable is treated exactly like an unset one" do
+      unset = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      System.put_env(@var_a, "")
+      assert message(keys: [{"a", {:system, @var_a}}], current: "a") == unset
+    end
+
+    test "the first missing variable in configured order is the one named" do
+      msg = message(keys: [{"a", {:system, @var_a}}, {"b", {:system, @var_b}}], current: "a")
+      assert msg =~ @var_a
+      refute msg =~ @var_b
+    end
+
+    test "a valid variable's value never appears when another variable is missing" do
+      System.put_env(@var_s, Base.encode64(:crypto.hash(:sha256, @sentinel)))
+      msg = message(keys: [{"a", {:system, @var_s}}, {"b", {:system, @var_b}}], current: "a")
+      refute msg =~ Base.encode64(:crypto.hash(:sha256, @sentinel))
+      refute msg =~ @sentinel
+      assert msg =~ @var_b
+    end
+
+    test "two ids reading the same variable fail as duplicate material without the value" do
+      value = b64("same")
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}, {"b", {:system, @var_a}}], current: "a")
+      assert msg =~ "duplicate_key_material"
+      refute msg =~ value
+    end
+
+    test "a trailing newline is not trimmed and fails closed" do
+      value = b64("one") <> "\n"
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid_base64"
+      refute msg =~ value
+    end
+
+    test "a whitespace-only variable fails naming the variable, not its value" do
+      for value <- [" ", "\n", " \t\n "] do
+        System.put_env(@var_a, value)
+        msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+        assert msg =~ "invalid config :key_encryption"
+        assert msg =~ "blank_env"
+        assert msg =~ @var_a
+        refute msg =~ inspect(value)
+      end
+    end
+
+    test "a short value fails with invalid_key_length without the value" do
+      value = Base.encode64(:crypto.strong_rand_bytes(31))
+      System.put_env(@var_a, value)
+      msg = message(keys: [{"a", {:system, @var_a}}], current: "a")
+      assert msg =~ "invalid_key_length"
+      refute msg =~ value
+    end
+
+    test "malformed system entries are classified by KeySet, not crashed on" do
+      for entry <- [{"a", {:system, :atom}}, {"a", {:system}}, {:system, @var_a}] do
+        assert message(keys: [entry], current: "a") =~ "invalid_key_entry"
+      end
+    end
+
+    test "empty keys still fail with missing_keys" do
+      assert message(keys: [], current: "a") =~ "missing_keys"
+    end
+  end
+
+  describe "boot and redaction with {:system, var}" do
+    require Logger
+
+    @boot_var "LOCKSPIRE_TEST_KEK_BOOT_A"
+    @boot_var_b "LOCKSPIRE_TEST_KEK_BOOT_B"
+
+    setup do
+      prior = for v <- [@boot_var, @boot_var_b], do: {v, System.get_env(v)}
+      for v <- [@boot_var, @boot_var_b], do: System.delete_env(v)
+
+      on_exit(fn ->
+        for {v, value} <- prior do
+          if value, do: System.put_env(v, value), else: System.delete_env(v)
+        end
+      end)
+
+      :ok
+    end
+
+    defp forms(bytes, value) do
+      [
+        value,
+        bytes,
+        Base.url_encode64(bytes, padding: false),
+        Base.encode16(bytes, case: :lower)
+      ]
+    end
+
+    test "a configured block with an unset variable aborts boot validation" do
+      put(keys: [{"a", {:system, @boot_var}}], current: "a")
+      :persistent_term.erase(Config.key_encryption_cache_key())
+
+      assert_raise ArgumentError, ~r/missing_env/, fn ->
+        Lockspire.Application.validate_key_encryption!()
+      end
+
+      refute :persistent_term.get(Config.key_encryption_cache_key(), :miss) == :unconfigured
+      assert_raise ArgumentError, fn -> Config.key_encryption!() end
+    end
+
+    test "inspect, interpolation and logs of a resolved key set show no key material" do
+      bytes = :crypto.hash(:sha256, "redaction-one")
+      value = Base.encode64(bytes)
+      System.put_env(@boot_var, value)
+      put(keys: [{"a", {:system, @boot_var}}, {"b", b64("redaction-two")}], current: "a")
+      ks = Config.key_encryption!()
+
+      outputs = [
+        inspect(ks),
+        inspect(ks, limit: :infinity, pretty: true),
+        "#{inspect(ks)}",
+        ExUnit.CaptureLog.capture_log(fn -> Logger.error("keyset #{inspect(ks)}") end)
+      ]
+
+      for out <- outputs, form <- forms(bytes, value) do
+        refute out =~ form
+      end
+
+      assert hd(outputs) =~ "#Lockspire.KeyEncryption.KeySet<"
+      assert hd(outputs) =~ "a"
+      assert Enum.at(outputs, 3) =~ "keyset"
+    end
+
+    test "inspect of a system-resolved key set equals inspect of a literal one" do
+      value = b64("same-shape")
+      System.put_env(@boot_var, value)
+      put(keys: [{"a", {:system, @boot_var}}], current: "a")
+      system_ks = Config.key_encryption!()
+      put(keys: [{"a", value}], current: "a")
+      literal_ks = Config.key_encryption!()
+
+      assert inspect(system_ks) == inspect(literal_ks)
+    end
+
+    test "a missing variable message never carries another variable's value" do
+      sentinel_key = Base.encode64(:crypto.hash(:sha256, @sentinel))
+      System.put_env(@boot_var, sentinel_key)
+
+      msg =
+        message(keys: [{"a", {:system, @boot_var}}, {"b", {:system, @boot_var_b}}], current: "a")
+
+      refute msg =~ sentinel_key
+      assert msg =~ @boot_var_b
     end
   end
 

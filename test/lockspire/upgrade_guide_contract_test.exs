@@ -11,13 +11,17 @@ defmodule Lockspire.UpgradeGuideContractTest do
   test "the guide gives the four upgrade steps in a safe order", %{guide: guide} do
     assert_in_order(guide, [
       "Before you start",
-      "openssl rand -base64 32",
+      "mix lockspire.gen.kek",
       "legacy_plaintext: :allow",
       "mix lockspire.keys.reencrypt --dry-run",
       "mix lockspire.keys.reencrypt --check",
       "legacy_plaintext: :reject",
       "mix lockspire.doctor key_encryption"
     ])
+  end
+
+  test "the guide does not recommend an OpenSSL key recipe", %{guide: guide} do
+    refute guide =~ "openssl"
   end
 
   test "the guide covers releases and warns that a bare eval does not start the repo", %{

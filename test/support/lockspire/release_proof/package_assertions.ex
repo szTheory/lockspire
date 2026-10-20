@@ -113,18 +113,36 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
   def assert_phase_139_release_train_fail_closed! do
     release_train_path = Paths.path(".planning/RELEASE-TRAIN.md")
-    metadata_line = "- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->"
-
-    public_line =
-      "- Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08. Release Please metadata above is not publication proof."
-
-    artifact_line =
-      "- Artifact truth: protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282) for source `0b56503859b69531ff86d8e4a465a0e75f963594` was backed by matching canonical push CI [37788996197](https://github.com/szTheory/lockspire/actions/runs/37788996197), whose seven required jobs passed on that exact SHA. The release run verified the public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`, HexDocs, [lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1), and clean-room install. Its terminal receipt records `release_verified: true` with no blocker. The overall run failed only in bounded evidence retention; PR #120 fixed the receipt validator."
-
     source = File.read!(release_train_path)
+    lines = String.split(source, "\n")
+
+    metadata_line =
+      Enum.find(lines, &String.starts_with?(&1, "- Release Please version metadata:"))
+
+    public_line = Enum.find(lines, &String.starts_with?(&1, "- Latest public package:"))
+    artifact_line = Enum.find(lines, &String.starts_with?(&1, "- Artifact truth:"))
+
+    assert metadata_line, "RELEASE-TRAIN.md has no Release Please metadata line"
+    assert public_line, "RELEASE-TRAIN.md has no public package line"
+    assert artifact_line, "RELEASE-TRAIN.md has no artifact truth line"
+
+    [metadata_version] =
+      Regex.run(~r/`(\d+\.\d+\.\d+)`/, metadata_line, capture: :all_but_first)
+
+    [public_version, public_sha] =
+      Regex.run(~r/Hex `(\d+\.\d+\.\d+)`, published from source `([0-9a-f]{40})`/, public_line,
+        capture: :all_but_first
+      )
+
+    [checksum] = Regex.run(~r/checksum `([0-9a-f]{64})`/, artifact_line, capture: :all_but_first)
+
+    higher_version = bump_patch(public_version)
+    lower_version = lower_version(public_version)
+    flipped_sha = flip_sha(public_sha)
+    tag_label = "lockspire-v#{public_version}"
 
     for historical_value <- [
-          "Previous release: source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
+          "source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
           "33141161205",
           "33141484467",
           "lockspire-v1.5.0",
@@ -144,7 +162,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          "- Release Please version metadata: `one.five.one` <!-- x-release-please-version -->"
        )},
       {"mismatched Release Please metadata",
-       String.replace(source, metadata_line, String.replace(metadata_line, "1.5.1", "1.5.2"))},
+       String.replace(
+         source,
+         metadata_line,
+         String.replace(metadata_line, "`#{metadata_version}`", "`#{lower_version}`")
+       )},
       {"missing public package claim", String.replace(source, public_line <> "\n", "")},
       {"duplicate public package claim",
        String.replace(source, public_line, public_line <> "\n" <> public_line)},
@@ -152,23 +174,19 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        String.replace(
          source,
          public_line,
-         String.replace(public_line, "Hex `1.5.1`", "Hex `latest`")
+         String.replace(public_line, "Hex `#{public_version}`", "Hex `latest`")
        )},
       {"public package disagrees with Release Please metadata",
        String.replace(
          source,
          public_line,
-         String.replace(public_line, "Hex `1.5.1`", "Hex `1.5.2`")
+         String.replace(public_line, "Hex `#{public_version}`", "Hex `#{higher_version}`")
        )},
       {"public package source disagrees with protected release proof",
        String.replace(
          source,
          public_line,
-         String.replace(
-           public_line,
-           "0b56503859b69531ff86d8e4a465a0e75f963594",
-           "1b56503859b69531ff86d8e4a465a0e75f963594"
-         )
+         String.replace(public_line, public_sha, flipped_sha)
        )},
       {"missing artifact proof", String.replace(source, artifact_line <> "\n", "")},
       {"duplicate artifact proof",
@@ -177,23 +195,23 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
        String.replace(
          source,
          artifact_line,
-         String.replace(
-           artifact_line,
-           "c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3",
-           "invalid"
-         )
+         String.replace(artifact_line, checksum, "invalid")
        )},
       {"artifact tag disagrees with public package",
        String.replace(
          source,
          artifact_line,
-         String.replace(artifact_line, "lockspire-v1.5.1", "lockspire-v1.5.0")
+         String.replace(artifact_line, tag_label, "lockspire-v#{lower_version}")
        )},
       {"GitHub release URL disagrees with its label",
        String.replace(
          source,
          artifact_line,
-         String.replace(artifact_line, "/tag/lockspire-v1.5.1)", "/tag/lockspire-v1.5.2)")
+         String.replace(
+           artifact_line,
+           "/tag/#{tag_label})",
+           "/tag/lockspire-v#{higher_version})"
+         )
        )},
       {"GitHub release URL points to another repository",
        String.replace(
@@ -201,13 +219,24 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
          artifact_line,
          String.replace(
            artifact_line,
-           "https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1",
-           "https://github.com/another-owner/another-repo/releases/tag/lockspire-v1.5.1"
+           "https://github.com/szTheory/lockspire/releases/tag/#{tag_label}",
+           "https://github.com/another-owner/another-repo/releases/tag/#{tag_label}"
          )
        )},
       {"legacy release label cannot replace metadata",
-       String.replace(source, metadata_line, "- Latest released version: `1.5.1`")}
+       String.replace(source, metadata_line, "- Latest released version: `#{metadata_version}`")}
     ]
+
+    pending_release_contents =
+      source
+      |> String.replace(
+        public_line,
+        String.replace(public_line, "Hex `#{public_version}`", "Hex `#{lower_version}`")
+      )
+      |> String.replace(
+        artifact_line,
+        String.replace(artifact_line, tag_label, "lockspire-v#{lower_version}")
+      )
 
     Enum.each(cases, fn {label, contents} ->
       {output, status} =
@@ -221,6 +250,41 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       refute output =~ "fixture-credential-sentinel", "#{label} leaked fixture credentials"
       refute output =~ ~s({"workflow_runs"), "#{label} leaked a raw workflow response"
     end)
+
+    {pending_output, _pending_status} =
+      run_exact_sha_hygiene_fixture!("success",
+        release_train_contents: pending_release_contents,
+        expect_release_train_pass: true
+      )
+
+    refute pending_output =~ "[BLOCK] release train ledger",
+           "pending release: metadata ahead of a consistent public package blocked the ledger: #{pending_output}"
+
+    refute pending_output =~ "fixture-credential-sentinel",
+           "pending release case leaked fixture credentials"
+
+    refute pending_output =~ ~s({"workflow_runs"),
+           "pending release case leaked a raw workflow response"
+  end
+
+  defp bump_patch(version) do
+    [major, minor, patch] = version |> String.split(".") |> Enum.map(&String.to_integer/1)
+    "#{major}.#{minor}.#{patch + 1}"
+  end
+
+  defp lower_version(version) do
+    [major, minor, patch] = version |> String.split(".") |> Enum.map(&String.to_integer/1)
+
+    cond do
+      patch > 0 -> "#{major}.#{minor}.#{patch - 1}"
+      minor > 0 -> "#{major}.#{minor - 1}.0"
+      true -> "#{max(major - 1, 0)}.0.0"
+    end
+  end
+
+  defp flip_sha(<<first::binary-size(1), rest::binary>>) do
+    flipped = if first == "0", do: "1", else: "0"
+    flipped <> rest
   end
 
   def assert_phase_139_docker_volume_name_matching! do
@@ -471,7 +535,8 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
                "exact-SHA acceptance must fetch only origin/main without tags or pruning"
       end
 
-      if Keyword.has_key?(options, :release_train_contents) do
+      if Keyword.has_key?(options, :release_train_contents) and
+           not Keyword.get(options, :expect_release_train_pass, false) do
         refute File.exists?(Path.join(state, "fetch.argv")),
                "a blocked release-train claim must stop before origin/main fetch"
 

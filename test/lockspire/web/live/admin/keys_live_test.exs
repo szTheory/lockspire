@@ -4,9 +4,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
   import Phoenix.LiveViewTest
 
   alias Lockspire.Domain.SigningKey
+  alias Lockspire.KeyEncryptionHelpers
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.AdminProof.HtmlAssertions
   alias Lockspire.Web.Live.Admin.KeysLive.Index
+  alias Lockspire.Web.Live.Admin.KeysLive.Protection
   alias Lockspire.Web.Live.Admin.KeysLive.Show
   alias Phoenix.Router
 
@@ -228,6 +230,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     html = rendered_to_string(Index.render(failed_socket.assigns))
     assert failed_socket.assigns.total_keys == 5
     assert failed_socket.assigns.generation_error =~ "could not be generated"
+    refute failed_socket.assigns.generation_error =~ "key-encryption key"
     refute html =~ "Signing key generated and confirmed"
     refute html =~ "Encryption key generated"
   end
@@ -586,6 +589,395 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     assert html =~ "Only upcoming keys can be published."
     assert html =~ "Key actions"
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
+  end
+
+  describe "key protection" do
+    test "key protection line names the current key-encryption key when stored keys are encrypted" do
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DELETE FROM lockspire_signing_keys", [])
+
+      {:ok, _} =
+        Repository.publish_key(
+          Lockspire.KeyEncryptionHelpers.sealed_row("sealed-current", "test-1")
+        )
+
+      html = render_index()
+
+      assert html =~ "Key protection"
+      assert html =~ "Encrypted"
+
+      text = protection_section(html) |> LazyHTML.text()
+      assert text =~ ~s(key-encryption key "test-1")
+
+      assert_before(html, "Key protection", "How key states work")
+      refute_forbidden_key_copy(html)
+    end
+
+    test "key protection reads unknown and never healthy when the check cannot run" do
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_signing_keys", [])
+      assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      assert html =~ "Unknown"
+      assert html =~ "Could not load signing keys"
+
+      section_html = protection_section(html) |> LazyHTML.to_html()
+      refute section_html =~ "lockspire-admin-decision-summary__item-success"
+      refute section_html =~ "Encrypted"
+    end
+
+    test "unencrypted state shows its command and keeps the key list" do
+      {html, _socket} = drive_index()
+      section = protection_section(html)
+
+      assert LazyHTML.text(section) =~ "Some keys are stored unencrypted"
+      assert html =~ "Key protection"
+      assert html =~ "mix lockspire.keys.reencrypt"
+      assert key_record_count(html) == 4
+      assert_common_protection_checks(html, "")
+    end
+
+    test "older key state names only the current key-encryption key" do
+      reset_keys()
+      publish_sealed("sealed-current", "test-1")
+      publish_sealed("sealed-older", "test-2")
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Encrypted, some with an older key-encryption key"
+      assert section_text =~ "test-1"
+      refute section_text =~ "test-2"
+      assert html =~ "mix lockspire.keys.reencrypt"
+      assert key_record_count(html) == 2
+      assert_common_protection_checks(html, "test-1")
+    end
+
+    test "unreadable state shows no key-encryption key ids" do
+      reset_keys()
+      publish_sealed("sealed-gone", "gone-1")
+      publish_sealed("sealed-wrong", "test-1", salt: "different")
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Some keys cannot be read"
+      refute section_text =~ "gone-1"
+      refute section_text =~ "test-1"
+      assert html =~ "mix lockspire.doctor.key_encryption"
+      assert key_record_count(html) == 2
+      assert_common_protection_checks(html, "")
+    end
+
+    test "not set up state points at the generator when no encrypted keys are stranded" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Not set up"
+      refute section_text =~ "Some keys cannot be read"
+      refute section_text =~ "no longer configured"
+      assert html =~ "mix lockspire.gen.kek"
+      assert key_record_count(html) == 4
+      assert_common_protection_checks(html, "")
+    end
+
+    test "not set up with keys sealed by a missing key-encryption key says to restore it" do
+      publish_sealed("sealed-gone", "gone-1")
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Not set up"
+      assert section_text =~ "no longer configured"
+      assert section_text =~ "rather than creating a new one"
+      refute section_text =~ "gone-1"
+      assert html =~ "mix lockspire.doctor.key_encryption"
+      refute html =~ "mix lockspire.gen.kek"
+      assert_common_protection_checks(html, "")
+    end
+
+    test "invalid setup shows setup needs attention and keeps the key list" do
+      original = Application.fetch_env(:lockspire, :key_encryption)
+
+      on_exit(fn ->
+        case original do
+          {:ok, value} -> Application.put_env(:lockspire, :key_encryption, value)
+          :error -> Application.delete_env(:lockspire, :key_encryption)
+        end
+      end)
+
+      Application.put_env(:lockspire, :key_encryption,
+        keys: [{"bad", "not-base64"}],
+        current: "bad"
+      )
+
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Setup needs attention"
+      refute section_text =~ "not-base64"
+      refute section_text =~ "bad"
+      assert html =~ "mix lockspire.doctor.key_encryption"
+      assert key_record_count(html) == 4
+      assert_common_protection_checks(html, "")
+    end
+
+    test "no stored keys with a key-encryption key reads encrypted above the empty state" do
+      reset_keys()
+      {html, _socket} = drive_index()
+
+      assert protection_section(html) |> LazyHTML.text() =~ "Encrypted"
+      assert html =~ "No signing keys are stored"
+      assert_before(html, "Key protection", "No signing keys are stored")
+      assert_common_protection_checks(html, "test-1")
+    end
+
+    test "unknown line renders alongside a loaded key list and is never healthy" do
+      {_html, socket} = drive_index()
+
+      socket =
+        Phoenix.Component.assign(socket,
+          key_protection: Protection.summarize({:error, :storage_unavailable})
+        )
+
+      html = rendered_to_string(Index.render(socket.assigns))
+      section_html = protection_section(html) |> LazyHTML.to_html()
+
+      assert section_html =~ "Unknown"
+      refute section_html =~ "lockspire-admin-decision-summary__item-success"
+      assert key_record_count(html) == 4
+      assert_common_protection_checks(html, "")
+    end
+
+    test "a nil protection assign renders no section" do
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+      assert socket.assigns.key_protection == nil
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      assert protection_section(html) |> Enum.count() == 0
+      refute html =~ "Key protection"
+    end
+
+    test "the protection line renders above an inventory read error" do
+      reset_keys()
+      publish_sealed("sealed-current", "test-1")
+      {_html, socket} = drive_index()
+      assert socket.assigns.key_protection.state == :encrypted
+
+      socket =
+        Phoenix.Component.assign(socket,
+          inventory_state: :error,
+          keys: [],
+          total_keys: nil,
+          lifecycle_metrics: nil
+        )
+
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      assert protection_section(html) |> LazyHTML.text() =~ "Encrypted"
+      assert html =~ "Could not load signing keys"
+      assert_before(html, "Key protection", "Could not load signing keys")
+    end
+
+    test "the page discloses no key-encryption key material or internal field names" do
+      reset_keys()
+      publish_sealed("sealed-current", "test-1")
+      publish_sealed("sealed-older", "test-2")
+      {html, _socket} = drive_index()
+
+      refute html =~ KeyEncryptionHelpers.config_material("test-1")
+      refute html =~ KeyEncryptionHelpers.config_material("test-2")
+
+      for denied <- [
+            "configured_kek_ids",
+            "by_kek_id",
+            "unknown_kek",
+            "LOCKSPIRE_KEY_ENCRYPTION_KEY"
+          ] do
+        refute html =~ denied
+      end
+    end
+
+    test "a successful generate refreshes the protection line" do
+      {_html, socket} = drive_index()
+      assert socket.assigns.key_protection.state == :unencrypted
+
+      reset_keys()
+      assert {:noreply, socket} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+
+      assert socket.assigns.key_protection.state == :encrypted
+      assert socket.assigns.generation_notice
+    end
+  end
+
+  describe "missing key-encryption key" do
+    test "generating a signing key without a key-encryption key explains the refusal" do
+      assert_refusal("sig", "signing")
+    end
+
+    test "generating an encryption key without a key-encryption key explains the refusal" do
+      assert_refusal("enc", "encryption")
+    end
+
+    test "a repeated refusal is identical and stores nothing" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      assert {:noreply, first} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      assert {:noreply, second} = Index.handle_event("generate", %{"use" => "sig"}, first)
+
+      assert first.assigns.generation_error == second.assigns.generation_error
+      assert {:ok, keys} = Lockspire.Admin.list_keys()
+      assert length(keys) == 4
+    end
+
+    test "a refusal without a key-encryption key takes precedence over a storage failure" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_signing_keys", [])
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      assert socket.assigns.generation_error =~ "No key-encryption key is set up"
+      refute socket.assigns.generation_error =~ "could not be generated"
+    end
+
+    test "invalid key-encryption config shows fixed copy and never echoes the error" do
+      # Registers the env and cache restore for test exit, then breaks both.
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      Application.put_env(:lockspire, :key_encryption,
+        keys: [{"bad", "SENTINEL-not-base64"}],
+        current: "bad"
+      )
+
+      :persistent_term.erase(Lockspire.Config.key_encryption_cache_key())
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      error = socket.assigns.generation_error
+
+      assert error =~ "key-encryption key setup is not valid"
+      assert error =~ "mix lockspire.doctor.key_encryption"
+      assert is_nil(socket.assigns.generation_notice)
+      assert is_nil(socket.assigns.generated_key_path)
+      refute Map.has_key?(socket.assigns, :flash)
+
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      alerts =
+        html
+        |> HtmlAssertions.document()
+        |> LazyHTML.query(~s(ul.lockspire-admin-errors[role="alert"]))
+
+      assert LazyHTML.text(alerts) =~ "key-encryption key setup is not valid"
+      refute html =~ "SENTINEL"
+      refute html =~ "invalid config"
+      refute html =~ "ArgumentError"
+    end
+
+    test "use validation still runs first" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{}, socket)
+
+      assert socket.assigns.generation_error =~
+               "Choose signing or encryption key use before generating a key."
+    end
+  end
+
+  defp assert_refusal(use, noun) do
+    KeyEncryptionHelpers.put_key_encryption(nil)
+    {_html, socket} = drive_index()
+
+    assert {:noreply, socket} = Index.handle_event("generate", %{"use" => use}, socket)
+    error = socket.assigns.generation_error
+
+    assert error =~ "No key-encryption key is set up"
+    assert error =~ "cannot create an #{noun} key" or error =~ "cannot create a #{noun} key"
+    assert error =~ "will not store private keys unencrypted"
+    assert error =~ "mix lockspire.gen.kek"
+    assert is_nil(socket.assigns.generation_notice)
+    assert is_nil(socket.assigns.generated_key_path)
+    assert socket.assigns.total_keys == 4
+    refute Map.has_key?(socket.assigns, :flash)
+
+    html = rendered_to_string(Index.render(socket.assigns))
+
+    alerts =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query(~s(ul.lockspire-admin-errors[role="alert"]))
+
+    assert LazyHTML.text(alerts) =~ error
+
+    document = HtmlAssertions.document(html)
+
+    for u <- ["sig", "enc"] do
+      button = LazyHTML.query(document, ~s(button[phx-value-use="#{u}"]))
+      assert Enum.count(button) == 1
+      assert LazyHTML.attribute(button, "disabled") == []
+    end
+
+    refute html =~ "LOCKSPIRE_KEY_ENCRYPTION_KEY"
+    refute html =~ KeyEncryptionHelpers.config_material("test-1")
+    refute_forbidden_key_copy(html)
+  end
+
+  defp drive_index do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
+    {rendered_to_string(Index.render(socket.assigns)), socket}
+  end
+
+  defp reset_keys do
+    Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DELETE FROM lockspire_signing_keys", [])
+  end
+
+  defp publish_sealed(kid, kek_id, opts \\ []) do
+    {:ok, _} = Repository.publish_key(KeyEncryptionHelpers.sealed_row(kid, kek_id, opts))
+  end
+
+  defp key_record_count(html) do
+    html
+    |> HtmlAssertions.document()
+    |> LazyHTML.query(".lockspire-admin-key-record")
+    |> Enum.count()
+  end
+
+  defp assert_common_protection_checks(html, allowed_id) do
+    refute_forbidden_key_copy(html)
+    HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
+    assert_protection_is_text_only(html, allowed_id)
+  end
+
+  defp assert_protection_is_text_only(html, allowed_id) do
+    section = protection_section(html)
+    assert Enum.count(section) == 1
+
+    HtmlAssertions.assert_no_interactive_controls(LazyHTML.to_html(section),
+      events: ["phx-click", "phx-submit", "phx-change"]
+    )
+
+    for tag <- ["button", "a", "form", "input"] do
+      assert Enum.empty?(LazyHTML.query(section, tag)), "expected no <#{tag}> in the section"
+    end
+
+    text = LazyHTML.text(section)
+    text = if allowed_id == "", do: text, else: String.replace(text, allowed_id, "")
+    refute text =~ ~r/\d/, "expected no digits (counts) in the protection line"
+  end
+
+  defp render_index do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
+    rendered_to_string(Index.render(socket.assigns))
+  end
+
+  defp protection_section(html) do
+    html
+    |> HtmlAssertions.document()
+    |> LazyHTML.query(~s(section[aria-label="Key protection"]))
   end
 
   defp signing_key(kid, status, now, attrs \\ []) do

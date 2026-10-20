@@ -142,7 +142,7 @@ If you plan to support device login, keep that host-owned `/verify` seam paired 
 
 ### Protect signing keys with a key-encryption key
 
-Lockspire stores private signing keys as sealed envelopes under a key-encryption key (KEK) that your app provides at runtime. The install command prints the blocks below; add them yourself, because Lockspire never writes your secrets. Generate the value with `openssl rand -base64 32` and keep it in your secret manager, separately from database backups.
+Lockspire stores private signing keys as sealed envelopes under a key-encryption key (KEK) that your app provides at runtime. The install command prints the blocks below; add them yourself, because Lockspire never writes your secrets. Generate the value with `mix lockspire.gen.kek`, which prints it once together with the block below, and keep it in your secret manager, separately from database backups.
 
 In `config/runtime.exs`, where production fails closed if the variable is missing:
 
@@ -152,7 +152,7 @@ if config_env() == :prod do
     keys: [
       {"2026-01",
        System.get_env("LOCKSPIRE_KEY_ENCRYPTION_KEY") ||
-         raise("LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: openssl rand -base64 32")}
+         raise("LOCKSPIRE_KEY_ENCRYPTION_KEY is missing. Generate one with: mix lockspire.gen.kek")}
     ],
     current: "2026-01",
     legacy_plaintext: :reject
@@ -160,6 +160,10 @@ end
 ```
 
 In `config/dev.exs` and `config/test.exs`, use a throwaway value that is never reused in production (the install output prints a fresh random one).
+
+You can also write a key entry as `{"2026-01", {:system, "LOCKSPIRE_KEY_ENCRYPTION_KEY"}}`. Lockspire reads the variable when the app boots and refuses to boot if it is unset or empty. Store the value exactly as printed, because a trailing newline makes it invalid and boot fails. Changing the variable takes effect when the app restarts.
+
+After setup, the Key protection line on the admin Keys page shows whether your stored signing keys are encrypted; see [Key protection](operator-admin.md#key-protection).
 
 If your app already has signing keys from an earlier version, do not start with `:reject`. Follow the [signing key encryption upgrade note](upgrading/signing-key-encryption.md) instead.
 
