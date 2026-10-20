@@ -40,7 +40,7 @@ REL-01 and SAFE-02 checkboxes in REQUIREMENTS.md were deliberately left untouche
 
 | Task | Commit | Result |
 | ---- | ------ | ------ |
-| 1 SAFE-02 diff checks (tracer) | 807802b6 | Forbidden-path diff empty; only `security/key_encryption/key_set.ex` changed (adds `valid_id?/1`, same regex) |
+| 1 SAFE-02 diff checks (tracer) | 807802b6 | Forbidden-path diff empty; only `lib/lockspire/security/key_encryption/key_set.ex` changed (adds `valid_id?/1`, same regex) |
 | 2 No-leak sweep and gate | 0265b8ad | Every added-line hit classified; only key output is `mix lockspire.gen.kek` stdout; targeted list 199 tests 0 failures; qa and docs.verify exit 0; test.fast 1875 tests 0 failures 6 skipped; hygiene 18 PASS 0 BLOCK |
 | 3 PR text and #122 override | e9177e13 | Offline parse with vendored release-please: 2 commits, both feat, scope admin, not breaking; PR body passes the D-07 negative grep |
 

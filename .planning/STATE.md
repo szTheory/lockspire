@@ -3,39 +3,38 @@ gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
-current_phase_name: Docs & Verified 1.6.0 Release
-status: executing
-stopped_at: "161-09: waiting for release-record PR133 CI before conditional squash merge"
-last_updated: "2026-10-20T19:32:51+00:00"
+status: completed
+stopped_at: Phase 161 complete — all phases complete
+last_updated: "2026-10-20T19:46:35.285Z"
 last_activity: 2026-10-20
-last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
-state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
+last_activity_desc: Phase 161 complete
+state_head: 2f4c18ae362d6efc4a65f5bed7554abaac4e35a4
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
+See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 161 — Docs & Verified 1.6.0 Release
+**Current focus:** Verified 1.6.0 released; all v1.44 phases complete
 
 ## Current Position
 
-Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 9 of 9
-Status: Recording verified publication on main
-Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
+Phase: 161
+Plan: 9 of 9 complete
+Status: All phases complete
+Last activity: 2026-10-20 — Phase 161 complete
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Accumulated Context
 
@@ -365,9 +364,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T19:32:51+00:00
-Stopped at: Plan161-09 — PR133 release-record tip440f65b6, CI39484021517 running. Source428a9c53 published and independently verified; run39481079989 success; one-use authorization deleted. Conditional maintainer approval covers remaining green scoped release steps. Merge PR133 after all checks green, then finalize phase evidence.
-Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
+Last session: 2026-10-20T19:48:00+00:00
+Stopped at: Phase161 complete; all4phases/17plans and13requirements delivered. Lockspire1.6.0 published from428a9c53, independently verified and recorded on main5e8a484c; final mainCI39485083024 and Releasepush39485083062 success. One-use publication authorization absent. Conditional green-check approval recorded; no repeated prompts for already-scoped verified steps.
+Resume file: None
+
+Release boundary: published source428a9c53 is immutable; later main5e8a484c is the docs-only record. Local phase closure commits remain planning-only after that record, as planned. Original state.json edit remains unstaged and was preserved through resets/rebase; backups retained. Milestone is ready for audit/archival at its natural boundary; no next product scope selected.
 
 ## Performance Metrics
 

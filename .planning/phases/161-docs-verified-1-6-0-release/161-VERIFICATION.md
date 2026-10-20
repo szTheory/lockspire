@@ -1,6 +1,6 @@
 ---
 phase: 161-docs-verified-1-6-0-release
-verified: 2026-10-20T19:46:22+00:00
+verified: 2026-10-20T19:48:00+00:00
 status: passed
 score: 5/5 must-haves verified
 execution: inline
@@ -45,7 +45,7 @@ covered_files:
   - "test/mix/tasks/lockspire_client_create_cold_test.exs"
   - "test/support/lockspire/release_proof/package_assertions.ex"
   - "test/support/lockspire/release_proof/workflow_assertions.ex"
-covered_digest: "v3:sha256:3bb7f4da624b970c06826f6b891c5672f1895fb039da0c9b56287ca015233927"
+covered_digest: "v3:sha256:0c7e94cd11156ba47f45ab3966f67ba21f6570372cd7738fc29c4db449784bd8"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification: []

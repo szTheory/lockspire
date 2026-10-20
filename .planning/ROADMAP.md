@@ -22,7 +22,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
 - [x] **Phase 158: Mix Task Repo Start** - `client.create`, `doctor.token_format` and `doctor.remote_jwks` start and stop the host repo themselves via `RepoRunner`, with real error reasons (completed 2026-10-19)
 - [x] **Phase 159: Key-Encryption Key Setup DX** - `mix lockspire.gen.kek`, `{:system, "VAR"}` runtime resolution, redacted `KeySet` inspect, and guidance that points to the new task (completed 2026-10-19)
 - [x] **Phase 160: Admin Key Protection & Missing-KEK Copy** - read-only Key protection line and a calm missing-encryption-key error on the Keys page, with vocabulary map updates (completed 2026-10-19)
-- [ ] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources
+- [x] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources (completed 2026-10-20)
 
 ### Phase 158: Mix Task Repo Start
 
@@ -102,7 +102,7 @@ Plans:
   4. 1.6.0 is published through the protected exact-ref lane and independently verified: Hex API checksum matches the manifest and downloaded tarball, HexDocs serve 1.6.0, the `lockspire-v1.6.0` tag and GitHub release point at the published source SHA, and the tarball includes the new Mix tasks.
   5. A clean-room host installs `{:lockspire, "== 1.6.0"}` from Hex in a fresh `HEX_HOME`, and the result is recorded in `.planning/RELEASE-TRAIN.md`.
 
-**Plans:** 9 plans
+**Plans:** 9/9 plans complete
 
 Plans:
 **Wave 1**
@@ -128,7 +128,7 @@ Plans:
 - [x] 161-08-PLAN.md — independent public verification: checksum three-way, tarball tasks, HexDocs, tag/release, fresh HEX_HOME install
 
 **Wave 8**
-- [ ] 161-09-PLAN.md — RELEASE-TRAIN.md 1.6.0 record via squash-merged docs PR, auto-merge and Dependabot decision
+- [x] 161-09-PLAN.md — RELEASE-TRAIN.md 1.6.0 record via squash-merged docs PR, auto-merge and Dependabot decision
 
 ### Progress
 
@@ -137,7 +137,7 @@ Plans:
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 3/3 | Complete    | 2026-10-19 |
 | 160. Admin Key Protection & Missing-KEK Copy | 2/2 | Complete    | 2026-10-19 |
-| 161. Docs & Verified 1.6.0 Release | 8/9 | In progress | - |
+| 161. Docs & Verified 1.6.0 Release | 9/9 | Complete    | 2026-10-20 |
 
 ## Phases
 
