@@ -57,6 +57,16 @@ Adopters can read accurate guides for the new setup path and install a publicly 
   - Approving `hex-publish`.
   - Deciding when to re-enable auto-merge.
 
+### Release Gate Repair (decided after research, 2026-10-20)
+- **D-16:** Merging #121 as-is would fail the required `Release Hygiene Drift` check: `scripts/maintainer/repo_hygiene_check.sh` (~676-694) requires the RELEASE-TRAIN "Latest public package" version to equal the Release Please metadata version. The test helpers `test/support/lockspire/release_proof/workflow_assertions.ex` and `package_assertions.ex` hardcode the 1.5.1 values. The user chose to repair this inside the v1.44 PR:
+  - The hygiene check accepts metadata version >= public version, as long as the public version, artifact, tag and source SHA lines stay consistent with each other.
+  - The test helpers derive their version and SHA values from the file instead of hardcoding them.
+
+  The #121 squash SHA must then pass CI on its own, so D-10 holds unchanged. The fallback (publish a later fix-PR SHA, as with 1.5.1) is rejected.
+- **D-17:** Correction to D-11: `lockspire.test.setup` is excluded from the package. The 1.6.0 tarball must gain exactly three tasks over 1.5.1: `lockspire.doctor.key_encryption`, `lockspire.gen.kek` and `lockspire.keys.reencrypt`. The in-app missing-KEK error names only `mix lockspire.gen.kek`. The operator guide links the upgrade guide itself and must not claim that the error does (refines D-02).
+- **D-18:** Trigger the #121 regeneration by editing #122's body *before* squash-merging the v1.44 PR, so the push to main regenerates #121 once. Do not re-run the workflow, because its retry step would dispatch the disabled auto-merge workflow. Override entries are separated by blank lines and use `feat(admin): ... (#122)` for v1.40 and v1.41.
+- **D-19:** Before resetting local `main`, stash the uncommitted `.planning/state.json` edit and create a backup branch. Commit all Phase 161 repo work (docs, contract test, gate repair, evidence) to local main *before* the push, so it ships in the v1.44 PR.
+
 ### Claude's Discretion
 - Exact wording of the operator-guide subsection and the override lines, within the vocabulary map and conventional-commit format.
 - Exact `milestone/v1.44-<slug>` branch name and the v1.44 squash title.
