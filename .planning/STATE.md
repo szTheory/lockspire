@@ -5,7 +5,7 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 163
 current_phase_name: App Lifetime & Compatible Host Storage
 status: planning
-stopped_at: Phase 162 complete, ready to plan Phase 163
+stopped_at: Phase 162 complete, ready to discuss Phase 163
 last_updated: "2026-10-20T22:29:38.004Z"
 last_activity: 2026-10-20
 last_activity_desc: Phase 162 complete, transitioned to Phase 163
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 Phase: 163 — App Lifetime & Compatible Host Storage
 Plan: Not started
-Status: Ready to plan
+Status: Ready for Phase 163 discussion
 Last activity: 2026-10-20 — Phase 162 complete, transitioned to Phase 163
 
 ## Accumulated Context
@@ -43,7 +43,7 @@ Last activity: 2026-10-20 — Phase 162 complete, transitioned to Phase 163
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. This does not mark Phase 162 complete or authorize implementation planning before its contract verification.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete; Phase 163 is ready for discussion before implementation planning.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.

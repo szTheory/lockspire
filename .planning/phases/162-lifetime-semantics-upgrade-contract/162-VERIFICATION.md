@@ -105,7 +105,7 @@ No unreferenced TBD/FIXME/XXX debt markers or implementation stubs were found in
 
 ### Decision Coverage
 
-All trackable CONTEXT.md decisions are honored by shipped artifacts: **27/27**, no unmatched decisions. This coverage result does not override the contradictory C-APP-16 fixture.
+All trackable CONTEXT.md decisions are honored by shipped artifacts: **27/27**, no unmatched decisions. The previously contradictory C-APP-16 fixture is corrected and protected by a dedicated negative mutation.
 
 ### Test Quality Audit
 
@@ -113,7 +113,7 @@ No runtime test suite is linked to these design requirements. The validator's mu
 
 ### Human Verification Required
 
-N/A — design/foundation phase with no user-facing elements. The discovered issue is an observable fixture/validator contradiction and is recorded as a blocking gap for correction.
+N/A — design/foundation phase with no user-facing elements. The discovered fixture/validator contradiction was corrected and independently rechecked; no manual verification remains.
 
 ### Gaps Summary
 
