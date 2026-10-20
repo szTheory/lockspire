@@ -1,22 +1,27 @@
 ---
 phase: 159-key-encryption-key-setup-dx
-verified: 2026-10-19T00:00:00Z
+verified: 2026-10-20T19:43:05+00:00
 status: passed
 score: 4/4 must-haves verified
 covered_files:
-  - .planning/phases/159-key-encryption-key-setup-dx/159-01-PLAN.md
-  - .planning/phases/159-key-encryption-key-setup-dx/159-01-SUMMARY.md
-  - .planning/phases/159-key-encryption-key-setup-dx/159-02-PLAN.md
-  - .planning/phases/159-key-encryption-key-setup-dx/159-02-SUMMARY.md
-  - .planning/phases/159-key-encryption-key-setup-dx/159-03-PLAN.md
-  - .planning/phases/159-key-encryption-key-setup-dx/159-03-SUMMARY.md
-  - docs/upgrading/signing-key-encryption.md
-  - lib/lockspire/application.ex
-  - lib/lockspire/config.ex
-  - lib/lockspire/generators/kek_snippet.ex
-  - lib/lockspire/security/key_encryption/key_set_inspect.ex
-  - lib/mix/tasks/lockspire.gen.kek.ex
-covered_digest: "v3:sha256:ebc57cf16c7cf4bb357883b8a5af5ddb14d1b4a4689f68c303ba6a0156c0b3df"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-01-PLAN.md"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-01-SUMMARY.md"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-02-PLAN.md"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-02-SUMMARY.md"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-03-PLAN.md"
+  - ".planning/phases/159-key-encryption-key-setup-dx/159-03-SUMMARY.md"
+  - "docs/upgrading/signing-key-encryption.md"
+  - "lib/lockspire/application.ex"
+  - "lib/lockspire/config.ex"
+  - "lib/lockspire/generators/kek_snippet.ex"
+  - "lib/lockspire/security/key_encryption/key_set_inspect.ex"
+  - "lib/mix/tasks/lockspire.gen.kek.ex"
+  - "test/lockspire/config_key_encryption_test.exs"
+  - "test/lockspire/install/verify_test.exs"
+  - "test/lockspire/kek_guidance_contract_test.exs"
+  - "test/mix/tasks/lockspire_gen_kek_test.exs"
+  - "test/mix/tasks/lockspire_verify_test.exs"
+covered_digest: "v3:sha256:c5822443440abfc96448273cb61bea65797b5d353176e81052aca195b225529f"
 behavior_unverified: 0
 overrides_applied: 0
 ---
@@ -24,7 +29,7 @@ overrides_applied: 0
 # Phase 159: Key-Encryption Key Setup DX Verification Report
 
 **Phase Goal:** A host developer can generate and wire up a key-encryption key without openssl and without risking a silent unencrypted fallback.
-**Status:** passed. **Re-verification:** No.
+**Status:** passed. **Re-verification:** Yes — current guide and implementation rechecked after Phase161 documentation edits.
 
 ## Observable Truths (ROADMAP success criteria)
 
@@ -72,3 +77,12 @@ None. The phase goal is achieved in the codebase.
 
 _Verified: 2026-10-19_
 _Verifier: Claude (gsd-verifier)_
+
+
+## Re-verification 2026-10-20
+
+The prior report was stale after Phase161 added the Key protection guide pointer. Rechecked the four claims against the current generator, snippet builder, runtime config/boot validation and redacted Inspect implementation. The guide still leads with gen.kek and fail-closed environment configuration; the added pointer does not alter the KEK guidance or implementation contract.
+
+Fresh current-tree run of five tracked files (lockspire_gen_kek_test, config_key_encryption_test, kek_guidance_contract_test, install/verify_test, lockspire_verify_test): **83 tests, 0 failures**. Existing tests exercise generated snippets and valid/invalid IDs, runtime environment resolution and error redaction, no raw key inspection, guidance and verification behavior. In addition, the independently installed public1.6.0 package compiled in fresh Hex/Mix homes and ran gen.kek --raw successfully with only length44 recorded. The broader source and record PR CI cover the current implementation. No new product edit or override was needed.
+
+Regenerated the covered-input digest with the owning verification.fingerprint CLI over the current covered files, adding the actual tested files. Original observations above remain historical; the current verdict is supported by this fresh re-verification.
