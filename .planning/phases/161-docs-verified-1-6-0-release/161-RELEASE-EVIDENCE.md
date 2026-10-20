@@ -43,6 +43,8 @@ T: d1c9c0579cb615710e9bdef7f73c8d591fcb2619
 - Local proposed patch: `/private/tmp/lockspire-132-proposed-dialyzer-fix.patch` (reconstruct from this note if unavailable).
 - Plan 161-04 remains incomplete until all seven required checks and dependency-review pass. REL-01 / SAFE-02 / REL-02 remain unchecked.
 
+CI repair (2026-10-20): maintainer explicitly approved the scoped fix. Source commit `a679e9ce0e5dd0269b43cb47c8d14c2ca31c3846` moves the existing validation-error raise directly into the case branch and removes its raise-only helper clause. Local verification: cold client-creation tests 9/9, full SAFE-02 targeted suite 199/199, Dialyzer zero errors, formatter and forbidden-path diff checks passed. SAFE-02 evidence extended to this source revision. All other checks on the first PR revision passed. The updated head must pass a fresh complete CI run before plan 04 closes.
+
 ## Release PR #121
 
 (filled by plan 161-05)

@@ -4,7 +4,7 @@
 
 - Base: `038df080748c046829f9f98297da8403c47b4d89` (origin/main, v1.43 squash)
 - Head (git rev-parse HEAD at run time): `9471f0981a3686597717b10453de19b03bbfa60f`
-- Plan 161-04 re-binds this evidence to the v1.44 squash SHA by confirming the pushed branch tip has the same tree as the squash commit. Only `.planning/` files are added after this head.
+- Plan 161-04 re-binds this evidence to the v1.44 squash SHA by confirming the pushed branch tip has the same tree as the squash commit. The original run had only `.planning/` changes after this head; the approved CI repair below extends the evidence to the later source revision.
 
 ## Claim
 
@@ -117,3 +117,17 @@ All 13 targeted paths are tracked by git (`git ls-files --error-unmatch` succeed
 Prior evidence: `.planning/phases/158-mix-task-repo-start/`, `.planning/phases/159-key-encryption-key-setup-dx/` and `.planning/phases/160-admin-key-protection-missing-kek-copy/` SECURITY and VERIFICATION files (for example 160-SECURITY.md and 160-VERIFICATION.md).
 
 Verdict: SAFE-02 PASS at 807802b693c2aa8a76d8b70c4db9bfebd13f557e
+
+## Approved CI repair revalidation (2026-10-20)
+
+Source revision: `a679e9ce0e5dd0269b43cb47c8d14c2ca31c3846`.
+
+PR #132's first run passed all checks except Dialyzer. The maintainer approved the scoped `lib/` repair in this session (“yes”). `lockspire.client.create` now raises the existing `format_domain_errors(errors)` result directly in the validation-error case and removes the helper clause that only raises. The message, formatter, repo cleanup and secret handling are unchanged.
+
+- Source delta after original sweep: one changed file, `lib/mix/tasks/lockspire.client.create.ex`; the only added line is `Mix.raise(format_domain_errors(errors))`. This relocates the existing raise; no new output or logging sink, interpolation or key material is introduced.
+- Repeated forbidden-path diff from base `038df080748c046829f9f98297da8403c47b4d89` to this source revision: empty for mix.exs, mix.lock, migrations, protocol, config, examples and compatibility.
+- Existing 13-path SAFE-02 targeted suite repeated on Elixir 1.19.5 / OTP 28.5: **199 tests, 0 failures** (includes the 9 cold client-creation tests).
+- `bash scripts/ci/run_dialyzer.sh`: **Total errors: 0, Skipped: 0, Unnecessary Skips: 0**, exit 0.
+- Formatter check for the changed task and `git diff --check`: exit 0.
+
+SAFE-02 evidence remains valid for this source revision plus subsequent planning-only changes. The requirement remains unchecked until the planned squash-SHA rebinding in 161-06.
