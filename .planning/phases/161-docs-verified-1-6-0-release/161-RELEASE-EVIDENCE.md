@@ -71,7 +71,24 @@ Dependency Review: https://github.com/szTheory/lockspire/actions/runs/3947139333
 
 ## Release PR #121
 
-(filled by plan 161-05)
+PR #122 override edit (plan 161-05 Task 2), 2026-10-20T18:29:33+00:00:
+
+- Maintainer explicitly approved the exact append in this session (“yes”).
+- Pre-edit body SHA-256 (gh --jq newline convention): `5fc53683228d8767e8faaaa59f88b46195f494fc8869daca64a5e3db627ab0d2`.
+- Post-edit body SHA-256 (same convention): `872a5161a00a731de0e736738b76876cb33c097444844163ece84f031691d91f`.
+- Read-back equals the proposed body byte-for-byte and preserves the complete previous body as its prefix.
+- Exactly one marker pair; the block matches the approved artifact exactly. Offline parser: two feat(admin) entries; no breaking change.
+- Applied before any v1.44 squash merge; PR #132 remains open. No Release workflow re-run.
+
+Stored block:
+
+```text
+BEGIN_COMMIT_OVERRIDE
+feat(admin): refine the operator UI across apps, security, keys, consents and tokens (v1.40) (#122)
+
+feat(admin): describe admin pages in task and object language and route adopters through task-grouped guides (v1.41) (#122)
+END_COMMIT_OVERRIDE
+```
 
 ## Publication
 
