@@ -163,6 +163,8 @@ In `config/dev.exs` and `config/test.exs`, use a throwaway value that is never r
 
 You can also write a key entry as `{"2026-01", {:system, "LOCKSPIRE_KEY_ENCRYPTION_KEY"}}`. Lockspire reads the variable when the app boots and refuses to boot if it is unset or empty. Store the value exactly as printed, because a trailing newline makes it invalid and boot fails. Changing the variable takes effect when the app restarts.
 
+After setup, the Key protection line on the admin Keys page shows whether your stored signing keys are encrypted; see [Key protection](operator-admin.md#key-protection).
+
 If your app already has signing keys from an earlier version, do not start with `:reject`. Follow the [signing key encryption upgrade note](upgrading/signing-key-encryption.md) instead.
 
 ## 4. Run host migrations

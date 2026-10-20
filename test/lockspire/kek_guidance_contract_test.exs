@@ -85,4 +85,17 @@ defmodule Lockspire.KekGuidanceContractTest do
     assert guide =~ "mix lockspire.gen.kek"
     assert guide =~ "upgrading/signing-key-encryption.md"
   end
+
+  test "the install and upgrade guides point to the operator guide's Key protection subsection" do
+    pointers = [
+      {"docs/install-and-onboard.md", "operator-admin.md#key-protection"},
+      {"docs/upgrading/signing-key-encryption.md", "../operator-admin.md#key-protection"}
+    ]
+
+    for {rel, link} <- pointers do
+      text = read(rel)
+      assert text =~ link, "#{rel} must link #{link}"
+      assert text =~ "Key protection", "#{rel} must mention the Key protection line"
+    end
+  end
 end

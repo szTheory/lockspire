@@ -20,6 +20,8 @@ Follow this note in order. Each step says what to run and what you should see. D
 
    Store the value exactly as printed: a trailing newline makes it invalid, and Lockspire refuses to boot. The output of `mix phx.gen.secret` is not 32 bytes and is rejected.
 
+   Once a key-encryption key is configured, the Key protection line on the admin Keys page shows whether your stored signing keys are encrypted; see [Key protection](../operator-admin.md#key-protection).
+
 2. Store the KEK in your secret manager, separately from your database backups. A KEK kept next to the data it protects protects nothing.
 3. Take a fresh database backup.
 4. Avoid generating, publishing or activating signing keys while a deploy is rolling out. Once a KEK is configured, any node that has it seals new keys, even in allow mode. A node that does not have the KEK yet, or that still runs the earlier version, cannot read those sealed keys. Wait until every node runs the new version with the KEK, then generate keys.
