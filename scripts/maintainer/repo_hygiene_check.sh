@@ -673,6 +673,11 @@ release_train_tag_version() {
   printf '%s\n' "$label_version"
 }
 
+# version_ge A B: succeeds when A >= B (X.Y.Z strings, sort -V).
+version_ge() {
+  [[ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n 1)" == "$2" ]]
+}
+
 release_train_has_consistent_versions() {
   local metadata_count public_count artifact_count tag_count
   local metadata_version public_version public_source_sha artifact_source_sha artifact_version tag_version
@@ -690,7 +695,8 @@ release_train_has_consistent_versions() {
   artifact_version="$(release_train_artifact_version)"
   tag_version="$(release_train_tag_version)"
   [[ -n "$metadata_version" && -n "$public_version" && -n "$public_source_sha" && -n "$artifact_source_sha" && -n "$artifact_version" && -n "$tag_version" ]] || return 1
-  [[ "$public_version" == "$metadata_version" && "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" && "$public_source_sha" == "$artifact_source_sha" ]]
+  # D-16: metadata may run ahead of the public package (release PR merged, publish pending); never behind.
+  version_ge "$metadata_version" "$public_version" && [[ "$public_version" == "$artifact_version" && "$public_version" == "$tag_version" && "$public_source_sha" == "$artifact_source_sha" ]]
 }
 
 release_train_has_required_lines() {
