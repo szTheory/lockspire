@@ -6,7 +6,7 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Release Please version metadata: `1.6.0` <!-- x-release-please-version -->
+- Release Please version metadata: `1.6.1` <!-- x-release-please-version -->
 - Release Please date metadata: `2026-10-20` <!-- x-release-please-date -->
 - Latest public package: Hex `1.6.0`, published from source `428a9c53e02bc573376d0fcac313f047fbbea81c` on 2026-10-20. Release Please metadata above is not publication proof.
 - Artifact truth: protected release run [39481079989](https://github.com/szTheory/lockspire/actions/runs/39481079989) for source `428a9c53e02bc573376d0fcac313f047fbbea81c` was backed by matching canonical push CI [39478977350](https://github.com/szTheory/lockspire/actions/runs/39478977350), whose seven required jobs passed on that exact SHA. The release run verified the public Hex checksum `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`, HexDocs, [lockspire-v1.6.0](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.6.0), and clean-room install. Its terminal receipt records `release_verified: true` with no blocker. Independent maintainer-machine verification confirmed the three-way checksum, exact 11-task tarball, versioned guides, release target and a fresh HEX_HOME install with a matching lock checksum; the new gen.kek task compiled and ran with output length only recorded.
