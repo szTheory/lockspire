@@ -128,6 +128,39 @@ def validate(contract: str, data, stage: str) -> None:
     if stage in {"consumers", "complete"}:
         observed = {case.get("consumer") for case in cases.values() if case.get("kind") == "consumer"}
         require(observed == CONSUMERS, "consumer inventory is missing or adds a selected row")
+        consumer_cases = {c["consumer"]: c for c in cases.values() if c.get("kind") == "consumer"}
+        required_outcomes = {
+            "authorization_intake": "reject_before_login_or_consent",
+            "resume_remembered_consent_approval": "no_code",
+            "par_create_and_use": "reject_at_both_boundaries",
+            "device_create_verify_approve": "reject_create_and_approval",
+            "ciba_initiation_poll_push": "recheck_current_worker_state",
+            "code_redemption": "reject_without_token_write_or_code_consumption",
+            "refresh_device_ciba_existing_grants": "reject_replacement_preserve_grant_rules",
+            "exchange_requesting_client": "reject_caller",
+            "exchange_subject_actor": "invalid_grant",
+            "introspection_caller": "client_authentication_failure",
+            "introspection_target": "200_active_false_if_owned",
+            "userinfo": "401_invalid_token_before_host_claims",
+            "revocation": "reject_caller; eligible_unknown_token_non_disclosing",
+            "management_get_delete": "allow_valid_current_token_if_enabled",
+            "management_put": "403_registration_expired",
+            "disabled_app": "deny_protocol_and_all_self_management",
+            "discovery_jwks": "unaffected",
+            "host_rp_sessions_account_policy": "unaffected_host_owned",
+        }
+        require({name: row.get("expired") for name, row in consumer_cases.items()} == required_outcomes,
+                "consumer inventory is missing or has an incorrect outcome")
+        for name, row in consumer_cases.items():
+            require(row.get("state_assumptions") == {
+                "app_enabled": True, "app_expired": True, "registration_history_retained": True},
+                f"consumer state assumptions are incomplete: {name}")
+            require(isinstance(row.get("checkpoint"), str) and row["checkpoint"],
+                    f"consumer check point is missing: {name}")
+            require(isinstance(row.get("state_effect"), str) and row["state_effect"],
+                    f"consumer state effect is missing: {name}")
+            require(row.get("response_or_behavior") == row.get("expired"),
+                    f"consumer response or unaffected behavior is missing: {name}")
         token = cases.get("C-TOK-01", {})
         require(token.get("stored_expiry") == token.get("jwt_exp") == token.get("app_deadline")
                 and token.get("expires_in") == token.get("app_deadline") - token.get("at"),
@@ -137,6 +170,11 @@ def validate(contract: str, data, stage: str) -> None:
                 "GET must be side-effect free and credential-free")
         require(cases.get("C-MGMT-08", {}).get("missing_bearer") == "401 challenge no detail",
                 "missing Bearer outcome is wrong")
+        require(cases.get("C-MGMT-07", {}).get("extension_omission") == "preserve"
+                and cases["C-MGMT-07"].get("changed_extension") == "400 invalid_client_metadata",
+                "server-owned extension changes must be rejected and omission preserved")
+        require("do not probe callbacks" in contract.lower(),
+                "contract must keep adapter probing outside token internals")
 
     if stage == "complete":
         require(set(decisions) == DECISIONS, "decision map must contain exactly D-01 through D-27")
@@ -201,11 +239,11 @@ def self_test(contract: str, data, stage: str) -> list[str]:
     if stage in {"consumers", "complete"}:
         def missing_consumer(doc, fixture):
             fixture["cases"] = [c for c in fixture["cases"] if c["id"] != "C-APP-01"]
-        rejected("missing-consumer", missing_consumer, "decision D-01 references missing case")
+        rejected("missing-consumer", missing_consumer, "references missing case")
 
         def caller_target(doc, fixture):
-            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-11")]["expired"] = "401"
-        rejected("caller-target-swap", caller_target, "consumer inventory")
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-11")]["expired"] = "401 invalid_token"
+        rejected("caller-target-swap", caller_target, "incorrect outcome")
 
         def token_cap(doc, fixture):
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-TOK-01")]["jwt_exp"] = 161
