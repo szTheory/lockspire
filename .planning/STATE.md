@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-05 Task 3: awaiting PR #132 squash merge approval"
-last_updated: "2026-10-20T18:12:44+00:00"
+stopped_at: "161-05 complete; proceeding to 161-06 safety rebinding and release PR verification"
+last_updated: "2026-10-20T18:31:14+00:00"
 last_activity: 2026-10-20
-last_activity_desc: Plan 161-04 complete; PR 132 green at c12b2c65
+last_activity_desc: Plan 161-05 complete; PR 132 squash-merged at db33c470
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 12
-  percent: 71
+  completed_plans: 13
+  percent: 76
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 5 of 9
-Status: Awaiting PR #132 squash merge approval
-Last activity: 2026-10-20 — Plan 161-04 complete; PR #132 passes all eight checks at c12b2c65
+Plan: 6 of 9
+Status: Executing safety rebinding and release PR verification
+Last activity: 2026-10-20 — PR #132 squash-merged at db33c470; proceeding to plan 06
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 76%
 
 ## Accumulated Context
 
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T18:12:44+00:00
-Stopped at: Plan 161-04 complete (summary 4969b5e9). PR #132 is green at c12b2c65; PR #122 override applied and verified (626880b9); awaiting plan 161-05 Task 3 approval to squash-merge PR #132.
+Last session: 2026-10-20T18:31:14+00:00
+Stopped at: Plan 161-05 complete; PR #132 squash db33c470 verified. Proceeding to plan 161-06 Tasks 1–2 (safety rebind, safe local reset and #121 exact-head verification), then separate #121 merge checkpoint.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
