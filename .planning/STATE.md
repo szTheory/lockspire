@@ -2,40 +2,37 @@
 gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
-current_phase: 161
-current_phase_name: Docs & Verified 1.6.0 Release
-status: executing
-stopped_at: "161-07 Task 4: waiting for hex-publish approval, run 39481079989"
-last_updated: "2026-10-20T19:05:19+00:00"
+status: Awaiting next milestone
+stopped_at: v1.44 archived — closeout PR pending
+last_updated: "2026-10-20T20:09:26.327Z"
 last_activity: 2026-10-20
-last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
-state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
+last_activity_desc: Milestone v1.44 completed and archived
+state_head: ae3f3e211243bfb1abb375316e2f3d489c431280
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
+current_phase: 161
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
+See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 161 — Docs & Verified 1.6.0 Release
+**Current focus:** v1.44 archived; land planning closeout, then keys.reencrypt follow-up
 
 ## Current Position
 
-Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 9 of 9
-Status: Recording verified publication on main
-Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
-
-Progress: [█████████░] 94%
+Phase: Milestone v1.44 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-20 — Milestone v1.44 completed and archived
 
 ## Accumulated Context
 
@@ -363,11 +360,15 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 | verification_override | 155/155-VERIFICATION.md | passed at execution; stale after in-milestone 156/157 edits; override_closeout | 2026-10-16 | v1.43 |
 | verification_override | 156/156-VERIFICATION.md | passed at execution; stale after in-milestone 157 edits; override_closeout | 2026-10-16 | v1.43 |
 
+| todos | 2026-10-19-keys-reencrypt-via-repo-runner.md | Deferred follow-up after approved v1.44 closeout; not resolved | 2026-10-20 | v1.44 |
+
 ## Session Continuity
 
-Last session: 2026-10-20T19:17:18+00:00
-Stopped at: Plan 161-07 Task 4 — run 39481079989 on S 428a9c53 passed validation and exact package proof; waiting for maintainer hex-publish approval. One-use authorization is currently set and must be cleared after terminal outcome; on abort cancel run, await terminal, then delete it. Nothing published yet.
-Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
+Last session: 2026-10-20
+Stopped at: v1.44 audited and archived; 13/13 requirements, 4/4 phases, 17/17 plans. Planning closeout PR is being prepared under standing green-CI approval.
+Resume file: None
+
+Published source428a9c53 and package tag lockspire-v1.6.0 remain immutable. Release ledger is on main5e8a484c; this closeout only lands planning records. Original state.json remains unstaged and preserved. Old phases142/143/999.1 and quick tasks are untouched. All phase reports passed before archival; one deferred todo acknowledged and four prior artifacts carried forward. Next: keys.reencrypt follow-up, then separately scoped DCR lifetimes.
 
 ## Performance Metrics
 
@@ -500,4 +501,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Plan the first v1.44 phase with /gsd-plan-phase 158
+- Start the next milestone with $gsd-new-milestone

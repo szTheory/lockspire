@@ -8,17 +8,19 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## Current Milestone: v1.44 Adopter Polish & Verified 1.6.0
+## Completed Milestone: v1.44 Adopter Polish & Verified 1.6.0 (Completed 2026-10-20)
 
 **Goal:** Make the first encrypted-at-rest release easy to adopt, then publish and verify it end to end.
 
 **Target features:**
-- Confirm in a clean-room host, then fix, the DB-touching Mix tasks (`lockspire.client.create`, `lockspire.doctor.token_format`, `lockspire.doctor.remote_jwks`) that do not start the repo, using the `Ecto.Migrator.with_repo` pattern, with tests that run each task without a pre-started repo.
+- Confirm in a clean-room host, then fix, the DB-touching Mix tasks (`lockspire.client.create`, `lockspire.doctor.token_format`, `lockspire.doctor.remote_jwks`) that do not start the repo, using the shared `TaskError` / `RepoRunner` pattern, with tests that run each task without a pre-started repo.
 - `mix lockspire.gen.kek` prints a fresh key-encryption key and the `runtime.exs` snippet (KEK-03).
 - `{:system, "ENV"}` key-encryption-key resolution (KEK-05).
 - A read-only "Key protection" line on the admin Keys pages showing whether keys are encrypted and under which key ID (KEY-UI-01), worded from the PRODUCT.md vocabulary map.
 - An admin key-generation error that names the missing key-encryption key instead of generic copy.
 - Merge Release Please PR #121 and verify the published lockspire 1.6.0 (Hex checksum, docs, GitHub release and tag, clean-room install), as v1.39 did for 1.5.1.
+
+**Delivered (2026-10-20):** Phases 158–161 delivered all 13 requirements in 17 plans. Lockspire 1.6.0 was published from `428a9c53e02bc573376d0fcac313f047fbbea81c` through protected run 39481079989, with matching canonical source CI, exact artifact proof and terminal `release_verified: true`. Independent public checksum/manifest/tar/lockfile checks, versioned docs, exact11-task inventory, tag/release source and a fresh Hex/Mix-home install all passed. PR133 records that verified release on main; later documentation commits are distinct from the published source.
 
 No protocol change, no new dependency, and security defaults stay the same. Deferred: DCR lifetime enforcement (DCR-01, its own protocol milestone), KMS/Vault key-set provider (KEK-04), the dedicated `client_secret_jwt` verifier key (SEC-01), and a paged `--dry-run`.
 
@@ -129,7 +131,9 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-v1.43 Signing Key Encryption at Rest is complete and archived (2026-10-16). Phases 155–157 delivered all 16 requirements in 14 plans and closed CR-01: private signing keys are encrypted at rest under a rotatable host KEK, existing installs have a checked migration path, and redaction is proven across every surface. The release (a minor bump with an upgrade guide) is pending through Release Please. No milestone is active; the next one starts with `/gsd-new-milestone`.
+v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is next; DCR lifetimes require their own protocol milestone.
+
+v1.43 Signing Key Encryption at Rest is complete and archived (2026-10-16). Phases 155–157 delivered all 16 requirements in 14 plans and closed CR-01: private signing keys are encrypted at rest under a rotatable host KEK, existing installs have a checked migration path, and redaction is proven across every surface. This work is now publicly shipped in 1.6.0 together with v1.44 adopter polish.
 
 v1.42 Admin UI Clarity & Workflow Refinement is complete and archived (2026-10-15). Phases 151–154 delivered all nine requirements in 21 plans; every phase is verified, Nyquist-validated and security-audited, and the full suite passes (1573 tests).
 
@@ -139,7 +143,7 @@ The v1.40 Admin Operator UI Refinement milestone closed on 2026-10-10 with all 2
 
 Billingo is a synthetic demo-adopter fixture in Lockspire's adoption demo. It is not a real customer or production integration. The stable preview remains backed by synthetic data, and mutation checks use a separate disposable target.
 
-Lockspire 1.5.1 remains the latest public package, verified through the protected exact-source workflow. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The CR-01 private-key-at-rest finding, left open by the UI milestones (v1.40, v1.42), was resolved in v1.43.
+Lockspire 1.6.0 is the latest public package, verified through protected run 39481079989 and independently from public sources; checksum `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`. Repository readability/docs-polish backlog Phase 999.1 was promoted into v1.41 and delivered through Phases 148–150. The CR-01 private-key-at-rest finding, left open by the UI milestones (v1.40, v1.42), was resolved in v1.43.
 
 The embedded-library shape, host-owned account/login/layout/branding/policy seam, protocol security defaults, and sustaining GA release-train posture remain unchanged. Verification defaults to deterministic tests and CI where they provide recurring value; human handoffs remain only for subjective or otherwise unreachable evidence.
 
@@ -309,15 +313,16 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-v1.44 Adopter Polish & Verified 1.6.0 (requirements in [REQUIREMENTS.md](REQUIREMENTS.md)):
-- `mix lockspire.gen.kek` generator (KEK-03) and `{:system, "ENV"}` KEK resolution (KEK-05).
-- Read-only "Key protection" line on admin Keys pages (KEY-UI-01) and an admin error that names a missing KEK.
-- Verified publication of lockspire 1.6.0.
+The v1.44 implementation and public-release requirements are delivered; no new active product scope has been selected. Phase/milestone records retain the exact evidence boundary.
 
 Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures, DCR default lifetime semantics (DCR-01).
 
 ### Validated
 
+- ✓ Repo-free `mix lockspire.gen.kek`, shared fail-closed snippet, runtime `{:system, "VAR"}` resolution and redacted key-set inspection (KEK-03, KEK-05, KEK-06) — v1.44, Phase 159; reverified after guide edits with 83 tests / 0 failures and a fresh public-package task run.
+- ✓ Read-only Key protection states and specific missing-KEK generation guidance, with vocabulary contracts (KEY-UI-01..03) — v1.44, Phase 160; existing verified report plus current118-test cross-phase regression gate.
+- ✓ Task-focused install/upgrade/operator guides and executable label/pointer contracts (DOC-02), with warning-free CI docs builds — Phase 161.
+- ✓ Release Please1.6.0 coverage for v1.40–v1.44, protected exact-source publication, mandatory receipt/manifest evidence, independent public/fresh-install proof and release ledger on main (REL-01, REL-02, SAFE-02) — Phase 161; source428a9c53, protected run 39481079989.
 - ✓ `mix lockspire.client.create`, `doctor token_format` and `doctor remote-jwks` start and stop the host repo themselves through `RepoRunner` (an already-running pool is left untouched), report real failure reasons as fixed secret-free phrases via `Lockspire.Install.TaskError`, print a client secret once only after a committed write, and are proven by cold tests plus the clean-room journey (TASK-01..03) — v1.44, Phase 158; verifier passed 4/4, security 15/15, code review 7/7 fixed. `keys.reencrypt` still on raw `with_repo` (follow-up todo).
 - ✓ Demo and clean-room hosts on Bandit 1.13.1; strictly validated `:key_encryption` KEK list in runtime config with no `secret_key_base` fallback; every new private signing key sealed as an AES-256-GCM `LSK\x01` envelope bound to its kid; missing KEK keeps boot and existing signing working while generation refuses (DEP-01, KEK-01, KEK-02, ENC-01..03) — v1.43, Phase 155; verifier 5/5.
 - ✓ Locked, CAS-guarded `mix lockspire.keys.reencrypt` legacy migration and KEK rotation with dry-run, `--check` readiness and durable audit; opt-in `legacy_plaintext: :reject` refuses plaintext before any parser runs (MIG-01..03, OPS-01, OPS-02) — v1.43, Phase 156; verifier 5/5, security 19/19.
@@ -440,6 +445,11 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Share KEK snippet generation between installer and print-only task; resolve env references at runtime and fail closed | Keep adopter setup consistent without writing secrets or hiding missing configuration | ✓ Good — Phase159 and public1.6.0, covered by generator/config/guidance contracts |
+| Keep key protection read-only and unknown states explicit | Operators need truthful status while the host owns encryption-key lifecycle | ✓ Good — Phase160 state matrix, rendered checks and vocabulary contracts |
+| Approve pending bot-created PR workflow runs through the normal API when authorized | Manual dispatch success alone does not satisfy PR check gates | ✓ Good — corrected D-21 premise; actual PR runs passed before normal merge |
+| Keep planning milestone tags separate from package release tags | v1.44 describes work organization; lockspire-v1.6.0 identifies immutable published source | ✓ Good — closeout does not republish or move the package tag |
+| Apply explicit conditional maintainer authorization to already-scoped release steps when required checks are green | Avoid repeated approval prompts while retaining actual branch/environment protections, exact-source guards and one-use authorization cleanup | Adopted2026-10-20; normal API approvals used for verified release workflow and record PR; failed checks still stop progress |
 | Start v1.41 with a plain-language admin UI copy pass before README and guide rewrites | The user reports that existing UI wording feels like boilerplate and jargon; reviewed terms should anchor the documentation pass while preserving protocol meaning and action consequences | Adopted 2026-10-10; delivered in Phase 148 with 33/33 must-haves verified, 215 focused tests, and responsive inspection; Impeccable `clarify` guidance informed the bounded copy review |
 | Keep reader guides task-focused, preserve `docs/supported-surface.md` as the single capability contract, and prove recurring documentation properties with deterministic checks | Adopters need clear next steps and accurate boundaries without duplicate capability promises or manual verification of properties the build and tests can prove | Adopted and delivered in Phase 150; five ExDoc groups, an 8-test contract, warning-free docs build, package build, and Phase 148/149 regressions passed |
 | Keep repository planning paths out of public adopter/admin guides | Repository-only evidence can disappear from published HexDocs and distract adopters from their tasks | Adopted in Phase 150; an executable contract checks the README and five adopter/admin guides |
@@ -522,4 +532,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-19 after Phase 158*
+*Last updated: 2026-10-20 after v1.44 milestone closeout*

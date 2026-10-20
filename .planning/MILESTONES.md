@@ -1,5 +1,29 @@
 # Milestones
 
+## v1.44 Adopter Polish & Verified 1.6.0 (Shipped: 2026-10-20)
+
+**Delivered:** Repo-safe host tasks, print-only KEK setup, runtime environment configuration, truthful admin key protection and accurate guides, shipped together with v1.43 as publicly verified Lockspire1.6.0.
+
+**Phases completed:** 4 phases (158–161), 17 plans; 49 planned task elements; all 13 requirements satisfied. The CLI reported zero tasks because these summaries use varied metadata; 49 is counted from PLAN task elements, not claimed as measured execution telemetry.
+
+**Key accomplishments:**
+- Three named tasks use TaskError/RepoRunner with cold-start, existing-pool, real failure-reason and secret-once proof.
+- gen.kek shares the install snippet; environment tuple configuration fails closed and KeySet inspection stays redacted.
+- Admin Keys shows seven read-only protection states and actionable missing-KEK generation guidance.
+- Public1.6.0 source428a9c53 was published through protected run39481079989, independently checked, installed from fresh homes and recorded on main5e8a484c.
+
+**Known verification overrides: 1 newly acknowledged, 4 carried forward from prior closes (see STATE.md Deferred Items).** The new acknowledgment is the already-deferred keys.reencrypt follow-up, not a phase-verification override. All four phase projections passed before archival. Older historical reports retain their verdicts.
+
+**Accepted debt:** keys.reencrypt RepoRunner/TaskError follow-up; Phase160 IN-02 decryption on status reads; optional copy-tone judgment. Persistent release auto-merge remains disabled. No new package publication or protocol scope is authorized by this planning archive.
+
+**Audit:** [v1.44 milestone audit](milestones/v1.44-MILESTONE-AUDIT.md), tech_debt, no blockers; 13/13 requirements, 6/6 links, 4/4 flows, all four phases Nyquist-compliant. Fresh seam gate:145tests/0failures.
+
+**Archives:** [roadmap](milestones/v1.44-ROADMAP.md), [requirements](milestones/v1.44-REQUIREMENTS.md), [phases](milestones/v1.44-phases/). GSD tag v1.44 is a planning marker, distinct from lockspire-v1.6.0.
+
+**Next:** bounded keys.reencrypt maintenance; DCR lifetime enforcement as a separate scoped protocol milestone.
+
+---
+
 ## v1.43 Signing Key Encryption at Rest (Completed: 2026-10-16)
 
 **Delivered:** Closes CR-01. Private signing keys are no longer stored as plaintext. Every new key is sealed as an AES-256-GCM `LSK\x01` envelope under a host-supplied, rotatable key-encryption key (KEK) from `runtime.exs`. Existing installs upgrade in place: legacy rows stay readable, `mix lockspire.keys.reencrypt` migrates them and rotates KEKs, `--check` proves readiness, and opt-in `legacy_plaintext: :reject` refuses plaintext. No new dependency, no schema migration and no OAuth/OIDC behaviour change (SAFE-01). The demo and clean-room hosts moved to Bandit 1.13.1 first. The package release is left to Release Please.

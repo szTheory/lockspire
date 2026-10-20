@@ -4,6 +4,9 @@ title: Route mix lockspire.keys.reencrypt through RepoRunner/TaskError
 area: install-dx
 files:
   - lib/mix/tasks/lockspire.keys.reencrypt.ex
+audit_acknowledged:
+  milestone: v1.44
+  at: 2026-10-20
 ---
 
 ## Problem

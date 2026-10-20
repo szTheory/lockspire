@@ -311,3 +311,26 @@ CLEAN_ROOM: /private/tmp/lockspire-160-clean-oush3_3d
 Plan161-09 Task1: refreshed RELEASE-TRAIN.md from the terminal receipt and independent public proof. Latest package is Hex1.6.0 from S428a9c53; previous1.5.1 and earlier1.5.0 history preserved, metadata/date lines and standing train rules unchanged. Hygiene:18PASS,0WARN,0BLOCK. Existing repository_hygiene_contract_test.exs + release_automation_contract_test.exs:13tests,0failures; no test edits.
 
 Maintainer's conditional authorization covers pushing/opening and squash-merging this scoped documentation-only record PR after required checks pass, without another prompt. Public package source remains S; later record commits are distinct. Branch docs/record-lockspire-1.6.0; title docs(release): record verified Lockspire 1.6.0 publication.
+
+
+Release-record landing (plan09 Task3):
+
+- PR https://github.com/szTheory/lockspire/pull/133 at R `440f65b690535261621d8bf9db95779a32a9a7f5` passed all seven required jobs plus dependency-review (CI39484021517; DependencyReview39484021542).
+- Squash merged under the user's explicit conditional green-check authorization, normal protection and exact-head pin; no extra prompt.
+- Merge `5e8a484cb834197bb0f57902fdbd6cb9675a2715`, single parent S `428a9c53e02bc573376d0fcac313f047fbbea81c`; tree equality R==merge verified. Published source remains S.
+- origin/main ledger names verified Hex1.6.0. Release push39485083062 success; no open autorelease:pending PR after it completed.
+- Backup/local-main-pre-record-reset at `df3a12355f485630040cf25ce49cf6bf27ca8d6f`; state.json stashed, clean-tree gate immediately before reset empty, reset to merged main, all3 post-R planning commits replayed, exact state.json SHA256 `f260f30019ac3d53ce4682057c2eaac9546751b5cf978d94c57783520e21e40b` preserved. Only planning files differ from origin/main; state.json remains unstaged.
+- Final main CI39485083024 is running separately; wait for completion before reporting final main readiness.
+
+## Post-release decisions
+
+- Maintainer's explicit instruction: “if CI is green i approve it, i dont want to have to manually approve each time”. Applied to the remaining scoped release approvals through normal GitHub APIs, preserving all actual checks and protections. This conditional authorization is retained in CONTEXT for future resumption of authorized work.
+- Existing repository automation setting preserved: Release Please Auto Merge `disabled_manually`, variable LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED `true`. Conditional agent approval does not require an unsolicited change to persistent unattended repository automation. No future release intent was created.
+- Dependabot #125/#126/#127 remain OPEN and deferred; none merged, rebased or closed in this release task.
+- No open autorelease:pending PR; observation 2026-10-20T19:39:15+00:00.
+- One-use publication authorization remains absent.
+
+
+## Final main readiness
+
+Observed 2026-10-20T19:46:21+00:00: main `5e8a484cb834197bb0f57902fdbd6cb9675a2715` (documentation-only release-record merge) has successful canonical push CI39485083024 with all seven required jobs success; Release push39485083062 also success. Published artifact source remains428a9c53. No open autorelease:pending PR and no one-use publication authorization variable. Branch/environment protections unchanged; dependency PRs deferred. Local phase closure records after the record PR are planning-only, with original state.json preserved unstaged.
