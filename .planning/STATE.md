@@ -5,8 +5,8 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-07 Task 4: waiting for hex-publish approval, run 39481079989"
-last_updated: "2026-10-20T19:05:19+00:00"
+stopped_at: "161-09: waiting for release-record PR133 CI before conditional squash merge"
+last_updated: "2026-10-20T19:32:51+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
 state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T19:17:18+00:00
-Stopped at: Plan 161-07 Task 4 — run 39481079989 on S 428a9c53 passed validation and exact package proof; waiting for maintainer hex-publish approval. One-use authorization is currently set and must be cleared after terminal outcome; on abort cancel run, await terminal, then delete it. Nothing published yet.
+Last session: 2026-10-20T19:32:51+00:00
+Stopped at: Plan161-09 — PR133 release-record tip440f65b6, CI39484021517 running. Source428a9c53 published and independently verified; run39481079989 success; one-use authorization deleted. Conditional maintainer approval covers remaining green scoped release steps. Merge PR133 after all checks green, then finalize phase evidence.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
