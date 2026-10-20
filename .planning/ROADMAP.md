@@ -36,7 +36,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 **Goal:** Host maintainers have one selected, standards-grounded expiry and upgrade contract before implementation planning.
 **Depends on:** Approved v1.45 scope and focused research; no implementation dependency
 **Requirements:** DCR-02, DCR-03, DCR-04
-**Plans:** 0 (not yet planned)
+**Plans:** 1 (162-01 execution complete; independent verification pending)
 
 **Success criteria:**
 
@@ -104,7 +104,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 
 | Phase | Plans complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 162. Lifetime Semantics & Upgrade Contract | 0/TBD | Not started | — |
+| 162. Lifetime Semantics & Upgrade Contract | 1/1 | Ready for verification | — |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
 | 164. Client-Secret Expiry & Atomic Rotation | 0/TBD | Not started | — |
 | 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |

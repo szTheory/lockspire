@@ -4,17 +4,17 @@ milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 162
 current_phase_name: Lifetime Semantics & Upgrade Contract
-status: planning
-stopped_at: Phase 162 context gathered (researched assumptions mode)
-last_updated: "2026-10-20T22:17:59.272Z"
+status: verifying
+stopped_at: Completed 162-01-PLAN.md
+last_updated: "2026-10-20T22:23:17.562Z"
 last_activity: 2026-10-20
-last_activity_desc: Approved five-phase roadmap maps all 18 requirements
-state_head: 180e5e230706aca60b91d5cbbca81fa7cefad5f6
+last_activity_desc: Phase 162 execution started
+state_head: facc252bc29f40c9ff03232e889e4fe56b43d4a9
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 1
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.45 DCR Lifetime Enforcement — Phase 162 researched context selected; ready for contract planning
+**Current focus:** Phase 162 — Lifetime Semantics & Upgrade Contract
 
 ## Current Position
 
-Phase: 162 (Lifetime Semantics & Upgrade Contract) — READY TO EXECUTE
-Plan: —
-Status: Ready for Phase 162 planning
-Last activity: 2026-10-20 — Selected researched Phase 162 decisions under user-directed automatic adoption
+Phase: 162 (Lifetime Semantics & Upgrade Contract) — EXECUTING
+Plan: 1 of 1
+Status: Phase complete — ready for verification
+Last activity: 2026-10-20 — Phase 162 execution started
 
 ## Accumulated Context
 
@@ -313,6 +313,8 @@ Last activity: 2026-10-20 — Selected researched Phase 162 decisions under user
 - [Phase 160]: Missing key-encryption key refusal is static vocabulary-map copy in the alert list; generate buttons stay enabled
 - [Phase 161]: D-16: ledger gate accepts metadata >= public; artifact/tag/SHA equality stays strict
 - [Phase 161]: 161-03: SAFE-02 PASS at 807802b6; v1.44 PR names repo-start change only for client.create, doctor token_format, doctor remote-jwks; #122 override proven offline
+- [Phase 162]: Nil and zero remain unlimited; positive lifetimes use issuance snapshots and strict UTC-second boundaries.
+- [Phase 162]: Legacy/custom-store compatibility requires explicit authoritative version and guarded whole-row promotion.
 
 ### Pending Todos
 
@@ -377,11 +379,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T22:05:54.156Z
-Stopped at: Phase 162 context gathered (researched assumptions mode)
-Resume file: .planning/phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md
+Last session: 2026-10-20T22:23:17.529Z
+Stopped at: Completed 162-01-PLAN.md
+Resume file: None
 
-Next: $gsd-discuss-phase 162 — resolve lifetime semantics and upgrade compatibility using the approved scope, focused research and completed Phase 153 audit. No implementation plan may proceed until Phase 162 resolves the semantics and compatibility contract. Public 1.6.1 remains verified; package publication is separate. Preserve original unstaged state.json bytes and historical phase exceptions.
+Next: Independently verify Phase 162's contract and cases against the selected decisions; do not begin implementation planning for Phases 163–166 until that gate passes. The complete-stage validator proves design consistency only, not runtime enforcement. Preserve original unstaged state.json bytes and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -511,6 +513,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 161 P01 | 10 min | 2 tasks | 4 files |
 | Phase 161 P02 | 25 min | 3 tasks | 3 files |
 | Phase 161 P03 | 25 min | 3 tasks | 3 files |
+| Phase 162 P01 | 5 min | 3 tasks | 5 files |
 
 ## Operator Next Steps
 
