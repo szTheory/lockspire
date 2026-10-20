@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.44 archived; land planning closeout, then keys.reencrypt follow-up
+**Current focus:** v1.44 archived on main via PR134; keys.reencrypt implemented in PR135; DCR scope ready for next milestone
 
 ## Current Position
 
@@ -323,6 +323,7 @@ Last activity: 2026-10-20 — Milestone v1.44 completed and archived
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 20261020-keys-reencrypt | Route keys.reencrypt through TaskError/RepoRunner;171tests/0failures; implemented in PR135 | 2026-10-20 | fb8f3ccb | [summary](./quick/20261020-keys-reencrypt-repo-runner/SUMMARY.md) |
 | 260924-mhp | Classify active UAT lifecycle records from structured status and document shape | 2026-09-24 | 37a1d62c | [260924-mhp-classify-active-uat-records-in-the-phase](./quick/260924-mhp-classify-active-uat-records-in-the-phase/) |
 | 2 | 260925-x8y: classify structurally valid status: testing UAT as active evidence | 2026-09-26 | f0270d2d | — |
 | 260926-c7l | Refresh Phase 139 verification across all 13 plans | 2026-09-26 | 285c6c62 | [260926-c7l-refresh-phase-139-s-canonical-verificati](./quick/260926-c7l-refresh-phase-139-s-canonical-verificati/) |
@@ -365,10 +366,10 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20
-Stopped at: v1.44 audited and archived; 13/13 requirements, 4/4 phases, 17/17 plans. Planning closeout PR is being prepared under standing green-CI approval.
+Stopped at: v1.44 audited/archived and merged as c7f66219 via PR134 after all eight checks passed. keys.reencrypt follow-up is implemented in PR135 with171tests/0failures; consult GitHub for its final CI/landing state. DCR scope captured at research/dcr-lifetimes/SCOPE.md; no protocol implementation started.
 Resume file: None
 
-Published source428a9c53 and package tag lockspire-v1.6.0 remain immutable. Release ledger is on main5e8a484c; this closeout only lands planning records. Original state.json remains unstaged and preserved. Old phases142/143/999.1 and quick tasks are untouched. All phase reports passed before archival; one deferred todo acknowledged and four prior artifacts carried forward. Next: keys.reencrypt follow-up, then separately scoped DCR lifetimes.
+Published source428a9c53 and package tag lockspire-v1.6.0 remain immutable. Release ledger is on main5e8a484c; this closeout only lands planning records. Original state.json remains unstaged and preserved. Old phases142/143/999.1 and quick tasks are untouched. All phase reports passed before archival; one deferred todo acknowledged and four prior artifacts carried forward. Next: confirm PR135 landing state, then activate the separately scoped DCR milestone.
 
 ## Performance Metrics
 
