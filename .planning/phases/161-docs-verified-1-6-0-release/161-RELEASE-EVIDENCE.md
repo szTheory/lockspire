@@ -19,6 +19,16 @@ Preflight (plan 161-04 Task 1), taken 2026-10-20, before any remote write:
 
 Planned branch: `milestone/v1.44-adopter-polish`.
 
+Resume preflight (2026-10-20, Codex):
+
+- GitHub API reachable; live `refs/heads/main` is still `038df080748c046829f9f98297da8403c47b4d89`.
+- No milestone PR exists (all states checked); #122 has no override yet.
+- Release Please Auto Merge remains `disabled_manually`; #125–#127 remain open.
+- Since the SAFE-02 sweep, committed changes affect only `.planning/`.
+- Local planning changes are STATE.md continuity, config runtime `claude` → `codex`, and the intentionally unstaged state.json.
+- Existing push/PR approval is retained. User instructed this session: “what do u recommend? do that”; recommended action is to push/open the prepared milestone PR and obtain green CI.
+- Historical handoff instructions demanding approval again solely because of a new session are superseded by the active session's approval-persistence rule.
+
 ## Release PR #121
 
 (filled by plan 161-05)

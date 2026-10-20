@@ -54,5 +54,5 @@
       "haiku": "claude-haiku-5-5"
     }
   },
-  "runtime": "claude"
+  "runtime": "codex"
 }
