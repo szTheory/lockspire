@@ -208,6 +208,16 @@ gh workflow run release.yml --repo szTheory/lockspire --ref main -f recovery_ref
 
 The protected hex-publish environment remains a later separate maintainer approval. Variable cleanup after the attempt is mandatory on every outcome.
 
+Publication authorization and dispatch (plan 161-07 Task 3):
+
+- Maintainer explicitly authorized setting the one-use variable and dispatching the exact-SHA protected workflow (“yes”).
+- Repeated guards before writing: live main S, matching #121 mergeCommit, source push CI all seven success, exact Hex version HTTP404, tag absent, variable absent, no in-flight Release run, auto-merge disabled.
+- Set LOCKSPIRE_PHASE143_AUTHORIZED_SHA at 2026-10-20T19:09:50+00:00; read-back equals S `428a9c53e02bc573376d0fcac313f047fbbea81c`.
+RUN: 39481079989
+- Run URL: https://github.com/szTheory/lockspire/actions/runs/39481079989
+- Confirmed workflow_dispatch event and exact headSha S. Validation and package proof run before the hex-publish environment approval.
+- No deployment approval performed. Keep variable until attempt finishes; on abort cancel run and wait for terminal, then clear it; clear on every outcome.
+
 ## Independent verification
 
 (filled by later plans)
@@ -215,3 +225,5 @@ The protected hex-publish environment remains a later separate maintainer approv
 ## Variable lifecycle
 
 2026-10-20T19:04:46+00:00: no stale variable; LOCKSPIRE_PHASE143_AUTHORIZED_SHA absent. No set or dispatch yet.
+
+2026-10-20T19:09:50+00:00: set authorized-SHA variable to `428a9c53e02bc573376d0fcac313f047fbbea81c` and verified read-back; dispatched RUN 39481079989. Cleanup pending terminal outcome.
