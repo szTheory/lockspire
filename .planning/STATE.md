@@ -4,16 +4,16 @@ milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 160
 current_phase_name: Admin Key Protection & Missing-KEK Copy
-status: planning
+status: executing
 stopped_at: Phase 160 context gathered (assumptions mode)
-last_updated: "2026-10-20T01:53:18.562Z"
+last_updated: "2026-10-20T02:46:12.904Z"
 last_activity: 2026-10-19
 last_activity_desc: Phase 159 complete, transitioned to Phase 160
-state_head: ce024f2ea58c52fe6954b38d4ffd4850e8ce1541
+state_head: 95349153150eda91fb641c9c813cfe4b278cbea6
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 6
+  total_plans: 8
   completed_plans: 6
   percent: 50
 ---
@@ -30,9 +30,9 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 ## Current Position
 
-Phase: 160 — Admin Key Protection & Missing-KEK Copy
+Phase: 160 (Admin Key Protection & Missing-KEK Copy) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
+Status: Ready to execute
 Last activity: 2026-10-19 — Phase 159 complete, transitioned to Phase 160
 
 Progress: [█████░░░░░] 50%
