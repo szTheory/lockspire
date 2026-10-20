@@ -168,6 +168,25 @@ CI_RUN: 39478977350
 - Read-back: #121 MERGED; mergeCommit equals live origin/main S; parent is S1; exact tree equals simulated/CI-green HEAD121; subject `chore(main): release lockspire 1.6.0 (#121)`; mix.exs version 1.6.0.
 - No package publication or authorization-variable change performed.
 
+Plan 161-06 completion evidence:
+
+- CI_RUN 39478977350: push event on S `428a9c53e02bc573376d0fcac313f047fbbea81c`, completed success; all seven required jobs success.
+- Release push run 39478977389: completed success; publication jobs skipped on ordinary push.
+- Post-merge local preservation: backup/local-main-pre-release-rebase at `b2448edfccb6ba6b923888070cd4025367fed637`; stashed only state.json, observed empty clean-tree gate, rebased all 16 planning-only commits onto origin/main S, and restored state.json byte-for-byte (SHA256 `f260f30019ac3d53ce4682057c2eaac9546751b5cf978d94c57783520e21e40b`).
+- After rebase, local main differs from origin/main only under `.planning/`; only unstaged change is `.planning/state.json`.
+
+| Required source CI job | Conclusion |
+|------------------------|------------|
+| Fast Checks | success |
+| Release Hygiene Drift | success |
+| Integration Checks | success |
+| Dialyzer | success |
+| Minimum Supported Elixir/OTP | success |
+| Adoption Demo Smoke | success |
+| Complete Coverage Evidence | success |
+
+REL-01 and SAFE-02 completion evidence is now established. Publication REL-02 remains pending; no package publish or authorization-variable set has occurred.
+
 ## Publication
 
 (filled by later plans)
