@@ -8,6 +8,18 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
+## Current Milestone: v1.45 DCR Lifetime Enforcement
+
+**Goal:** Make registration and credential expiry trustworthy, with matching advertised and enforced behavior and an explicit upgrade path for existing Phoenix hosts.
+
+**Target features:**
+- Resolve unset/zero/positive lifetime semantics, policy timing, expiry effects, management recovery and legacy compatibility in Phase 162 before implementation planning.
+- Enforce app, app-management-token and shared-secret lifetimes consistently across issuance, use and rotation.
+- Support existing installations, generated migrations and custom storage with executable compatibility evidence.
+- Prove boundary-time behavior, concurrency, redaction and complete host journeys; update operator and public guidance only after implementation is verified.
+
+**Inputs:** [DCR scope](research/dcr-lifetimes/SCOPE.md) and the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md). Focused standards and compatibility research is approved. No new timeout, backfill or rejection policy is selected by initializing this milestone. Package publication is a separate verified step.
+
 ## Completed Milestone: v1.44 Adopter Polish & Verified 1.6.0 (Completed 2026-10-20)
 
 **Goal:** Make the first encrypted-at-rest release easy to adopt, then publish and verify it end to end.
@@ -315,9 +327,9 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-The v1.44 implementation and public-release requirements are delivered; no new active product scope has been selected. Phase/milestone records retain the exact evidence boundary.
+v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. Detailed requirements are being defined from the approved scope and focused research.
 
-Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures, DCR default lifetime semantics (DCR-01).
+Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures. The DCR lifetime protocol gap is active scope and remains unresolved until verified.
 
 ### Validated
 
@@ -534,4 +546,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-20 after verified1.6.1 patch publication*
+*Last updated: 2026-10-20 at v1.45 milestone initialization*

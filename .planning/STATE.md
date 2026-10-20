@@ -1,20 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.44
-milestone_name: Adopter Polish & Verified 1.6.0
-status: Awaiting next milestone
-stopped_at: Verified1.6.1 published; sustaining train, no active phase
-last_updated: "2026-10-20T21:13:58.061607+00:00"
+milestone: v1.45
+milestone_name: DCR Lifetime Enforcement
+status: planning
+last_updated: "2026-10-20T21:48:11.534Z"
 last_activity: 2026-10-20
-last_activity_desc: Verified1.6.1 patch release
-state_head: d04be40262e975a4eb8d8567eb0d1458a9c23181
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 17
-  completed_plans: 17
-  percent: 100
-current_phase: 161
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,15 +21,24 @@ See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Verified1.6.1 public; sustaining patch train, DCR scope captured but inactive
+**Current focus:** v1.45 DCR Lifetime Enforcement — focused research and requirements; Phase 162 precedes implementation
 
 ## Current Position
 
-Phase: none (v1.44 archived)
-Status: Sustaining release train; verified1.6.1 public
-Last activity: 2026-10-20 — protected publication and independent verification passed
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-10-20 — Milestone v1.45 started
 
 ## Accumulated Context
+
+### v1.45 Milestone Direction
+
+- User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
+- No lifetime defaults, automatic legacy backfill or credential rejection policy has been selected yet. Requirements and roadmap approval remain pending.
+- Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
+- Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
+- Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
 
 ### v1.44 Milestone Direction
 
@@ -368,7 +373,7 @@ Last session: 2026-10-20
 Stopped at: Verified1.6.1 published from d04be40262e975a4eb8d8567eb0d1458a9c23181; sourceCI39495931590, protected run39496849388, terminal release_verifiedtrue/blockernone. Public checksum/docs/tag/release and isolated exact-version install verified; one-use authorization cleared and temporary freezes removed.
 Resume file: None
 
-v1.44 and PR134 closeout are archived/on main; PR135 keys.reencrypt fix is merged and shipped in1.6.1; release PR136 is merged and tagged. This documentation record is distinct from the immutable publication source. No protocol implementation is active; candidate scope is research/dcr-lifetimes/SCOPE.md. Original state.json remains unstaged and preserved; historical phase exceptions and backup branches remain intact. Confirm this release-record PR landing on GitHub before starting new work.
+v1.44 and PR134 closeout are archived/on main; PR135 keys.reencrypt fix is merged and shipped in1.6.1; release PR136 is merged and tagged. This documentation record is distinct from the immutable publication source. No protocol implementation has begun; v1.45 uses research/dcr-lifetimes/SCOPE.md. Original state.json remains unstaged and preserved; historical phase exceptions and backup branches remain intact. Release-record PR137 landed at a1e39a01; v1.45 initialization is now authorized.
 
 ## Performance Metrics
 
