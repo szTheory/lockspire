@@ -911,7 +911,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     )
 
     for tag <- ["button", "a", "form", "input"] do
-      assert Enum.count(LazyHTML.query(section, tag)) == 0, "expected no <#{tag}> in the section"
+      assert Enum.empty?(LazyHTML.query(section, tag)), "expected no <#{tag}> in the section"
     end
 
     text = LazyHTML.text(section)
