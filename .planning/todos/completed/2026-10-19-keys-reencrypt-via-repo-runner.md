@@ -16,3 +16,7 @@ Phase 158 moved `client.create`, `doctor token_format` and `doctor remote-jwks` 
 ## Solution
 
 Wrap its DB work in `TaskError.run/2`, keep its exit semantics, add a pool-untouched check and a cold test, mirroring the doctor tasks.
+
+## Resolution
+
+Implemented 2026-10-20 in the keys.reencrypt shared-runner follow-up. Existing cold coverage retained; startup exception reproduction and three all-mode running-pool checks added. See the quick-task summary for verification and scope.
