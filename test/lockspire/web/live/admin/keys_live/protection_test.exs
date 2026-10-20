@@ -131,10 +131,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ProtectionTest do
     end
   end
 
-  test "stranded retired rows and legacy_plaintext do not change the state" do
+  test "stranded retired rows do not change the state" do
     assert summarize_status(%{stranded_retired: %{count: 3}}).state == :encrypted
+  end
 
-    assert summarize_status(%{legacy_plaintext: :reject, legacy: 1}).state == :unencrypted
+  test "legacy rows are unreadable under reject mode and unencrypted otherwise" do
+    assert summarize_status(%{legacy_plaintext: :reject, legacy: 1}).state == :unreadable
+    assert summarize_status(%{legacy_plaintext: :allow, legacy: 1}).state == :unencrypted
+    assert summarize_status(%{legacy_plaintext: :reject, legacy: 0}).state == :encrypted
   end
 
   test "only the current id appears, and only when encrypted or older key" do

@@ -42,7 +42,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
       (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable)) ->
         :unreadable
 
-      unsealable_legacy?(status) ->
+      unsealable_legacy?(status) or reject_legacy?(status) ->
         :unreadable
 
       positive?(Map.get(status, :legacy)) ->
@@ -64,6 +64,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
     |> List.wrap()
     |> Enum.any?(&(Map.get(&1, :state) == :unsealable_legacy))
   end
+
+  # With `legacy_plaintext: :reject`, legacy rows are unreadable at runtime. This matches
+  # `EncryptionStatus.broken_now?/1`, which doctor and install verification gate on.
+  defp reject_legacy?(status),
+    do: Map.get(status, :legacy_plaintext) == :reject and positive?(Map.get(status, :legacy))
 
   defp positive?(value), do: is_integer(value) and value > 0
 
