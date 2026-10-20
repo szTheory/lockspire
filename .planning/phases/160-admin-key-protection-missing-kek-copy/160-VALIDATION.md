@@ -40,10 +40,12 @@ created: "2026-10-19"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD (filled after planning) | — | — | KEY-UI-01 | — | Could-not-check never healthy; only current KEK id shown | unit + LiveView | `MIX_ENV=test mix test test/lockspire/web/live/admin/keys_live/protection_test.exs test/lockspire/web/live/admin/keys_live_test.exs` | ❌ W0 | ⬜ pending |
-| TBD | — | — | KEY-UI-02 | — | Missing-KEK error names no secrets; catch-all unchanged | LiveView | `MIX_ENV=test mix test test/lockspire/web/live/admin/keys_live_test.exs` | ✅ (extended) | ⬜ pending |
-| TBD | — | — | KEY-UI-03 | — | N/A | contract | `MIX_ENV=test mix test test/lockspire/web/live/admin/vocabulary_contract_test.exs` | ✅ | ⬜ pending |
-| TBD | — | — | SAFE-02 | — | No key material, KEK id list, or counts on page | LiveView + existing | `MIX_ENV=test mix test test/lockspire/security/key_material_leak_test.exs test/lockspire/admin/keys_encryption_status_test.exs` | ✅ | ⬜ pending |
+| 160-01-01 (tracer) | 01 | 1 | KEY-UI-01, KEY-UI-03 | T-160-02, T-160-03 | Presenter maps all 7 states; unknown term/raise/exit -> could-not-check (neutral, "Unknown"); invalid-config message discarded; PRODUCT.md rows added | unit + LiveView + contract | `MIX_ENV=test mix compile --warnings-as-errors && MIX_ENV=test mix test test/lockspire/web/live/admin/keys_live/protection_test.exs test/lockspire/web/live/admin/keys_live_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs` | ❌ W0 (protection_test.exs created in this task) | ⬜ pending |
+| 160-01-02 | 01 | 1 | KEY-UI-01, SAFE-02 | T-160-01, T-160-03, T-160-04 | Seven-state page matrix; failed check keeps key list; only current KEK id shown; no counts, controls, material; refresh after generate | LiveView | `MIX_ENV=test mix test test/lockspire/web/live/admin/keys_live_test.exs test/lockspire/web/live/admin/keys_live/protection_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs test/lockspire/admin/keys_encryption_status_test.exs` | ✅ (extended) | ⬜ pending |
+| 160-02-01 | 02 | 2 | KEY-UI-02, KEY-UI-03 | T-160-06, T-160-07 | Missing-KEK error for sig and enc names no secrets; catch-all byte-identical; buttons stay enabled; repeated refusal stores nothing | LiveView | `MIX_ENV=test mix compile --warnings-as-errors && MIX_ENV=test mix test test/lockspire/web/live/admin/keys_live_test.exs test/lockspire/web/live/admin/keys_live/protection_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs` | ✅ (extended) | ⬜ pending |
+| 160-02-02 | 02 | 2 | SAFE-02, KEY-UI-03 | T-160-08 | Stress, leak, status, vocabulary suites green; `mix ci` green; SAFE-02 diff vs dda81e8d empty; PRODUCT.md rows present | contract + full suite + diff | `MIX_ENV=test mix test test/lockspire/web/live/admin/design_system_component_stress_test.exs test/lockspire/security/key_material_leak_test.exs test/lockspire/admin/keys_encryption_status_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs test/lockspire/web/live/admin/keys_live_test.exs test/lockspire/web/live/admin/keys_live/protection_test.exs` then `mix ci`, then `git diff --quiet dda81e8d -- mix.exs mix.lock priv lib/lockspire/protocol lib/lockspire/storage lib/lockspire/admin/keys.ex lib/lockspire/admin/keys lib/lockspire/config.ex lib/lockspire/application.ex lib/lockspire/web/components/admin_components.ex lib/lockspire/web/admin_css.ex` | ✅ | ⬜ pending |
+
+All commands run with `export ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5; cd /Users/jon/projects/lockspire &&` prefixed.
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,8 +53,8 @@ created: "2026-10-19"
 
 ## Wave 0 Requirements
 
-- [ ] `test/lockspire/web/live/admin/keys_live/protection_test.exs` — presenter table tests (KEY-UI-01)
-- [ ] New "key protection" describe block in `test/lockspire/web/live/admin/keys_live_test.exs` — seven-state matrix, failure isolation, disclosure, generation error
+- [ ] `test/lockspire/web/live/admin/keys_live/protection_test.exs` — presenter table tests (KEY-UI-01), created in task 160-01-01
+- [ ] New "key protection" describe block in `test/lockspire/web/live/admin/keys_live_test.exs` — seven-state matrix, failure isolation, disclosure (160-01-01, 160-01-02); describe "missing key-encryption key" generation error (160-02-01)
 
 ---
 

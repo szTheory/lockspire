@@ -79,7 +79,15 @@ Plans:
   3. Trying to generate a signing key with no encryption key configured shows that none is set up, that Lockspire will not store signing keys unencrypted, and how to set one up; other generation errors keep their existing copy.
   4. All new wording comes from the PRODUCT.md vocabulary map, new terms and retired phrases are added in the same change, and `vocabulary_contract_test.exs` passes.
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+**Wave 1**
+- [ ] 160-01-PLAN.md — Key protection line: KeysLive.Protection presenter (tracer), page wiring, seven-state matrix, isolation and disclosure tests, PRODUCT.md vocabulary rows
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 160-02-PLAN.md — missing key-encryption key generation error for signing and encryption keys, docs-only generate_key @spec, phase gate (mix ci, stress test, SAFE-02 diff)
+
 **UI hint**: yes
 
 ### Phase 161: Docs & Verified 1.6.0 Release
