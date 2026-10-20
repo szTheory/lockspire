@@ -121,6 +121,26 @@ feat(admin): describe admin pages in task and object language and route adopters
 END_COMMIT_OVERRIDE
 ```
 
+Regenerated #121 read-back and D-21 simulation (2026-10-20T18:34:08+00:00):
+
+- S1 Release push run https://github.com/szTheory/lockspire/actions/runs/39475380565 completed successfully; it regenerated #121 without a workflow re-run.
+- Title: `chore(main): release lockspire 1.6.0`; state OPEN; mergeable MERGEABLE.
+HEAD121: 14bb083562a195e99feed679a08f74f0e9fc3e75
+- Changelog covers v1.40 and v1.41 (#122), v1.42 (#129), v1.43 (#131), v1.44 (#132), plus #123, #124, #128 and #120.
+- Exact changed files: .planning/RELEASE-TRAIN.md, .release-please-manifest.json, CHANGELOG.md, mix.exs. Diff from S1 to HEAD121 is exactly those four files.
+- Ledger read-back:
+  - - Release Please version metadata: `1.6.0` <!-- x-release-please-version -->
+  - - Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08. Release Please metadata above is not publication proof.
+
+- Prior plan-02 simulation: `Summary: 18 PASS, 0 WARN, 0 BLOCK`; release_automation_contract_test: 3 tests, 0 failures; both release/repository hygiene contracts combined: 13 tests, 0 failures. Prior lower-metadata negative control: `Summary: 17 PASS, 0 WARN, 1 BLOCK`.
+- Repeated on #121's actual exact head in a disposable detached worktree with its own _build, shared dependency sources, Elixir 1.19.5 / OTP 28.5: hygiene `Summary: 18 PASS, 0 WARN, 0 BLOCK`, exit 0; release_automation_contract_test.exs plus repository_hygiene_contract_test.exs `13 tests, 0 failures`, exit 0.
+- Disposable worktree removed; no simulation worktree remains.
+D-21 simulation: head 14bb083562a195e99feed679a08f74f0e9fc3e75 hygiene 0 BLOCK; contract tests 0 failures
+
+- No PR-level CI checks were requested for #121; its bot-token push cannot create them. Gate is exact-head simulation + read-back, then green CI on the resulting squash before publication.
+- Release Please Auto Merge remains disabled_manually; #125–#127 remain OPEN.
+- No merge of #121 or publication occurred. Next step is the separate #121 squash-merge approval.
+
 ## Publication
 
 (filled by later plans)
