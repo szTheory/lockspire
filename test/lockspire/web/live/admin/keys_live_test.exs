@@ -230,6 +230,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     html = rendered_to_string(Index.render(failed_socket.assigns))
     assert failed_socket.assigns.total_keys == 5
     assert failed_socket.assigns.generation_error =~ "could not be generated"
+    refute failed_socket.assigns.generation_error =~ "key-encryption key"
     refute html =~ "Signing key generated and confirmed"
     refute html =~ "Encryption key generated"
   end
@@ -791,6 +792,87 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
       assert socket.assigns.key_protection.state == :encrypted
       assert socket.assigns.generation_notice
     end
+  end
+
+  describe "missing key-encryption key" do
+    test "generating a signing key without a key-encryption key explains the refusal" do
+      assert_refusal("sig", "signing")
+    end
+
+    test "generating an encryption key without a key-encryption key explains the refusal" do
+      assert_refusal("enc", "encryption")
+    end
+
+    test "a repeated refusal is identical and stores nothing" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      assert {:noreply, first} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      assert {:noreply, second} = Index.handle_event("generate", %{"use" => "sig"}, first)
+
+      assert first.assigns.generation_error == second.assigns.generation_error
+      assert {:ok, keys} = Lockspire.Admin.list_keys()
+      assert length(keys) == 4
+    end
+
+    test "a refusal without a key-encryption key takes precedence over a storage failure" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_signing_keys", [])
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      assert socket.assigns.generation_error =~ "No key-encryption key is set up"
+      refute socket.assigns.generation_error =~ "could not be generated"
+    end
+
+    test "use validation still runs first" do
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{}, socket)
+
+      assert socket.assigns.generation_error =~
+               "Choose signing or encryption key use before generating a key."
+    end
+  end
+
+  defp assert_refusal(use, noun) do
+    KeyEncryptionHelpers.put_key_encryption(nil)
+    {_html, socket} = drive_index()
+
+    assert {:noreply, socket} = Index.handle_event("generate", %{"use" => use}, socket)
+    error = socket.assigns.generation_error
+
+    assert error =~ "No key-encryption key is set up"
+    assert error =~ "cannot create an #{noun} key" or error =~ "cannot create a #{noun} key"
+    assert error =~ "will not store private keys unencrypted"
+    assert error =~ "mix lockspire.gen.kek"
+    assert is_nil(socket.assigns.generation_notice)
+    assert is_nil(socket.assigns.generated_key_path)
+    assert socket.assigns.total_keys == 4
+    refute Map.has_key?(socket.assigns, :flash)
+
+    html = rendered_to_string(Index.render(socket.assigns))
+
+    alerts =
+      html
+      |> HtmlAssertions.document()
+      |> LazyHTML.query(~s(ul.lockspire-admin-errors[role="alert"]))
+
+    assert LazyHTML.text(alerts) =~ error
+
+    document = HtmlAssertions.document(html)
+
+    for u <- ["sig", "enc"] do
+      button = LazyHTML.query(document, ~s(button[phx-value-use="#{u}"]))
+      assert Enum.count(button) == 1
+      assert LazyHTML.attribute(button, "disabled") == []
+    end
+
+    refute html =~ "LOCKSPIRE_KEY_ENCRYPTION_KEY"
+    refute html =~ KeyEncryptionHelpers.config_material("test-1")
+    refute_forbidden_key_copy(html)
   end
 
   defp drive_index do

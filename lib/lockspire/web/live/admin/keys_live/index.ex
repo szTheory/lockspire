@@ -255,6 +255,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
              )}
         end
 
+      {:error, :key_encryption_not_configured} ->
+        {:noreply,
+         assign(socket,
+           generation_error: missing_key_encryption_error(key_label),
+           generation_notice: nil,
+           generated_key_path: nil
+         )}
+
       {:error, _reason} ->
         {:noreply,
          assign(socket,
@@ -263,6 +271,18 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
            generated_key_path: nil
          )}
     end
+  end
+
+  defp missing_key_encryption_error("Signing") do
+    "No key-encryption key is set up, so Lockspire cannot create a signing key. " <>
+      "Lockspire will not store private keys unencrypted. " <>
+      "Create one with mix lockspire.gen.kek, add it to your app's configuration, and restart the app."
+  end
+
+  defp missing_key_encryption_error("Encryption") do
+    "No key-encryption key is set up, so Lockspire cannot create an encryption key. " <>
+      "Lockspire will not store private keys unencrypted. " <>
+      "Create one with mix lockspire.gen.kek, add it to your app's configuration, and restart the app."
   end
 
   defp key_show_path(id), do: Lockspire.mount_path() <> "/admin/keys/" <> Integer.to_string(id)
