@@ -5,16 +5,16 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 160
 current_phase_name: Admin Key Protection & Missing-KEK Copy
 status: executing
-stopped_at: Phase 160 context gathered (assumptions mode)
-last_updated: "2026-10-20T02:46:12.904Z"
+stopped_at: Completed 160-01-PLAN.md
+last_updated: "2026-10-20T02:50:11.571Z"
 last_activity: 2026-10-19
-last_activity_desc: Phase 159 complete, transitioned to Phase 160
-state_head: 95349153150eda91fb641c9c813cfe4b278cbea6
+last_activity_desc: Phase 160 execution started
+state_head: ab8c44ec48c4f252b26d99362b99e3e02ca02a9a
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 8
-  completed_plans: 6
+  completed_plans: 7
   percent: 50
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 159 — Key-Encryption Key Setup DX
+**Current focus:** Phase 160 — Admin Key Protection & Missing-KEK Copy
 
 ## Current Position
 
-Phase: 160 (Admin Key Protection & Missing-KEK Copy) — READY TO EXECUTE
-Plan: Not started
+Phase: 160 (Admin Key Protection & Missing-KEK Copy) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-10-19 — Phase 159 complete, transitioned to Phase 160
+Last activity: 2026-10-19 — Phase 160 execution started
 
 Progress: [█████░░░░░] 50%
 
@@ -300,6 +300,7 @@ Progress: [█████░░░░░] 50%
 - [Phase 159]: Env values for {:system, var} key entries are never trimmed; trailing newline fails closed
 - [Phase 159]: missing_env is a Config-only 3-element reason; KeySet {atom, atom} contract unchanged
 - [Phase 159]: Plan 03: elixir -e fallback kept only in upgrade guide after gen.kek; config.ex names only gen.kek
+- [Phase 160]: Key protection presenter returns only state/tone/value/detail/command; check failures read Unknown, never healthy
 
 ### Pending Todos
 
@@ -361,9 +362,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T01:53:18.454Z
-Stopped at: Phase 160 context gathered (assumptions mode)
-Resume file: .planning/phases/160-admin-key-protection-missing-kek-copy/160-CONTEXT.md
+Last session: 2026-10-20T02:50:11.476Z
+Stopped at: Completed 160-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -488,6 +489,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 159 P01 | 12 min | 3 tasks | 8 files |
 | Phase 159 P02 | 12 min | 2 tasks | 3 files |
 | Phase 159 P03 | 10 min | 3 tasks | 11 files |
+| Phase 160 P01 | 20 min | 2 tasks | 5 files |
 
 ## Operator Next Steps
 

@@ -83,7 +83,7 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 160-01-PLAN.md — Key protection line: KeysLive.Protection presenter (tracer), page wiring, seven-state matrix, isolation and disclosure tests, PRODUCT.md vocabulary rows
+- [x] 160-01-PLAN.md — Key protection line: KeysLive.Protection presenter (tracer), page wiring, seven-state matrix, isolation and disclosure tests, PRODUCT.md vocabulary rows
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 160-02-PLAN.md — missing key-encryption key generation error for signing and encryption keys, docs-only generate_key @spec, phase gate (mix ci, stress test, SAFE-02 diff)

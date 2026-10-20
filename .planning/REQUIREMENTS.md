@@ -20,9 +20,9 @@
 
 ### Admin Keys
 
-- [ ] **KEY-UI-01**: An operator on the admin Keys page sees a read-only "Key protection" line stating whether signing keys are encrypted and under which current encryption key ID. Older-key, unencrypted, unreadable, not-set-up, invalid-config, and could-not-check states each get distinct calm wording, and "could not check" never reads as healthy. A failed check does not hide the key list. It shows no counts per encryption key and no key material, and adds no controls.
+- [x] **KEY-UI-01**: An operator on the admin Keys page sees a read-only "Key protection" line stating whether signing keys are encrypted and under which current encryption key ID. Older-key, unencrypted, unreadable, not-set-up, invalid-config, and could-not-check states each get distinct calm wording, and "could not check" never reads as healthy. A failed check does not hide the key list. It shows no counts per encryption key and no key material, and adds no controls.
 - [ ] **KEY-UI-02**: When an operator tries to generate a signing key and no key-encryption key is configured, the page says that no encryption key is set up, that Lockspire will not store signing keys unencrypted, and how to set one up. Other generation errors keep their existing copy.
-- [ ] **KEY-UI-03**: New admin wording comes from the PRODUCT.md vocabulary map; new terms are added to the map, and replaced phrases to the retired-wording table, in the same change.
+- [x] **KEY-UI-03**: New admin wording comes from the PRODUCT.md vocabulary map; new terms are added to the map, and replaced phrases to the retired-wording table, in the same change.
 
 ### Docs & Release
 
@@ -63,9 +63,9 @@
 | KEK-03 | Phase 159 | Complete |
 | KEK-05 | Phase 159 | Complete |
 | KEK-06 | Phase 159 | Complete |
-| KEY-UI-01 | Phase 160 | Pending |
+| KEY-UI-01 | Phase 160 | Complete |
 | KEY-UI-02 | Phase 160 | Pending |
-| KEY-UI-03 | Phase 160 | Pending |
+| KEY-UI-03 | Phase 160 | Complete |
 | DOC-02 | Phase 161 | Pending |
 | REL-01 | Phase 161 | Pending |
 | REL-02 | Phase 161 | Pending |
