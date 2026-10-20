@@ -32,7 +32,7 @@ Resume preflight (2026-10-20, Codex):
 Landing execution (2026-10-20T17:54:04+00:00):
 
 - PR: https://github.com/szTheory/lockspire/pull/132
-T: d1c9c0579cb615710e9bdef7f73c8d591fcb2619
+Initial T (failed Dialyzer): d1c9c0579cb615710e9bdef7f73c8d591fcb2619
 - CI run: https://github.com/szTheory/lockspire/actions/runs/39469690927
 - Dependency Review run: https://github.com/szTheory/lockspire/actions/runs/39469690774
 - Remote main remained `038df080748c046829f9f98297da8403c47b4d89` after push.
@@ -44,6 +44,30 @@ T: d1c9c0579cb615710e9bdef7f73c8d591fcb2619
 - Plan 161-04 remains incomplete until all seven required checks and dependency-review pass. REL-01 / SAFE-02 / REL-02 remain unchecked.
 
 CI repair (2026-10-20): maintainer explicitly approved the scoped fix. Source commit `a679e9ce0e5dd0269b43cb47c8d14c2ca31c3846` moves the existing validation-error raise directly into the case branch and removes its raise-only helper clause. Local verification: cold client-creation tests 9/9, full SAFE-02 targeted suite 199/199, Dialyzer zero errors, formatter and forbidden-path diff checks passed. SAFE-02 evidence extended to this source revision. All other checks on the first PR revision passed. The updated head must pass a fresh complete CI run before plan 04 closes.
+
+Final landing verification (2026-10-20T18:12:15+00:00):
+
+PR: https://github.com/szTheory/lockspire/pull/132
+T: c12b2c65f5705090fc7641f16b0f3e633659a733
+CI run: https://github.com/szTheory/lockspire/actions/runs/39471393273 (success)
+Dependency Review: https://github.com/szTheory/lockspire/actions/runs/39471393331 (success)
+
+| Check | Result |
+|-------|--------|
+| Complete Coverage Evidence | success |
+| Dialyzer | success |
+| dependency-review | success |
+| Release Hygiene Drift | success |
+| Fast Checks | success |
+| Minimum Supported Elixir/OTP | success |
+| Adoption Demo Smoke | success |
+| Integration Checks | success |
+
+- Live branch read-back equals T; live main remains `038df080748c046829f9f98297da8403c47b4d89`.
+- PR state OPEN; merge state `CLEAN`.
+- Release Please Auto Merge remains disabled_manually.
+- Final plan-04 evidence append is committed locally after T and deliberately not pushed; plan 161-06 preserves it during the reset procedure.
+- All seven required checks plus dependency-review passed at this head. This completes plan 04's PR/CI prerequisite, not REL-01, SAFE-02 or REL-02.
 
 ## Release PR #121
 
