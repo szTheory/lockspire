@@ -50,7 +50,42 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 **Goal:** New and existing Phoenix hosts can store and enforce the selected app lifetime through an explicit schema and storage upgrade path.
 **Depends on:** Phase 162
 **Requirements:** DCR-05, DCR-06, DCR-13, DCR-14
-**Plans:** 0 (not yet planned)
+**Plans:** 14 plans
+
+Plans:
+**Wave 1**
+- [ ] 163-01-PLAN.md — Register, persist and evaluate one authoritative app
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 163-02-PLAN.md — Declare adapter lifetime support and shared transaction authority
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 163-03-PLAN.md — Enforce app eligibility at authentication without losing clocks
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 163-04-PLAN.md — Enforce browser and PAR boundaries with lock-free rendering
+- [ ] 163-05-PLAN.md — Guard device and CIBA request creation and host approval
+- [ ] 163-06-PLAN.md — Redeem codes under current authority and issue one consistent expiry
+- [ ] 163-10-PLAN.md — Enforce online token consumers without changing offline verification
+- [ ] 163-11-PLAN.md — Apply app-state management gates and safe legacy promotion
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 163-07-PLAN.md — Rotate refresh tokens under current app authority
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 163-08-PLAN.md — Enforce device/CIBA poll and queued push at final issuance
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 163-09-PLAN.md — Validate RFC 8693 requester, subject and actor apps independently
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 163-12-PLAN.md — Prove actual PostgreSQL waits, stale identity rejection and rollback
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 163-13-PLAN.md — Prove additive migrations with isolated pre-lifetime and candidate packages
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 163-14-PLAN.md — Ship accurate host guidance and close app/storage proof coverage
 
 **Success criteria:**
 
