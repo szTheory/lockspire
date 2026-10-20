@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-10-20T17:33:47.761Z",
+  "phase": "161",
+  "phase_name": "Docs & Verified 1.6.0 Release",
+  "phase_dir": ".planning/phases/161-docs-verified-1-6-0-release",
+  "plan": 4,
+  "task": 2,
+  "total_tasks": 3,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "161-01", "name": "Key protection docs + contract tests (DOC-02)", "status": "done", "commit": "9b511ee6"},
+    {"id": "161-02", "name": "Hygiene gate repair D-16 (metadata >= public)", "status": "done", "commit": "664becb3"},
+    {"id": "161-03", "name": "SAFE-02 evidence, v1.44 PR text, #122 override", "status": "done", "commit": "064b3741"},
+    {"id": "161-04 Task 1", "name": "Landing preflight + evidence log start", "status": "done", "commit": "dd3eb1ec"},
+    {"id": "161-04 Task 2", "name": "Maintainer approves push + PR (blocking-human)", "status": "in_progress", "progress": "User answered 'approve' on 2026-10-20, but the push never ran: github.com unreachable (git ls-remote / gh / curl api.github.com all timed out; hex.pm reachable). Nothing pushed, no PR opened."}
+  ],
+  "remaining_tasks": [
+    {"id": "161-04 Task 2-3", "name": "Push milestone/v1.44-adopter-polish, open PR, wait for required CI, record PR/T/run id", "status": "not_started"},
+    {"id": "161-05", "name": "#122 override edit + v1.44 squash-merge (checkpoints)", "status": "not_started"},
+    {"id": "161-06", "name": "SAFE-02 rebind + D-19 reset, #121 read-back/simulation, #121 squash + CI on S (checkpoint)", "status": "not_started"},
+    {"id": "161-07", "name": "Authorize SHA, dispatch release.yml, hex-publish approval, clear variable (checkpoints)", "status": "not_started"},
+    {"id": "161-08", "name": "Independent public verification + clean-room install", "status": "not_started"},
+    {"id": "161-09", "name": "RELEASE-TRAIN.md record PR + auto-merge/Dependabot decision (checkpoints)", "status": "not_started"}
+  ],
+  "blockers": [
+    {"description": "github.com unreachable from this machine at pause time (port 443 timeouts); hex.pm reachable", "type": "external", "workaround": "Confirm `gh api rate_limit --jq .rate.remaining` prints a number before resuming plan 04"}
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {"action": "Re-confirm the v1.44 push/PR checkpoint (161-04 Task 2) once GitHub is reachable", "context": "Approval was given in the previous session; re-present the checkpoint in the new session before any GitHub write", "blocking": true},
+    {"action": "Approve each later maintainer-only step: #122 body edit, v1.44 squash, #121 squash, authorized-SHA variable, release dispatch, hex-publish approval, auto-merge re-enable", "context": "D-15 blocking-human checkpoints", "blocking": true}
+  ],
+  "decisions": [
+    {"decision": "D-16: repair hygiene gate in the v1.44 PR (metadata >= public) so the #121 squash SHA is green on its own", "rationale": "User chose over the 1.5.1 fix-PR fallback", "phase": "161"},
+    {"decision": "D-08/D-18: fix missing v1.40/v1.41 changelog with BEGIN_COMMIT_OVERRIDE on merged PR #122, edited BEFORE the v1.44 squash; never re-run the Release workflow", "rationale": "User chose commit override over accepting the omission", "phase": "161"},
+    {"decision": "D-21: gate #121 merge on post-#121 simulation + read-back + S's own green push CI (no PR-level checks exist for GITHUB_TOKEN PRs)", "rationale": "gh pr checks 121 reports no checks", "phase": "161"},
+    {"decision": "Both pending todos (DCR lifetime audit, keys.reencrypt RepoRunner) deferred", "rationale": "Keep the release diff quiet", "phase": "161"}
+  ],
+  "uncommitted_files": [" M .planning/state.json"],
+  "next_action": "Verify GitHub reachability, then re-run plan 161-04 from Task 2: re-check origin/main is still 038df080 and the tree is clean except .planning/state.json, re-present the push/PR checkpoint to the user, then push main:refs/heads/milestone/v1.44-adopter-polish and open the PR from 161-V144-PR.md.",
+  "context_notes": "Executing with workflow.use_worktrees=false (sequential executors on main). Run mix with ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5. Local main is 119 commits ahead of origin/main (038df080) and holds all v1.44 + phase 161 work. REL-01, SAFE-02, REL-02 must stay unchecked in REQUIREMENTS.md until their real completion events. Always squash-merge."
+}
