@@ -102,7 +102,33 @@ Plans:
   4. 1.6.0 is published through the protected exact-ref lane and independently verified: Hex API checksum matches the manifest and downloaded tarball, HexDocs serve 1.6.0, the `lockspire-v1.6.0` tag and GitHub release point at the published source SHA, and the tarball includes the new Mix tasks.
   5. A clean-room host installs `{:lockspire, "== 1.6.0"}` from Hex in a fresh `HEX_HOME`, and the result is recorded in `.planning/RELEASE-TRAIN.md`.
 
-**Plans**: TBD
+**Plans:** 9 plans
+
+Plans:
+**Wave 1**
+- [ ] 161-01-PLAN.md — operator guide Key protection subsection + contract test, install/upgrade drift audit, docs.verify (DOC-02)
+- [ ] 161-02-PLAN.md — release-train gate repair (metadata >= public), file-derived test helpers, simulated post-#121 proof (REL-01, D-16)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 161-03-PLAN.md — SAFE-02 evidence, full pre-push gate, v1.44 PR text and #122 override with offline parse proof
+
+**Wave 3**
+- [ ] 161-04-PLAN.md — maintainer-gated push of milestone/v1.44 branch, open PR, all required checks green
+
+**Wave 4**
+- [ ] 161-05-PLAN.md — maintainer-gated #122 override edit, v1.44 squash merge as its own step (S1 recorded)
+
+**Wave 5**
+- [ ] 161-06-PLAN.md — SAFE-02 rebound to S1 and safe local reset; re-read regenerated #121 (1.6.0, v1.40-v1.44) and simulate its head tree (D-21), maintainer-gated squash merge, CI push run green on publish SHA (REL-01)
+
+**Wave 6**
+- [ ] 161-07-PLAN.md — protected exact-ref publish of 1.6.0: authorize SHA, dispatch, hex-publish approval, clear variable (REL-02)
+
+**Wave 7**
+- [ ] 161-08-PLAN.md — independent public verification: checksum three-way, tarball tasks, HexDocs, tag/release, fresh HEX_HOME install
+
+**Wave 8**
+- [ ] 161-09-PLAN.md — RELEASE-TRAIN.md 1.6.0 record via squash-merged docs PR, auto-merge and Dependabot decision
 
 ### Progress
 

@@ -67,6 +67,13 @@ Adopters can read accurate guides for the new setup path and install a publicly 
 - **D-18:** Trigger the #121 regeneration by editing #122's body *before* squash-merging the v1.44 PR, so the push to main regenerates #121 once. Do not re-run the workflow, because its retry step would dispatch the disabled auto-merge workflow. Override entries are separated by blank lines and use `feat(admin): ... (#122)` for v1.40 and v1.41.
 - **D-19:** Before resetting local `main`, stash the uncommitted `.planning/state.json` edit and create a backup branch. Commit all Phase 161 repo work (docs, contract test, gate repair, evidence) to local main *before* the push, so it ships in the v1.44 PR.
 
+- **D-20:** Plan-check found that DOC-02 says all three guides describe the Key protection line. To meet it, `docs/install-and-onboard.md` and `docs/upgrading/signing-key-encryption.md` each get one short sentence pointing to the operator guide's "Key protection" subsection, and a contract assertion locks both. This is consistent with D-01's minimal-edit scope, so no rewrite.
+
+- **D-21:** PR #121 is pushed with the default GitHub Actions token, so it never gets PR-level CI checks (`gh pr checks 121` reports none, as PR #93 did). The #121 merge is gated on three things instead:
+  1. The plan-02 simulation of the post-#121 tree passes hygiene and the release contract tests.
+  2. A re-read of the regenerated title and body (1.6.0, v1.40–v1.44) and its file list.
+  3. After the merge, per D-10: the squash SHA S has its own successful CI push run before publish. If that run is red, nothing is published and a fix PR follows.
+
 ### Claude's Discretion
 - Exact wording of the operator-guide subsection and the override lines, within the vocabulary map and conventional-commit format.
 - Exact `milestone/v1.44-<slug>` branch name and the v1.44 squash title.

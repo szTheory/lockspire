@@ -662,16 +662,21 @@ Not a rename/refactor phase, but release operations touch hosted state:
 | A6 | HexDocs page names `operator-admin.html`, `signing-key-encryption.html`, `Mix.Tasks.Lockspire.Gen.Kek.html` exist for the exact version | Verification script | A 404 on a name guess; confirm against `https://lockspire.hexdocs.pm/1.6.0/` sidebar at execution |
 | A7 | Option 1 (pre-landing the gate repair) is acceptable to the maintainer | Critical Finding 1 | If rejected, fall back to Option 2 (extra PR, publish the fix commit SHA) |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Gate repair approach (blocking).**
    - Known: hygiene and two test helpers fail after #121's version bump; the publish lane needs CI green on the publish SHA.
    - Unclear: whether the maintainer accepts relaxing the equality in `repo_hygiene_check.sh` (and de-pinning test helpers) inside the v1.44 PR vs a separate PR after #121.
    - Recommendation: Option 1, pre-land. Needs an explicit user decision at a checkpoint before the first push, since it widens the v1.44 diff beyond lib/docs/tests.
+   - **RESOLVED:** settled by CONTEXT D-16 (gate repair approach); implemented in the plan set as locked there.
 2. **Does the minor bump stay 1.6.0 after the override?** Known: all `feat`; `bump-minor-pre-major: false`, current is 1.5.1, so feat -> 1.6.0 [VERIFIED: release-please-config.json]. Confirm by reading regenerated #121 title.
+   - **RESOLVED:** plan 161-06 Task 1 asserts the regenerated #121 title names 1.6.0 and stops if it does not.
 3. **Where the squash-merge lands relative to Dependabot PRs.** Known: #125-#127 are GitHub Actions bumps touching `.github/workflows`; with `strict: true` they would need rebases after v1.44 merges. They stay unmerged until after publish (D-09). No action needed beyond not merging them.
+   - **RESOLVED:** CONTEXT D-09 (no action; Dependabot PRs stay unmerged until after publish).
 4. **HexDocs guide URLs.** Known pattern from `verify_install_truth.sh`: `https://hexdocs.pm/lockspire/<v>/supported-surface.html`. Confirm the operator-admin and upgrade-note page names (A6) when 1.6.0 is live.
+   - **RESOLVED:** plan 161-08 Task 1 checks the live 1.6.0 HexDocs page names for the operator-admin guide and the upgrade note.
 5. **Manifest availability for verification.** `release-evidence-<sha>` retains 90 days and contains `release-manifest.json` and `postpublish-receipt.json`; confirm the download works for the 1.6.0 run (the 1.5.1 evidence retention had failed once before #120).
+   - **RESOLVED:** plan 161-08 Task 1 downloads `release-manifest.json` and compares its artifact sha256 three ways (Hex API, tarball, manifest); a missing manifest is a stop condition.
 
 ## Sources
 
