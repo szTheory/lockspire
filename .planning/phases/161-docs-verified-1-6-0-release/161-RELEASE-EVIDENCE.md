@@ -69,6 +69,17 @@ Dependency Review: https://github.com/szTheory/lockspire/actions/runs/3947139333
 - Final plan-04 evidence append is committed locally after T and deliberately not pushed; plan 161-06 preserves it during the reset procedure.
 - All seven required checks plus dependency-review passed at this head. This completes plan 04's PR/CI prerequisite, not REL-01, SAFE-02 or REL-02.
 
+Milestone squash merge (plan 161-05 Task 4):
+
+- Maintainer explicitly approved squash-merging PR #132 at `c12b2c65f5705090fc7641f16b0f3e633659a733` with its current title.
+- Immediately preceding merge gate (2026-10-20T18:30:38.279228+00:00): Release Please Auto Merge = `disabled_manually`; all eight exact-head checks success; live main still `038df080748c046829f9f98297da8403c47b4d89`; #122 body hash unchanged since the verified override edit.
+- Merged at: 2026-10-20T18:30:41Z; used --squash and --match-head-commit, no admin bypass.
+S1: db33c470c5deef9cc72e2240e0db0bdf0044e22b
+- Subject: `feat(install): add mix lockspire.gen.kek and show Key protection status in admin (v1.44) (#132)`.
+- S1 parent: `038df080748c046829f9f98297da8403c47b4d89` (verified).
+- `git diff --quiet c12b2c65f5705090fc7641f16b0f3e633659a733 db33c470c5deef9cc72e2240e0db0bdf0044e22b` succeeded: S1 tree equals approved T.
+- Local branch untouched by this merge task; no backup/reset/stash/cherry-pick performed.
+
 ## Release PR #121
 
 PR #122 override edit (plan 161-05 Task 2), 2026-10-20T18:29:33+00:00:
