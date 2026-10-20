@@ -6,6 +6,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   alias Lockspire.Admin
   alias Lockspire.Redaction
   alias Lockspire.Web.Components.AdminComponents
+  alias Lockspire.Web.Live.Admin.KeysLive.Protection
   alias Lockspire.Web.Live.AdminLayoutLive
 
   @impl true
@@ -16,6 +17,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
        current_section: :keys,
        keys: [],
        inventory_state: :loading,
+       key_protection: nil,
        total_keys: nil,
        lifecycle_metrics: nil,
        generation_error: nil,
@@ -52,6 +54,13 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
     ~H"""
     <AdminLayoutLive.shell current_section={@current_section} page_title={@page_title}>
       <AdminComponents.page_hero body="Manage keys used to sign tokens or decrypt encrypted authorization requests." />
+      <section :if={@key_protection} class="lockspire-admin-key-protection" aria-label="Key protection">
+        <AdminComponents.decision_summary>
+          <:item label="Key protection" value={@key_protection.value} tone={@key_protection.tone} detail={@key_protection.detail}>
+            <p :if={@key_protection.command}><code>{@key_protection.command}</code></p>
+          </:item>
+        </AdminComponents.decision_summary>
+      </section>
       <section class="lockspire-admin-key-inventory" aria-label="Key inventory">
         <AdminComponents.metric_grid :if={@inventory_state == :loaded}>
           <AdminComponents.summary_stat value={@lifecycle_metrics.active} label="Active" />
@@ -175,6 +184,17 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
       generated_key_path: nil
     )
     |> assign_inventory_result(load_keys())
+    |> assign(key_protection: load_key_protection())
+  end
+
+  # A non-ArgumentError raise from config resolution reads as could-not-check,
+  # the safe direction. Nothing is logged: the message could carry config text.
+  defp load_key_protection do
+    Admin.encryption_status() |> Protection.summarize()
+  rescue
+    _exception -> Protection.summarize(:error)
+  catch
+    :exit, _reason -> Protection.summarize(:error)
   end
 
   defp assign_inventory_result(socket, {:ok, keys}) do
@@ -200,6 +220,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
 
     case Admin.generate_key(use_atom) do
       {:ok, %{key: %{id: generated_id}}} ->
+        socket = assign(socket, key_protection: load_key_protection())
+
         case load_keys() do
           {:ok, keys} ->
             socket = assign_inventory_result(socket, {:ok, keys})

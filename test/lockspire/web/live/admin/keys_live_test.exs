@@ -588,6 +588,54 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
     HtmlAssertions.assert_no_text(html, forbidden_key_material_samples())
   end
 
+  describe "key protection" do
+    test "key protection line names the current key-encryption key when stored keys are encrypted" do
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DELETE FROM lockspire_signing_keys", [])
+
+      {:ok, _} =
+        Repository.publish_key(
+          Lockspire.KeyEncryptionHelpers.sealed_row("sealed-current", "test-1")
+        )
+
+      html = render_index()
+
+      assert html =~ "Key protection"
+      assert html =~ "Encrypted"
+
+      text = protection_section(html) |> LazyHTML.text()
+      assert text =~ ~s(key-encryption key "test-1")
+
+      assert_before(html, "Key protection", "How key states work")
+      refute_forbidden_key_copy(html)
+    end
+
+    test "key protection reads unknown and never healthy when the check cannot run" do
+      assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+      Ecto.Adapters.SQL.query!(Lockspire.TestRepo, "DROP TABLE lockspire_signing_keys", [])
+      assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      assert html =~ "Unknown"
+      assert html =~ "Could not load signing keys"
+
+      section_html = protection_section(html) |> LazyHTML.to_html()
+      refute section_html =~ "lockspire-admin-decision-summary__item-success"
+      refute section_html =~ "Encrypted"
+    end
+  end
+
+  defp render_index do
+    assert {:ok, socket} = Index.mount(%{}, %{}, socket_for(:index))
+    assert {:noreply, socket} = Index.handle_params(%{}, "/lockspire/admin/keys", socket)
+    rendered_to_string(Index.render(socket.assigns))
+  end
+
+  defp protection_section(html) do
+    html
+    |> HtmlAssertions.document()
+    |> LazyHTML.query(~s(section[aria-label="Key protection"]))
+  end
+
   defp signing_key(kid, status, now, attrs \\ []) do
     attrs = Enum.into(attrs, %{})
 
