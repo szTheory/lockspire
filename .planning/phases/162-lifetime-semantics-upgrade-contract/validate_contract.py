@@ -158,7 +158,7 @@ def validate(contract: str, data, stage: str) -> None:
                 "consumer inventory is missing or has an incorrect outcome")
         for name, row in consumer_cases.items():
             require(row.get("state_assumptions") == {
-                "app_enabled": True, "app_expired": True, "registration_history_retained": True},
+                "app_enabled": name != "disabled_app", "app_expired": True, "registration_history_retained": True},
                 f"consumer state assumptions are incomplete: {name}")
             require(isinstance(row.get("checkpoint"), str) and row["checkpoint"],
                     f"consumer check point is missing: {name}")
@@ -309,6 +309,10 @@ def self_test(contract: str, data, stage: str) -> list[str]:
         def expired_put(doc, fixture):
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-15")]["expired"] = "200 accepted"
         rejected("expired-app-put-success", expired_put, "consumer inventory is missing or has an incorrect outcome")
+
+        def disabled_assumed_enabled(doc, fixture):
+            next(c for c in fixture["cases"] if c["id"] == "C-APP-16")["state_assumptions"]["app_enabled"] = True
+        rejected("disabled-case-assumes-enabled", disabled_assumed_enabled, "consumer state assumptions")
 
         def disabled_get(doc, fixture):
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-16")]["expired"] = "allow GET"

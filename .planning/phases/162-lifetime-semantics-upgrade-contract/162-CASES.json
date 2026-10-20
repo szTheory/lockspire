@@ -565,7 +565,7 @@
       "consumer": "disabled_app",
       "expired": "deny_protocol_and_all_self_management",
       "state_assumptions": {
-        "app_enabled": true,
+        "app_enabled": false,
         "app_expired": true,
         "registration_history_retained": true
       },
