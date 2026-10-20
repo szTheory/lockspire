@@ -33,6 +33,17 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptArgsTest do
     assert error.message =~ "--check"
   end
 
+  test "repo startup exceptions become safe Mix errors" do
+    original_repo = Application.get_env(:lockspire, :repo)
+    Application.put_env(:lockspire, :repo, Lockspire.MixRepoHelpers.RaisingRepo)
+    on_exit(fn -> Application.put_env(:lockspire, :repo, original_repo) end)
+
+    error = assert_raise Mix.Error, fn -> Mix.Task.run(@task, ["--check"]) end
+    assert error.message == Lockspire.Install.TaskError.repo_unavailable_phrase()
+    refute error.message =~ "connection refused"
+    refute Process.whereis(Lockspire.MixRepoHelpers.RaisingRepo)
+  end
+
   test "--help prints the upgrade and rotation order" do
     output = capture_io(fn -> Mix.Task.run(@task, ["--help"]) end)
 
@@ -459,5 +470,28 @@ defmodule Mix.Tasks.Lockspire.Keys.ReencryptE2ETest do
     )
 
     Lockspire.TestRepo.delete_all(from(k in SigningKeyRecord, where: k.id in ^ids))
+  end
+end
+
+defmodule Mix.Tasks.Lockspire.Keys.ReencryptRunningRepoTest do
+  use ExUnit.Case, async: false
+
+  import Lockspire.MixRepoHelpers
+
+  @task "lockspire.keys.reencrypt"
+
+  setup_all do
+    start_supervised!(Lockspire.TestRepo)
+    Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
+    :ok
+  end
+
+  for args <- [[], ["--dry-run"], ["--check"]] do
+    test "#{inspect(args)} preserves an already-running repo and its checked-out connection" do
+      assert_pool_untouched!(Lockspire.TestRepo, fn ->
+        assert {output, :ok} = run_task(@task, unquote(args))
+        assert output =~ "current_kek=test-1"
+      end)
+    end
   end
 end

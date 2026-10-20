@@ -11,6 +11,7 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
   use Mix.Task
 
   alias Lockspire.Admin.Keys
+  alias Lockspire.Install.TaskError
 
   @shortdoc "Re-encrypts stored signing keys under the current key-encryption key"
   @requirements ["app.config"]
@@ -106,22 +107,14 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
   end
 
   defp execute(mode) do
-    {:ok, _} = Application.ensure_all_started(:ecto_sql)
-
-    result =
-      case Ecto.Migrator.with_repo(
-             Lockspire.Config.repo!(),
-             fn _repo -> work(mode) end,
-             mode: :temporary
-           ) do
-        {:ok, result, _apps} -> result
-        {:error, _reason} -> Mix.raise(repo_failure())
-      end
-
-    finish(mode, result)
+    case TaskError.run(Lockspire.Config.repo!(), fn _repo -> work(mode) end) do
+      {:ok, result} -> finish(mode, result)
+      {:error, phrase} -> Mix.raise(phrase)
+    end
   end
 
-  # Only computes. Printing and raising happen after the repo has been stopped again.
+  # Only computes. Printing and raising happen after temporary repo cleanup;
+  # an already-running repo and its pool are left untouched.
   defp work(:apply), do: Keys.reencrypt(actor: @actor)
   defp work(:dry_run), do: Keys.reencrypt(dry_run: true, actor: @actor)
 
@@ -154,9 +147,7 @@ defmodule Mix.Tasks.Lockspire.Keys.Reencrypt do
   defp raise_error(:storage_unavailable),
     do: Mix.raise("could not read stored signing keys; check the database and migrations")
 
-  defp raise_error(_reason), do: Mix.raise(repo_failure())
-
-  defp repo_failure, do: "could not start the repo; check database connectivity and config"
+  defp raise_error(reason), do: Mix.raise(TaskError.classify(reason))
 
   # Apply and dry-run
 
