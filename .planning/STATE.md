@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: Completed 161-02-PLAN.md
-last_updated: "2026-10-20T17:11:29.371Z"
+stopped_at: Completed 161-03-PLAN.md
+last_updated: "2026-10-20T17:21:12.563Z"
 last_activity: 2026-10-20
 last_activity_desc: Phase 161 execution started
-state_head: 1509aa7eab96a571348bda5048954754fbc0b13c
+state_head: 064b3741cb1944eb3f63e9fbc6488bba7203907e
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 10
-  percent: 59
+  completed_plans: 11
+  percent: 65
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-10-20 — Phase 161 execution started
 
-Progress: [██████░░░░] 59%
+Progress: [███████░░░] 65%
 
 ## Accumulated Context
 
@@ -303,6 +303,7 @@ Progress: [██████░░░░] 59%
 - [Phase 160]: Key protection presenter returns only state/tone/value/detail/command; check failures read Unknown, never healthy
 - [Phase 160]: Missing key-encryption key refusal is static vocabulary-map copy in the alert list; generate buttons stay enabled
 - [Phase 161]: D-16: ledger gate accepts metadata >= public; artifact/tag/SHA equality stays strict
+- [Phase 161]: 161-03: SAFE-02 PASS at 807802b6; v1.44 PR names repo-start change only for client.create, doctor token_format, doctor remote-jwks; #122 override proven offline
 
 ### Pending Todos
 
@@ -364,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T17:11:29.283Z
-Stopped at: Completed 161-02-PLAN.md
+Last session: 2026-10-20T17:21:12.460Z
+Stopped at: Completed 161-03-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -495,6 +496,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 160 P02 | 25 min | 2 tasks | 3 files |
 | Phase 161 P01 | 10 min | 2 tasks | 4 files |
 | Phase 161 P02 | 25 min | 3 tasks | 3 files |
+| Phase 161 P03 | 25 min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
