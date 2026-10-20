@@ -189,7 +189,24 @@ REL-01 and SAFE-02 completion evidence is now established. Publication REL-02 re
 
 ## Publication
 
-(filled by later plans)
+Read-only publication preflight (2026-10-20T19:04:46+00:00), plan 161-07 Task 1:
+
+- Live origin/main == #121 mergeCommit == S `428a9c53e02bc573376d0fcac313f047fbbea81c`; mix.exs version 1.6.0.
+- Source CI push run `39478977350` completed success; all seven required jobs success (see prior section).
+- Authorized-SHA variable absent: no stale variable, no cleanup needed.
+- No in-flight release.yml run; ordinary S push run completed success.
+- Remote tag lockspire-v1.6.0 absent; Hex API exact version returned HTTP 404.
+- hex-publish environment exists with required-reviewer protection.
+- Release Please Auto Merge remains disabled_manually.
+- Open PRs #127, #126, #125, #98, #97, #96, #91, #88, #87 will be left alone throughout publication.
+- No variable set, dispatch or publication performed. Awaiting explicit authorization for these exact commands:
+
+```sh
+gh variable set LOCKSPIRE_PHASE143_AUTHORIZED_SHA --repo szTheory/lockspire --body 428a9c53e02bc573376d0fcac313f047fbbea81c
+gh workflow run release.yml --repo szTheory/lockspire --ref main -f recovery_ref=428a9c53e02bc573376d0fcac313f047fbbea81c -f source_ci_run_id=39478977350 -f "recovery_reason=Publish Lockspire 1.6.0 (v1.43 + v1.44) from verified main 428a9c53e02bc573376d0fcac313f047fbbea81c"
+```
+
+The protected hex-publish environment remains a later separate maintainer approval. Variable cleanup after the attempt is mandatory on every outcome.
 
 ## Independent verification
 
@@ -197,4 +214,4 @@ REL-01 and SAFE-02 completion evidence is now established. Publication REL-02 re
 
 ## Variable lifecycle
 
-(filled by later plans)
+2026-10-20T19:04:46+00:00: no stale variable; LOCKSPIRE_PHASE143_AUTHORIZED_SHA absent. No set or dispatch yet.
