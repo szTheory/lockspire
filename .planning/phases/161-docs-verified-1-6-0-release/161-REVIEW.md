@@ -47,3 +47,5 @@ No actionable findings in this scope.
 - Independent public checksum three-way, exact11-task tarball, versioned HexDocs, tag/release source and isolated fresh install all passed. No raw generated key retained.
 
 PR133 is still undergoing its required CI at report creation; its merge/ledger-on-main result is a remaining execution gate, not a source-code review finding.
+
+Final closeout observation: PR133 passed all eight checks and merged as5e8a484c; its own main push CI39485083024 subsequently passed all seven jobs. The earlier pending-PR note above describes report-creation time only.
