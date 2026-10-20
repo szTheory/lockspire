@@ -304,3 +304,10 @@ CLEAN_ROOM: /private/tmp/lockspire-160-clean-oush3_3d
 2026-10-20T19:09:50+00:00: set authorized-SHA variable to `428a9c53e02bc573376d0fcac313f047fbbea81c` and verified read-back; dispatched RUN 39481079989. Cleanup pending terminal outcome.
 
 2026-10-20T19:25:11+00:00: RUN 39481079989 terminal success; authorization variable deleted and absence verified.
+
+
+## Release record PR
+
+Plan161-09 Task1: refreshed RELEASE-TRAIN.md from the terminal receipt and independent public proof. Latest package is Hex1.6.0 from S428a9c53; previous1.5.1 and earlier1.5.0 history preserved, metadata/date lines and standing train rules unchanged. Hygiene:18PASS,0WARN,0BLOCK. Existing repository_hygiene_contract_test.exs + release_automation_contract_test.exs:13tests,0failures; no test edits.
+
+Maintainer's conditional authorization covers pushing/opening and squash-merging this scoped documentation-only record PR after required checks pass, without another prompt. Public package source remains S; later record commits are distinct. Branch docs/record-lockspire-1.6.0; title docs(release): record verified Lockspire 1.6.0 publication.
