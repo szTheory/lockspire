@@ -80,6 +80,26 @@ S1: db33c470c5deef9cc72e2240e0db0bdf0044e22b
 - `git diff --quiet c12b2c65f5705090fc7641f16b0f3e633659a733 db33c470c5deef9cc72e2240e0db0bdf0044e22b` succeeded: S1 tree equals approved T.
 - Local branch untouched by this merge task; no backup/reset/stash/cherry-pick performed.
 
+Plan 161-06 Task 1 — SAFE-02 rebinding and safe local reset:
+
+- SAFE-02 bound to S1 `db33c470c5deef9cc72e2240e0db0bdf0044e22b`: forbidden-path diff empty; approved T and S1 trees identical; 36 added-line emission grep hits identical to approved T including the scoped CI repair.
+- Backup branch: `backup/local-main-pre-v1.44-reset` at `941423c2306e9a67525c5d9d6add2263fece4522`.
+- Saved state.json SHA256 before/after: `f260f30019ac3d53ce4682057c2eaac9546751b5cf978d94c57783520e21e40b`; byte-for-byte preserved.
+- Stashed state.json under `phase161-state-json`, then the clean-tree gate immediately before reset printed nothing.
+- Reset local main to origin/main S1, replayed all nine post-T planning-only commits in order, then popped the task's exact stash.
+- Replayed commits (old → new):
+  - `cf49b6450b6e9fd968e2be589210e9961b662e93` → `df7b0d172a1d884b61f629578861d416542d3586`
+  - `4969b5e9b03e389e25052d9d08f62405dc520d6f` → `c8920302dc5d5c2c4aa05984967378016cbad92c`
+  - `3d544848f7491c580426064026a5383e748a90fe` → `07d11c8fc288b2cd74dedaf6df0dbeaa03f495ab`
+  - `626880b944e24d9aa0c1b74734071759603c3c83` → `f743ffb355bb0b7b67bba1bcfadd1a92e3dd48ed`
+  - `fc7154209722be73ac7a70e15cd34f519360801f` → `712d89b2bfa6b2e913fbae133cdad2a7ddf66094`
+  - `4739294eb428f9f2b25ba06a8fca4c6c34b877bd` → `a8081ebf41d811768b6d735b2774ef4188078ac0`
+  - `01eba239eef7892f889625abe82a39c92579404b` → `71d7c33a94b5d5afa0f7ec1d8ba03808c2b3ef21`
+  - `98c505d745a70508838da469eda873b9c7dbbbbd` → `20bd763c8c651b759af0fcb23bdf82f2ddb0ec91`
+  - `941423c2306e9a67525c5d9d6add2263fece4522` → `4658fb1aca32284a887a0b4627722980ae6ad7c1`
+
+- Post-reset local main differs from origin/main only under `.planning/`; working tree contains only the preserved ` M .planning/state.json`.
+
 ## Release PR #121
 
 PR #122 override edit (plan 161-05 Task 2), 2026-10-20T18:29:33+00:00:
