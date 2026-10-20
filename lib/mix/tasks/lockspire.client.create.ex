@@ -51,7 +51,7 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
           print_result({:ok, result})
 
         {:ok, {:error, errors}} when is_list(errors) ->
-          print_result({:error, errors})
+          Mix.raise(format_domain_errors(errors))
 
         {:ok, _other} ->
           Mix.raise("client registration failed: " <> TaskError.unexpected_phrase())
@@ -128,10 +128,6 @@ defmodule Mix.Tasks.Lockspire.Client.Create do
     )
 
     Mix.shell().info("* Keep product authorization and tenant policy in the host app.")
-  end
-
-  defp print_result({:error, errors}) do
-    Mix.raise(format_domain_errors(errors))
   end
 
   defp format_domain_errors(errors) do
