@@ -401,6 +401,30 @@
 
 ---
 
+## Milestone: v1.44 — Adopter Polish & Verified 1.6.0
+
+**Shipped:** 2026-10-20 · **Phases:** 4 · **Plans:** 17
+
+### What Was Built
+Repo-safe tasks, shared KEK setup, runtime environment resolution, read-only key protection, and a protected, independently verified1.6.0 publication.
+
+### What Worked
+Cold host tests exposed the real install seam. Shared snippet and vocabulary contracts kept task, UI and guide behavior aligned. Exact-source receipts and independent artifact checks established the public release boundary.
+
+### What Was Inefficient
+Repeated approval prompts persisted after sufficient authorization. D-21 incorrectly assumed bot PR workflows could not run; a manual CI dispatch did not clear PR gates. Later guide edits made an earlier verifier stale and required a focused re-verification.
+
+### Patterns Established
+Use conditional green-check authorization for scoped steps, normal workflow approval APIs, and distinct published-source and documentation-record SHAs. Archive only the current milestone's phase range.
+
+### Key Lessons
+Resolve actual check-gate state before inventing a workaround. Preserve historical exceptions rather than broadening claims. Keep deferred protocol changes separate from adopter polish.
+
+### Cost Observations
+No reliable total model/session telemetry is claimed. Existing deterministic tests supplied the audit gate:145tests/0failures; closure added no duplicate tests.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
