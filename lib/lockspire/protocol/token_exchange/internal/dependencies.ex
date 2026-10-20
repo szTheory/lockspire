@@ -4,9 +4,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
   alias Lockspire.Config
   alias Lockspire.Observability
   alias Lockspire.Protocol.TokenResult.Error
+  alias Lockspire.Storage.ClientLifetime
 
   @enforce_keys [
     :client_store,
+    :client_lifetime,
     :token_store,
     :device_authorization_store,
     :ciba_authorization_store,
@@ -24,6 +26,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
   ]
   defstruct [
     :client_store,
+    :client_lifetime,
     :token_store,
     :device_authorization_store,
     :ciba_authorization_store,
@@ -57,10 +60,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
 
   @spec validate(t(), atom()) :: {:ok, t()} | {:error, Error.t()}
   def validate(%__MODULE__{} = dependencies, grant) do
-    if Enum.all?(required_capabilities(grant), &capability_available?(dependencies, &1)) do
+    if participants_available?(dependencies, grant) and
+         Enum.all?(required_capabilities(grant), &capability_available?(dependencies, &1)) do
       {:ok, dependencies}
     else
-      {:error, unavailable_error()}
+      {:error,
+       if(participants_available?(dependencies, grant),
+         do: unavailable_error(),
+         else: authority_error()
+       )}
     end
   end
 
@@ -72,6 +80,59 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
   @doc false
   @spec fetch!(map()) :: t()
   def fetch!(request) when is_map(request), do: Map.fetch!(request, :token_exchange_dependencies)
+
+  defp participants_available?(
+         %__MODULE__{client_lifetime: %ClientLifetime{} = lifetime} = d,
+         grant
+       ) do
+    authority = lifetime.transaction_authority
+    participants = if is_map(authority), do: Map.get(authority, :participants), else: nil
+    required = required_participants(d, grant)
+
+    is_map(participants) and not is_nil(Map.get(authority, :identity)) and
+      Enum.all?(required, fn {role, store} -> Map.get(participants, role) == store end) and
+      lifetime.client_store == d.client_store
+  end
+
+  defp participants_available?(_dependencies, _grant), do: false
+
+  defp required_participants(dependencies, grant) do
+    base = [
+      client_store: dependencies.client_store,
+      transaction_store: dependencies.transaction_store
+    ]
+
+    grant_participants =
+      case grant do
+        :device_code ->
+          [
+            device_authorization_store: dependencies.device_authorization_store,
+            token_store: dependencies.token_store,
+            audit_store: dependencies.audit_store
+          ]
+
+        :ciba ->
+          [
+            ciba_authorization_store: dependencies.ciba_authorization_store,
+            token_store: dependencies.token_store,
+            audit_store: dependencies.audit_store
+          ]
+
+        :authorization_code_mutation ->
+          [token_store: dependencies.token_store, audit_store: dependencies.audit_store]
+
+        :refresh ->
+          [token_store: dependencies.token_store, audit_store: dependencies.audit_store]
+
+        :rfc8693 ->
+          [token_store: dependencies.token_store, audit_store: dependencies.audit_store]
+
+        _ ->
+          []
+      end
+
+    Enum.uniq_by(base ++ grant_participants, &elem(&1, 0))
+  end
 
   defp required_capabilities(:authorization_code) do
     [
@@ -146,6 +207,16 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
       error: "server_error",
       error_description: "Token exchange dependencies are unavailable",
       reason_code: :dependency_capability_unavailable
+    }
+  end
+
+  defp authority_error do
+    %Error{
+      status: 500,
+      error: "server_error",
+      error_description:
+        "Token exchange storage adapters must declare one shared transaction authority for the selected grant",
+      reason_code: :transaction_authority_unavailable
     }
   end
 end

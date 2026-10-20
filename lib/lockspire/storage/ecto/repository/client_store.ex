@@ -9,6 +9,31 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
   alias Lockspire.Storage.Ecto.Repository.Support
   alias Lockspire.Storage.Ecto.Repository.TransactionStore
 
+  @spec lock_clients(module(), [String.t()]) :: {:ok, [Client.t()]} | {:error, term()}
+  def lock_clients(repo, client_ids) when is_list(client_ids) do
+    cond do
+      not Enum.all?(client_ids, &is_binary/1) ->
+        {:error, :invalid_client_ids}
+
+      not repo.in_transaction?() ->
+        {:error, :transaction_required}
+
+      true ->
+        ids = Enum.uniq(client_ids) |> Enum.sort()
+
+        ClientRecord
+        |> where([client], client.client_id in ^ids)
+        |> order_by([client], asc: client.client_id)
+        |> lock("FOR UPDATE")
+        |> then(&Support.all(repo, &1))
+        |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
+    end
+  rescue
+    error -> {:error, error}
+  end
+
+  def lock_clients(_repo, _client_ids), do: {:error, :invalid_client_ids}
+
   @spec register_client(module(), Client.t()) :: {:ok, Client.t()} | {:error, term()}
   def register_client(repo, %Client{} = client) do
     %ClientRecord{}

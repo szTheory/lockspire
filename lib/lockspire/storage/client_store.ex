@@ -7,6 +7,23 @@ defmodule Lockspire.Storage.ClientStore do
 
   @type store_error :: term()
 
+  @doc """
+  Declares the adapter-owned app/credential lifetime contract and the single
+  transaction authority shared by guarded client, grant, token and audit writes.
+  The declaration must include `version: 1` and `transaction_authority`.
+  """
+  @callback lifetime_contract() :: %{
+              required(:version) => 1,
+              required(:transaction_authority) => term()
+            }
+
+  @doc """
+  Locks and reloads current client rows for the lifetime of the caller's active
+  transaction. Adapters deduplicate and order IDs by stable `client_id` before
+  acquiring locks; ordinary fetch callbacks remain state-preserving.
+  """
+  @callback lock_clients([String.t()]) :: {:ok, [Client.t()]} | {:error, store_error()}
+
   @callback register_client(Client.t()) :: {:ok, Client.t()} | {:error, store_error()}
   @callback list_clients(keyword()) :: {:ok, [Client.t()]} | {:error, store_error()}
   @callback fetch_client_by_id(String.t()) :: {:ok, Client.t() | nil} | {:error, store_error()}

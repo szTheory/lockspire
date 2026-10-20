@@ -72,6 +72,32 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour AuditStore
 
   @impl ClientStore
+  def lifetime_contract do
+    %{version: 1, transaction_authority: transaction_authority()}
+  end
+
+  @impl TransactionStore
+  def transaction_authority do
+    %{
+      identity: {:ecto_repo, repo()},
+      participants: %{
+        client_store: __MODULE__,
+        token_store: __MODULE__,
+        device_authorization_store: __MODULE__,
+        ciba_authorization_store: __MODULE__,
+        interaction_store: __MODULE__,
+        audit_store: __MODULE__,
+        transaction_store: __MODULE__
+      }
+    }
+  end
+
+  @impl ClientStore
+  def lock_clients(client_ids) when is_list(client_ids) do
+    EctoClientStore.lock_clients(repo(), client_ids)
+  end
+
+  @impl ClientStore
   def register_client(%Client{} = client) do
     EctoClientStore.register_client(repo(), client)
   end
