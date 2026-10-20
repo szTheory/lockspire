@@ -5,7 +5,7 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-05 Task 1: awaiting PR #122 changelog override approval"
+stopped_at: "161-05 Task 3: awaiting PR #132 squash merge approval"
 last_updated: "2026-10-20T18:12:44+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-04 complete; PR 132 green at c12b2c65
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
 Plan: 5 of 9
-Status: Awaiting PR #122 changelog override approval
+Status: Awaiting PR #132 squash merge approval
 Last activity: 2026-10-20 — Plan 161-04 complete; PR #132 passes all eight checks at c12b2c65
 
 Progress: [███████░░░] 71%
@@ -366,7 +366,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20T18:12:44+00:00
-Stopped at: Plan 161-04 complete (summary 4969b5e9). PR #132 is green at c12b2c65; awaiting plan 161-05 Task 1 approval to append the prepared changelog override to merged PR #122.
+Stopped at: Plan 161-04 complete (summary 4969b5e9). PR #132 is green at c12b2c65; PR #122 override applied and verified (626880b9); awaiting plan 161-05 Task 3 approval to squash-merge PR #132.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
