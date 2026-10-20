@@ -106,6 +106,20 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ProtectionTest do
     assert summarize_status(%{by_kek_id: %{"test-1" => 4}}).state == :encrypted
   end
 
+  test "legacy rows the engine cannot seal read unreadable, ahead of unencrypted" do
+    summary =
+      summarize_status(%{
+        legacy: 2,
+        pending: [%{kid: "a", state: :legacy}, %{kid: "b", state: :unsealable_legacy}]
+      })
+
+    assert summary.state == :unreadable
+    assert summary.command == "mix lockspire.doctor.key_encryption"
+
+    assert summarize_status(%{legacy: 1, pending: [%{kid: "a", state: :legacy}]}).state ==
+             :unencrypted
+  end
+
   test "empty configured key set reads encrypted" do
     assert summarize_status(%{total: 0, by_kek_id: %{}, unknown_kek: %{}}).state == :encrypted
   end

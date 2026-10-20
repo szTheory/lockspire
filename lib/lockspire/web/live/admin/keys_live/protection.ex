@@ -42,6 +42,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
       (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable)) ->
         :unreadable
 
+      unsealable_legacy?(status) ->
+        :unreadable
+
       positive?(Map.get(status, :legacy)) ->
         :unencrypted
 
@@ -51,6 +54,15 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
       true ->
         :encrypted
     end
+  end
+
+  # Legacy rows the re-encryption engine cannot seal (corrupt bytes, mismatched id) are not
+  # fixable by `mix lockspire.keys.reencrypt`, so they read as unreadable, not unencrypted.
+  defp unsealable_legacy?(status) do
+    status
+    |> Map.get(:pending)
+    |> List.wrap()
+    |> Enum.any?(&(Map.get(&1, :state) == :unsealable_legacy))
   end
 
   defp positive?(value), do: is_integer(value) and value > 0
