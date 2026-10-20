@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
-current_phase: 160
-current_phase_name: Admin Key Protection & Missing-KEK Copy
-status: verifying
-stopped_at: Completed 160-02-PLAN.md
-last_updated: "2026-10-20T02:57:25.352Z"
+current_phase: 161
+current_phase_name: Docs & Verified 1.6.0 Release
+status: planning
+stopped_at: Phase 160 complete, ready to plan Phase 161
+last_updated: "2026-10-20T03:21:29.899Z"
 last_activity: 2026-10-19
-last_activity_desc: Phase 160 execution started
-state_head: 5e02cac2602c989839a6d451a0b1dd4aec6dd733
+last_activity_desc: Phase 160 complete, transitioned to Phase 161
+state_head: 12ffacdc3156e453b9e368ca581056d61a4ec91b
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 8
   completed_plans: 8
-  percent: 50
+  percent: 75
 ---
 
 # Project State
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 ## Current Position
 
-Phase: 160 (Admin Key Protection & Missing-KEK Copy) — EXECUTING
-Plan: 2 of 2
-Status: Phase complete — ready for verification
-Last activity: 2026-10-19 — Phase 160 execution started
+Phase: 161 — Docs & Verified 1.6.0 Release
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-19 — Phase 160 complete, transitioned to Phase 161
 
-Progress: [█████░░░░░] 50%
+Progress: [████████░░] 75%
 
 ## Accumulated Context
 
@@ -364,7 +364,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20T02:57:25.296Z
-Stopped at: Completed 160-02-PLAN.md
+Stopped at: Phase 160 complete, ready to plan Phase 161
 Resume file: None
 
 ## Performance Metrics

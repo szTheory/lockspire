@@ -21,7 +21,7 @@ v1.44 Adopter Polish & Verified 1.6.0 is active (Phases 158–161). It fixes the
 
 - [x] **Phase 158: Mix Task Repo Start** - `client.create`, `doctor.token_format` and `doctor.remote_jwks` start and stop the host repo themselves via `RepoRunner`, with real error reasons (completed 2026-10-19)
 - [x] **Phase 159: Key-Encryption Key Setup DX** - `mix lockspire.gen.kek`, `{:system, "VAR"}` runtime resolution, redacted `KeySet` inspect, and guidance that points to the new task (completed 2026-10-19)
-- [ ] **Phase 160: Admin Key Protection & Missing-KEK Copy** - read-only Key protection line and a calm missing-encryption-key error on the Keys page, with vocabulary map updates
+- [x] **Phase 160: Admin Key Protection & Missing-KEK Copy** - read-only Key protection line and a calm missing-encryption-key error on the Keys page, with vocabulary map updates (completed 2026-10-19)
 - [ ] **Phase 161: Docs & Verified 1.6.0 Release** - guides updated, PR #121 squash-merged last, 1.6.0 published and verified from public sources
 
 ### Phase 158: Mix Task Repo Start
@@ -79,7 +79,7 @@ Plans:
   3. Trying to generate a signing key with no encryption key configured shows that none is set up, that Lockspire will not store signing keys unencrypted, and how to set one up; other generation errors keep their existing copy.
   4. All new wording comes from the PRODUCT.md vocabulary map, new terms and retired phrases are added in the same change, and `vocabulary_contract_test.exs` passes.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
@@ -110,7 +110,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 3/3 | Complete    | 2026-10-19 |
-| 160. Admin Key Protection & Missing-KEK Copy | 0/TBD | Not started | - |
+| 160. Admin Key Protection & Missing-KEK Copy | 2/2 | Complete    | 2026-10-19 |
 | 161. Docs & Verified 1.6.0 Release | 0/TBD | Not started | - |
 
 ## Phases
