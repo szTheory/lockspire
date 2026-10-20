@@ -156,6 +156,18 @@ Additional PR workflow approval recovery:
 - Started the existing reviewed-head PR CI and Dependency Review runs with normal POST actions/runs/{id}/approve endpoints, under the already authorized merge work. No source, workflows, branch protection or admin-bypass change. Retain the user's merge approval and retry only after these runs pass and live exact-head guards hold.
 - Required runs to watch: CI 39475469715; Dependency Review 39475469657. Head remains 14bb083562a195e99feed679a08f74f0e9fc3e75. Post-merge push CI on S remains mandatory before publication.
 
+Release PR #121 squash merged (2026-10-20T18:55:22Z):
+
+- User's explicit exact-head merge approval retained through the required-check recovery.
+- Actual PR CI 39475469715 succeeded (all seven jobs), Dependency Review 39475469657 succeeded; statusCheckRollup had eight successes and merge state CLEAN.
+- Immediately preceding merge (2026-10-20T18:55:19.594917+00:00): HEAD121 unchanged, live main S1 db33c470, auto-merge workflow disabled_manually. Used --squash --match-head-commit, no admin bypass.
+S: 428a9c53e02bc573376d0fcac313f047fbbea81c
+CI_RUN: 39478977350
+- Post-merge push CI 39478977350 is running; its success is still required before any publication authorization.
+- Release push workflow 39478977389 is running.
+- Read-back: #121 MERGED; mergeCommit equals live origin/main S; parent is S1; exact tree equals simulated/CI-green HEAD121; subject `chore(main): release lockspire 1.6.0 (#121)`; mix.exs version 1.6.0.
+- No package publication or authorization-variable change performed.
+
 ## Publication
 
 (filled by later plans)
