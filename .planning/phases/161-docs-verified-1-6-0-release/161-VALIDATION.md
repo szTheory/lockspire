@@ -1,85 +1,55 @@
 ---
 phase: "161"
 slug: "docs-verified-1-6-0-release"
-# status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-20"
+validated: "2026-10-20T19:40:16+00:00"
 ---
 
-# Phase 161 — Validation Strategy
+# Phase161 Validation Coverage
 
-> Per-phase validation contract for feedback sampling during execution.
+Audited inline after all nine plans produced summaries. No missing behavioral coverage; no new tests needed beyond the shipped contract extensions. External publication facts were verified with live checks rather than mocked completion.
 
----
+## Infrastructure and feedback
 
-## Test Infrastructure
+- ExUnit on Elixir1.19.5-otp-28 / OTP28.5; existing Mix/CI aliases.
+- Quick command: `MIX_ENV=test mix test test/lockspire/kek_guidance_contract_test.exs test/lockspire/documentation_contract_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs` — fresh14tests,0failures in0.2s.
+- Existing release/hygiene contracts:13tests,0failures on refreshed1.6.0 ledger. That broader command took74.9s; it is not claimed to meet the quick-feedback target.
+- Prior-phase regression extraction:5existing files,118tests,0failures. Full CI ran required suites, docs, quality, compatibility, coverage and smoke checks on actual source and record PR heads. Long external runs are bounded by their existing workflow timeouts, not a fictional sub-minute completion claim.
 
-| Property | Value |
-|----------|-------|
-| **Framework** | ExUnit (Elixir 1.19.5-otp-28; `export ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5`) |
-| **Config file** | `mix.exs` aliases; `test/test_helper.exs` |
-| **Quick run command** | `MIX_ENV=test mix test test/lockspire/kek_guidance_contract_test.exs test/lockspire/documentation_contract_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs` |
-| **Full suite command** | `mix ci` |
-| **Estimated runtime** | quick ~5s; full several minutes |
+## Requirement and task map
 
----
+| Requirement / plans | Behavior | Executable evidence | Result |
+|---------------------|----------|---------------------|--------|
+| DOC-02 /01 | Seven shipped Key protection labels, read-only/Unknown meaning and guide pointers | kek_guidance_contract_test.exs, upgrade_guide_contract_test.exs, documentation_contract_test.exs, vocabulary_contract_test.exs; CI docs.verify | PASS |
+| REL-01 /02 | Metadata may precede publication, malformed/lower/inconsistent release claims block | repo_hygiene_check.sh --ci; repository_hygiene_contract_test.exs and release_automation_contract_test.exs fixture matrix | PASS |
+| REL-01 /02,06 | Actual release-head gate, not simulation-only assumption | Head12114bb0835 disposable-worktree hygiene18PASS/0BLOCK and13contracts; actual PR checks after normal workflow approval; source428a9c53 pushCI39478977350 all7success | PASS |
+| REL-01 /03–06 | Exact v1.44 landing, #122 override and complete1.6.0 changelog; guarded squash source | gh read-backs/hashes, exact-head pins, parent/tree equality, retained source CI and Release run IDs in RELEASE-EVIDENCE | PASS |
+| REL-02 /07 | One exact proven artifact published through protected lane; authorization cleaned | Run39481079989 all applicable jobs success; terminal release_verified true/blocker none; variable absence read-back | PASS |
+| REL-02 /08 | API == tarball == retained manifest; docs/tag/release/task inventory | Independent public Python-isolated/curl/tar checks; exact11Mix tasks; fourDocs200; verified tag/release targetS | PASS |
+| REL-02 /08 | Fresh public install and new task | Isolated HEX_HOME/MIX_HOME host==1.6.0; lockfile outer checksum match; dependency compile and gen.kek length44 only | PASS |
+| REL-02 /09 | Truthful ledger on main preserves prior releases and metadata | Local hygiene18PASS/0BLOCK and13contracts; PR133all8checks; merge5e8a484c parentS/tree==R; origin/main ledger read-back; Releasepushsuccess/no new releasePR | PASS |
+| SAFE-02 /03,06 | No protocol/schema/dependency/default changes in v1.44 milestone | Empty forbidden-path diff038df080..S1db33c470; exactT==S1; added-line emission sweep36hits | PASS |
+| SAFE-02 /03,04 | No key/KEK leak; validation errors unchanged after approved fix | Existing199-test safety suite and9cold client tests pass; Dialyzer0errors; gen.kek value never recorded | PASS |
 
-## Sampling Rate
+## Wave0 and completion coverage
 
-- **After every task commit:** quick run command, plus `mix docs.verify` after any docs edit
-- **After every plan wave:** SAFE-02 targeted test list (see RESEARCH.md), `bash scripts/maintainer/repo_hygiene_check.sh --ci`, `mix format --check-formatted`
-- **Before `/gsd-verify-work`:** v1.44 PR CI fully green; release verification outputs recorded in `161-RELEASE-EVIDENCE.md`
-- **Max feedback latency:** ~60 seconds locally
+- Gate repair, file-derived tests and documentation-contract extension delivered and exercised.
+- External verification commands and outputs retained inline in RELEASE-EVIDENCE; no missing placeholder script.
+- All nine plans have automated verification/read-back evidence. Authorization is a maintainer decision, captured explicitly and later granted conditionally for green checks; it is not mislabeled as an unperformed human test.
+- Bot PR workflow behavior was corrected from live evidence: normal approval-required runs exist and were approved, with no protection bypass.
+- No outstanding manual-only behavior verification. Existing branch/environment protections remained active; no watch-mode test flags or unbounded local test process.
 
----
+## Sign-off
 
-## Per-Requirement Verification Map
+Coverage complete for DOC-02,REL-01,REL-02,SAFE-02. Source and record-PR gates have executable passing evidence; final main readiness is separately observed until its CI run completes. Audit adds no product behavior and no new test duplication.
 
-| Requirement | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|-------------|-----------------|-----------|-------------------|-------------|--------|
-| DOC-02 | Operator guide lists 7 Key protection labels, read-only, Unknown not healthy, gen.kek, upgrade link | contract | `MIX_ENV=test mix test test/lockspire/kek_guidance_contract_test.exs` | ❌ W0 (extend) | ⬜ pending |
-| DOC-02 | Install/upgrade guides name gen.kek and `{:system, ...}` | contract | `MIX_ENV=test mix test test/lockspire/kek_guidance_contract_test.exs test/lockspire/upgrade_guide_contract_test.exs` | ✅ | ⬜ pending |
-| DOC-02 | ExDoc builds without warnings | build | `MIX_ENV=test mix test test/lockspire/documentation_contract_test.exs && mix docs.verify` | ✅ | ⬜ pending |
-| REL-01 | Hygiene accepts metadata >= public with consistent public/artifact/tag/SHA; rejects malformed | script + contract | `bash scripts/maintainer/repo_hygiene_check.sh --ci && MIX_ENV=test mix test test/lockspire/release/repository_hygiene_contract_test.exs test/lockspire/release/release_automation_contract_test.exs` | ❌ W0 (edit) | ⬜ pending |
-| REL-01 | Simulated post-#121 tree passes hygiene | scripted | scratch `git archive` copy + 1.6.0 edits + hygiene `--ci` | ❌ W0 | ⬜ pending |
-| REL-01 | Regenerated #121 proposes 1.6.0 covering v1.40–v1.44 | manual-read | `gh pr view 121 --json title,body` | n/a | ⬜ pending |
-| REL-02 | Hex checksum == tarball sha == manifest; tag/release == SHA; HexDocs 200; 3 new tasks in tarball | script | independent verification script (RESEARCH.md) | ❌ | ⬜ pending |
-| REL-02 | Fresh HEX_HOME install `== 1.6.0` | script | clean-room snippet (RESEARCH.md) | ❌ | ⬜ pending |
-| SAFE-02 | No mix.exs/mix.lock/migrations/protocol/config change in v1.44 diff | diff | `git diff --stat 038df080..<SQUASH> -- mix.exs mix.lock priv/repo/migrations lib/lockspire/protocol config` (empty) | n/a | ⬜ pending |
-| SAFE-02 | No key/KEK in logs/telemetry/admin/errors | tests + grep | 8-file targeted test list + grep sweep (RESEARCH.md) | ✅ | ⬜ pending |
+## Validation Audit 2026-10-20
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-
----
-
-## Wave 0 Requirements
-
-- [ ] Gate repair in `scripts/maintainer/repo_hygiene_check.sh`; version/SHA-agnostic `test/support/lockspire/release_proof/workflow_assertions.ex` and `package_assertions.ex` (D-16)
-- [ ] New operator-guide test in `test/lockspire/kek_guidance_contract_test.exs`
-- [ ] Public verification commands (script or inline in evidence plan)
-
----
-
-## Manual-Only Verifications
-
-| Behavior | Requirement | Why Manual | Test Instructions |
-|----------|-------------|------------|-------------------|
-| Push v1.44 branch, squash-merge PR | REL-01 | Maintainer approval | Checkpoint before push/merge |
-| Edit #122 body with commit override | REL-01 | GitHub write | Checkpoint; confirm #121 regenerates |
-| Squash-merge #121 | REL-01 | Maintainer approval | Re-read title/body first |
-| Set/clear authorized SHA, dispatch release, approve `hex-publish` | REL-02 | Protected release lane | Checkpoint each step |
-
----
-
-## Validation Sign-Off
-
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
-
-**Approval:** pending
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
