@@ -4,6 +4,13 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.6.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.6.0...lockspire-v1.6.1) (2026-10-20)
+
+
+### Bug Fixes
+
+* use shared repo runner for key re-encryption ([#135](https://github.com/szTheory/lockspire/issues/135)) ([170428a](https://github.com/szTheory/lockspire/commit/170428a7ef6158d527a8b424186f7ca79551a5dd))
+
 ## [1.6.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.1...lockspire-v1.6.0) (2026-10-20)
 
 
