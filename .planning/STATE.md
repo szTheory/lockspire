@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
-current_phase: 159
-current_phase_name: Key-Encryption Key Setup DX
-status: verifying
-stopped_at: Completed 159-03-PLAN.md
-last_updated: "2026-10-19T19:40:31.358Z"
+current_phase: 160
+current_phase_name: Admin Key Protection & Missing-KEK Copy
+status: planning
+stopped_at: Phase 159 complete, ready to plan Phase 160
+last_updated: "2026-10-20T01:05:45.971Z"
 last_activity: 2026-10-19
-last_activity_desc: Phase 159 execution started
-state_head: 18862fff994df5be52067e836d18a0a0172725fe
+last_activity_desc: Phase 159 complete, transitioned to Phase 160
+state_head: 5fd608a9800e7b91a0e478a72fe7c1ecc1d65745
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 6
-  percent: 25
+  percent: 50
 ---
 
 # Project State
@@ -30,12 +30,12 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 ## Current Position
 
-Phase: 159 (Key-Encryption Key Setup DX) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-10-19 — Phase 159 execution started
+Phase: 160 — Admin Key Protection & Missing-KEK Copy
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-19 — Phase 159 complete, transitioned to Phase 160
 
-Progress: [███░░░░░░░] 25%
+Progress: [█████░░░░░] 50%
 
 ## Accumulated Context
 
@@ -362,7 +362,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-19T19:40:31.311Z
-Stopped at: Completed 159-03-PLAN.md
+Stopped at: Phase 159 complete, ready to plan Phase 160
 Resume file: None
 
 ## Performance Metrics
