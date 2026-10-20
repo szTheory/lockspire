@@ -3,11 +3,11 @@ gsd_state_version: "1.0"
 milestone: v1.44
 milestone_name: Adopter Polish & Verified 1.6.0
 status: Awaiting next milestone
-stopped_at: v1.44 archived — closeout PR pending
-last_updated: "2026-10-20T20:09:26.327Z"
+stopped_at: Verified1.6.1 published; sustaining train, no active phase
+last_updated: "2026-10-20T21:13:58.061607+00:00"
 last_activity: 2026-10-20
-last_activity_desc: Milestone v1.44 completed and archived
-state_head: ae3f3e211243bfb1abb375316e2f3d489c431280
+last_activity_desc: Verified1.6.1 patch release
+state_head: d04be40262e975a4eb8d8567eb0d1458a9c23181
 progress:
   total_phases: 4
   completed_phases: 4
@@ -25,14 +25,13 @@ See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.44 archived on main via PR134; keys.reencrypt implemented in PR135; DCR scope ready for next milestone
+**Current focus:** Verified1.6.1 public; sustaining patch train, DCR scope captured but inactive
 
 ## Current Position
 
-Phase: Milestone v1.44 complete
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-20 — Milestone v1.44 completed and archived
+Phase: none (v1.44 archived)
+Status: Sustaining release train; verified1.6.1 public
+Last activity: 2026-10-20 — protected publication and independent verification passed
 
 ## Accumulated Context
 
@@ -323,7 +322,7 @@ Last activity: 2026-10-20 — Milestone v1.44 completed and archived
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 20261020-keys-reencrypt | Route keys.reencrypt through TaskError/RepoRunner;171tests/0failures; implemented in PR135 | 2026-10-20 | fb8f3ccb | [summary](./quick/20261020-keys-reencrypt-repo-runner/SUMMARY.md) |
+| 20261020-keys-reencrypt | Route keys.reencrypt through TaskError/RepoRunner;171tests/0failures; implemented in PR135 | 2026-10-20 | 170428a7 | [summary](./quick/20261020-keys-reencrypt-repo-runner/SUMMARY.md) |
 | 260924-mhp | Classify active UAT lifecycle records from structured status and document shape | 2026-09-24 | 37a1d62c | [260924-mhp-classify-active-uat-records-in-the-phase](./quick/260924-mhp-classify-active-uat-records-in-the-phase/) |
 | 2 | 260925-x8y: classify structurally valid status: testing UAT as active evidence | 2026-09-26 | f0270d2d | — |
 | 260926-c7l | Refresh Phase 139 verification across all 13 plans | 2026-09-26 | 285c6c62 | [260926-c7l-refresh-phase-139-s-canonical-verificati](./quick/260926-c7l-refresh-phase-139-s-canonical-verificati/) |
@@ -366,10 +365,10 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20
-Stopped at: v1.44 audited/archived and merged as c7f66219 via PR134 after all eight checks passed. keys.reencrypt follow-up is implemented in PR135 with171tests/0failures; consult GitHub for its final CI/landing state. DCR scope captured at research/dcr-lifetimes/SCOPE.md; no protocol implementation started.
+Stopped at: Verified1.6.1 published from d04be40262e975a4eb8d8567eb0d1458a9c23181; sourceCI39495931590, protected run39496849388, terminal release_verifiedtrue/blockernone. Public checksum/docs/tag/release and isolated exact-version install verified; one-use authorization cleared and temporary freezes removed.
 Resume file: None
 
-Published source428a9c53 and package tag lockspire-v1.6.0 remain immutable. Release ledger is on main5e8a484c; this closeout only lands planning records. Original state.json remains unstaged and preserved. Old phases142/143/999.1 and quick tasks are untouched. All phase reports passed before archival; one deferred todo acknowledged and four prior artifacts carried forward. Next: confirm PR135 landing state, then activate the separately scoped DCR milestone.
+v1.44 and PR134 closeout are archived/on main; PR135 keys.reencrypt fix is merged and shipped in1.6.1; release PR136 is merged and tagged. This documentation record is distinct from the immutable publication source. No protocol implementation is active; candidate scope is research/dcr-lifetimes/SCOPE.md. Original state.json remains unstaged and preserved; historical phase exceptions and backup branches remain intact. Confirm this release-record PR landing on GitHub before starting new work.
 
 ## Performance Metrics
 
