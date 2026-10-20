@@ -400,10 +400,12 @@ Style constraints [VERIFIED: keys_live_test.exs]: `use ExUnit.Case, async: false
 | A5 | PRODUCT.md "Last reviewed" date should be bumped when adding rows | Vocabulary | Cosmetic |
 | A6 | Exact wording of proposed copy | Proposed copy | Discretion area; tone/claims must be re-checked against facts above |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Is "Reload the page to try again" acceptable without a control?** What we know: SAFE-02/D-07 forbid new controls; `retry_inventory` exists only on inventory error. Recommendation: text-only instruction; no button.
-2. **Should `Admin.generate_key` `@spec` name `:key_encryption_not_configured`?** Optional docs-only tightening (discretion). `Admin.Keys.generate_key/1` spec already names it (keys.ex:80-82); `admin.ex:208-209` is `{:error, term()}`. If changed, run `mix docs --warnings-as-errors` (PITFALLS M5) on CI Elixir.
+   **RESOLVED (160-01 Task 1):** Yes. The could-not-check detail ends with the text-only sentence "Reload the page to try again." and the Key protection line carries no button, link, form or phx event (D-07, SAFE-02). 160-01 Task 2 `assert_protection_is_text_only/2` enforces it.
+2. **Should `Admin.generate_key` `@spec` name `:key_encryption_not_configured`?** Optional docs-only tightening (discretion). `Admin.Keys.generate_key/1` spec already names it (keys.ex:83-84); `admin.ex:208-209` is `{:error, term()}`. If changed, run `mix docs --warnings-as-errors` (PITFALLS M5) on CI Elixir.
+   **RESOLVED (160-02 Task 1):** Yes, make the docs-only tightening. The `Admin.generate_key/1` @spec return becomes `{:ok, Lockspire.Admin.Keys.key_view()} | {:error, :key_encryption_not_configured | term()}`, with at most one optional @doc sentence; no other admin.ex change (diff-size gate). `mix ci` in 160-02 Task 2 includes the docs warnings-as-errors check.
 
 ## Environment Availability
 
