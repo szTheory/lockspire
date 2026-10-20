@@ -228,6 +228,13 @@ Protected approval checkpoint (2026-10-20T19:17:18+00:00):
 - Live main and one-use authorized SHA still equal S. No deployment approval or upload performed.
 - Maintainer action: open https://github.com/szTheory/lockspire/actions/runs/39481079989, confirm commit S, approve hex-publish, then reply approved. On rejection or abort, monitor/cancel to terminal and always clear authorization as specified in plan 07.
 
+Conditional maintainer authorization and protected approval (2026-10-20T19:19:06+00:00):
+
+- User explicitly instructed: “if CI is green i approve it, i dont want to have to manually approve each time”. This authorizes proceeding through the remaining planned release actions when their verification gates are green, without repeated confirmation prompts. Existing protection settings remain enforced; failed checks still stop progress.
+- Revalidated source push CI (all seven success), exact package proof success, run head S, live main S and authorized variable S.
+- Approved the pending hex-publish environment for RUN 39481079989 via the normal pending_deployments approval API, under that explicit user authorization. No protection bypass or settings change.
+- Continue monitoring to terminal, then delete one-use authorization regardless of result. Subsequent independent verification and checked release-record PR proceed under the same conditional authorization.
+
 ## Independent verification
 
 (filled by later plans)
