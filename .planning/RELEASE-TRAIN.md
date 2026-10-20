@@ -6,8 +6,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Release Please version metadata: `1.5.1` <!-- x-release-please-version -->
-- Release Please date metadata: `2026-09-26` <!-- x-release-please-date -->
+- Release Please version metadata: `1.6.0` <!-- x-release-please-version -->
+- Release Please date metadata: `2026-10-20` <!-- x-release-please-date -->
 - Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08. Release Please metadata above is not publication proof.
 - Artifact truth: protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282) for source `0b56503859b69531ff86d8e4a465a0e75f963594` was backed by matching canonical push CI [37788996197](https://github.com/szTheory/lockspire/actions/runs/37788996197), whose seven required jobs passed on that exact SHA. The release run verified the public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`, HexDocs, [lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1), and clean-room install. Its terminal receipt records `release_verified: true` with no blocker. The overall run failed only in bounded evidence retention; PR #120 fixed the receipt validator.
 - Current-main truth: `main` is `ef6e33be2d8bc8ac438390495990b231b475466c`; canonical CI [37800419349](https://github.com/szTheory/lockspire/actions/runs/37800419349) and Release push [37800419385](https://github.com/szTheory/lockspire/actions/runs/37800419385) passed. PR #119 fixed the unsupported pinned GitHub App token input.

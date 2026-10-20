@@ -4,6 +4,25 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.6.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.1...lockspire-v1.6.0) (2026-10-20)
+
+
+### Features
+
+* **admin:** clearer app wording and DCR lifetime fields ([#123](https://github.com/szTheory/lockspire/issues/123)) ([d44b95d](https://github.com/szTheory/lockspire/commit/d44b95dd78e62d81dc64356894990795c34b58a8))
+* **admin:** clearer app workflows, queue states and responsive themes (v1.42) ([#129](https://github.com/szTheory/lockspire/issues/129)) ([1cfafd0](https://github.com/szTheory/lockspire/commit/1cfafd03ced0fef99c1d7b091b99c43589ad07a9))
+* **admin:** describe admin pages in task and object language and route adopters through task-grouped guides (v1.41) ([#122](https://github.com/szTheory/lockspire/issues/122)) ([e67a489](https://github.com/szTheory/lockspire/commit/e67a4898db129086f871c0d62f910cfd1bda87a6))
+* **admin:** refine the operator UI across apps, security, keys, consents and tokens (v1.40) ([#122](https://github.com/szTheory/lockspire/issues/122)) ([e67a489](https://github.com/szTheory/lockspire/commit/e67a4898db129086f871c0d62f910cfd1bda87a6))
+* **install:** add mix lockspire.gen.kek and show Key protection status in admin (v1.44) ([#132](https://github.com/szTheory/lockspire/issues/132)) ([db33c47](https://github.com/szTheory/lockspire/commit/db33c470c5deef9cc72e2240e0db0bdf0044e22b))
+* **keys:** encrypt private signing keys at rest (v1.43) ([#131](https://github.com/szTheory/lockspire/issues/131)) ([038df08](https://github.com/szTheory/lockspire/commit/038df080748c046829f9f98297da8403c47b4d89))
+
+
+### Bug Fixes
+
+* **admin:** collapse nav into a menu on tablet and phone ([#124](https://github.com/szTheory/lockspire/issues/124)) ([4136972](https://github.com/szTheory/lockspire/commit/413697280581ace5a8abc7ec47b8967760b15993))
+* **admin:** keep policy sub-tabs on one scrolling row ([#128](https://github.com/szTheory/lockspire/issues/128)) ([5124369](https://github.com/szTheory/lockspire/commit/5124369e2c6483fdea2ddcd0704085096bc78e52))
+* **release:** retain complete prepublish evidence ([#120](https://github.com/szTheory/lockspire/issues/120)) ([ef6e33b](https://github.com/szTheory/lockspire/commit/ef6e33be2d8bc8ac438390495990b231b475466c))
+
 ## [1.5.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.5.0...lockspire-v1.5.1) (2026-09-26)
 
 
