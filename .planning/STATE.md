@@ -5,7 +5,7 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: "161-07 Task 2: awaiting exact-SHA publication authorization"
+stopped_at: "161-07 Task 4: waiting for hex-publish approval, run 39481079989"
 last_updated: "2026-10-20T19:05:19+00:00"
 last_activity: 2026-10-20
 last_activity_desc: Plan 161-06 complete; release source 428a9c53 has green push CI
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
 Plan: 7 of 9
-Status: Awaiting exact-SHA publication authorization
+Status: Awaiting hex-publish environment approval
 Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
 
 Progress: [████████░░] 82%
@@ -365,8 +365,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T19:05:19+00:00
-Stopped at: Plan 161-07 Task 2 — awaiting authorization to set one-use SHA variable and dispatch protected publication for S 428a9c53e02bc573376d0fcac313f047fbbea81c with successful push CI 39478977350. No variable set or dispatch yet; version/tag absent and protected environment verified.
+Last session: 2026-10-20T19:17:18+00:00
+Stopped at: Plan 161-07 Task 4 — run 39481079989 on S 428a9c53 passed validation and exact package proof; waiting for maintainer hex-publish approval. One-use authorization is currently set and must be cleared after terminal outcome; on abort cancel run, await terminal, then delete it. Nothing published yet.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics

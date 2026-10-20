@@ -218,6 +218,16 @@ RUN: 39481079989
 - Confirmed workflow_dispatch event and exact headSha S. Validation and package proof run before the hex-publish environment approval.
 - No deployment approval performed. Keep variable until attempt finishes; on abort cancel run and wait for terminal, then clear it; clear on every outcome.
 
+Protected approval checkpoint (2026-10-20T19:17:18+00:00):
+
+- RUN 39481079989 status waiting; headSha exactly S `428a9c53e02bc573376d0fcac313f047fbbea81c`.
+- Validate exact main head and CI evidence: success.
+- Prove exact package before publication: success.
+- Retained artifact: `release-package-428a9c53e02bc573376d0fcac313f047fbbea81c`.
+- Publish verified release to Hex: waiting for environment `hex-publish`; pending-deployment API confirms that environment.
+- Live main and one-use authorized SHA still equal S. No deployment approval or upload performed.
+- Maintainer action: open https://github.com/szTheory/lockspire/actions/runs/39481079989, confirm commit S, approve hex-publish, then reply approved. On rejection or abort, monitor/cancel to terminal and always clear authorization as specified in plan 07.
+
 ## Independent verification
 
 (filled by later plans)
