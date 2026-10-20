@@ -366,7 +366,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20T17:50:05+00:00
-Stopped at: Resumed 161-04 Task 3 with retained push/PR approval; refreshing preflight and opening milestone PR.
+Stopped at: 161-04 Task 3 — PR #132 open at d1c9c057; Dialyzer failed in client.create; awaiting scoped lib/ fix approval. Other CI jobs still running.
 Resume file: .planning/phases/161-docs-verified-1-6-0-release/.continue-here.md
 
 ## Performance Metrics
