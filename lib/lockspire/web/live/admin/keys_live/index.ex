@@ -187,14 +187,19 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
     |> assign(key_protection: load_key_protection())
   end
 
-  # A non-ArgumentError raise from config resolution reads as could-not-check,
-  # the safe direction. Nothing is logged: the message could carry config text.
+  # Only the status read is guarded: any raise or exit there reads as could-not-check, the safe
+  # direction. Nothing is logged because the message could carry config text. Summarizing runs
+  # unguarded so a defect in it is not silently hidden.
   defp load_key_protection do
-    Admin.encryption_status() |> Protection.summarize()
+    Protection.summarize(read_encryption_status())
+  end
+
+  defp read_encryption_status do
+    Admin.encryption_status()
   rescue
-    _exception -> Protection.summarize(:error)
+    _exception -> :error
   catch
-    :exit, _reason -> Protection.summarize(:error)
+    :exit, _reason -> :error
   end
 
   defp assign_inventory_result(socket, {:ok, keys}) do
