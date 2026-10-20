@@ -1,6 +1,6 @@
 # Proposed next milestone: DCR Lifetime Enforcement
 
-Status: scoped candidate, not an active implementation milestone. Recorded 2026-10-20 under the approved sequence: close v1.44, finish the bounded keys.reencrypt follow-up, then scope DCR lifetimes separately. No protocol behavior is changed by this brief.
+Status: activated as v1.45 on 2026-10-20; requirements and Phases 162–166 approved. Implementation has not started. Originally recorded under the approved sequence: close v1.44, finish the bounded keys.reencrypt follow-up, then scope DCR lifetimes separately. No protocol behavior is changed by this brief.
 
 ## Outcome
 
@@ -51,4 +51,4 @@ The next discuss/research phase should resolve these as a coherent compatibility
 
 ## Completion boundary
 
-Scope is captured here. Implementation remains pending and the protocol todo stays open. Activate a new GSD milestone with the next available phase number (162), resolve the decision matrix, then plan vertical slices. Package release is a separate verified step after implementation.
+v1.45 is initialized with approved requirements and Phases 162–166. Implementation remains pending and the protocol todo stays open. Start Phase 162 to resolve the decision matrix and upgrade contract before planning implementation slices. Phase 166 owns final proof; package release is a separate verified step after implementation.

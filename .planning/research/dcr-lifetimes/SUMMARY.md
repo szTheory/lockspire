@@ -47,4 +47,4 @@ Phase 162 must choose unset/zero/positive behavior for all three lifetimes; pros
 - [RFC 7662 section 4](https://www.rfc-editor.org/rfc/rfc7662.html#section-4): introspection validation and cache limits.
 - [RFC 7009 section 3](https://www.rfc-editor.org/rfc/rfc7009.html#section-3): revocation deployment limits.
 
-Research complete for requirements scoping; requirement confirmation and roadmap approval remain pending.
+Research informed the 18 requirements and Phases 162–166 approved on 2026-10-20. Phase 162 must resolve the remaining policy and compatibility decisions before implementation planning.

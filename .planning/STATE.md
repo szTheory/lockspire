@@ -3,10 +3,11 @@ gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 status: planning
-last_updated: "2026-10-20T21:48:11.534Z"
+current_phase: 162
+last_updated: "2026-10-20T21:54:25.072428+00:00"
 last_activity: 2026-10-20
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,18 +18,18 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
+See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.45 DCR Lifetime Enforcement — focused research and requirements; Phase 162 precedes implementation
+**Current focus:** v1.45 DCR Lifetime Enforcement — requirements and Phases 162–166 approved; Phase 162 ready for discussion
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 162 — Lifetime Semantics & Upgrade Contract (1 of 5; not started)
 Plan: —
-Status: Focused research complete; requirements confirmation pending
-Last activity: 2026-10-20 — Milestone v1.45 started
+Status: Ready for Phase 162 discussion and planning
+Last activity: 2026-10-20 — Approved five-phase roadmap maps all 18 requirements
 
 ## Accumulated Context
 
@@ -36,8 +37,9 @@ Last activity: 2026-10-20 — Milestone v1.45 started
 
 - Focused inline research: research/dcr-lifetimes/SUMMARY.md (with STACK, FEATURES, ARCHITECTURE and PITFALLS). No new dependency recommended; standards constraints and open decisions recorded.
 
+- User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- No lifetime defaults, automatic legacy backfill or credential rejection policy has been selected yet. Requirements and roadmap approval remain pending.
+- No lifetime defaults, automatic legacy backfill or credential rejection policy has been selected yet. The user approved all requirements and the roadmap on 2026-10-20.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -372,10 +374,10 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20
-Stopped at: Verified1.6.1 published from d04be40262e975a4eb8d8567eb0d1458a9c23181; sourceCI39495931590, protected run39496849388, terminal release_verifiedtrue/blockernone. Public checksum/docs/tag/release and isolated exact-version install verified; one-use authorization cleared and temporary freezes removed.
+Stopped at: v1.45 requirements and roadmap approved; initialization complete. Phase 162 has not started.
 Resume file: None
 
-v1.44 and PR134 closeout are archived/on main; PR135 keys.reencrypt fix is merged and shipped in1.6.1; release PR136 is merged and tagged. This documentation record is distinct from the immutable publication source. No protocol implementation has begun; v1.45 uses research/dcr-lifetimes/SCOPE.md. Original state.json remains unstaged and preserved; historical phase exceptions and backup branches remain intact. Release-record PR137 landed at a1e39a01; v1.45 initialization is now authorized.
+Next: $gsd-discuss-phase 162 — resolve lifetime semantics and upgrade compatibility using the approved scope, focused research and completed Phase 153 audit. No implementation plan may proceed until Phase 162 resolves the semantics and compatibility contract. Public 1.6.1 remains verified; package publication is separate. Preserve original unstaged state.json bytes and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -508,4 +510,4 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- Start the next milestone with $gsd-new-milestone
+- $gsd-discuss-phase 162 — Lifetime Semantics & Upgrade Contract

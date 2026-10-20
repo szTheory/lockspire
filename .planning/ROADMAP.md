@@ -2,6 +2,8 @@
 
 ## Milestones
 
+- 🚧 **v1.45 DCR Lifetime Enforcement** — Phases 162–166; requirements and roadmap approved 2026-10-20.
+
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
 - ✅ [v1.42 Admin UI Clarity & Workflow Refinement](milestones/v1.42-ROADMAP.md) — completed 2026-10-15; Phases 151–154; no protocol changes or package release.
@@ -15,9 +17,101 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.44 is complete and archived. Lockspire 1.6.0 is publicly verified; see [the audit](milestones/v1.44-MILESTONE-AUDIT.md) for all 13 requirements and retained debt. The bounded keys.reencrypt RepoRunner/TaskError follow-up is shipped in verified1.6.1. DCR lifetimes remain a [separately scoped candidate](research/dcr-lifetimes/SCOPE.md); no new protocol scope is active.
+v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20; no implementation has begun.
+
+**Mandatory dependency:** Phase 162 must finish the selected semantics and compatibility contract before any Phase 163–166 implementation plan. A roadmap approval approves this sequencing and scope, not an unresolved timeout, legacy backfill or rejection policy. Every implementation phase includes focused boundary and regression tests; Phase 166 owns the final cross-phase proof. Preserve existing security defaults, host ownership and historical records. Package publication is separate.
 
 ## Phases
+
+### v1.45 DCR Lifetime Enforcement — Approved
+
+- [ ] Phase 162: Lifetime Semantics & Upgrade Contract
+- [ ] Phase 163: App Lifetime & Compatible Host Storage
+- [ ] Phase 164: Client-Secret Expiry & Atomic Rotation
+- [ ] Phase 165: Management-Token Lifecycle & Recovery
+- [ ] Phase 166: End-to-End Lifetime, Security & Guidance Proof
+
+### Phase 162: Lifetime Semantics & Upgrade Contract
+
+**Goal:** Host maintainers have one selected, standards-grounded expiry and upgrade contract before implementation planning.
+**Depends on:** Approved v1.45 scope and focused research; no implementation dependency
+**Requirements:** DCR-02, DCR-03, DCR-04
+**Plans:** 0 (not yet planned)
+
+**Success criteria:**
+
+1. A decision matrix selects unset/zero/positive meanings, time precision and equality boundary, policy-change timing and renewal rules for all three lifetimes.
+2. An endpoint/consumer inventory selects app-expiry effects on authorization, issuance, refresh, management and existing tokens, with safe error mappings and explicit offline-validation limits.
+3. An upgrade contract selects legacy-date treatment, custom-storage changes, migration/activation order, mixed-version deployment and rollback limits.
+4. Management expiry and recovery choices address the registration lockout risk; concrete acceptance examples cover the selected behavior and all previously open decisions are resolved before implementation plans.
+
+### Phase 163: App Lifetime & Compatible Host Storage
+
+**Goal:** New and existing Phoenix hosts can store and enforce the selected app lifetime through an explicit schema and storage upgrade path.
+**Depends on:** Phase 162
+**Requirements:** DCR-05, DCR-06, DCR-13, DCR-14
+**Plans:** 0 (not yet planned)
+
+**Success criteria:**
+
+1. New registrations persist the selected effective lifetime; request-time app eligibility follows the Phase 162 consumer inventory, including clients without shared secrets.
+2. Existing registrations upgrade under the approved legacy treatment; no guessed historical date silently activates rejection, and supported deployment/rollback procedures have executable coverage.
+3. Fresh generated schema and custom storage satisfy the selected contract; missing capabilities produce the documented outcome.
+4. Focused tests demonstrate app-expiry boundaries, disabled-versus-expired behavior and the selected issued-token behavior without relying on a pruning job.
+
+### Phase 164: Client-Secret Expiry & Atomic Rotation
+
+**Goal:** Apps can rely on shared-secret expiry metadata matching authentication and operator rotation.
+**Depends on:** Phase 163
+**Requirements:** DCR-07, DCR-08, DCR-09
+**Plans:** 0 (not yet planned)
+
+**Success criteria:**
+
+1. Registration responses and persisted secret expiry match the selected unset/zero/positive and non-secret behavior.
+2. Basic, post and secret-JWT paths enforce the same secret deadline; JWT assertion timing and replay controls remain independently effective.
+3. Rotation writes replacement secret material and expiry atomically under the selected policy; old-secret use, concurrent requests and failed-write rollback follow the contract.
+
+### Phase 165: Management-Token Lifecycle & Recovery
+
+**Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
+**Depends on:** Phase 164
+**Requirements:** DCR-10, DCR-11, DCR-12
+**Plans:** 0 (not yet planned)
+
+**Success criteria:**
+
+1. Issuance stores the chosen management-token lifetime, including the chosen finite/unlimited behavior.
+2. Read, update and delete enforce the selected credential and app state with safe errors; authorized operator recovery works without bypassing the approved permissions.
+3. Rotation replaces hash and lifecycle atomically; stale pre-rotation requests and competing replacements cannot restore or retain credentials contrary to the selected contract.
+
+### Phase 166: End-to-End Lifetime, Security & Guidance Proof
+
+**Goal:** Adopters and maintainers can reproduce complete lifetime journeys and follow guidance that matches the verified behavior.
+**Depends on:** Phase 165
+**Requirements:** DCR-15, DCR-16, DCR-17, DCR-18, DCR-19
+**Plans:** 0 (not yet planned)
+
+**Success criteria:**
+
+1. Deterministic cross-phase tests cover before/at/after expiry, unset/zero/positive settings, changed policies, rotation and disabled/expired apps for all three lifetimes.
+2. Real PostgreSQL race and rollback tests confirm the selected ordering for expiry, disablement, stale authorization and rotation.
+3. A packaged clean-room journey proves registration, use, expiry and rotation; fresh install, legacy upgrade and custom-storage evidence is linked to the Phase 162 contract.
+4. Required CI and scoped security review pass across changed surfaces, with preserved security defaults and redaction.
+5. Configuration, storage, migration and operator guidance match executable results; changed admin copy follows PRODUCT.md vocabulary and retired-wording contracts.
+
+### v1.45 Progress
+
+| Phase | Plans complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 162. Lifetime Semantics & Upgrade Contract | 0/TBD | Not started | — |
+| 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
+| 164. Client-Secret Expiry & Atomic Rotation | 0/TBD | Not started | — |
+| 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |
+| 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
+
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. No requirement is complete.
+
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>

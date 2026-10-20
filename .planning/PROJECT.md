@@ -327,7 +327,7 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. Detailed requirements are being defined from the approved scope and focused research.
+v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. All eight outcome areas are approved and expanded into 18 [requirements](REQUIREMENTS.md). The approved [roadmap](ROADMAP.md) covers Phases 162–166. Phase 162 is ready for discussion and planning.
 
 Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures. The DCR lifetime protocol gap is active scope and remains unresolved until verified.
 

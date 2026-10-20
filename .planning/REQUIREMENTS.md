@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.45 DCR Lifetime Enforcement
 
 **Defined:** 2026-10-20
-**Status:** Scope approved by user; roadmap approval pending.
+**Status:** Requirements and roadmap approved by user on 2026-10-20.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
 ## Milestone Requirements
@@ -69,11 +69,29 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 
 ## Traceability
 
-To be populated during roadmap creation; every requirement will have exactly one owning phase.
+Approved owning phases are below. Each requirement has one owning phase. Cross-cutting constraints apply throughout, and final proof does not replace tests in implementation slices.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| DCR-02 | Phase 162 | Pending |
+| DCR-03 | Phase 162 | Pending |
+| DCR-04 | Phase 162 | Pending |
+| DCR-05 | Phase 163 | Pending |
+| DCR-06 | Phase 163 | Pending |
+| DCR-13 | Phase 163 | Pending |
+| DCR-14 | Phase 163 | Pending |
+| DCR-07 | Phase 164 | Pending |
+| DCR-08 | Phase 164 | Pending |
+| DCR-09 | Phase 164 | Pending |
+| DCR-10 | Phase 165 | Pending |
+| DCR-11 | Phase 165 | Pending |
+| DCR-12 | Phase 165 | Pending |
+| DCR-15 | Phase 166 | Pending |
+| DCR-16 | Phase 166 | Pending |
+| DCR-17 | Phase 166 | Pending |
+| DCR-18 | Phase 166 | Pending |
+| DCR-19 | Phase 166 | Pending |
 
-**Coverage:** 18 requirements; roadmap mapping pending.
+**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 0 complete.
 
-*Last updated: 2026-10-20 after user requirements approval.*
+*Last updated: 2026-10-20 after roadmap approval.*
