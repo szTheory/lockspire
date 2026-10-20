@@ -141,6 +141,13 @@ D-21 simulation: head 14bb083562a195e99feed679a08f74f0e9fc3e75 hygiene 0 BLOCK; 
 - Release Please Auto Merge remains disabled_manually; #125–#127 remain OPEN.
 - No merge of #121 or publication occurred. Next step is the separate #121 squash-merge approval.
 
+Plan 161-06 merge-gate correction (2026-10-20):
+
+- Maintainer approved squash-merging #121 at HEAD121 14bb083562a195e99feed679a08f74f0e9fc3e75. All planned preconditions passed, but normal `gh pr merge --squash --match-head-commit` was rejected: “the base branch policy prohibits the merge”. PR remains OPEN; main remains S1. No merge, admin bypass, protection change or publication occurred.
+- Live protection requires seven status contexts from GitHub Actions (app 15368), strict/up-to-date, with admins enforced. #121 initially had an empty statusCheckRollup because its bot-token push did not start PR workflows.
+- D-21's assumption that simulation alone suffices for the pre-merge policy gate is incomplete. Local exact-head simulation remains valid; additionally, run existing ci.yml workflow_dispatch on release-please--branches--main--components--lockspire at the unchanged verified HEAD121. CI already supports this trigger and has no event-based job exclusions. This creates real required check evidence without changing source, workflow or branch protection.
+- The user's exact-head merge approval is retained. Retry only after this head's dispatched CI succeeds and live exact-head/main/auto-merge guards are revalidated. Post-merge CI on the resulting S is still mandatory before publish. No release.yml workflow re-run.
+
 ## Publication
 
 (filled by later plans)
