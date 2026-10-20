@@ -142,3 +142,15 @@ Adopters can read accurate guides for the new setup path and install a publicly 
 - `2026-10-13-audit-dcr-default-lifetime-semantics.md`: protocol work, owned by a later DCR lifetime milestone (DCR-01).
 - `2026-10-19-keys-reencrypt-via-repo-runner.md`: Mix task behavior change. Deferred to a post-1.6.0 quick task so the release diff stays quiet (see D-07).
 </deferred>
+
+
+## Execution correction to D-21 (2026-10-20)
+
+Live GitHub behavior disproved the premise that bot-token PRs cannot have PR-level workflows. Current GitHub creates approval-required pull_request CI and Dependency Review runs (action_required). The initial empty rollup did not waive protected-main checks. A manually dispatched head CI passed but did not clear the PR gate. Approving the existing PR runs through the normal workflow approval API produced the required checks, and the normal exact-head squash then succeeded with protections intact. See RELEASE-EVIDENCE.md for run IDs, primary documentation and read-backs.
+
+For future release PRs, inspect approval-required PR runs first, approve reviewed-source CI/dependency runs as part of the authorized merge work, and require their actual success. Preserve the exact-head simulation and the mandatory post-squash main push CI before publish. The older instruction not to inspect or wait for PR checks is superseded by this observed correction. Never bypass protections or use --admin.
+
+
+## Maintainer authorization update (2026-10-20)
+
+The user explicitly authorized proceeding when CI is green and does not want repeated manual confirmations. For the remaining scoped release workflow, treat successful verification gates as the condition on the user's approval, including the protected environment approval and the verified release-record PR. Perform normal GitHub approvals under that authorization; preserve protection settings, exact-source guards, checks and cleanup. Stop for an actual failure or material scope change, rather than repeating already-covered approval questions. This supersedes D-15's repeated prompting for these already-authorized steps; it does not disable branch or environment protections or expand the release scope.

@@ -131,3 +131,54 @@ PR #132's first run passed all checks except Dialyzer. The maintainer approved t
 - Formatter check for the changed task and `git diff --check`: exit 0.
 
 SAFE-02 evidence remains valid for this source revision plus subsequent planning-only changes. The requirement remains unchecked until the planned squash-SHA rebinding in 161-06.
+
+## Bound to v1.44 squash S1
+
+S1: db33c470c5deef9cc72e2240e0db0bdf0044e22b
+T: c12b2c65f5705090fc7641f16b0f3e633659a733
+
+- `git diff --quiet T S1` passed: the exact approved, CI-green source tree is unchanged by squash.
+- Forbidden-path diff `038df080748c046829f9f98297da8403c47b4d89..db33c470c5deef9cc72e2240e0db0bdf0044e22b` is empty for mix.exs, mix.lock, migrations, protocol, config, examples and compatibility.
+- Re-ran the added-line lib/ emission grep on `038df080748c046829f9f98297da8403c47b4d89..S1` and compared it with the latest approved T (which includes the separately approved Dialyzer repair): identical 36 hits. The original-sweep extension above explains the moved validation-error raise; it introduces no new output or interpolation.
+- Targeted 199-test safety suite and zero-warning Dialyzer were run on the repaired source; all eight PR checks succeeded at T. Identical trees bind those results to S1.
+
+Re-run added-line emission matches:
+
+```elixir
+lib/lockspire/config.ex:254:   # missing or empty variable raises (it never degrades to "not configured").
+lib/lockspire/config.ex:325:     raise ArgumentError,
+lib/lockspire/config.ex:332:     raise ArgumentError,
+lib/lockspire/generators/kek_snippet.ex:23:       raise ArgumentError,
+lib/lockspire/generators/kek_snippet.ex:33:              raise("#{@env_var} is missing. Generate one with: mix lockspire.gen.kek")}
+lib/lockspire/install/repo_runner.ex:13:   # work with `Lockspire.Install.TaskError.run/2`, which turns exceptions, exits and throws raised
+lib/lockspire/install/task_error.ex:6:   # `run/2` wraps `Lockspire.Install.RepoRunner.run/2`. RepoRunner converts anything raised inside
+lib/lockspire/install/task_error.ex:8:   # as a repo start failure. `run/2` therefore classifies every exception, exit and throw raised
+lib/lockspire/install/task_error.ex:16:   # Nothing here prints or raises through Mix; callers print after `run/2` returns.
+lib/lockspire/install/task_error.ex:84:     previous_level = Logger.get_process_level(self())
+lib/lockspire/install/task_error.ex:85:     Logger.put_process_level(self(), :warning)
+lib/lockspire/install/task_error.ex:98:   defp restore_level(nil), do: Logger.delete_process_level(self())
+lib/lockspire/install/task_error.ex:99:   defp restore_level(level), do: Logger.put_process_level(self(), level)
+lib/lockspire/web/live/admin/keys_live/index.ex:190:   # Only the status read is guarded: any raise or exit there reads as could-not-check, the safe
+lib/lockspire/web/live/admin/keys_live/index.ex:289:   # Invalid key-encryption key config raises ArgumentError when the key set is resolved. The
+lib/mix/tasks/lockspire.client.create.ex:45:       # runner turns anything raised inside the fun into a repo failure.
+lib/mix/tasks/lockspire.client.create.ex:54:           Mix.raise(format_domain_errors(errors))
+lib/mix/tasks/lockspire.client.create.ex:57:           Mix.raise("client registration failed: " <> TaskError.unexpected_phrase())
+lib/mix/tasks/lockspire.client.create.ex:60:           Mix.raise("client registration failed: " <> phrase)
+lib/mix/tasks/lockspire.doctor.remote_jwks.ex:83:     Mix.raise("Could not inspect client: " <> TaskError.classify(reason))
+lib/mix/tasks/lockspire.doctor.remote_jwks.ex:87:     Mix.raise("Could not inspect client: " <> phrase)
+lib/mix/tasks/lockspire.doctor.token_format.ex:68:         Mix.shell().info("Could not inspect token formats: " <> TaskError.classify(reason))
+lib/mix/tasks/lockspire.doctor.token_format.ex:71:         Mix.shell().info("Could not inspect token formats: " <> phrase)
+lib/mix/tasks/lockspire.doctor.token_format.ex:75:   # `Lockspire.Config.repo!/0` raises when :repo is unset; classify that like any other failure so
+lib/mix/tasks/lockspire.gen.kek.ex:33:       Keyword.get(opts, :help, false) -> Mix.shell().info(help())
+lib/mix/tasks/lockspire.gen.kek.ex:34:       Keyword.get(opts, :raw, false) -> Mix.shell().info(KekSnippet.generate_key())
+lib/mix/tasks/lockspire.gen.kek.ex:64:         Mix.raise("Unknown options: #{Enum.map_join(invalid, ", ", &elem(&1, 0))}")
+lib/mix/tasks/lockspire.gen.kek.ex:67:         Mix.raise(
+lib/mix/tasks/lockspire.gen.kek.ex:73:         Mix.raise("--id must be 1-32 characters from A-Z, a-z, 0-9, dot, underscore or dash")
+lib/mix/tasks/lockspire.gen.kek.ex:83:     Mix.shell().info(
+lib/mix/tasks/lockspire.gen.kek.ex:87:     Mix.shell().info("")
+lib/mix/tasks/lockspire.gen.kek.ex:88:     Mix.shell().info("#{KekSnippet.env_var()}=#{value}")
+lib/mix/tasks/lockspire.gen.kek.ex:89:     Mix.shell().info("")
+lib/mix/tasks/lockspire.gen.kek.ex:91:     Mix.shell().info(
+lib/mix/tasks/lockspire.gen.kek.ex:95:     Mix.shell().info(String.trim_trailing(KekSnippet.prod_block(id, 2)))
+lib/mix/tasks/lockspire.gen.kek.ex:97:     Mix.shell().info(
+```
