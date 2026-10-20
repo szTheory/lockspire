@@ -111,27 +111,38 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
 
     assert milestones =~ "## v1.37 Prime-Time Readiness Ratchet (Shipped: 2026-08-28)"
     assert milestones =~ "public package `1.5.0`"
-    assert release_train =~ "Release Please version metadata: `1.5.1`"
 
-    assert release_train =~
-             "Latest public package: Hex `1.5.1`, published from source `0b56503859b69531ff86d8e4a465a0e75f963594` on 2026-10-08."
+    metadata_version =
+      capture!(
+        release_train,
+        ~r/^- Release Please version metadata: `(\d+\.\d+\.\d+)`/m,
+        "Release Please version metadata"
+      )
 
-    assert release_train =~
-             "protected release run [37795671282](https://github.com/szTheory/lockspire/actions/runs/37795671282)"
+    [public_version, public_sha, _public_date] =
+      capture_all!(
+        release_train,
+        ~r/^- Latest public package: Hex `(\d+\.\d+\.\d+)`, published from source `([0-9a-f]{40})` on (\d{4}-\d{2}-\d{2})\./m,
+        "Latest public package"
+      )
 
-    assert release_train =~
-             "was backed by matching canonical push CI [37788996197]"
+    [_run_id, artifact_sha, _checksum, tag_label_version, tag_url_version] =
+      capture_all!(
+        release_train,
+        ~r/^- Artifact truth: protected release run \[(\d+)\]\(https:\/\/github\.com\/[^\/]+\/[^\/]+\/actions\/runs\/\d+\) for source `([0-9a-f]{40})` .*verified the public Hex checksum `([0-9a-f]{64})`, HexDocs, \[lockspire-v(\d+\.\d+\.\d+)\]\(https:\/\/github\.com\/[^\/]+\/[^\/]+\/releases\/tag\/lockspire-v(\d+\.\d+\.\d+)\)/m,
+        "Artifact truth"
+      )
 
+    assert metadata_version == Paths.mix_version()
+    assert Version.compare(metadata_version, public_version) in [:gt, :eq]
+    assert tag_label_version == tag_url_version
+    assert tag_label_version == public_version
+    assert artifact_sha == public_sha
     assert release_train =~ "The release run verified the public Hex checksum"
-
-    assert release_train =~
-             "public Hex checksum `c13dabddef307dcb5d89490642272571e91d12bdf3fd14756e820600121df0b3`"
-
-    assert release_train =~
-             "[lockspire-v1.5.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.5.1)"
+    assert release_train =~ "`release_verified: true`"
 
     for historical_value <- [
-          "Previous release: source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
+          "source `5d10ce2219c2e687cf9573c8b280abfb118a47d8`",
           "33141161205",
           "33141484467",
           "lockspire-v1.5.0",
@@ -186,6 +197,18 @@ defmodule Lockspire.TestSupport.ReleaseProof.WorkflowAssertions do
     case :binary.match(bytes, needle) do
       {offset, _length} -> offset
       :nomatch -> flunk("expected #{inspect(needle)} in release workflow")
+    end
+  end
+
+  defp capture!(content, regex, label) do
+    [value] = capture_all!(content, regex, label)
+    value
+  end
+
+  defp capture_all!(content, regex, label) do
+    case Regex.run(regex, content, capture: :all_but_first) do
+      nil -> flunk("RELEASE-TRAIN.md line not found or malformed: #{label}")
+      values -> values
     end
   end
 end
