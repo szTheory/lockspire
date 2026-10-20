@@ -120,6 +120,26 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.ProtectionTest do
              :unencrypted
   end
 
+  test "not set up with orphaned encrypted keys says to restore the old key, without ids or counts" do
+    for overrides <- [%{unknown_kek: %{"gone-1" => 3}}, %{undecryptable: 2}] do
+      summary = Protection.summarize({:ok, status(Map.put(overrides, :configured, false))})
+
+      assert summary.state == :not_set_up
+      assert summary.value == "Not set up"
+      assert summary.command == "mix lockspire.doctor.key_encryption"
+      assert summary.detail =~ "no longer configured"
+      assert summary.detail =~ "rather than creating a new one"
+      refute all_text(summary) =~ "mix lockspire.gen.kek"
+      refute all_text(summary) =~ "gone-1"
+      refute all_text(summary) =~ ~r/\d/
+      refute summary.detail =~ "keep working"
+    end
+
+    plain = Protection.summarize({:ok, status(%{configured: false})})
+    assert plain.command == "mix lockspire.gen.kek"
+    refute plain.detail =~ "no longer configured"
+  end
+
   test "empty configured key set reads encrypted" do
     assert summarize_status(%{total: 0, by_kek_id: %{}, unknown_kek: %{}}).state == :encrypted
   end

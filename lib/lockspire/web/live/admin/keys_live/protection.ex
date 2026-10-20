@@ -26,7 +26,9 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
   @spec summarize(term()) :: summary()
   def summarize({:error, {:invalid_config, _message}}), do: build(:invalid_config)
 
-  def summarize({:ok, %{configured: false}}), do: build(:not_set_up)
+  def summarize({:ok, %{configured: false} = status}) do
+    if orphaned_keys?(status), do: build(:not_set_up_orphaned), else: build(:not_set_up)
+  end
 
   def summarize({:ok, %{configured: true} = status}) do
     status |> classify() |> build(Map.get(status, :current_kek_id))
@@ -69,6 +71,12 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
   # `EncryptionStatus.broken_now?/1`, which doctor and install verification gate on.
   defp reject_legacy?(status),
     do: Map.get(status, :legacy_plaintext) == :reject and positive?(Map.get(status, :legacy))
+
+  # Not set up, yet stored keys were encrypted with a key-encryption key that is gone. The state
+  # stays :not_set_up (D-02); only the guidance changes. Ids and counts never reach the copy.
+  defp orphaned_keys?(status) do
+    (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable))
+  end
 
   defp positive?(value), do: is_integer(value) and value > 0
 
@@ -126,6 +134,17 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
       detail:
         "No key-encryption key is set up, so Lockspire cannot create new keys until one is. Create one with the command below, add it to your app's configuration, and restart the app.",
       command: "mix lockspire.gen.kek"
+    }
+  end
+
+  defp build(:not_set_up_orphaned, _id) do
+    %{
+      state: :not_set_up,
+      tone: :warning,
+      value: "Not set up",
+      detail:
+        "No key-encryption key is set up, and some stored keys were encrypted with a key-encryption key that is no longer configured. Restore that key-encryption key in your app's configuration rather than creating a new one, then restart the app. Do not delete the keys. For details, run:",
+      command: "mix lockspire.doctor.key_encryption"
     }
   end
 

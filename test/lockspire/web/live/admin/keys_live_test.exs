@@ -667,16 +667,31 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
       assert_common_protection_checks(html, "")
     end
 
-    test "not set up state points at the generator and wins over unreadable" do
-      publish_sealed("sealed-current", "test-1")
+    test "not set up state points at the generator when no encrypted keys are stranded" do
       KeyEncryptionHelpers.put_key_encryption(nil)
       {html, _socket} = drive_index()
       section_text = protection_section(html) |> LazyHTML.text()
 
       assert section_text =~ "Not set up"
       refute section_text =~ "Some keys cannot be read"
+      refute section_text =~ "no longer configured"
       assert html =~ "mix lockspire.gen.kek"
-      assert key_record_count(html) == 5
+      assert key_record_count(html) == 4
+      assert_common_protection_checks(html, "")
+    end
+
+    test "not set up with keys sealed by a missing key-encryption key says to restore it" do
+      publish_sealed("sealed-gone", "gone-1")
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {html, _socket} = drive_index()
+      section_text = protection_section(html) |> LazyHTML.text()
+
+      assert section_text =~ "Not set up"
+      assert section_text =~ "no longer configured"
+      assert section_text =~ "rather than creating a new one"
+      refute section_text =~ "gone-1"
+      assert html =~ "mix lockspire.doctor.key_encryption"
+      refute html =~ "mix lockspire.gen.kek"
       assert_common_protection_checks(html, "")
     end
 
