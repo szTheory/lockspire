@@ -27,12 +27,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 after verified 1.6.0)
 
 Phase: Not started (defining requirements)
 Plan: —
-Status: Defining requirements
+Status: Focused research complete; requirements confirmation pending
 Last activity: 2026-10-20 — Milestone v1.45 started
 
 ## Accumulated Context
 
 ### v1.45 Milestone Direction
+
+- Focused inline research: research/dcr-lifetimes/SUMMARY.md (with STACK, FEATURES, ARCHITECTURE and PITFALLS). No new dependency recommended; standards constraints and open decisions recorded.
 
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
 - No lifetime defaults, automatic legacy backfill or credential rejection policy has been selected yet. Requirements and roadmap approval remain pending.
