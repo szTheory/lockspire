@@ -125,7 +125,7 @@ Plans:
 - [x] 161-07-PLAN.md — protected exact-ref publish of 1.6.0: authorize SHA, dispatch, hex-publish approval, clear variable (REL-02)
 
 **Wave 7**
-- [ ] 161-08-PLAN.md — independent public verification: checksum three-way, tarball tasks, HexDocs, tag/release, fresh HEX_HOME install
+- [x] 161-08-PLAN.md — independent public verification: checksum three-way, tarball tasks, HexDocs, tag/release, fresh HEX_HOME install
 
 **Wave 8**
 - [ ] 161-09-PLAN.md — RELEASE-TRAIN.md 1.6.0 record via squash-merged docs PR, auto-merge and Dependabot decision
@@ -137,7 +137,7 @@ Plans:
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 3/3 | Complete    | 2026-10-19 |
 | 160. Admin Key Protection & Missing-KEK Copy | 2/2 | Complete    | 2026-10-19 |
-| 161. Docs & Verified 1.6.0 Release | 7/9 | In progress | - |
+| 161. Docs & Verified 1.6.0 Release | 8/9 | In progress | - |
 
 ## Phases
 
