@@ -1,8 +1,8 @@
 ---
 phase: "162"
 slug: "lifetime-semantics-upgrade-contract"
-status: draft
-nyquist_compliant: false
+status: validated
+nyquist_compliant: true
 wave_0_complete: true
 created: "2026-10-20"
 ---
@@ -46,3 +46,7 @@ Independent adversarial semantic review cross-checks selected decisions against 
 - [x] Runtime/migration/race/security/CI claims remain assigned to 163–166.
 
 Automated design-contract validation passed for policy, consumers and complete stages. Independent adversarial semantic review remains pending as the separate Phase 162 verifier gate. No runtime conformance is claimed.
+
+## Validation Audit
+
+2026-10-20: all3task commands verified green, all3design requirements automated,23meaningfulnegative mutations rejected. No missing automated coverage. Independent semantic review remains separate. Runtime proof is outside this validation scope.

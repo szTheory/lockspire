@@ -117,6 +117,11 @@ def validate(contract: str, data, stage: str) -> None:
         require(row.get("deadline") == deadline and row.get("checks") == {
             str(deadline - 1): True, str(deadline): False, str(deadline + 1): False},
             f"equality boundary is not strict for {cid}")
+    provenance = cases.get("C-POL-05", {})
+    require(provenance.get("dcr_uses_defaults") is True
+            and provenance.get("direct_operator_uses_dcr_defaults") is False
+            and provenance.get("no_secret_secret_lifetime") == "inapplicable",
+            "DCR provenance and no-secret policy boundaries must remain independent")
     policy = cases.get("C-POL-06", {})
     require(policy.get("valid") == [None, 0, 1, 2147483647]
             and set(map(json.dumps, policy.get("invalid", []))) ==
@@ -275,6 +280,10 @@ def self_test(contract: str, data, stage: str) -> list[str]:
     def duplicate_json(doc, fixture):
         strict_json('{"duplicate":1,"duplicate":2}')
     rejected("duplicate-json-key", duplicate_json, "duplicate JSON key")
+
+    def wrong_provenance(doc, fixture):
+        next(c for c in fixture["cases"] if c["id"] == "C-POL-05")["dcr_uses_defaults"] = False
+    rejected("wrong-dcr-provenance", wrong_provenance, "DCR provenance")
 
     if stage in {"consumers", "complete"}:
         def missing_consumer(doc, fixture):
