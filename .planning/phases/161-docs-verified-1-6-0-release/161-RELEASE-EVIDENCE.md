@@ -250,7 +250,52 @@ Terminal publication outcome (2026-10-20T19:25:11+00:00):
 
 ## Independent verification
 
-(filled by later plans)
+Independent maintainer-machine verification (2026-10-20T19:27:56+00:00):
+
+- Stale-variable check: absent; authorization cleanup already verified.
+- Public API https://hex.pm/api/packages/lockspire/releases/1.6.0: version 1.6.0, has_docs true, inserted_at 2026-10-20T19:19:39.936786Z.
+- API checksum: `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`.
+- SHA256 of downloaded https://repo.hex.pm/tarballs/lockspire-1.6.0.tar: `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`.
+- Retained release-evidence manifest artifact.sha256: `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5`; source_sha `428a9c53e02bc573376d0fcac313f047fbbea81c`. Mandatory three-way equality passed; artifact download succeeded (no fallback).
+- Postpublish receipt status verified. Terminal receipt release_verified true, blocker none; all stages passed.
+- Outer tar entries: VERSION, CHECKSUM, metadata.config, contents.tar.gz.
+- Inner exact task list (11; lockspire.test.setup absent):
+
+```text
+lib/mix/tasks/lockspire.client.create.ex
+lib/mix/tasks/lockspire.doctor.ex
+lib/mix/tasks/lockspire.doctor.key_encryption.ex
+lib/mix/tasks/lockspire.doctor.remote_jwks.ex
+lib/mix/tasks/lockspire.doctor.token_format.ex
+lib/mix/tasks/lockspire.gen.kek.ex
+lib/mix/tasks/lockspire.install.ex
+lib/mix/tasks/lockspire.keys.reencrypt.ex
+lib/mix/tasks/lockspire.oidf_conformance.ex
+lib/mix/tasks/lockspire.upgrade.ex
+lib/mix/tasks/lockspire.verify.ex
+```
+
+- HexDocs HTTP/effective URLs (README follows a meta refresh; real guide paths confirmed from published sidebar JSON without executing JavaScript):
+  - 200 https://lockspire.hexdocs.pm/1.6.0/
+  - 200 https://lockspire.hexdocs.pm/1.6.0/supported-surface.html
+  - 200 https://lockspire.hexdocs.pm/1.6.0/operator-admin.html
+  - 200 https://lockspire.hexdocs.pm/1.6.0/signing-key-encryption.html
+- Tag read-back: `428a9c53e02bc573376d0fcac313f047fbbea81c	refs/tags/lockspire-v1.6.0`.
+- tag lockspire-v1.6.0 resolves to verified commit 428a9c53e02bc573376d0fcac313f047fbbea81c.
+- GitHub release: tag lockspire-v1.6.0; target 428a9c53e02bc573376d0fcac313f047fbbea81c; draft false, prerelease false.
+- Public verification workdir: `/private/tmp/lockspire-160-public-19qkctqj`. Commands: curl -fsSL for public API/tar/docs, python3 -I for downloaded JSON/tar inspection and hashing, gh run download for mandatory manifest/receipts, git ls-remote and verify_github_release_target.sh for tag target.
+
+### Clean-room install
+
+CLEAN_ROOM: /private/tmp/lockspire-160-clean-oush3_3d
+
+- Fresh HEX_HOME=hexhome, MIX_HOME=mixhome and MIX_ARCHIVES=mixhome/archives beneath CLEAN_ROOM; HEX_API_KEY unset; ASDF Elixir 1.19.5-otp-28 / Erlang 28.5.
+- Minimal host pinned `{:lockspire, "== 1.6.0"}`; mix local.hex --force, mix local.rebar --force and mix deps.get succeeded. Repeated mix deps.get in the same isolated homes succeeded.
+- mix.lock lockspire 1.6.0 outer checksum `9eba2cda3a7d5513399e4bcb0401e2688f98300a3b34b25fe6a568c62d782ed5` equals public API, tarball and manifest.
+- deps/lockspire/mix.exs is version 1.6.0 and lib/mix/tasks/lockspire.gen.kek.ex exists.
+- mix deps.compile succeeded. gen.kek --raw succeeded; generated value captured in memory only, recorded length 44, no key value printed or retained in evidence.
+- No environmental fallback needed. Fresh clean-room directories retained through verification.
+
 
 ## Variable lifecycle
 
