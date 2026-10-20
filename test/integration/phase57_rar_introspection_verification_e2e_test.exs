@@ -90,6 +90,7 @@ defmodule Lockspire.Integration.Phase57RarIntrospectionVerificationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase57-client",
         client_type: :confidential,
         client_secret_hash: Policy.hash_client_secret("secret"),

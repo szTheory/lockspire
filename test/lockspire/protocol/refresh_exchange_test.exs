@@ -41,6 +41,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-refresh",
         client_secret_hash: "sha256:static-salt:ignored",
         client_type: :confidential,
@@ -577,6 +578,7 @@ defmodule Lockspire.Protocol.RefreshExchangeTest do
   test "rejects refresh tokens issued to a different client", %{now: now} do
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-other-refresh",
         client_secret_hash: "sha256:static-salt:ignored",
         client_type: :confidential,

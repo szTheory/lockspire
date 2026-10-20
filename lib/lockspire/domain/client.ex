@@ -78,6 +78,9 @@ defmodule Lockspire.Domain.Client do
           initial_access_token_id: integer() | nil,
           client_id_issued_at: DateTime.t() | nil,
           client_secret_expires_at: DateTime.t() | nil,
+          lifetime_version: 0 | 1 | nil,
+          client_expires_at: DateTime.t() | nil,
+          registration_access_token_expires_at: DateTime.t() | nil,
           backchannel_user_code_parameter: boolean(),
           backchannel_token_delivery_mode: backchannel_token_delivery_mode(),
           backchannel_client_notification_endpoint: String.t() | nil,
@@ -142,6 +145,9 @@ defmodule Lockspire.Domain.Client do
     initial_access_token_id: nil,
     client_id_issued_at: nil,
     client_secret_expires_at: nil,
+    lifetime_version: nil,
+    client_expires_at: nil,
+    registration_access_token_expires_at: nil,
     backchannel_user_code_parameter: false,
     backchannel_token_delivery_mode: :poll,
     backchannel_client_notification_endpoint: nil,
@@ -149,4 +155,47 @@ defmodule Lockspire.Domain.Client do
     inserted_at: nil,
     updated_at: nil
   ]
+
+  @doc """
+  Decides whether a current client row remains eligible as an application.
+
+  The consumer is explicit so callers can map the result to their own protocol error.
+  Legacy rows (version 0) and authoritative unlimited rows (version 1 with no deadline)
+  have no app expiry. Unknown versions and malformed authoritative dates fail closed.
+  """
+  @spec app_eligibility(t(), DateTime.t(), atom()) ::
+          :ok | {:error, :disabled | :expired | :invalid_lifetime_state}
+  def app_eligibility(%__MODULE__{active: false}, %DateTime{}, _consumer),
+    do: {:error, :disabled}
+
+  def app_eligibility(%__MODULE__{lifetime_version: 0, client_expires_at: nil}, %DateTime{}, _),
+    do: :ok
+
+  def app_eligibility(%__MODULE__{lifetime_version: 0}, %DateTime{}, _),
+    do: {:error, :invalid_lifetime_state}
+
+  def app_eligibility(%__MODULE__{lifetime_version: 1, client_expires_at: nil}, %DateTime{}, _),
+    do: :ok
+
+  def app_eligibility(
+        %__MODULE__{lifetime_version: 1, client_expires_at: deadline},
+        %DateTime{} = now,
+        _
+      ) do
+    if utc_second?(deadline) and utc_second?(now) do
+      if DateTime.compare(now, deadline) == :lt, do: :ok, else: {:error, :expired}
+    else
+      {:error, :invalid_lifetime_state}
+    end
+  end
+
+  def app_eligibility(%__MODULE__{}, %DateTime{}, _),
+    do: {:error, :invalid_lifetime_state}
+
+  def app_eligibility(%__MODULE__{}, _, _),
+    do: {:error, :invalid_lifetime_state}
+
+  defp utc_second?(%DateTime{time_zone: "Etc/UTC", microsecond: {0, _precision}}), do: true
+  defp utc_second?(%DateTime{time_zone: "UTC", microsecond: {0, _precision}}), do: true
+  defp utc_second?(_), do: false
 end

@@ -142,6 +142,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, %Client{} = first_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "alpha-client",
                client_secret_hash: "argon2id$hash",
                client_secret_jwt_verifier_encrypted: "sealed-alpha",
@@ -160,6 +161,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _second_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "beta-client",
                client_type: :public,
                name: "Beta Client",
@@ -309,6 +311,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "sensitive-client",
                client_secret_hash: "argon2id$top-secret-hash",
                client_type: :confidential,
@@ -365,6 +368,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "debug-client",
                client_secret_hash: "argon2id$hash",
                client_type: :confidential,

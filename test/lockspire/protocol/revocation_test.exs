@@ -26,6 +26,7 @@ defmodule Lockspire.Protocol.RevocationTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-revocation",
         client_secret_hash: client_secret_hash(confidential_secret),
         client_type: :confidential,
@@ -43,6 +44,7 @@ defmodule Lockspire.Protocol.RevocationTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-revocation-other",
         client_secret_hash: client_secret_hash("other-secret"),
         client_type: :confidential,

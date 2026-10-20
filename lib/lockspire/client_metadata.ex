@@ -41,7 +41,11 @@ defmodule Lockspire.ClientMetadata do
   @spec build_dcr_client(map(), map(), term(), map()) :: Client.t()
   def build_dcr_client(metadata, resolved, iat_record, credentials)
       when is_map(metadata) and is_map(credentials) do
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    now =
+      credentials
+      |> Map.get(:issued_at, DateTime.utc_now())
+      |> DateTime.truncate(:second)
+
     logout_metadata = normalize_logout_metadata(metadata)
 
     auth_method =
@@ -98,6 +102,8 @@ defmodule Lockspire.ClientMetadata do
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
       client_secret_expires_at: client_secret_expires_at(now, resolved, credentials),
+      lifetime_version: 1,
+      client_expires_at: app_expires_at(now, Map.get(resolved, :default_client_lifetime_seconds)),
       metadata:
         metadata |> Map.take(["client_uri"]) |> Map.reject(fn {_key, value} -> is_nil(value) end)
     }
@@ -282,6 +288,13 @@ defmodule Lockspire.ClientMetadata do
       Map.get(resolved, :default_client_secret_lifetime_seconds, 0) || 0,
       :second
     )
+  end
+
+  defp app_expires_at(_now, lifetime_seconds) when lifetime_seconds in [nil, 0], do: nil
+
+  defp app_expires_at(now, lifetime_seconds)
+       when is_integer(lifetime_seconds) and lifetime_seconds > 0 do
+    DateTime.add(now, lifetime_seconds, :second)
   end
 
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post

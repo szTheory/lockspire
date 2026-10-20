@@ -93,6 +93,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     field(:initial_access_token_id, :integer)
     field(:client_id_issued_at, :utc_datetime_usec)
     field(:client_secret_expires_at, :utc_datetime_usec)
+    field(:lifetime_version, :integer)
+    field(:client_expires_at, :utc_datetime_usec)
+    field(:registration_access_token_expires_at, :utc_datetime_usec)
     field(:backchannel_user_code_parameter, :boolean, default: false)
 
     field(:backchannel_token_delivery_mode, Ecto.Enum,
@@ -161,6 +164,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :initial_access_token_id,
       :client_id_issued_at,
       :client_secret_expires_at,
+      :lifetime_version,
+      :client_expires_at,
+      :registration_access_token_expires_at,
       :backchannel_user_code_parameter,
       :backchannel_token_delivery_mode,
       :backchannel_client_notification_endpoint,
@@ -177,8 +183,10 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       :pkce_required,
       :subject_type,
       :active,
-      :provenance
+      :provenance,
+      :lifetime_version
     ])
+    |> validate_inclusion(:lifetime_version, [0, 1])
     |> validate_number(:max_delegation_depth,
       less_than_or_equal_to: 5,
       greater_than_or_equal_to: 0
@@ -322,6 +330,9 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
       initial_access_token_id: record.initial_access_token_id,
       client_id_issued_at: record.client_id_issued_at,
       client_secret_expires_at: record.client_secret_expires_at,
+      lifetime_version: record.lifetime_version,
+      client_expires_at: record.client_expires_at,
+      registration_access_token_expires_at: record.registration_access_token_expires_at,
       backchannel_user_code_parameter: record.backchannel_user_code_parameter,
       backchannel_token_delivery_mode: record.backchannel_token_delivery_mode,
       backchannel_client_notification_endpoint: record.backchannel_client_notification_endpoint,

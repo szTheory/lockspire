@@ -80,6 +80,7 @@ defmodule Lockspire.Integration.Phase54ResourceIndicatorsE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "resource-client",
         client_type: :confidential,
         client_secret_hash: Policy.hash_client_secret("secret"),

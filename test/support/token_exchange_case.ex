@@ -103,6 +103,9 @@ defmodule Lockspire.TokenExchangeCase do
       ) do
     Repository.register_client(%Client{
       client_id: client_id,
+      # This helper models a pre-lifetime-contract stored client. New application
+      # registrations should use the explicit v1 constructor instead.
+      lifetime_version: 0,
       client_secret_hash: client_secret_hash(client_secret),
       client_type: Map.get(attrs, :client_type, :confidential),
       name: Map.get(attrs, :name, "Client #{client_id}"),

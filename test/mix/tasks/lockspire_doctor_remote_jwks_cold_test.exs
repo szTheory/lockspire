@@ -39,6 +39,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksColdTest do
     with_temp_repo(fn ->
       {:ok, _client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: client_id,
           client_secret_hash: "sha256:#{client_id}:hash",
           client_type: :confidential,

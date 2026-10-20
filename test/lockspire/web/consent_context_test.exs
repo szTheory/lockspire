@@ -65,6 +65,7 @@ defmodule Lockspire.Web.ConsentContextTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "context-client",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,

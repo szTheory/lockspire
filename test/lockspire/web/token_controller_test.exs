@@ -70,6 +70,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -215,6 +216,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns token_type DPoP for DPoP-mode clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop",
         client_secret_hash: nil,
         client_type: :public,
@@ -301,6 +303,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns invalid_dpop_proof when proof iat is a string" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop-invalid-iat",
         client_secret_hash: nil,
         client_type: :public,
@@ -376,6 +379,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns use_dpop_nonce and a retry nonce when a DPoP proof omits nonce" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop-nonce",
         client_secret_hash: nil,
         client_type: :public,
@@ -609,6 +613,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-controller-refresh",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -668,6 +673,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-controller-replay",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -1054,6 +1060,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
   defp register_device_client(client_id, secret, opts \\ []) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash: client_secret_hash(secret),
       client_type: :confidential,

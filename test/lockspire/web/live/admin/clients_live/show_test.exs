@@ -43,6 +43,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "security-show-client",
         client_secret_hash: "sha256:show:hash",
         client_type: :confidential,
@@ -98,6 +99,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   } do
     assert {:ok, registered_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "route-copy-self-registered-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -460,6 +462,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
        %{client: client} do
     assert {:ok, self_registered_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "self-registered-action-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -579,6 +582,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, long_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "long-configure-client",
                client_secret_hash: "sha256:long:client:secret:hash",
                client_type: :confidential,
@@ -716,6 +720,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
        %{client: client} do
     assert {:ok, self_registered_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "rat-handoff-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -798,6 +803,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, self_registered_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "rat-failure-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -944,6 +950,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
 
     assert {:ok, pkjwt_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "pkjwt-show-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -1018,6 +1025,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
        } do
     assert {:ok, incident_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "pkjwt-incident-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -1064,6 +1072,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   } do
     assert {:ok, jarm_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "jarm-remote-client",
                client_secret_hash: client.client_secret_hash,
                client_type: :confidential,
@@ -1092,6 +1101,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ShowTest do
   test "client detail shows read-only client_secret_jwt plus HS256 truth", %{client: client} do
     assert {:ok, jwt_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "csjwt-show-client",
                client_secret_hash: client.client_secret_hash,
                client_secret_jwt_verifier_encrypted: "sealed-jwt-show",

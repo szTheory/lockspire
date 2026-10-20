@@ -114,6 +114,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.TokenFormatTest do
 
   defp register_client(client_id, access_token_format) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash: "sha256:#{client_id}:hash",
       client_type: :confidential,

@@ -42,6 +42,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _alpha} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "alpha-client",
         client_secret_hash: "sha256:alpha:hash",
         client_type: :confidential,
@@ -59,6 +60,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _beta} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "beta-client",
         client_type: :public,
         name: "Beta Client",
@@ -76,6 +78,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _gamma} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "gamma-client",
         client_type: :confidential,
         name: "Gamma Client",
@@ -523,6 +526,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   test "client IDs with reserved URL characters are encoded in app links" do
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "odd/id?x#y",
         client_secret_hash: "sha256:odd",
         client_type: :confidential,
@@ -559,6 +563,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     for n <- 1..9 do
       {:ok, _client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "paged-client-#{n}",
           client_secret_hash: "sha256:paged:#{n}",
           client_type: :confidential,
@@ -620,6 +625,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _disabled_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: long_client_id,
         client_secret_hash: "sha256:disabled:secret:hash",
         client_type: :confidential,

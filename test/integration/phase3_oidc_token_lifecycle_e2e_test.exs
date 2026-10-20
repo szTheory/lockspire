@@ -71,6 +71,7 @@ defmodule Lockspire.Integration.Phase3OidcTokenLifecycleE2ETest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase3-e2e-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -90,6 +91,7 @@ defmodule Lockspire.Integration.Phase3OidcTokenLifecycleE2ETest do
 
     {:ok, confidential_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase3-e2e-confidential",
         client_secret_hash: client_secret_hash(confidential_secret),
         client_type: :confidential,

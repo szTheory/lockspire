@@ -29,6 +29,7 @@ defmodule Lockspire.Web.RevocationControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-revocation-controller",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -46,6 +47,7 @@ defmodule Lockspire.Web.RevocationControllerTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-revocation-controller-other",
         client_secret_hash: client_secret_hash("other-controller-secret"),
         client_type: :confidential,

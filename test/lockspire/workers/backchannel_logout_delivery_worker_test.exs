@@ -366,6 +366,7 @@ defmodule Lockspire.Workers.BackchannelLogoutDeliveryWorkerTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "client-123",
                client_secret_hash: "sha256:test:hash",
                client_type: :confidential,

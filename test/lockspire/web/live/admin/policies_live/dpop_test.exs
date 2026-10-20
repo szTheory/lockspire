@@ -39,6 +39,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
 
     {:ok, _c1} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "dpop-inherit",
         client_type: :confidential,
         dpop_policy: :inherit
@@ -46,6 +47,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
 
     {:ok, _c2} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "dpop-bearer",
         client_type: :public,
         dpop_policy: :bearer
@@ -53,6 +55,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DpopTest do
 
     {:ok, _c3} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "dpop-required",
         client_type: :public,
         dpop_policy: :dpop

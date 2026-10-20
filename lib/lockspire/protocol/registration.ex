@@ -64,12 +64,16 @@ defmodule Lockspire.Protocol.Registration do
       when is_map(metadata) do
     iat = Map.get(request, :iat)
     source = Map.get(request, :source, %{ip: nil, user_agent: nil})
+    issued_at = request |> Map.get(:now, DateTime.utc_now()) |> DateTime.truncate(:second)
 
     with :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
-         credentials <- generate_credentials(metadata, Map.get(request, :secret_key_base)),
+         credentials <-
+           metadata
+           |> generate_credentials(Map.get(request, :secret_key_base))
+           |> Map.put(:issued_at, issued_at),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
       emit_succeeded(client, iat_record, source)

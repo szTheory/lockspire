@@ -39,6 +39,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "token-ui-client",
         client_secret_hash: "sha256:token-ui:hash",
         client_type: :confidential,
@@ -470,6 +471,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: client_id,
                client_type: :confidential,
                name: "Reserved Client ID",
@@ -819,6 +821,7 @@ defmodule Lockspire.Web.Live.Admin.TokensLiveTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: long_client_id,
         client_secret_hash: "sha256:token-proof-secret-hash",
         client_type: :confidential,

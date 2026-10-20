@@ -216,6 +216,7 @@ defmodule Lockspire.Phase38SessionLogoutE2ETest do
 
   defp register_public_client do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: "phase38-public-client",
       client_type: :public,
       name: "Phase 38 Public Client",

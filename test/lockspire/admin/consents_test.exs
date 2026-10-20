@@ -24,6 +24,7 @@ defmodule Lockspire.Admin.ConsentsTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "consent-client",
         client_secret_hash: "sha256:consent:hash",
         client_type: :confidential,

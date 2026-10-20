@@ -70,6 +70,7 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase15-par-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -245,6 +246,7 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: client_id,
         client_secret_hash: Policy.hash_client_secret(secret),
         client_type: :confidential,

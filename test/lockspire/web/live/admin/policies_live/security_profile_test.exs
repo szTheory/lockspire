@@ -39,6 +39,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     {:ok, _inherit_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "security-inherit",
         client_type: :confidential,
         security_profile: :inherit
@@ -46,6 +47,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     {:ok, _fapi_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "security-fapi",
         client_type: :public,
         security_profile: :fapi_2_0_security
@@ -53,6 +55,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     {:ok, _message_signing_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "security-message-signing",
         client_type: :confidential,
         security_profile: :fapi_2_0_message_signing
@@ -60,6 +63,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfileTest do
 
     {:ok, _none_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "security-none",
         client_type: :public,
         security_profile: :none

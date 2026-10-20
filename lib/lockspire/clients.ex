@@ -163,6 +163,7 @@ defmodule Lockspire.Clients do
           created_by:
             normalize_optional_string(Map.get(attrs, :created_by) || Map.get(attrs, "created_by")),
           created_at: DateTime.utc_now(),
+          lifetime_version: 1,
           metadata: normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
         }
 

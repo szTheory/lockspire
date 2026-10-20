@@ -63,6 +63,7 @@ defmodule Lockspire.Web.UserinfoControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-userinfo",
         client_secret_hash: nil,
         client_type: :public,

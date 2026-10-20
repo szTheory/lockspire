@@ -108,6 +108,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     test "returns persisted logout metadata truthfully for stored clients" do
       {:ok, stored_client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "persisted-logout-client",
           client_type: :confidential,
           redirect_uris: ["https://app.example.test/callback"],

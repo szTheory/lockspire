@@ -25,6 +25,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-client",
         client_secret_hash: "sha256:old-salt:old-hash",
         client_type: :confidential,
@@ -99,6 +100,7 @@ defmodule Lockspire.Admin.ClientsTest do
       {client_secret_hash, _plaintext} = Lockspire.Clients.rotate_secret_hash()
 
       client = %Lockspire.Domain.Client{
+        lifetime_version: 0,
         client_id: "ls_dcr_test_" <> Integer.to_string(System.unique_integer([:positive])),
         client_secret_hash: client_secret_hash,
         client_type: :confidential,
@@ -225,6 +227,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 reports bounded reactive support truth for jwks_uri clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-summary",
         client_secret_hash: "sha256:remote:hash",
         client_type: :confidential,
@@ -261,6 +264,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 also applies to JARM-only jwks_uri clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-jarm",
         client_secret_hash: "sha256:remote:jarm",
         client_type: :confidential,
@@ -291,6 +295,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 reuses the shared incident taxonomy from client metadata" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-incident",
         client_secret_hash: "sha256:remote:incident",
         client_type: :confidential,
@@ -396,6 +401,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
     assert {:ok, %Client{} = created} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: client_id,
                client_secret_hash: "sha256:logout-salt:logout-hash",
                client_type: :confidential,

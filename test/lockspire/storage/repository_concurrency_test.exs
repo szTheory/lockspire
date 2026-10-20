@@ -69,7 +69,8 @@ defmodule Lockspire.Storage.RepositoryConcurrencyTest do
 
     results = Task.await_many(tasks, 5_000)
 
-    assert Enum.count(results, &match?({:ok, %{authorization_code: _, access_token: _}}, &1)) == 1,
+    assert Enum.count(results, &match?({:ok, %{authorization_code: _, access_token: _}}, &1)) ==
+             1,
            "expected one successful redemption, got: #{inspect(results)}"
 
     assert Enum.count(results, &match?({:error, :already_redeemed}, &1)) == 9,

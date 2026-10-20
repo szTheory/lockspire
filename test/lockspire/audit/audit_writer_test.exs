@@ -362,6 +362,7 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   defp register_client(client_id, now, auth_method \\ :none) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash:
         if(auth_method == :none, do: "argon2id$hash", else: client_secret_hash("secret")),

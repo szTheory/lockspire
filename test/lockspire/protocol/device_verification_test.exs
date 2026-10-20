@@ -190,6 +190,7 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
 
       assert {:ok, _client} =
                Repository.register_client(%Client{
+                 lifetime_version: 0,
                  client_id: "repo-device-client",
                  name: "Desk TV",
                  client_type: :public,

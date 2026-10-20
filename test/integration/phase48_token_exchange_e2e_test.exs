@@ -34,6 +34,7 @@ defmodule Lockspire.Integration.Phase48TokenExchangeE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase48-client",
         name: "Token Exchange Client",
         client_type: :public,

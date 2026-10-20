@@ -40,6 +40,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
     # Register a few clients with different overrides to test summary counts
     {:ok, _c1} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "c1",
         client_type: :confidential,
         par_policy: :inherit
@@ -47,6 +48,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
 
     {:ok, _c2} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "c2",
         client_type: :public,
         par_policy: :required
@@ -54,6 +56,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.ParTest do
 
     {:ok, _c3} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "c3",
         client_type: :public,
         par_policy: :optional

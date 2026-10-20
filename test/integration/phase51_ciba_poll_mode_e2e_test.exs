@@ -48,6 +48,7 @@ defmodule Lockspire.Integration.Phase51CibaPollModeE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "ciba-client",
         name: "CIBA Consumer",
         client_type: :public,
