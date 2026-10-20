@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: Phase 161 context gathered (assumptions mode)
-last_updated: "2026-10-20T16:59:12.962Z"
-last_activity: 2026-10-19
-last_activity_desc: Phase 160 complete, transitioned to Phase 161
-state_head: 7b652e3d4372e8a1c799400c3d4069bf9d6076dc
+stopped_at: Completed 161-01-PLAN.md
+last_updated: "2026-10-20T17:02:17.518Z"
+last_activity: 2026-10-20
+last_activity_desc: Phase 161 execution started
+state_head: 9b511ee63068198a4e44ecc493b2dee38c659821
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 8
-  percent: 47
+  completed_plans: 9
+  percent: 53
 ---
 
 # Project State
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 160 — Admin Key Protection & Missing-KEK Copy
+**Current focus:** Phase 161 — Docs & Verified 1.6.0 Release
 
 ## Current Position
 
-Phase: 161 (Docs & Verified 1.6.0 Release) — READY TO EXECUTE
-Plan: Not started
+Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-10-19 — Phase 160 complete, transitioned to Phase 161
+Last activity: 2026-10-20 — Phase 161 execution started
 
-Progress: [█████░░░░░] 47%
+Progress: [█████░░░░░] 53%
 
 ## Accumulated Context
 
@@ -363,9 +363,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T03:36:18.542Z
-Stopped at: Phase 161 context gathered (assumptions mode)
-Resume file: .planning/phases/161-docs-verified-1-6-0-release/161-CONTEXT.md
+Last session: 2026-10-20T17:02:17.425Z
+Stopped at: Completed 161-01-PLAN.md
+Resume file: None
 
 ## Performance Metrics
 
@@ -492,6 +492,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 159 P03 | 10 min | 3 tasks | 11 files |
 | Phase 160 P01 | 20 min | 2 tasks | 5 files |
 | Phase 160 P02 | 25 min | 2 tasks | 3 files |
+| Phase 161 P01 | 10 min | 2 tasks | 4 files |
 
 ## Operator Next Steps
 
