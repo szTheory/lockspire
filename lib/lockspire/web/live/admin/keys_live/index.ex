@@ -218,7 +218,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
   defp generate_key(socket, use, use_atom) do
     key_label = if use == "sig", do: "Signing", else: "Encryption"
 
-    case Admin.generate_key(use_atom) do
+    case safe_generate_key(use_atom) do
       {:ok, %{key: %{id: generated_id}}} ->
         socket = assign(socket, key_protection: load_key_protection())
 
@@ -263,6 +263,14 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
            generated_key_path: nil
          )}
 
+      {:error, :invalid_key_encryption_config} ->
+        {:noreply,
+         assign(socket,
+           generation_error: invalid_key_encryption_error(),
+           generation_notice: nil,
+           generated_key_path: nil
+         )}
+
       {:error, _reason} ->
         {:noreply,
          assign(socket,
@@ -271,6 +279,19 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Index do
            generated_key_path: nil
          )}
     end
+  end
+
+  # Invalid key-encryption key config raises ArgumentError when the key set is resolved. The
+  # message can carry config text, so it is never echoed, logged or flashed.
+  defp safe_generate_key(use_atom) do
+    Admin.generate_key(use_atom)
+  rescue
+    ArgumentError -> {:error, :invalid_key_encryption_config}
+  end
+
+  defp invalid_key_encryption_error do
+    "The key-encryption key setup is not valid, so Lockspire cannot create a key. " <>
+      "Run mix lockspire.doctor.key_encryption for details."
   end
 
   defp missing_key_encryption_error("Signing") do

@@ -841,6 +841,40 @@ defmodule Lockspire.Web.Live.Admin.KeysLiveTest do
       refute socket.assigns.generation_error =~ "could not be generated"
     end
 
+    test "invalid key-encryption config shows fixed copy and never echoes the error" do
+      # Registers the env and cache restore for test exit, then breaks both.
+      KeyEncryptionHelpers.put_key_encryption(nil)
+      {_html, socket} = drive_index()
+
+      Application.put_env(:lockspire, :key_encryption,
+        keys: [{"bad", "SENTINEL-not-base64"}],
+        current: "bad"
+      )
+
+      :persistent_term.erase(Lockspire.Config.key_encryption_cache_key())
+
+      assert {:noreply, socket} = Index.handle_event("generate", %{"use" => "sig"}, socket)
+      error = socket.assigns.generation_error
+
+      assert error =~ "key-encryption key setup is not valid"
+      assert error =~ "mix lockspire.doctor.key_encryption"
+      assert is_nil(socket.assigns.generation_notice)
+      assert is_nil(socket.assigns.generated_key_path)
+      refute Map.has_key?(socket.assigns, :flash)
+
+      html = rendered_to_string(Index.render(socket.assigns))
+
+      alerts =
+        html
+        |> HtmlAssertions.document()
+        |> LazyHTML.query(~s(ul.lockspire-admin-errors[role="alert"]))
+
+      assert LazyHTML.text(alerts) =~ "key-encryption key setup is not valid"
+      refute html =~ "SENTINEL"
+      refute html =~ "invalid config"
+      refute html =~ "ArgumentError"
+    end
+
     test "use validation still runs first" do
       KeyEncryptionHelpers.put_key_encryption(nil)
       {_html, socket} = drive_index()
