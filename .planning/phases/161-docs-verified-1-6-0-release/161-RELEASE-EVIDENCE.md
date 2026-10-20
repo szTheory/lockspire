@@ -235,6 +235,19 @@ Conditional maintainer authorization and protected approval (2026-10-20T19:19:06
 - Approved the pending hex-publish environment for RUN 39481079989 via the normal pending_deployments approval API, under that explicit user authorization. No protection bypass or settings change.
 - Continue monitoring to terminal, then delete one-use authorization regardless of result. Subsequent independent verification and checked release-record PR proceed under the same conditional authorization.
 
+Terminal publication outcome (2026-10-20T19:25:11+00:00):
+
+- RUN 39481079989 completed `success` on exact S `428a9c53e02bc573376d0fcac313f047fbbea81c`.
+- Outcome: published and workflow-verified. Independent public verification follows in plan08.
+- Validate exact main head and CI evidence: success.
+- Maintain Release Please PR: skipped.
+- Prove exact package before publication: success.
+- Publish verified release to Hex: success.
+- Verify public install truth: success.
+- Record terminal release outcome: success.
+- Artifacts: release-evidence-428a9c53e02bc573376d0fcac313f047fbbea81c, lockspire-release-terminal-receipt-39481079989, release-package-428a9c53e02bc573376d0fcac313f047fbbea81c.
+- Deleted LOCKSPIRE_PHASE143_AUTHORIZED_SHA at 2026-10-20T19:25:11+00:00; gh variable list confirms absence.
+
 ## Independent verification
 
 (filled by later plans)
@@ -244,3 +257,5 @@ Conditional maintainer authorization and protected approval (2026-10-20T19:19:06
 2026-10-20T19:04:46+00:00: no stale variable; LOCKSPIRE_PHASE143_AUTHORIZED_SHA absent. No set or dispatch yet.
 
 2026-10-20T19:09:50+00:00: set authorized-SHA variable to `428a9c53e02bc573376d0fcac313f047fbbea81c` and verified read-back; dispatched RUN 39481079989. Cleanup pending terminal outcome.
+
+2026-10-20T19:25:11+00:00: RUN 39481079989 terminal success; authorization variable deleted and absence verified.
