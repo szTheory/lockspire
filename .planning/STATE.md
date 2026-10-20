@@ -14,8 +14,8 @@ progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 7 of 9
-Status: Awaiting hex-publish environment approval
+Plan: 8 of 9
+Status: Independent public artifact and clean-room verification
 Last activity: 2026-10-20 — PR #121 merged as 428a9c53; seven source CI jobs green; REL-01 and SAFE-02 satisfied
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 88%
 
 ## Accumulated Context
 

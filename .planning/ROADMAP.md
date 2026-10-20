@@ -122,7 +122,7 @@ Plans:
 - [x] 161-06-PLAN.md — SAFE-02 rebound to S1 and safe local reset; re-read regenerated #121 (1.6.0, v1.40-v1.44) and simulate its head tree (D-21), maintainer-gated squash merge, CI push run green on publish SHA (REL-01)
 
 **Wave 6**
-- [ ] 161-07-PLAN.md — protected exact-ref publish of 1.6.0: authorize SHA, dispatch, hex-publish approval, clear variable (REL-02)
+- [x] 161-07-PLAN.md — protected exact-ref publish of 1.6.0: authorize SHA, dispatch, hex-publish approval, clear variable (REL-02)
 
 **Wave 7**
 - [ ] 161-08-PLAN.md — independent public verification: checksum three-way, tarball tasks, HexDocs, tag/release, fresh HEX_HOME install
@@ -137,7 +137,7 @@ Plans:
 | 158. Mix Task Repo Start | 3/3 | Complete    | 2026-10-19 |
 | 159. Key-Encryption Key Setup DX | 3/3 | Complete    | 2026-10-19 |
 | 160. Admin Key Protection & Missing-KEK Copy | 2/2 | Complete    | 2026-10-19 |
-| 161. Docs & Verified 1.6.0 Release | 6/9 | In progress | - |
+| 161. Docs & Verified 1.6.0 Release | 7/9 | In progress | - |
 
 ## Phases
 
