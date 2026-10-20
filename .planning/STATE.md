@@ -2,10 +2,14 @@
 gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
-status: planning
 current_phase: 162
-last_updated: "2026-10-20T21:54:25.072428+00:00"
+current_phase_name: Lifetime Semantics & Upgrade Contract
+status: planning
+stopped_at: Phase 162 context gathered (researched assumptions mode)
+last_updated: "2026-10-20T22:05:54.177Z"
 last_activity: 2026-10-20
+last_activity_desc: Approved five-phase roadmap maps all 18 requirements
+state_head: 37b9c1d60565cdbbfef64d082a284eac74025d69
 progress:
   total_phases: 5
   completed_phases: 0
@@ -22,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.45 DCR Lifetime Enforcement — requirements and Phases 162–166 approved; Phase 162 ready for discussion
+**Current focus:** v1.45 DCR Lifetime Enforcement — Phase 162 researched context selected; ready for contract planning
 
 ## Current Position
 
-Phase: 162 — Lifetime Semantics & Upgrade Contract (1 of 5; not started)
+Phase: 162 — Lifetime Semantics & Upgrade Contract (1 of 5; context gathered)
 Plan: —
-Status: Ready for Phase 162 discussion and planning
-Last activity: 2026-10-20 — Approved five-phase roadmap maps all 18 requirements
+Status: Ready for Phase 162 planning
+Last activity: 2026-10-20 — Selected researched Phase 162 decisions under user-directed automatic adoption
 
 ## Accumulated Context
 
@@ -39,7 +43,7 @@ Last activity: 2026-10-20 — Approved five-phase roadmap maps all 18 requiremen
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- No lifetime defaults, automatic legacy backfill or credential rejection policy has been selected yet. The user approved all requirements and the roadmap on 2026-10-20.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. This does not mark Phase 162 complete or authorize implementation planning before its contract verification.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -373,9 +377,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20
-Stopped at: v1.45 requirements and roadmap approved; initialization complete. Phase 162 has not started.
-Resume file: None
+Last session: 2026-10-20T22:05:54.156Z
+Stopped at: Phase 162 context gathered (researched assumptions mode)
+Resume file: .planning/phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md
 
 Next: $gsd-discuss-phase 162 — resolve lifetime semantics and upgrade compatibility using the approved scope, focused research and completed Phase 153 audit. No implementation plan may proceed until Phase 162 resolves the semantics and compatibility contract. Public 1.6.1 remains verified; package publication is separate. Preserve original unstaged state.json bytes and historical phase exceptions.
 

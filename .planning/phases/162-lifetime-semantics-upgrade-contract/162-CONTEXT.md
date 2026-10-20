@@ -123,12 +123,12 @@ Downstream agents MUST read these before planning or implementing.
 - `lib/lockspire/domain/client.ex`, `lib/lockspire/storage/ecto/client_record.ex`, `lib/lockspire/storage/client_store.ex`, `lib/lockspire/storage/ecto/repository/client_store.ex` own domain/round trips/lifecycle writes. Current row locks do not reauthorize the caller's credential or make stale full replacements safe.
 - `lib/lockspire/client_lifecycle.ex`, `lib/lockspire/protocol/registration_management.ex`, `lib/lockspire/admin/clients.ex` own transaction/audit/rotation workflows. Existing host-authorized token recovery is reusable; attribution needs correction.
 - `lib/lockspire/protocol/client_auth.ex` currently checks method/credential without universal enabled-state enforcement. `lib/lockspire/protocol/client_auth/client_secret_jwt.ex` independently enforces assertion timing/replay; preserve that protection.
-- `lib/lockspire/protocol/token_exchange/internal/dependencies.ex` and `legacy_options.ex` are explicit dependency adaptation seams; `client_authentication.ex` currently loses the request clock. Architecture tests prohibit ambient runtime discovery inside token internals.
+- `lib/lockspire/protocol/token_exchange/internal/dependencies.ex` and `lib/lockspire/protocol/token_exchange/internal/legacy_options.ex` are explicit dependency adaptation seams; `lib/lockspire/protocol/token_exchange/internal/client_authentication.ex` currently loses the request clock. Architecture tests prohibit ambient runtime discovery inside token internals.
 
 ### Integration points
 
 - Authorization intake/resume/approval; PAR; device verification; CIBA polling/push; token grant handlers; RFC8693 subject/actor validation; introspection and UserInfo require the D-07 inventory.
-- `lib/lockspire/protocol/token_exchange/internal/access_token_signer.ex`, `token_issuer.ex`, `refresh_exchange.ex` currently derive JWT/response lifetimes separately from persisted expiry: all three must use selected effective token lifetime.
+- `lib/lockspire/protocol/token_exchange/internal/access_token_signer.ex`, `lib/lockspire/protocol/token_exchange/internal/token_issuer.ex`, `lib/lockspire/protocol/token_exchange/internal/refresh_exchange.ex` currently derive JWT/response lifetimes separately from persisted expiry: all three must use selected effective token lifetime.
 - `lib/lockspire/plug/verify_token.ex` remains an offline verifier; no hidden client-store dependency.
 - `lib/lockspire/web/controllers/registration_controller.ex` currently gates every action on intake enablement. `lib/lockspire/web/registration_json.ex` currently emits expiry even without a secret and floors microsecond dates.
 - `lib/lockspire/install/migrations.ex` and `lib/lockspire/storage/ecto/migration.ex` provide additive/prefix-aware packaged migration patterns.
