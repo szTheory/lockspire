@@ -27,7 +27,7 @@
 ### Docs & Release
 
 - [x] **DOC-02**: The install, upgrade, and operator guides describe `mix lockspire.gen.kek`, the `{:system, "VAR"}` option, and the Key protection line, and `mix docs.verify` passes on CI Elixir 1.19.5 / OTP 28.
-- [ ] **REL-01**: After all v1.44 work is on `main` with CI green, the maintainer re-reads the regenerated Release Please PR #121, confirms its version and changelog cover v1.40–v1.44, and squash-merges it.
+- [x] **REL-01**: After all v1.44 work is on `main` with CI green, the maintainer re-reads the regenerated Release Please PR #121, confirms its version and changelog cover v1.40–v1.44, and squash-merges it.
 - [ ] **REL-02**: lockspire 1.6.0 is published through the protected exact-ref release lane and independently verified: the Hex API checksum matches the manifest and the downloaded tarball, HexDocs serve 1.6.0, the `lockspire-v1.6.0` tag and GitHub release point at the published source SHA, the tarball includes the new Mix tasks, and a clean-room host installs `{:lockspire, "== 1.6.0"}` from Hex in a fresh `HEX_HOME`. The result is recorded in `.planning/RELEASE-TRAIN.md`.
 
 ### Safety
@@ -67,7 +67,7 @@
 | KEY-UI-02 | Phase 160 | Complete |
 | KEY-UI-03 | Phase 160 | Complete |
 | DOC-02 | Phase 161 | Complete |
-| REL-01 | Phase 161 | Pending |
+| REL-01 | Phase 161 | Complete |
 | REL-02 | Phase 161 | Pending |
 | SAFE-02 | Phase 161 | Pending |
 

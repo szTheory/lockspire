@@ -5,17 +5,17 @@ milestone_name: Adopter Polish & Verified 1.6.0
 current_phase: 161
 current_phase_name: Docs & Verified 1.6.0 Release
 status: executing
-stopped_at: Completed 161-01-PLAN.md
-last_updated: "2026-10-20T17:02:17.518Z"
+stopped_at: Completed 161-02-PLAN.md
+last_updated: "2026-10-20T17:11:29.371Z"
 last_activity: 2026-10-20
 last_activity_desc: Phase 161 execution started
-state_head: 9b511ee63068198a4e44ecc493b2dee38c659821
+state_head: 1509aa7eab96a571348bda5048954754fbc0b13c
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 17
-  completed_plans: 9
-  percent: 53
+  completed_plans: 10
+  percent: 59
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-18 for v1.44)
 ## Current Position
 
 Phase: 161 (Docs & Verified 1.6.0 Release) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-10-20 — Phase 161 execution started
 
-Progress: [█████░░░░░] 53%
+Progress: [██████░░░░] 59%
 
 ## Accumulated Context
 
@@ -302,6 +302,7 @@ Progress: [█████░░░░░] 53%
 - [Phase 159]: Plan 03: elixir -e fallback kept only in upgrade guide after gen.kek; config.ex names only gen.kek
 - [Phase 160]: Key protection presenter returns only state/tone/value/detail/command; check failures read Unknown, never healthy
 - [Phase 160]: Missing key-encryption key refusal is static vocabulary-map copy in the alert list; generate buttons stay enabled
+- [Phase 161]: D-16: ledger gate accepts metadata >= public; artifact/tag/SHA equality stays strict
 
 ### Pending Todos
 
@@ -363,8 +364,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T17:02:17.425Z
-Stopped at: Completed 161-01-PLAN.md
+Last session: 2026-10-20T17:11:29.283Z
+Stopped at: Completed 161-02-PLAN.md
 Resume file: None
 
 ## Performance Metrics
@@ -493,6 +494,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 160 P01 | 20 min | 2 tasks | 5 files |
 | Phase 160 P02 | 25 min | 2 tasks | 3 files |
 | Phase 161 P01 | 10 min | 2 tasks | 4 files |
+| Phase 161 P02 | 25 min | 3 tasks | 3 files |
 
 ## Operator Next Steps
 
