@@ -41,10 +41,7 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
     current = Map.get(status, :current_kek_id)
 
     cond do
-      (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable)) ->
-        :unreadable
-
-      unsealable_legacy?(status) or reject_legacy?(status) ->
+      unreadable?(status) ->
         :unreadable
 
       positive?(Map.get(status, :legacy)) ->
@@ -56,6 +53,11 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
       true ->
         :encrypted
     end
+  end
+
+  defp unreadable?(status) do
+    (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable)) or
+      unsealable_legacy?(status) or reject_legacy?(status)
   end
 
   # Legacy rows the re-encryption engine cannot seal (corrupt bytes, mismatched id) are not
