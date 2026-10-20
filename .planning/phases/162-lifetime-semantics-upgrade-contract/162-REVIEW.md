@@ -18,9 +18,9 @@ status: clean
 
 # Phase 162: Code Review Report
 
-**Reviewed:** 2026-10-20T22:30:00Z  
-**Depth:** standard  
-**Files Reviewed:** 4  
+**Reviewed:** 2026-10-20T22:30:00Z
+**Depth:** standard
+**Files Reviewed:** 4
 **Status:** clean
 
 ## Summary
@@ -43,6 +43,6 @@ Fresh `--self-test` runs passed for policy, consumers and complete stages. The c
 
 ---
 
-_Reviewed: 2026-10-20T22:34:00Z (follow-up)_  
-_Reviewer: the agent (gsd-code-reviewer)_  
+_Reviewed: 2026-10-20T22:34:00Z (follow-up)_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
