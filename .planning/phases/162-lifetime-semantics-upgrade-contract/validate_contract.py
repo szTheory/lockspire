@@ -87,7 +87,7 @@ def validate(contract: str, data, stage: str) -> None:
         active_decisions = DECISIONS
     for decision in sorted(active_decisions):
         row = decisions.get(decision)
-        require(isinstance(row, dict) and row.get("section") in contract,
+        require(isinstance(row, dict) and f'<a id="{row.get("section")}"></a>' in contract,
                 f"missing decision or broken section link: {decision}")
         require(isinstance(row.get("cases"), list) and row["cases"],
                 f"decision has no case references: {decision}")
@@ -97,7 +97,7 @@ def validate(contract: str, data, stage: str) -> None:
     if stage in {"consumers", "complete"}:
         for req in sorted(REQUIREMENTS if stage == "complete" else {"DCR-02", "DCR-03"}):
             row = requirements.get(req)
-            require(isinstance(row, dict) and row.get("section") in contract,
+            require(isinstance(row, dict) and f'<a id="{row.get("section")}"></a>' in contract,
                     f"missing requirement owner or broken section link: {req}")
             require(all(cid in cases for cid in row.get("cases", [])) and row.get("cases"),
                     f"requirement {req} has missing/empty case references")
@@ -171,28 +171,64 @@ def validate(contract: str, data, stage: str) -> None:
         require(cases.get("C-MGMT-08", {}).get("missing_bearer") == "401 challenge no detail",
                 "missing Bearer outcome is wrong")
         require(cases.get("C-MGMT-07", {}).get("extension_omission") == "preserve"
-                and cases["C-MGMT-07"].get("changed_extension") == "400 invalid_client_metadata",
+                and cases["C-MGMT-07"].get("changed_extension") == "400 invalid_client_metadata"
+                and cases["C-MGMT-07"].get("intake_extension_supplied") == "400 invalid_client_metadata",
                 "server-owned extension changes must be rejected and omission preserved")
+        require(cases.get("C-MGMT-09", {}).get("disabled") == "401 invalid_token"
+                and cases.get("C-APP-16", {}).get("expired") == "deny_protocol_and_all_self_management",
+                "disabled apps must not allow management GET or protocol access")
+        require("intake rejects either client-supplied extension" in contract.lower()
+                and "get never discloses plaintext secret or management token" in contract.lower(),
+                "wire contract must reject client-owned extensions and keep GET credential-free")
         require("do not probe callbacks" in contract.lower(),
                 "contract must keep adapter probing outside token internals")
 
     if stage == "complete":
         require(set(decisions) == DECISIONS, "decision map must contain exactly D-01 through D-27")
         require(set(requirements) == REQUIREMENTS, "requirement map must contain exactly DCR-02/03/04")
-        require("atomic whole-row" in contract and "lifetime_version" in contract,
+        require("locked whole-row write" in contract and "lifetime_version" in contract,
                 "legacy canonicalization and compatibility version contract missing")
         require(cases.get("C-LEG-04", {}).get("secret_hash_preserved") is True
                 and cases["C-LEG-04"].get("secret_deadline") is None,
                 "management-only promotion must preserve hash and keep secret unlimited")
         require(cases.get("C-LEG-07", {}).get("dropped_fields") == "configuration_error",
                 "adapter dropped-field failure must be explicit")
+        require(cases["C-LEG-07"].get("unknown_row_version") == "configuration_error"
+                and cases["C-LEG-07"].get("missing_schema") == "configuration_error",
+                "unknown version and missing schema must fail as server configuration errors")
+        legacy_management = cases.get("C-LEG-04", {})
+        require(legacy_management.get("promoted_dates") == {
+            "app": None, "secret": None, "management": 127}
+            and legacy_management.get("secret_hash_preserved") is True
+            and legacy_management.get("current_secret_hash_is_written_unchanged") is True
+            and legacy_management.get("audit_atomic") is True,
+            "legacy management-only promotion must canonicalize all dates and preserve secret hash")
         require(cases.get("C-RACE-01", {}).get("winners") == 1,
                 "same-token PUT schedule must have one winner")
+        require(cases["C-RACE-01"].get("presented_token_matches_current_hash") is True
+                and cases["C-RACE-01"].get("url_binding_matches") is True,
+                "management mutation must bind current hash and URL")
+        require(cases.get("C-RACE-02", {}).get("concurrent_secret_hash_preserved") is True
+                and cases["C-RACE-02"].get("concurrent_enabled_state_preserved") is True,
+                "stale management snapshot must not restore secret or enabled state")
+        require(cases.get("C-RACE-03", {}).get("current_fingerprint_rechecked") is True
+                and cases["C-RACE-03"].get("after_committed_rotation") == "reject",
+                "preverified credential must be rechecked after committed rotation")
+        require(cases.get("C-RACE-06", {}).get("old_ingress_time_authorizes") is False
+                and cases["C-RACE-06"].get("current_row_reloaded_after_wait") is True,
+                "ingress timestamp cannot authorize after a wait crossing equality")
         order = cases.get("C-DEP-01", {}).get("order", [])
-        require(order.index("drain_web_admin_jobs_cli_old_writers") < order.index("new_ingress_cutover")
-                < order.index("first_v1_write"), "deployment partial order is invalid")
+        required_order = ["old_code_schema", "additive_prefix_migration", "stage_new_code_no_ingress",
+                          "drain_web_admin_jobs_cli_old_writers", "new_ingress_cutover", "first_v1_write"]
+        require(order == required_order, "deployment partial order is invalid")
+        require(set(cases["C-DEP-01"].get("old_writers", [])) == {"web", "admin", "jobs", "cli"}
+                and cases["C-DEP-01"].get("drain_before_ingress_cutover") is True,
+                "deployment must drain every old writer before ingress cutover")
         require(cases.get("C-DEP-03", {}).get("after_first_v1_write")
                 == "retain_state_fix_forward_or_aware_rollback", "rollback boundary is unsafe")
+        require(cases["C-DEP-03"].get("rollback_state_retained_after_v1_write") is True
+                and cases["C-DEP-03"].get("old_binary_after_v1_write") == "never_serve_protocol_traffic",
+                "rollback must retain authoritative state and keep old binaries out of service")
         require("Phase 163" in contract and "Phase 166" in contract,
                 "bounded implementation and proof handoff missing")
 
@@ -203,8 +239,8 @@ def self_test(contract: str, data, stage: str) -> list[str]:
 
     def rejected(label, mutate, expected):
         doc, fixture = contract, copy.deepcopy(data)
-        mutate(doc, fixture)
         try:
+            mutate(doc, fixture)
             validate(doc, fixture, stage)
         except ContractError as exc:
             require(expected in str(exc), f"{label} rejected for wrong reason: {exc}")
@@ -236,6 +272,10 @@ def self_test(contract: str, data, stage: str) -> list[str]:
         fixture["decisions"]["D-01"]["section"] = "missing-anchor"
     rejected("broken-section-link", broken_anchor, "broken section link")
 
+    def duplicate_json(doc, fixture):
+        strict_json('{"duplicate":1,"duplicate":2}')
+    rejected("duplicate-json-key", duplicate_json, "duplicate JSON key")
+
     if stage in {"consumers", "complete"}:
         def missing_consumer(doc, fixture):
             fixture["cases"] = [c for c in fixture["cases"] if c["id"] != "C-APP-01"]
@@ -249,6 +289,22 @@ def self_test(contract: str, data, stage: str) -> list[str]:
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-TOK-01")]["jwt_exp"] = 161
         rejected("token-cap-disagreement", token_cap, "token cap")
 
+        def extension_accepted(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-MGMT-07")]["changed_extension"] = "200 accepted"
+        rejected("forbidden-extension-accepted", extension_accepted, "server-owned extension changes")
+
+        def plaintext_get(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-MGMT-01")]["plaintext_returned"] = True
+        rejected("get-plaintext", plaintext_get, "GET must be side-effect free")
+
+        def expired_put(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-15")]["expired"] = "200 accepted"
+        rejected("expired-app-put-success", expired_put, "consumer inventory is missing or has an incorrect outcome")
+
+        def disabled_get(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-APP-16")]["expired"] = "allow GET"
+        rejected("disabled-app-get-success", disabled_get, "consumer inventory is missing or has an incorrect outcome")
+
     if stage == "complete":
         def dropped_fields(doc, fixture):
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-LEG-07")]["dropped_fields"] = "accepted"
@@ -257,6 +313,30 @@ def self_test(contract: str, data, stage: str) -> list[str]:
         def old_writers(doc, fixture):
             fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-DEP-01")]["order"].remove("drain_web_admin_jobs_cli_old_writers")
         rejected("missing-old-writer-drain", old_writers, "deployment partial order")
+
+        def secret_date_reactivated(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-LEG-04")]["promoted_dates"]["secret"] = 110
+        rejected("rat-only-reactivates-secret-date", secret_date_reactivated, "canonicalize all dates")
+
+        def unknown_is_legacy(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-LEG-07")]["unknown_row_version"] = "legacy"
+        rejected("unknown-version-as-legacy", unknown_is_legacy, "unknown version")
+
+        def stale_hash(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-RACE-01")]["presented_token_matches_current_hash"] = False
+        rejected("stale-management-hash", stale_hash, "bind current hash")
+
+        def prelock_time(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-RACE-06")]["old_ingress_time_authorizes"] = True
+        rejected("pre-lock-time-authorizes", prelock_time, "ingress timestamp")
+
+        def cleared_rollback(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-DEP-03")]["rollback_state_retained_after_v1_write"] = False
+        rejected("cleared-rollback-state", cleared_rollback, "retain authoritative state")
+
+        def reversed_cutover(doc, fixture):
+            fixture["cases"][next(i for i,c in enumerate(fixture["cases"]) if c["id"] == "C-DEP-01")]["order"].reverse()
+        rejected("reversed-cutover", reversed_cutover, "deployment partial order")
 
     return checks
 

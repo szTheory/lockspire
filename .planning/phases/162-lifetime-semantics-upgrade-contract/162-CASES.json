@@ -691,7 +691,8 @@
       "extension_omission": "preserve",
       "identical_echo": "accept",
       "changed_extension": "400 invalid_client_metadata",
-      "secret": "must-match-current"
+      "secret": "must-match-current",
+      "intake_extension_supplied": "400 invalid_client_metadata"
     },
     {
       "id": "C-MGMT-08",
@@ -766,7 +767,14 @@
       "app_deadline": null,
       "secret_deadline": null,
       "secret_hash_preserved": true,
-      "version": 1
+      "version": 1,
+      "promoted_dates": {
+        "app": null,
+        "secret": null,
+        "management": 127
+      },
+      "current_secret_hash_is_written_unchanged": true,
+      "audit_atomic": true
     },
     {
       "id": "C-LEG-05",
@@ -777,7 +785,14 @@
       "secret_deadline": 138,
       "app_deadline": null,
       "management_deadline": null,
-      "unrelated_current_state_preserved": true
+      "unrelated_current_state_preserved": true,
+      "promoted_dates": {
+        "app": null,
+        "secret": 138,
+        "management": null
+      },
+      "management_hash_preserved": true,
+      "audit_atomic": true
     },
     {
       "id": "C-LEG-06",
@@ -792,7 +807,9 @@
       "kind": "adapter_failures",
       "missing_declaration": "configuration_error",
       "unsupported_declaration": "configuration_error",
-      "dropped_fields": "configuration_error"
+      "dropped_fields": "configuration_error",
+      "unknown_row_version": "configuration_error",
+      "missing_schema": "configuration_error"
     },
     {
       "id": "C-LEG-08",
@@ -804,25 +821,41 @@
       "id": "C-RACE-01",
       "kind": "schedule",
       "schedule": "two_puts_same_old_token",
-      "winners": 1
+      "winners": 1,
+      "presented_token_matches_current_hash": true,
+      "url_binding_matches": true,
+      "linearization": "locked_current_row_replace"
     },
     {
       "id": "C-RACE-02",
       "kind": "schedule",
       "schedule": "stale_put_racing_secret_rotation_and_disable",
-      "stale_snapshot_cannot_restore": true
+      "stale_snapshot_cannot_restore": true,
+      "concurrent_secret_hash_preserved": true,
+      "concurrent_enabled_state_preserved": true,
+      "stale_credential_rejected": true
     },
     {
       "id": "C-RACE-03",
       "kind": "schedule",
       "schedule": "preverified_credential_then_committed_rotation",
-      "issuance": "reject_stale_fingerprint"
+      "issuance": "reject_stale_fingerprint",
+      "pre_lock_verified_fingerprint": true,
+      "current_fingerprint_rechecked": true,
+      "after_committed_rotation": "reject"
     },
     {
       "id": "C-RACE-04",
       "kind": "atomicity",
       "schedule": "write_or_audit_failure",
-      "credentials_version_deadlines_audit": "rollback_together"
+      "credentials_version_deadlines_audit": "rollback_together",
+      "atomic_fields": [
+        "credential_hash",
+        "secret_jwt_verifier",
+        "lifetime_version",
+        "deadlines",
+        "audit"
+      ]
     },
     {
       "id": "C-RACE-05",
@@ -840,7 +873,10 @@
       "schedule": "request_enters_159_locks_at_160",
       "decision_time": 160,
       "app_deadline": 160,
-      "issuance": "reject"
+      "issuance": "reject",
+      "ingress_time": 159,
+      "current_row_reloaded_after_wait": true,
+      "old_ingress_time_authorizes": false
     },
     {
       "id": "C-DEP-01",
@@ -854,7 +890,15 @@
         "first_v1_write"
       ],
       "example_prefix": "tenant_auth",
-      "old_migration_checksums_unchanged": true
+      "old_migration_checksums_unchanged": true,
+      "old_writers": [
+        "web",
+        "admin",
+        "jobs",
+        "cli"
+      ],
+      "drain_before_ingress_cutover": true,
+      "all_old_writers_stopped_before_v1_write": true
     },
     {
       "id": "C-DEP-02",
@@ -865,7 +909,9 @@
       "id": "C-DEP-03",
       "kind": "rollback",
       "before_first_v1_write": "old_code_compatible",
-      "after_first_v1_write": "retain_state_fix_forward_or_aware_rollback"
+      "after_first_v1_write": "retain_state_fix_forward_or_aware_rollback",
+      "rollback_state_retained_after_v1_write": true,
+      "old_binary_after_v1_write": "never_serve_protocol_traffic"
     },
     {
       "id": "C-DEP-04",
