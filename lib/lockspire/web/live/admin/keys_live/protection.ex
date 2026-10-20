@@ -75,7 +75,8 @@ defmodule Lockspire.Web.Live.Admin.KeysLive.Protection do
     do: Map.get(status, :legacy_plaintext) == :reject and positive?(Map.get(status, :legacy))
 
   # Not set up, yet stored keys were encrypted with a key-encryption key that is gone. The state
-  # stays :not_set_up (D-02); only the guidance changes. Ids and counts never reach the copy.
+  # stays :not_set_up, which outranks unreadable; only the guidance changes. Ids and counts never
+  # reach the copy.
   defp orphaned_keys?(status) do
     (Map.get(status, :unknown_kek) || %{}) != %{} or positive?(Map.get(status, :undecryptable))
   end
