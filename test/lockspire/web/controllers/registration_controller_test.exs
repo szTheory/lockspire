@@ -66,6 +66,26 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     assert Jason.decode!(conn.resp_body)["client_id"] != nil
   end
 
+  test "registration returns server_error for a corrupt stored secret policy" do
+    Repository.put_server_policy(DcrFixtures.server_policy(%{registration_policy: :open}))
+
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "UPDATE lockspire_server_policies SET dcr_default_client_secret_lifetime_seconds = -1 WHERE id = 1",
+      []
+    )
+
+    {:ok, clients_before} = Repository.list_clients()
+
+    conn =
+      build_conn(:post, "/register", DcrFixtures.valid_metadata())
+      |> dispatch()
+
+    assert conn.status == 500
+    assert Jason.decode!(conn.resp_body) == %{"error" => "server_error"}
+    assert {:ok, ^clients_before} = Repository.list_clients()
+  end
+
   test "public DCR clients receive no shared secret" do
     Repository.put_server_policy(DcrFixtures.server_policy(%{registration_policy: :open}))
 
