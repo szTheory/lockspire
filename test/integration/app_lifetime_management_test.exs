@@ -138,6 +138,20 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
       |> dispatch()
 
     assert disabled_conn.status == 401
+
+    disabled_put_conn =
+      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      |> put_req_header("authorization", "Bearer #{rotated_rat}")
+      |> dispatch()
+
+    assert disabled_put_conn.status == 401
+
+    disabled_delete_conn =
+      build_conn(:delete, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{rotated_rat}")
+      |> dispatch()
+
+    assert disabled_delete_conn.status == 401
   end
 
   test "missing bearer stays a non-disclosing 401 challenge" do

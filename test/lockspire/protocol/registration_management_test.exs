@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   alias Lockspire.Protocol.RegistrationManagement.UpdateSuccess
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Web.RegistrationJSON
@@ -310,6 +311,54 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
   end
 
   describe "update/2 — RAT rotation" do
+    @tag :phase165_put_clock
+    test "rejects a PUT at injected management-deadline equality", %{
+      client_id: client_id,
+      server_policy: server_policy
+    } do
+      deadline = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(60, :second)
+
+      Lockspire.TestRepo.update_all(
+        from(c in ClientRecord, where: c.client_id == ^client_id),
+        set: [lifetime_version: 1, registration_access_token_expires_at: deadline]
+      )
+
+      {:ok, current} = Repository.fetch_client_by_id(client_id)
+
+      assert {:error, :invalid_token} =
+               RegistrationManagement.update(client_id, %{
+                 metadata: DcrFixtures.valid_metadata(),
+                 server_policy: server_policy,
+                 client: current,
+                 now: deadline
+               })
+
+      {:ok, after_rejection} = Repository.fetch_client_by_id(client_id)
+
+      assert after_rejection.registration_access_token_hash ==
+               current.registration_access_token_hash
+
+      assert after_rejection.registration_access_token_expires_at ==
+               current.registration_access_token_expires_at
+    end
+
+    @tag :phase165_delete_clock
+    test "delete/3 accepts the final decision time and stores it in disabled_at", %{
+      client: client,
+      client_id: client_id
+    } do
+      decision_time =
+        DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-60, :second)
+
+      unless function_exported?(RegistrationManagement, :delete, 3) do
+        assert function_exported?(RegistrationManagement, :delete, 3)
+      else
+        assert :ok = RegistrationManagement.delete(client_id, client, now: decision_time)
+        {:ok, disabled} = Repository.fetch_client_by_id(client_id)
+        assert DateTime.compare(disabled.disabled_at, decision_time) == :eq
+      end
+    end
+
     test "switching to client_secret_jwt requires explicit HS256 and read/update responses use stored truth",
          %{client: client, client_id: client_id} do
       request = %{

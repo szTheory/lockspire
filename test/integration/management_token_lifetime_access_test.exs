@@ -8,6 +8,7 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeAccessTest do
   import Ecto.Query
 
   alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Protocol.RegistrationManagement
   alias Lockspire.Test.Fixtures.DcrFixtures
@@ -168,5 +169,38 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeAccessTest do
 
     assert after_get.registration_access_token_expires_at ==
              before_expired_get.registration_access_token_expires_at
+  end
+
+  @tag :expired_management_matrix
+  test "expired management credentials reject GET, PUT, and DELETE without writes" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+    deadline = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-1, :second)
+    set_management_deadline!(client_id, deadline)
+    {:ok, before} = Repository.fetch_client_by_id(client_id)
+    audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    get_conn =
+      build_conn(:get, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch()
+
+    put_conn =
+      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch()
+
+    delete_conn =
+      build_conn(:delete, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch()
+
+    assert get_conn.status == 401
+    assert put_conn.status == 401
+    assert delete_conn.status == 401
+    assert {:ok, after_requests} = Repository.fetch_client_by_id(client_id)
+    assert after_requests == before
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
   end
 end
