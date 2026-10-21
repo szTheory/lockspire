@@ -348,11 +348,45 @@ defmodule Lockspire.Domain.Client do
 
   def secret_deadline(%__MODULE__{}, _, _), do: {:error, :invalid_lifetime_state}
 
+  @doc "Calculates the validated management-token deadline for self-registered clients."
+  @spec management_deadline(t(), DateTime.t(), term()) ::
+          {:ok, DateTime.t() | nil}
+          | {:error, :invalid_management_lifetime_policy | :invalid_lifetime_state}
+  def management_deadline(%__MODULE__{provenance: provenance}, %DateTime{} = issued_at, duration)
+      when provenance in [:operator, :self_registered] do
+    with :ok <- validate_management_duration(duration),
+         {:ok, issued_second} <- decision_instant(issued_at) do
+      if provenance == :self_registered and is_integer(duration) and duration > 0 do
+        {:ok, DateTime.add(issued_second, duration, :second)}
+      else
+        {:ok, nil}
+      end
+    else
+      {:error, reason}
+      when reason in [:invalid_management_lifetime_policy, :invalid_lifetime_state] ->
+        {:error, reason}
+
+      _other ->
+        {:error, :invalid_lifetime_state}
+    end
+  rescue
+    _error -> {:error, :invalid_lifetime_state}
+  end
+
+  def management_deadline(%__MODULE__{}, _, _), do: {:error, :invalid_lifetime_state}
+
   defp validate_secret_duration(value)
        when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
        do: :ok
 
   defp validate_secret_duration(_value), do: {:error, :invalid_secret_lifetime_policy}
+
+  defp validate_management_duration(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_management_duration(_value),
+    do: {:error, :invalid_management_lifetime_policy}
 
   defp invalid_lifetime, do: {:error, :invalid_lifetime_state}
 

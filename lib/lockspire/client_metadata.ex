@@ -104,6 +104,11 @@ defmodule Lockspire.ClientMetadata do
       client_secret_expires_at: client_secret_expires_at(now, resolved, credentials, auth_method),
       lifetime_version: 1,
       client_expires_at: app_expires_at(now, Map.get(resolved, :default_client_lifetime_seconds)),
+      registration_access_token_expires_at:
+        management_expires_at(
+          now,
+          Map.get(resolved, :default_registration_access_token_lifetime_seconds)
+        ),
       metadata:
         metadata |> Map.take(["client_uri"]) |> Map.reject(fn {_key, value} -> is_nil(value) end)
     }
@@ -306,10 +311,21 @@ defmodule Lockspire.ClientMetadata do
     DateTime.add(now, lifetime_seconds, :second)
   end
 
+  defp management_expires_at(now, lifetime_seconds) do
+    client = %Client{provenance: :self_registered}
+
+    case Client.management_deadline(client, now, lifetime_seconds) do
+      {:ok, deadline} -> deadline
+      {:error, _reason} -> raise ArgumentError, "invalid DCR management-token lifetime"
+    end
+  end
+
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
   defp atomize_auth_method("client_secret_jwt"), do: :client_secret_jwt
   defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt
   defp atomize_auth_method("none"), do: :none
+  defp atomize_auth_method("tls_client_auth"), do: :tls_client_auth
+  defp atomize_auth_method("self_signed_tls_client_auth"), do: :self_signed_tls_client_auth
   defp atomize_auth_method(_), do: :client_secret_basic
   defp client_type_from_auth_method(:none), do: :public
   defp client_type_from_auth_method(_), do: :confidential
