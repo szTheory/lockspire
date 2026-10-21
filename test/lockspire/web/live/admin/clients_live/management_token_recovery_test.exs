@@ -17,6 +17,29 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
   @endpoint Lockspire.Web.Endpoint
 
   setup_all do
+    original_env =
+      for key <- [:repo, :mount_path, :issuer, :known_scopes], into: %{} do
+        {key, Application.get_env(:lockspire, key)}
+      end
+
+    original_endpoint_env = Application.get_env(:lockspire, @endpoint)
+
+    on_exit(fn ->
+      Enum.each(original_env, fn {key, value} ->
+        if is_nil(value) do
+          Application.delete_env(:lockspire, key)
+        else
+          Application.put_env(:lockspire, key, value)
+        end
+      end)
+
+      if is_nil(original_endpoint_env) do
+        Application.delete_env(:lockspire, @endpoint)
+      else
+        Application.put_env(:lockspire, @endpoint, original_endpoint_env)
+      end
+    end)
+
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
     Application.put_env(:lockspire, :mount_path, "")
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
@@ -36,7 +59,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
 
     policy =
       DcrFixtures.server_policy(%{
