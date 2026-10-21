@@ -5,7 +5,11 @@ app state at online protocol decision points. Existing rows remain compatible
 after the additive migration: they are read as legacy records without an app or
 management-token deadline. Historical `client_secret_expires_at` values on those
 rows remain advisory; nil, past, future, creation-time, or stale post-rotation
-values do not create a new rejection deadline for a legacy app.
+values do not create a new rejection deadline for a legacy secret. A legacy
+secret continues to work until it is explicitly replaced. Replacement promotes
+the current row and uses the current DCR secret-lifetime policy only for
+self-registered apps that use a shared secret. Later policy edits do not
+rewrite that stored secret deadline.
 
 ## Install the additive migration
 
@@ -80,7 +84,12 @@ env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test
 The conformance tests cover explicit declarations, round trips, current-row
 guards, participant agreement, and rollback. A custom adapter still needs
 adapter-specific evidence that its database and transaction composition meet
-those guarantees.
+those guarantees. The existing `rotate_client_secret/4` adapter operation
+accepts either an explicit `DateTime` or a zero-argument clock function without
+changing its arity. The default clock function must be evaluated only after the
+adapter has locked and reloaded the current row and read the current DCR policy.
+The same decision time must determine the replacement timestamp, secret
+deadline, and audit time; include this behavior in adapter conformance coverage.
 
 ## Roll out and roll back safely
 
@@ -130,6 +139,8 @@ issuing app was later disabled or expired. Existing cache and offline
 verification limits still apply; this upgrade does not promise immediate
 revocation of an already-issued JWT.
 
-The broader credential and operator recovery reconciliation remains tracked for
-Phase 166. This app-storage change does not complete later shared-secret or
-management-token lifecycle requirements.
+Shared-secret expiry and operator secret replacement are enforced by the
+current Lockspire implementation as described in [Dynamic Client Registration](../dynamic-registration.md).
+Management-token expiry and recovery remain owned by Phase 165. Phase 166 owns
+the final cross-phase packaged proof and synchronized release guidance; neither
+phase is complete based on this app-storage upgrade guide.

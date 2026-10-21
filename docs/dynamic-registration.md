@@ -72,12 +72,18 @@ A successful response (HTTP `201 Created`) will return the newly minted client d
 
 The `registration_access_token` allows the partner to manage the client they just created. They must securely store both their client credentials (`client_id`, `client_secret`) and the `registration_access_token`.
 
+### Shared-secret lifetime and rotation
+
+`client_secret_expires_at` is the Unix-second expiry of a shared client secret. A value of `0` means that the secret has no automatic expiry; the field is omitted when the app has no client secret. A positive DCR secret-lifetime setting is recorded for newly registered self-managed apps that use a shared secret and for their secrets later replaced through Lockspire's operator rotation workflow. Changing the setting does not change the expiry already stored for existing secrets.
+
+Lockspire accepts a shared secret only before its stored expiry time. At the exact expiry time and afterward, Basic, post, and `client_secret_jwt` authentication using that secret is rejected. A JWT client's assertion lifetime and replay checks remain separate. Expiring a client secret does not revoke access or refresh tokens that were already issued; those tokens keep their own validity rules. Public-key and mutual-TLS authentication do not use a shared-secret expiry.
+
 ### Read, Update, and Delete
 
 Partners can read, update, or delete their client via the `registration_client_uri` using the RAT.
 
 * **Read (GET):** `GET /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
-* **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated client. This will rotate both the `client_secret` and the `registration_access_token`.
+* **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated client. A successful PUT rotates the app management token. It preserves the existing client secret; it does not return or rotate that secret.
 * **Delete (DELETE):** `DELETE /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
 
 ### `client_secret_jwt` metadata shape
@@ -218,12 +224,11 @@ RFC 7592 `PUT` is full-replace, not patch. If logout propagation fields are omit
 
 The same full-replace rule applies to auth-method metadata. If a client stays on `client_secret_jwt`, send both `token_endpoint_auth_method` and `token_endpoint_auth_signing_alg` together so the stored `HS256` truth remains coherent. If an update changes auth method away from `client_secret_jwt`, omit the old symmetric JWT signing-alg expectation and let the new method's metadata define the replacement state.
 
-The returned `registration_access_token` replaces the old RAT immediately. Any returned `client_secret` replaces the old client credential immediately.
+The returned `registration_access_token` replaces the old RAT immediately. This update response does not contain a `client_secret`. To replace a shared secret, use the operator rotation workflow; the new secret is shown once and uses the current DCR secret-lifetime policy when that policy applies to the app.
 
 ```json
 {
   "client_id": "cli_abc123",
-  "client_secret": "sec_rotated789",
   "client_name": "Updated logout fixture client",
   "redirect_uris": [
     "https://app.example.com/callback"

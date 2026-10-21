@@ -46,9 +46,9 @@ Every task has automated and fails_when clauses in its PLAN. Existing files are 
 | 164-05-01 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry and committed replacement during a client-row wait | C051 | pending |
 | 164-05-02 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry during every later grant or token wait | C052 | pending |
 | 164-05-03 | 05 | 4 | DCR-08/09 | T-164-18/19/20 | Prove serialized operator winners, post-wait truth and rollback | C053 | pending |
-| 164-06-01 | 06 | 5 | DCR-07/08/09 | T-164-21 | Observe finite-secret events and prove redaction | C061 | pending |
-| 164-06-02 | 06 | 5 | DCR-07/08/09 | T-164-22 | Make secret lifetime admin guidance truthful | C062 | pending |
-| 164-06-03 | 06 | 5 | DCR-07/08/09 | T-164-23 | Reconcile host guidance and execute the complete phase gate | C063a, C063b, C063c | pending |
+| 164-06-01 | 06 | 5 | DCR-07/08/09 | T-164-21 | Observe finite-secret events and prove redaction | C061 | passed |
+| 164-06-02 | 06 | 5 | DCR-07/08/09 | T-164-22 | Make secret lifetime admin guidance truthful | C062 | passed |
+| 164-06-03 | 06 | 5 | DCR-07/08/09 | T-164-23 | Reconcile host guidance and execute the complete phase gate | C063a, C063b, C063c | passed |
 
 ## Exact command registry
 
@@ -191,6 +191,22 @@ Any failed command or missing evidence remains a visible gap. ASVS level 1 high/
 ## Manual-only checks
 
 None planned. No external account/API setup or new irreversible decision is introduced; stored/wire format is already settled by the normative contract.
+
+## Phase 164 plan 164-06 execution results
+
+All Mix commands ran from the repository root with Elixir `1.18.4-otp-27`, OTP `27.3.4.15`, the supplied Mix/Hex homes, `MIX_ENV=test`, and the dedicated `LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation` database.
+
+| Command | Result | Notes |
+|---|---|---|
+| C061 — finite-secret redaction and redaction matcher | **26 tests, 0 failures** | The lifecycle test observed positive DCR registration, token issuance, expiry-failure, and operator-rotation telemetry counts. It exercised a real finite DCR registration, successful authorization-code token exchange, equality rejection, and operator replacement; scanned captured telemetry, persisted audit rows, captured failure logs, and inspected public errors for plaintext, stored hashes, verifier material, and sensitive structural keys. |
+| C062 — admin hint, rendered DCR page, vocabulary contract | **23 tests, 0 failures** | Blank and zero display no automatic expiry; positive duration remains readable; help explains prospective issue/replacement behavior; retired wording is recorded in `PRODUCT.md`. |
+| C063a — guidance, architecture, public compatibility | **20 tests, 0 failures** | Re-run after the final documentation edits. |
+| C063b — `mix test.fast` | **2 properties, 2,348 tests, 0 failures, 440 excluded, 6 skipped** | Normal suite only; the exclusions and skips remain visible and are not race or packaged-upgrade evidence. |
+| C063c — explicit PostgreSQL race, rollback, and adapter-conformance files with `--include postgres_race` | **32 tests, 0 failures** | Included the three real PostgreSQL race modules, secret rollback coverage, and adapter conformance. The dedicated database was queried afterward: `current_database()` was `lockspire_phase164_validation`; counts for `secret-%` clients and related audit, token, JTI, interaction, device, and CIBA rows were all zero; singleton server-policy rows were zero. |
+
+The separate PostgreSQL run includes all selected cases and passes with the explicit race tag enabled. Phase 164 plan 164-05's previously measured race-only subset was 11 tests, 0 failures, and no exclusions; C063c adds the rollback and adapter-conformance modules to that evidence. Adapter failures are covered by the conformance tests, and write/audit rollback failures by `client_lifetime_rollback_test.exs` and the rotation race suite.
+
+The packaged clean-room upgrade proof was not rerun because plan 164-06 changed no schema, migration, installer, package, or generated-host input. Phase 166 retains the final packaged cross-phase proof. Management-token lifetime and recovery remain owned by Phase 165. The validation map records execution, not independent Nyquist or security sign-off; `nyquist_compliant` remains `false` until the independent audit supplies that evidence.
 
 ## Validation sign-off
 
