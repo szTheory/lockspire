@@ -3,6 +3,8 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
 
   @guide Path.expand("../../docs/upgrading/client-lifetimes.md", __DIR__)
   @dcr_guide Path.expand("../../docs/dynamic-registration.md", __DIR__)
+  @operator_guide Path.expand("../../docs/operator-admin.md", __DIR__)
+  @supported_surface Path.expand("../../docs/supported-surface.md", __DIR__)
   @jwt_guide Path.expand("../../docs/client-secret-jwt-host-guide.md", __DIR__)
   @upgrade_task Path.expand("../../lib/mix/tasks/lockspire.upgrade.ex", __DIR__)
   @runner Path.expand("../../scripts/acceptance/clean_room/client_lifetime_upgrade.py", __DIR__)
@@ -96,5 +98,45 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
 
     refute upgrade_guide =~ "does not complete later shared-secret"
     refute upgrade_guide =~ "Management-token expiry and recovery are implemented"
+  end
+
+  test "management-token guidance describes finite policy, replacement, and host recovery" do
+    dcr_guide = File.read!(@dcr_guide) |> String.replace(~r/\s+/, " ")
+    upgrade_guide = File.read!(@guide) |> String.replace(~r/\s+/, " ")
+    operator_guide = File.read!(@operator_guide) |> String.replace(~r/\s+/, " ")
+    support = File.read!(@supported_surface) |> String.replace(~r/\s+/, " ")
+
+    for phrase <- [
+          "Lockspire.mount_path",
+          "Include the unchanged `client_id` in every PUT body.",
+          "lockspire_client_expires_at",
+          "lockspire_registration_access_token_expires_at",
+          "the current server-owned values are returned",
+          "the previous app management token stops working immediately",
+          "A GET does not renew",
+          "A value of `0` means no automatic expiry",
+          "Lockspire does not require one universal registration-token timeout",
+          "expired app management token cannot read, update, or delete its registration",
+          "an expired but enabled app can still be read or deleted, but not updated",
+          "replay of the previous token cannot recover a successful PUT response",
+          "at time 100",
+          "160",
+          "110",
+          "120",
+          "at time 125",
+          "165",
+          "the new app management token is shown once",
+          "does not extend app or client-secret expiry",
+          "v0 records are effectively unlimited",
+          "custom storage adapters"
+        ] do
+      assert dcr_guide =~ phrase
+    end
+
+    assert upgrade_guide =~ "custom storage adapters"
+    assert operator_guide =~ "app management token"
+    assert operator_guide =~ "Rotating this token does not enable the app or extend app or client-secret expiry."
+    assert support =~ "app management-token lifecycle"
+    assert support =~ "host-authorized recovery"
   end
 end
