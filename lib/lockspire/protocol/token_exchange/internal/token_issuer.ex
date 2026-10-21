@@ -112,6 +112,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  def prepare_poll_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        issuance_context,
+        %Dependencies{} = dependencies
+      ),
+      do: prepare_code_grant(client, grant, issuance_context, dependencies)
+
+  @doc false
   @spec issue_prepared_code_grant(
           Client.t(),
           Token.t(),
@@ -153,6 +162,25 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
        }}
     end
   end
+
+  @doc false
+  def issue_prepared_poll_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        %DateTime{} = issued_at,
+        %DateTime{} = access_expires_at,
+        prepared_issuance,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        issue_prepared_code_grant(
+          client,
+          grant,
+          issued_at,
+          access_expires_at,
+          prepared_issuance,
+          dependencies
+        )
 
   @doc false
   @spec build_success(

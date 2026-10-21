@@ -21,6 +21,7 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Storage.Ecto.CibaAuthorizationRecord
   alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.Repository
 
   @impl Oban.Worker
   def perform(%Oban.Job{args: %{"ciba_authorization_id" => ciba_auth_id}}) do
@@ -70,7 +71,14 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
 
   defp deliver_push(ciba_auth, client) do
     # Generate tokens
-    case TokenExchange.issue_ciba_tokens(client, ciba_auth, mock_issuance_context(client), %{}) do
+    request = %{opts: push_issuance_options()}
+
+    case TokenExchange.issue_ciba_tokens(
+           client,
+           ciba_auth,
+           mock_issuance_context(client),
+           request
+         ) do
       {:ok, %TokenExchange.Success{} = success} ->
         payload =
           %{
@@ -169,6 +177,22 @@ defmodule Lockspire.Workers.CibaNotificationWorker do
       security_profile:
         SecurityProfile.resolve_effective_profile(%Lockspire.Domain.ServerPolicy{}, client)
     }
+  end
+
+  defp push_issuance_options do
+    [
+      client_store: Repository,
+      token_store: Repository,
+      ciba_authorization_store: Repository,
+      device_authorization_store: Repository,
+      transaction_store: Repository,
+      audit_store: Repository,
+      interaction_store: Repository,
+      key_store: Repository,
+      server_policy_store: Repository,
+      dpop_replay_store: Repository,
+      now: Application.get_env(:lockspire, :ciba_notification_now, fn -> DateTime.utc_now() end)
+    ]
   end
 
   defp repo, do: Config.repo!()

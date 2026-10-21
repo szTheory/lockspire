@@ -203,51 +203,198 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   end
 
   defp redeem_poll_authorization(
-         %{access_token: %Token{} = access_token, audit_event: audit_event} = intent,
+         %{audit_event: audit_event} = intent,
          %Dependencies{} = dependencies,
          kind
        ) do
-    transact_with_audit(dependencies, fn ->
-      with {:ok, _authorization} <- consume_poll_authorization(intent, dependencies, kind),
-           {:ok, %Token{} = persisted_access_token} <-
-             dependencies.token_store.store_token(access_token),
-           {:ok, persisted_refresh_token} <-
-             maybe_store_token(dependencies.token_store, build_poll_refresh_token(intent)) do
-        {:ok,
-         %{
-           access_token: persisted_access_token,
-           refresh_token: persisted_refresh_token,
-           refresh_token_raw: refresh_token_raw(intent)
-         }, [audit_event]}
-      else
-        {:error, reason} -> {:error, reason}
+    result_key = make_ref()
+
+    try do
+      result =
+        transact_with_audit(dependencies, fn ->
+          with {:ok, [%Client{} = current_client]} <-
+                 dependencies.client_store.lock_clients([intent.client.client_id]),
+               {:ok, current_client} <-
+                 validate_current_client(
+                   current_client,
+                   intent.client,
+                   intent.issuance_context
+                 ),
+               {:ok, _authorization} <-
+                 consume_poll_authorization(
+                   intent,
+                   dependencies,
+                   kind,
+                   current_client,
+                   result_key
+                 ) do
+            case Process.get(result_key) do
+              %{access_token: %Token{}} = issued -> {:ok, issued, [audit_event]}
+              _ -> {:error, :poll_issuance_result_missing}
+            end
+          else
+            {:error, reason} -> {:error, reason}
+          end
+        end)
+
+      case result do
+        {:ok, issued} -> {:ok, issued}
+        error -> error
       end
-    end)
+    after
+      Process.delete(result_key)
+    end
   end
 
   defp consume_poll_authorization(
-         %{authorization: %DeviceAuthorization{} = authorization, issued_at: issued_at},
+         %{authorization: %DeviceAuthorization{} = authorization} = intent,
          %Dependencies{} = dependencies,
-         :device
+         :device,
+         %Client{} = current_client,
+         result_key
        ) do
-    dependencies.device_authorization_store.consume_device_authorization(
+    dependencies.device_authorization_store.transition_device_authorization(
       authorization.verification_handle,
-      authorization.client_id,
-      issued_at
+      [:approved],
+      fn current_authorization ->
+        finalize_poll_issuance(
+          intent,
+          current_authorization,
+          current_client,
+          dependencies,
+          result_key,
+          :device
+        )
+      end
     )
   end
 
   defp consume_poll_authorization(
-         %{authorization: %CibaAuthorization{} = authorization, issued_at: issued_at},
+         %{authorization: %CibaAuthorization{} = authorization} = intent,
          %Dependencies{} = dependencies,
-         :ciba
+         :ciba,
+         %Client{} = current_client,
+         result_key
        ) do
     dependencies.ciba_authorization_store.transition_ciba_authorization(
       authorization.auth_req_id_hash,
       [:approved],
-      %{status: :consumed, consumed_at: issued_at}
+      fn current_authorization ->
+        finalize_poll_issuance(
+          intent,
+          current_authorization,
+          current_client,
+          dependencies,
+          result_key,
+          :ciba
+        )
+      end
     )
   end
+
+  defp finalize_poll_issuance(
+         intent,
+         authorization,
+         %Client{} = current_client,
+         %Dependencies{} = dependencies,
+         result_key,
+         kind
+       ) do
+    now = dependencies.now.()
+    original = intent.authorization
+
+    with :ok <- current_authorization_matches(authorization, original, now, kind),
+         :ok <- app_eligibility(current_client, now),
+         {:ok, access_expires_at} <-
+           TokenLifetime.effective_expiry(
+             now,
+             TokenLifetime.access_token(),
+             current_client.client_expires_at
+           ),
+         {:ok, refresh_expires_at} <-
+           maybe_poll_refresh_expiry(now, current_client.client_expires_at, intent),
+         {:ok, issued} <-
+           TokenIssuer.issue_prepared_poll_grant(
+             current_client,
+             intent.grant,
+             now,
+             access_expires_at,
+             intent.prepared_issuance,
+             dependencies
+           ),
+         {:ok, persisted_access_token} <-
+           dependencies.token_store.store_token(issued.access_token),
+         {:ok, persisted_refresh_token} <-
+           maybe_store_token(
+             dependencies.token_store,
+             build_poll_refresh_token(intent, now, refresh_expires_at)
+           ) do
+      Process.put(result_key, %{
+        access_token: persisted_access_token,
+        refresh_token: persisted_refresh_token,
+        refresh_token_raw: refresh_token_raw(intent),
+        raw_access_token: issued.raw_access_token,
+        issued_at: to_utc_datetime_usec(now),
+        expires_in: TokenLifetime.expires_in(now, access_expires_at)
+      })
+
+      %{status: :consumed, consumed_at: to_utc_datetime_usec(now)}
+    else
+      {:error, %Error{} = error} -> {:error, error}
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp current_authorization_matches(current, original, now, kind) do
+    cond do
+      current.client_id != original.client_id ->
+        {:error, :invalid_state}
+
+      current.status != :approved ->
+        {:error, :invalid_state}
+
+      DateTime.compare(current.expires_at, now) != :gt ->
+        {:error, :expired_token}
+
+      current.subject_id != original.subject_id ->
+        {:error, :invalid_state}
+
+      current.approved_at != original.approved_at ->
+        {:error, :invalid_state}
+
+      current.expires_at != original.expires_at ->
+        {:error, :invalid_state}
+
+      kind == :device and current.device_code_hash != original.device_code_hash ->
+        {:error, :invalid_state}
+
+      kind == :ciba and current.auth_req_id_hash != original.auth_req_id_hash ->
+        {:error, :invalid_state}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp app_eligibility(%Client{} = client, now) do
+    case Client.app_eligibility(client, now, :guarded_token_redemption) do
+      :ok -> :ok
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp maybe_poll_refresh_expiry(
+         _now,
+         _deadline,
+         %{prepared_issuance: %{formatted_refresh_token: nil}}
+       ),
+       do: {:ok, nil}
+
+  defp maybe_poll_refresh_expiry(now, deadline, _intent),
+    do: TokenLifetime.effective_expiry(now, TokenLifetime.refresh_token(), deadline)
 
   defp append_audit_events({:error, reason}, _audit_store), do: {:error, reason}
 
@@ -296,14 +443,22 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     }
   end
 
-  defp build_poll_refresh_token(%{formatted_refresh_token: nil}), do: nil
+  defp build_poll_refresh_token(
+         %{prepared_issuance: %{formatted_refresh_token: nil}},
+         _issued_at,
+         _expires_at
+       ),
+       do: nil
 
-  defp build_poll_refresh_token(%{
-         formatted_refresh_token: formatted_refresh_token,
-         grant: %Token{} = grant,
-         issued_at: issued_at,
-         issuance_context: issuance_context
-       }) do
+  defp build_poll_refresh_token(
+         %{
+           prepared_issuance: %{formatted_refresh_token: formatted_refresh_token},
+           grant: %Token{} = grant,
+           issuance_context: issuance_context
+         },
+         issued_at,
+         refresh_expires_at
+       ) do
     %Token{
       token_hash: formatted_refresh_token.token_hash,
       token_type: :refresh_token,
@@ -316,9 +471,16 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       audience: grant.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
+      expires_at: refresh_expires_at
     }
   end
+
+  defp refresh_token_raw(%{prepared_issuance: %{formatted_refresh_token: nil}}), do: nil
+
+  defp refresh_token_raw(%{
+         prepared_issuance: %{formatted_refresh_token: formatted_refresh_token}
+       }),
+       do: formatted_refresh_token.token
 
   defp refresh_token_raw(%{formatted_refresh_token: nil}), do: nil
 
