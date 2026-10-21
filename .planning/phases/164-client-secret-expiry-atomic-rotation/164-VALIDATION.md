@@ -265,3 +265,14 @@ All three source-audit edge probes remain flagged unresolved/unclassified assump
 | Gaps found | 1 |
 | Resolved | 1 |
 | Escalated | 0 |
+
+## Final Reviewed-Tree Regression Gate
+
+Executed 2026-10-21 after security/UI corrections and independent clean 49-file code review. A new isolated database `lockspire_phase164_final_validation` was created through `mix test.setup`; the shared default database was not used. Every command used pinned Elixir/OTP and supplied task-local Mix/Hex homes.
+
+- `mix compile --warnings-as-errors`: exit 0.
+- `mix test.fast`: **2 properties, 2,349 tests, 0 failures, 440 excluded, 6 skipped**. Log: `/private/tmp/lockspire164-final-fast.log`.
+- `mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_client_wait_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs test/lockspire/storage/client_lifetime_client_wait_test.exs test/lockspire/storage/client_lifetime_grant_wait_test.exs test/lockspire/storage/client_lifetime_rollback_test.exs test/lockspire/storage/client_lifetime_conformance_test.exs --max-failures 1 --timeout 55000`: **38 tests, 0 failures, none excluded**. This expands the earlier 32-case selection with prior app-lifetime client/grant wait regressions; the new 11 genuine PostgreSQL races and prior rollback/wait cases remain explicit. Log: `/private/tmp/lockspire164-final-postgres.log`.
+- After the explicit committed-session selection, `current_database()` confirmed the final isolated database and clients, singleton policies, audits, tokens, used JTIs, interactions, device requests and CIBA requests all had zero rows. Log: `/private/tmp/lockspire164-final-db-cleanup.log`.
+
+The standard fast suite excludes integration cases by alias invocation; earlier targeted integration selections in each plan and the separate PostgreSQL selection remain required evidence. Previously excluded clean-room/package work remains Phase 166; unchanged packaged upgrade proof from Phase 163 was not rerun. No strict phase-wide TDD claim is made.
