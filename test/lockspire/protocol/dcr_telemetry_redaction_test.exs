@@ -1,14 +1,22 @@
 defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   use ExUnit.Case, async: false
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Lockspire.Protocol.InitialAccessToken
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationManagement
+  alias Lockspire.Domain.Interaction
+  alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenExchange
+  alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Admin.Clients
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
   alias Lockspire.TestSupport.TelemetryCapture
+  import Lockspire.TokenExchangeCase, only: [basic_auth: 2, publish_signing_key: 1]
 
   # The 18 event paths the sweep attaches to.
   # 7 DCR family events × 2 paths (telemetry + audit-mirror) = 14
@@ -134,6 +142,183 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     end
   end
 
+  test "finite secret issuance, token use, expiry rejection, and operator replacement are observed and redacted" do
+    issued_at = DateTime.utc_now() |> DateTime.truncate(:second)
+    deadline = DateTime.add(issued_at, 60, :second)
+
+    events = [
+      [:lockspire, :dcr, :register],
+      [:lockspire, :audit, :dcr, :register],
+      [:lockspire, :authorization_code, :redeemed],
+      [:lockspire, :audit, :authorization_code, :redeemed],
+      [:lockspire, :token, :issued],
+      [:lockspire, :audit, :token, :issued],
+      [:lockspire, :token_exchange, :failed],
+      [:lockspire, :audit, :token_exchange, :failed],
+      [:lockspire, :client, :secret_rotated],
+      [:lockspire, :audit, :client, :secret_rotated]
+    ]
+
+    TelemetryCapture.attach_many(events, self())
+
+    policy =
+      DcrFixtures.server_policy(%{
+        dcr_default_client_lifetime_seconds: nil,
+        dcr_default_client_secret_lifetime_seconds: 60
+      })
+
+    request =
+      DcrFixtures.register_request(
+        server_policy: policy,
+        metadata: %{
+          "client_name" => "Finite secret redaction",
+          "redirect_uris" => ["https://app.example.test/callback"],
+          "token_endpoint_auth_method" => "client_secret_basic"
+        }
+      )
+      |> Map.put(:now, issued_at)
+
+    assert {:ok, success} = Registration.register(request)
+    client = success.client
+    secret = success.client_secret_plaintext
+    hash_before = client.client_secret_hash
+    assert DateTime.compare(client.client_secret_expires_at, deadline) == :eq
+
+    code = "redaction-code-#{System.unique_integer([:positive, :monotonic])}"
+    verifier = "redaction-verifier-#{System.unique_integer([:positive, :monotonic])}"
+
+    redirect_uri = List.first(client.redirect_uris)
+
+    assert {:ok, _authorization_code} =
+             put_authorization_code(client, code, verifier, redirect_uri)
+
+    publish_signing_key("kid-redaction-finite-secret")
+
+    exchange_params = %{
+      "grant_type" => "authorization_code",
+      "code" => code,
+      "code_verifier" => verifier,
+      "redirect_uri" => redirect_uri
+    }
+
+    assert {:ok, issued} =
+             TokenExchange.exchange_authorization_code(%{
+               params: exchange_params,
+               authorization: basic_auth(client.client_id, secret),
+               opts: [
+                 client_store: Lockspire.Storage.Ecto.Repository,
+                 token_store: Lockspire.Storage.Ecto.Repository,
+                 transaction_store: Lockspire.Storage.Ecto.Repository,
+                 audit_store: Lockspire.Storage.Ecto.Repository,
+                 interaction_store: Lockspire.Storage.Ecto.Repository,
+                 key_store: Lockspire.Storage.Ecto.Repository,
+                 server_policy_store: Lockspire.Storage.Ecto.Repository,
+                 now: fn -> DateTime.add(issued_at, 1, :second) end,
+                 access_token_generator: fn -> "redaction-access-token" end,
+                 refresh_token_generator: fn -> "redaction-refresh-token" end
+               ]
+             })
+
+    assert is_binary(issued.access_token)
+
+    expired_code = "redaction-expired-code-#{System.unique_integer([:positive, :monotonic])}"
+
+    assert {:ok, _authorization_code} =
+             put_authorization_code(client, expired_code, verifier, redirect_uri)
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id),
+               set: [client_secret_expires_at: deadline]
+             )
+
+    failure_logs =
+      capture_log(fn ->
+        Process.put(
+          :dcr_redaction_expiry_failure,
+          TokenExchange.exchange_authorization_code(%{
+            params: %{exchange_params | "code" => expired_code},
+            authorization: basic_auth(client.client_id, secret),
+            opts: [
+              client_store: Lockspire.Storage.Ecto.Repository,
+              token_store: Lockspire.Storage.Ecto.Repository,
+              transaction_store: Lockspire.Storage.Ecto.Repository,
+              audit_store: Lockspire.Storage.Ecto.Repository,
+              interaction_store: Lockspire.Storage.Ecto.Repository,
+              key_store: Lockspire.Storage.Ecto.Repository,
+              server_policy_store: Lockspire.Storage.Ecto.Repository,
+              now: fn -> deadline end
+            ]
+          })
+        )
+      end)
+
+    failure = Process.delete(:dcr_redaction_expiry_failure)
+
+    assert {:error, %{reason_code: :client_secret_expired} = public_error} = failure
+
+    assert {:ok, %{client: rotated, client_secret: replacement}} =
+             Clients.rotate_client_secret(client.client_id, %{
+               actor: %{type: :operator, id: "ops"}
+             })
+
+    assert is_binary(replacement) and replacement != secret
+    hash_after = rotated.client_secret_hash
+    captured = drain_events()
+
+    observed = Enum.frequencies_by(captured, fn {event, _measurements, _metadata} -> event end)
+
+    assert observed[[:lockspire, :dcr, :register]] > 0
+    assert observed[[:lockspire, :token, :issued]] > 0
+    assert observed[[:lockspire, :token_exchange, :failed]] > 0
+    assert observed[[:lockspire, :client, :secret_rotated]] > 0
+
+    material = [secret, replacement, hash_before, hash_after, verifier]
+
+    for {event, measurements, metadata} <- captured,
+        value <- material do
+      inspected =
+        inspect({event, measurements, metadata}, limit: :infinity, printable_limit: :infinity)
+
+      refute String.contains?(inspected, value),
+             "captured lifecycle output contained sensitive material"
+
+      refute sensitive_keys({event, measurements, metadata})
+    end
+
+    for value <- material do
+      refute String.contains?(failure_logs, value),
+             "captured failure log contained sensitive material"
+    end
+
+    assert public_error.error == "invalid_client"
+    error_shape = inspect(public_error, limit: :infinity, printable_limit: :infinity)
+
+    for value <- material do
+      refute String.contains?(error_shape, value),
+             "public auth error contained sensitive material"
+    end
+
+    refute sensitive_keys(public_error)
+
+    audit_rows =
+      Lockspire.TestRepo.all(
+        from(audit in AuditEventRecord,
+          where: audit.resource_id == ^client.client_id,
+          order_by: [desc: audit.id]
+        )
+      )
+
+    assert Enum.any?(audit_rows, &(&1.action == "dcr_client_created"))
+    assert Enum.any?(audit_rows, &(&1.action == "client_secret_rotated"))
+
+    for row <- audit_rows, value <- material do
+      inspected = inspect(row, limit: :infinity, printable_limit: :infinity)
+      refute String.contains?(inspected, value), "audit evidence contained sensitive material"
+      refute sensitive_keys(row)
+    end
+  end
+
   defp drain_events(acc \\ []) do
     receive do
       {:telemetry_event, e, m, md} -> drain_events([{e, m, md} | acc])
@@ -141,4 +326,60 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       50 -> Enum.reverse(acc)
     end
   end
+
+  defp put_authorization_code(client, raw_code, verifier, redirect_uri) do
+    interaction_id = "redaction-interaction-#{raw_code}"
+    challenge = :crypto.hash(:sha256, verifier) |> Base.url_encode64(padding: false)
+    issued_at = DateTime.utc_now()
+
+    with {:ok, _interaction} <-
+           Lockspire.Storage.Ecto.Repository.put_interaction(%Interaction{
+             interaction_id: interaction_id,
+             client_id: client.client_id,
+             account_id: "redaction-subject",
+             scopes_requested: ["email"],
+             redirect_uri: redirect_uri,
+             return_to: "/authorize",
+             state: "redaction-state",
+             code_challenge: challenge,
+             code_challenge_method: :S256,
+             status: :completed,
+             completed_at: issued_at,
+             expires_at: DateTime.add(issued_at, 300, :second)
+           }),
+         {:ok, code} <-
+           Lockspire.Storage.Ecto.Repository.store_token(%Token{
+             token_hash: TokenFormatter.hash_token(raw_code),
+             token_type: :authorization_code,
+             client_id: client.client_id,
+             account_id: "redaction-subject",
+             interaction_id: interaction_id,
+             redirect_uri: redirect_uri,
+             scopes: ["email"],
+             audience: [],
+             code_challenge: challenge,
+             code_challenge_method: :S256,
+             issued_at: issued_at,
+             expires_at: DateTime.add(issued_at, 300, :second)
+           }) do
+      {:ok, code}
+    end
+  end
+
+  defp sensitive_keys(%_{} = struct), do: struct |> Map.from_struct() |> sensitive_keys()
+
+  defp sensitive_keys(value) when is_map(value) do
+    forbidden =
+      MapSet.new(
+        ~w(client_secret client_secret_hash client_secret_jwt_verifier_encrypted secret_hash verifier_secret)
+      )
+
+    Enum.any?(value, fn {key, nested} ->
+      key_name = if is_atom(key), do: Atom.to_string(key), else: key
+      MapSet.member?(forbidden, key_name) or sensitive_keys(nested)
+    end)
+  end
+
+  defp sensitive_keys(value) when is_list(value), do: Enum.any?(value, &sensitive_keys/1)
+  defp sensitive_keys(_value), do: false
 end
