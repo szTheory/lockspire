@@ -4,17 +4,17 @@ milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
-status: ready_to_execute
-stopped_at: Phase 165 plans independently verified; implementation not started
-last_updated: "2026-10-21T17:30:35Z"
+status: executing
+stopped_at: Completed 165-01-PLAN.md
+last_updated: "2026-10-21T17:53:56.048Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 researched and planned; seven plans passed independent checking and full coverage gates
-state_head: ad2906ef
+last_activity_desc: Phase 165 plan 01 complete; finite management access verified
+state_head: c99bbc9ad1e1e4100118d0bc108f1d41555d7735
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 28
-  completed_plans: 21
+  completed_plans: 22
   percent: 60
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 165 ready to execute — Management-Token Lifecycle & Recovery
+**Current focus:** Phase 165 — Management-Token Lifecycle & Recovery
 
 ## Current Position
 
-Phase: 165 (Management-Token Lifecycle & Recovery) — READY TO EXECUTE
-Plan: 0/7 executed; seven plans across seven dependency-ordered waves
-Status: Ready to execute (research, planning and independent plan checking complete; implementation not started)
-Last activity: 2026-10-21 — All three requirements and nineteen decisions covered; checker passed after one targeted revision
+Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
+Plan: 2 of 7
+Status: Executing
+Last activity: 2026-10-21 — Phase 165 execution started
 
 ## Accumulated Context
 
@@ -326,6 +326,9 @@ Last activity: 2026-10-21 — All three requirements and nineteen decisions cove
 - [Phase 164]: Only trusted authenticated device/CIBA poll and RFC 8693 requester contexts apply the current secret-expiry gate after required locks; queued CIBA push and issuer app checks stay secret-independent.
 - [Phase 164]: Secret expiry does not revoke issued access/refresh tokens or gate non-secret authentication methods; confidential refresh still requires current credentials.
 - [Phase 164]: Finite-secret redaction uses real DCR registration, token issuance/failure, and operator-rotation events; no new event family is needed.
+- [Phase 165]: Sample one UTC-second management decision time after locking and reloading the current client row.
+- [Phase 165]: Validate management-token eligibility before allowing GET/DELETE on naturally expired enabled apps.
+- [Phase 165]: Keep persistence, unsupported-state, and policy errors as redacted server errors; only supplied invalid credentials map to invalid_token.
 
 ### Pending Todos
 
@@ -390,11 +393,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T17:30:35Z
-Stopped at: Phase 165 planning complete; independently checked; implementation not started
-Resume file: .planning/phases/165-management-token-lifecycle-recovery/165-01-PLAN.md
+Last session: 2026-10-21T17:53:55.776Z
+Stopped at: Completed 165-01-PLAN.md
+Resume file: None
 
-Next: $gsd-execute-phase 165. The requested planning invocation is complete: seven plans and eighteen tasks across seven waves, with research, pattern mapping, a draft validation strategy and an independent checker pass. The inherited bounded handoff takes precedence over configured auto-advance; execution awaits the next instruction. No implementation or phase test execution is claimed. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Continue Phase 165 with plan 02 when directed. Plan 01 is complete with the finite-token GET tracer, current-row checks for all management operations, and safe Bearer/server error mapping. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -531,6 +534,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 164 P04 | 16 min | 3 tasks | 9 files |
 | Phase 164 P05 | 9min | 3 tasks | 3 files |
 | Phase 164 P06 | 9min | 3 tasks | 11 files |
+| Phase 165 P01 | 13min | 3 tasks | 14 files |
 
 ## Operator Next Steps
 
