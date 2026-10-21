@@ -47,9 +47,17 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   @spec read(String.t(), Client.t()) ::
           {:ok, Client.t()} | {:error, :invalid_token | Registration.Error.t()}
-  def read(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
+  def read(client_id_from_url, %Client{} = client),
+    do: read(client_id_from_url, client, [])
+
+  @spec read(String.t(), Client.t(), keyword()) ::
+          {:ok, Client.t()} | {:error, :invalid_token | Registration.Error.t()}
+  def read(client_id_from_url, %Client{} = client, opts)
+      when is_binary(client_id_from_url) and is_list(opts) do
     result =
-      with_current_client(client_id_from_url, client, :read, fn current -> {:ok, current} end)
+      with_current_client(client_id_from_url, client, :read, opts, fn current, _now ->
+        {:ok, current}
+      end)
 
     case result do
       {:ok, current} ->
@@ -65,6 +73,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       {:error, :invalid_token} = error ->
         emit_unauthorized(client_id_from_url, client)
         error
+
+      {:error, %Registration.Error{} = error} ->
+        {:error, error}
 
       {:error, reason} ->
         {:error, %Registration.Error{code: :server_error, reason: reason}}
@@ -85,7 +96,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
          :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
          {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
          {:ok, updated_client} <-
-           with_current_client(client_id_from_url, client, :update, fn current ->
+           with_current_client(client_id_from_url, client, :update, [], fn current, _now ->
              persist_update(current, metadata, new_rat_hash)
            end) do
       emit_updated(updated_client)
@@ -126,7 +137,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   @spec delete(String.t(), Client.t()) :: :ok | {:error, :invalid_token | term()}
   def delete(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    case with_current_client(client_id_from_url, client, :delete, fn current ->
+    case with_current_client(client_id_from_url, client, :delete, [], fn current, _now ->
            ClientLifecycle.disable_dcr(current)
          end) do
       {:ok, %Client{}} ->
@@ -178,45 +189,77 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     ClientLifecycle.replace_dcr(client, metadata, new_rat_hash)
   end
 
-  defp with_current_client(client_id_from_url, %Client{} = snapshot, operation, callback) do
+  defp with_current_client(client_id_from_url, %Client{} = snapshot, operation, opts, callback) do
     Repository.transact(fn ->
       with true <- client_id_from_url == snapshot.client_id,
            {:ok, [current]} <- Repository.lock_clients([snapshot.client_id]),
            true <- current.id == snapshot.id,
            true <-
              current.registration_access_token_hash == snapshot.registration_access_token_hash,
-           true <- current.active do
-        eligibility =
-          Client.app_eligibility(
-            current,
-            DateTime.utc_now() |> DateTime.truncate(:second),
-            :registration_management
-          )
+           true <- current.active,
+           {:ok, now} <- decision_now(opts) do
+        case Client.management_eligibility(current, now, :registration_management) do
+          :ok ->
+            case Client.app_eligibility(current, now, :registration_management) do
+              :ok ->
+                callback.(current, now)
 
-        case {operation, eligibility} do
-          {:update, :ok} ->
-            callback.(current)
+              {:error, :expired} when operation in [:read, :delete] ->
+                callback.(current, now)
 
-          {:update, {:error, :expired}} ->
-            {:error, %Registration.Error{code: :registration_expired}}
+              {:error, :expired} ->
+                {:error, %Registration.Error{code: :registration_expired}}
 
-          {kind, :ok} when kind in [:read, :delete] ->
-            callback.(current)
+              {:error, :disabled} ->
+                {:error, :invalid_token}
 
-          {kind, {:error, :expired}} when kind in [:read, :delete] ->
-            callback.(current)
+              {:error, :invalid_lifetime_state} ->
+                {:error,
+                 %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+            end
 
-          {_kind, {:error, :disabled}} ->
+          {:error, :expired} ->
             {:error, :invalid_token}
 
-          {_kind, {:error, :invalid_lifetime_state}} ->
+          {:error, :invalid_lifetime_state} ->
             {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
         end
       else
-        _ -> {:error, :invalid_token}
+        false -> {:error, :invalid_token}
+        {:error, %Registration.Error{} = error} -> {:error, error}
+        {:error, reason} -> {:error, reason}
       end
     end)
   end
+
+  defp decision_now(opts) do
+    clock = Keyword.get(opts, :now, fn -> DateTime.utc_now() end)
+
+    value =
+      case clock do
+        %DateTime{} = now -> now
+        fun when is_function(fun, 0) -> fun.()
+        _ -> :invalid_clock
+      end
+
+    case value do
+      %DateTime{} = now ->
+        case DateTime.from_unix(DateTime.to_unix(now, :second), :second) do
+          {:ok, instant} -> {:ok, instant}
+          {:error, _reason} -> invalid_clock()
+        end
+
+      _ ->
+        invalid_clock()
+    end
+  rescue
+    _error -> invalid_clock()
+  catch
+    _kind, _reason -> invalid_clock()
+  end
+
+  defp invalid_clock,
+    do: {:error, %Registration.Error{code: :server_error, reason: :invalid_clock}}
 
   defp emit_updated(%Client{} = client) do
     Observability.emit(:dcr, :update, %{count: 1}, %{

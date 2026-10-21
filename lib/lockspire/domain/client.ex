@@ -170,11 +170,7 @@ defmodule Lockspire.Domain.Client do
   def app_eligibility(%__MODULE__{active: false}, %DateTime{}, _consumer),
     do: {:error, :disabled}
 
-  def app_eligibility(%__MODULE__{lifetime_version: 0, client_expires_at: nil}, %DateTime{}, _),
-    do: :ok
-
-  def app_eligibility(%__MODULE__{lifetime_version: 0}, %DateTime{}, _),
-    do: {:error, :invalid_lifetime_state}
+  def app_eligibility(%__MODULE__{lifetime_version: 0}, %DateTime{}, _), do: :ok
 
   def app_eligibility(%__MODULE__{lifetime_version: 1, client_expires_at: nil}, %DateTime{}, _),
     do: :ok
@@ -201,6 +197,64 @@ defmodule Lockspire.Domain.Client do
     do: {:error, :invalid_lifetime_state}
 
   def app_eligibility(%__MODULE__{}, _, _),
+    do: {:error, :invalid_lifetime_state}
+
+  @doc "Returns the authoritative app deadline, treating legacy rows as unlimited."
+  @spec effective_app_deadline(t()) ::
+          {:ok, nil | DateTime.t()} | {:error, :invalid_lifetime_state}
+  def effective_app_deadline(%__MODULE__{lifetime_version: 0}), do: {:ok, nil}
+
+  def effective_app_deadline(%__MODULE__{lifetime_version: 1, client_expires_at: nil}),
+    do: {:ok, nil}
+
+  def effective_app_deadline(%__MODULE__{
+        lifetime_version: 1,
+        client_expires_at: %DateTime{} = deadline
+      }) do
+    if utc_second?(deadline), do: {:ok, deadline}, else: invalid_lifetime()
+  end
+
+  def effective_app_deadline(%__MODULE__{}), do: invalid_lifetime()
+
+  @doc "Returns the authoritative app-management-token deadline, treating legacy rows as unlimited."
+  @spec effective_management_deadline(t()) ::
+          {:ok, nil | DateTime.t()} | {:error, :invalid_lifetime_state}
+  def effective_management_deadline(%__MODULE__{lifetime_version: 0}), do: {:ok, nil}
+
+  def effective_management_deadline(%__MODULE__{
+        lifetime_version: 1,
+        registration_access_token_expires_at: nil
+      }),
+      do: {:ok, nil}
+
+  def effective_management_deadline(%__MODULE__{
+        lifetime_version: 1,
+        registration_access_token_expires_at: %DateTime{} = deadline
+      }) do
+    if utc_second?(deadline), do: {:ok, deadline}, else: invalid_lifetime()
+  end
+
+  def effective_management_deadline(%__MODULE__{}), do: invalid_lifetime()
+
+  @doc "Checks a management credential against the final whole-second decision time."
+  @spec management_eligibility(t(), DateTime.t(), atom()) ::
+          :ok | {:error, :expired | :invalid_lifetime_state}
+  def management_eligibility(%__MODULE__{} = client, %DateTime{} = now, _consumer) do
+    with {:ok, deadline} <- effective_management_deadline(client),
+         {:ok, instant} <- decision_instant(now) do
+      case deadline do
+        nil ->
+          :ok
+
+        %DateTime{} ->
+          if DateTime.compare(instant, deadline) == :lt, do: :ok, else: {:error, :expired}
+      end
+    else
+      _ -> {:error, :invalid_lifetime_state}
+    end
+  end
+
+  def management_eligibility(%__MODULE__{}, _, _),
     do: {:error, :invalid_lifetime_state}
 
   @doc "Decides whether a shared-secret credential remains eligible at the current instant."
