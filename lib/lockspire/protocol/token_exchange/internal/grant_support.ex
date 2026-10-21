@@ -583,6 +583,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                  code_hash,
                  client,
                  authorization_code,
+                 requested_resources,
                  prepared_issuance,
                  issuance_context,
                  request
@@ -1050,6 +1051,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          code_hash,
          %Client{} = client,
          %Token{} = authorization_code,
+         selected_audience,
          prepared_issuance,
          issuance_context,
          request
@@ -1061,6 +1063,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         code_hash: code_hash,
         client: client,
         authorization_code: authorization_code,
+        selected_audience: selected_audience,
         prepared_issuance: prepared_issuance,
         formatted_refresh_token: prepared_issuance.formatted_refresh_token,
         issuance_context: issuance_context,

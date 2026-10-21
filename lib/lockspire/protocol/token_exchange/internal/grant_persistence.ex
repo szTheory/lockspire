@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.ResourceSelection
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Storage.ClientLifetime
@@ -221,7 +222,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
         %{
           code_hash: code_hash,
           client: %Client{} = authenticated_client,
-          authorization_code: %Token{} = authorization_code,
+          authorization_code: %Token{},
+          selected_audience: selected_audience,
           prepared_issuance: prepared_issuance,
           issuance_context: issuance_context,
           audit_event: audit_event
@@ -241,7 +243,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
                  decide_and_build_code_issuance(
                    current_client,
                    current_code,
-                   authorization_code,
+                   selected_audience,
                    prepared_issuance,
                    issuance_context,
                    dependencies
@@ -254,6 +256,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
                dependencies.token_store,
                build_refresh_token(
                  Map.merge(intent, %{
+                   authorization_code: %{
+                     redeemed.authorization_code
+                     | audience: redeemed.selected_audience
+                   },
+                   selected_audience: redeemed.selected_audience,
                    issued_at: redeemed.issued_at,
                    refresh_expires_at: redeemed.refresh_expires_at
                  })
@@ -355,7 +362,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   defp decide_and_build_code_issuance(
          %Client{} = current_client,
          %Token{} = current_code,
-         %Token{} = authorization_code,
+         selected_audience,
          prepared_issuance,
          issuance_context,
          %Dependencies{} = dependencies
@@ -368,6 +375,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
              now,
              :guarded_token_redemption
            ),
+         {:ok, selected_audience} <-
+           ResourceSelection.select(%{"resource" => selected_audience}, current_code),
          true <- current_code.client_id == current_client.client_id,
          true <- DateTime.compare(current_code.expires_at, now) == :gt,
          {:ok, access_expires_at} <-
@@ -385,7 +394,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
          {:ok, issued} <-
            TokenIssuer.issue_prepared_code_grant(
              current_client,
-             %Token{current_code | audience: authorization_code.audience},
+             %Token{current_code | audience: selected_audience},
              now,
              access_expires_at,
              prepared_issuance,
@@ -397,6 +406,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
          issued_at: to_utc_datetime_usec(now),
          access_token: issued.access_token,
          raw_access_token: issued.raw_access_token,
+         selected_audience: selected_audience,
          refresh_expires_at: refresh_expires_at,
          expires_in: TokenLifetime.expires_in(now, access_expires_at)
        }}
