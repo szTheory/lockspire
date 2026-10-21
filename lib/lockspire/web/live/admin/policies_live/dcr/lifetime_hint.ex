@@ -8,13 +8,13 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHint do
   @units [{86_400, "day"}, {3_600, "hour"}, {60, "minute"}, {1, "second"}]
   @year_seconds 31_536_000
   @secret_field :dcr_default_client_secret_lifetime_seconds
-  @secret_already_expired "Apps will be told their secret has already expired"
+  @secret_unlimited "No automatic expiry"
 
   @spec describe(atom(), term()) :: String.t() | nil
   def describe(field, value) do
     case parse(value) do
       :blank -> blank_text(field)
-      0 when field == @secret_field -> @secret_already_expired
+      0 when field == @secret_field -> @secret_unlimited
       seconds when is_integer(seconds) -> duration(seconds)
       :invalid -> nil
     end
@@ -50,7 +50,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHint do
     end
   end
 
-  defp blank_text(@secret_field), do: @secret_already_expired
+  defp blank_text(@secret_field), do: @secret_unlimited
 
   # A blank box already says "not set"; only explain blanks with a surprising effect.
   defp blank_text(_field), do: nil

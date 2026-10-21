@@ -144,10 +144,10 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_secret_lifetime_seconds"
             label="Client secret lifetime (seconds)"
-            help="Tells each new app when its secret expires. Match how often secrets get replaced."
+            help="Sets how long shared secrets for new apps remain valid. Replacing a secret uses the current setting."
             errors={field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds)}
           >
-            <:info label="About client secret lifetime">For example, 2592000 is 30 days. If you leave this blank or enter 0, apps are told their secret has already expired. Lockspire still accepts a secret after its expiry date.</:info>
+            <:info label="About client secret lifetime">For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Existing secrets keep their current expiry when you change this setting. Replacing a secret applies the current setting.</:info>
             <input
               type="number"
               min="0"

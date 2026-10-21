@@ -28,15 +28,18 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHintTest do
              "≈ 24,855.1 days (≈ 68.1 years)"
   end
 
-  test "blank and zero explain what the app is told" do
+  test "blank and zero explain that app secrets do not expire automatically" do
     assert LifetimeHint.describe(@client, "") == nil
     assert LifetimeHint.describe(@client, nil) == nil
     assert LifetimeHint.describe(@client, "0") == "0 seconds"
 
     for value <- [" ", "0"] do
-      assert LifetimeHint.describe(@secret, value) ==
-               "Apps will be told their secret has already expired"
+      assert LifetimeHint.describe(@secret, value) == "No automatic expiry"
     end
+  end
+
+  test "a positive secret duration remains a readable duration" do
+    assert LifetimeHint.describe(@secret, "60") == "1 minute"
   end
 
   test "invalid input shows no duration and leaves the error to validation" do

@@ -128,6 +128,7 @@ Last reviewed: 2026-10-19. When an admin change introduces a domain concept, add
 | consent grant | consent grant | Yes |
 | refresh token family | token family | Yes, on token details |
 | `client_secret_expires_at` | secret expiry date | No |
+| shared-secret lifetime | how long an app secret remains valid | No |
 | PAR, DPoP, FAPI, JARM, PKCE | the same abbreviation, explained in plain words beside it | Yes |
 | `token_endpoint_auth_method` | how the app authenticates | In option help text only |
 | `client_secret_basic` / `client_secret_post` | client secret in the request header / body | No |
@@ -165,6 +166,9 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | None (Standard OIDC) | Standard OAuth and OpenID Connect |
 | login or consent | sign-in or consent |
 | logout deliveries | sign-out notices |
+| Apps will be told their secret has already expired | No automatic expiry |
+| apps are told their secret has already expired | No automatic expiry |
+| Lockspire still accepts a secret after its expiry date | A positive value applies to new or replaced app secrets |
 | client class | app type |
 | assertion-key | signing keys |
 | destructive actions | (name the action) |

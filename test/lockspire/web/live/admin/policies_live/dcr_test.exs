@@ -217,10 +217,10 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
              "Lockspire saves this value but never disables an app"
 
     assert rendered_text(blank_limits_html) =~
-             "Apps will be told their secret has already expired"
+             "No automatic expiry"
 
     assert rendered_text(blank_limits_html) =~
-             "If you leave this blank or enter 0, apps are told their secret has already expired."
+             "Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Existing secrets keep their current expiry when you change this setting. Replacing a secret applies the current setting."
 
     refute has_element?(view, ".lockspire-admin-field-errors")
   end
@@ -423,12 +423,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     assert duration_hint(html, "dcr_default_client_secret_lifetime_seconds") ==
-             "Apps will be told their secret has already expired"
+             "No automatic expiry"
 
     assert has_element?(
              view,
              "#dcr_default_client_secret_lifetime_seconds-info[role=tooltip]",
-             "still accepts a secret after its expiry date"
+             "A positive value applies to new or replaced app secrets"
            )
   end
 
