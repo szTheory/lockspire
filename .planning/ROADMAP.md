@@ -129,7 +129,31 @@ Plans:
 **Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
 **Depends on:** Phase 164
 **Requirements:** DCR-10, DCR-11, DCR-12
-**Plans:** 0 (not yet planned)
+**Plans:** 7 plans (18 tasks; 7 dependency-aware waves)
+
+Plans:
+**Wave 1**
+- [ ] 165-01-PLAN.md — Prove finite management GET, current-state operation gates and safe Bearer errors.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 165-02-PLAN.md — Issue validated finite/unlimited management credentials and truthful wire metadata.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 165-03-PLAN.md — Enforce required PUT body identity and commit atomic current-policy replacements.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 165-04-PLAN.md — Recover through the existing host path and prove adapter, legacy and rollback behavior.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 165-05-PLAN.md — Prove actual PostgreSQL waits, stale requests, competing replacements and rollback.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 165-06-PLAN.md — Observe redacted, correctly attributed events and prove confirmed one-time operator recovery.
+
+**Wave 7** *(blocked on Waves 5–6 completion)*
+- [ ] 165-07-PLAN.md — Update affected guidance and execute the complete applicable phase validation gates.
+
+**Execution constraints:** Verify the production GET tracer before expansion. Reuse existing schema, adapter authority, host permission and one-time reveal boundaries. Race and observability lanes are ordered because both mutate the same dedicated PostgreSQL database/server-policy singleton. Phase 166 retains final packaged cross-phase, CI/security and complete guidance proof; publication is separate.
 
 **Success criteria:**
 
