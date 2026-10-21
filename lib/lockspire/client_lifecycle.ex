@@ -136,19 +136,23 @@ defmodule Lockspire.ClientLifecycle do
   end
 
   @spec disable_dcr(Client.t()) :: result()
-  def disable_dcr(%Client{} = client) do
+  def disable_dcr(%Client{} = client),
+    do: disable_dcr(client, DateTime.utc_now())
+
+  @spec disable_dcr(Client.t(), DateTime.t()) :: result()
+  def disable_dcr(%Client{} = client, %DateTime{} = disabled_at) do
     audit_event = %{
       action: :client_disabled,
       outcome: :succeeded,
       reason_code: :client_disabled,
       actor: %{type: :self_registered_client, id: client.client_id},
       resource: %{type: :client, id: client.client_id},
-      metadata: %{disabled_by: "dcr_self_delete"}
+      metadata: %{disabled_by: "dcr_self_delete", disabled_at: disabled_at}
     }
 
     Repository.transact_with_audit(audit_event, fn ->
       Repository.set_client_active(client, false, %{
-        disabled_at: DateTime.utc_now(),
+        disabled_at: disabled_at,
         disabled_by: "dcr_self_delete"
       })
     end)

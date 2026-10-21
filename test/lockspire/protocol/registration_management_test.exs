@@ -356,6 +356,9 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
         assert :ok = RegistrationManagement.delete(client_id, client, now: decision_time)
         {:ok, disabled} = Repository.fetch_client_by_id(client_id)
         assert DateTime.compare(disabled.disabled_at, decision_time) == :eq
+
+        assert latest_audit!("client_disabled").metadata["disabled_at"] ==
+                 DateTime.to_iso8601(decision_time)
       end
     end
 

@@ -39,7 +39,8 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   @type update_request :: %{
           required(:metadata) => map(),
           required(:server_policy) => ServerPolicy.t(),
-          required(:client) => Client.t()
+          required(:client) => Client.t(),
+          optional(:now) => DateTime.t() | (-> DateTime.t())
         }
 
   @type update_result ::
@@ -89,14 +90,17 @@ defmodule Lockspire.Protocol.RegistrationManagement do
           metadata: metadata,
           server_policy: %ServerPolicy{} = server_policy,
           client: %Client{} = client
-        } = _request
+        } = request
       )
       when is_binary(client_id_from_url) and is_map(metadata) do
+    decision_clock = if Map.has_key?(request, :now), do: [now: request.now], else: []
+
     with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
          :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
          {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
          {:ok, updated_client} <-
-           with_current_client(client_id_from_url, client, :update, [], fn current, _now ->
+           with_current_client(client_id_from_url, client, :update, decision_clock, fn current,
+                                                                                       _now ->
              persist_update(current, metadata, new_rat_hash)
            end) do
       emit_updated(updated_client)
@@ -136,9 +140,14 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   @spec delete(String.t(), Client.t()) :: :ok | {:error, :invalid_token | term()}
-  def delete(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    case with_current_client(client_id_from_url, client, :delete, [], fn current, _now ->
-           ClientLifecycle.disable_dcr(current)
+  def delete(client_id_from_url, %Client{} = client),
+    do: delete(client_id_from_url, client, [])
+
+  @spec delete(String.t(), Client.t(), keyword()) :: :ok | {:error, :invalid_token | term()}
+  def delete(client_id_from_url, %Client{} = client, opts)
+      when is_binary(client_id_from_url) and is_list(opts) do
+    case with_current_client(client_id_from_url, client, :delete, opts, fn current, now ->
+           ClientLifecycle.disable_dcr(current, now)
          end) do
       {:ok, %Client{}} ->
         Observability.emit(:dcr, :delete, %{count: 1}, %{
