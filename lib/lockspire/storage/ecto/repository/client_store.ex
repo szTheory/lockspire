@@ -148,12 +148,16 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
                  current.registration_access_token_hash ==
                    client.registration_access_token_hash,
                {:ok, lifetime_changes} <-
-                 Client.credential_lifetime_changes(current, :management, nil) do
+                 Client.credential_lifetime_changes(
+                   current,
+                   :management,
+                   client.registration_access_token_expires_at
+                 ) do
             record
             |> ClientRecord.dcr_management_changeset(
               Map.merge(lifetime_changes, %{
                 registration_access_token_hash: new_rat_hash,
-                updated_at: DateTime.utc_now()
+                updated_at: client.updated_at
               })
             )
             |> then(&Support.update(repo, &1))

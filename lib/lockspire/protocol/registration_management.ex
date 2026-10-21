@@ -198,17 +198,44 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   @spec rotate_registration_access_token(Client.t()) ::
           {:ok, String.t(), Client.t()} | {:error, term()}
-  def rotate_registration_access_token(%Client{} = client) do
+  def rotate_registration_access_token(%Client{} = client),
+    do: rotate_registration_access_token(client, [])
+
+  @spec rotate_registration_access_token(Client.t(), keyword()) ::
+          {:ok, String.t(), Client.t()} | {:error, term()}
+  def rotate_registration_access_token(%Client{} = client, opts) when is_list(opts) do
     {new_rat_plaintext, new_rat_hash} = RegistrationAccessToken.generate()
 
     result =
-      ClientLifecycle.rotate_registration_access_token(client, new_rat_hash, %{
-        action: :dcr_management_rat_rotated,
-        outcome: :success,
-        actor: %{type: :operator, id: "admin-ui"},
-        resource: %{type: :client, id: client.client_id},
-        metadata: %{}
-      })
+      with_recovery_client(client, opts, fn current ->
+        with {:ok, %ServerPolicy{} = policy} <- Repository.get_server_policy(),
+             {:ok, resolved} <- resolve_current_policy(policy, %{}),
+             {:ok, now} <- decision_now(opts),
+             {:ok, deadline} <-
+               Client.management_deadline(
+                 current,
+                 now,
+                 resolved.default_registration_access_token_lifetime_seconds
+               ) do
+          candidate = %{
+            current
+            | registration_access_token_expires_at: deadline,
+              updated_at: now
+          }
+
+          ClientLifecycle.rotate_registration_access_token(candidate, new_rat_hash, %{
+            action: :dcr_management_rat_rotated,
+            outcome: :success,
+            actor: %{type: :operator, id: "admin-ui"},
+            resource: %{type: :client, id: current.client_id},
+            metadata: %{rotated_at: now}
+          })
+        else
+          {:error, %Registration.Error{} = error} -> {:error, error}
+          {:error, reason} -> {:error, %Registration.Error{code: :server_error, reason: reason}}
+          _unexpected -> {:error, %Registration.Error{code: :server_error}}
+        end
+      end)
 
     case result do
       {:ok, updated_client} ->
@@ -401,6 +428,23 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         false -> {:error, :invalid_token}
         {:ok, _rows} -> {:error, :invalid_token}
         {:error, %Registration.Error{} = error} -> {:error, error}
+        {:error, reason} -> {:error, reason}
+      end
+    end)
+  end
+
+  defp with_recovery_client(%Client{} = snapshot, _opts, callback)
+       when is_function(callback, 1) do
+    Repository.transact(fn ->
+      with {:ok, [current]} <- Repository.lock_clients([snapshot.client_id]),
+           true <- current.id == snapshot.id,
+           true <- current.client_id == snapshot.client_id,
+           true <-
+             current.registration_access_token_hash == snapshot.registration_access_token_hash do
+        callback.(current)
+      else
+        false -> {:error, :invalid_token}
+        {:ok, _rows} -> {:error, :invalid_token}
         {:error, reason} -> {:error, reason}
       end
     end)
