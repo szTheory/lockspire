@@ -68,6 +68,10 @@ defmodule Lockspire.Integration.Phase3OidcTokenLifecycleE2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    {:ok, server_policy} = Repository.get_server_policy()
+
+    {:ok, _server_policy} =
+      Repository.put_server_policy(%{server_policy | registration_policy: :disabled})
 
     {:ok, public_client} =
       Repository.register_client(%Client{
