@@ -118,6 +118,13 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
     ]
   }
 
+  # Additive option-bearing entrypoints added for explicit adapter/clock injection.
+  # The original v1.x arities above remain present; keep these intentional additions
+  # separate so the literal compatibility baseline still detects accidental drift.
+  @extensions %{
+    Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3]
+  }
+
   @structs [
     {Lockspire.Clients.RegistrationResult, [:client, :client_secret]},
     {Lockspire.Protocol.Registration.Success,
@@ -177,6 +184,7 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
   ]
 
   def modules, do: @modules
+  def extensions, do: @extensions
   def structs, do: @structs
   def result_contracts, do: @result_contracts
 end

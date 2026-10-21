@@ -2,7 +2,7 @@
 
 Lockspire supports Dynamic Client Registration (DCR) via [RFC 7591](https://datatracker.ietf.org/doc/html/rfc7591) and [RFC 7592](https://datatracker.ietf.org/doc/html/rfc7592). This allows external ecosystem partners to register their OAuth/OIDC clients programmatically without operator intervention, provided they have been issued an Initial Access Token (IAT).
 
-For the canonical public support contract, see `docs/supported-surface.md`. For the shipped symmetric JWT direct-client slice specifically, see `docs/client-secret-jwt-host-guide.md`.
+For the canonical public support contract, see `docs/supported-surface.md`. For the shipped symmetric JWT direct-client slice specifically, see `docs/client-secret-jwt-host-guide.md`. For legacy app lifetime storage, custom adapter requirements, and the old-writer drain boundary, see [Upgrade app lifetime storage](upgrading/client-lifetimes.md).
 
 ## Operator Setup
 

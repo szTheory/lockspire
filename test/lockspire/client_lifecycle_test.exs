@@ -19,6 +19,7 @@ defmodule Lockspire.ClientLifecycleTest do
     actor_id = "iat-#{client_id}"
 
     client = %Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_type: :public,
       redirect_uris: ["https://client.example.test/callback"],
@@ -58,6 +59,7 @@ defmodule Lockspire.ClientLifecycleTest do
     client_id = "lifecycle-operator-#{System.unique_integer([:positive])}"
 
     client = %Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_type: :confidential,
       client_secret_hash: "old-secret-hash",

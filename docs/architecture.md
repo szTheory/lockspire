@@ -299,6 +299,14 @@ config :lockspire,
   oban_prefix: "lockspire"
 ```
 
+Client lifetime storage is part of that host-storage contract. The built-in
+Ecto adapter declares its supported lifetime version and shared transaction
+authority; custom client stores used by token exchange must declare equivalent
+current-row locking and transaction composition. Existing rows remain
+compatible through the additive, prefix-aware migration. See
+[Upgrade app lifetime storage](upgrading/client-lifetimes.md) for migration,
+custom-adapter conformance, and writer-drain steps.
+
 Managed files are checksummed in the install manifest. `mix lockspire.upgrade`
 can replace one only when it still matches the recorded content. Account,
 interaction, consent, device-verification, layout, branding, and product-policy

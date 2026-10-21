@@ -52,13 +52,22 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     Enum.each(Manifest.modules(), fn {module, expected_functions} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
 
+      extensions = Map.get(Manifest.extensions(), module, [])
+
       actual_functions =
         module.__info__(:functions)
         |> Enum.reject(fn {name, _arity} -> String.starts_with?(Atom.to_string(name), "__") end)
 
-      assert actual_functions == expected_functions,
+      assert Enum.reject(actual_functions, &(&1 in extensions)) == expected_functions,
              "#{inspect(module)} public functions drifted from the literal 76cf872 baseline"
+
+      assert Enum.filter(actual_functions, &(&1 in extensions)) == extensions,
+             "#{inspect(module)} additive public functions drifted from the declared extensions"
     end)
+
+    assert Manifest.extensions() == %{
+             Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3]
+           }
 
     Enum.each(Manifest.structs(), fn {module, keys} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
