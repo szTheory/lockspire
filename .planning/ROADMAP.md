@@ -99,7 +99,7 @@ Plans:
 **Goal:** Apps can rely on shared-secret expiry metadata matching authentication and operator rotation.
 **Depends on:** Phase 163
 **Requirements:** DCR-07, DCR-08, DCR-09
-**Plans:** 6 plans
+**Plans:** 6/6 plans executed; independent phase verification pending.
 
 Plans:
 **Wave 1**
@@ -110,13 +110,13 @@ Plans:
 - [x] 164-03-PLAN.md — Commit current-policy secret rotation, legacy promotion and audit atomically.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 164-04-PLAN.md — Guard authenticated polling and RFC requester while preserving token and queued-work validity.
+- [x] 164-04-PLAN.md — Guard authenticated polling and RFC requester while preserving token and queued-work validity.
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 164-05-PLAN.md — Prove actual PostgreSQL wait, replacement, competing-rotation and rollback schedules.
+- [x] 164-05-PLAN.md — Prove actual PostgreSQL wait, replacement, competing-rotation and rollback schedules.
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 164-06-PLAN.md — Prove observed-event redaction, accurate guidance and integrated validation gates.
+- [x] 164-06-PLAN.md — Prove observed-event redaction, accurate guidance and integrated validation gates.
 
 **Success criteria:**
 

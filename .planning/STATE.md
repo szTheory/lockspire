@@ -5,16 +5,16 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 164
 current_phase_name: Client-Secret Expiry & Atomic Rotation
 status: executing
-stopped_at: Completed 164-05-PLAN.md
-last_updated: "2026-10-21T15:05:11.989Z"
+stopped_at: Completed 164-06-PLAN.md
+last_updated: "2026-10-21T15:34:32.473Z"
 last_activity: 2026-10-21
 last_activity_desc: Phase 164 plan 164-03 completed
-state_head: 9a0e46367d6845f85e9a24b568923fc66d201f0e
+state_head: 288af0f769fcf9d1a1e8fa3690eb1247e2e515ee
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 21
-  completed_plans: 20
+  completed_plans: 21
   percent: 40
 ---
 
@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 Phase: 164 (Client-Secret Expiry & Atomic Rotation) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-10-21 — Phase 164 plan 164-02 completed
+Status: Plans 1–6 executed; independent phase verification pending
+Last activity: 2026-10-21 — Phase 164 plan 164-06 completed
 
 ## Accumulated Context
 
@@ -325,6 +325,7 @@ Last activity: 2026-10-21 — Phase 164 plan 164-02 completed
 - [Phase 164]: Only self-registered shared-secret methods apply the current DCR secret duration during rotation.
 - [Phase 164]: Only trusted authenticated device/CIBA poll and RFC 8693 requester contexts apply the current secret-expiry gate after required locks; queued CIBA push and issuer app checks stay secret-independent.
 - [Phase 164]: Secret expiry does not revoke issued access/refresh tokens or gate non-secret authentication methods; confidential refresh still requires current credentials.
+- [Phase 164]: Finite-secret redaction uses real DCR registration, token issuance/failure, and operator-rotation events; no new event family is needed.
 
 ### Pending Todos
 
@@ -389,8 +390,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T15:05:11.822Z
-Stopped at: Completed 164-05-PLAN.md
+Last session: 2026-10-21T15:34:29.928Z
+Stopped at: Completed 164-06-PLAN.md
 Resume file: None
 
 Next: Execute Phase 164 plan 164-04. Preserve original unstaged state.json bytes and historical phase exceptions.
@@ -529,6 +530,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 164 P03 | 12min | 3 tasks | 12 files |
 | Phase 164 P04 | 16 min | 3 tasks | 9 files |
 | Phase 164 P05 | 9min | 3 tasks | 3 files |
+| Phase 164 P06 | 9min | 3 tasks | 11 files |
 
 ## Operator Next Steps
 
