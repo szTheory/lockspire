@@ -287,17 +287,84 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     end
   end
 
+  @doc false
+  def validate_current_authority(
+        %Client{} = current,
+        issuance_context,
+        %DateTime{} = now,
+        consumer
+      )
+      when is_map(issuance_context) and is_atom(consumer) do
+    identity = Map.get(issuance_context, :verified_client_identity)
+
+    with {:ok, current} <- ClientLifetime.validate_client(current),
+         :ok <- require_active_client(current),
+         :ok <- require_verified_identity(identity, current),
+         :ok <- require_app_eligibility(current, now, consumer),
+         :ok <- require_secret_eligibility(current, now, consumer) do
+      :ok
+    else
+      {:error, %Error{} = error} -> {:error, error}
+      {:error, reason} -> {:error, server_error(reason)}
+    end
+  end
+
+  def validate_current_authority(%Client{}, _issuance_context, _now, _consumer),
+    do: {:error, server_error(:client_lifetime_clock_failed)}
+
+  defp require_active_client(%Client{active: true}), do: :ok
+
+  defp require_active_client(%Client{}),
+    do: {:error, client_authentication_error(:client_disabled)}
+
+  defp require_verified_identity(identity, current) do
+    if ClientAuthentication.verified_identity_matches?(identity, current),
+      do: :ok,
+      else: {:error, client_authentication_error(:credential_changed)}
+  end
+
+  defp require_app_eligibility(client, now, consumer) do
+    case Client.app_eligibility(client, now, consumer) do
+      :ok -> :ok
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, reason} -> {:error, server_error(reason)}
+    end
+  end
+
+  defp require_secret_eligibility(client, now, consumer) do
+    case Client.secret_eligibility(client, now, consumer) do
+      :ok -> :ok
+      {:error, :expired} -> {:error, client_authentication_error(:client_secret_expired)}
+      {:error, reason} -> {:error, server_error(reason)}
+    end
+  end
+
+  defp final_authority_time(%Dependencies{} = dependencies) do
+    case dependencies.now.() do
+      %DateTime{} = now -> {:ok, now}
+      _other -> {:error, server_error(:client_lifetime_clock_failed)}
+    end
+  rescue
+    _error -> {:error, server_error(:client_lifetime_clock_failed)}
+  end
+
   defp decide_and_build_code_issuance(
          %Client{} = current_client,
          %Token{} = current_code,
          %Token{} = authorization_code,
          prepared_issuance,
-         _issuance_context,
+         issuance_context,
          %Dependencies{} = dependencies
        ) do
-    now = dependencies.now.()
-
-    with :ok <- Client.app_eligibility(current_client, now, :guarded_token_redemption),
+    with {:ok, now} <- final_authority_time(dependencies),
+         :ok <-
+           validate_current_authority(
+             current_client,
+             issuance_context,
+             now,
+             :guarded_token_redemption
+           ),
          true <- current_code.client_id == current_client.client_id,
          true <- DateTime.compare(current_code.expires_at, now) == :gt,
          {:ok, access_expires_at} <-
@@ -331,8 +398,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
          expires_in: TokenLifetime.expires_in(now, access_expires_at)
        }}
     else
-      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
-      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
       {:error, %Error{} = error} -> {:error, error}
       {:error, reason} -> {:error, reason}
       false -> {:error, :invalid_grant}

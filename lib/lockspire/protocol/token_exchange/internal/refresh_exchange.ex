@@ -174,8 +174,14 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
                authenticated_client,
                context
              ),
-           now <- dependencies.now.(),
-           :ok <- Client.app_eligibility(current_client, now, :guarded_refresh_rotation),
+           {:ok, now} <- refresh_authority_time(dependencies),
+           :ok <-
+             GrantPersistence.validate_current_authority(
+               current_client,
+               context,
+               now,
+               :guarded_refresh_rotation
+             ),
            {:ok, access_expires_at} <-
              TokenLifetime.effective_expiry(
                now,
@@ -227,13 +233,29 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
            }}
         end
       else
-        {:error, :expired} -> {:error, client_authority_error(:client_app_expired)}
-        {:error, :disabled} -> {:error, client_authority_error(:client_disabled)}
         {:error, %Error{} = error} -> {:error, error}
         {:error, reason} -> {:error, reason}
         _ -> {:error, client_authority_error(:credential_changed)}
       end
     end
+  end
+
+  defp refresh_authority_time(%Dependencies{} = dependencies) do
+    case dependencies.now.() do
+      %DateTime{} = now -> {:ok, now}
+      _other -> {:error, server_error(:client_lifetime_clock_failed)}
+    end
+  rescue
+    _error -> {:error, server_error(:client_lifetime_clock_failed)}
+  end
+
+  defp server_error(reason) do
+    %Error{
+      status: 500,
+      error: "server_error",
+      error_description: "Client lifetime state is unavailable",
+      reason_code: reason
+    }
   end
 
   defp client_authority_error(reason) do
