@@ -136,7 +136,7 @@ Plans:
 - [x] 165-01-PLAN.md — Prove finite management GET, current-state operation gates and safe Bearer errors.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 165-02-PLAN.md — Issue validated finite/unlimited management credentials and truthful wire metadata.
+- [x] 165-02-PLAN.md — Issue validated finite/unlimited management credentials and truthful wire metadata.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 165-03-PLAN.md — Enforce required PUT body identity and commit atomic current-policy replacements.
@@ -183,10 +183,10 @@ Plans:
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
-| 165. Management-Token Lifecycle & Recovery | 1/7 | In Progress | — |
+| 165. Management-Token Lifecycle & Recovery | 2/7 | In Progress | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
-**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Seven requirements are complete after Phases 162–163; eleven remain pending.
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Twelve requirements are complete through Phase 165 Plan 02; six remain pending.
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>

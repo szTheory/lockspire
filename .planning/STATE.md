@@ -5,16 +5,16 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
 status: executing
-stopped_at: Completed 165-01-PLAN.md
-last_updated: "2026-10-21T17:53:56.048Z"
+stopped_at: Completed 165-02-PLAN.md
+last_updated: "2026-10-21T18:01:42.661Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 plan 01 complete; finite management access verified
-state_head: c99bbc9ad1e1e4100118d0bc108f1d41555d7735
+last_activity_desc: Phase 165 plan 02 complete; issuance and management policy verified
+state_head: 3da77760fd0a7168f80ae7c78554bd6c9c06bdaa
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 28
-  completed_plans: 22
+  completed_plans: 23
   percent: 60
 ---
 
@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 ## Current Position
 
 Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
-Plan: 2 of 7
-Status: Executing
+Plan: 3 of 7
+Status: Ready to execute
 Last activity: 2026-10-21 — Phase 165 execution started
 
 ## Accumulated Context
@@ -329,6 +329,9 @@ Last activity: 2026-10-21 — Phase 165 execution started
 - [Phase 165]: Sample one UTC-second management decision time after locking and reloading the current client row.
 - [Phase 165]: Validate management-token eligibility before allowing GET/DELETE on naturally expired enabled apps.
 - [Phase 165]: Keep persistence, unsupported-state, and policy errors as redacted server errors; only supplied invalid credentials map to invalid_token.
+- [Phase 165]: Management expiry depends on self-registration provenance regardless of authentication method.
+- [Phase 165]: Reject malformed typed management policy before Ecto coercion at persistence and use boundaries.
+- [Phase 165]: Keep HTML duration conversion in PolicyForm and pass cast integer or nil through the admin API.
 
 ### Pending Todos
 
@@ -393,11 +396,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T17:53:55.776Z
-Stopped at: Completed 165-01-PLAN.md
+Last session: 2026-10-21T18:01:42.384Z
+Stopped at: Completed 165-02-PLAN.md
 Resume file: None
 
-Next: Continue Phase 165 with plan 02 when directed. Plan 01 is complete with the finite-token GET tracer, current-row checks for all management operations, and safe Bearer/server error mapping. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Continue Phase 165 with plan 03 when directed. Plans 01–02 are complete with finite management access, issuance snapshots and typed policy bounds verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -535,6 +538,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 164 P05 | 9min | 3 tasks | 3 files |
 | Phase 164 P06 | 9min | 3 tasks | 11 files |
 | Phase 165 P01 | 13min | 3 tasks | 14 files |
+| Phase 165 P02 | 290 | 2 tasks | 9 files |
 
 ## Operator Next Steps
 

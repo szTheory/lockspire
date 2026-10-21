@@ -146,6 +146,7 @@ Both RED records passed `gsd_run check tdd-red-evidence` with `RED_EVIDENCE_OK`;
 
 - The first invalid-state serializer assertion initially observed the earlier client-secret validation error. The test was narrowed to assert the required server error class without assuming which invalid lifetime field is checked first.
 - A test attempted to construct an incomplete `%DateTime{}` and failed compilation; it was corrected to pass an invalid time value through the public domain API and assert the explicit state error.
+- The roadmap progress SDK did not recognize this phase's detailed plan checklist. The plan checkbox and progress row were updated directly to 2/7, and the requirements coverage count was refreshed.
 
 ## User Setup Required
 
