@@ -91,3 +91,31 @@ PostgreSQL batch passed 34/0, and `mix test.fast` passed with 2 properties,
 2,413 tests, 0 failures, 485 excluded, and 6 skipped in 129.6s. These results
 supersede the previous full-suite count while retaining the earlier failure
 history above.
+
+## Prior-phase regression gate finding (out of Phase 165 scope)
+
+The cross-phase regression command over 108 test files extracted from Phases
+162–164 reported **179 tests, 1 failure**. The failing
+`test/integration/phase57_rar_introspection_verification_e2e_test.exs` case
+also fails in isolation (**1 test, 1 failure**), so it is not explained by
+suite ordering or test-environment leakage.
+
+The test requests two authorized resources in PAR, then redeems its code with
+`resource=https://api.one`. Its expectation of the narrowed audience
+`["https://api.one"]` matches `ResourceSelection.select/2`, the
+`docs/code-walkthrough.md` contract that resource indicators cannot broaden
+the authorized audience, and Phase 54's targeted-audience/downscoping tests.
+Current code selects the requested subset for preparation, but passes the
+original authorization-code struct to `persist_authorization_code_grant/6`.
+`GrantPersistence.redeem_authorization_code/2` then copies the original
+authorization-code audience back onto the current code before persistence,
+and the refresh-token row likewise stores that original audience. This is a
+feature-level resource-downscoping/persistence defect, not an outdated test
+expectation.
+
+The RAR end-to-end test and the relevant `GrantSupport`, `GrantPersistence`,
+`ResourceSelection`, and `TokenIssuer` files are byte-for-byte unchanged from
+`ee7f8d2c`. This behavior predates Phase 165; changing OAuth token semantics
+would broaden the current phase. No source or test expectation was changed.
+The prior-phase regression gate remains an explicit blocker pending a scoped
+fix in the resource-indicator/token-exchange workstream.

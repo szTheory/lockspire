@@ -323,7 +323,7 @@ All selected phase behaviors have automated verification. Host authorization and
 - [x] Actual feedback timings recorded during execution.
 - [x] `nyquist_compliant: true` set only after the applicable audit.
 
-**Approval:** automated coverage audit complete. All 18 task rows map to executed behavioral verification; requirements DCR-10, DCR-11, and DCR-12 have direct automated coverage. Corrective final gates passed: combined guidance/compatibility 21/0, explicit PostgreSQL 34/0, and fast suite 2 properties + 2,411 tests/0 failures (483 excluded, 6 skipped). Independent security, code-review, and goal-backward reports remain for their next hooks.
+**Approval:** automated coverage audit complete. All 18 task rows map to executed behavioral verification; requirements DCR-10, DCR-11, and DCR-12 have direct automated coverage. Latest corrective final gates passed: combined guidance/compatibility 21/0, explicit PostgreSQL 34/0, and fast suite 2 properties + 2,413 tests/0 failures (485 excluded, 6 skipped). The separately scoped prior-phase regression gate has one pre-existing resource-downscoping failure recorded below. Independent security, code-review, and goal-backward reports remain for their next hooks.
 
 ## Validation Audit 2026-10-21
 
@@ -332,3 +332,33 @@ All selected phase behaviors have automated verification. Host authorization and
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Cross-phase prior-regression gate (open, outside this phase's Nyquist scope)
+
+The parent ran normal `mix test` over 108 test files extracted from the Phase
+162–164 verification records using the pinned runtime and the dedicated
+`lockspire_phase165_validation` database, with `--max-failures 1 --timeout
+55000`. It ended at **179 tests, 1 failure** in
+`test/integration/phase57_rar_introspection_verification_e2e_test.exs:165`:
+the persisted access-token audience was `["https://api.one",
+"https://api.two"]` when the token request selected only
+`https://api.one`. The exact file list and full output are preserved at
+`/private/tmp/lockspire-phase165-prior-test-files.txt` and
+`/private/tmp/lockspire-phase165-prior-regression.log`.
+
+The isolated command `mix test
+test/integration/phase57_rar_introspection_verification_e2e_test.exs
+--max-failures 1 --timeout 55000` reproduces it as **1 test, 1 failure**.
+The test expectation is supported by the resource-selection implementation,
+the source-backed Resource Indicators contract, and Phase 54 downscoping
+coverage. Comparison against `ee7f8d2c` confirms the failing test and relevant
+authorization-code selection/persistence path are unchanged from the
+pre-Phase-165 baseline. The root cause is that persistence receives the
+original authorization-code audience after preparation has selected the
+requested subset, then stores that broader audience on token records.
+
+This is an unrelated pre-existing token-exchange feature defect; no test
+expectation or protocol behavior was changed in Phase 165. It remains an open
+cross-phase regression blocker for a separately scoped correction. The
+Phase-165 Nyquist flags above remain validated and true; this external gate
+does not erase the phase's completed validation evidence.
