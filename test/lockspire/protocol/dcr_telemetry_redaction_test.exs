@@ -13,6 +13,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   alias Lockspire.Admin.Clients
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
   alias Lockspire.TestSupport.TelemetryCapture
@@ -88,7 +89,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       # D-19 LOCKED: update/2 with bundled-request map. Do NOT call update/4.
       {:ok, update_success} =
         RegistrationManagement.update(success.client.client_id, %{
-          metadata: DcrFixtures.valid_metadata(),
+          metadata: Map.put(DcrFixtures.valid_metadata(), "client_id", success.client.client_id),
           server_policy: server_policy,
           client: success.client
         })
@@ -140,6 +141,79 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
                "audit row id=#{row.id} action=#{row.action} metadata carried plaintext"
       end
     end
+  end
+
+  test "self PUT and host recovery use distinct management actors" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    policy =
+      DcrFixtures.server_policy(%{
+        dcr_default_registration_access_token_lifetime_seconds: 60
+      })
+
+    assert {:ok, _} = Repository.put_server_policy(policy)
+    TelemetryCapture.attach_many([[:lockspire, :dcr, :rotate], [:lockspire, :audit, :dcr, :rotate]], self())
+
+    assert {:ok, registered} =
+             Registration.register(
+               DcrFixtures.register_request(server_policy: policy) |> Map.put(:now, now)
+             )
+
+    client = registered.client
+
+    assert {:ok, updated} =
+             RegistrationManagement.update(client.client_id, %{
+               metadata: Map.put(DcrFixtures.valid_metadata(), "client_id", client.client_id),
+               server_policy: policy,
+               client: client,
+               now: DateTime.add(now, 1, :second)
+             })
+
+    assert {:ok, _recovered_plaintext, recovered} =
+             RegistrationManagement.rotate_registration_access_token(
+               updated.client,
+               now: DateTime.add(now, 2, :second)
+             )
+
+    captured = drain_events()
+
+    self_rotations =
+      Enum.filter(captured, fn
+        {[:lockspire, :dcr, :rotate], _measurements,
+         %{actor_type: :self_registered_client, actor_id: id}} ->
+          id == client.client_id
+
+        _ ->
+          false
+      end)
+
+    host_rotations =
+      Enum.filter(captured, fn
+        {[:lockspire, :dcr, :rotate], _measurements,
+         %{actor_type: :operator, actor_id: "admin-ui"}} ->
+          true
+
+        _ ->
+          false
+      end)
+
+    assert length(self_rotations) >= 1
+    assert length(host_rotations) >= 1
+
+    audit_rows =
+      Lockspire.TestRepo.all(
+        from(audit in AuditEventRecord,
+          where:
+            audit.resource_id == ^client.client_id and
+              audit.action in ["dcr_management_updated", "dcr_management_rat_rotated"],
+          order_by: [asc: audit.id]
+        )
+      )
+
+    assert Enum.any?(audit_rows, &(&1.action == "dcr_management_updated" and &1.actor_type == "self_registered_client"))
+    assert Enum.any?(audit_rows, &(&1.action == "dcr_management_rat_rotated" and &1.actor_type == "operator" and &1.actor_id == "admin-ui"))
+
+    assert recovered.client_id == client.client_id
   end
 
   test "finite secret issuance, token use, expiry rejection, and operator replacement are observed and redacted" do
