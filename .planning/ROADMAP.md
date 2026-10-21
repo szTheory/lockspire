@@ -166,7 +166,42 @@ Plans:
 **Goal:** Adopters and maintainers can reproduce complete lifetime journeys and follow guidance that matches the verified behavior.
 **Depends on:** Phase 165
 **Requirements:** DCR-15, DCR-16, DCR-17, DCR-18, DCR-19
-**Plans:** 0 (not yet planned)
+**Plans:** 12 plans
+
+Plans:
+**Wave 1**
+- [ ] 166-01-PLAN.md — Packaged registration/use tracer and compact evidence map
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 166-02-PLAN.md — Candidate provenance and stale-reuse negatives
+- [ ] 166-03-PLAN.md — Deterministic nonmasking lifetime interactions
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 166-04-PLAN.md — Observed PostgreSQL waits, contention and rollback proof
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 166-05-PLAN.md — Public selector decision and production issuance seam
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 166-06-PLAN.md — Selected management/replacement and shared authority
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 166-07-PLAN.md — Positive events and safe failure diagnostics
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 166-08-PLAN.md — Configured adapter and executed copyable host example
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 166-09-PLAN.md — Complete fresh and legacy HTTP lifetime journeys
+
+**Wave 9** *(blocked on Wave 8 completion)*
+- [ ] 166-10-PLAN.md — Active required CI counts and sanitized receipt retention
+
+**Wave 10** *(blocked on Wave 9 completion)*
+- [ ] 166-11-PLAN.md — Evidence-backed adopter/operator guidance
+
+**Wave 11** *(blocked on Wave 10 completion)*
+- [ ] 166-12-PLAN.md — Final scoped security, live CI and conditional umbrella closure
 
 **Success criteria:**
 
