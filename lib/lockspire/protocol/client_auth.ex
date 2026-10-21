@@ -46,6 +46,7 @@ defmodule Lockspire.Protocol.ClientAuth do
            resolve_implicit_method(raw_method, client.token_endpoint_auth_method, opts),
          :ok <- validate_registered_auth_method(client, attempted_method),
          :ok <- validate_client_secret(client, attempted_method, client_secret, opts),
+         :ok <- ensure_secret_eligible(client, opts),
          :ok <- validate_client_lifetime_contract(client, opts),
          :ok <- ensure_app_eligible(client, opts) do
       {:ok, client}
@@ -274,6 +275,34 @@ defmodule Lockspire.Protocol.ClientAuth do
          "server_error",
          "Unable to determine client application eligibility",
          :client_lifetime_clock_failed
+       )}
+  end
+
+  defp ensure_secret_eligible(%Client{} = client, opts) do
+    case Client.secret_eligibility(client, request_now(opts), :client_authentication) do
+      :ok ->
+        :ok
+
+      {:error, :expired} ->
+        {:error, invalid_client("Client authentication failed", :client_secret_expired)}
+
+      {:error, :invalid_lifetime_state} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to validate client secret lifetime state",
+           :client_secret_lifetime_state_invalid
+         )}
+    end
+  rescue
+    _error ->
+      {:error,
+       oauth_error(
+         500,
+         "server_error",
+         "Unable to determine client secret eligibility",
+         :client_secret_lifetime_clock_failed
        )}
   end
 

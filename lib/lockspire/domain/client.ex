@@ -24,6 +24,8 @@ defmodule Lockspire.Domain.Client do
   @type provenance :: :operator | :self_registered
   @type access_token_format :: :jwt | :opaque
 
+  @secret_auth_methods [:client_secret_basic, :client_secret_post, :client_secret_jwt]
+
   @type t :: %__MODULE__{
           id: integer() | nil,
           client_id: String.t(),
@@ -200,6 +202,105 @@ defmodule Lockspire.Domain.Client do
 
   def app_eligibility(%__MODULE__{}, _, _),
     do: {:error, :invalid_lifetime_state}
+
+  @doc "Decides whether a shared-secret credential remains eligible at the current instant."
+  @spec secret_eligibility(t(), DateTime.t(), atom()) ::
+          :ok | {:error, :expired | :invalid_lifetime_state}
+  def secret_eligibility(
+        %__MODULE__{token_endpoint_auth_method: method} = client,
+        %DateTime{} = now,
+        _consumer
+      )
+      when method in @secret_auth_methods do
+    with {:ok, deadline} when is_struct(deadline, DateTime) <- effective_secret_deadline(client),
+         {:ok, instant} <- decision_instant(now) do
+      if DateTime.compare(instant, deadline) == :lt, do: :ok, else: {:error, :expired}
+    else
+      {:ok, nil} -> :ok
+      {:error, :invalid_lifetime_state} -> {:error, :invalid_lifetime_state}
+      _other -> {:error, :invalid_lifetime_state}
+    end
+  end
+
+  def secret_eligibility(%__MODULE__{} = client, %DateTime{}, _consumer) do
+    case effective_secret_deadline(client) do
+      {:ok, :inapplicable} -> :ok
+      {:ok, nil} -> :ok
+      {:ok, %DateTime{}} -> :ok
+      {:error, :invalid_lifetime_state} -> {:error, :invalid_lifetime_state}
+    end
+  end
+
+  def secret_eligibility(%__MODULE__{}, _, _),
+    do: {:error, :invalid_lifetime_state}
+
+  @doc "Returns the effective secret deadline, unlimited state, or method inapplicability."
+  @spec effective_secret_deadline(t()) ::
+          {:ok, :inapplicable | nil | DateTime.t()} | {:error, :invalid_lifetime_state}
+  def effective_secret_deadline(%__MODULE__{token_endpoint_auth_method: method})
+      when method in [:none, :private_key_jwt, :tls_client_auth, :self_signed_tls_client_auth],
+      do: {:ok, :inapplicable}
+
+  def effective_secret_deadline(%__MODULE__{
+        token_endpoint_auth_method: method,
+        lifetime_version: 0
+      })
+      when method in @secret_auth_methods,
+      do: {:ok, nil}
+
+  def effective_secret_deadline(
+        %__MODULE__{token_endpoint_auth_method: method, lifetime_version: 1} = client
+      )
+      when method in @secret_auth_methods do
+    case client.client_secret_expires_at do
+      nil ->
+        {:ok, nil}
+
+      %DateTime{} = deadline ->
+        if utc_second?(deadline), do: {:ok, deadline}, else: invalid_lifetime()
+
+      _other ->
+        invalid_lifetime()
+    end
+  end
+
+  def effective_secret_deadline(%__MODULE__{}), do: invalid_lifetime()
+
+  @doc "Calculates a validated, whole-second secret deadline for self-registered clients."
+  @spec secret_deadline(t(), DateTime.t(), term()) ::
+          {:ok, DateTime.t() | nil}
+          | {:error, :invalid_secret_lifetime_policy | :invalid_lifetime_state}
+  def secret_deadline(%__MODULE__{} = client, %DateTime{} = issued_at, duration) do
+    with :ok <- validate_secret_duration(duration),
+         {:ok, issued_second} <- decision_instant(issued_at) do
+      if client.provenance == :self_registered and
+           client.token_endpoint_auth_method in @secret_auth_methods and
+           is_integer(duration) and duration > 0 do
+        {:ok, DateTime.add(issued_second, duration, :second)}
+      else
+        {:ok, nil}
+      end
+    else
+      {:error, reason}
+      when reason in [:invalid_secret_lifetime_policy, :invalid_lifetime_state] ->
+        {:error, reason}
+
+      _other ->
+        {:error, :invalid_lifetime_state}
+    end
+  rescue
+    _error -> {:error, :invalid_lifetime_state}
+  end
+
+  def secret_deadline(%__MODULE__{}, _, _), do: {:error, :invalid_lifetime_state}
+
+  defp validate_secret_duration(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_secret_duration(_value), do: {:error, :invalid_secret_lifetime_policy}
+
+  defp invalid_lifetime, do: {:error, :invalid_lifetime_state}
 
   @doc """
   Returns the lifetime fields to write when a credential replacement promotes a legacy row.

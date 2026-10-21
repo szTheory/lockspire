@@ -101,7 +101,7 @@ defmodule Lockspire.ClientMetadata do
       security_profile:
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
-      client_secret_expires_at: client_secret_expires_at(now, resolved, credentials),
+      client_secret_expires_at: client_secret_expires_at(now, resolved, credentials, auth_method),
       lifetime_version: 1,
       client_expires_at: app_expires_at(now, Map.get(resolved, :default_client_lifetime_seconds)),
       metadata:
@@ -280,14 +280,23 @@ defmodule Lockspire.ClientMetadata do
 
   defp parse_scope(_), do: []
 
-  defp client_secret_expires_at(_now, _resolved, %{client_secret_hash: nil}), do: nil
+  defp client_secret_expires_at(_now, _resolved, %{client_secret_hash: nil}, _method), do: nil
 
-  defp client_secret_expires_at(now, resolved, _credentials) do
-    DateTime.add(
-      now,
-      Map.get(resolved, :default_client_secret_lifetime_seconds, 0) || 0,
-      :second
-    )
+  defp client_secret_expires_at(now, resolved, credentials, method) do
+    client = %Client{
+      provenance: :self_registered,
+      token_endpoint_auth_method: method,
+      client_secret_hash: credentials.client_secret_hash
+    }
+
+    case Client.secret_deadline(
+           client,
+           now,
+           Map.get(resolved, :default_client_secret_lifetime_seconds)
+         ) do
+      {:ok, deadline} -> deadline
+      {:error, _reason} -> raise ArgumentError, "invalid DCR client secret lifetime"
+    end
   end
 
   defp app_expires_at(_now, lifetime_seconds) when lifetime_seconds in [nil, 0], do: nil

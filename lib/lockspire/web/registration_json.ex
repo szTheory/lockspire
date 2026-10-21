@@ -42,6 +42,7 @@ defmodule Lockspire.Web.RegistrationJSON do
     payload = Map.new(client.metadata || %{})
 
     payload
+    |> Map.delete(:client_secret_expires_at)
     |> Map.put(:client_id, client.client_id)
     |> put_registered_metadata(client)
     |> Map.put(
@@ -52,17 +53,27 @@ defmodule Lockspire.Web.RegistrationJSON do
       :client_id_issued_at,
       if(client.inserted_at, do: DateTime.to_unix(client.inserted_at), else: 0)
     )
-    |> Map.put(
-      :client_secret_expires_at,
-      if(client.client_secret_expires_at,
-        do: DateTime.to_unix(client.client_secret_expires_at),
-        else: 0
-      )
-    )
+    |> put_client_secret_expiry(client)
     |> Map.put(:dpop_bound_access_tokens, client.dpop_policy == :dpop)
     |> Map.put(:registration_client_uri, Config.issuer!() <> "/register/" <> client.client_id)
     |> maybe_put_token_endpoint_auth_signing_alg(client)
     |> maybe_put_logout_metadata(client)
+  end
+
+  defp put_client_secret_expiry(payload, %Client{} = client) do
+    case Client.effective_secret_deadline(client) do
+      {:ok, :inapplicable} ->
+        payload
+
+      {:ok, nil} ->
+        Map.put(payload, :client_secret_expires_at, 0)
+
+      {:ok, %DateTime{} = deadline} ->
+        Map.put(payload, :client_secret_expires_at, DateTime.to_unix(deadline))
+
+      {:error, :invalid_lifetime_state} ->
+        raise ArgumentError, "invalid client secret lifetime state"
+    end
   end
 
   defp maybe_put_token_endpoint_auth_signing_alg(payload, %Client{
