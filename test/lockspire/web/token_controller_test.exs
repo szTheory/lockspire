@@ -157,6 +157,57 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert persisted_token.token_hash == TokenFormatter.hash_token(body["access_token"])
   end
 
+  @tag :secret_expiry_contract
+  test "POST /token keeps the generic invalid_client response for an expired shared secret" do
+    secret = "expired-token-controller-secret"
+    expired_at = DateTime.utc_now() |> DateTime.add(-60, :second) |> DateTime.truncate(:second)
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        lifetime_version: 1,
+        client_id: "client-expired-secret-token",
+        client_secret_hash: client_secret_hash(secret),
+        client_type: :confidential,
+        name: "Expired Secret Token Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        client_secret_expires_at: expired_at,
+        metadata: %{}
+      })
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "code" => "unused"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Basic realm=\"Lockspire Token Endpoint\""
+           ]
+
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    refute conn.resp_body =~ "expires_at"
+    refute conn.resp_body =~ "expired"
+  end
+
   test "POST /token preserves the authorization-code replay OAuth wire contract", %{
     public_client: public_client
   } do

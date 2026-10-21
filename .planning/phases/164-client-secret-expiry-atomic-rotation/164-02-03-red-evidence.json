@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --no-compile test/lockspire/web/token_controller_test.exs test/lockspire/web/introspection_controller_test.exs test/lockspire/web/revocation_controller_test.exs --only secret_expiry_contract --formatter Lockspire.Test.Phase164TapFormatter --max-failures 3 --timeout 55000 2>/private/tmp/lockspire-164-02-red-stderr.log",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - Elixir.Lockspire.Web.RevocationControllerTest.test POST /revoke keeps the generic invalid_client response for an expired shared secret\nnot ok 2 - Elixir.Lockspire.Web.IntrospectionControllerTest.test POST /introspect keeps the generic invalid_client response for an expired shared secret\nnot ok 3 - Elixir.Lockspire.Web.TokenControllerTest.test POST /token keeps the generic invalid_client response for an expired shared secret\n1..3",
+  "targetTest": "Elixir.Lockspire.Web.RevocationControllerTest.test POST /revoke keeps the generic invalid_client response for an expired shared secret",
+  "targetFile": "test/lockspire/web/revocation_controller_test.exs",
+  "expected": "Revocation rejects an expired shared-secret caller with its existing 401 invalid_client Basic challenge.",
+  "actual": "With the shared-secret gate removed, revocation returns HTTP 200; introspection also returns 200 and token returns 500 instead of the expected generic authentication failure.",
+  "semanticAssessment": "Valid RED: TAP shows all three selected endpoint tests executed and failed on the planned authentication behavior. Ordinary ExUnit output confirms the target revocation assertion received status 200 where 401 was expected, demonstrating that expired credentials were accepted and the endpoint's existing success path ran. No setup, compile, collection, syntax, or unrelated failure occurred."
+}
