@@ -107,7 +107,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [x] 164-02-PLAN.md — Enforce every authentication method and final code/refresh authority.
-- [ ] 164-03-PLAN.md — Commit current-policy secret rotation, legacy promotion and audit atomically.
+- [x] 164-03-PLAN.md — Commit current-policy secret rotation, legacy promotion and audit atomically.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 164-04-PLAN.md — Guard authenticated polling and RFC requester while preserving token and queued-work validity.
@@ -158,7 +158,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
-| 164. Client-Secret Expiry & Atomic Rotation | 2/6 | In Progress | — |
+| 164. Client-Secret Expiry & Atomic Rotation | 3/6 | In Progress | — |
 | 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
