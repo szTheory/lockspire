@@ -81,6 +81,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
     {:ok, unchanged} = Repository.fetch_client_by_id(client.client_id)
     assert unchanged.registration_access_token_hash == client.registration_access_token_hash
 
+    rotation_started_at = DateTime.utc_now() |> DateTime.truncate(:second)
+
     rotated_html =
       view
       |> form("form[phx-submit=rotate_rat]", %{rotate: %{confirm: "true"}})
@@ -106,10 +108,15 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
            )
 
     assert after_rotation.active == false
-    assert after_rotation.disabled_at == now
-    assert after_rotation.client_expires_at == app_deadline
-    assert after_rotation.client_secret_expires_at == secret_deadline
-    assert DateTime.diff(after_rotation.registration_access_token_expires_at, now, :second) == 90
+    assert DateTime.compare(after_rotation.disabled_at, now) == :eq
+    assert DateTime.compare(after_rotation.client_expires_at, app_deadline) == :eq
+    assert DateTime.compare(after_rotation.client_secret_expires_at, secret_deadline) == :eq
+
+    assert DateTime.diff(
+             after_rotation.registration_access_token_expires_at,
+             rotation_started_at,
+             :second
+           ) in 90..91
 
     repeated = render_submit(view, "rotate_rat", %{rotate: %{confirm: "true"}})
     assert occurrences(repeated, replacement) == 1
@@ -162,8 +169,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
     assert extract_copy_once_value(rotated)
     {:ok, after_rotation} = Repository.fetch_client_by_id(client.client_id)
     assert after_rotation.active
-    assert after_rotation.client_expires_at == app_deadline
-    assert after_rotation.client_secret_expires_at == secret_deadline
+    assert DateTime.compare(after_rotation.client_expires_at, app_deadline) == :eq
+    assert DateTime.compare(after_rotation.client_secret_expires_at, secret_deadline) == :eq
   end
 
   test "stale and failed host recovery reveal no token and keep app context", %{policy: _policy} do
@@ -247,7 +254,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
     for credential <- credentials do
       conn = public_management_get(client.client_id, credential)
       assert conn.status == 401
-      assert Jason.decode!(conn.resp_body)["error"] == "invalid_token"
+
+      assert get_resp_header(conn, "www-authenticate") == [
+               "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+             ]
+
+      assert conn.resp_body == ""
     end
 
     expired_at = DateTime.utc_now() |> DateTime.add(-1, :second) |> DateTime.truncate(:second)
@@ -262,7 +274,12 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.ManagementTokenRecoveryTest do
       public_management_get(client.client_id, registered.registration_access_token_plaintext)
 
     assert expired_conn.status == 401
-    assert Jason.decode!(expired_conn.resp_body)["error"] == "invalid_token"
+
+    assert get_resp_header(expired_conn, "www-authenticate") == [
+             "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+           ]
+
+    assert expired_conn.resp_body == ""
   end
 
   defp self_registered_client(suffix, now, attrs \\ []) do
