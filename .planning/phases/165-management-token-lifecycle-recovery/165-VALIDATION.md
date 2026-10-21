@@ -36,7 +36,7 @@ Prefix every Mix verification command with the same `env` assignments. Setup cre
 
 ## Per-Task Verification Map
 
-Each command reference links to the exact runnable command(s) below, copied from the canonical task. Plans 165-01 through 165-06 have passing evidence recorded in their summaries. Plan 165-07 evidence is recorded below; the fast suite and combined guidance/compatibility gate remain blocked by unrelated failures, so this validation file remains draft. Every runnable task command has an immediately following observable fails_when in its PLAN.md.
+Each command reference links to the exact runnable command(s) below, copied from the canonical task. Plans 165-01 through 165-06 have passing evidence recorded in their summaries. Plan 165-07 evidence is recorded below; the initial failed run is preserved as historical evidence and superseded by clean corrective reruns. Keep this validation file draft while independent phase security, review, and goal-backward verification remain open. Every runnable task command has an immediately following observable fails_when in its PLAN.md.
 
 | Task ID | Wave | Requirement | Secure Behavior | Test Type | Command | Threat Ref | Status |
 |---|---|---|---|---|---|---|---|
@@ -56,8 +56,8 @@ Each command reference links to the exact runnable command(s) below, copied from
 | 165-06-01 | 6 | DCR-11, DCR-12 | Observed event counts, distinct actors and sensitive-material redaction | telemetry + audit | [165-06-01](#command-165-06-01) | T-165-15 | pass — included in 68-test combined run (165-06-SUMMARY) |
 | 165-06-02 | 6 | DCR-11, DCR-12 | Confirmed one-time mounted recovery and host/public route boundary | LiveView + router | [165-06-02](#command-165-06-02) | T-165-09, T-165-16 | pass — included in 68-test combined run (165-06-SUMMARY) |
 | 165-06-03 | 6 | DCR-11 | Prospective finite-token copy and retired vocabulary contract | rendered contracts | [165-06-03](#command-165-06-03) | T-165-16 | pass — included in 24-test policy/copy run (165-06-SUMMARY) |
-| 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | partial — guidance/architecture 15/0; combined command 9/1 (compatibility drift) |
-| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | partial — explicit PostgreSQL 34/0; fast suite 2411/6 |
+| 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | pass — combined guidance/architecture/compatibility 21/0 after manifest correction |
+| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pass — explicit PostgreSQL 34/0; fast suite 2411/0 |
 
 ## Plan 165-07 Execution Evidence
 
@@ -67,9 +67,17 @@ catalog. No dependency installation was performed.
 
 | Task | Command/result | Duration | Threat and evidence disposition |
 |---|---|---:|---|
-| 165-07-01 | Guidance + architecture suites: **15 tests, 0 failures**. Exact plan command including compatibility contract: **9 tests, 1 failure** at the pinned exported-function baseline. | 0.20s / 0.06s | T-165-17: lifecycle guidance and architecture checks pass. Compatibility failure is pre-existing Phase 165 API drift, recorded in `deferred-items.md`; no docs claim that the gate passed. |
-| 165-07-02 fast | `mix test.fast`: **2,411 tests, 6 failures, 483 excluded, 6 skipped**. Full captured rerun took **139.4s**. | 139.4s | T-165-18: gate failed. Failures: compatibility baseline omits `RegistrationManagement.rotate_registration_access_token/1,2`; three `ServerPolicyRecordTest` inserts collide on `lockspire_server_policies_pkey`; `ClientsLiveTest` still expects retired text `current token stops working after rotation`; and `DiscoveryControllerTest` expects `registration_endpoint` to be absent although it is present. These existing failures are outside plan 165-07's files and are listed in `deferred-items.md`. Fast-suite exclusions/skips are reported, not credited as proof. |
+| 165-07-01 historical | Guidance + architecture suites: **15 tests, 0 failures**. Initial exact combined gate: **9 tests, 1 failure** at the additive API manifest. | 0.20s / 0.06s | Preserved as the first observed outcome; resolved by explicitly adding phase-approved `read/3`, `delete/3`, and `rotate_registration_access_token/2` extensions in `f91a975a`. |
+| 165-07-01 rerun | Exact plan command with guidance, architecture, and compatibility contract: **21 tests, 0 failures**. Affected regression suites: **48 tests, 0 failures**. | 0.1s / 0.7s | T-165-17: all selected contracts pass. Host recovery remains on the approved host operation; protocol discovery behavior was not changed. |
+| 165-07-02 historical fast | `mix test.fast`: **2,411 tests, 6 failures, 483 excluded, 6 skipped** in **139.4s**. | 139.4s | Preserved historical failed-run evidence. The singleton policy assumptions, stale UI wording assertion, and policy-dependent discovery assertion were corrected in `f91a975a`; the same run also exposed five order-dependent issuer/mount-path failures, corrected in `0d2b0051`. Full causes and commit references are in `deferred-items.md`. |
+| 165-07-02 corrected fast | `mix test.fast`: **2 properties, 2,411 tests, 0 failures, 483 excluded, 6 skipped** in **134.0s**. | 134.0s | T-165-18: zero-failure full fast gate. Exclusions and skips remain reported but are not credited as race evidence. |
 | 165-07-02 explicit PostgreSQL | All six selected management race, rollback, adapter conformance and promotion modules with `--include postgres_race`: **34 tests, 0 failures**. The three 165-05 race modules account for **24 previously observed PostgreSQL blocker relationships** (10 + 5 + 9); the current run also executed the selected rollback and adapter suites. | 1.0s | T-165-18: explicit race inclusion executed positive counts and passed; race proof is independent of the fast-suite result. |
+
+The corrected full-suite run also re-executed the exact combined gate after the
+test-environment fix: **21 tests, 0 failures**. The recovery LiveView and
+private-key JWT modules passed together: **9 tests, 0 failures**. Formatting
+checks passed for all modified Elixir files. The original failed-run logs remain
+historical evidence; the results above supersede their gate status.
 
 The 165-07-01 RED attempt added source-backed guidance assertions and ran the
 exact focused command before the documentation changes. ExUnit reported the
@@ -81,12 +89,12 @@ classifier-approved RED is claimed. This task changes documentation and
 contract assertions only and adds no runtime implementation. Its test commit
 precedes the documentation commit.
 
-**Gate status:** the explicit PostgreSQL batch passes. The complete fast suite
-and exact combined guidance/compatibility command do not meet their zero-failure
-acceptance criteria. Keep this validation record `draft`, `nyquist_compliant:
-false`, and `wave_0_complete: false` until the listed failures are resolved and
-the gates are rerun. Phase 166 remains responsible for final packaged
-cross-phase proof, final security/guidance audit and umbrella-todo closure.
+**Gate status:** the combined guidance/compatibility gate, explicit PostgreSQL
+batch, and full fast suite pass. Keep this validation record `draft`,
+`nyquist_compliant: false`, and `wave_0_complete: false` while independent
+phase-wide security, code-review, and goal-backward verification remain open.
+Phase 166 remains responsible for final packaged cross-phase proof, final
+security/guidance audit and umbrella-todo closure.
 
 ### Exact command catalog
 

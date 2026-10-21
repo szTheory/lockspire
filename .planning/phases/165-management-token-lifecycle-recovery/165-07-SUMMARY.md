@@ -38,7 +38,7 @@ key-files:
 key-decisions:
   - "Describe finite management-token expiry as an optional host policy, with blank/zero unlimited behavior, prospective policy, strict expiry, and no GET renewal."
   - "Document immediate no-overlap PUT replacement and host-only confirmed one-time recovery after a lost response; do not imply old-token replay recovers a committed response."
-  - "Keep the validation artifact draft because the fast suite and exact combined guidance/compatibility gate have unrelated outstanding failures."
+  - "Keep phase validation draft until independent security, code-review, and goal-backward verification are complete, even after the selected automated gates pass."
 requirements-completed: [DCR-10, DCR-11, DCR-12]
 coverage:
   - id: D1
@@ -54,10 +54,10 @@ coverage:
     requirement: DCR-12
     verification:
       - kind: integration
-        ref: 165-VALIDATION.md — explicit PostgreSQL batch, 34 tests, 0 failures; fast suite, 2411 tests, 6 failures
-        status: unknown
+        ref: 165-VALIDATION.md — explicit PostgreSQL batch 34/0, combined gate 21/0, corrected fast suite 2411/0
+        status: pass
     human_judgment: true
-    rationale: The full fast suite and the combined guidance/compatibility command did not meet zero-failure acceptance; independent phase audits remain outstanding.
+    rationale: Selected automated gates pass; independent phase audits remain outstanding.
 duration: 11min 12s
 completed: 2026-10-21
 status: complete
@@ -80,7 +80,7 @@ status: complete
 - Updated dynamic-registration, upgrade, operator, and supported-surface guidance with the configured route prefix, required unchanged PUT `client_id`, forbidden and matching-secret rules, and numeric server-owned expiry extensions.
 - Added executable 100 → 160/110/120 issuance and 125 → 165 recovery examples. Guidance explains unlimited blank/zero settings, strict expiry, prospective policy, GET non-renewal, app-state exceptions, immediate no-overlap replacement, lost-response consequences, and the existing confirmed one-time host recovery boundary.
 - Extended source-backed guidance checks. The focused guidance and architecture batch passed 15 tests with zero failures.
-- Ran the required explicit PostgreSQL race, rollback, adapter conformance, and promotion selection: 34 tests, zero failures. The fast suite ran 2,411 tests and reported 6 failures, 483 exclusions, and 6 skips; all failures remain listed in the validation artifact.
+- Ran the required explicit PostgreSQL race, rollback, adapter conformance, and promotion selection: 34 tests, zero failures. The initial fast suite found six failures; the corrective follow-up resolved them and reran the full suite at 2,411 tests, zero failures, 483 exclusions, and 6 skips.
 
 ## Task Commits
 
@@ -101,10 +101,25 @@ status: complete
 ## Validation Results
 
 - Focused guidance and architecture tests: **15 tests, 0 failures** in 0.20 seconds.
-- Exact plan command including the compatibility contract: **9 tests, 1 failure** in 0.06 seconds. The `RegistrationManagement` export baseline does not declare the management-token recovery functions introduced by plans 165-04/06.
-- `mix test.fast`: **2,411 tests, 6 failures, 483 excluded, 6 skipped** in 139.4 seconds. The other five failures are three duplicate `lockspire_server_policies_pkey` inserts in `ServerPolicyRecordTest`, a `ClientsLiveTest` assertion for retired rotation wording, and a `DiscoveryControllerTest` assertion that `registration_endpoint` is absent. The exact findings and follow-up owners are in [deferred-items.md](./deferred-items.md).
+- Historical initial exact combined gate: **9 tests, 1 failure** in 0.06 seconds. The literal compatibility assertion omitted Phase 165 additive arities.
+- Historical initial `mix test.fast`: **2,411 tests, 6 failures, 483 excluded, 6 skipped** in 139.4 seconds. See [deferred-items.md](./deferred-items.md) for preserved evidence and root causes.
+- Corrected exact combined guidance, architecture, and compatibility gate: **21 tests, 0 failures**. Affected compatibility, singleton-policy, discovery, and LiveView assertions: **48 tests, 0 failures**. The recovery LiveView and private-key JWT environment-isolation run: **9 tests, 0 failures**.
+- Corrected `mix test.fast`: **2 properties, 2,411 tests, 0 failures, 483 excluded, 6 skipped** in 134.0 seconds.
 - Explicit selected PostgreSQL batch with `--include postgres_race`: **34 tests, 0 failures** in 1.0 second. The three independent race modules retain 24 verified blocker relationships from plan 165-05.
 - The `mix test.fast` exclusions and skips are recorded but are not credited as race evidence. No package was installed.
+
+## Corrective Regression Follow-up
+
+After plan execution, the initial gate failures were resolved in two atomic test
+commits: `f91a975a` declares the phase-approved `read/3`, `delete/3`, and
+`rotate_registration_access_token/2` compatibility extensions, isolates the
+singleton server-policy tests, seeds discovery's disabled-registration policy,
+and updates the stale LiveView copy assertion. The follow-up full run exposed an
+order-dependent mount-path leak from the recovery LiveView module; `0d2b0051`
+restores the module's original application environment and rolls back each
+test's sandbox transaction. These corrective fixes claim no additional TDD RED
+evidence. Full root-cause and command details are in
+[165-REGRESSION-FIX-SUMMARY.md](./165-REGRESSION-FIX-SUMMARY.md).
 
 ## Files Created/Modified
 
@@ -120,17 +135,17 @@ status: complete
 
 - Finite expiry remains an optional host policy, not a universal RFC timeout. The docs state the partner lockout risk and preserve unlimited blank/zero behavior.
 - A successful PUT immediately invalidates the previous token and discloses the replacement once. Recovery stays on the existing host-authorized, confirmed admin operation and never extends app or secret expiry.
-- The evidence record remains draft with compliance flags false because the requested full gates did not pass. Phase 166 still owns final packaged cross-phase proof, final security/guidance audit, and umbrella-todo closure.
+- The evidence record remains draft with compliance flags false until independent security, code-review, and goal-backward verification complete. Phase 166 still owns final packaged cross-phase proof, final security/guidance audit, and umbrella-todo closure.
 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
 
-None. The six full-suite failures are outside plan 165-07's declared files and were recorded for phase-owner follow-up rather than changed here.
+The phase owner authorized a post-plan corrective pass after validation found failures across earlier phase-owned tests. Root causes and fixes are recorded in the corrective follow-up section and `165-REGRESSION-FIX-SUMMARY.md`; no runtime protocol behavior or discovery output was changed.
 
 ## Issues Encountered
 
-- The plan's combined focused command and full fast suite expose existing failures from earlier source/test work. The focused guidance and architecture checks themselves pass, and the explicit PostgreSQL batch passes.
+- The initial combined gate and full fast suite exposed compatibility, fixed-singleton test setup, stale copy, discovery policy setup, and application-environment isolation issues. Corrective focused, combined, PostgreSQL, and full-suite reruns now pass.
 - The TDD RED output is semantically valid as a test assertion failure but was not machine-classified because the default ExUnit reporter is unsupported by the GSD checker.
 
 ## User Setup Required
@@ -139,12 +154,14 @@ None. The dedicated PostgreSQL validation database was already present and migra
 
 ## Next Phase Readiness
 
-Guidance is ready for independent security, code-review, and goal-backward verification. Keep the full Phase 165 validation open until the compatibility, server-policy fixture, stale LiveView wording, and discovery metadata failures are resolved and rerun. Phase 166 retains final integrated/package proof and umbrella-todo ownership.
+Guidance and the selected automated Phase 165 gates are ready for independent security, code-review, and goal-backward verification. Keep Phase 165 in verification status until those audits complete. Phase 166 retains final integrated/package proof and umbrella-todo ownership.
 
 ## Self-Check: PASSED
 
 - All declared deliverables, the validation record, and this summary exist.
 - Task commits `8955e11e`, `2fbd57a8`, and `165849fd` are ancestors of HEAD.
+- Corrective regression summary exists; corrective commits `f91a975a` and `0d2b0051` are ancestors of HEAD.
+- Corrected combined, explicit PostgreSQL, and full fast-suite results are recorded in `165-VALIDATION.md`.
 - No stubs or TODO/FIXME placeholders were found in the plan's docs or guidance test.
 - `.planning/state.json` remains byte-for-byte equal to the supplied backup and has not been staged.
 

@@ -5,10 +5,10 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
 status: verifying
-stopped_at: Completed 165-07-PLAN.md; full-suite failures remain pending independent phase verification
+stopped_at: Phase 165 regression gates rerun clean; independent phase verification remains open
 last_updated: "2026-10-21T19:02:46.866Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 plan 06 complete; operator attribution, one-time recovery, redaction, and finite-lifetime guidance verified
+last_activity_desc: Phase 165 automated validation rerun clean after test isolation and compatibility contract corrections
 state_head: 165849fd490643b52217751b22a5780ba07b7499
 progress:
   total_phases: 5
@@ -408,10 +408,10 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-21T19:02:46.564Z
-Stopped at: Completed 165-07-PLAN.md; full-suite failures remain pending independent phase verification
+Stopped at: Phase 165 regression fixes committed; selected gates pass and independent phase verification remains pending
 Resume file: None
 
-Next: Complete Phase 165 security review, code review, and independent goal verification. Plan 07 guidance and validation evidence are committed; the explicit PostgreSQL batch passed, while the full fast suite and combined compatibility gate retain failures in deferred-items.md. Keep Phase 165 open for verification. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Complete Phase 165 security review, code review, and independent goal verification. Plan 07 guidance and corrective validation evidence are committed; the combined compatibility gate, explicit PostgreSQL batch, and full fast suite pass. Keep Phase 165 open for independent verification. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 

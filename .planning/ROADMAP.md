@@ -151,7 +151,7 @@ Plans:
 - [x] 165-06-PLAN.md — Observe redacted, correctly attributed events and prove confirmed one-time operator recovery.
 
 **Wave 7** *(blocked on Waves 5–6 completion)*
-- [x] 165-07-PLAN.md — Update affected guidance and record applicable phase validation gates; full suite has six outstanding failures.
+- [x] 165-07-PLAN.md — Update affected guidance and record applicable phase validation gates; corrective reruns pass, independent verification remains open.
 
 **Execution constraints:** Verify the production GET tracer before expansion. Reuse existing schema, adapter authority, host permission and one-time reveal boundaries. Race and observability lanes are ordered because both mutate the same dedicated PostgreSQL database/server-policy singleton. Phase 166 retains final packaged cross-phase, CI/security and complete guidance proof; publication is separate.
 
