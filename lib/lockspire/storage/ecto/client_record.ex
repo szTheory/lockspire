@@ -259,6 +259,61 @@ defmodule Lockspire.Storage.Ecto.ClientRecord do
     |> validate_fapi_metadata()
   end
 
+  @doc false
+  def dcr_management_changeset(record, attrs) when is_map(attrs) do
+    record
+    |> cast(attrs, [
+      :name,
+      :redirect_uris,
+      :allowed_scopes,
+      :allowed_grant_types,
+      :allowed_response_types,
+      :token_endpoint_auth_method,
+      :token_endpoint_auth_signing_alg,
+      :logo_uri,
+      :tos_uri,
+      :policy_uri,
+      :contacts,
+      :jwks,
+      :jwks_uri,
+      :id_token_signed_response_alg,
+      :authorization_signed_response_alg,
+      :authorization_encrypted_response_alg,
+      :authorization_encrypted_response_enc,
+      :security_profile,
+      :dpop_policy,
+      :backchannel_logout_uri,
+      :backchannel_logout_session_required,
+      :frontchannel_logout_uri,
+      :frontchannel_logout_session_required,
+      :metadata,
+      :registration_access_token_hash,
+      :lifetime_version,
+      :client_expires_at,
+      :client_secret_expires_at,
+      :registration_access_token_expires_at,
+      :updated_at
+    ])
+    |> validate_inclusion(:lifetime_version, [0, 1])
+    |> validate_fapi_metadata()
+  end
+
+  @doc false
+  def secret_rotation_changeset(record, attrs) when is_map(attrs) do
+    record
+    |> cast(attrs, [
+      :client_secret_hash,
+      :client_secret_jwt_verifier_encrypted,
+      :last_secret_rotated_at,
+      :lifetime_version,
+      :client_expires_at,
+      :client_secret_expires_at,
+      :registration_access_token_expires_at,
+      :updated_at
+    ])
+    |> validate_inclusion(:lifetime_version, [0, 1])
+  end
+
   defp validate_fapi_metadata(changeset) do
     profile = get_field(changeset, :security_profile)
     alg = get_field(changeset, :id_token_signed_response_alg)

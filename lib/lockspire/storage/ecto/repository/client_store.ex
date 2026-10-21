@@ -81,7 +81,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           {:ok, Client.t()} | {:error, term()}
   def replace_client_registration(
         repo,
-        %Client{id: id},
+        %Client{id: id} = client,
         %Client{} = replacement,
         new_rat_hash,
         audit_attrs
@@ -96,22 +96,37 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           TransactionStore.rollback(repo, :not_found)
 
         %ClientRecord{} = record ->
-          record
-          |> ClientRecord.changeset(replacement)
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> then(&Support.update(repo, &1))
-          |> map_one(&ClientRecord.to_domain/1)
-          |> append_audit_or_rollback(repo, audit_attrs)
+          current = ClientRecord.to_domain(record)
+
+          with true <-
+                 current.active and
+                   current.registration_access_token_hash ==
+                     client.registration_access_token_hash,
+               {:ok, lifetime_changes} <-
+                 Client.credential_lifetime_changes(current, :management, nil) do
+            attrs =
+              replacement
+              |> Map.from_struct()
+              |> Map.take(dcr_metadata_fields())
+              |> Map.merge(lifetime_changes)
+              |> Map.put(:registration_access_token_hash, new_rat_hash)
+              |> Map.put(:updated_at, DateTime.utc_now())
+
+            record
+            |> ClientRecord.dcr_management_changeset(attrs)
+            |> then(&Support.update(repo, &1))
+            |> map_one(&ClientRecord.to_domain/1)
+            |> append_audit_or_rollback(repo, audit_attrs)
+          else
+            _ -> TransactionStore.rollback(repo, :invalid_token)
+          end
       end
     end)
   end
 
   @spec rotate_registration_access_token(module(), Client.t(), String.t(), map()) ::
           {:ok, Client.t()} | {:error, term()}
-  def rotate_registration_access_token(repo, %Client{id: id}, new_rat_hash, audit_attrs)
+  def rotate_registration_access_token(repo, %Client{id: id} = client, new_rat_hash, audit_attrs)
       when is_integer(id) and is_binary(new_rat_hash) and is_map(audit_attrs) do
     TransactionStore.transact(repo, fn ->
       id
@@ -122,14 +137,26 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           TransactionStore.rollback(repo, :not_found)
 
         %ClientRecord{} = record ->
-          record
-          |> Ecto.Changeset.change(
-            registration_access_token_hash: new_rat_hash,
-            updated_at: DateTime.utc_now()
-          )
-          |> then(&Support.update(repo, &1))
-          |> map_one(&ClientRecord.to_domain/1)
-          |> append_audit_or_rollback(repo, audit_attrs)
+          current = ClientRecord.to_domain(record)
+
+          with true <-
+                 current.registration_access_token_hash ==
+                   client.registration_access_token_hash,
+               {:ok, lifetime_changes} <-
+                 Client.credential_lifetime_changes(current, :management, nil) do
+            record
+            |> ClientRecord.dcr_management_changeset(
+              Map.merge(lifetime_changes, %{
+                registration_access_token_hash: new_rat_hash,
+                updated_at: DateTime.utc_now()
+              })
+            )
+            |> then(&Support.update(repo, &1))
+            |> map_one(&ClientRecord.to_domain/1)
+            |> append_audit_or_rollback(repo, audit_attrs)
+          else
+            _ -> TransactionStore.rollback(repo, :invalid_token)
+          end
       end
     end)
   end
@@ -144,18 +171,34 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
   def rotate_client_secret(repo, %Client{id: id}, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
              is_struct(rotated_at, DateTime) do
-    update_record(
-      repo,
-      id,
-      %{
-        client_secret_hash: secret_hash,
-        client_secret_jwt_verifier_encrypted: verifier_encrypted,
-        last_secret_rotated_at: rotated_at,
-        updated_at: DateTime.utc_now()
-      },
-      &ClientRecord.update_changeset/2,
-      sensitive: true
-    )
+    TransactionStore.transact(repo, fn ->
+      case id |> locked_query() |> then(&Support.one(repo, &1, sensitive: true)) do
+        nil ->
+          TransactionStore.rollback(repo, :not_found)
+
+        %ClientRecord{} = record ->
+          current = ClientRecord.to_domain(record)
+
+          case Client.credential_lifetime_changes(current, :secret, nil) do
+            {:ok, lifetime_changes} ->
+              record
+              |> ClientRecord.secret_rotation_changeset(
+                Map.merge(lifetime_changes, %{
+                  client_secret_hash: secret_hash,
+                  client_secret_jwt_verifier_encrypted: verifier_encrypted,
+                  last_secret_rotated_at: rotated_at,
+                  updated_at: DateTime.utc_now()
+                })
+              )
+              |> then(&Support.update(repo, &1, sensitive: true))
+              |> map_one(&ClientRecord.to_domain/1)
+              |> unwrap_or_rollback(repo)
+
+            {:error, reason} ->
+              TransactionStore.rollback(repo, reason)
+          end
+      end
+    end)
   end
 
   @spec set_client_active(module(), Client.t(), boolean(), map()) ::
@@ -192,6 +235,35 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
 
   defp locked_query(id),
     do: ClientRecord |> where([client], client.id == ^id) |> lock("FOR UPDATE")
+
+  defp dcr_metadata_fields do
+    [
+      :name,
+      :redirect_uris,
+      :allowed_scopes,
+      :allowed_grant_types,
+      :allowed_response_types,
+      :token_endpoint_auth_method,
+      :token_endpoint_auth_signing_alg,
+      :logo_uri,
+      :tos_uri,
+      :policy_uri,
+      :contacts,
+      :jwks,
+      :jwks_uri,
+      :id_token_signed_response_alg,
+      :authorization_signed_response_alg,
+      :authorization_encrypted_response_alg,
+      :authorization_encrypted_response_enc,
+      :security_profile,
+      :dpop_policy,
+      :backchannel_logout_uri,
+      :backchannel_logout_session_required,
+      :frontchannel_logout_uri,
+      :frontchannel_logout_session_required,
+      :metadata
+    ]
+  end
 
   defp append_audit_or_rollback({:ok, %Client{} = client}, repo, audit_attrs) do
     case AuditStore.append_audit_event(repo, audit_attrs) do

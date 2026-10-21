@@ -195,6 +195,44 @@ defmodule Lockspire.Domain.Client do
   def app_eligibility(%__MODULE__{}, _, _),
     do: {:error, :invalid_lifetime_state}
 
+  @doc """
+  Returns the lifetime fields to write when a credential replacement promotes a legacy row.
+
+  Historical v0 timestamps are advisory. Promotion clears all unrelated deadlines and only
+  assigns a deadline to the credential being replaced. Authoritative v1 rows retain their
+  unrelated deadlines.
+  """
+  @spec credential_lifetime_changes(t(), :secret | :management, DateTime.t() | nil) ::
+          {:ok, map()} | {:error, :invalid_lifetime_state}
+  def credential_lifetime_changes(%__MODULE__{lifetime_version: 0}, kind, deadline)
+      when kind in [:secret, :management] and (is_nil(deadline) or is_struct(deadline, DateTime)) do
+    credential_deadlines =
+      case kind do
+        :secret -> %{client_secret_expires_at: deadline}
+        :management -> %{registration_access_token_expires_at: deadline}
+      end
+
+    {:ok,
+     Map.merge(
+       %{lifetime_version: 1, client_expires_at: nil},
+       Map.merge(
+         %{client_secret_expires_at: nil, registration_access_token_expires_at: nil},
+         credential_deadlines
+       )
+     )}
+  end
+
+  def credential_lifetime_changes(%__MODULE__{lifetime_version: 1}, :secret, deadline)
+      when is_nil(deadline) or is_struct(deadline, DateTime),
+      do: {:ok, %{client_secret_expires_at: deadline}}
+
+  def credential_lifetime_changes(%__MODULE__{lifetime_version: 1}, :management, deadline)
+      when is_nil(deadline) or is_struct(deadline, DateTime),
+      do: {:ok, %{registration_access_token_expires_at: deadline}}
+
+  def credential_lifetime_changes(%__MODULE__{}, _, _),
+    do: {:error, :invalid_lifetime_state}
+
   defp utc_second?(%DateTime{time_zone: "Etc/UTC", microsecond: {0, _precision}}), do: true
   defp utc_second?(%DateTime{time_zone: "UTC", microsecond: {0, _precision}}), do: true
   defp utc_second?(_), do: false

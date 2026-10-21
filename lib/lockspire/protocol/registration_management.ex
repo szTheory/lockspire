@@ -21,6 +21,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Storage.Ecto.Repository
 
   defmodule UpdateSuccess do
     @moduledoc """
@@ -44,20 +45,29 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   @type update_result ::
           {:ok, UpdateSuccess.t()} | {:error, Registration.Error.t() | :invalid_token}
 
-  @spec read(String.t(), Client.t()) :: {:ok, Client.t()} | {:error, :invalid_token}
+  @spec read(String.t(), Client.t()) ::
+          {:ok, Client.t()} | {:error, :invalid_token | Registration.Error.t()}
   def read(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    if client_id_from_url == client.client_id and client.active do
-      Observability.emit(:dcr, :read, %{count: 1}, %{
-        status: :success,
-        actor_type: :self_registered_client,
-        actor_id: client.client_id,
-        client_id: client.client_id
-      })
+    result =
+      with_current_client(client_id_from_url, client, :read, fn current -> {:ok, current} end)
 
-      {:ok, client}
-    else
-      emit_unauthorized(client_id_from_url, client)
-      {:error, :invalid_token}
+    case result do
+      {:ok, current} ->
+        Observability.emit(:dcr, :read, %{count: 1}, %{
+          status: :success,
+          actor_type: :self_registered_client,
+          actor_id: current.client_id,
+          client_id: current.client_id
+        })
+
+        {:ok, current}
+
+      {:error, :invalid_token} = error ->
+        emit_unauthorized(client_id_from_url, client)
+        error
+
+      {:error, reason} ->
+        {:error, %Registration.Error{code: :server_error, reason: reason}}
     end
   end
 
@@ -71,66 +81,70 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         } = _request
       )
       when is_binary(client_id_from_url) and is_map(metadata) do
-    if client_id_from_url != client.client_id or not client.active do
-      emit_unauthorized(client_id_from_url, client)
-      {:error, :invalid_token}
+    with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
+         :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
+         {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
+         {:ok, updated_client} <-
+           with_current_client(client_id_from_url, client, :update, fn current ->
+             persist_update(current, metadata, new_rat_hash)
+           end) do
+      emit_updated(updated_client)
+      emit_rat_rotated(updated_client)
+
+      {:ok,
+       %UpdateSuccess{
+         client: updated_client,
+         registration_access_token_plaintext: new_rat_plaintext
+       }}
     else
-      with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
-           :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
-           {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
-           {:ok, updated_client} <- persist_update(client, metadata, new_rat_hash) do
-        emit_updated(updated_client)
-        emit_rat_rotated(updated_client)
+      {:error, :invalid_client_metadata, info} ->
+        error = %Registration.Error{
+          code: :invalid_client_metadata,
+          field: info.field,
+          reason: info.reason,
+          allowed: info[:allowed]
+        }
 
-        {:ok,
-         %UpdateSuccess{
-           client: updated_client,
-           registration_access_token_plaintext: new_rat_plaintext
-         }}
-      else
-        {:error, :invalid_client_metadata, info} ->
-          error = %Registration.Error{
-            code: :invalid_client_metadata,
-            field: info.field,
-            reason: info.reason,
-            allowed: info[:allowed]
-          }
+        emit_update_rejected(client, error)
+        {:error, error}
 
-          emit_update_rejected(client, error)
-          {:error, error}
+      {:error, %Registration.Error{} = error} ->
+        emit_update_rejected(client, error)
+        {:error, error}
 
-        {:error, %Registration.Error{} = error} ->
-          emit_update_rejected(client, error)
-          {:error, error}
-
-        {:error, reason} ->
+      {:error, reason} ->
+        if reason == :invalid_token do
+          emit_unauthorized(client_id_from_url, client)
+          {:error, :invalid_token}
+        else
           error = %Registration.Error{code: :persistence_error, reason: reason}
           emit_update_rejected(client, error)
           {:error, error}
-      end
+        end
     end
   end
 
   @spec delete(String.t(), Client.t()) :: :ok | {:error, :invalid_token | term()}
   def delete(client_id_from_url, %Client{} = client) when is_binary(client_id_from_url) do
-    if client_id_from_url != client.client_id or not client.active do
-      emit_unauthorized(client_id_from_url, client)
-      {:error, :invalid_token}
-    else
-      case ClientLifecycle.disable_dcr(client) do
-        {:ok, %Client{}} ->
-          Observability.emit(:dcr, :delete, %{count: 1}, %{
-            status: :success,
-            actor_type: :self_registered_client,
-            actor_id: client.client_id,
-            client_id: client.client_id
-          })
+    case with_current_client(client_id_from_url, client, :delete, fn current ->
+           ClientLifecycle.disable_dcr(current)
+         end) do
+      {:ok, %Client{}} ->
+        Observability.emit(:dcr, :delete, %{count: 1}, %{
+          status: :success,
+          actor_type: :self_registered_client,
+          actor_id: client.client_id,
+          client_id: client.client_id
+        })
 
-          :ok
+        :ok
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+      {:error, :invalid_token} = error ->
+        emit_unauthorized(client_id_from_url, client)
+        error
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 
@@ -162,6 +176,46 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   defp persist_update(%Client{} = client, metadata, new_rat_hash) do
     ClientLifecycle.replace_dcr(client, metadata, new_rat_hash)
+  end
+
+  defp with_current_client(client_id_from_url, %Client{} = snapshot, operation, callback) do
+    Repository.transact(fn ->
+      with true <- client_id_from_url == snapshot.client_id,
+           {:ok, [current]} <- Repository.lock_clients([snapshot.client_id]),
+           true <- current.id == snapshot.id,
+           true <-
+             current.registration_access_token_hash == snapshot.registration_access_token_hash,
+           true <- current.active do
+        eligibility =
+          Client.app_eligibility(
+            current,
+            DateTime.utc_now() |> DateTime.truncate(:second),
+            :registration_management
+          )
+
+        case {operation, eligibility} do
+          {:update, :ok} ->
+            callback.(current)
+
+          {:update, {:error, :expired}} ->
+            {:error, %Registration.Error{code: :registration_expired}}
+
+          {kind, :ok} when kind in [:read, :delete] ->
+            callback.(current)
+
+          {kind, {:error, :expired}} when kind in [:read, :delete] ->
+            callback.(current)
+
+          {_kind, {:error, :disabled}} ->
+            {:error, :invalid_token}
+
+          {_kind, {:error, :invalid_lifetime_state}} ->
+            {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+        end
+      else
+        _ -> {:error, :invalid_token}
+      end
+    end)
   end
 
   defp emit_updated(%Client{} = client) do

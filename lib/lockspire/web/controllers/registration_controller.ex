@@ -7,7 +7,7 @@ defmodule Lockspire.Web.RegistrationController do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.RegistrationJSON
 
-  plug(:ensure_dcr_enabled)
+  plug(:ensure_dcr_enabled when action in [:create])
 
   def create(conn, params) do
     source = %{
@@ -155,6 +155,7 @@ defmodule Lockspire.Web.RegistrationController do
         :invalid_client -> 401
         :unauthorized_client -> 401
         :access_denied -> 403
+        :registration_expired -> 403
         :server_error -> 500
         _ -> 400
       end
