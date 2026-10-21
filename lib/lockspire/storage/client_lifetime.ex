@@ -23,6 +23,7 @@ defmodule Lockspire.Storage.ClientLifetime do
   """
   @spec adapt(module(), term()) :: {:ok, t()} | {:error, atom()}
   def adapt(client_store, expected_authority) when is_atom(client_store) do
+    _ = Code.ensure_loaded?(client_store)
     declaration = client_store.lifetime_contract()
 
     cond do
@@ -34,6 +35,9 @@ defmodule Lockspire.Storage.ClientLifetime do
 
       not function_exported?(client_store, :lock_clients, 1) ->
         {:error, :client_store_guard_unavailable}
+
+      not function_exported?(client_store, :rotate_client_secret, 4) ->
+        {:error, :client_secret_rotation_unavailable}
 
       not valid_authority?(Map.get(declaration, :transaction_authority)) ->
         {:error, :transaction_authority_unavailable}

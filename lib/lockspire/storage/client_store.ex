@@ -37,7 +37,12 @@ defmodule Lockspire.Storage.ClientStore do
   @callback rotate_registration_access_token(Client.t(), String.t(), map()) ::
               {:ok, Client.t()} | {:error, store_error()}
 
-  @callback rotate_client_secret(Client.t(), String.t(), String.t(), DateTime.t()) ::
+  @callback rotate_client_secret(
+              Client.t(),
+              String.t(),
+              String.t(),
+              DateTime.t() | (-> DateTime.t())
+            ) ::
               {:ok, Client.t()} | {:error, store_error()}
 
   @callback set_client_active(Client.t(), boolean(), map()) ::

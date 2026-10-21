@@ -129,6 +129,50 @@ defmodule Lockspire.ClientLifecycleTest do
     end
   end
 
+  test "secret lifecycle accepts a deferred clock and builds audit from committed time" do
+    client_id = "lifecycle-clock-#{System.unique_integer([:positive])}"
+
+    client = %Client{
+      lifetime_version: 0,
+      client_id: client_id,
+      client_type: :confidential,
+      client_secret_hash: "old-secret-hash",
+      redirect_uris: ["https://client.example.test/callback"],
+      token_endpoint_auth_method: :client_secret_basic
+    }
+
+    assert {:ok, persisted} = ClientLifecycle.persist_direct(client)
+    now = ~U[2030-01-02 03:04:05Z]
+
+    material = %{
+      client_secret_hash: "replacement-hash",
+      client_secret_jwt_verifier_encrypted: "replacement-verifier"
+    }
+
+    assert {:ok, rotated} =
+             ClientLifecycle.rotate_operator_secret(
+               persisted,
+               material,
+               fn -> now end,
+               fn %Client{last_secret_rotated_at: committed_at} = updated ->
+                 audit_event(:client_secret_rotated, updated, %{rotated_at: committed_at})
+               end
+             )
+
+    assert DateTime.compare(rotated.last_secret_rotated_at, now) == :eq
+
+    assert %AuditEventRecord{metadata: %{"rotated_at" => audit_time}} =
+             Lockspire.TestRepo.one!(
+               from(audit in AuditEventRecord,
+                 where:
+                   audit.action == "client_secret_rotated" and audit.resource_id == ^client_id
+               )
+             )
+
+    assert {:ok, parsed_audit_time, 0} = DateTime.from_iso8601(audit_time)
+    assert DateTime.compare(parsed_audit_time, now) == :eq
+  end
+
   defp audit_event(action, %Client{} = client, metadata) do
     %{
       action: action,

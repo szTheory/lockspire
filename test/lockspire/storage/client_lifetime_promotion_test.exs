@@ -84,6 +84,95 @@ defmodule Lockspire.Storage.ClientLifetimePromotionTest do
     assert is_nil(rotated.client_secret_expires_at)
   end
 
+  test "secret replacement canonicalizes every v0 historical deadline class" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    classes = [
+      {"nil", nil},
+      {"creation", now},
+      {"past", DateTime.add(now, -60, :second)},
+      {"future", DateTime.add(now, 600, :second)},
+      {"stale", DateTime.add(now, 300, :second)}
+    ]
+
+    for {label, historical} <- classes do
+      client_id = "lifetime-v0-#{label}-#{System.unique_integer([:positive])}"
+      {:ok, client} = create_client(client_id, :client_secret_basic, "old-#{label}")
+
+      assert {1, _} =
+               Lockspire.TestRepo.update_all(
+                 from(record in ClientRecord, where: record.id == ^client.id),
+                 set: [
+                   lifetime_version: 0,
+                   client_expires_at: historical,
+                   client_secret_expires_at: historical,
+                   registration_access_token_expires_at: historical
+                 ]
+               )
+
+      assert {:ok, current} = Repository.fetch_client_by_id(client_id)
+
+      material = %{
+        client_secret_hash: "replacement-hash-#{label}",
+        client_secret_jwt_verifier_encrypted: "replacement-verifier-#{label}"
+      }
+
+      assert {:ok, rotated} =
+               ClientLifecycle.rotate_operator_secret(
+                 current,
+                 material,
+                 now,
+                 valid_rotation_audit(current, now)
+               )
+
+      assert rotated.lifetime_version == 1
+      assert rotated.client_secret_hash == material.client_secret_hash
+      assert is_nil(rotated.client_expires_at)
+      assert is_nil(rotated.client_secret_expires_at)
+      assert is_nil(rotated.registration_access_token_expires_at)
+    end
+  end
+
+  test "v1 secret replacement preserves app and management deadlines exactly" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    app_deadline = DateTime.add(now, 5_000, :second)
+    management_deadline = DateTime.add(now, 6_000, :second)
+    {:ok, client} = create_client("lifetime-v1-secret-preserve", :client_secret_basic, "old-v1")
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.id == ^client.id),
+               set: [
+                 lifetime_version: 1,
+                 client_expires_at: app_deadline,
+                 client_secret_expires_at: nil,
+                 registration_access_token_expires_at: management_deadline
+               ]
+             )
+
+    assert {:ok, current} = Repository.fetch_client_by_id(client.client_id)
+
+    material = %{
+      client_secret_hash: "replacement-v1-hash",
+      client_secret_jwt_verifier_encrypted: "replacement-v1-verifier"
+    }
+
+    assert {:ok, rotated} =
+             ClientLifecycle.rotate_operator_secret(
+               current,
+               material,
+               now,
+               valid_rotation_audit(current, now)
+             )
+
+    assert DateTime.compare(rotated.client_expires_at, app_deadline) == :eq
+
+    assert DateTime.compare(rotated.registration_access_token_expires_at, management_deadline) ==
+             :eq
+
+    assert is_nil(rotated.client_secret_expires_at)
+  end
+
   test "metadata and enablement leave legacy version and historical secret date untouched" do
     {:ok, client} = create_client("lifetime-no-promotion", :client_secret_basic, "old-secret")
     historical = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-700, :second)
@@ -141,6 +230,16 @@ defmodule Lockspire.Storage.ClientLifetimePromotionTest do
       actor: %{type: :self_registered_client, id: client.client_id},
       resource: %{type: :client, id: client.client_id},
       metadata: %{}
+    }
+  end
+
+  defp valid_rotation_audit(client, rotated_at) do
+    %{
+      action: :client_secret_rotated,
+      outcome: :succeeded,
+      actor: %{type: :operator, id: "promotion-test"},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{rotated_at: rotated_at}
     }
   end
 end

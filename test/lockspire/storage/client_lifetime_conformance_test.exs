@@ -41,12 +41,36 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     ])
   end
 
+  test "built-in and custom adapters execute secret replacement with deferred time" do
+    now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
+
+    for {adapter, id} <- [
+          {Repository, "built-in-replacement-#{System.unique_integer([:positive])}"},
+          {__MODULE__.CustomClientStore,
+           "custom-replacement-#{System.unique_integer([:positive])}"}
+        ] do
+      original = %{
+        client(id, 1, DateTime.add(now, 100, :second), DateTime.add(now, 200, :second))
+        | client_secret_expires_at: DateTime.add(now, 50, :second),
+          client_secret_hash: "old-hash",
+          client_secret_jwt_verifier_encrypted: "old-verifier"
+      }
+
+      assert {:ok, stored} = adapter.register_client(original)
+      assert rotation_conforms?(adapter, stored, now)
+      assert Process.get({adapter, :rotation_clock_called, id}) == true
+    end
+  end
+
   test "missing, unknown, state-dropping and unguarded adapters fail conformance" do
     authority = Repository.transaction_authority()
 
     assert {:error, _} = ClientLifetime.adapt(__MODULE__.MissingDeclaration, authority)
     assert {:error, _} = ClientLifetime.adapt(__MODULE__.UnknownDeclaration, authority)
     assert {:error, _} = ClientLifetime.adapt(__MODULE__.MissingGuard, authority)
+
+    assert {:error, :client_secret_rotation_unavailable} =
+             ClientLifetime.adapt(__MODULE__.MissingRotation, authority)
 
     finite = DateTime.from_unix!(1_800_000_000) |> DateTime.truncate(:second)
     client = client("custom-drop-fields", 1, finite, finite)
@@ -56,6 +80,12 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     for adapter <- [__MODULE__.DroppedVersion, __MODULE__.DroppedDeadline] do
       assert Process.get({adapter, :registered, client.client_id}) == true
       assert Process.get({adapter, :fetched, client.client_id}) == true
+    end
+
+    for adapter <- [__MODULE__.DroppedVersion, __MODULE__.DroppedDeadline] do
+      assert {:ok, stored} = adapter.register_client(client)
+      refute rotation_conforms?(adapter, stored, finite)
+      assert Process.get({adapter, :rotation_called, client.client_id}) == true
     end
 
     assert {:ok, %Client{lifetime_version: nil}} =
@@ -247,7 +277,29 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
       same_deadline?(
         expected.registration_access_token_expires_at,
         actual.registration_access_token_expires_at
-      )
+      ) and same_deadline?(expected.client_secret_expires_at, actual.client_secret_expires_at)
+  end
+
+  defp rotation_conforms?(adapter, client, now) do
+    {:ok, _lifetime} = ClientLifetime.adapt(adapter, adapter.transaction_authority())
+
+    clock = fn ->
+      Process.put({adapter, :rotation_clock_called, client.client_id}, true)
+      now
+    end
+
+    with {:ok, rotated} <-
+           adapter.rotate_client_secret(client, "replacement-hash", "replacement-verifier", clock),
+         {:ok, validated} <- ClientLifetime.validate_client(rotated) do
+      validated.client_secret_hash == "replacement-hash" and
+        validated.client_secret_jwt_verifier_encrypted == "replacement-verifier" and
+        DateTime.compare(validated.last_secret_rotated_at, now) == :eq and
+        same_lifetime?(%{client | client_secret_expires_at: nil, lifetime_version: 1}, validated)
+    else
+      _ -> false
+    end
+  rescue
+    _error -> false
   end
 
   defp same_deadline?(nil, nil), do: true
@@ -357,6 +409,27 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
 
     def fetch_client_by_id(client_id), do: {:ok, Process.get({__MODULE__, client_id})}
     defp fetch!(client_id), do: Process.get({__MODULE__, client_id})
+
+    def rotate_client_secret(%Client{} = client, secret_hash, verifier, clock) do
+      current = Process.get({__MODULE__, client.client_id})
+      now = clock.()
+
+      with {:ok, lifetime} <- Client.credential_lifetime_changes(current, :secret, nil) do
+        rotated =
+          current
+          |> Map.from_struct()
+          |> Map.merge(lifetime)
+          |> Map.merge(%{
+            client_secret_hash: secret_hash,
+            client_secret_jwt_verifier_encrypted: verifier,
+            last_secret_rotated_at: now
+          })
+          |> then(&struct!(Client, &1))
+
+        Process.put({__MODULE__, client.client_id}, rotated)
+        {:ok, rotated}
+      end
+    end
   end
 
   defmodule MissingDeclaration do
@@ -375,6 +448,20 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
 
     def transaction_authority,
       do: %{identity: :dropped_version, participants: %{client_store: __MODULE__}}
+
+    def rotate_client_secret(client, hash, verifier, clock) do
+      Process.put({__MODULE__, :rotation_called, client.client_id}, true)
+      now = clock.()
+
+      {:ok,
+       %{
+         client
+         | client_secret_hash: hash,
+           client_secret_jwt_verifier_encrypted: verifier,
+           last_secret_rotated_at: now,
+           lifetime_version: nil
+       }}
+    end
 
     def lock_clients(_ids), do: {:ok, []}
 
@@ -396,6 +483,23 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
 
     def transaction_authority,
       do: %{identity: :dropped_deadline, participants: %{client_store: __MODULE__}}
+
+    def rotate_client_secret(client, hash, verifier, clock) do
+      Process.put({__MODULE__, :rotation_called, client.client_id}, true)
+      now = clock.()
+
+      {:ok,
+       %{
+         client
+         | client_secret_hash: hash,
+           client_secret_jwt_verifier_encrypted: verifier,
+           last_secret_rotated_at: now,
+           lifetime_version: 1,
+           client_expires_at: nil,
+           client_secret_expires_at: nil,
+           registration_access_token_expires_at: nil
+       }}
+    end
 
     def lock_clients(_ids), do: {:ok, []}
 
@@ -419,5 +523,12 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
 
   defmodule MissingGuard do
     def lifetime_contract, do: %{version: 1, transaction_authority: :custom_test}
+  end
+
+  defmodule MissingRotation do
+    def lifetime_contract,
+      do: %{version: 1, transaction_authority: %{identity: :missing_rotation, participants: %{}}}
+
+    def lock_clients(_ids), do: {:ok, []}
   end
 end
