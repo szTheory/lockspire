@@ -264,16 +264,87 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
     assert is_binary(replacement) and replacement != secret
     hash_after = rotated.client_secret_hash
+
+    jwt_request =
+      DcrFixtures.register_request(
+        server_policy:
+          DcrFixtures.client_secret_jwt_server_policy(%{
+            dcr_default_client_secret_lifetime_seconds: 60
+          }),
+        metadata:
+          DcrFixtures.client_secret_jwt_metadata()
+          |> Map.put("client_name", "Finite JWT secret redaction")
+      )
+      |> Map.put(:now, issued_at)
+
+    assert {:ok, jwt_success} = Registration.register(jwt_request)
+    jwt_client = jwt_success.client
+    jwt_secret_before = jwt_success.client_secret_plaintext
+
+    assert {:ok, persisted_jwt_before} =
+             Lockspire.Storage.Ecto.Repository.fetch_client_by_id(jwt_client.client_id)
+
+    jwt_verifier_before = persisted_jwt_before.client_secret_jwt_verifier_encrypted
+    assert is_binary(jwt_verifier_before)
+
+    assert {:ok, ^jwt_secret_before} =
+             Lockspire.Security.Policy.unseal_client_secret_jwt_verifier(jwt_verifier_before)
+
+    assert {:ok, %{client: _rotated_jwt, client_secret: jwt_secret_after}} =
+             Clients.rotate_client_secret(jwt_client.client_id, %{
+               actor: %{type: :operator, id: "ops"}
+             })
+
+    assert {:ok, persisted_jwt_after} =
+             Lockspire.Storage.Ecto.Repository.fetch_client_by_id(jwt_client.client_id)
+
+    jwt_verifier_after = persisted_jwt_after.client_secret_jwt_verifier_encrypted
+    assert is_binary(jwt_verifier_after)
+    assert jwt_verifier_before != jwt_verifier_after
+
+    assert {:ok, ^jwt_secret_after} =
+             Lockspire.Security.Policy.unseal_client_secret_jwt_verifier(jwt_verifier_after)
+
     captured = drain_events()
 
     observed = Enum.frequencies_by(captured, fn {event, _measurements, _metadata} -> event end)
 
-    assert observed[[:lockspire, :dcr, :register]] > 0
-    assert observed[[:lockspire, :token, :issued]] > 0
-    assert observed[[:lockspire, :token_exchange, :failed]] > 0
-    assert observed[[:lockspire, :client, :secret_rotated]] > 0
+    for event <- events do
+      assert_positive_event_count!(observed, event)
+    end
 
-    material = [secret, replacement, hash_before, hash_after, verifier]
+    assert_raise KeyError, fn ->
+      assert_positive_event_count!(%{}, [:lockspire, :dcr, :register])
+    end
+
+    assert_raise ExUnit.AssertionError, fn ->
+      assert_positive_event_count!(
+        %{[:lockspire, :dcr, :register] => nil},
+        [:lockspire, :dcr, :register]
+      )
+    end
+
+    assert sensitive_keys(
+             {:captured, %{nested: %{client_secret_jwt_verifier_encrypted: "sentinel"}}}
+           )
+
+    refute sensitive_keys({:captured, %{nested: %{ordinary: "safe"}}})
+
+    material =
+      [
+        secret,
+        replacement,
+        hash_before,
+        hash_after,
+        verifier,
+        jwt_secret_before,
+        jwt_secret_after,
+        persisted_jwt_before.client_secret_hash,
+        persisted_jwt_after.client_secret_hash,
+        jwt_verifier_before,
+        jwt_verifier_after
+      ]
+      |> Enum.filter(&is_binary/1)
 
     for {event, measurements, metadata} <- captured,
         value <- material do
@@ -304,7 +375,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     audit_rows =
       Lockspire.TestRepo.all(
         from(audit in AuditEventRecord,
-          where: audit.resource_id == ^client.client_id,
+          where: audit.resource_id in ^[client.client_id, jwt_client.client_id],
           order_by: [desc: audit.id]
         )
       )
@@ -381,5 +452,16 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   end
 
   defp sensitive_keys(value) when is_list(value), do: Enum.any?(value, &sensitive_keys/1)
+
+  defp sensitive_keys(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> sensitive_keys()
+
   defp sensitive_keys(_value), do: false
+
+  defp assert_positive_event_count!(observed, event) do
+    count = Map.fetch!(observed, event)
+
+    assert is_integer(count) and count > 0,
+           "expected a positive integer count for #{inspect(event)}"
+  end
 end
