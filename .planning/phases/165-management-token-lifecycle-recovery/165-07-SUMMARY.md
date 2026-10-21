@@ -121,6 +121,17 @@ test's sandbox transaction. These corrective fixes claim no additional TDD RED
 evidence. Full root-cause and command details are in
 [165-REGRESSION-FIX-SUMMARY.md](./165-REGRESSION-FIX-SUMMARY.md).
 
+The later security-audit follow-up added regressions for expired-credential
+precedence over invalid PUT metadata and clarified that host recovery does not
+restore PUT permission for an expired app. The final current evidence
+supersedes the earlier 2,411-test result: all 27 test files changed since
+`ee7f8d2c` passed **217/0**, the exact combined gate passed **21/0**, the
+explicit PostgreSQL batch passed **34/0**, and `mix test.fast` passed with
+**2 properties, 2,412 tests, 0 failures, 484 excluded, and 6 skipped** in
+136.3 seconds. Details and the preserved historical outcomes are in
+[165-VALIDATION.md](./165-VALIDATION.md) and
+[165-REGRESSION-FIX-SUMMARY.md](./165-REGRESSION-FIX-SUMMARY.md).
+
 ## Files Created/Modified
 
 - `docs/dynamic-registration.md` — adopter lifecycle, required PUT identity, extension rules, sample requests, and recovery limits.

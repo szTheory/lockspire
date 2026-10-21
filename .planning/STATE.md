@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
 Plan: 7 of 7
-Status: Plan execution complete; phase verification remains open because the full fast suite and combined compatibility gate have failures
-Last activity: 2026-10-21 — Phase 165 plan 07 guidance and validation record complete; full-suite findings are deferred for phase-owner follow-up
+Status: Plan execution complete; corrective security regressions and selected gates pass; independent phase verification remains open
+Last activity: 2026-10-21 — T-165-03 credential precedence and T-165-17 recovery guidance corrected; 27 changed test files, combined gate, PostgreSQL batch, and full fast suite pass
 
 ## Accumulated Context
 

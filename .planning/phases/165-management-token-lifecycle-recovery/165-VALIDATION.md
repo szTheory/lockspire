@@ -1,9 +1,9 @@
 ---
 phase: "165"
 slug: "management-token-lifecycle-recovery"
-status: validated
-nyquist_compliant: true
-wave_0_complete: true
+status: draft
+nyquist_compliant: false
+wave_0_complete: false
 created: "2026-10-21"
 ---
 
@@ -57,7 +57,7 @@ Each command reference links to the exact runnable command(s) below, copied from
 | 165-06-02 | 6 | DCR-11, DCR-12 | Confirmed one-time mounted recovery and host/public route boundary | LiveView + router | [165-06-02](#command-165-06-02) | T-165-09, T-165-16 | pass — included in 68-test combined run (165-06-SUMMARY) |
 | 165-06-03 | 6 | DCR-11 | Prospective finite-token copy and retired vocabulary contract | rendered contracts | [165-06-03](#command-165-06-03) | T-165-16 | pass — included in 24-test policy/copy run (165-06-SUMMARY) |
 | 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | pass — combined guidance/architecture/compatibility 21/0 after manifest correction |
-| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pass — explicit PostgreSQL 34/0; fast suite 2411/0 |
+| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pass — explicit PostgreSQL 34/0; final fast suite 2412/0 |
 
 ## Plan 165-07 Execution Evidence
 
@@ -88,6 +88,28 @@ classifier, so this is recorded as a semantic RED observation only; no
 classifier-approved RED is claimed. This task changes documentation and
 contract assertions only and adds no runtime implementation. Its test commit
 precedes the documentation commit.
+
+### Security-audit follow-up (superseding evidence)
+
+The post-plan security audit found T-165-03 and T-165-17. T-165-03 is fixed by
+`63041a41`: an expired management credential now takes precedence over missing
+or invalid PUT metadata, while current-row locking, row-ID and token-hash
+comparison, preparation-before-final-clock ordering, and final-clock expiry
+evaluation remain intact. The observed regression was HTTP 400 where the
+contract requires HTTP 401 / `invalid_token`. T-165-17 is fixed by `2c88994b`:
+recovery preserves app expiry and expired-app PUT remains HTTP 403 /
+`registration_expired`.
+
+After these fixes, the access integration module passed **4 tests, 0
+failures**, guidance passed **6 tests, 0 failures**, and all **27** test files
+changed since `ee7f8d2c` passed with **217 tests, 0 failures** (integration
+files explicitly included). The exact combined guidance/architecture/
+compatibility gate passed **21/0**; the explicit PostgreSQL race/rollback/
+adapter batch passed **34/0**. The final `mix test.fast` supersedes earlier
+clean-run counts with **2 properties, 2,412 tests, 0 failures, 484 excluded,
+and 6 skipped** in 136.3s. Earlier failed-run evidence remains historical and
+is not erased. Independent security review, code review, and goal-backward
+verification are still open; these results do not complete Phase 165.
 
 **Gate status:** the combined guidance/compatibility gate, explicit PostgreSQL
 batch, and full fast suite pass. Keep this validation record `draft`,
