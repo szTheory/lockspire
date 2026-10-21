@@ -4,12 +4,12 @@ milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
-status: ready_to_discuss
-stopped_at: Phase 164 verified complete; ready to discuss Phase 165
-last_updated: "2026-10-21T16:06:40.697Z"
+status: ready_to_plan
+stopped_at: Phase 165 context gathered (assumptions mode); ready for planning
+last_updated: "2026-10-21T16:33:11.863Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 164 independently verified; Phase 165 discussion is next
-state_head: 991a6d382e1505ce0a73a3f75ff0071d79a3361d
+last_activity_desc: Phase 165 context confirmed and captured; ready for planning
+state_head: f01d96d63f364cb1dac06569233ec9eba8343917
 progress:
   total_phases: 5
   completed_phases: 3
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 165 discussion — Management-Token Lifecycle & Recovery
+**Current focus:** Phase 165 planning — Management-Token Lifecycle & Recovery
 
 ## Current Position
 
 Phase: 165 — Management-Token Lifecycle & Recovery
 Plan: Not started
-Status: Ready for discussion (Phase 165 planning and execution not started)
-Last activity: 2026-10-21 — Phase 164 independently verified; Phase 165 discussion is next
+Status: Ready for planning (Phase 165 context captured; planning and execution not started)
+Last activity: 2026-10-21 — Phase 165 recommendation bundle explicitly confirmed; context and discussion log captured
 
 ## Accumulated Context
 
@@ -390,11 +390,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T15:34:29.928Z
-Stopped at: Phase 164 verified complete; ready to discuss Phase 165
-Resume file: None
+Last session: 2026-10-21T16:33:11.559Z
+Stopped at: Phase 165 context gathered (assumptions mode); ready for planning
+Resume file: .planning/phases/165-management-token-lifecycle-recovery/165-CONTEXT.md
 
-Next: Discuss Phase 165 only. No Phase 165 artifacts or runtime work started. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: $gsd-plan-phase 165. Phase 165 context and discussion log are captured; no planning or runtime work started. This discussion-only handoff takes precedence over configured auto-advance. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -534,7 +534,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- $gsd-discuss-phase 163 — App Lifetime & Compatible Host Storage
+- $gsd-plan-phase 165 — Management-Token Lifecycle & Recovery
 
 ## Phase 163 completion notes
 
