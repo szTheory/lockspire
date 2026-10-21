@@ -145,12 +145,34 @@ defmodule Lockspire.Protocol.Registration do
           :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
-    with :ok <- validate_registration_shape(metadata, server_policy),
+    with :ok <- validate_lifecycle_extension_intake(metadata, current_client),
+         :ok <- validate_registration_shape(metadata, server_policy),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_logout_metadata(metadata),
          :ok <- validate_token_endpoint_auth_metadata(metadata, server_policy),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
+    end
+  end
+
+  defp validate_lifecycle_extension_intake(_metadata, %Client{}), do: :ok
+
+  defp validate_lifecycle_extension_intake(metadata, nil) do
+    case Enum.find(
+           [
+             {"lockspire_client_expires_at", :lockspire_client_expires_at},
+             {
+               "lockspire_registration_access_token_expires_at",
+               :lockspire_registration_access_token_expires_at
+             }
+           ],
+           fn {field, _atom} -> Map.has_key?(metadata, field) end
+         ) do
+      nil ->
+        :ok
+
+      {_field, atom} ->
+        {:error, %Error{code: :invalid_client_metadata, field: atom, reason: :not_allowed}}
     end
   end
 
