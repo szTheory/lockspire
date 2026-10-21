@@ -2,38 +2,38 @@
 gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
-current_phase: 165
-current_phase_name: Management-Token Lifecycle & Recovery
-status: verifying
-stopped_at: Phase 165 regression gates rerun clean; independent phase verification remains open
-last_updated: "2026-10-21T19:02:46.866Z"
+current_phase: 166
+current_phase_name: End-to-End Lifetime, Security & Guidance Proof
+status: planning
+stopped_at: Phase 165 complete, ready to plan Phase 166
+last_updated: "2026-10-21T20:19:54Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 automated validation rerun clean after test isolation and compatibility contract corrections
-state_head: 165849fd490643b52217751b22a5780ba07b7499
+last_activity_desc: Phase 165 complete, transitioned to Phase 166
+state_head: 271dcfbb216a3e54c0ee60fb155620856c711945
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 28
   completed_plans: 28
-  percent: 60
+  percent: 80
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
+See: .planning/PROJECT.md (updated 2026-10-21 after Phase 165)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 165 — Management-Token Lifecycle & Recovery
+**Current focus:** Phase 166 — End-to-End Lifetime, Security & Guidance Proof
 
 ## Current Position
 
-Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
-Plan: 7 of 7
-Status: Plan execution complete; corrective security regressions and selected gates pass; independent phase verification remains open
-Last activity: 2026-10-21 — T-165-03 credential precedence and T-165-17 recovery guidance corrected; 27 changed test files, combined gate, PostgreSQL batch, and full fast suite pass
+Phase: 166 — End-to-End Lifetime, Security & Guidance Proof
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-21 — Phase 165 complete, transitioned to Phase 166
 
 ## Accumulated Context
 
@@ -43,7 +43,7 @@ Last activity: 2026-10-21 — T-165-03 credential precedence and T-165-17 recove
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase 164 is complete: six canonical plans, 26/26 independently verified must-haves and 18/18 decisions; DCR-07/08/09 complete. Final fresh database gate: 2 properties, 2349 tests, 0 failures (440 excluded, 6 skipped); separate 38-case PostgreSQL regression selection passed. Security 24/24 closed; code review 49 files clean; copy findings resolved; Nyquist compliant. Phase 165 discussion is next; management-token lifecycle and final cross-phase proof remain pending.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase 164 is complete: six canonical plans, 26/26 independently verified must-haves and 18/18 decisions; DCR-07/08/09 complete. Final fresh database gate: 2 properties, 2349 tests, 0 failures (440 excluded, 6 skipped); separate 38-case PostgreSQL regression selection passed. Security 24/24 closed; code review 49 files clean; copy findings resolved; Nyquist compliant. Phase 165 is complete: seven canonical plans, 37/37 independently verified truths, DCR-10/11/12 complete; final cross-phase proof remains in Phase 166.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -407,8 +407,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T19:02:46.564Z
-Stopped at: Phase 165 regression fixes committed; selected gates pass and independent phase verification remains pending
+Last session: 2026-10-21T20:19:54Z
+Stopped at: Phase 165 complete, ready to plan Phase 166
 Resume file: None
 
 Next: Complete Phase 165 security review, code review, and independent goal verification. Plan 07 guidance and corrective validation evidence are committed; the combined compatibility gate, explicit PostgreSQL batch, and full fast suite pass. Keep Phase 165 open for independent verification. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
@@ -558,7 +558,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- $gsd-plan-phase 165 — Management-Token Lifecycle & Recovery
+- $gsd-discuss-phase 166 — End-to-End Lifetime, Security & Guidance Proof
 
 ## Phase 163 completion notes
 
@@ -566,3 +566,13 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 - SDK reference warnings treated literal shell commands in summary verification lists as file paths. The referenced source/test/script files exist; commands were executed and recorded. No runtime or missing-file gap was accepted.
 - Two code review findings were fixed and independently re-reviewed closed; securityL1verified38/38plannedmitigations. Fullcode review traced11criticalboundaryfiles and6fixfiles; independentgoalverification covers the phase contract.
 - Next command: `$gsd-discuss-phase 164`. No164plan/runtimework, push,PRorpublication was performed by this bounded pipeline.
+
+
+## Phase 165 completion notes
+
+- Seven canonical plans and 18 tasks complete; independent goal verification passed 37/37 truths. Security19/19 mitigations closed; final code review clean across54unique files; Nyquist validated. DCR-10/11/12 complete.
+- Final dedicated-database gates:2properties2413tests0failures485excluded6skipped; normal33changedfiles298/0; prior108files908/0; explicitPostgreSQL34/0; combinedguidance/architecture/compatibility21/0. Excluded tests are not counted as race proof.
+- Corrected error precedence to credential401, expired-appPUT403, then eligible-appmetadata400; preserved preparation-before-final-clock and no-write guards. Regression gate also found and repaired a pre-existing audience persistence defect with locked-current-code subset revalidation; independent security and code review verified that delta.
+- SDK phase.complete counted8/7 because it includes165-REGRESSION-FIX-SUMMARY.md; canonical totals reconciled to7/7 and28milestoneplans. SDK missing-file warnings refer to a literal Mix command and resource=https://api.one prose, not missing files.
+- Historical165-04TDDRED evidence gap remains disclosed; no fabricated history. UI audit was code-only; optional rendered/screen-reader checks and final packaged/cross-phase proof belong to166.
+- Preserved the user's original unstaged state.json bytes. Next command:$gsd-discuss-phase166. No push, PR or publication performed.

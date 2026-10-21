@@ -17,7 +17,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162–164 are complete; management-token lifecycle remains in Phase 165 and final cross-phase proof in Phase 166.
+v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162–165 are complete; Phase 166 owns final cross-phase lifetime, security and guidance proof.
 
 **Mandatory dependency:** Phase 162 must finish the selected semantics and compatibility contract before any Phase 163–166 implementation plan. A roadmap approval approves this sequencing and scope, not an unresolved timeout, legacy backfill or rejection policy. Every implementation phase includes focused boundary and regression tests; Phase 166 owns the final cross-phase proof. Preserve existing security defaults, host ownership and historical records. Package publication is separate.
 
@@ -28,7 +28,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 - [x] Phase 162: Lifetime Semantics & Upgrade Contract (completed 2026-10-20)
 - [x] Phase 163: App Lifetime & Compatible Host Storage (completed 2026-10-20)
 - [x] Phase 164: Client-Secret Expiry & Atomic Rotation (completed 2026-10-21)
-- [ ] Phase 165: Management-Token Lifecycle & Recovery
+- [x] Phase 165: Management-Token Lifecycle & Recovery (completed 2026-10-21)
 - [ ] Phase 166: End-to-End Lifetime, Security & Guidance Proof
 
 ### Phase 162: Lifetime Semantics & Upgrade Contract
@@ -129,7 +129,7 @@ Plans:
 **Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
 **Depends on:** Phase 164
 **Requirements:** DCR-10, DCR-11, DCR-12
-**Plans:** 7/7 plans executed (18 tasks; 7 dependency-aware waves); Phase 165 validation and independent verification remain open.
+**Plans:** 7/7 canonical plans complete (18 tasks; 7 dependency-aware waves); independently verified 37/37 must-have truths on 2026-10-21. The supplemental regression-fix summary is not an additional plan.
 
 Plans:
 **Wave 1**
@@ -151,7 +151,7 @@ Plans:
 - [x] 165-06-PLAN.md — Observe redacted, correctly attributed events and prove confirmed one-time operator recovery.
 
 **Wave 7** *(blocked on Waves 5–6 completion)*
-- [x] 165-07-PLAN.md — Update affected guidance and record applicable phase validation gates; corrective reruns pass, independent verification remains open.
+- [x] 165-07-PLAN.md — Update affected guidance and complete phase validation, regression repairs and independent verification.
 
 **Execution constraints:** Verify the production GET tracer before expansion. Reuse existing schema, adapter authority, host permission and one-time reveal boundaries. Race and observability lanes are ordered because both mutate the same dedicated PostgreSQL database/server-policy singleton. Phase 166 retains final packaged cross-phase, CI/security and complete guidance proof; publication is separate.
 
@@ -181,12 +181,12 @@ Plans:
 | Phase | Plans complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
-| 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
+| 163. App Lifetime & Compatible Host Storage | 14/14 | Complete | 2026-10-20 |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
-| 165. Management-Token Lifecycle & Recovery | 7/7 | Ready for verification | — |
+| 165. Management-Token Lifecycle & Recovery | 7/7 | Complete | 2026-10-21 |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
-**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are complete through Phase 165 Plan 04; five remain pending.
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are independently complete through Phase 165; five Phase 166 proof requirements remain pending.
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>

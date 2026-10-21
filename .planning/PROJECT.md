@@ -327,11 +327,13 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. All eight outcome areas are approved and expanded into 18 [requirements](REQUIREMENTS.md). The approved [roadmap](ROADMAP.md) covers Phases 162–166. Phase 162 is ready for discussion and planning.
+v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. All eight outcome areas are approved and expanded into 18 [requirements](REQUIREMENTS.md). The approved [roadmap](ROADMAP.md) covers Phases 162–166. Phases 162–165 are independently complete:13/18 requirements. Phase166 retains the five final lifetime/security/guidance proof requirements and is ready for discussion.
 
-Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures. The DCR lifetime protocol gap is active scope and remains unresolved until verified.
+Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures. The DCR lifetime protocol implementation is verified through Phase165; the milestone remains open for final Phase166 proof.
 
 ### Validated
+
+- ✓ Policy-derived management-token issuance, strict current-row GET/PUT/DELETE authority, immediate atomic replacement and host-owned recovery (DCR-10/11/12) — Phase165;37/37 truths,19/19 threats closed,2,413-test fast gate plus independent integration/PostgreSQL and908-test prior-phase evidence.
 
 - ✓ Repo-free `mix lockspire.gen.kek`, shared fail-closed snippet, runtime `{:system, "VAR"}` resolution and redacted key-set inspection (KEK-03, KEK-05, KEK-06) — v1.44, Phase 159; reverified after guide edits with 83 tests / 0 failures and a fresh public-package task run.
 - ✓ Read-only Key protection states and specific missing-KEK generation guidance, with vocabulary contracts (KEY-UI-01..03) — v1.44, Phase 160; existing verified report plus current118-test cross-phase regression gate.
@@ -459,6 +461,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Sample management time after locked-row preparation; prioritize credential401, app403, then metadata400 | Bind expiry/error decisions to current authority without leaking metadata on rejected credentials | Verified in Phase165 HTTP and PostgreSQL matrices |
+| Use current policy for immediate management replacement; keep recovery host-owned and app expiry unchanged | Make lost-response recovery explicit without overlap or unintended renewal | Verified in Phase165 transaction, rollback and mounted recovery tests |
 | Share KEK snippet generation between installer and print-only task; resolve env references at runtime and fail closed | Keep adopter setup consistent without writing secrets or hiding missing configuration | ✓ Good — Phase159 and public1.6.0, covered by generator/config/guidance contracts |
 | Keep key protection read-only and unknown states explicit | Operators need truthful status while the host owns encryption-key lifecycle | ✓ Good — Phase160 state matrix, rendered checks and vocabulary contracts |
 | Approve pending bot-created PR workflow runs through the normal API when authorized | Manual dispatch success alone does not satisfy PR check gates | ✓ Good — corrected D-21 premise; actual PR runs passed before normal merge |
@@ -546,4 +550,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-20 at v1.45 milestone initialization*
+*Last updated: 2026-10-21 after independently verified Phase 165 completion*
