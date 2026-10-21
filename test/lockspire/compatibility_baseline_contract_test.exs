@@ -66,7 +66,12 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     end)
 
     assert Manifest.extensions() == %{
-             Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3]
+             Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
+             Lockspire.Protocol.RegistrationManagement => [
+               delete: 3,
+               read: 3,
+               rotate_registration_access_token: 2
+             ]
            }
 
     Enum.each(Manifest.structs(), fn {module, keys} ->

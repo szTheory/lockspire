@@ -118,11 +118,17 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
     ]
   }
 
-  # Additive option-bearing entrypoints added for explicit adapter/clock injection.
+  # Additive option-bearing entrypoints added for explicit adapter/clock injection
+  # and phase-165 host recovery with explicit time control.
   # The original v1.x arities above remain present; keep these intentional additions
   # separate so the literal compatibility baseline still detects accidental drift.
   @extensions %{
-    Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3]
+    Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
+    Lockspire.Protocol.RegistrationManagement => [
+      delete: 3,
+      read: 3,
+      rotate_registration_access_token: 2
+    ]
   }
 
   @structs [

@@ -821,8 +821,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     rat_prompt_html = render(view)
 
     assert rat_prompt_html =~ "Rotate app management token"
-    assert rat_prompt_html =~ "current token stops working after rotation"
-    assert rat_prompt_html =~ "new token is shown once, right after you confirm"
+    assert rat_prompt_html =~ "The previous app management token stops working immediately."
+    assert rat_prompt_html =~ "new token is shown once after you confirm"
     refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm

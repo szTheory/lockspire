@@ -37,6 +37,7 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
   alias Lockspire.Clients
   alias Lockspire.Protocol.Discovery.AuthorizationResponseCapabilities
   alias Lockspire.Protocol.DPoP
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.Repository
 
   @shared_methods [
@@ -78,7 +79,16 @@ defmodule Lockspire.Web.DiscoveryControllerTest do
       end)
     end)
 
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
+
+    # Discovery's DCR metadata depends on the persisted singleton server policy.
+    # Seed its default explicitly so prior test runs or modules cannot affect it.
+    assert {:ok, _policy} =
+             Repository.put_server_policy(%ServerPolicy{
+               registration_policy: :disabled,
+               security_profile: :none
+             })
 
     :ok
   end
