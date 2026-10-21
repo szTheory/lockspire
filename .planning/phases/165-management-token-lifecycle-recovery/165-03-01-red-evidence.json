@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_update_test.exs:55 --max-failures 1 --timeout 55000 (temporary LockspireTapFormatter configured in test/test_helper.exs)",
+  "exitCode": 2,
+  "output": "ok 1 - test missing body client_id is rejected even when the URL contains the same id\nnot ok 2 - test PUT replaces the management deadline from current policy and invalidates the old token\n1..2\n",
+  "targetTest": "test PUT replaces the management deadline from current policy and invalidates the old token",
+  "targetFile": "test/integration/management_token_lifetime_update_test.exs",
+  "expected": "A successful PUT stores and returns the new management deadline from current policy.",
+  "actual": "The successful PUT persisted no management deadline; the target assertion failed because the deadline was nil.",
+  "semanticAssessment": "The named test executed through HTTP registration and PUT, then failed directly on the planned persisted-deadline assertion. The test reached its intended behavior and shows the existing replacement path clears management expiry rather than applying current policy."
+}
