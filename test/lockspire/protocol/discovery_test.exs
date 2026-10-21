@@ -68,6 +68,11 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     start_supervised!(Lockspire.TestRepo)
     Ecto.Adapters.SQL.Sandbox.mode(Lockspire.TestRepo, :manual)
 
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Lockspire.TestRepo, fn ->
+      {:ok, policy} = Repository.get_server_policy()
+      {:ok, _policy} = Repository.put_server_policy(%{policy | registration_policy: :disabled})
+    end)
+
     :ok
   end
 
@@ -77,6 +82,8 @@ defmodule Lockspire.Protocol.DiscoveryTest do
     original_rar_validators = Application.get_env(:lockspire, :rar_validators)
     original_rar_types_supported = Application.get_env(:lockspire, :rar_types_supported)
     Application.put_env(:lockspire, :issuer, "https://example.test/lockspire")
+
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     on_exit(fn ->
       if is_nil(original) do
@@ -103,8 +110,6 @@ defmodule Lockspire.Protocol.DiscoveryTest do
         Application.put_env(:lockspire, :rar_types_supported, original_rar_types_supported)
       end
     end)
-
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
 
     :ok
   end
