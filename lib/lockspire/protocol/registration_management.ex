@@ -56,7 +56,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   def read(client_id_from_url, %Client{} = client, opts)
       when is_binary(client_id_from_url) and is_list(opts) do
     result =
-      with_current_client(client_id_from_url, client, :read, opts, fn current, _now ->
+      with_current_client(client_id_from_url, client, :read, opts, fn current, _now, _prepared ->
         {:ok, current}
       end)
 
@@ -99,10 +99,32 @@ defmodule Lockspire.Protocol.RegistrationManagement do
          :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
          {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
          {:ok, updated_client} <-
-           with_current_client(client_id_from_url, client, :update, decision_clock, fn current,
-                                                                                       _now ->
-             persist_update(current, metadata, new_rat_hash)
-           end) do
+           with_current_client(
+             client_id_from_url,
+             client,
+             :update,
+             Keyword.put(decision_clock, :prepare, &prepare_update(&1, metadata)),
+             fn current, now, {current_resolved, mutable_metadata} ->
+               with {:ok, deadline} <-
+                      Client.management_deadline(
+                        current,
+                        now,
+                        current_resolved.default_registration_access_token_lifetime_seconds
+                      ) do
+                 persist_update(current, mutable_metadata, new_rat_hash, deadline, now)
+               else
+                 {:error, :invalid_lifetime_state} ->
+                   {:error,
+                    %Registration.Error{
+                      code: :server_error,
+                      reason: :invalid_lifetime_state
+                    }}
+
+                 {:error, reason} ->
+                   {:error, reason}
+               end
+             end
+           ) do
       emit_updated(updated_client)
       emit_rat_rotated(updated_client)
 
@@ -146,9 +168,15 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   @spec delete(String.t(), Client.t(), keyword()) :: :ok | {:error, :invalid_token | term()}
   def delete(client_id_from_url, %Client{} = client, opts)
       when is_binary(client_id_from_url) and is_list(opts) do
-    case with_current_client(client_id_from_url, client, :delete, opts, fn current, now ->
-           ClientLifecycle.disable_dcr(current, now)
-         end) do
+    case with_current_client(
+           client_id_from_url,
+           client,
+           :delete,
+           opts,
+           fn current, now, _prepared ->
+             ClientLifecycle.disable_dcr(current, now)
+           end
+         ) do
       {:ok, %Client{}} ->
         Observability.emit(:dcr, :delete, %{count: 1}, %{
           status: :success,
@@ -194,8 +222,143 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   # Private Helpers
 
-  defp persist_update(%Client{} = client, metadata, new_rat_hash) do
-    ClientLifecycle.replace_dcr(client, metadata, new_rat_hash)
+  defp persist_update(%Client{} = client, metadata, new_rat_hash, deadline, now) do
+    ClientLifecycle.replace_dcr(client, metadata, new_rat_hash, deadline, now)
+  end
+
+  defp prepare_update(%Client{} = current, metadata) do
+    with {:ok, %ServerPolicy{} = policy} <- Repository.get_server_policy(),
+         {:ok, resolved} <- resolve_current_policy(policy, metadata),
+         :ok <- Registration.validate_intake_metadata(metadata, resolved, policy, current),
+         {:ok, mutable_metadata} <- validate_management_metadata(metadata, current) do
+      {:ok, {resolved, mutable_metadata}}
+    else
+      {:error, %Registration.Error{} = error} -> {:error, error}
+      {:error, reason} -> {:error, %Registration.Error{code: :server_error, reason: reason}}
+      _unexpected -> {:error, %Registration.Error{code: :server_error}}
+    end
+  end
+
+  defp resolve_current_policy(policy, metadata) do
+    case DcrPolicy.resolve(policy, nil, metadata) do
+      {:ok, resolved} ->
+        {:ok, resolved}
+
+      {:error, :invalid_client_metadata, info} ->
+        {:error,
+         %Registration.Error{
+           code: :invalid_client_metadata,
+           field: info.field,
+           reason: info.reason,
+           allowed: info[:allowed]
+         }}
+
+      {:error, :server_error, info} ->
+        {:error,
+         %Registration.Error{
+           code: :server_error,
+           field: info.field,
+           reason: info.reason
+         }}
+    end
+  end
+
+  defp validate_management_metadata(metadata, %Client{} = current) do
+    with :ok <- validate_body_client_id(metadata, current),
+         :ok <- reject_management_fields(metadata),
+         :ok <- validate_included_client_secret(metadata, current),
+         :ok <-
+           validate_lifecycle_extension(metadata, "lockspire_client_expires_at", current, :app),
+         :ok <-
+           validate_lifecycle_extension(
+             metadata,
+             "lockspire_registration_access_token_expires_at",
+             current,
+             :management
+           ) do
+      {:ok,
+       Map.drop(metadata, [
+         "client_id",
+         "client_secret",
+         "lockspire_client_expires_at",
+         "lockspire_registration_access_token_expires_at"
+       ])}
+    end
+  end
+
+  defp validate_body_client_id(metadata, %Client{client_id: client_id}) do
+    if Map.get(metadata, "client_id") == client_id,
+      do: :ok,
+      else: invalid_metadata(:client_id, :unchanged_required)
+  end
+
+  defp reject_management_fields(metadata) do
+    forbidden_fields = [
+      {"registration_access_token", :registration_access_token},
+      {"registration_client_uri", :registration_client_uri},
+      {"client_secret_expires_at", :client_secret_expires_at},
+      {"client_id_issued_at", :client_id_issued_at}
+    ]
+
+    case Enum.find(forbidden_fields, fn {field, _atom} -> Map.has_key?(metadata, field) end) do
+      nil -> :ok
+      {_field, atom} -> invalid_metadata(atom, :not_allowed)
+    end
+  end
+
+  defp validate_included_client_secret(metadata, %Client{client_secret_hash: hash}) do
+    case Map.fetch(metadata, "client_secret") do
+      :error ->
+        :ok
+
+      {:ok, secret} when is_binary(secret) ->
+        if Lockspire.Security.Policy.verify_client_secret(hash, secret),
+          do: :ok,
+          else: invalid_metadata(:client_secret, :does_not_match)
+
+      {:ok, _other} ->
+        invalid_metadata(:client_secret, :does_not_match)
+    end
+  end
+
+  defp validate_lifecycle_extension(metadata, field, current, kind) do
+    case Map.fetch(metadata, field) do
+      :error ->
+        :ok
+
+      {:ok, supplied} when is_integer(supplied) ->
+        with {:ok, deadline} <- effective_lifecycle_deadline(current, kind) do
+          expected = if deadline, do: DateTime.to_unix(deadline, :second), else: 0
+
+          if supplied == expected,
+            do: :ok,
+            else: invalid_metadata(lifecycle_extension_atom(kind), :cannot_be_changed)
+        end
+
+      {:ok, _other} ->
+        invalid_metadata(lifecycle_extension_atom(kind), :cannot_be_changed)
+    end
+  end
+
+  defp effective_lifecycle_deadline(current, :app), do: Client.effective_app_deadline(current)
+
+  defp effective_lifecycle_deadline(current, :management),
+    do: Client.effective_management_deadline(current)
+
+  defp lifecycle_extension_atom(:app), do: :lockspire_client_expires_at
+
+  defp lifecycle_extension_atom(:management),
+    do: :lockspire_registration_access_token_expires_at
+
+  defp invalid_metadata(field, reason),
+    do:
+      {:error, %Registration.Error{code: :invalid_client_metadata, field: field, reason: reason}}
+
+  defp prepare_current(current, opts) do
+    case Keyword.get(opts, :prepare) do
+      nil -> {:ok, nil}
+      prepare when is_function(prepare, 1) -> prepare.(current)
+    end
   end
 
   defp with_current_client(client_id_from_url, %Client{} = snapshot, operation, opts, callback) do
@@ -206,15 +369,16 @@ defmodule Lockspire.Protocol.RegistrationManagement do
            true <-
              current.registration_access_token_hash == snapshot.registration_access_token_hash,
            true <- current.active,
+           {:ok, prepared} <- prepare_current(current, opts),
            {:ok, now} <- decision_now(opts) do
         case Client.management_eligibility(current, now, :registration_management) do
           :ok ->
             case Client.app_eligibility(current, now, :registration_management) do
               :ok ->
-                callback.(current, now)
+                callback.(current, now, prepared)
 
               {:error, :expired} when operation in [:read, :delete] ->
-                callback.(current, now)
+                callback.(current, now, prepared)
 
               {:error, :expired} ->
                 {:error, %Registration.Error{code: :registration_expired}}

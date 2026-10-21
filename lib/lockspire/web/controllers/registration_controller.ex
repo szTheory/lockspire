@@ -51,13 +51,15 @@ defmodule Lockspire.Web.RegistrationController do
     end
   end
 
-  def update(conn, %{"client_id" => client_id} = params) do
+  def update(conn, _params) do
+    client_id = conn.path_params["client_id"]
+    metadata = conn.body_params
+
     case lookup_client_by_rat(conn) do
       {:ok, client} ->
-        case Repository.get_server_policy() do
-          {:ok, server_policy} ->
-            metadata = Map.delete(params, "client_id")
-
+        case {client_id, metadata, Repository.get_server_policy()} do
+          {client_id, metadata, {:ok, server_policy}}
+          when is_binary(client_id) and is_map(metadata) ->
             request_map = %{
               metadata: metadata,
               server_policy: server_policy,
@@ -72,8 +74,18 @@ defmodule Lockspire.Web.RegistrationController do
                 handle_error(conn, error)
             end
 
-          {:error, _reason} ->
+          {_client_id, _metadata, {:error, _reason}} ->
             handle_error(conn, :server_error)
+
+          _invalid_request ->
+            handle_error(
+              conn,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :client_id,
+                reason: :required
+              }
+            )
         end
 
       {:error, reason} ->

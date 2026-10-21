@@ -75,7 +75,11 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeUpdateTest do
     audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
 
     put_conn =
-      build_conn(:put, "/register/#{client_id}", Map.put(DcrFixtures.valid_metadata(), "client_id", client_id))
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.valid_metadata(), "client_id", client_id)
+      )
       |> put_req_header("authorization", "Bearer #{old_rat}")
       |> dispatch()
 
@@ -87,13 +91,14 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeUpdateTest do
     {:ok, after_put} = Repository.fetch_client_by_id(client_id)
     replacement_deadline = after_put.registration_access_token_expires_at
     assert is_struct(replacement_deadline, DateTime)
+
     assert response["lockspire_registration_access_token_expires_at"] ==
              DateTime.to_unix(replacement_deadline)
 
     refute after_put.registration_access_token_hash == before.registration_access_token_hash
     assert DateTime.compare(replacement_deadline, prior_management_deadline) == :lt
-    assert after_put.client_expires_at == app_deadline
-    assert after_put.client_secret_expires_at == secret_deadline
+    assert DateTime.compare(after_put.client_expires_at, app_deadline) == :eq
+    assert DateTime.compare(after_put.client_secret_expires_at, secret_deadline) == :eq
     assert after_put.client_secret_hash == before.client_secret_hash
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count + 1
 

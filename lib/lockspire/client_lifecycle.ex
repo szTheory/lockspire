@@ -124,14 +124,34 @@ defmodule Lockspire.ClientLifecycle do
   @spec replace_dcr(Client.t(), map(), String.t()) :: result()
   def replace_dcr(%Client{} = client, metadata, new_rat_hash)
       when is_map(metadata) and is_binary(new_rat_hash) do
+    replace_dcr(
+      client,
+      metadata,
+      new_rat_hash,
+      client.registration_access_token_expires_at,
+      client.updated_at || DateTime.utc_now() |> DateTime.truncate(:second)
+    )
+  end
+
+  @doc false
+  @spec replace_dcr(Client.t(), map(), String.t(), DateTime.t() | nil, DateTime.t()) :: result()
+  def replace_dcr(%Client{} = client, metadata, new_rat_hash, deadline, %DateTime{} = updated_at)
+      when is_map(metadata) and is_binary(new_rat_hash) and
+             (is_nil(deadline) or is_struct(deadline, DateTime)) do
     updated_client = Lockspire.ClientMetadata.apply_dcr_metadata(client, metadata)
+
+    updated_client = %{
+      updated_client
+      | registration_access_token_expires_at: deadline,
+        updated_at: updated_at
+    }
 
     Repository.replace_client_registration(client, updated_client, new_rat_hash, %{
       action: :dcr_management_updated,
       outcome: :success,
       actor: %{type: :self_registered_client, id: client.client_id},
       resource: %{type: :client, id: client.client_id},
-      metadata: %{}
+      metadata: %{rotated_at: updated_at}
     })
   end
 

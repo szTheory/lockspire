@@ -100,18 +100,22 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           current = ClientRecord.to_domain(record)
 
           with true <-
-                 current.active and
+                 current.client_id == client.client_id and current.active and
                    current.registration_access_token_hash ==
                      client.registration_access_token_hash,
                {:ok, lifetime_changes} <-
-                 Client.credential_lifetime_changes(current, :management, nil) do
+                 Client.credential_lifetime_changes(
+                   current,
+                   :management,
+                   replacement.registration_access_token_expires_at
+                 ) do
             attrs =
               replacement
               |> Map.from_struct()
               |> Map.take(dcr_metadata_fields())
               |> Map.merge(lifetime_changes)
               |> Map.put(:registration_access_token_hash, new_rat_hash)
-              |> Map.put(:updated_at, DateTime.utc_now())
+              |> Map.put(:updated_at, replacement.updated_at)
 
             record
             |> ClientRecord.dcr_management_changeset(attrs)
