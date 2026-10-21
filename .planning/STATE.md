@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
-current_phase: 164
-current_phase_name: Client-Secret Expiry & Atomic Rotation
-status: executing
-stopped_at: Completed 164-06-PLAN.md
-last_updated: "2026-10-21T15:34:32.473Z"
+current_phase: 165
+current_phase_name: Management-Token Lifecycle & Recovery
+status: ready_to_discuss
+stopped_at: Phase 164 verified complete; ready to discuss Phase 165
+last_updated: "2026-10-21T16:06:40.697Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 164 plan 164-03 completed
-state_head: 288af0f769fcf9d1a1e8fa3690eb1247e2e515ee
+last_activity_desc: Phase 164 independently verified; Phase 165 discussion is next
+state_head: 991a6d382e1505ce0a73a3f75ff0071d79a3361d
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 21
   completed_plans: 21
-  percent: 40
+  percent: 60
 ---
 
 # Project State
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 164 — Client-Secret Expiry & Atomic Rotation
+**Current focus:** Phase 165 discussion — Management-Token Lifecycle & Recovery
 
 ## Current Position
 
-Phase: 164 (Client-Secret Expiry & Atomic Rotation) — EXECUTING
-Plan: 6 of 6
-Status: Plans 1–6 executed; independent phase verification pending
-Last activity: 2026-10-21 — Phase 164 plan 164-06 completed
+Phase: 165 — Management-Token Lifecycle & Recovery
+Plan: Not started
+Status: Ready for discussion (Phase 165 planning and execution not started)
+Last activity: 2026-10-21 — Phase 164 independently verified; Phase 165 discussion is next
 
 ## Accumulated Context
 
@@ -43,7 +43,7 @@ Last activity: 2026-10-21 — Phase 164 plan 164-06 completed
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase 164 plans 164-01 through 164-03 are complete; plan 164-04 is next.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase 164 is complete: six canonical plans, 26/26 independently verified must-haves and 18/18 decisions; DCR-07/08/09 complete. Final fresh database gate: 2 properties, 2349 tests, 0 failures (440 excluded, 6 skipped); separate 38-case PostgreSQL regression selection passed. Security 24/24 closed; code review 49 files clean; copy findings resolved; Nyquist compliant. Phase 165 discussion is next; management-token lifecycle and final cross-phase proof remain pending.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -391,10 +391,10 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-21T15:34:29.928Z
-Stopped at: Completed 164-06-PLAN.md
+Stopped at: Phase 164 verified complete; ready to discuss Phase 165
 Resume file: None
 
-Next: Execute Phase 164 plan 164-04. Preserve original unstaged state.json bytes and historical phase exceptions.
+Next: Discuss Phase 165 only. No Phase 165 artifacts or runtime work started. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 

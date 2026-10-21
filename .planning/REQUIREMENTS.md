@@ -25,9 +25,9 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 
 ### Client-secret lifetime
 
-- [ ] **DCR-07**: An app receiving a shared secret gets stored and advertised secret expiry that matches its effective policy, including unlimited and non-secret cases.
-- [ ] **DCR-08**: A client using Basic, post or secret-JWT authentication is accepted or rejected consistently according to secret expiry, while independent JWT assertion timing and replay protection remain enforced.
-- [ ] **DCR-09**: An operator can rotate a shared secret with its replacement expiry committed atomically, with prior-credential and changed-policy behavior matching the selected contract.
+- [x] **DCR-07**: An app receiving a shared secret gets stored and advertised secret expiry that matches its effective policy, including unlimited and non-secret cases.
+- [x] **DCR-08**: A client using Basic, post or secret-JWT authentication is accepted or rejected consistently according to secret expiry, while independent JWT assertion timing and replay protection remain enforced.
+- [x] **DCR-09**: An operator can rotate a shared secret with its replacement expiry committed atomically, with prior-credential and changed-policy behavior matching the selected contract.
 
 ### App-management-token lifecycle
 
@@ -80,9 +80,9 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-06 | Phase 163 | Complete |
 | DCR-13 | Phase 163 | Complete |
 | DCR-14 | Phase 163 | Complete |
-| DCR-07 | Phase 164 | Pending |
-| DCR-08 | Phase 164 | Pending |
-| DCR-09 | Phase 164 | Pending |
+| DCR-07 | Phase 164 | Complete |
+| DCR-08 | Phase 164 | Complete |
+| DCR-09 | Phase 164 | Complete |
 | DCR-10 | Phase 165 | Pending |
 | DCR-11 | Phase 165 | Pending |
 | DCR-12 | Phase 165 | Pending |
@@ -92,6 +92,6 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-18 | Phase 166 | Pending |
 | DCR-19 | Phase 166 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 7 complete; 11 pending.
+**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 10 complete; 8 pending.
 
-*Last updated: 2026-10-20 after independently verified Phase 163 completion.*
+*Last updated: 2026-10-21 after independently verified Phase 164 completion.*

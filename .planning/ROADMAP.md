@@ -17,7 +17,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162 and 163 are complete; credential enforcement remains in Phases 164–165 and final cross-phase proof in Phase 166.
+v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162–164 are complete; management-token lifecycle remains in Phase 165 and final cross-phase proof in Phase 166.
 
 **Mandatory dependency:** Phase 162 must finish the selected semantics and compatibility contract before any Phase 163–166 implementation plan. A roadmap approval approves this sequencing and scope, not an unresolved timeout, legacy backfill or rejection policy. Every implementation phase includes focused boundary and regression tests; Phase 166 owns the final cross-phase proof. Preserve existing security defaults, host ownership and historical records. Package publication is separate.
 
@@ -27,7 +27,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 
 - [x] Phase 162: Lifetime Semantics & Upgrade Contract (completed 2026-10-20)
 - [x] Phase 163: App Lifetime & Compatible Host Storage (completed 2026-10-20)
-- [ ] Phase 164: Client-Secret Expiry & Atomic Rotation
+- [x] Phase 164: Client-Secret Expiry & Atomic Rotation (completed 2026-10-21)
 - [ ] Phase 165: Management-Token Lifecycle & Recovery
 - [ ] Phase 166: End-to-End Lifetime, Security & Guidance Proof
 
@@ -99,7 +99,7 @@ Plans:
 **Goal:** Apps can rely on shared-secret expiry metadata matching authentication and operator rotation.
 **Depends on:** Phase 163
 **Requirements:** DCR-07, DCR-08, DCR-09
-**Plans:** 6/6 plans executed; independent phase verification pending.
+**Plans:** 6/6 canonical plans complete; independent verification passed 26/26 (2026-10-21).
 
 Plans:
 **Wave 1**
@@ -158,7 +158,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
-| 164. Client-Secret Expiry & Atomic Rotation | 3/6 | In Progress | — |
+| 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
 | 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
