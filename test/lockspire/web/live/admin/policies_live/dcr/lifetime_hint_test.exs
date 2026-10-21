@@ -5,6 +5,7 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHintTest do
 
   @client :dcr_default_client_lifetime_seconds
   @secret :dcr_default_client_secret_lifetime_seconds
+  @management_token :dcr_default_registration_access_token_lifetime_seconds
 
   test "exact durations use the largest whole unit" do
     assert LifetimeHint.describe(@client, "45") == "45 seconds"
@@ -35,6 +36,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.Dcr.LifetimeHintTest do
 
     for value <- [" ", "0"] do
       assert LifetimeHint.describe(@secret, value) == "No automatic expiry"
+    end
+  end
+
+  test "blank and zero explain that management tokens do not expire automatically" do
+    for value <- ["", nil, "0"] do
+      assert LifetimeHint.describe(@management_token, value) == "No automatic expiry"
     end
   end
 

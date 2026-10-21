@@ -173,6 +173,14 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | Leave blank unless your own code checks this value. | How long a new app may use Lockspire. |
 | Lockspire saves this value but never disables an app when the time runs out. | Lockspire stops an app from using OAuth when its expiry date is reached. |
 | Existing secrets keep their current expiry when you change this setting. | Changing this setting does not change expiry on existing app secrets; some older apps may have an advisory expiry date. |
+| App management-token expiry is not enforced yet. | Lockspire enforces app, client secret and app management token expiry. |
+| Lockspire saves this value but doesn't expire these tokens. | A positive duration applies to new or replaced app management tokens. |
+| To stop an app from changing its registration, replace its token or disable the app. | Expiry blocks reading, updating or deleting an app registration until an authorized team member rotates the token. |
+| Apps use this token to update or delete their own registration. Leave blank so it keeps working. | Leave blank or enter 0 for no automatic expiry. A positive duration applies to new or replaced app management tokens. |
+| This token lets the app update its registration. The current token stops working after rotation. | The previous app management token stops working immediately. |
+| The current token stops working after rotation. | The previous app management token stops working immediately. |
+| The current token stops working when you create a new one. | The previous app management token stops working immediately. |
+| I understand the current token stops working after rotation. | The previous app management token stops working immediately. |
 | client class | app type |
 | assertion-key | signing keys |
 | destructive actions | (name the action) |

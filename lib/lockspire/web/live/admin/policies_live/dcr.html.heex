@@ -118,7 +118,7 @@
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Expiry limits"
         >
-          <p class="lockspire-admin-help">Lockspire enforces app expiry for new apps and secret expiry for new or replaced app secrets. App management-token expiry is not enforced yet.</p>
+          <p class="lockspire-admin-help">Lockspire enforces app, client secret and app management token expiry. Changing a lifetime only affects new or replaced items.</p>
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_lifetime_seconds"
             label="App lifetime (seconds)"
@@ -166,10 +166,10 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_registration_access_token_lifetime_seconds"
             label="App management token lifetime (seconds)"
-            help="Apps use this token to update or delete their own registration. Leave blank so it keeps working."
+            help="Leave blank or enter 0 for no automatic expiry. A positive duration applies to new or replaced app management tokens."
             errors={field_errors(@form_errors, :dcr_default_registration_access_token_lifetime_seconds)}
           >
-            <:info label="About app management token lifetime">Lockspire saves this value but doesn't expire these tokens. To stop an app from changing its registration, replace its token or disable the app.</:info>
+            <:info label="About app management token lifetime">Changing this setting does not change existing app management tokens. Expiry blocks reading, updating or deleting an app registration until an authorized team member rotates the token. If an app loses access or a successful update response is lost, ask your provider team to rotate the token. Rotating the token does not renew the app or its client secret.</:info>
             <input
               type="number"
               min="0"
