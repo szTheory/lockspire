@@ -129,14 +129,27 @@ defmodule Lockspire.Web.RegistrationJSONTest do
         client_secret_expires_at: DateTime.from_unix!(110),
         client_secret_hash: "dormant-hash",
         client_secret_jwt_verifier_encrypted: "dormant-verifier",
-        metadata: Map.put(@client.metadata, "client_secret_expires_at", 999)
+        metadata:
+          @client.metadata
+          |> Map.put("client_secret_expires_at", 999)
+          |> Map.put("client_secret", "metadata-secret")
     }
 
     read = RegistrationJSON.read_response(client)
 
     assert read.client_secret_expires_at == 110
     refute Map.has_key?(read, "client_secret_expires_at")
+    refute Map.has_key?(read, "client_secret")
     refute Map.has_key?(read, :client_secret)
+
+    update =
+      RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+        client: client,
+        registration_access_token_plaintext: "rat"
+      })
+
+    refute Map.has_key?(update, "client_secret")
+    refute Map.has_key?(update, :client_secret)
   end
 
   test "non-secret methods omit secret expiry even with dormant material and v0 dates are advisory" do
@@ -151,6 +164,22 @@ defmodule Lockspire.Web.RegistrationJSONTest do
       }
 
       refute Map.has_key?(RegistrationJSON.read_response(client), :client_secret_expires_at)
+
+      success =
+        RegistrationJSON.success_response(%Registration.Success{
+          client: client,
+          client_secret_plaintext: nil,
+          registration_access_token_plaintext: "rat"
+        })
+
+      update =
+        RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+          client: client,
+          registration_access_token_plaintext: "rat"
+        })
+
+      refute Map.has_key?(success, :client_secret_expires_at)
+      refute Map.has_key?(update, :client_secret_expires_at)
     end
 
     legacy = %Client{

@@ -43,6 +43,9 @@ defmodule Lockspire.Web.RegistrationJSON do
 
     payload
     |> Map.delete(:client_secret_expires_at)
+    |> Map.delete("client_secret_expires_at")
+    |> Map.delete(:client_secret)
+    |> Map.delete("client_secret")
     |> Map.put(:client_id, client.client_id)
     |> put_registered_metadata(client)
     |> Map.put(
