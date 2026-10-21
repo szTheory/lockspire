@@ -116,6 +116,8 @@ status: complete
 2. **164-06-02: Make secret lifetime admin guidance truthful** — `8c25c2e7` (`fix`)
 3. **164-06-03: Reconcile host guidance and execute the complete phase gate** — `288af0f7` (`docs`)
 
+**Plan metadata:** `2bd4d979` (`docs`: record plan execution closeout)
+
 ## Verification
 
 All Mix commands used Elixir `1.18.4-otp-27`, OTP `27.3.4.15`, the supplied Mix and Hex homes, and the dedicated `lockspire_phase164_validation` database.
