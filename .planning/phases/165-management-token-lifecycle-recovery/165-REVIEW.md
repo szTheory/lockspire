@@ -1,8 +1,13 @@
 ---
 phase: 165-management-token-lifecycle-recovery
 reviewed: 2026-10-21T19:36:13Z
+rereviewed: 2026-10-21T19:42:50Z
 depth: standard
 files_reviewed: 46
+rereviewed_files: 2
+rereviewed_files_list:
+  - lib/lockspire/protocol/registration_management.ex
+  - test/integration/management_token_lifetime_access_test.exs
 files_reviewed_list:
   - PRODUCT.md
   - docs/dynamic-registration.md
@@ -51,34 +56,45 @@ files_reviewed_list:
   - test/lockspire/web/registration_json_test.exs
   - test/support/architecture/public_compatibility_manifest.ex
 findings:
-  critical: 1
+  critical: 0
   warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 165: Code Review Report
 
-**Reviewed:** 2026-10-21T19:36:13Z  
-**Depth:** standard  
-**Files Reviewed:** 46  
-**Status:** issues_found
+**Reviewed:** 2026-10-21T19:36:13Z
+
+**Re-reviewed:** 2026-10-21T19:42:50Z
+
+**Depth:** standard
+
+**Files Reviewed:** 46
+
+**Correction Re-review:** 2 files (`registration_management.ex`, `management_token_lifetime_access_test.exs`)
+
+**Status:** clean
 
 ## Summary
 
-Reviewed the full explicit Phase 165 file scope against DCR-10/11/12, the Phase 162 lifecycle decisions, and project guidance. The locking, current-token checks, final-clock expiry decisions, recovery preservation, response redaction, and atomic write/audit paths are consistent with the stated contracts. One error-precedence defect remains: an expired app can receive a PUT metadata error instead of the required `registration_expired` response. Supplied validation evidence was reviewed but not rerun as part of this code review.
+Reviewed the full explicit Phase 165 scope of 46 files against DCR-10/11/12, the Phase 162 lifecycle decisions, and project guidance. The initial review found CR-01 in PUT error precedence. Commit `e1883472` fixes it by checking app eligibility before surfacing deferred metadata errors while preserving the management-token check and final-clock ordering. The correction re-review covered the two changed source/test files and the targeted HTTP integration suite passed 5 tests with 0 failures. Supplied correction gates also report 218/0 across 27 changed test files, 21/0 combined, 34/0 PostgreSQL, and 2,413/0 fast tests (485 excluded, 6 skipped). No open findings remain.
 
-## Critical Issues
+## Narrative Findings (AI reviewer)
 
-### CR-01 [BLOCKER]: Expired-app PUT validation can bypass the required expiry response
+No open findings. The original finding is retained below for traceability and is resolved by the correction.
 
-**File:** `lib/lockspire/protocol/registration_management.ex:450`
-**Issue:** `with_prepared_current/5` returns a preparation error at lines 450-451 before it checks `Client.app_eligibility/3` at lines 432-447. With a valid management token for an expired app, a PUT containing a missing/mismatched `client_id` or another invalid field therefore returns HTTP 400 `invalid_client_metadata` rather than the contractually required HTTP 403 `registration_expired`. This makes the PUT result depend on body validity even though DCR-11 requires PUT to be blocked for an expired app.
-**Fix:** Keep the management-token eligibility check first so expired management credentials still receive the non-disclosing 401 response. Then check app eligibility before returning a deferred preparation error: return `registration_expired` for expired-app PUTs, allow the expired-app GET/DELETE exceptions, and only surface prepared metadata errors when the operation is app-eligible.
+### CR-01 [BLOCKER] — RESOLVED: Expired-app PUT validation could bypass the required expiry response
+
+**Original file:** `lib/lockspire/protocol/registration_management.ex:450`
+
+**Correction:** `e1883472` checks app eligibility before returning deferred preparation errors. Expired management credentials still take precedence with 401 `invalid_token`; an expired app with an eligible management token receives 403 `registration_expired`; an eligible app with an invalid body receives 400 `invalid_client_metadata`.
+
+**Regression coverage:** `test/integration/management_token_lifetime_access_test.exs` asserts those three branches and confirms no client-row or audit writes. The focused suite was rerun with the pinned environment and dedicated database: **5 tests, 0 failures**. The final wider gates are recorded in `165-REVIEW-FIX.md`.
 
 ---
 
-_Reviewed: 2026-10-21T19:36:13Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
+_Reviewed: 2026-10-21T19:36:13Z; re-reviewed: 2026-10-21T19:42:50Z_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_

@@ -65,3 +65,7 @@ ASVS L1 checks registered mitigations. Arbitrary third-party adapters and a depl
 - [x] status: verified
 
 Approval: verified 2026-10-21
+
+## Final Correction Impact Check
+
+The security auditor rechecked e1883472 after CR-01 closure. All 19 mitigations remain closed, no accepted risks. Fresh normal Mix batch: 55 tests, 0 failures (access/request/protocol/app-state and PostgreSQL client-wait suites). Confirmed credential 401 → expired-app PUT 403 → eligible-app metadata 400, preparation before the final clock, and unchanged GET/DELETE exceptions. Final broader gates at 581f48cd: changed tests218/0, combined21/0, explicitPG34/0, fast2properties2413tests0failures485excluded6skipped. No dependency manifest/lockfile changes.
