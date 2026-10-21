@@ -123,6 +123,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "Save app registration settings"
     assert html =~ "These rules apply to new app registrations only."
 
+    assert rendered_text(html) =~ "Leave blank or enter 0 for no automatic expiry."
+    assert rendered_text(html) =~ "A positive duration applies to new or replaced app management tokens."
+    assert rendered_text(html) =~ "Changing this setting does not change existing app management tokens."
+    assert rendered_text(html) =~ "Expiry blocks reading, updating or deleting the app's registration until an authorized team member rotates the token."
+    assert rendered_text(html) =~ "Rotating the token does not renew the app or its client secret."
+    refute rendered_text(html) =~ "Lockspire saves this value but doesn't expire these tokens."
     for name <- [
           "policy[registration_policy]",
           "policy[dcr_allowed_scopes]",
