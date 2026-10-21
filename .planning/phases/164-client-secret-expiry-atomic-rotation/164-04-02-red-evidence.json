@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_poll_exchange_test.exs --timeout 55000 --formatter Lockspire.TemporaryTAPFormatter --no-compile",
+  "exitCode": 2,
+  "output": "1..6\nok 1 - test a supplied authority value cannot turn an authenticated poll into queued push\nok 2 - test a valid secret-JWT poll issues and consumes its assertion JTI once\nok 3 - test client_credentials remains an unsupported grant\nok 4 - test expired issuer secrets do not block opaque or signed RFC 8693 outputs\nnot ok 5 - test RFC 8693 rejects a requester expiring during token locks without output or audit\nok 6 - test device and CIBA polls reject a secret that expires before final issuance\n",
+  "targetTest": "test RFC 8693 rejects a requester expiring during token locks without output or audit",
+  "targetFile": "test/integration/client_secret_lifetime_poll_exchange_test.exs",
+  "expected": "A requester authenticated before the deadline must return invalid_client with reason_code client_secret_expired when the final post-token-lock decision time equals its deadline.",
+  "actual": "The planned assertion failed because the exchange succeeded without the final requester secret check.",
+  "semanticAssessment": "The target ExUnit test executed and failed on its intended final-authority assertion. All five neighboring task regressions passed in the same run; no setup or compilation failure occurred."
+}

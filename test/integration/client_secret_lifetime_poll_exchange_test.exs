@@ -12,8 +12,13 @@ defmodule Lockspire.Integration.ClientSecretLifetimePollExchangeTest do
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.TokenRecord
+  alias Lockspire.Domain.Token
 
   @moduletag :integration
+
+  defmodule ExchangeValidator do
+    def validate(_context), do: Process.get({__MODULE__, :result}, :ok)
+  end
 
   test "device and CIBA polls reject a secret that expires before final issuance" do
     for grant_type <- [
@@ -161,6 +166,122 @@ defmodule Lockspire.Integration.ClientSecretLifetimePollExchangeTest do
              })
   end
 
+  test "RFC 8693 rejects a requester expiring during token locks without output or audit" do
+    now = future_now()
+    suffix = Ecto.UUID.generate()
+    secret = "rfc-request-secret-#{suffix}"
+
+    {:ok, requester} =
+      create_client(
+        "rfc-requester-#{suffix}",
+        :client_secret_basic,
+        secret,
+        ["urn:ietf:params:oauth:grant-type:token-exchange"],
+        %{access_token_format: :opaque, allowed_scopes: ["read"]}
+      )
+
+    {:ok, issuer} =
+      create_client(
+        "rfc-issuer-#{suffix}",
+        :client_secret_basic,
+        "issuer-secret-#{suffix}",
+        [],
+        %{allowed_scopes: ["read"]}
+      )
+
+    expired_issuer_secret = to_usec(DateTime.add(now, -1, :second))
+    set_secret_deadline(issuer, expired_issuer_secret)
+    subject_raw = "rfc-subject-#{suffix}"
+    seed_input_token(issuer, subject_raw, now)
+
+    deadline = to_usec(now)
+    set_secret_deadline(requester, deadline)
+    before_tokens = Lockspire.TestRepo.aggregate(TokenRecord, :count)
+    before_audits = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    assert {:error,
+            %{
+              status: 401,
+              error: "invalid_client",
+              reason_code: :client_secret_expired
+            }} =
+             exchange_rfc(
+               requester,
+               subject_raw,
+               secret,
+               sequence_clock([
+                 DateTime.add(now, -1, :second),
+                 DateTime.add(now, -1, :second),
+                 DateTime.add(now, -1, :second),
+                 DateTime.add(now, -1, :second),
+                 deadline
+               ]),
+               :ok
+             )
+
+    assert Lockspire.TestRepo.aggregate(TokenRecord, :count) == before_tokens
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits
+  end
+
+  test "expired issuer secrets do not block opaque or signed RFC 8693 outputs" do
+    for {format, validator_result} <- [
+          {:opaque, :ok},
+          {:jwt, {:ok, %{claims: %{"lifetime" => "independent"}}}}
+        ] do
+      now = future_now()
+      suffix = Ecto.UUID.generate()
+
+      {:ok, requester} =
+        create_client(
+          "rfc-success-requester-#{format}-#{suffix}",
+          :client_secret_basic,
+          "request-secret-#{suffix}",
+          ["urn:ietf:params:oauth:grant-type:token-exchange"],
+          %{access_token_format: format, allowed_scopes: ["read"]}
+        )
+
+      {:ok, issuer} =
+        create_client(
+          "rfc-expired-issuer-#{format}-#{suffix}",
+          :client_secret_basic,
+          "issuer-secret-#{suffix}",
+          [],
+          %{allowed_scopes: ["read"]}
+        )
+
+      set_secret_deadline(issuer, to_usec(DateTime.add(now, -1, :second)))
+      subject_raw = "rfc-expired-issuer-subject-#{suffix}"
+      seed_input_token(issuer, subject_raw, now)
+      before_tokens = Lockspire.TestRepo.aggregate(TokenRecord, :count)
+
+      if format == :jwt, do: publish_signing_key("kid-rfc-expired-#{suffix}")
+
+      assert {:ok, success} =
+               exchange_rfc(
+                 requester,
+                 subject_raw,
+                 "request-secret-#{suffix}",
+                 fn -> now end,
+                 validator_result
+               )
+
+      assert is_binary(success.access_token)
+      if format == :opaque, do: refute(String.contains?(success.access_token, "."))
+      if format == :jwt, do: assert(String.contains?(success.access_token, "."))
+
+      assert {:ok, stored_subject} =
+               Repository.fetch_lifecycle_token(Policy.hash_token(subject_raw))
+
+      assert stored_subject.client_id == issuer.client_id
+      assert Lockspire.TestRepo.aggregate(TokenRecord, :count) == before_tokens + 1
+    end
+  end
+
+  test "client_credentials remains an unsupported grant" do
+    assert {:error, %{status: 400, error: "unsupported_grant_type"}} =
+             TokenExchange.exchange(%{params: %{"grant_type" => "client_credentials"}})
+  end
+
   defp approved_grant("urn:ietf:params:oauth:grant-type:device_code", client, now, suffix) do
     authorization =
       DeviceAuthorization.issue(
@@ -236,10 +357,42 @@ defmodule Lockspire.Integration.ClientSecretLifetimePollExchangeTest do
       interaction_store: Repository,
       key_store: Repository,
       server_policy_store: Repository,
+      token_exchange_validator: ExchangeValidator,
       now: clock,
       access_token_generator: fn -> "opaque-access-#{Ecto.UUID.generate()}" end,
       refresh_token_generator: fn -> "opaque-refresh-#{Ecto.UUID.generate()}" end
     ]
+  end
+
+  defp seed_input_token(issuer, raw_token, now) do
+    assert {:ok, _token} =
+             Repository.store_token(%Token{
+               token_hash: Policy.hash_token(raw_token),
+               token_type: :access_token,
+               family_id: "family-#{raw_token}",
+               generation: 1,
+               client_id: issuer.client_id,
+               account_id: "account-#{raw_token}",
+               scopes: ["read"],
+               audience: ["api.example.test"],
+               issued_at: DateTime.add(now, -1, :second),
+               expires_at: DateTime.add(now, 600, :second)
+             })
+  end
+
+  defp exchange_rfc(requester, subject_raw, secret, clock, validator_result) do
+    Process.put({ExchangeValidator, :result}, validator_result)
+
+    TokenExchange.exchange(%{
+      params: %{
+        "grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange",
+        "client_id" => requester.client_id,
+        "subject_token" => subject_raw,
+        "scope" => "read"
+      },
+      authorization: basic_auth(requester.client_id, secret),
+      opts: exchange_options(clock)
+    })
   end
 
   defp set_secret_deadline(client, deadline) do

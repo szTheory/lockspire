@@ -122,18 +122,21 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   end
 
   defp validate_exchange_eligibility(clients, intent, now) do
-    with :ok <- requester_eligibility(clients[intent.requester.client_id], now),
+    requester = clients[intent.requester.client_id]
+
+    requester_context = %{
+      verified_client_identity: intent.verified_client_identity
+    }
+
+    with :ok <-
+           validate_current_authority(
+             requester,
+             requester_context,
+             now,
+             :guarded_token_exchange
+           ),
          :ok <- validate_issuer_eligibility(clients, intent.issuer_client_ids, now) do
       :ok
-    end
-  end
-
-  defp requester_eligibility(client, now) do
-    case Client.app_eligibility(client, now, :guarded_token_exchange) do
-      :ok -> :ok
-      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
-      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
-      {:error, reason} -> {:error, server_error(reason)}
     end
   end
 
