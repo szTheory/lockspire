@@ -62,6 +62,16 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     end
   end
 
+  test "an adapter that ignores the deferred clock fails executed replacement conformance" do
+    now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
+    client = client("custom-ignore-clock", 1, nil, nil)
+    assert {:ok, stored} = __MODULE__.IgnoringClock.register_client(client)
+
+    refute rotation_conforms?(__MODULE__.IgnoringClock, stored, now)
+    assert Process.get({__MODULE__.IgnoringClock, :rotation_called, client.client_id}) == true
+    refute Process.get({__MODULE__.IgnoringClock, :rotation_clock_called, client.client_id})
+  end
+
   test "missing, unknown, state-dropping and unguarded adapters fail conformance" do
     authority = Repository.transaction_authority()
 
@@ -530,5 +540,37 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
       do: %{version: 1, transaction_authority: %{identity: :missing_rotation, participants: %{}}}
 
     def lock_clients(_ids), do: {:ok, []}
+  end
+
+  defmodule IgnoringClock do
+    alias Lockspire.Domain.Client
+
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :ignoring_clock, participants: %{client_store: __MODULE__}}
+
+    def lock_clients(ids), do: {:ok, Enum.map(Enum.uniq(ids) |> Enum.sort(), &fetch!/1)}
+
+    def register_client(%Client{} = client) do
+      Process.put({__MODULE__, client.client_id}, client)
+      {:ok, client}
+    end
+
+    def fetch_client_by_id(client_id), do: {:ok, Process.get({__MODULE__, client_id})}
+    defp fetch!(client_id), do: Process.get({__MODULE__, client_id})
+
+    def rotate_client_secret(%Client{} = client, hash, verifier, _clock) do
+      Process.put({__MODULE__, :rotation_called, client.client_id}, true)
+
+      {:ok,
+       %{
+         client
+         | client_secret_hash: hash,
+           client_secret_jwt_verifier_encrypted: verifier,
+           lifetime_version: 1,
+           client_secret_expires_at: nil
+       }}
+    end
   end
 end
