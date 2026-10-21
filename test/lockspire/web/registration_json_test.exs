@@ -14,6 +14,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     allowed_grant_types: ["authorization_code", "refresh_token"],
     allowed_response_types: ["code"],
     inserted_at: @now,
+    lifetime_version: 0,
     client_secret_expires_at: nil,
     dpop_policy: :dpop,
     backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
@@ -118,6 +119,68 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     refute Map.has_key?(result, :backchannel_logout_session_required)
     refute Map.has_key?(result, :frontchannel_logout_uri)
     refute Map.has_key?(result, :frontchannel_logout_session_required)
+  end
+
+  test "serializer ignores advisory metadata and uses only the effective secret deadline" do
+    client = %Client{
+      @client
+      | token_endpoint_auth_method: :client_secret_basic,
+        lifetime_version: 1,
+        client_secret_expires_at: DateTime.from_unix!(110),
+        client_secret_hash: "dormant-hash",
+        client_secret_jwt_verifier_encrypted: "dormant-verifier",
+        metadata: Map.put(@client.metadata, "client_secret_expires_at", 999)
+    }
+
+    read = RegistrationJSON.read_response(client)
+
+    assert read.client_secret_expires_at == 110
+    refute Map.has_key?(read, "client_secret_expires_at")
+    refute Map.has_key?(read, :client_secret)
+  end
+
+  test "non-secret methods omit secret expiry even with dormant material and v0 dates are advisory" do
+    for method <- [:none, :private_key_jwt, :tls_client_auth, :self_signed_tls_client_auth] do
+      client = %Client{
+        @client
+        | token_endpoint_auth_method: method,
+          lifetime_version: 1,
+          client_secret_expires_at: DateTime.from_unix!(110),
+          client_secret_hash: "dormant-hash",
+          client_secret_jwt_verifier_encrypted: "dormant-verifier"
+      }
+
+      refute Map.has_key?(RegistrationJSON.read_response(client), :client_secret_expires_at)
+    end
+
+    legacy = %Client{
+      @client
+      | token_endpoint_auth_method: :client_secret_basic,
+        lifetime_version: 0,
+        client_secret_expires_at: DateTime.from_unix!(50)
+    }
+
+    assert RegistrationJSON.success_response(%Registration.Success{
+             client: legacy,
+             client_secret_plaintext: "secret",
+             registration_access_token_plaintext: "rat"
+           }).client_secret_expires_at == 0
+
+    assert RegistrationJSON.read_response(legacy).client_secret_expires_at == 0
+
+    assert RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+             client: legacy,
+             registration_access_token_plaintext: "rat"
+           }).client_secret_expires_at == 0
+  end
+
+  test "operator secret registration does not inherit the DCR secret policy" do
+    assert {:ok, nil} =
+             Client.secret_deadline(
+               %Client{token_endpoint_auth_method: :client_secret_basic, provenance: :operator},
+               DateTime.from_unix!(100),
+               10
+             )
   end
 
   test "error_response/1 maps code to error string" do

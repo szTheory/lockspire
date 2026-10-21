@@ -5,6 +5,7 @@ defmodule Lockspire.Integration.ClientSecretLifetimeRegistrationTest do
 
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.Registration
+  alias Lockspire.Protocol.RegistrationManagement
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Web.RegistrationJSON
@@ -71,5 +72,62 @@ defmodule Lockspire.Integration.ClientSecretLifetimeRegistrationTest do
 
       refute error.error_description =~ "expir"
     end
+  end
+
+  test "nil and zero DCR secret durations remain unlimited in storage and metadata" do
+    for duration <- [nil, 0] do
+      policy =
+        DcrFixtures.server_policy(%{
+          dcr_default_client_lifetime_seconds: nil,
+          dcr_default_client_secret_lifetime_seconds: duration
+        })
+
+      request =
+        DcrFixtures.register_request(server_policy: policy)
+        |> Map.put(:now, DateTime.from_unix!(200))
+
+      assert {:ok, %Registration.Success{} = success} = Registration.register(request)
+      assert {:ok, stored} = Repository.fetch_client_by_id(success.client.client_id)
+      assert is_nil(stored.client_secret_expires_at)
+      assert RegistrationJSON.success_response(success).client_secret_expires_at == 0
+    end
+  end
+
+  test "policy edits and read/update responses preserve the registered deadline" do
+    policy =
+      DcrFixtures.server_policy(%{
+        dcr_default_client_lifetime_seconds: nil,
+        dcr_default_client_secret_lifetime_seconds: 10
+      })
+
+    request =
+      DcrFixtures.register_request(server_policy: policy)
+      |> Map.put(:now, DateTime.from_unix!(300))
+
+    assert {:ok, %Registration.Success{} = success} = Registration.register(request)
+    assert {:ok, before_edit} = Repository.fetch_client_by_id(success.client.client_id)
+    assert DateTime.compare(before_edit.client_secret_expires_at, DateTime.from_unix!(310)) == :eq
+
+    assert {:ok, _updated_policy} =
+             Repository.put_server_policy(%{
+               policy
+               | dcr_default_client_secret_lifetime_seconds: 1
+             })
+
+    assert {:ok, after_edit} = Repository.fetch_client_by_id(success.client.client_id)
+    assert DateTime.compare(after_edit.client_secret_expires_at, DateTime.from_unix!(310)) == :eq
+
+    read_payload = RegistrationJSON.read_response(after_edit)
+
+    update_payload =
+      RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+        client: after_edit,
+        registration_access_token_plaintext: "rat"
+      })
+
+    assert read_payload.client_secret_expires_at == 310
+    assert update_payload.client_secret_expires_at == 310
+    refute Map.has_key?(read_payload, :client_secret)
+    refute Map.has_key?(update_payload, :client_secret)
   end
 end
