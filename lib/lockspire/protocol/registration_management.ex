@@ -428,13 +428,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     end)
   end
 
-  defp with_prepared_current(current, operation, {:ok, prepared}, now, callback) do
+  defp with_prepared_current(current, operation, preparation, now, callback) do
     case Client.app_eligibility(current, now, :registration_management) do
       :ok ->
-        callback.(current, now, prepared)
+        apply_prepared_current(current, now, preparation, callback)
 
       {:error, :expired} when operation in [:read, :delete] ->
-        callback.(current, now, prepared)
+        apply_prepared_current(current, now, preparation, callback)
 
       {:error, :expired} ->
         {:error, %Registration.Error{code: :registration_expired}}
@@ -447,10 +447,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     end
   end
 
-  defp with_prepared_current(_current, _operation, {:error, reason}, _now, _callback),
-    do: {:error, reason}
+  defp apply_prepared_current(current, now, {:ok, prepared}, callback),
+    do: callback.(current, now, prepared)
 
-  defp with_prepared_current(_current, _operation, _unexpected, _now, _callback),
+  defp apply_prepared_current(_current, _now, {:error, reason}, _callback), do: {:error, reason}
+
+  defp apply_prepared_current(_current, _now, _unexpected, _callback),
     do: {:error, :invalid_token}
 
   defp with_recovery_client(%Client{} = snapshot, _opts, callback)
