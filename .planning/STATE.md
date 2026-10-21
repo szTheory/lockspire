@@ -4,17 +4,17 @@ milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 164
 current_phase_name: Client-Secret Expiry & Atomic Rotation
-status: planning
-stopped_at: Phase 164 context gathered; auto-advancing within Phase 164
-last_updated: "2026-10-21T02:17:11.292Z"
-last_activity: 2026-10-20
-last_activity_desc: Phase 163 complete, transitioned to Phase 164
-state_head: d5692bc20e1065794560f87230e378a072f73d99
+status: executing
+stopped_at: Completed 164-01-PLAN.md
+last_updated: "2026-10-21T13:56:43.564Z"
+last_activity: 2026-10-21
+last_activity_desc: Phase 164 plan 164-01 completed
+state_head: 8a07ff05dbfc97d49a1651216fa3a7a9e88f0d0e
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 21
-  completed_plans: 15
+  completed_plans: 17
   percent: 40
 ---
 
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 164 — Client-Secret Expiry & Atomic Rotation (not started)
+**Current focus:** Phase 164 — Client-Secret Expiry & Atomic Rotation
 
 ## Current Position
 
-Phase: 164 (Client-Secret Expiry & Atomic Rotation) — READY TO EXECUTE
-Plan: Not started
-Status: Ready for Phase 164 discussion
-Last activity: 2026-10-20 — Phase 163 complete, transitioned to Phase 164
+Phase: 164 (Client-Secret Expiry & Atomic Rotation) — EXECUTING
+Plan: 2 of 6
+Status: Executing Phase 164; plan 164-01 is complete
+Last activity: 2026-10-21 — Phase 164 plan 164-01 completed
 
 ## Accumulated Context
 
@@ -43,7 +43,7 @@ Last activity: 2026-10-20 — Phase 163 complete, transitioned to Phase 164
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase164 is ready for discussion.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase 164 plan 164-01 is complete; plan 164-02 is next.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -315,6 +315,8 @@ Last activity: 2026-10-20 — Phase 163 complete, transitioned to Phase 164
 - [Phase 161]: 161-03: SAFE-02 PASS at 807802b6; v1.44 PR names repo-start change only for client.create, doctor token_format, doctor remote-jwks; #122 override proven offline
 - [Phase 162]: Nil and zero remain unlimited; positive lifetimes use issuance snapshots and strict UTC-second boundaries.
 - [Phase 162]: Legacy/custom-store compatibility requires explicit authoritative version and guarded whole-row promotion.
+- [Phase 164]: Invalid DCR shared-secret lifetime policy is host configuration failure and maps to server_error.
+- [Phase 164]: Registration metadata removes atom- and string-keyed raw secret fields before adding effective version-aware values.
 
 ### Pending Todos
 
@@ -379,11 +381,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T01:48:51.662Z
-Stopped at: Phase 164 context gathered; auto-advancing within Phase 164
-Resume file: .planning/phases/164-client-secret-expiry-atomic-rotation/164-CONTEXT.md
+Last session: 2026-10-21T13:56:36.886Z
+Stopped at: Completed 164-01-PLAN.md
+Resume file: None
 
-Next: $gsd-discuss-phase 163 — Phase 162 design contract independently verified (33/33 truths; 24 negative validator mutations). No Phase 163 planning or implementation has begun. Preserve original unstaged state.json bytes and historical phase exceptions.
+Next: Execute Phase 164 plan 164-02. Preserve original unstaged state.json bytes and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -514,6 +516,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 161 P02 | 25 min | 3 tasks | 3 files |
 | Phase 161 P03 | 25 min | 3 tasks | 3 files |
 | Phase 162 P01 | 5 min | 3 tasks | 5 files |
+| Phase 164 P01 | 8min | 3 tasks | 14 files |
 
 ## Operator Next Steps
 
