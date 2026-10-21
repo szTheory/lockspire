@@ -174,6 +174,43 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeAccessTest do
   end
 
   @tag :expired_management_matrix
+  test "expired management credentials take precedence over invalid PUT metadata" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+    deadline = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-1, :second)
+    set_management_deadline!(client_id, deadline)
+    {:ok, before} = Repository.fetch_client_by_id(client_id)
+    audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    invalid_bodies = [
+      DcrFixtures.valid_metadata(),
+      DcrFixtures.valid_metadata()
+      |> Map.put("client_id", client_id)
+      |> Map.put("lockspire_registration_access_token_expires_at", 0)
+    ]
+
+    for body <- invalid_bodies do
+      conn =
+        build_conn(:put, "/register/#{client_id}", body)
+        |> put_req_header("authorization", "Bearer #{rat}")
+        |> dispatch()
+
+      assert conn.status == 401
+
+      assert get_resp_header(conn, "www-authenticate") == [
+               "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+             ]
+
+      assert conn.resp_body == ""
+    end
+
+    assert {:ok, after_requests} = Repository.fetch_client_by_id(client_id)
+    assert after_requests == before
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
+  end
+
+  @tag :expired_management_matrix
   test "expired management credentials reject GET, PUT, and DELETE without writes" do
     registered = register_client()
     client_id = registered["client_id"]

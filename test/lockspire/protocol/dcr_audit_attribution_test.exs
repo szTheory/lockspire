@@ -84,7 +84,9 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
       assert {:ok, _recovered_plaintext, recovered_client} =
                RegistrationManagement.rotate_registration_access_token(update_success.client)
 
-      {:error, %Registration.Error{}} =
+      # Recovery above rotated the current RAT, so the stale snapshot takes precedence over
+      # invalid metadata and does not disclose that validation result.
+      {:error, :invalid_token} =
         RegistrationManagement.update(update_success.client.client_id, %{
           metadata: DcrFixtures.invalid_redirect_uri_metadata(),
           server_policy: server_policy,

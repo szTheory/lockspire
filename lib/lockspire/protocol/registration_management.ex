@@ -88,16 +88,14 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         client_id_from_url,
         %{
           metadata: metadata,
-          server_policy: %ServerPolicy{} = server_policy,
+          server_policy: %ServerPolicy{},
           client: %Client{} = client
         } = request
       )
       when is_binary(client_id_from_url) and is_map(metadata) do
     decision_clock = if Map.has_key?(request, :now), do: [now: request.now], else: []
 
-    with {:ok, resolved} <- DcrPolicy.resolve(server_policy, nil, metadata),
-         :ok <- Registration.validate_intake_metadata(metadata, resolved, server_policy, client),
-         {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
+    with {new_rat_plaintext, new_rat_hash} <- RegistrationAccessToken.generate(),
          {:ok, updated_client} <-
            with_current_client(
              client_id_from_url,
@@ -402,34 +400,24 @@ defmodule Lockspire.Protocol.RegistrationManagement do
            true <- current.id == snapshot.id,
            true <-
              current.registration_access_token_hash == snapshot.registration_access_token_hash,
-           true <- current.active,
-           {:ok, prepared} <- prepare_current(current, opts),
-           {:ok, now} <- decision_now(opts) do
-        case Client.management_eligibility(current, now, :registration_management) do
-          :ok ->
-            case Client.app_eligibility(current, now, :registration_management) do
-              :ok ->
-                callback.(current, now, prepared)
+           true <- current.active do
+        # Retain preparation before the decision clock so every operation decides against
+        # the final post-preparation instant. Defer returning preparation errors until the
+        # credential deadline has been checked, so an expired credential cannot learn body
+        # validation details.
+        preparation = prepare_current(current, opts)
 
-              {:error, :expired} when operation in [:read, :delete] ->
-                callback.(current, now, prepared)
+        with {:ok, now} <- decision_now(opts) do
+          case Client.management_eligibility(current, now, :registration_management) do
+            :ok ->
+              with_prepared_current(current, operation, preparation, now, callback)
 
-              {:error, :expired} ->
-                {:error, %Registration.Error{code: :registration_expired}}
+            {:error, :expired} ->
+              {:error, :invalid_token}
 
-              {:error, :disabled} ->
-                {:error, :invalid_token}
-
-              {:error, :invalid_lifetime_state} ->
-                {:error,
-                 %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
-            end
-
-          {:error, :expired} ->
-            {:error, :invalid_token}
-
-          {:error, :invalid_lifetime_state} ->
-            {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+            {:error, :invalid_lifetime_state} ->
+              {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+          end
         end
       else
         false -> {:error, :invalid_token}
@@ -439,6 +427,31 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       end
     end)
   end
+
+  defp with_prepared_current(current, operation, {:ok, prepared}, now, callback) do
+    case Client.app_eligibility(current, now, :registration_management) do
+      :ok ->
+        callback.(current, now, prepared)
+
+      {:error, :expired} when operation in [:read, :delete] ->
+        callback.(current, now, prepared)
+
+      {:error, :expired} ->
+        {:error, %Registration.Error{code: :registration_expired}}
+
+      {:error, :disabled} ->
+        {:error, :invalid_token}
+
+      {:error, :invalid_lifetime_state} ->
+        {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+    end
+  end
+
+  defp with_prepared_current(_current, _operation, {:error, reason}, _now, _callback),
+    do: {:error, reason}
+
+  defp with_prepared_current(_current, _operation, _unexpected, _now, _callback),
+    do: {:error, :invalid_token}
 
   defp with_recovery_client(%Client{} = snapshot, _opts, callback)
        when is_function(callback, 1) do
