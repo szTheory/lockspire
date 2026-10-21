@@ -74,6 +74,12 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
     send(pid, {:telemetry_event, event, measurements, metadata})
   end
 
+  defp management_update(client_id, %{client: %Client{client_id: body_client_id}} = request) do
+    Repository.put_server_policy(request.server_policy)
+    metadata = Map.put(request.metadata, "client_id", body_client_id)
+    RegistrationManagement.update(client_id, %{request | metadata: metadata})
+  end
+
   defp encrypted_jarm_metadata(overrides) do
     DcrFixtures.valid_metadata()
     |> Map.put("authorization_signed_response_alg", "RS256")
@@ -182,7 +188,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :token_endpoint_auth_method,
                 reason: :incompatible_with_fapi_2_0
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
 
     test "rejects update when client algorithm metadata is incompatible with FAPI", %{
@@ -202,7 +208,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :id_token_signed_response_alg,
                 reason: :incompatible_with_fapi_2_0
               }} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
     end
 
     test "rejects update when server is missing compliant keys for FAPI", %{
@@ -223,7 +229,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :security_profile,
                 reason: :missing_compliant_publishable_key
               }} =
-               RegistrationManagement.update(client.client_id, request)
+               management_update(client.client_id, request)
     end
 
     test "allows non-FAPI update to store legacy algorithm metadata", %{
@@ -237,7 +243,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       request = %{metadata: new_metadata, server_policy: server_policy, client: client}
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.id_token_signed_response_alg == :RS256
     end
@@ -279,7 +285,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.security_profile == :fapi_2_0_message_signing
       assert updated_client.authorization_signed_response_alg == :ES256
@@ -323,7 +329,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :authorization_signed_response_alg,
                 reason: :incompatible_with_fapi_2_0
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
   end
 
@@ -343,7 +349,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       {:ok, current} = Repository.fetch_client_by_id(client_id)
 
       assert {:error, :invalid_token} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.valid_metadata(),
                  server_policy: server_policy,
                  client: current,
@@ -388,7 +394,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client} = success} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.token_endpoint_auth_method == :client_secret_jwt
       assert updated_client.token_endpoint_auth_signing_alg == :HS256
@@ -407,14 +413,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       client_id: client_id
     } do
       {:ok, %UpdateSuccess{client: jwt_client}} =
-        RegistrationManagement.update(client_id, %{
+        management_update(client_id, %{
           metadata: DcrFixtures.client_secret_jwt_metadata(),
           server_policy: DcrFixtures.client_secret_jwt_server_policy(),
           client: client
         })
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.valid_metadata(),
                  server_policy: DcrFixtures.client_secret_jwt_server_policy(),
                  client: jwt_client
@@ -436,7 +442,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client} = success} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.backchannel_logout_uri == "https://rp.example.test/backchannel-logout"
       assert updated_client.backchannel_logout_session_required == true
@@ -470,14 +476,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       server_policy: server_policy
     } do
       assert {:ok, %UpdateSuccess{client: seeded_client}} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.valid_logout_metadata(),
                  server_policy: server_policy,
                  client: client
                })
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.replacement_logout_metadata(),
                  server_policy: server_policy,
                  client: seeded_client
@@ -500,14 +506,14 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       server_policy: server_policy
     } do
       assert {:ok, %UpdateSuccess{client: seeded_client}} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.valid_logout_metadata(),
                  server_policy: server_policy,
                  client: client
                })
 
       assert {:ok, %UpdateSuccess{client: cleared_client}} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.valid_metadata(),
                  server_policy: server_policy,
                  client: seeded_client
@@ -540,7 +546,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.authorization_signed_response_alg == :RS256
       assert updated_client.authorization_encrypted_response_alg == :RSA_OAEP_256
@@ -570,7 +576,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client.client_id, request)
+               management_update(client.client_id, request)
 
       assert updated_client.client_id == client.client_id
       assert updated_client.token_endpoint_auth_method == :private_key_jwt
@@ -598,7 +604,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :authorization_encrypted_response_enc,
                 reason: :missing_for_encrypted_response
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
 
     test "rejects update when encrypted JARM metadata uses both jwks and jwks_uri", %{
@@ -621,7 +627,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :jwks,
                 reason: :mutually_exclusive_with_jwks_uri
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
 
     test "rejects update when metadata includes both jwks and jwks_uri", %{
@@ -641,7 +647,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :jwks,
                 reason: :mutually_exclusive_with_jwks_uri
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
 
     test "rejects update when jwks_uri is paired with unsupported auth method", %{
@@ -660,7 +666,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 code: :invalid_client_metadata,
                 field: :jwks_uri,
                 reason: :unsupported_token_endpoint_auth_method
-              }} = RegistrationManagement.update(client_id, request)
+              }} = management_update(client_id, request)
     end
 
     test "accepts (client_id_from_url, %{metadata, server_policy, client}) and returns UpdateSuccess",
@@ -675,7 +681,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
 
       assert {:ok,
               %UpdateSuccess{client: updated_client, registration_access_token_plaintext: new_rat}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.client_id == client_id
       assert updated_client.name == "Updated Name"
@@ -723,7 +729,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:error, %Registration.Error{code: :invalid_client_metadata, field: :redirect_uris}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
     end
 
     test "rejects malformed backchannel logout URI with stable field attribution", %{
@@ -737,7 +743,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :backchannel_logout_uri,
                 reason: :invalid_logout_uri
               }} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.invalid_backchannel_logout_uri_metadata(),
                  server_policy: server_policy,
                  client: client
@@ -755,7 +761,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :backchannel_logout_session_required,
                 reason: :invalid_boolean
               }} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.invalid_logout_boolean_metadata(),
                  server_policy: server_policy,
                  client: client
@@ -773,7 +779,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :backchannel_logout_session_required,
                 reason: :logout_uri_required
               }} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.missing_backchannel_logout_uri_metadata(),
                  server_policy: server_policy,
                  client: client
@@ -791,7 +797,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
                 field: :frontchannel_logout_uri,
                 reason: :frontchannel_logout_origin_mismatch
               }} =
-               RegistrationManagement.update(client_id, %{
+               management_update(client_id, %{
                  metadata: DcrFixtures.frontchannel_logout_origin_mismatch_metadata(),
                  server_policy: server_policy,
                  client: client
@@ -808,7 +814,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
         client: client
       }
 
-      assert {:error, :invalid_token} = RegistrationManagement.update("wrong_id", request)
+      assert {:error, :invalid_token} = management_update("wrong_id", request)
     end
 
     test "updates self-registered client dpop_policy to :dpop from dpop_bound_access_tokens", %{
@@ -825,7 +831,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.dpop_policy == :dpop
     end
@@ -845,7 +851,7 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       }
 
       assert {:ok, %UpdateSuccess{client: updated_client}} =
-               RegistrationManagement.update(client_id, request)
+               management_update(client_id, request)
 
       assert updated_client.dpop_policy == :bearer
     end

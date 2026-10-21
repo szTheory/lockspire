@@ -43,6 +43,9 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     Jason.decode!(conn.resp_body)
   end
 
+  defp management_metadata(client_id),
+    do: Map.put(DcrFixtures.valid_metadata(), "client_id", client_id)
+
   defp expire_app!(client_id) do
     past = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-1, :second)
 
@@ -78,7 +81,7 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
 
     put_conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id))
       |> put_req_header("authorization", "Bearer #{rat}")
       |> dispatch()
 
@@ -115,13 +118,24 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     assert get_conn.status == 200
 
     put_conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id))
       |> put_req_header("authorization", "Bearer #{old_rat}")
       |> dispatch()
 
     assert put_conn.status == 200
     rotated_rat = Jason.decode!(put_conn.resp_body)["registration_access_token"]
     refute rotated_rat == old_rat
+    {:ok, after_update} = Repository.fetch_client_by_id(client_id)
+    audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    replay_put_conn =
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id))
+      |> put_req_header("authorization", "Bearer #{old_rat}")
+      |> dispatch()
+
+    assert replay_put_conn.status == 401
+    assert {:ok, ^after_update} = Repository.fetch_client_by_id(client_id)
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
 
     stale_conn =
       build_conn(:get, "/register/#{client_id}")
@@ -140,7 +154,7 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     assert disabled_conn.status == 401
 
     disabled_put_conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id))
       |> put_req_header("authorization", "Bearer #{rotated_rat}")
       |> dispatch()
 
@@ -152,6 +166,26 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
       |> dispatch()
 
     assert disabled_delete_conn.status == 401
+  end
+
+  test "repeated GET does not renew a management token or write audit state" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+    {:ok, before} = Repository.fetch_client_by_id(client_id)
+    audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    for _ <- 1..2 do
+      conn =
+        build_conn(:get, "/register/#{client_id}")
+        |> put_req_header("authorization", "Bearer #{rat}")
+        |> dispatch()
+
+      assert conn.status == 200
+    end
+
+    assert {:ok, ^before} = Repository.fetch_client_by_id(client_id)
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
   end
 
   @tag :phase165_bare_bearer
@@ -201,7 +235,7 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
 
     conns = [
       build_conn(:get, "/register/#{client_id}"),
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata()),
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id)),
       build_conn(:delete, "/register/#{client_id}")
     ]
 
@@ -226,7 +260,7 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
 
     conns = [
       build_conn(:get, "/register/#{client_id}"),
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata()),
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id)),
       build_conn(:delete, "/register/#{client_id}")
     ]
 
@@ -250,7 +284,7 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     )
 
     conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      build_conn(:put, "/register/#{client_id}", management_metadata(client_id))
       |> put_req_header("authorization", "Bearer #{rat}")
 
     result =

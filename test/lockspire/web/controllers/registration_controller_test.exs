@@ -202,7 +202,11 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     prior_rat = create_body["registration_access_token"]
 
     update_conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.replacement_logout_metadata())
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.replacement_logout_metadata(), "client_id", client_id)
+      )
       |> put_req_header("authorization", "Bearer #{prior_rat}")
       |> dispatch()
 
@@ -244,12 +248,13 @@ defmodule Lockspire.Web.RegistrationControllerTest do
 
     assert create_conn.status == 201
     create_body = Jason.decode!(create_conn.resp_body)
+    client_id = create_body["client_id"]
 
     update_conn =
       build_conn(
         :put,
-        "/register/#{create_body["client_id"]}",
-        DcrFixtures.invalid_backchannel_logout_uri_metadata()
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.invalid_backchannel_logout_uri_metadata(), "client_id", client_id)
       )
       |> put_req_header("authorization", "Bearer #{create_body["registration_access_token"]}")
       |> dispatch()

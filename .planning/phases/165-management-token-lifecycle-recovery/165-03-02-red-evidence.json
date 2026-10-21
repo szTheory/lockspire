@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/management_token_request_contract_test.exs --include management_request_red --exclude test --max-failures 1 --timeout 55000 (temporary LockspireTapFormatter configured in test/test_helper.exs)",
+  "exitCode": 2,
+  "output": "ok 1 - test rejects registration_access_token in replacement metadata without rotating authority\nok 2 - test lifecycle extensions are server-owned and intake cannot set them\nok 3 - test rejected replacements leave the client and audit record unchanged\nnot ok 4 - test registration intake rejects server-owned lifecycle extensions\n1..4\n",
+  "targetTest": "test registration intake rejects server-owned lifecycle extensions",
+  "targetFile": "test/lockspire/protocol/management_token_request_contract_test.exs",
+  "expected": "Registration intake rejects server-owned lifecycle extensions with invalid_client_metadata.",
+  "actual": "The named test failed because lifecycle extensions were accepted by registration intake.",
+  "semanticAssessment": "The test executed real registration intake with the server-owned app-expiry extension and failed directly on the planned invalid_client_metadata assertion. This demonstrates that the current intake path accepts server-owned lifecycle values from the client."
+}
