@@ -573,33 +573,28 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          request,
          requested_resources
        ) do
-    issued_at = now(request)
+    grant = %Token{authorization_code | audience: requested_resources}
+    dependencies = Dependencies.fetch!(request)
 
-    case TokenIssuer.issue_grant(
-           client,
-           %Token{authorization_code | audience: requested_resources},
-           issued_at,
-           issuance_context,
-           Dependencies.fetch!(request)
-         ) do
-      {:ok,
-       %{
-         access_token: %Token{} = access_token,
-         raw_access_token: raw_access_token,
-         formatted_refresh_token: formatted_refresh_token
-       }} ->
+    case TokenIssuer.prepare_code_grant(client, grant, issuance_context, dependencies) do
+      {:ok, prepared_issuance} ->
         with :ok <- ensure_code_redemption_capabilities(request) do
           case persist_authorization_code_grant(
                  code_hash,
-                 issued_at,
-                 access_token,
+                 client,
                  authorization_code,
-                 formatted_refresh_token,
+                 prepared_issuance,
                  issuance_context,
                  request
                ) do
-            {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-              TokenIssuer.build_success(
+            {:ok,
+             %{
+               access_token: %Token{} = persisted_access_token,
+               raw_access_token: raw_access_token,
+               issued_at: issued_at,
+               expires_in: expires_in
+             } = persisted_grant} ->
+              TokenIssuer.build_code_success(
                 client,
                 authorization_code,
                 persisted_access_token,
@@ -607,8 +602,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                 issuance_context,
                 issued_at,
                 Map.get(persisted_grant, :refresh_token_raw),
+                expires_in,
                 Dependencies.fetch!(request)
               )
+
+            {:error, %Error{} = error} ->
+              {:error, error}
 
             {:error, :already_redeemed} ->
               {:error,
@@ -1058,10 +1057,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   defp persist_authorization_code_grant(
          code_hash,
-         issued_at,
-         %Token{} = access_token,
+         %Client{} = client,
          %Token{} = authorization_code,
-         formatted_refresh_token,
+         prepared_issuance,
          issuance_context,
          request
        ) do
@@ -1070,10 +1068,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     GrantPersistence.redeem_authorization_code(
       %{
         code_hash: code_hash,
-        issued_at: issued_at,
-        access_token: access_token,
+        client: client,
         authorization_code: authorization_code,
-        formatted_refresh_token: formatted_refresh_token,
+        prepared_issuance: prepared_issuance,
+        formatted_refresh_token: prepared_issuance.formatted_refresh_token,
         issuance_context: issuance_context,
         audit_event:
           GrantObservability.authorization_code_redemption_audit_event(

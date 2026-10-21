@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   """
 
   alias Lockspire.Config
+  alias Lockspire.Domain.Client
   alias Lockspire.Domain.ConsentGrant
   alias Lockspire.Domain.Interaction
   alias Lockspire.Domain.Token
@@ -12,6 +13,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   alias Lockspire.Protocol.AuthorizationRequest.Validated
   alias Lockspire.Protocol.ConsentPolicy
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   @authorization_code_ttl 300
@@ -50,15 +52,36 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
          :ok <- ensure_resume_subject(interaction, subject_context) do
       subject_id = subject_id!(subject_context)
 
-      case interaction.status do
-        :pending_login ->
-          transition_pending_login(interaction, subject_id, subject_context, opts)
+      case current_client_eligibility(interaction.client_id, opts) do
+        :ok ->
+          case interaction.status do
+            :pending_login ->
+              case transition_pending_login(interaction, subject_id, subject_context, opts) do
+                {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+                  case denial_redirect(interaction, opts) do
+                    {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
+                    {:error, redirect_reason} -> {:error, redirect_reason}
+                  end
 
-        :pending_consent ->
-          {:consent_required, interaction}
+                outcome ->
+                  outcome
+              end
 
-        _other ->
-          {:error, :interaction_not_active}
+            :pending_consent ->
+              {:consent_required, interaction}
+
+            _other ->
+              {:error, :interaction_not_active}
+          end
+
+        {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+          case denial_redirect(interaction, opts) do
+            {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
+            {:error, redirect_reason} -> {:error, redirect_reason}
+          end
+
+        {:error, reason} ->
+          {:error, reason}
       end
     end
   end
@@ -79,14 +102,23 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       ]
 
       case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
-        {:ok, {completed, redirect_uri}} ->
+        {:ok, {completed, raw_code}} ->
           emit(:consent, :approved, completed, subject_id, %{reason_code: :consent_approved})
 
           emit(:authorization, :completed, completed, subject_id, %{
             reason_code: :consent_approved
           })
 
-          {:approved, redirect_uri}
+          case approval_redirect(completed, raw_code, opts) do
+            {:ok, redirect_uri} -> {:approved, redirect_uri}
+            {:error, reason} -> {:error, reason}
+          end
+
+        {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+          case denial_redirect(interaction, opts) do
+            {:ok, redirect_uri} -> {:denied, redirect_uri}
+            {:error, redirect_reason} -> {:error, redirect_reason}
+          end
 
         {:error, :invalid_state} ->
           {:error, :interaction_not_active}
@@ -252,12 +284,22 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     case transact_with_audit(interaction_store(opts), [audit_event], fn ->
            complete_reused_consent(interaction, subject_id, grant.id, opts)
          end) do
-      {:ok, {%Interaction{} = completed, redirect_uri}} ->
+      {:ok, {%Interaction{} = completed, raw_code}} ->
         emit(:authorization, :completed, completed, subject_id, %{reason_code: :consent_reused})
-        {:consent_reused, redirect_uri}
+
+        case approval_redirect(completed, raw_code, opts) do
+          {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
+          {:error, reason} -> {:error, reason}
+        end
 
       {:error, :invalid_state} ->
         {:error, :interaction_not_active}
+
+      {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+        case denial_redirect(interaction, opts) do
+          {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
+          {:error, redirect_reason} -> {:error, redirect_reason}
+        end
 
       {:error, reason} ->
         {:error, reason}
@@ -293,7 +335,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
   defp issue_authorization_code(%Interaction{} = interaction, subject_id, consent_grant_id, opts) do
     raw_code = generate_code(opts)
-    now = now(opts)
+    now = interaction.completed_at || now(opts)
     token_hash = Policy.hash_token(raw_code)
 
     token = %Token{
@@ -315,7 +357,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
 
     with {:ok, stored_token} <- token_store(opts).store_token(token) do
       emit(:authorization_code, :issued, interaction, subject_id, %{token_id: stored_token.id})
-      approval_redirect(interaction, raw_code, opts)
+      {:ok, raw_code}
     end
   end
 
@@ -325,7 +367,7 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       client_id: interaction.client_id,
       scopes: interaction.scopes_requested,
       authorization_details: interaction.authorization_details,
-      granted_at: now(opts),
+      granted_at: interaction.completed_at || now(opts),
       status: :active,
       kind: ConsentPolicy.approval_kind(remember?)
     }
@@ -587,11 +629,12 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp approve_pending_interaction(interaction_id, subject_id, remember?, opts) do
-    with {:ok, completed} <-
+    with {:ok, client} <- lock_current_client_for_interaction(interaction_id, opts),
+         {:ok, completed} <-
            interaction_store(opts).transition_interaction(
              interaction_id,
              [:pending_consent],
-             %{status: :completed, completed_at: now(opts)}
+             completion_mutation(client, opts)
            ),
          {:ok, grant} <- maybe_store_consent(completed, subject_id, remember?, opts),
          {:ok, redirect_uri} <- issue_authorization_code(completed, subject_id, grant.id, opts) do
@@ -612,11 +655,12 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp complete_reused_consent(%Interaction{} = interaction, subject_id, consent_grant_id, opts) do
-    with {:ok, completed} <-
+    with {:ok, client} <- lock_current_client_for_interaction(interaction.interaction_id, opts),
+         {:ok, completed} <-
            interaction_store(opts).transition_interaction(
              interaction.interaction_id,
              [:pending_consent],
-             %{status: :completed, completed_at: now(opts)}
+             completion_mutation(client, opts)
            ),
          {:ok, redirect_uri} <-
            issue_authorization_code(completed, subject_id, consent_grant_id, opts) do
@@ -630,17 +674,104 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
          subject_context,
          opts
        ) do
-    interaction_store(opts).transition_interaction(
-      interaction.interaction_id,
-      [:pending_login],
-      %{
-        status: :pending_consent,
-        account_id: subject_id,
-        consent_requested_at: now(opts)
-      }
-      |> maybe_put_auth_time(subject_context)
-    )
+    transact_with_audit(interaction_store(opts), [], fn ->
+      with {:ok, client} <- lock_current_client_for_interaction(interaction.interaction_id, opts) do
+        interaction_store(opts).transition_interaction(
+          interaction.interaction_id,
+          [:pending_login],
+          fn current ->
+            decision_now = now(opts)
+
+            with :ok <- ensure_current_app_eligible(client, decision_now),
+                 :ok <- ensure_interaction_active(current, decision_now) do
+              {:ok,
+               %{
+                 status: :pending_consent,
+                 account_id: subject_id,
+                 consent_requested_at: decision_now
+               }
+               |> maybe_put_auth_time(subject_context)}
+            end
+          end
+        )
+      end
+    end)
   end
+
+  defp lock_current_client_for_interaction(interaction_id, opts) do
+    with {:ok, %Interaction{client_id: client_id}} <-
+           interaction_store(opts).fetch_interaction(interaction_id),
+         {:ok, authority} <- transaction_authority(interaction_store(opts)),
+         {:ok, _support} <- ClientLifetime.adapt(client_store(opts), authority),
+         {:ok, [%Client{} = client]} <- client_store(opts).lock_clients([client_id]),
+         {:ok, client} <- ClientLifetime.validate_client(client) do
+      {:ok, client}
+    else
+      {:ok, []} -> {:error, :client_not_found}
+      {:error, reason} -> {:error, reason}
+      _other -> {:error, :client_lifetime_unavailable}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp completion_mutation(%Client{} = client, opts) do
+    fn %Interaction{} = interaction ->
+      decision_now = now(opts)
+
+      with :ok <- ensure_current_app_eligible(client, decision_now),
+           :ok <- ensure_interaction_active(interaction, decision_now) do
+        {:ok, %{status: :completed, completed_at: decision_now}}
+      end
+    end
+  end
+
+  defp ensure_current_app_eligible(%Client{} = client, now) do
+    case Client.app_eligibility(client, now, :authorization_completion) do
+      :ok -> :ok
+      {:error, :expired} -> {:error, :client_app_expired}
+      {:error, :disabled} -> {:error, :client_app_disabled}
+      {:error, :invalid_lifetime_state} -> {:error, :client_lifetime_state_invalid}
+    end
+  end
+
+  defp current_client_eligibility(client_id, opts) do
+    store = client_store(opts)
+
+    with {:ok, authority} <- transaction_authority(interaction_store(opts)),
+         {:ok, _support} <- ClientLifetime.adapt(store, authority),
+         {:ok, %Client{} = client} <- store.fetch_client_by_id(client_id),
+         {:ok, client} <- ClientLifetime.validate_client(client) do
+      ensure_current_app_eligible(client, now(opts))
+    else
+      {:ok, nil} -> {:error, :client_not_found}
+      {:error, reason} -> {:error, reason}
+      _other -> {:error, :client_lifetime_unavailable}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp ensure_interaction_active(%Interaction{} = interaction, now) do
+    if interaction.status in [:pending_login, :pending_consent] and
+         DateTime.compare(interaction.expires_at, now) == :gt do
+      :ok
+    else
+      {:error, :interaction_expired}
+    end
+  end
+
+  defp transaction_authority(store) do
+    if function_exported?(store, :transaction_authority, 0) do
+      {:ok, store.transaction_authority()}
+    else
+      {:error, :transaction_authority_unavailable}
+    end
+  rescue
+    _error -> {:error, :transaction_authority_unavailable}
+  end
+
+  defp client_store(opts), do: Keyword.get(opts, :client_store, interaction_store(opts))
 
   defp interaction_expired?(%Interaction{} = interaction, now) do
     interaction.status == :expired or DateTime.compare(interaction.expires_at, now) != :gt
@@ -724,9 +855,12 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   end
 
   defp now(opts) do
-    opts
-    |> Keyword.get_lazy(:now, fn -> &DateTime.utc_now/0 end)
-    |> then(& &1.())
+    case Keyword.get(opts, :now) do
+      %DateTime{} = now -> DateTime.truncate(now, :second)
+      now_fun when is_function(now_fun, 0) -> now_fun.() |> DateTime.truncate(:second)
+      nil -> DateTime.utc_now() |> DateTime.truncate(:second)
+      _other -> nil
+    end
   end
 
   defp login_required?(%Validated{} = validated, subject_context, now) do
@@ -804,7 +938,6 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
   defp interaction_store(opts), do: Keyword.get(opts, :interaction_store, Repository)
   defp consent_store(opts), do: Keyword.get(opts, :consent_store, Repository)
   defp token_store(opts), do: Keyword.get(opts, :token_store, Repository)
-  defp client_store(opts), do: Keyword.get(opts, :client_store, Repository)
   defp key_store(opts), do: Keyword.get(opts, :key_store, Repository)
   defp observability_module, do: Observability
 end

@@ -39,7 +39,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.LegacyOptions
-  alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Protocol.PrivateJwk
   alias Lockspire.Security.Policy
 
@@ -85,6 +84,40 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
         claims = base_claims(token, client, aud)
         sign_jwt(claims, dependencies.key_store)
     end
+  end
+
+  @doc false
+  @spec prepare(Client.t(), Dependencies.t()) :: {:ok, map()} | {:error, Error.t()}
+  def prepare(%Client{} = client, %Dependencies{} = dependencies) do
+    case resolve_format(client, server_policy(dependencies)) do
+      :opaque ->
+        formatted = TokenFormatter.format_access_token([])
+        {:ok, %{format: :opaque, formatted: formatted}}
+
+      :jwt ->
+        with {:ok, signing_key} <- fetch_signing_key(dependencies.key_store),
+             {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+             {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map) do
+          {:ok, %{format: :jwt, jwk: jwk, kid: signing_key.kid, alg: signing_key.alg}}
+        else
+          {:error, reason} -> {:error, token_signing_error(reason)}
+        end
+    end
+  end
+
+  @doc false
+  @spec issue_prepared(token_for_issuance(), Client.t(), map()) :: result()
+  def issue_prepared(%Token{} = _token, %Client{} = _client, %{
+        format: :opaque,
+        formatted: formatted
+      }) do
+    {:ok, formatted.token, formatted.token_hash}
+  end
+
+  def issue_prepared(%Token{} = token, %Client{} = client, %{format: :jwt} = prepared) do
+    aud = derive_aud(token.audience, client.client_id)
+    claims = base_claims(token, client, aud)
+    sign_jwt_prepared(claims, prepared)
   end
 
   @doc """
@@ -175,7 +208,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
       "iss" => Config.issuer!(),
       "sub" => token.account_id,
       "aud" => aud,
-      "exp" => iat + TokenLifetime.access_token(),
+      "exp" => DateTime.to_unix(token.expires_at),
       "iat" => iat,
       "client_id" => client.client_id,
       "jti" => generate_jti(),
@@ -222,6 +255,26 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
            reason_code: :token_signing_failed
          }}
     end
+  end
+
+  defp sign_jwt_prepared(claims, %{jwk: jwk, kid: kid, alg: alg}) do
+    with {:ok, compact} <-
+           PrivateJwk.sign(jwk, %{"alg" => alg, "kid" => kid, "typ" => "at+jwt"}, claims) do
+      {:ok, compact, Policy.hash_token(compact)}
+    else
+      {:error, reason} -> {:error, token_signing_error(reason)}
+    end
+  end
+
+  defp token_signing_error(reason) do
+    Logger.error("Failed to sign access token: #{inspect(reason)}")
+
+    %Error{
+      status: 500,
+      error: "server_error",
+      error_description: "Unable to sign access token.",
+      reason_code: :token_signing_failed
+    }
   end
 
   # --------------------------------------------------------------------------

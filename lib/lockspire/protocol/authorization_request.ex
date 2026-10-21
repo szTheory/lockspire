@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   alias Lockspire.Protocol.RequestObject
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.Policy
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   @allowed_prompts MapSet.new(["login", "consent"])
@@ -87,9 +88,10 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   @type result ::
           {:ok, Validated.t()} | {:browser_error, Error.t()} | {:redirect_error, Error.t()}
 
-  @spec validate(map()) :: result()
-  def validate(params) when is_map(params) do
-    with {:ok, %Client{} = client} <- fetch_client(params),
+  @spec validate(map(), keyword()) :: result()
+  def validate(params, opts \\ []) when is_map(params) and is_list(opts) do
+    with {:ok, %Client{} = client} <- fetch_client(params, opts),
+         :ok <- ensure_intake_app_eligible(params, client, opts),
          {:ok, resolved_par_policy} <- resolve_effective_par_policy(client),
          {:ok, resolved_security_profile} <- resolve_effective_security_profile(client),
          :ok <-
@@ -100,6 +102,7 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
              resolved_security_profile
            ),
          {:ok, resolved_params} <- resolve_authorization_params(params, client),
+         :ok <- ensure_app_eligible(resolved_params, client, opts),
          {:ok, resolved_params} <-
            maybe_consume_request_object(resolved_params, client,
              security_profile: resolved_security_profile
@@ -127,29 +130,51 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  @spec validate_pushed(map(), Client.t()) :: {:ok, Validated.t()} | {:error, Error.t()}
-  def validate_pushed(params, %Client{} = client) when is_map(params) do
-    with {:ok, resolved_security_profile} <- resolve_effective_security_profile(client) do
-      case validate_with_client(params, client,
-             pushed?: true,
-             security_profile: resolved_security_profile
-           ) do
-        {:ok, %Validated{} = validated} ->
-          {:ok, validated}
+  @spec validate_pushed(map(), Client.t(), keyword()) ::
+          {:ok, Validated.t()} | {:error, Error.t()}
+  def validate_pushed(params, %Client{} = client, opts \\ [])
+      when is_map(params) and is_list(opts) do
+    case ensure_app_eligible(params, client, opts) do
+      :ok ->
+        with {:ok, resolved_security_profile} <- resolve_effective_security_profile(client) do
+          case validate_with_client(params, client,
+                 pushed?: true,
+                 security_profile: resolved_security_profile
+               ) do
+            {:ok, %Validated{} = validated} ->
+              {:ok, validated}
 
-        {:browser_error, %Error{} = error} ->
-          {:error, error}
+            {:browser_error, %Error{} = error} ->
+              {:error, error}
 
-        {:redirect_error, %Error{} = error} ->
-          {:error, error}
-      end
+            {:redirect_error, %Error{} = error} ->
+              {:error, error}
+          end
+        end
+
+      {disposition, %Error{} = error} when disposition in [:browser_error, :redirect_error] ->
+        {:error, error}
     end
   end
 
-  defp fetch_client(%{"client_id" => client_id}) when is_binary(client_id) and client_id != "" do
-    case Repository.fetch_client_by_id(client_id) do
+  defp fetch_client(%{"client_id" => client_id}, opts)
+       when is_binary(client_id) and client_id != "" do
+    client_store = Keyword.get(opts, :client_store, Repository)
+
+    case client_store.fetch_client_by_id(client_id) do
       {:ok, %Client{} = client} ->
-        {:ok, client}
+        case adapted_client(client, client_store) do
+          {:ok, valid_client} ->
+            {:ok, valid_client}
+
+          {:error, _reason} ->
+            {:browser_error,
+             browser_error(
+               :invalid_request,
+               "Unable to validate client lifetime state",
+               :client_lifetime_state_invalid
+             )}
+        end
 
       {:ok, nil} ->
         {:browser_error, browser_error(:invalid_client, "Unknown client_id", :invalid_client)}
@@ -160,8 +185,82 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     end
   end
 
-  defp fetch_client(_params) do
+  defp fetch_client(_params, _opts) do
     {:browser_error, browser_error(:invalid_request, "Missing client_id", :missing_client_id)}
+  end
+
+  defp ensure_app_eligible(params, %Client{} = client, opts) do
+    now = request_now(opts)
+
+    case Client.app_eligibility(client, now, :authorization_intake) do
+      :ok ->
+        :ok
+
+      {:error, reason} when reason in [:disabled, :expired] ->
+        case validate_redirect_uri(client, params) do
+          {:ok, redirect_uri} ->
+            {:redirect_error,
+             %Error{
+               error: "access_denied",
+               error_description: "Client application is not available",
+               reason_code:
+                 if(reason == :expired, do: :client_app_expired, else: :client_app_disabled),
+               state: params["state"],
+               redirect_uri: redirect_uri
+             }}
+
+          {:browser_error, %Error{} = error} ->
+            {:browser_error, error}
+        end
+
+      {:error, :invalid_lifetime_state} ->
+        {:browser_error,
+         browser_error(
+           :invalid_request,
+           "Unable to validate client lifetime state",
+           :client_lifetime_state_invalid
+         )}
+    end
+  rescue
+    _error ->
+      {:browser_error,
+       browser_error(
+         :invalid_request,
+         "Unable to determine client application eligibility",
+         :client_lifetime_clock_failed
+       )}
+  end
+
+  defp ensure_intake_app_eligible(%{"request_uri" => request_uri}, %Client{}, _opts)
+       when is_binary(request_uri) and request_uri != "",
+       do: :ok
+
+  defp ensure_intake_app_eligible(params, %Client{} = client, opts),
+    do: ensure_app_eligible(params, client, opts)
+
+  defp adapted_client(%Client{} = client, client_store) do
+    with {:ok, declaration} <- client_lifetime_declaration(client_store),
+         {:ok, _support} <-
+           ClientLifetime.adapt(client_store, Map.get(declaration, :transaction_authority)),
+         {:ok, valid_client} <- ClientLifetime.validate_client(client) do
+      {:ok, valid_client}
+    end
+  end
+
+  defp client_lifetime_declaration(client_store) do
+    declaration = client_store.lifetime_contract()
+    {:ok, declaration}
+  rescue
+    _error -> {:error, :client_lifetime_declaration_unavailable}
+  end
+
+  defp request_now(opts) do
+    case Keyword.get(opts, :now) do
+      %DateTime{} = now -> DateTime.truncate(now, :second)
+      now_fun when is_function(now_fun, 0) -> now_fun.() |> DateTime.truncate(:second)
+      nil -> DateTime.utc_now() |> DateTime.truncate(:second)
+      _other -> nil
+    end
   end
 
   defp resolve_effective_par_policy(%Client{} = client) do

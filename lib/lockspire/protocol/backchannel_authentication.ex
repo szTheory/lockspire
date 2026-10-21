@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   alias Lockspire.Host.Context
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Security.DeviceCode
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
@@ -38,7 +39,7 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   def authorize(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", %{}))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-    now = now(request)
+    clock = clock(request)
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
          :ok <- validate_hints(params),
@@ -46,8 +47,8 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
          {:ok, delivery_mode} <- validate_delivery_mode(params, client),
          {:ok, subject_id} <- resolve_subject(params, client, request),
          :ok <- validate_user_code(params, client, subject_id, request),
-         {:ok, %CibaAuthorization{} = ciba_auth} <-
-           persist_ciba_authorization(params, client, subject_id, delivery_mode, request, now),
+         {:ok, %CibaAuthorization{} = ciba_auth, now} <-
+           persist_ciba_authorization(params, client, subject_id, delivery_mode, request, clock),
          :ok <- notify_host(ciba_auth, client, request) do
       {:ok,
        %Success{
@@ -62,18 +63,20 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   end
 
   defp authenticate_client(params, authorization, request) do
-    case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
-      {:ok, %Client{} = client} ->
-        {:ok, client}
+    with {:ok, options} <- client_auth_options(request) do
+      case ClientAuth.authenticate(params, authorization, options) do
+        {:ok, %Client{} = client} ->
+          {:ok, client}
 
-      {:error, %ClientAuth.Error{} = error} ->
-        {:error,
-         %Error{
-           status: error.status,
-           error: error.error,
-           error_description: error.error_description,
-           reason_code: error.reason_code
-         }}
+        {:error, %ClientAuth.Error{} = error} ->
+          {:error,
+           %Error{
+             status: error.status,
+             error: error.error,
+             error_description: error.error_description,
+             reason_code: error.reason_code
+           }}
+      end
     end
   end
 
@@ -292,29 +295,22 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   defp to_subject_id(%{id: id}), do: to_string(id)
   defp to_subject_id(other), do: to_string(other)
 
-  defp persist_ciba_authorization(params, client, subject_id, delivery_mode, request, now) do
+  defp persist_ciba_authorization(params, client, subject_id, delivery_mode, request, clock) do
     # Reusing the same entropy as device code
     auth_req_id = DeviceCode.generate_device_code()
     scopes = parse_scopes(params["scope"])
 
-    ciba_auth =
-      CibaAuthorization.issue(
-        %{
-          client_id: client.client_id,
-          auth_req_id: auth_req_id,
-          scopes: scopes,
-          subject_id: subject_id,
-          binding_message: params["binding_message"],
-          delivery_mode: delivery_mode,
-          client_notification_endpoint: client.backchannel_client_notification_endpoint,
-          client_notification_token_encrypted: params["client_notification_token"],
-          auth_req_id_encrypted: auth_req_id
-        },
-        now: now
-      )
-
-    case ciba_authorization_store(request).put_ciba_authorization(ciba_auth) do
-      {:ok, %CibaAuthorization{} = stored_auth} ->
+    case guarded_create_ciba_authorization(
+           client,
+           subject_id,
+           delivery_mode,
+           request,
+           clock,
+           auth_req_id,
+           scopes,
+           params
+         ) do
+      {:ok, {%CibaAuthorization{} = stored_auth, now}} ->
         Lockspire.Observability.emit(
           :ciba_authorization,
           :initiated,
@@ -322,7 +318,25 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
           %{client_id: client.client_id, auth_req_id_hash: stored_auth.auth_req_id_hash}
         )
 
-        {:ok, %CibaAuthorization{stored_auth | auth_req_id: ciba_auth.auth_req_id}}
+        {:ok, %CibaAuthorization{stored_auth | auth_req_id: auth_req_id}, now}
+
+      {:error, :expired} ->
+        {:error,
+         oauth_error(
+           401,
+           "invalid_client",
+           "Client application has expired",
+           :client_app_expired
+         )}
+
+      {:error, :disabled} ->
+        {:error,
+         oauth_error(
+           401,
+           "invalid_client",
+           "Client application is disabled",
+           :client_app_disabled
+         )}
 
       {:error, _reason} ->
         {:error,
@@ -334,6 +348,80 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
          )}
     end
   end
+
+  defp guarded_create_ciba_authorization(
+         client,
+         subject_id,
+         delivery_mode,
+         request,
+         clock,
+         auth_req_id,
+         scopes,
+         params
+       ) do
+    opts = request_opts(request)
+    client_store = Keyword.get(opts, :client_store, Repository)
+    ciba_store = ciba_authorization_store(request)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+    authority = transaction_store.transaction_authority()
+
+    with :ok <- require_participants(authority, client_store, ciba_store, transaction_store),
+         {:ok, _lifetime} <- ClientLifetime.adapt(client_store, authority),
+         {:ok, result} <-
+           transaction_store.transact(fn ->
+             with {:ok, [current_client]} <- client_store.lock_clients([client.client_id]),
+                  decision_time <- clock.(),
+                  :ok <- app_eligibility(current_client, decision_time),
+                  ciba_auth <-
+                    CibaAuthorization.issue(
+                      %{
+                        client_id: client.client_id,
+                        auth_req_id: auth_req_id,
+                        scopes: scopes,
+                        subject_id: subject_id,
+                        binding_message: params["binding_message"],
+                        delivery_mode: delivery_mode,
+                        client_notification_endpoint:
+                          current_client.backchannel_client_notification_endpoint,
+                        client_notification_token_encrypted: params["client_notification_token"],
+                        auth_req_id_encrypted: auth_req_id
+                      },
+                      now: decision_time
+                    ),
+                  {:ok, stored} <- ciba_store.put_ciba_authorization(ciba_auth) do
+               {:ok, {stored, decision_time}}
+             else
+               {:ok, []} -> {:error, :client_not_found}
+               {:error, reason} -> {:error, reason}
+             end
+           end) do
+      {:ok, result}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp app_eligibility(%Client{} = client, %DateTime{} = now) do
+    with {:ok, client} <- ClientLifetime.validate_client(client) do
+      Client.app_eligibility(client, now, :ciba_initiation)
+    end
+  end
+
+  defp require_participants(%{identity: identity, participants: participants}, client, ciba, tx)
+       when not is_nil(identity) and is_map(participants) do
+    if Map.get(participants, :client_store) == client and
+         Map.get(participants, :ciba_authorization_store) == ciba and
+         Map.get(participants, :transaction_store) == tx do
+      :ok
+    else
+      {:error, :transaction_authority_mismatch}
+    end
+  end
+
+  defp require_participants(_authority, _client, _ciba, _tx),
+    do: {:error, :transaction_authority_unavailable}
 
   defp parse_scopes(nil), do: []
   defp parse_scopes(""), do: []
@@ -362,20 +450,34 @@ defmodule Lockspire.Protocol.BackchannelAuthentication do
   end
 
   defp client_auth_options(request) do
-    [
-      client_store: Keyword.get(request_opts(request), :client_store, Repository),
-      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
-    ]
+    opts = request_opts(request)
+    client_store = Keyword.get(opts, :client_store, Repository)
+    ciba_store = ciba_authorization_store(request)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+    authority = transaction_store.transaction_authority()
+
+    with :ok <- require_participants(authority, client_store, ciba_store, transaction_store),
+         {:ok, lifetime} <- ClientLifetime.adapt(client_store, authority) do
+      {:ok,
+       [
+         client_store: client_store,
+         client_lifetime: lifetime,
+         now: clock(request),
+         supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
+       ]}
+    end
   end
 
   defp request_opts(request) do
     Map.get(request, :opts, Map.get(request, "opts", []))
   end
 
-  defp now(request) do
-    request
-    |> request_opts()
-    |> Keyword.get_lazy(:now, &DateTime.utc_now/0)
+  defp clock(request) do
+    case request |> request_opts() |> Keyword.get(:now, &DateTime.utc_now/0) do
+      %DateTime{} = now -> fn -> now end
+      now when is_function(now, 0) -> now
+      _other -> fn -> nil end
+    end
   end
 
   defp oauth_error(status, error, description, reason_code) do

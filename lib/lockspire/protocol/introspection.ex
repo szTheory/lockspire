@@ -11,6 +11,7 @@ defmodule Lockspire.Protocol.Introspection do
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
@@ -113,27 +114,44 @@ defmodule Lockspire.Protocol.Introspection do
 
   defp classify_token(%Client{} = client, %Token{} = token, now, request) do
     cond do
-      token.client_id != client.client_id ->
-        inactive_response()
-
-      token.token_type not in [:access_token, :refresh_token] ->
-        inactive_response()
-
-      not is_nil(token.reuse_detected_at) ->
-        inactive_response()
-
-      not is_nil(token.revoked_at) ->
-        inactive_response()
-
-      DateTime.compare(token.expires_at, now) != :gt ->
-        inactive_response()
-
-      true ->
-        {:ok, active_response(token, request)}
+      token.client_id != client.client_id -> inactive_response()
+      token.token_type not in [:access_token, :refresh_token] -> inactive_response()
+      not is_nil(token.reuse_detected_at) -> inactive_response()
+      not is_nil(token.revoked_at) -> inactive_response()
+      DateTime.compare(token.expires_at, now) != :gt -> inactive_response()
+      true -> target_app_response(token, request, now)
     end
   end
 
   defp classify_token(_client, nil, _now, _request), do: inactive_response()
+
+  defp target_app_response(%Token{client_id: client_id} = token, request, now) do
+    client_store = client_store(request)
+
+    case client_store.fetch_client_by_id(client_id) do
+      {:ok, %Client{} = target} ->
+        with {:ok, target} <- ClientLifetime.validate_client(target) do
+          case Client.app_eligibility(target, now, :introspection_target) do
+            :ok -> {:ok, active_response(token, request)}
+            {:error, reason} when reason in [:expired, :disabled] -> inactive_response()
+            {:error, _reason} -> lifetime_state_error()
+          end
+        else
+          {:error, _reason} -> lifetime_state_error()
+        end
+
+      {:ok, nil} ->
+        inactive_response()
+
+      {:error, _reason} ->
+        token_lookup_error()
+
+      _other ->
+        token_lookup_error()
+    end
+  rescue
+    _error -> token_lookup_error()
+  end
 
   defp active_response(%Token{} = token, request) do
     %{
@@ -211,6 +229,26 @@ defmodule Lockspire.Protocol.Introspection do
      }}
   end
 
+  defp lifetime_state_error do
+    {:error,
+     %Error{
+       status: 500,
+       error: "server_error",
+       error_description: "Unable to validate client lifetime",
+       reason_code: :client_lifetime_state_invalid
+     }}
+  end
+
+  defp token_lookup_error do
+    {:error,
+     %Error{
+       status: 500,
+       error: "server_error",
+       error_description: "Unable to load client",
+       reason_code: :client_lookup_failed
+     }}
+  end
+
   defp emit_result(%Client{} = client, %{"active" => _} = _response) do
     # unreachable because controller-facing responses use atom keys, but keep clause for completeness
     Observability.emit(:token, :introspected, %{}, %{client_id: client.client_id, active: false})
@@ -242,9 +280,25 @@ defmodule Lockspire.Protocol.Introspection do
   end
 
   defp client_auth_options(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.put_new(:client_store, Repository)
+    opts = Map.get(request, :opts, [])
+    client_store = Keyword.get(opts, :client_store, Repository)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+
+    lifetime =
+      try do
+        authority = transaction_store.transaction_authority()
+
+        case ClientLifetime.adapt(client_store, authority) do
+          {:ok, adapted} -> adapted
+          {:error, _reason} -> :unavailable
+        end
+      rescue
+        _error -> :unavailable
+      end
+
+    opts
+    |> Keyword.put(:client_store, client_store)
+    |> Keyword.put(:client_lifetime, lifetime)
     |> Keyword.put_new(:supported_jwt_auth_methods, [:private_key_jwt, :client_secret_jwt])
   end
 

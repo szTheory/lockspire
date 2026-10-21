@@ -58,10 +58,16 @@ defmodule Lockspire.Storage.Ecto.Repository.InteractionStore do
     error -> {:error, error}
   end
 
-  @spec transition_interaction(module(), String.t(), [atom()], map()) ::
+  @spec transition_interaction(
+          module(),
+          String.t(),
+          [atom()],
+          map() | (Interaction.t() -> {:ok, map()} | {:error, term()})
+        ) ::
           {:ok, Interaction.t()} | {:error, term()}
   def transition_interaction(repo, interaction_id, expected_statuses, attrs)
-      when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
+      when is_binary(interaction_id) and is_list(expected_statuses) and
+             (is_map(attrs) or is_function(attrs, 1)) do
     TransactionStore.transact(repo, fn ->
       interaction_id
       |> locked_query()
@@ -81,18 +87,34 @@ defmodule Lockspire.Storage.Ecto.Repository.InteractionStore do
 
   defp transition_record(%InteractionRecord{} = record, repo, expected_statuses, attrs) do
     if record.status in expected_statuses do
-      record
-      |> InteractionRecord.update_changeset(Map.put(attrs, :updated_at, DateTime.utc_now()))
-      |> then(&Support.update(repo, &1))
-      |> map_one(&InteractionRecord.to_domain/1)
-      |> unwrap_or_rollback(repo)
+      with {:ok, attrs} <- resolve_mutation(attrs, InteractionRecord.to_domain(record)),
+           {:ok, updated} <-
+             record
+             |> InteractionRecord.update_changeset(
+               Map.put(attrs, :updated_at, DateTime.utc_now())
+             )
+             |> then(&Support.update(repo, &1)) do
+        {:ok, InteractionRecord.to_domain(updated)}
+      else
+        {:error, reason} -> TransactionStore.rollback(repo, reason)
+      end
     else
       TransactionStore.rollback(repo, :invalid_state)
     end
   end
 
-  defp unwrap_or_rollback({:ok, result}, _repo), do: result
-  defp unwrap_or_rollback({:error, reason}, repo), do: TransactionStore.rollback(repo, reason)
+  defp resolve_mutation(attrs, _interaction) when is_map(attrs), do: {:ok, attrs}
+
+  defp resolve_mutation(fun, %Interaction{} = interaction) when is_function(fun, 1) do
+    case fun.(interaction) do
+      {:ok, attrs} when is_map(attrs) -> {:ok, attrs}
+      {:error, reason} -> {:error, reason}
+      _other -> {:error, :invalid_transition_mutation}
+    end
+  rescue
+    error -> {:error, error}
+  end
+
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
   defp map_one({:error, error}, _mapper), do: {:error, error}
   defp maybe_map(nil, _mapper), do: nil

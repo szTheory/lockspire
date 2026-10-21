@@ -31,7 +31,7 @@ defmodule Lockspire.Storage.CibaAuthorizationStore do
   @callback transition_ciba_authorization(
               String.t(),
               [CibaAuthorization.status()],
-              map()
+              map() | (CibaAuthorization.t() -> map() | {:error, term()})
             ) ::
               {:ok, CibaAuthorization.t()} | {:error, term()}
 

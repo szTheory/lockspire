@@ -37,7 +37,7 @@ defmodule Lockspire.Storage.DeviceAuthorizationStore do
   @callback transition_device_authorization(
               String.t(),
               [DeviceAuthorization.status()],
-              map()
+              map() | (DeviceAuthorization.t() -> map() | {:error, term()})
             ) ::
               {:ok, DeviceAuthorization.t()} | {:error, term()}
 

@@ -2,11 +2,15 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   @moduledoc false
 
   alias Lockspire.Domain.CibaAuthorization
+  alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
   alias Lockspire.Domain.Token
+  alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
+  alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenLifetime
+  alias Lockspire.Storage.ClientLifetime
 
   @doc false
   @spec transact_with_audit(Dependencies.t(), (-> term())) :: {:ok, term()} | {:error, term()}
@@ -43,31 +47,142 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   def redeem_authorization_code(
         %{
           code_hash: code_hash,
-          issued_at: issued_at,
-          access_token: %Token{} = access_token,
+          client: %Client{} = authenticated_client,
+          authorization_code: %Token{} = authorization_code,
+          prepared_issuance: prepared_issuance,
+          issuance_context: issuance_context,
           audit_event: audit_event
         } = intent,
         %Dependencies{} = dependencies
       ) do
     transact_with_audit(dependencies, fn ->
-      with {:ok, %{access_token: %Token{} = persisted_access_token}} <-
+      with {:ok, [%Client{} = current_client]} <-
+             dependencies.client_store.lock_clients([authenticated_client.client_id]),
+           {:ok, current_client} <-
+             validate_current_client(current_client, authenticated_client, issuance_context),
+           {:ok, redeemed} <-
              dependencies.token_store.redeem_authorization_code(
                code_hash,
-               issued_at,
-               access_token
+               nil,
+               fn %Token{} = current_code ->
+                 decide_and_build_code_issuance(
+                   current_client,
+                   current_code,
+                   authorization_code,
+                   prepared_issuance,
+                   issuance_context,
+                   dependencies
+                 )
+               end
              ),
+           %Token{} = persisted_access_token <- redeemed.access_token,
            {:ok, persisted_refresh_token} <-
-             maybe_store_token(dependencies.token_store, build_refresh_token(intent)) do
+             maybe_store_token(
+               dependencies.token_store,
+               build_refresh_token(
+                 Map.merge(intent, %{
+                   issued_at: redeemed.issued_at,
+                   refresh_expires_at: redeemed.refresh_expires_at
+                 })
+               )
+             ) do
         {:ok,
          %{
            access_token: persisted_access_token,
            refresh_token: persisted_refresh_token,
-           refresh_token_raw: refresh_token_raw(intent)
+           refresh_token_raw: refresh_token_raw(intent),
+           raw_access_token: redeemed.raw_access_token,
+           issued_at: redeemed.issued_at,
+           expires_in: redeemed.expires_in
          }, [audit_event]}
       else
         {:error, reason} -> {:error, reason}
       end
     end)
+  end
+
+  defp validate_current_client(%Client{} = current, %Client{} = _authenticated, context) do
+    identity = Map.get(context, :verified_client_identity)
+
+    with {:ok, current} <- ClientLifetime.validate_client(current),
+         :ok <- if(current.active, do: :ok, else: {:error, :client_disabled}),
+         true <- ClientAuthentication.verified_identity_matches?(identity, current) do
+      {:ok, current}
+    else
+      false -> {:error, client_authentication_error(:credential_changed)}
+      {:error, :client_disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, client_authentication_error(:credential_changed)}
+    end
+  end
+
+  defp decide_and_build_code_issuance(
+         %Client{} = current_client,
+         %Token{} = current_code,
+         %Token{} = authorization_code,
+         prepared_issuance,
+         _issuance_context,
+         %Dependencies{} = dependencies
+       ) do
+    now = dependencies.now.()
+
+    with :ok <- Client.app_eligibility(current_client, now, :guarded_token_redemption),
+         true <- current_code.client_id == current_client.client_id,
+         true <- DateTime.compare(current_code.expires_at, now) == :gt,
+         {:ok, access_expires_at} <-
+           TokenLifetime.effective_expiry(
+             now,
+             TokenLifetime.access_token(),
+             current_client.client_expires_at
+           ),
+         {:ok, refresh_expires_at} <-
+           maybe_refresh_expiry(
+             now,
+             current_client.client_expires_at,
+             prepared_issuance.formatted_refresh_token
+           ),
+         {:ok, issued} <-
+           TokenIssuer.issue_prepared_code_grant(
+             current_client,
+             %Token{current_code | audience: authorization_code.audience},
+             now,
+             access_expires_at,
+             prepared_issuance,
+             dependencies
+           ) do
+      {:ok,
+       %{
+         redeemed_at: to_utc_datetime_usec(now),
+         issued_at: to_utc_datetime_usec(now),
+         access_token: issued.access_token,
+         raw_access_token: issued.raw_access_token,
+         refresh_expires_at: refresh_expires_at,
+         expires_in: TokenLifetime.expires_in(now, access_expires_at)
+       }}
+    else
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, %Error{} = error} -> {:error, error}
+      {:error, reason} -> {:error, reason}
+      false -> {:error, :invalid_grant}
+    end
+  end
+
+  defp maybe_refresh_expiry(_now, _deadline, nil), do: {:ok, nil}
+
+  defp maybe_refresh_expiry(now, deadline, _formatted_refresh_token),
+    do: TokenLifetime.effective_expiry(now, TokenLifetime.refresh_token(), deadline)
+
+  defp to_utc_datetime_usec(datetime),
+    do: DateTime.from_unix!(DateTime.to_unix(datetime) * 1_000_000, :microsecond)
+
+  defp client_authentication_error(reason) do
+    %Error{
+      status: 401,
+      error: "invalid_client",
+      error_description: "Client is no longer authorized to redeem this grant",
+      reason_code: reason
+    }
   end
 
   @doc false
@@ -159,6 +274,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
          formatted_refresh_token: formatted_refresh_token,
          authorization_code: %Token{} = authorization_code,
          issued_at: issued_at,
+         refresh_expires_at: refresh_expires_at,
          issuance_context: issuance_context
        }) do
     %Token{
@@ -175,7 +291,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       audience: authorization_code.audience,
       cnf: issuance_context.cnf,
       issued_at: issued_at,
-      expires_at: DateTime.add(issued_at, TokenLifetime.refresh_token(), :second)
+      expires_at: refresh_expires_at
     }
   end
 

@@ -23,13 +23,54 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
     def record_ciba_poll(_, _, _), do: {:error, :not_implemented}
   end
 
+  defmodule MockTransactionStore do
+    def transaction_authority do
+      %{
+        identity: :backchannel_authentication_test,
+        participants: %{
+          client_store: Lockspire.Protocol.BackchannelAuthenticationTest.MockClientStore,
+          ciba_authorization_store:
+            Lockspire.Protocol.BackchannelAuthenticationTest.MockCibaStore,
+          transaction_store: __MODULE__
+        }
+      }
+    end
+
+    def transact(fun) do
+      case fun.() do
+        {:ok, value} -> {:ok, value}
+        {:error, reason} -> {:error, reason}
+      end
+    end
+  end
+
   defmodule MockClientStore do
     @behaviour Lockspire.Storage.ClientStore
+    def lifetime_contract do
+      %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.BackchannelAuthenticationTest.MockTransactionStore.transaction_authority()
+      }
+    end
+
+    def lock_clients([client_id]) do
+      case fetch_client_by_id(client_id) do
+        {:ok, client} -> if(client, do: {:ok, [client]}, else: {:ok, []})
+      end
+    end
+
     def register_client(_), do: {:error, :not_implemented}
     def list_clients(_), do: {:error, :not_implemented}
 
     def fetch_client_by_id("client-1"),
-      do: {:ok, %Client{client_id: "client-1", token_endpoint_auth_method: :none}}
+      do:
+        {:ok,
+         %Client{
+           client_id: "client-1",
+           token_endpoint_auth_method: :none,
+           lifetime_version: 0
+         }}
 
     def get_client_by_registration_access_token_hash(_), do: {:error, :not_implemented}
     def update_client(_, _), do: {:error, :not_implemented}
@@ -42,7 +83,8 @@ defmodule Lockspire.Protocol.BackchannelAuthenticationTest do
   @opts [
     account_resolver: MockAccountResolver,
     ciba_authorization_store: MockCibaStore,
-    client_store: MockClientStore
+    client_store: MockClientStore,
+    transaction_store: MockTransactionStore
   ]
 
   describe "authorize/1" do

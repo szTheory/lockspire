@@ -88,15 +88,26 @@ defmodule Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore do
     end)
   end
 
-  @spec transition_device_authorization(module(), String.t(), [atom()], map()) ::
+  @spec transition_device_authorization(
+          module(),
+          String.t(),
+          [atom()],
+          map() | (DeviceAuthorization.t() -> map() | {:error, term()})
+        ) ::
           {:ok, DeviceAuthorization.t()} | {:error, term()}
-  def transition_device_authorization(repo, verification_handle, expected_statuses, attrs)
-      when is_binary(verification_handle) and is_list(expected_statuses) and is_map(attrs) do
+  def transition_device_authorization(
+        repo,
+        verification_handle,
+        expected_statuses,
+        attrs_or_mutation
+      )
+      when is_binary(verification_handle) and is_list(expected_statuses) and
+             (is_map(attrs_or_mutation) or is_function(attrs_or_mutation, 1)) do
     TransactionStore.transact(repo, fn ->
       verification_handle
       |> locked_query()
       |> then(&Support.one(repo, &1))
-      |> transition_record(repo, expected_statuses, attrs)
+      |> transition_record(repo, expected_statuses, attrs_or_mutation)
     end)
   end
 
@@ -112,20 +123,43 @@ defmodule Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore do
     |> lock("FOR UPDATE")
   end
 
-  defp transition_record(nil, repo, _expected_statuses, _attrs),
+  defp transition_record(nil, repo, _expected_statuses, _attrs_or_mutation),
     do: TransactionStore.rollback(repo, :not_found)
 
-  defp transition_record(%DeviceAuthorizationRecord{} = record, repo, expected_statuses, attrs) do
+  defp transition_record(
+         %DeviceAuthorizationRecord{} = record,
+         repo,
+         expected_statuses,
+         attrs_or_mutation
+       ) do
     if record.status in expected_statuses do
-      record
-      |> DeviceAuthorizationRecord.update_changeset(
-        Map.put(attrs, :updated_at, DateTime.utc_now())
-      )
-      |> then(&Support.update(repo, &1))
-      |> map_one(&DeviceAuthorizationRecord.to_domain/1)
-      |> unwrap_or_rollback(repo)
+      attrs_or_mutation
+      |> mutation_attrs(DeviceAuthorizationRecord.to_domain(record))
+      |> case do
+        {:ok, attrs} ->
+          record
+          |> DeviceAuthorizationRecord.update_changeset(
+            Map.put(attrs, :updated_at, DateTime.utc_now())
+          )
+          |> then(&Support.update(repo, &1))
+          |> map_one(&DeviceAuthorizationRecord.to_domain/1)
+          |> unwrap_or_rollback(repo)
+
+        {:error, reason} ->
+          TransactionStore.rollback(repo, reason)
+      end
     else
       TransactionStore.rollback(repo, :invalid_state)
+    end
+  end
+
+  defp mutation_attrs(attrs, _authorization) when is_map(attrs), do: {:ok, attrs}
+
+  defp mutation_attrs(mutation, authorization) when is_function(mutation, 1) do
+    case mutation.(authorization) do
+      attrs when is_map(attrs) -> {:ok, attrs}
+      {:error, reason} -> {:error, reason}
+      _other -> {:error, :invalid_transition_mutation}
     end
   end
 
@@ -238,7 +272,8 @@ defmodule Lockspire.Storage.Ecto.Repository.DeviceAuthorizationStore do
          client_id,
          _now
        )
-       when stored_client_id != client_id, do: TransactionStore.rollback(repo, :invalid_state)
+       when stored_client_id != client_id,
+       do: TransactionStore.rollback(repo, :invalid_state)
 
   defp consume_record(
          %DeviceAuthorizationRecord{status: :approved} = record,

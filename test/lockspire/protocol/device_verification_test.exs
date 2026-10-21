@@ -56,13 +56,20 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
     def fetch_device_authorization_by_verification_handle("store-error-handle"),
       do: {:error, :store_unavailable}
 
-    def transition_device_authorization("pending-handle", [:pending], attrs) do
-      merged =
-        pending_authorization()
-        |> Map.from_struct()
-        |> Map.merge(attrs)
+    def transition_device_authorization("pending-handle", [:pending], attrs_or_mutation) do
+      authorization = pending_authorization()
 
-      {:ok, struct!(DeviceAuthorization, merged)}
+      attrs =
+        if is_function(attrs_or_mutation, 1),
+          do: attrs_or_mutation.(authorization),
+          else: attrs_or_mutation
+
+      if match?({:error, _}, attrs) do
+        attrs
+      else
+        merged = authorization |> Map.from_struct() |> Map.merge(attrs)
+        {:ok, struct!(DeviceAuthorization, merged)}
+      end
     end
 
     def transition_device_authorization("approved-handle", [:pending], _attrs),
@@ -134,19 +141,66 @@ defmodule Lockspire.Protocol.DeviceVerificationTest do
   end
 
   defmodule FakeClientStore do
+    def lifetime_contract do
+      %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.DeviceVerificationTest.FakeTransactionStore.transaction_authority()
+      }
+    end
+
+    def lock_clients([client_id]) do
+      case fetch_client_by_id(client_id) do
+        {:ok, %Client{} = client} -> {:ok, [client]}
+        {:ok, nil} -> {:ok, []}
+        {:error, reason} -> {:error, reason}
+      end
+    end
+
     def fetch_client_by_id("client-123"),
-      do: {:ok, %Client{client_id: "client-123", name: "Living Room TV"}}
+      do:
+        {:ok,
+         %Client{
+           client_id: "client-123",
+           name: "Living Room TV",
+           lifetime_version: 0
+         }}
 
     def fetch_client_by_id("client-without-name"),
-      do: {:ok, %Client{client_id: "client-without-name"}}
+      do: {:ok, %Client{client_id: "client-without-name", lifetime_version: 0}}
 
     def fetch_client_by_id("missing-client"), do: {:ok, nil}
     def fetch_client_by_id("store-error"), do: {:error, :store_unavailable}
   end
 
+  defmodule FakeTransactionStore do
+    def transaction_authority do
+      %{
+        identity: :device_verification_test,
+        participants: %{
+          client_store: Lockspire.Protocol.DeviceVerificationTest.FakeClientStore,
+          device_authorization_store:
+            Lockspire.Protocol.DeviceVerificationTest.FakeDeviceAuthorizationStore,
+          audit_store: Lockspire.Protocol.DeviceVerificationTest.FakeAuditStore,
+          transaction_store: __MODULE__
+        }
+      }
+    end
+
+    def transact(fun), do: normalize(fun.())
+    defp normalize({:ok, value}), do: {:ok, value}
+    defp normalize({:error, reason}), do: {:error, reason}
+  end
+
+  defmodule FakeAuditStore do
+    def append_audit_event(_event), do: {:ok, :recorded}
+  end
+
   @opts [
     device_authorization_store: FakeDeviceAuthorizationStore,
     client_store: FakeClientStore,
+    audit_store: FakeAuditStore,
+    transaction_store: FakeTransactionStore,
     now: ~U[2026-04-28 11:00:00Z]
   ]
 

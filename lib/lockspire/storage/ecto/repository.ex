@@ -206,7 +206,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl InteractionStore
   def transition_interaction(interaction_id, expected_statuses, attrs)
-      when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
+      when is_binary(interaction_id) and is_list(expected_statuses) and
+             (is_map(attrs) or is_function(attrs, 1)) do
     EctoInteractionStore.transition_interaction(repo(), interaction_id, expected_statuses, attrs)
   end
 
@@ -306,13 +307,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl DeviceAuthorizationStore
-  def transition_device_authorization(verification_handle, expected_statuses, attrs)
-      when is_binary(verification_handle) and is_list(expected_statuses) and is_map(attrs) do
+  def transition_device_authorization(verification_handle, expected_statuses, attrs_or_mutation)
+      when is_binary(verification_handle) and is_list(expected_statuses) and
+             (is_map(attrs_or_mutation) or is_function(attrs_or_mutation, 1)) do
     EctoDeviceAuthorizationStore.transition_device_authorization(
       repo(),
       verification_handle,
       expected_statuses,
-      attrs
+      attrs_or_mutation
     )
   end
 
@@ -337,13 +339,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl CibaAuthorizationStore
-  def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs)
-      when is_binary(auth_req_id_hash) and is_list(expected_statuses) and is_map(attrs) do
+  def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs_or_mutation)
+      when is_binary(auth_req_id_hash) and is_list(expected_statuses) and
+             (is_map(attrs_or_mutation) or is_function(attrs_or_mutation, 1)) do
     EctoCibaAuthorizationStore.transition_ciba_authorization(
       repo(),
       auth_req_id_hash,
       expected_statuses,
-      attrs
+      attrs_or_mutation
     )
   end
 
@@ -568,9 +571,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
       do: EctoSigningKeyStore.reencrypt_signing_key(repo(), id, decide, opts)
 
   @impl TokenStore
-  def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
-      when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
-    EctoTokenStore.redeem_authorization_code(repo(), token_hash, redeemed_at, access_token)
+  def redeem_authorization_code(token_hash, redeemed_at, access_token_or_builder)
+      when is_binary(token_hash) and (is_struct(redeemed_at, DateTime) or is_nil(redeemed_at)) do
+    EctoTokenStore.redeem_authorization_code(
+      repo(),
+      token_hash,
+      redeemed_at,
+      access_token_or_builder
+    )
   end
 
   @impl false

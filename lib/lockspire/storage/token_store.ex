@@ -32,7 +32,20 @@ defmodule Lockspire.Storage.TokenStore do
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback mark_authorization_code_redeemed(String.t(), DateTime.t()) ::
               {:ok, Token.t()} | {:error, store_error()}
-  @callback redeem_authorization_code(String.t(), DateTime.t(), Token.t()) ::
+  @type redemption_builder :: (Token.t() ->
+                                 {:ok,
+                                  %{
+                                    required(:redeemed_at) => DateTime.t(),
+                                    required(:access_token) => Token.t(),
+                                    optional(atom()) => term()
+                                  }}
+                                 | {:error, store_error()})
+
+  @callback redeem_authorization_code(
+              String.t(),
+              DateTime.t() | nil,
+              Token.t() | redemption_builder()
+            ) ::
               {:ok, %{authorization_code: Token.t(), access_token: Token.t()}}
               | {:error, store_error()}
   @callback rotate_refresh_token(

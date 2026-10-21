@@ -183,6 +183,47 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
     end)
   end
 
+  def redeem_authorization_code(repo, hash, nil, builder) when is_function(builder, 1) do
+    TransactionStore.transact(repo, fn ->
+      case TokenRecord
+           |> where(
+             [token],
+             token.token_hash == ^hash and token.token_type == :authorization_code
+           )
+           |> lock("FOR UPDATE")
+           |> then(&Support.one(repo, &1, sensitive: true)) do
+        nil ->
+          TransactionStore.rollback(repo, :not_found)
+
+        %TokenRecord{redeemed_at: %DateTime{}} ->
+          TransactionStore.rollback(repo, :already_redeemed)
+
+        %TokenRecord{} = record ->
+          current_code = TokenRecord.to_domain(record)
+
+          with {:ok,
+                %{redeemed_at: %DateTime{} = redeemed_at, access_token: %Token{} = access_token} =
+                  issued} <-
+                 builder.(current_code),
+               {:ok, code} <-
+                 record
+                 |> Ecto.Changeset.change(
+                   redeemed_at: redeemed_at,
+                   updated_at: DateTime.utc_now()
+                 )
+                 |> then(&Support.update(repo, &1, sensitive: true))
+                 |> map_one(),
+               {:ok, access} <- store_record(repo, access_token) do
+            issued
+            |> Map.put(:authorization_code, code)
+            |> Map.put(:access_token, access)
+          else
+            {:error, reason} -> TransactionStore.rollback(repo, reason)
+          end
+      end
+    end)
+  end
+
   def rotate_refresh_token(repo, hash, client_id, rotated_at, refresh, access),
     do: rotate_refresh_token(repo, hash, client_id, rotated_at, refresh, access, nil)
 
@@ -217,7 +258,8 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   end
 
   defp rotate_record(_repo, %TokenRecord{client_id: stored}, client, _at, _r, _a, _cnf)
-       when stored != client, do: {:error, :client_mismatch}
+       when stored != client,
+       do: {:error, :client_mismatch}
 
   defp rotate_record(_repo, %TokenRecord{family_id: nil}, _client, _at, _r, _a, _cnf),
     do: {:error, :missing_family_id}
@@ -265,7 +307,8 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   end
 
   defp rotate_unexpired_record(_repo, %TokenRecord{cnf: actual}, _client, _at, _r, _a, expected)
-       when actual != expected, do: {:error, :dpop_binding_mismatch}
+       when actual != expected,
+       do: {:error, :dpop_binding_mismatch}
 
   defp rotate_unexpired_record(repo, record, _client, at, refresh, access, cnf) do
     with {:ok, presented} <-

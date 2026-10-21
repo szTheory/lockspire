@@ -81,6 +81,8 @@ defmodule Lockspire.TokenExchangeCase do
       opts: [
         client_store: Repository,
         token_store: token_store,
+        transaction_store: Keyword.get(opts, :transaction_store, token_store),
+        audit_store: Keyword.get(opts, :audit_store, token_store),
         interaction_store: Repository,
         key_store: Repository,
         server_policy_store: Keyword.get(opts, :server_policy_store, Repository),

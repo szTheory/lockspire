@@ -22,7 +22,16 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
           audits: [],
           interactions: %{},
           consents: %{},
-          tokens: %{}
+          tokens: %{},
+          clients: %{
+            "client_123" => %Lockspire.Domain.Client{
+              client_id: "client_123",
+              lifetime_version: 0,
+              redirect_uris: ["https://client.example.com/callback"],
+              allowed_scopes: ["email", "profile", "offline_access"],
+              active: true
+            }
+          }
         }
       end)
 
@@ -730,6 +739,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     client =
       %Lockspire.Domain.Client{
         client_id: "client_jarm_fail_closed",
+        lifetime_version: 0,
         redirect_uris: ["https://client.example.com/callback"],
         allowed_scopes: ["email", "profile", "offline_access"],
         allowed_grant_types: ["authorization_code"],
@@ -756,7 +766,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
         metadata: %{}
       }
 
-    __MODULE__.JarmClientStore.put_client(client)
+    Store.put_client(client)
 
     assert {:consent_required, %Interaction{} = approval_interaction} =
              AuthorizationFlow.start_authorization(
@@ -782,7 +792,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
-               client_store: __MODULE__.JarmClientStore,
+               client_store: Store,
                key_store: __MODULE__.JarmKeyStore,
                now: &fixed_now/0,
                code_generator: fn -> "approval-code-jarm" end
@@ -813,7 +823,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
                interaction_store: Store,
                consent_store: Store,
                token_store: Store,
-               client_store: __MODULE__.JarmClientStore,
+               client_store: Store,
                key_store: __MODULE__.JarmKeyStore,
                now: &fixed_now/0
              )
@@ -866,6 +876,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       client_id: "client_123",
       client: %Lockspire.Domain.Client{
         client_id: "client_123",
+        lifetime_version: 0,
         redirect_uris: ["https://client.example.com/callback"],
         allowed_scopes: ["email", "profile", "offline_access"],
         allowed_grant_types: ["authorization_code"],
@@ -937,6 +948,57 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
 
     def use_agent(pid), do: Process.put({__MODULE__, :pid}, pid)
 
+    def lifetime_contract do
+      %{version: 1, transaction_authority: authority()}
+    end
+
+    def transaction_authority do
+      authority()
+    end
+
+    defp authority do
+      participants =
+        Map.new(
+          [
+            :client_store,
+            :interaction_store,
+            :consent_store,
+            :token_store,
+            :audit_store,
+            :transaction_store
+          ],
+          &{&1, __MODULE__}
+        )
+
+      %{identity: {:test_store, __MODULE__}, participants: participants}
+    end
+
+    def lock_clients(client_ids) do
+      clients =
+        client_ids
+        |> Enum.uniq()
+        |> Enum.sort()
+        |> Enum.map(&get_in_state([:clients, &1]))
+
+      if Enum.all?(clients, &match?(%Lockspire.Domain.Client{}, &1)),
+        do: {:ok, clients},
+        else: {:error, :not_found}
+    end
+
+    def fetch_client_by_id(client_id), do: fetch_client(client_id)
+
+    def fetch_client(client_id) do
+      case get_in_state([:clients, client_id]) do
+        %Lockspire.Domain.Client{} = client -> {:ok, client}
+        nil -> {:error, :not_found}
+      end
+    end
+
+    def put_client(%Lockspire.Domain.Client{} = client) do
+      update(&put_in(&1, [:clients, client.client_id], client))
+      {:ok, client}
+    end
+
     def put_interaction(%Interaction{} = interaction) do
       stored =
         interaction
@@ -969,16 +1031,31 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       case get_in_state([:interactions, interaction_id]) do
         %Interaction{} = interaction ->
           if interaction.status in expected_statuses do
-            updated =
-              interaction
-              |> Map.merge(attrs)
-              |> Map.put(:updated_at, attrs[:updated_at] || fixed_now())
+            attrs =
+              if is_function(attrs, 1) do
+                case attrs.(interaction) do
+                  {:ok, changes} when is_map(changes) -> changes
+                  {:error, reason} -> {:error, reason}
+                  changes -> changes
+                end
+              else
+                attrs
+              end
 
-            update(fn state ->
-              put_in(state, [:interactions, interaction_id], updated)
-            end)
+            if is_map(attrs) do
+              updated =
+                interaction
+                |> Map.merge(attrs)
+                |> Map.put(:updated_at, attrs[:updated_at] || fixed_now())
 
-            {:ok, updated}
+              update(fn state ->
+                put_in(state, [:interactions, interaction_id], updated)
+              end)
+
+              {:ok, updated}
+            else
+              attrs
+            end
           else
             {:error, :invalid_state}
           end
@@ -989,9 +1066,15 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
     end
 
     def transact(fun) do
+      before = Agent.get(pid(), & &1)
+
       case fun.() do
-        {:error, reason} -> {:error, reason}
-        result -> {:ok, result}
+        {:error, reason} ->
+          Agent.update(pid(), fn _state -> before end)
+          {:error, reason}
+
+        result ->
+          {:ok, result}
       end
     end
 

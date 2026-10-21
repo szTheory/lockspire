@@ -8,6 +8,7 @@ defmodule Lockspire.Protocol.Revocation do
   alias Lockspire.Observability
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Protocol.TokenFormatter
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Error do
@@ -127,9 +128,25 @@ defmodule Lockspire.Protocol.Revocation do
   end
 
   defp client_auth_options(request) do
-    request
-    |> Map.get(:opts, [])
-    |> Keyword.put_new(:client_store, Repository)
+    opts = Map.get(request, :opts, [])
+    client_store = Keyword.get(opts, :client_store, Repository)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+
+    lifetime =
+      try do
+        authority = transaction_store.transaction_authority()
+
+        case ClientLifetime.adapt(client_store, authority) do
+          {:ok, adapted} -> adapted
+          {:error, _reason} -> :unavailable
+        end
+      rescue
+        _error -> :unavailable
+      end
+
+    opts
+    |> Keyword.put(:client_store, client_store)
+    |> Keyword.put(:client_lifetime, lifetime)
     |> Keyword.put_new(:supported_jwt_auth_methods, [:private_key_jwt, :client_secret_jwt])
   end
 

@@ -755,6 +755,8 @@ defmodule Lockspire.Protocol.TokenExchange.AuthorizationCodeTest do
                  "code_verifier" => "verifier-plain-method"
                },
                PlainMethodTokenStore,
+               transaction_store: Repository,
+               audit_store: Repository,
                authorization: basic_auth(client.client_id, secret)
              )
 

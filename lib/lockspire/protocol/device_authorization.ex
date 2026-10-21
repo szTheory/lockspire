@@ -7,6 +7,7 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
   alias Lockspire.Domain.DeviceAuthorization, as: DeviceAuthorizationState
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Security.DeviceCode
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule Success do
@@ -46,11 +47,11 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
   def authorize(request) when is_map(request) do
     params = Map.get(request, :params, Map.get(request, "params", %{}))
     authorization = Map.get(request, :authorization, Map.get(request, "authorization"))
-    now = now(request)
+    clock = clock(request)
 
     with {:ok, %Client{} = client} <- authenticate_client(params, authorization, request),
-         {:ok, %DeviceAuthorizationState{} = device_auth} <-
-           persist_device_authorization(params, client, request, now) do
+         {:ok, %DeviceAuthorizationState{} = device_auth, now} <-
+           persist_device_authorization(params, client, request, clock) do
       verification_uri = verification_uri(request)
 
       {:ok,
@@ -70,39 +71,37 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
   end
 
   defp authenticate_client(params, authorization, request) do
-    case ClientAuth.authenticate(params, authorization, client_auth_options(request)) do
-      {:ok, %Client{} = client} ->
-        {:ok, client}
+    with {:ok, options} <- client_auth_options(request) do
+      case ClientAuth.authenticate(params, authorization, options) do
+        {:ok, %Client{} = client} ->
+          {:ok, client}
 
-      {:error, %ClientAuth.Error{} = error} ->
-        {:error,
-         %Error{
-           status: error.status,
-           error: error.error,
-           error_description: error.error_description,
-           reason_code: error.reason_code
-         }}
+        {:error, %ClientAuth.Error{} = error} ->
+          {:error,
+           %Error{
+             status: error.status,
+             error: error.error,
+             error_description: error.error_description,
+             reason_code: error.reason_code
+           }}
+      end
     end
   end
 
-  defp persist_device_authorization(params, %Client{} = client, request, now) do
+  defp persist_device_authorization(params, %Client{} = client, request, clock) do
     device_code = DeviceCode.generate_device_code()
     user_code = DeviceCode.generate_user_code()
     scopes = parse_scopes(params["scope"])
 
-    device_auth =
-      DeviceAuthorizationState.issue(
-        %{
-          client_id: client.client_id,
-          device_code: device_code,
-          user_code: user_code,
-          scopes: scopes
-        },
-        now: now
-      )
-
-    case device_authorization_store(request).put_device_authorization(device_auth) do
-      {:ok, %DeviceAuthorizationState{} = stored_auth} ->
+    case guarded_create_device_authorization(
+           client,
+           request,
+           clock,
+           device_code,
+           user_code,
+           scopes
+         ) do
+      {:ok, {%DeviceAuthorizationState{} = stored_auth, now}} ->
         Lockspire.Observability.emit(
           :device_authorization,
           :created,
@@ -113,9 +112,22 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
         {:ok,
          %DeviceAuthorizationState{
            stored_auth
-           | device_code: device_auth.device_code,
-             user_code: device_auth.user_code
-         }}
+           | device_code: device_code,
+             user_code: user_code
+         }, now}
+
+      {:error, :expired} ->
+        {:error,
+         oauth_error(401, "invalid_client", "Client application has expired", :client_app_expired)}
+
+      {:error, :disabled} ->
+        {:error,
+         oauth_error(
+           401,
+           "invalid_client",
+           "Client application is disabled",
+           :client_app_disabled
+         )}
 
       {:error, _reason} ->
         {:error,
@@ -127,6 +139,74 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
          )}
     end
   end
+
+  defp guarded_create_device_authorization(
+         %Client{} = client,
+         request,
+         clock,
+         device_code,
+         user_code,
+         scopes
+       ) do
+    opts = request_opts(request)
+    client_store = Keyword.get(opts, :client_store, Repository)
+    device_store = device_authorization_store(request)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+    authority = transaction_store.transaction_authority()
+
+    with :ok <- require_participants(authority, client_store, device_store, transaction_store),
+         {:ok, _lifetime} <- ClientLifetime.adapt(client_store, authority),
+         {:ok, {stored_auth, decision_time}} <-
+           transaction_store.transact(fn ->
+             with {:ok, [current_client]} <- client_store.lock_clients([client.client_id]),
+                  decision_time <- clock.(),
+                  :ok <- eligible(current_client, decision_time, :device_authorization),
+                  device_auth <-
+                    DeviceAuthorizationState.issue(
+                      %{
+                        client_id: client.client_id,
+                        device_code: device_code,
+                        user_code: user_code,
+                        scopes: scopes
+                      },
+                      now: decision_time
+                    ),
+                  {:ok, stored} <- device_store.put_device_authorization(device_auth) do
+               {:ok, {stored, decision_time}}
+             else
+               {:ok, []} -> {:error, :client_not_found}
+               {:error, reason} -> {:error, reason}
+             end
+           end) do
+      {:ok, {stored_auth, decision_time}}
+    else
+      {:error, %ClientAuth.Error{} = error} -> {:error, error}
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp eligible(%Client{} = client, %DateTime{} = now, consumer) do
+    case ClientLifetime.validate_client(client) do
+      {:ok, client} -> Client.app_eligibility(client, now, consumer)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp require_participants(%{identity: identity, participants: participants}, client, device, tx)
+       when not is_nil(identity) and is_map(participants) do
+    if Map.get(participants, :client_store) == client and
+         Map.get(participants, :device_authorization_store) == device and
+         Map.get(participants, :transaction_store) == tx do
+      :ok
+    else
+      {:error, :transaction_authority_mismatch}
+    end
+  end
+
+  defp require_participants(_authority, _client, _device, _tx),
+    do: {:error, :transaction_authority_unavailable}
 
   defp parse_scopes(nil), do: []
   defp parse_scopes(""), do: []
@@ -143,10 +223,22 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
   end
 
   defp client_auth_options(request) do
-    [
-      client_store: Keyword.get(request_opts(request), :client_store, Repository),
-      supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
-    ]
+    opts = request_opts(request)
+    client_store = Keyword.get(opts, :client_store, Repository)
+    device_store = device_authorization_store(request)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+    authority = transaction_store.transaction_authority()
+
+    with :ok <- require_participants(authority, client_store, device_store, transaction_store),
+         {:ok, lifetime} <- ClientLifetime.adapt(client_store, authority) do
+      {:ok,
+       [
+         client_store: client_store,
+         client_lifetime: lifetime,
+         now: clock(request),
+         supported_jwt_auth_methods: [:private_key_jwt, :client_secret_jwt]
+       ]}
+    end
   end
 
   defp request_opts(request) do
@@ -175,10 +267,15 @@ defmodule Lockspire.Protocol.DeviceAuthorization do
     |> URI.to_string()
   end
 
-  defp now(request) do
+  defp clock(request) do
     request
     |> request_opts()
-    |> Keyword.get_lazy(:now, &DateTime.utc_now/0)
+    |> Keyword.get(:now, &DateTime.utc_now/0)
+    |> case do
+      %DateTime{} = now -> fn -> now end
+      now when is_function(now, 0) -> now
+      _other -> fn -> nil end
+    end
   end
 
   defp oauth_error(status, error, description, reason_code) do
