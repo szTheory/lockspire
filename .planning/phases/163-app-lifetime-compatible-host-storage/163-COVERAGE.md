@@ -1,5 +1,7 @@
 # Phase 163 implementation and proof coverage
 
+No external API integration: this phase extends Lockspire protocol, storage and host upgrade behavior using existing dependencies; it introduces no external service or SDK integration.
+
 The rows below connect the Phase 162 normative inventory to Phase 163's
 implementation and executable evidence. “Slice pass” refers to the commands
 recorded in the named 163-01 through 163-13 summary. The final `mix test.fast`
