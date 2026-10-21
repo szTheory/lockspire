@@ -62,6 +62,71 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     end
   end
 
+  test "built-in and custom adapters persist management replacement fields" do
+    now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
+
+    for {adapter, id} <- [
+          {Repository, "built-in-management-#{System.unique_integer([:positive])}"},
+          {__MODULE__.CustomClientStore,
+           "custom-management-#{System.unique_integer([:positive])}"}
+        ] do
+      app_deadline = DateTime.add(now, 100, :second)
+      secret_deadline = DateTime.add(now, 50, :second)
+
+      original = %{
+        client(id, 1, app_deadline, DateTime.add(now, 200, :second))
+        | client_secret_expires_at: secret_deadline,
+          client_secret_hash: "management-old-secret",
+          client_secret_jwt_verifier_encrypted: "management-old-verifier",
+          registration_access_token_hash: "management-old-hash"
+      }
+
+      assert {:ok, stored} = adapter.register_client(original)
+      assert management_rotation_conforms?(adapter, stored, now, DateTime.add(now, 40, :second))
+
+      assert {:ok, replaced} = adapter.fetch_client_by_id(id)
+      assert replaced.registration_access_token_hash == "management-replacement-hash"
+
+      assert DateTime.compare(
+               replaced.registration_access_token_expires_at,
+               DateTime.add(now, 40, :second)
+             ) == :eq
+
+      assert DateTime.compare(replaced.client_expires_at, app_deadline) == :eq
+      assert DateTime.compare(replaced.client_secret_expires_at, secret_deadline) == :eq
+      assert replaced.client_secret_hash == original.client_secret_hash
+
+      assert replaced.client_secret_jwt_verifier_encrypted ==
+               original.client_secret_jwt_verifier_encrypted
+    end
+  end
+
+  test "management callback conformance rejects dropped deadline or version fields after invocation" do
+    now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
+    deadline = DateTime.add(now, 40, :second)
+    original = client("custom-drop-management", 1, nil, nil)
+
+    for adapter <- [__MODULE__.DroppedManagementDeadline, __MODULE__.DroppedManagementVersion] do
+      assert {:ok, stored} = adapter.register_client(original)
+      refute management_rotation_conforms?(adapter, stored, now, deadline)
+      assert Process.get({adapter, :management_rotation_called, original.client_id}) == true
+    end
+  end
+
+  test "management conformance rejects a split transaction authority" do
+    now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
+    client = client("custom-split-management", 1, nil, nil)
+    assert {:ok, stored} = __MODULE__.SplitManagementAuthority.register_client(client)
+
+    refute management_rotation_conforms?(
+             __MODULE__.SplitManagementAuthority,
+             stored,
+             now,
+             DateTime.add(now, 40, :second),
+             Repository.transaction_authority()
+           )
+  end
+
   test "an adapter that ignores the deferred clock fails executed replacement conformance" do
     now = DateTime.from_unix!(1_900_000_000) |> DateTime.truncate(:second)
     client = client("custom-ignore-clock", 1, nil, nil)
@@ -318,6 +383,70 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     _error -> false
   end
 
+  defp management_rotation_conforms?(
+         adapter,
+         client,
+         now,
+         deadline,
+         expected_authority \\ nil
+       ) do
+    expected_authority = expected_authority || adapter.transaction_authority()
+
+    with {:ok, _lifetime} <- ClientLifetime.adapt(adapter, expected_authority),
+         {:ok, current} <- adapter.fetch_client_by_id(client.client_id),
+         {:ok, lifetime_changes} <-
+           Client.credential_lifetime_changes(current, :management, deadline) do
+      candidate = %{current | registration_access_token_expires_at: deadline, updated_at: now}
+
+      expected =
+        current
+        |> Map.from_struct()
+        |> Map.merge(lifetime_changes)
+        |> Map.merge(%{
+          registration_access_token_hash: "management-replacement-hash",
+          updated_at: now
+        })
+        |> then(&struct!(Client, &1))
+
+      audit = management_audit(candidate, now)
+
+      with {:ok, _rotated} <-
+             adapter.rotate_registration_access_token(
+               candidate,
+               "management-replacement-hash",
+               audit
+             ),
+           {:ok, persisted} <- adapter.fetch_client_by_id(client.client_id),
+           {:ok, validated} <- ClientLifetime.validate_client(persisted) do
+        result =
+          validated.registration_access_token_hash == "management-replacement-hash" and
+            validated.lifetime_version == expected.lifetime_version and
+            same_deadline?(validated.registration_access_token_expires_at, deadline) and
+            same_deadline?(validated.client_expires_at, expected.client_expires_at) and
+            same_deadline?(validated.client_secret_expires_at, expected.client_secret_expires_at) and
+            DateTime.compare(validated.updated_at, now) == :eq
+
+        result
+      else
+        _ -> false
+      end
+    else
+      _ -> false
+    end
+  rescue
+    _error -> false
+  end
+
+  defp management_audit(client, now) do
+    %{
+      action: :dcr_management_rat_rotated,
+      outcome: :succeeded,
+      actor: %{type: :operator, id: "conformance-test"},
+      resource: %{type: :client, id: client.client_id},
+      metadata: %{rotated_at: now}
+    }
+  end
+
   defp same_deadline?(nil, nil), do: true
 
   defp same_deadline?(%DateTime{} = expected, %DateTime{} = actual),
@@ -445,6 +574,126 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
         Process.put({__MODULE__, client.client_id}, rotated)
         {:ok, rotated}
       end
+    end
+
+    def rotate_registration_access_token(%Client{} = candidate, rat_hash, _audit) do
+      current = Process.get({__MODULE__, candidate.client_id})
+
+      with {:ok, lifetime} <-
+             Client.credential_lifetime_changes(
+               current,
+               :management,
+               candidate.registration_access_token_expires_at
+             ) do
+        updated =
+          current
+          |> Map.from_struct()
+          |> Map.merge(lifetime)
+          |> Map.merge(%{
+            registration_access_token_hash: rat_hash,
+            updated_at: candidate.updated_at
+          })
+          |> then(&struct!(Client, &1))
+
+        Process.put({__MODULE__, candidate.client_id}, updated)
+        {:ok, updated}
+      end
+    end
+  end
+
+  defmodule DroppedManagementDeadline do
+    alias Lockspire.Domain.Client
+
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :drop_management_deadline, participants: %{client_store: __MODULE__}}
+
+    def lock_clients(ids), do: {:ok, Enum.map(ids, &Process.get({__MODULE__, &1}))}
+
+    def register_client(client),
+      do:
+        (
+          Process.put({__MODULE__, client.client_id}, client)
+          {:ok, client}
+        )
+
+    def fetch_client_by_id(id), do: {:ok, Process.get({__MODULE__, id})}
+
+    def rotate_registration_access_token(candidate, hash, _audit) do
+      Process.put({__MODULE__, :management_rotation_called, candidate.client_id}, true)
+      current = Process.get({__MODULE__, candidate.client_id})
+
+      updated = %{
+        current
+        | registration_access_token_hash: hash,
+          registration_access_token_expires_at: nil,
+          updated_at: candidate.updated_at
+      }
+
+      Process.put({__MODULE__, candidate.client_id}, updated)
+      {:ok, updated}
+    end
+  end
+
+  defmodule DroppedManagementVersion do
+    alias Lockspire.Domain.Client
+
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :drop_management_version, participants: %{client_store: __MODULE__}}
+
+    def lock_clients(ids), do: {:ok, Enum.map(ids, &Process.get({__MODULE__, &1}))}
+
+    def register_client(client),
+      do:
+        (
+          Process.put({__MODULE__, client.client_id}, client)
+          {:ok, client}
+        )
+
+    def fetch_client_by_id(id), do: {:ok, Process.get({__MODULE__, id})}
+
+    def rotate_registration_access_token(candidate, hash, _audit) do
+      Process.put({__MODULE__, :management_rotation_called, candidate.client_id}, true)
+      current = Process.get({__MODULE__, candidate.client_id})
+
+      updated = %{
+        current
+        | registration_access_token_hash: hash,
+          registration_access_token_expires_at: candidate.registration_access_token_expires_at,
+          lifetime_version: nil,
+          updated_at: candidate.updated_at
+      }
+
+      Process.put({__MODULE__, candidate.client_id}, updated)
+      {:ok, updated}
+    end
+  end
+
+  defmodule SplitManagementAuthority do
+    alias Lockspire.Domain.Client
+
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :management_split, participants: %{client_store: __MODULE__}}
+
+    def lock_clients(_ids), do: {:ok, []}
+
+    def register_client(client),
+      do:
+        (
+          Process.put({__MODULE__, client.client_id}, client)
+          {:ok, client}
+        )
+
+    def fetch_client_by_id(id), do: {:ok, Process.get({__MODULE__, id})}
+
+    def rotate_registration_access_token(_candidate, _hash, _audit) do
+      Process.put({__MODULE__, :management_rotation_called}, true)
+      {:error, :split_authority}
     end
   end
 

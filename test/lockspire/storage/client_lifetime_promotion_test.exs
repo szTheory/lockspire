@@ -43,6 +43,102 @@ defmodule Lockspire.Storage.ClientLifetimePromotionTest do
     assert is_nil(updated.registration_access_token_expires_at)
   end
 
+  test "host management recovery promotes the locked whole v0 row and preserves v1 unrelated deadlines" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    historical = DateTime.add(now, -500, :second)
+    intended_management_deadline = DateTime.add(now, 40, :second)
+
+    {:ok, legacy} =
+      create_client("lifetime-management-host-v0", :client_secret_basic, "legacy-secret")
+
+    old_hash = "host-management-v0-hash"
+    old_secret_hash = legacy.client_secret_hash
+    old_verifier = "host-management-v0-verifier"
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(c in ClientRecord, where: c.id == ^legacy.id),
+               set: [
+                 lifetime_version: 0,
+                 registration_access_token_hash: old_hash,
+                 client_expires_at: historical,
+                 client_secret_expires_at: historical,
+                 registration_access_token_expires_at: historical,
+                 client_secret_jwt_verifier_encrypted: old_verifier,
+                 active: false,
+                 name: "current metadata"
+               ]
+             )
+
+    {:ok, current} = Repository.fetch_client_by_id(legacy.client_id)
+
+    candidate = %{
+      current
+      | registration_access_token_expires_at: intended_management_deadline,
+        updated_at: now
+    }
+
+    assert {:ok, promoted} =
+             ClientLifecycle.rotate_registration_access_token(
+               candidate,
+               "host-management-v1-hash",
+               valid_rotation_audit(current, now)
+             )
+
+    assert promoted.lifetime_version == 1
+    assert promoted.registration_access_token_hash == "host-management-v1-hash"
+
+    assert DateTime.compare(
+             promoted.registration_access_token_expires_at,
+             intended_management_deadline
+           ) == :eq
+
+    assert is_nil(promoted.client_expires_at)
+    assert is_nil(promoted.client_secret_expires_at)
+    assert promoted.client_secret_hash == old_secret_hash
+    assert promoted.client_secret_jwt_verifier_encrypted == old_verifier
+    refute promoted.active
+    assert promoted.name == "current metadata"
+
+    app_deadline = DateTime.add(now, 500, :second)
+    secret_deadline = DateTime.add(now, 450, :second)
+    management_deadline = DateTime.add(now, 400, :second)
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(c in ClientRecord, where: c.id == ^legacy.id),
+               set: [
+                 lifetime_version: 1,
+                 client_expires_at: app_deadline,
+                 client_secret_expires_at: secret_deadline,
+                 registration_access_token_expires_at: management_deadline
+               ]
+             )
+
+    {:ok, v1} = Repository.fetch_client_by_id(legacy.client_id)
+
+    v1_candidate = %{
+      v1
+      | registration_access_token_expires_at: intended_management_deadline,
+        updated_at: now
+    }
+
+    assert {:ok, replaced} =
+             ClientLifecycle.rotate_registration_access_token(
+               v1_candidate,
+               "host-management-v1-next-hash",
+               valid_rotation_audit(v1, now)
+             )
+
+    assert DateTime.compare(replaced.client_expires_at, app_deadline) == :eq
+    assert DateTime.compare(replaced.client_secret_expires_at, secret_deadline) == :eq
+
+    assert DateTime.compare(
+             replaced.registration_access_token_expires_at,
+             intended_management_deadline
+           ) == :eq
+  end
+
   test "secret replacement promotes v0 and preserves management credential" do
     {:ok, client} = create_client("lifetime-secret-promotion", :client_secret_basic, "old-secret")
     old_rat = "management-rat-secret-test"
