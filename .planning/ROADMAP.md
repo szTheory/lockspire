@@ -17,7 +17,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20; no implementation has begun.
+v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162 and 163 are complete; credential enforcement remains in Phases 164–165 and final cross-phase proof in Phase 166.
 
 **Mandatory dependency:** Phase 162 must finish the selected semantics and compatibility contract before any Phase 163–166 implementation plan. A roadmap approval approves this sequencing and scope, not an unresolved timeout, legacy backfill or rejection policy. Every implementation phase includes focused boundary and regression tests; Phase 166 owns the final cross-phase proof. Preserve existing security defaults, host ownership and historical records. Package publication is separate.
 
@@ -26,7 +26,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 ### v1.45 DCR Lifetime Enforcement — Approved
 
 - [x] Phase 162: Lifetime Semantics & Upgrade Contract (completed 2026-10-20)
-- [ ] Phase 163: App Lifetime & Compatible Host Storage
+- [x] Phase 163: App Lifetime & Compatible Host Storage (completed 2026-10-20)
 - [ ] Phase 164: Client-Secret Expiry & Atomic Rotation
 - [ ] Phase 165: Management-Token Lifecycle & Recovery
 - [ ] Phase 166: End-to-End Lifetime, Security & Guidance Proof
@@ -50,42 +50,42 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 **Goal:** New and existing Phoenix hosts can store and enforce the selected app lifetime through an explicit schema and storage upgrade path.
 **Depends on:** Phase 162
 **Requirements:** DCR-05, DCR-06, DCR-13, DCR-14
-**Plans:** 14 plans
+**Plans:** 14/14 plans complete; independently verified 2026-10-20
 
 Plans:
 **Wave 1**
-- [ ] 163-01-PLAN.md — Register, persist and evaluate one authoritative app
+- [x] 163-01-PLAN.md — Register, persist and evaluate one authoritative app
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 163-02-PLAN.md — Declare adapter lifetime support and shared transaction authority
+- [x] 163-02-PLAN.md — Declare adapter lifetime support and shared transaction authority
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 163-03-PLAN.md — Enforce app eligibility at authentication without losing clocks
+- [x] 163-03-PLAN.md — Enforce app eligibility at authentication without losing clocks
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 163-04-PLAN.md — Enforce browser and PAR boundaries with lock-free rendering
-- [ ] 163-05-PLAN.md — Guard device and CIBA request creation and host approval
-- [ ] 163-06-PLAN.md — Redeem codes under current authority and issue one consistent expiry
-- [ ] 163-10-PLAN.md — Enforce online token consumers without changing offline verification
-- [ ] 163-11-PLAN.md — Apply app-state management gates and safe legacy promotion
+- [x] 163-04-PLAN.md — Enforce browser and PAR boundaries with lock-free rendering
+- [x] 163-05-PLAN.md — Guard device and CIBA request creation and host approval
+- [x] 163-06-PLAN.md — Redeem codes under current authority and issue one consistent expiry
+- [x] 163-10-PLAN.md — Enforce online token consumers without changing offline verification
+- [x] 163-11-PLAN.md — Apply app-state management gates and safe legacy promotion
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 163-07-PLAN.md — Rotate refresh tokens under current app authority
+- [x] 163-07-PLAN.md — Rotate refresh tokens under current app authority
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 163-08-PLAN.md — Enforce device/CIBA poll and queued push at final issuance
+- [x] 163-08-PLAN.md — Enforce device/CIBA poll and queued push at final issuance
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 163-09-PLAN.md — Validate RFC 8693 requester, subject and actor apps independently
+- [x] 163-09-PLAN.md — Validate RFC 8693 requester, subject and actor apps independently
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 163-12-PLAN.md — Prove actual PostgreSQL waits, stale identity rejection and rollback
+- [x] 163-12-PLAN.md — Prove actual PostgreSQL waits, stale identity rejection and rollback
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 163-13-PLAN.md — Prove additive migrations with isolated pre-lifetime and candidate packages
+- [x] 163-13-PLAN.md — Prove additive migrations with isolated pre-lifetime and candidate packages
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 163-14-PLAN.md — Ship accurate host guidance and close app/storage proof coverage
+- [x] 163-14-PLAN.md — Ship accurate host guidance and close app/storage proof coverage
 
 **Success criteria:**
 

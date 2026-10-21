@@ -18,10 +18,10 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 
 ### App lifetime and host storage
 
-- [ ] **DCR-05**: A newly registered app stores and uses its effective lifetime according to the selected contract, with distinct disabled and expired behavior where the contract requires it.
-- [ ] **DCR-06**: A host can rely on app expiry being checked consistently across applicable existing protocol paths, with issued tokens handled exactly as selected in DCR-03 and without depending on worker scheduling.
-- [ ] **DCR-13**: An existing host can upgrade representative legacy registrations under the selected compatibility contract without deriving unapproved rejection deadlines from ambiguous historical dates.
-- [ ] **DCR-14**: A fresh generated host and a host using custom client storage can satisfy the lifetime contract through documented schema and storage changes, with unsupported capabilities handled explicitly.
+- [x] **DCR-05**: A newly registered app stores and uses its effective lifetime according to the selected contract, with distinct disabled and expired behavior where the contract requires it.
+- [x] **DCR-06**: A host can rely on app expiry being checked consistently across applicable existing protocol paths, with issued tokens handled exactly as selected in DCR-03 and without depending on worker scheduling.
+- [x] **DCR-13**: An existing host can upgrade representative legacy registrations under the selected compatibility contract without deriving unapproved rejection deadlines from ambiguous historical dates.
+- [x] **DCR-14**: A fresh generated host and a host using custom client storage can satisfy the lifetime contract through documented schema and storage changes, with unsupported capabilities handled explicitly.
 
 ### Client-secret lifetime
 
@@ -76,10 +76,10 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-02 | Phase 162 | Complete |
 | DCR-03 | Phase 162 | Complete |
 | DCR-04 | Phase 162 | Complete |
-| DCR-05 | Phase 163 | Pending |
-| DCR-06 | Phase 163 | Pending |
-| DCR-13 | Phase 163 | Pending |
-| DCR-14 | Phase 163 | Pending |
+| DCR-05 | Phase 163 | Complete |
+| DCR-06 | Phase 163 | Complete |
+| DCR-13 | Phase 163 | Complete |
+| DCR-14 | Phase 163 | Complete |
 | DCR-07 | Phase 164 | Pending |
 | DCR-08 | Phase 164 | Pending |
 | DCR-09 | Phase 164 | Pending |

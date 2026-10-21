@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
-current_phase: 163
-current_phase_name: App Lifetime & Compatible Host Storage
-status: executing
-stopped_at: Phase 163 context gathered with researched recommendations
-last_updated: "2026-10-21T00:05:09.216Z"
+current_phase: 164
+current_phase_name: Client-Secret Expiry & Atomic Rotation
+status: planning
+stopped_at: Phase 163 complete, ready to discuss Phase 164
+last_updated: "2026-10-21T01:35:02.508Z"
 last_activity: 2026-10-20
-last_activity_desc: Phase 163 execution started
-state_head: ff424b48c123d369a77ab2963c935bf8467bc9bd
+last_activity_desc: Phase 163 complete, transitioned to Phase 164
+state_head: 0ff99d4ccb3413a237797956f19a64d8007a6c2d
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 15
-  completed_plans: 8
-  percent: 20
+  completed_plans: 15
+  percent: 40
 ---
 
 # Project State
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 **Core value:** A Phoenix SaaS team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 163 — App Lifetime & Compatible Host Storage
+**Current focus:** Phase 164 — Client-Secret Expiry & Atomic Rotation (not started)
 
 ## Current Position
 
-Phase: 163 (App Lifetime & Compatible Host Storage) — EXECUTING
-Plan: 8 of 14
-Status: Ready to execute
-Last activity: 2026-10-20 — Phase 163 execution started
+Phase: 164 — Client-Secret Expiry & Atomic Rotation
+Plan: Not started
+Status: Ready for Phase 164 discussion
+Last activity: 2026-10-20 — Phase 163 complete, transitioned to Phase 164
 
 ## Accumulated Context
 
@@ -43,7 +43,7 @@ Last activity: 2026-10-20 — Phase 163 execution started
 
 - User approved all eight requirement outcome areas; REQUIREMENTS.md expands them to DCR-02–19, with DCR-01 retained as the historical umbrella. Approved Phases 162–166 map all 18 exactly once.
 - User approved DCR scope plus focused research; reuse Phase 153 audit, start at Phase 162, resolve expiry semantics and upgrade compatibility before implementation.
-- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete; Phase 163 is ready for discussion before implementation planning.
+- Phase 162 discussion selected 27 researched decisions under the user’s explicit direction to adopt a coherent recommendation bundle: nil/zero unlimited; positive issuance snapshots; strict UTC-second boundaries; separate app/secret/management gates; grandfather legacy dates; explicit custom-store contract and maintenance cutover. See phases/162-lifetime-semantics-upgrade-contract/162-CONTEXT.md. That discussion was followed by completed contract execution and independent verification: 33/33 truths, 4/4 roadmap criteria, 24 negative validator checks. DCR-02/03/04 are complete. Phase 163 has since implemented all14plans with independent4/4goalverification and24/24decisioncoverage; DCR-05/06/13/14 are complete. Post-review fresh fullgate:2properties,2291tests0failures(398excluded6skipped);13focusedPGtests and actual pinned package upgrade supply separate evidence. Phase164 is ready for discussion.
 - Preserve historical Phase 142/143/999.1 directories; skip phases.clear as in prior milestones. v1.44 phases are already archived.
 - Preserve the pre-existing unstaged state.json bytes. SDK milestone-switch updated STATE.md; its generated cache was restored to the user's original bytes deliberately.
 - Public 1.6.1 and release record PR137 are on main (a1e39a01); publication remains separate from this milestone.
@@ -380,7 +380,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-20T22:57:59.231Z
-Stopped at: Phase 163 context gathered with researched recommendations
+Stopped at: Phase 163 complete, ready to plan Phase 164
 Resume file: .planning/phases/163-app-lifetime-compatible-host-storage/163-CONTEXT.md
 
 Next: $gsd-discuss-phase 163 — Phase 162 design contract independently verified (33/33 truths; 24 negative validator mutations). No Phase 163 planning or implementation has begun. Preserve original unstaged state.json bytes and historical phase exceptions.
@@ -518,3 +518,10 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 ## Operator Next Steps
 
 - $gsd-discuss-phase 163 — App Lifetime & Compatible Host Storage
+
+## Phase 163 completion notes
+
+- All14plan summaries are complete. SDK reported15/14 because it also counted163-REVIEW-FIX-SUMMARY.md; canonical plan count is14, plus Phase162's1=15milestoneplans.
+- SDK reference warnings treated literal shell commands in summary verification lists as file paths. The referenced source/test/script files exist; commands were executed and recorded. No runtime or missing-file gap was accepted.
+- Two code review findings were fixed and independently re-reviewed closed; securityL1verified38/38plannedmitigations. Fullcode review traced11criticalboundaryfiles and6fixfiles; independentgoalverification covers the phase contract.
+- Next command: `$gsd-discuss-phase 164`. No164plan/runtimework, push,PRorpublication was performed by this bounded pipeline.
