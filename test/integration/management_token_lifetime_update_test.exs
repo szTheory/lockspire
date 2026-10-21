@@ -74,12 +74,17 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeUpdateTest do
     {:ok, before} = Repository.fetch_client_by_id(client_id)
     audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
 
-    put_conn =
-      build_conn(
-        :put,
-        "/register/#{client_id}",
-        Map.put(DcrFixtures.valid_metadata(), "client_id", client_id)
+    metadata =
+      DcrFixtures.valid_metadata()
+      |> Map.put("client_id", client_id)
+      |> Map.put("lockspire_client_expires_at", DateTime.to_unix(app_deadline))
+      |> Map.put(
+        "lockspire_registration_access_token_expires_at",
+        DateTime.to_unix(prior_management_deadline)
       )
+
+    put_conn =
+      build_conn(:put, "/register/#{client_id}", metadata)
       |> put_req_header("authorization", "Bearer #{old_rat}")
       |> dispatch()
 
@@ -87,6 +92,7 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeUpdateTest do
     response = Jason.decode!(put_conn.resp_body)
     new_rat = response["registration_access_token"]
     refute new_rat == old_rat
+    refute Map.has_key?(response, "client_secret")
 
     {:ok, after_put} = Repository.fetch_client_by_id(client_id)
     replacement_deadline = after_put.registration_access_token_expires_at
@@ -102,12 +108,65 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeUpdateTest do
     assert after_put.client_secret_hash == before.client_secret_hash
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count + 1
 
+    audit =
+      Lockspire.TestRepo.one!(
+        from(a in AuditEventRecord,
+          where: a.action == "dcr_management_updated",
+          order_by: [desc: a.id],
+          limit: 1
+        )
+      )
+
+    assert {:ok, rotated_at, 0} = DateTime.from_iso8601(audit.metadata["rotated_at"])
+    assert DateTime.compare(rotated_at, after_put.updated_at) == :eq
+
     stale_conn =
       build_conn(:get, "/register/#{client_id}")
       |> put_req_header("authorization", "Bearer #{old_rat}")
       |> dispatch()
 
     assert stale_conn.status == 401
+  end
+
+  test "explicit v0 management replacement clears advisory dates and promotes the current row" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    old_rat = registered["registration_access_token"]
+    advisory = DateTime.utc_now() |> DateTime.truncate(:second) |> DateTime.add(-60, :second)
+
+    Lockspire.TestRepo.update_all(
+      from(c in ClientRecord, where: c.client_id == ^client_id),
+      set: [
+        lifetime_version: 0,
+        client_expires_at: advisory,
+        client_secret_expires_at: advisory,
+        registration_access_token_expires_at: advisory
+      ]
+    )
+
+    {:ok, before} = Repository.fetch_client_by_id(client_id)
+
+    put_conn =
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.valid_metadata(), "client_id", client_id)
+      )
+      |> put_req_header("authorization", "Bearer #{old_rat}")
+      |> dispatch()
+
+    assert put_conn.status == 200
+    response = Jason.decode!(put_conn.resp_body)
+    {:ok, after_put} = Repository.fetch_client_by_id(client_id)
+
+    assert after_put.lifetime_version == 1
+    assert is_nil(after_put.client_expires_at)
+    assert is_nil(after_put.client_secret_expires_at)
+    assert after_put.registration_access_token_expires_at
+    assert DateTime.compare(after_put.registration_access_token_expires_at, advisory) == :gt
+    assert response["lockspire_client_expires_at"] == 0
+    assert after_put.client_secret_hash == before.client_secret_hash
+    assert after_put.registration_access_token_hash != before.registration_access_token_hash
   end
 
   test "missing body client_id is rejected even when the URL contains the same id" do
