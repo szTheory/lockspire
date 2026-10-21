@@ -129,7 +129,7 @@ Plans:
 **Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
 **Depends on:** Phase 164
 **Requirements:** DCR-10, DCR-11, DCR-12
-**Plans:** 7 plans (18 tasks; 7 dependency-aware waves; 3/7 complete)
+**Plans:** 7 plans (18 tasks; 7 dependency-aware waves; 4/7 complete)
 
 Plans:
 **Wave 1**
@@ -142,7 +142,7 @@ Plans:
 - [x] 165-03-PLAN.md — Enforce required PUT body identity and commit atomic current-policy replacements.
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 165-04-PLAN.md — Recover through the existing host path and prove adapter, legacy and rollback behavior.
+- [x] 165-04-PLAN.md — Recover through the existing host path and prove adapter, legacy and rollback behavior.
 
 **Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 165-05-PLAN.md — Prove actual PostgreSQL waits, stale requests, competing replacements and rollback.
@@ -183,10 +183,10 @@ Plans:
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
-| 165. Management-Token Lifecycle & Recovery | 3/7 | In Progress | — |
+| 165. Management-Token Lifecycle & Recovery | 4/7 | In Progress | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
-**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are complete through Phase 165 Plan 03; five remain pending.
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are complete through Phase 165 Plan 04; five remain pending.
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>

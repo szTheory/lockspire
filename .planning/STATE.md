@@ -5,16 +5,16 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
 status: executing
-stopped_at: Completed 165-03-PLAN.md
-last_updated: "2026-10-21T18:14:56.507Z"
+stopped_at: Completed 165-04-PLAN.md
+last_updated: "2026-10-21T18:26:38.678Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 plan 03 complete; management token PUT replacements are atomic
-state_head: 8036d1ea292ee7c7b36be8310f023b87f9a4b156
+last_activity_desc: Phase 165 plan 04 complete; host recovery and replacement rollback verified
+state_head: b46741311365fa623c4e06e1b4c93cc1b561ebef
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 28
-  completed_plans: 24
+  completed_plans: 25
   percent: 60
 ---
 
@@ -31,9 +31,9 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 ## Current Position
 
 Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
-Last activity: 2026-10-21 — Phase 165 plan 03 complete; atomic current-policy replacement verified
+Last activity: 2026-10-21 — Phase 165 plan 04 complete; host recovery and replacement rollback verified
 
 ## Accumulated Context
 
@@ -335,6 +335,8 @@ Last activity: 2026-10-21 — Phase 165 plan 03 complete; atomic current-policy 
 - [Phase 165]: Keep the existing replace_client_registration/4 callback and carry intended deadline/time on its replacement Client.
 - [Phase 165]: Resolve current server policy and validate current-row request echoes after locking, then sample one decision instant for authorization, deadline, and audit.
 - [Phase 165]: On v0 management replacement, use Client.credential_lifetime_changes/3 to clear advisory unrelated dates and promote the complete current row.
+- [Phase 165]: Host recovery locks and reloads the current client, resolves current policy, then writes the intended management deadline and audit timestamp together.
+- [Phase 165]: Legacy v0 management replacement canonicalizes the current whole row; v1 preserves app and secret deadlines.
 
 ### Pending Todos
 
@@ -399,11 +401,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T18:14:56.202Z
-Stopped at: Completed 165-03-PLAN.md
+Last session: 2026-10-21T18:26:38.385Z
+Stopped at: Completed 165-04-PLAN.md
 Resume file: None
 
-Next: Continue Phase 165 with plan 04. Plans 01–03 are complete with finite management access, issuance snapshots, typed policy bounds, and atomic current-policy replacement verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Continue Phase 165 with plan 05. Plans 01–04 are complete with finite management access, issuance snapshots, typed policy bounds, atomic current-policy replacement, host recovery, adapter conformance, legacy promotion, and rollback verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -543,6 +545,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 165 P01 | 13min | 3 tasks | 14 files |
 | Phase 165 P02 | 290 | 2 tasks | 9 files |
 | Phase 165 P03 | 10min | 2 tasks | 12 files |
+| Phase 165 P04 | 9min | 3 tasks | 7 files |
 
 ## Operator Next Steps
 
