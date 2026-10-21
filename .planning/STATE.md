@@ -4,17 +4,17 @@ milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
-status: executing
-stopped_at: Completed 165-06-PLAN.md
-last_updated: "2026-10-21T18:49:28.554Z"
+status: verifying
+stopped_at: Completed 165-07-PLAN.md; full-suite failures remain pending independent phase verification
+last_updated: "2026-10-21T19:02:46.866Z"
 last_activity: 2026-10-21
 last_activity_desc: Phase 165 plan 06 complete; operator attribution, one-time recovery, redaction, and finite-lifetime guidance verified
-state_head: 1d2a8a9c167afb3c611c47d5aba0022c7620e595
+state_head: 165849fd490643b52217751b22a5780ba07b7499
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 28
-  completed_plans: 27
+  completed_plans: 28
   percent: 60
 ---
 
@@ -32,8 +32,8 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 
 Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
 Plan: 7 of 7
-Status: Ready to execute
-Last activity: 2026-10-21 — Phase 165 plan 06 complete; operator attribution, one-time recovery, redaction, and finite-lifetime guidance verified
+Status: Plan execution complete; phase verification remains open because the full fast suite and combined compatibility gate have failures
+Last activity: 2026-10-21 — Phase 165 plan 07 guidance and validation record complete; full-suite findings are deferred for phase-owner follow-up
 
 ## Accumulated Context
 
@@ -341,6 +341,8 @@ Last activity: 2026-10-21 — Phase 165 plan 06 complete; operator attribution, 
 - [Phase 165]: Keep plan 165-05 test-only; the production contention behavior was delivered in plans 165-01 through 165-04.
 - [Phase 165]: Host management-token recovery remains on the existing embedding-app admin mount; Lockspire adds no staff accounts or public recovery route.
 - [Phase 165]: Blank and zero management-token lifetime settings mean unlimited; positive policy applies to new or replaced tokens and leaves existing tokens unchanged.
+- [Phase 165]: Finite management-token expiry remains optional host policy; blank and zero mean unlimited, and existing token deadlines remain unchanged.
+- [Phase 165]: A successful PUT immediately invalidates the old management token; lost responses require the existing confirmed, one-time host recovery workflow.
 
 ### Pending Todos
 
@@ -405,11 +407,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T18:49:28.130Z
-Stopped at: Completed 165-06-PLAN.md
+Last session: 2026-10-21T19:02:46.564Z
+Stopped at: Completed 165-07-PLAN.md; full-suite failures remain pending independent phase verification
 Resume file: None
 
-Next: Continue Phase 165 with plan 06. Plans 01–05 are complete with finite management access, issuance snapshots, typed policy bounds, atomic current-policy replacement, host recovery, adapter conformance, legacy promotion, rollback, and PostgreSQL contention verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Complete Phase 165 security review, code review, and independent goal verification. Plan 07 guidance and validation evidence are committed; the explicit PostgreSQL batch passed, while the full fast suite and combined compatibility gate retain failures in deferred-items.md. Keep Phase 165 open for verification. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -552,6 +554,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 165 P04 | 9min | 3 tasks | 7 files |
 | Phase 165 P05 | 6min | 3 tasks | 3 files |
 | Phase 165 P06 | 11min | 3 tasks | 11 files |
+| Phase 165 P07 | 672 | 2 tasks | 7 files |
 
 ## Operator Next Steps
 

@@ -129,7 +129,7 @@ Plans:
 **Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
 **Depends on:** Phase 164
 **Requirements:** DCR-10, DCR-11, DCR-12
-**Plans:** 7 plans (18 tasks; 7 dependency-aware waves; 6/7 complete)
+**Plans:** 7/7 plans executed (18 tasks; 7 dependency-aware waves); Phase 165 validation and independent verification remain open.
 
 Plans:
 **Wave 1**
@@ -151,7 +151,7 @@ Plans:
 - [x] 165-06-PLAN.md — Observe redacted, correctly attributed events and prove confirmed one-time operator recovery.
 
 **Wave 7** *(blocked on Waves 5–6 completion)*
-- [ ] 165-07-PLAN.md — Update affected guidance and execute the complete applicable phase validation gates.
+- [x] 165-07-PLAN.md — Update affected guidance and record applicable phase validation gates; full suite has six outstanding failures.
 
 **Execution constraints:** Verify the production GET tracer before expansion. Reuse existing schema, adapter authority, host permission and one-time reveal boundaries. Race and observability lanes are ordered because both mutate the same dedicated PostgreSQL database/server-policy singleton. Phase 166 retains final packaged cross-phase, CI/security and complete guidance proof; publication is separate.
 
@@ -183,7 +183,7 @@ Plans:
 | 162. Lifetime Semantics & Upgrade Contract | 1/1 | Complete | 2026-10-20 |
 | 163. App Lifetime & Compatible Host Storage | 0/TBD | Not started | — |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
-| 165. Management-Token Lifecycle & Recovery | 6/7 | In Progress | — |
+| 165. Management-Token Lifecycle & Recovery | 7/7 | Ready for verification | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
 **Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are complete through Phase 165 Plan 04; five remain pending.
