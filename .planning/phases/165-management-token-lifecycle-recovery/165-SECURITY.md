@@ -69,3 +69,9 @@ Approval: verified 2026-10-21
 ## Final Correction Impact Check
 
 The security auditor rechecked e1883472 after CR-01 closure. All 19 mitigations remain closed, no accepted risks. Fresh normal Mix batch: 55 tests, 0 failures (access/request/protocol/app-state and PostgreSQL client-wait suites). Confirmed credential 401 → expired-app PUT 403 → eligible-app metadata 400, preparation before the final clock, and unchanged GET/DELETE exceptions. Final broader gates at 581f48cd: changed tests218/0, combined21/0, explicitPG34/0, fast2properties2413tests0failures485excluded6skipped. No dependency manifest/lockfile changes.
+
+## Prior-Phase Regression Repair Impact Review
+
+The security auditor reviewed a1fd2d47 and fixture commits 4386dbe3, 2ad5ec11, c329210b, 62ffc461 and 33c63e2e. The pre-existing resource downscoping defect is corrected: GrantSupport passes the selected audience; GrantPersistence validates it against the locked current authorization code before access/refresh issuance. Client/code locking, verified identity/hash, single-use, final authority clock, app/secret eligibility and transactional audit remain intact. No direct security defect found; all 19 planned mitigations remain closed. Fresh independent Phase54/57 integration batch: 4 tests, 0 failures. This is a targeted impact review, not an unrestricted scan.
+
+Superseding broad evidence: 108 prior-phase files908/0; 33 changed files298/0; combined21/0; explicitPostgreSQL34/0; fast2properties2413tests0failures485excluded6skipped (133.9s). No dependency manifests or lockfiles changed.
