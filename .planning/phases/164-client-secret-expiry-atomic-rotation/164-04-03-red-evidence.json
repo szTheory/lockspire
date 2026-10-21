@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_existing_tokens_test.exs --timeout 55000 --formatter Lockspire.TemporaryTAPFormatter --no-compile",
+  "exitCode": 2,
+  "output": "1..2\nok 1 - test issued access token validity and online targets survive secret expiry and rotation\nnot ok 2 - test non-secret final issuance authority ignores dormant expired secret material\n",
+  "targetTest": "test non-secret final issuance authority ignores dormant expired secret material",
+  "targetFile": "test/integration/client_secret_lifetime_existing_tokens_test.exs",
+  "expected": "Final authority validation must accept public, private_key_jwt, tls_client_auth and self_signed_tls_client_auth clients with dormant expired shared-secret material.",
+  "actual": "A deliberate strict-secret-gate mutation rejected all non-secret final authorities, and the named regression failed.",
+  "semanticAssessment": "This was a mutation check of the lasting regression: the target test failed on its planned authority assertion while the existing-token integration remained green. The production helper was restored immediately afterward; the clean implementation passed the same test in the focused verification run."
+}
