@@ -49,6 +49,10 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   end
 
   setup do
+    Ecto.Adapters.SQL.Sandbox.unboxed_run(Lockspire.TestRepo, fn ->
+      {:ok, _policy} = Repository.put_server_policy(DcrFixtures.server_policy(%{}))
+    end)
+
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     TelemetryCapture.attach_many(@attached_events, self())
     %{}
