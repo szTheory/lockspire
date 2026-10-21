@@ -17,6 +17,7 @@ before returning any preparation error.
 | Five private-key JWT failures in the first corrected fast run | The new recovery LiveView module set global `:mount_path` to `""` and did not restore Lockspire or endpoint application configuration after `setup_all`. Later tests paired issuer `/lockspire` with mount path `""`. | Capture and restore the original application environment after the module and use a rollback-only sandbox owner per test. |
 | T-165-03: expired management token with invalid PUT metadata returned 400 | `RegistrationManagement.update/2` performed request metadata validation before checking the current credential. In `with_current_client/5`, a preparation error also short-circuited before `decision_now/1` and management expiry evaluation. | Removed redundant preflight validation; perform validation in current-row preparation, retain its result, obtain the final clock after preparation, check management eligibility, then return any preparation error. Invalid credentials now win with 401/`invalid_token`; valid credentials still receive metadata errors. Current-row locking, ID/hash comparison, preparation-before-clock ordering, and decision time are preserved. |
 | T-165-17: recovery guidance implied it enables PUT for an expired app | “must be recovered before it can update it” could imply token recovery is sufficient to restore update permission, while the integration contract keeps expired-app PUT blocked. | State that recovery leaves app expiry unchanged and an expired app's PUT remains blocked with `registration_expired` (HTTP 403). A source-backed guidance assertion pins the distinction. |
+| CR-01: Expired-app PUT validation can bypass the required expiry response | `with_prepared_current/5` returned a body preparation error before checking app eligibility. | Check app eligibility for both successful and failed preparation results after the management-token gate. Eligible apps receive body errors; expired-app PUT returns 403/`registration_expired`; expired management credentials still return 401/`invalid_token`. |
 
 The existing audit-attribution test expected an invalid-metadata result when it
 used a snapshot whose token had already been rotated by host recovery. It now
@@ -81,3 +82,12 @@ Phase 165 remains in verification status. Independent security, code-review,
 and goal-backward verification are still required. The user-owned
 `.planning/state.json` remained byte-for-byte identical to
 `/private/tmp/lockspire-phase165-original-state.json` and was not staged.
+
+The code-review finding CR-01 was reproduced before its fix: the added focused
+HTTP integration test failed with 400 instead of 403 (3 tests, 1 failure, 4
+excluded). After commit `e1883472`, the access module passed 5/0, all 27
+changed test files passed 218/0, the combined gate passed 21/0, the explicit
+PostgreSQL batch passed 34/0, and `mix test.fast` passed with 2 properties,
+2,413 tests, 0 failures, 485 excluded, and 6 skipped in 129.6s. These results
+supersede the previous full-suite count while retaining the earlier failure
+history above.

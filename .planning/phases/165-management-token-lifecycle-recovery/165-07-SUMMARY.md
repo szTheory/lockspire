@@ -121,6 +121,15 @@ test's sandbox transaction. These corrective fixes claim no additional TDD RED
 evidence. Full root-cause and command details are in
 [165-REGRESSION-FIX-SUMMARY.md](./165-REGRESSION-FIX-SUMMARY.md).
 
+The parent code review later found CR-01, “Expired-app PUT validation can
+bypass the required expiry response.” Its test-first reproduction returned
+400 instead of 403. Commit `e1883472` fixes the ordering and adds an HTTP
+matrix for valid, invalid, and expired credentials with eligible/expired app
+states and invalid bodies. The final revalidation passed all 27 changed test
+files (218/0), the combined gate (21/0), the PostgreSQL batch (34/0), and the
+full fast suite (2,413 tests, 0 failures, 485 excluded, 6 skipped; 129.6s).
+See [165-REVIEW-FIX.md](./165-REVIEW-FIX.md) for the exact finding and evidence.
+
 The later security-audit follow-up added regressions for expired-credential
 precedence over invalid PUT metadata and clarified that host recovery does not
 restore PUT permission for an expired app. The final current evidence
@@ -139,14 +148,14 @@ explicit PostgreSQL batch passed **34/0**, and `mix test.fast` passed with
 - `docs/operator-admin.md` — host staff boundary, confirmation, one-time disclosure, and lockout tradeoff.
 - `docs/supported-surface.md` — concise public contract for management-token lifecycle and recovery.
 - `test/lockspire/client_lifetime_guidance_test.exs` — source-backed checks for the new guidance.
-- `.planning/phases/165-management-token-lifecycle-recovery/165-VALIDATION.md` — task evidence and exact gate outcomes; remains draft.
+- `.planning/phases/165-management-token-lifecycle-recovery/165-VALIDATION.md` — validated Nyquist evidence and exact gate outcomes; phase completion still awaits independent verification.
 - `.planning/phases/165-management-token-lifecycle-recovery/deferred-items.md` — out-of-scope existing full-suite failures.
 
 ## Decisions Made
 
 - Finite expiry remains an optional host policy, not a universal RFC timeout. The docs state the partner lockout risk and preserve unlimited blank/zero behavior.
 - A successful PUT immediately invalidates the previous token and discloses the replacement once. Recovery stays on the existing host-authorized, confirmed admin operation and never extends app or secret expiry.
-- The evidence record remains draft with compliance flags false until independent security, code-review, and goal-backward verification complete. Phase 166 still owns final packaged cross-phase proof, final security/guidance audit, and umbrella-todo closure.
+- Nyquist evidence remains validated with compliance flags true; Phase 165 remains open until independent security, code-review, and goal-backward verification complete. Phase 166 still owns final packaged cross-phase proof, final security/guidance audit, and umbrella-todo closure.
 
 ## Deviations from Plan
 

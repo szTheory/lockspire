@@ -57,7 +57,7 @@ Each command reference links to the exact runnable command(s) below, copied from
 | 165-06-02 | 6 | DCR-11, DCR-12 | Confirmed one-time mounted recovery and host/public route boundary | LiveView + router | [165-06-02](#command-165-06-02) | T-165-09, T-165-16 | pass — included in 68-test combined run (165-06-SUMMARY) |
 | 165-06-03 | 6 | DCR-11 | Prospective finite-token copy and retired vocabulary contract | rendered contracts | [165-06-03](#command-165-06-03) | T-165-16 | pass — included in 24-test policy/copy run (165-06-SUMMARY) |
 | 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | pass — combined guidance/architecture/compatibility 21/0 after manifest correction |
-| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pass — explicit PostgreSQL 34/0; final fast suite 2412/0 |
+| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pass — explicit PostgreSQL 34/0; final fast suite 2413/0 |
 
 ## Plan 165-07 Execution Evidence
 
@@ -111,10 +111,35 @@ and 6 skipped** in 136.3s. Earlier failed-run evidence remains historical and
 is not erased. Independent security review, code review, and goal-backward
 verification are still open; these results do not complete Phase 165.
 
+### Code-review follow-up: CR-01
+
+Review identified a remaining precedence case: for a valid management token
+and expired app, invalid PUT metadata could return HTTP 400 before app expiry
+was evaluated. Commit `e1883472` applies app eligibility to both successful
+and failed preparation outcomes. Management-token eligibility remains first;
+the app eligibility check follows; only an eligible app receives a deferred
+metadata error. Preparation still runs before the final decision-clock sample,
+and rejected requests do not write client or audit state.
+
+The new HTTP integration matrix first reproduced the review finding: **3
+tests, 1 failure, 4 excluded**, with expired-app PUT returning 400 instead of
+403. After the fix, the access module passed **5/0**. Across all **27**
+changed test files since `ee7f8d2c`, the normal `mix test` run passed **218
+tests, 0 failures**. The exact combined guidance/architecture/compatibility
+gate passed **21/0**; the explicit PostgreSQL race/rollback/adapter batch
+passed **34/0**; and the full fast suite passed with **2 properties, 2,413
+tests, 0 failures, 485 excluded, and 6 skipped** in 129.6s. The exclusion and
+skip counts are reported and are not treated as race evidence.
+
+Nyquist status remains validated from the completed plan evidence. Phase
+completion is still pending independent re-review of CR-01, security review,
+and goal-backward verification.
+
 **Gate status:** the combined guidance/compatibility gate, explicit PostgreSQL
-batch, and full fast suite pass. Keep this validation record `draft`,
-`nyquist_compliant: false`, and `wave_0_complete: false` while independent
-phase-wide security, code-review, and goal-backward verification remain open.
+batch, and full fast suite pass. This validation record remains
+`status: validated`, `nyquist_compliant: true`, and `wave_0_complete: true`;
+the additional independent phase-wide security, code-review, and
+goal-backward verification gates remain open before phase completion.
 Phase 166 remains responsible for final packaged cross-phase proof, final
 security/guidance audit and umbrella-todo closure.
 
