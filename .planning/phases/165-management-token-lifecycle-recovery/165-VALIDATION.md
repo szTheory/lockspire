@@ -36,28 +36,57 @@ Prefix every Mix verification command with the same `env` assignments. Setup cre
 
 ## Per-Task Verification Map
 
-Each command reference links to the exact runnable command(s) below, copied from the canonical task. All statuses remain pending: planning has not run implementation verification. Every runnable task command has an immediately following observable fails_when in its PLAN.md.
+Each command reference links to the exact runnable command(s) below, copied from the canonical task. Plans 165-01 through 165-06 have passing evidence recorded in their summaries. Plan 165-07 evidence is recorded below; the fast suite and combined guidance/compatibility gate remain blocked by unrelated failures, so this validation file remains draft. Every runnable task command has an immediately following observable fails_when in its PLAN.md.
 
 | Task ID | Wave | Requirement | Secure Behavior | Test Type | Command | Threat Ref | Status |
 |---|---|---|---|---|---|---|---|
-| 165-01-01 | 1 | DCR-11 | Finite GET, post-lock expiry and safe effective extensions | E2E integration | [165-01-01](#command-165-01-01) | T-165-01, T-165-02 | pending |
-| 165-01-02 | 1 | DCR-11 | All operations, app-state exceptions, non-renewal and final DELETE audit time | protocol + endpoint | [165-01-02](#command-165-01-02) | T-165-01 | pending |
-| 165-01-03 | 1 | DCR-11 | Absent/invalid Bearer and redacted server errors | endpoint | [165-01-03](#command-165-01-03) | T-165-03 | pending |
-| 165-02-01 | 2 | DCR-10 | Issuance snapshots, provenance and wire truth | integration + serializer | [165-02-01](#command-165-02-01) | T-165-05 | pending |
-| 165-02-02 | 2 | DCR-10 | Real policy/admin write and reload, typed use rejection, malformed in-memory registration and corrupt-policy HTTP500 without issuance | persistence + protocol + router | [165-02-02](#command-165-02-02) | T-165-04 | pending |
-| 165-03-01 | 3 | DCR-11, DCR-12 | Required body identity and atomic PUT hash/deadline/metadata/audit | E2E integration | [165-03-01](#command-165-03-01) | T-165-06, T-165-07, T-165-08 | pending |
-| 165-03-02 | 3 | DCR-11, DCR-12 | Field/extension/secret rules, intake rejection and repeat-operation semantics | protocol + endpoint | [165-03-02](#command-165-03-02) | T-165-06 | pending |
-| 165-04-01 | 4 | DCR-11, DCR-12 | Current-policy host recovery, stale snapshot and no app renewal | integration | [165-04-01](#command-165-04-01) | T-165-09, T-165-10 | pending |
-| 165-04-02 | 4 | DCR-12 | Executed adapter round trips, dropping controls and whole-row promotion | adapter conformance | [165-04-02](#command-165-04-02) | T-165-10, T-165-11 | pending |
-| 165-04-03 | 4 | DCR-11, DCR-12 | Client-write/audit rollback and no successful plaintext | fault injection | [165-04-03](#command-165-04-03) | T-165-08, T-165-11 | pending |
-| 165-05-01 | 5 | DCR-11, DCR-12 | Real blocker, expiry and stale GET/PUT/DELETE | independent PostgreSQL | [165-05-01](#command-165-05-01) | T-165-12 | pending |
-| 165-05-02 | 5 | DCR-12 | One-winner PUT/PUT, PUT/recovery and recovery/recovery | independent PostgreSQL | [165-05-02](#command-165-05-02) | T-165-13 | pending |
-| 165-05-03 | 5 | DCR-11, DCR-12 | Concurrent secret/disable preservation and contended rollback | independent PostgreSQL | [165-05-03](#command-165-05-03) | T-165-14 | pending |
-| 165-06-01 | 6 | DCR-11, DCR-12 | Observed event counts, distinct actors and sensitive-material redaction | telemetry + audit | [165-06-01](#command-165-06-01) | T-165-15 | pending |
-| 165-06-02 | 6 | DCR-11, DCR-12 | Confirmed one-time mounted recovery and host/public route boundary | LiveView + router | [165-06-02](#command-165-06-02) | T-165-09, T-165-16 | pending |
-| 165-06-03 | 6 | DCR-11 | Prospective finite-token copy and retired vocabulary contract | rendered contracts | [165-06-03](#command-165-06-03) | T-165-16 | pending |
-| 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | pending |
-| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | pending |
+| 165-01-01 | 1 | DCR-11 | Finite GET, post-lock expiry and safe effective extensions | E2E integration | [165-01-01](#command-165-01-01) | T-165-01, T-165-02 | pass — 3 tests, 0 failures (165-01-SUMMARY) |
+| 165-01-02 | 1 | DCR-11 | All operations, app-state exceptions, non-renewal and final DELETE audit time | protocol + endpoint | [165-01-02](#command-165-01-02) | T-165-01 | pass — 44 tests, 0 failures (165-01-SUMMARY) |
+| 165-01-03 | 1 | DCR-11 | Absent/invalid Bearer and redacted server errors | endpoint | [165-01-03](#command-165-01-03) | T-165-03 | pass — 19 tests, 0 failures (165-01-SUMMARY) |
+| 165-02-01 | 2 | DCR-10 | Issuance snapshots, provenance and wire truth | integration + serializer | [165-02-01](#command-165-02-01) | T-165-05 | pass — 15 tests, 0 failures (165-02-SUMMARY) |
+| 165-02-02 | 2 | DCR-10 | Real policy/admin write and reload, typed use rejection, malformed in-memory registration and corrupt-policy HTTP500 without issuance | persistence + protocol + router | [165-02-02](#command-165-02-02) | T-165-04 | pass — 35 tests, 0 failures (165-02-SUMMARY) |
+| 165-03-01 | 3 | DCR-11, DCR-12 | Required body identity and atomic PUT hash/deadline/metadata/audit | E2E integration | [165-03-01](#command-165-03-01) | T-165-06, T-165-07, T-165-08 | pass — 3 tests, 0 failures (165-03-SUMMARY) |
+| 165-03-02 | 3 | DCR-11, DCR-12 | Field/extension/secret rules, intake rejection and repeat-operation semantics | protocol + endpoint | [165-03-02](#command-165-03-02) | T-165-06 | pass — 62 tests, 0 failures (165-03-SUMMARY) |
+| 165-04-01 | 4 | DCR-11, DCR-12 | Current-policy host recovery, stale snapshot and no app renewal | integration | [165-04-01](#command-165-04-01) | T-165-09, T-165-10 | pass — 9 tests, 0 failures (165-04-SUMMARY) |
+| 165-04-02 | 4 | DCR-12 | Executed adapter round trips, dropping controls and whole-row promotion | adapter conformance | [165-04-02](#command-165-04-02) | T-165-10, T-165-11 | pass — 22 tests, 0 failures (165-04-SUMMARY) |
+| 165-04-03 | 4 | DCR-11, DCR-12 | Client-write/audit rollback and no successful plaintext | fault injection | [165-04-03](#command-165-04-03) | T-165-08, T-165-11 | pass — 6 tests, 0 failures (165-04-SUMMARY) |
+| 165-05-01 | 5 | DCR-11, DCR-12 | Real blocker, expiry and stale GET/PUT/DELETE | independent PostgreSQL | [165-05-01](#command-165-05-01) | T-165-12 | pass — 3 tests, 10 blocker observations (165-05-SUMMARY) |
+| 165-05-02 | 5 | DCR-12 | One-winner PUT/PUT, PUT/recovery and recovery/recovery | independent PostgreSQL | [165-05-02](#command-165-05-02) | T-165-13 | pass — 2 tests, 5 blocker observations (165-05-SUMMARY) |
+| 165-05-03 | 5 | DCR-11, DCR-12 | Concurrent secret/disable preservation and contended rollback | independent PostgreSQL | [165-05-03](#command-165-05-03) | T-165-14 | pass — 5 tests, 9 blocker observations (165-05-SUMMARY) |
+| 165-06-01 | 6 | DCR-11, DCR-12 | Observed event counts, distinct actors and sensitive-material redaction | telemetry + audit | [165-06-01](#command-165-06-01) | T-165-15 | pass — included in 68-test combined run (165-06-SUMMARY) |
+| 165-06-02 | 6 | DCR-11, DCR-12 | Confirmed one-time mounted recovery and host/public route boundary | LiveView + router | [165-06-02](#command-165-06-02) | T-165-09, T-165-16 | pass — included in 68-test combined run (165-06-SUMMARY) |
+| 165-06-03 | 6 | DCR-11 | Prospective finite-token copy and retired vocabulary contract | rendered contracts | [165-06-03](#command-165-06-03) | T-165-16 | pass — included in 24-test policy/copy run (165-06-SUMMARY) |
+| 165-07-01 | 7 | DCR-10, DCR-11, DCR-12 | Source-backed lifecycle and lost-response guidance | guidance contracts | [165-07-01](#command-165-07-01) | T-165-17 | partial — guidance/architecture 15/0; combined command 9/1 (compatibility drift) |
+| 165-07-02 | 7 | DCR-10, DCR-11, DCR-12 | Fast and explicit race/conformance/rollback evidence | phase gates | [165-07-02](#command-165-07-02) | T-165-18 | partial — explicit PostgreSQL 34/0; fast suite 2411/6 |
+
+## Plan 165-07 Execution Evidence
+
+All commands used the dedicated `lockspire_phase165_validation` database and
+the pinned Elixir/OTP, `MIX_HOME`, and `HEX_HOME` selectors shown in the command
+catalog. No dependency installation was performed.
+
+| Task | Command/result | Duration | Threat and evidence disposition |
+|---|---|---:|---|
+| 165-07-01 | Guidance + architecture suites: **15 tests, 0 failures**. Exact plan command including compatibility contract: **9 tests, 1 failure** at the pinned exported-function baseline. | 0.20s / 0.06s | T-165-17: lifecycle guidance and architecture checks pass. Compatibility failure is pre-existing Phase 165 API drift, recorded in `deferred-items.md`; no docs claim that the gate passed. |
+| 165-07-02 fast | `mix test.fast`: **2,411 tests, 6 failures, 483 excluded, 6 skipped**. Full captured rerun took **139.4s**. | 139.4s | T-165-18: gate failed. Failures: compatibility baseline omits `RegistrationManagement.rotate_registration_access_token/1,2`; three `ServerPolicyRecordTest` inserts collide on `lockspire_server_policies_pkey`; `ClientsLiveTest` still expects retired text `current token stops working after rotation`; and `DiscoveryControllerTest` expects `registration_endpoint` to be absent although it is present. These existing failures are outside plan 165-07's files and are listed in `deferred-items.md`. Fast-suite exclusions/skips are reported, not credited as proof. |
+| 165-07-02 explicit PostgreSQL | All six selected management race, rollback, adapter conformance and promotion modules with `--include postgres_race`: **34 tests, 0 failures**. The three 165-05 race modules account for **24 previously observed PostgreSQL blocker relationships** (10 + 5 + 9); the current run also executed the selected rollback and adapter suites. | 1.0s | T-165-18: explicit race inclusion executed positive counts and passed; race proof is independent of the fast-suite result. |
+
+The 165-07-01 RED attempt added source-backed guidance assertions and ran the
+exact focused command before the documentation changes. ExUnit reported the
+new target test failing at the missing `Lockspire.mount_path` guidance
+assertion (1 test, 1 failure; exit 2), not during compilation or fixture setup.
+The default ExUnit console format is not accepted by the GSD RED evidence
+classifier, so this is recorded as a semantic RED observation only; no
+classifier-approved RED is claimed. This task changes documentation and
+contract assertions only and adds no runtime implementation. Its test commit
+precedes the documentation commit.
+
+**Gate status:** the explicit PostgreSQL batch passes. The complete fast suite
+and exact combined guidance/compatibility command do not meet their zero-failure
+acceptance criteria. Keep this validation record `draft`, `nyquist_compliant:
+false`, and `wave_0_complete: false` until the listed failures are resolved and
+the gates are rerun. Phase 166 remains responsible for final packaged
+cross-phase proof, final security/guidance audit and umbrella-todo closure.
 
 ### Exact command catalog
 
