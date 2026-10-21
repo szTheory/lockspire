@@ -11,6 +11,7 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.ServerPolicyRecord
 
   @moduletag :integration
   @moduletag :postgres_race
@@ -27,8 +28,13 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
         registration_access_token_expires_at: management_deadline
       })
 
+    previous_policy = snapshot_server_policy()
     set_secret_policy(37)
-    on_exit(fn -> cleanup(client_id) end)
+
+    on_exit(fn ->
+      cleanup(client_id)
+      restore_server_policy(previous_policy)
+    end)
 
     parent = self()
     first_time = decision_time()
@@ -100,8 +106,14 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
         registration_access_token_expires_at: DateTime.add(old, 200, :second)
       })
 
+    previous_policy = snapshot_server_policy()
     set_secret_policy(11)
-    on_exit(fn -> cleanup(client_id) end)
+
+    on_exit(fn ->
+      cleanup(client_id)
+      restore_server_policy(previous_policy)
+    end)
+
     parent = self()
 
     holder =
@@ -319,6 +331,28 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
         })
 
       policy
+    end)
+  end
+
+  defp snapshot_server_policy do
+    Sandbox.unboxed_run(Lockspire.TestRepo, fn ->
+      Lockspire.TestRepo.get(ServerPolicyRecord, ServerPolicyRecord.singleton_id())
+    end)
+  end
+
+  defp restore_server_policy(previous_policy) do
+    Sandbox.unboxed_run(Lockspire.TestRepo, fn ->
+      case previous_policy do
+        nil ->
+          Lockspire.TestRepo.delete_all(
+            from(policy in ServerPolicyRecord,
+              where: policy.id == ^ServerPolicyRecord.singleton_id()
+            )
+          )
+
+        %ServerPolicyRecord{} = policy ->
+          Lockspire.TestRepo.insert_or_update!(policy)
+      end
     end)
   end
 

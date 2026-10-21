@@ -31,11 +31,13 @@ key-files:
     - test/lockspire/storage/client_secret_lifetime_client_wait_test.exs
     - test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs
     - test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs
-  modified: []
+  modified:
+    - test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs
 key-decisions:
   - "Use exact PostgreSQL blocker and NOWAIT evidence as the ordering gate before advancing the injected secret clock."
   - "For device and CIBA, let the real preliminary poll complete before a holder locks the row used by the final transition."
   - "Compare durable grant, token, credential, lifecycle, and audit rows after the relevant success or rollback boundary."
+  - "Restore the exact prior durable singleton policy after rotation race fixtures, deleting the row only when the test created it."
 patterns-established:
   - "Race tests use unique committed fixtures, bounded waits, actual PostgreSQL sessions, and deterministic cleanup."
   - "An operator command may return a secret that a later serialized commit supersedes; only the last committed secret is current."
@@ -114,6 +116,14 @@ env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test
 ```
 
 Result: **11 tests, 0 failures** across the three named modules; no tests in the requested explicit selection were excluded. `mix format` completed successfully for all three files, and `git diff --check` passed before commits. The blocker assertions used exact `pg_blocking_pids` results and NOWAIT probes; expiry was advanced through injected clocks, without elapsed sleeps as ordering evidence. Durable assertions verified denied code/request/family/input-token state, committed replacement credentials and audits, and complete rollback after injected write/audit failures.
+
+## Durable Fixture Cleanup Follow-up
+
+Wave validation found that the rotation race tests committed singleton server-policy changes without restoring the prior durable row. The tests now snapshot the row before changing policy and restore it after each race; an absent row is deleted only when the test created it, while an existing row is restored from its exact prior record. Client/audit cleanup remains scoped to each test's unique client ID.
+
+On the dedicated `lockspire_phase164_validation` database, the prior run's identified rollback client and singleton policy row (`id = 1`, secret lifetime `37`) were removed by exact predicates. Before and after the rerun, durable counts were zero for `secret-%` clients and related audits, tokens, used JTIs, interactions, device authorizations, and CIBA authorizations, and zero singleton policy rows. The post-run query confirmed `current_database() = 'lockspire_phase164_validation'`.
+
+The explicit PostgreSQL race selection was rerun with `--include postgres_race`: **11 tests, 0 failures, 0 excluded**. The required `mix test.fast` gate passed: **2 properties, 2,344 tests, 0 failures, 440 excluded, 6 skipped**. The tagged PostgreSQL races were independently included and run above.
 
 ## TDD Evidence
 
