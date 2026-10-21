@@ -123,7 +123,11 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
             |> map_one(&ClientRecord.to_domain/1)
             |> append_audit_or_rollback(repo, audit_attrs)
           else
-            _ -> TransactionStore.rollback(repo, :invalid_token)
+            {:error, :invalid_lifetime_state} ->
+              TransactionStore.rollback(repo, :invalid_lifetime_state)
+
+            _ ->
+              TransactionStore.rollback(repo, :invalid_token)
           end
       end
     end)
@@ -164,7 +168,11 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
             |> map_one(&ClientRecord.to_domain/1)
             |> append_audit_or_rollback(repo, audit_attrs)
           else
-            _ -> TransactionStore.rollback(repo, :invalid_token)
+            {:error, :invalid_lifetime_state} ->
+              TransactionStore.rollback(repo, :invalid_lifetime_state)
+
+            _ ->
+              TransactionStore.rollback(repo, :invalid_token)
           end
       end
     end)

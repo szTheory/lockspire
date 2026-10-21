@@ -192,7 +192,11 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         error
 
       {:error, reason} ->
-        {:error, reason}
+        if reason == :invalid_lifetime_state do
+          {:error, %Registration.Error{code: :server_error, reason: reason}}
+        else
+          {:error, reason}
+        end
     end
   end
 
@@ -241,6 +245,9 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       {:ok, updated_client} ->
         emit_rat_rotated(updated_client)
         {:ok, new_rat_plaintext, updated_client}
+
+      {:error, :invalid_lifetime_state} ->
+        {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
 
       {:error, reason} ->
         {:error, reason}
