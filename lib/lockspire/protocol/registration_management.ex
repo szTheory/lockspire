@@ -235,6 +235,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
         end
       else
         false -> {:error, :invalid_token}
+        {:ok, _rows} -> {:error, :invalid_token}
         {:error, %Registration.Error{} = error} -> {:error, error}
         {:error, reason} -> {:error, reason}
       end

@@ -158,6 +158,27 @@ defmodule Lockspire.Web.RegistrationControllerTest do
       |> dispatch()
 
     assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Bearer realm=\"Lockspire Dynamic Client Registration\""
+           ]
+
+    assert conn.resp_body == ""
+  end
+
+  test "show marks a supplied unknown RAT as invalid_token" do
+    conn =
+      build_conn(:get, "/register/client-123")
+      |> put_req_header("authorization", "Bearer supplied-but-unknown")
+      |> dispatch()
+
+    assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+           ]
+
+    assert conn.resp_body == ""
   end
 
   test "update yields 401 without RAT" do
@@ -189,6 +210,8 @@ defmodule Lockspire.Web.RegistrationControllerTest do
 
     update_body = Jason.decode!(update_conn.resp_body)
     assert update_body["registration_access_token"] != prior_rat
+    assert is_integer(update_body["lockspire_client_expires_at"])
+    assert is_integer(update_body["lockspire_registration_access_token_expires_at"])
 
     assert update_body["backchannel_logout_uri"] ==
              "https://rp.example.test/replaced-backchannel-logout"

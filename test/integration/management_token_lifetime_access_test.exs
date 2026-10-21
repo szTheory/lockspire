@@ -128,7 +128,9 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeAccessTest do
     assert payload["lockspire_client_expires_at"] == 0
     assert payload["lockspire_registration_access_token_expires_at"] == DateTime.to_unix(deadline)
     refute Map.has_key?(payload, "registration_access_token")
+    refute Map.has_key?(payload, "registration_access_token_hash")
     refute Map.has_key?(payload, "client_secret")
+    refute Map.has_key?(payload, "client_secret_hash")
 
     {:ok, after_future_get} = Repository.fetch_client_by_id(client_id)
 
@@ -199,6 +201,16 @@ defmodule Lockspire.Integration.ManagementTokenLifetimeAccessTest do
     assert get_conn.status == 401
     assert put_conn.status == 401
     assert delete_conn.status == 401
+
+    [get_conn, put_conn, delete_conn]
+    |> Enum.each(fn conn ->
+      assert get_resp_header(conn, "www-authenticate") == [
+               "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+             ]
+
+      assert conn.resp_body == ""
+    end)
+
     assert {:ok, after_requests} = Repository.fetch_client_by_id(client_id)
     assert after_requests == before
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
