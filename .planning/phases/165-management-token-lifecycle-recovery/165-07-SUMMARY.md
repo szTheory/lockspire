@@ -132,14 +132,35 @@ See [165-REVIEW-FIX.md](./165-REVIEW-FIX.md) for the exact finding and evidence.
 
 The later security-audit follow-up added regressions for expired-credential
 precedence over invalid PUT metadata and clarified that host recovery does not
-restore PUT permission for an expired app. The final current evidence
-supersedes the earlier 2,411-test result: all 27 test files changed since
-`ee7f8d2c` passed **217/0**, the exact combined gate passed **21/0**, the
-explicit PostgreSQL batch passed **34/0**, and `mix test.fast` passed with
-**2 properties, 2,412 tests, 0 failures, 484 excluded, and 6 skipped** in
-136.3 seconds. Details and the preserved historical outcomes are in
+restore PUT permission for an expired app. Its all-27-file/217-test and
+2,412-test fast results remain historical evidence in
 [165-VALIDATION.md](./165-VALIDATION.md) and
 [165-REGRESSION-FIX-SUMMARY.md](./165-REGRESSION-FIX-SUMMARY.md).
+
+### Authorized prior-phase regression follow-up
+
+The parent authorized a narrow correction after the prior-phase gate exposed a
+pre-existing RAR audience-persistence defect. Commit `a1fd2d47` carries the
+selected resource audience through guarded authorization-code redemption and
+refresh-token persistence, validates it against the locked current row, and
+preserves all other current-row authority. The Phase 57/54 integration suite
+passes 4/0 and asserts access, refresh, rotation, and introspection audiences.
+
+The same gate exposed stale fixture assumptions. Commits `4386dbe3`,
+`2ad5ec11`, `c329210b`, `62ffc461`, and `33c63e2e` add required client
+lifetime-version values, scope rollback assertions, restore registration
+policy premises, use a changeset for Ecto race-teardown restoration, and seed
+the intended DCR policy before telemetry tests. Historical failures and root
+causes are retained in `deferred-items.md` and
+`165-REGRESSION-FIX-SUMMARY.md`.
+
+The latest validation supersedes earlier counts: the **108-file** prior-phase
+gate passed **908/0**; all **33** changed test files passed **298/0**; the
+combined guidance/architecture/compatibility gate passed **21/0**; the
+explicit PostgreSQL batch passed **34/0**; and `mix test.fast` passed with
+**2 properties, 2,413 tests, 0 failures, 485 excluded, and 6 skipped**. The
+prior failed outputs remain historical evidence. Phase 165 remains pending
+independent security, review, and goal-backward verification.
 
 ## Files Created/Modified
 
@@ -148,6 +169,9 @@ explicit PostgreSQL batch passed **34/0**, and `mix test.fast` passed with
 - `docs/operator-admin.md` — host staff boundary, confirmation, one-time disclosure, and lockout tradeoff.
 - `docs/supported-surface.md` — concise public contract for management-token lifecycle and recovery.
 - `test/lockspire/client_lifetime_guidance_test.exs` — source-backed checks for the new guidance.
+- `lib/lockspire/protocol/token_exchange/internal/grant_support.ex` and `lib/lockspire/protocol/token_exchange/internal/grant_persistence.ex` — carry the selected RAR audience through locked issuance and refresh persistence.
+- `test/integration/phase57_rar_introspection_verification_e2e_test.exs` — selected audience remains narrowed across access, refresh, rotation, and introspection.
+- Prior-phase fixture isolation: `test/lockspire/audit/audit_writer_test.exs`, `test/lockspire/storage/repository_test.exs`, `test/lockspire/protocol/discovery_test.exs`, `test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs`, `test/lockspire/protocol/dcr_telemetry_redaction_test.exs`, and `test/integration/phase3_oidc_token_lifecycle_e2e_test.exs`.
 - `.planning/phases/165-management-token-lifecycle-recovery/165-VALIDATION.md` — validated Nyquist evidence and exact gate outcomes; phase completion still awaits independent verification.
 - `.planning/phases/165-management-token-lifecycle-recovery/deferred-items.md` — out-of-scope existing full-suite failures.
 
@@ -161,7 +185,7 @@ explicit PostgreSQL batch passed **34/0**, and `mix test.fast` passed with
 
 ### Auto-fixed Issues
 
-The phase owner authorized a post-plan corrective pass after validation found failures across earlier phase-owned tests. Root causes and fixes are recorded in the corrective follow-up section and `165-REGRESSION-FIX-SUMMARY.md`; no runtime protocol behavior or discovery output was changed.
+The phase owner authorized post-plan corrective work after validation found security and prior-phase regression failures. The selected-audience repair is a narrow runtime correction required by the established Resource Indicators contract; it preserves locked current-row checks and does not change discovery behavior. Test-isolation corrections do not weaken protocol assertions. Root causes and superseding gates are recorded in `165-REGRESSION-FIX-SUMMARY.md` and `165-VALIDATION.md`.
 
 ## Issues Encountered
 

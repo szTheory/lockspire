@@ -1,10 +1,13 @@
 # Phase 165 Regression Fix Summary
 
-Initial Phase 165 validation and a later security audit exposed test isolation,
-credential-precedence, and guidance-ambiguity gaps. Four corrective commits
-resolved them. The protocol fix preserves current-row and hash checks, runs
-preparation before the final decision clock, and checks credential eligibility
-before returning any preparation error.
+Initial Phase 165 validation, a later security audit, code review, and the
+prior-phase regression gate exposed test isolation, credential-precedence,
+guidance-ambiguity, and token audience persistence gaps. Corrective commits
+resolved them. The lifecycle security fix preserves current-row and hash
+checks, runs preparation before the final decision clock, and checks
+credential eligibility before returning any preparation error. The separate
+audience repair carries only the selected issuance audience forward while
+relying on the locked current authorization-code row for all other fields.
 
 ## Root causes and fixes
 
@@ -92,7 +95,7 @@ PostgreSQL batch passed 34/0, and `mix test.fast` passed with 2 properties,
 supersede the previous full-suite count while retaining the earlier failure
 history above.
 
-## Prior-phase regression gate finding (out of Phase 165 scope)
+## Prior-phase regression gate finding (historical diagnosis; now resolved)
 
 The cross-phase regression command over 108 test files extracted from Phases
 162–164 reported **179 tests, 1 failure**. The failing
@@ -114,8 +117,44 @@ feature-level resource-downscoping/persistence defect, not an outdated test
 expectation.
 
 The RAR end-to-end test and the relevant `GrantSupport`, `GrantPersistence`,
-`ResourceSelection`, and `TokenIssuer` files are byte-for-byte unchanged from
-`ee7f8d2c`. This behavior predates Phase 165; changing OAuth token semantics
-would broaden the current phase. No source or test expectation was changed.
-The prior-phase regression gate remains an explicit blocker pending a scoped
-fix in the resource-indicator/token-exchange workstream.
+`ResourceSelection`, and `TokenIssuer` files were unchanged from `ee7f8d2c` at
+the time of the initial diagnosis. The first assessment treated this
+pre-existing defect as outside Phase 165 scope. The parent then authorized a
+narrow correction to clear the required regression gate; the expected
+downscoping behavior was retained.
+
+### Authorized correction and final evidence
+
+The failure was reproduced before the fix: the Phase 57 integration test
+expected the selected audience `https://api.one`, while persistence retained
+both authorized resources. `GrantSupport` created a prepared authorization
+code with the selected audience but passed the original struct to
+`GrantPersistence`; the locked-row callback restored the broader current
+audience on access persistence, and refresh-token construction used the
+original struct as well.
+
+Commit `a1fd2d47` passes the selected audience as a separate intent value.
+`GrantPersistence` checks it against the locked current authorization code
+using `ResourceSelection.select/2`, derives issuance from that current row with
+only the selected audience applied, returns the audience in the redemption
+result, and builds refresh state from the fresh redeemed code plus that same
+selected audience. This preserves locked row identity, single-use/hash checks,
+and current-row authority while retaining the request's intended resource
+narrowing. The integration test now verifies access and refresh rows, rotation,
+and refresh introspection.
+
+The subsequent 108-file gate also uncovered legacy test fixture and policy
+isolation issues. Commits `4386dbe3`, `2ad5ec11`, `c329210b`, `62ffc461`, and
+`33c63e2e` correct required lifetime fields, row-scoped rollback assertions,
+discovery policy baselines, Ecto changeset restoration, and DCR fixture policy
+setup. They do not change OAuth protocol behavior.
+
+Verification is now clean: prior-phase files **108/908 tests/0 failures**;
+Phase 57 + Phase 54 **4/0**; all changed `*_test.exs` files **33/298/0**;
+explicit PostgreSQL race/conformance batch **34/0**; combined guidance and
+compatibility gate **21/0**; and `mix test.fast` **2 properties, 2,413 tests,
+0 failures, 485 excluded, 6 skipped**. Intermediate failure output remains in
+the per-run logs under `/private/tmp/lockspire-phase165-prior-regression-rerun*.log`.
+These results supersede the initial 179/1 outcome and do not close Phase 165;
+independent security review, code review, and goal-backward verification
+remain pending.

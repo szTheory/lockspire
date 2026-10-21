@@ -135,6 +135,58 @@ Nyquist status remains validated from the completed plan evidence. Phase
 completion is still pending independent re-review of CR-01, security review,
 and goal-backward verification.
 
+### Cross-phase regression repair (superseding evidence)
+
+The initial 108-file prior-phase run ended at **179 tests, 1 failure** in the
+Phase 57 RAR audience assertion. The isolated RED run confirmed a persistence
+defect: `GrantSupport` selected `https://api.one` for issuance preparation but
+passed the original authorization-code audience into persistence, which
+overwrote the narrowed audience on access and refresh rows. Phase 54
+downscoping and `ResourceSelection.select/2` support the expected behavior;
+the protocol expectation was preserved.
+
+Commit `a1fd2d47` carries the selected audience separately through guarded
+redemption, revalidates it against the locked current authorization code, and
+uses the fresh redeemed row plus that selected audience for access and rotated
+refresh records. Phase 57 assertions cover persisted access and refresh
+audience, post-rotation audience, and refresh introspection. Focused Phase 57
++ Phase 54 verification passed **4/0**.
+
+The reruns also exposed independent legacy fixture/isolation failures. The
+intermediate failures are preserved in `/private/tmp/lockspire-phase165-prior-regression-rerun*.log`:
+
+| Historical failed run | Root cause | Fix |
+|---|---|---|
+| 244 tests, 1 failure | `RepositoryTest` omitted required `lifetime_version`; rollback assertions queried persistent audit/client tables globally. | Add the field and scope assertions to each fixture client (`4386dbe3`; audit fixture sibling updated too). |
+| 334 tests, 1 failure | The dedicated DB retained an enabled registration policy before the Phase 03 discovery assertion. | Normalize discovery and Phase 03 policy premises (`2ad5ec11`, `33c63e2e`). |
+| 408 tests, 1 failure | Rotation-race teardown passed a loaded Ecto struct to `Repo.insert_or_update!/1`. | Restore through `Ecto.Changeset.change/1` (`c329210b`). |
+| 412 tests, 1 failure | DCR telemetry registration used a shared server policy whose scope allowlist was restricted by earlier suites. | Seed the intended DCR fixture policy outside each test sandbox (`62ffc461`). |
+| 442 tests, 1 failure | Another integration suite durably enabled registration before Phase 03's discovery request. | Set Phase 03's disabled-policy premise inside its sandbox (`33c63e2e`). |
+
+The exact prior-phase command over the same **108 test files** now passes with
+**908 tests, 0 failures**. The same verification completed the 33 test files
+changed from `ee7f8d2c..HEAD` with **298/0**, the explicit PostgreSQL batch
+with **34/0**, the combined guidance/architecture/compatibility gate with
+**21/0**, and `mix test.fast` with **2 properties, 2,413 tests, 0 failures,
+485 excluded, and 6 skipped**. Historical failures are retained and
+superseded by these clean results.
+
+The prior-phase invocation was normal `mix test`, with paths read from the
+preserved file list:
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation xargs mix test --max-failures 1 --timeout 55000 < /private/tmp/lockspire-phase165-prior-test-files.txt
+```
+
+All **33** changed `*_test.exs` files were run the same way using
+`/private/tmp/lockspire-phase165-changed-test-files.txt`; the complete output
+is `/private/tmp/lockspire-phase165-changed-tests.log`. The final 108-file
+output is `/private/tmp/lockspire-phase165-prior-regression-rerun5.log`.
+Formatting passed for all changed Elixir files with
+`git diff --name-only ee7f8d2c..HEAD -- '*.ex' '*.exs' | xargs mix format --check-formatted`,
+and `git diff --check` passed. The environment assignments are the pinned
+selectors at the top of this document.
+
 **Gate status:** the combined guidance/compatibility gate, explicit PostgreSQL
 batch, and full fast suite pass. This validation record remains
 `status: validated`, `nyquist_compliant: true`, and `wave_0_complete: true`;
@@ -323,7 +375,7 @@ All selected phase behaviors have automated verification. Host authorization and
 - [x] Actual feedback timings recorded during execution.
 - [x] `nyquist_compliant: true` set only after the applicable audit.
 
-**Approval:** automated coverage audit complete. All 18 task rows map to executed behavioral verification; requirements DCR-10, DCR-11, and DCR-12 have direct automated coverage. Latest corrective final gates passed: combined guidance/compatibility 21/0, explicit PostgreSQL 34/0, and fast suite 2 properties + 2,413 tests/0 failures (485 excluded, 6 skipped). The separately scoped prior-phase regression gate has one pre-existing resource-downscoping failure recorded below. Independent security, code-review, and goal-backward reports remain for their next hooks.
+**Approval:** automated coverage audit complete. All 18 task rows map to executed behavioral verification; requirements DCR-10, DCR-11, and DCR-12 have direct automated coverage. Latest gates passed: combined guidance/compatibility 21/0, explicit PostgreSQL 34/0, prior-phase regression suite 908/0, and fast suite 2 properties + 2,413 tests/0 failures (485 excluded, 6 skipped). Independent security, code-review, and goal-backward reports remain for their next hooks.
 
 ## Validation Audit 2026-10-21
 
@@ -333,7 +385,7 @@ All selected phase behaviors have automated verification. Host authorization and
 | Resolved | 0 |
 | Escalated | 0 |
 
-## Cross-phase prior-regression gate (open, outside this phase's Nyquist scope)
+## Cross-phase prior-regression gate (resolved; supplemental to this phase's Nyquist scope)
 
 The parent ran normal `mix test` over 108 test files extracted from the Phase
 162–164 verification records using the pinned runtime and the dedicated
@@ -346,19 +398,22 @@ the persisted access-token audience was `["https://api.one",
 `/private/tmp/lockspire-phase165-prior-test-files.txt` and
 `/private/tmp/lockspire-phase165-prior-regression.log`.
 
-The isolated command `mix test
+Before the correction, the isolated command `mix test
 test/integration/phase57_rar_introspection_verification_e2e_test.exs
---max-failures 1 --timeout 55000` reproduces it as **1 test, 1 failure**.
+--max-failures 1 --timeout 55000` reproduced it as **1 test, 1 failure**.
 The test expectation is supported by the resource-selection implementation,
 the source-backed Resource Indicators contract, and Phase 54 downscoping
 coverage. Comparison against `ee7f8d2c` confirms the failing test and relevant
-authorization-code selection/persistence path are unchanged from the
-pre-Phase-165 baseline. The root cause is that persistence receives the
-original authorization-code audience after preparation has selected the
-requested subset, then stores that broader audience on token records.
+authorization-code selection/persistence path were unchanged from the
+pre-Phase-165 baseline. The root cause was that persistence received the
+original authorization-code audience after preparation had selected the
+requested subset, then stored that broader audience on token records.
 
-This is an unrelated pre-existing token-exchange feature defect; no test
-expectation or protocol behavior was changed in Phase 165. It remains an open
-cross-phase regression blocker for a separately scoped correction. The
-Phase-165 Nyquist flags above remain validated and true; this external gate
-does not erase the phase's completed validation evidence.
+The initial defect predates Phase 165, but the orchestrator authorized a narrow
+regression repair after the gate blocked phase closure. The selected audience
+is now carried as an explicit issuance delta and checked against the locked
+current row; current row identity and all other current fields remain
+authoritative. Test-only corrections isolate legacy shared-database fixtures.
+The passing 908/0 rerun supersedes the initial 179/1 result. Nyquist flags
+remain validated and true; this supplemental gate does not complete Phase 165,
+which still awaits independent security, review, and goal-backward verification.
