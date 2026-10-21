@@ -106,6 +106,23 @@ defmodule Lockspire.Protocol.RegistrationManagementTest do
       assert {:error, :invalid_token} = RegistrationManagement.read("wrong_id", client)
     end
 
+    @tag :phase165_missing_locked_row
+    test "rejects a token candidate removed before the current-row lock", %{
+      client: client,
+      client_id: client_id
+    } do
+      Lockspire.TestRepo.delete_all(from(c in ClientRecord, where: c.id == ^client.id))
+
+      result =
+        try do
+          RegistrationManagement.read(client_id, client)
+        rescue
+          _error -> :raised
+        end
+
+      assert result == {:error, :invalid_token}
+    end
+
     test "returns persisted logout metadata truthfully for stored clients" do
       {:ok, stored_client} =
         Repository.register_client(%Client{
