@@ -351,7 +351,7 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
           )
 
         %ServerPolicyRecord{} = policy ->
-          Lockspire.TestRepo.insert_or_update!(policy)
+          Lockspire.TestRepo.insert_or_update!(Ecto.Changeset.change(policy))
       end
     end)
   end
