@@ -11,7 +11,7 @@ requires:
   - phase: 164-01 through 164-05
     provides: Secret issue/authentication/rotation behavior and PostgreSQL race evidence
 provides:
-  - Non-vacuous audit, telemetry, log, and public-error redaction evidence from finite-secret operations
+  - Non-vacuous audit, telemetry, log, and public-error redaction evidence from finite Basic and JWT secret operations
   - Correct DCR secret lifetime guidance and admin wording for prospective policy and explicit legacy replacement
   - Executed Phase 164 focused, normal-suite, and PostgreSQL race validation record
 affects: [164-independent-verification, 165-management-lifetimes, 166-cross-phase-proof]
@@ -25,7 +25,7 @@ plan_head_after: 288af0f769fcf9d1a1e8fa3690eb1247e2e515ee
 tech-stack:
   added: []
   patterns:
-    - Redaction checks exercise finite DCR registration, successful token exchange, secret expiry rejection, and operator rotation before scanning observed output.
+    - Redaction checks require positive integer counts for each observed event class and exercise finite DCR Basic/JWT secret registration and rotation before scanning observed output.
     - Admin and host guidance distinguish prospective secret policy, stored credential lifetimes, and independent issued-token validity.
 key-files:
   created: []
@@ -46,11 +46,11 @@ key-decisions:
   - "DCR secret policy is prospective; existing secrets retain their stored expiry, and legacy dates remain advisory until explicit replacement."
   - "Management-token lifecycle remains Phase 165 work; final packaged cross-phase proof remains Phase 166 work."
 patterns-established:
-  - "Redaction acceptance requires positive observed lifecycle events before sensitive-material scans."
+  - "Redaction acceptance requires positive integer counts for every subscribed lifecycle event before sensitive-material scans."
 requirements-completed: []
 coverage:
   - id: D1
-    description: Finite-secret lifecycle operations are observed and their audit, telemetry, log, and public-error outputs are scanned for secret material.
+    description: Finite-secret Basic/JWT lifecycle operations are observed and their audit, telemetry, log, and public-error outputs are scanned for secret material.
     requirement: DCR-07
     verification:
       - kind: integration
@@ -104,7 +104,7 @@ status: complete
 
 ## Accomplishments
 
-- Extended the DCR redaction sweep with a real finite-secret registration, authorization-code token issuance, equality-time secret rejection, and operator secret replacement. It requires observed registration, token-issued, token-exchange-failed, and secret-rotation events before scanning captured telemetry, persisted audit rows, captured failure logs, and public error values for plaintext, stored hashes, PKCE verifier material, and sensitive structural keys.
+- Extended the DCR redaction sweep with real finite Basic and JWT secret registration, authorization-code token issuance, equality-time secret rejection, and operator secret replacement. It requires positive integer counts for every subscribed event class before scanning captured telemetry, persisted audit rows for both clients, captured failure logs, and public error values for plaintext, stored hashes, the old/new persisted encrypted JWT verifiers, PKCE verifier material, and sensitive structural keys. A focused follow-up corrected the count assertion and nested-tuple scanner gaps found in independent security review; that review remains pending.
 - Corrected blank and zero admin hints to say “No automatic expiry.” Positive-duration help now explains that the setting applies to new or replaced secrets and that changing policy leaves existing stored lifetimes alone. Retired wording is recorded in `PRODUCT.md`.
 - Reconciled DCR PUT guidance: PUT rotates the app management token and preserves the client secret. The example no longer suggests a client-secret replacement or returns replacement plaintext.
 - Updated host docs for strict expiry equality, non-secret exemptions, independent assertion timing/replay, issued-token validity, explicit legacy-secret replacement, and the same-arity adapter clock contract.
@@ -115,6 +115,7 @@ status: complete
 1. **164-06-01: Observe finite-secret events and prove redaction** — `051880f1` (`test`)
 2. **164-06-02: Make secret lifetime admin guidance truthful** — `8c25c2e7` (`fix`)
 3. **164-06-03: Reconcile host guidance and execute the complete phase gate** — `288af0f7` (`docs`)
+4. **Independent-review redaction evidence follow-up** — `42d0fd0f` (`test`)
 
 **Plan metadata:** `2bd4d979` (`docs`: record plan execution closeout)
 
@@ -122,7 +123,7 @@ status: complete
 
 All Mix commands used Elixir `1.18.4-otp-27`, OTP `27.3.4.15`, the supplied Mix and Hex homes, and the dedicated `lockspire_phase164_validation` database.
 
-- C061 redaction selection: **26 tests, 0 failures**. Assertions confirmed positive counts for each observed lifecycle event class before inspecting outputs.
+- C061 redaction selection, rerun after the independent-review correction: **26 tests, 0 failures**. Each subscribed event class must have a present, positive integer count; negative controls reject missing and nil counts and detect a sensitive key nested under a tuple. The live lifecycle includes finite Basic token issuance/expiry rejection/rotation and finite JWT registration/rotation. The old/new persisted encrypted JWT verifier values are unsealed and matched to their generated plaintexts, then scanned with available stored hashes across captured telemetry, both clients' audit rows, failure logs, and the public error. Independent security re-audit remains pending.
 - C062 admin and vocabulary selection: **23 tests, 0 failures**.
 - C063a guidance, architecture, and compatibility: **20 tests, 0 failures**.
 - C063b `mix test.fast`: **2 properties, 2,348 tests, 0 failures, 440 excluded, 6 skipped**.
@@ -153,6 +154,13 @@ Exact command lines and the phase-wide exclusion boundary are recorded in `164-V
 ## Deviations from Plan
 
 - Task 164-06-01 did not produce classifier-validated semantic RED evidence. This task extended an existing test-only redaction seam, and the real lifecycle data passed the existing redaction implementation without requiring a production change. The initial test runs failed on fixture setup and an incorrect expected audit label, not on the intended redaction behavior; no such run is counted as RED evidence.
+
+## Security Audit Follow-up
+
+- Corrected lifecycle event assertions to use `Map.fetch!/2` and require an integer count greater than zero for every subscribed event class. Negative controls prove missing and nil counts are rejected.
+- Added tuple recursion to the sensitive-key detector with a nested-tuple negative control.
+- Added actual finite `client_secret_jwt` registration and rotation. The test unseals old/new verifier values read back from storage to confirm they match the generated plaintexts, then scans those values and available hashes, including audit rows for both clients.
+- Focused verification after these changes: **26 tests, 0 failures**. Runtime leakage was not observed; independent security re-audit is pending. Test commit: `42d0fd0f`.
 
 ## Issues Encountered
 

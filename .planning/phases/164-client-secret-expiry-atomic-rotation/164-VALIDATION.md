@@ -183,7 +183,7 @@ env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test
 - Rotation uses current locked provenance/policy and post-wait time; hash/verifier/time/deadline/version/audit commit/rollback together. V0 clears ALL old dates, v1 preserves unrelated state. Preserve no-old-proof, no-renewal, last-commit-winner behavior.
 - Actual independent PostgreSQL sessions have distinct backend PIDs, exact pg_blocking_pids proof, later-lock NOWAIT probes, barrier clocks advanced only after observation and bounded cleanup. All five shipped finalizers have later-lock cases; client wait/committed replacement are separate.
 - Reached write and audit failure compare complete durable state and return no success plaintext.
-- Real finite-secret lifecycle event classes have positive observed counts before redaction assertions across audit, telemetry, logs, inspected results and errors.
+- Every subscribed finite-secret lifecycle event class must have a present, positive integer observed count before redaction assertions; negative controls reject missing/nil counts and detect sensitive keys nested under tuples.
 - Literal public compatibility/architecture pass; changed rendered copy/docs match runtime and PRODUCT retired wording. No Phase 165 policy is added.
 
 Any failed command or missing evidence remains a visible gap. ASVS level 1 high/critical mitigations block completion. All three unclassified edge-probe entries remain flagged unresolved in plans/source audit; concrete tests derive from requirements/CONTEXT rather than fabricated detector resolution.
@@ -198,13 +198,15 @@ All Mix commands ran from the repository root with Elixir `1.18.4-otp-27`, OTP `
 
 | Command | Result | Notes |
 |---|---|---|
-| C061 — finite-secret redaction and redaction matcher | **26 tests, 0 failures** | The lifecycle test observed positive DCR registration, token issuance, expiry-failure, and operator-rotation telemetry counts. It exercised a real finite DCR registration, successful authorization-code token exchange, equality rejection, and operator replacement; scanned captured telemetry, persisted audit rows, captured failure logs, and inspected public errors for plaintext, stored hashes, verifier material, and sensitive structural keys. |
+| C061 — finite-secret redaction and redaction matcher | **26 tests, 0 failures** | Rerun after independent-review correction. Every subscribed event class must have a present, positive integer count; negative controls reject missing and nil counts and detect a nested-tuple sensitive key. The live lifecycle exercises finite Basic token issuance, expiry rejection, and rotation plus finite JWT registration and rotation. Old/new persisted encrypted JWT verifier values are unsealed and matched against their generated plaintexts, then scanned with available hashes across captured telemetry, audit rows for both clients, captured failure logs, and public errors. Independent security re-audit remains pending. |
 | C062 — admin hint, rendered DCR page, vocabulary contract | **23 tests, 0 failures** | Blank and zero display no automatic expiry; positive duration remains readable; help explains prospective issue/replacement behavior; retired wording is recorded in `PRODUCT.md`. |
 | C063a — guidance, architecture, public compatibility | **20 tests, 0 failures** | Re-run after the final documentation edits. |
 | C063b — `mix test.fast` | **2 properties, 2,348 tests, 0 failures, 440 excluded, 6 skipped** | Normal suite only; the exclusions and skips remain visible and are not race or packaged-upgrade evidence. |
 | C063c — explicit PostgreSQL race, rollback, and adapter-conformance files with `--include postgres_race` | **32 tests, 0 failures** | Included the three real PostgreSQL race modules, secret rollback coverage, and adapter conformance. The dedicated database was queried afterward: `current_database()` was `lockspire_phase164_validation`; counts for `secret-%` clients and related audit, token, JTI, interaction, device, and CIBA rows were all zero; singleton server-policy rows were zero. |
 
 The separate PostgreSQL run includes all selected cases and passes with the explicit race tag enabled. Phase 164 plan 164-05's previously measured race-only subset was 11 tests, 0 failures, and no exclusions; C063c adds the rollback and adapter-conformance modules to that evidence. Adapter failures are covered by the conformance tests, and write/audit rollback failures by `client_lifetime_rollback_test.exs` and the rotation race suite.
+
+The C061 follow-up closes the assertion and coverage gaps recorded by independent security review. No runtime leakage was observed in the exercised outputs; security sign-off is still pending the independent auditor's recheck.
 
 The packaged clean-room upgrade proof was not rerun because plan 164-06 changed no schema, migration, installer, package, or generated-host input. Phase 166 retains the final packaged cross-phase proof. Management-token lifetime and recovery remain owned by Phase 165. The Nyquist audit below records the exact task mapping and its supplemental authentication test. It does not claim a separate security audit or phase-wide strict TDD compliance.
 
@@ -242,7 +244,7 @@ The audit matched all 18 task IDs to executed selections and behavioral assertio
 | 164-05-01 | green | C051, included in C063c's explicit `postgres_race` selection; committed replacement and client-row wait proof |
 | 164-05-02 | green | C052, included in C063c's explicit `postgres_race` selection; later grant/token wait proof for all five finalizers |
 | 164-05-03 | green | C053, included in C063c's explicit `postgres_race` selection; serialized winners, current-row policy/time and write/audit rollback |
-| 164-06-01 | green | C061, 26 tests: positive observed lifecycle event counts and redaction scans |
+| 164-06-01 | green | C061, 26 tests: positive integer counts for all subscribed event classes, missing/nil and tuple-recursion negative controls, and actual finite JWT verifier material redaction scan; independent security re-audit pending |
 | 164-06-02 | green | C062, 23 tests: rendered guidance and vocabulary contract |
 | 164-06-03 | green | C063a 20 tests; C063b 2 properties + 2,348 tests (440 excluded, 6 skipped); C063c 32 tests (11 race tests, no exclusions) |
 
@@ -255,3 +257,11 @@ env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test
 Result: **1 test, 0 failures**. It asserts finite-secret JWT authentication at deadline minus one second, replay rejection for that same JTI, secret-expiry rejection at equality for a second still-valid assertion, and one in-test observation per distinct JTI. Existing `JarTest` coverage separately exercises expired `exp`, future `iat`, and configured skew; the direct-client JWT suite exercises signature, audience, replay, algorithm, and method mismatch.
 
 All three source-audit edge probes remain flagged unresolved/unclassified assumptions. They are not treated as additional policy requirements. The checks above cover the concrete DCR-07/08/09 behaviors in the locked context; the phase summaries explicitly record that 164-06-01 lacks classifier-validated semantic RED evidence, so this audit makes no strict TDD claim. Management-token lifecycle and packaged cross-phase proof remain Phase 165 and 166 scope.
+
+## Validation Audit 2026-10-21
+
+| Metric | Count |
+|---|---|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
