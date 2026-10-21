@@ -124,6 +124,43 @@ defmodule Lockspire.Protocol.ClientAppAuthenticationTest do
     end
   end
 
+  test "app eligibility normalizes subsecond decision instants for public clients" do
+    deadline = ~U[2026-10-20 12:00:00Z]
+
+    finite_client = %Client{
+      client_id: "subsecond-public-client",
+      token_endpoint_auth_method: :none,
+      lifetime_version: 1,
+      client_expires_at: deadline
+    }
+
+    Process.put(:app_auth_client, finite_client)
+
+    assert {:ok, %Client{client_id: "subsecond-public-client"}} =
+             ClientAuth.authenticate(%{"client_id" => finite_client.client_id}, nil,
+               client_store: __MODULE__.Store,
+               now: fn -> ~U[2026-10-20 11:59:59.999999Z] end
+             )
+
+    assert {:error, %Error{reason_code: :client_app_expired}} =
+             ClientAuth.authenticate(%{"client_id" => finite_client.client_id}, nil,
+               client_store: __MODULE__.Store,
+               now: fn -> ~U[2026-10-20 12:00:00.999999Z] end
+             )
+
+    Process.put(:app_auth_client, %{
+      finite_client
+      | client_id: "default-clock-public-client",
+        client_expires_at:
+          DateTime.utc_now() |> DateTime.add(60, :second) |> DateTime.truncate(:second)
+    })
+
+    assert {:ok, %Client{client_id: "default-clock-public-client"}} =
+             ClientAuth.authenticate(%{"client_id" => "default-clock-public-client"}, nil,
+               client_store: __MODULE__.Store
+             )
+  end
+
   test "disabled apps and malformed lifetime state fail closed with endpoint errors" do
     now = Process.get(:app_auth_now)
 

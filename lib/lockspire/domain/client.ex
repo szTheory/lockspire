@@ -182,8 +182,14 @@ defmodule Lockspire.Domain.Client do
         %DateTime{} = now,
         _
       ) do
-    if utc_second?(deadline) and utc_second?(now) do
-      if DateTime.compare(now, deadline) == :lt, do: :ok, else: {:error, :expired}
+    if utc_second?(deadline) do
+      case decision_instant(now) do
+        {:ok, instant} ->
+          if DateTime.compare(instant, deadline) == :lt, do: :ok, else: {:error, :expired}
+
+        :error ->
+          {:error, :invalid_lifetime_state}
+      end
     else
       {:error, :invalid_lifetime_state}
     end
@@ -236,4 +242,13 @@ defmodule Lockspire.Domain.Client do
   defp utc_second?(%DateTime{time_zone: "Etc/UTC", microsecond: {0, _precision}}), do: true
   defp utc_second?(%DateTime{time_zone: "UTC", microsecond: {0, _precision}}), do: true
   defp utc_second?(_), do: false
+
+  defp decision_instant(%DateTime{} = now) do
+    case DateTime.from_unix(DateTime.to_unix(now, :second), :second) do
+      {:ok, instant} -> {:ok, instant}
+      {:error, _reason} -> :error
+    end
+  rescue
+    _error -> :error
+  end
 end

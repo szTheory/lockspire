@@ -53,6 +53,21 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     refute conforms?(__MODULE__.DroppedVersion, [client])
     refute conforms?(__MODULE__.DroppedDeadline, [client])
 
+    for adapter <- [__MODULE__.DroppedVersion, __MODULE__.DroppedDeadline] do
+      assert Process.get({adapter, :registered, client.client_id}) == true
+      assert Process.get({adapter, :fetched, client.client_id}) == true
+    end
+
+    assert {:ok, %Client{lifetime_version: nil}} =
+             __MODULE__.DroppedVersion.fetch_client_by_id(client.client_id)
+
+    assert {:ok,
+            %Client{
+              lifetime_version: 1,
+              client_expires_at: nil,
+              registration_access_token_expires_at: nil
+            }} = __MODULE__.DroppedDeadline.fetch_client_by_id(client.client_id)
+
     assert {:error, :invalid_lifetime_version} =
              ClientLifetime.validate_client(%Client{client_id: "missing-version"})
 
@@ -356,20 +371,42 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
   defmodule DroppedVersion do
     alias Lockspire.Domain.Client
 
-    def lifetime_contract, do: %{version: 1, transaction_authority: :custom_test}
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :dropped_version, participants: %{client_store: __MODULE__}}
+
     def lock_clients(_ids), do: {:ok, []}
-    def register_client(client), do: {:ok, client}
-    def fetch_client_by_id(client_id), do: {:ok, %Client{client_id: client_id}}
+
+    def register_client(client) do
+      Process.put({__MODULE__, :registered, client.client_id}, true)
+      {:ok, client}
+    end
+
+    def fetch_client_by_id(client_id) do
+      Process.put({__MODULE__, :fetched, client_id}, true)
+      {:ok, %Client{client_id: client_id}}
+    end
   end
 
   defmodule DroppedDeadline do
     alias Lockspire.Domain.Client
 
-    def lifetime_contract, do: %{version: 1, transaction_authority: :custom_test}
+    def lifetime_contract, do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :dropped_deadline, participants: %{client_store: __MODULE__}}
+
     def lock_clients(_ids), do: {:ok, []}
-    def register_client(client), do: {:ok, client}
+
+    def register_client(client) do
+      Process.put({__MODULE__, :registered, client.client_id}, true)
+      {:ok, client}
+    end
 
     def fetch_client_by_id(client_id) do
+      Process.put({__MODULE__, :fetched, client_id}, true)
+
       {:ok,
        %Client{
          client_id: client_id,
