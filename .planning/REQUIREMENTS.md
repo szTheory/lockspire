@@ -92,6 +92,6 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-18 | Phase 166 | Pending |
 | DCR-19 | Phase 166 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 0 complete.
+**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 7 complete; 11 pending.
 
-*Last updated: 2026-10-20 after roadmap approval.*
+*Last updated: 2026-10-20 after independently verified Phase 163 completion.*

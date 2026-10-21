@@ -145,7 +145,7 @@ Plans:
 | 165. Management-Token Lifecycle & Recovery | 0/TBD | Not started | — |
 | 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
 
-**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. No requirement is complete.
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Seven requirements are complete after Phases 162–163; eleven remain pending.
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>
