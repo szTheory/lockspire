@@ -127,6 +127,7 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
           "165",
           "shows the committed replacement token once",
           "does not enable a disabled app or extend the app's expiry or client-secret expiry",
+          "Recovery does not restore PUT permission: an expired app's PUT remains blocked with `registration_expired`",
           "no automatic app, client-secret, or management-token expiry"
         ] do
       assert dcr_guide =~ phrase
