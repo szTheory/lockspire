@@ -154,8 +154,32 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
     assert disabled_delete_conn.status == 401
   end
 
+  @tag :phase165_bare_bearer
   test "missing bearer stays a non-disclosing 401 challenge" do
-    conn = build_conn(:get, "/register/unknown") |> dispatch()
+    conns = [
+      build_conn(:get, "/register/unknown"),
+      build_conn(:put, "/register/unknown", DcrFixtures.valid_metadata()),
+      build_conn(:delete, "/register/unknown")
+    ]
+
+    Enum.each(conns, fn conn ->
+      conn = dispatch(conn)
+      assert conn.status == 401
+
+      assert get_resp_header(conn, "www-authenticate") == [
+               "Bearer realm=\"Lockspire Dynamic Client Registration\""
+             ]
+
+      assert conn.resp_body == ""
+    end)
+  end
+
+  test "supplied invalid management credentials keep the invalid_token challenge" do
+    conn =
+      build_conn(:get, "/register/unknown")
+      |> put_req_header("authorization", "Bearer supplied-but-unknown")
+      |> dispatch()
+
     assert conn.status == 401
 
     assert get_resp_header(conn, "www-authenticate") == [
@@ -163,5 +187,81 @@ defmodule Lockspire.Integration.AppLifetimeManagementTest do
            ]
 
     assert conn.resp_body == ""
+  end
+
+  test "invalid durable lifetime state is a redacted server error for every management method" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+
+    Lockspire.TestRepo.update_all(
+      from(c in ClientRecord, where: c.client_id == ^client_id),
+      set: [lifetime_version: 2]
+    )
+
+    conns = [
+      build_conn(:get, "/register/#{client_id}"),
+      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata()),
+      build_conn(:delete, "/register/#{client_id}")
+    ]
+
+    Enum.each(conns, fn conn ->
+      conn = conn |> put_req_header("authorization", "Bearer #{rat}") |> dispatch()
+      assert conn.status == 500
+      assert Jason.decode!(conn.resp_body) == %{"error" => "server_error"}
+      assert get_resp_header(conn, "www-authenticate") == []
+    end)
+  end
+
+  test "registration access-token lookup failures remain server errors" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "ALTER TABLE lockspire_clients RENAME TO lockspire_clients_unavailable",
+      []
+    )
+
+    conns = [
+      build_conn(:get, "/register/#{client_id}"),
+      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata()),
+      build_conn(:delete, "/register/#{client_id}")
+    ]
+
+    Enum.each(conns, fn conn ->
+      conn = conn |> put_req_header("authorization", "Bearer #{rat}") |> dispatch()
+      assert conn.status == 500
+      assert Jason.decode!(conn.resp_body) == %{"error" => "server_error"}
+      assert get_resp_header(conn, "www-authenticate") == []
+    end)
+  end
+
+  test "server policy lookup failure on PUT returns a redacted server error" do
+    registered = register_client()
+    client_id = registered["client_id"]
+    rat = registered["registration_access_token"]
+
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "ALTER TABLE lockspire_server_policies RENAME TO lockspire_server_policies_unavailable",
+      []
+    )
+
+    conn =
+      build_conn(:put, "/register/#{client_id}", DcrFixtures.valid_metadata())
+      |> put_req_header("authorization", "Bearer #{rat}")
+
+    result =
+      try do
+        dispatch(conn)
+      rescue
+        _error -> :raised
+      end
+
+    assert %Plug.Conn{status: 500, resp_body: body} = result
+    assert Jason.decode!(body) == %{"error" => "server_error"}
+    assert get_resp_header(result, "www-authenticate") == []
   end
 end
