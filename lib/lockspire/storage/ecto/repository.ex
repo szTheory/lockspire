@@ -168,7 +168,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl ClientStore
   def rotate_client_secret(%Client{id: id} = client, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
-             is_struct(rotated_at, DateTime) do
+             (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) do
     EctoClientStore.rotate_client_secret(
       repo(),
       client,

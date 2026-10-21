@@ -49,15 +49,22 @@ defmodule Lockspire.ClientLifecycle do
     do: Repository.set_client_active(client, true, %{disabled_at: nil, disabled_by: nil})
 
   @doc false
-  @spec rotate_operator_secret(Client.t(), map(), DateTime.t(), map()) ::
+  @spec rotate_operator_secret(
+          Client.t(),
+          map(),
+          DateTime.t() | (-> DateTime.t()),
+          map() | (Client.t() -> map())
+        ) ::
           result()
   def rotate_operator_secret(
         %Client{} = client,
         secret_material,
-        %DateTime{} = rotated_at,
-        audit_event
+        rotated_at,
+        build_audit_event
       )
-      when is_map(secret_material) and is_map(audit_event) do
+      when is_map(secret_material) and
+             (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) and
+             (is_map(build_audit_event) or is_function(build_audit_event, 1)) do
     transact_with_audit(
       fn ->
         Repository.rotate_client_secret(
@@ -67,7 +74,10 @@ defmodule Lockspire.ClientLifecycle do
           rotated_at
         )
       end,
-      fn _updated_client -> audit_event end
+      case build_audit_event do
+        event when is_map(event) -> fn _updated_client -> event end
+        builder -> builder
+      end
     )
   end
 

@@ -6,6 +6,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.Repository.AuditStore
+  alias Lockspire.Storage.Ecto.Repository.ServerPolicyStore
   alias Lockspire.Storage.Ecto.Repository.Support
   alias Lockspire.Storage.Ecto.Repository.TransactionStore
 
@@ -166,11 +167,17 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     update_record(repo, id, attrs, &ClientRecord.update_changeset/2)
   end
 
-  @spec rotate_client_secret(module(), Client.t(), String.t(), String.t(), DateTime.t()) ::
+  @spec rotate_client_secret(
+          module(),
+          Client.t(),
+          String.t(),
+          String.t(),
+          DateTime.t() | (-> DateTime.t())
+        ) ::
           {:ok, Client.t()} | {:error, term()}
   def rotate_client_secret(repo, %Client{id: id}, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
-             is_struct(rotated_at, DateTime) do
+             (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) do
     TransactionStore.transact(repo, fn ->
       case id |> locked_query() |> then(&Support.one(repo, &1, sensitive: true)) do
         nil ->
@@ -179,27 +186,57 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
         %ClientRecord{} = record ->
           current = ClientRecord.to_domain(record)
 
-          case Client.credential_lifetime_changes(current, :secret, nil) do
-            {:ok, lifetime_changes} ->
-              record
-              |> ClientRecord.secret_rotation_changeset(
-                Map.merge(lifetime_changes, %{
-                  client_secret_hash: secret_hash,
-                  client_secret_jwt_verifier_encrypted: verifier_encrypted,
-                  last_secret_rotated_at: rotated_at,
-                  updated_at: DateTime.utc_now()
-                })
-              )
-              |> then(&Support.update(repo, &1, sensitive: true))
-              |> map_one(&ClientRecord.to_domain/1)
-              |> unwrap_or_rollback(repo)
-
-            {:error, reason} ->
-              TransactionStore.rollback(repo, reason)
+          with {:ok, duration} <- secret_lifetime_duration(repo, current),
+               {:ok, decision_time} <- rotation_decision_time(rotated_at),
+               {:ok, deadline} <- Client.secret_deadline(current, decision_time, duration),
+               {:ok, lifetime_changes} <-
+                 Client.credential_lifetime_changes(current, :secret, deadline) do
+            record
+            |> ClientRecord.secret_rotation_changeset(
+              Map.merge(lifetime_changes, %{
+                client_secret_hash: secret_hash,
+                client_secret_jwt_verifier_encrypted: verifier_encrypted,
+                last_secret_rotated_at: decision_time,
+                updated_at: decision_time
+              })
+            )
+            |> then(&Support.update(repo, &1, sensitive: true))
+            |> map_one(&ClientRecord.to_domain/1)
+            |> unwrap_or_rollback(repo)
+          else
+            {:error, reason} -> TransactionStore.rollback(repo, reason)
           end
       end
     end)
   end
+
+  defp secret_lifetime_duration(_repo, %Client{
+         provenance: provenance,
+         token_endpoint_auth_method: method
+       })
+       when provenance != :self_registered or
+              method not in [:client_secret_basic, :client_secret_post, :client_secret_jwt],
+       do: {:ok, nil}
+
+  defp secret_lifetime_duration(repo, %Client{}) do
+    case ServerPolicyStore.get_server_policy(repo) do
+      {:ok, policy} -> {:ok, policy.dcr_default_client_secret_lifetime_seconds}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp rotation_decision_time(%DateTime{} = time), do: {:ok, time}
+
+  defp rotation_decision_time(clock) when is_function(clock, 0) do
+    case clock.() do
+      %DateTime{} = time -> {:ok, time}
+      _other -> {:error, :invalid_lifetime_state}
+    end
+  rescue
+    _error -> {:error, :invalid_lifetime_state}
+  end
+
+  defp rotation_decision_time(_time), do: {:error, :invalid_lifetime_state}
 
   @spec set_client_active(module(), Client.t(), boolean(), map()) ::
           {:ok, Client.t()} | {:error, term()}
