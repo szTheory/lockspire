@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
   alias Lockspire.Protocol.TokenExchange.Internal.GrantObservability
   alias Lockspire.Protocol.TokenExchange.Internal.GrantPersistence
+  alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.TokenExchange.Internal.TokenIssuer
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenFormatter
@@ -35,7 +36,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          refresh_token: result.raw_refresh_token,
          id_token: nil,
          token_type: result.token_type,
-         expires_in: TokenLifetime.access_token(),
+         expires_in: result.expires_in,
          scope: Enum.join(result.access_token.scopes, " ")
        }}
     else
@@ -76,6 +77,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
              request,
              Dependencies.fetch!(request)
            ) do
+      context =
+        Map.put(
+          context,
+          :verified_client_identity,
+          ClientAuthentication.verified_identity(client)
+        )
+
       rotate_refresh_token_with_audit(
         client,
         refresh_token_hash,
@@ -95,68 +103,43 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          context,
          request
        ) do
+    dependencies = Dependencies.fetch!(request)
+
     formatted_refresh_token =
       TokenFormatter.format_refresh_token(refresh_token_format_options(request))
 
-    rotated_at = now(request)
-
-    # Build the rotated access token with the subject/scopes sourced from the
-    # presented refresh token (the rotated token's own account_id is
-    # nil) so the signer derives a non-nil `sub` and a correct `scope` claim.
-    access_token =
-      build_rotated_access_token(
-        client,
-        rotated_at,
-        context,
-        presented_refresh_token,
-        requested_resources
-      )
-
-    # Mint the at+jwt (or opaque, per format resolution) via the shared signer and
-    # re-point the persisted token_hash to the signer's hash.
-    with {:ok, raw_access_token, access_token_hash} <-
-           TokenIssuer.issue_access(access_token, client, Dependencies.fetch!(request)) do
-      access_token = %Token{access_token | token_hash: access_token_hash}
-
-      refresh_token =
-        build_rotated_refresh_token(
-          client,
-          formatted_refresh_token,
-          rotated_at,
-          context,
-          presented_refresh_token
-        )
-
+    with {:ok, prepared_signing} <- TokenIssuer.prepare_refresh_access(client, dependencies) do
       case transact_with_audit_outcome(request, fn ->
-             handle_refresh_rotation(
-               token_store(request),
-               client,
-               refresh_token_hash,
-               rotated_at,
-               refresh_token,
-               access_token,
-               presented_refresh_token,
-               context
-             )
-           end) do
-        {:ok,
-         %{
-           presented_refresh_token: %Token{} = presented_refresh_token,
-           refresh_token: %Token{} = persisted_refresh_token,
-           access_token: %Token{} = persisted_access_token
-         }} ->
-          {:ok,
-           %{
-             presented_refresh_token: presented_refresh_token,
-             refresh_token: persisted_refresh_token,
-             access_token: persisted_access_token,
-             raw_access_token: raw_access_token,
-             raw_refresh_token: formatted_refresh_token.token,
-             token_type: context.token_type
-           }}
+             with {:ok, [%Client{} = current_client]} <-
+                    dependencies.client_store.lock_clients([client.client_id]) do
+               builder =
+                 refresh_rotation_builder(
+                   current_client,
+                   client,
+                   prepared_signing,
+                   formatted_refresh_token,
+                   requested_resources,
+                   context,
+                   dependencies
+                 )
 
-        {:error, %Error{} = error} ->
-          {:error, error}
+               handle_refresh_rotation(
+                 token_store(request),
+                 current_client,
+                 refresh_token_hash,
+                 formatted_refresh_token,
+                 builder,
+                 presented_refresh_token,
+                 context
+               )
+             else
+               {:error, reason} -> {:error, reason}
+               _ -> {:error, client_authority_error(:credential_changed)}
+             end
+           end) do
+        {:ok, result} -> {:ok, result}
+        {:error, %Error{} = error} -> {:error, error}
+        {:error, reason} -> {:error, refresh_rotation_error(reason)}
       end
     end
   end
@@ -173,6 +156,93 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
         {:error,
          oauth_error(500, "server_error", "Unable to load refresh token", :refresh_lookup_failed)}
     end
+  end
+
+  defp refresh_rotation_builder(
+         %Client{} = locked_client,
+         %Client{} = authenticated_client,
+         prepared_signing,
+         formatted_refresh_token,
+         requested_resources,
+         context,
+         %Dependencies{} = dependencies
+       ) do
+    fn %Token{} = locked_refresh ->
+      with {:ok, current_client} <-
+             GrantPersistence.validate_current_client(
+               locked_client,
+               authenticated_client,
+               context
+             ),
+           now <- dependencies.now.(),
+           :ok <- Client.app_eligibility(current_client, now, :guarded_refresh_rotation),
+           {:ok, access_expires_at} <-
+             TokenLifetime.effective_expiry(
+               now,
+               TokenLifetime.access_token(),
+               current_client.client_expires_at
+             ),
+           {:ok, refresh_expires_at} <-
+             TokenLifetime.effective_expiry(
+               now,
+               TokenLifetime.refresh_token(),
+               current_client.client_expires_at
+             ) do
+        access_token =
+          build_rotated_access_token(
+            current_client,
+            now,
+            access_expires_at,
+            context,
+            locked_refresh,
+            requested_resources
+          )
+
+        with {:ok, raw_access_token, access_token_hash} <-
+               TokenIssuer.issue_prepared_refresh_access(
+                 access_token,
+                 current_client,
+                 prepared_signing
+               ) do
+          access_token = %Token{access_token | token_hash: access_token_hash}
+
+          refresh_token =
+            build_rotated_refresh_token(
+              current_client,
+              formatted_refresh_token,
+              now,
+              refresh_expires_at,
+              context,
+              locked_refresh
+            )
+
+          {:ok,
+           %{
+             rotated_at: to_utc_datetime_usec(now),
+             refresh_token: refresh_token,
+             access_token: access_token,
+             raw_access_token: raw_access_token,
+             raw_refresh_token: formatted_refresh_token.token,
+             expires_in: TokenLifetime.expires_in(now, access_expires_at)
+           }}
+        end
+      else
+        {:error, :expired} -> {:error, client_authority_error(:client_app_expired)}
+        {:error, :disabled} -> {:error, client_authority_error(:client_disabled)}
+        {:error, %Error{} = error} -> {:error, error}
+        {:error, reason} -> {:error, reason}
+        _ -> {:error, client_authority_error(:credential_changed)}
+      end
+    end
+  end
+
+  defp client_authority_error(reason) do
+    %Error{
+      status: 401,
+      error: "invalid_client",
+      error_description: "Client is no longer authorized to rotate this grant",
+      reason_code: reason
+    }
   end
 
   defp validate_requested_resources(params, %Token{} = presented_refresh_token) do
@@ -229,9 +299,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     end
   end
 
-  @spec now(map()) :: DateTime.t()
-  defp now(request), do: Dependencies.fetch!(request).now.()
-
   defp transact_with_audit_outcome(request, fun) when is_map(request) and is_function(fun, 0) do
     case GrantPersistence.transact_with_audit(Dependencies.fetch!(request), fun) do
       {:error, reason} when is_atom(reason) ->
@@ -245,6 +312,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   defp build_rotated_access_token(
          %Client{} = client,
          rotated_at,
+         expires_at,
          context,
          %Token{} = source_token,
          requested_resources
@@ -262,15 +330,16 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
       scopes: source_token.scopes,
       audience: requested_resources,
       cnf: context.cnf,
-      issued_at: rotated_at,
-      expires_at: DateTime.add(rotated_at, TokenLifetime.access_token(), :second)
+      issued_at: to_utc_datetime_usec(rotated_at),
+      expires_at: expires_at
     }
   end
 
   defp build_rotated_refresh_token(
          %Client{} = client,
          formatted_refresh_token,
-         rotated_at,
+         _rotated_at,
+         expires_at,
          context,
          %Token{} = source_token
        ) do
@@ -282,7 +351,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
       consent_grant_id: source_token.consent_grant_id,
       sid: source_token.sid,
       cnf: context.cnf,
-      expires_at: DateTime.add(rotated_at, TokenLifetime.refresh_token(), :second)
+      expires_at: expires_at
     }
   end
 
@@ -290,9 +359,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          store,
          %Client{} = client,
          refresh_token_hash,
-         rotated_at,
-         %Token{} = refresh_token,
-         %Token{} = access_token,
+         formatted_refresh_token,
+         builder,
          %Token{} = presented_refresh_token,
          context
        ) do
@@ -301,9 +369,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
     case store.rotate_refresh_token(
            refresh_token_hash,
            client.client_id,
-           rotated_at,
-           refresh_token,
-           access_token,
+           nil,
+           builder,
+           nil,
            expected_cnf
          ) do
       {:ok,
@@ -312,7 +380,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
          refresh_token: %Token{} = persisted_refresh_token,
          access_token: %Token{}
        } = success} ->
-        {:ok, success, [refresh_rotation_audit_event(client, presented, persisted_refresh_token)]}
+        {:ok,
+         Map.merge(success, %{
+           raw_refresh_token: formatted_refresh_token.token,
+           token_type: context.token_type
+         }), [refresh_rotation_audit_event(client, presented, persisted_refresh_token)]}
 
       {:error, :reuse_detected} ->
         {:durable_error,
@@ -320,6 +392,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
            "Refresh token reuse detected; the token family has been revoked",
            :refresh_token_reuse_detected
          ), reuse_audit_events(client, presented_refresh_token)}
+
+      {:error, %Error{} = error} ->
+        {:error, error}
 
       {:error, reason} ->
         {:error, refresh_rotation_error(reason)}
@@ -399,4 +474,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
   end
 
   defp client_actor(client_id), do: %{type: :client, id: client_id, display: client_id}
+
+  defp to_utc_datetime_usec(datetime),
+    do: DateTime.from_unix!(DateTime.to_unix(datetime) * 1_000_000, :microsecond)
 end

@@ -26,6 +26,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  def prepare_refresh_access(%Client{} = client, %Dependencies{} = dependencies),
+    do: AccessTokenSigner.prepare(client, dependencies)
+
+  @doc false
+  def issue_prepared_refresh_access(
+        %Token{} = token,
+        %Client{} = client,
+        prepared_signing
+      ),
+      do: AccessTokenSigner.issue_prepared(token, client, prepared_signing)
+
+  @doc false
   @spec issue_exchange(token_for_issuance(), Client.t(), map(), Dependencies.t()) ::
           {:ok, String.t(), String.t()} | {:error, Error.t()}
   def issue_exchange(%Token{} = token, %Client{} = client, claims, %Dependencies{} = dependencies)

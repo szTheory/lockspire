@@ -605,17 +605,19 @@ defmodule Lockspire.Storage.Ecto.Repository do
         token_hash,
         client_id,
         rotated_at,
-        %Token{} = refresh_token,
-        %Token{} = access_token,
+        refresh_or_builder,
+        access_token,
         expected_cnf
       )
-      when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
+      when is_binary(token_hash) and is_binary(client_id) and
+             (is_struct(rotated_at, DateTime) or
+                (is_nil(rotated_at) and is_function(refresh_or_builder, 1))) do
     EctoTokenStore.rotate_refresh_token(
       repo(),
       token_hash,
       client_id,
       rotated_at,
-      refresh_token,
+      refresh_or_builder,
       access_token,
       expected_cnf
     )

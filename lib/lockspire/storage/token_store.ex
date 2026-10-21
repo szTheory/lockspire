@@ -52,8 +52,8 @@ defmodule Lockspire.Storage.TokenStore do
               String.t(),
               String.t(),
               DateTime.t(),
-              Token.t(),
-              Token.t(),
+              Token.t() | refresh_rotation_builder(),
+              Token.t() | nil,
               expected_cnf()
             ) ::
               {:ok,
@@ -63,4 +63,12 @@ defmodule Lockspire.Storage.TokenStore do
                  access_token: Token.t()
                }}
               | {:error, store_error()}
+  @type refresh_rotation_builder :: (Token.t() ->
+                                       {:ok,
+                                        %{
+                                          required(:rotated_at) => DateTime.t(),
+                                          required(:refresh_token) => Token.t(),
+                                          required(:access_token) => Token.t()
+                                        }}
+                                       | {:error, store_error()})
 end

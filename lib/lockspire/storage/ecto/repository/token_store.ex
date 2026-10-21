@@ -232,12 +232,13 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
         hash,
         client_id,
         rotated_at,
-        %Token{} = refresh,
-        %Token{} = access,
+        refresh_or_builder,
+        access,
         expected_cnf
-      ) do
+      )
+      when is_function(refresh_or_builder, 1) or is_struct(refresh_or_builder, Token) do
     case repo.transaction(fn ->
-           rotate(repo, hash, client_id, rotated_at, refresh, access, expected_cnf)
+           rotate(repo, hash, client_id, rotated_at, refresh_or_builder, access, expected_cnf)
          end) do
       {:ok, {:ok, result}} -> {:ok, result}
       {:ok, {:error, reason}} -> {:error, reason}
@@ -250,11 +251,35 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   defp rotate(repo, hash, client_id, at, refresh, access, cnf) do
     case TokenRecord
          |> where([token], token.token_hash == ^hash and token.token_type == :refresh_token)
-         |> lock("FOR UPDATE")
          |> then(&Support.one(repo, &1, sensitive: true)) do
-      nil -> {:error, :not_found}
-      record -> rotate_record(repo, record, client_id, at, refresh, access, cnf)
+      nil ->
+        {:error, :not_found}
+
+      %TokenRecord{family_id: family_id} when is_binary(family_id) ->
+        with {:ok, _family} <- lock_refresh_family(repo, family_id) do
+          case TokenRecord
+               |> where([token], token.token_hash == ^hash and token.token_type == :refresh_token)
+               |> lock("FOR UPDATE")
+               |> then(&Support.one(repo, &1, sensitive: true)) do
+            nil -> {:error, :not_found}
+            record -> rotate_record(repo, record, client_id, at, refresh, access, cnf)
+          end
+        end
+
+      record ->
+        rotate_record(repo, record, client_id, at, refresh, access, cnf)
     end
+  end
+
+  defp lock_refresh_family(repo, family_id) do
+    TokenRecord
+    |> where([token], token.family_id == ^family_id)
+    |> order_by([token], asc: token.id)
+    |> lock("FOR UPDATE")
+    |> then(&Support.all(repo, &1, sensitive: true))
+    |> then(&{:ok, &1})
+  rescue
+    error -> {:error, error}
   end
 
   defp rotate_record(_repo, %TokenRecord{client_id: stored}, client, _at, _r, _a, _cnf)
@@ -269,15 +294,46 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
          %TokenRecord{expires_at: expires} = record,
          client,
          at,
-         refresh,
+         refresh_or_builder,
          access,
          cnf
        ) do
-    if DateTime.compare(expires, at) == :gt do
-      rotate_unexpired_record(repo, record, client, at, refresh, access, cnf)
+    with {:ok, at, refresh, access, extra} <-
+           resolve_refresh_replacement(record, at, refresh_or_builder, access),
+         true <- DateTime.compare(expires, at) == :gt do
+      case rotate_unexpired_record(repo, record, client, at, refresh, access, cnf) do
+        {:ok, result} -> {:ok, Map.merge(result, extra)}
+        other -> other
+      end
     else
-      {:error, :expired}
+      false -> {:error, :expired}
+      {:error, reason} -> {:error, reason}
     end
+  end
+
+  defp resolve_refresh_replacement(_record, at, refresh, access)
+       when is_struct(refresh, Token) and is_struct(access, Token),
+       do: {:ok, at, refresh, access, %{}}
+
+  defp resolve_refresh_replacement(record, _at, builder, nil) when is_function(builder, 1) do
+    case builder.(TokenRecord.to_domain(record)) do
+      {:ok,
+       %{
+         rotated_at: %DateTime{} = rotated_at,
+         refresh_token: %Token{} = refresh,
+         access_token: %Token{} = access
+       } = result} ->
+        extra = Map.drop(result, [:rotated_at, :refresh_token, :access_token])
+        {:ok, rotated_at, refresh, access, extra}
+
+      {:error, reason} ->
+        {:error, reason}
+
+      _ ->
+        {:error, :invalid_rotation_builder_result}
+    end
+  rescue
+    error -> {:error, error}
   end
 
   defp rotate_unexpired_record(

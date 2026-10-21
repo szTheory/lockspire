@@ -101,7 +101,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     end)
   end
 
-  defp validate_current_client(%Client{} = current, %Client{} = _authenticated, context) do
+  @doc false
+  def validate_current_client(%Client{} = current, %Client{} = _authenticated, context) do
     identity = Map.get(context, :verified_client_identity)
 
     with {:ok, current} <- ClientLifetime.validate_client(current),
