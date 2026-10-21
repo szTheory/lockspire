@@ -116,6 +116,7 @@ status: complete
 2. **164-06-02: Make secret lifetime admin guidance truthful** — `8c25c2e7` (`fix`)
 3. **164-06-03: Reconcile host guidance and execute the complete phase gate** — `288af0f7` (`docs`)
 4. **Independent-review redaction evidence follow-up** — `42d0fd0f` (`test`)
+5. **Independent UI-copy review follow-up** — `c7e29dcb` (`fix`)
 
 **Plan metadata:** `2bd4d979` (`docs`: record plan execution closeout)
 
@@ -125,6 +126,7 @@ All Mix commands used Elixir `1.18.4-otp-27`, OTP `27.3.4.15`, the supplied Mix 
 
 - C061 redaction selection, rerun after the independent-review correction: **26 tests, 0 failures**. Each subscribed event class must have a present, positive integer count; negative controls reject missing and nil counts and detect a sensitive key nested under a tuple. The live lifecycle includes finite Basic token issuance/expiry rejection/rotation and finite JWT registration/rotation. The old/new persisted encrypted JWT verifier values are unsealed and matched to their generated plaintexts, then scanned with available stored hashes across captured telemetry, both clients' audit rows, failure logs, and the public error. Independent security re-audit remains pending.
 - C062 admin and vocabulary selection: **23 tests, 0 failures**.
+- UI-copy review follow-up selection (rendered DCR page, lifetime hints, vocabulary contract, and host guidance): **28 tests, 0 failures**. Rendered copy now states which expiry is enforced, keeps app management-token expiry scoped to Phase 165, and explains that older advisory secret dates are replaced under the current setting.
 - C063a guidance, architecture, and compatibility: **20 tests, 0 failures**.
 - C063b `mix test.fast`: **2 properties, 2,348 tests, 0 failures, 440 excluded, 6 skipped**.
 - C063c explicit PostgreSQL race, rollback, and adapter-conformance selection with `--include postgres_race`: **32 tests, 0 failures**.
@@ -161,6 +163,13 @@ Exact command lines and the phase-wide exclusion boundary are recorded in `164-V
 - Added tuple recursion to the sensitive-key detector with a nested-tuple negative control.
 - Added actual finite `client_secret_jwt` registration and rotation. The test unseals old/new verifier values read back from storage to confirm they match the generated plaintexts, then scans those values and available hashes, including audit rows for both clients.
 - Focused verification after these changes: **26 tests, 0 failures**. Runtime leakage was not observed; independent security re-audit is pending. Test commit: `42d0fd0f`.
+
+## UI Copy Audit Follow-up
+
+- The DCR expiry introduction now distinguishes enforced app and secret expiry from app management-token expiry, which remains unenforced and owned by Phase 165.
+- App-lifetime help now describes Lockspire's enforcement for new apps. Secret-lifetime help explains that policy edits leave existing expiry unchanged and that an older app's advisory date is replaced using the current setting when its secret is replaced.
+- Added each removed phrase to the PRODUCT retired-wording table and asserted the full rendered copy. The focused rendered-copy, lifetime-hint, vocabulary, and guidance selection passed: **28 tests, 0 failures**.
+- The independent UI review artifact remains auditor-owned and was not edited. Implementation commit: `c7e29dcb`.
 
 ## Issues Encountered
 
