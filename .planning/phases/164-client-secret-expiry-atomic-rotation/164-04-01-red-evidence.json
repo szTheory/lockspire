@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_poll_exchange_test.exs --timeout 55000 --formatter Lockspire.TemporaryTAPFormatter --no-compile",
+  "exitCode": 2,
+  "output": "1..2\nnot ok 1 - test device and CIBA polls reject a secret that expires before final issuance\nnot ok 2 - test a supplied authority value cannot turn an authenticated poll into queued push\n",
+  "targetTest": "test device and CIBA polls reject a secret that expires before final issuance",
+  "targetFile": "test/integration/client_secret_lifetime_poll_exchange_test.exs",
+  "expected": "Both polling grants should return invalid_client with reason_code client_secret_expired at the final decision time.",
+  "actual": "The target assertion failed because polling succeeded after the shared secret deadline.",
+  "semanticAssessment": "The named test executed and failed on its planned behavioral assertion. Existing app checks and fixtures completed; the result was successful issuance instead of secret-expiry denial."
+}

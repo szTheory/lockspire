@@ -539,7 +539,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
     original = intent.authorization
 
     with :ok <- current_authorization_matches(authorization, original, now, kind),
-         :ok <- app_eligibility(current_client, now),
+         :ok <- poll_authority_eligibility(current_client, intent.issuance_context, now),
          {:ok, access_expires_at} <-
            TokenLifetime.effective_expiry(
              now,
@@ -580,6 +580,29 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp poll_authority_eligibility(
+         %Client{} = current_client,
+         %{authentication_authority: :client_request} = issuance_context,
+         %DateTime{} = now
+       ) do
+    validate_current_authority(
+      current_client,
+      issuance_context,
+      now,
+      :guarded_token_redemption
+    )
+  end
+
+  defp poll_authority_eligibility(
+         %Client{} = current_client,
+         %{authentication_authority: :queued_push},
+         now
+       ),
+       do: app_eligibility(current_client, now)
+
+  defp poll_authority_eligibility(%Client{}, _issuance_context, _now),
+    do: {:error, server_error(:invalid_poll_authority)}
 
   defp current_authorization_matches(current, original, now, kind) do
     cond do

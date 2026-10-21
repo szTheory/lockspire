@@ -26,6 +26,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.CibaGrant do
              dependencies
            ),
          {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request, dependencies),
+         context = Map.put(context, :authentication_authority, :client_request),
          {:ok, %Success{} = success} <-
            GrantSupport.redeem_ciba_authorization(
              client,
@@ -55,7 +56,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.CibaGrant do
         GrantSupport.redeem_ciba_authorization(
           client,
           authorization,
-          context,
+          Map.put(context, :authentication_authority, :queued_push),
           request,
           dependencies
         )

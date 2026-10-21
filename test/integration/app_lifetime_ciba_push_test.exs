@@ -5,6 +5,7 @@ defmodule Lockspire.Integration.AppLifetimeCibaPushTest do
   alias Lockspire.Domain.CibaAuthorization
   alias Lockspire.Domain.Client
   alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Workers.CibaNotificationWorker
 
   @moduletag :integration
@@ -87,19 +88,56 @@ defmodule Lockspire.Integration.AppLifetimeCibaPushTest do
     assert stored.status == :consumed
   end
 
+  test "queued push remains eligible after its shared secret expires" do
+    now = future_now()
+    {:ok, client} = push_client("push-secret-expired")
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id),
+               set: [
+                 lifetime_version: 1,
+                 client_secret_expires_at: DateTime.add(now, -1, :second)
+               ]
+             )
+
+    publish_signing_key("kid-push-secret-expired")
+    auth = approved_push(client, now)
+    Application.put_env(:lockspire, :ciba_notification_now, fn -> now end)
+
+    Application.put_env(:lockspire, :backchannel_ciba_req,
+      plug: {Req.Test, __MODULE__},
+      retry: false
+    )
+
+    Req.Test.expect(__MODULE__, fn req -> Req.Test.json(req, %{status: "ok"}) end)
+
+    assert :ok =
+             CibaNotificationWorker.perform(%Oban.Job{
+               args: %{"ciba_authorization_id" => auth.id}
+             })
+
+    assert {:ok, stored} =
+             Repository.fetch_ciba_authorization_by_auth_req_id_hash(auth.auth_req_id_hash)
+
+    assert stored.status == :consumed
+  end
+
   defp push_client(id) do
     Repository.register_client(%Client{
       lifetime_version: 1,
       client_id: id,
+      client_secret_hash: client_secret_hash("push-secret"),
+      client_type: :confidential,
       name: id,
-      client_type: :public,
-      token_endpoint_auth_method: :none,
       allowed_grant_types: ["urn:openid:params:grant-type:ciba"],
       allowed_scopes: ["email"],
+      token_endpoint_auth_method: :client_secret_basic,
       backchannel_token_delivery_mode: :push,
       backchannel_client_notification_endpoint: "https://rp.example.test/push",
       access_token_format: :jwt,
-      created_at: DateTime.utc_now()
+      created_at: DateTime.utc_now(),
+      metadata: %{}
     })
   end
 
