@@ -75,7 +75,7 @@ defmodule Lockspire.Protocol.ClientAppAuthenticationTest do
         client
         | lifetime_version: 1,
           client_expires_at: now,
-          client_secret_expires_at: DateTime.add(now, -1, :second)
+          client_secret_expires_at: nil
       })
 
       assert {:error,
@@ -231,7 +231,7 @@ defmodule Lockspire.Protocol.ClientAppAuthenticationTest do
              )
   end
 
-  test "public methods ignore shared-secret deadlines and enforcement stays deferred here" do
+  test "public methods ignore shared-secret deadlines while Basic enforces them" do
     now = Process.get(:app_auth_now)
 
     Process.put(:app_auth_client, %Client{
@@ -257,7 +257,7 @@ defmodule Lockspire.Protocol.ClientAppAuthenticationTest do
       client_secret_expires_at: DateTime.add(now, -30, :second)
     })
 
-    assert {:ok, %Client{client_id: "basic-with-old-secret-date"}} =
+    assert {:error, %Error{reason_code: :client_secret_expired}} =
              ClientAuth.authenticate(
                %{},
                basic_header("basic-with-old-secret-date", Process.get(:app_auth_secret)),
