@@ -5,16 +5,16 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 165
 current_phase_name: Management-Token Lifecycle & Recovery
 status: executing
-stopped_at: Completed 165-02-PLAN.md
-last_updated: "2026-10-21T18:01:42.661Z"
+stopped_at: Completed 165-03-PLAN.md
+last_updated: "2026-10-21T18:14:56.507Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 plan 02 complete; issuance and management policy verified
-state_head: 3da77760fd0a7168f80ae7c78554bd6c9c06bdaa
+last_activity_desc: Phase 165 plan 03 complete; management token PUT replacements are atomic
+state_head: 8036d1ea292ee7c7b36be8310f023b87f9a4b156
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 28
-  completed_plans: 23
+  completed_plans: 24
   percent: 60
 ---
 
@@ -31,9 +31,9 @@ See: .planning/PROJECT.md (updated 2026-10-20 for approved v1.45)
 ## Current Position
 
 Phase: 165 (Management-Token Lifecycle & Recovery) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
-Last activity: 2026-10-21 — Phase 165 execution started
+Last activity: 2026-10-21 — Phase 165 plan 03 complete; atomic current-policy replacement verified
 
 ## Accumulated Context
 
@@ -332,6 +332,9 @@ Last activity: 2026-10-21 — Phase 165 execution started
 - [Phase 165]: Management expiry depends on self-registration provenance regardless of authentication method.
 - [Phase 165]: Reject malformed typed management policy before Ecto coercion at persistence and use boundaries.
 - [Phase 165]: Keep HTML duration conversion in PolicyForm and pass cast integer or nil through the admin API.
+- [Phase 165]: Keep the existing replace_client_registration/4 callback and carry intended deadline/time on its replacement Client.
+- [Phase 165]: Resolve current server policy and validate current-row request echoes after locking, then sample one decision instant for authorization, deadline, and audit.
+- [Phase 165]: On v0 management replacement, use Client.credential_lifetime_changes/3 to clear advisory unrelated dates and promote the complete current row.
 
 ### Pending Todos
 
@@ -396,11 +399,11 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T18:01:42.384Z
-Stopped at: Completed 165-02-PLAN.md
+Last session: 2026-10-21T18:14:56.202Z
+Stopped at: Completed 165-03-PLAN.md
 Resume file: None
 
-Next: Continue Phase 165 with plan 03 when directed. Plans 01–02 are complete with finite management access, issuance snapshots and typed policy bounds verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
+Next: Continue Phase 165 with plan 04. Plans 01–03 are complete with finite management access, issuance snapshots, typed policy bounds, and atomic current-policy replacement verified. Preserve original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
 ## Performance Metrics
 
@@ -539,6 +542,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 | Phase 164 P06 | 9min | 3 tasks | 11 files |
 | Phase 165 P01 | 13min | 3 tasks | 14 files |
 | Phase 165 P02 | 290 | 2 tasks | 9 files |
+| Phase 165 P03 | 10min | 2 tasks | 12 files |
 
 ## Operator Next Steps
 

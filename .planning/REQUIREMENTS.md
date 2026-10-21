@@ -33,7 +33,7 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 
 - [x] **DCR-10**: An app receives an app-management token whose stored lifecycle matches the selected policy, including any chosen finite or unlimited lifetime.
 - [x] **DCR-11**: A client can read, update and delete its registration according to the selected management-token and app lifecycle, and an authorized host operator has the documented recovery path when management access is lost.
-- [ ] **DCR-12**: A management-token rotation commits the replacement hash and lifecycle together and handles stale credentials and competing requests according to the selected transaction contract.
+- [x] **DCR-12**: A management-token rotation commits the replacement hash and lifecycle together and handles stale credentials and competing requests according to the selected transaction contract.
 
 ### Proof, safety and guidance
 
@@ -85,7 +85,7 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-09 | Phase 164 | Complete |
 | DCR-10 | Phase 165 | Complete |
 | DCR-11 | Phase 165 | Complete |
-| DCR-12 | Phase 165 | Pending |
+| DCR-12 | Phase 165 | Complete |
 | DCR-15 | Phase 166 | Pending |
 | DCR-16 | Phase 166 | Pending |
 | DCR-17 | Phase 166 | Pending |
