@@ -120,7 +120,7 @@ status: complete
 
 - `lib/lockspire/admin/clients.ex` - Defers default rotation time and derives audit/telemetry time from the committed client.
 - `lib/lockspire/client_lifecycle.ex` - Supports DateTime or clock inputs and builds audit events from the replacement result.
-- `lib/lockspire/storage/client_store.ex` and `lib/lockspire/storage/client_lifetime.ex` - Declare deferred-time rotation and reject adapters without replacement support.
+- `lib/lockspire/storage/client_store.ex` and `lib/lockspire/storage/client_lifetime.ex` - Declare deferred-time rotation and preserve ordinary use of lifetime-aware adapters that do not implement operator replacement.
 - `lib/lockspire/storage/ecto/repository.ex` and `lib/lockspire/storage/ecto/repository/client_store.ex` - Load current policy after locking, calculate the effective deadline, and persist the full replacement lifecycle atomically.
 - `test/integration/client_secret_lifetime_rotation_test.exs` - Exercises the real Admin.Clients replacement path, current DCR deadline, preserved v1 state, and matching audit time.
 - `test/lockspire/admin/clients_test.exs`, `test/lockspire/client_lifecycle_test.exs`, and storage lifetime tests - Cover adapter conformance, legacy promotion, operator compatibility, and full rollback.
@@ -143,7 +143,7 @@ status: complete
 ## New Symbols and Compatibility
 
 - `ClientLifecycle.rotate_operator_secret/4` and the existing `Repository.rotate_client_secret/4` / `ClientStore.rotate_client_secret/4` accept either an explicit `DateTime` or a zero-argument clock function. No exported arity or result shape changed.
-- `ClientLifetime.adapt/2` now validates that the selected adapter exports secret replacement support. Built-in and custom adapters execute the same callback contract.
+- `ClientLifetime.adapt/2` validates the Phase 163 lifetime declaration and guard callback. Secret replacement support is checked only when replacement is requested, so unrelated OAuth flows do not require operator-only storage behavior.
 
 ## Deviations from Plan
 
@@ -152,6 +152,13 @@ status: complete
 ## Issues Encountered
 
 - The new integration test initially lacked a `TestRepo` setup. The fixture was corrected before the valid target RED run; no production change was required.
+
+## Compatibility Follow-up
+
+- Wave 2's full suite exposed that validating `rotate_client_secret/4` inside `ClientLifetime.adapt/2` rejected existing declared adapters used by token exchange, RFC 8693, and device flows. Rotation is now validated at the replacement boundary, while unsupported replacement still returns `:client_secret_rotation_unavailable` without entering the transaction.
+- Focused adapter/token-exchange/RFC 8693/device/backchannel tests: **43 tests, 0 failures**.
+- Supported full gate `mix test.fast`: **2 properties, 2,324 tests, 0 failures, 420 excluded, 6 skipped**.
+- Follow-up implementation commit: `e715625f`.
 
 ## Known Limitations
 
