@@ -63,6 +63,8 @@ A successful response (HTTP `201 Created`) will return the newly minted client d
   "token_endpoint_auth_method": "client_secret_basic",
   "grant_types": ["authorization_code", "refresh_token"],
   "response_types": ["code"],
+  "lockspire_client_expires_at": 0,
+  "lockspire_registration_access_token_expires_at": 0,
   "registration_access_token": "rat_xyz789",
   "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
 }
@@ -70,7 +72,26 @@ A successful response (HTTP `201 Created`) will return the newly minted client d
 
 ### Registration Access Token (RAT)
 
-The `registration_access_token` allows the partner to manage the client they just created. They must securely store both their client credentials (`client_id`, `client_secret`) and the `registration_access_token`.
+The `registration_access_token` is the app management token: it lets the partner read, update, or delete the app registration. Lockspire returns it only when the app is created or its token is replaced, so the partner must securely store it. It is separate from the app's client secret.
+
+### App management-token lifetime
+
+The management-token lifetime is an optional host policy. A blank setting or a value of `0` means no automatic expiry; a positive duration applies to newly issued or replaced app management tokens. Changing the setting does not change tokens already issued. Lockspire does not require one universal registration-token timeout. A host may choose a finite duration to reduce the time a copied token remains usable, while accounting for the lockout risk if the partner loses it.
+
+Lockspire stores the expiry and returns it in the server-owned `lockspire_registration_access_token_expires_at` extension. The value is a Unix timestamp in seconds; `0` means no automatic expiry. The related `lockspire_client_expires_at` extension reports the app's expiry in the same format. These extensions are informational: a PUT may omit them or echo their current values, but cannot change them. Registration intake cannot set either extension.
+
+For example, with a 60-second app lifetime, 10-second client-secret lifetime, and 20-second management-token lifetime, a registration issued at time `100` has app expiry `160`, secret expiry `110`, and management-token expiry `120`:
+
+```json
+{
+  "client_id": "cli_abc123",
+  "client_secret_expires_at": 110,
+  "lockspire_client_expires_at": 160,
+  "lockspire_registration_access_token_expires_at": 120
+}
+```
+
+The management token is usable strictly before its expiry time. At the exact expiry time and afterward, it cannot read, update, or delete the registration. A GET does not renew the token or change its deadline. If the management token has expired, the app cannot manage its own registration. An expired but enabled app can still be read or deleted with an eligible management token, but it cannot be updated. A disabled app cannot use any registration-management operation.
 
 ### Shared-secret lifetime and rotation
 
@@ -80,11 +101,13 @@ Lockspire accepts a shared secret only before its stored expiry time. At the exa
 
 ### Read, Update, and Delete
 
-Partners can read, update, or delete their client via the `registration_client_uri` using the RAT.
+Partners can read, update, or delete their app through `registration_client_uri` using the app management token. The examples below use `/oauth`; the actual path is `Lockspire.mount_path()` plus `/register`, so use the prefix configured by the host application.
 
 * **Read (GET):** `GET /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
-* **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated client. A successful PUT rotates the app management token. It preserves the existing client secret; it does not return or rotate that secret.
+* **Update (PUT):** `PUT /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>` and the full JSON representation of the updated app. Include the unchanged `client_id` in every PUT body; it must match the URL. A supplied `client_secret` must match the current secret. Do not send `registration_access_token`, `registration_client_uri`, `client_secret_expires_at`, or `client_id_issued_at` in the body. The Lockspire expiry extensions may be omitted or echoed unchanged. A successful PUT rotates the app management token immediately and returns its replacement once. It preserves the existing client secret; it does not return or rotate that secret. There is no overlap period: the previous app management token stops working immediately.
 * **Delete (DELETE):** `DELETE /oauth/register/cli_abc123` with `Authorization: Bearer <RAT>`
+
+PUT is a full replacement of the supported registration metadata, not a patch. Include every value the app needs to retain. A successful response contains the new `registration_access_token`; it does not contain a `client_secret`.
 
 ### `client_secret_jwt` metadata shape
 
@@ -205,6 +228,7 @@ Accept: application/json
 Authorization: Bearer <RAT>
 
 {
+  "client_id": "cli_abc123",
   "client_name": "Updated logout fixture client",
   "redirect_uris": [
     "https://app.example.com/callback"
@@ -212,6 +236,8 @@ Authorization: Bearer <RAT>
   "grant_types": ["authorization_code", "refresh_token"],
   "response_types": ["code"],
   "token_endpoint_auth_method": "client_secret_basic",
+  "lockspire_client_expires_at": 1610000160,
+  "lockspire_registration_access_token_expires_at": 1610001200,
   "scope": "openid profile",
   "backchannel_logout_uri": "https://rp.example.test/replaced-backchannel-logout",
   "backchannel_logout_session_required": false,
@@ -224,7 +250,7 @@ RFC 7592 `PUT` is full-replace, not patch. If logout propagation fields are omit
 
 The same full-replace rule applies to auth-method metadata. If a client stays on `client_secret_jwt`, send both `token_endpoint_auth_method` and `token_endpoint_auth_signing_alg` together so the stored `HS256` truth remains coherent. If an update changes auth method away from `client_secret_jwt`, omit the old symmetric JWT signing-alg expectation and let the new method's metadata define the replacement state.
 
-The returned `registration_access_token` replaces the old RAT immediately. This update response does not contain a `client_secret`. To replace a shared secret, use the operator rotation workflow; the new secret is shown once and uses the current DCR secret-lifetime policy when that policy applies to the app.
+The returned `registration_access_token` replaces the old app management token immediately. This update response does not contain a `client_secret`. To replace a shared secret, use the operator rotation workflow; the new secret is shown once and uses the current DCR secret-lifetime policy when that policy applies to the app.
 
 ```json
 {
@@ -241,6 +267,12 @@ The returned `registration_access_token` replaces the old RAT immediately. This 
   "registration_client_uri": "https://your-domain.com/oauth/register/cli_abc123"
 }
 ```
+
+If the successful PUT response is lost, replay of the previous token cannot recover it: the previous token has already been invalidated, and the replacement plaintext is not returned again. The provider team must use its existing host-authorized app management-token rotation task to issue and securely deliver another token. For example, if the provider rotates the token at time `125` under a current 40-second policy, the new expiry is `165`.
+
+The existing operator recovery flow is available only to the host-authorized team and requires its confirmation step. It shows the committed replacement token once. Recovery changes management-token authority only: it does not enable a disabled app or extend the app's expiry or client-secret expiry. An expired but enabled app may use an eligible token to read or delete its registration, but must be recovered before it can update it.
+
+Older v0 app records are treated as having no automatic app, client-secret, or management-token expiry. Their legacy expiry values are advisory until an explicit replacement promotes the current row to the current lifecycle format. Custom storage adapters must preserve the complete current client row during management replacement and recovery, including the management-token expiry, secret hash and expiry, app expiry, and enabled state. See [Upgrade app lifetime storage](upgrading/client-lifetimes.md) for the adapter and rollout contract.
 
 ## Out of Scope
 

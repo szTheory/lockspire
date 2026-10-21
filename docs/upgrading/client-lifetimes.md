@@ -141,6 +141,22 @@ revocation of an already-issued JWT.
 
 Shared-secret expiry and operator secret replacement are enforced by the
 current Lockspire implementation as described in [Dynamic Client Registration](../dynamic-registration.md).
-Management-token expiry and recovery remain owned by Phase 165. Phase 166 owns
-the final cross-phase packaged proof and synchronized release guidance; neither
-phase is complete based on this app-storage upgrade guide.
+
+App management-token expiry is an optional host policy. Blank or zero means no
+automatic expiry; a positive duration applies when a self-managed app is
+registered or its management token is replaced. Existing tokens keep their
+stored deadline when policy changes, and a GET does not extend it. At expiry,
+the token can no longer read, update, or delete the registration. An expired
+but enabled app can still be read or deleted with an eligible token, while PUT
+is rejected; disabled apps cannot use registration management.
+
+Older v0 app records are effectively unlimited for app, shared-secret, and
+management-token expiry. Their historical dates remain advisory until an
+explicit replacement promotes the current row. Custom storage adapters must
+preserve current-row lifecycle fields during app management-token replacement
+and host-authorized recovery. See [Dynamic Client Registration](../dynamic-registration.md)
+for the required request identity, server-owned expiry extensions, immediate
+replacement, and lost-response recovery behavior.
+
+Phase 166 owns the final cross-phase packaged proof and synchronized release
+guidance; this upgrade guide does not claim that later work is complete.

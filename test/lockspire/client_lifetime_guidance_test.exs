@@ -80,7 +80,7 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
           "uses the current DCR secret-lifetime policy",
           "zero-argument clock function",
           "after the adapter has locked and reloaded the current row",
-          "Management-token expiry and recovery remain owned by Phase 165",
+          "App management-token expiry is an optional host policy",
           "Phase 166 owns"
         ] do
       assert upgrade_guide =~ phrase
@@ -108,35 +108,37 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
 
     for phrase <- [
           "Lockspire.mount_path",
-          "Include the unchanged `client_id` in every PUT body.",
+          "Include the unchanged `client_id` in every PUT body",
           "lockspire_client_expires_at",
           "lockspire_registration_access_token_expires_at",
-          "the current server-owned values are returned",
+          "may omit them or echo their current values",
           "the previous app management token stops working immediately",
           "A GET does not renew",
-          "A value of `0` means no automatic expiry",
+          "means no automatic expiry",
           "Lockspire does not require one universal registration-token timeout",
-          "expired app management token cannot read, update, or delete its registration",
-          "an expired but enabled app can still be read or deleted, but not updated",
-          "replay of the previous token cannot recover a successful PUT response",
-          "at time 100",
+          "it cannot read, update, or delete the registration",
+          "An expired but enabled app can still be read or deleted with an eligible management token",
+          "replay of the previous token cannot recover it",
+          "issued at time `100`",
           "160",
           "110",
           "120",
-          "at time 125",
+          "rotates the token at time `125`",
           "165",
-          "the new app management token is shown once",
-          "does not extend app or client-secret expiry",
-          "v0 records are effectively unlimited",
-          "custom storage adapters"
+          "shows the committed replacement token once",
+          "does not enable a disabled app or extend the app's expiry or client-secret expiry",
+          "no automatic app, client-secret, or management-token expiry"
         ] do
       assert dcr_guide =~ phrase
     end
 
-    assert upgrade_guide =~ "custom storage adapters"
+    assert upgrade_guide =~ "Custom storage adapters must preserve"
     assert operator_guide =~ "app management token"
-    assert operator_guide =~ "Rotating this token does not enable the app or extend app or client-secret expiry."
-    assert support =~ "app management-token lifecycle"
-    assert support =~ "host-authorized recovery"
+
+    assert operator_guide =~
+             "Rotating this token does not enable the app or extend app or client-secret expiry."
+
+    assert support =~ "Optional finite expiry for self-registered app management tokens"
+    assert support =~ "host-authorized operator workflow"
   end
 end

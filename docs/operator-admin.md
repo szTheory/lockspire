@@ -81,6 +81,12 @@ Keep DCR onboarding separate from DCR policy:
 
 These workflows are connected, but they are not the same job. Admin users may start in DCR onboarding, find that issuer policy blocks registration, then update the policy before returning to onboarding.
 
+### Recovering an app management token
+
+The host team can replace an app management token from the existing app detail task when a partner loses the token or its configured expiry passes. The action requires the normal host staff authorization and confirmation. Lockspire displays the committed replacement token once; deliver it securely to the partner. The old token stops working immediately, including after a successful registration update whose response was lost. Replaying that old token cannot recover the replacement.
+
+Recovery is available for self-registered apps and changes only management access. Rotating this token does not enable the app or extend app or client-secret expiry. A finite token lifetime is an optional provider policy: blank or `0` means no automatic expiry, while a positive duration applies to newly issued or replaced tokens and leaves existing tokens unchanged. A finite lifetime can lock a partner out of self-management after expiry, so the host team should be ready to rotate and securely deliver a replacement.
+
 ## Logout propagation workflow
 
 Each client has two separate logout-related settings:

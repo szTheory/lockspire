@@ -25,6 +25,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - `authorization_details_types_supported` in discovery only when the mounted authorization-code surface is usable and the host has configured at least one RAR validator type
 - Userinfo
 - Dynamic client registration and direct registration for the repo-proven RFC 7591/RFC 7592 slice: built-in `openid`, device-code-only clients without redirect URIs, and authorization-code clients with exact redirect validation; registration management includes create/read/update of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
+- Optional finite expiry for self-registered app management tokens, reported through Lockspire-owned Unix-second expiry extensions; management-token replacement is immediate, and expired authority is recovered only through the existing host-authorized operator workflow
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration requiring exactly one inline `jwks` or HTTPS `jwks_uri`; an authorization-code or `code` response shape requires non-empty redirect URIs with the existing exact-match runtime validation
 - Bounded reactive remote-`jwks_uri` rollover support on the shipped remote-key surfaces (`private_key_jwt` direct-client authentication and JARM client-key resolution): Lockspire reads from cached remote JWKS material, forces one refresh when verification indicates stale or unknown key material, preserves the last known good cache entry when refresh fails, and fails the current authentication attempt closed
 - Confidential-client `client_secret_jwt` authentication on the same Lockspire-owned direct-client endpoints that reuse the shared verifier, limited to `HS256`, issuer-string `aud`, required `jti`, replay protection, and fail-closed `invalid_client` behavior with no silent fallback to `client_secret_basic` or `client_secret_post`
@@ -48,6 +49,30 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
 - RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
+
+### Dynamic-registration management-token lifecycle
+
+The host can leave app management-token expiry unlimited or configure a positive
+duration for newly issued and replaced tokens. A policy change does not alter
+existing token deadlines, and GET does not renew a token. Lockspire reports app
+and management-token expiry with the server-owned
+`lockspire_client_expires_at` and
+`lockspire_registration_access_token_expires_at` response extensions. A PUT
+must include the unchanged `client_id`; it may omit the expiry extensions or
+echo their current values, but cannot change them. A successful PUT immediately
+invalidates the previous management token and returns its replacement once.
+
+An expired management token cannot read, update, or delete its registration.
+An expired but enabled app can still be read or deleted with an eligible
+management token, while PUT is rejected. A disabled app cannot use
+registration management. If the response to a successful PUT is lost, replay
+of the old token cannot retrieve the replacement; the host team must use its
+existing authorized, confirmed, one-time recovery task. Recovery does not
+enable the app or extend app or client-secret expiry. Lockspire does not require
+a universal RFC timeout for registration access tokens; finite expiry is an
+optional host policy with a partner lockout tradeoff. See
+[`docs/dynamic-registration.md`](dynamic-registration.md) for executable
+request and recovery examples.
 
 ### `client_secret_jwt` Direct-Client Slice
 
