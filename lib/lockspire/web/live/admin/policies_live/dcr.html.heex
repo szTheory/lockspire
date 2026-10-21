@@ -118,14 +118,14 @@
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Expiry limits"
         >
-          <p class="lockspire-admin-help">Enter times in seconds. These apply to apps that register from now on. Lockspire saves them but doesn't enforce any expiry yet.</p>
+          <p class="lockspire-admin-help">Lockspire enforces app expiry for new apps and secret expiry for new or replaced app secrets. App management-token expiry is not enforced yet.</p>
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_lifetime_seconds"
             label="App lifetime (seconds)"
-            help="Leave blank unless your own code checks this value."
+            help="How long a new app may use Lockspire."
             errors={field_errors(@form_errors, :dcr_default_client_lifetime_seconds)}
           >
-            <:info label="About app lifetime">Lockspire saves this value but never disables an app when the time runs out.</:info>
+            <:info label="About app lifetime">Lockspire stops an app from using OAuth when its expiry date is reached. This setting applies to new apps.</:info>
             <input
               type="number"
               min="0"
@@ -147,7 +147,7 @@
             help="Sets how long shared secrets for new apps remain valid. Replacing a secret uses the current setting."
             errors={field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds)}
           >
-            <:info label="About client secret lifetime">For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Existing secrets keep their current expiry when you change this setting. Replacing a secret applies the current setting.</:info>
+            <:info label="About client secret lifetime">For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Changing this setting does not change expiry on existing app secrets. Some older apps may have an advisory expiry date; replacing the secret sets its new expiry using the current setting.</:info>
             <input
               type="number"
               min="0"

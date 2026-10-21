@@ -169,6 +169,10 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | Apps will be told their secret has already expired | No automatic expiry |
 | apps are told their secret has already expired | No automatic expiry |
 | Lockspire still accepts a secret after its expiry date | A positive value applies to new or replaced app secrets |
+| Lockspire saves them but doesn't enforce any expiry yet | Lockspire enforces app and secret expiry; app management-token expiry is not enforced yet |
+| Leave blank unless your own code checks this value. | How long a new app may use Lockspire. |
+| Lockspire saves this value but never disables an app when the time runs out. | Lockspire stops an app from using OAuth when its expiry date is reached. |
+| Existing secrets keep their current expiry when you change this setting. | Changing this setting does not change expiry on existing app secrets; some older apps may have an advisory expiry date. |
 | client class | app type |
 | assertion-key | signing keys |
 | destructive actions | (name the action) |

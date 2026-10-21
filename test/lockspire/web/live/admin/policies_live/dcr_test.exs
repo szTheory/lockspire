@@ -214,13 +214,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     assert rendered_text(blank_limits_html) =~
-             "Lockspire saves this value but never disables an app"
+             "Lockspire enforces app expiry for new apps and secret expiry for new or replaced app secrets. App management-token expiry is not enforced yet."
+
+    assert rendered_text(blank_limits_html) =~
+             "Lockspire stops an app from using OAuth when its expiry date is reached. This setting applies to new apps."
 
     assert rendered_text(blank_limits_html) =~
              "No automatic expiry"
 
     assert rendered_text(blank_limits_html) =~
-             "Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Existing secrets keep their current expiry when you change this setting. Replacing a secret applies the current setting."
+             "For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Changing this setting does not change expiry on existing app secrets. Some older apps may have an advisory expiry date; replacing the secret sets its new expiry using the current setting."
 
     refute has_element?(view, ".lockspire-admin-field-errors")
   end
