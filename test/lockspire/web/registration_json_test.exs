@@ -152,6 +152,58 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     refute Map.has_key?(update, :client_secret)
   end
 
+  test "responses advertise effective management deadlines and discard metadata aliases" do
+    client = %Client{
+      @client
+      | lifetime_version: 1,
+        registration_access_token_expires_at: DateTime.from_unix!(120),
+        metadata:
+          @client.metadata
+          |> Map.put("lockspire_registration_access_token_expires_at", 999)
+          |> Map.put(:lockspire_registration_access_token_expires_at, 998)
+          |> Map.put("registration_access_token", "metadata-token")
+          |> Map.put(:registration_access_token, "atom-metadata-token")
+    }
+
+    assert RegistrationJSON.read_response(client).lockspire_registration_access_token_expires_at ==
+             120
+
+    for response <- [
+          RegistrationJSON.success_response(%Registration.Success{
+            client: client,
+            client_secret_plaintext: nil,
+            registration_access_token_plaintext: "fresh-token"
+          }),
+          RegistrationJSON.read_response(client),
+          RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+            client: client,
+            registration_access_token_plaintext: "rotated-token"
+          })
+        ] do
+      assert response.lockspire_registration_access_token_expires_at == 120
+      refute response["lockspire_registration_access_token_expires_at"]
+      refute response["registration_access_token"]
+      refute response[:registration_access_token] in ["metadata-token", "atom-metadata-token"]
+    end
+
+    unlimited = %Client{@client | lifetime_version: 1}
+    legacy = %Client{@client | lifetime_version: 0}
+
+    assert RegistrationJSON.read_response(unlimited).lockspire_registration_access_token_expires_at ==
+             0
+
+    assert RegistrationJSON.read_response(legacy).lockspire_registration_access_token_expires_at ==
+             0
+  end
+
+  test "serializer reports unsupported management lifetime state as a server failure" do
+    invalid = %Client{@client | lifetime_version: 2}
+
+    assert_raise ArgumentError, fn ->
+      RegistrationJSON.read_response(invalid)
+    end
+  end
+
   test "non-secret methods omit secret expiry even with dormant material and v0 dates are advisory" do
     for method <- [:none, :private_key_jwt, :tls_client_auth, :self_signed_tls_client_auth] do
       client = %Client{

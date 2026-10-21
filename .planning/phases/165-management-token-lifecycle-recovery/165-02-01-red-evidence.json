@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation elixir -r /private/tmp/lockspire-phase165-tap-formatter.ex -S mix test test/integration/management_token_lifetime_registration_test.exs --only management_issuance_snapshot --formatter LockspirePhase165TapFormatter --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..1\nnot ok 1 - test test issuance snapshots app, secret, and management lifetimes and GET preserves them\n",
+  "targetTest": "test test issuance snapshots app, secret, and management lifetimes and GET preserves them",
+  "targetFile": "test/integration/management_token_lifetime_registration_test.exs",
+  "expected": "A self-registered client issued at Unix second 100 under app/secret/management durations 60/10/20 must persist deadlines 160/110/120 and advertise numeric server-owned extensions.",
+  "actual": "The client persisted app and secret deadlines but registration_access_token_expires_at was nil for the positive 20-second management policy.",
+  "semanticAssessment": "Valid RED: the named target test executed and failed on the planned persisted-management-deadline assertion. Registration, sandbox checkout, and client persistence completed; the existing implementation left the management deadline nil."
+}
