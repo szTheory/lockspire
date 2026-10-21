@@ -3,6 +3,7 @@ defmodule Lockspire.ClientLifecycle do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   @type result :: {:ok, Client.t()} | {:error, term()}
@@ -65,20 +66,22 @@ defmodule Lockspire.ClientLifecycle do
       when is_map(secret_material) and
              (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) and
              (is_map(build_audit_event) or is_function(build_audit_event, 1)) do
-    transact_with_audit(
-      fn ->
-        Repository.rotate_client_secret(
-          client,
-          secret_material.client_secret_hash,
-          secret_material.client_secret_jwt_verifier_encrypted,
-          rotated_at
-        )
-      end,
-      case build_audit_event do
-        event when is_map(event) -> fn _updated_client -> event end
-        builder -> builder
-      end
-    )
+    with :ok <- ClientLifetime.ensure_secret_rotation_available(Repository) do
+      transact_with_audit(
+        fn ->
+          Repository.rotate_client_secret(
+            client,
+            secret_material.client_secret_hash,
+            secret_material.client_secret_jwt_verifier_encrypted,
+            rotated_at
+          )
+        end,
+        case build_audit_event do
+          event when is_map(event) -> fn _updated_client -> event end
+          builder -> builder
+        end
+      )
+    end
   end
 
   @doc false

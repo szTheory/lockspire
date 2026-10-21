@@ -79,8 +79,14 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
     assert {:error, _} = ClientLifetime.adapt(__MODULE__.UnknownDeclaration, authority)
     assert {:error, _} = ClientLifetime.adapt(__MODULE__.MissingGuard, authority)
 
+    assert {:ok, _lifetime} =
+             ClientLifetime.adapt(
+               __MODULE__.MissingRotation,
+               __MODULE__.MissingRotation.transaction_authority()
+             )
+
     assert {:error, :client_secret_rotation_unavailable} =
-             ClientLifetime.adapt(__MODULE__.MissingRotation, authority)
+             ClientLifetime.ensure_secret_rotation_available(__MODULE__.MissingRotation)
 
     finite = DateTime.from_unix!(1_800_000_000) |> DateTime.truncate(:second)
     client = client("custom-drop-fields", 1, finite, finite)
@@ -537,7 +543,10 @@ defmodule Lockspire.Storage.ClientLifetimeConformanceTest do
 
   defmodule MissingRotation do
     def lifetime_contract,
-      do: %{version: 1, transaction_authority: %{identity: :missing_rotation, participants: %{}}}
+      do: %{version: 1, transaction_authority: transaction_authority()}
+
+    def transaction_authority,
+      do: %{identity: :missing_rotation, participants: %{client_store: __MODULE__}}
 
     def lock_clients(_ids), do: {:ok, []}
   end

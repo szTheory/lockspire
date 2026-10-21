@@ -36,9 +36,6 @@ defmodule Lockspire.Storage.ClientLifetime do
       not function_exported?(client_store, :lock_clients, 1) ->
         {:error, :client_store_guard_unavailable}
 
-      not function_exported?(client_store, :rotate_client_secret, 4) ->
-        {:error, :client_secret_rotation_unavailable}
-
       not valid_authority?(Map.get(declaration, :transaction_authority)) ->
         {:error, :transaction_authority_unavailable}
 
@@ -59,6 +56,20 @@ defmodule Lockspire.Storage.ClientLifetime do
 
   def adapt(_client_store, _expected_authority),
     do: {:error, :invalid_client_lifetime_adapter}
+
+  @doc "Validates rotation support only when a caller requests secret replacement."
+  @spec ensure_secret_rotation_available(module()) ::
+          :ok | {:error, :client_secret_rotation_unavailable}
+  def ensure_secret_rotation_available(client_store) when is_atom(client_store) do
+    _ = Code.ensure_loaded?(client_store)
+
+    if function_exported?(client_store, :rotate_client_secret, 4),
+      do: :ok,
+      else: {:error, :client_secret_rotation_unavailable}
+  end
+
+  def ensure_secret_rotation_available(_client_store),
+    do: {:error, :client_secret_rotation_unavailable}
 
   @doc "Validates explicit lifetime state returned by an adapted client store."
   @spec validate_client(Client.t() | term()) :: {:ok, Client.t()} | {:error, atom()}
