@@ -73,6 +73,7 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
     ])
     |> validate_app_lifetime(policy.dcr_default_client_lifetime_seconds)
     |> validate_secret_lifetime(policy.dcr_default_client_secret_lifetime_seconds)
+    |> validate_management_lifetime(policy.dcr_default_registration_access_token_lifetime_seconds)
     |> validate_required([
       :id,
       :par_policy,
@@ -110,6 +111,19 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecord do
       :dcr_default_client_secret_lifetime_seconds,
       "must be nil or an integer from 0 through 2147483647",
       validation: :secret_lifetime
+    )
+  end
+
+  defp validate_management_lifetime(changeset, value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: changeset
+
+  defp validate_management_lifetime(changeset, _value) do
+    add_error(
+      changeset,
+      :dcr_default_registration_access_token_lifetime_seconds,
+      "must be nil or an integer from 0 through 2147483647",
+      validation: :management_lifetime
     )
   end
 

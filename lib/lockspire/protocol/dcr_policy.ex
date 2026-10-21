@@ -97,6 +97,10 @@ defmodule Lockspire.Protocol.DcrPolicy do
            validate_default_client_secret_lifetime(
              server_policy.dcr_default_client_secret_lifetime_seconds
            ),
+         :ok <-
+           validate_default_registration_access_token_lifetime(
+             server_policy.dcr_default_registration_access_token_lifetime_seconds
+           ),
          {:ok, scopes} <-
            intersect_axis(
              :scope,
@@ -166,6 +170,15 @@ defmodule Lockspire.Protocol.DcrPolicy do
   defp validate_default_client_secret_lifetime(_value) do
     {:error, :server_error,
      %{field: :default_client_secret_lifetime_seconds, reason: :invalid_duration}}
+  end
+
+  defp validate_default_registration_access_token_lifetime(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_default_registration_access_token_lifetime(_value) do
+    {:error, :server_error,
+     %{field: :default_registration_access_token_lifetime_seconds, reason: :invalid_duration}}
   end
 
   defp intersect_axis(field, requested_list, server_allowlist, iat_override_list) do
