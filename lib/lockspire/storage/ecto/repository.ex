@@ -460,6 +460,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl TokenStore
+  def lock_lifecycle_tokens(hashes) when is_list(hashes) do
+    EctoTokenStore.lock_lifecycle_tokens(repo(), hashes)
+  end
+
+  @impl TokenStore
   def fetch_refresh_token(token_hash) when is_binary(token_hash) do
     EctoTokenStore.fetch_refresh_token(repo(), token_hash)
   end

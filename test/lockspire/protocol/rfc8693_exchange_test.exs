@@ -9,6 +9,29 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
   alias Lockspire.Security.Policy
 
   defmodule MockTokenStore do
+    def transaction_authority do
+      %{
+        identity: :mock_rfc8693,
+        participants: %{
+          client_store: Lockspire.Protocol.Rfc8693ExchangeTest.MockClientStore,
+          token_store: __MODULE__,
+          audit_store: __MODULE__,
+          transaction_store: __MODULE__
+        }
+      }
+    end
+
+    def transact(fun) do
+      case fun.() do
+        {:ok, result} -> {:ok, result}
+        {:error, reason} -> {:error, reason}
+        result -> {:ok, result}
+      end
+    end
+
+    def rollback(reason), do: throw({:rollback, reason})
+    def append_audit_event(event), do: {:ok, event}
+
     def fetch_lifecycle_token(token_hash) do
       case Process.get({__MODULE__, token_hash}) do
         nil -> {:error, :not_found}
@@ -16,9 +39,29 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
       end
     end
 
+    def lock_lifecycle_tokens(hashes) do
+      {:ok, hashes |> Enum.map(&Process.get({__MODULE__, &1})) |> Enum.reject(&is_nil/1)}
+    end
+
     def store_token(%Token{} = token) do
       Process.put({__MODULE__, token.token_hash}, token)
       {:ok, token}
+    end
+  end
+
+  defmodule MockClientStore do
+    def lifetime_contract do
+      %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.Rfc8693ExchangeTest.MockTokenStore.transaction_authority()
+      }
+    end
+
+    def fetch_client_by_id(client_id), do: {:ok, Process.get({__MODULE__, client_id})}
+
+    def lock_clients(ids) do
+      {:ok, ids |> Enum.map(&Process.get({__MODULE__, &1})) |> Enum.reject(&is_nil/1)}
     end
   end
 
@@ -41,8 +84,12 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
   setup do
     client = %Client{
       client_id: "test_client",
+      active: true,
+      lifetime_version: 0,
       allowed_grant_types: ["urn:ietf:params:oauth:grant-type:token-exchange"]
     }
+
+    Process.put({MockClientStore, client.client_id}, client)
 
     now = DateTime.utc_now()
 
@@ -53,6 +100,9 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
       },
       opts: [
         token_store: MockTokenStore,
+        client_store: MockClientStore,
+        transaction_store: MockTokenStore,
+        audit_store: MockTokenStore,
         token_exchange_validator: MockValidator,
         now: fn -> now end
       ]
@@ -61,6 +111,7 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     valid_token = %Token{
       token_hash: Policy.hash_token("valid_token_string"),
       token_type: :access_token,
+      client_id: client.client_id,
       expires_at: DateTime.add(now, 3600, :second),
       scopes: ["read", "write"]
     }
@@ -99,6 +150,7 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     expired_token = %Token{
       token_hash: Policy.hash_token("expired_token"),
       token_type: :access_token,
+      client_id: "test_client",
       expires_at: DateTime.add(now, -3600, :second),
       scopes: ["read", "write"]
     }
@@ -119,6 +171,7 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     revoked_token = %Token{
       token_hash: Policy.hash_token("revoked_token"),
       token_type: :access_token,
+      client_id: "test_client",
       expires_at: DateTime.add(now, 3600, :second),
       revoked_at: now,
       scopes: ["read", "write"]

@@ -11,6 +11,176 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   alias Lockspire.Protocol.TokenResult.Error
   alias Lockspire.Protocol.TokenLifetime
   alias Lockspire.Storage.ClientLifetime
+  alias Lockspire.Security.Policy
+
+  @doc false
+  def persist_rfc8693(intent, %Dependencies{} = dependencies) when is_map(intent) do
+    transact_with_audit(dependencies, fn ->
+      with {:ok, current_clients} <-
+             dependencies.client_store.lock_clients(intent.participant_client_ids),
+           {:ok, current_by_id} <- validate_exchange_clients(current_clients, intent),
+           {:ok, locked_tokens} <-
+             dependencies.token_store.lock_lifecycle_tokens(intent.input_token_hashes),
+           {:ok, now} <- final_exchange_time(dependencies),
+           :ok <- validate_exchange_tokens(locked_tokens, intent, now),
+           :ok <- validate_exchange_eligibility(current_by_id, intent, now),
+           {:ok, expires_at} <-
+             TokenLifetime.effective_expiry(
+               now,
+               TokenLifetime.access_token(),
+               current_by_id[intent.requester.client_id].client_expires_at
+             ),
+           :ok <- expiry_after_now(expires_at, now),
+           issued_token = %{intent.output_token | issued_at: now, expires_at: expires_at},
+           {:ok, raw_token, token_hash} <- issue_exchange_token(issued_token, intent),
+           issued_token = %{issued_token | token_hash: token_hash},
+           {:ok, persisted} <- dependencies.token_store.store_token(issued_token) do
+        {:ok,
+         %{
+           token: persisted,
+           raw_token: raw_token,
+           expires_in: TokenLifetime.expires_in(now, expires_at),
+           issued_at: now
+         }, [intent.audit_event]}
+      else
+        {:error, %Error{} = error} -> {:error, error}
+        {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+        {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+        {:error, reason} -> {:error, reason}
+        false -> {:error, invalid_grant(:input_token_changed)}
+      end
+    end)
+  end
+
+  defp validate_exchange_clients(current_clients, intent) do
+    current_by_id = Map.new(current_clients, &{&1.client_id, &1})
+    requester_id = intent.requester.client_id
+
+    with %Client{} = requester <- current_by_id[requester_id],
+         {:ok, requester} <- ClientLifetime.validate_client(requester),
+         true <- requester.active,
+         true <-
+           ClientAuthentication.verified_identity_matches?(
+             intent.verified_client_identity,
+             requester
+           ),
+         :ok <- validate_issuer_client_rows(current_by_id, intent.issuer_client_ids) do
+      {:ok, current_by_id}
+    else
+      nil -> {:error, client_authentication_error(:client_missing)}
+      false -> {:error, client_authentication_error(:credential_or_client_changed)}
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, reason} -> {:error, server_error(reason)}
+      _ -> {:error, client_authentication_error(:client_state_invalid)}
+    end
+  end
+
+  defp validate_issuer_client_rows(_clients, []), do: :ok
+
+  defp validate_issuer_client_rows(clients, [client_id | rest]) do
+    case clients[client_id] do
+      %Client{} = client ->
+        with {:ok, client} <- ClientLifetime.validate_client(client),
+             true <- client.active do
+          validate_issuer_client_rows(clients, rest)
+        else
+          false -> {:error, invalid_grant(:issuer_ineligible)}
+          {:error, reason} -> {:error, server_error(reason)}
+        end
+
+      nil ->
+        {:error, invalid_grant(:issuer_missing)}
+    end
+  end
+
+  defp validate_exchange_tokens(locked_tokens, intent, now) do
+    by_hash = Map.new(locked_tokens, &{&1.token_hash, &1})
+
+    valid? =
+      Enum.all?(intent.input_tokens, fn original ->
+        case by_hash[original.token_hash] do
+          %Token{} = current ->
+            current.client_id == original.client_id and current.account_id == original.account_id and
+              current.token_type == original.token_type and
+              current.expires_at == original.expires_at and
+              is_nil(current.revoked_at) and is_nil(current.reuse_detected_at) and
+              DateTime.compare(current.expires_at, now) == :gt
+
+          _ ->
+            false
+        end
+      end)
+
+    if valid?, do: :ok, else: {:error, invalid_grant(:input_token_changed)}
+  end
+
+  defp final_exchange_time(dependencies) do
+    {:ok, dependencies.now.()}
+  rescue
+    _ -> {:error, server_error(:clock_unavailable)}
+  end
+
+  defp validate_exchange_eligibility(clients, intent, now) do
+    with :ok <- requester_eligibility(clients[intent.requester.client_id], now),
+         :ok <- validate_issuer_eligibility(clients, intent.issuer_client_ids, now) do
+      :ok
+    end
+  end
+
+  defp requester_eligibility(client, now) do
+    case Client.app_eligibility(client, now, :guarded_token_exchange) do
+      :ok -> :ok
+      {:error, :expired} -> {:error, client_authentication_error(:client_app_expired)}
+      {:error, :disabled} -> {:error, client_authentication_error(:client_disabled)}
+      {:error, reason} -> {:error, server_error(reason)}
+    end
+  end
+
+  defp validate_issuer_eligibility(_clients, [], _now), do: :ok
+
+  defp validate_issuer_eligibility(clients, [client_id | rest], now) do
+    case Client.app_eligibility(clients[client_id], now, :guarded_token_exchange) do
+      :ok -> validate_issuer_eligibility(clients, rest, now)
+      {:error, _reason} -> {:error, invalid_grant(:issuer_ineligible)}
+    end
+  end
+
+  defp expiry_after_now(expires_at, now) do
+    if DateTime.compare(expires_at, now) == :gt,
+      do: :ok,
+      else: {:error, client_authentication_error(:client_app_expired)}
+  end
+
+  defp issue_exchange_token(_token, %{prepared_signing: nil, raw_token: raw_token}),
+    do: {:ok, raw_token, Policy.hash_token(raw_token)}
+
+  defp issue_exchange_token(token, intent) do
+    TokenIssuer.issue_prepared_exchange(
+      token,
+      intent.requester,
+      intent.custom_claims,
+      intent.prepared_signing
+    )
+  end
+
+  defp invalid_grant(reason) do
+    %Error{
+      status: 400,
+      error: "invalid_grant",
+      error_description: "The provided token is invalid, expired, or revoked",
+      reason_code: reason
+    }
+  end
+
+  defp server_error(reason) do
+    %Error{
+      status: 500,
+      error: "server_error",
+      error_description: "Token exchange storage or lifetime state is unavailable",
+      reason_code: reason
+    }
+  end
 
   @doc false
   @spec transact_with_audit(Dependencies.t(), (-> term())) :: {:ok, term()} | {:error, term()}

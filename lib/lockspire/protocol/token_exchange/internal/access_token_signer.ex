@@ -149,6 +149,26 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
     end
   end
 
+  @doc false
+  def prepare_exchange(%Client{} = _client, %Dependencies{} = dependencies) do
+    with {:ok, signing_key} <- fetch_signing_key(dependencies.key_store),
+         {:ok, jwk_map} <- PrivateJwk.decode(signing_key),
+         {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map) do
+      {:ok, %{format: :jwt, jwk: jwk, kid: signing_key.kid, alg: signing_key.alg}}
+    else
+      {:error, reason} -> {:error, token_signing_error(reason)}
+    end
+  end
+
+  @doc false
+  def issue_prepared_exchange(%Token{} = token, %Client{} = client, custom_claims, prepared)
+      when is_map(custom_claims) do
+    base = base_claims(token, client, client.client_id)
+    safe_custom_claims = Map.drop(custom_claims, ~w(iss sub aud exp iat jti client_id))
+    claims = Map.merge(base, safe_custom_claims)
+    sign_jwt_prepared(claims, prepared)
+  end
+
   defp issue_exchange_with_dependencies(
          %Token{} = token,
          %Client{} = client,

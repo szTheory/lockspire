@@ -81,6 +81,31 @@ defmodule Lockspire.Storage.Ecto.Repository.TokenStore do
   def fetch_lifecycle_token(repo, hash),
     do: fetch_hash(repo, hash, [:access_token, :refresh_token])
 
+  def lock_lifecycle_tokens(repo, hashes) when is_list(hashes) do
+    cond do
+      not Enum.all?(hashes, &is_binary/1) ->
+        {:error, :invalid_token_hashes}
+
+      not repo.in_transaction?() ->
+        {:error, :transaction_required}
+
+      true ->
+        hashes = Enum.uniq(hashes) |> Enum.sort()
+
+        TokenRecord
+        |> where([token], token.token_hash in ^hashes)
+        |> where([token], token.token_type in [:access_token, :refresh_token])
+        |> order_by([token], asc: token.token_hash)
+        |> lock("FOR UPDATE")
+        |> then(&Support.all(repo, &1, sensitive: true))
+        |> then(fn records -> {:ok, Enum.map(records, &TokenRecord.to_domain/1)} end)
+    end
+  rescue
+    error -> {:error, error}
+  end
+
+  def lock_lifecycle_tokens(_repo, _hashes), do: {:error, :invalid_token_hashes}
+
   def fetch_refresh_token(repo, hash), do: fetch_hash(repo, hash, :refresh_token)
 
   def fetch_active_authorization_code(repo, hash) when is_binary(hash) do

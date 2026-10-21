@@ -46,6 +46,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  def prepare_exchange(%Client{} = client, %Dependencies{} = dependencies),
+    do: AccessTokenSigner.prepare_exchange(client, dependencies)
+
+  @doc false
+  def issue_prepared_exchange(
+        %Token{} = token,
+        %Client{} = client,
+        claims,
+        prepared
+      )
+      when is_map(claims),
+      do: AccessTokenSigner.issue_prepared_exchange(token, client, claims, prepared)
+
+  @doc false
   @spec issue_grant(Client.t(), Token.t(), DateTime.t(), map(), Dependencies.t()) ::
           {:ok,
            %{

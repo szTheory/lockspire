@@ -22,6 +22,8 @@ defmodule Lockspire.Storage.TokenStore do
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_lifecycle_token(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
+  @callback lock_lifecycle_tokens([String.t()]) ::
+              {:ok, [Token.t()]} | {:error, store_error()}
   @callback fetch_refresh_token(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_active_authorization_code(String.t()) ::

@@ -182,8 +182,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.Dependencies do
 
   defp required_capabilities(:rfc8693) do
     [
+      {:client_store, :fetch_client_by_id, 1},
+      {:client_store, :lock_clients, 1},
       {:token_store, :fetch_lifecycle_token, 1},
-      {:token_store, :store_token, 1}
+      {:token_store, :lock_lifecycle_tokens, 1},
+      {:token_store, :store_token, 1},
+      {:audit_store, :append_audit_event, 1},
+      {:transaction_store, :transact, 1}
     ]
   end
 
