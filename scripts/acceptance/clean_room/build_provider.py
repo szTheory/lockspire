@@ -47,7 +47,7 @@ FORBIDDEN = (
 )
 
 
-def write_host_runtime(child: Path, database_url: str) -> None:
+def write_host_runtime(child: Path, database_url: str, storage_prefix: str = "lockspire") -> None:
     (child / "config").mkdir(parents=True, exist_ok=True)
     (child / "lib" / "clean_room_provider_web").mkdir(parents=True, exist_ok=True)
     (child / "lib" / "clean_room_provider").mkdir(parents=True, exist_ok=True)
@@ -72,8 +72,8 @@ config :lockspire,
   known_scopes: [\"openid\", \"profile\", \"read:billing\", \"offline_access\"],
   mount_path: \"/lockspire\",
   logout_path: \"/logout\",
-  storage_prefix: \"lockspire\",
-  oban_prefix: \"lockspire\"
+  storage_prefix: System.get_env(\"LOCKSPIRE_STORAGE_PREFIX\", \"lockspire\"),
+  oban_prefix: System.get_env(\"LOCKSPIRE_STORAGE_PREFIX\", \"lockspire\")
 config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
 """
@@ -229,28 +229,49 @@ def prepare_provider(
     install: bool = True,
     port: int = 4100,
     cache_root: Path | None = None,
+    storage_prefix: str = "lockspire",
 ) -> Path:
     probe_environment()
+    if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
+        raise PackageInputError("invalid Lockspire storage prefix")
     if package_root is None:
         package_root, _ = build_package(run_root)
-    child = copy_child_template("provider_host", run_root, package_root)
-    # The checked-in lib tree is an overlay source, not pre-existing host code:
-    # retain only the manifest/lock in the fresh child so the public installer
-    # can create its managed and host-owned files without an overwrite refusal.
-    shutil.rmtree(child / "lib")
-    write_host_runtime(child, database_url)
+    child = run_root / "provider_host"
+    reuse = child.is_dir()
+    if reuse:
+        vendor = child / "vendor" / "lockspire"
+        if not vendor.is_dir() or inventory(vendor) != inventory(package_root):
+            raise PackageInputError("prepared provider package does not match the requested package root")
+    else:
+        child = copy_child_template("provider_host", run_root, package_root)
+        # The checked-in lib tree is an overlay source, not pre-existing host code:
+        # retain only the manifest/lock in the fresh child so the public installer
+        # can create its managed and host-owned files without an overwrite refusal.
+        shutil.rmtree(child / "lib")
+        write_host_runtime(child, database_url, storage_prefix)
     # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
     dependency_cache = cache_root or run_root / "deps-cache"
-    verify_child("provider_host", child, dependency_cache)
+    isolated_hex_home = run_root / "hex-home"
+    isolated_mix_home = run_root / "mix-home"
+    isolated_hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)
+    isolated_mix_home.mkdir(mode=0o700, parents=True, exist_ok=True)
+    isolated_environment = {
+        "HEX_HOME": str(isolated_hex_home),
+        "MIX_HOME": str(isolated_mix_home),
+    }
+    if not reuse:
+        verify_child("provider_host", child, dependency_cache, isolated_environment)
     environment = locked_environment(child, "provider_host", dependency_cache)
+    environment.update(isolated_environment)
     environment.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
     environment.update(
         {
             "DATABASE_URL": database_url,
             "PORT": str(port),
             "LOCKSPIRE_ISSUER": f"http://127.0.0.1:{port}/lockspire",
+            "LOCKSPIRE_STORAGE_PREFIX": storage_prefix,
         }
     )
     if not install:
@@ -262,10 +283,13 @@ def prepare_provider(
         assert_below(vendor, child, "provider vendor dependency")
         return child
 
+    if reuse:
+        return child
+
     patch_jose_record_extractors(child, environment)
 
     install_result = subprocess.run(
-        ("mix", "lockspire.install", "--web", "CleanRoomProviderWeb", "--scope", "CleanRoomProvider.Lockspire", "--path", str(child), "--mount-path", "/lockspire", "--storage-prefix", "lockspire", "--oban-prefix", "lockspire"),
+        ("mix", "lockspire.install", "--web", "CleanRoomProviderWeb", "--scope", "CleanRoomProvider.Lockspire", "--path", str(child), "--mount-path", "/lockspire", "--storage-prefix", storage_prefix, "--oban-prefix", storage_prefix),
         cwd=child,
         env=environment,
         stdin=subprocess.DEVNULL,
