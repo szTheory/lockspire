@@ -46,9 +46,10 @@ defmodule Lockspire.Protocol.ClientAuth do
            resolve_implicit_method(raw_method, client.token_endpoint_auth_method, opts),
          :ok <- validate_registered_auth_method(client, attempted_method),
          :ok <- validate_client_secret(client, attempted_method, client_secret, opts),
-         :ok <- ensure_secret_eligible(client, opts),
          :ok <- validate_client_lifetime_contract(client, opts),
-         :ok <- ensure_app_eligible(client, opts) do
+         {:ok, decision_now} <- authentication_decision_time(opts),
+         :ok <- ensure_secret_eligible(client, decision_now),
+         :ok <- ensure_app_eligible(client, decision_now) do
       {:ok, client}
     end
   end
@@ -247,8 +248,8 @@ defmodule Lockspire.Protocol.ClientAuth do
     end
   end
 
-  defp ensure_app_eligible(%Client{} = client, opts) do
-    case Client.app_eligibility(client, request_now(opts), :client_authentication) do
+  defp ensure_app_eligible(%Client{} = client, now) do
+    case Client.app_eligibility(client, now, :client_authentication) do
       :ok ->
         :ok
 
@@ -278,8 +279,8 @@ defmodule Lockspire.Protocol.ClientAuth do
        )}
   end
 
-  defp ensure_secret_eligible(%Client{} = client, opts) do
-    case Client.secret_eligibility(client, request_now(opts), :client_authentication) do
+  defp ensure_secret_eligible(%Client{} = client, now) do
+    case Client.secret_eligibility(client, now, :client_authentication) do
       :ok ->
         :ok
 
@@ -304,6 +305,24 @@ defmodule Lockspire.Protocol.ClientAuth do
          "Unable to determine client secret eligibility",
          :client_secret_lifetime_clock_failed
        )}
+  end
+
+  defp authentication_decision_time(opts) do
+    case request_now(opts) do
+      %DateTime{} = now -> {:ok, now}
+      _other -> {:error, clock_error()}
+    end
+  rescue
+    _error -> {:error, clock_error()}
+  end
+
+  defp clock_error do
+    oauth_error(
+      500,
+      "server_error",
+      "Unable to determine client authentication eligibility",
+      :client_lifetime_clock_failed
+    )
   end
 
   defp request_now(opts) do
