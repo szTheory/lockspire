@@ -4,6 +4,7 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
   import Ecto.Query
 
   alias Lockspire.Domain.Token
+  alias Lockspire.Admin.Clients
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
@@ -152,6 +153,77 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
                "replacement-rat-#{suffix}",
                %{action: nil}
              )
+
+    assert client_row(client_id) == before
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits
+  end
+
+  test "secret replacement write failure leaves the complete stored client unchanged" do
+    client_id = "lifetime-rotation-write-#{System.unique_integer([:positive])}"
+    {:ok, _client} = create_client(client_id, :client_secret_basic, "old-rotation-secret")
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    old_verifier = "old-rotation-verifier"
+    old_last_rotated_at = DateTime.add(now, -900, :second)
+    historical = DateTime.add(now, 900, :second)
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client_id),
+               set: [
+                 client_secret_jwt_verifier_encrypted: old_verifier,
+                 last_secret_rotated_at: old_last_rotated_at,
+                 client_expires_at: historical,
+                 client_secret_expires_at: historical,
+                 registration_access_token_expires_at: historical
+               ]
+             )
+
+    before = client_row(client_id)
+    before_audits = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    with_client_rotation_write_failure(fn ->
+      result =
+        Clients.rotate_client_secret(client_id, %{
+          actor: %{type: :operator, id: "rotation-write-test"}
+        })
+
+      assert {:error, reason} = result
+      assert inspect(reason) =~ "plan03 forced client rotation write failure"
+      refute match?({:ok, %{client_secret: _plaintext}}, result)
+    end)
+
+    assert client_row(client_id) == before
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits
+  end
+
+  test "required audit failure rolls back every secret replacement field and handoff" do
+    client_id = "lifetime-rotation-audit-#{System.unique_integer([:positive])}"
+    {:ok, _client} = create_client(client_id, :client_secret_basic, "old-audit-secret")
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client_id),
+               set: [
+                 client_secret_jwt_verifier_encrypted: "old-audit-verifier",
+                 last_secret_rotated_at: DateTime.add(now, -600, :second),
+                 client_secret_expires_at: DateTime.add(now, 400, :second)
+               ]
+             )
+
+    before = client_row(client_id)
+    before_audits = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+
+    with_audit_failure(fn ->
+      result =
+        Clients.rotate_client_secret(client_id, %{
+          actor: %{type: :operator, id: "rotation-audit-test"}
+        })
+
+      assert {:error, reason} = result
+      assert inspect(reason) =~ "plan12 forced audit write failure"
+      refute match?({:ok, %{client_secret: _plaintext}}, result)
+    end)
 
     assert client_row(client_id) == before
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits
@@ -481,6 +553,32 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
     """)
   end
 
+  defp with_client_rotation_write_failure(fun) do
+    install_client_rotation_write_failure_trigger()
+
+    try do
+      fun.()
+    after
+      remove_failure_triggers()
+    end
+  end
+
+  defp install_client_rotation_write_failure_trigger do
+    Lockspire.TestRepo.query!("""
+    CREATE OR REPLACE FUNCTION lockspire_plan03_reject_client_rotation() RETURNS trigger AS $$
+    BEGIN
+        RAISE EXCEPTION 'plan03 forced client rotation write failure for %', NEW.client_id;
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Lockspire.TestRepo.query!("""
+    CREATE TRIGGER lockspire_plan03_client_rotation_failure
+    BEFORE UPDATE ON lockspire_clients
+    FOR EACH ROW EXECUTE FUNCTION lockspire_plan03_reject_client_rotation()
+    """)
+  end
+
   defp install_access_token_failure_trigger do
     Lockspire.TestRepo.query!(
       "DROP TRIGGER IF EXISTS lockspire_plan12_token_failure ON lockspire_tokens"
@@ -506,6 +604,10 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
 
   defp remove_failure_triggers do
     Lockspire.TestRepo.query!(
+      "DROP TRIGGER IF EXISTS lockspire_plan03_client_rotation_failure ON lockspire_clients"
+    )
+
+    Lockspire.TestRepo.query!(
       "DROP TRIGGER IF EXISTS lockspire_plan12_audit_failure ON lockspire_audit_events"
     )
 
@@ -515,20 +617,10 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
 
     Lockspire.TestRepo.query!("DROP FUNCTION IF EXISTS lockspire_plan12_reject_audit()")
     Lockspire.TestRepo.query!("DROP FUNCTION IF EXISTS lockspire_plan12_reject_access_token()")
+    Lockspire.TestRepo.query!("DROP FUNCTION IF EXISTS lockspire_plan03_reject_client_rotation()")
   end
 
   defp client_row(client_id) do
     Lockspire.TestRepo.one!(from(record in ClientRecord, where: record.client_id == ^client_id))
-    |> Map.take([
-      :client_secret_hash,
-      :client_secret_jwt_verifier_encrypted,
-      :registration_access_token_hash,
-      :active,
-      :name,
-      :lifetime_version,
-      :client_expires_at,
-      :client_secret_expires_at,
-      :registration_access_token_expires_at
-    ])
   end
 end
