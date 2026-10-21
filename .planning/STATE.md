@@ -5,11 +5,11 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 164
 current_phase_name: Client-Secret Expiry & Atomic Rotation
 status: planning
-stopped_at: Phase 163 complete, ready to discuss Phase 164
-last_updated: "2026-10-21T01:35:02.508Z"
+stopped_at: Phase 164 context gathered; auto-advancing within Phase 164
+last_updated: "2026-10-21T01:48:51.722Z"
 last_activity: 2026-10-20
 last_activity_desc: Phase 163 complete, transitioned to Phase 164
-state_head: 0ff99d4ccb3413a237797956f19a64d8007a6c2d
+state_head: 1de0ea05053265732aba86a6635ef407742f9eda
 progress:
   total_phases: 5
   completed_phases: 2
@@ -379,9 +379,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-20T22:57:59.231Z
-Stopped at: Phase 163 complete, ready to plan Phase 164
-Resume file: .planning/phases/163-app-lifetime-compatible-host-storage/163-CONTEXT.md
+Last session: 2026-10-21T01:48:51.662Z
+Stopped at: Phase 164 context gathered; auto-advancing within Phase 164
+Resume file: .planning/phases/164-client-secret-expiry-atomic-rotation/164-CONTEXT.md
 
 Next: $gsd-discuss-phase 163 — Phase 162 design contract independently verified (33/33 truths; 24 negative validator mutations). No Phase 163 planning or implementation has begun. Preserve original unstaged state.json bytes and historical phase exceptions.
 
