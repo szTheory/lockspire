@@ -126,6 +126,9 @@ defmodule Lockspire.Protocol.Registration do
            reason: reason,
            allowed: Map.get(info, :allowed)
          }}
+
+      {:error, :server_error, %{field: field, reason: reason}} ->
+        {:error, %Error{code: :server_error, field: field, reason: reason}}
     end
   end
 

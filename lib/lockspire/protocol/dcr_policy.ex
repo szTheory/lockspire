@@ -76,9 +76,12 @@ defmodule Lockspire.Protocol.DcrPolicy do
   end
 
   @type error_detail :: %{field: atom(), reason: atom(), allowed: list() | nil}
+  @type error ::
+          {:error, :invalid_client_metadata, error_detail()}
+          | {:error, :server_error, %{field: atom(), reason: atom()}}
 
   @spec resolve(ServerPolicy.t(), map() | keyword() | nil, map()) ::
-          {:ok, struct()} | {:error, :invalid_client_metadata, error_detail()}
+          {:ok, struct()} | error()
   # `iat_overrides` MUST be a plain map or nil. Structs are maps in Elixir, so without the
   # `not is_struct(iat_overrides)` guard a caller could pass an `%InitialAccessToken{}`
   # struct directly (instead of `iat_struct.policy_overrides`) and the resolver would
@@ -90,6 +93,10 @@ defmodule Lockspire.Protocol.DcrPolicy do
              is_map(inbound_metadata) do
     with :ok <-
            validate_default_client_lifetime(server_policy.dcr_default_client_lifetime_seconds),
+         :ok <-
+           validate_default_client_secret_lifetime(
+             server_policy.dcr_default_client_secret_lifetime_seconds
+           ),
          {:ok, scopes} <-
            intersect_axis(
              :scope,
@@ -150,6 +157,15 @@ defmodule Lockspire.Protocol.DcrPolicy do
   defp validate_default_client_lifetime(_value) do
     {:error, :invalid_client_metadata,
      %{field: :default_client_lifetime_seconds, reason: :invalid_duration, allowed: nil}}
+  end
+
+  defp validate_default_client_secret_lifetime(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_default_client_secret_lifetime(_value) do
+    {:error, :server_error,
+     %{field: :default_client_secret_lifetime_seconds, reason: :invalid_duration}}
   end
 
   defp intersect_axis(field, requested_list, server_allowlist, iat_override_list) do

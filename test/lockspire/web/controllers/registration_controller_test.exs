@@ -82,7 +82,7 @@ defmodule Lockspire.Web.RegistrationControllerTest do
       |> dispatch()
 
     assert conn.status == 500
-    assert Jason.decode!(conn.resp_body) == %{"error" => "server_error"}
+    assert Jason.decode!(conn.resp_body)["error"] == "server_error"
     assert {:ok, ^clients_before} = Repository.list_clients()
   end
 
