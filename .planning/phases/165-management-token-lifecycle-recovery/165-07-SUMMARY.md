@@ -205,6 +205,8 @@ Guidance and the selected automated Phase 165 gates are ready for independent se
 - All declared deliverables, the validation record, and this summary exist.
 - Task commits `8955e11e`, `2fbd57a8`, and `165849fd` are ancestors of HEAD.
 - Corrective regression summary exists; corrective commits `f91a975a` and `0d2b0051` are ancestors of HEAD.
+- Audience repair and regression-isolation commits `a1fd2d47`, `4386dbe3`, `2ad5ec11`, `c329210b`, `62ffc461`, and `33c63e2e` are ancestors of HEAD.
+- Current superseding gates are recorded: prior-phase 908/0, changed test files 298/0, combined gate 21/0, PostgreSQL batch 34/0, and fast suite 2,413/0 (485 excluded, 6 skipped).
 - Corrected combined, explicit PostgreSQL, and full fast-suite results are recorded in `165-VALIDATION.md`.
 - No stubs or TODO/FIXME placeholders were found in the plan's docs or guidance test.
 - `.planning/state.json` remains byte-for-byte equal to the supplied backup and has not been staged.
