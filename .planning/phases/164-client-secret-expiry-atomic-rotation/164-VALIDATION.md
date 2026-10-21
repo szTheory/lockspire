@@ -1,15 +1,15 @@
 ---
 phase: "164"
 slug: "client-secret-expiry-atomic-rotation"
-status: planned
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-20"
 ---
 
 # Phase 164 — Validation Strategy
 
-Planning map only; runtime evidence remains pending. No strict phase-wide TDD mode is enabled. All task behavior blocks specify regression expectations.
+Executed validation map, updated by the independent Nyquist audit. No strict phase-wide TDD mode is enabled. All task behavior blocks specify regression expectations.
 
 ## Infrastructure and environment
 
@@ -31,21 +31,21 @@ Every task has automated and fails_when clauses in its PLAN. Existing files are 
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure behavior | Exact command IDs | Status |
 |---|---|---:|---|---|---|---|---|
-| 164-01-01 | 01 | 1 | DCR-07/08 | T-164-01/02/03 | Register one finite Basic secret and prove its actual boundary | C011 | pending |
-| 164-01-02 | 01 | 1 | DCR-07/08 | T-164-01 | Reject invalid secret policy at write and use boundaries | C012 | pending |
-| 164-01-03 | 01 | 1 | DCR-07/08 | T-164-03 | Complete unlimited, provenance, legacy and no-secret metadata cases | C013 | pending |
-| 164-02-01 | 02 | 2 | DCR-08 | T-164-04/06 | Apply one strict secret gate across every auth method | C021 | pending |
-| 164-02-02 | 02 | 2 | DCR-08 | T-164-05/06 | Recheck current secret authority after code and refresh locks | C022 | pending |
-| 164-02-03 | 02 | 2 | DCR-08 | T-164-07 | Preserve endpoint errors for expired secret callers | C023 | pending |
-| 164-03-01 | 03 | 2 | DCR-07/09 | T-164-08/10/12 | Rotate from the locked row using current policy and deferred time | C031 | pending |
-| 164-03-02 | 03 | 2 | DCR-07/09 | T-164-09 | Prove adapter transport and whole-row legacy canonicalization | C032 | pending |
-| 164-03-03 | 03 | 2 | DCR-07/09 | T-164-11/12 | Preserve operator policy and roll back failed secret delivery | C033 | pending |
-| 164-04-01 | 04 | 3 | DCR-08 | T-164-13/14/15 | Guard authenticated device and CIBA polls without gating queued push | C041 | pending |
-| 164-04-02 | 04 | 3 | DCR-08 | T-164-15/16 | Revalidate only the RFC 8693 requesting secret after token locks | C042 | pending |
-| 164-04-03 | 04 | 3 | DCR-08 | T-164-15 | Prove existing tokens and non-secret finalizers remain usable | C043 | pending |
-| 164-05-01 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry and committed replacement during a client-row wait | C051 | pending |
-| 164-05-02 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry during every later grant or token wait | C052 | pending |
-| 164-05-03 | 05 | 4 | DCR-08/09 | T-164-18/19/20 | Prove serialized operator winners, post-wait truth and rollback | C053 | pending |
+| 164-01-01 | 01 | 1 | DCR-07/08 | T-164-01/02/03 | Register one finite Basic secret and prove its actual boundary | C011 | passed |
+| 164-01-02 | 01 | 1 | DCR-07/08 | T-164-01 | Reject invalid secret policy at write and use boundaries | C012 | passed |
+| 164-01-03 | 01 | 1 | DCR-07/08 | T-164-03 | Complete unlimited, provenance, legacy and no-secret metadata cases | C013 | passed |
+| 164-02-01 | 02 | 2 | DCR-08 | T-164-04/06 | Apply one strict secret gate across every auth method | C021 | passed |
+| 164-02-02 | 02 | 2 | DCR-08 | T-164-05/06 | Recheck current secret authority after code and refresh locks | C022 | passed |
+| 164-02-03 | 02 | 2 | DCR-08 | T-164-07 | Preserve endpoint errors for expired secret callers | C023 | passed |
+| 164-03-01 | 03 | 2 | DCR-07/09 | T-164-08/10/12 | Rotate from the locked row using current policy and deferred time | C031 | passed |
+| 164-03-02 | 03 | 2 | DCR-07/09 | T-164-09 | Prove adapter transport and whole-row legacy canonicalization | C032 | passed |
+| 164-03-03 | 03 | 2 | DCR-07/09 | T-164-11/12 | Preserve operator policy and roll back failed secret delivery | C033 | passed |
+| 164-04-01 | 04 | 3 | DCR-08 | T-164-13/14/15 | Guard authenticated device and CIBA polls without gating queued push | C041 | passed |
+| 164-04-02 | 04 | 3 | DCR-08 | T-164-15/16 | Revalidate only the RFC 8693 requesting secret after token locks | C042 | passed |
+| 164-04-03 | 04 | 3 | DCR-08 | T-164-15 | Prove existing tokens and non-secret finalizers remain usable | C043 | passed |
+| 164-05-01 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry and committed replacement during a client-row wait | C051 | passed |
+| 164-05-02 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry during every later grant or token wait | C052 | passed |
+| 164-05-03 | 05 | 4 | DCR-08/09 | T-164-18/19/20 | Prove serialized operator winners, post-wait truth and rollback | C053 | passed |
 | 164-06-01 | 06 | 5 | DCR-07/08/09 | T-164-21 | Observe finite-secret events and prove redaction | C061 | passed |
 | 164-06-02 | 06 | 5 | DCR-07/08/09 | T-164-22 | Make secret lifetime admin guidance truthful | C062 | passed |
 | 164-06-03 | 06 | 5 | DCR-07/08/09 | T-164-23 | Reconcile host guidance and execute the complete phase gate | C063a, C063b, C063c | passed |
@@ -206,17 +206,52 @@ All Mix commands ran from the repository root with Elixir `1.18.4-otp-27`, OTP `
 
 The separate PostgreSQL run includes all selected cases and passes with the explicit race tag enabled. Phase 164 plan 164-05's previously measured race-only subset was 11 tests, 0 failures, and no exclusions; C063c adds the rollback and adapter-conformance modules to that evidence. Adapter failures are covered by the conformance tests, and write/audit rollback failures by `client_lifetime_rollback_test.exs` and the rotation race suite.
 
-The packaged clean-room upgrade proof was not rerun because plan 164-06 changed no schema, migration, installer, package, or generated-host input. Phase 166 retains the final packaged cross-phase proof. Management-token lifetime and recovery remain owned by Phase 165. The validation map records execution, not independent Nyquist or security sign-off; `nyquist_compliant` remains `false` until the independent audit supplies that evidence.
+The packaged clean-room upgrade proof was not rerun because plan 164-06 changed no schema, migration, installer, package, or generated-host input. Phase 166 retains the final packaged cross-phase proof. Management-token lifetime and recovery remain owned by Phase 165. The Nyquist audit below records the exact task mapping and its supplemental authentication test. It does not claim a separate security audit or phase-wide strict TDD compliance.
 
 ## Validation sign-off
 
-- [ ] Every exact task selection passes on the named database.
-- [ ] New tests exist and execute rather than being excluded.
-- [ ] Actual independent-session races prove every blocker and durable outcome.
-- [ ] Finite-secret event counts are nonzero and every channel is redacted.
-- [ ] Normal counts/exclusions/skips and separate race counts are recorded.
-- [ ] Adapter conformance and architecture/public compatibility pass.
-- [ ] Changed guidance/copy matches behavior and scope.
-- [ ] Independent coverage/security audit justifies nyquist_compliant.
+- [x] Every exact task selection passes on the named database.
+- [x] New tests exist and execute rather than being excluded.
+- [x] Actual independent-session races prove every blocker and durable outcome.
+- [x] Finite-secret event counts are nonzero and every channel is redacted.
+- [x] Normal counts/exclusions/skips and separate race counts are recorded.
+- [x] Adapter conformance and architecture/public compatibility pass.
+- [x] Changed guidance/copy matches behavior and scope.
+- [x] Independent Nyquist coverage audit justifies `nyquist_compliant: true`.
 
-Approval: pending implementation and independent audit.
+Approval: validation and Nyquist coverage complete; separate security sign-off is outside this audit.
+
+## Independent Nyquist audit
+
+The audit matched all 18 task IDs to executed selections and behavioral assertions in the six plan summaries. Results by task are below; counts are from the executed task selections, while C063b/C063c provide the later integrated normal-suite and explicit PostgreSQL evidence.
+
+| Task ID | Result | Executed behavioral selection |
+|---|---|---|
+| 164-01-01 | green | C011, 3 tests: real DCR row, wire deadline, Basic before/equality/after |
+| 164-01-02 | green | C012, 15 tests: supported and rejected policy values, write/use errors |
+| 164-01-03 | green | C013, 13 tests: unlimited, prospective policy, method-aware metadata, v0/no-secret serialization |
+| 164-02-01 | green | C021, 35 tests: Basic/post/JWT expiry gate and existing JWT algorithm/claims/replay checks; see supplemental test below |
+| 164-02-02 | green | C022, 9 tests: code/refresh final guards, unchanged grants/tokens on denial, valid JWT JTI replay-once |
+| 164-02-03 | green | C023, 40 tests: endpoint response and challenge behavior |
+| 164-03-01 | green | C031, 39 tests: real operator replacement, current policy, deferred time, preserved v1 state/audit |
+| 164-03-02 | green | C032, 27 tests: built-in/custom adapter replacement, deferred clock, and v0 canonicalization |
+| 164-03-03 | green | C033, 51 tests; plan-wide rerun 78 tests: operator behavior and durable rollback |
+| 164-04-01 | green | C041, 9 tests: device/CIBA authenticated polls and queued push exemption |
+| 164-04-02 | green | C042, 11 tests: RFC 8693 requester authority after input-token lock |
+| 164-04-03 | green | C043, 15 tests: existing token validity and non-secret finalizer behavior |
+| 164-05-01 | green | C051, included in C063c's explicit `postgres_race` selection; committed replacement and client-row wait proof |
+| 164-05-02 | green | C052, included in C063c's explicit `postgres_race` selection; later grant/token wait proof for all five finalizers |
+| 164-05-03 | green | C053, included in C063c's explicit `postgres_race` selection; serialized winners, current-row policy/time and write/audit rollback |
+| 164-06-01 | green | C061, 26 tests: positive observed lifecycle event counts and redaction scans |
+| 164-06-02 | green | C062, 23 tests: rendered guidance and vocabulary contract |
+| 164-06-03 | green | C063a 20 tests; C063b 2 properties + 2,348 tests (440 excluded, 6 skipped); C063c 32 tests (11 race tests, no exclusions) |
+
+The audit found one focused DCR-08 edge that the existing tests split across a finite JWT equality rejection and an unlimited JWT success/replay test: successful authentication of a finite secret-JWT assertion before its deadline, then a single-use replay attempt, and strict rejection at equality while a fresh assertion remains within its own `iat`/`exp` window. The additional behavioral test was executed with the pinned environment:
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000
+```
+
+Result: **1 test, 0 failures**. It asserts finite-secret JWT authentication at deadline minus one second, replay rejection for that same JTI, secret-expiry rejection at equality for a second still-valid assertion, and one in-test observation per distinct JTI. Existing `JarTest` coverage separately exercises expired `exp`, future `iat`, and configured skew; the direct-client JWT suite exercises signature, audience, replay, algorithm, and method mismatch.
+
+All three source-audit edge probes remain flagged unresolved/unclassified assumptions. They are not treated as additional policy requirements. The checks above cover the concrete DCR-07/08/09 behaviors in the locked context; the phase summaries explicitly record that 164-06-01 lacks classifier-validated semantic RED evidence, so this audit makes no strict TDD claim. Management-token lifecycle and packaged cross-phase proof remain Phase 165 and 166 scope.
