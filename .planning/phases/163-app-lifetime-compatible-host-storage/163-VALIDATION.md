@@ -1,8 +1,8 @@
 ---
 phase: "163"
 slug: "app-lifetime-compatible-host-storage"
-status: draft
-nyquist_compliant: false
+status: validated
+nyquist_compliant: true
 wave_0_complete: false
 created: "2026-10-20"
 ---
@@ -41,3 +41,17 @@ Plan 163-14 execution evidence (2026-10-20):
 The initial fast run against the pre-existing default test database reported 16 failures: two direct client fixtures lacked the now-required explicit legacy version, one compatibility assertion did not enumerate the intentional option-bearing public arities, and admin copy/count expectations were sensitive to database contents. The fixture and compatibility contract were corrected; the affected admin files passed alone on a clean database, and the entire fast suite then passed on a separate fresh database. The initial failure log is `/private/tmp/phase163-plan14-test-fast.log`; it is retained as execution evidence, not as the final result.
 
 No UI verification is applicable. The full suite does not run 398 tagged tests, including independent race suites; their focused PostgreSQL evidence is recorded by the owning plans rather than treated as covered by the fast-suite count. Plan 163-14's gate and packaged receipt pass, but phase sign-off remains pending independent review/verifier. DCR-07–12 and DCR-15–19, later shared-secret and management-token work, and the umbrella lifetime todo remain open for their owning phases/Phase 166.
+
+## Final adversarial validation (2026-10-20)
+
+| Check | Command / evidence | Result |
+|---|---|---|
+| Fresh isolated test database setup | Task-local Elixir 1.18.4 / OTP 27, `MIX_ENV=test LOCKSPIRE_TEST_DB_NAME=lockspire_phase163_final_validation mix test.setup`; task-local `MIX_HOME` and `HEX_HOME` under `/private/tmp/lockspire-163-13-debug-8/old-public/` | Database created and all migrations completed, including `AddClientLifetimeContract`. |
+| Required post-review full fast suite | `MIX_ENV=test LOCKSPIRE_TEST_DB_NAME=lockspire_phase163_final_validation mix test.fast`; full durable output: `/private/tmp/phase163-final-test-fast.log` | 2 properties, 2291 tests, 0 failures, 398 excluded, 6 skipped; 201.9s. |
+| Review fix regressions | `163-REVIEW-FIX-SUMMARY.md`: `client_app_authentication_test.exs` and `client_lifetime_conformance_test.exs` — 18 tests, 0 failures; client/grant wait and rollback tests — 13 tests, 0 failures | CR-01 normalized fractional decision instants at UTC-second precision; WR-01 dropped-field adapters reach and fail the intended persistence checks. |
+| PostgreSQL waits and rollback | `test/lockspire/storage/client_lifetime_client_wait_test.exs`, `client_lifetime_grant_wait_test.exs`, `client_lifetime_rollback_test.exs`; exact result in 163-12 and review-fix summaries | 13 tests, 0 failures, real independent PostgreSQL sessions. |
+| Packaged migration proof | `/private/tmp/lockspire-163-13-all-receipt.json`, checked with `python3 scripts/acceptance/clean_room/client_lifetime_upgrade.py --check-receipt /private/tmp/lockspire-163-13-all-receipt.json` | Passed for `public` and `tenant_auth`, with old and candidate packages, historical migration/checksum preservation, drained old writers, first v1 write, retained v1 state, and successful cleanup. Receipt SHA-256 remains `5edde26983007bf875e6ea7e10fe273c5a0e5d764359ae1e5069fdc009fa9ebf`. |
+
+## Requirement and decision coverage disposition
+
+The 29 task-level automated verify blocks across plans 163-01 through 163-14 map to the focused executable checks recorded in their matching summaries; no task is left without a command or actual result. The DCR-05, DCR-06, DCR-13 and DCR-14 rows above are backed by executed behavior. `163-COVERAGE.md` maps C-APP-01–18 and C-TOK-01–03 to focused tests or an explicit unaffected-boundary disposition; `163-SOURCE-AUDIT.md` maps D-01–D-24 and all four requirement IDs to proof. The 398 full-suite exclusions and 6 skips are not counted as passing full-suite tests; PostgreSQL wait/rollback and package proof have separate passing evidence. Phase completion and cross-phase requirements remain pending the independent goal verifier; this status records Nyquist test coverage only.
