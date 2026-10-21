@@ -12,11 +12,11 @@ provides:
   - Method/version-aware DCR secret expiry metadata for success, read and update responses
 affects: [164-02, 164-03, 164-04, 164-05, 164-06, client-secret-authentication, registration-metadata]
 actuals:
-  tokens: 8032
+  tokens: 8269
   tasks: 3
-  commits: 6
+  commits: 9
 plan_head_before: a1a55de0a931c641fbe176e5c3f9c4737aa62b9d
-plan_head_after: b059cb8d1780ce5ccf271ae1afef98eb63eacd56
+plan_head_after: ebcce49d52b2b9b1902e87cf447a9e8b413318dd
 tech-stack:
   added: []
   patterns:
@@ -50,6 +50,9 @@ coverage:
       - kind: integration
         ref: "test/integration/client_secret_lifetime_registration_test.exs#DCR stores, advertises, and enforces the finite Basic secret deadline"
         status: pass
+      - kind: unit
+        ref: "test/lockspire/protocol/client_app_authentication_test.exs#all supported authentication methods reject app expiry at equality"
+        status: pass
     human_judgment: false
   - id: D2
     description: "Secret lifetime policy accepts only nil or bounded integers at writes and use, while bad configuration produces server_error without client writes."
@@ -77,11 +80,11 @@ status: complete
 
 ## Performance
 
-- **Duration:** 8 min
+- **Duration:** 17 min
 - **Started:** 2026-10-21T13:47:44Z
-- **Completed:** 2026-10-21T13:55:32Z
+- **Completed:** 2026-10-21T14:04:41Z
 - **Tasks:** 3
-- **Files modified:** 14, including three committed RED evidence records
+- **Files modified:** 15, including three committed RED evidence records
 
 ## Accomplishments
 
@@ -97,6 +100,9 @@ status: complete
 4. **Task 2 GREEN: validate DCR secret lifetime policy** - `5a8f7097` (fix)
 5. **Task 3 RED: metadata and lifetime edge cases** - `1f971701` (test)
 6. **Task 3 GREEN: strip advisory secret metadata** - `b059cb8d` (fix)
+7. **Integrated auth-test closure: separate app and secret expiry assertions** - `ebcce49d` (test)
+
+Plan metadata commits: `8a07ff05` (summary), `770a9344` (STATE/ROADMAP progress); this summary refresh is committed separately.
 
 ## Files Created/Modified
 
@@ -136,12 +142,16 @@ All Mix commands used the pinned Elixir/OTP versions, task-local Mix and Hex hom
 - `mix test test/integration/client_secret_lifetime_registration_test.exs --max-failures 1 --timeout 55000` — **3 tests, 0 failures**.
 - `mix test test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/web/controllers/registration_controller_test.exs --max-failures 1 --timeout 55000` — **15 tests, 0 failures**.
 - `mix test test/integration/client_secret_lifetime_registration_test.exs test/lockspire/web/registration_json_test.exs --max-failures 1 --timeout 55000` — **13 tests, 0 failures**.
+- `mix test test/lockspire/protocol/client_app_authentication_test.exs --max-failures 1 --timeout 55000` — **8 tests, 0 failures**.
+- `mix test.setup` on the dedicated `lockspire_phase164_validation` database — storage and migrations present.
+- `mix test.fast` — **2 properties, 2302 tests, 0 failures, 406 excluded, 6 skipped**.
 
 Tasks used per-task RED/GREEN cycles. The plan is not described as strict phase-wide TDD. The tracer feedback gate passed before expansion.
 
 ## Issues Encountered
 
 - The controller's existing error body includes an optional `error_description`; the regression asserts the stable `server_error` code and 500 status rather than requiring that optional field to be absent.
+- The integrated suite's app-expiry test also set a past secret deadline, so the correct secret-expired result masked its app-expiry assertion. The fixture now leaves secret expiry unlimited to test app expiry in isolation; a separate Basic assertion now expects `client_secret_expired` at its expired boundary.
 - The plan's flagged `EDGE-DCR-07` deterministic edge-classifier assumption remains unresolved. This plan implemented concrete cases from D-01 through D-04 and D-15; it did not infer broader requirement coverage.
 
 ## User Setup Required
@@ -159,5 +169,5 @@ Plan 01 establishes registration, policy and metadata behavior. Later Phase 164 
 ## Self-Check: PASSED
 
 - Summary file exists at the required path.
-- All six task commits are ancestors of the current branch head.
+- All seven task and regression-closure commits are ancestors of the current branch head.
 - Original `.planning/state.json` backup remains byte-identical and unstaged.
