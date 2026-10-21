@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --no-compile test/integration/client_secret_lifetime_code_refresh_test.exs --include integration --formatter Lockspire.Test.Phase164TapFormatter --max-failures 2 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - Elixir.Lockspire.Integration.ClientSecretLifetimeCodeRefreshTest.test a code that reaches secret expiry before its locked finalizer remains unredeemed\nnot ok 2 - Elixir.Lockspire.Integration.ClientSecretLifetimeCodeRefreshTest.test a refresh token that reaches secret expiry after token-family locks stays unchanged\n1..2",
+  "targetTest": "Elixir.Lockspire.Integration.ClientSecretLifetimeCodeRefreshTest.test a code that reaches secret expiry before its locked finalizer remains unredeemed",
+  "targetFile": "test/integration/client_secret_lifetime_code_refresh_test.exs",
+  "expected": "Code redemption rechecks current secret authority at the final locked builder and rolls back when the deadline is reached there.",
+  "actual": "The target receives a successful token response after the secret deadline; the companion refresh case also successfully rotates its family after the deadline.",
+  "semanticAssessment": "Valid RED: the complete TAP report records two executed target tests, both failing on the planned final-authority contract. Ordinary ExUnit output confirms each failure is an unexpected successful issuance/rotation after ingress at the pre-deadline instant and the final clock sample at equality. Durable-state assertions did not run because success occurred. No setup, compile, collection, syntax, or unrelated failure occurred."
+}
