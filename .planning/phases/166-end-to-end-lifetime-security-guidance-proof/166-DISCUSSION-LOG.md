@@ -77,3 +77,7 @@ Sources were consulted by the delegated researchers on 2026-10-21. Facts below g
 Applied all project methodology lenses: assumption-first analysis, least-surprise host seam, research-first defaults, high-threshold escalation and one-shot bundles. Relevant prompts supplied background; PRODUCT.md and current brandbook govern audience/branding. Security, library DX, concurrency, CI/SRE, protocol and operator comprehension lenses converge on the same bounded approach.
 
 Stop fanout when each requirement has a coherent proof owner, current-source execution route, applicable negative/failure path and truthful claim boundary, and adversarial review finds no new material decision. Further generic frameworks, another backend, UI redesign and speculative combinations add little value. Implementation still must earn actual proof; this discussion does not mark requirements complete or close the lifetime umbrella todo.
+
+## Workflow Routing
+
+The project auto_advance preference is enabled. The orchestrator inspected the downstream planning workflow, which also chains into execution, then retained the current user's research/discussion scope rather than launching that broader lifecycle. No PLAN.md, Phase 166 implementation, push, PR or publication was created. The preference remains enabled; the handoff is `$gsd-plan-phase 166`.
