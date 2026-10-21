@@ -3,6 +3,9 @@ defmodule Lockspire.Integration.ClientSecretLifetimeCodeRefreshTest do
 
   import Ecto.Query
 
+  alias Lockspire.Domain.Client
+  alias Lockspire.Domain.UsedJti
+  alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.ClientRecord
 
@@ -121,6 +124,78 @@ defmodule Lockspire.Integration.ClientSecretLifetimeCodeRefreshTest do
              tokens_before
 
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audits_before
+  end
+
+  test "a valid secret JWT code exchange consumes its assertion JTI once" do
+    secret = "secret-jwt-final-secret"
+    client_id = "secret-jwt-final-#{Ecto.UUID.generate()}"
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        lifetime_version: 1,
+        client_id: client_id,
+        client_secret_hash: nil,
+        client_secret_jwt_verifier_encrypted: Policy.seal_client_secret_jwt_verifier(secret),
+        client_type: :confidential,
+        name: "Secret JWT Final Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_jwt,
+        pkce_required: true,
+        access_token_format: :opaque,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    raw_code = "secret-jwt-final-code-#{Ecto.UUID.generate()}"
+    jti = "secret-jwt-final-jti-#{Ecto.UUID.generate()}"
+
+    {:ok, _code} =
+      create_authorization_code(client,
+        raw_code: raw_code,
+        code_verifier: "secret-jwt-final-verifier"
+      )
+
+    assertion =
+      Lockspire.JarTestHelpers.sign_jar(
+        JOSE.JWK.from_oct(secret),
+        %{
+          "iss" => client.client_id,
+          "sub" => client.client_id,
+          "aud" => Lockspire.Config.issuer!(),
+          "jti" => jti,
+          "iat" => DateTime.to_unix(now),
+          "exp" => DateTime.add(now, 300, :second) |> DateTime.to_unix()
+        },
+        alg: "HS256"
+      )
+
+    assert {:ok, success} =
+             exchange(
+               %{
+                 "grant_type" => "authorization_code",
+                 "code" => raw_code,
+                 "code_verifier" => "secret-jwt-final-verifier",
+                 "redirect_uri" => "https://client.example.com/callback",
+                 "client_assertion_type" =>
+                   "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                 "client_assertion" => assertion
+               },
+               now: sequence_clock([now, now])
+             )
+
+    assert is_binary(success.access_token)
+
+    assert {:ok, :replay} =
+             Repository.record_used_jti(%UsedJti{
+               client_id: client.client_id,
+               jti: jti,
+               expires_at: to_utc_datetime_usec(DateTime.add(now, 600, :second))
+             })
   end
 
   defp set_secret_deadline(client, deadline) do
