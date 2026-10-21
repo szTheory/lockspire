@@ -767,13 +767,19 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
       <AdminComponents.section_card
         :if={@action == :rotate_registration_access_token}
         title="Rotate app management token"
-        subtitle="This token lets the app update its registration. The current token stops working after rotation."
+        subtitle="The previous app management token stops working immediately."
       >
         <section class="lockspire-admin-form-shell">
           <header>
             <p>
-              Use this token to update the app's registration at this URL. The current token stops
-              working when you create a new one.
+              Use this token to update the app's registration at this URL.
+            </p>
+            <p>
+              The previous app management token stops working immediately. If an update succeeds
+              but its response is lost, ask your provider team to rotate the token.
+            </p>
+            <p>
+              Rotating this token does not enable the app or extend app or client secret expiry.
             </p>
             <p>
               <strong>Registration URL:</strong>
@@ -803,7 +809,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
           <form :if={is_nil(@revealed_rat)} phx-submit="rotate_rat">
             <label class="lockspire-admin-checkbox-field">
               <input type="checkbox" name="rotate[confirm]" value="true" />
-              <span>I understand the current token stops working after rotation.</span>
+              <span>I understand that the previous token stops working immediately.</span>
             </label>
 
             <AdminComponents.action_bar>
@@ -1029,7 +1035,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Show do
 
   defp client_task_copy(:rotate_registration_access_token, _form_mode) do
     {"Rotate app management token",
-     "Replace the token this app uses to update or delete its registration. The new token is shown once, right after you confirm."}
+     "Replace the token this app uses to update or delete its registration. The previous app management token stops working immediately, and the new token is shown once after you confirm."}
   end
 
   defp client_task_copy(:rotate_secret, _form_mode) do
