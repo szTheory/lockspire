@@ -24,25 +24,21 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
   # 2 IAT family events × 2 paths = 4 → total 18.
   @attached_events [
     # DCR
-    [:lockspire, :dcr_registration_succeeded],
-    [:lockspire, :dcr_registration_rejected],
-    [:lockspire, :dcr_management_read],
-    [:lockspire, :dcr_management_updated],
-    [:lockspire, :dcr_management_deleted],
-    [:lockspire, :dcr_management_unauthorized],
-    [:lockspire, :dcr_registration_access_token_rotated],
-    [:lockspire, :audit, :dcr_registration_succeeded],
-    [:lockspire, :audit, :dcr_registration_rejected],
-    [:lockspire, :audit, :dcr_management_read],
-    [:lockspire, :audit, :dcr_management_updated],
-    [:lockspire, :audit, :dcr_management_deleted],
-    [:lockspire, :audit, :dcr_management_unauthorized],
-    [:lockspire, :audit, :dcr_registration_access_token_rotated],
+    [:lockspire, :dcr, :register],
+    [:lockspire, :audit, :dcr, :register],
+    [:lockspire, :dcr, :read],
+    [:lockspire, :audit, :dcr, :read],
+    [:lockspire, :dcr, :update],
+    [:lockspire, :audit, :dcr, :update],
+    [:lockspire, :dcr, :delete],
+    [:lockspire, :audit, :dcr, :delete],
+    [:lockspire, :dcr, :unauthorized],
+    [:lockspire, :audit, :dcr, :unauthorized],
+    [:lockspire, :dcr, :rotate],
+    [:lockspire, :audit, :dcr, :rotate],
     # IAT
-    [:lockspire, :iat_redeemed],
-    [:lockspire, :iat_redemption_failed],
-    [:lockspire, :audit, :iat_redeemed],
-    [:lockspire, :audit, :iat_redemption_failed]
+    [:lockspire, :iat, :use],
+    [:lockspire, :audit, :iat, :use]
   ]
 
   setup_all do
@@ -105,7 +101,22 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
       # ── 5. Drain telemetry ─────────────────────────────────────────────────
       captured = drain_events()
-      # assert captured != [], "expected at least one captured telemetry event"
+      observed = Enum.frequencies_by(captured, fn {event, _measurements, _metadata} -> event end)
+
+      for event <- [
+            [:lockspire, :dcr, :register],
+            [:lockspire, :audit, :dcr, :register],
+            [:lockspire, :dcr, :read],
+            [:lockspire, :audit, :dcr, :read],
+            [:lockspire, :dcr, :update],
+            [:lockspire, :audit, :dcr, :update],
+            [:lockspire, :dcr, :delete],
+            [:lockspire, :audit, :dcr, :delete],
+            [:lockspire, :dcr, :unauthorized],
+            [:lockspire, :audit, :dcr, :unauthorized]
+          ] do
+        assert_positive_event_count!(observed, event)
+      end
 
       # ── 6. Single-sweep refute on captured events ──────────────────────────
       plaintexts = [plaintext_secret, plaintext_rat, plaintext_iat, new_plaintext_rat]
@@ -152,11 +163,16 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       })
 
     assert {:ok, _} = Repository.put_server_policy(policy)
-    TelemetryCapture.attach_many([[:lockspire, :dcr, :rotate], [:lockspire, :audit, :dcr, :rotate]], self())
+
+    TelemetryCapture.attach_many(
+      [[:lockspire, :dcr, :rotate], [:lockspire, :audit, :dcr, :rotate]],
+      self()
+    )
 
     assert {:ok, registered} =
              Registration.register(
-               DcrFixtures.register_request(server_policy: policy) |> Map.put(:now, now)
+               DcrFixtures.register_request(server_policy: policy)
+               |> Map.put(:now, now)
              )
 
     client = registered.client
@@ -210,10 +226,72 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
         )
       )
 
-    assert Enum.any?(audit_rows, &(&1.action == "dcr_management_updated" and &1.actor_type == "self_registered_client"))
-    assert Enum.any?(audit_rows, &(&1.action == "dcr_management_rat_rotated" and &1.actor_type == "operator" and &1.actor_id == "admin-ui"))
+    assert Enum.any?(
+             audit_rows,
+             &(&1.action == "dcr_management_updated" and &1.actor_type == "self_registered_client")
+           )
+
+    assert Enum.any?(
+             audit_rows,
+             &(&1.action == "dcr_management_rat_rotated" and &1.actor_type == "operator" and
+                 &1.actor_id == "admin-ui")
+           )
 
     assert recovered.client_id == client.client_id
+  end
+
+  test "failed host recovery audit emits no successful rotation event" do
+    policy = DcrFixtures.server_policy(%{})
+    assert {:ok, _} = Repository.put_server_policy(policy)
+
+    assert {:ok, registered} =
+             Registration.register(DcrFixtures.register_request(server_policy: policy))
+
+    client = registered.client
+    events = [[:lockspire, :dcr, :rotate], [:lockspire, :audit, :dcr, :rotate]]
+    TelemetryCapture.attach_many(events, self())
+    _ = drain_events()
+
+    Lockspire.TestRepo.query!("""
+    CREATE OR REPLACE FUNCTION lockspire_plan165_reject_management_audit() RETURNS trigger AS $$
+    BEGIN
+      IF NEW.action = 'dcr_management_rat_rotated' THEN
+        RAISE EXCEPTION '165-06 forced management audit failure';
+      END IF;
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql
+    """)
+
+    Lockspire.TestRepo.query!("""
+    CREATE TRIGGER lockspire_plan165_management_audit_failure
+    BEFORE INSERT ON lockspire_audit_events
+    FOR EACH ROW EXECUTE FUNCTION lockspire_plan165_reject_management_audit()
+    """)
+
+    try do
+      assert {:error, _reason} = RegistrationManagement.rotate_registration_access_token(client)
+
+      captured = drain_events()
+
+      refute Enum.any?(captured, fn {event, _measurements, _metadata} -> event in events end)
+
+      refute Lockspire.TestRepo.exists?(
+               from(audit in AuditEventRecord,
+                 where:
+                   audit.resource_id == ^client.client_id and
+                     audit.action == "dcr_management_rat_rotated"
+               )
+             )
+    after
+      Lockspire.TestRepo.query!(
+        "DROP TRIGGER IF EXISTS lockspire_plan165_management_audit_failure ON lockspire_audit_events"
+      )
+
+      Lockspire.TestRepo.query!(
+        "DROP FUNCTION IF EXISTS lockspire_plan165_reject_management_audit()"
+      )
+    end
   end
 
   test "finite secret issuance, token use, expiry rejection, and operator replacement are observed and redacted" do
@@ -339,12 +417,17 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     assert is_binary(replacement) and replacement != secret
     hash_after = rotated.client_secret_hash
 
+    jwt_policy =
+      DcrFixtures.client_secret_jwt_server_policy(%{
+        dcr_default_client_secret_lifetime_seconds: 60,
+        dcr_default_registration_access_token_lifetime_seconds: 60
+      })
+
+    assert {:ok, _} = Repository.put_server_policy(jwt_policy)
+
     jwt_request =
       DcrFixtures.register_request(
-        server_policy:
-          DcrFixtures.client_secret_jwt_server_policy(%{
-            dcr_default_client_secret_lifetime_seconds: 60
-          }),
+        server_policy: jwt_policy,
         metadata:
           DcrFixtures.client_secret_jwt_metadata()
           |> Map.put("client_name", "Finite JWT secret redaction")
@@ -361,7 +444,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     jwt_verifier_before = persisted_jwt_before.client_secret_jwt_verifier_encrypted
     assert is_binary(jwt_verifier_before)
 
-    assert {:ok, ^jwt_secret_before} =
+    assert {:ok, jwt_verifier_plaintext_before} =
              Lockspire.Security.Policy.unseal_client_secret_jwt_verifier(jwt_verifier_before)
 
     assert {:ok, %{client: _rotated_jwt, client_secret: jwt_secret_after}} =
@@ -376,8 +459,67 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     assert is_binary(jwt_verifier_after)
     assert jwt_verifier_before != jwt_verifier_after
 
-    assert {:ok, ^jwt_secret_after} =
+    assert {:ok, jwt_verifier_plaintext_after} =
              Lockspire.Security.Policy.unseal_client_secret_jwt_verifier(jwt_verifier_after)
+
+    original_rat = jwt_success.registration_access_token_plaintext
+
+    assert {:ok, _current_client} =
+             RegistrationManagement.read(jwt_client.client_id, jwt_client,
+               now: DateTime.add(issued_at, 1, :second)
+             )
+
+    management_failure_logs =
+      capture_log(fn ->
+        Process.put(
+          :dcr_management_expiry_failure,
+          RegistrationManagement.read(jwt_client.client_id, jwt_client,
+            now: DateTime.add(issued_at, 60, :second)
+          )
+        )
+      end)
+
+    expired_management_result = Process.delete(:dcr_management_expiry_failure)
+    assert expired_management_result == {:error, :invalid_token}
+
+    assert {:ok, recovered_rat, recovered_client} =
+             RegistrationManagement.rotate_registration_access_token(jwt_client,
+               now: DateTime.add(issued_at, 61, :second)
+             )
+
+    jwt_metadata =
+      DcrFixtures.client_secret_jwt_metadata()
+      |> Map.put("client_id", jwt_client.client_id)
+      |> Map.put("client_name", "Finite JWT management redaction updated")
+
+    assert {:ok, management_update} =
+             RegistrationManagement.update(jwt_client.client_id, %{
+               metadata: jwt_metadata,
+               server_policy: jwt_policy,
+               client: recovered_client,
+               now: DateTime.add(issued_at, 62, :second)
+             })
+
+    {:ok, final_client} = Repository.fetch_client_by_id(jwt_client.client_id)
+
+    management_material =
+      [
+        original_rat,
+        recovered_rat,
+        management_update.registration_access_token_plaintext,
+        jwt_success.client.registration_access_token_hash,
+        recovered_client.registration_access_token_hash,
+        final_client.registration_access_token_hash,
+        jwt_secret_before,
+        jwt_secret_after,
+        jwt_verifier_before,
+        jwt_verifier_after,
+        jwt_verifier_plaintext_before,
+        jwt_verifier_plaintext_after,
+        jwt_verifier_plaintext_before,
+        jwt_verifier_plaintext_after
+      ]
+      |> Enum.filter(&is_binary/1)
 
     captured = drain_events()
 
@@ -386,6 +528,42 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     for event <- events do
       assert_positive_event_count!(observed, event)
     end
+
+    for event <- [
+          [:lockspire, :dcr, :read],
+          [:lockspire, :audit, :dcr, :read],
+          [:lockspire, :dcr, :unauthorized],
+          [:lockspire, :audit, :dcr, :unauthorized],
+          [:lockspire, :dcr, :update],
+          [:lockspire, :audit, :dcr, :update],
+          [:lockspire, :dcr, :rotate],
+          [:lockspire, :audit, :dcr, :rotate]
+        ] do
+      assert_positive_event_count!(observed, event)
+    end
+
+    host_rotation_events =
+      Enum.filter(captured, fn
+        {[:lockspire, :dcr, :rotate], _measurements,
+         %{actor_type: :operator, actor_id: "admin-ui", client_id: id}} ->
+          id == jwt_client.client_id
+
+        _ ->
+          false
+      end)
+
+    self_rotation_events =
+      Enum.filter(captured, fn
+        {[:lockspire, :dcr, :rotate], _measurements,
+         %{actor_type: :self_registered_client, actor_id: id}} ->
+          id == jwt_client.client_id
+
+        _ ->
+          false
+      end)
+
+    assert length(host_rotation_events) >= 1
+    assert length(self_rotation_events) >= 1
 
     assert_raise KeyError, fn ->
       assert_positive_event_count!(%{}, [:lockspire, :dcr, :register])
@@ -416,7 +594,13 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
         persisted_jwt_before.client_secret_hash,
         persisted_jwt_after.client_secret_hash,
         jwt_verifier_before,
-        jwt_verifier_after
+        jwt_verifier_after,
+        original_rat,
+        recovered_rat,
+        management_update.registration_access_token_plaintext,
+        jwt_success.client.registration_access_token_hash,
+        recovered_client.registration_access_token_hash,
+        final_client.registration_access_token_hash
       ]
       |> Enum.filter(&is_binary/1)
 
@@ -431,9 +615,31 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       refute sensitive_keys({event, measurements, metadata})
     end
 
+    for {event, measurements, metadata} <- captured,
+        value <- management_material do
+      inspected =
+        inspect({event, measurements, metadata}, limit: :infinity, printable_limit: :infinity)
+
+      refute String.contains?(inspected, value),
+             "captured management output contained sensitive material"
+    end
+
     for value <- material do
       refute String.contains?(failure_logs, value),
              "captured failure log contained sensitive material"
+    end
+
+    for value <- management_material do
+      refute String.contains?(management_failure_logs, value),
+             "captured management failure log contained sensitive material"
+    end
+
+    management_error_shape =
+      inspect(expired_management_result, limit: :infinity, printable_limit: :infinity)
+
+    for value <- management_material do
+      refute String.contains?(management_error_shape, value),
+             "public management error contained sensitive material"
     end
 
     assert public_error.error == "invalid_client"
@@ -457,10 +663,23 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     assert Enum.any?(audit_rows, &(&1.action == "dcr_client_created"))
     assert Enum.any?(audit_rows, &(&1.action == "client_secret_rotated"))
 
+    assert Enum.any?(
+             audit_rows,
+             &(&1.action == "dcr_management_rat_rotated" and &1.actor_type == "operator" and
+                 &1.actor_id == "admin-ui")
+           )
+
     for row <- audit_rows, value <- material do
       inspected = inspect(row, limit: :infinity, printable_limit: :infinity)
       refute String.contains?(inspected, value), "audit evidence contained sensitive material"
       refute sensitive_keys(row)
+    end
+
+    for value <- management_material, row <- audit_rows do
+      inspected = inspect(row, limit: :infinity, printable_limit: :infinity)
+
+      refute String.contains?(inspected, value),
+             "management audit evidence contained sensitive material"
     end
   end
 

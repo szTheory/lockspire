@@ -243,7 +243,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
     case result do
       {:ok, updated_client} ->
-        emit_rat_rotated(updated_client)
+        emit_rat_rotated(updated_client, %{type: :operator, id: "admin-ui"})
         {:ok, new_rat_plaintext, updated_client}
 
       {:error, :invalid_lifetime_state} ->
@@ -495,11 +495,17 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     })
   end
 
-  defp emit_rat_rotated(%Client{} = client) do
+  defp emit_rat_rotated(client, actor \\ nil)
+
+  defp emit_rat_rotated(%Client{} = client, nil) do
+    emit_rat_rotated(client, %{type: :self_registered_client, id: client.client_id})
+  end
+
+  defp emit_rat_rotated(%Client{} = client, %{type: actor_type, id: actor_id}) do
     Observability.emit(:dcr, :rotate, %{count: 1}, %{
       status: :success,
-      actor_type: :self_registered_client,
-      actor_id: client.client_id,
+      actor_type: actor_type,
+      actor_id: actor_id,
       client_id: client.client_id
     })
   end
