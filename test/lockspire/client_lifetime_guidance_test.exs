@@ -81,7 +81,7 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
           "zero-argument clock function",
           "after the adapter has locked and reloaded the current row",
           "App management-token expiry is an optional host policy",
-          "Phase 166 owns"
+          "final-candidate CI plus independent security review are still pending"
         ] do
       assert upgrade_guide =~ phrase
     end
@@ -141,5 +141,35 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
 
     assert support =~ "Optional finite expiry for self-registered app management tokens"
     assert support =~ "host-authorized operator workflow"
+  end
+
+  test "adopter storage guidance names only the executed public composition and example" do
+    guide = File.read!(@guide)
+    architecture = File.read!(Path.expand("../../docs/architecture.md", __DIR__))
+
+    for phrase <- [
+          "`:client_store` and",
+          "`:transaction_store` application configuration keys",
+          "Lockspire.Storage.ClientStore",
+          "Lockspire.Storage.TransactionStore",
+          "not arbitrary external databases",
+          "client_store: MyApp.LifetimeClientStore",
+          "transaction_store: MyApp.LifetimeClientStore",
+          "docs/examples/client-lifetime-adapter.md",
+          "mix test test/client_lifetime_adapter_test.exs",
+          "replace `CleanRoomProvider.Repo` with your host repo module",
+          "not a shipped",
+          "repository's private `scripts/` tree",
+          "49 checks passed and none failed or skipped",
+          "observed source",
+          "8050a398",
+          "5709092d",
+          "broader canonical integration matrix had unrelated"
+        ] do
+      assert guide =~ phrase
+    end
+
+    assert architecture =~ "`:client_store` and `:transaction_store` selectors"
+    assert architecture =~ "does not establish support for arbitrary datastore backends"
   end
 end

@@ -1,7 +1,12 @@
 # Upgrade app lifetime storage
 
-Lockspire stores the lifetime selected for each app and checks current stored
-app state at online protocol decision points. Existing rows remain compatible
+Lockspire stores three independent lifetimes: an app lifetime, a shared-secret
+lifetime, and an app management-token lifetime. Each policy accepts `nil` or
+`0` for no automatic expiry and a positive number of seconds for a finite
+deadline. The deadline is calculated from that credential's issuance event and
+stored with the app; changing policy does not rewrite existing deadlines.
+Eligibility ends at the deadline itself. Lockspire checks current stored app
+state at online protocol decision points. Existing rows remain compatible
 after the additive migration: they are read as legacy records without an app or
 management-token deadline. Historical `client_secret_expires_at` values on those
 rows remain advisory; nil, past, future, creation-time, or stale post-rotation
@@ -10,6 +15,16 @@ secret continues to work until it is explicitly replaced. Replacement promotes
 the current row and uses the current DCR secret-lifetime policy only for
 self-registered apps that use a shared secret. Later policy edits do not
 rewrite that stored secret deadline.
+
+The renewal events are separate. A new self-registered app receives the app
+deadline from the current app-lifetime policy; app expiry has no renewal event,
+so the app must be registered again. Operator rotation replaces a shared
+secret and snapshots the current secret policy. A successful DCR PUT or the
+existing host-authorized recovery task replaces the app management token and
+snapshots the current management-token policy. Those operations preserve the
+other stored deadlines; GET, authentication, enabling an app, and ordinary
+metadata changes do not renew any lifetime. Public-key and mutual-TLS clients
+do not have a shared-secret lifetime.
 
 ## Install the additive migration
 
@@ -72,8 +87,42 @@ Version `0` rows have nil app and management deadlines; version `1` stores the
 selected deadlines (or nil for unlimited). Missing, unknown, or dropped state
 fails closed as a storage/configuration error.
 
-Run the reusable conformance contract and dependency adaptation checks when
-implementing an adapter:
+The supported selectors are the existing `:client_store` and
+`:transaction_store` application configuration keys. A host module can select
+both roles when it implements `Lockspire.Storage.ClientStore` and
+`Lockspire.Storage.TransactionStore`, declares lifetime contract version `1`,
+and reports the same transaction authority and participants from both
+behaviors. Lockspire's demonstrated composition is deliberately narrow: the
+host adapter delegates the selected client and transaction operations to the
+built-in Ecto repository under the same PostgreSQL transaction authority. It
+proves that named composition, not arbitrary external databases or every
+possible adapter.
+
+```elixir
+config :lockspire,
+  client_store: MyApp.LifetimeClientStore,
+  transaction_store: MyApp.LifetimeClientStore
+```
+
+The exact ExUnit/Ecto example executed from the candidate package is in
+[`docs/examples/client-lifetime-adapter.md`](../examples/client-lifetime-adapter.md).
+Copy its single test module into your host application's `test/` directory,
+replace `CleanRoomProvider.Repo` with your host repo module, and run it against
+a disposable PostgreSQL test database using your host's normal test setup:
+
+```sh
+mix test test/client_lifetime_adapter_test.exs
+```
+
+The example checks the configured authority, current-row guards, replacement
+rollback, issuance rollback, and fail-closed unsupported state. It uses
+`Lockspire.Storage.Ecto.Repository` only to seed and inspect test rows; that
+module is not an adapter API. The example is an adopter-run test, not a shipped
+conformance SDK. Repository-private files under `test/` and `scripts/` are
+maintainer checkout tooling and are excluded from the Hex package.
+
+Maintainers can run the reusable conformance contract and dependency
+adaptation checks from a Lockspire checkout:
 
 ```sh
 env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test \
@@ -81,7 +130,7 @@ env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test
   test/lockspire/protocol/token_exchange/dependencies_test.exs --max-failures 1
 ```
 
-The conformance tests cover explicit declarations, round trips, current-row
+These checkout-only conformance tests cover explicit declarations, round trips, current-row
 guards, participant agreement, and rollback. A custom adapter still needs
 adapter-specific evidence that its database and transaction composition meet
 those guarantees. The existing `rotate_client_secret/4` adapter operation
@@ -119,13 +168,17 @@ the owner under your normal operations policy, then retry during a quieter
 window. Do not increase a lock timeout blindly or treat a failed attempt as a
 completed migration.
 
-The packaged acceptance journey exercises the pinned pre-lifetime package and
-candidate in isolated host roots and databases for `public` and `tenant_auth`:
+Maintainers can run the packaged acceptance journey for the pinned
+pre-lifetime package and candidate in isolated host roots and databases for
+`public` and `tenant_auth` from a Lockspire checkout:
 
 ```sh
 python3 scripts/acceptance/clean_room/client_lifetime_upgrade.py --receipt /tmp/client-lifetime-upgrade.json
 python3 scripts/acceptance/clean_room/client_lifetime_upgrade.py --check-receipt /tmp/client-lifetime-upgrade.json
 ```
+
+The commands above require the repository's private `scripts/` tree; they are
+not adopter commands and those scripts are not included in the Hex package.
 
 ## Online checks and offline tokens
 
@@ -158,5 +211,10 @@ and host-authorized recovery. See [Dynamic Client Registration](../dynamic-regis
 for the required request identity, server-owned expiry extensions, immediate
 replacement, and lost-response recovery behavior.
 
-Phase 166 owns the final cross-phase packaged proof and synchronized release
-guidance; this upgrade guide does not claim that later work is complete.
+The Phase 166 local packaged lifetime partition completed all nine required
+scenarios with 49 checks passed and none failed or skipped. Its observed source
+revision was `8050a398`; package archive and extracted-tree digests were checked
+against `5709092d`. The broader canonical integration matrix had unrelated
+fixture failures, and final-candidate CI plus independent security review are
+still pending. See the phase's maintainer evidence record; this local result
+does not claim those remaining gates or a release are complete.

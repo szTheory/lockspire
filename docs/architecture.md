@@ -305,7 +305,14 @@ authority; custom client stores used by token exchange must declare equivalent
 current-row locking and transaction composition. Existing rows remain
 compatible through the additive, prefix-aware migration. See
 [Upgrade app lifetime storage](upgrading/client-lifetimes.md) for migration,
-custom-adapter conformance, and writer-drain steps.
+custom-adapter conformance, and writer-drain steps. The existing
+`:client_store` and `:transaction_store` selectors are the host configuration
+seam. Current packaged proof covers one named host adapter that delegates to
+the built-in Ecto repository under the same PostgreSQL transaction authority;
+it does not establish support for arbitrary datastore backends. The guide links
+the exact ExUnit/Ecto example executed from the package. Repository-private
+conformance suites and acceptance scripts are maintainer checkout tooling, not
+host APIs or a shipped SDK.
 
 Managed files are checksummed in the install manifest. `mix lockspire.upgrade`
 can replace one only when it still matches the recorded content. Account,

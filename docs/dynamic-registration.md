@@ -4,6 +4,10 @@ Lockspire supports Dynamic Client Registration (DCR) via [RFC 7591](https://data
 
 For the canonical public support contract, see `docs/supported-surface.md`. For the shipped symmetric JWT direct-client slice specifically, see `docs/client-secret-jwt-host-guide.md`. For legacy app lifetime storage, custom adapter requirements, and the old-writer drain boundary, see [Upgrade app lifetime storage](upgrading/client-lifetimes.md).
 
+If you configure finite app, shared-secret, or app management-token lifetimes,
+read the [lifetime upgrade and storage guide](upgrading/client-lifetimes.md)
+before applying the additive migration or selecting custom storage.
+
 ## Operator Setup
 
 DCR is controlled by Lockspire's server policy. Out of the box, DCR might be disabled to ensure secure defaults. To enable it:
@@ -77,6 +81,20 @@ The `registration_access_token` is the app management token: it lets the partner
 ### App management-token lifetime
 
 The management-token lifetime is an optional host policy. A blank setting or a value of `0` means no automatic expiry; a positive duration applies to newly issued or replaced app management tokens. Changing the setting does not change tokens already issued. Lockspire does not require one universal registration-token timeout. A host may choose a finite duration to reduce the time a copied token remains usable, while accounting for the lockout risk if the partner loses it.
+
+For all three lifetime policies, `nil` or `0` means no automatic expiry and a
+positive integer is a duration in seconds. Lockspire snapshots each policy
+when the corresponding deadline is issued. A new self-registered app receives
+its app deadline at registration; the app deadline has no renewal event.
+Operator secret rotation issues a new shared-secret deadline under the current
+DCR secret policy when it applies. Successful PUT
+and authorized host recovery issue a new app management-token deadline. Each
+replacement preserves the other deadlines. GET, authentication, enabling an
+app, and metadata-only changes do not renew them. These are separate states:
+app expiry does not disable or delete the app, an expired secret does not
+revoke already-issued access or refresh tokens, and an expired management
+token removes only self-management authority. Offline JWT verification cannot
+observe later app disablement or expiry.
 
 Lockspire stores the expiry and returns it in the server-owned `lockspire_registration_access_token_expires_at` extension. The value is a Unix timestamp in seconds; `0` means no automatic expiry. The related `lockspire_client_expires_at` extension reports the app's expiry in the same format. These extensions are informational: a PUT may omit them or echo their current values, but cannot change them. Registration intake cannot set either extension.
 
