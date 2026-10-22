@@ -7,6 +7,8 @@ defmodule Lockspire.Storage.ClientLifetime do
   """
 
   alias Lockspire.Domain.Client
+  alias Lockspire.Config
+  alias Lockspire.Storage.Ecto.Repository
 
   @enforce_keys [:contract_version, :client_store, :transaction_authority]
   defstruct [:contract_version, :client_store, :transaction_authority]
@@ -16,6 +18,112 @@ defmodule Lockspire.Storage.ClientLifetime do
           client_store: module(),
           transaction_authority: term()
         }
+
+  @doc false
+  @spec configured() ::
+          {:ok,
+           %{
+             client_store: module(),
+             transaction_store: module(),
+             transaction_authority: map(),
+             lifetime: t()
+           }}
+          | {:error, atom()}
+  def configured do
+    client_store = Config.client_store()
+    transaction_store = Config.transaction_store()
+
+    with :ok <- ensure_callbacks(client_store, client_callbacks()),
+         :ok <- ensure_callbacks(transaction_store, transaction_callbacks()),
+         {:ok, authority} <- transaction_authority(transaction_store),
+         :ok <- validate_selected_participants(authority, client_store, transaction_store),
+         {:ok, lifetime} <- adapt(client_store, authority) do
+      {:ok,
+       %{
+         client_store: client_store,
+         transaction_store: transaction_store,
+         transaction_authority: authority,
+         lifetime: lifetime
+       }}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :client_lifetime_configuration_unavailable}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_configuration_unavailable}
+  catch
+    _kind, _reason -> {:error, :client_lifetime_configuration_unavailable}
+  end
+
+  defp transaction_authority(transaction_store) when is_atom(transaction_store) do
+    _ = Code.ensure_loaded?(transaction_store)
+    authority = transaction_store.transaction_authority()
+
+    case authority do
+      %{identity: identity, participants: participants}
+      when not is_nil(identity) and is_map(participants) ->
+        if Enum.all?(participants, fn {role, store} -> is_atom(role) and is_atom(store) end),
+          do: {:ok, authority},
+          else: {:error, :invalid_transaction_authority}
+
+      _ ->
+        {:error, :invalid_transaction_authority}
+    end
+  rescue
+    _error -> {:error, :transaction_authority_unavailable}
+  end
+
+  defp transaction_authority(_transaction_store),
+    do: {:error, :transaction_authority_unavailable}
+
+  defp validate_selected_participants(
+         %{participants: participants},
+         client_store,
+         transaction_store
+       ) do
+    required = %{
+      client_store: client_store,
+      transaction_store: transaction_store,
+      token_store: Repository,
+      device_authorization_store: Repository,
+      ciba_authorization_store: Repository,
+      audit_store: Repository
+    }
+
+    if Enum.all?(required, fn {role, store} -> Map.get(participants, role) == store end),
+      do: :ok,
+      else: {:error, :transaction_authority_mismatch}
+  end
+
+  defp validate_selected_participants(_authority, _client_store, _transaction_store),
+    do: {:error, :invalid_transaction_authority}
+
+  defp ensure_callbacks(module, callbacks) when is_atom(module) do
+    _ = Code.ensure_loaded?(module)
+
+    if Enum.all?(callbacks, fn {name, arity} -> function_exported?(module, name, arity) end),
+      do: :ok,
+      else: {:error, :client_lifetime_callback_unavailable}
+  end
+
+  defp ensure_callbacks(_module, _callbacks),
+    do: {:error, :client_lifetime_callback_unavailable}
+
+  defp client_callbacks do
+    [
+      {:lifetime_contract, 0},
+      {:fetch_client_by_id, 1},
+      {:get_client_by_registration_access_token_hash, 1},
+      {:lock_clients, 1},
+      {:register_client, 1},
+      {:replace_client_registration, 4},
+      {:rotate_registration_access_token, 3},
+      {:rotate_client_secret, 4},
+      {:set_client_active, 3}
+    ]
+  end
+
+  defp transaction_callbacks, do: [{:transaction_authority, 0}, {:transact, 1}, {:rollback, 1}]
 
   @doc """
   Adapts an adapter-owned v1 declaration and verifies it names the selected

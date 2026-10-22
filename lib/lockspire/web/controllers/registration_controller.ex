@@ -4,6 +4,7 @@ defmodule Lockspire.Web.RegistrationController do
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationManagement
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.RegistrationJSON
 
@@ -134,19 +135,25 @@ defmodule Lockspire.Web.RegistrationController do
         {:error, :missing_credential}
 
       token when is_binary(token) ->
-        case Repository.get_client_by_registration_access_token_hash(
-               RegistrationAccessToken.hash(token)
-             ) do
-          {:ok, %Lockspire.Domain.Client{} = client} ->
-            {:ok, client}
+        case ClientLifetime.configured() do
+          {:ok, stores} ->
+            case stores.client_store.get_client_by_registration_access_token_hash(
+                   RegistrationAccessToken.hash(token)
+                 ) do
+              {:ok, %Lockspire.Domain.Client{} = client} ->
+                {:ok, client}
 
-          {:ok, nil} ->
-            {:error, :invalid_token}
+              {:ok, nil} ->
+                {:error, :invalid_token}
+
+              {:error, _reason} ->
+                {:error, :server_error}
+
+              _unsupported ->
+                {:error, :server_error}
+            end
 
           {:error, _reason} ->
-            {:error, :server_error}
-
-          _unsupported ->
             {:error, :server_error}
         end
     end

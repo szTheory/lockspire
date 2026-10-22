@@ -21,6 +21,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   alias Lockspire.Protocol.DcrPolicy
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule UpdateSuccess do
@@ -394,38 +395,42 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   end
 
   defp with_current_client(client_id_from_url, %Client{} = snapshot, operation, opts, callback) do
-    Repository.transact(fn ->
-      with true <- client_id_from_url == snapshot.client_id,
-           {:ok, [current]} <- Repository.lock_clients([snapshot.client_id]),
-           true <- current.id == snapshot.id,
-           true <-
-             current.registration_access_token_hash == snapshot.registration_access_token_hash,
-           true <- current.active do
-        # Retain preparation before the decision clock so every operation decides against
-        # the final post-preparation instant. Defer returning preparation errors until the
-        # credential deadline has been checked, so an expired credential cannot learn body
-        # validation details.
-        preparation = prepare_current(current, opts)
+    with {:ok, stores} <- ClientLifetime.configured() do
+      stores.transaction_store.transact(fn ->
+        with true <- client_id_from_url == snapshot.client_id,
+             {:ok, [current]} <- stores.client_store.lock_clients([snapshot.client_id]),
+             true <- current.id == snapshot.id,
+             true <-
+               current.registration_access_token_hash == snapshot.registration_access_token_hash,
+             true <- current.active,
+             {:ok, current} <- ClientLifetime.validate_client(current) do
+          # Retain preparation before the decision clock so every operation decides against
+          # the final post-preparation instant. Defer returning preparation errors until the
+          # credential deadline has been checked, so an expired credential cannot learn body
+          # validation details.
+          preparation = prepare_current(current, opts)
 
-        with {:ok, now} <- decision_now(opts) do
-          case Client.management_eligibility(current, now, :registration_management) do
-            :ok ->
-              with_prepared_current(current, operation, preparation, now, callback)
+          with {:ok, now} <- decision_now(opts) do
+            case Client.management_eligibility(current, now, :registration_management) do
+              :ok ->
+                with_prepared_current(current, operation, preparation, now, callback)
 
-            {:error, :expired} ->
-              {:error, :invalid_token}
+              {:error, :expired} ->
+                {:error, :invalid_token}
 
-            {:error, :invalid_lifetime_state} ->
-              {:error, %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+              {:error, :invalid_lifetime_state} ->
+                {:error,
+                 %Registration.Error{code: :server_error, reason: :invalid_lifetime_state}}
+            end
           end
+        else
+          false -> {:error, :invalid_token}
+          {:ok, _rows} -> {:error, :invalid_token}
+          {:error, %Registration.Error{} = error} -> {:error, error}
+          {:error, reason} -> {:error, reason}
         end
-      else
-        false -> {:error, :invalid_token}
-        {:ok, _rows} -> {:error, :invalid_token}
-        {:error, %Registration.Error{} = error} -> {:error, error}
-        {:error, reason} -> {:error, reason}
-      end
-    end)
+      end)
+    end
   end
 
   defp with_prepared_current(current, operation, preparation, now, callback) do
@@ -457,19 +462,22 @@ defmodule Lockspire.Protocol.RegistrationManagement do
 
   defp with_recovery_client(%Client{} = snapshot, _opts, callback)
        when is_function(callback, 1) do
-    Repository.transact(fn ->
-      with {:ok, [current]} <- Repository.lock_clients([snapshot.client_id]),
-           true <- current.id == snapshot.id,
-           true <- current.client_id == snapshot.client_id,
-           true <-
-             current.registration_access_token_hash == snapshot.registration_access_token_hash do
-        callback.(current)
-      else
-        false -> {:error, :invalid_token}
-        {:ok, _rows} -> {:error, :invalid_token}
-        {:error, reason} -> {:error, reason}
-      end
-    end)
+    with {:ok, stores} <- ClientLifetime.configured() do
+      stores.transaction_store.transact(fn ->
+        with {:ok, [current]} <- stores.client_store.lock_clients([snapshot.client_id]),
+             true <- current.id == snapshot.id,
+             true <- current.client_id == snapshot.client_id,
+             true <-
+               current.registration_access_token_hash == snapshot.registration_access_token_hash,
+             {:ok, current} <- ClientLifetime.validate_client(current) do
+          callback.(current)
+        else
+          false -> {:error, :invalid_token}
+          {:ok, _rows} -> {:error, :invalid_token}
+          {:error, reason} -> {:error, reason}
+        end
+      end)
+    end
   end
 
   defp decision_now(opts) do

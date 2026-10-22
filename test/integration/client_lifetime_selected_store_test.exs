@@ -53,6 +53,29 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     assert_received {:selected_store, :get_client_by_rat, _hash}
     assert_received {:selected_store, :lock_clients, [locked_id]} when locked_id == client_id
     assert_received {:selected_store, :transact}
+
+    update_conn =
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Lockspire.Test.Fixtures.DcrFixtures.valid_metadata() |> Map.put("client_id", client_id)
+      )
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch_registration()
+
+    assert update_conn.status == 200
+    updated = Jason.decode!(update_conn.resp_body)
+    assert_received {:selected_store, :replace_client_registration}
+    assert_received {:selected_store, :transact}
+
+    delete_conn =
+      build_conn(:delete, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{updated["registration_access_token"]}")
+      |> dispatch_registration()
+
+    assert delete_conn.status == 204
+    assert_received {:selected_store, :set_client_active}
+    assert_received {:selected_store, :transact}
   end
 
   defp dispatch_registration(conn) do
@@ -225,6 +248,49 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     def get_client_by_registration_access_token_hash(hash) do
       send(Process.get(:selected_store_test_owner), {:selected_store, :get_client_by_rat, hash})
       Lockspire.Storage.Ecto.Repository.get_client_by_registration_access_token_hash(hash)
+    end
+
+    def replace_client_registration(client, replacement, rat_hash, audit_attrs) do
+      send(
+        Process.get(:selected_store_test_owner),
+        {:selected_store, :replace_client_registration}
+      )
+
+      Lockspire.Storage.Ecto.Repository.replace_client_registration(
+        client,
+        replacement,
+        rat_hash,
+        audit_attrs
+      )
+    end
+
+    def rotate_registration_access_token(client, rat_hash, audit_attrs) do
+      send(
+        Process.get(:selected_store_test_owner),
+        {:selected_store, :rotate_registration_access_token}
+      )
+
+      Lockspire.Storage.Ecto.Repository.rotate_registration_access_token(
+        client,
+        rat_hash,
+        audit_attrs
+      )
+    end
+
+    def rotate_client_secret(client, hash, encrypted_verifier, rotated_at) do
+      send(Process.get(:selected_store_test_owner), {:selected_store, :rotate_client_secret})
+
+      Lockspire.Storage.Ecto.Repository.rotate_client_secret(
+        client,
+        hash,
+        encrypted_verifier,
+        rotated_at
+      )
+    end
+
+    def set_client_active(client, active, attrs) do
+      send(Process.get(:selected_store_test_owner), {:selected_store, :set_client_active})
+      Lockspire.Storage.Ecto.Repository.set_client_active(client, active, attrs)
     end
   end
 
