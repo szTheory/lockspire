@@ -226,6 +226,7 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
   use ExUnit.Case, async: false
 
   import Phoenix.ConnTest
+  import Phoenix.LiveViewTest
 
   alias Lockspire.Web.AdminRouteHost
 
@@ -235,6 +236,40 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     {AdminRouteHost.NestedEndpoint, AdminRouteHost.NestedRouter, "/teams/ops/identity",
      "/teams/ops/identity/admin"},
     {AdminRouteHost.RootEndpoint, AdminRouteHost.RootRouter, "", "/admin"}
+  ]
+
+  @journeys [
+    {"/", Lockspire.Web.Live.Admin.OverviewLive.Index, :index},
+    {"/overview", Lockspire.Web.Live.Admin.OverviewLive.Index, :index},
+    {"/clients", Lockspire.Web.Live.Admin.ClientsLive.Index, :index},
+    {"/clients/new", Lockspire.Web.Live.Admin.ClientsLive.Index, :new},
+    {"/clients/:client_id", Lockspire.Web.Live.Admin.ClientsLive.Show, :show},
+    {"/consents", Lockspire.Web.Live.Admin.ConsentsLive.Index, :index},
+    {"/consents/:id", Lockspire.Web.Live.Admin.ConsentsLive.Show, :show},
+    {"/tokens", Lockspire.Web.Live.Admin.TokensLive.Index, :index},
+    {"/tokens/:id", Lockspire.Web.Live.Admin.TokensLive.Show, :show},
+    {"/keys", Lockspire.Web.Live.Admin.KeysLive.Index, :index},
+    {"/keys/:id", Lockspire.Web.Live.Admin.KeysLive.Show, :show},
+    {"/interactions", Lockspire.Web.Live.Admin.InteractionsLive.Index, :index},
+    {"/logouts", Lockspire.Web.Live.Admin.LogoutDeliveriesLive.Index, :index},
+    {"/iats", Lockspire.Web.Live.Admin.IatLive.Index, :index},
+    {"/iats/new", Lockspire.Web.Live.Admin.IatLive.New, :new},
+    {"/device_authorizations", Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index, :index},
+    {"/clients/:client_id/edit", Lockspire.Web.Live.Admin.ClientsLive.Show, :edit},
+    {"/clients/:client_id/par-policy", Lockspire.Web.Live.Admin.ClientsLive.Show, :par_policy},
+    {"/clients/:client_id/security-profile", Lockspire.Web.Live.Admin.ClientsLive.Show,
+     :security_profile},
+    {"/clients/:client_id/redirects", Lockspire.Web.Live.Admin.ClientsLive.Show, :redirects},
+    {"/clients/:client_id/logout-uris", Lockspire.Web.Live.Admin.ClientsLive.Show, :logout_uris},
+    {"/clients/:client_id/rotate-secret", Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_secret},
+    {"/clients/:client_id/rotate-registration-access-token",
+     Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_registration_access_token},
+    {"/dcr", Lockspire.Web.Live.Admin.DcrLive.Index, :index},
+    {"/policies", Lockspire.Web.Live.Admin.PoliciesLive.Index, :index},
+    {"/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show},
+    {"/policies/security-profile", Lockspire.Web.Live.Admin.PoliciesLive.SecurityProfile, :show},
+    {"/policies/dpop", Lockspire.Web.Live.Admin.PoliciesLive.Dpop, :show},
+    {"/policies/dcr", Lockspire.Web.Live.Admin.PoliciesLive.Dcr, :show}
   ]
 
   setup_all do
@@ -285,16 +320,17 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     :ok
   end
 
-  for {endpoint, _router, mount, path} <- @mounts do
+  for {_endpoint, _router, _mount, path} <- @mounts do
     @tag expanded_mount: path
     test "#{path} connects the real overview and clients pages and rejoins with fresh host hooks",
          %{expanded_mount: path} do
       {endpoint, router, mount, ^path} = Enum.find(@mounts, fn {_ep, _r, _m, p} -> p == path end)
       configure_mount(mount)
+      fixtures = AdminRouteHost.seed_admin_records!()
 
       for route <- [path, path <> "/clients"] do
         session = %{"host_staff_id" => "staff-1"}
-        assert {:ok, view, html} = endpoint_live(endpoint, route, session)
+        {{:ok, view, html}, initial_conn} = endpoint_live_with_conn(endpoint, route, session)
 
         expected_module =
           if route == path,
@@ -308,7 +344,13 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         GenServer.stop(first_pid)
         assert_receive {:DOWN, ^monitor, :process, ^first_pid, _reason}
 
-        assert {:ok, rejoined, _html} = endpoint_live(endpoint, route, session)
+        rejoin_conn =
+          initial_conn
+          |> Phoenix.ConnTest.recycle()
+          |> Phoenix.ConnTest.dispatch(endpoint, :get, route)
+
+        assert Plug.Conn.get_session(rejoin_conn, "host_staff_id") == "staff-1"
+        assert {:ok, rejoined, _html} = Phoenix.LiveViewTest.__live__(rejoin_conn, nil, [])
         assert rejoined.pid != first_pid
         assert rejoined.module == view.module
         assert_receive {:host_live_hook, "staff-1"}
@@ -326,7 +368,150 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
                path <> "/clients",
                "www.example.com"
              ) == path
+
+      for {relative, expected_module, expected_action} <- @journeys do
+        route_path = route_path(path, relative, fixtures)
+
+        assert %{
+                 phoenix_live_view: {^expected_module, ^expected_action, _options, _extra}
+               } = Phoenix.Router.route_info(router, "GET", route_path, "www.example.com")
+        assert Lockspire.Web.AdminRoutes.effective_admin_path(
+                 router,
+                 "GET",
+                 route_path,
+                 "www.example.com"
+               ) == path
+
+        assert {:ok, route_view, _html} =
+                 endpoint_live(endpoint, route_path, %{"host_staff_id" => "staff-1"})
+
+        assert route_view.module == expected_module
+        assert_receive {:host_live_hook, "staff-1"}
+        assert_receive {:host_session_callback, _label}
+      end
     end
+  end
+
+  test "rendered navigation and filters keep the configured prefix at every mount" do
+    fixtures = AdminRouteHost.seed_admin_records!()
+
+    for {endpoint, _router, mount, base} <- @mounts do
+      configure_mount(mount)
+      client_path = base <> "/clients"
+      detail_path = client_path <> "/#{fixtures.client.client_id}"
+      edit_path = detail_path <> "/edit"
+
+      assert {:ok, overview, overview_html} =
+               endpoint_live(endpoint, base, %{"host_staff_id" => "staff-1"})
+
+      assert overview_html =~ ~s(href="#{client_path}")
+      assert {:ok, clients, clients_html} =
+               Phoenix.LiveViewTest.live_redirect(overview, to: client_path)
+
+      assert clients.module == Lockspire.Web.Live.Admin.ClientsLive.Index
+      assert clients_html =~ ~s(href="#{client_path}/new?)
+      assert clients_html =~ ~s(href="#{detail_path}")
+      assert_receive {:host_live_hook, "staff-1"}
+
+      assert {:ok, details, detail_html} =
+               Phoenix.LiveViewTest.live_redirect(clients, to: detail_path)
+
+      assert details.module == Lockspire.Web.Live.Admin.ClientsLive.Show
+      assert detail_html =~ ~s(href="#{client_path}")
+      assert_receive {:host_live_hook, "staff-1"}
+
+      assert {:ok, edit, edit_html} =
+               Phoenix.LiveViewTest.live_redirect(details, to: edit_path)
+
+      assert edit.module == Lockspire.Web.Live.Admin.ClientsLive.Show
+      assert edit_html =~ ~s(href="#{detail_path}")
+      assert_receive {:host_live_hook, "staff-1"}
+
+      assert {:ok, client_filter, _html} =
+               endpoint_live(endpoint, client_path, %{"host_staff_id" => "staff-1"})
+
+      client_filter
+      |> form("form[phx-submit=filter_inventory]", %{
+        "q" => "admin-route",
+        "status" => "all",
+        "provenance" => "all"
+      })
+      |> render_submit()
+
+      assert_patch(client_filter, client_path <> "?page=1&provenance=all&q=admin-route&status=all")
+
+      token_path = base <> "/tokens"
+
+      assert {:ok, token_filter, _html} =
+               endpoint_live(endpoint, token_path, %{"host_staff_id" => "staff-1"})
+
+      token_filter
+      |> form("form[phx-submit=filter_inventory]", %{
+        "account" => "admin-route-account",
+        "client" => fixtures.client.client_id,
+        "status" => "all"
+      })
+      |> render_submit()
+
+      assert_patch(
+        token_filter,
+        token_path <>
+          "?account=admin-route-account&client=admin-route-client&status=all"
+      )
+
+      workflow_path = edit_path <> "?workflow=logout-propagation"
+
+      assert {:ok, _workflow, workflow_html} =
+               endpoint_live(endpoint, workflow_path, %{"host_staff_id" => "staff-1"})
+
+      assert workflow_html =~ "Server sign-out notification URL"
+    end
+  end
+
+  test "missing detail records retain their prefixed recovery links" do
+    for {endpoint, _router, mount, base} <- @mounts do
+      configure_mount(mount)
+      missing_id = "987654321"
+
+      for {path, heading, return_path} <- [
+            {base <> "/clients/not-a-real-app", "App not found", base <> "/clients"},
+            {base <> "/consents/#{missing_id}", "Consent grant not found", base <> "/consents"},
+            {base <> "/tokens/#{missing_id}", "Token not found", base <> "/tokens"},
+            {base <> "/keys/#{missing_id}", "Key not found", base <> "/keys"}
+          ] do
+        assert {:ok, _view, html} =
+                 endpoint_live(endpoint, path, %{"host_staff_id" => "staff-1"})
+
+        assert html =~ heading
+        assert html =~ ~s(href="#{return_path}")
+        refute html =~ "//admin"
+      end
+    end
+  end
+
+  test "concurrent connected filters retain separate state under one fixed mount" do
+    configure_mount("/lockspire")
+    AdminRouteHost.seed_admin_records!()
+
+    assert {:ok, alpha, _html} =
+             endpoint_live(
+               AdminRouteHost.DefaultEndpoint,
+               "/lockspire/admin/clients?q=admin-route&status=all&provenance=all",
+               %{"host_staff_id" => "staff-1"}
+             )
+
+    assert {:ok, beta, _html} =
+             endpoint_live(
+               AdminRouteHost.DefaultEndpoint,
+               "/lockspire/admin/clients?q=missing&status=all&provenance=all",
+               %{"host_staff_id" => "staff-1"}
+             )
+
+    assert alpha.pid != beta.pid
+    assert render(alpha) =~ ~s(value="admin-route")
+    assert render(beta) =~ ~s(value="missing")
+    assert_receive {:host_live_hook, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
   end
 
   test "both root mount config values and a normalized trailing slash produce one admin slash" do
@@ -355,12 +540,41 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
   end
 
   defp endpoint_live(endpoint, path, session) do
+    {result, _conn} = endpoint_live_with_conn(endpoint, path, session)
+    result
+  end
+
+  defp endpoint_live_with_conn(endpoint, path, session) do
     conn =
       build_conn()
       |> init_test_session(session)
       |> Phoenix.ConnTest.dispatch(endpoint, :get, path)
 
-    Phoenix.LiveViewTest.__live__(conn, nil, [])
+    {Phoenix.LiveViewTest.__live__(conn, nil, []), conn}
+  end
+
+  defp route_path(base, "/", _fixtures), do: base
+
+  defp route_path(base, relative, fixtures) do
+    relative = String.replace(relative, ":client_id", fixtures.client.client_id)
+
+    relative
+    |> then(fn path ->
+      cond do
+        String.starts_with?(path, "/consents/") ->
+          String.replace(path, ":id", Integer.to_string(fixtures.consent.id))
+
+        String.starts_with?(path, "/tokens/") ->
+          String.replace(path, ":id", Integer.to_string(fixtures.token.id))
+
+        String.starts_with?(path, "/keys/") ->
+          String.replace(path, ":id", Integer.to_string(fixtures.key.id))
+
+        true ->
+          path
+      end
+    end)
+    |> then(&(base <> &1))
   end
 
   defp restore_env(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)

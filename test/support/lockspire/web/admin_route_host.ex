@@ -8,6 +8,67 @@ defmodule Lockspire.Web.AdminRouteHost do
   ]
 
   def session_options, do: @session_options
+
+  def seed_admin_records! do
+    now = DateTime.utc_now()
+
+    {:ok, client} =
+      Lockspire.Storage.Ecto.Repository.register_client(%Lockspire.Domain.Client{
+        lifetime_version: 0,
+        client_id: "admin-route-client",
+        client_secret_hash: "sha256:admin-route-client:fixture-hash",
+        client_type: :confidential,
+        name: "Admin Route Fixture",
+        redirect_uris: ["https://admin-route.example.invalid/callback"],
+        allowed_scopes: ["openid", "email"],
+        allowed_grant_types: ["authorization_code", "refresh_token"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: now,
+        metadata: %{}
+      })
+
+    {:ok, consent} =
+      Lockspire.Storage.Ecto.Repository.grant_consent(%Lockspire.Domain.ConsentGrant{
+        account_id: "admin-route-account",
+        client_id: client.client_id,
+        scopes: ["openid", "email"],
+        granted_at: now,
+        metadata: %{}
+      })
+
+    {:ok, token} =
+      Lockspire.Storage.Ecto.Repository.store_token(%Lockspire.Domain.Token{
+        token_hash: "sha256:admin-route-token:fixture-hash",
+        token_type: :refresh_token,
+        family_id: "admin-route-family",
+        generation: 0,
+        client_id: client.client_id,
+        account_id: "admin-route-account",
+        consent_grant_id: consent.id,
+        scopes: ["openid", "email"],
+        issued_at: now,
+        expires_at: DateTime.add(now, 3600, :second)
+      })
+
+    {:ok, key} =
+      Lockspire.Storage.Ecto.Repository.publish_key(%Lockspire.Domain.SigningKey{
+        kid: "admin-route-key",
+        kty: :RSA,
+        alg: "RS256",
+        use: :sig,
+        public_jwk: %{"kty" => "RSA", "kid" => "admin-route-key", "alg" => "RS256", "use" => "sig"},
+        private_jwk_encrypted: :erlang.term_to_binary(%{"kid" => "admin-route-key", "d" => "fixture"}),
+        status: :active,
+        published_at: now,
+        activated_at: now,
+        inserted_at: now
+      })
+
+    %{client: client, consent: consent, token: token, key: key}
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.RequireStaff do
