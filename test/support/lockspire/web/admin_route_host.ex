@@ -9,6 +9,42 @@ defmodule Lockspire.Web.AdminRouteHost do
 
   def session_options, do: @session_options
 
+  defmacro host_consent_routes(prefix) do
+    quote do
+      Phoenix.Router.scope unquote(prefix) do
+        Phoenix.Router.pipe_through(:host_consent)
+
+        Phoenix.LiveView.Router.live_session :host_consent,
+          on_mount: [Lockspire.Web.AdminRouteHost.ConsentAuthorization],
+          session: {Lockspire.Web.AdminRouteHost.Identity, :consent_session, []} do
+          Phoenix.LiveView.Router.live(
+            "/consent/:interaction_id",
+            Lockspire.Web.AdminRouteHost.ConsentLive,
+            :show
+          )
+        end
+      end
+    end
+  end
+
+  def record_trace(trace_id, surface) when is_binary(trace_id) and trace_id != "" do
+    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
+      observer when is_pid(observer) -> send(observer, {:route_trace, trace_id, surface})
+      nil -> :ok
+    end
+  end
+
+  def record_trace(_trace_id, _surface), do: :ok
+
+  def record_trace(trace_id, surface) when is_binary(trace_id) and trace_id != "" do
+    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
+      observer when is_pid(observer) -> send(observer, {:route_trace, trace_id, surface})
+      nil -> :ok
+    end
+  end
+
+  def record_trace(_trace_id, _surface), do: :ok
+
   def seed_admin_records! do
     now = DateTime.utc_now()
 
@@ -90,11 +126,32 @@ defmodule Lockspire.Web.AdminRouteHost.RequireStaff do
   def call(conn, _opts) do
     case get_session(conn, "host_staff_id") do
       identity_id when is_binary(identity_id) and identity_id != "" ->
+        Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_allowed)
         assign(conn, :host_staff_id, identity_id)
 
       _missing ->
+        Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_denied)
         conn |> send_resp(:forbidden, "Forbidden") |> halt()
     end
+  end
+
+  defp trace_id(conn), do: conn |> get_req_header("x-route-trace") |> List.first()
+end
+
+defmodule Lockspire.Web.AdminRouteHost.TraceSurface do
+  @moduledoc false
+  @behaviour Plug
+
+  import Plug.Conn, only: [get_req_header: 2]
+
+  @impl true
+  def init(surface), do: surface
+
+  @impl true
+  def call(conn, surface) do
+    trace_id = conn |> get_req_header("x-route-trace") |> List.first()
+    Lockspire.Web.AdminRouteHost.record_trace(trace_id, surface)
+    conn
   end
 end
 
@@ -107,10 +164,17 @@ defmodule Lockspire.Web.AdminRouteHost.LiveAuthorization do
     case Lockspire.Web.AdminRouteHost.Identity.resolve(Map.get(session, "host_staff_id")) do
       {:ok, staff} ->
         Lockspire.Web.AdminRouteHost.Identity.record_hook(staff.id)
+        Lockspire.Web.AdminRouteHost.record_trace(Map.get(session, "trace_id"), :admin_hook)
         {:cont, assign(socket, :host_staff, staff)}
 
       :error ->
         Lockspire.Web.AdminRouteHost.Identity.record_hook(:denied)
+
+        Lockspire.Web.AdminRouteHost.record_trace(
+          Map.get(session, "trace_id"),
+          :admin_hook_denied
+        )
+
         {:halt, Phoenix.LiveView.redirect(socket, to: "/host/sign-in")}
     end
   end
@@ -136,14 +200,47 @@ defmodule Lockspire.Web.AdminRouteHost.Identity do
     end
   end
 
-  def session(_conn, label) do
+  def session(conn, label) do
     case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
       observer when is_pid(observer) -> send(observer, {:host_session_callback, label})
       nil -> :ok
     end
 
-    %{"host_session_label" => label}
+    trace_id = conn |> Plug.Conn.get_req_header("x-route-trace") |> List.first()
+    Lockspire.Web.AdminRouteHost.record_trace(trace_id, :admin_session)
+    %{"host_session_label" => label, "trace_id" => trace_id}
   end
+
+  def consent_session(conn) do
+    trace_id = conn |> Plug.Conn.get_req_header("x-route-trace") |> List.first()
+    Lockspire.Web.AdminRouteHost.record_trace(trace_id, :consent_session)
+    %{"trace_id" => trace_id}
+  end
+end
+
+defmodule Lockspire.Web.AdminRouteHost.ConsentAuthorization do
+  @moduledoc false
+
+  import Phoenix.Component, only: [assign: 3]
+
+  def on_mount(_name, _params, session, socket) do
+    Lockspire.Web.AdminRouteHost.record_trace(Map.get(session, "trace_id"), :consent_hook)
+    {:cont, assign(socket, :host_consent, true)}
+  end
+end
+
+defmodule Lockspire.Web.AdminRouteHost.ConsentLive do
+  @moduledoc false
+
+  use Phoenix.LiveView
+
+  @impl true
+  def mount(%{"interaction_id" => interaction_id}, _session, socket) do
+    {:ok, Phoenix.Component.assign(socket, :interaction_id, interaction_id)}
+  end
+
+  @impl true
+  def render(assigns), do: ~H"<main>Host consent <span><%= @interaction_id %></span></main>"
 end
 
 defmodule Lockspire.Web.AdminRouteHost.MountSentinelLive do
@@ -186,6 +283,7 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
 
   require Phoenix.LiveView.Router
   require Lockspire.Web.AdminRoutes
+  require Lockspire.Web.AdminRouteHost
 
   pipeline :browser do
     plug(:fetch_session)
@@ -194,11 +292,24 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
     plug(Lockspire.Web.AdminRouteHost.RequireStaff)
   end
 
+  pipeline :host_consent do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
+  end
+
+  pipeline :public_surface do
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
+  end
+
   Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
     pipe_through: [:browser],
     on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
     session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["admin-route"]}
   )
+
+  Lockspire.Web.AdminRouteHost.host_consent_routes("/lockspire")
 
   scope "/" do
     pipe_through(:browser)
@@ -214,6 +325,7 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
   end
 
   scope "/" do
+    pipe_through(:public_surface)
     forward("/lockspire", Lockspire.Web.Router)
   end
 end
@@ -249,12 +361,24 @@ defmodule Lockspire.Web.AdminRouteHost.DefaultRouter do
 
   use Phoenix.Router
   require Lockspire.Web.AdminRoutes
+  require Lockspire.Web.AdminRouteHost
 
   pipeline :browser do
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
     plug(Lockspire.Web.AdminRouteHost.RequireStaff)
+  end
+
+  pipeline :host_consent do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
+  end
+
+  pipeline :public_surface do
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
 
   Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
@@ -262,6 +386,13 @@ defmodule Lockspire.Web.AdminRouteHost.DefaultRouter do
     on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
     session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["default"]}
   )
+
+  Lockspire.Web.AdminRouteHost.host_consent_routes("/lockspire")
+
+  scope "/" do
+    pipe_through(:public_surface)
+    forward("/lockspire", Lockspire.Web.Router)
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
@@ -269,12 +400,24 @@ defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
 
   use Phoenix.Router
   require Lockspire.Web.AdminRoutes
+  require Lockspire.Web.AdminRouteHost
 
   pipeline :browser do
     plug(:fetch_session)
     plug(:protect_from_forgery)
     plug(:put_secure_browser_headers)
     plug(Lockspire.Web.AdminRouteHost.RequireStaff)
+  end
+
+  pipeline :host_consent do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
+  end
+
+  pipeline :public_surface do
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
 
   Lockspire.Web.AdminRoutes.lockspire_admin_routes("/teams/ops/identity/admin",
@@ -282,6 +425,13 @@ defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
     on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
     session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["nested"]}
   )
+
+  Lockspire.Web.AdminRouteHost.host_consent_routes("/teams/ops/identity")
+
+  scope "/" do
+    pipe_through(:public_surface)
+    forward("/teams/ops/identity", Lockspire.Web.Router)
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.RootRouter do
@@ -289,6 +439,7 @@ defmodule Lockspire.Web.AdminRouteHost.RootRouter do
 
   use Phoenix.Router
   require Lockspire.Web.AdminRoutes
+  require Lockspire.Web.AdminRouteHost
 
   pipeline :browser do
     plug(:fetch_session)
@@ -297,11 +448,29 @@ defmodule Lockspire.Web.AdminRouteHost.RootRouter do
     plug(Lockspire.Web.AdminRouteHost.RequireStaff)
   end
 
+  pipeline :host_consent do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
+  end
+
+  pipeline :public_surface do
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
+  end
+
   Lockspire.Web.AdminRoutes.lockspire_admin_routes("/admin",
     pipe_through: [:browser],
     on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
     session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["root"]}
   )
+
+  Lockspire.Web.AdminRouteHost.host_consent_routes("")
+
+  scope "/" do
+    pipe_through(:public_surface)
+    forward("/", Lockspire.Web.Router)
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.DefaultEndpoint do
