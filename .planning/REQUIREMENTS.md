@@ -41,7 +41,7 @@ Phase 162 must select and record semantics and upgrade compatibility before any 
 - [ ] **DCR-16**: A maintainer can reproduce real PostgreSQL races and failed-write rollback checks for expiry, disablement and credential rotation without stale authorization restoring an invalid credential.
 - [ ] **DCR-17**: An adopter can complete an executable packaged clean-room registration-to-use-to-expiry/rotation journey, with fresh-install, legacy-upgrade and custom-storage evidence linked to the selected contract.
 - [ ] **DCR-18**: A maintainer can verify that the changed protocol, storage and host surfaces preserve established security defaults and redaction, with required CI and a scoped security review passing before merge.
-- [ ] **DCR-19**: An operator or host developer can follow configuration, storage, migration and rotation guidance whose expiry claims match verified behavior; changed admin wording follows PRODUCT.md vocabulary and retired-wording contracts.
+- [x] **DCR-19**: An operator or host developer can follow configuration, storage, migration and rotation guidance whose expiry claims match verified behavior; changed admin wording follows PRODUCT.md vocabulary and retired-wording contracts.
 
 ## Future Requirements
 
@@ -90,8 +90,8 @@ Approved owning phases are below. Each requirement has one owning phase. Cross-c
 | DCR-16 | Phase 166 | Pending |
 | DCR-17 | Phase 166 | Pending |
 | DCR-18 | Phase 166 | Pending |
-| DCR-19 | Phase 166 | Pending |
+| DCR-19 | Phase 166 | Complete |
 
-**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 12 complete; 6 pending.
+**Coverage:** 18 requirements; 18 mapped; 0 unmapped; 13 complete; 5 pending.
 
 *Last updated: 2026-10-21 after independently verified Phase 165 completion.*
