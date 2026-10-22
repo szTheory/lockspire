@@ -176,3 +176,99 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalEndpoint do
   plug(Plug.Session, Lockspire.Web.AdminRouteHost.session_options())
   plug(Lockspire.Web.AdminRouteHost.CanonicalRouter)
 end
+
+defmodule Lockspire.Web.AdminRouteHost.DefaultRouter do
+  @moduledoc false
+
+  use Phoenix.Router
+  require Lockspire.Web.AdminRoutes
+
+  pipeline :browser do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.RequireStaff)
+  end
+
+  Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+    pipe_through: [:browser],
+    on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
+    session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["default"]}
+  )
+end
+
+defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
+  @moduledoc false
+
+  use Phoenix.Router
+  require Lockspire.Web.AdminRoutes
+
+  pipeline :browser do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.RequireStaff)
+  end
+
+  Lockspire.Web.AdminRoutes.lockspire_admin_routes("/teams/ops/identity/admin",
+    pipe_through: [:browser],
+    on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
+    session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["nested"]}
+  )
+end
+
+defmodule Lockspire.Web.AdminRouteHost.RootRouter do
+  @moduledoc false
+
+  use Phoenix.Router
+  require Lockspire.Web.AdminRoutes
+
+  pipeline :browser do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.RequireStaff)
+  end
+
+  Lockspire.Web.AdminRoutes.lockspire_admin_routes("/admin",
+    pipe_through: [:browser],
+    on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
+    session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["root"]}
+  )
+end
+
+defmodule Lockspire.Web.AdminRouteHost.DefaultEndpoint do
+  @moduledoc false
+  use Phoenix.Endpoint, otp_app: :lockspire
+
+  socket("/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: Lockspire.Web.AdminRouteHost.session_options()]]
+  )
+
+  plug(Plug.Session, Lockspire.Web.AdminRouteHost.session_options())
+  plug(Lockspire.Web.AdminRouteHost.DefaultRouter)
+end
+
+defmodule Lockspire.Web.AdminRouteHost.NestedEndpoint do
+  @moduledoc false
+  use Phoenix.Endpoint, otp_app: :lockspire
+
+  socket("/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: Lockspire.Web.AdminRouteHost.session_options()]]
+  )
+
+  plug(Plug.Session, Lockspire.Web.AdminRouteHost.session_options())
+  plug(Lockspire.Web.AdminRouteHost.NestedRouter)
+end
+
+defmodule Lockspire.Web.AdminRouteHost.RootEndpoint do
+  @moduledoc false
+  use Phoenix.Endpoint, otp_app: :lockspire
+
+  socket("/live", Phoenix.LiveView.Socket,
+    websocket: [connect_info: [session: Lockspire.Web.AdminRouteHost.session_options()]]
+  )
+
+  plug(Plug.Session, Lockspire.Web.AdminRouteHost.session_options())
+  plug(Lockspire.Web.AdminRouteHost.RootRouter)
+end

@@ -225,11 +225,9 @@ defmodule Lockspire.Web.AdminRoutes do
   defp route_mount_prefix(route_path) do
     Enum.find_value(@admin_live_routes, fn {relative_path, _view, _action} ->
       cond do
-        relative_path == "/" and String.ends_with?(route_path, "/") ->
+        relative_path == "/" and
+            (route_path == "/" or String.ends_with?(route_path, "/admin")) ->
           String.trim_trailing(route_path, "/")
-
-        relative_path == "/" and route_path != "" ->
-          route_path
 
         String.ends_with?(route_path, relative_path) ->
           route_path
