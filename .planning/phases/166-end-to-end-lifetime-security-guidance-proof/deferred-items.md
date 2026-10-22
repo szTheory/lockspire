@@ -1,0 +1,5 @@
+# Deferred Items
+
+- Full canonical matrix `integration` partition exited 2 after 346 seconds with unrelated existing failures, including Phase 28 update assertions, logout/device-auth fixtures missing `lifetime_version`, and Phase 133 `gen.kek` errors. The broad `--only integration --exclude lifetime_package` selection remains intact; these failures need separate investigation.
+- The matrix's clean-room SaaS journey exited 1 after 50 seconds in the redacted `scenario=unknown` `AssertionError` path. The packaged lifetime partition and receipt validation had already passed. Investigate this runner failure separately.
+- Local packaged receipts report the source revision observed at execution (`8050a3988139b7142a0c0713beae379bb8055e22`). A rebuilt archive after task 1 commit `5709092d` matched both recorded archive and unpacked tree digests exactly, and no package source files differed from that commit. Preserve the observed revision in this receipt; Phase 166-12 must rerun final-candidate evidence and live required CI.
