@@ -206,16 +206,38 @@ def verify_candidate_input(archive: Path, package_root: Path, identity: PackageI
             raise PackageInputError("candidate archive and extracted tree differ")
 
 
-def _compiled_candidate_digest(child_root: Path) -> str | None:
-    roots = (child_root / "_build" / "dev" / "lib" / "lockspire", child_root / "_build" / "test" / "lib" / "lockspire")
+def _compiled_candidate_digest(child_root: Path, vendor_root: Path) -> str | None:
+    # MIX_BUILD_PATH is an exact path override, so it omits Mix's default
+    # environment subdirectory. Accept that direct shape as well as default
+    # dev/test paths used by older clean-room hosts.
+    roots = (
+        child_root / "_build" / "lib" / "lockspire",
+        child_root / "_build" / "dev" / "lib" / "lockspire",
+        child_root / "_build" / "test" / "lib" / "lockspire",
+    )
     existing = [root for root in roots if root.exists()]
     if not existing:
         return None
+    vendor_realpath = vendor_root.resolve(strict=True)
     digest = hashlib.sha256()
     for root in existing:
         for path in sorted(root.rglob("*")):
             if path.is_symlink():
-                raise PackageInputError("compiled candidate contains a symlink")
+                try:
+                    resolved_target = path.resolve(strict=True)
+                except OSError:
+                    raise PackageInputError(
+                        "compiled candidate contains a broken symlink: "
+                        + path.name
+                        + " -> "
+                        + os.readlink(path)
+                    ) from None
+                if resolved_target == vendor_realpath or vendor_realpath not in resolved_target.parents:
+                    raise PackageInputError("compiled candidate contains an unapproved symlink: " + path.name)
+                digest.update(path.relative_to(child_root).as_posix().encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(resolved_target.relative_to(vendor_realpath).as_posix().encode("utf-8"))
+                digest.update(b"\0")
             if path.is_file():
                 digest.update(path.relative_to(child_root).as_posix().encode("utf-8"))
                 digest.update(b"\0")
@@ -225,7 +247,11 @@ def _compiled_candidate_digest(child_root: Path) -> str | None:
 
 
 def bind_compiled_candidate(child_root: Path, identity: PackageIdentity, vendor_root: Path, resolved_root: Path) -> None:
-    compiled = _compiled_candidate_digest(child_root)
+    try:
+        compiled = _compiled_candidate_digest(child_root, vendor_root)
+    except PackageInputError as error:
+        print("compiled candidate provenance rejected: " + str(error))
+        raise
     if compiled is None:
         raise PackageInputError("compiled candidate is missing after host preparation")
     marker = {
@@ -255,7 +281,7 @@ def verify_candidate_host(
     resolved = resolved_dependency.resolve(strict=True)
     if resolved != vendor:
         raise PackageInputError("candidate resolved dependency identity mismatch")
-    compiled = _compiled_candidate_digest(child_root)
+    compiled = _compiled_candidate_digest(child_root, vendor_root)
     marker_path = child_root / ".lockspire-candidate.json"
     if compiled is None and not marker_path.exists():
         return
@@ -428,7 +454,17 @@ def copy_child_template(role: str, run_root: Path, package_root: Path) -> Path:
 
 def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> dict[str, str]:
     environment = os.environ.copy()
-    environment["MIX_BUILD_PATH"] = str(child_root / "_build")
+    mix_env = environment.get("MIX_ENV")
+    if mix_env not in {"dev", "test", "prod"}:
+        mix_env = "dev"
+    # MIX_BUILD_PATH is the exact build directory, not the root that Mix
+    # augments with an environment segment. Keep the environment segment so
+    # path-dependency asset links (notably priv/) resolve inside the host.
+    # Canonicalize the build path before Mix calculates relative `priv/`
+    # links. On macOS, TMPDIR commonly enters through /var but resolves to
+    # /private/var; mixing those spellings makes valid package links point
+    # past the host root.
+    environment["MIX_BUILD_PATH"] = str((child_root / "_build" / mix_env).resolve())
 
     if cache_root is not None:
         cache_realpath = cache_root.resolve()

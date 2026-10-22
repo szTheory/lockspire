@@ -54,7 +54,13 @@ FORBIDDEN = (
 )
 
 
-def write_host_runtime(child: Path, database_url: str, storage_prefix: str = "lockspire") -> None:
+def write_host_runtime(
+    child: Path,
+    database_url: str,
+    storage_prefix: str = "lockspire",
+    *,
+    custom_lifetime_adapter: bool = False,
+) -> None:
     (child / "config").mkdir(parents=True, exist_ok=True)
     (child / "lib" / "clean_room_provider_web").mkdir(parents=True, exist_ok=True)
     (child / "lib" / "clean_room_provider").mkdir(parents=True, exist_ok=True)
@@ -85,6 +91,15 @@ config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
 """
     )
+    if custom_lifetime_adapter:
+        with (child / "config" / "config.exs").open("a", encoding="utf-8") as config:
+            config.write(
+                """
+config :lockspire,
+  client_store: CleanRoomProvider.LifetimeClientStore,
+  transaction_store: CleanRoomProvider.LifetimeClientStore
+"""
+            )
     # The child runs under the default dev env, so the generator's prod guard is omitted;
     # the body is the fail-closed block `mix lockspire.install` prints.
     (child / "config" / "runtime.exs").write_text(
@@ -180,7 +195,23 @@ def audit_boundary(child: Path, package_root: Path) -> None:
 
             host_sources.append(destination)
 
+    adapter_source = child / "lib" / "clean_room_provider" / "lifetime_client_store.ex"
+    adapter_text = adapter_source.read_text() if adapter_source.is_file() else ""
+    allowed_refs = {
+        "Lockspire.Storage.ClientStore",
+        "Lockspire.Storage.TransactionStore",
+        "Lockspire.Storage.Ecto.Repository",
+        "Lockspire.Domain.Client",
+    }
+    adapter_refs = set(re.findall(r"Lockspire\.(?:Storage|Domain)(?:\.[A-Za-z0-9_]+)+", adapter_text))
+    if adapter_refs - allowed_refs:
+        raise PackageInputError("provider boundary audit found forbidden lifetime-adapter reference")
+    if adapter_text and adapter_refs != allowed_refs:
+        raise PackageInputError("provider lifetime adapter is missing a documented public seam")
+
     sources = "\n".join(path.read_text() for path in host_sources)
+    for reference in allowed_refs:
+        sources = sources.replace(reference, "")
     found = [needle for needle in FORBIDDEN if needle in sources]
     if found:
         raise PackageInputError(f"provider boundary audit found forbidden seam: {found[0]}")
@@ -238,6 +269,7 @@ def prepare_provider(
     cache_root: Path | None = None,
     storage_prefix: str = "lockspire",
     candidate_identity: PackageIdentity | None = None,
+    custom_lifetime_adapter: bool = False,
 ) -> Path:
     probe_environment()
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
@@ -264,7 +296,12 @@ def prepare_provider(
         # retain only the manifest/lock in the fresh child so the public installer
         # can create its managed and host-owned files without an overwrite refusal.
         shutil.rmtree(child / "lib")
-        write_host_runtime(child, database_url, storage_prefix)
+        write_host_runtime(
+            child,
+            database_url,
+            storage_prefix,
+            custom_lifetime_adapter=custom_lifetime_adapter,
+        )
     vendor = child / "vendor" / "lockspire"
     # Validate all bytes already on disk before Mix is allowed to inspect or load
     # the reusable child. The resolver probe below then confirms the observed path.
@@ -282,6 +319,7 @@ def prepare_provider(
         "MIX_HOME": str(isolated_mix_home),
     }
     resolved = verify_child("provider_host", child, dependency_cache, isolated_environment)
+    print("provider dependency provenance verified")
     verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
     environment = locked_environment(child, "provider_host", dependency_cache)
     environment.update(isolated_environment)
@@ -322,8 +360,27 @@ def prepare_provider(
         details = install_result.stdout.decode(errors="replace").splitlines()[-16:]
         raise PackageInputError("provider installer failed: " + " ".join(details))
     apply_host_overlays(child)
+    print("provider host overlays applied")
     audit_boundary(child, package_root)
+    print("provider boundary audit complete")
     run(("mix", "compile"), cwd=child, env=environment)
+    built_apps = sorted(
+        path.name
+        for path in (
+            *(child / "_build" / "lib").glob("*"),
+            *(child / "_build" / "dev" / "lib").glob("*"),
+            *(child / "_build" / "test" / "lib").glob("*"),
+        )
+        if path.is_dir()
+    )
+    print(
+        "provider host compiled; mix env "
+        + str(environment.get("MIX_ENV"))
+        + "; build root "
+        + str(environment.get("MIX_BUILD_PATH"))
+        + "; build apps "
+        + ",".join(built_apps)
+    )
     bind_compiled_candidate(child, candidate_identity, vendor, resolved)
     return child
 

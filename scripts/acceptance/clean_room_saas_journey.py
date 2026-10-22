@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+from collections import Counter
 import hashlib
 import http.client
 import json
@@ -50,6 +51,7 @@ PROVIDER_ORIGIN = "http://127.0.0.1:4100"
 CLIENT_ORIGIN = "http://127.0.0.1:4101"
 MAX_REDIRECTS = 8
 ACTIVE_REDACTOR: Redactor | None = None
+CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
 
 
@@ -466,7 +468,15 @@ def provider_path(endpoint: str) -> str:
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
 
 
-def run_dcr_lifetime(provider: Browser, provider_child: Path, provider_environment: dict[str, str], handoff: Path) -> dict[str, object]:
+def run_dcr_lifetime(
+    provider: Browser,
+    provider_child: Path,
+    provider_environment: dict[str, str],
+    handoff: Path,
+    provider_log: Path,
+    *,
+    custom: bool = False,
+) -> dict[str, object]:
     """Register a fresh public client and redeem an S256 code through HTTP."""
     discovery_response = provider.request("GET", "/lockspire/.well-known/openid-configuration")
     require_status(discovery_response, 200, "DCR lifetime discovery")
@@ -535,16 +545,106 @@ def run_dcr_lifetime(provider: Browser, provider_child: Path, provider_environme
     access_token = issued.get("access_token")
     if not isinstance(access_token, str) or not access_token:
         raise AssertionError("DCR code redemption did not issue an access token")
+    is_custom = custom
+    replacement_status = None
+    if is_custom:
+        registration_uri = registration.get("registration_client_uri")
+        registration_access_token = registration.get("registration_access_token")
+        if not isinstance(registration_uri, str) or not isinstance(registration_access_token, str):
+            raise AssertionError("DCR registration omitted its management endpoint or credential")
+        replaced = provider.request(
+            "PUT",
+            provider_path(registration_uri),
+            {**metadata, "client_id": client_id, "client_name": "Lifetime journey replaced"},
+            {
+                "content-type": "application/json",
+                "authorization": f"Bearer {registration_access_token}",
+            },
+        )
+        require_status(replaced, 200, "production DCR credential replacement")
+        replacement = json.loads(str(replaced["body"]))
+        register_secret(replacement.get("registration_access_token"))
+        replacement_status = 200
+    callback_counts = callback_counts_from_log(provider_log) if is_custom else {}
+    if is_custom and not all(
+        callback_counts.get(callback, 0) > 0
+        for callback in ("lifetime_contract", "transaction_authority", "register_client", "lock_clients", "replace_client_registration", "transact")
+    ):
+        raise AssertionError("configured adapter callback observations are incomplete")
     return {
-        "id": "fresh.register_use",
-        "leg": "fresh",
+        "id": "custom.issue_replace" if is_custom else "fresh.register_use",
+        "leg": "custom" if is_custom else "fresh",
         "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
         "outcome": "passed",
-        "observations": {"registration_http_status": 201, "token_http_status": 200, "access_token_issued": True, "pkce_method": "S256"},
-        "event_counts": {"registration_succeeded": 1, "authorization_code_redeemed": 1},
+        "observations": {
+            "registration_http_status": 201,
+            "token_http_status": 200,
+            "replacement_http_status": replacement_status,
+            "access_token_issued": True,
+            "management_credential_replaced": is_custom,
+            "callbacks_executed": sum(callback_counts.values()),
+            "callback_counts": callback_counts,
+            "authority_shared": is_custom,
+            "example_executed": os.environ.get("CLEAN_ROOM_ADAPTER_EXAMPLE_EXECUTED") == "true",
+            "pkce_method": "S256",
+        },
+        "event_counts": {
+            "registration_succeeded": 1,
+            "authorization_code_redeemed": 1,
+            "credential_replaced": int(is_custom),
+        },
         "audit_counts": {},
-        "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+        "counts": {
+            "executed": 1 + sum(callback_counts.values()),
+            "passed": 1 + sum(callback_counts.values()),
+            "failed": 0,
+            "skipped": 0,
+        },
     }
+
+
+def callback_counts_from_log(path: Path) -> dict[str, int]:
+    counts = Counter(re.findall(r"^LIFETIME_ADAPTER_CALLBACK ([a-z_]+)$", path.read_text(encoding="utf-8"), re.MULTILINE))
+    return dict(sorted(counts.items()))
+
+
+def run_packaged_adapter_example(package_root: Path, provider_child: Path, environment: dict[str, str]) -> None:
+    """Execute the exact ExUnit code block shipped in the candidate package."""
+    markdown = package_root / "docs" / "examples" / "client-lifetime-adapter.md"
+    if not markdown.is_file():
+        raise PackageInputError("candidate package omits the client lifetime adapter example")
+    examples = re.findall(r"^```elixir\n(.*?)^```\s*$", markdown.read_text(encoding="utf-8"), re.MULTILINE | re.DOTALL)
+    if len(examples) != 1 or "defmodule HostLifetimeAdapterTest do" not in examples[0]:
+        raise PackageInputError("candidate package lifetime example is not one bounded ExUnit module")
+    test_file = provider_child / "test" / "client_lifetime_adapter_example_test.exs"
+    test_file.parent.mkdir(parents=True, exist_ok=True)
+    test_file.write_text(examples[0], encoding="utf-8")
+    helper = test_file.parent / "test_helper.exs"
+    if not helper.exists():
+        helper.write_text("Logger.configure(level: :warning)\nExUnit.start()\n", encoding="utf-8")
+    test_environment = dict(environment, MIX_ENV="test")
+    output = run_child_command_output(
+        provider_child,
+        test_environment,
+        "test",
+        "--trace",
+        str(test_file.relative_to(provider_child)),
+    )
+    summaries = re.findall(r"\b(\d+) tests?, (\d+) failures?\b", output)
+    if len(summaries) != 1:
+        raise AssertionError("packaged adapter example did not produce one ExUnit summary")
+    executed, failed = (int(value) for value in summaries[0])
+    required_cases = (
+        "the configured stores round-trip a client under one PostgreSQL authority",
+        "a late replacement audit failure restores credentials for an independent observer",
+        "a late issuance audit failure restores grant, token and audit rows independently",
+        "unsupported lifetime state fails closed",
+    )
+    if executed != 4 or failed != 0 or any(case not in output for case in required_cases):
+        raise AssertionError("packaged adapter example omitted rollback, observer, unsupported, or clean test evidence")
+    global CUSTOM_EXAMPLE_EVIDENCE
+    CUSTOM_EXAMPLE_EVIDENCE = {"executed": executed, "passed": executed - failed}
+    os.environ["CLEAN_ROOM_ADAPTER_EXAMPLE_EXECUTED"] = "true"
 
 
 def lifecycle_code(
@@ -967,6 +1067,7 @@ def main(argv: list[str]) -> int:
     global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime"))
+    parser.add_argument("--lifetime-leg", action="append", choices=("fresh", "custom", "legacy"))
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--check-lifetime-receipt", type=Path)
     parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
@@ -978,9 +1079,17 @@ def main(argv: list[str]) -> int:
     sources.add_argument("--hex-version")
     parser.add_argument("--package-sha256")
     args = parser.parse_args(argv)
+    lifetime_leg = (args.lifetime_leg or ["fresh"])[0]
+    if len(args.lifetime_leg or []) > 1:
+        parser.error("run one lifetime leg per isolated provider process")
     if args.check_lifetime_receipt:
         try:
-            validate_lifetime_receipt(args.check_lifetime_receipt, expected_scenarios=("fresh.register_use",))
+            expected_scenarios = (
+                ("custom.issue_replace", "custom.shared_rollback", "custom.unsupported")
+                if lifetime_leg == "custom"
+                else ("fresh.register_use",)
+            )
+            validate_lifetime_receipt(args.check_lifetime_receipt, expected_scenarios=expected_scenarios)
         except (AssertionError, OSError, json.JSONDecodeError) as error:
             print(str(error), file=sys.stderr)
             return 1
@@ -998,6 +1107,8 @@ def main(argv: list[str]) -> int:
         parser.error("dcr_lifetime requires --receipt and must run as its only journey group")
     if args.receipt is not None and args.only != ["dcr_lifetime"]:
         parser.error("--receipt is only supported with --only dcr_lifetime")
+    if lifetime_leg == "legacy":
+        parser.error("legacy lifetime leg is added by the legacy upgrade plan")
     signal.signal(signal.SIGINT, interruption_handler)
     signal.signal(signal.SIGTERM, interruption_handler)
     redactor = Redactor(SentinelSet.for_run())
@@ -1066,10 +1177,15 @@ def main(argv: list[str]) -> int:
                 package_root=package_root,
                 port=provider_port,
                 cache_root=dependency_cache_root(run_root),
+                custom_lifetime_adapter=lifetime_leg == "custom",
             )
+            print("provider host prepared")
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
+            if lifetime_leg == "custom":
+                provider_environment["CLEAN_ROOM_CUSTOM_LIFETIME_ADAPTER"] = "true"
             run_child_command(provider_child, provider_environment, "ecto.create")
+            print("provider database created")
             run_child_command(
                 provider_child,
                 provider_environment,
@@ -1079,10 +1195,15 @@ def main(argv: list[str]) -> int:
             )
             run_child_command(provider_child, provider_environment, "compile", "--warnings-as-errors")
             run_child_command(provider_child, provider_environment, "lockspire.verify")
+            print("provider migrations and verification complete")
+            if lifetime_leg == "custom":
+                run_packaged_adapter_example(package_root, provider_child, provider_environment)
+                print("packaged adapter example executed")
             run_child_command(provider_child, provider_environment, "run", "-e", f'CleanRoomProvider.Bootstrap.provision!("{handoff}")')
             run_child_command(provider_child, provider_environment, "lockspire.keys.reencrypt", "--check")
             run_child_command(provider_child, provider_environment, "lockspire.doctor", "key_encryption")
             assert_bare_mix_tasks(provider_child, provider_environment, redactor)
+            print("provider smoke tasks complete")
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
             if "dcr_lifetime" in args.only:
@@ -1109,7 +1230,14 @@ def main(argv: list[str]) -> int:
             if args.hold_after_ready:
                 time.sleep(args.hold_after_ready)
             if "dcr_lifetime" in args.only:
-                dcr_scenario = run_dcr_lifetime(Browser(PROVIDER_ORIGIN), provider_child, provider_environment, handoff)
+                dcr_scenario = run_dcr_lifetime(
+                    Browser(PROVIDER_ORIGIN),
+                    provider_child,
+                    provider_environment,
+                    handoff,
+                    run_root / "provider.log",
+                    custom=lifetime_leg == "custom",
+                )
             if "happy_path" in args.only:
                 run_happy()
             if "boundary" in args.only:
@@ -1163,17 +1291,41 @@ def main(argv: list[str]) -> int:
     if args.receipt is not None:
         if dcr_scenario is None and result_code != 0:
             dcr_scenario = {
-                "id": "fresh.register_use", "leg": "fresh",
+                "id": "custom.issue_replace" if lifetime_leg == "custom" else "fresh.register_use",
+                "leg": lifetime_leg if lifetime_leg == "custom" else "fresh",
                 "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
                 "outcome": "failed", "observations": {}, "event_counts": {}, "audit_counts": {},
                 "counts": {"executed": 1, "passed": 0, "failed": 1, "skipped": 0},
             }
         if dcr_scenario is not None and candidate is not None:
+            scenarios = [dcr_scenario]
+            if lifetime_leg == "custom" and CUSTOM_EXAMPLE_EVIDENCE is not None:
+                executed = int(CUSTOM_EXAMPLE_EVIDENCE["executed"])
+                passed = int(CUSTOM_EXAMPLE_EVIDENCE["passed"])
+                scenarios.extend([
+                    {
+                        "id": "custom.shared_rollback", "leg": "custom",
+                        "contract_case_ids": ["C-APP-06", "C-PROOF-01"],
+                        "outcome": "passed", "observations": {
+                            "independent_observer": True, "rollback_preserved": True,
+                            "replacement_observed": True, "issuance_observed": True,
+                        }, "event_counts": {}, "audit_counts": {},
+                        "counts": {"executed": 2, "passed": 2, "failed": 0, "skipped": 0},
+                    },
+                    {
+                        "id": "custom.unsupported", "leg": "custom",
+                        "contract_case_ids": ["C-POL-01"],
+                        "outcome": "passed", "observations": {
+                            "unsupported_rejected": True, "example_executed": True,
+                        }, "event_counts": {}, "audit_counts": {},
+                        "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+                    },
+                ])
             write_lifetime_receipt(
                 args.receipt,
                 source_revision=source_revision,
                 candidate=candidate,
-                scenarios=[dcr_scenario],
+                scenarios=scenarios,
                 cleanup=cleanup,
             )
     return result_code

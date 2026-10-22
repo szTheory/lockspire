@@ -72,6 +72,16 @@ class CandidateIdentityTest(unittest.TestCase):
         with self.assertRaises(PackageInputError):
             verify_candidate_host(self.package, child, self.identity, vendor, vendor)
 
+    def test_exact_mix_build_path_compiled_candidate_is_observed(self) -> None:
+        child, vendor = self._host()
+        build = child / "_build" / "lib" / "lockspire"
+        build.mkdir(parents=True)
+        (build / "lockspire.app").write_bytes(b"stale direct build-path candidate")
+        marker = child / ".lockspire-candidate.json"
+        marker.write_text('{"tree_sha256":"' + self.identity.tree_sha256 + '"}')
+        with self.assertRaises(PackageInputError):
+            verify_candidate_host(self.package, child, self.identity, vendor, vendor)
+
     def test_resolved_dependency_mismatch_rejected(self) -> None:
         child, vendor = self._host()
         other = self.root / "other-dependency"
