@@ -6,6 +6,12 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
   import Phoenix.ConnTest
   import Plug.Conn
 
+  alias Lockspire.Admin.Clients
+  alias Lockspire.Protocol.Registration
+  alias Lockspire.Protocol.RegistrationManagement
+  alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.ClientRecord
+  alias Lockspire.Storage.Ecto.InitialAccessTokenRecord
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
@@ -78,11 +84,138 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     assert_received {:selected_store, :transact}
   end
 
+  test "selected secret rotation and host recovery use configured callbacks" do
+    install_selected_stores()
+    enable_registration()
+    registered = register_dcr_client()
+    client_id = registered["client_id"]
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    assert {:ok, original} = Repository.fetch_client_by_id(client_id)
+
+    assert {:ok, %{client: rotated, client_secret: plaintext}} =
+             Clients.rotate_client_secret(client_id,
+               now: now,
+               actor: %{type: :operator, id: "selected-store-test"}
+             )
+
+    assert is_binary(plaintext)
+    assert rotated.client_secret_hash != original.client_secret_hash
+    assert_received {:selected_store, :rotate_client_secret}
+    assert_received {:selected_store, :transact}
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(row in ClientRecord, where: row.client_id == ^client_id),
+               set: [registration_access_token_expires_at: DateTime.add(now, -1, :second)]
+             )
+
+    assert {:ok, recovery_snapshot} = Repository.fetch_client_by_id(client_id)
+
+    assert {:ok, recovery_token, recovered} =
+             RegistrationManagement.rotate_registration_access_token(recovery_snapshot, now: now)
+
+    assert is_binary(recovery_token)
+
+    assert recovered.registration_access_token_hash !=
+             recovery_snapshot.registration_access_token_hash
+
+    assert_received {:selected_store, :lock_clients, [locked_id]} when locked_id == client_id
+    assert_received {:selected_store, :rotate_registration_access_token}
+    assert_received {:selected_store, :transact}
+  end
+
+  test "late audit failure rolls selected DCR replacement back durably" do
+    install_selected_stores()
+    enable_registration()
+    registered = register_dcr_client()
+    client_id = registered["client_id"]
+    before = client_row(client_id)
+    audit_count = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
+    token_count = Lockspire.TestRepo.aggregate(TokenRecord, :count)
+    Process.put(:selected_store_fail_replace_audit, true)
+
+    update_conn =
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Lockspire.Test.Fixtures.DcrFixtures.valid_metadata() |> Map.put("client_id", client_id)
+      )
+      |> put_req_header("authorization", "Bearer #{registered["registration_access_token"]}")
+      |> dispatch_registration()
+
+    Process.delete(:selected_store_fail_replace_audit)
+    assert update_conn.status == 500
+    assert Jason.decode!(update_conn.resp_body) == %{"error" => "server_error"}
+    assert client_row(client_id) == before
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == audit_count
+    assert Lockspire.TestRepo.aggregate(TokenRecord, :count) == token_count
+    assert_received {:selected_store, :replace_client_registration}
+    assert_received {:selected_store, :transact}
+  end
+
+  test "invalid selected composition fails before consuming an initial access token" do
+    preserve_store_config()
+    Application.put_env(:lockspire, :client_store, :missing_store)
+
+    {plaintext, initial_token} =
+      Lockspire.Test.Fixtures.InitialAccessTokenFixtures.persist_with_plaintext(%{})
+
+    request = %{
+      metadata: Lockspire.Test.Fixtures.DcrFixtures.valid_metadata(),
+      server_policy:
+        Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{
+          registration_policy: :initial_access_token
+        }),
+      source: %{ip: "127.0.0.1", user_agent: "selected-store-test"},
+      iat: plaintext
+    }
+
+    assert {:error, %Registration.Error{}} = Registration.register(request)
+    assert is_nil(Lockspire.TestRepo.get!(InitialAccessTokenRecord, initial_token.id).used_at)
+  end
+
   defp dispatch_registration(conn) do
     conn
     |> put_req_header("accept", "application/json")
     |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
   end
+
+  defp install_selected_stores do
+    preserve_store_config()
+    Process.put(:selected_store_test_owner, self())
+
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedClientStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedTransactionStore
+    )
+  end
+
+  defp enable_registration do
+    assert {:ok, _policy} =
+             Repository.put_server_policy(
+               Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{registration_policy: :open})
+             )
+  end
+
+  defp register_dcr_client do
+    conn =
+      build_conn(:post, "/register", Lockspire.Test.Fixtures.DcrFixtures.valid_metadata())
+      |> dispatch_registration()
+
+    assert conn.status == 201
+    Jason.decode!(conn.resp_body)
+  end
+
+  defp client_row(client_id),
+    do: Lockspire.TestRepo.get_by!(ClientRecord, client_id: client_id)
 
   setup do
     client =
@@ -255,6 +388,11 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
         Process.get(:selected_store_test_owner),
         {:selected_store, :replace_client_registration}
       )
+
+      audit_attrs =
+        if Process.get(:selected_store_fail_replace_audit),
+          do: Map.put(audit_attrs, :action, nil),
+          else: audit_attrs
 
       Lockspire.Storage.Ecto.Repository.replace_client_registration(
         client,
