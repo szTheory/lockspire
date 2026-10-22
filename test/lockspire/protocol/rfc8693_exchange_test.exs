@@ -30,7 +30,14 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     end
 
     def rollback(reason), do: throw({:rollback, reason})
-    def append_audit_event(event), do: {:ok, event}
+
+    def append_audit_event(event) do
+      Process.put({__MODULE__, :audit_events}, [
+        event | Process.get({__MODULE__, :audit_events}, [])
+      ])
+
+      {:ok, event}
+    end
 
     def fetch_lifecycle_token(token_hash) do
       case Process.get({__MODULE__, token_hash}) do
@@ -40,6 +47,7 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
     end
 
     def lock_lifecycle_tokens(hashes) do
+      Process.put({__MODULE__, :lifecycle_tokens_locked}, true)
       {:ok, hashes |> Enum.map(&Process.get({__MODULE__, &1})) |> Enum.reject(&is_nil/1)}
     end
 
@@ -260,5 +268,34 @@ defmodule Lockspire.Protocol.Rfc8693ExchangeTest do
   test "retains the public RFC 8693 exchange facade arity" do
     Code.ensure_loaded!(Rfc8693Exchange)
     assert function_exported?(Rfc8693Exchange, :exchange, 2)
+  end
+
+  test "exchange/2 rejects a malformed final clock without issuing or auditing", %{
+    client: client,
+    request: request,
+    now: now
+  } do
+    clock = fn ->
+      if Process.get({MockTokenStore, :lifecycle_tokens_locked}), do: :invalid_clock, else: now
+    end
+
+    tokens_before = stored_tokens()
+    request = Map.update!(request, :opts, &Keyword.put(&1, :now, clock))
+
+    assert {:error, %Error{error: "server_error", reason_code: :clock_unavailable}} =
+             Rfc8693Exchange.exchange(client, request)
+
+    assert Process.get({MockTokenStore, :lifecycle_tokens_locked})
+    assert stored_tokens() == tokens_before
+    assert Process.get({MockTokenStore, :audit_events}, []) == []
+  end
+
+  defp stored_tokens do
+    Process.get()
+    |> Enum.filter(fn
+      {{MockTokenStore, _key}, %Token{}} -> true
+      _ -> false
+    end)
+    |> Enum.sort()
   end
 end

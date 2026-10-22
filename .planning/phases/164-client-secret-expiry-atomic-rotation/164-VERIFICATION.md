@@ -1,9 +1,11 @@
 ---
 phase: 164-client-secret-expiry-atomic-rotation
-verified: 2026-10-21T16:05:31Z
+verified: 2026-10-22T16:28:05Z
 status: passed
 score: 26/26 must-haves verified
 covered_files:
+  - .planning/REQUIREMENTS.md
+  - .planning/ROADMAP.md
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-01-PLAN.md
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-01-SUMMARY.md
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-02-PLAN.md
@@ -16,6 +18,16 @@ covered_files:
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-05-SUMMARY.md
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-06-PLAN.md
   - .planning/phases/164-client-secret-expiry-atomic-rotation/164-06-SUMMARY.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-CONTEXT.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-COVERAGE.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-EXECUTION-REFRESH.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-REVIEW-DISPOSITION.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-REVIEW-FIX.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-REVIEW.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-SECURITY.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-SOURCE-AUDIT.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-UI-REVIEW.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-VALIDATION.md
   - PRODUCT.md
   - docs/client-secret-jwt-host-guide.md
   - docs/dynamic-registration.md
@@ -52,6 +64,7 @@ covered_files:
   - test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs
   - test/lockspire/protocol/client_secret_lifetime_policy_test.exs
   - test/lockspire/protocol/dcr_telemetry_redaction_test.exs
+  - test/lockspire/protocol/rfc8693_exchange_test.exs
   - test/lockspire/storage/client_lifetime_conformance_test.exs
   - test/lockspire/storage/client_lifetime_promotion_test.exs
   - test/lockspire/storage/client_lifetime_rollback_test.exs
@@ -65,9 +78,16 @@ covered_files:
   - test/lockspire/web/registration_json_test.exs
   - test/lockspire/web/revocation_controller_test.exs
   - test/lockspire/web/token_controller_test.exs
-covered_digest: "v3:sha256:fa4b5879ca7585a7a197e7198fdc4b56d97a549b627ec3354946edcb0b568658"
+covered_digest: "v3:sha256:315aa027b3fd7aa14fc05b5b97cf5f9c11a5659475cf5b90babd53358710feb3"
 behavior_unverified: 0
 overrides_applied: 0
+re_verification:
+  previous_status: passed
+  previous_score: 26/26
+  gaps_closed:
+    - "WR-01 / D-02: malformed post-lock RFC 8693 decision time returns controlled server_error before issuance or audit."
+  gaps_remaining: []
+  regressions: []
 decision_coverage:
   honored: 18
   total: 18
@@ -77,9 +97,9 @@ decision_coverage:
 # Phase 164: Client-Secret Expiry & Atomic Rotation Verification Report
 
 **Phase Goal:** Apps can rely on shared-secret expiry metadata matching authentication and operator rotation.
-**Verified:** 2026-10-21T16:05:31Z
+**Verified:** 2026-10-22T16:28:05Z
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — after WR-01 correction
 
 ## Goal Achievement
 
@@ -96,7 +116,7 @@ decision_coverage:
 | 7 | Code and refresh finalizers recheck verified method/material identity and secret eligibility using a fresh time after client and token locks. | ✓ VERIFIED | Grant persistence and refresh builder lock current client/token state before sampling the final time and invoking `validate_current_authority/4`. Code/refresh integration tests exercise stale identity, deadline, and no-consumption paths. |
 | 8 | Secret-JWT assertion signature, algorithm, claims, expiry, and JTI checks remain independent; final issuance does not consume the JTI twice. | ✓ VERIFIED | Client-auth verification and final current-identity validation are separate. The named finite-JWT boundary test passed: valid pre-deadline assertion, replay denial, then strict secret equality denial with a fresh still-valid assertion. |
 | 9 | Expired callers retain generic invalid_client/challenge responses; issued tokens keep their own validity; confidential refresh still requires current authentication. | ✓ VERIFIED | Endpoint and integration tests assert established challenges/error shapes, preserved existing-token validity, and refresh authentication. Secret expiry is not used to cap/revoke issued tokens. |
-| 10 | Invalid durable lifetime state or clock/configuration failures map to server_error at ingress and final authority checks. | ✓ VERIFIED | Domain validation returns invalid lifetime state; authentication and finalizer error mapping returns server_error. Focused auth/policy tests cover malformed durable state and clock failures. |
+| 10 | Invalid durable lifetime state or clock/configuration failures map to server_error at ingress and final authority checks. | ✓ VERIFIED | Domain validation and authentication/finalizer mappings return server_error. The current public RFC 8693 regression supplies a valid initial time and malformed post-input-lock final time; it observes `server_error/:clock_unavailable`, unchanged token inventory, and no audit. The original failure was reproduced as FunctionClauseError (8 tests, 1 failure); the corrected path is covered by the current 27-test green selection. |
 | 11 | Rotation uses current locked provenance and policy; replacement hash, verifier, time, deadline, version, and audit commit together using post-lock decision time. | ✓ VERIFIED | `rotate_client_secret/5` queries the current row with a lock, reads policy for eligible self-registered methods, invokes the supplied clock afterward, then writes the complete replacement lifecycle. Rotation and rollback coverage verifies atomicity. |
 | 12 | V0 replacement clears all historical deadlines and sets only the replacement secret deadline; v1 replacement preserves app and management deadlines. | ✓ VERIFIED | `credential_lifetime_changes/3` clears all three v0 dates before v1 promotion and changes only the secret date for v1. Promotion and replacement tests assert durable values. |
 | 13 | Authorized rotation accepts expired secrets without old-secret proof, does not renew disabled/expired apps, preserves dormant-method behavior, and serializes last-commit-winner rotation. | ✓ VERIFIED | The operator facade requires existing host authorization only; lifecycle tests and PostgreSQL rotation race tests prove current-row winner semantics and preserved app state. |
@@ -157,7 +177,11 @@ The generic `verify.key-links` query returned false negatives because its litera
 | Real PostgreSQL waits, rotations, rollback, and adapter contract | `/private/tmp/lockspire164-final-postgres.log` | 38 tests, 0 failures, no exclusions | ✓ PASS |
 | Database cleanup and isolation | `/private/tmp/lockspire164-final-db-cleanup.log` | New dedicated database confirmed; no client/token/JTI/device/CIBA fixtures remained; three audit-only rows belong to earlier Phase 163 regression fixtures | ✓ PASS |
 
-These validations were already run against this reviewed tree; the broad suite was not rerun during this verification.
+All preceding rows are retained historical evidence for the pre-WR-01 candidate, not current-tree runtime proof. The current WR-01 runtime change was independently verified by the bounded red/green selection below; the broad suite and package gate were not rerun during this verification, and new-candidate CI/package proof remains pending final milestone revalidation.
+
+| Malformed final RFC 8693 clock after input-token lock fails closed | `mix test test/lockspire/protocol/rfc8693_exchange_test.exs test/integration/app_lifetime_rfc8693_test.exs test/integration/client_secret_lifetime_poll_exchange_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs --include integration --include postgres_race --max-failures 1 --timeout 55000` (isolated database; `/tmp/phase164-clock-green.log`) | 27 tests, 0 failures. Public facade returns controlled server_error; token inventory is unchanged and audit is empty. Includes affected Phase 163 RFC coverage and PostgreSQL grant waits. | ✓ PASS |
+
+The malformed-clock regression was first run red against the old helper: the public facade raised `FunctionClauseError` (8 tests, 1 failure before the stop; `/tmp/phase164-clock-red.log`). This confirms the named regression detected the defect rather than merely exercising the passing branch.
 
 ## Probe Execution
 
@@ -175,7 +199,7 @@ All requirements assigned to Phase 164 appear in plan frontmatter; no orphaned P
 
 ### Decision Coverage
 
-The decision-coverage query reports **18/18 trackable CONTEXT decisions honored**, with no unhonored decisions. The three plan assumptions marked `unclassified` refer to source-audit classifier edges; concrete cases are specified by D-01–D-18 and are covered by the tests above. They do not identify unresolved product policy.
+The decision-coverage query reports **18/18 trackable CONTEXT decisions honored**, with no unhonored decisions. The three plan assumptions marked `unclassified` remain limits on source-audit classification; concrete cases specified by D-01–D-18 are covered above. Phase 166's three undefined edge probes and two descriptor-less prohibitions also remain unresolved/unverified; these are explicitly retained as evidence limits and are not counted as Phase 164 requirements or silently marked passed. Historical `workflow.tdd_mode: false` and the task-specific TDD caveats remain in force. None creates an additional Phase 164 must-have or a human-approval gate.
 
 ## Test Quality Audit
 
@@ -183,7 +207,7 @@ Requirement-linked tests contain no disabled-test markers. Assertions check valu
 
 ## Anti-Patterns Found
 
-No blocking debt markers or implementation stubs were found in the 49 source, test, and documentation files reviewed. Broad stub-pattern scans matched ordinary test cleanup callbacks and embedded fixture data only; these do not flow to production output. Independent standard code review covered the same 49 files and reported 0 critical, 0 warning, and 0 info findings. Security review closed 24/24 threats. The copy-only UI review resolved both initial findings; no visual redesign or layout change was in scope.
+No blocking debt markers or implementation stubs were found in the reviewed source, test, and documentation paths. Broad stub-pattern scans matched ordinary test cleanup callbacks and embedded fixture data only; these do not flow to production output. Independent review's direct scope and reused paths are separated in the current review artifact; its bounded follow-up is clean, and security re-audit closed 24/24 threats. The copy-only UI review covers text only (4/4); the other visual pillars remain unscored and no screenshot/live-visual claim is made.
 
 ## Human Verification Required
 
@@ -191,9 +215,9 @@ None. The phase goal is protocol, storage, transaction, and metadata behavior. C
 
 ## Gaps Summary
 
-No goal gaps found. The three roadmap success criteria and all plan must-haves are evidenced by real code paths, connected storage and protocol consumers, focused behavior tests, and the final isolated PostgreSQL gate. The 440 standard-suite exclusions and 6 skips remain visible; the separately executed race/rollback/adapter selection covers phase-specific database concurrency evidence. Management-token enforcement and packaged cross-phase proof remain explicitly owned by Phases 165 and 166.
+No Phase 164 goal gaps found. The three roadmap success criteria and all 26 plan must-haves are evidenced by real code paths, connected storage and protocol consumers, focused behavior tests, and PostgreSQL concurrency evidence. The new WR-01 regression is behaviorally covered by 27 passing related tests, including actual grant-wait coverage. The old full-suite counts (2,349 passed, 440 excluded, 6 skipped) and 38-test PostgreSQL gate belong to the reviewed pre-WR-01 candidate, not this current runtime tree. New-candidate CI/package proof remains pending final milestone revalidation. Management-token enforcement and packaged cross-phase proof remain owned by Phases 165 and 166.
 
 ---
 
-_Verified: 2026-10-21T16:05:31Z_  
+_Verified: 2026-10-22T16:28:05Z_
 _Verifier: the agent (gsd-verifier)_

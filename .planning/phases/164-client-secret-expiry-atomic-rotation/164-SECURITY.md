@@ -69,3 +69,23 @@ T-164-21 was a verification gap, not an observed runtime disclosure. Elixir term
 - [x] status: verified.
 
 Approval: independently verified 2026-10-21 at ASVS L1. This report does not replace independent code review, final goal verification or deferred Phase 165/166 work.
+
+## Current-source refresh (2026-10-22)
+
+Independent typed gsd-security-auditor rechecked all 24 planned mitigations at `cecd4bdbfa74a59802d6c63ac483ef4dc393df10`: 24 closed (20 high, 4 medium), 0 open, ASVS L1. Actual current source retains strict shared-secret expiry, independent JWT signature/claim/replay validation, final post-lock identity and eligibility checks, atomic current-row rotation/promotion with required audit, selected-store authority checks, safe plaintext handoff, redacted observability, and continued validity of previously issued tokens. Existing planned race tests inspect exact blockers and durable rollback state. No new dependency or accepted risk was introduced.
+
+At the initial audit before WR-01, runtime, scripts and Mix inputs matched completed candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; the later guide and existing guidance-assertion correction explicitly postdates that CI proof. This audit checks ASVS L1 mitigation presence, not a new runtime run. Phase 164's three unclassified edge assumptions, Phase 166's three undefined probes, two descriptor-less prohibitions and historical TDD caveats remain explicit limits; no new predicates or approvals were invented.
+
+## Security Audit 2026-10-22
+
+| Metric | Count |
+|---|---|
+| Threats found | 24 |
+| Closed | 24 |
+| Open | 0 |
+
+## WR-01 bounded security correction (2026-10-22)
+
+The subsequent runtime guard and public-facade regression are post-candidate changes. Independent bounded security review confirmed T-164-05/16/17/19 remain mitigated: malformed post-lock time returns controlled server_error before validation/signing/persistence/audit; requester identity/secret, issuer app-only and transaction boundaries are unchanged. That review flagged T-164-23 because initial refresh paragraphs still described runtime parity. Those paragraphs are now explicitly historical, and 164-VALIDATION.md records actual RED/GREEN results (27 green tests, 0 failures) and the pending new-candidate final CI gate. Old CI/package proof remains bound only to 0bd4070d. No accepted-risk override is used; evidence-accounting closure requires the bounded follow-up.
+
+Independent bounded follow-up rechecked the revised evidence accounting and closed T-164-23: SECURED 24/24, threats_open 0. The guard-related T-164-05/16/17/19 closures remain retained; new-candidate final CI is still pending.

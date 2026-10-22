@@ -116,7 +116,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
   defp exchange_token_current?(_current, _original, _now), do: false
 
   defp final_exchange_time(dependencies) do
-    {:ok, dependencies.now.()}
+    case dependencies.now.() do
+      %DateTime{} = now -> {:ok, now}
+      _ -> {:error, server_error(:clock_unavailable)}
+    end
   rescue
     _ -> {:error, server_error(:clock_unavailable)}
   end

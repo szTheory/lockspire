@@ -99,7 +99,7 @@ Plans:
 **Goal:** Apps can rely on shared-secret expiry metadata matching authentication and operator rotation.
 **Depends on:** Phase 163
 **Requirements:** DCR-07, DCR-08, DCR-09
-**Plans:** 6/6 canonical plans complete; independent verification passed 26/26 (2026-10-21).
+**Plans:** 6/6 plans complete; independently reverified 2026-10-22
 
 Plans:
 **Wave 1**
