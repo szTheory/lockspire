@@ -170,14 +170,14 @@ Plans:
 
 Plans:
 **Wave 1**
-- [ ] 166-01-PLAN.md — Packaged registration/use tracer and compact evidence map
+- [x] 166-01-PLAN.md — Packaged registration/use tracer and compact evidence map
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 166-02-PLAN.md — Candidate provenance and stale-reuse negatives
-- [ ] 166-03-PLAN.md — Deterministic nonmasking lifetime interactions
+- [x] 166-02-PLAN.md — Candidate provenance and stale-reuse negatives
+- [x] 166-03-PLAN.md — Deterministic nonmasking lifetime interactions
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 166-04-PLAN.md — Observed PostgreSQL waits, contention and rollback proof
+- [x] 166-04-PLAN.md — Observed PostgreSQL waits, contention and rollback proof
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 166-05-PLAN.md — Public selector decision and production issuance seam
@@ -219,7 +219,7 @@ Plans:
 | 163. App Lifetime & Compatible Host Storage | 14/14 | Complete | 2026-10-20 |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
 | 165. Management-Token Lifecycle & Recovery | 7/7 | Complete | 2026-10-21 |
-| 166. End-to-End Lifetime, Security & Guidance Proof | 0/TBD | Not started | — |
+| 166. End-to-End Lifetime, Security & Guidance Proof | 4/12 | In progress | — |
 
 **Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are independently complete through Phase 165; five Phase 166 proof requirements remain pending.
 

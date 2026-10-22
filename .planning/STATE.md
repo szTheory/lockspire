@@ -5,17 +5,17 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 166
 current_phase_name: End-to-End Lifetime, Security & Guidance Proof
 status: executing
-stopped_at: Phase 166 context gathered (assumptions mode)
-last_updated: "2026-10-21T23:54:27.970Z"
+stopped_at: Phase 166 plan 05 task 01 awaiting explicit public selector decision; plans 01–04 complete
+last_updated: "2026-10-22T00:23:22.283Z"
 last_activity: 2026-10-21
-last_activity_desc: Phase 165 complete, transitioned to Phase 166
-state_head: 1c20cbdf0b39c493a6993252dcde96fbfd527338
+last_activity_desc: Phase 166 execution started
+state_head: c18eb6632bff0e782f682282da4e63d76c753787
 progress:
   total_phases: 5
   completed_phases: 4
   total_plans: 40
-  completed_plans: 28
-  percent: 40
+  completed_plans: 32
+  percent: 80
 ---
 
 # Project State
@@ -30,10 +30,18 @@ See: .planning/PROJECT.md (updated 2026-10-21 after Phase 165)
 
 ## Current Position
 
-Phase: 166 (End-to-End Lifetime, Security & Guidance Proof) — READY TO EXECUTE
-Plan: Not started
+Phase: 166 (End-to-End Lifetime, Security & Guidance Proof) — EXECUTING
+Plan: 5 of 12
 Status: Ready to execute
-Last activity: 2026-10-21 — Phase 165 complete, transitioned to Phase 166
+Last activity: 2026-10-21 — Phase 166 execution started
+
+## Phase 166 Execution Checkpoint
+
+Plans 166-01 through 166-04 are committed and summarized (4/12 complete). Planning passed independent review with DCR-15–19 and all 20 context decisions covered. Plan 166-05 task 01 awaits an actual user decision before its public selector implementation; 0/2 tasks in plan 05 are complete. No selector keys or decision receipt have been implemented.
+
+Proposed `narrow-selectors`: application keys `:client_store` and `:transaction_store`, and `Lockspire.Config.client_store/0` / `transaction_store/0`, default to `Lockspire.Storage.Ecto.Repository`. Limit the support claim to the named PostgreSQL-delegating composition with matching shared authority; malformed explicit configuration fails closed. `retain-current` leaves D-10 unmet and needs explicit scope/replanning. Auto-advance supplies no `auto_select` for this decision and cannot establish the user's answer. Resume with the real response and plan 166-05; do not fabricate `166-SELECTOR-DECISION.json`.
+
+Observed proof so far: packaged tracer 1 test/0 failures; provenance 8 Python tests plus actual Hex stale-archive negative; boundary selections 2/19/11 overlapping tests with zero failures; PostgreSQL selections 16/34/13 overlapping tests with zero failures. Final candidate reruns, full fresh/legacy/custom journeys, required live CI, scoped security review and umbrella closure remain pending. Preserve the pre-existing state.json bytes.
 
 ## Accumulated Context
 
@@ -407,9 +415,9 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 ## Session Continuity
 
-Last session: 2026-10-21T22:20:13.894Z
-Stopped at: Phase 166 context gathered (assumptions mode)
-Resume file: .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-CONTEXT.md
+Last session: 2026-10-22T00:23:21.859Z
+Stopped at: Phase 166 plan 05 task 01 awaiting explicit public selector decision; plans 01–04 complete
+Resume file: .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-05-PLAN.md
 
 Next: Plan Phase 166 from its confirmed research-based context. Phases 162–165 are independently complete; Phase 166 owns final cross-phase packaged lifetime, security, required CI and guidance proof. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
 
