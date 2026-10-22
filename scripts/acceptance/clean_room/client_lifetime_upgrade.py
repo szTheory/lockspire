@@ -16,13 +16,15 @@ from urllib.request import urlopen
 
 from build_provider import prepare_provider
 from package_input import (
+    candidate_host_provenance,
     PackageInputError,
+    PackageIdentity,
     PackageSource,
-    build_package,
     clean_room_database_url,
-    package_version,
     prepare_package,
+    verify_candidate_input,
 )
+from lifetime_receipts import validate_candidate_identity_agreement
 
 
 OLD_VERSION = "1.6.1"
@@ -71,16 +73,6 @@ def mix_env(child: Path, run_root: Path, database_url: str, storage_prefix: str)
     return env
 
 
-def package_tree_sha256(root: Path) -> str:
-    digest = hashlib.sha256()
-    for path in sorted(item for item in root.rglob("*") if item.is_file()):
-        digest.update(str(path.relative_to(root)).encode())
-        digest.update(b"\0")
-        digest.update(path.read_bytes())
-        digest.update(b"\0")
-    return digest.hexdigest()
-
-
 def migration_checksums(root: Path) -> dict[str, str]:
     migration_root = root / "priv" / "repo" / "migrations"
     return {
@@ -89,7 +81,10 @@ def migration_checksums(root: Path) -> dict[str, str]:
     }
 
 
-def run_scenario(run_root: Path, prefix: str) -> dict[str, object]:
+def run_scenario(
+    run_root: Path, prefix: str, candidate_package: Path, candidate_archive: Path,
+    candidate_identity: PackageIdentity,
+) -> dict[str, object]:
     old_root = run_root / f"old-{prefix}"
     candidate_root = run_root / f"candidate-{prefix}"
     database_url = clean_room_database_url(f"life_{prefix}")
@@ -106,28 +101,16 @@ def run_scenario(run_root: Path, prefix: str) -> dict[str, object]:
     os.environ["LOCKSPIRE_PACKAGE_ROOT"] = str(downloads)
     try:
         old_package = old_root / "package" / "lockspire"
-        if old_package.is_dir():
-            from package_input import inventory
-            old_entries = inventory(old_package)
-            if package_version(old_package) != OLD_VERSION:
-                raise PackageInputError("prepared old package version does not match pinned version")
-            from package_input import PackageIdentity
-            old_identity = PackageIdentity("tar", OLD_VERSION, digest)
-        else:
-            old_package, old_entries, old_identity = prepare_package(
-                old_root, PackageSource("tar", str(old_tar), OLD_SHA256)
-            )
+        old_package, old_entries, old_identity = prepare_package(
+            old_root, PackageSource("tar", str(old_tar), OLD_SHA256)
+        )
+        verify_candidate_input(old_tar, old_package, old_identity)
     finally:
         if previous_root is None:
             os.environ.pop("LOCKSPIRE_PACKAGE_ROOT", None)
         else:
             os.environ["LOCKSPIRE_PACKAGE_ROOT"] = previous_root
-    candidate_package = candidate_root / "package" / "lockspire"
-    if candidate_package.is_dir():
-        from package_input import inventory
-        inventory(candidate_package)
-    else:
-        candidate_package, _ = build_package(candidate_root)
+    verify_candidate_input(candidate_archive, candidate_package, candidate_identity)
     if not (candidate_package / "priv/repo/migrations/20261021000000_add_client_lifetime_contract.exs").is_file():
         raise PackageInputError("candidate package lacks the lifetime expansion migration")
     if "priv/repo/migrations/20261021000000_add_client_lifetime_contract.exs" in old_entries:
@@ -137,7 +120,7 @@ def run_scenario(run_root: Path, prefix: str) -> dict[str, object]:
     if not old_checksums or any(candidate_checksums.get(name) != checksum for name, checksum in old_checksums.items()):
         raise PackageInputError("candidate package changed a shipped migration checksum")
 
-    old_host = prepare_provider(old_root, database_url, package_root=old_package, storage_prefix=prefix)
+    old_host = prepare_provider(old_root, database_url, package_root=old_package, storage_prefix=prefix, candidate_identity=old_identity)
     old_env = mix_env(old_host, old_root, database_url, prefix)
     old_processes = [
         run_process(old_host, old_env, ("ecto.create",)),
@@ -147,9 +130,11 @@ def run_scenario(run_root: Path, prefix: str) -> dict[str, object]:
     # The old package still reads and writes every row after expansion: its schema ignores
     # the additive columns and PostgreSQL supplies the constant v0 default.
     candidate_host = prepare_provider(
-        candidate_root, database_url, package_root=candidate_package, storage_prefix=prefix
+        candidate_root, database_url, package_root=candidate_package, storage_prefix=prefix,
+        candidate_identity=candidate_identity,
     )
     candidate_env = mix_env(candidate_host, candidate_root, database_url, prefix)
+    host_provenance = candidate_host_provenance(candidate_host)
     expansion = run_process(candidate_host, candidate_env, ("ecto.migrate",))
 
     client_ids = [f"lifetime-{prefix}-{label}" for label in DATES]
@@ -228,7 +213,14 @@ def run_scenario(run_root: Path, prefix: str) -> dict[str, object]:
     receipt = {
         "prefix": prefix,
         "old_package": old_identity.safe_receipt(),
-        "candidate_package": {"version": package_version(candidate_package), "source": "current-package-builder", "tree_sha256": package_tree_sha256(candidate_package)},
+        "candidate_package": {
+            "kind": candidate_identity.kind,
+            "version": candidate_identity.version,
+            "archive_sha256": candidate_identity.archive_sha256,
+            "tree_sha256": candidate_identity.tree_sha256,
+            "source_revision": candidate_identity.source_revision,
+            **host_provenance,
+        },
         "historical_migration_checksums_preserved": True,
         "historical_migration_checksum_count": len(old_checksums),
         "historical_migration_checksums_sha256": hashlib.sha256(json.dumps(old_checksums, sort_keys=True).encode()).hexdigest(),
@@ -254,6 +246,7 @@ def validate_receipt(receipt: dict[str, object], expected_prefixes: set[str] | N
     rows = receipt.get("scenarios")
     if not isinstance(rows, list) or {row.get("prefix") for row in rows if isinstance(row, dict)} != expected_prefixes:
         raise PackageInputError("receipt is missing a requested prefix scenario")
+    candidate_identities: set[tuple[object, ...]] = set()
     for row in rows:
         if not isinstance(row, dict) or row.get("old_read_write_count", 0) < len(DATES):
             raise PackageInputError("receipt has no observed old package writes")
@@ -271,6 +264,26 @@ def validate_receipt(receipt: dict[str, object], expected_prefixes: set[str] | N
             raise PackageInputError("receipt is missing byte-preserved historical migration checksums")
         if row.get("old_binary_after_v1_traffic") is not False:
             raise PackageInputError("receipt claims unsafe old-binary protocol rollback")
+        candidate = row.get("candidate_package")
+        if not isinstance(candidate, dict):
+            raise PackageInputError("receipt is missing candidate package identity")
+        if not all(isinstance(candidate.get(key), str) for key in ("kind", "version", "archive_sha256", "tree_sha256", "source_revision", "vendor_tree_sha256", "compiled_candidate_sha256")):
+            raise PackageInputError("receipt candidate package identity is incomplete")
+        if any(not re.fullmatch(r"[0-9a-f]{64}", str(candidate[key])) for key in ("archive_sha256", "tree_sha256", "vendor_tree_sha256", "compiled_candidate_sha256")):
+            raise PackageInputError("receipt candidate package digest is invalid")
+        if not re.fullmatch(r"[0-9a-f]{40,64}", str(candidate["source_revision"])):
+            raise PackageInputError("receipt candidate source revision is invalid")
+        if candidate.get("resolved_dependency_verified") is not True or candidate["vendor_tree_sha256"] != candidate["tree_sha256"]:
+            raise PackageInputError("receipt candidate host provenance is incomplete")
+        candidate_identities.add(tuple(candidate[key] for key in ("kind", "version", "archive_sha256", "tree_sha256", "source_revision")))
+    if len(candidate_identities) != 1:
+        raise PackageInputError("prefix scenarios do not share one candidate identity")
+    try:
+        validate_candidate_identity_agreement(
+            [{key: row["candidate_package"][key] for key in ("kind", "version", "archive_sha256", "tree_sha256")} for row in rows]
+        )
+    except (AssertionError, KeyError, TypeError):
+        raise PackageInputError("prefix scenarios do not share one candidate identity") from None
 
 
 def main() -> int:
@@ -279,6 +292,9 @@ def main() -> int:
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--check-receipt", type=Path)
     parser.add_argument("--work-root", type=Path, help="reuse isolated package and provider trees under this task-local directory")
+    parser.add_argument("--package-tar", type=Path)
+    parser.add_argument("--package-sha256")
+    parser.add_argument("--source-revision")
     args = parser.parse_args()
     try:
         if args.check_receipt:
@@ -290,7 +306,19 @@ def main() -> int:
         if debug_root:
             run_root = Path(debug_root).resolve()
             run_root.mkdir(mode=0o700, parents=True, exist_ok=True)
-            scenarios = [run_scenario(run_root, SCENARIOS[name]) for name in selected]
+            candidate_package, _entries, candidate_identity = prepare_package(
+                run_root, PackageSource("tar", str(args.package_tar), args.package_sha256)
+                if args.package_tar else None
+            )
+            candidate_archive = args.package_tar.resolve() if args.package_tar else run_root / "package" / f"lockspire-{candidate_identity.version}.tar"
+            if args.source_revision:
+                if not re.fullmatch(r"[0-9a-f]{40,64}", args.source_revision):
+                    raise PackageInputError("candidate source revision is invalid")
+                candidate_identity = PackageIdentity(
+                    candidate_identity.kind, candidate_identity.version, candidate_identity.sha256,
+                    candidate_identity.archive_sha256, candidate_identity.tree_sha256, args.source_revision,
+                )
+            scenarios = [run_scenario(run_root, SCENARIOS[name], candidate_package, candidate_archive, candidate_identity) for name in selected]
             receipt = {"schema_version": 1, "scenarios": scenarios}
             validate_receipt(receipt, {SCENARIOS[name] for name in selected})
             rendered = json.dumps(receipt, sort_keys=True, indent=2)
@@ -301,7 +329,19 @@ def main() -> int:
         else:
             with tempfile.TemporaryDirectory(prefix="lockspire-lifetime-upgrade-") as temporary:
                 run_root = Path(temporary)
-                scenarios = [run_scenario(run_root, SCENARIOS[name]) for name in selected]
+                candidate_package, _entries, candidate_identity = prepare_package(
+                    run_root, PackageSource("tar", str(args.package_tar), args.package_sha256)
+                    if args.package_tar else None
+                )
+                candidate_archive = args.package_tar.resolve() if args.package_tar else run_root / "package" / f"lockspire-{candidate_identity.version}.tar"
+                if args.source_revision:
+                    if not re.fullmatch(r"[0-9a-f]{40,64}", args.source_revision):
+                        raise PackageInputError("candidate source revision is invalid")
+                    candidate_identity = PackageIdentity(
+                        candidate_identity.kind, candidate_identity.version, candidate_identity.sha256,
+                        candidate_identity.archive_sha256, candidate_identity.tree_sha256, args.source_revision,
+                    )
+                scenarios = [run_scenario(run_root, SCENARIOS[name], candidate_package, candidate_archive, candidate_identity) for name in selected]
                 receipt = {"schema_version": 1, "scenarios": scenarios}
                 validate_receipt(receipt)
                 rendered = json.dumps(receipt, sort_keys=True, indent=2)

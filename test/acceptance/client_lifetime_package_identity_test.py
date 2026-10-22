@@ -18,6 +18,7 @@ from package_input import (  # noqa: E402
     verify_candidate_host,
     verify_candidate_input,
 )
+from lifetime_receipts import validate_candidate_identity_agreement  # noqa: E402
 
 
 class CandidateIdentityTest(unittest.TestCase):
@@ -41,7 +42,8 @@ class CandidateIdentityTest(unittest.TestCase):
         self.temporary.cleanup()
 
     def test_matching_candidate_passes_before_use(self) -> None:
-        verify_candidate_input(self.archive, self.package, self.identity)
+        with patch("package_input.unpack_hex_tarball", side_effect=self._extract_matching_archive):
+            verify_candidate_input(self.archive, self.package, self.identity)
 
     def test_same_filename_changed_archive_bytes_rejected(self) -> None:
         self.archive.write_bytes(b"candidate archive two")
@@ -50,8 +52,9 @@ class CandidateIdentityTest(unittest.TestCase):
 
     def test_stale_extracted_tree_rejected(self) -> None:
         (self.package / "lib.ex").write_text("stale candidate\n")
-        with self.assertRaises(PackageInputError):
-            verify_candidate_input(self.archive, self.package, self.identity)
+        with patch("package_input.unpack_hex_tarball", side_effect=self._extract_matching_archive):
+            with self.assertRaises(PackageInputError):
+                verify_candidate_input(self.archive, self.package, self.identity)
 
     def test_stale_vendor_tree_rejected(self) -> None:
         child, vendor = self._host()
@@ -88,6 +91,16 @@ class CandidateIdentityTest(unittest.TestCase):
                 verify_candidate_host(self.package, child, stale_identity, vendor, vendor)
         self.assertEqual(run_calls, [])
 
+    def test_receipt_candidate_identity_must_agree_across_legs(self) -> None:
+        candidate = {
+            "kind": "tar", "version": "1.7.0", "archive_sha256": "a" * 64,
+            "tree_sha256": self.identity.tree_sha256,
+        }
+        validate_candidate_identity_agreement([candidate, dict(candidate)])
+        changed = dict(candidate, archive_sha256="c" * 64)
+        with self.assertRaises(AssertionError):
+            validate_candidate_identity_agreement([candidate, changed])
+
     def _host(self) -> tuple[Path, Path]:
         child = self.root / "provider"
         child.mkdir(exist_ok=True)
@@ -98,6 +111,11 @@ class CandidateIdentityTest(unittest.TestCase):
 
             shutil.copytree(self.package, vendor)
         return child, vendor
+
+    def _extract_matching_archive(self, _archive: Path, destination: Path) -> None:
+        import shutil
+
+        shutil.copytree(self.package, destination)
 
 
 if __name__ == "__main__":

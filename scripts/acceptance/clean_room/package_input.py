@@ -196,6 +196,14 @@ def verify_candidate_input(archive: Path, package_root: Path, identity: PackageI
         raise PackageInputError("candidate extracted tree identity mismatch")
     if package_version(package_root) != identity.version:
         raise PackageInputError("candidate package version identity mismatch")
+    with tempfile.TemporaryDirectory(prefix="lockspire-candidate-verify-") as temporary:
+        extracted = Path(temporary) / "lockspire"
+        try:
+            unpack_hex_tarball(archive, extracted)
+        except PackageInputError:
+            raise PackageInputError("candidate archive could not be verified against its extracted tree") from None
+        if package_tree_digest(extracted) != identity.tree_sha256:
+            raise PackageInputError("candidate archive and extracted tree differ")
 
 
 def _compiled_candidate_digest(child_root: Path) -> str | None:
@@ -221,10 +229,13 @@ def bind_compiled_candidate(child_root: Path, identity: PackageIdentity, vendor_
     if compiled is None:
         raise PackageInputError("compiled candidate is missing after host preparation")
     marker = {
+        "source_revision": identity.source_revision,
+        "archive_sha256": identity.archive_sha256,
         "tree_sha256": identity.tree_sha256,
         "vendor_tree_sha256": package_tree_digest(vendor_root),
         "compiled_candidate_sha256": compiled,
         "resolved_dependency": str(resolved_root.resolve(strict=True)),
+        "resolved_dependency_verified": True,
     }
     marker_path = child_root / ".lockspire-candidate.json"
     marker_path.write_text(json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -255,13 +266,29 @@ def verify_candidate_host(
     except (OSError, ValueError):
         raise PackageInputError("candidate compiled state identity mismatch") from None
     expected_marker = {
+        "source_revision": identity.source_revision,
+        "archive_sha256": identity.archive_sha256,
         "tree_sha256": expected,
         "vendor_tree_sha256": expected,
         "compiled_candidate_sha256": compiled,
         "resolved_dependency": str(vendor),
+        "resolved_dependency_verified": True,
     }
     if marker != expected_marker:
         raise PackageInputError("candidate compiled state identity mismatch")
+
+
+def candidate_host_provenance(child_root: Path) -> dict[str, object]:
+    """Return only non-path provenance fields from a previously verified host binding."""
+    try:
+        marker = json.loads((child_root / ".lockspire-candidate.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise PackageInputError("candidate compiled state identity mismatch") from None
+    return {
+        "vendor_tree_sha256": marker.get("vendor_tree_sha256"),
+        "compiled_candidate_sha256": marker.get("compiled_candidate_sha256"),
+        "resolved_dependency_verified": marker.get("resolved_dependency_verified") is True,
+    }
 
 
 def exact_version(value: str) -> str:
@@ -295,9 +322,11 @@ end
 
 
 def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str | None) -> tuple[Path, str, str]:
+    if path.is_symlink():
+        raise PackageInputError("Lockspire package tar must be a regular file")
     resolved = path.resolve(strict=True)
     allowed = allowed_root.resolve(strict=True)
-    if not resolved.is_file() or resolved.is_symlink():
+    if not resolved.is_file():
         raise PackageInputError("Lockspire package tar must be a regular file")
     if resolved.parent != allowed and allowed not in resolved.parents:
         raise PackageInputError("Lockspire package tar escapes its declared root")
@@ -317,9 +346,16 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     package_root = run_root / "package" / "lockspire"
 
     if source.kind == "checkout":
+        tarball = run_root / "package" / f"lockspire-{package_version(PROJECT_ROOT)}.tar"
+        if package_root.is_dir() and tarball.is_file():
+            version = package_version(package_root)
+            checksum = sha256(tarball)
+            tree = package_tree_digest(package_root)
+            identity = PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
+            verify_candidate_input(tarball, package_root, identity)
+            return package_root.resolve(strict=True), inventory(package_root), identity
         package_root, entries = build_package(run_root)
         version = package_version(package_root)
-        tarball = run_root / "package" / f"lockspire-{version}.tar"
         checksum = sha256(tarball)
         tree = package_tree_digest(package_root)
         return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
@@ -339,6 +375,12 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         raise PackageInputError("unknown Lockspire package source")
 
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
+    if package_root.is_dir():
+        identity = PackageIdentity(
+            source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+        )
+        verify_candidate_input(tarball, package_root, identity)
+        return package_root.resolve(strict=True), inventory(package_root), identity
     unpack_hex_tarball(tarball, package_root)
     unpacked_version = package_version(package_root)
     if unpacked_version != version:

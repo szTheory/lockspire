@@ -30,6 +30,19 @@ def _counts(value: object, label: str) -> dict[str, int]:
     return counts  # type: ignore[return-value]
 
 
+def validate_candidate_identity_agreement(candidates: Iterable[dict[str, object]]) -> None:
+    """Require all proof legs to name one archive and one unpacked candidate."""
+    identities: set[tuple[str, str, str, str]] = set()
+    for candidate in candidates:
+        if not isinstance(candidate, dict) or any(not isinstance(candidate.get(key), str) for key in CANDIDATE_FIELDS):
+            raise AssertionError("lifetime receipt candidate identity is incomplete")
+        if any(not re.fullmatch(r"[0-9a-f]{64}", candidate[key]) for key in ("archive_sha256", "tree_sha256")):
+            raise AssertionError("lifetime receipt candidate digest is invalid")
+        identities.add(tuple(candidate[key] for key in ("kind", "version", "archive_sha256", "tree_sha256")))
+    if not identities or len(identities) != 1:
+        raise AssertionError("lifetime receipt legs do not share one candidate identity")
+
+
 def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) -> dict[str, object]:
     receipt = _exact_keys(json.loads(path.read_text(encoding="utf-8")), RECEIPT_FIELDS, "root")
     if receipt["schema_version"] != 1 or not isinstance(receipt["source_revision"], str) or not re.fullmatch(r"[0-9a-f]{40,64}", receipt["source_revision"]):

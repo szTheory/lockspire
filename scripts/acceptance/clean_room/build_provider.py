@@ -265,6 +265,10 @@ def prepare_provider(
         # can create its managed and host-owned files without an overwrite refusal.
         shutil.rmtree(child / "lib")
         write_host_runtime(child, database_url, storage_prefix)
+    vendor = child / "vendor" / "lockspire"
+    # Validate all bytes already on disk before Mix is allowed to inspect or load
+    # the reusable child. The resolver probe below then confirms the observed path.
+    verify_candidate_host(package_root, child, candidate_identity, vendor, vendor)
     # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
@@ -278,7 +282,6 @@ def prepare_provider(
         "MIX_HOME": str(isolated_mix_home),
     }
     resolved = verify_child("provider_host", child, dependency_cache, isolated_environment)
-    vendor = child / "vendor" / "lockspire"
     verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
     environment = locked_environment(child, "provider_host", dependency_cache)
     environment.update(isolated_environment)
@@ -299,6 +302,9 @@ def prepare_provider(
         return child
 
     if reuse:
+        if not (child / ".lockspire-candidate.json").exists():
+            run(("mix", "compile"), cwd=child, env=environment)
+            bind_compiled_candidate(child, candidate_identity, vendor, resolved)
         return child
 
     patch_jose_record_extractors(child, environment)
