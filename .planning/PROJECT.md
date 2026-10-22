@@ -14,9 +14,19 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Closeout:** All five phase verification owners passed before archival. The audit is tech_debt with 18/18 requirements, 29/29 links and 6/6 flows. Recorded evidence limits and bookkeeping are accepted for archival; no undefined probe or unperformed visual review is relabeled as passing. See [audit](milestones/v1.45-MILESTONE-AUDIT.md), [roadmap](milestones/v1.45-ROADMAP.md) and [requirements](milestones/v1.45-REQUIREMENTS.md). Latest public package remains verified 1.6.1; this planning completion does not publish the candidate.
 
-## Next Milestone Goals
+## Current Milestone: v1.46 Embedded Host Integration Reliability
 
-No next milestone selected. Use `$gsd-new-milestone` to choose bounded scope and define fresh requirements. Existing candidates remain KEK-04, SEC-01, paged dry-run and legacy-plaintext test-fixture maintenance; retained v1.45 debt is recorded in its audit.
+**Goal:** A Phoenix host can install, mount and securely use Lockspire’s admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
+
+**Target features:**
+- One reusable host-router integration replacing the demo’s duplicated admin routes and the unsupported forwarded LiveView path.
+- Explicit host-owned authorization for initial HTTP requests, LiveView connections, reconnects and navigation; Lockspire does not take over staff accounts or policy.
+- Generated installation and upgrade guidance, installation verification, the adoption demo and clean-room fixtures use the same supported integration.
+- Automated proof for default and custom mount paths, connected navigation, denied access and separation from public OAuth/OIDC endpoints across supported LiveView baselines.
+
+**User direction:** Favor impactful mechanical fixes with little maintainer attention. No visual redesign or subjective UI signoff; focused research approved before requirements. Version and scope confirmed 2026-10-22. Phase numbering continues from 167.
+
+**Deferred:** Dedicated client-secret-JWT verifier encryption (SEC-01), KMS/Vault (KEK-04), paged key-maintenance dry-run, legacy-plaintext fixture maintenance and unrelated v1.45 debt remain separate work. Package publication and remote ref updates are separate actions.
 
 <details>
 <summary>Original v1.45 intent (2026-10-20)</summary>
@@ -342,7 +352,9 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-None; the next milestone will define fresh requirements. Deferred candidates: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures and the explicitly retained v1.45 debt.
+- [ ] Reliable host-router mounting and connected admin navigation through one supported integration — v1.46, requirements being defined.
+- [ ] Host-owned authorization on HTTP and LiveView entry, reconnect and navigation boundaries — v1.46, requirements being defined.
+- [ ] Generated install/upgrade, diagnostic and clean-room proof use the supported integration — v1.46, requirements being defined.
 
 ### Validated
 
@@ -584,4 +596,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-22 after v1.45 milestone completion*
+*Last updated: 2026-10-22 after v1.46 milestone scope confirmation*

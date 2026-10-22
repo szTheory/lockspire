@@ -1,19 +1,16 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.45
-milestone_name: DCR Lifetime Enforcement
-status: Awaiting next milestone
-stopped_at: Milestone v1.45 complete and archived
-last_updated: "2026-10-22T18:50:09Z"
+milestone: v1.46
+milestone_name: Embedded Host Integration Reliability
+status: planning
+last_updated: "2026-10-22T20:02:25.590Z"
 last_activity: 2026-10-22
-last_activity_desc: Milestone v1.45 completed and archived
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 40
-  completed_plans: 40
-  percent: 100
-current_phase: 166
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -24,14 +21,14 @@ See: .planning/PROJECT.md (updated 2026-10-22 after v1.45 completion)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone; no next scope selected.
+**Current focus:** v1.46 Embedded Host Integration Reliability — researching the confirmed scope before defining requirements.
 
 ## Current Position
 
-Phase: Milestone v1.45 complete (Phases 162–166 archived)
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-22 — Archived v1.45 with recorded nonblocking debt accepted; quick tasks remain in place.
+Status: Defining requirements
+Last activity: 2026-10-22 — Milestone v1.46 started
 
 ## Accumulated Context
 
@@ -94,6 +91,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: Milestone v1.45 complete and archived
+Stopped at: v1.46 scope confirmed; focused research approved
 Resume file: None
-Next: `$gsd-new-milestone` to select scope and create fresh requirements. Continue phase numbering from 167. Preserve the original unstaged state.json bytes.
+Next: finish approved v1.46 research, confirm requirements, then create the roadmap from Phase 167. Preserve the original unstaged state.json bytes.
