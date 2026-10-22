@@ -40,6 +40,9 @@ class PackageIdentity:
     kind: str
     version: str
     sha256: str
+    archive_sha256: str | None = None
+    tree_sha256: str | None = None
+    source_revision: str | None = None
 
     def safe_receipt(self) -> dict[str, object]:
         return {
@@ -48,6 +51,9 @@ class PackageIdentity:
             "package": "lockspire",
             "version": self.version,
             "sha256": self.sha256,
+            "archive_sha256": self.archive_sha256 or self.sha256,
+            "tree_sha256": self.tree_sha256 or "unavailable",
+            "source_revision": self.source_revision or "unavailable",
         }
 
 
@@ -133,15 +139,13 @@ def inventory(root: Path) -> tuple[str, ...]:
 
 
 def build_package(run_root: Path) -> tuple[Path, tuple[str, ...]]:
-    """Build a local Hex-style unpacked tree before any child app is started."""
+    """Build and unpack one concrete local Hex archive before any child starts."""
     require_command("mix")
     package_root = run_root / "package" / "lockspire"
     package_root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-
-    run(
-        ("mix", "hex.build", "--unpack", "--output", str(package_root)),
-        cwd=PROJECT_ROOT,
-    )
+    archive = run_root / "package" / f"lockspire-{package_version(PROJECT_ROOT)}.tar"
+    run(("mix", "hex.build", "--output", str(archive)), cwd=PROJECT_ROOT)
+    unpack_hex_tarball(archive, package_root)
 
     return package_root.resolve(strict=True), inventory(package_root)
 
@@ -152,6 +156,112 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def package_tree_digest(root: Path) -> str:
+    """Hash sorted relative names and bytes, rejecting links and empty trees."""
+    digest = hashlib.sha256()
+    paths = sorted(root.rglob("*"))
+    for path in paths:
+        if path.is_symlink():
+            raise PackageInputError("candidate tree contains a symlink")
+        if path.is_file():
+            digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+            digest.update(b"\0")
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            digest.update(b"\0")
+    if not any(path.is_file() for path in paths):
+        raise PackageInputError("candidate tree contains no files")
+    return digest.hexdigest()
+
+
+def source_revision() -> str:
+    result = subprocess.run(
+        ("git", "rev-parse", "HEAD"), cwd=PROJECT_ROOT, stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False,
+    )
+    value = result.stdout.decode().strip()
+    if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40,64}", value):
+        raise PackageInputError("candidate source revision could not be identified")
+    return value
+
+
+def verify_candidate_input(archive: Path, package_root: Path, identity: PackageIdentity) -> None:
+    """Verify the source artifact and extracted tree before any child can reuse them."""
+    if not archive.is_file() or sha256(archive) != (identity.archive_sha256 or identity.sha256):
+        raise PackageInputError("candidate archive identity mismatch")
+    if not package_root.is_dir() or package_tree_digest(package_root) != identity.tree_sha256:
+        raise PackageInputError("candidate extracted tree identity mismatch")
+    if package_version(package_root) != identity.version:
+        raise PackageInputError("candidate package version identity mismatch")
+
+
+def _compiled_candidate_digest(child_root: Path) -> str | None:
+    roots = (child_root / "_build" / "dev" / "lib" / "lockspire", child_root / "_build" / "test" / "lib" / "lockspire")
+    existing = [root for root in roots if root.exists()]
+    if not existing:
+        return None
+    digest = hashlib.sha256()
+    for root in existing:
+        for path in sorted(root.rglob("*")):
+            if path.is_symlink():
+                raise PackageInputError("compiled candidate contains a symlink")
+            if path.is_file():
+                digest.update(path.relative_to(child_root).as_posix().encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(path.read_bytes())
+                digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def bind_compiled_candidate(child_root: Path, identity: PackageIdentity, vendor_root: Path, resolved_root: Path) -> None:
+    compiled = _compiled_candidate_digest(child_root)
+    if compiled is None:
+        raise PackageInputError("compiled candidate is missing after host preparation")
+    marker = {
+        "tree_sha256": identity.tree_sha256,
+        "vendor_tree_sha256": package_tree_digest(vendor_root),
+        "compiled_candidate_sha256": compiled,
+        "resolved_dependency": str(resolved_root.resolve(strict=True)),
+    }
+    marker_path = child_root / ".lockspire-candidate.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+
+
+def verify_candidate_host(
+    package_root: Path, child_root: Path, identity: PackageIdentity,
+    vendor_root: Path, resolved_dependency: Path,
+) -> None:
+    """Reject package, vendor, resolver, or compiled drift before a host is reused."""
+    expected = identity.tree_sha256
+    if not expected or package_tree_digest(package_root) != expected:
+        raise PackageInputError("candidate source tree identity mismatch")
+    if package_tree_digest(vendor_root) != expected:
+        raise PackageInputError("candidate vendor tree identity mismatch")
+    vendor = vendor_root.resolve(strict=True)
+    resolved = resolved_dependency.resolve(strict=True)
+    if resolved != vendor:
+        raise PackageInputError("candidate resolved dependency identity mismatch")
+    compiled = _compiled_candidate_digest(child_root)
+    marker_path = child_root / ".lockspire-candidate.json"
+    if compiled is None and not marker_path.exists():
+        return
+    if compiled is None or not marker_path.is_file():
+        raise PackageInputError("candidate compiled state identity mismatch")
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise PackageInputError("candidate compiled state identity mismatch") from None
+    expected_marker = {
+        "tree_sha256": expected,
+        "vendor_tree_sha256": expected,
+        "compiled_candidate_sha256": compiled,
+        "resolved_dependency": str(vendor),
+    }
+    if marker != expected_marker:
+        raise PackageInputError("candidate compiled state identity mismatch")
 
 
 def exact_version(value: str) -> str:
@@ -209,9 +319,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     if source.kind == "checkout":
         package_root, entries = build_package(run_root)
         version = package_version(package_root)
-        tarball = PROJECT_ROOT / f"lockspire-{version}.tar"
-        checksum = sha256(tarball) if tarball.is_file() else "unavailable"
-        return package_root, entries, PackageIdentity("checkout", version, checksum)
+        tarball = run_root / "package" / f"lockspire-{version}.tar"
+        checksum = sha256(tarball)
+        tree = package_tree_digest(package_root)
+        return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
 
     if source.kind == "hex":
         version = exact_version(source.value or "")
@@ -234,7 +345,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         raise PackageInputError("Lockspire package filename and metadata versions differ")
 
     entries = inventory(package_root)
-    return package_root.resolve(strict=True), entries, PackageIdentity(source.kind, version, checksum)
+    package_root = package_root.resolve(strict=True)
+    return package_root, entries, PackageIdentity(
+        source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+    )
 
 
 def assert_below(path: Path, root: Path, label: str) -> Path:
@@ -290,7 +404,7 @@ def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> 
 
 def verify_child(
     role: str, child_root: Path, cache_root: Path | None, extra_environment: dict[str, str] | None = None
-) -> None:
+) -> Path:
     before_manifest = (child_root / "mix.exs").read_bytes()
     before_lock = (child_root / "mix.lock").read_bytes()
     environment = locked_environment(child_root, role, cache_root)
@@ -342,6 +456,7 @@ def verify_child(
 
     label = "provider" if role == "provider_host" else "client"
     print(f"{label} provenance verified")
+    return resolved
 
 
 def prepare_children(run_root: Path, cache_root: Path | None = None) -> None:

@@ -26,12 +26,19 @@ from package_input import (
     PackageInputError,
     assert_below,
     build_package,
+    bind_compiled_candidate,
     clean_room_database_url,
     copy_child_template,
     inventory,
     locked_environment,
     probe_environment,
+    PackageIdentity,
+    package_tree_digest,
+    package_version,
+    sha256,
     run,
+    source_revision,
+    verify_candidate_host,
     verify_child,
 )
 
@@ -230,18 +237,27 @@ def prepare_provider(
     port: int = 4100,
     cache_root: Path | None = None,
     storage_prefix: str = "lockspire",
+    candidate_identity: PackageIdentity | None = None,
 ) -> Path:
     probe_environment()
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
         raise PackageInputError("invalid Lockspire storage prefix")
     if package_root is None:
         package_root, _ = build_package(run_root)
+    if candidate_identity is None:
+        version = package_version(package_root)
+        archive = package_root.parent / f"lockspire-{version}.tar"
+        candidate_identity = PackageIdentity(
+            "checkout", version, sha256(archive) if archive.is_file() else "",
+            sha256(archive) if archive.is_file() else None,
+            package_tree_digest(package_root), source_revision(),
+        )
     child = run_root / "provider_host"
     reuse = child.is_dir()
     if reuse:
         vendor = child / "vendor" / "lockspire"
-        if not vendor.is_dir() or inventory(vendor) != inventory(package_root):
-            raise PackageInputError("prepared provider package does not match the requested package root")
+        if not vendor.is_dir():
+            raise PackageInputError("prepared provider package is missing")
     else:
         child = copy_child_template("provider_host", run_root, package_root)
         # The checked-in lib tree is an overlay source, not pre-existing host code:
@@ -261,8 +277,9 @@ def prepare_provider(
         "HEX_HOME": str(isolated_hex_home),
         "MIX_HOME": str(isolated_mix_home),
     }
-    if not reuse:
-        verify_child("provider_host", child, dependency_cache, isolated_environment)
+    resolved = verify_child("provider_host", child, dependency_cache, isolated_environment)
+    vendor = child / "vendor" / "lockspire"
+    verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
     environment = locked_environment(child, "provider_host", dependency_cache)
     environment.update(isolated_environment)
     environment.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
@@ -278,9 +295,7 @@ def prepare_provider(
         # No overlay is applied without the installer, so the overlay-based boundary audit does
         # not apply; only the vendored package inventory is checked here.
         vendor = child / "vendor" / "lockspire"
-        if inventory(vendor) != inventory(package_root):
-            raise PackageInputError("provider vendor inventory drifted after installation")
-        assert_below(vendor, child, "provider vendor dependency")
+        verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
         return child
 
     if reuse:
@@ -302,6 +317,8 @@ def prepare_provider(
         raise PackageInputError("provider installer failed: " + " ".join(details))
     apply_host_overlays(child)
     audit_boundary(child, package_root)
+    run(("mix", "compile"), cwd=child, env=environment)
+    bind_compiled_candidate(child, candidate_identity, vendor, resolved)
     return child
 
 
