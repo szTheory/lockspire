@@ -223,21 +223,24 @@ defmodule Lockspire.Web.AdminRoutes do
   defp normalize_hooks!(hook), do: [hook]
 
   defp route_mount_prefix(route_path) do
-    Enum.find_value(@admin_live_routes, fn {relative_path, _view, _action} ->
-      cond do
-        relative_path == "/" and
-            (route_path == "/" or String.ends_with?(route_path, "/admin")) ->
-          String.trim_trailing(route_path, "/")
+    route =
+      @admin_live_routes
+      |> Enum.filter(fn {relative_path, _view, _action} ->
+        if relative_path == "/" do
+          route_path == "/" or String.ends_with?(route_path, "/admin")
+        else
+          String.ends_with?(route_path, relative_path)
+        end
+      end)
+      |> Enum.max_by(fn {relative_path, _view, _action} -> byte_size(relative_path) end, fn ->
+        nil
+      end)
 
-        String.ends_with?(route_path, relative_path) ->
-          route_path
-          |> String.replace_suffix(relative_path, "")
-          |> String.trim_trailing("/")
-
-        true ->
-          nil
-      end
-    end)
+    case route do
+      {"/", _view, _action} -> String.trim_trailing(route_path, "/")
+      {relative_path, _view, _action} -> String.replace_suffix(route_path, relative_path, "")
+      nil -> nil
+    end
   end
 
   defp validate_admin_path!(path, label) when is_binary(path) and path != "" do

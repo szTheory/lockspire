@@ -261,7 +261,8 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
      :security_profile},
     {"/clients/:client_id/redirects", Lockspire.Web.Live.Admin.ClientsLive.Show, :redirects},
     {"/clients/:client_id/logout-uris", Lockspire.Web.Live.Admin.ClientsLive.Show, :logout_uris},
-    {"/clients/:client_id/rotate-secret", Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_secret},
+    {"/clients/:client_id/rotate-secret", Lockspire.Web.Live.Admin.ClientsLive.Show,
+     :rotate_secret},
     {"/clients/:client_id/rotate-registration-access-token",
      Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_registration_access_token},
     {"/dcr", Lockspire.Web.Live.Admin.DcrLive.Index, :index},
@@ -339,6 +340,8 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
         assert view.module == expected_module
         assert html != ""
+        assert_receive {:host_live_hook, "staff-1"}
+        assert_receive {:host_session_callback, _label}
         first_pid = view.pid
         monitor = Process.monitor(first_pid)
         GenServer.stop(first_pid)
@@ -354,8 +357,6 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         assert rejoined.pid != first_pid
         assert rejoined.module == view.module
         assert_receive {:host_live_hook, "staff-1"}
-        assert_receive {:host_live_hook, "staff-1"}
-        assert_receive {:host_session_callback, _label}
         assert_receive {:host_session_callback, _label}
       end
 
@@ -375,6 +376,7 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         assert %{
                  phoenix_live_view: {^expected_module, ^expected_action, _options, _extra}
                } = Phoenix.Router.route_info(router, "GET", route_path, "www.example.com")
+
         assert Lockspire.Web.AdminRoutes.effective_admin_path(
                  router,
                  "GET",
@@ -405,6 +407,7 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
                endpoint_live(endpoint, base, %{"host_staff_id" => "staff-1"})
 
       assert overview_html =~ ~s(href="#{client_path}")
+
       assert {:ok, clients, clients_html} =
                Phoenix.LiveViewTest.live_redirect(overview, to: client_path)
 
@@ -438,7 +441,13 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
       })
       |> render_submit()
 
-      assert_patch(client_filter, client_path <> "?page=1&provenance=all&q=admin-route&status=all")
+      assert_patch(
+        client_filter,
+        client_path <> "?page=1&provenance=all&q=admin-route&status=all"
+      )
+
+      assert render(client_filter) =~ ~s(href="#{client_path}/new?)
+      assert render(client_filter) =~ ~s(href="#{detail_path}?)
 
       token_path = base <> "/tokens"
 
@@ -458,6 +467,8 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         token_path <>
           "?account=admin-route-account&client=admin-route-client&status=all"
       )
+
+      assert render(token_filter) =~ ~s(href="#{token_path}/#{fixtures.token.id}?)
 
       workflow_path = edit_path <> "?workflow=logout-propagation"
 
@@ -508,10 +519,23 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
              )
 
     assert alpha.pid != beta.pid
+    assert alpha.module == Lockspire.Web.Live.Admin.ClientsLive.Index
+    assert beta.module == Lockspire.Web.Live.Admin.ClientsLive.Index
     assert render(alpha) =~ ~s(value="admin-route")
     assert render(beta) =~ ~s(value="missing")
+
+    assert %{phoenix_live_view: {Lockspire.Web.Live.Admin.ClientsLive.Index, :index, _, _}} =
+             Phoenix.Router.route_info(
+               AdminRouteHost.DefaultRouter,
+               "GET",
+               "/lockspire/admin/clients",
+               "www.example.com"
+             )
+
     assert_receive {:host_live_hook, "staff-1"}
     assert_receive {:host_live_hook, "staff-1"}
+    assert_receive {:host_session_callback, _label}
+    assert_receive {:host_session_callback, _label}
   end
 
   test "both root mount config values and a normalized trailing slash produce one admin slash" do
