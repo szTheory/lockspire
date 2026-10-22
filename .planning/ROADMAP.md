@@ -72,7 +72,18 @@ Plans:
   3. Navigation from public/consent sessions into admin cannot skip its host checks, and every admin destination remains within the protected session with its required hooks. (HAUTH-03)
   4. Reconnecting with an invalid session or withdrawn host authority is denied, while currently authorized staff reconnect successfully. (HAUTH-04)
 
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 168-01-PLAN.md — Current host policy at HTTP, disconnected and connected admin entry; required wiring refusal.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 168-02-PLAN.md — Cached-session connected rejoin with current session, identity and staff-policy checks.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 168-03-PLAN.md — Protected cross-session/admin navigation, native patches and automated evidence closure.
+
 **UI hint**: yes
 **UI scope**: Access and navigation mechanics only; no visual redesign or subjective UI signoff.
 **Planning constraints**: Resolve staff identity through the host seam; conn.assigns or a copied session boolean is not current connected authority. Tests must distinguish disconnected HTTP, connected mount, cross-session navigation and reconnect. Keep native host logout/disconnect and event-policy responsibilities explicit; no promise of continuous permission revocation, new account store, role engine or resource ACL system.

@@ -4,16 +4,16 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 168
 current_phase_name: Host-Owned LiveView Authorization
-status: planning
-stopped_at: Phase 167 complete, ready to plan Phase 168
-last_updated: "2026-10-22T23:27:26.221Z"
+status: executing
+stopped_at: Phase 168 planned and independently checked, ready to execute
+last_updated: "2026-10-22T23:57:50.029Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 167 complete, transitioned to Phase 168
-state_head: 003c7a03e9ddbc6ebb64e6fb7c64fc8280bbf547
+last_activity_desc: Phase 168 planning complete; three plans independently checked
+state_head: 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 3
+  total_plans: 6
   completed_plans: 3
   percent: 25
 ---
@@ -26,18 +26,20 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 168 — Host-Owned LiveView Authorization, ready to plan. Phase 167 is complete with zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
+**Current focus:** Phase 168 — Host-Owned LiveView Authorization, ready to execute three checked plans in three waves. Research, pattern mapping and independent plan verification are complete; runtime acceptance is pending. Phase 167 is complete with zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
 
 ## Current Position
 
-Phase: 168 of 170 (Host-Owned LiveView Authorization)
+Phase: 168 (Host-Owned LiveView Authorization) — READY TO EXECUTE
 Plan: Not started
-Status: Ready to plan
-Last activity: 2026-10-22 — Phase 167 complete, transitioned to Phase 168
+Status: Ready to execute
+Last activity: 2026-10-22 — Phase 168 planning complete; three plans independently checked
 
 ## Accumulated Context
 
 ### Decisions
+
+Phase 168 plans cover current host policy at HTTP/disconnected/connected entry, cached-response connected rejoin, cross-session/admin navigation and native patches through a host-owned params hook. Six tasks run in three sequential waves. All four HAUTH requirements are covered; independent checker passed. Three unspecified probe assumptions remain flagged, and two descriptor-less prohibitions have automated/source-evidence closure rules. Browser/socket, packaged and exact-floor proof remains Phase 170; install/demo convergence remains Phase 169. No Phase 168 runtime pass is claimed during planning.
 
 Phase 167 completed three plans: native host-expanded routes, required host pipelines/current-identity hooks, fixed :lockspire_admin session, mount alignment, 29-route parity and public/consent separation. Fresh verification passed 48 tests and all 22 truths; security closed 12/12 threats and code review found no issues. The two descriptor-less prohibition checkpoints were individually resolved through automated tests and delegated evidence review in 167-UAT.md. Canonical verification and the combined completion predicate passed; no override or human pass was assumed.
 
@@ -104,6 +106,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: Phase 167 complete, ready to plan Phase 168
+Stopped at: Phase 168 planned and independently checked, ready to execute
 Resume file: None
-Next: `$gsd-plan-phase 168`. Apply the automation policy and retain the closed Phase 167 UAT dispositions. Preserve the original unstaged state.json bytes; no Phase 168 implementation has started.
+Next: `$gsd-execute-phase 168`. Apply the automation policy and retain the closed Phase 167 UAT dispositions. Preserve the original unstaged state.json bytes; no Phase 168 implementation has started. The configured plan workflow auto-advances to execution after recording planning completion.
