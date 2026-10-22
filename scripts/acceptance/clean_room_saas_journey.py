@@ -42,7 +42,7 @@ from package_input import (
     probe_environment,
     verify_child,
 )
-from redaction import Redactor, SentinelSet
+from redaction import Redactor, SentinelSet, safe_failure_summary
 from processes import allocate_loopback_port
 
 
@@ -63,7 +63,7 @@ def interruption_handler(signum: int, _frame: object) -> None:
 
 def register_secret(value: object) -> None:
     if ACTIVE_REDACTOR is not None:
-        ACTIVE_REDACTOR.register(value)
+        ACTIVE_REDACTOR.register_material(value)
 
 
 class Browser:
@@ -1132,7 +1132,10 @@ def main(argv: list[str]) -> int:
             print("clean-room journey interrupted", file=sys.stderr)
             result_code = 130
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
-            print(redactor.text(error), file=sys.stderr)
+            print(str(safe_failure_summary(
+                stage="saas_journey", scenario="-".join(args.only or ["all"]),
+                event="runner_failure", field=type(error).__name__, count=1,
+            )), file=sys.stderr)
             result_code = 1
         finally:
             stop_process(client_process)
@@ -1141,7 +1144,10 @@ def main(argv: list[str]) -> int:
             try:
                 assert_owned_run_root(run_root, run_root_owner)
             except AssertionError as error:
-                print(redactor.text(error), file=sys.stderr)
+                print(str(safe_failure_summary(
+                    stage="saas_journey", scenario="cleanup", event="runner_failure",
+                    field=type(error).__name__, count=1,
+                )), file=sys.stderr)
             else:
                 if client_child is not None and client_environment is not None:
                     drop_child_database(client_child, client_environment, "client")

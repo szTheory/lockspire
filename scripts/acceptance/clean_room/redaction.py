@@ -4,15 +4,27 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from dataclasses import dataclass
+import hashlib
 import re
 import secrets
 import sys
 from typing import Any, Mapping, Sequence
+from urllib.parse import quote, quote_plus
 
 
 SECRET_HEADER_NAMES = frozenset({"authorization", "cookie", "set-cookie"})
 FREE_TEXT_HEADERS = re.compile(r"(?i)(authorization|cookie|set-cookie)\s*[:=]\s*[^\r\n]+")
+SAFE_IDENTIFIER = re.compile(r"[A-Za-z0-9_.-]{1,80}\Z")
+SAFE_FAILURE_FIELDS = frozenset({"stage", "scenario", "event", "field", "count"})
+SAFE_IDENTIFIERS = frozenset({
+    "legacy_upgrade", "saas_journey", "public", "tenant_auth", "selected", "cleanup",
+    "all", "happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime",
+    "child_start", "child_timeout", "child_exit", "runner_failure", "assertion_failure",
+    "stdout_stderr", "argv", "process", "exception", "PackageInputError", "AssertionError",
+    "OSError", "SubprocessError", "JSONDecodeError", "TimeoutExpired", "RuntimeError",
+})
 
 
 @dataclass(frozen=True)
@@ -63,6 +75,23 @@ class Redactor:
             return
         self._values = tuple(sorted(set((*self._values, value)), key=len, reverse=True))
 
+    def register_material(self, value: object) -> None:
+        """Register a returned value and common retained encodings before rendering."""
+        if not isinstance(value, str) or not value:
+            return
+        raw = value.encode("utf-8")
+        digest = hashlib.sha256(raw).hexdigest()
+        representations = {
+            value,
+            base64.b64encode(raw).decode("ascii"),
+            base64.urlsafe_b64encode(raw).decode("ascii"),
+            quote(value, safe=""),
+            quote_plus(value, safe=""),
+            digest,
+        }
+        for representation in representations:
+            self.register(representation)
+
     def text(self, value: object) -> str:
         scrubbed = str(value)
 
@@ -100,6 +129,26 @@ def safe_http_summary(redactor: Redactor, status: int, headers: Mapping[str, str
         "headers": redactor.structured(headers),
         "body_excerpt": redactor.text(body)[:600],
     }
+
+
+def safe_failure_summary(
+    *, stage: object, scenario: object, event: object, field: object, count: object
+) -> dict[str, str | int]:
+    """Build diagnostics from a fixed identifier/count allowlist only."""
+    def identifier(value: object) -> str:
+        return value if isinstance(value, str) and SAFE_IDENTIFIER.fullmatch(value) and value in SAFE_IDENTIFIERS else "unknown"
+
+    safe_count = count if type(count) is int and count >= 0 else 0
+    summary: dict[str, str | int] = {
+        "stage": identifier(stage),
+        "scenario": identifier(scenario),
+        "event": identifier(event),
+        "field": identifier(field),
+        "count": safe_count,
+    }
+    if set(summary) != SAFE_FAILURE_FIELDS:
+        raise RuntimeError("safe failure summary fields drifted")
+    return summary
 
 
 def self_test() -> None:
