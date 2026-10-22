@@ -216,5 +216,6 @@ scenarios with 49 checks passed and none failed or skipped. Its observed source
 revision was `8050a398`; package archive and extracted-tree digests were checked
 against `5709092d`. The broader canonical integration matrix had unrelated
 fixture failures, and final-candidate CI plus independent security review are
-still pending. See the phase's maintainer evidence record; this local result
-does not claim those remaining gates or a release are complete.
+still pending. Maintainer execution records retain the sanitized receipt and
+artifact identity for this run. This local result does not claim those remaining
+gates or a release are complete.
