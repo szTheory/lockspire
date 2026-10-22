@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m unittest discover -s test/acceptance -p 'client_lifetime_redaction_test.py' -v",
+  "exitCode": 1,
+  "output": "test_safe_failure_summary_is_allowlisted (client_lifetime_redaction_test.LifetimeRedactionTest.test_safe_failure_summary_is_allowlisted) ... FAIL\n\n======================================================================\nFAIL: test_safe_failure_summary_is_allowlisted (client_lifetime_redaction_test.LifetimeRedactionTest.test_safe_failure_summary_is_allowlisted)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_lifetime_redaction_test.py\", line 19, in test_safe_failure_summary_is_allowlisted\n    self.assertTrue(callable(summary), \"redaction module must expose safe failure summaries\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : redaction module must expose safe failure summaries\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_safe_failure_summary_is_allowlisted",
+  "targetFile": "test/acceptance/client_lifetime_redaction_test.py",
+  "expected": "The shared redaction module exposes a bounded safe failure-summary function.",
+  "actual": "The function is absent, so no safe structured failure summary can be produced.",
+  "semanticAssessment": "The exact named unittest target executed and failed on its planned API assertion. Import and discovery succeeded; this was not a load or fixture failure."
+}
