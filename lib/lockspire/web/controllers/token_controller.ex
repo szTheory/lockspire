@@ -5,6 +5,7 @@ defmodule Lockspire.Web.TokenController do
 
   use Phoenix.Controller, formats: [:json]
 
+  alias Lockspire.Config
   alias Lockspire.Protocol.TokenExchange
   alias Lockspire.Protocol.TokenExchange.Error
   alias Lockspire.Protocol.TokenExchange.Success
@@ -20,7 +21,11 @@ defmodule Lockspire.Web.TokenController do
            dpop: List.first(get_req_header(conn, "dpop")),
            method: conn.method,
            opts:
-             [client_store: Repository, token_store: Repository]
+             [
+               client_store: Config.client_store(),
+               token_store: Repository,
+               transaction_store: Config.transaction_store()
+             ]
              |> Keyword.put(:server_policy_store, Repository)
              |> Keyword.put(:dpop_replay_store, Repository)
              |> Keyword.put(:device_authorization_store, Repository)

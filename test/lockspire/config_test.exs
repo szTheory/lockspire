@@ -37,6 +37,28 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.account_resolver!() == Lockspire.TestAccountResolver
   end
 
+  test "client and transaction store selectors default to Repository and preserve explicit values" do
+    delete_lockspire_env(:client_store)
+    delete_lockspire_env(:transaction_store)
+
+    assert Lockspire.Config.client_store() == Lockspire.Storage.Ecto.Repository
+    assert Lockspire.Config.transaction_store() == Lockspire.Storage.Ecto.Repository
+
+    put_lockspire_env(:client_store, CustomClientStore)
+    put_lockspire_env(:transaction_store, CustomTransactionStore)
+
+    assert Lockspire.Config.client_store() == CustomClientStore
+    assert Lockspire.Config.transaction_store() == CustomTransactionStore
+  end
+
+  test "invalid explicit store selector values are not replaced by defaults" do
+    put_lockspire_env(:client_store, :invalid_client_store)
+    put_lockspire_env(:transaction_store, "invalid transaction store")
+
+    assert Lockspire.Config.client_store() == :invalid_client_store
+    assert Lockspire.Config.transaction_store() == "invalid transaction store"
+  end
+
   test "storage_prefix/0 keeps missing config legacy-compatible and validates explicit values" do
     delete_lockspire_env(:storage_prefix)
     delete_lockspire_env(:oban_prefix)

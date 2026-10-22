@@ -33,6 +33,30 @@ defmodule Lockspire.Config do
   end
 
   @doc """
+  Returns the configured client storage module for token exchange.
+
+  Defaults to `Lockspire.Storage.Ecto.Repository`. An explicitly configured
+  unsupported value is returned as supplied so token exchange can reject the
+  composition as a server configuration error instead of silently falling back.
+  """
+  @spec client_store() :: term()
+  def client_store do
+    Application.get_env(@app, :client_store, Lockspire.Storage.Ecto.Repository)
+  end
+
+  @doc """
+  Returns the configured transaction storage module for token exchange.
+
+  Defaults to `Lockspire.Storage.Ecto.Repository`. The selected transaction
+  store must declare the same shared authority as the selected client store.
+  Unsupported explicit values fail closed during request adaptation.
+  """
+  @spec transaction_store() :: term()
+  def transaction_store do
+    Application.get_env(@app, :transaction_store, Lockspire.Storage.Ecto.Repository)
+  end
+
+  @doc """
   Returns the configured token exchange validator module, or defaults to a delegation validator.
   """
   @spec token_exchange_validator() :: module()

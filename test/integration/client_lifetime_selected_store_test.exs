@@ -34,12 +34,21 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
   } do
     preserve_store_config()
     Process.put(:selected_store_test_owner, self())
-    Application.put_env(:lockspire, :client_store, SelectedClientStore)
-    Application.put_env(:lockspire, :transaction_store, SelectedTransactionStore)
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedClientStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedTransactionStore
+    )
 
     conn = token_request(client, raw_code)
 
-    assert conn.status == 200
+    assert conn.status == 200, conn.resp_body
 
     assert_received {:selected_store, :fetch_client_by_id, client_id}
                     when client_id == client.client_id
@@ -80,8 +89,17 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     raw_code: raw_code
   } do
     preserve_store_config()
-    Application.put_env(:lockspire, :client_store, MismatchedClientStore)
-    Application.put_env(:lockspire, :transaction_store, SelectedTransactionStore)
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.MismatchedClientStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedTransactionStore
+    )
 
     conn = token_request(client, raw_code)
 
@@ -150,7 +168,10 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
         authority
         | participants:
             authority.participants
-            |> Map.put(:client_store, SelectedClientStore)
+            |> Map.put(
+              :client_store,
+              Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedClientStore
+            )
             |> Map.put(:transaction_store, __MODULE__)
       }
     end
