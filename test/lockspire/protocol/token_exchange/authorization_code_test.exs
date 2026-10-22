@@ -14,6 +14,8 @@ defmodule Lockspire.Protocol.TokenExchange.AuthorizationCodeTest do
     _code =
       create_authorization_code(client, raw_code: "code-basic", code_verifier: "verifier-basic")
 
+    exchange_time = DateTime.truncate(DateTime.utc_now(), :second)
+
     assert {:ok, success} =
              exchange(
                %{
@@ -22,7 +24,8 @@ defmodule Lockspire.Protocol.TokenExchange.AuthorizationCodeTest do
                  "redirect_uri" => "https://client.example.com/callback",
                  "code_verifier" => "verifier-basic"
                },
-               authorization: basic_auth(client.client_id, secret)
+               authorization: basic_auth(client.client_id, secret),
+               now: fn -> exchange_time end
              )
 
     assert success.access_token
