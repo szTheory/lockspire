@@ -88,6 +88,8 @@ these actions clears host-owned browser sessions. Online Lockspire consumers
 check current app state, but offline JWT verification and caches may not see a
 later disablement or expiry immediately. See the [lifetime upgrade and storage
 guide](upgrading/client-lifetimes.md) for cutover, legacy, and storage limits.
+Maintainers can trace the lifetime contract to its [maintainer case
+evidence](https://github.com/szTheory/lockspire/blob/93bb6e386d6751873ec2c090bd751ddfbd575a7d/.planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json).
 
 ### `client_secret_jwt` Direct-Client Slice
 
