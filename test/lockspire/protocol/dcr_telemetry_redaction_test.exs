@@ -585,6 +585,36 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
     assert length(host_rotation_events) >= 1
     assert length(self_rotation_events) >= 1
 
+    audit_rows =
+      Lockspire.TestRepo.all(
+        from(audit in AuditEventRecord,
+          where: audit.resource_id in ^[client.client_id, jwt_client.client_id],
+          order_by: [desc: audit.id]
+        )
+      )
+
+    required_audit_counts = %{
+      "dcr_client_created" => 2,
+      "client_secret_rotated" => 2,
+      "dcr_management_updated" => 1,
+      "dcr_management_rat_rotated" => 1
+    }
+
+    for {action, minimum_count} <- required_audit_counts do
+      actual_count = Enum.count(audit_rows, &(&1.action == action))
+      assert actual_count >= minimum_count, "expected persisted #{action} audit rows"
+    end
+
+    assert Enum.any?(
+             audit_rows,
+             &(&1.action == "dcr_management_updated" and &1.actor_type == "self_registered_client")
+           )
+
+    assert Enum.any?(audit_rows, fn row ->
+             row.action == "dcr_management_rat_rotated" and row.actor_type == "operator" and
+               row.actor_id == "admin-ui"
+           end)
+
     assert_raise KeyError, fn ->
       assert_positive_event_count!(%{}, [:lockspire, :dcr, :register])
     end
@@ -672,14 +702,6 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
     refute sensitive_keys(public_error)
 
-    audit_rows =
-      Lockspire.TestRepo.all(
-        from(audit in AuditEventRecord,
-          where: audit.resource_id in ^[client.client_id, jwt_client.client_id],
-          order_by: [desc: audit.id]
-        )
-      )
-
     assert Enum.any?(audit_rows, &(&1.action == "dcr_client_created"))
     assert Enum.any?(audit_rows, &(&1.action == "client_secret_rotated"))
 
@@ -713,7 +735,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
   defp assert_material_absent!(payload, material, event, count) do
     if String.contains?(payload, material) do
-      flunk("telemetry redaction failed for event #{inspect(event)}; matches=#{count}; payload=#{payload}")
+      flunk("telemetry redaction failed for event #{inspect(event)}; matches=#{count}")
     end
   end
 
