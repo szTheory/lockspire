@@ -1,0 +1,10 @@
+{
+  "decision": "narrow-selectors",
+  "confirmed_by": "user",
+  "config_keys": [
+    "client_store",
+    "transaction_store"
+  ],
+  "user_response_ref": "Conversation response to the narrow-selectors recommendation: \"what do u recommend? do that\" (2026-10-22T00:39:37Z). The recommendation approved :client_store and :transaction_store, both defaulting to Lockspire.Storage.Ecto.Repository, with support limited to the named PostgreSQL-delegating composition and matching shared authority.",
+  "confirmed_at": "2026-10-22T00:39:37Z"
+}
