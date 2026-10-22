@@ -844,11 +844,6 @@ def main() -> int:
                 print(rendered)
         return 0
     except (PackageInputError, OSError, ValueError) as error:
-        try:
-            redactor.assert_safe(str(error))
-            print(f"legacy upgrade detail: {error}", file=sys.stderr)
-        except RuntimeError:
-            print("legacy upgrade detail contained by redaction guard", file=sys.stderr)
         summary = safe_failure_summary(
             stage="legacy_upgrade", scenario="selected", event="runner_failure",
             field=type(error).__name__, count=1,

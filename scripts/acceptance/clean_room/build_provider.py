@@ -361,8 +361,7 @@ def prepare_provider(
         check=False,
     )
     if install_result.returncode != 0:
-        details = install_result.stdout.decode(errors="replace").splitlines()[-16:]
-        raise PackageInputError("provider installer failed: " + " ".join(details))
+        raise PackageInputError("provider installer failed")
     apply_host_overlays(child)
     print("provider host overlays applied")
     audit_boundary(child, package_root)

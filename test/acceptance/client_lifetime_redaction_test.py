@@ -7,6 +7,8 @@ import hashlib
 from pathlib import Path
 import sys
 import unittest
+from contextlib import redirect_stderr
+from io import StringIO
 from unittest.mock import patch
 
 
@@ -110,6 +112,31 @@ class LifetimeRedactionTest(unittest.TestCase):
                 )
         self.assertNotIn("raw secret body", str(raised.exception))
         self.assertIn("child_start", str(raised.exception))
+
+    def test_upgrade_main_never_prints_untrusted_package_error_text(self) -> None:
+        unregistered = "phase166-unregistered-client_secret=synthetic-987654"
+        registered = "phase166-registered-client_secret=synthetic-123456"
+        sentinels = redaction.SentinelSet(
+            authorization_code="code", access_token="access", refresh_token="refresh",
+            bearer_client_secret=registered, dpop_client_secret="dpop-secret",
+            session_encryption_key="session-key", pkce_verifier="verifier",
+            dpop_private_key="private-key", dpop_proof="proof", cookie="cookie",
+        )
+
+        for material in (unregistered, registered):
+            with self.subTest(material="registered" if material == registered else "unregistered"):
+                stderr = StringIO()
+                with (
+                    patch.object(upgrade.SentinelSet, "for_run", return_value=sentinels),
+                    patch.object(upgrade, "prepare_package", side_effect=upgrade.PackageInputError(material)),
+                    patch.object(sys, "argv", ["client_lifetime_upgrade.py", "--scenario", "public"]),
+                    redirect_stderr(stderr),
+                ):
+                    self.assertEqual(upgrade.main(), 1)
+                rendered = stderr.getvalue()
+                self.assert_material_absent(material, rendered)
+                self.assertIn("runner_failure", rendered)
+                self.assertNotIn("legacy upgrade detail:", rendered)
 
     def test_success_receipt_keeps_only_allowlisted_markers(self) -> None:
         secret = "phase166-child-token-987654"

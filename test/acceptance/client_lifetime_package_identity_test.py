@@ -104,7 +104,7 @@ class CandidateIdentityTest(unittest.TestCase):
     def test_receipt_candidate_identity_must_agree_across_legs(self) -> None:
         candidate = {
             "kind": "tar", "version": "1.7.0", "archive_sha256": "a" * 64,
-            "tree_sha256": self.identity.tree_sha256,
+            "tree_sha256": self.identity.tree_sha256, "source_revision": "b" * 40,
         }
         validate_candidate_identity_agreement([candidate, dict(candidate)])
         changed = dict(candidate, archive_sha256="c" * 64)
