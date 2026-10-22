@@ -110,7 +110,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
           {:ok,
            %{
              access_signing: AccessTokenSigner.prepared_signing(),
-             formatted_refresh_token: TokenFormatter.formatted_token() | nil,
+             formatted_refresh_token: AccessTokenSigner.formatted_token() | nil,
              cnf: term()
            }}
           | {:error, Error.t()}
@@ -135,7 +135,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
           {:ok,
            %{
              access_signing: AccessTokenSigner.prepared_signing(),
-             formatted_refresh_token: TokenFormatter.formatted_token() | nil,
+             formatted_refresh_token: AccessTokenSigner.formatted_token() | nil,
              cnf: term()
            }}
           | {:error, Error.t()}

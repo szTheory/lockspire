@@ -46,9 +46,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # tokens tighten this field to String.t(), but signing deliberately accepts
   # the pre-persistence shape too.
   @type token_for_issuance :: %Token{token_hash: String.t() | nil}
+  @type formatted_token :: %{token: String.t(), token_hash: String.t(), token_type: String.t()}
   @type result :: {:ok, String.t(), String.t()} | {:error, struct()}
   @type prepared_signing ::
-          %{format: :opaque, formatted: TokenFormatter.formatted_token()}
+          %{format: :opaque, formatted: formatted_token()}
           | %{format: :jwt, jwk: JOSE.JWK.t(), kid: String.t(), alg: String.t()}
 
   @doc """

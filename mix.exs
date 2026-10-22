@@ -217,6 +217,8 @@ defmodule Lockspire.MixProject do
         "docs/maintainer-conformance.md",
         "docs/maintainer-release.md",
         "docs/upgrading/v1.27.md",
+        "docs/upgrading/client-lifetimes.md",
+        "docs/examples/client-lifetime-adapter.md",
         "docs/upgrading/storage-prefix.md",
         "docs/upgrading/signing-key-encryption.md",
         "docs/sigra-companion-host.md"
@@ -248,6 +250,8 @@ defmodule Lockspire.MixProject do
         ],
         Upgrade: [
           "docs/upgrading/v1.27.md",
+          "docs/upgrading/client-lifetimes.md",
+          "docs/examples/client-lifetime-adapter.md",
           "docs/upgrading/storage-prefix.md",
           "docs/upgrading/signing-key-encryption.md"
         ],
