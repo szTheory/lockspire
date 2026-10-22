@@ -81,7 +81,7 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
           "zero-argument clock function",
           "after the adapter has locked and reloaded the current row",
           "App management-token expiry is an optional host policy",
-          "final-candidate CI plus independent security review are still pending"
+          "passed all seven required CI contexts"
         ] do
       assert upgrade_guide =~ phrase
     end
@@ -162,10 +162,12 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
           "not a shipped",
           "repository's private `scripts/` tree",
           "49 checks passed and none failed or skipped",
-          "observed source",
-          "8050a398",
-          "5709092d",
-          "broader canonical integration matrix had unrelated"
+          "final runtime",
+          "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "run 39776185275",
+          "maintainer case evidence map",
+          "This documentation paragraph was reconciled after that CI run",
+          "these limits are not passing checks"
         ] do
       assert guide =~ phrase
     end

@@ -50,7 +50,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 **Goal:** New and existing Phoenix hosts can store and enforce the selected app lifetime through an explicit schema and storage upgrade path.
 **Depends on:** Phase 162
 **Requirements:** DCR-05, DCR-06, DCR-13, DCR-14
-**Plans:** 14/14 plans complete; independently verified 2026-10-20
+**Plans:** 14/14 plans complete; independently reverified 2026-10-22
 
 Plans:
 **Wave 1**

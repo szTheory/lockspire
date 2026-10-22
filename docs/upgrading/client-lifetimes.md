@@ -211,11 +211,15 @@ and host-authorized recovery. See [Dynamic Client Registration](../dynamic-regis
 for the required request identity, server-owned expiry extensions, immediate
 replacement, and lost-response recovery behavior.
 
-The Phase 166 local packaged lifetime partition completed all nine required
-scenarios with 49 checks passed and none failed or skipped. Its observed source
-revision was `8050a398`; package archive and extracted-tree digests were checked
-against `5709092d`. The broader canonical integration matrix had unrelated
-fixture failures, and final-candidate CI plus independent security review are
-still pending. Maintainer execution records retain the sanitized receipt and
-artifact identity for this run. This local result does not claim those remaining
-gates or a release are complete.
+The completed Phase 166 packaged lifetime proof passed all nine required
+scenarios with 49 checks passed and none failed or skipped. The final runtime
+candidate, `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`, passed all seven required
+CI contexts in [run 39776185275](https://github.com/szTheory/lockspire/actions/runs/39776185275)
+and independent security review. The [maintainer case evidence map](https://github.com/szTheory/lockspire/blob/49ec3c7c727c3234992e929d0e194015a901083c/.planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json)
+retains the sanitized receipts and package identity. Three undefined edge probes
+remain unresolved, and two prohibitions without descriptors remain unverified;
+these limits are not passing checks.
+
+This documentation paragraph was reconciled after that CI run. The run verified
+the recorded runtime candidate; it did not include this later documentation
+correction. These results do not claim a release or publication is complete.

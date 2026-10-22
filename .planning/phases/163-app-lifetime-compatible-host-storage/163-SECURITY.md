@@ -5,7 +5,7 @@ status: verified
 threats_open: 0
 asvs_level: 1
 created: "2026-10-20"
-audited_head: cadb7a27d9df8a58dffa23645fe35658e9b20222
+audited_head: 27417748685f8fdadc810ead0a16216d8e6b1471
 ---
 
 # Phase 163 Security
@@ -66,3 +66,19 @@ None. No planned threat was accepted or transferred. No runtime dependencies wer
 Auditor separately identified correctness/proof concerns for mandatory code review: fractional default decision clocks may reject eligible finite apps; dropped-state negative adapter fixtures may reject invalid declarations before exercising field loss. These do not imply phase approval and must be resolved or dispositioned before completion. Finite secret/management credential requirements remain164/165.
 
 Review handoff resolved: CR-01/WR-01 fixed and independently re-reviewed closed; current focused auth/conformance plus realPGwait/rollback31tests0failures. No new planned threat scope.
+
+## Current-source refresh (2026-10-22)
+
+Independent typed gsd-security-auditor rechecked all 38 planned mitigations against current source at `27417748685f8fdadc810ead0a16216d8e6b1471`: 38 closed (33 high, 5 medium), 0 open, ASVS L1. Current selected client/transaction stores, matching authority checks, guarded issuance, atomic rollback/audit, credential redaction, online consumers and management gates remain present. All 37 historical migrations and mix.lock were compared directly with release commit `d04be402`; no dependency changes were found. At that audit, source, tests, package scripts, docs and CI inputs were identical to candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`.
+
+This refresh checks mitigation presence; runtime/package results above remain historical. A-EDGE-16/17/19 and the two descriptor-less prohibitions retain their explicit unresolved/flagged limits. Historical TDD limitations remain unchanged. No new threats, accepted risks or implementation changes were introduced.
+
+## Security Audit 2026-10-22
+
+| Metric | Count |
+|---|---|
+| Threats found | 38 |
+| Closed | 38 |
+| Open | 0 |
+
+The subsequent D-24 correction changes only the upgrade-guide proof paragraph and its existing documentation assertions. It does not change a runtime mitigation or claim that the old CI run includes the later text.
