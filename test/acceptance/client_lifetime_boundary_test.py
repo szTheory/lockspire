@@ -12,15 +12,15 @@ from unittest.mock import patch
 CLEAN_ROOM = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM))
 
-from package_input import PackageInputError  # noqa: E402
-from build_provider import audit_boundary  # noqa: E402
+from package_input import PackageIdentity, PackageInputError  # noqa: E402
+from build_provider import audit_boundary, prepare_provider  # noqa: E402
 
 
 class LifetimeBoundaryTest(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
-        self.child = self.root / "provider"
+        self.child = self.root / "provider_host"
         self.package = self.root / "package"
         self.overlay = self.root / "overlay"
         (self.child / "vendor" / "lockspire").mkdir(parents=True)
@@ -78,6 +78,73 @@ end
 
     def test_nested_public_seam_names_are_not_exempt_in_runtime_sources(self) -> None:
         self._reject_runtime_reference("Lockspire.Storage.Ecto.Repository.ClientStore")
+
+    def test_reused_provider_is_audited_before_mix_inspects_it(self) -> None:
+        identity = PackageIdentity(
+            "tar", "1.7.0", "a" * 64, "b" * 64, "c" * 64, "d" * 40
+        )
+        candidate_marker = self.child / ".lockspire-candidate.json"
+        candidate_marker.write_text("candidate bound\n")
+        events: list[str] = []
+
+        def verify_child(*_args: object, **_kwargs: object) -> str:
+            events.append("mix_probe")
+            return str(self.child / "vendor" / "lockspire")
+
+        def observe_audit(child: Path, package: Path) -> None:
+            events.append("audit")
+            audit_boundary(child, package)
+
+        with (
+            patch("build_provider.probe_environment"),
+            patch("build_provider.verify_candidate_host"),
+            patch("build_provider.verify_child", side_effect=verify_child),
+            patch("build_provider.locked_environment", return_value={}),
+            patch("build_provider.audit_boundary", side_effect=observe_audit),
+            patch("build_provider.OVERLAY_ROOT", self.overlay),
+            patch.dict("os.environ", {"LOCKSPIRE_KEY_ENCRYPTION_KEY": "test-key"}),
+        ):
+            self.assertEqual(
+                prepare_provider(
+                    self.root,
+                    "postgres://provider",
+                    package_root=self.package,
+                    candidate_identity=identity,
+                ),
+                self.child,
+            )
+
+        self.assertEqual(events, ["audit", "mix_probe"])
+
+    def test_reused_provider_with_forbidden_overlay_is_rejected_before_mix(self) -> None:
+        identity = PackageIdentity(
+            "tar", "1.7.0", "a" * 64, "b" * 64, "c" * 64, "d" * 40
+        )
+        candidate_marker = self.child / ".lockspire-candidate.json"
+        candidate_marker.write_text("candidate bound\n")
+        router = self.child / "lib" / "clean_room_provider_web" / "router.ex"
+        router.write_text(
+            "defmodule HostRuntime do\n"
+            "  alias Lockspire.Protocol.Internal.ClientStore\n"
+            "end\n"
+        )
+
+        with (
+            patch("build_provider.probe_environment"),
+            patch("build_provider.verify_candidate_host"),
+            patch("build_provider.verify_child") as mix_probe,
+            patch("build_provider.OVERLAY_ROOT", self.overlay),
+            patch.dict("os.environ", {"LOCKSPIRE_KEY_ENCRYPTION_KEY": "test-key"}),
+        ):
+            with self.assertRaises(PackageInputError):
+                prepare_provider(
+                    self.root,
+                    "postgres://provider",
+                    package_root=self.package,
+                    candidate_identity=identity,
+                )
+
+        mix_probe.assert_not_called()
 
     def _reject(self, forbidden: str) -> None:
         source = self.adapter.read_text().replace("end\n", f"  # {forbidden}\nend\n")

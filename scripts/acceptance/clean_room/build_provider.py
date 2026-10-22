@@ -310,6 +310,11 @@ def prepare_provider(
     # Validate all bytes already on disk before Mix is allowed to inspect or load
     # the reusable child. The resolver probe below then confirms the observed path.
     verify_candidate_host(package_root, child, candidate_identity, vendor, vendor)
+    if install and reuse:
+        # A reused child bypasses the installer that normally leads to the host
+        # overlay audit. Re-audit its current host-owned sources before any Mix
+        # resolver or compile command can inspect the child.
+        audit_boundary(child, package_root)
     # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
