@@ -82,3 +82,9 @@ This refresh checks mitigation presence; runtime/package results above remain hi
 | Open | 0 |
 
 The subsequent D-24 correction changes only the upgrade-guide proof paragraph and its existing documentation assertions. It does not change a runtime mitigation or claim that the old CI run includes the later text.
+
+## Frozen-candidate L1 delta revalidation (2026-10-22)
+
+The existing 38 planned mitigations remain closed. This bounded revalidation inspected the sole covered runtime delta, final_exchange_time, after the independent Phase 164 guard re-review/security closure. The new DateTime guard executes after input-token locks and before token checks, app/identity eligibility, signing, writes and audit; malformed time now returns controlled server_error. Client/issuer authority checks, lock order and atomic transaction boundaries are unchanged, preserving T-163-33/34/35 and the earlier 38-mitigation closure. This applies the documented ASVS L1 closed-register short circuit; it is not a new full threat audit or runtime run. No new dependency or accepted risk is introduced.
+
+Frozen source candidate is f8dd7712af7f3ef906305db549c6312284339dba; independent post-guard 27/0 and root's fresh RFC/guidance 19/0 evidence are recorded in the delta receipt. New CI run 39816801430 is handled by root; the old 0bd4070d CI/package proof remains historical. Existing evidence limits remain unchanged.

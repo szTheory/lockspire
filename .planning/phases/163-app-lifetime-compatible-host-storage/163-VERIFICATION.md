@@ -1,6 +1,6 @@
 ---
 phase: 163-app-lifetime-compatible-host-storage
-verified: 2026-10-22T16:07:50Z
+verified: 2026-10-22T16:52:36Z
 status: passed
 score: 46/46 must-haves verified
 covered_files:
@@ -44,6 +44,8 @@ covered_files:
   - .planning/phases/163-app-lifetime-compatible-host-storage/163-SOURCE-AUDIT.md
   - .planning/phases/163-app-lifetime-compatible-host-storage/163-UI-REVIEW.md
   - .planning/phases/163-app-lifetime-compatible-host-storage/163-VALIDATION.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-REVIEW.md
+  - .planning/phases/164-client-secret-expiry-atomic-rotation/164-SECURITY.md
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-12-SUMMARY.md
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-CI-EVIDENCE.json
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json
@@ -102,20 +104,23 @@ covered_files:
   - test/lockspire/install/migrations_test.exs
   - test/lockspire/protocol/app_lifetime_policy_test.exs
   - test/lockspire/protocol/client_app_authentication_test.exs
+  - test/lockspire/protocol/rfc8693_exchange_test.exs
   - test/lockspire/storage/client_lifetime_client_wait_test.exs
   - test/lockspire/storage/client_lifetime_conformance_test.exs
   - test/lockspire/storage/client_lifetime_grant_wait_test.exs
   - test/lockspire/storage/client_lifetime_promotion_test.exs
   - test/lockspire/storage/client_lifetime_rollback_test.exs
   - test/support/client_lifetime_race_helpers.ex
-covered_digest: "v3:sha256:ac2f9223d2800ddca9e4d65978a2c47688841c2949f9fa764eed3676744017b1"
+covered_digest: "v3:sha256:b237cc88c5cc222572540f380ae0cb47263e8e1e51376078c575691da8017c37"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
-  previous_status: gaps_found
-  previous_score: 45/46
-  gaps_closed:
-    - "D-24 host guidance now reports final-candidate CI/review accurately and preserves the unresolved evidence limits."
+  previous_status: passed
+  previous_score: 46/46
+  delta_reverified:
+    - "RFC 8693 final exchange clock accepts only DateTime and returns a controlled error without token issuance or audit on malformed callback output."
+    - "Existing truths, including D-24 host guidance and storage/upgrade behavior, were regression-checked against unchanged covered paths."
+  gaps_closed: []
   gaps_remaining: []
   regressions: []
 advisory: []
@@ -132,7 +137,7 @@ advisory: []
 
 ### Observable Truths
 
-The four roadmap success criteria are non-negotiable. The 42 plan-level truths add detail; each plan row below represents its three declared truths, with the plan identifiers and corresponding source/test evidence. All four roadmap criteria and 41 of 42 plan truths pass. The remaining truth is D-24's stale guidance status statement, recorded as a gap.
+The four roadmap success criteria are non-negotiable. The 42 plan-level truths add detail; each plan row below represents its three declared truths, with the plan identifiers and corresponding source/test evidence. All four roadmap criteria and all 42 plan truths pass. This bounded re-verification rechecks the final RFC 8693 clock-guard delta and regression evidence while retaining the previously verified unchanged-path evidence.
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
@@ -147,7 +152,7 @@ The four roadmap success criteria are non-negotiable. The 42 plan-level truths a
 | P5 | Plan 06: code redemption rechecks locked current app/credential after waits, failed redemption leaves no partial writes, and durable/JWT/response expiry shares the final cap. | ✓ VERIFIED | `GrantPersistence` locks/reloads current client state and uses one final effective expiry. The current code-redemption suite covers untouched grant on equality and equal capped output representations. |
 | P6 | Plan 07: refresh issuance rechecks current app/credential after ordered locks, caps access and replacement refresh TTLs independently, and preserves replay/rollback behavior. | ✓ VERIFIED | Refresh flow reaches shared guarded persistence; current refresh integration behavior is in the mapped C-APP/C-TOK matrix. The saved focused rollback run covers refresh family/write failure behavior. |
 | P7 | Plan 08: approved device/CIBA requests cannot issue after app expiry/disablement; poll/push sample after locks, cap outputs uniformly and deliver push after lock release. | ✓ VERIFIED | Poll, CIBA grant and worker paths were traced. Focused poll/push cases and recorded wait/rollback tests exercise final equality and post-commit delivery. |
-| P8 | Plan 09: RFC 8693 checks requester, subject and actor independently, locks participating clients in stable order, rolls back writes together and caps signed/opaque outputs. | ✓ VERIFIED | Exchange and persistence paths were inspected; current RFC 8693 integration tests map each identity and compare stored/JWT/response expiry. |
+| P8 | Plan 09: RFC 8693 checks requester, subject and actor independently, locks participating clients in stable order, rolls back writes together and caps signed/opaque outputs. | ✓ VERIFIED | The public exchange path retains ordered client/token locks, current issuer checks and transactional issuance. The final clock is sampled after locks and before validity/eligibility/issuance; only `%DateTime{}` is accepted, and malformed/raised callback results become controlled `server_error(:clock_unavailable)`. The public `exchange/2` regression asserts that outcome, unchanged stored-token inventory and no audit events. The current post-guard RFC/app-RFC/secret-poll/PostgreSQL grant-wait selection passed 27 tests, 0 failures; the additional root-attributed RFC/guidance selection passed 19 tests, 0 failures. See `163-REVIEW.md` and `/tmp/phase163-final-delta-20261022.md`. |
 | P9 | Plan 10: UserInfo and introspection read current issuer state, revocation checks caller eligibility, while provider discovery/JWKS, host sessions and offline VerifyToken remain outside app-lifetime checks. | ✓ VERIFIED | Online-consumer behavior tests cover current custom stores, inactive owned tokens, unknown-token revocation and discovery. `VerifyToken` remains offline; the host boundary is explicit in architecture docs. |
 | P10 | Plan 11: expired enabled apps retain allowed GET/DELETE but cannot PUT; disabled apps are denied; legacy credential replacement promotes the locked row atomically and stale snapshots cannot restore prior state. | ✓ VERIFIED | Registration management/controller and repository delta mutations were inspected. Current management/promotion tests cover operation outcomes, atomic v0 promotion and rollback. |
 | P11 | Plan 12: independent PostgreSQL holder/contender sessions confirm the actual blockers; post-wait equality/disablement/replacement and write/audit rollback preserve durable state. | ✓ VERIFIED | Recorded exact focused command in `163-12-SUMMARY.md`: 13 PostgreSQL tests, 0 failures. Helpers compare backend PIDs and `pg_blocking_pids` before advancing the clock; rollback tests inspect durable state. |
@@ -177,7 +182,7 @@ The four roadmap success criteria are non-negotiable. The 42 plan-level truths a
 | Packaged installer and runner | Additive migration and old/candidate host journey | Existing migration checksum/copy flow and isolated process roots | WIRED | Installer delegates migration copying with checksum/no-overwrite checks; package scenario tests and current Phase 166 exact-candidate package evidence cover both prefixes. |
 | Upgrade guidance | Executable upgrade/custom-store path | Commands, adapter example, cutover procedure | WIRED | The procedure points to executable package/conformance evidence and accurately labels the runtime CI result and later documentation correction. |
 
-The literal key-link query returned 2/30 links verified and 28 false negatives because it searched for the target path as source text. I checked each relationship through the actual modules/call sites and behavior evidence above; no disconnected implementation link was found. The reported document gap is separate from code wiring.
+The literal key-link query returned 2/30 links verified and 28 false negatives because it searched for the target path as source text. I checked each relationship through the actual modules/call sites and behavior evidence above; no disconnected implementation link was found. The final RFC clock guard is directly wired between the post-lock callback and issuance decision, and its public-facade regression checks the failure boundary.
 
 ### Data-Flow Trace (Level 4)
 
@@ -187,7 +192,7 @@ The literal key-link query returned 2/30 links verified and 28 false negatives b
 | Current app guard → protocol outcome | active state and app deadline | Current store row after the applicable lock/fetch | Yes; current integration tests assert outcomes and durable state | ✓ FLOWING |
 | Final issuance → row, JWT, response | effective access/refresh expiry | Post-wait decision time capped by the app deadline | Yes; focused signed/opaque cases compare expiry outputs | ✓ FLOWING |
 | Existing host → candidate schema | v0 record and advisory historical secret dates | Actual prefix-aware additive migration and old/candidate package processes | Yes; package evidence retains old records, v0 interpretation, v1 cutover and cleanup | ✓ FLOWING |
-| Upgrade guide status addendum | CI/review completion status | Hard-coded prose | No; contradicted by current exact-candidate evidence | ✗ STALE |
+| Upgrade guide status addendum | CI/review completion status and evidence limits | Maintainer-reviewed static guidance | Yes; it identifies the historical runtime candidate/CI and separately dates the later documentation correction | ✓ VERIFIED |
 
 ### Behavioral Spot-Checks
 
@@ -197,6 +202,7 @@ The literal key-link query returned 2/30 links verified and 28 false negatives b
 | Real PostgreSQL client/grant waits and rollback | Exact command recorded in `163-12-SUMMARY.md` | 13 tests, 0 failures; observed independent blockers and durable state | ✓ PASS |
 | Packaged legacy upgrade and custom prefix | Current exact-candidate Phase 166 package lane, `166-VALIDATION.md` and `166-CI-EVIDENCE.json` | Candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; 7/7 required contexts, 9/9 scenarios, 49/49 checks passed; cleanup complete | ✓ PASS |
 | D-24 guidance correction | Old guide red log, corrected guide green log; format and whitespace results recorded in `163-REVIEW.md` | Old wording fails the contract as expected; corrected guide passes 8 tests with 0 failures; formatting/diff checks pass | ✓ PASS |
+| RFC 8693 malformed final-clock handling | Public `Rfc8693Exchange.exchange/2` regression in `test/lockspire/protocol/rfc8693_exchange_test.exs`; root-attributed command and environment in `/tmp/phase163-final-delta-20261022.md` | `MIX_ENV=test mix test test/lockspire/protocol/rfc8693_exchange_test.exs test/lockspire/client_lifetime_guidance_test.exs`; 19 tests, 0 failures (seed 742898). The related post-guard RFC/app-RFC/secret-poll/PostgreSQL grant-wait selection also passed 27 tests, 0 failures. | ✓ PASS |
 | Phase 163 standalone receipt recheck | `python3 scripts/acceptance/clean_room/client_lifetime_upgrade.py --check-receipt /private/tmp/lockspire-163-13-all-receipt.json` | Failed with `PackageInputError`; that dated receipt predates the evolved receipt schema. The current candidate package proof above uses the later receipt contract. | Informational; not counted as a product behavior failure |
 
 ### Probe Execution
@@ -226,7 +232,7 @@ The decision coverage gate reports 24/24 trackable `163-CONTEXT.md` decisions ho
 
 ### Re-verification
 
-The sole prior gap is closed. The updated guide is directly tied to the exact final runtime candidate and completed CI/security evidence, and the test contract now asserts the new claims. The 69 unchanged paths from the prior Phase 166 review remain valid at the same runtime candidate; the guide and its contract test were directly re-reviewed. Current runtime source/package inputs still match that candidate. No regressions were found.
+The prior verification passed 46/46; this re-verification addresses its only newly stale input, `grant_persistence.ex`, by directly inspecting the final RFC 8693 clock guard and its public-facade regression. The callback now fails closed with a controlled server error before issuance or audit, and the test checks no token or audit mutation. The existing client/token lock order, current app/issuer eligibility, transaction boundary, and no-write-on-error behavior remain intact. Unchanged-path truths and D-24 guidance were regression-checked using recorded Phase 163 and Phase 166 evidence; the guide accurately labels the historical candidate/CI and later correction. No regressions were found. CI run 39776185275 and package 9/49 remain historical for candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; final CI run 39816801430 belongs to the root workflow and is not claimed here.
 
 ### Advisory (New Scope, Unevidenced)
 
@@ -242,5 +248,5 @@ The codebase implements the app lifetime schema, adapter contract, online enforc
 
 ---
 
-_Verified: 2026-10-22T16:07:50Z_
+_Verified: 2026-10-22T16:52:36Z_
 _Verifier: the agent (gsd-verifier)_
