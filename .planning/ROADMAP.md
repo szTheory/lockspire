@@ -180,19 +180,19 @@ Plans:
 - [x] 166-04-PLAN.md — Observed PostgreSQL waits, contention and rollback proof
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 166-05-PLAN.md — Public selector decision and production issuance seam
+- [x] 166-05-PLAN.md — Public selector decision and production issuance seam
 
 **Wave 5** *(blocked on Wave 4 completion)*
-- [ ] 166-06-PLAN.md — Selected management/replacement and shared authority
+- [x] 166-06-PLAN.md — Selected management/replacement and shared authority
 
 **Wave 6** *(blocked on Wave 5 completion)*
-- [ ] 166-07-PLAN.md — Positive events and safe failure diagnostics
+- [x] 166-07-PLAN.md — Positive events and safe failure diagnostics
 
 **Wave 7** *(blocked on Wave 6 completion)*
-- [ ] 166-08-PLAN.md — Configured adapter and executed copyable host example
+- [x] 166-08-PLAN.md — Configured adapter and executed copyable host example
 
 **Wave 8** *(blocked on Wave 7 completion)*
-- [ ] 166-09-PLAN.md — Complete fresh and legacy HTTP lifetime journeys
+- [x] 166-09-PLAN.md — Complete fresh and legacy HTTP lifetime journeys
 
 **Wave 9** *(blocked on Wave 8 completion)*
 - [ ] 166-10-PLAN.md — Active required CI counts and sanitized receipt retention
@@ -219,7 +219,7 @@ Plans:
 | 163. App Lifetime & Compatible Host Storage | 14/14 | Complete | 2026-10-20 |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
 | 165. Management-Token Lifecycle & Recovery | 7/7 | Complete | 2026-10-21 |
-| 166. End-to-End Lifetime, Security & Guidance Proof | 4/12 | In progress | — |
+| 166. End-to-End Lifetime, Security & Guidance Proof | 9/12 | In progress | — |
 
 **Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are independently complete through Phase 165; five Phase 166 proof requirements remain pending.
 
