@@ -58,7 +58,7 @@ defmodule Lockspire.Integration.ClientLifetimeInteractionsTest do
     updated
   end
 
-  test "C-POL-01 C-POL-07 C-CROSS-01: replacement events renew only their own snapshot" do
+  test "C-POL-01 C-POL-07: replacement events renew only their own snapshot" do
     initial_policy = policy(60, 10, 20)
     assert {:ok, _} = Repository.put_server_policy(initial_policy)
     registered = register_at(initial_policy)
