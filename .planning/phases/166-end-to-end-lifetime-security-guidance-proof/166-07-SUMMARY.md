@@ -20,7 +20,7 @@ actuals:
   commits: 5
 commits: 5
 plan_head_before: 57a5910c44aad426a72c924c836d19ba80718302
-plan_head_after: fd7095d1304e1d908df7c929f370c73455a891bb
+plan_head_after: fd7095d1dd0c1f6e50698821c3a4039f6f181e17
 tech-stack:
   added: []
   patterns:
@@ -141,5 +141,5 @@ The focused redaction and attribution guardrails are ready for the Phase 166 pac
 
 - All seven files listed under `key-files` exist.
 - Commits `9a530f8b`, `ff9a6622`, `79fba826`, `04aad454` and `fd7095d1` are ancestors of `HEAD`.
-- `git rev-list --count 57a5910c44aad426a72c924c836d19ba80718302..fd7095d1304e1d908df7c929f370c73455a891bb` measured **5 task commits**. The realized diff was 42,484 characters; `actuals.tokens` is 10,621 (characters divided by four).
+- `git rev-list --count 57a5910c44aad426a72c924c836d19ba80718302..fd7095d1dd0c1f6e50698821c3a4039f6f181e17` measured **5 task commits**. The realized diff was 42,484 characters; `actuals.tokens` is 10,621 (characters divided by four).
 - Parent-owned `.planning/STATE.md`, `.planning/state.json` and `.planning/ROADMAP.md` edits were left untouched and unstaged.
