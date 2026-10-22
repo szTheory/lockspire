@@ -45,17 +45,17 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. Admin routes resolve before the public forward, and public OAuth/OIDC and host-owned consent routes retain their intended access and behavior. (MNT-04)
   4. The recorded forward-only join failure has a fresh regression reproduction, and the same host-path case succeeds through the new route integration using native Phoenix routing. (MNT-01, MNT-02)
 
-**Plans**: 3 plans
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 167-01-PLAN.md — Reproduce the forwarded join failure, verify the native host-route tracer and settle compile/session/config contracts.
+- [x] 167-01-PLAN.md — Reproduce the forwarded join failure, verify the native host-route tracer and settle compile/session/config contracts.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 167-02-PLAN.md — Connect every existing admin action at default, nested and root mounts with prefixed navigation and fresh rejoins.
+- [x] 167-02-PLAN.md — Connect every existing admin action at default, nested and root mounts with prefixed navigation and fresh rejoins.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 167-03-PLAN.md — Fence exact ordered route/action parity and prove independent public/host-consent routing.
+- [x] 167-03-PLAN.md — Fence exact ordered route/action parity and prove independent public/host-consent routing.
 
 **UI hint**: yes
 **UI scope**: Routing and connected lifecycle only; preserve the existing visual contract and vocabulary. No visual design deliverable or manual UI signoff.
@@ -123,7 +123,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 167. Host-Expanded Admin Routing | v1.46 | 0/3 | Planned | — |
+| 167. Host-Expanded Admin Routing | v1.46 | 3/3 | In Progress | — |
 | 168. Host-Owned LiveView Authorization | v1.46 | 0/TBD | Not started | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |

@@ -1,15 +1,15 @@
 ---
 phase: "167"
 slug: "host-expanded-admin-routing"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-22"
 ---
 
 # Phase 167 — Validation Strategy
 
-Planning contract; no new implementation test or forwarded-join reproduction is claimed by this file.
+Execution validation audit: all six tasks have implemented automated checks. Forward-only failure and canonical success are independently recorded in 167-01-SUMMARY.md; final focused and broad gates passed in 167-03-SUMMARY.md.
 
 ## Test Infrastructure
 
@@ -37,12 +37,12 @@ Final plan/task mapping. Every task has a real automated command followed immedi
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 167-01-01 | 167-01 | 1 | MNT-01, MNT-02, MNT-03, MNT-04 | T-167-01, T-167-02, T-167-03, T-167-04, T-167-SC | Fresh precise forward-only failure before replacement; actual native default connected tracer; immediate host HTTP/disconnected/connected hook rejection and required metadata | router/connected | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | New; created by this task | pending |
-| 167-01-02 | 167-01 | 1 | MNT-01, MNT-02, MNT-03, MNT-04 | T-167-01, T-167-02, T-167-03, T-167-04, T-167-SC | Compile-time required wiring, native option/session/hook order, scope composition, normalization and HTTP/on_mount config mismatch refusal | compile/config/integration | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/config_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs` | Compile test new in this task; others tracked or 167-01-01 | pending |
-| 167-02-01 | 167-02 | 2 | MNT-01, MNT-02, MNT-03 | T-167-05, T-167-06, T-167-07, T-167-08, T-167-SC | Default/nested/root and both root config forms connect; fresh rejoin has distinct process and required current-identity hook | connected lifecycle | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | Created by 167-01-01 | pending |
-| 167-02-02 | 167-02 | 2 | MNT-01, MNT-02, MNT-03 | T-167-05, T-167-06, T-167-07, T-167-08, T-167-SC | All 29 routes connect at three effective mounts; links/queries/tasks/patches/redirects retain prefix; stable-config concurrent views remain separate | connected journeys | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | Created by 167-01-01 | pending |
-| 167-03-01 | 167-03 | 3 | MNT-01, MNT-03 | T-167-09, T-167-SC | Independent literal ordered 29-route baseline and every concrete route/view/action/session/pipeline/hook selection; boundaries and repetition/concurrency | compiled router | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_router_test.exs` | Inventory test new in this task; router test tracked | pending |
-| 167-03-02 | 167-03 | 3 | MNT-01, MNT-03, MNT-04 | T-167-10, T-167-11, T-167-SC | Admin-before-forward and independent anonymous public/host-consent access, including concurrent surface provenance; focused final gates | host integration | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_route_separation_test.exs test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs test/lockspire/config_test.exs` | Separation test new in this task; others earlier/tracked | pending |
+| 167-01-01 | 167-01 | 1 | MNT-01, MNT-02, MNT-03, MNT-04 | T-167-01, T-167-02, T-167-03, T-167-04, T-167-SC | Fresh precise forward-only failure before replacement; actual native default connected tracer; immediate host HTTP/disconnected/connected hook rejection and required metadata | router/connected | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | New; created by this task | green |
+| 167-01-02 | 167-01 | 1 | MNT-01, MNT-02, MNT-03, MNT-04 | T-167-01, T-167-02, T-167-03, T-167-04, T-167-SC | Compile-time required wiring, native option/session/hook order, scope composition, normalization and HTTP/on_mount config mismatch refusal | compile/config/integration | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/config_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs` | Compile test new in this task; others tracked or 167-01-01 | green |
+| 167-02-01 | 167-02 | 2 | MNT-01, MNT-02, MNT-03 | T-167-05, T-167-06, T-167-07, T-167-08, T-167-SC | Default/nested/root and both root config forms connect; fresh rejoin has distinct process and required current-identity hook | connected lifecycle | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | Created by 167-01-01 | green |
+| 167-02-02 | 167-02 | 2 | MNT-01, MNT-02, MNT-03 | T-167-05, T-167-06, T-167-07, T-167-08, T-167-SC | All 29 routes connect at three effective mounts; links/queries/tasks/patches/redirects retain prefix; stable-config concurrent views remain separate | connected journeys | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` | Created by 167-01-01 | green |
+| 167-03-01 | 167-03 | 3 | MNT-01, MNT-03 | T-167-09, T-167-SC | Independent literal ordered 29-route baseline and every concrete route/view/action/session/pipeline/hook selection; boundaries and repetition/concurrency | compiled router | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_router_test.exs` | Inventory test new in this task; router test tracked | green |
+| 167-03-02 | 167-03 | 3 | MNT-01, MNT-03, MNT-04 | T-167-10, T-167-11, T-167-SC | Admin-before-forward and independent anonymous public/host-consent access, including concurrent surface provenance; focused final gates | host integration | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_route_separation_test.exs test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs test/lockspire/config_test.exs` | Separation test new in this task; others earlier/tracked | green |
 
 ASVS 5.0.0 level L1; high/critical findings block. Threat IDs T-167-01 through T-167-11 are unique across plans; reserved T-167-SC is repeated intentionally. No package install, schema change or private Phoenix join patch is planned.
 
@@ -69,10 +69,18 @@ None required. Acceptance is mechanical and automated; no visual signoff. Full a
 
 ## Validation Sign-Off
 
-- [ ] Every final task is mapped to its automated check and relevant threat IDs.
-- [ ] No three consecutive tasks lack automated feedback.
-- [ ] New test paths are created before first use; no watch-mode checks.
-- [ ] Forwarded failure and canonical success are distinguished from transport proof.
-- [ ] Final execution evidence is recorded; nyquist_compliant remains false until validated.
+- [x] Every final task is mapped to its automated check and relevant threat IDs.
+- [x] No three consecutive tasks lack automated feedback.
+- [x] New test paths are created before first use; no watch-mode checks.
+- [x] Forwarded failure and canonical success are distinguished from transport proof.
+- [x] Final execution evidence is recorded; nyquist_compliant is true after this coverage audit.
 
-**Approval:** Planning contract only; implementation results pending.
+**Audit:** 2026-10-22 — all four requirements covered by implemented green automated checks; no missing or manual-only requirement test. Final focused union: 43 passed. Broad suite: 1961 passed (2 properties, 1959 tests), 6 skipped, 497 excluded; exit 0 in 114.1s. Commands run with LOCKSPIRE_TEST_DB_NAME=lockspire_phase167_20261022_1754 and the documented asdf runtime. See 167-03-SUMMARY.md and 167-EXECUTION-GATES.md for evidence boundaries and environment corrections.
+
+## Validation Audit 2026-10-22
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
