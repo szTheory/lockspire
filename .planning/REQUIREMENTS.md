@@ -2,7 +2,7 @@
 
 **Milestone:** v1.46 Embedded Host Integration Reliability
 **Defined:** 2026-10-22
-**Status:** Requirements approved by user on 2026-10-22; roadmap pending
+**Status:** Requirements and roadmap approved by user on 2026-10-22
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
 ## v1.46 Requirements
@@ -68,27 +68,27 @@ Requirements cover the user-confirmed mechanical integration scope. They do not 
 
 ## Traceability
 
-Requirements confirmed by the user on 2026-10-22. Roadmap creation pending; continue phase numbering at 167. Each of the 15 requirements must map to exactly one owning phase; integration checks in later phases supplement rather than duplicate ownership.
+Requirements confirmed by the user on 2026-10-22. Approved roadmap continues phase numbering at 167. Each of the 15 requirements maps to exactly one owning phase; integration checks in later phases supplement rather than duplicate ownership.
 
 | Requirement | Phase | Status |
 |---|---|---|
-| MNT-01 | Pending | Pending |
-| MNT-02 | Pending | Pending |
-| MNT-03 | Pending | Pending |
-| MNT-04 | Pending | Pending |
-| HAUTH-01 | Pending | Pending |
-| HAUTH-02 | Pending | Pending |
-| HAUTH-03 | Pending | Pending |
-| HAUTH-04 | Pending | Pending |
-| HDX-01 | Pending | Pending |
-| HDX-02 | Pending | Pending |
-| HDX-03 | Pending | Pending |
-| HDX-04 | Pending | Pending |
-| HPROOF-01 | Pending | Pending |
-| HPROOF-02 | Pending | Pending |
-| HPROOF-03 | Pending | Pending |
+| MNT-01 | Phase 167 | Pending |
+| MNT-02 | Phase 167 | Pending |
+| MNT-03 | Phase 167 | Pending |
+| MNT-04 | Phase 167 | Pending |
+| HAUTH-01 | Phase 168 | Pending |
+| HAUTH-02 | Phase 168 | Pending |
+| HAUTH-03 | Phase 168 | Pending |
+| HAUTH-04 | Phase 168 | Pending |
+| HDX-01 | Phase 169 | Pending |
+| HDX-02 | Phase 169 | Pending |
+| HDX-03 | Phase 169 | Pending |
+| HDX-04 | Phase 169 | Pending |
+| HPROOF-01 | Phase 170 | Pending |
+| HPROOF-02 | Phase 170 | Pending |
+| HPROOF-03 | Phase 170 | Pending |
 
-**Coverage:** 15 requirements defined; 0 mapped pending roadmap; 15 pending implementation. No implementation or runtime success is claimed by this document.
+**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 15 pending implementation. No implementation or runtime success is claimed by this document.
 
 ---
-*Last updated: 2026-10-22 — all 15 requirements approved by the user.*
+*Last updated: 2026-10-22 — all 15 requirements and four-phase roadmap approved by the user.*

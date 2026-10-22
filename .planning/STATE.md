@@ -3,10 +3,12 @@ gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 status: planning
-last_updated: "2026-10-22T20:02:25.590Z"
+current_phase: 167
+stopped_at: v1.46 initialized; ready to plan Phase 167
+last_updated: "2026-10-22T20:31:55.119698Z"
 last_activity: 2026-10-22
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,18 +23,20 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.46 Embedded Host Integration Reliability — researching the confirmed scope before defining requirements.
+**Current focus:** v1.46 Embedded Host Integration Reliability — 15 requirements and four-phase roadmap approved; Phase 167 ready for planning.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 167 of 170 — Host-Expanded Admin Routing (first of four; not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-10-22 — Milestone v1.46 started
+Status: Ready for phase planning
+Last activity: 2026-10-22 — User approved Phases 167–170; all 15 requirements mapped exactly once; ready to plan Phase 167
 
 ## Accumulated Context
 
 ### Decisions
+
+v1.46 scope and research are confirmed; all 15 requirements were approved on 2026-10-22. Approved phases 167–170 cover routing, host authorization, installation/upgrade convergence and packaged/runtime proof. The user approved the roadmap on 2026-10-22. Mechanical integration and automated acceptance only; no visual redesign, identity system or publication scope. Research was performed inline; no new subagents were spawned.
 
 v1.45 decisions and validated requirements are recorded in PROJECT.md and the archived phases. Full pre-close context, performance metrics and historical concerns are preserved in [v1.45-STATE.md](milestones/v1.45-STATE.md). All five phase verification owners passed immediately before archival; their original fingerprint paths remain historical checkout paths and were not restamped after the move.
 
@@ -91,6 +95,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: v1.46 scope confirmed; focused research approved
+Stopped at: v1.46 initialized; ready to plan Phase 167
 Resume file: None
-Next: finish approved v1.46 research, confirm requirements, then create the roadmap from Phase 167. Preserve the original unstaged state.json bytes.
+Next: `$gsd-plan-phase 167` to plan Host-Expanded Admin Routing; `$gsd-discuss-phase 167` remains available for further context. Preserve the original unstaged state.json bytes.
