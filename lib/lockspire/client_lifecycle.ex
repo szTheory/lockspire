@@ -80,31 +80,34 @@ defmodule Lockspire.ClientLifecycle do
              (is_map(build_audit_event) or is_function(build_audit_event, 1)) do
     with {:ok, stores} <- ClientLifetime.configured(),
          :ok <- ClientLifetime.ensure_secret_rotation_available(stores.client_store) do
-      stores.transaction_store.transact(fn ->
-        case stores.client_store.rotate_client_secret(
-               client,
-               secret_material.client_secret_hash,
-               secret_material.client_secret_jwt_verifier_encrypted,
-               rotated_at
-             ) do
-          {:ok, %Client{} = updated} ->
-            audit_event =
-              case build_audit_event do
-                event when is_map(event) -> event
-                builder -> builder.(updated)
-              end
-
-            case Repository.append_audit_event(audit_event) do
-              {:ok, _event} -> {:ok, updated}
-              {:error, reason} -> stores.transaction_store.rollback(reason)
-            end
-
-          {:error, reason} ->
-            stores.transaction_store.rollback(reason)
-        end
-      end)
+      rotate_with_stores(stores, client, secret_material, rotated_at, build_audit_event)
     end
   end
+
+  defp rotate_with_stores(stores, client, secret_material, rotated_at, build_audit_event) do
+    stores.transaction_store.transact(fn ->
+      case stores.client_store.rotate_client_secret(
+             client,
+             secret_material.client_secret_hash,
+             secret_material.client_secret_jwt_verifier_encrypted,
+             rotated_at
+           ) do
+        {:ok, %Client{} = updated} ->
+          audit_event = build_secret_rotation_audit_event(build_audit_event, updated)
+
+          case Repository.append_audit_event(audit_event) do
+            {:ok, _event} -> {:ok, updated}
+            {:error, reason} -> stores.transaction_store.rollback(reason)
+          end
+
+        {:error, reason} ->
+          stores.transaction_store.rollback(reason)
+      end
+    end)
+  end
+
+  defp build_secret_rotation_audit_event(event, _updated) when is_map(event), do: event
+  defp build_secret_rotation_audit_event(builder, updated), do: builder.(updated)
 
   @doc false
   @spec disable_operator(Client.t(), DateTime.t(), String.t() | nil, map()) ::

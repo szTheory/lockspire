@@ -1031,31 +1031,7 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
       case get_in_state([:interactions, interaction_id]) do
         %Interaction{} = interaction ->
           if interaction.status in expected_statuses do
-            attrs =
-              if is_function(attrs, 1) do
-                case attrs.(interaction) do
-                  {:ok, changes} when is_map(changes) -> changes
-                  {:error, reason} -> {:error, reason}
-                  changes -> changes
-                end
-              else
-                attrs
-              end
-
-            if is_map(attrs) do
-              updated =
-                interaction
-                |> Map.merge(attrs)
-                |> Map.put(:updated_at, attrs[:updated_at] || fixed_now())
-
-              update(fn state ->
-                put_in(state, [:interactions, interaction_id], updated)
-              end)
-
-              {:ok, updated}
-            else
-              attrs
-            end
+            apply_interaction_transition(interaction_id, interaction, attrs)
           else
             {:error, :invalid_state}
           end
@@ -1064,6 +1040,38 @@ defmodule Lockspire.Protocol.AuthorizationFlowTest do
           {:error, :not_found}
       end
     end
+
+    defp apply_interaction_transition(interaction_id, interaction, attrs) do
+      case transition_attrs(attrs, interaction) do
+        {:error, reason} ->
+          {:error, reason}
+
+        changes when is_map(changes) ->
+          updated =
+            interaction
+            |> Map.merge(changes)
+            |> Map.put(:updated_at, changes[:updated_at] || fixed_now())
+
+          update(fn state ->
+            put_in(state, [:interactions, interaction_id], updated)
+          end)
+
+          {:ok, updated}
+
+        other ->
+          other
+      end
+    end
+
+    defp transition_attrs(attrs, interaction) when is_function(attrs, 1) do
+      case attrs.(interaction) do
+        {:ok, changes} when is_map(changes) -> changes
+        {:error, reason} -> {:error, reason}
+        changes -> changes
+      end
+    end
+
+    defp transition_attrs(attrs, _interaction), do: attrs
 
     def transact(fun) do
       before = Agent.get(pid(), & &1)

@@ -100,21 +100,20 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
 
     valid? =
       Enum.all?(intent.input_tokens, fn original ->
-        case by_hash[original.token_hash] do
-          %Token{} = current ->
-            current.client_id == original.client_id and current.account_id == original.account_id and
-              current.token_type == original.token_type and
-              current.expires_at == original.expires_at and
-              is_nil(current.revoked_at) and is_nil(current.reuse_detected_at) and
-              DateTime.compare(current.expires_at, now) == :gt
-
-          _ ->
-            false
-        end
+        exchange_token_current?(by_hash[original.token_hash], original, now)
       end)
 
     if valid?, do: :ok, else: {:error, invalid_grant(:input_token_changed)}
   end
+
+  defp exchange_token_current?(%Token{} = current, original, now) do
+    current.client_id == original.client_id and current.account_id == original.account_id and
+      current.token_type == original.token_type and current.expires_at == original.expires_at and
+      is_nil(current.revoked_at) and is_nil(current.reuse_detected_at) and
+      DateTime.compare(current.expires_at, now) == :gt
+  end
+
+  defp exchange_token_current?(_current, _original, _now), do: false
 
   defp final_exchange_time(dependencies) do
     {:ok, dependencies.now.()}
@@ -135,9 +134,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
              requester_context,
              now,
              :guarded_token_exchange
-           ),
-         :ok <- validate_issuer_eligibility(clients, intent.issuer_client_ids, now) do
-      :ok
+           ) do
+      validate_issuer_eligibility(clients, intent.issuer_client_ids, now)
     end
   end
 
@@ -618,23 +616,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
 
   defp current_authorization_matches(current, original, now, kind) do
     cond do
-      current.client_id != original.client_id ->
-        {:error, :invalid_state}
-
-      current.status != :approved ->
+      not same_approved_authorization?(current, original) ->
         {:error, :invalid_state}
 
       DateTime.compare(current.expires_at, now) != :gt ->
         {:error, :expired_token}
-
-      current.subject_id != original.subject_id ->
-        {:error, :invalid_state}
-
-      current.approved_at != original.approved_at ->
-        {:error, :invalid_state}
-
-      current.expires_at != original.expires_at ->
-        {:error, :invalid_state}
 
       kind == :device and current.device_code_hash != original.device_code_hash ->
         {:error, :invalid_state}
@@ -645,6 +631,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       true ->
         :ok
     end
+  end
+
+  defp same_approved_authorization?(current, original) do
+    current.client_id == original.client_id and current.status == :approved and
+      current.subject_id == original.subject_id and current.approved_at == original.approved_at and
+      current.expires_at == original.expires_at
   end
 
   defp app_eligibility(%Client{} = client, now) do

@@ -156,34 +156,7 @@ defmodule Lockspire.Protocol.Userinfo do
 
     case client_store.fetch_client_by_id(client_id) do
       {:ok, %Lockspire.Domain.Client{} = client} ->
-        with {:ok, client} <- ClientLifetime.validate_client(client) do
-          case Lockspire.Domain.Client.app_eligibility(client, request_now(request), :userinfo) do
-            :ok ->
-              {:ok, client}
-
-            {:error, reason} when reason in [:expired, :disabled] ->
-              {:error,
-               error(401, "invalid_token", "Access token is invalid", :invalid_access_token)}
-
-            {:error, _reason} ->
-              {:error,
-               error(
-                 500,
-                 "server_error",
-                 "Unable to validate client lifetime",
-                 :client_lifetime_state_invalid
-               )}
-          end
-        else
-          {:error, _reason} ->
-            {:error,
-             error(
-               500,
-               "server_error",
-               "Unable to validate client lifetime",
-               :client_lifetime_state_invalid
-             )}
-        end
+        eligible_issuer_response(client, request)
 
       {:ok, nil} ->
         {:error, error(401, "invalid_token", "Access token is invalid", :invalid_access_token)}
@@ -218,6 +191,36 @@ defmodule Lockspire.Protocol.Userinfo do
     end
   end
 
+  defp eligible_issuer_response(client, request) do
+    case ClientLifetime.validate_client(client) do
+      {:ok, client} ->
+        case Lockspire.Domain.Client.app_eligibility(client, request_now(request), :userinfo) do
+          :ok ->
+            {:ok, client}
+
+          {:error, reason} when reason in [:expired, :disabled] ->
+            {:error,
+             error(401, "invalid_token", "Access token is invalid", :invalid_access_token)}
+
+          {:error, _reason} ->
+            client_lifetime_state_error()
+        end
+
+      {:error, _reason} ->
+        client_lifetime_state_error()
+    end
+  end
+
+  defp client_lifetime_state_error do
+    {:error,
+     error(
+       500,
+       "server_error",
+       "Unable to validate client lifetime",
+       :client_lifetime_state_invalid
+     )}
+  end
+
   defp build_userinfo_claims(%Claims{} = claims, scopes) do
     allowed_claims =
       scopes
@@ -243,9 +246,10 @@ defmodule Lockspire.Protocol.Userinfo do
   end
 
   defp resolve_security_profile(%Token{}, client, request) do
-    with {:ok, server_policy} <- server_policy_store(request).get_server_policy() do
-      {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
-    else
+    case server_policy_store(request).get_server_policy() do
+      {:ok, server_policy} ->
+        {:ok, SecurityProfile.resolve_effective_profile(server_policy, client)}
+
       _other ->
         {:error,
          error(

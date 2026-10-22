@@ -241,9 +241,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp adapted_client(%Client{} = client, client_store) do
     with {:ok, declaration} <- client_lifetime_declaration(client_store),
          {:ok, _support} <-
-           ClientLifetime.adapt(client_store, Map.get(declaration, :transaction_authority)),
-         {:ok, valid_client} <- ClientLifetime.validate_client(client) do
-      {:ok, valid_client}
+           ClientLifetime.adapt(client_store, Map.get(declaration, :transaction_authority)) do
+      ClientLifetime.validate_client(client)
     end
   end
 

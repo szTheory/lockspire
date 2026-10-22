@@ -104,14 +104,14 @@ defmodule Lockspire.Protocol.RegistrationManagement do
              :update,
              Keyword.put(decision_clock, :prepare, &prepare_update(&1, metadata)),
              fn current, now, {current_resolved, mutable_metadata} ->
-               with {:ok, deadline} <-
-                      Client.management_deadline(
-                        current,
-                        now,
-                        current_resolved.default_registration_access_token_lifetime_seconds
-                      ) do
-                 persist_update(current, mutable_metadata, new_rat_hash, deadline, now)
-               else
+               case Client.management_deadline(
+                      current,
+                      now,
+                      current_resolved.default_registration_access_token_lifetime_seconds
+                    ) do
+                 {:ok, deadline} ->
+                   persist_update(current, mutable_metadata, new_rat_hash, deadline, now)
+
                  {:error, :invalid_lifetime_state} ->
                    {:error,
                     %Registration.Error{

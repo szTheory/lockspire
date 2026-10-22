@@ -835,23 +835,21 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
              status: :completed,
              completed_at: issued_at,
              expires_at: DateTime.add(issued_at, 300, :second)
-           }),
-         {:ok, code} <-
-           Lockspire.Storage.Ecto.Repository.store_token(%Token{
-             token_hash: TokenFormatter.hash_token(raw_code),
-             token_type: :authorization_code,
-             client_id: client.client_id,
-             account_id: "redaction-subject",
-             interaction_id: interaction_id,
-             redirect_uri: redirect_uri,
-             scopes: ["email"],
-             audience: [],
-             code_challenge: challenge,
-             code_challenge_method: :S256,
-             issued_at: issued_at,
-             expires_at: DateTime.add(issued_at, 300, :second)
            }) do
-      {:ok, code}
+      Lockspire.Storage.Ecto.Repository.store_token(%Token{
+        token_hash: TokenFormatter.hash_token(raw_code),
+        token_type: :authorization_code,
+        client_id: client.client_id,
+        account_id: "redaction-subject",
+        interaction_id: interaction_id,
+        redirect_uri: redirect_uri,
+        scopes: ["email"],
+        audience: [],
+        code_challenge: challenge,
+        code_challenge_method: :S256,
+        issued_at: issued_at,
+        expires_at: DateTime.add(issued_at, 300, :second)
+      })
     end
   end
 

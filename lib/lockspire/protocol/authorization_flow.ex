@@ -50,39 +50,55 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
       when is_binary(interaction_id) and is_map(subject_context) do
     with {:ok, %Interaction{} = interaction} <- load_active_interaction(interaction_id, opts),
          :ok <- ensure_resume_subject(interaction, subject_context) do
-      subject_id = subject_id!(subject_context)
+      resume_loaded_interaction(interaction, subject_context, opts)
+    end
+  end
 
-      case current_client_eligibility(interaction.client_id, opts) do
-        :ok ->
-          case interaction.status do
-            :pending_login ->
-              case transition_pending_login(interaction, subject_id, subject_context, opts) do
-                {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
-                  case denial_redirect(interaction, opts) do
-                    {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
-                    {:error, redirect_reason} -> {:error, redirect_reason}
-                  end
+  defp resume_loaded_interaction(interaction, subject_context, opts) do
+    subject_id = subject_id!(subject_context)
 
-                outcome ->
-                  outcome
-              end
+    case current_client_eligibility(interaction.client_id, opts) do
+      :ok ->
+        resume_interaction_status(interaction, subject_id, subject_context, opts)
 
-            :pending_consent ->
-              {:consent_required, interaction}
+      {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+        consent_reused_redirect(interaction, opts)
 
-            _other ->
-              {:error, :interaction_not_active}
-          end
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
 
-        {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
-          case denial_redirect(interaction, opts) do
-            {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
-            {:error, redirect_reason} -> {:error, redirect_reason}
-          end
+  defp resume_interaction_status(
+         %Interaction{status: :pending_login} = interaction,
+         subject_id,
+         subject_context,
+         opts
+       ) do
+    case transition_pending_login(interaction, subject_id, subject_context, opts) do
+      {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+        consent_reused_redirect(interaction, opts)
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+      outcome ->
+        outcome
+    end
+  end
+
+  defp resume_interaction_status(
+         %Interaction{status: :pending_consent} = interaction,
+         _subject_id,
+         _subject_context,
+         _opts
+       ),
+       do: {:consent_required, interaction}
+
+  defp resume_interaction_status(%Interaction{}, _subject_id, _subject_context, _opts),
+    do: {:error, :interaction_not_active}
+
+  defp consent_reused_redirect(interaction, opts) do
+    case denial_redirect(interaction, opts) do
+      {:ok, redirect_uri} -> {:consent_reused, redirect_uri}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -93,39 +109,43 @@ defmodule Lockspire.Protocol.AuthorizationFlow do
     with {:ok, %Interaction{} = interaction} <-
            load_pending_consent_interaction(interaction_id, opts),
          :ok <- ensure_subject_match(interaction, subject_context) do
-      subject_id = subject_id!(subject_context)
-      remember? = Keyword.get(opts, :remember, false)
+      approve_loaded_interaction(interaction, interaction_id, subject_context, opts)
+    end
+  end
 
-      audit_events = [
-        consent_approved_event(interaction, subject_id, remember?),
-        authorization_completed_event(interaction, subject_actor(subject_id), :consent_approved)
-      ]
+  defp approve_loaded_interaction(interaction, interaction_id, subject_context, opts) do
+    subject_id = subject_id!(subject_context)
+    remember? = Keyword.get(opts, :remember, false)
 
-      case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
-        {:ok, {completed, raw_code}} ->
-          emit(:consent, :approved, completed, subject_id, %{reason_code: :consent_approved})
+    audit_events = [
+      consent_approved_event(interaction, subject_id, remember?),
+      authorization_completed_event(interaction, subject_actor(subject_id), :consent_approved)
+    ]
 
-          emit(:authorization, :completed, completed, subject_id, %{
-            reason_code: :consent_approved
-          })
+    case approve_with_audit(interaction_id, subject_id, remember?, audit_events, opts) do
+      {:ok, {completed, raw_code}} ->
+        emit(:consent, :approved, completed, subject_id, %{reason_code: :consent_approved})
 
-          case approval_redirect(completed, raw_code, opts) do
-            {:ok, redirect_uri} -> {:approved, redirect_uri}
-            {:error, reason} -> {:error, reason}
-          end
+        emit(:authorization, :completed, completed, subject_id, %{
+          reason_code: :consent_approved
+        })
 
-        {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
-          case denial_redirect(interaction, opts) do
-            {:ok, redirect_uri} -> {:denied, redirect_uri}
-            {:error, redirect_reason} -> {:error, redirect_reason}
-          end
+        case approval_redirect(completed, raw_code, opts) do
+          {:ok, redirect_uri} -> {:approved, redirect_uri}
+          {:error, reason} -> {:error, reason}
+        end
 
-        {:error, :invalid_state} ->
-          {:error, :interaction_not_active}
+      {:error, reason} when reason in [:client_app_expired, :client_app_disabled] ->
+        case denial_redirect(interaction, opts) do
+          {:ok, redirect_uri} -> {:denied, redirect_uri}
+          {:error, redirect_reason} -> {:error, redirect_reason}
+        end
 
-        {:error, reason} ->
-          {:error, reason}
-      end
+      {:error, :invalid_state} ->
+        {:error, :interaction_not_active}
+
+      {:error, reason} ->
+        {:error, reason}
     end
   end
 

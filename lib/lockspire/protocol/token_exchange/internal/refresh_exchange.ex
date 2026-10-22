@@ -110,31 +110,34 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
 
     with {:ok, prepared_signing} <- TokenIssuer.prepare_refresh_access(client, dependencies) do
       case transact_with_audit_outcome(request, fn ->
-             with {:ok, [%Client{} = current_client]} <-
-                    dependencies.client_store.lock_clients([client.client_id]) do
-               builder =
-                 refresh_rotation_builder(
+             case dependencies.client_store.lock_clients([client.client_id]) do
+               {:ok, [%Client{} = current_client]} ->
+                 builder =
+                   refresh_rotation_builder(
+                     current_client,
+                     client,
+                     prepared_signing,
+                     formatted_refresh_token,
+                     requested_resources,
+                     context,
+                     dependencies
+                   )
+
+                 handle_refresh_rotation(
+                   token_store(request),
                    current_client,
-                   client,
-                   prepared_signing,
+                   refresh_token_hash,
                    formatted_refresh_token,
-                   requested_resources,
-                   context,
-                   dependencies
+                   builder,
+                   presented_refresh_token,
+                   context
                  )
 
-               handle_refresh_rotation(
-                 token_store(request),
-                 current_client,
-                 refresh_token_hash,
-                 formatted_refresh_token,
-                 builder,
-                 presented_refresh_token,
-                 context
-               )
-             else
-               {:error, reason} -> {:error, reason}
-               _ -> {:error, client_authority_error(:credential_changed)}
+               {:error, reason} ->
+                 {:error, reason}
+
+               _other ->
+                 {:error, client_authority_error(:credential_changed)}
              end
            end) do
         {:ok, result} -> {:ok, result}

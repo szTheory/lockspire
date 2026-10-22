@@ -238,8 +238,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
       issuance_context,
       issued_at,
       raw_refresh_token,
-      TokenLifetime.access_token(),
-      dependencies
+      %{expires_in: TokenLifetime.access_token(), dependencies: dependencies}
     )
   end
 
@@ -252,8 +251,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
         issuance_context,
         %DateTime{} = issued_at,
         raw_refresh_token,
-        expires_in,
-        %Dependencies{} = dependencies
+        %{expires_in: expires_in, dependencies: %Dependencies{} = dependencies}
       ) do
     build_success_with_expires_in(
       client,
@@ -263,8 +261,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
       issuance_context,
       issued_at,
       raw_refresh_token,
-      expires_in,
-      dependencies
+      %{expires_in: expires_in, dependencies: dependencies}
     )
   end
 
@@ -276,8 +273,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
          issuance_context,
          %DateTime{} = issued_at,
          raw_refresh_token,
-         expires_in,
-         %Dependencies{} = dependencies
+         %{expires_in: expires_in, dependencies: %Dependencies{} = dependencies}
        ) do
     with {:ok, id_token} <-
            maybe_issue_id_token(

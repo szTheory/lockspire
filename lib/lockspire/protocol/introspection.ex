@@ -130,15 +130,7 @@ defmodule Lockspire.Protocol.Introspection do
 
     case client_store.fetch_client_by_id(client_id) do
       {:ok, %Client{} = target} ->
-        with {:ok, target} <- ClientLifetime.validate_client(target) do
-          case Client.app_eligibility(target, now, :introspection_target) do
-            :ok -> {:ok, active_response(token, request)}
-            {:error, reason} when reason in [:expired, :disabled] -> inactive_response()
-            {:error, _reason} -> lifetime_state_error()
-          end
-        else
-          {:error, _reason} -> lifetime_state_error()
-        end
+        introspect_eligible_target(target, token, request, now)
 
       {:ok, nil} ->
         inactive_response()
@@ -151,6 +143,20 @@ defmodule Lockspire.Protocol.Introspection do
     end
   rescue
     _error -> token_lookup_error()
+  end
+
+  defp introspect_eligible_target(target, token, request, now) do
+    case ClientLifetime.validate_client(target) do
+      {:ok, target} ->
+        case Client.app_eligibility(target, now, :introspection_target) do
+          :ok -> {:ok, active_response(token, request)}
+          {:error, reason} when reason in [:expired, :disabled] -> inactive_response()
+          {:error, _reason} -> lifetime_state_error()
+        end
+
+      {:error, _reason} ->
+        lifetime_state_error()
+    end
   end
 
   defp active_response(%Token{} = token, request) do

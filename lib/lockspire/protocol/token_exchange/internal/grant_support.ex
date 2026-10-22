@@ -603,8 +603,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                 issuance_context,
                 issued_at,
                 Map.get(persisted_grant, :refresh_token_raw),
-                expires_in,
-                Dependencies.fetch!(request)
+                %{expires_in: expires_in, dependencies: Dependencies.fetch!(request)}
               )
 
             {:error, %Error{} = error} ->
@@ -826,8 +825,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         issuance_context,
         persisted_grant.issued_at,
         persisted_grant.refresh_token_raw,
-        persisted_grant.expires_in,
-        dependencies
+        %{expires_in: persisted_grant.expires_in, dependencies: dependencies}
       )
     else
       {:error, :invalid_state} ->
@@ -943,8 +941,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         issuance_context,
         persisted_grant.issued_at,
         persisted_grant.refresh_token_raw,
-        persisted_grant.expires_in,
-        dependencies
+        %{expires_in: persisted_grant.expires_in, dependencies: dependencies}
       )
     else
       {:error, :invalid_state} ->
