@@ -4,11 +4,11 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 167
 current_phase_name: Host-Expanded Admin Routing
-status: executing
-stopped_at: Phase 167 execution complete; independent goal verification pending
+status: human_needed
+stopped_at: Phase 167 implemented; two prohibition verification decisions pending
 last_updated: "2026-10-22T21:29:58.124Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 167 execution started
+last_activity_desc: Phase 167 has 22 of 22 truths verified; 48 focused tests passed; two prohibition decisions remain
 state_head: fa369ab3464675883316a30af8a7e8930769081b
 progress:
   total_phases: 4
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 167 routing implementation complete; all three plans executed, security and code review passed; goal verification pending.
+**Current focus:** Phase 167 implemented and functionally verified; two prohibition classification decisions await developer review. No visual or implementation gap.
 
 ## Current Position
 
-Phase: 167 (Host-Expanded Admin Routing) — EXECUTING
+Phase: 167 of 170 — Host-Expanded Admin Routing (implemented; human_needed)
 Plan: 3 of 3 complete
-Status: Execution complete; goal verification pending
-Last activity: 2026-10-22 — Phase 167 execution started
+Status: Human verification decisions pending
+Last activity: 2026-10-22 — Independent verifier confirmed all 22 truths and MNT-01 through MNT-04; 48 focused tests passed; human_needed solely for two unresolved descriptor-less prohibitions
 
 ## Accumulated Context
 
@@ -46,6 +46,8 @@ v1.46 scope and research are confirmed; all 15 requirements were approved on 202
 v1.45 decisions and validated requirements are recorded in PROJECT.md and the archived phases. Full pre-close context, performance metrics and historical concerns are preserved in [v1.45-STATE.md](milestones/v1.45-STATE.md). All five phase verification owners passed immediately before archival; their original fingerprint paths remain historical checkout paths and were not restamped after the move.
 
 ### Blockers/Concerns
+
+Phase 167 has no implementation gap (22/22 truths, four requirements verified). Verification status is human_needed solely because two plan-authored descriptor-less prohibitions remain unresolved: host ownership and truthful evidence boundaries. See phases/167-host-expanded-admin-routing/167-VERIFICATION.md and 167-UAT.md. Security audit closed 12/12 threats and code review found zero issues. The unclassified MNT-02 probe ledger remains explicit; no new mount semantics are inferred.
 
 No active v1.45 implementation blocker. Its audit retains eight nonblocking debt entries and explicit undefined-probe/visual limits. [Audit](milestones/v1.45-MILESTONE-AUDIT.md). Latest verified public package remains 1.6.1; publication of the lifetime candidate is separate. Historical Phase 138/140/143 and visual exceptions are preserved in the archived pre-close state and the disclosure table below.
 
@@ -100,6 +102,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: Phase 167 execution complete; independent goal verification pending
+Stopped at: Phase 167 implemented; two prohibition verification decisions pending
 Resume file: None
-Next: `$gsd-execute-phase 167` to execute Host-Expanded Admin Routing. The configured auto-advance path may start it directly after planning. Preserve the original unstaged state.json bytes.
+Next: `$gsd-verify-work 167` to resolve the two recorded prohibition decisions in 167-UAT.md. No discuss-phase or visual signoff is required. Do not advance to 168 until verification passes; preserve the original unstaged state.json bytes.

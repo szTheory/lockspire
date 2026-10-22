@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170, ready for phase planning.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 implemented, two verification decisions pending.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,7 +19,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Implementation has not started.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is implemented; functional verification passed and two prohibition classification decisions remain before phase closure.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
@@ -119,16 +119,16 @@ Plans:
 
 ## Progress
 
-**Execution Order:** 167 → 168 → 169 → 170. No phase has started; plan counts are determined by phase planning.
+**Execution Order:** 167 → 168 → 169 → 170. Phase 167 has executed all three plans and awaits two verification decisions; Phases 168–170 have not started.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 167. Host-Expanded Admin Routing | v1.46 | 3/3 | In Progress | — |
+| 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Needs Review | — |
 | 168. Host-Owned LiveView Authorization | v1.46 | 0/TBD | Not started | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
-**Coverage:** 15/15 requirements mapped exactly once; 0 implemented, 0 phases complete. Phase 167 has three independently verified plans covering MNT-01 through MNT-04 and is ready to execute.
+**Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 functionally verified by Phase 167, with formal completion pending two prohibition decisions. Zero phases closed; remaining requirements retain their later owners.
 
 ## Completed Backlog Scope
 
