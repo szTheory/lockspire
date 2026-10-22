@@ -59,8 +59,14 @@ defmodule Lockspire.Web.AdminRouteHost do
         kty: :RSA,
         alg: "RS256",
         use: :sig,
-        public_jwk: %{"kty" => "RSA", "kid" => "admin-route-key", "alg" => "RS256", "use" => "sig"},
-        private_jwk_encrypted: :erlang.term_to_binary(%{"kid" => "admin-route-key", "d" => "fixture"}),
+        public_jwk: %{
+          "kty" => "RSA",
+          "kid" => "admin-route-key",
+          "alg" => "RS256",
+          "use" => "sig"
+        },
+        private_jwk_encrypted:
+          :erlang.term_to_binary(%{"kid" => "admin-route-key", "d" => "fixture"}),
         status: :active,
         published_at: now,
         activated_at: now,
