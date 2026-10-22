@@ -1,7 +1,6 @@
 defmodule Lockspire.Integration.ClientLifetimePackagedJourneyTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
   @moduletag :lifetime_package
   @moduletag timeout: 900_000
 
