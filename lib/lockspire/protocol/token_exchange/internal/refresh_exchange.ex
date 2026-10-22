@@ -235,7 +235,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.RefreshExchange do
       else
         {:error, %Error{} = error} -> {:error, error}
         {:error, reason} -> {:error, reason}
-        _ -> {:error, client_authority_error(:credential_changed)}
       end
     end
   end

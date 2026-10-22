@@ -107,7 +107,12 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
 
   @doc false
   @spec prepare_code_grant(Client.t(), Token.t(), map(), Dependencies.t()) ::
-          {:ok, %{access_signing: map(), formatted_refresh_token: map() | nil}}
+          {:ok,
+           %{
+             access_signing: AccessTokenSigner.prepared_signing(),
+             formatted_refresh_token: TokenFormatter.formatted_token() | nil,
+             cnf: term()
+           }}
           | {:error, Error.t()}
   def prepare_code_grant(
         %Client{} = client,
@@ -126,6 +131,14 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  @spec prepare_poll_grant(Client.t(), Token.t(), map(), Dependencies.t()) ::
+          {:ok,
+           %{
+             access_signing: AccessTokenSigner.prepared_signing(),
+             formatted_refresh_token: TokenFormatter.formatted_token() | nil,
+             cnf: term()
+           }}
+          | {:error, Error.t()}
   def prepare_poll_grant(
         %Client{} = client,
         %Token{} = grant,

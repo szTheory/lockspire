@@ -47,6 +47,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   # the pre-persistence shape too.
   @type token_for_issuance :: %Token{token_hash: String.t() | nil}
   @type result :: {:ok, String.t(), String.t()} | {:error, struct()}
+  @type prepared_signing ::
+          %{format: :opaque, formatted: TokenFormatter.formatted_token()}
+          | %{format: :jwt, jwk: JOSE.JWK.t(), kid: String.t(), alg: String.t()}
 
   @doc """
   Issue an access token for a standard grant path.
@@ -87,7 +90,8 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AccessTokenSigner do
   end
 
   @doc false
-  @spec prepare(Client.t(), Dependencies.t()) :: {:ok, map()} | {:error, Error.t()}
+  @spec prepare(Client.t(), Dependencies.t()) ::
+          {:ok, prepared_signing()} | {:error, Error.t()}
   def prepare(%Client{} = client, %Dependencies{} = dependencies) do
     case resolve_format(client, server_policy(dependencies)) do
       :opaque ->

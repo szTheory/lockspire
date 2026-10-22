@@ -293,7 +293,6 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantPersistence do
       false -> {:error, client_authentication_error(:credential_changed)}
       {:error, :client_disabled} -> {:error, client_authentication_error(:client_disabled)}
       {:error, reason} -> {:error, reason}
-      _ -> {:error, client_authentication_error(:credential_changed)}
     end
   end
 
