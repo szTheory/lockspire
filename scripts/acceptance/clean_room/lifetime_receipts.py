@@ -13,6 +13,18 @@ RECEIPT_FIELDS = frozenset({"schema_version", "source_revision", "candidate", "s
 CANDIDATE_FIELDS = frozenset({"kind", "version", "archive_sha256", "tree_sha256"})
 CLEANUP_FIELDS = frozenset({"processes_stopped", "databases_removed", "temporary_roots_removed"})
 COUNT_FIELDS = frozenset({"executed", "passed", "failed", "skipped"})
+FRESH_SCENARIO_FIELDS = {
+    "fresh.register_use": ("access_token_issued",),
+    "fresh.secret_expiry_rotate": ("expiry_rejected", "rotation_restored_auth", "unrelated_deadlines_preserved"),
+    "fresh.management_put_recover": ("old_credential_rejected", "new_credential_accepted", "host_authorized_recovery", "unrelated_deadlines_preserved"),
+    "fresh.app_expiry_disabled": ("expired_get_allowed", "expired_delete_allowed", "expired_put_rejected", "disabled_management_denied", "state_retained"),
+}
+FRESH_SCENARIO_EVENTS = {
+    "fresh.register_use": ("registration_succeeded", "authorization_code_redeemed"),
+    "fresh.secret_expiry_rotate": ("secret_expired", "secret_rotated"),
+    "fresh.management_put_recover": ("management_token_replaced", "host_recovery"),
+    "fresh.app_expiry_disabled": ("app_expired", "disabled_management_denied"),
+}
 
 
 def _exact_keys(value: object, expected: frozenset[str], label: str) -> dict[str, object]:
@@ -74,6 +86,35 @@ def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) 
                 raise AssertionError("lifetime receipt observation shape is invalid")
     if seen != set(expected_scenarios):
         raise AssertionError("lifetime receipt required scenario set is incomplete")
+    if seen & set(FRESH_SCENARIO_FIELDS):
+        if seen != set(FRESH_SCENARIO_FIELDS):
+            raise AssertionError("lifetime receipt fresh scenario set is incomplete")
+        by_id = {scenario["id"]: scenario for scenario in scenarios}
+        for identifier, required_observations in FRESH_SCENARIO_FIELDS.items():
+            scenario = by_id[identifier]
+            if scenario["leg"] != "fresh" or scenario["outcome"] != "passed":
+                raise AssertionError("lifetime receipt fresh scenario did not pass")
+            if _counts(scenario["counts"], "fresh scenario")["skipped"] != 0:
+                raise AssertionError("lifetime receipt skipped a required fresh scenario")
+            observations = scenario["observations"]
+            if not isinstance(observations, dict) or any(observations.get(name) is not True for name in required_observations):
+                raise AssertionError("lifetime receipt fresh route observations are incomplete")
+            if identifier == "fresh.register_use" and (
+                observations.get("registration_http_status") != 201
+                or observations.get("token_http_status") != 200
+                or observations.get("pkce_method") != "S256"
+            ):
+                raise AssertionError("lifetime receipt fresh registration or S256 use is incomplete")
+            events = scenario["event_counts"]
+            audits = scenario["audit_counts"]
+            if not isinstance(events, dict) or any(type(events.get(name)) is not int or events[name] <= 0 for name in FRESH_SCENARIO_EVENTS[identifier]):
+                raise AssertionError("lifetime receipt fresh event observations are incomplete")
+            if identifier != "fresh.register_use" and (
+                not isinstance(audits, dict)
+                or not audits
+                or any(type(value) is not int or value <= 0 for value in audits.values())
+            ):
+                raise AssertionError("lifetime receipt fresh audit observations are incomplete")
     if any(identifier.startswith("custom.") for identifier in seen):
         by_id = {scenario["id"]: scenario for scenario in scenarios}
         if set(by_id) != {"custom.issue_replace", "custom.shared_rollback", "custom.unsupported"}:

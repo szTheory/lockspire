@@ -476,7 +476,7 @@ def run_dcr_lifetime(
     provider_log: Path,
     *,
     custom: bool = False,
-) -> dict[str, object]:
+) -> list[dict[str, object]]:
     """Register a fresh public client and redeem an S256 code through HTTP."""
     discovery_response = provider.request("GET", "/lockspire/.well-known/openid-configuration")
     require_status(discovery_response, 200, "DCR lifetime discovery")
@@ -571,7 +571,7 @@ def run_dcr_lifetime(
         for callback in ("lifetime_contract", "transaction_authority", "register_client", "lock_clients", "replace_client_registration", "transact")
     ):
         raise AssertionError("configured adapter callback observations are incomplete")
-    return {
+    registration_scenario = {
         "id": "custom.issue_replace" if is_custom else "fresh.register_use",
         "leg": "custom" if is_custom else "fresh",
         "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
@@ -600,6 +600,265 @@ def run_dcr_lifetime(
             "failed": 0,
             "skipped": 0,
         },
+    }
+    if is_custom:
+        return [registration_scenario]
+    return [
+        registration_scenario,
+        run_secret_expiry_rotation(provider, provider_child, provider_environment, discovery),
+        run_management_put_and_host_recovery(provider, provider_child, provider_environment, discovery),
+        run_expired_and_disabled_app(provider, provider_child, provider_environment, discovery),
+    ]
+
+
+def _set_lifetime_policy(child: Path, environment: dict[str, str], app: int, secret: int, management: int) -> None:
+    expression = (
+        "{:ok, _} = Lockspire.Admin.ServerPolicy.put_dcr_policy(%{"
+        "registration_policy: :open, dcr_allowed_scopes: [\"profile\"], "
+        "dcr_allowed_grant_types: [\"authorization_code\"], dcr_allowed_response_types: [\"code\"], "
+        "dcr_allowed_redirect_uri_schemes: [\"http\"], dcr_allowed_redirect_uri_hosts: [\"127.0.0.1\"], "
+        "dcr_allowed_token_endpoint_auth_methods: [\"none\", \"client_secret_basic\"], "
+        f"dcr_default_client_lifetime_seconds: {app}, "
+        f"dcr_default_client_secret_lifetime_seconds: {secret}, "
+        f"dcr_default_registration_access_token_lifetime_seconds: {management}"
+        "}); IO.puts(\"LIFETIME_POLICY_READY=1\")"
+    )
+    try:
+        output = _run_host_control(child, environment, expression)
+    except PackageInputError as error:
+        print(f"lifetime policy setup failed: {error}")
+        raise
+    if "LIFETIME_POLICY_READY=1" not in output:
+        raise AssertionError("clean-room lifetime policy setup did not complete")
+
+
+def _run_host_control(child: Path, environment: dict[str, str], expression: str) -> str:
+    """Run a setup/observation seam without booting a second HTTP listener."""
+    expression = "{:ok, _} = Application.ensure_all_started(:ecto_sql); {:ok, _repo} = CleanRoomProvider.Repo.start_link(); {:ok, _} = Application.ensure_all_started(:lockspire); " + expression
+    try:
+        return run_child_command_output(child, environment, "run", "--no-start", "-e", expression)
+    except PackageInputError as error:
+        try:
+            if ACTIVE_REDACTOR is not None:
+                ACTIVE_REDACTOR.assert_safe(str(error))
+            print(f"host control failed: {error}")
+        except RuntimeError:
+            print("host control failed; diagnostic contained by redaction guard")
+        raise
+
+
+def _register_confidential(provider: Browser, discovery: dict[str, object], label: str) -> dict[str, object]:
+    metadata = {
+        "client_name": label,
+        "redirect_uris": [CLIENT_ORIGIN + "/oauth/callback"],
+        "grant_types": ["authorization_code"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "client_secret_basic",
+        "scope": "openid profile",
+    }
+    endpoint = discovery.get("registration_endpoint")
+    if not isinstance(endpoint, str):
+        raise AssertionError("DCR lifetime discovery omitted the mounted registration endpoint")
+    response = provider.request("POST", provider_path(endpoint), metadata, {"content-type": "application/json"})
+    require_status(response, 201, f"{label} production DCR registration")
+    registration = json.loads(str(response["body"]))
+    for key in ("client_id", "client_secret", "registration_access_token", "registration_client_uri"):
+        if not isinstance(registration.get(key), str) or not registration[key]:
+            raise AssertionError(f"{label} registration omitted required credentials")
+        if key != "client_id":
+            register_secret(registration[key])
+    return registration
+
+
+def _stored_deadlines(child: Path, environment: dict[str, str], client_id: str) -> tuple[int | None, int | None, int | None, int]:
+    client = json.dumps(client_id)
+    expression = (
+        f"{{:ok, client}} = Lockspire.Admin.Clients.get_client({client}); "
+        "deadline = fn nil -> \"0\"; value -> Integer.to_string(DateTime.to_unix(value)) end; "
+        "repo = Lockspire.Config.repo!(); "
+        "{:ok, count} = Ecto.Adapters.SQL.query(repo, \"SELECT count(*) FROM lockspire.lockspire_audit_events WHERE resource_id = $1 AND action IN ('client_secret_rotated','dcr_management_rat_rotated')\", [client.client_id]); "
+        "[[audit_count]] = count.rows; "
+        "IO.puts(\"LIFETIME_DEADLINES=\" <> Enum.join([deadline.(client.client_expires_at), deadline.(client.client_secret_expires_at), deadline.(client.registration_access_token_expires_at), Integer.to_string(audit_count)], \",\"))"
+    )
+    output = _run_host_control(child, environment, expression)
+    match = re.search(r"^LIFETIME_DEADLINES=(\d+),(\d+),(\d+),(\d+)$", output, re.MULTILINE)
+    if not match:
+        raise AssertionError("host lifetime observer omitted deadline or audit counts")
+    app, secret, management, audit = (int(value) for value in match.groups())
+    return tuple(value or None for value in (app, secret, management)) + (audit,)  # type: ignore[return-value]
+
+
+def _wait_for_expiry(deadline: int | None) -> None:
+    if deadline is None:
+        raise AssertionError("isolated lifetime scenario has no issued deadline")
+    remaining = deadline - int(time.time())
+    if remaining > 0:
+        time.sleep(remaining + 0.05)
+    if int(time.time()) < deadline:
+        raise AssertionError("observed lifetime deadline has not elapsed")
+
+
+def _introspect(provider: Browser, discovery: dict[str, object], client_id: str, secret: str) -> dict[str, object]:
+    endpoint = discovery.get("introspection_endpoint")
+    if not isinstance(endpoint, str):
+        raise AssertionError("OIDC discovery omitted introspection endpoint")
+    return provider.request("POST", provider_path(endpoint), {"token": "clean-room-unowned-token"}, {
+        "authorization": basic(client_id, secret),
+    })
+
+
+def _audit_count(child: Path, environment: dict[str, str], client_id: str) -> int:
+    return _stored_deadlines(child, environment, client_id)[3]
+
+
+def run_secret_expiry_rotation(
+    provider: Browser, child: Path, environment: dict[str, str], discovery: dict[str, object]
+) -> dict[str, object]:
+    print("fresh secret expiry scenario starting")
+    _set_lifetime_policy(child, environment, 120, 2, 120)
+    print("fresh secret policy configured")
+    registration = _register_confidential(provider, discovery, "Secret expiry and rotation")
+    print("fresh secret client registered")
+    client_id = str(registration["client_id"])
+    old_secret = str(registration["client_secret"])
+    deadlines_before = _stored_deadlines(child, environment, client_id)
+    print("fresh secret deadline observed")
+    _wait_for_expiry(deadlines_before[1])
+    expired = _introspect(provider, discovery, client_id, old_secret)
+    require_status(expired, 401, "expired DCR client secret")
+    secret_path = Path(environment["CLEAN_ROOM_HANDOFF_DIR"]) / f"{client_id}.secret"
+    expression = (
+        f"{{:ok, result}} = Lockspire.Admin.Clients.rotate_client_secret({json.dumps(client_id)}, %{{actor: %{{type: :operator, id: \"clean-room-host-operator\"}}}}); "
+        f"File.write!({json.dumps(str(secret_path))}, result.client_secret); "
+        f"File.chmod!({json.dumps(str(secret_path))}, 0o600); IO.puts(\"HOST_SECRET_ROTATION=1\")"
+    )
+    output = _run_host_control(child, environment, expression)
+    if "HOST_SECRET_ROTATION=1" not in output or not secret_path.is_file():
+        raise AssertionError("host secret rotation setup did not complete")
+    new_secret = secret_path.read_text(encoding="utf-8")
+    register_secret(new_secret)
+    restored = _introspect(provider, discovery, client_id, new_secret)
+    require_status(restored, 200, "rotated DCR client secret")
+    deadlines_after = _stored_deadlines(child, environment, client_id)
+    if deadlines_before[0] != deadlines_after[0] or deadlines_before[2] != deadlines_after[2]:
+        raise AssertionError("secret rotation changed unrelated client deadlines")
+    if deadlines_after[3] <= deadlines_before[3]:
+        raise AssertionError("secret rotation audit event was not persisted")
+    return {
+        "id": "fresh.secret_expiry_rotate", "leg": "fresh", "contract_case_ids": ["C-LEG-01", "C-LEG-05", "C-PROOF-02"],
+        "outcome": "passed", "observations": {
+            "expiry_rejected": True, "rotation_restored_auth": True,
+            "unrelated_deadlines_preserved": True, "production_routes_used": True,
+        }, "event_counts": {"secret_expired": 1, "secret_rotated": 1},
+        "audit_counts": {"host_secret_rotation": deadlines_after[3] - deadlines_before[3]},
+        "counts": {"executed": 3, "passed": 3, "failed": 0, "skipped": 0},
+    }
+
+
+def run_management_put_and_host_recovery(
+    provider: Browser, child: Path, environment: dict[str, str], discovery: dict[str, object]
+) -> dict[str, object]:
+    print("fresh management replacement scenario starting")
+    _set_lifetime_policy(child, environment, 120, 120, 2)
+    registration = _register_confidential(provider, discovery, "Management replacement and recovery")
+    client_id, secret = str(registration["client_id"]), str(registration["client_secret"])
+    management_uri = str(registration["registration_client_uri"])
+    old_token = str(registration["registration_access_token"])
+    before = _stored_deadlines(child, environment, client_id)
+    update = provider.request("PUT", provider_path(management_uri), {
+        "client_id": client_id, "client_name": "Management replacement and recovery",
+        "redirect_uris": [CLIENT_ORIGIN + "/oauth/callback"], "grant_types": ["authorization_code"],
+        "response_types": ["code"], "token_endpoint_auth_method": "client_secret_basic", "scope": "openid profile",
+        "client_secret": secret,
+    }, {"content-type": "application/json", "authorization": f"Bearer {old_token}"})
+    require_status(update, 200, "production DCR management-token replacement")
+    replacement = json.loads(str(update["body"]))
+    new_token = replacement.get("registration_access_token")
+    if not isinstance(new_token, str) or not new_token:
+        raise AssertionError("successful management replacement omitted replacement credential")
+    register_secret(new_token)
+    require_status(provider.request("GET", provider_path(management_uri), extra_headers={"authorization": f"Bearer {old_token}"}), 401, "replaced management credential")
+    require_status(provider.request("GET", provider_path(management_uri), extra_headers={"authorization": f"Bearer {new_token}"}), 200, "new management credential")
+    after_put = _stored_deadlines(child, environment, client_id)
+    if before[0] != after_put[0] or before[1] != after_put[1]:
+        raise AssertionError("management replacement changed unrelated client deadlines")
+    _wait_for_expiry(after_put[2])
+    require_status(provider.request("GET", provider_path(management_uri), extra_headers={"authorization": f"Bearer {new_token}"}), 401, "expired management credential")
+    recovery_path = Path(environment["CLEAN_ROOM_HANDOFF_DIR"]) / f"{client_id}.rat"
+    recovery = (
+        f"{{:ok, client}} = Lockspire.Admin.Clients.get_client({json.dumps(client_id)}); "
+        f"{{:ok, token, _}} = Lockspire.Protocol.RegistrationManagement.rotate_registration_access_token(client); "
+        f"File.write!({json.dumps(str(recovery_path))}, token); File.chmod!({json.dumps(str(recovery_path))}, 0o600); "
+        "IO.puts(\"HOST_RECOVERY=1\")"
+    )
+    output = _run_host_control(child, environment, recovery)
+    if "HOST_RECOVERY=1" not in output or not recovery_path.is_file():
+        raise AssertionError("host-authorized management recovery setup did not complete")
+    recovered_token = recovery_path.read_text(encoding="utf-8")
+    register_secret(recovered_token)
+    require_status(provider.request("GET", provider_path(management_uri), extra_headers={"authorization": f"Bearer {recovered_token}"}), 200, "host-recovered management credential")
+    after_recovery = _stored_deadlines(child, environment, client_id)
+    if before[0] != after_recovery[0] or before[1] != after_recovery[1] or after_recovery[3] <= before[3]:
+        raise AssertionError("host recovery changed unrelated deadlines or omitted persisted audit")
+    return {
+        "id": "fresh.management_put_recover", "leg": "fresh", "contract_case_ids": ["C-MGMT-02", "C-MGMT-03", "C-PROOF-02", "C-PROOF-03"],
+        "outcome": "passed", "observations": {
+            "old_credential_rejected": True, "new_credential_accepted": True,
+            "host_authorized_recovery": True, "unrelated_deadlines_preserved": True,
+            "production_routes_used": True,
+        }, "event_counts": {"management_token_replaced": 1, "host_recovery": 1},
+        "audit_counts": {"management_mutations": after_recovery[3] - before[3]},
+        "counts": {"executed": 5, "passed": 5, "failed": 0, "skipped": 0},
+    }
+
+
+def run_expired_and_disabled_app(
+    provider: Browser, child: Path, environment: dict[str, str], discovery: dict[str, object]
+) -> dict[str, object]:
+    print("fresh expired and disabled app scenario starting")
+    _set_lifetime_policy(child, environment, 2, 120, 120)
+    expired_registration = _register_confidential(provider, discovery, "Expired enabled app")
+    expired_id = str(expired_registration["client_id"])
+    expired_uri = str(expired_registration["registration_client_uri"])
+    expired_token = str(expired_registration["registration_access_token"])
+    expired_deadlines = _stored_deadlines(child, environment, expired_id)
+    _wait_for_expiry(expired_deadlines[0])
+    require_status(provider.request("GET", provider_path(expired_uri), extra_headers={"authorization": f"Bearer {expired_token}"}), 200, "expired enabled app management GET")
+    put = provider.request("PUT", provider_path(expired_uri), {"client_id": expired_id, "client_name": "Expired enabled app"}, {
+        "content-type": "application/json", "authorization": f"Bearer {expired_token}",
+    })
+    require_status(put, 403, "expired app management PUT")
+    delete = provider.request("DELETE", provider_path(expired_uri), extra_headers={"authorization": f"Bearer {expired_token}"})
+    require_status(delete, 204, "expired enabled app management DELETE")
+    disabled_registration = _register_confidential(provider, discovery, "Disabled app state retention")
+    disabled_id = str(disabled_registration["client_id"])
+    disabled_uri = str(disabled_registration["registration_client_uri"])
+    disabled_token = str(disabled_registration["registration_access_token"])
+    disable_expr = f"{{:ok, _}} = Lockspire.Admin.Clients.disable_client({json.dumps(disabled_id)}, %{{actor: %{{type: :operator, id: \"clean-room-host-operator\"}}}}); IO.puts(\"APP_DISABLED=1\")"
+    if "APP_DISABLED=1" not in _run_host_control(child, environment, disable_expr):
+        raise AssertionError("host disabled-app setup did not complete")
+    disabled_statuses = [
+        provider.request("GET", provider_path(disabled_uri), extra_headers={"authorization": f"Bearer {disabled_token}"})["status"],
+        provider.request("PUT", provider_path(disabled_uri), {"client_id": disabled_id}, {"content-type": "application/json", "authorization": f"Bearer {disabled_token}"})["status"],
+        provider.request("DELETE", provider_path(disabled_uri), extra_headers={"authorization": f"Bearer {disabled_token}"})["status"],
+    ]
+    if disabled_statuses != [401, 401, 401]:
+        raise AssertionError("disabled app self-management was not denied for every operation")
+    remaining = _run_host_control(child, environment, (
+        f"{{:ok, client}} = Lockspire.Admin.Clients.get_client({json.dumps(disabled_id)}); "
+        "IO.puts(\"DISABLED_STATE_RETAINED=#{if client.active, do: 0, else: 1}\")"
+    ))
+    if "DISABLED_STATE_RETAINED=1" not in remaining:
+        raise AssertionError("disabled registration state was not retained")
+    return {
+        "id": "fresh.app_expiry_disabled", "leg": "fresh", "contract_case_ids": ["C-APP-14", "C-APP-15", "C-APP-16", "C-PROOF-02"],
+        "outcome": "passed", "observations": {
+            "expired_get_allowed": True, "expired_delete_allowed": True,
+            "expired_put_rejected": True, "disabled_management_denied": True,
+            "state_retained": True, "production_routes_used": True,
+        }, "event_counts": {"app_expired": 1, "disabled_management_denied": 3},
+        "audit_counts": {"disabled_record_retained": 1},
+        "counts": {"executed": 7, "passed": 7, "failed": 0, "skipped": 0},
     }
 
 
@@ -1087,7 +1346,12 @@ def main(argv: list[str]) -> int:
             expected_scenarios = (
                 ("custom.issue_replace", "custom.shared_rollback", "custom.unsupported")
                 if lifetime_leg == "custom"
-                else ("fresh.register_use",)
+                else (
+                    "fresh.register_use",
+                    "fresh.secret_expiry_rotate",
+                    "fresh.management_put_recover",
+                    "fresh.app_expiry_disabled",
+                )
             )
             validate_lifetime_receipt(args.check_lifetime_receipt, expected_scenarios=expected_scenarios)
         except (AssertionError, OSError, json.JSONDecodeError) as error:
@@ -1120,7 +1384,7 @@ def main(argv: list[str]) -> int:
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
-    dcr_scenario: dict[str, object] | None = None
+    dcr_scenario: list[dict[str, object]] | None = None
     result_code = 0
     cleanup = {"processes_stopped": False, "databases_removed": False, "temporary_roots_removed": False}
     candidate: dict[str, str] | None = None
@@ -1181,7 +1445,7 @@ def main(argv: list[str]) -> int:
             )
             print("provider host prepared")
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
-            provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
+            provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             if lifetime_leg == "custom":
                 provider_environment["CLEAN_ROOM_CUSTOM_LIFETIME_ADAPTER"] = "true"
             run_child_command(provider_child, provider_environment, "ecto.create")
@@ -1290,15 +1554,15 @@ def main(argv: list[str]) -> int:
     cleanup["temporary_roots_removed"] = not run_root.exists()
     if args.receipt is not None:
         if dcr_scenario is None and result_code != 0:
-            dcr_scenario = {
+            dcr_scenario = [{
                 "id": "custom.issue_replace" if lifetime_leg == "custom" else "fresh.register_use",
                 "leg": lifetime_leg if lifetime_leg == "custom" else "fresh",
                 "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
                 "outcome": "failed", "observations": {}, "event_counts": {}, "audit_counts": {},
                 "counts": {"executed": 1, "passed": 0, "failed": 1, "skipped": 0},
-            }
+            }]
         if dcr_scenario is not None and candidate is not None:
-            scenarios = [dcr_scenario]
+            scenarios = dcr_scenario
             if lifetime_leg == "custom" and CUSTOM_EXAMPLE_EVIDENCE is not None:
                 executed = int(CUSTOM_EXAMPLE_EVIDENCE["executed"])
                 passed = int(CUSTOM_EXAMPLE_EVIDENCE["passed"])

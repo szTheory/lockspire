@@ -44,14 +44,32 @@ defmodule Lockspire.Integration.ClientLifetimePackagedJourneyTest do
     assert check_output =~ "lifetime receipt verified"
     {:ok, python} = File.read(receipt_path)
     {:ok, receipt} = Jason.decode(python)
-    assert receipt["counts"] == %{"executed" => 1, "passed" => 1, "failed" => 0, "skipped" => 0}
-    assert [scenario] = receipt["scenarios"]
-    assert scenario["id"] == "fresh.register_use"
-    assert scenario["outcome"] == "passed"
-    assert scenario["observations"]["access_token_issued"]
-    assert scenario["observations"]["pkce_method"] == "S256"
-    assert scenario["counts"]["executed"] > 0
-    assert scenario["counts"]["passed"] > 0
+    scenarios = Map.new(receipt["scenarios"], &{&1["id"], &1})
+    assert Map.keys(scenarios) |> Enum.sort() == [
+             "fresh.app_expiry_disabled",
+             "fresh.management_put_recover",
+             "fresh.register_use",
+             "fresh.secret_expiry_rotate"
+           ]
+    assert receipt["counts"]["executed"] > 0
+    assert receipt["counts"]["passed"] == receipt["counts"]["executed"]
+    assert receipt["counts"]["failed"] == 0
+    assert receipt["counts"]["skipped"] == 0
+    assert scenarios["fresh.register_use"]["observations"]["access_token_issued"]
+    assert scenarios["fresh.register_use"]["observations"]["pkce_method"] == "S256"
+    for identifier <- ["fresh.secret_expiry_rotate", "fresh.management_put_recover", "fresh.app_expiry_disabled"] do
+      assert scenarios[identifier]["outcome"] == "passed"
+      assert scenarios[identifier]["counts"]["executed"] > 0
+      assert scenarios[identifier]["event_counts"] |> Map.values() |> Enum.all?(&(&1 > 0))
+      assert scenarios[identifier]["audit_counts"] |> Map.values() |> Enum.all?(&(&1 > 0))
+    end
+    assert scenarios["fresh.secret_expiry_rotate"]["observations"]["expiry_rejected"]
+    assert scenarios["fresh.secret_expiry_rotate"]["observations"]["rotation_restored_auth"]
+    assert scenarios["fresh.secret_expiry_rotate"]["observations"]["unrelated_deadlines_preserved"]
+    assert scenarios["fresh.management_put_recover"]["observations"]["old_credential_rejected"]
+    assert scenarios["fresh.management_put_recover"]["observations"]["host_authorized_recovery"]
+    assert scenarios["fresh.app_expiry_disabled"]["observations"]["expired_put_rejected"]
+    assert scenarios["fresh.app_expiry_disabled"]["observations"]["disabled_management_denied"]
     assert receipt["cleanup"] == %{"processes_stopped" => true, "databases_removed" => true, "temporary_roots_removed" => true}
   end
 
