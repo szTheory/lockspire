@@ -209,9 +209,13 @@ def audit_boundary(child: Path, package_root: Path) -> None:
     if adapter_text and adapter_refs != allowed_refs:
         raise PackageInputError("provider lifetime adapter is missing a documented public seam")
 
-    sources = "\n".join(path.read_text() for path in host_sources)
+    sources = "\n".join(path.read_text() for path in host_sources if path != adapter_source)
+    adapter_sources = adapter_text
     for reference in allowed_refs:
-        sources = sources.replace(reference, "")
+        exact_reference = rf"(?<![A-Za-z0-9_.]){re.escape(reference)}(?![A-Za-z0-9_.])"
+        adapter_sources = re.sub(exact_reference, "", adapter_sources)
+
+    sources = f"{sources}\n{adapter_sources}"
     found = [needle for needle in FORBIDDEN if needle in sources]
     if found:
         raise PackageInputError(f"provider boundary audit found forbidden seam: {found[0]}")

@@ -73,10 +73,23 @@ end
     def test_checkout_test_support_remains_forbidden_in_named_adapter(self) -> None:
         self._reject("test/support/client_lifetime_race_helpers.ex")
 
+    def test_documented_public_seams_are_not_exempt_in_runtime_sources(self) -> None:
+        self._reject_runtime_reference("Lockspire.Storage.ClientStore")
+
+    def test_nested_public_seam_names_are_not_exempt_in_runtime_sources(self) -> None:
+        self._reject_runtime_reference("Lockspire.Storage.Ecto.Repository.ClientStore")
+
     def _reject(self, forbidden: str) -> None:
         source = self.adapter.read_text().replace("end\n", f"  # {forbidden}\nend\n")
         self.adapter.write_text(source)
         (self.child / "lib" / "clean_room_provider" / self.adapter.name).write_text(source)
+        with patch("build_provider.OVERLAY_ROOT", self.overlay):
+            with self.assertRaises(PackageInputError):
+                audit_boundary(self.child, self.package)
+
+    def _reject_runtime_reference(self, reference: str) -> None:
+        router = self.child / "lib" / "clean_room_provider_web" / "router.ex"
+        router.write_text(f"defmodule HostRuntime do\n  alias {reference}\nend\n")
         with patch("build_provider.OVERLAY_ROOT", self.overlay):
             with self.assertRaises(PackageInputError):
                 audit_boundary(self.child, self.package)
