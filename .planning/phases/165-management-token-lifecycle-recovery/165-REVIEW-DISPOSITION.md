@@ -9,13 +9,15 @@ findings:
     title: "Expired-app PUT validation can bypass the required expiry response"
 open: 0
 total: 1
-recorded: "2026-10-21"
+recorded: 2026-10-22T16:39:45.752Z
 ---
 
 # Phase 165: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
-|---|---|---|---|
+|---------|----------|-------------|--------|
 | CR-01 | critical | fixed | 165-REVIEW-FIX.md; e1883472; independent clean re-review (not in the current review) |
 
-The original 46-file standard review found one issue. The correction retained credential precedence, added the expired-app invalid-body HTTP matrix, passed all required gates, and was independently re-reviewed clean. The current review has zero findings; this ledger retains the original finding and its disposition.
+Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
+Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
+Re-running the gate keeps every row it can. A row the current review no longer reports is kept and its Source cell flagged, so a finding does not leave this record silently. ONE exception: when a finding id is REUSED by a different finding, the earlier decision cannot keep a row — the id is taken — and it is dropped. A RECORDED decision (anything but `open`) is named on the console when that happens; a row still at `open` is replaced silently, because `open` records no decision to lose.

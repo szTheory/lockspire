@@ -75,3 +75,17 @@ The security auditor rechecked e1883472 after CR-01 closure. All 19 mitigations 
 The security auditor reviewed a1fd2d47 and fixture commits 4386dbe3, 2ad5ec11, c329210b, 62ffc461 and 33c63e2e. The pre-existing resource downscoping defect is corrected: GrantSupport passes the selected audience; GrantPersistence validates it against the locked current authorization code before access/refresh issuance. Client/code locking, verified identity/hash, single-use, final authority clock, app/secret eligibility and transactional audit remain intact. No direct security defect found; all 19 planned mitigations remain closed. Fresh independent Phase54/57 integration batch: 4 tests, 0 failures. This is a targeted impact review, not an unrestricted scan.
 
 Superseding broad evidence: 108 prior-phase files908/0; 33 changed files298/0; combined21/0; explicitPostgreSQL34/0; fast2properties2413tests0failures485excluded6skipped (133.9s). No dependency manifests or lockfiles changed.
+
+## Current-source refresh (2026-10-22)
+
+Independent typed gsd-security-auditor verified all 19 planned mitigations against current source at `9244417955efebd9a872100d49f3e88ad2db9fe5`: 19 closed (17 high, 2 medium), 0 open, ASVS L1. Actual selected client/transaction-store callbacks and matching authority remain mandatory for self-management and host recovery. Locked current URL/identity/hash checks, final credential/app eligibility, protected expiry metadata, atomic replacement and required audit, v0 promotion, host-owned recovery authorization, one-time committed disclosure/clearing and redaction all remain present. Error precedence retains the prior independently reviewed correction.
+
+Current runtime includes the Phase 164 clock guard. Candidate 0bd4070d and CI 39776185275 with nine package scenarios/49 checks remain historical proof for that candidate, not the current runtime. New final-candidate CI is pending final milestone revalidation. This ASVS L1 audit checked mitigation presence without rerunning tests or expanding to a new threat scan. No new dependency or accepted risk was introduced. Three undefined probes, two descriptor-less prohibition flags and historical TDD caveats remain explicit limits.
+
+## Security Audit 2026-10-22
+
+| Metric | Count |
+|---|---|
+| Threats found | 19 |
+| Closed | 19 |
+| Open | 0 |

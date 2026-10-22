@@ -129,7 +129,7 @@ Plans:
 **Goal:** Clients can manage registrations under the selected token lifecycle, with explicit authorized recovery and safe rotation.
 **Depends on:** Phase 164
 **Requirements:** DCR-10, DCR-11, DCR-12
-**Plans:** 7/7 canonical plans complete (18 tasks; 7 dependency-aware waves); independently verified 37/37 must-have truths on 2026-10-21. The supplemental regression-fix summary is not an additional plan.
+**Plans:** 7/7 plans complete; independently reverified 2026-10-22
 
 Plans:
 **Wave 1**
