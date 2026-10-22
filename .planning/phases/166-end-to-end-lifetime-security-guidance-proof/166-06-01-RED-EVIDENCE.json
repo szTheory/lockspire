@@ -1,0 +1,11 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration test/integration/client_lifetime_selected_store_test.exs:12 --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - configured stores own registration and routed management lifecycle\n  ---\n  message: \"selected client registration callback was not observed; route persisted through Repository\"\n  file: test/integration/client_lifetime_selected_store_test.exs\n  line: 41\n  ...\n1..1\n",
+  "rawReport": "Running ExUnit with seed: 755787, max_cases: 36\nExcluding tags: [:test]\nIncluding tags: [location: {\"test/integration/client_lifetime_selected_store_test.exs\", 12}]\n\n\n20:46:22.893 [debug] Processing with Lockspire.Web.RegistrationController.create/2\n  Parameters: %{}\n  Pipelines: []\n\n\n  1) test configured stores own registration and routed management lifecycle (Lockspire.Integration.ClientLifetimeSelectedStoreTest)\n     test/integration/client_lifetime_selected_store_test.exs:12\n     Assertion failed, no matching message after 0ms\n     code: assert_received {:selected_store, :register_client, registered_id} when registered_id == client_id\n     stacktrace:\n       test/integration/client_lifetime_selected_store_test.exs:41: (test)\n\n--max-failures reached, aborting test suite\nFinished in 0.1 seconds (0.00s async, 0.1s sync)\n4 tests, 1 failure, 3 excluded\n",
+  "targetTest": "configured stores own registration and routed management lifecycle",
+  "targetFile": "test/integration/client_lifetime_selected_store_test.exs",
+  "expected": "A successful POST /register invokes the selected client store register callback and selected transaction callback.",
+  "actual": "The route returned 201 but no selected register callback was observed; persistence bypassed the configured selector.",
+  "semanticAssessment": "The exact named ExUnit target executed and failed on its callback assertion after a successful HTTP 201 registration. There was no setup, compilation, or fixture failure; a deterministic ExUnit-to-TAP report adapter retained the unchanged raw report for the classifier."
+}

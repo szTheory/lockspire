@@ -9,6 +9,58 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Storage.Ecto.TokenRecord
 
+  test "configured stores own registration and routed management lifecycle" do
+    preserve_store_config()
+    Process.put(:selected_store_test_owner, self())
+
+    assert {:ok, _policy} =
+             Repository.put_server_policy(
+               Lockspire.Test.Fixtures.DcrFixtures.server_policy(%{registration_policy: :open})
+             )
+
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedClientStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.Integration.ClientLifetimeSelectedStoreTest.SelectedTransactionStore
+    )
+
+    registration =
+      build_conn(:post, "/register", Lockspire.Test.Fixtures.DcrFixtures.valid_metadata())
+      |> dispatch_registration()
+
+    assert registration.status == 201
+    registration_response = Jason.decode!(registration.resp_body)
+    client_id = registration_response["client_id"]
+    rat = registration_response["registration_access_token"]
+
+    assert_received {:selected_store, :register_client, registered_id}
+                    when registered_id == client_id
+
+    assert_received {:selected_store, :transact}
+
+    get_conn =
+      build_conn(:get, "/register/#{client_id}")
+      |> put_req_header("authorization", "Bearer #{rat}")
+      |> dispatch_registration()
+
+    assert get_conn.status == 200
+    assert_received {:selected_store, :get_client_by_rat, _hash}
+    assert_received {:selected_store, :lock_clients, [locked_id]} when locked_id == client_id
+    assert_received {:selected_store, :transact}
+  end
+
+  defp dispatch_registration(conn) do
+    conn
+    |> put_req_header("accept", "application/json")
+    |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+  end
+
   setup do
     client =
       create_public_client("selected-store-#{System.unique_integer([:positive])}", [
@@ -34,6 +86,7 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
   } do
     preserve_store_config()
     Process.put(:selected_store_test_owner, self())
+
     Application.put_env(
       :lockspire,
       :client_store,
@@ -89,6 +142,7 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     raw_code: raw_code
   } do
     preserve_store_config()
+
     Application.put_env(
       :lockspire,
       :client_store,
@@ -157,6 +211,20 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     def lock_clients(ids) do
       send(Process.get(:selected_store_test_owner), {:selected_store, :lock_clients, ids})
       Lockspire.Storage.Ecto.Repository.lock_clients(ids)
+    end
+
+    def register_client(client) do
+      send(
+        Process.get(:selected_store_test_owner),
+        {:selected_store, :register_client, client.client_id}
+      )
+
+      Lockspire.Storage.Ecto.Repository.register_client(client)
+    end
+
+    def get_client_by_registration_access_token_hash(hash) do
+      send(Process.get(:selected_store_test_owner), {:selected_store, :get_client_by_rat, hash})
+      Lockspire.Storage.Ecto.Repository.get_client_by_registration_access_token_hash(hash)
     end
   end
 
