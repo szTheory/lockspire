@@ -1,6 +1,6 @@
 ---
 phase: 163-app-lifetime-compatible-host-storage
-verified: 2026-10-22T16:52:36Z
+verified: 2026-10-22T17:22:46Z
 status: passed
 score: 46/46 must-haves verified
 covered_files:
@@ -49,6 +49,7 @@ covered_files:
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-12-SUMMARY.md
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-CI-EVIDENCE.json
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json
+  - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-SECURITY.md
   - .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-VALIDATION.md
   - docs/architecture.md
   - docs/dynamic-registration.md
@@ -111,7 +112,7 @@ covered_files:
   - test/lockspire/storage/client_lifetime_promotion_test.exs
   - test/lockspire/storage/client_lifetime_rollback_test.exs
   - test/support/client_lifetime_race_helpers.ex
-covered_digest: "v3:sha256:b237cc88c5cc222572540f380ae0cb47263e8e1e51376078c575691da8017c37"
+covered_digest: "v3:sha256:d55948fbc5359e726d0a4f17b9dd66e488a074cce9fd8128a33f98aba2c1d581"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
@@ -120,6 +121,7 @@ re_verification:
   delta_reverified:
     - "RFC 8693 final exchange clock accepts only DateTime and returns a controlled error without token issuance or audit on malformed callback output."
     - "Existing truths, including D-24 host guidance and storage/upgrade behavior, were regression-checked against unchanged covered paths."
+    - "Current final-candidate CI, package, and independent security proof are rebound to frozen source f8dd7712; the older 0bd proof remains historical."
   gaps_closed: []
   gaps_remaining: []
   regressions: []
@@ -142,7 +144,7 @@ The four roadmap success criteria are non-negotiable. The 42 plan-level truths a
 | # | Truth | Status | Evidence |
 |---|---|---|---|
 | R1 | New registrations persist the selected effective lifetime; request-time eligibility follows the Phase 162 consumer inventory, including no-secret clients. | ✓ VERIFIED | `ClientMetadata` creates version 1 snapshots; `ClientRecord` persists the version and deadlines. Current registration/authorization tests are included in the fresh focused run (52 tests, 0 failures; `163-VALIDATION.md`). Coverage maps C-APP-01–18 and C-TOK-01–03. |
-| R2 | Existing hosts upgrade under the approved legacy treatment; ambiguous historical dates do not silently activate rejection, and rollout/rollback procedures have executable coverage. | ✓ VERIFIED | Additive migration defaults existing rows to v0 and keeps old secret dates advisory; `Client.app_eligibility/3` treats v0 as unlimited. The current candidate's Phase 166 package lane records both prefixes, old-writer drain before v1, preserved migration history and retained v1 state (166-VALIDATION.md, 166-12-SUMMARY.md). |
+| R2 | Existing hosts upgrade under the approved legacy treatment; ambiguous historical dates do not silently activate rejection, and rollout/rollback procedures have executable coverage. | ✓ VERIFIED | Additive migration defaults existing rows to v0 and keeps old secret dates advisory; `Client.app_eligibility/3` treats v0 as unlimited. The current f8 Phase 166 package receipt records both prefixes, old-writer drain before v1, preserved migration history and retained v1 state; the current CI JSON binds the receipt to f8 (166-VALIDATION.md, 166-CI-EVIDENCE.json, 166-12-SUMMARY.md). |
 | R3 | Fresh generated schema and custom storage satisfy the selected contract; unsupported capabilities produce the documented outcome. | ✓ VERIFIED | Migration/installer tests, candidate-package upgrade tests and the documented custom adapter composition establish the path. `ClientLifetime` checks explicit version, current-row callback and shared authority; negative conformance cases cover missing/dropped state. |
 | R4 | Focused tests demonstrate expiry boundaries, disabled-versus-expired behavior and issued-token behavior without relying on pruning. | ✓ VERIFIED | The 52-test current focused run includes registration, authorization, code redemption, online consumers, management, adapter conformance, promotion and migration. Recorded Phase 163 PostgreSQL wait/rollback tests pass 13/13; capped durable/JWT/response expiry is mapped in C-TOK-01–03. |
 | P1 | Plans 01–02: explicit v1 registration and v0 migration round-trip; selected policy/clock semantics; adapters declare version 1 and matching transaction authority; lossy state or missing guards fail closed; fetch preserves disabled/expired rows. | ✓ VERIFIED | Current schema/domain/adapter code inspected. `app_lifetime_registration_test.exs`, `app_lifetime_policy_test.exs` and `client_lifetime_conformance_test.exs` provide behavior evidence; all declared artifacts pass. |
@@ -156,7 +158,7 @@ The four roadmap success criteria are non-negotiable. The 42 plan-level truths a
 | P9 | Plan 10: UserInfo and introspection read current issuer state, revocation checks caller eligibility, while provider discovery/JWKS, host sessions and offline VerifyToken remain outside app-lifetime checks. | ✓ VERIFIED | Online-consumer behavior tests cover current custom stores, inactive owned tokens, unknown-token revocation and discovery. `VerifyToken` remains offline; the host boundary is explicit in architecture docs. |
 | P10 | Plan 11: expired enabled apps retain allowed GET/DELETE but cannot PUT; disabled apps are denied; legacy credential replacement promotes the locked row atomically and stale snapshots cannot restore prior state. | ✓ VERIFIED | Registration management/controller and repository delta mutations were inspected. Current management/promotion tests cover operation outcomes, atomic v0 promotion and rollback. |
 | P11 | Plan 12: independent PostgreSQL holder/contender sessions confirm the actual blockers; post-wait equality/disablement/replacement and write/audit rollback preserve durable state. | ✓ VERIFIED | Recorded exact focused command in `163-12-SUMMARY.md`: 13 PostgreSQL tests, 0 failures. Helpers compare backend PIDs and `pg_blocking_pids` before advancing the clock; rollback tests inspect durable state. |
-| P12 | Plan 13: generated and upgraded public/custom-prefix schemas converge; PostgreSQL DDL lock handling is bounded; real old/candidate package processes preserve old checksums and enforce the writer-drain boundary. | ✓ VERIFIED | `163-13-SUMMARY.md` records the actual old/candidate package journey. The current Phase 166 candidate package partition re-proves inherited public/tenant_auth upgrade outcomes and adds current legacy HTTP/promotion evidence. The old Phase 163 receipt no longer validates against the evolved runner schema; it is not counted as current proof. |
+| P12 | Plan 13: generated and upgraded public/custom-prefix schemas converge; PostgreSQL DDL lock handling is bounded; real old/candidate package processes preserve old checksums and enforce the writer-drain boundary. | ✓ VERIFIED | `163-13-SUMMARY.md` records the actual old/candidate package journey. The current f8 Phase 166 package partition re-proves inherited public/tenant_auth upgrade outcomes and adds legacy HTTP/promotion evidence. Its exact-candidate receipt is independently validated in `166-CI-EVIDENCE.json`; the old Phase 163 receipt no longer validates against the evolved runner schema and is not counted as current proof. |
 | P13 | Plan 14 D-24: host storage/migration guidance matches observed runtime/package behavior without product UI versions or an immediate offline-revocation promise. | ✓ VERIFIED | [The guide](/Users/jon/projects/lockspire/docs/upgrading/client-lifetimes.md:214) now identifies runtime candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`, links the 7/7 CI run and committed evidence map, states that three edge probes and two descriptor-less prohibitions remain unverified, and says the later text correction was not part of that CI run. The 8-test guidance contract passes. |
 | P14 | Plan 14 D-01–D-24 coverage is explicit; no dependency/service/admin redesign was introduced, and later credential requirements remain in their owning phases. | ✓ VERIFIED | `163-COVERAGE.md` maps C-APP/C-TOK cases; `163-SOURCE-AUDIT.md` maps all 24 decisions. `mix.exs`/`mix.lock` and dependency boundary are unchanged; shared-secret and management-token policy remain assigned to their later owning scopes. |
 
@@ -169,7 +171,7 @@ The four roadmap success criteria are non-negotiable. The 42 plan-level truths a
 | 14 plans' declared artifacts | Current implementation and focused evidence | ✓ VERIFIED | `gsd-tools query verify.artifacts` evaluated every plan: 34/34 artifacts exist and passed substantive checks. |
 | Schema, migration, client lifetime domain and adapter | Explicit lifetime state, v0 compatibility and fail-closed adapter contract | ✓ VERIFIED | Inspected current schema mapping, migration, eligibility, adapter declaration/current-row validation and shared authority checks. |
 | Authorization, token issuance and management paths | Current-app checks and consistent expiry across applicable online consumers | ✓ VERIFIED | Source call chains and current focused integration evidence cover the selected consumer inventory. |
-| Upgrade scripts, clean-room tests and host guidance | Executable expansion/cutover and adopter-facing schema/custom-store instructions | ✓ VERIFIED | Core upgrade instructions are current, and the Phase 166 status paragraph now reflects the final runtime-candidate evidence while disclosing that the documentation correction postdates CI. |
+| Upgrade scripts, clean-room tests and host guidance | Executable expansion/cutover and adopter-facing schema/custom-store instructions | ✓ VERIFIED | Core upgrade instructions are current. The guide correctly labels its 0bd CI result historical and says the later correction postdates that run; separate current f8 proof is bound by Phase 166 CI, package, security, and verification records. |
 
 ### Key Link Verification
 
@@ -200,7 +202,7 @@ The literal key-link query returned 2/30 links verified and 28 false negatives b
 |---|---|---|---|
 | Current app lifetime registration, equality and online consumers | Current isolated focused run recorded in `163-VALIDATION.md`; eight named ExUnit files | 52 tests, 0 failures | ✓ PASS |
 | Real PostgreSQL client/grant waits and rollback | Exact command recorded in `163-12-SUMMARY.md` | 13 tests, 0 failures; observed independent blockers and durable state | ✓ PASS |
-| Packaged legacy upgrade and custom prefix | Current exact-candidate Phase 166 package lane, `166-VALIDATION.md` and `166-CI-EVIDENCE.json` | Candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; 7/7 required contexts, 9/9 scenarios, 49/49 checks passed; cleanup complete | ✓ PASS |
+| Packaged legacy upgrade and custom prefix | Current exact-candidate Phase 166 package lane, `166-VALIDATION.md` and `166-CI-EVIDENCE.json` | Candidate `f8dd7712af7f3ef906305db549c6312284339dba`; CI 39816801430 passed all 7/7 strict required contexts; artifact 12444105217 validated 9/9 scenarios and 49/49 checks with 0 failures/skips and all cleanup true | ✓ PASS |
 | D-24 guidance correction | Old guide red log, corrected guide green log; format and whitespace results recorded in `163-REVIEW.md` | Old wording fails the contract as expected; corrected guide passes 8 tests with 0 failures; formatting/diff checks pass | ✓ PASS |
 | RFC 8693 malformed final-clock handling | Public `Rfc8693Exchange.exchange/2` regression in `test/lockspire/protocol/rfc8693_exchange_test.exs`; root-attributed command and environment in `/tmp/phase163-final-delta-20261022.md` | `MIX_ENV=test mix test test/lockspire/protocol/rfc8693_exchange_test.exs test/lockspire/client_lifetime_guidance_test.exs`; 19 tests, 0 failures (seed 742898). The related post-guard RFC/app-RFC/secret-poll/PostgreSQL grant-wait selection also passed 27 tests, 0 failures. | ✓ PASS |
 | Phase 163 standalone receipt recheck | `python3 scripts/acceptance/clean_room/client_lifetime_upgrade.py --check-receipt /private/tmp/lockspire-163-13-all-receipt.json` | Failed with `PackageInputError`; that dated receipt predates the evolved receipt schema. The current candidate package proof above uses the later receipt contract. | Informational; not counted as a product behavior failure |
@@ -215,8 +217,8 @@ Not applicable. No phase plan or success criterion declares a shell probe or pro
 |---|---|---|---|---|
 | DCR-05 | 01, 03, 06, 11, 12, 14 | New app lifetime persistence and distinct disabled/expired behavior | ✓ SATISFIED | V1 registration round-trip plus consumer equality/disabled tests; current focused run passed. |
 | DCR-06 | 03–12, 14 | Consistent current-state checks and selected issued-token behavior | ✓ SATISFIED | C-APP-01–18/C-TOK-01–03 mapping; current focused behavior and PostgreSQL wait/rollback evidence. |
-| DCR-13 | 01, 02, 11–14 | Existing-host upgrade without guessed deadlines from ambiguous legacy dates | ✓ SATISFIED | V0 treatment and promotion, additive migration, and exact-candidate packaged upgrade evidence. |
-| DCR-14 | 01–14 | Fresh/custom storage contract and explicit unsupported outcome | ✓ SATISFIED | Built-in/custom adapter conformance, generated-prefix migration and package evidence, and host storage guidance. The stale release-status addendum is reported under plan truth D-24. |
+| DCR-13 | 01, 02, 11–14 | Existing-host upgrade without guessed deadlines from ambiguous legacy dates | ✓ SATISFIED | V0 treatment and promotion, additive migration, and current f8 exact-candidate packaged upgrade evidence. |
+| DCR-14 | 01–14 | Fresh/custom storage contract and explicit unsupported outcome | ✓ SATISFIED | Built-in/custom adapter conformance, generated-prefix migration and current f8 package evidence, and host storage guidance. The guide's 0bd release-status paragraph remains explicitly historical; current f8 proof is separately recorded. |
 
 All four roadmap-assigned requirements appear in plan frontmatter. No orphaned Phase 163 requirement mapping was found.
 
@@ -232,7 +234,7 @@ The decision coverage gate reports 24/24 trackable `163-CONTEXT.md` decisions ho
 
 ### Re-verification
 
-The prior verification passed 46/46; this re-verification addresses its only newly stale input, `grant_persistence.ex`, by directly inspecting the final RFC 8693 clock guard and its public-facade regression. The callback now fails closed with a controlled server error before issuance or audit, and the test checks no token or audit mutation. The existing client/token lock order, current app/issuer eligibility, transaction boundary, and no-write-on-error behavior remain intact. Unchanged-path truths and D-24 guidance were regression-checked using recorded Phase 163 and Phase 166 evidence; the guide accurately labels the historical candidate/CI and later correction. No regressions were found. CI run 39776185275 and package 9/49 remain historical for candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; final CI run 39816801430 belongs to the root workflow and is not claimed here.
+The prior verification passed 46/46. The RFC 8693 clock guard and its public-facade regression were directly checked in the preceding bounded source-delta re-verification; the callback fails closed with a controlled server error before issuance or audit, and the test checks no token or audit mutation. The existing client/token lock order, current app/issuer eligibility, transaction boundary, and no-write-on-error behavior remain intact. This final bounded pass verifies the newly rebound Phase 166 proof inputs and their relevance to the unchanged Phase 163 upgrade and storage truths: the 166 report passes 53/53, current CI 39816801430 is successful on exact f8 with all seven strict contexts, artifact 12444105217 validates nine scenarios and 49/49 checks with complete cleanup, and same-candidate security is SECURED 25/25 with zero open. The current evidence map preserves all 69 cases plus A-EDGE-16/17/19 unresolved and both descriptor-less prohibitions flagged-unverified. The 0bd run 39776185275 and its package receipt remain historical; the guide accurately labels them as historical and states that its later correction postdates that run. No regressions were found.
 
 ### Advisory (New Scope, Unevidenced)
 
@@ -244,9 +246,9 @@ None. All goal and plan truths have code or behavioral evidence; the D-24 wordin
 
 ### Gaps Summary
 
-The codebase implements the app lifetime schema, adapter contract, online enforcement, selected expiry behavior and executable legacy upgrade path. The prior D-24 documentation gap is closed, and the remaining truths pass. The correction postdates the runtime candidate CI and is explicitly identified as such; the updated guidance contract passes.
+The codebase implements the app lifetime schema, adapter contract, online enforcement, selected expiry behavior and executable legacy upgrade path. Current f8 CI/package/security proof is now bound separately from the guide's intentionally historical 0bd status paragraph. The documentation correction postdates the 0bd run and is explicitly identified as such; the guidance contract passes.
 
 ---
 
-_Verified: 2026-10-22T16:52:36Z_
+_Verified: 2026-10-22T17:22:46Z_
 _Verifier: the agent (gsd-verifier)_
