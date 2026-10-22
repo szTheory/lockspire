@@ -166,7 +166,7 @@ Plans:
 **Goal:** Adopters and maintainers can reproduce complete lifetime journeys and follow guidance that matches the verified behavior.
 **Depends on:** Phase 165
 **Requirements:** DCR-15, DCR-16, DCR-17, DCR-18, DCR-19
-**Plans:** 12/12 plans complete
+**Plans:** 12/12 plans complete; independently reverified 2026-10-22
 
 Plans:
 **Wave 1**

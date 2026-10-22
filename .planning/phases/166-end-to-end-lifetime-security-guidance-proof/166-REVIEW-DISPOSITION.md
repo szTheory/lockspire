@@ -9,14 +9,14 @@ findings:
     title: "Single-prefix upgrade runs fail outside a work-root"
 open: 0
 total: 1
-recorded: 2026-10-22T11:19:56.677Z
+recorded: 2026-10-22T17:13:30.521Z
 ---
 
 # Phase 166: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 166-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 166-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.

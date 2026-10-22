@@ -1,9 +1,9 @@
 ---
 phase: 166
 plan: "12"
-candidate_sha: 0bd4070d862c53cb3e8dfc4d1cf25535b232aaed
-scope_digest: b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903
-reviewed_at: "2026-10-22T12:29:25Z"
+candidate_sha: f8dd7712af7f3ef906305db549c6312284339dba
+scope_digest: b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8
+reviewed_at: "2026-10-22T17:10:55Z"
 status: SECURED
 asvs_level: 1
 block_on: high
@@ -13,9 +13,11 @@ threats_open: 0
 
 # Phase 166 Independent Security Review
 
-A separate security auditor reviewed candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`, including the selected-prefix CLI fix, maintainer evidence link, and reused-host boundary audit with regression controls. Verdict: **SECURED**; all 25 registered threats closed, with no source or blocking evidence threat open.
+A separate typed security auditor independently revalidated the four-file delta from prior candidate 0bd4070d to frozen candidate `f8dd7712af7f3ef906305db549c6312284339dba`, retaining unchanged verified controls. Verdict: **SECURED**, 25/25 planned high-severity mitigations closed, 0 open. This is a bounded ASVS L1 delta review, not a new unrestricted scan.
 
-The review scope digest is `b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903`, the SHA256 of the binary diff from prior reviewed candidate `99a55e2e74b9f2ce7d16ad9ba170ba60dc5be556` through `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`. The reviewer independently retrieved canonical CI run [39776185275](https://github.com/szTheory/lockspire/actions/runs/39776185275), all seven live `main` required contexts, and artifact 12424668494. Its receipt has nine expected scenarios, 49 passed, zero failed/skipped, and complete cleanup. Hashes and safe counts are recorded in [166-CI-EVIDENCE.json](166-CI-EVIDENCE.json).
+The review scope digest `b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8` is SHA-256 of the full binary diff `git diff --binary 0bd4070d862c53cb3e8dfc4d1cf25535b232aaed f8dd7712af7f3ef906305db549c6312284339dba`. Product/source changes are limited to the final RFC clock guard, its public-facade regression, the corrected upgrade-guide proof paragraph and its existing assertions. Workspace HEAD is a planning-only descendant; source inputs match frozen f8 exactly.
+
+The auditor independently retrieved [CI39816801430](https://github.com/szTheory/lockspire/actions/runs/39816801430), confirmed all seven live strict `main` required contexts succeeded on exact f8, and downloaded artifact12444105217. Its ZIP SHA-256 is `d10554b6ebf835fcecae73e7e17a5e485211b142250ecfb9e92509bc45dbfd1e`; allowlisted files matched the retained capture byte-for-byte and independently passed `validate_ci_receipts(expected_source_revision=f8...)`: nine scenarios, 49 executed/passed, 0 failed/skipped, all cleanup true. Safe candidate/archive/tree/receipt/validation hashes are in [166-CI-EVIDENCE.json](166-CI-EVIDENCE.json). The previous 0bd verdict is preserved verbatim in [the historical security snapshot](166-SECURITY-0bd4070d-HISTORY.md).
 
 ## Threat dispositions
 
@@ -29,7 +31,7 @@ Every row below is severity high, disposition mitigate, status closed. Evidence 
 | T-166-04 | Repudiation | `lifetime_receipts.py:256` enforces identity agreement across proof legs. |
 | T-166-05 | Elevation of privilege | `client_lifetime_interactions_test.exs:108` checks independent lifetime gates. |
 | T-166-06 | Tampering | `client_lifetime_interactions_test.exs:61` checks unrelated deadlines and redemption rollback. |
-| T-166-07 | Elevation of privilege | `client_lifetime_grant_wait_test.exs:94` observes blocking; `grant_persistence.ex:367` rechecks authority after wait. |
+| T-166-07 | Elevation of privilege | Final RFC clock is validated after input-token locks at `grant_persistence.ex:24-27,118-124`, before eligibility, signing and writes; the public-facade regression asserts controlled failure and no token/audit mutation. |
 | T-166-08 | Tampering | Separate secret-rotation and management-replacement race/rollback suites preserve atomicity. |
 | T-166-09 | Elevation of privilege | `client_lifetime.ex:84` and `dependencies.ex:84` validate selected participants. |
 | T-166-10 | Tampering | Narrow shared-authority selectors and PostgreSQL-delegating support boundary are documented and tested. |
@@ -41,20 +43,19 @@ Every row below is severity high, disposition mitigate, status closed. Evidence 
 | T-166-16 | Tampering | Packaged example injects actual audit failures and checks durable state through distinct PostgreSQL observers. |
 | T-166-17 | Elevation of privilege | `client_lifetime_upgrade.py:529` drains old writers before v1; canonical promotion assertions pass. |
 | T-166-18 | Information disclosure / Repudiation | `client_lifetime_upgrade.py:816` and `:839` validate the exact selected prefix set before receipt rendering; safe child-output boundary and production HTTP journeys remain. |
-| T-166-19 | Repudiation | `run_test_matrix.sh:143` runs the dedicated package lane; current run 39776185275 validates all nine scenarios with positive, non-skipped counts. |
+| T-166-19 | Repudiation | Dedicated package lane at `run_test_matrix.sh:143` ran in current CI39816801430; all nine scenarios have positive 49/49 passed counts with no failure/skip. |
 | T-166-20 | Information disclosure | CI validates the receipt pair before upload and uses a SHA-bound artifact name with 14-day retention. |
 | T-166-21 | Elevation of privilege | Recovery guidance remains host-authorized and confirms the one-time reveal flow. |
-| T-166-22 | Repudiation | Guidance retains adapter, legacy, cutover and offline-token limits. |
-| T-166-23 | Repudiation | Independent re-review retrieved run 39776185275, confirmed all seven live branch-protection contexts on the exact candidate, and validated artifact 12424668494 and its receipt pair. |
+| T-166-22 | Repudiation | Changed guide explicitly labels its earlier candidate proof and later correction; adapter, legacy, cutover, offline and unresolved-probe limits remain. Replacement current proof is independently verified here. |
+| T-166-23 | Repudiation | Auditor independently retrieved CI39816801430, all seven live strict main required contexts on exact f8, artifact12444105217 and matching validated receipt pair. |
 | T-166-24 | Tampering / Elevation of privilege | The final record follows the reuse-path mitigation, current exact-candidate CI and package receipt, and independent review. Probe/prohibition flags remain explicit. |
 | T-166-SC | Tampering | No dependency or lockfile additions; pinned legacy identity and candidate provenance remain intact. |
 
-## Security regression evidence
 
-The selected-prefix CLI regression passes in the focused acceptance suite. The reused-host boundary regression observes `audit_boundary` before the resolver probe and rejects a forbidden reused router before Mix; all **40 lifetime Python acceptance tests pass**. Current Fast Checks passed **2 properties, 1,935 tests, 0 failures, 497 excluded, 6 skipped**; minimum-supported passed **2 properties, 2,432 tests, 0 failures, 497 excluded, 6 skipped**; broad integration passed **494 tests, 0 failures, 1,940 excluded**. The dedicated package lane passed **3 tests** and executed all nine required scenarios without skips. Exact current counts and identities are in [166-CI-EVIDENCE.json](166-CI-EVIDENCE.json).
+## Current regression and package evidence
 
-## Preserved probe dispositions
+Current Fast Checks: 2 properties, 1936 tests, 0 failures, 497 excluded, 6 skipped. Minimum-supported: 2 properties, 2433 tests, 0 failures, 497 excluded, 6 skipped. Broad integration: 494 tests, 0 failures, 1941 excluded. Dedicated package lane: 3 tests, 0 failures; nine required scenarios and 49 checks passed, none failed/skipped, process/database/temp-root cleanup all true. Current focused receipts include post-guard 27/0, root's RFC/guidance 19/0, and separate Phase165 84/0 lifecycle/PG/conformance plus70/0 recovery/UI/guidance selections. Those local receipts were reused, not rerun by this auditor; the exact-candidate CI/package proof above is freshly observed.
 
-The refreshed review does not silently clear A-EDGE-16, A-EDGE-17 or A-EDGE-19, and it does not convert the two descriptor-less prohibition flags into fabricated passing checks. The independent reviewer confirmed the flags remain explicit. The three assumptions remain marked **unresolved** in the evidence map, and both prohibitions remain **flagged-unverified**. Their disposition is recorded and bounded: no tests adjacent to them are represented as automatic proof of those spec-less probe predicates. The restrictions themselves are honored by the reviewed implementation and proof record; broad datastore or internal-module support is not claimed, and stale, skipped or missing proof is not represented as assurance.
+## Preserved limits and history
 
-The first documentation candidate `99a55e2e` passed CI but its independent review opened T-166-15 and the dependent T-166-24. The reuse-path audit was added before Mix can inspect the child, and the final reviewer verified compiled-marker present/absent paths, forbidden-source rejection, and fresh-install ordering. No high or critical finding remains open. Candidates c6, f68, and 99a55 remain historical; only run 39776185275 and artifact 12424668494 establish the current exact-candidate gates. The three edge probes remain `unresolved`, and both descriptor-less prohibitions remain `flagged-unverified`. Any later product/package/documentation/CI-input change requires affected verification and a new candidate-bound review.
+A-EDGE-16/17/19 remain **unresolved** and prohibition-1/2 remain **flagged-unverified**. No predicate or passing descriptor was invented. Historical TDD limitations are unchanged. There are no unregistered flags in the twelve summaries and no accepted-risk override or new dependency. The earlier 0bd CI39776185275/artifact12424668494 and preceding candidates remain historical. Only current run39816801430/artifact12444105217 and this scoped review establish the f8 final gates. No raw child logs or credential-bearing payload was committed.

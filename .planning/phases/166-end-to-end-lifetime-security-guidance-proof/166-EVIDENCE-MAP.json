@@ -1,6 +1,6 @@
 {
   "contract_source": ".planning/phases/162-lifetime-semantics-upgrade-contract/162-CASES.json",
-  "source_revision": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+  "source_revision": "f8dd7712af7f3ef906305db549c6312284339dba",
   "rows": [
     {
       "case_id": "C-POL-01",
@@ -32,8 +32,8 @@
         }
       ],
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-02",
@@ -54,8 +54,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-03",
@@ -76,8 +76,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-04",
@@ -98,8 +98,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-05",
@@ -120,8 +120,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-06",
@@ -142,8 +142,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-07",
@@ -164,8 +164,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-08",
@@ -186,8 +186,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-09",
@@ -208,8 +208,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-10",
@@ -230,8 +230,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-11",
@@ -252,8 +252,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-12",
@@ -274,8 +274,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-POL-13",
@@ -296,8 +296,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-01",
@@ -316,8 +316,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-02",
@@ -336,8 +336,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-03",
@@ -356,8 +356,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-04",
@@ -376,8 +376,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-05",
@@ -396,8 +396,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-06",
@@ -427,8 +427,8 @@
         }
       ],
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-07",
@@ -447,8 +447,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-08",
@@ -467,8 +467,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-09",
@@ -487,8 +487,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-10",
@@ -507,8 +507,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-11",
@@ -527,8 +527,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-12",
@@ -547,8 +547,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-13",
@@ -567,8 +567,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-14",
@@ -587,8 +587,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-15",
@@ -607,8 +607,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-16",
@@ -627,8 +627,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-17",
@@ -647,8 +647,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-APP-18",
@@ -667,8 +667,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-TOK-01",
@@ -689,8 +689,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-TOK-02",
@@ -711,8 +711,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-TOK-03",
@@ -733,8 +733,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-TOK-04",
@@ -754,8 +754,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-01",
@@ -777,8 +777,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-02",
@@ -800,8 +800,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-03",
@@ -823,8 +823,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-04",
@@ -846,8 +846,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-05",
@@ -869,8 +869,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-06",
@@ -892,8 +892,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-07",
@@ -915,8 +915,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-08",
@@ -938,8 +938,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-09",
@@ -961,8 +961,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-10",
@@ -984,8 +984,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-11",
@@ -1007,8 +1007,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-MGMT-12",
@@ -1030,8 +1030,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-01",
@@ -1051,8 +1051,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-02",
@@ -1072,8 +1072,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-03",
@@ -1093,8 +1093,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-04",
@@ -1114,8 +1114,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-05",
@@ -1135,8 +1135,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-06",
@@ -1156,8 +1156,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-07",
@@ -1177,8 +1177,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-LEG-08",
@@ -1198,8 +1198,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-01",
@@ -1217,8 +1217,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-02",
@@ -1236,8 +1236,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-03",
@@ -1255,8 +1255,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-04",
@@ -1274,8 +1274,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-05",
@@ -1293,8 +1293,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-RACE-06",
@@ -1312,8 +1312,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-DEP-01",
@@ -1333,8 +1333,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "package",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-DEP-02",
@@ -1354,8 +1354,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "package",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-DEP-03",
@@ -1375,8 +1375,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "package",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-DEP-04",
@@ -1396,8 +1396,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "integration",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-PROOF-01",
@@ -1429,8 +1429,8 @@
         }
       ],
       "matrix_lane": "package",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-PROOF-02",
@@ -1448,8 +1448,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-PROOF-03",
@@ -1467,8 +1467,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     },
     {
       "case_id": "C-PROOF-04",
@@ -1486,8 +1486,8 @@
       "status": "verified_in_current_candidate",
       "receipt_ref": null,
       "matrix_lane": "fast",
-      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-      "matrix_ref": "166-CI-EVIDENCE.json#checks"
+      "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+      "matrix_ref": "166-CI-EVIDENCE.json#matrix"
     }
   ],
   "assumptions": [
@@ -1628,21 +1628,21 @@
     }
   ],
   "final_candidate": {
-    "sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-    "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
-    "canonical_run_id": 39776185275,
-    "canonical_run_url": "https://github.com/szTheory/lockspire/actions/runs/39776185275",
+    "sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+    "scope_digest": "b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8",
+    "canonical_run_id": 39816801430,
+    "canonical_run_url": "https://github.com/szTheory/lockspire/actions/runs/39816801430",
     "security_ref": "166-SECURITY.md",
     "evidence_ref": "166-CI-EVIDENCE.json",
     "matrix_partitions": {
-      "fast": "2 properties, 1935 tests, 0 failures, 6 skipped, 497 excluded",
-      "minimum_supported": "2 properties, 2432 tests, 0 failures, 6 skipped, 497 excluded",
-      "integration": "494 tests, 0 failures (1940 excluded)",
+      "fast": "2 properties, 1936 tests, 0 failures, 6 skipped, 497 excluded",
+      "minimum_supported": "2 properties, 2433 tests, 0 failures, 6 skipped, 497 excluded",
+      "integration": "494 tests, 0 failures, 1941 excluded",
       "lifetime_package": "3 tests, 0 failures; 9 scenarios, 49 passed, 0 failed, 0 skipped"
     }
   },
   "probe_dispositions": {
-    "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+    "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
     "security_ref": "166-SECURITY.md",
     "unclassified_assumptions_preserved": [
       "A-EDGE-16",
@@ -1698,6 +1698,32 @@
         "integration": "494 tests, 0 failures (1940 excluded)",
         "lifetime_package": "3 tests, 0 failures; 9 scenarios, 49 passed, 0 failed, 0 skipped"
       }
+    },
+    {
+      "sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
+      "canonical_run_id": 39776185275,
+      "canonical_run_url": "https://github.com/szTheory/lockspire/actions/runs/39776185275",
+      "security_ref": "166-SECURITY.md",
+      "evidence_ref": "166-CI-EVIDENCE.json",
+      "matrix_partitions": {
+        "fast": "2 properties, 1935 tests, 0 failures, 6 skipped, 497 excluded",
+        "minimum_supported": "2 properties, 2432 tests, 0 failures, 6 skipped, 497 excluded",
+        "integration": "494 tests, 0 failures (1940 excluded)",
+        "lifetime_package": "3 tests, 0 failures; 9 scenarios, 49 passed, 0 failed, 0 skipped"
+      },
+      "historical_security_snapshot": "166-SECURITY-0bd4070d-HISTORY.md"
     }
-  ]
+  ],
+  "current_candidate_proof": {
+    "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+    "canonical_run_id": 39816801430,
+    "artifact_id": 12444105217,
+    "candidate_digest": "8fa1cdad6e88f1fa9d9ce7b2f9b672433d9762fc5cd2111d889460d54db6e04b",
+    "receipt_sha256": "a3e01e13892cfd06de7a7d03339a18853c13cef2e2ff0d33856eb3c48e39f8fa",
+    "security_status": "SECURED",
+    "threats_closed": 25,
+    "threats_open": 0,
+    "historical_observations": "Nested prior receipt observations and original verifier-disposition prose remain historical; current row binding is the f8 matrix and exact-candidate receipt above."
+  }
 }

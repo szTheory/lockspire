@@ -5,10 +5,10 @@ milestone_name: DCR Lifetime Enforcement
 current_phase: 166
 status: completed
 stopped_at: Phase 166 complete — all phases complete
-last_updated: "2026-10-22T12:53:44.741Z"
+last_updated: "2026-10-22T17:19:37.162Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 166 complete
-state_head: 49ec3c7c727c3234992e929d0e194015a901083c
+state_head: e810c0574e3d7dd2b34f7d8bfb021a8468acb950
 progress:
   total_phases: 5
   completed_phases: 5
@@ -30,13 +30,13 @@ See: .planning/PROJECT.md (updated 2026-10-21 after Phase 165)
 ## Current Position
 
 Phase: 166
-Plan: 12 of 12 complete
+Plan: Not started
 Status: All phases complete
 Last activity: 2026-10-22 — Phase 166 complete
 
 ## Phase 166 Execution Progress
 
-All 12 plans and 24 tasks are complete. Independent verification passed53/53 must-haves and DCR-15–19. The user-approved `:client_store`/`:transaction_store` selectors support the named shared-PostgreSQL delegation with Repository defaults and fail-closed authority checks. Final candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed` passed all7 current required contexts in CI39776185275; packaged proof passed all9 scenarios/49 checks with cleanup complete. Security SECURED25/25; code-review finding fixed/reviewed; prior-phase regression1009/0. The boundary audit now runs on reused hosts before Mix probes; exact shipped adapter example, custom callbacks, durable rollback, and both upgrade prefixes are proved. Three undefined edge probes and two descriptor-less prohibitions retain explicit unresolved/flagged limits. All40 canonical milestone plans complete. Next: milestone audit; publication remains separate. Preserve pre-existing state.json bytes.
+All 12 plans and 24 tasks are complete. Independent verification passed 53/53 must-haves and DCR-15–19 on frozen source candidate `f8dd7712af7f3ef906305db549c6312284339dba`. Canonical CI [39816801430](https://github.com/szTheory/lockspire/actions/runs/39816801430) passed all seven actual strict main required contexts. Package artifact 12444105217 passed all nine scenarios and 49 checks with no failures/skips and complete cleanup; receipt, archive, tree and candidate identities are recorded in 166-CI-EVIDENCE.json. Independent security is SECURED25/25 on scope `b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8`; four changed source/doc/test paths were independently reviewed clean. The final RFC clock guard returns a controlled server error before token/audit writes; post-guard 27/0 and RFC/guidance19/0 focused receipts remain explicit, with Phase165 management/PG/conformance84/0 and recovery/UI/guidance70/0. Current CI counts are fast1936/0, minimum2433/0, broad integration494/0 and dedicated package3/0; exclusions/skips remain visible in the evidence record. Prior0bd and earlier CI/package/local1009/0 evidence remains historical. The three undefined probes and two descriptor-less prohibitions retain unresolved/flagged-unverified limits. All40 canonical milestone plans remain complete. Next: final Phase163 proof-binding refresh, then milestone audit; publication remains separate. Preserve pre-existing state.json bytes.
 
 ## Accumulated Context
 

@@ -42,9 +42,22 @@ metrics:
   duration: "7h 40m from preceding plan summary commit through final source-fix evidence; elapsed calendar interval"
   completed: "2026-10-22"
 status: complete
+current_verified_candidate: f8dd7712af7f3ef906305db549c6312284339dba
+verification_refreshed: "2026-10-22T17:10:55Z"
+current_scope_digest: b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8
 ---
 
 # Phase 166 Plan 12: Final Security, CI, and Lifetime Evidence Summary
+
+## Current frozen-candidate verification — f8dd7712
+
+Canonical [CI39816801430](https://github.com/szTheory/lockspire/actions/runs/39816801430) completed successfully on exact source/docs candidate `f8dd7712af7f3ef906305db549c6312284339dba`. All seven actual strict main required contexts passed. Current Fast Checks: 2 properties/1936 tests/0 failures/497 excluded/6 skipped; minimum-supported: 2/2433/0/497 excluded/6 skipped; broad integration494/0/1941 excluded; dedicated package3/0. The package artifact12444105217 validates all nine required scenarios and49/49 checks, none failed/skipped, with all cleanup complete.
+
+The independent typed security delta review is **SECURED25/25**, 0 open, on the same f8 candidate and scope `b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8`. Source delta is the controlled final-clock guard and its regression plus the already reviewed guide/assertion correction. The code review directly checks those four paths and reuses unchanged prior evidence explicitly. Candidate/package/archive/tree/receipt/validation identities are recorded in166-CI-EVIDENCE.json and the69-case map is rebound to this current matrix. The three undefined probes, two descriptor-less prohibitions and historical TDD limits remain explicit.
+
+The original plan execution head and decisions below describe the previous0bd completion. They are preserved as history and superseded as final-candidate proof by the current f8 binding above. No source was edited during this refresh, and no release/publication is claimed.
+
+## Historical execution record — 0bd4070d
 
 **Final exact-candidate CI, the nine-scenario packaged lifetime proof, and an independent scoped security review all passed on `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`; the DCR audit todo remains completed with probe limits explicit.**
 

@@ -1,7 +1,7 @@
 {
-  "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-  "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
-  "observed_at": "2026-10-22T12:29:25Z",
+  "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+  "scope_digest": "b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8",
+  "observed_at": "2026-10-22T17:10:55Z",
   "status": "passed",
   "target_branch": "main",
   "required_contexts": [
@@ -14,88 +14,89 @@
     "Release Hygiene Drift"
   ],
   "canonical_run": {
-    "run_id": 39776185275,
-    "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+    "run_id": 39816801430,
+    "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
     "status": "completed",
     "conclusion": "success",
-    "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275"
+    "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430",
+    "completed_at": "2026-10-22T16:59:54Z"
   },
   "checks": [
     {
       "name": "Adoption Demo Smoke",
-      "run_id": 39776185275,
-      "job_id": 119815612883,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957310304,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612883"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957310304"
     },
     {
       "name": "Complete Coverage Evidence",
-      "run_id": 39776185275,
-      "job_id": 119820255933,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119963491678,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119820255933"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119963491678"
     },
     {
       "name": "Dialyzer",
-      "run_id": 39776185275,
-      "job_id": 119815613039,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957309371,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815613039"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957309371"
     },
     {
       "name": "Fast Checks",
-      "run_id": 39776185275,
-      "job_id": 119815612951,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957310194,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612951"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957310194"
     },
     {
       "name": "Integration Checks",
-      "run_id": 39776185275,
-      "job_id": 119815612907,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957310352,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612907"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957310352"
     },
     {
       "name": "Minimum Supported Elixir/OTP",
-      "run_id": 39776185275,
-      "job_id": 119815612473,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957309919,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612473"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957309919"
     },
     {
       "name": "Release Hygiene Drift",
-      "run_id": 39776185275,
-      "job_id": 119815612729,
-      "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "run_id": 39816801430,
+      "job_id": 119957309791,
+      "head_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612729"
+      "url": "https://github.com/szTheory/lockspire/actions/runs/39816801430/job/119957309791"
     }
   ],
   "matrix": {
     "fast_checks": {
       "properties": 2,
-      "tests": 1935,
+      "tests": 1936,
       "failures": 0,
       "skipped": 6,
       "excluded": 497
     },
     "minimum_supported_elixir_otp": {
       "properties": 2,
-      "tests": 2432,
+      "tests": 2433,
       "failures": 0,
       "skipped": 6,
       "excluded": 497
@@ -103,13 +104,12 @@
     "integration_checks": {
       "tests": 494,
       "failures": 0,
-      "excluded": 1940,
+      "excluded": 1941,
       "lifetime_package_wrappers_in_broad_lane": 0
     },
     "dedicated_lifetime_package_lane": {
       "tests": 3,
       "failures": 0,
-      "excluded": 2431,
       "required_scenarios": 9,
       "scenarios_passed": 9,
       "scenarios_failed": 0,
@@ -117,29 +117,33 @@
     }
   },
   "receipt_refs": {
-    "artifact_id": 12424668494,
-    "artifact_name": "lockspire-client-lifetimes-0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+    "artifact_id": 12444105217,
+    "artifact_name": "lockspire-client-lifetimes-f8dd7712af7f3ef906305db549c6312284339dba",
     "receipt": "receipt.json",
     "validation": "validation.json",
     "retention_days": 14,
-    "downloaded_to": "private evidence capture; raw files are not committed"
+    "artifact_created_at": "2026-10-22T16:58:28Z",
+    "artifact_expires_at": "2026-11-05T16:58:27Z",
+    "artifact_expired": false,
+    "downloaded_to": "private evidence capture; raw files are not committed",
+    "private_capture_path": "/tmp/phase166-f8-package-audit"
   },
   "receipt_digests": {
-    "artifact_sha256": "641526ec0b0cfff0bb81bab2fd1d54510668147a9fbf30f6dcc6495c00fc2d7a",
-    "receipt_sha256": "c93052849881d01152d2f91764d4e048af27c4c84c553216f1c3714ed9e4d919",
-    "validation_sha256": "e1b5867d27bd1dc4d822f558501b63f94b308db079bd647a7cb9f32f2648b727",
-    "candidate_digest": "4bd5dfc541accce1e97364d7bcaa05d87b054cf82903766193b29a7875d1cf25",
-    "candidate_archive_sha256": "4b780fdd702633511e0fdf0e88f346ea7605d2f483abd72cf5b3ac18f28c08bb",
-    "candidate_tree_sha256": "4efe5e9296b983eadbced7eeca329ef1faf8efcbd8424c120adbf34d99317ca8"
+    "artifact_sha256": "d10554b6ebf835fcecae73e7e17a5e485211b142250ecfb9e92509bc45dbfd1e",
+    "receipt_sha256": "a3e01e13892cfd06de7a7d03339a18853c13cef2e2ff0d33856eb3c48e39f8fa",
+    "validation_sha256": "4414e2364319c7ef9b331098d227256dcfa4f5b8247a9511087870e7252e10fe",
+    "candidate_digest": "8fa1cdad6e88f1fa9d9ce7b2f9b672433d9762fc5cd2111d889460d54db6e04b",
+    "candidate_archive_sha256": "0bd9e86da955c1164308be32b86a2dc07f0361b6b10daaca845a94cca8e675e0",
+    "candidate_tree_sha256": "53b212573ec260149918aa5fe547fe4d8cdd6a979f0d8740a341653574bea45c"
   },
   "scenario_ids": [
-    "fresh.register_use",
-    "fresh.secret_expiry_rotate",
-    "fresh.management_put_recover",
-    "fresh.app_expiry_disabled",
     "custom.issue_replace",
     "custom.shared_rollback",
     "custom.unsupported",
+    "fresh.app_expiry_disabled",
+    "fresh.management_put_recover",
+    "fresh.register_use",
+    "fresh.secret_expiry_rotate",
     "legacy.public",
     "legacy.tenant_auth"
   ],
@@ -149,8 +153,8 @@
     "failed": 0,
     "skipped": 0,
     "cleanup": {
-      "processes_stopped": true,
       "databases_removed": true,
+      "processes_stopped": true,
       "temporary_roots_removed": true
     }
   },
@@ -168,7 +172,7 @@
       "disposition": "historical and not used as final proof; causes were investigated as described in deferred-items.md"
     }
   ],
-  "candidate_boundary": "Final source/docs/CI candidate is 0bd4070d862c53cb3e8dfc4d1cf25535b232aaed. Run 39776185275 and the current required contexts bind to this exact SHA. Run 39772929816 passed all required CI contexts but its independent review opened T-166-15 and T-166-24; those findings were repaired by the current reuse-host boundary audit and verified by the final independent review. Earlier f68 and c6 candidates remain historical; any subsequent product/package/docs/CI input change requires new proof.",
+  "candidate_boundary": "Current frozen source/docs/CI candidate is f8dd7712af7f3ef906305db549c6312284339dba. Canonical run 39816801430, all seven live strict main required contexts, artifact 12444105217, its validated receipt pair and independent SECURED25/25 review bind to this exact SHA and scope b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8. The prior 0bd run39776185275 and earlier nested snapshots remain historical. Subsequent local commits contain planning records only; source inputs match the frozen candidate.",
   "historical_candidates": [
     {
       "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
@@ -606,15 +610,202 @@
         "threats_open": 2,
         "security_ref": "166-SECURITY.md"
       }
+    },
+    {
+      "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+      "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
+      "observed_at": "2026-10-22T12:29:25Z",
+      "status": "passed",
+      "target_branch": "main",
+      "required_contexts": [
+        "Adoption Demo Smoke",
+        "Complete Coverage Evidence",
+        "Dialyzer",
+        "Fast Checks",
+        "Integration Checks",
+        "Minimum Supported Elixir/OTP",
+        "Release Hygiene Drift"
+      ],
+      "canonical_run": {
+        "run_id": 39776185275,
+        "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275"
+      },
+      "checks": [
+        {
+          "name": "Adoption Demo Smoke",
+          "run_id": 39776185275,
+          "job_id": 119815612883,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612883"
+        },
+        {
+          "name": "Complete Coverage Evidence",
+          "run_id": 39776185275,
+          "job_id": 119820255933,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119820255933"
+        },
+        {
+          "name": "Dialyzer",
+          "run_id": 39776185275,
+          "job_id": 119815613039,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815613039"
+        },
+        {
+          "name": "Fast Checks",
+          "run_id": 39776185275,
+          "job_id": 119815612951,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612951"
+        },
+        {
+          "name": "Integration Checks",
+          "run_id": 39776185275,
+          "job_id": 119815612907,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612907"
+        },
+        {
+          "name": "Minimum Supported Elixir/OTP",
+          "run_id": 39776185275,
+          "job_id": 119815612473,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612473"
+        },
+        {
+          "name": "Release Hygiene Drift",
+          "run_id": 39776185275,
+          "job_id": 119815612729,
+          "head_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/szTheory/lockspire/actions/runs/39776185275/job/119815612729"
+        }
+      ],
+      "matrix": {
+        "fast_checks": {
+          "properties": 2,
+          "tests": 1935,
+          "failures": 0,
+          "skipped": 6,
+          "excluded": 497
+        },
+        "minimum_supported_elixir_otp": {
+          "properties": 2,
+          "tests": 2432,
+          "failures": 0,
+          "skipped": 6,
+          "excluded": 497
+        },
+        "integration_checks": {
+          "tests": 494,
+          "failures": 0,
+          "excluded": 1940,
+          "lifetime_package_wrappers_in_broad_lane": 0
+        },
+        "dedicated_lifetime_package_lane": {
+          "tests": 3,
+          "failures": 0,
+          "excluded": 2431,
+          "required_scenarios": 9,
+          "scenarios_passed": 9,
+          "scenarios_failed": 0,
+          "scenarios_skipped": 0
+        }
+      },
+      "receipt_refs": {
+        "artifact_id": 12424668494,
+        "artifact_name": "lockspire-client-lifetimes-0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+        "receipt": "receipt.json",
+        "validation": "validation.json",
+        "retention_days": 14,
+        "downloaded_to": "private evidence capture; raw files are not committed"
+      },
+      "receipt_digests": {
+        "artifact_sha256": "641526ec0b0cfff0bb81bab2fd1d54510668147a9fbf30f6dcc6495c00fc2d7a",
+        "receipt_sha256": "c93052849881d01152d2f91764d4e048af27c4c84c553216f1c3714ed9e4d919",
+        "validation_sha256": "e1b5867d27bd1dc4d822f558501b63f94b308db079bd647a7cb9f32f2648b727",
+        "candidate_digest": "4bd5dfc541accce1e97364d7bcaa05d87b054cf82903766193b29a7875d1cf25",
+        "candidate_archive_sha256": "4b780fdd702633511e0fdf0e88f346ea7605d2f483abd72cf5b3ac18f28c08bb",
+        "candidate_tree_sha256": "4efe5e9296b983eadbced7eeca329ef1faf8efcbd8424c120adbf34d99317ca8"
+      },
+      "scenario_ids": [
+        "fresh.register_use",
+        "fresh.secret_expiry_rotate",
+        "fresh.management_put_recover",
+        "fresh.app_expiry_disabled",
+        "custom.issue_replace",
+        "custom.shared_rollback",
+        "custom.unsupported",
+        "legacy.public",
+        "legacy.tenant_auth"
+      ],
+      "receipt_outcomes": {
+        "executed": 49,
+        "passed": 49,
+        "failed": 0,
+        "skipped": 0,
+        "cleanup": {
+          "processes_stopped": true,
+          "databases_removed": true,
+          "temporary_roots_removed": true
+        }
+      },
+      "scoped_security_ref": "166-SECURITY.md",
+      "historical_failures": [
+        {
+          "run": "pre-final local canonical attempt",
+          "status": "failed",
+          "disposition": "superseded by final candidate run 39766614548 on f68c7f0f47cb957ed8dc31b35cc78fd612eeb1ea; prior selector/fixture corrections remain committed and historical records are retained in deferred-items.md"
+        },
+        {
+          "run": "Plan 10 canonical matrix attempt",
+          "head_sha": "8050a3988139b7142a0c0713beae379bb8055e22",
+          "status": "failed",
+          "disposition": "historical and not used as final proof; causes were investigated as described in deferred-items.md"
+        }
+      ],
+      "candidate_boundary": "Final source/docs/CI candidate is 0bd4070d862c53cb3e8dfc4d1cf25535b232aaed. Run 39776185275 and the current required contexts bind to this exact SHA. Run 39772929816 passed all required CI contexts but its independent review opened T-166-15 and T-166-24; those findings were repaired by the current reuse-host boundary audit and verified by the final independent review. Earlier f68 and c6 candidates remain historical; any subsequent product/package/docs/CI input change requires new proof.",
+      "security_review": {
+        "status": "SECURED",
+        "reviewed_at": "2026-10-22T12:29:25Z",
+        "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+        "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
+        "threats_closed": 25,
+        "threats_open": 0,
+        "security_ref": "166-SECURITY.md"
+      },
+      "historical_security_snapshot": "166-SECURITY-0bd4070d-HISTORY.md",
+      "historical_note": "Preserved previous final-candidate record; nested historical data is retained as recorded, not used as current f8 proof."
     }
   ],
   "security_review": {
     "status": "SECURED",
-    "reviewed_at": "2026-10-22T12:29:25Z",
-    "candidate_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
-    "scope_digest": "b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903",
+    "reviewed_at": "2026-10-22T17:10:55Z",
+    "candidate_sha": "f8dd7712af7f3ef906305db549c6312284339dba",
+    "scope_digest": "b532945e284ccef309358a4fa19153a68d87caecec524aadea8719a855495fb8",
     "threats_closed": 25,
     "threats_open": 0,
     "security_ref": "166-SECURITY.md"
-  }
+  },
+  "scope_base_sha": "0bd4070d862c53cb3e8dfc4d1cf25535b232aaed",
+  "required_contexts_strict": true,
+  "scope_input_command": "git diff --binary 0bd4070d862c53cb3e8dfc4d1cf25535b232aaed f8dd7712af7f3ef906305db549c6312284339dba",
+  "scope_digest_algorithm": "SHA-256"
 }
