@@ -47,7 +47,6 @@ defmodule Lockspire.Storage.ClientLifetime do
        }}
     else
       {:error, reason} -> {:error, reason}
-      _ -> {:error, :client_lifetime_configuration_unavailable}
     end
   rescue
     _error -> {:error, :client_lifetime_configuration_unavailable}
@@ -94,9 +93,6 @@ defmodule Lockspire.Storage.ClientLifetime do
       do: :ok,
       else: {:error, :transaction_authority_mismatch}
   end
-
-  defp validate_selected_participants(_authority, _client_store, _transaction_store),
-    do: {:error, :invalid_transaction_authority}
 
   defp ensure_callbacks(module, callbacks) when is_atom(module) do
     _ = Code.ensure_loaded?(module)

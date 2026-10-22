@@ -267,7 +267,6 @@ defmodule Lockspire.Protocol.RegistrationManagement do
     else
       {:error, %Registration.Error{} = error} -> {:error, error}
       {:error, reason} -> {:error, %Registration.Error{code: :server_error, reason: reason}}
-      _unexpected -> {:error, %Registration.Error{code: :server_error}}
     end
   end
 

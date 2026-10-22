@@ -310,8 +310,8 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
           false
       end)
 
-    assert length(self_rotations) >= 1
-    assert length(host_rotations) >= 1
+    assert self_rotations != []
+    assert host_rotations != []
 
     audit_rows =
       Lockspire.TestRepo.all(
@@ -659,8 +659,8 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
           false
       end)
 
-    assert length(host_rotation_events) >= 1
-    assert length(self_rotation_events) >= 1
+    assert host_rotation_events != []
+    assert self_rotation_events != []
 
     audit_rows =
       Lockspire.TestRepo.all(
