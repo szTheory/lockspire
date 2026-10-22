@@ -196,9 +196,11 @@ defmodule Lockspire.Storage.ClientLifetimeGrantWaitTest do
     {_pid_b, backend_b} = Race.await_session!(:rfc_order_b)
     refute backend_a == backend_b
 
-    validated = Map.new([await_validated(), await_validated()], fn {request, pid, context} ->
-      {request, {pid, context}}
-    end)
+    validated =
+      Map.new([await_validated(), await_validated()], fn {request, pid, context} ->
+        {request, {pid, context}}
+      end)
+
     {validator_a, context_a} = Map.fetch!(validated, :a)
     {validator_b, context_b} = Map.fetch!(validated, :b)
 

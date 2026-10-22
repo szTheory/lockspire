@@ -425,7 +425,8 @@ defmodule Lockspire.Protocol.ClientAuth.PrivateKeyJwt do
     do: :inline_jwks
 
   defp jwks_source_for_failure(%Client{jwks_uri: jwks_uri}, _resolved_source)
-       when is_binary(jwks_uri), do: :jwks_uri
+       when is_binary(jwks_uri),
+       do: :jwks_uri
 
   defp jwks_source_for_failure(_client, resolved_source), do: resolved_source || :unknown
 

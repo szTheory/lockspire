@@ -113,6 +113,7 @@ clients = [
     token_endpoint_auth_method: :none,
     pkce_required: true,
     subject_type: :public,
+    lifetime_version: 0,
     created_by: "seed",
     created_at: now,
     metadata: %{"demo" => true, "phase110_state" => "healthy"}
@@ -129,6 +130,7 @@ clients = [
     token_endpoint_auth_method: :none,
     pkce_required: true,
     subject_type: :public,
+    lifetime_version: 0,
     created_by: "seed",
     created_at: now,
     metadata: %{"demo" => true, "phase110_state" => "warning pending device"}
@@ -145,6 +147,7 @@ clients = [
     token_endpoint_auth_method: :client_secret_basic,
     pkce_required: true,
     subject_type: :public,
+    lifetime_version: 0,
     created_by: "seed",
     created_at: now,
     metadata: %{"demo" => true, "phase110_state" => "copy-once client secret rotation"}
@@ -172,6 +175,7 @@ clients = [
     dpop_policy: :dpop,
     security_profile: :fapi_2_0_message_signing,
     subject_type: :public,
+    lifetime_version: 0,
     created_by: "dcr",
     created_at: now,
     provenance: :self_registered,
@@ -196,6 +200,7 @@ clients = [
     token_endpoint_auth_method: :client_secret_basic,
     pkce_required: true,
     subject_type: :public,
+    lifetime_version: 0,
     active: false,
     disabled_at: DateTime.add(now, -86_400, :second),
     disabled_by: "ops",

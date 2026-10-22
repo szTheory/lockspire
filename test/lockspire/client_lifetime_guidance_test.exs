@@ -192,9 +192,14 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
       assert dcr =~ phrase
     end
 
-    assert operator =~ "These provider-side changes do not clear the host application's staff or end-user browser sessions."
+    assert operator =~
+             "These provider-side changes do not clear the host application's staff or end-user browser sessions."
+
     assert operator =~ "An expired client secret cannot authenticate"
-    assert operator =~ "Disabling an app blocks its protocol use and registration-management operations."
+
+    assert operator =~
+             "Disabling an app blocks its protocol use and registration-management operations."
+
     assert support =~ "App expiry has no renewal event"
     assert support =~ "offline JWT verification and caches may not see a"
   end

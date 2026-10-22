@@ -23,6 +23,12 @@ defmodule Lockspire.Domain.Client do
   @type backchannel_token_delivery_mode :: :poll | :ping | :push
   @type provenance :: :operator | :self_registered
   @type access_token_format :: :jwt | :opaque
+  @type management_lifetime_context :: %__MODULE__{provenance: provenance()}
+  @type secret_lifetime_context :: %__MODULE__{
+          provenance: provenance(),
+          token_endpoint_auth_method: token_endpoint_auth_method(),
+          client_secret_hash: String.t() | nil
+        }
 
   @secret_auth_methods [:client_secret_basic, :client_secret_post, :client_secret_jwt]
 
@@ -321,7 +327,7 @@ defmodule Lockspire.Domain.Client do
   def effective_secret_deadline(%__MODULE__{}), do: invalid_lifetime()
 
   @doc "Calculates a validated, whole-second secret deadline for self-registered clients."
-  @spec secret_deadline(t(), DateTime.t(), term()) ::
+  @spec secret_deadline(secret_lifetime_context(), DateTime.t(), term()) ::
           {:ok, DateTime.t() | nil}
           | {:error, :invalid_secret_lifetime_policy | :invalid_lifetime_state}
   def secret_deadline(%__MODULE__{} = client, %DateTime{} = issued_at, duration) do
@@ -349,7 +355,7 @@ defmodule Lockspire.Domain.Client do
   def secret_deadline(%__MODULE__{}, _, _), do: {:error, :invalid_lifetime_state}
 
   @doc "Calculates the validated management-token deadline for self-registered clients."
-  @spec management_deadline(t(), DateTime.t(), term()) ::
+  @spec management_deadline(management_lifetime_context(), DateTime.t(), term()) ::
           {:ok, DateTime.t() | nil}
           | {:error, :invalid_management_lifetime_policy | :invalid_lifetime_state}
   def management_deadline(%__MODULE__{provenance: provenance}, %DateTime{} = issued_at, duration)

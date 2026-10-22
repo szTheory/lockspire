@@ -1404,6 +1404,13 @@ def main(argv: list[str]) -> int:
         # replacement or cleanup against this run.
         os.environ["TMPDIR"] = str(runner_tmpdir)
         provider_port, client_port = configure_origins()
+        # The router overlay captures its audience while the child host compiles
+        # during prepare_provider, so these origins must be inherited before
+        # that call rather than added only to the later server environment.
+        os.environ.update({
+            "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN,
+            "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
+        })
         provider_database = clean_room_database_url("provider")
         client_database = clean_room_database_url("client")
 

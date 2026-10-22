@@ -90,6 +90,7 @@ register_fapi_client = fn client_id ->
       dpop_policy: :dpop,
       security_profile: :fapi_2_0_security,
       subject_type: :public,
+      lifetime_version: 0,
       jwks: %{"keys" => [public_jwk]},
       created_by: "ephemeral-conformance",
       created_at: now,

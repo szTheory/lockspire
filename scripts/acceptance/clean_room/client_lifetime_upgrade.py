@@ -538,7 +538,7 @@ def run_scenario(
         'dcr_allowed_redirect_uri_schemes: ["https"], dcr_allowed_redirect_uri_hosts: ["client.example"], '
         'dcr_allowed_token_endpoint_auth_methods: ["client_secret_basic"], '
         'dcr_default_client_lifetime_seconds: 3600, dcr_default_client_secret_lifetime_seconds: 90, '
-        'dcr_default_registration_access_token_lifetime_seconds: 120}); IO.puts("LEGACY_CURRENT_POLICY_READY=1")',
+        'dcr_default_registration_access_token_lifetime_seconds: 3600}); IO.puts("LEGACY_CURRENT_POLICY_READY=1")',
     ))
     if "LEGACY_CURRENT_POLICY_READY=1" not in str(policy["output"]):
         raise PackageInputError("candidate current lifetime policy setup did not complete")
