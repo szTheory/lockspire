@@ -11,7 +11,7 @@ defmodule Lockspire.CiCoverageAggregationContractTest do
     assert runner =~ ~s(run_coverage_partition fast "MIX_ENV=test mix do test.setup + test")
 
     assert runner =~
-             ~s(run_coverage_partition integration "MIX_ENV=test mix do test.setup + test --only integration")
+             ~s(run_coverage_partition integration "MIX_ENV=test mix do test.setup + test --only integration --exclude lifetime_package")
 
     assert runner =~ ~s(run_partition clean_room "MIX_ENV=test mix test.clean-room.e2e")
     refute runner =~ "mix test.coverage"

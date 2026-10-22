@@ -123,6 +123,7 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
   # The original v1.x arities above remain present; keep these intentional additions
   # separate so the literal compatibility baseline still detects accidental drift.
   @extensions %{
+    Lockspire.Config => [client_store: 0, transaction_store: 0],
     Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
     Lockspire.Protocol.RegistrationManagement => [
       delete: 3,

@@ -169,7 +169,7 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     assert {:ok, snapshot} = Repository.fetch_client_by_id(client_id)
     before = client_row(client_id)
 
-    assert {:error, :invalid_lifetime_version} =
+    assert {:error, %Registration.Error{code: :server_error}} =
              RegistrationManagement.rotate_registration_access_token(snapshot,
                now: DateTime.utc_now() |> DateTime.truncate(:second)
              )

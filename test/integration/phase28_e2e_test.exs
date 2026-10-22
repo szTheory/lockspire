@@ -109,6 +109,7 @@ defmodule Lockspire.Integration.Phase28E2ETest do
     # 4. Update Client (this triggers update and rotate)
     update_conn =
       build_conn(:put, "/register/#{client_id}", %{
+        "client_id" => client_id,
         "client_name" => "Phase 28 E2E Client - Updated",
         "redirect_uris" => ["https://client.example.com/callback2"]
       })

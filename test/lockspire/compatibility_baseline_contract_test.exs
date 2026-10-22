@@ -66,6 +66,7 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     end)
 
     assert Manifest.extensions() == %{
+             Lockspire.Config => [client_store: 0, transaction_store: 0],
              Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
              Lockspire.Protocol.RegistrationManagement => [
                delete: 3,

@@ -483,8 +483,12 @@ defmodule Lockspire.Protocol.RegistrationManagement do
   # row and clears them. Unknown versions and malformed authoritative v1 state fail closed.
   defp validate_recovery_lifetime(%Client{lifetime_version: 0} = current), do: {:ok, current}
 
-  defp validate_recovery_lifetime(%Client{} = current),
-    do: ClientLifetime.validate_client(current)
+  defp validate_recovery_lifetime(%Client{} = current) do
+    case ClientLifetime.validate_client(current) do
+      {:ok, validated} -> {:ok, validated}
+      {:error, _reason} -> {:error, :invalid_lifetime_state}
+    end
+  end
 
   defp decision_now(opts) do
     clock = Keyword.get(opts, :now, fn -> DateTime.utc_now() end)

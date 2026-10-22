@@ -166,6 +166,7 @@ defmodule Lockspire.Integration.Phase29DcrE2ETest do
     # 5. Rotate RAT via Update
     update_conn =
       build_conn(:put, "/register/#{client_id}", %{
+        "client_id" => client_id,
         "client_name" => "Phase 29 E2E Client - Updated",
         "redirect_uris" => ["https://client.example.com/callback"]
       })
