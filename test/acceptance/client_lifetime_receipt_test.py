@@ -14,6 +14,12 @@ from lifetime_receipts import validate_lifetime_receipt  # noqa: E402
 
 
 CUSTOM_SCENARIOS = ("custom.issue_replace", "custom.shared_rollback", "custom.unsupported")
+FRESH_SCENARIOS = (
+    "fresh.register_use",
+    "fresh.secret_expiry_rotate",
+    "fresh.management_put_recover",
+    "fresh.app_expiry_disabled",
+)
 
 
 class LifetimeReceiptTest(unittest.TestCase):
@@ -45,6 +51,72 @@ class LifetimeReceiptTest(unittest.TestCase):
         receipt["scenarios"].pop(1)
         receipt["counts"] = {"executed": 3, "passed": 3, "failed": 0, "skipped": 0}
         self.assert_rejected(receipt)
+
+    def test_fresh_receipt_requires_independent_expiry_rotation_and_recovery_scenarios(self) -> None:
+        receipt = self._receipt()
+        fresh = self._scenario(
+            "fresh.register_use",
+            {"registration_http_status": 201, "token_http_status": 200, "access_token_issued": True, "pkce_method": "S256"},
+            2,
+        )
+        fresh["leg"] = "fresh"
+        receipt["scenarios"] = [fresh]
+        receipt["counts"] = fresh["counts"]
+        with self.assertRaises(AssertionError):
+            validate_lifetime_receipt(self._write(receipt), expected_scenarios=FRESH_SCENARIOS)
+
+    def test_fresh_lifetime_scenarios_require_real_route_outcomes_and_positive_events(self) -> None:
+        receipt = self._receipt()
+        receipt["scenarios"] = [self._fresh_scenario(identifier) for identifier in FRESH_SCENARIOS]
+        receipt["counts"] = {
+            "executed": len(FRESH_SCENARIOS),
+            "passed": len(FRESH_SCENARIOS),
+            "failed": 0,
+            "skipped": 0,
+        }
+        validate_lifetime_receipt(self._write(receipt), expected_scenarios=FRESH_SCENARIOS)
+
+        receipt = self._receipt()
+        receipt["scenarios"] = [self._fresh_scenario(identifier) for identifier in FRESH_SCENARIOS]
+        receipt["scenarios"][1]["event_counts"] = {"secret_expired": 0, "secret_rotated": 1}
+        receipt["counts"] = {
+            "executed": len(FRESH_SCENARIOS),
+            "passed": len(FRESH_SCENARIOS),
+            "failed": 0,
+            "skipped": 0,
+        }
+        with self.assertRaises(AssertionError):
+            validate_lifetime_receipt(self._write(receipt), expected_scenarios=FRESH_SCENARIOS)
+
+    def _fresh_scenario(self, identifier: str) -> dict[str, object]:
+        observations: dict[str, object] = {"production_routes_used": True}
+        events: dict[str, int] = {"registration_succeeded": 1, "authorization_code_redeemed": 1}
+        if identifier == "fresh.register_use":
+            observations.update({
+                "registration_http_status": 201,
+                "token_http_status": 200,
+                "access_token_issued": True,
+                "pkce_method": "S256",
+            })
+        elif identifier == "fresh.secret_expiry_rotate":
+            observations.update({"expiry_rejected": True, "rotation_restored_auth": True, "unrelated_deadlines_preserved": True})
+            events = {"secret_expired": 1, "secret_rotated": 1}
+        elif identifier == "fresh.management_put_recover":
+            observations.update({"old_credential_rejected": True, "new_credential_accepted": True, "host_authorized_recovery": True, "unrelated_deadlines_preserved": True})
+            events = {"management_token_replaced": 1, "host_recovery": 1}
+        elif identifier == "fresh.app_expiry_disabled":
+            observations.update({"expired_get_allowed": True, "expired_delete_allowed": True, "expired_put_rejected": True, "disabled_management_denied": True, "state_retained": True})
+            events = {"app_expired": 1, "disabled_management_denied": 1}
+        return {
+            "id": identifier,
+            "leg": "fresh",
+            "contract_case_ids": ["C-APP-14", "C-MGMT-02", "C-MGMT-03"],
+            "outcome": "passed",
+            "observations": observations,
+            "event_counts": events,
+            "audit_counts": {"observed": 1},
+            "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+        }
 
     def assert_rejected(self, receipt: dict[str, object]) -> None:
         with self.assertRaises(AssertionError):
