@@ -1,0 +1,94 @@
+# Requirements: Lockspire
+
+**Milestone:** v1.46 Embedded Host Integration Reliability
+**Defined:** 2026-10-22
+**Status:** Requirements approved by user on 2026-10-22; roadmap pending
+**Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
+
+## v1.46 Requirements
+
+Requirements cover the user-confirmed mechanical integration scope. They do not introduce staff identity, protocol breadth or UI redesign. Research: [summary](research/v1.46-host-integration/SUMMARY.md).
+
+### Admin Mounting
+
+- [ ] **MNT-01**: A Phoenix host can mount the complete admin surface through one reusable integration that defines the LiveView routes inside its own router, without copying Lockspire's route list.
+- [ ] **MNT-02**: Staff can open, navigate and reconnect to admin pages at the default mount and supported custom mount paths, with links, redirects and task URLs retaining the configured prefix.
+- [ ] **MNT-03**: Existing admin URLs keep their corresponding LiveView and action, including list/detail/new/edit and policy/rotation task routes; adopting the new integration does not silently remove routes or change their meaning.
+- [ ] **MNT-04**: A host can protect admin pages independently while its public OAuth/OIDC endpoints and host-owned consent routes retain their intended access and routing behavior, without being shadowed by either mount.
+
+### Host-Owned Authorization
+
+- [ ] **HAUTH-01**: The host can enforce its staff-access policy on initial admin HTTP requests; unauthenticated and unauthorized visitors are denied before admin data is rendered or actions run.
+- [ ] **HAUTH-02**: The host can enforce its current staff-access policy before disconnected and connected admin mounts through an explicit LiveView authorization seam; missing required authorization wiring is refused rather than silently permitting access.
+- [ ] **HAUTH-03**: A visitor cannot bypass host staff checks by navigating from a public or consent LiveView into the admin surface or between admin destinations; every admin destination belongs to the protected admin session and receives its required host hooks.
+- [ ] **HAUTH-04**: A reconnect with an invalid session or no-longer-authorized host identity is denied by the host policy, while a currently authorized staff session reconnects successfully.
+
+### Installation, Upgrade and Diagnostics
+
+- [ ] **HDX-01**: A newly installing host receives scaffolding and instructions for the canonical route/session integration, required host authorization and endpoint/browser wiring, without an assumed account schema or an allow-all staff-policy default.
+- [ ] **HDX-02**: An existing host can migrate from the generated forwarded-admin integration through explicit guidance and safe managed-file upgrade behavior; dry runs write nothing, repeat runs are safe, drift is refused and host-owned policy files are preserved.
+- [ ] **HDX-03**: A maintainer can use `mix lockspire.verify` to distinguish complete canonical admin route/session/hook wiring from incomplete, shadowed or legacy forward-only wiring, with actionable secret-safe guidance and an explicit limit that structural checks do not prove arbitrary host policy.
+- [ ] **HDX-04**: Adopters can follow consistent supported-surface, installation, admin and upgrade guidance, and the demo and maintained host fixtures consume the same reusable admin integration without duplicated live-route inventories.
+
+### Executable Host Proof
+
+- [ ] **HPROOF-01**: Maintainers can run a packaged clean-room host journey proving connected admin operation at default and custom mounts, reconnect/navigation and denied access, alongside successful public-route access that does not require staff authentication.
+- [ ] **HPROOF-02**: Maintainers can run the relevant route/session, connected authorization and navigation regressions on both the current locked Phoenix/LiveView pair and the exact supported floor (Phoenix 1.8.5 / LiveView 1.1.28), with runtime evidence rather than compilation alone.
+- [ ] **HPROOF-03**: Required CI runs the bounded host-integration checks and reports failures with redaction-safe source-bound evidence, so acceptance does not depend on manual visual review or an untracked local workaround.
+
+## Acceptance Boundaries
+
+- Phase plans must reproduce the recorded forward-only connected failure before fixing it; research has inspected source and official documentation but has not freshly executed that reproduction.
+- Cover the complete current path/view/action inventory and valid mount normalization. The default and a nested custom mount are mandatory; root mounting must retain its behavior if the existing supported configuration accepts it. Do not add multi-mount, reverse-proxy base-path or tenant-router support by inference.
+- Staff sessions, identity resolution, MFA, roles, tenant policy and any fine-grained resource/action permissions remain host-owned. Do not treat an arbitrary session boolean or HTTP conn assign as current connected authorization.
+- Authorization is required at initial request, disconnected/connected mount, reconnect and admin navigation boundaries. A mount-only check is not a promise of immediate permission revocation on an already connected socket. Host logout/disconnect and event-level policy responsibilities must be explicit in guidance; continuous reauthorization/polling and a new revocation coordinator are outside this milestone.
+- Keep staff auth separate from public OAuth/OIDC and host-owned consent. Preserve the library's current protocol behavior and security defaults, including S256 PKCE, exact redirect matching, secret hashing, single-use codes, refresh-family reuse handling and redaction.
+- Use focused unit/integration/lifecycle checks while building each capability. Packaged proof must consume the actual candidate artifact/templates. Real client/socket proof must cover endpoint session, browser assets and host path signing; LiveViewTest alone is not a claim of browser transport proof.
+- Runtime compatibility claims name exact tested versions; no dependency upgrade is required. A static verification result describes wiring, not arbitrary application authorization correctness.
+- No subjective UI signoff is required. Package publication, merging and remote ref updates are separate from implementation verification.
+
+## Future Requirements
+
+- **SEC-01**: Re-seal the client-secret-JWT verifier with a dedicated rotatable key instead of endpoint secret_key_base.
+- **KEK-04**: Host KMS/Vault key-set provider.
+- **OPS-03**: Paged keys.reencrypt dry-run and separately scoped status-read improvements.
+- Remaining legacy-plaintext fixture maintenance and unrelated v1.45 accepted debt stay recorded in their existing owners; this milestone does not silently close them.
+
+## Out of Scope
+
+| Feature | Reason |
+|---|---|
+| Visual redesign, new admin workflows or vocabulary overhaul | User selected mechanical reliability work needing little attention |
+| Staff account store, login UX, role engine or tenant policy | Explicit host ownership and embedded-library boundary |
+| New OAuth/OIDC flows or protocol policy | Integration repair only |
+| Continuous permission polling, distributed logout coordinator, new per-resource authorization engine | Separate product/design scope; document native host lifecycle responsibilities |
+| KMS/Vault and client-secret-JWT key lifecycle changes | Valuable separate milestones, not dependencies of host routing |
+| Multi-mount/tenant-router/proxy-prefix expansion | No newly approved support claim |
+| Release publication or broad repository cleanup | Separate workflows; historical evidence and unrelated user changes are preserved |
+
+## Traceability
+
+Requirements confirmed by the user on 2026-10-22. Roadmap creation pending; continue phase numbering at 167. Each of the 15 requirements must map to exactly one owning phase; integration checks in later phases supplement rather than duplicate ownership.
+
+| Requirement | Phase | Status |
+|---|---|---|
+| MNT-01 | Pending | Pending |
+| MNT-02 | Pending | Pending |
+| MNT-03 | Pending | Pending |
+| MNT-04 | Pending | Pending |
+| HAUTH-01 | Pending | Pending |
+| HAUTH-02 | Pending | Pending |
+| HAUTH-03 | Pending | Pending |
+| HAUTH-04 | Pending | Pending |
+| HDX-01 | Pending | Pending |
+| HDX-02 | Pending | Pending |
+| HDX-03 | Pending | Pending |
+| HDX-04 | Pending | Pending |
+| HPROOF-01 | Pending | Pending |
+| HPROOF-02 | Pending | Pending |
+| HPROOF-03 | Pending | Pending |
+
+**Coverage:** 15 requirements defined; 0 mapped pending roadmap; 15 pending implementation. No implementation or runtime success is claimed by this document.
+
+---
+*Last updated: 2026-10-22 — all 15 requirements approved by the user.*
