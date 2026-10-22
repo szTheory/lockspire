@@ -759,7 +759,10 @@ def run_management_put_and_host_recovery(
     provider: Browser, child: Path, environment: dict[str, str], discovery: dict[str, object]
 ) -> dict[str, object]:
     print("fresh management replacement scenario starting")
-    _set_lifetime_policy(child, environment, 120, 120, 2)
+    # This journey performs registration and reads the stored deadlines before
+    # its first management request. Keep enough headroom for loaded CI runners;
+    # the scenario still proves expiry after the replacement response below.
+    _set_lifetime_policy(child, environment, 120, 120, 10)
     registration = _register_confidential(provider, discovery, "Management replacement and recovery")
     client_id, secret = str(registration["client_id"]), str(registration["client_secret"])
     management_uri = str(registration["registration_client_uri"])

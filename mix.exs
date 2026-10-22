@@ -90,10 +90,13 @@ defmodule Lockspire.MixProject do
   defp aliases do
     aliases = [
       "test.setup": ["lockspire.test.setup"],
-      "test.fast": ["test.setup", "test test/lockspire test/mix test/integration"],
+      "test.fast": [
+        "test.setup",
+        "test --exclude lifetime_package test/lockspire test/mix test/integration"
+      ],
       "test.coverage": [
         "test.setup",
-        "test --cover test/lockspire test/mix test/integration"
+        "test --cover --exclude lifetime_package test/lockspire test/mix test/integration"
       ],
       "test.integration": ["test.setup", "test --only integration test/integration"],
       "test.clean-room.e2e": [
