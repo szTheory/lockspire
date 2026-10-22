@@ -36,9 +36,33 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
     refute workflow =~ "continue-on-error"
   end
 
+  test "lifetime proof retains only validated SHA-bound receipts for fourteen days" do
+    workflow = File.read!(@workflow)
+    integration_job = integration_job(workflow)
+
+    assert integration_job =~ "timeout-minutes: 30"
+    assert integration_job =~ "bash scripts/ci/run_test_matrix.sh --integration"
+    assert integration_job =~ "--exclude lifetime_package"
+    assert integration_job =~ "run_partition lifetimes"
+    assert integration_job =~ "--only lifetime_package"
+    assert integration_job =~ ".artifacts/ci/client-lifetimes/receipt.json"
+    assert integration_job =~ ".artifacts/ci/client-lifetimes/validation.json"
+    assert integration_job =~ "lockspire-client-lifetimes-${{ github.sha }}"
+    assert integration_job =~ "retention-days: 14"
+    assert integration_job =~ "if-no-files-found: error"
+    assert integration_job =~
+             "path: |\n            .artifacts/ci/client-lifetimes/receipt.json\n            .artifacts/ci/client-lifetimes/validation.json"
+  end
+
   defp aggregate_job(workflow) do
     [_before, aggregate_and_after] = String.split(workflow, "\n  coverage-aggregate:\n", parts: 2)
     [aggregate_job | _rest] = String.split(aggregate_and_after, "\n  adoption-demo:", parts: 2)
     aggregate_job
+  end
+
+  defp integration_job(workflow) do
+    [_before, integration_and_after] = String.split(workflow, "\n  integration:\n", parts: 2)
+    [integration_job | _rest] = String.split(integration_and_after, "\n  coverage-aggregate:", parts: 2)
+    integration_job
   end
 end
