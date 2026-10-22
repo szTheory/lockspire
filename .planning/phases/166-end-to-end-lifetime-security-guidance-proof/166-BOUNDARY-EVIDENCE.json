@@ -1,0 +1,105 @@
+{
+  "source_revision": "3adbdedc",
+  "test_count": 32,
+  "failure_count": 0,
+  "excluded_count": 0,
+  "skipped_count": 0,
+  "duration_seconds": 3,
+  "test_count_semantics": "Sum of successful ExUnit invocations across runs; selections overlap and this is not a unique-test total.",
+  "case_ids": [
+    "C-POL-01",
+    "C-POL-02",
+    "C-POL-03",
+    "C-POL-04",
+    "C-POL-05",
+    "C-POL-06",
+    "C-POL-07",
+    "C-POL-08",
+    "C-POL-09",
+    "C-POL-10",
+    "C-POL-11",
+    "C-POL-12",
+    "C-POL-13",
+    "C-APP-14",
+    "C-APP-15",
+    "C-APP-16",
+    "C-MGMT-03",
+    "C-MGMT-04",
+    "C-MGMT-09",
+    "C-TOK-01",
+    "C-TOK-02",
+    "C-TOK-03",
+    "C-TOK-04"
+  ],
+  "runs": [
+    {
+      "name": "independent integrated interactions",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration test/integration/client_lifetime_interactions_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": [
+        "C-POL-01",
+        "C-POL-07",
+        "C-APP-14",
+        "C-APP-15",
+        "C-APP-16",
+        "C-MGMT-03",
+        "C-MGMT-04",
+        "C-MGMT-09"
+      ],
+      "test_count": 2,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1
+    },
+    {
+      "name": "contract policy, client authentication, JWT boundaries and interactions",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_auth_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs test/integration/client_lifetime_interactions_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": [
+        "C-POL-01",
+        "C-POL-02",
+        "C-POL-03",
+        "C-POL-04",
+        "C-POL-05",
+        "C-POL-06",
+        "C-POL-07",
+        "C-POL-08",
+        "C-POL-09",
+        "C-POL-10",
+        "C-POL-11",
+        "C-POL-12",
+        "C-POL-13",
+        "C-APP-14",
+        "C-APP-15",
+        "C-APP-16",
+        "C-MGMT-03",
+        "C-MGMT-04",
+        "C-MGMT-09",
+        "C-TOK-04"
+      ],
+      "test_count": 19,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1
+    },
+    {
+      "name": "code redemption, online consumers and JWT expiry limits",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration test/integration/app_lifetime_code_redemption_test.exs test/integration/app_lifetime_online_consumers_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": [
+        "C-TOK-01",
+        "C-TOK-02",
+        "C-TOK-03",
+        "C-TOK-04"
+      ],
+      "test_count": 11,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1
+    }
+  ],
+  "limits": [
+    "These local focused runs do not establish packaged HTTP lifetime duration proof, live required CI, or independent security review.",
+    "The integration tests use existing injected protocol clocks and persisted test rows; no public HTTP clock control was added."
+  ]
+}
