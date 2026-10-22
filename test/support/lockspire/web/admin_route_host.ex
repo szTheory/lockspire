@@ -68,6 +68,15 @@ defmodule Lockspire.Web.AdminRouteHost.Identity do
       nil -> :ok
     end
   end
+
+  def session(_conn, label) do
+    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
+      observer when is_pid(observer) -> send(observer, {:host_session_callback, label})
+      nil -> :ok
+    end
+
+    %{"host_session_label" => label}
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.MountSentinelLive do
@@ -120,7 +129,8 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
 
   Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
     pipe_through: [:browser],
-    on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization
+    on_mount: Lockspire.Web.AdminRouteHost.LiveAuthorization,
+    session: {Lockspire.Web.AdminRouteHost.Identity, :session, ["admin-route"]}
   )
 
   scope "/" do

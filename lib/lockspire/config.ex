@@ -86,21 +86,52 @@ defmodule Lockspire.Config do
   @doc """
   Returns the configured Lockspire mount path.
 
-  Accepts any binary, including the empty string (`""`), which is a deliberate
-  signal that Lockspire is mounted at the host's root. Only `nil` (config
-  unset) is rejected — host apps must set this explicitly to declare intent.
+  Accepts a slash-prefixed static path. A root path (`""` or `"/"`) means
+  Lockspire is mounted at the host's root; one trailing slash is removed.
+  Unset and non-binary values keep the required-config error, while malformed
+  prefixes raise an argument error.
   """
   @spec mount_path() :: String.t()
   def mount_path do
     case Application.get_env(@app, :mount_path) do
       value when is_binary(value) ->
-        value
+        normalize_mount_path!(value)
 
       _missing ->
         raise ArgumentError,
               "missing required config :mount_path for :lockspire. " <>
                 "Set it in config/runtime.exs or config/*.exs."
     end
+  end
+
+  @doc false
+  @spec normalize_mount_path!(String.t()) :: String.t()
+  def normalize_mount_path!(path) when is_binary(path) do
+    normalized = if path == "/", do: "", else: String.trim_trailing(path, "/")
+
+    segments = String.split(normalized, "/", trim: false)
+
+    invalid_segment? =
+      Enum.any?(segments, fn segment ->
+        segment in [".", ".."] or String.contains?(segment, [":", "*", "\\"]) or
+          Regex.match?(~r/%2f|%5c/i, segment)
+      end)
+
+    invalid? =
+      (normalized != "" and not String.starts_with?(normalized, "/")) or
+        String.contains?(path, "//") or invalid_segment? or
+        String.contains?(normalized, ["?", "#", "://"])
+
+    if invalid? do
+      raise ArgumentError,
+            "invalid :lockspire, :mount_path; expected a slash-prefixed static path"
+    end
+
+    normalized
+  end
+
+  def normalize_mount_path!(_path) do
+    raise ArgumentError, "invalid :lockspire, :mount_path; expected a slash-prefixed static path"
   end
 
   @doc """

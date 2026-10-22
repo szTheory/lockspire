@@ -8,7 +8,12 @@ defmodule Lockspire.Web.AdminMount do
   @impl true
   def call(conn, opts) do
     router = Keyword.fetch!(opts, :router)
-    assert_mount_alignment!(effective_path!(router, conn.method, conn.request_path, conn.host), :http)
+
+    assert_mount_alignment!(
+      effective_path!(router, conn.method, conn.request_path, conn.host),
+      :http
+    )
+
     conn
   end
 
@@ -28,8 +33,12 @@ defmodule Lockspire.Web.AdminMount do
 
   defp effective_path!(router, method, path, host) do
     case Lockspire.Web.AdminRoutes.effective_admin_path(router, method, path, host) do
-      effective_path when is_binary(effective_path) -> effective_path
-      _missing -> raise ArgumentError, "Lockspire admin mount alignment could not identify the compiled route"
+      effective_path when is_binary(effective_path) ->
+        effective_path
+
+      _missing ->
+        raise ArgumentError,
+              "Lockspire admin mount alignment could not identify the compiled route"
     end
   end
 
@@ -44,15 +53,6 @@ defmodule Lockspire.Web.AdminMount do
   end
 
   defp runtime_admin_path! do
-    mount_path = Lockspire.mount_path()
-
-    normalized =
-      cond do
-        mount_path in ["", "/"] -> ""
-        String.starts_with?(mount_path, "/") -> String.trim_trailing(mount_path, "/")
-        true -> mount_path
-      end
-
-    normalized <> "/admin"
+    Lockspire.Config.normalize_mount_path!(Lockspire.mount_path()) <> "/admin"
   end
 end

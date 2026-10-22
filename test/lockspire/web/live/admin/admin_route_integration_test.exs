@@ -53,7 +53,10 @@ defmodule Lockspire.Web.Live.Admin.AdminRouteIntegrationTest do
     assert {:ok, %{router: Lockspire.Web.AdminRouter}} =
              Phoenix.LiveView.Static.verify_token(Endpoint, signed_session)
 
-    assert %{plug: Phoenix.LiveView.Plug, phoenix_live_view: {Lockspire.Web.Live.Admin.OverviewLive.Index, :index, _, _}} =
+    assert %{
+             plug: Phoenix.LiveView.Plug,
+             phoenix_live_view: {Lockspire.Web.Live.Admin.OverviewLive.Index, :index, _, _}
+           } =
              Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", "/", "www.example.com")
 
     assert :error =
@@ -146,6 +149,7 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     assert view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
     assert html =~ "Overview"
     assert_receive {:host_live_hook, "staff-1"}
+    assert_receive {:host_session_callback, "admin-route"}
 
     assert %{pipe_through: [:browser, :lockspire_admin_mount]} =
              Phoenix.Router.route_info(
@@ -186,9 +190,34 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     refute Exception.message(error) =~ "cookie"
   end
 
+  test "a runtime mount mismatch also fails at the LiveView mount boundary" do
+    Application.put_env(:lockspire, :mount_path, "/different-secret-prefix")
+
+    socket = %Phoenix.LiveView.Socket{
+      host_uri: URI.parse("http://www.example.com/lockspire/admin")
+    }
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Lockspire.Web.AdminMount.on_mount(
+          {:mount_path, Lockspire.Web.AdminRouteHost.CanonicalRouter},
+          %{},
+          %{},
+          socket
+        )
+      end
+
+    assert Exception.message(error) =~ "does not match configured :lockspire, :mount_path"
+    assert Exception.message(error) =~ "/lockspire/admin"
+    refute Exception.message(error) =~ "staff-1"
+    refute Exception.message(error) =~ "csrf"
+  end
+
   defp restore_env(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)
   defp restore_env(key, :error), do: Application.delete_env(:lockspire, key)
 
   defp restore_observer(:unset), do: :persistent_term.erase(:lockspire_admin_route_hook_observer)
-  defp restore_observer(observer), do: :persistent_term.put(:lockspire_admin_route_hook_observer, observer)
+
+  defp restore_observer(observer),
+    do: :persistent_term.put(:lockspire_admin_route_hook_observer, observer)
 end

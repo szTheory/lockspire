@@ -25,12 +25,14 @@ defmodule Lockspire.Web.AdminRoutes do
     {"/device_authorizations", Lockspire.Web.Live.Admin.DeviceAuthorizationsLive.Index, :index},
     {"/clients/:client_id/edit", Lockspire.Web.Live.Admin.ClientsLive.Show, :edit},
     {"/clients/:client_id/par-policy", Lockspire.Web.Live.Admin.ClientsLive.Show, :par_policy},
-    {"/clients/:client_id/security-profile", Lockspire.Web.Live.Admin.ClientsLive.Show, :security_profile},
+    {"/clients/:client_id/security-profile", Lockspire.Web.Live.Admin.ClientsLive.Show,
+     :security_profile},
     {"/clients/:client_id/redirects", Lockspire.Web.Live.Admin.ClientsLive.Show, :redirects},
     {"/clients/:client_id/logout-uris", Lockspire.Web.Live.Admin.ClientsLive.Show, :logout_uris},
-    {"/clients/:client_id/rotate-secret", Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_secret},
-    {"/clients/:client_id/rotate-registration-access-token", Lockspire.Web.Live.Admin.ClientsLive.Show,
-     :rotate_registration_access_token},
+    {"/clients/:client_id/rotate-secret", Lockspire.Web.Live.Admin.ClientsLive.Show,
+     :rotate_secret},
+    {"/clients/:client_id/rotate-registration-access-token",
+     Lockspire.Web.Live.Admin.ClientsLive.Show, :rotate_registration_access_token},
     {"/dcr", Lockspire.Web.Live.Admin.DcrLive.Index, :index},
     {"/policies", Lockspire.Web.Live.Admin.PoliciesLive.Index, :index},
     {"/policies/par", Lockspire.Web.Live.Admin.PoliciesLive.Par, :show},
@@ -49,7 +51,7 @@ defmodule Lockspire.Web.AdminRoutes do
       end)
 
     quote do
-      unquote_splicing(route_calls)
+      (unquote_splicing(route_calls))
     end
   end
 
@@ -78,7 +80,10 @@ defmodule Lockspire.Web.AdminRoutes do
     native_options =
       options
       |> Keyword.drop([:pipe_through, :on_mount])
-      |> Keyword.put(:on_mount, host_hooks ++ [{Lockspire.Web.AdminMount, {:mount_path, caller.module}}])
+      |> Keyword.put(
+        :on_mount,
+        host_hooks ++ [{Lockspire.Web.AdminMount, {:mount_path, caller.module}}]
+      )
 
     quote do
       require Phoenix.LiveView.Router
@@ -87,8 +92,12 @@ defmodule Lockspire.Web.AdminRoutes do
         plug(Lockspire.Web.AdminMount, router: unquote(caller.module))
       end
 
-      Phoenix.Router.scope unquote(path) do
-        Phoenix.Router.pipe_through unquote(pipelines ++ [:lockspire_admin_mount])
+      Phoenix.Router.scope unquote(path), alias: false do
+        Lockspire.Web.AdminRoutes.__validate_effective_path__(
+          Phoenix.Router.scoped_path(__MODULE__, "/")
+        )
+
+        Phoenix.Router.pipe_through(unquote(pipelines ++ [:lockspire_admin_mount]))
 
         Phoenix.LiveView.Router.live_session :lockspire_admin, unquote(native_options) do
           Lockspire.Web.AdminRoutes.__admin_live_routes__()
@@ -97,24 +106,31 @@ defmodule Lockspire.Web.AdminRoutes do
     end
   end
 
+  @doc false
+  def __validate_effective_path__(path), do: validate_admin_path!(path, "effective admin path")
+
   defp validate_options!(options) when is_list(options) do
-    keys = Keyword.keys(options)
     allowed = [:pipe_through, :on_mount, :root_layout, :layout, :session]
 
     cond do
       not Keyword.keyword?(options) ->
         raise ArgumentError, "Lockspire.Web.AdminRoutes options must be a keyword list"
 
-      Enum.any?(keys, &(&1 not in allowed)) ->
-        unknown = Enum.find(keys, &(&1 not in allowed))
+      Enum.any?(Keyword.keys(options), &(&1 not in allowed)) ->
+        unknown = Enum.find(Keyword.keys(options), &(&1 not in allowed))
         raise ArgumentError, "unknown Lockspire admin route option #{inspect(unknown)}"
 
-      length(keys) != length(Enum.uniq(keys)) ->
+      length(Keyword.keys(options)) != length(Enum.uniq(Keyword.keys(options))) ->
         raise ArgumentError, "duplicate Lockspire admin route option"
+
+      not Keyword.has_key?(options, :pipe_through) or not Keyword.has_key?(options, :on_mount) ->
+        raise ArgumentError,
+              "pipe_through and on_mount are required Lockspire admin route options"
 
       true ->
         validate_pipeline_option!(Keyword.get(options, :pipe_through))
         validate_hook_option!(Keyword.get(options, :on_mount))
+        validate_native_options!(options)
     end
   end
 
@@ -123,7 +139,7 @@ defmodule Lockspire.Web.AdminRoutes do
   end
 
   defp validate_pipeline_option!(pipelines) when is_list(pipelines) and pipelines != [] do
-    unless Enum.all?(pipelines, &is_atom/1) do
+    unless Enum.all?(pipelines, &(is_atom(&1) and &1 not in [nil, true, false])) do
       raise ArgumentError, "pipe_through must be a nonempty list of host pipeline atoms"
     end
   end
@@ -144,8 +160,63 @@ defmodule Lockspire.Web.AdminRoutes do
     end
   end
 
-  defp valid_hook?(module) when is_atom(module), do: true
-  defp valid_hook?({module, _arg}) when is_atom(module), do: true
+  defp validate_native_options!(options) do
+    if Keyword.has_key?(options, :root_layout),
+      do: validate_layout_option!(Keyword.get(options, :root_layout), :root_layout)
+
+    if Keyword.has_key?(options, :layout),
+      do: validate_layout_option!(Keyword.get(options, :layout), :layout)
+
+    if Keyword.has_key?(options, :session),
+      do: validate_session_option!(Keyword.get(options, :session))
+  end
+
+  defp validate_layout_option!(false, _key), do: :ok
+
+  defp validate_layout_option!({module, template}, _key)
+       when is_atom(module) and is_atom(template), do: :ok
+
+  defp validate_layout_option!({:{}, _meta, [module, template]}, _key)
+       when is_atom(module) and is_atom(template),
+       do: :ok
+
+  defp validate_layout_option!(_layout, key) do
+    raise ArgumentError, "#{key} must be false or a {module, template} tuple of atoms"
+  end
+
+  defp validate_session_option!(session) when is_map(session) do
+    unless Enum.all?(Map.keys(session), &is_binary/1) do
+      raise ArgumentError, "session maps must use string keys"
+    end
+  end
+
+  defp validate_session_option!({:%{}, _meta, entries}) when is_list(entries) do
+    unless Enum.all?(entries, fn
+             {key, _value} when is_binary(key) -> true
+             _other -> false
+           end) do
+      raise ArgumentError, "session maps must use string keys"
+    end
+  end
+
+  defp validate_session_option!({module, function, args})
+       when is_atom(module) and is_atom(function) and is_list(args),
+       do: :ok
+
+  defp validate_session_option!({:{}, _meta, [module, function, args]})
+       when is_atom(module) and is_atom(function) and is_list(args),
+       do: :ok
+
+  defp validate_session_option!(_session) do
+    raise ArgumentError,
+          "session must be a string-keyed map or {module, function, args} MFA tuple"
+  end
+
+  defp valid_hook?(module) when is_atom(module) and module not in [nil, true, false], do: true
+
+  defp valid_hook?({module, _arg}) when is_atom(module) and module not in [nil, true, false],
+    do: true
+
   defp valid_hook?(_hook), do: false
 
   defp normalize_hooks!(hooks) when is_list(hooks), do: hooks
@@ -186,12 +257,11 @@ defmodule Lockspire.Web.AdminRoutes do
         not String.ends_with?(path, "/admin")
 
     if invalid? do
-      raise ArgumentError,
-            "#{label} must be a static slash-prefixed path ending in /admin; got #{inspect(path)}"
+      raise ArgumentError, "#{label} must be a static slash-prefixed path ending in /admin"
     end
   end
 
-  defp validate_admin_path!(path, label) do
-    raise ArgumentError, "#{label} must be a literal nonempty slash-prefixed path; got #{inspect(path)}"
+  defp validate_admin_path!(_path, label) do
+    raise ArgumentError, "#{label} must be a literal nonempty slash-prefixed path"
   end
 end
