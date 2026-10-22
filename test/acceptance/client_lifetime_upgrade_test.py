@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+from io import StringIO
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
 
+import client_lifetime_upgrade as upgrade  # noqa: E402
 from client_lifetime_upgrade import PackageInputError, validate_receipt  # noqa: E402
+from package_input import PackageIdentity  # noqa: E402
 
 
 class LegacyUpgradeReceiptTest(unittest.TestCase):
@@ -22,6 +27,40 @@ class LegacyUpgradeReceiptTest(unittest.TestCase):
 
     def test_complete_legacy_http_use_observation_is_accepted(self) -> None:
         validate_receipt({"schema_version": 1, "scenarios": [self._scenario("public")]}, {"public"})
+
+    def test_main_temporary_root_validates_selected_prefix_and_all_selection(self) -> None:
+        identity = PackageIdentity("tar", "1.7.0", "a" * 64, "b" * 64, "c" * 64, "d" * 40)
+        with (
+            patch.object(upgrade, "prepare_package", return_value=(Path("/candidate"), (), identity)) as prepare,
+            patch.object(upgrade, "run_scenario", side_effect=lambda _root, prefix, *_args: {"prefix": prefix}) as run,
+            patch.object(upgrade, "validate_receipt") as validate,
+            patch.object(sys, "argv", ["client_lifetime_upgrade.py", "--scenario", "public"]),
+            redirect_stdout(StringIO()),
+        ):
+            self.assertEqual(upgrade.main(), 0)
+
+        prepare.assert_called_once()
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[1], "public")
+        validate.assert_called_once_with(
+            {"schema_version": 1, "scenarios": [{"prefix": "public"}]}, {"public"}
+        )
+
+        with (
+            patch.object(upgrade, "prepare_package", return_value=(Path("/candidate"), (), identity)) as prepare_all,
+            patch.object(upgrade, "run_scenario", side_effect=lambda _root, prefix, *_args: {"prefix": prefix}) as run_all,
+            patch.object(upgrade, "validate_receipt") as validate_all,
+            patch.object(sys, "argv", ["client_lifetime_upgrade.py"]),
+            redirect_stdout(StringIO()),
+        ):
+            self.assertEqual(upgrade.main(), 0)
+
+        prepare_all.assert_called_once()
+        self.assertEqual([item.args[1] for item in run_all.call_args_list], ["public", "tenant_auth"])
+        validate_all.assert_called_once_with(
+            {"schema_version": 1, "scenarios": [{"prefix": "public"}, {"prefix": "tenant_auth"}]},
+            {"public", "tenant_auth"},
+        )
 
     @staticmethod
     def _scenario(prefix: str) -> dict[str, object]:

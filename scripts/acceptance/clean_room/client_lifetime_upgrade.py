@@ -836,7 +836,7 @@ def main() -> int:
                     )
                 scenarios = [run_scenario(run_root, SCENARIOS[name], candidate_package, candidate_archive, candidate_identity, redactor) for name in selected]
                 receipt = {"schema_version": 1, "scenarios": scenarios}
-                validate_receipt(receipt)
+                validate_receipt(receipt, {SCENARIOS[name] for name in selected})
                 rendered = json.dumps(receipt, sort_keys=True, indent=2)
                 if args.receipt:
                     args.receipt.parent.mkdir(parents=True, exist_ok=True)
