@@ -3,19 +3,18 @@ gsd_state_version: "1.0"
 milestone: v1.45
 milestone_name: DCR Lifetime Enforcement
 current_phase: 166
-current_phase_name: End-to-End Lifetime, Security & Guidance Proof
-status: executing
-stopped_at: Completed 166-09; continuing 166-10 active CI receipt wiring
-last_updated: "2026-10-22T02:55:33.010Z"
-last_activity: 2026-10-21
-last_activity_desc: Phase 166 execution started
-state_head: 69e2aa03e1976db19de84886e1ba70e4a48c82a9
+status: completed
+stopped_at: Phase 166 complete — all phases complete
+last_updated: "2026-10-22T12:53:44.741Z"
+last_activity: 2026-10-22
+last_activity_desc: Phase 166 complete
+state_head: 49ec3c7c727c3234992e929d0e194015a901083c
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 40
-  completed_plans: 37
-  percent: 80
+  completed_plans: 40
+  percent: 100
 ---
 
 # Project State
@@ -30,14 +29,14 @@ See: .planning/PROJECT.md (updated 2026-10-21 after Phase 165)
 
 ## Current Position
 
-Phase: 166 (End-to-End Lifetime, Security & Guidance Proof) — EXECUTING
-Plan: 10 of 12
-Status: Ready to execute
-Last activity: 2026-10-21 — Phase 166 execution started
+Phase: 166
+Plan: 12 of 12 complete
+Status: All phases complete
+Last activity: 2026-10-22 — Phase 166 complete
 
 ## Phase 166 Execution Progress
 
-Plans 166-01 through 166-09 are committed and summarized (9/12 complete). The user approved the recommended narrow selectors: “what do u recommend? do that”; the actual decision is in 166-SELECTOR-DECISION.json. Configured shared-PostgreSQL adapters now participate in token issuance, registration, management, secret rotation and host recovery. Default parity and invalid authority fail-closed tests pass. Packaged fresh/custom and public/custom-prefix legacy journeys passed together (3 tests, zero failures); exact shipped adapter example, callback participation, independent rollback and safe receipts are exercised. Plans 10–12 still own active CI receipts, truthful final guidance, current required CI and independent security review. Do not close the lifetime umbrella before those gates. Preserve pre-existing state.json bytes.
+All 12 plans and 24 tasks are complete. Independent verification passed53/53 must-haves and DCR-15–19. The user-approved `:client_store`/`:transaction_store` selectors support the named shared-PostgreSQL delegation with Repository defaults and fail-closed authority checks. Final candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed` passed all7 current required contexts in CI39776185275; packaged proof passed all9 scenarios/49 checks with cleanup complete. Security SECURED25/25; code-review finding fixed/reviewed; prior-phase regression1009/0. The boundary audit now runs on reused hosts before Mix probes; exact shipped adapter example, custom callbacks, durable rollback, and both upgrade prefixes are proved. Three undefined edge probes and two descriptor-less prohibitions retain explicit unresolved/flagged limits. All40 canonical milestone plans complete. Next: milestone audit; publication remains separate. Preserve pre-existing state.json bytes.
 
 ## Accumulated Context
 
@@ -412,7 +411,7 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 ## Session Continuity
 
 Last session: 2026-10-22T02:55:32.570Z
-Stopped at: Completed 166-09; continuing 166-10 active CI receipt wiring
+Stopped at: Phase 166 complete — all phases complete
 Resume file: .planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-10-PLAN.md
 
 Next: Plan Phase 166 from its confirmed research-based context. Phases 162–165 are independently complete; Phase 166 owns final cross-phase packaged lifetime, security, required CI and guidance proof. Preserve the original unstaged state.json bytes, the pending resolves_phase: 166 lifetime umbrella todo, and historical phase exceptions.
@@ -562,7 +561,7 @@ All 38 Phase 138 plans, all 16 Phase 139 plans, all 18 Phase 140 plans, and the 
 
 ## Operator Next Steps
 
-- $gsd-plan-phase 166 — End-to-End Lifetime, Security & Guidance Proof
+- $gsd-audit-milestone — audit v1.45 DCR Lifetime Enforcement
 
 ## Phase 163 completion notes
 

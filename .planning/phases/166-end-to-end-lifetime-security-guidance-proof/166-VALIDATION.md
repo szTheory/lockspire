@@ -139,7 +139,7 @@ Every source item is assigned to executable work. The coverage audit was created
 Deferred ideas remain excluded: app renewal, overlapping credentials, public acceptance clocks, other datastores, generalized conformance SDK, parallel harness, visual redesign, distributed activation, dependency upgrades and publication.
 
 
-## Final Candidate Execution: f68c7f0f
+## Prior Candidate Execution: f68c7f0f
 
 Canonical CI run [39766614548](https://github.com/szTheory/lockspire/actions/runs/39766614548) completed successfully on `f68c7f0f47cb957ed8dc31b35cc78fd612eeb1ea`. The observed main-branch required contexts were Adoption Demo Smoke, Complete Coverage Evidence, Dialyzer, Fast Checks, Integration Checks, Minimum Supported Elixir/OTP and Release Hygiene Drift; all seven completed successfully.
 
@@ -180,3 +180,7 @@ Historical pre-final failures and the former c6 candidate evidence are retained 
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Final Candidate Refresh: 0bd4070d
+
+Final source/docs candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed` includes the supported-surface maintainer evidence link and the independently reviewed reuse boundary-audit fix. Canonical CI run [39776185275](https://github.com/szTheory/lockspire/actions/runs/39776185275) passed all seven current branch-protection contexts. Fast: 1,935 tests/0 failures/6 skipped/497 excluded; minimum-supported: 2,432/0/6 skipped/497 excluded; broad integration494/0; dedicated package3/0. Artifact12424668494 validates all9 scenarios,49 checks,0 failed/skipped, cleanup true. Focused Python acceptance40/0 includes RED-before-GREEN reuse regressions. Security SECURED25/25,0open, scope`b31c7b93d873a6828d9ef07f034919225ffa9a1491a4145840c8595c8ef42903`. Detailed immutable hashes are in166-CI-EVIDENCE.json. Earlier candidates remain historical evidence; the unresolved three probes and two prohibitions retain their stated limits.

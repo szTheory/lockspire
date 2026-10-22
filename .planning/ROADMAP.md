@@ -17,7 +17,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 ## Current Direction
 
-v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162–165 are complete; Phase 166 owns final cross-phase lifetime, security and guidance proof.
+v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md) and [focused research](research/dcr-lifetimes/SUMMARY.md). Lockspire 1.6.1 remains the latest verified public package. This roadmap was approved on 2026-10-20. Phases 162–166 are complete; final lifetime, security and guidance proof passed. Milestone audit and publication remain separate.
 
 **Mandatory dependency:** Phase 162 must finish the selected semantics and compatibility contract before any Phase 163–166 implementation plan. A roadmap approval approves this sequencing and scope, not an unresolved timeout, legacy backfill or rejection policy. Every implementation phase includes focused boundary and regression tests; Phase 166 owns the final cross-phase proof. Preserve existing security defaults, host ownership and historical records. Package publication is separate.
 
@@ -29,7 +29,7 @@ v1.45 activates the [approved DCR scope](research/dcr-lifetimes/SCOPE.md), using
 - [x] Phase 163: App Lifetime & Compatible Host Storage (completed 2026-10-20)
 - [x] Phase 164: Client-Secret Expiry & Atomic Rotation (completed 2026-10-21)
 - [x] Phase 165: Management-Token Lifecycle & Recovery (completed 2026-10-21)
-- [ ] Phase 166: End-to-End Lifetime, Security & Guidance Proof
+- [x] Phase 166: End-to-End Lifetime, Security & Guidance Proof (completed 2026-10-22)
 
 ### Phase 162: Lifetime Semantics & Upgrade Contract
 
@@ -166,7 +166,7 @@ Plans:
 **Goal:** Adopters and maintainers can reproduce complete lifetime journeys and follow guidance that matches the verified behavior.
 **Depends on:** Phase 165
 **Requirements:** DCR-15, DCR-16, DCR-17, DCR-18, DCR-19
-**Plans:** 12 plans
+**Plans:** 12/12 plans complete
 
 Plans:
 **Wave 1**
@@ -195,13 +195,13 @@ Plans:
 - [x] 166-09-PLAN.md — Complete fresh and legacy HTTP lifetime journeys
 
 **Wave 9** *(blocked on Wave 8 completion)*
-- [ ] 166-10-PLAN.md — Active required CI counts and sanitized receipt retention
+- [x] 166-10-PLAN.md — Active required CI counts and sanitized receipt retention
 
 **Wave 10** *(blocked on Wave 9 completion)*
-- [ ] 166-11-PLAN.md — Evidence-backed adopter/operator guidance
+- [x] 166-11-PLAN.md — Evidence-backed adopter/operator guidance
 
 **Wave 11** *(blocked on Wave 10 completion)*
-- [ ] 166-12-PLAN.md — Final scoped security, live CI and conditional umbrella closure
+- [x] 166-12-PLAN.md — Final scoped security, live CI and conditional umbrella closure
 
 **Success criteria:**
 
@@ -219,9 +219,9 @@ Plans:
 | 163. App Lifetime & Compatible Host Storage | 14/14 | Complete | 2026-10-20 |
 | 164. Client-Secret Expiry & Atomic Rotation | 6/6 | Complete | 2026-10-21 |
 | 165. Management-Token Lifecycle & Recovery | 7/7 | Complete | 2026-10-21 |
-| 166. End-to-End Lifetime, Security & Guidance Proof | 9/12 | In progress | — |
+| 166. End-to-End Lifetime, Security & Guidance Proof | 12/12 | Complete | 2026-10-22 |
 
-**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. Thirteen requirements are independently complete through Phase 165; five Phase 166 proof requirements remain pending.
+**Coverage:** 18/18 requirements assigned exactly once; 0 unmapped. All 18 requirements are independently complete through Phase 166; zero proof requirements remain pending. Three undefined edge probes and two descriptor-less prohibitions remain explicitly unresolved or flagged in the phase verification.
 
 <details>
 <summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>
