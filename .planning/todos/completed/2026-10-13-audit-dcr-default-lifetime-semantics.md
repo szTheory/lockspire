@@ -40,3 +40,12 @@ This requires protocol work separate from the authorized UI refinement. Preserve
 ## v1.45 Roadmap Link
 
 The approved v1.45 roadmap addresses this protocol gap across Phases 162–166. Phase 162 resolves semantics and upgrade compatibility; Phases 163–165 implement the selected lifecycles. `resolves_phase: 166` identifies the final cross-phase host/security proof needed to close this todo, not a claim that the audit or initialization fixed enforcement. Requirements DCR-02–19 provide the acceptance contract. Keep this todo pending until the implemented lifecycle and compatibility behavior is verified.
+
+
+## Phase 166 Closure Record (2026-10-22)
+
+Closed after Phase 166 final-candidate verification on `c6bc4174675173b13c2bd1e95fba43e5f169adb4`. Canonical run [39762415198](https://github.com/szTheory/lockspire/actions/runs/39762415198) passed every one of the seven observed `main` required contexts. Its exact candidate package artifact validated all nine required fresh/custom/legacy scenarios with 49 passed, zero failed or skipped, and complete cleanup. Independent scoped review returned SECURED on the same candidate, with 25/25 registered threats closed and no high/critical findings.
+
+Evidence: [Phase 166 CI evidence](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-CI-EVIDENCE.json), [independent security review](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-SECURITY.md), [case evidence map](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json), [validation sign-off](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-VALIDATION.md).
+
+Closure preserves, rather than silently clears, probe assumptions A-EDGE-16/17/19 as unresolved and both descriptor-less prohibition dispositions as flagged-unverified. The review confirms those labels remain explicit; no adjacent green test is claimed as an individually defined predicate for them. Historical failed runs are retained in `deferred-items.md` and are superseded only by the final exact-candidate evidence.

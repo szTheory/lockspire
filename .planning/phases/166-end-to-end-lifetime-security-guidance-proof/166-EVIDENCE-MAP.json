@@ -18,7 +18,7 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
+      "status": "verified_in_current_candidate",
       "receipt_ref": "fresh.register_use (bounded observed receipt; see additional_evidence scope)",
       "additional_evidence": [
         {
@@ -30,7 +30,10 @@
           "status": "verified_in_current_candidate",
           "receipt_ref": "fresh.register_use; observed registration 201, code redemption 200, access token issued, S256, counts 1/1/0/0, cleanup complete; lifetime duration values are not asserted by this tracer"
         }
-      ]
+      ],
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-02",
@@ -48,8 +51,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-03",
@@ -67,8 +73,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-04",
@@ -86,8 +95,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-05",
@@ -105,8 +117,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-06",
@@ -124,8 +139,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-07",
@@ -143,8 +161,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-08",
@@ -162,8 +183,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-09",
@@ -181,8 +205,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-10",
@@ -200,8 +227,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-11",
@@ -219,8 +249,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-12",
@@ -238,8 +271,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-POL-13",
@@ -257,8 +293,11 @@
       ],
       "test": "policy, issuance-time snapshots, and exact boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/app_lifetime_policy_test.exs test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/protocol/management_token_lifetime_policy_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-01",
@@ -274,8 +313,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_authorization_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-02",
@@ -291,8 +333,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_authorization_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-03",
@@ -308,8 +353,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_authorization_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-04",
@@ -325,8 +373,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_device_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-05",
@@ -342,8 +393,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_ciba_push_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-06",
@@ -359,7 +413,7 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_code_redemption_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
+      "status": "verified_in_current_candidate",
       "receipt_ref": "fresh.register_use (bounded observed receipt; see additional_evidence scope)",
       "additional_evidence": [
         {
@@ -371,7 +425,10 @@
           "status": "verified_in_current_candidate",
           "receipt_ref": "fresh.register_use; observed registration 201, code redemption 200, access token issued, S256, counts 1/1/0/0, cleanup complete; lifetime duration values are not asserted by this tracer"
         }
-      ]
+      ],
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-07",
@@ -387,8 +444,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_refresh_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-08",
@@ -404,8 +464,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_rfc8693_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-09",
@@ -421,8 +484,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_rfc8693_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-10",
@@ -438,8 +504,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-11",
@@ -455,8 +524,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-12",
@@ -472,8 +544,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-13",
@@ -489,8 +564,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-14",
@@ -506,8 +584,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_management_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-15",
@@ -523,8 +604,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_management_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-16",
@@ -540,8 +624,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_management_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-17",
@@ -557,8 +644,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/web/discovery_controller_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-APP-18",
@@ -574,8 +664,11 @@
       ],
       "test": "app eligibility at protocol consumer boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-TOK-01",
@@ -593,8 +686,11 @@
       ],
       "test": "token expiry and credential-authentication boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_code_redemption_test.exs test/integration/app_lifetime_refresh_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-TOK-02",
@@ -612,8 +708,11 @@
       ],
       "test": "token expiry and credential-authentication boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_code_redemption_test.exs test/integration/app_lifetime_refresh_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-TOK-03",
@@ -631,8 +730,11 @@
       ],
       "test": "token expiry and credential-authentication boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_code_redemption_test.exs test/integration/app_lifetime_refresh_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-TOK-04",
@@ -649,8 +751,11 @@
       ],
       "test": "token expiry and credential-authentication boundaries",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs test/lockspire/protocol/client_secret_lifetime_auth_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-01",
@@ -669,8 +774,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-02",
@@ -689,8 +797,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-03",
@@ -709,8 +820,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-04",
@@ -729,8 +843,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-05",
@@ -749,8 +866,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-06",
@@ -769,8 +889,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-07",
@@ -789,8 +912,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-08",
@@ -809,8 +935,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-09",
@@ -829,8 +958,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-10",
@@ -849,8 +981,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-11",
@@ -869,8 +1004,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-MGMT-12",
@@ -889,8 +1027,11 @@
       ],
       "test": "registration management lifecycle and wire behavior",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_access_test.exs test/integration/management_token_lifetime_registration_test.exs test/integration/management_token_lifetime_update_test.exs test/integration/management_token_lifetime_recovery_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-01",
@@ -907,8 +1048,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_migration_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-02",
@@ -925,8 +1069,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_migration_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-03",
@@ -943,8 +1090,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_migration_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-04",
@@ -961,8 +1111,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_update_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-05",
@@ -979,8 +1132,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/client_secret_lifetime_rotation_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-06",
@@ -997,8 +1153,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/client_lifetime_conformance_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-07",
@@ -1015,8 +1174,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/client_lifetime_conformance_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-LEG-08",
@@ -1033,8 +1195,11 @@
       ],
       "test": "legacy row compatibility and explicit lifetime promotion",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/management_token_lifetime_update_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-01",
@@ -1049,8 +1214,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/management_token_replacement_race_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-02",
@@ -1065,8 +1233,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/management_token_mutation_race_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-03",
@@ -1081,8 +1252,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-04",
@@ -1097,8 +1271,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/client_lifetime_rollback_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-05",
@@ -1113,8 +1290,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/client_lifetime_client_wait_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-RACE-06",
@@ -1129,8 +1309,11 @@
       ],
       "test": "independent PostgreSQL blocker schedules and atomic rollback",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/storage/management_token_client_wait_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-DEP-01",
@@ -1147,8 +1330,11 @@
       ],
       "test": "additive migration, writer drain, and rollback boundary",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_packaged_upgrade_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "package",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-DEP-02",
@@ -1165,8 +1351,11 @@
       ],
       "test": "additive migration, writer drain, and rollback boundary",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_packaged_upgrade_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "package",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-DEP-03",
@@ -1183,8 +1372,11 @@
       ],
       "test": "additive migration, writer drain, and rollback boundary",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_packaged_upgrade_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "package",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-DEP-04",
@@ -1201,8 +1393,11 @@
       ],
       "test": "additive migration, writer drain, and rollback boundary",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/app_lifetime_migration_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "integration",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-PROOF-01",
@@ -1220,7 +1415,7 @@
       ],
       "test": "positive event/audit evidence, redaction, and truthful guidance",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/integration/client_lifetime_packaged_journey_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
+      "status": "verified_in_current_candidate",
       "receipt_ref": "fresh.register_use (bounded observed receipt; see additional_evidence scope)",
       "additional_evidence": [
         {
@@ -1232,7 +1427,10 @@
           "status": "verified_in_current_candidate",
           "receipt_ref": "fresh.register_use; observed registration 201, code redemption 200, access token issued, S256, counts 1/1/0/0, cleanup complete; lifetime duration values are not asserted by this tracer"
         }
-      ]
+      ],
+      "matrix_lane": "package",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-PROOF-02",
@@ -1247,8 +1445,11 @@
       ],
       "test": "positive event/audit evidence, redaction, and truthful guidance",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/dcr_telemetry_redaction_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-PROOF-03",
@@ -1263,8 +1464,11 @@
       ],
       "test": "positive event/audit evidence, redaction, and truthful guidance",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/protocol/dcr_audit_attribution_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     },
     {
       "case_id": "C-PROOF-04",
@@ -1279,8 +1483,11 @@
       ],
       "test": "positive event/audit evidence, redaction, and truthful guidance",
       "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test test/lockspire/client_lifetime_guidance_test.exs --max-failures 1 --timeout 55000",
-      "status": "pending_final_candidate_rerun",
-      "receipt_ref": null
+      "status": "verified_in_current_candidate",
+      "receipt_ref": null,
+      "matrix_lane": "fast",
+      "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+      "matrix_ref": "166-CI-EVIDENCE.json#checks"
     }
   ],
   "assumptions": [
@@ -1317,29 +1524,34 @@
     {
       "id": "A-EDGE-16",
       "status": "unresolved",
-      "text": "FLAGGED ASSUMPTION A-EDGE-16 (DCR-16): The probe classified this requirement as unclassified; explicit PostgreSQL acceptance in 166-04 must be independently checked, and this probe row remains unresolved."
+      "text": "FLAGGED ASSUMPTION A-EDGE-16 (DCR-16): The probe classified this requirement as unclassified; explicit PostgreSQL acceptance in 166-04 must be independently checked, and this probe row remains unresolved.",
+      "verifier_disposition": "Independently reviewed at final candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4; the reviewer confirmed this flag remains explicit and is not cleared by adjacent green tests. See 166-SECURITY.md. Disposition remains unresolved/flagged-unverified as originally classified."
     },
     {
       "id": "A-EDGE-17",
       "status": "unresolved",
-      "text": "FLAGGED ASSUMPTION A-EDGE-17 (DCR-17): The probe classified this requirement as unclassified; fresh/upgrade/adapter acceptance in 166-08/09 must be independently checked, and this probe row remains unresolved."
+      "text": "FLAGGED ASSUMPTION A-EDGE-17 (DCR-17): The probe classified this requirement as unclassified; fresh/upgrade/adapter acceptance in 166-08/09 must be independently checked, and this probe row remains unresolved.",
+      "verifier_disposition": "Independently reviewed at final candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4; the reviewer confirmed this flag remains explicit and is not cleared by adjacent green tests. See 166-SECURITY.md. Disposition remains unresolved/flagged-unverified as originally classified."
     },
     {
       "id": "A-EDGE-19",
       "status": "unresolved",
-      "text": "FLAGGED ASSUMPTION A-EDGE-19 (DCR-19): The probe classified this requirement as unclassified; guidance acceptance in 166-11 must be independently checked, and this probe row remains unresolved."
+      "text": "FLAGGED ASSUMPTION A-EDGE-19 (DCR-19): The probe classified this requirement as unclassified; guidance acceptance in 166-11 must be independently checked, and this probe row remains unresolved.",
+      "verifier_disposition": "Independently reviewed at final candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4; the reviewer confirmed this flag remains explicit and is not cleared by adjacent green tests. See 166-SECURITY.md. Disposition remains unresolved/flagged-unverified as originally classified."
     },
     {
       "id": "prohibition-1",
       "status": "flagged-unverified",
       "text": "The named PostgreSQL delegating adapter proof must not be represented as support for arbitrary external datastores or internal protocol modules.",
-      "plan_reference": "166-01-PLAN.md"
+      "plan_reference": "166-01-PLAN.md",
+      "verifier_disposition": "Independently reviewed at final candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4; the reviewer confirmed this flag remains explicit and is not cleared by adjacent green tests. See 166-SECURITY.md. Disposition remains unresolved/flagged-unverified as originally classified."
     },
     {
       "id": "prohibition-2",
       "status": "flagged-unverified",
       "text": "The phase must not represent skipped, omitted, stale-candidate or unexecuted proof as completed adopter assurance.",
-      "plan_reference": "166-01-PLAN.md"
+      "plan_reference": "166-01-PLAN.md",
+      "verifier_disposition": "Independently reviewed at final candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4; the reviewer confirmed this flag remains explicit and is not cleared by adjacent green tests. See 166-SECURITY.md. Disposition remains unresolved/flagged-unverified as originally classified."
     }
   ],
   "probe_coverage": {
@@ -1414,5 +1626,32 @@
       "plan": "166-12",
       "responsibility": "final candidate security regressions, scoped review, current required CI and conditional umbrella close"
     }
-  ]
+  ],
+  "final_candidate": {
+    "sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+    "canonical_run_id": 39762415198,
+    "canonical_run_url": "https://github.com/szTheory/lockspire/actions/runs/39762415198",
+    "security_ref": "166-SECURITY.md",
+    "evidence_ref": "166-CI-EVIDENCE.json",
+    "matrix_partitions": {
+      "fast": "2 properties, 1935 tests, 0 failures, 6 skipped, 497 excluded",
+      "minimum_supported": "2 properties, 2432 tests, 0 failures, 6 skipped, 497 excluded",
+      "integration": "494 tests, 0 failures (1940 excluded)",
+      "lifetime_package": "3 tests, 0 failures; 9 scenarios, 49 passed, 0 failed, 0 skipped"
+    }
+  },
+  "probe_dispositions": {
+    "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+    "security_ref": "166-SECURITY.md",
+    "unclassified_assumptions_preserved": [
+      "A-EDGE-16",
+      "A-EDGE-17",
+      "A-EDGE-19"
+    ],
+    "descriptorless_prohibitions_preserved": [
+      "prohibition-1",
+      "prohibition-2"
+    ],
+    "cleared": []
+  }
 }

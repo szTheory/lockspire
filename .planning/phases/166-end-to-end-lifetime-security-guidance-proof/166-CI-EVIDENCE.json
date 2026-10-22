@@ -1,0 +1,72 @@
+{
+  "candidate_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+  "scope_digest": "a971e2dad1f8526bee667c3cec74ac18593eab2b39befda2457fe1f9bc72d16a",
+  "observed_at": "2026-10-22T10:45:22Z",
+  "status": "passed",
+  "target_branch": "main",
+  "required_contexts": [
+    "Adoption Demo Smoke",
+    "Complete Coverage Evidence",
+    "Dialyzer",
+    "Fast Checks",
+    "Integration Checks",
+    "Minimum Supported Elixir/OTP",
+    "Release Hygiene Drift"
+  ],
+  "canonical_run": {
+    "run_id": 39762415198,
+    "head_sha": "c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/szTheory/lockspire/actions/runs/39762415198"
+  },
+  "checks": [
+    {"name":"Adoption Demo Smoke","run_id":39762415198,"job_id":119769695755,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695755"},
+    {"name":"Complete Coverage Evidence","run_id":39762415198,"job_id":119776730722,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119776730722"},
+    {"name":"Dialyzer","run_id":39762415198,"job_id":119769695668,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695668"},
+    {"name":"Fast Checks","run_id":39762415198,"job_id":119769695709,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695709"},
+    {"name":"Integration Checks","run_id":39762415198,"job_id":119769695777,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695777"},
+    {"name":"Minimum Supported Elixir/OTP","run_id":39762415198,"job_id":119769695832,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695832"},
+    {"name":"Release Hygiene Drift","run_id":39762415198,"job_id":119769695411,"head_sha":"c6bc4174675173b13c2bd1e95fba43e5f169adb4","status":"completed","conclusion":"success","url":"https://github.com/szTheory/lockspire/actions/runs/39762415198/job/119769695411"}
+  ],
+  "matrix": {
+    "fast_checks": {"properties":2,"tests":1935,"failures":0,"skipped":6,"excluded":497},
+    "minimum_supported_elixir_otp": {"properties":2,"tests":2432,"failures":0,"skipped":6,"excluded":497},
+    "integration_checks": {"tests":494,"failures":0,"excluded":1940,"lifetime_package_wrappers_in_broad_lane":0},
+    "dedicated_lifetime_package_lane": {"tests":3,"failures":0,"excluded":2431,"required_scenarios":9,"scenarios_passed":9,"scenarios_failed":0,"scenarios_skipped":0}
+  },
+  "receipt_refs": {
+    "artifact_id": 12418964333,
+    "artifact_name": "lockspire-client-lifetimes-c6bc4174675173b13c2bd1e95fba43e5f169adb4",
+    "receipt": "receipt.json",
+    "validation": "validation.json",
+    "retention_days": 14,
+    "downloaded_to": "private evidence capture; raw files are not committed"
+  },
+  "receipt_digests": {
+    "artifact_sha256": "0da5f42818f315891a82f2a573220a53c4563d37bc994f306baad6a85e5aaf87",
+    "receipt_sha256": "1c838c5d77a1ca69fe40abb2bea5dd3f7176fa9cbdadc97d2bb38c0215571fff",
+    "validation_sha256": "a12143db8f06b288b8b864a421387068146c421f8a6ff123d7b98a1ec6a4906a",
+    "candidate_digest": "c3654b2ad5e3f4ed71234b49443db1287f26c003faedd5f5b055de2d941dc6d4",
+    "candidate_archive_sha256": "7e817a0df158cf868d2e8e2ba0f02f6f232010bdee25b055de13d8f60dc4eddf",
+    "candidate_tree_sha256": "3f7c08d2aba532de6c071ba593edb5d5d3ae897677f3e1183a0f8bc36c971bb5"
+  },
+  "scenario_ids": [
+    "fresh.register_use",
+    "fresh.secret_expiry_rotate",
+    "fresh.management_put_recover",
+    "fresh.app_expiry_disabled",
+    "custom.issue_replace",
+    "custom.shared_rollback",
+    "custom.unsupported",
+    "legacy.public",
+    "legacy.tenant_auth"
+  ],
+  "receipt_outcomes": {"executed":49,"passed":49,"failed":0,"skipped":0,"cleanup":{"processes_stopped":true,"databases_removed":true,"temporary_roots_removed":true}},
+  "scoped_security_ref": "166-SECURITY.md",
+  "historical_failures": [
+    {"run": "pre-final local canonical attempt", "status":"failed", "disposition":"superseded by final candidate run 39762415198; failures led to selector/fixture corrections and are retained in deferred-items.md"},
+    {"run": "Plan 10 canonical matrix attempt", "head_sha":"8050a3988139b7142a0c0713beae379bb8055e22", "status":"failed", "disposition":"historical and not used as final proof; causes were investigated as described in deferred-items.md"}
+  ],
+  "candidate_boundary": "This evidence binds source/package/docs candidate c6bc4174675173b13c2bd1e95fba43e5f169adb4. Subsequent commits contain only planning evidence records and the conditional umbrella archival move; they do not alter product, package, docs or CI inputs. Any such input change requires new proof."
+}
