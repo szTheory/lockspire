@@ -130,10 +130,7 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
         inspected =
           inspect({event, measurements, metadata}, limit: :infinity, printable_limit: :infinity)
 
-        refute String.contains?(inspected, plaintext),
-               "telemetry event #{inspect(event)} carried plaintext: " <>
-                 "<<plaintext redacted in error msg; first 8 chars #{binary_part(plaintext, 0, min(8, byte_size(plaintext)))}>>; " <>
-                 "captured: #{inspected}"
+        assert_material_absent!(inspected, plaintext, event, :telemetry_payload)
       end
 
       # ── 7. Single-sweep refute on persisted audit rows ─────────────────────
@@ -156,6 +153,25 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
                "audit row id=#{row.id} action=#{row.action} metadata carried plaintext"
       end
     end
+  end
+
+  test "a failing telemetry leak assertion reports safe field identifiers only" do
+    sentinel = "phase166-redaction-credential-sentinel"
+    raw_payload = "authorization_code=#{sentinel}; response_body=#{sentinel}"
+
+    error =
+      assert_raise ExUnit.AssertionError, fn ->
+        assert_material_absent!(raw_payload, sentinel, :authorization_code, 1)
+      end
+
+    diagnostic = Exception.message(error)
+
+    if String.contains?(diagnostic, sentinel) or String.contains?(diagnostic, raw_payload) do
+      flunk("leak assertion diagnostic exposed protected material")
+    end
+
+    assert diagnostic =~ "authorization_code"
+    assert diagnostic =~ "1"
   end
 
   test "self PUT and host recovery use distinct management actors" do
@@ -692,6 +708,12 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       {:telemetry_event, e, m, md} -> drain_events([{e, m, md} | acc])
     after
       50 -> Enum.reverse(acc)
+    end
+  end
+
+  defp assert_material_absent!(payload, material, event, count) do
+    if String.contains?(payload, material) do
+      flunk("telemetry redaction failed for event #{inspect(event)}; matches=#{count}; payload=#{payload}")
     end
   end
 

@@ -1,0 +1,11 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration test/lockspire/protocol/dcr_telemetry_redaction_test.exs test/lockspire/protocol/dcr_audit_attribution_test.exs --max-failures 1 --timeout 55000",
+  "exitCode": 1,
+  "output": "TAP version 13\nnot ok 1 - test a failing telemetry leak assertion reports safe field identifiers only\n  ---\n  message: \"leak assertion diagnostic exposed protected material\"\n  file: test/lockspire/protocol/dcr_telemetry_redaction_test.exs\n  ...\n1..1\n",
+  "rawReport": "Running ExUnit with seed: 83414, max_cases: 36\nIncluding tags: [:integration]\n\n.\n\n  1) test a failing telemetry leak assertion reports safe field identifiers only (Lockspire.Protocol.DcrTelemetryRedactionTest)\n     test/lockspire/protocol/dcr_telemetry_redaction_test.exs:158\n     leak assertion diagnostic exposed protected material\n     code: flunk(\"leak assertion diagnostic exposed protected material\")\n     stacktrace:\n       test/lockspire/protocol/dcr_telemetry_redaction_test.exs:170: (test)\n\n--max-failures reached, aborting test suite\nFinished in 0.2 seconds (0.00s async, 0.2s sync)\n2 tests, 1 failure",
+  "targetTest": "test a failing telemetry leak assertion reports safe field identifiers only",
+  "targetFile": "test/lockspire/protocol/dcr_telemetry_redaction_test.exs",
+  "expected": "The leak detector diagnostic excludes the sentinel and raw event payload.",
+  "actual": "The deliberately failing assertion produced a diagnostic containing protected material.",
+  "semanticAssessment": "Target test executed and failed on the planned assertion after constructing a synthetic captured payload and sentinel. No setup, compilation, or fixture failure occurred."
+}
