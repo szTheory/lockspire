@@ -122,6 +122,20 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
         assert_positive_event_count!(observed, event)
       end
 
+      rows =
+        Lockspire.TestRepo.all(
+          from(audit in AuditEventRecord,
+            where:
+              like(audit.action, "dcr_%") or like(audit.action, "iat_%") or
+                audit.action == "client_disabled",
+            order_by: [desc: audit.id]
+          )
+        )
+
+      assert Enum.any?(rows, &(&1.action == "dcr_client_created"))
+      assert Enum.any?(rows, &(&1.action == "dcr_management_updated"))
+      assert Enum.any?(rows, &(&1.action == "client_disabled"))
+
       # ── 6. Single-sweep refute on captured events ──────────────────────────
       plaintexts = [plaintext_secret, plaintext_rat, plaintext_iat, new_plaintext_rat]
 
@@ -134,14 +148,6 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
       end
 
       # ── 7. Single-sweep refute on persisted audit rows ─────────────────────
-      rows =
-        Lockspire.TestRepo.all(
-          from(audit in AuditEventRecord,
-            where: like(audit.action, "dcr_%") or like(audit.action, "iat_%"),
-            order_by: [desc: audit.id]
-          )
-        )
-
       for row <- rows, plaintext <- plaintexts do
         payload_str = inspect(row, limit: :infinity, printable_limit: :infinity)
         metadata_str = inspect(row.metadata, limit: :infinity, printable_limit: :infinity)
@@ -172,6 +178,77 @@ defmodule Lockspire.Protocol.DcrTelemetryRedactionTest do
 
     assert diagnostic =~ "authorization_code"
     assert diagnostic =~ "1"
+  end
+
+  test "app expiry has an observed rejected update and no success audit row" do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    deadline = DateTime.add(now, 60, :second)
+
+    policy =
+      DcrFixtures.server_policy(%{
+        dcr_default_client_lifetime_seconds: 60,
+        dcr_default_client_secret_lifetime_seconds: nil,
+        dcr_default_registration_access_token_lifetime_seconds: 120
+      })
+
+    assert {:ok, _} = Repository.put_server_policy(policy)
+
+    assert {:ok, registered} =
+             Registration.register(
+               DcrFixtures.register_request(server_policy: policy)
+               |> Map.put(:now, now)
+             )
+
+    client = registered.client
+
+    assert {:error, %Registration.Error{code: :registration_expired}} =
+             RegistrationManagement.update(client.client_id, %{
+               metadata: Map.put(DcrFixtures.valid_metadata(), "client_id", client.client_id),
+               server_policy: policy,
+               client: client,
+               now: deadline
+             })
+
+    captured = drain_events()
+    observed = Enum.frequencies_by(captured, fn {event, _measurements, _metadata} -> event end)
+    assert_positive_event_count!(observed, [:lockspire, :dcr, :register])
+    assert_positive_event_count!(observed, [:lockspire, :audit, :dcr, :register])
+    assert_positive_event_count!(observed, [:lockspire, :dcr, :update])
+    assert_positive_event_count!(observed, [:lockspire, :audit, :dcr, :update])
+
+    update_events =
+      Enum.filter(captured, fn
+        {[:lockspire, :dcr, :update], _measurements, %{client_id: id}} -> id == client.client_id
+        _ -> false
+      end)
+
+    assert length(update_events) == 1
+    assert [{_, %{rejected: 1}, %{status: :failure}}] = update_events
+
+    rows =
+      Lockspire.TestRepo.all(
+        from(audit in AuditEventRecord, where: audit.resource_id == ^client.client_id)
+      )
+
+    assert Enum.count(rows, &(&1.action == "dcr_client_created")) == 1
+    refute Enum.any?(rows, &(&1.action == "dcr_management_updated"))
+
+    protected =
+      [client.client_secret_hash, client.registration_access_token_hash]
+      |> Enum.filter(&is_binary/1)
+
+    for {event, measurements, metadata} <- captured, value <- protected do
+      assert_material_absent!(
+        inspect({event, measurements, metadata}, limit: :infinity),
+        value,
+        event,
+        1
+      )
+    end
+
+    for row <- rows, value <- protected do
+      assert_material_absent!(inspect(row, limit: :infinity), value, row.action, 1)
+    end
   end
 
   test "self PUT and host recovery use distinct management actors" do
