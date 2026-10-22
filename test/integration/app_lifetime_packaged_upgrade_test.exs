@@ -72,6 +72,20 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
 
       assert scenario["old_read_write_count"] == 5
       assert scenario["old_writer_processes_stopped_before_v1"]
+      assert scenario["legacy_http_use_observation"] ==
+               Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_http_observation()
+
+      assert scenario["legacy_http_use_process"]["output"] ==
+               "LEGACY_HTTP_AUTH=1;LEGACY_V0_UNLIMITED=1;LEGACY_SECRET_PAST=1"
+
+      promotion = scenario["legacy_promotion_observation"]
+      assert Map.take(promotion, Map.keys(Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_promotion_statuses())) ==
+               Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_promotion_statuses()
+      assert promotion["wire_registration_access_token_expires_at"] > System.os_time(:second)
+
+      assert scenario["legacy_promotion_process"]["output"] ==
+               "LEGACY_WHOLE_ROW_PROMOTED=1;LEGACY_MANAGEMENT_AUTHORITY_PRESERVED=1;LEGACY_MANAGEMENT_POLICY_DEADLINE=1;LEGACY_MANAGEMENT_AUDIT=1"
+
       assert scenario["v1_state_retained"]
       assert scenario["historical_migration_checksums_preserved"]
       assert scenario["database_cleanup_process"]["exit_code"] == 0

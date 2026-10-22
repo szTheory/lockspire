@@ -676,7 +676,7 @@ def _stored_deadlines(child: Path, environment: dict[str, str], client_id: str) 
         f"{{:ok, client}} = Lockspire.Admin.Clients.get_client({client}); "
         "deadline = fn nil -> \"0\"; value -> Integer.to_string(DateTime.to_unix(value)) end; "
         "repo = Lockspire.Config.repo!(); "
-        "{:ok, count} = Ecto.Adapters.SQL.query(repo, \"SELECT count(*) FROM lockspire.lockspire_audit_events WHERE resource_id = $1 AND action IN ('client_secret_rotated','dcr_management_rat_rotated')\", [client.client_id]); "
+        "{:ok, count} = Ecto.Adapters.SQL.query(repo, \"SELECT count(*) FROM lockspire.lockspire_audit_events WHERE resource_id = $1\", [client.client_id]); "
         "[[audit_count]] = count.rows; "
         "IO.puts(\"LIFETIME_DEADLINES=\" <> Enum.join([deadline.(client.client_expires_at), deadline.(client.client_secret_expires_at), deadline.(client.registration_access_token_expires_at), Integer.to_string(audit_count)], \",\"))"
     )
@@ -834,6 +834,7 @@ def run_expired_and_disabled_app(
     disabled_id = str(disabled_registration["client_id"])
     disabled_uri = str(disabled_registration["registration_client_uri"])
     disabled_token = str(disabled_registration["registration_access_token"])
+    disabled_audit_before = _audit_count(child, environment, disabled_id)
     disable_expr = f"{{:ok, _}} = Lockspire.Admin.Clients.disable_client({json.dumps(disabled_id)}, %{{actor: %{{type: :operator, id: \"clean-room-host-operator\"}}}}); IO.puts(\"APP_DISABLED=1\")"
     if "APP_DISABLED=1" not in _run_host_control(child, environment, disable_expr):
         raise AssertionError("host disabled-app setup did not complete")
@@ -850,6 +851,9 @@ def run_expired_and_disabled_app(
     ))
     if "DISABLED_STATE_RETAINED=1" not in remaining:
         raise AssertionError("disabled registration state was not retained")
+    disabled_audit_after = _audit_count(child, environment, disabled_id)
+    if disabled_audit_after <= disabled_audit_before:
+        raise AssertionError("host disable action did not persist an audit event")
     return {
         "id": "fresh.app_expiry_disabled", "leg": "fresh", "contract_case_ids": ["C-APP-14", "C-APP-15", "C-APP-16", "C-PROOF-02"],
         "outcome": "passed", "observations": {
@@ -857,7 +861,7 @@ def run_expired_and_disabled_app(
             "expired_put_rejected": True, "disabled_management_denied": True,
             "state_retained": True, "production_routes_used": True,
         }, "event_counts": {"app_expired": 1, "disabled_management_denied": 3},
-        "audit_counts": {"disabled_record_retained": 1},
+        "audit_counts": {"host_disable": disabled_audit_after - disabled_audit_before},
         "counts": {"executed": 7, "passed": 7, "failed": 0, "skipped": 0},
     }
 
