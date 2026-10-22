@@ -402,8 +402,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
              true <- current.id == snapshot.id,
              true <-
                current.registration_access_token_hash == snapshot.registration_access_token_hash,
-             true <- current.active,
-             {:ok, current} <- ClientLifetime.validate_client(current) do
+             true <- current.active do
           # Retain preparation before the decision clock so every operation decides against
           # the final post-preparation instant. Defer returning preparation errors until the
           # credential deadline has been checked, so an expired credential cannot learn body
@@ -469,7 +468,7 @@ defmodule Lockspire.Protocol.RegistrationManagement do
              true <- current.client_id == snapshot.client_id,
              true <-
                current.registration_access_token_hash == snapshot.registration_access_token_hash,
-             {:ok, current} <- ClientLifetime.validate_client(current) do
+             {:ok, current} <- validate_recovery_lifetime(current) do
           callback.(current)
         else
           false -> {:error, :invalid_token}
@@ -479,6 +478,13 @@ defmodule Lockspire.Protocol.RegistrationManagement do
       end)
     end
   end
+
+  # v0 dates are advisory by contract; credential replacement promotes the current
+  # row and clears them. Unknown versions and malformed authoritative v1 state fail closed.
+  defp validate_recovery_lifetime(%Client{lifetime_version: 0} = current), do: {:ok, current}
+
+  defp validate_recovery_lifetime(%Client{} = current),
+    do: ClientLifetime.validate_client(current)
 
   defp decision_now(opts) do
     clock = Keyword.get(opts, :now, fn -> DateTime.utc_now() end)

@@ -35,6 +35,7 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Protocol.RegistrationAccessToken
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Storage.ClientLifetime
 
   defmodule Success do
     @moduledoc false
@@ -66,7 +67,8 @@ defmodule Lockspire.Protocol.Registration do
     source = Map.get(request, :source, %{ip: nil, user_agent: nil})
     issued_at = request |> Map.get(:now, DateTime.utc_now()) |> DateTime.truncate(:second)
 
-    with :ok <- require_iat_when_policy_demands(server_policy, iat),
+    with :ok <- ensure_client_lifetime_configured(),
+         :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
@@ -88,6 +90,13 @@ defmodule Lockspire.Protocol.Registration do
       {:error, %Error{} = error} ->
         emit_rejected(error, source)
         {:error, error}
+    end
+  end
+
+  defp ensure_client_lifetime_configured do
+    case ClientLifetime.configured() do
+      {:ok, _stores} -> :ok
+      {:error, reason} -> {:error, %Error{code: :server_error, reason: reason}}
     end
   end
 

@@ -154,6 +154,30 @@ defmodule Lockspire.Integration.ClientLifetimeSelectedStoreTest do
     assert_received {:selected_store, :transact}
   end
 
+  test "host recovery rejects an unknown lifetime version without changing the row" do
+    install_selected_stores()
+    enable_registration()
+    registered = register_dcr_client()
+    client_id = registered["client_id"]
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(row in ClientRecord, where: row.client_id == ^client_id),
+               set: [lifetime_version: 7]
+             )
+
+    assert {:ok, snapshot} = Repository.fetch_client_by_id(client_id)
+    before = client_row(client_id)
+
+    assert {:error, :invalid_lifetime_version} =
+             RegistrationManagement.rotate_registration_access_token(snapshot,
+               now: DateTime.utc_now() |> DateTime.truncate(:second)
+             )
+
+    assert client_row(client_id) == before
+    refute_received {:selected_store, :rotate_registration_access_token}
+  end
+
   test "invalid selected composition fails before consuming an initial access token" do
     preserve_store_config()
     Application.put_env(:lockspire, :client_store, :missing_store)
