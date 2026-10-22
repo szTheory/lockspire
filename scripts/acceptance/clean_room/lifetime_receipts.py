@@ -74,6 +74,41 @@ def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) 
                 raise AssertionError("lifetime receipt observation shape is invalid")
     if seen != set(expected_scenarios):
         raise AssertionError("lifetime receipt required scenario set is incomplete")
+    if any(identifier.startswith("custom.") for identifier in seen):
+        by_id = {scenario["id"]: scenario for scenario in scenarios}
+        if set(by_id) != {"custom.issue_replace", "custom.shared_rollback", "custom.unsupported"}:
+            raise AssertionError("lifetime receipt custom scenario set is incomplete")
+        if any(
+            by_id[identifier]["outcome"] != "passed"
+            or _counts(by_id[identifier]["counts"], "custom scenario")["skipped"] != 0
+            for identifier in by_id
+        ):
+            raise AssertionError("lifetime receipt custom scenario was not executed successfully")
+        issue = by_id["custom.issue_replace"]["observations"]
+        rollback = by_id["custom.shared_rollback"]["observations"]
+        unsupported = by_id["custom.unsupported"]["observations"]
+        if (
+            not isinstance(issue, dict)
+            or type(issue.get("callbacks_executed")) is not int
+            or issue["callbacks_executed"] <= 0
+            or issue.get("authority_shared") is not True
+            or issue.get("management_credential_replaced") is not True
+            or issue.get("example_executed") is not True
+        ):
+            raise AssertionError("lifetime receipt custom issuance evidence is incomplete")
+        if (
+            not isinstance(rollback, dict)
+            or any(rollback.get(key) is not True for key in (
+                "independent_observer", "rollback_preserved", "replacement_observed", "issuance_observed"
+            ))
+        ):
+            raise AssertionError("lifetime receipt independent rollback evidence is incomplete")
+        if (
+            not isinstance(unsupported, dict)
+            or unsupported.get("unsupported_rejected") is not True
+            or unsupported.get("example_executed") is not True
+        ):
+            raise AssertionError("lifetime receipt unsupported-state evidence is incomplete")
     if _counts(receipt["counts"], "aggregate") != aggregate:
         raise AssertionError("lifetime receipt aggregate counts differ from scenario totals")
     cleanup = _exact_keys(receipt["cleanup"], CLEANUP_FIELDS, "cleanup")
