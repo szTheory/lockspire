@@ -166,6 +166,10 @@ The host route macro and mount contract are ready for Plans 02 and 03. Generator
 
 After the wave-one broad suite identified downstream test assumptions, the exported-function manifest now records `Config.normalize_mount_path!/1` as an additive extension while retaining the literal 76cf872 baseline. Admin route contract checks now inspect the compiled Phoenix route table and `route_info/4` instead of looking for route literals in `AdminRouter` source; their specific mounted paths and read-only source assertions remain intact. Focused compatibility, route, config, compile-contract and integration checks passed together: 39 tests.
 
+## Follow-up security proof note
+
+The host identity hook now has direct callback-level assertions for explicitly disconnected and connected `Phoenix.LiveView.Socket` values, each paired with a missing or deleted identity. The checks assert the socket connection state, `{:halt, redirected_socket}`, the host sign-in redirect, the denial observer event, and absence of the mount sentinel. This proves the hook's behavior for both socket states; it does not exercise a real connected transport.
+
 ## Self-Check: PASSED
 
 - All eight planned source and test files exist.

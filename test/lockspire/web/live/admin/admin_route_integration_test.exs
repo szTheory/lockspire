@@ -175,6 +175,39 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     refute_receive :admin_mount_reached
   end
 
+  test "the host identity hook halts missing and deleted identities for both socket states" do
+    sockets = [
+      {"disconnected",
+       %Phoenix.LiveView.Socket{host_uri: URI.parse("http://www.example.com/admin")}, false},
+      {"connected",
+       %Phoenix.LiveView.Socket{
+         host_uri: URI.parse("http://www.example.com/admin"),
+         transport_pid: self()
+       }, true}
+    ]
+
+    identities = [{:missing, %{}}, {:deleted, %{"host_staff_id" => "deleted-staff"}}]
+
+    for {_state, socket, expected_connected?} <- sockets,
+        {_identity_kind, session} <- identities do
+      assert Phoenix.LiveView.connected?(socket) == expected_connected?
+
+      assert {:halt, redirected_socket} =
+               Lockspire.Web.AdminRouteHost.LiveAuthorization.on_mount(
+                 :default,
+                 %{},
+                 session,
+                 socket
+               )
+
+      assert redirected_socket.redirected ==
+               {:redirect, %{to: "/host/sign-in", status: 302}}
+
+      assert_receive {:host_live_hook, :denied}
+      refute_receive :admin_mount_reached
+    end
+  end
+
   test "a runtime mount mismatch fails at HTTP entry without exposing session data" do
     Application.put_env(:lockspire, :mount_path, "/different-secret-prefix")
 
