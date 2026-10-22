@@ -49,3 +49,10 @@ Closed after Phase 166 final-candidate verification on `c6bc4174675173b13c2bd1e9
 Evidence: [Phase 166 CI evidence](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-CI-EVIDENCE.json), [independent security review](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-SECURITY.md), [case evidence map](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json), [validation sign-off](../../phases/166-end-to-end-lifetime-security-guidance-proof/166-VALIDATION.md).
 
 Closure preserves, rather than silently clears, probe assumptions A-EDGE-16/17/19 as unresolved and both descriptor-less prohibition dispositions as flagged-unverified. The review confirms those labels remain explicit; no adjacent green test is claimed as an individually defined predicate for them. Historical failed runs are retained in `deferred-items.md` and are superseded only by the final exact-candidate evidence.
+
+
+## Final Source-Fix Revalidation (2026-10-22)
+
+After a review found a selected-prefix receipt-validation bug in the no-work-root upgrade CLI, the fix and regression were committed as `f68c7f0f47cb957ed8dc31b35cc78fd612eeb1ea`. Canonical run [39766614548](https://github.com/szTheory/lockspire/actions/runs/39766614548) then passed all seven observed main-branch required contexts. Artifact 12420254180 validates the exact f68 source revision, all nine scenarios, 49 passed, zero failed/skipped, and complete cleanup. A separate review returned SECURED, 25/25 threats closed.
+
+This supersedes the c6-specific execution references above. The explicit unresolved probe and flagged prohibition labels remain unchanged. Updated details and digests are in the linked Phase 166 evidence artifacts.
