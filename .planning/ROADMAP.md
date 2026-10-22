@@ -44,7 +44,19 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   2. Authorized staff can connect, navigate and reconnect at the default and nested custom mount, and at root if already supported; links, query/task URLs and redirects retain the configured prefix. (MNT-02)
   3. Admin routes resolve before the public forward, and public OAuth/OIDC and host-owned consent routes retain their intended access and behavior. (MNT-04)
   4. The recorded forward-only join failure has a fresh regression reproduction, and the same host-path case succeeds through the new route integration using native Phoenix routing. (MNT-01, MNT-02)
-**Plans**: TBD
+
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 167-01-PLAN.md — Reproduce the forwarded join failure, verify the native host-route tracer and settle compile/session/config contracts.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 167-02-PLAN.md — Connect every existing admin action at default, nested and root mounts with prefixed navigation and fresh rejoins.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 167-03-PLAN.md — Fence exact ordered route/action parity and prove independent public/host-consent routing.
+
 **UI hint**: yes
 **UI scope**: Routing and connected lifecycle only; preserve the existing visual contract and vocabulary. No visual design deliverable or manual UI signoff.
 **Planning constraints**: Settle public API signature, route inventory ownership, session naming, host hook composition, path normalization, root-layout/session options and old AdminRouter compatibility with executable evidence. Required authorization wiring must be explicit and fail closed from the start; Phase 168 owns its complete behavioral denial proof. Do not patch private Phoenix join internals. Add focused route and connected-mount tests during this phase.
@@ -59,6 +71,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   2. The required host hook runs before disconnected and connected admin mounts, resolves current host authority and denies invalid identities; absent required wiring is refused instead of allowing access. (HAUTH-02)
   3. Navigation from public/consent sessions into admin cannot skip its host checks, and every admin destination remains within the protected session with its required hooks. (HAUTH-03)
   4. Reconnecting with an invalid session or withdrawn host authority is denied, while currently authorized staff reconnect successfully. (HAUTH-04)
+
 **Plans**: TBD
 **UI hint**: yes
 **UI scope**: Access and navigation mechanics only; no visual redesign or subjective UI signoff.
@@ -74,6 +87,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   2. Existing generated hosts receive a concrete migration from forward-only admin wiring; dry runs preserve bytes, repeated upgrades are safe, drift is refused and host-owned authorization/configuration is preserved. (HDX-02)
   3. `mix lockspire.verify` distinguishes complete canonical route/action/session/hook wiring from incomplete, shadowed or legacy forward-only mounts, with actionable secret-safe guidance that identifies its structural-policy limits. (HDX-03)
   4. The demo and maintained generated/clean-room hosts consume the same reusable admin declarations, and installation, upgrade, admin and supported-surface guidance match that executable path. (HDX-04)
+
 **Plans**: TBD
 **UI hint**: yes
 **UI scope**: Generated integration, diagnostic and guidance changes only; preserve host-owned layouts and branding. Read PRODUCT.md before any necessary admin-visible copy change; no copy overhaul or manual signoff.
@@ -89,6 +103,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   2. Real client/socket evidence covers host endpoint session, browser assets and host-path signing without duplicated demo routes; server-side lifecycle tests are identified separately from transport proof. (HPROOF-01)
   3. Route/session, connected authorization and navigation regressions execute on both the current locked pair and exact Phoenix 1.8.5 / LiveView 1.1.28, with exact versions and runtime outcomes recorded. (HPROOF-02)
   4. Required CI executes the bounded integration checks, fails visibly on regressions and emits redaction-safe evidence tied to its source/package, without depending on manual visual approval. (HPROOF-03)
+
 **Plans**: TBD
 **UI hint**: yes
 **UI scope**: Automated connection/navigation proof only; no screenshots-as-design-approval requirement or subjective UI signoff.
@@ -108,12 +123,12 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 167. Host-Expanded Admin Routing | v1.46 | 0/TBD | Not started | — |
+| 167. Host-Expanded Admin Routing | v1.46 | 0/3 | Planned | — |
 | 168. Host-Owned LiveView Authorization | v1.46 | 0/TBD | Not started | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
-**Coverage:** 15/15 requirements mapped exactly once; 0 implemented, 0 phases complete. Research, requirements and roadmap are approved; Phase 167 is ready for planning.
+**Coverage:** 15/15 requirements mapped exactly once; 0 implemented, 0 phases complete. Phase 167 has three independently verified plans covering MNT-01 through MNT-04 and is ready to execute.
 
 ## Completed Backlog Scope
 

@@ -2,15 +2,18 @@
 gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
-status: planning
 current_phase: 167
-stopped_at: v1.46 initialized; ready to plan Phase 167
-last_updated: "2026-10-22T20:31:55.119698Z"
+current_phase_name: Host-Expanded Admin Routing
+status: ready_to_execute
+stopped_at: Phase 167 planned and independently checked; ready to execute
+last_updated: "2026-10-22T21:28:41.151Z"
 last_activity: 2026-10-22
+last_activity_desc: Phase 167 planned in three waves; four requirements covered; independent plan verification passed after one revision
+state_head: b1acfd258e2c316b55808c91f0f9884931ba6f9b
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
   percent: 0
 ---
@@ -23,18 +26,20 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.46 Embedded Host Integration Reliability — 15 requirements and four-phase roadmap approved; Phase 167 ready for planning.
+**Current focus:** v1.46 Embedded Host Integration Reliability — Phase 167 has three verified plans and is ready to execute.
 
 ## Current Position
 
-Phase: 167 of 170 — Host-Expanded Admin Routing (first of four; not started)
-Plan: —
-Status: Ready for phase planning
-Last activity: 2026-10-22 — User approved Phases 167–170; all 15 requirements mapped exactly once; ready to plan Phase 167
+Phase: 167 (Host-Expanded Admin Routing) — READY TO EXECUTE
+Plan: 0 of 3 complete
+Status: Ready to execute
+Last activity: 2026-10-22 — Phase 167 planned in three sequential waves; MNT-01 through MNT-04 covered; independent plan verification passed after one feedback-latency revision
 
 ## Accumulated Context
 
 ### Decisions
+
+Phase 167 planning used the approved roadmap and requirements without CONTEXT.md, as explicitly selected by the user, followed by focused research. Its three plans settle native host-expanded routes, a scope-relative macro path, required host HTTP/on_mount wiring, fixed :lockspire_admin session, mount alignment and the retained legacy router. No implementation result is claimed; the fresh forward-only reproduction precedes replacement in the leading tracer. Full denial proof, install/upgrade convergence and transport/package/version proof retain their Phase 168–170 owners. See phases/167-host-expanded-admin-routing/167-PLAN-CHECK.md for the final verification verdict and probe limitations.
 
 v1.46 scope and research are confirmed; all 15 requirements were approved on 2026-10-22. Approved phases 167–170 cover routing, host authorization, installation/upgrade convergence and packaged/runtime proof. The user approved the roadmap on 2026-10-22. Mechanical integration and automated acceptance only; no visual redesign, identity system or publication scope. Research was performed inline; no new subagents were spawned.
 
@@ -95,6 +100,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: v1.46 initialized; ready to plan Phase 167
+Stopped at: Phase 167 planned and independently checked; ready to execute
 Resume file: None
-Next: `$gsd-plan-phase 167` to plan Host-Expanded Admin Routing; `$gsd-discuss-phase 167` remains available for further context. Preserve the original unstaged state.json bytes.
+Next: `$gsd-execute-phase 167` to execute Host-Expanded Admin Routing. The configured auto-advance path may start it directly after planning. Preserve the original unstaged state.json bytes.
