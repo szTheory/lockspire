@@ -24,7 +24,7 @@ actuals:
   commits: 4
 commits: 4
 plan_head_before: ec81d54649c93cb40d061a7bf0df9aaa909569bb
-plan_head_after: 4f1da8cdfec0234f27b0973b44895eef2de943b5
+plan_head_after: 4f1da8cd14dfe5b84556c1ba58d4f3190a5f7efb
 tech-stack:
   added: []
   patterns:
@@ -173,7 +173,7 @@ The selected composition is ready for the independent packaged host proof in 166
 
 - All planned source and integration test files exist; the two RED evidence files exist and classify as `RED_EVIDENCE_OK`.
 - Commits `9e72f55a`, `8bb4aee0`, `4bbe2f69` and `4f1da8cd` are ancestors of `HEAD`.
-- `git rev-list --count ec81d54649c93cb40d061a7bf0df9aaa909569bb..4f1da8cdfec0234f27b0973b44895eef2de943b5` measured **4 task commits**. The plan's `actuals.tokens` is `9099` (36,397 changed-diff characters divided by four).
+- `git rev-list --count ec81d54649c93cb40d061a7bf0df9aaa909569bb..4f1da8cd14dfe5b84556c1ba58d4f3190a5f7efb` measured **4 task commits**. The plan's `actuals.tokens` is `9099` (36,397 changed-diff characters divided by four).
 - Both plan verification commands passed with 16/0 and 24/0 tests/failures. Formatting and whitespace checks passed.
 - The user-owned `.planning/STATE.md`, `.planning/state.json` and `.planning/ROADMAP.md` edits were not included in any plan commit.
 
