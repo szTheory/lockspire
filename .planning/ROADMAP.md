@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 implemented, two verification decisions pending.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 complete; Phase 168 ready to plan.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,15 +19,15 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is implemented; functional verification passed and two prohibition classification decisions remain before phase closure.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is complete after automated verification and delegated evidence review; zero human UAT checks remain. Phase 168 is ready to plan.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
-**Research:** [v1.46 summary](research/v1.46-host-integration/SUMMARY.md). The forwarding failure is recorded in historical evidence and source; Phase 167 owns its fresh reproduction. Research has not claimed a new runtime pass or exploit.
+**Research:** [v1.46 summary](research/v1.46-host-integration/SUMMARY.md). Phase 167 freshly reproduced the forward-only failure and verified native host routing. Research itself makes no new runtime or exploit claim; runtime evidence is recorded in the phase verification and UAT ledger.
 
 ## Phases
 
-- [ ] **Phase 167: Host-Expanded Admin Routing** — Hosts mount the complete existing admin surface without copying route declarations.
+- [x] **Phase 167: Host-Expanded Admin Routing** — Hosts mount the complete existing admin surface without copying route declarations. (completed 2026-10-22)
 - [ ] **Phase 168: Host-Owned LiveView Authorization** — Host staff checks protect HTTP, connected entry, reconnect and admin navigation boundaries.
 - [ ] **Phase 169: Install and Upgrade Convergence** — Generated hosts, safe upgrades, diagnostics, docs and the demo use the same supported integration.
 - [ ] **Phase 170: Packaged Host and Compatibility Proof** — Candidate-package and exact-version runtime checks establish the complete integration in required CI.
@@ -45,7 +45,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
   3. Admin routes resolve before the public forward, and public OAuth/OIDC and host-owned consent routes retain their intended access and behavior. (MNT-04)
   4. The recorded forward-only join failure has a fresh regression reproduction, and the same host-path case succeeds through the new route integration using native Phoenix routing. (MNT-01, MNT-02)
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -115,20 +115,20 @@ Plans:
 - Final evidence combines route inventory/action parity, server lifecycle/denial checks, actual client/socket operation, safe install/upgrade, structural diagnostics and exact supported-version runtime checks. No one layer substitutes for all others.
 - Preserve host ownership and current secure OAuth/OIDC defaults. Do not add multi-mount, tenant-router, reverse-proxy-prefix or continuous authorization support by inference.
 - Refresh repository/CI state before implementation and ship decisions. Planning is currently on feat/164-client-secret-lifetimes; this roadmap does not merge or publish the v1.45 candidate or establish a clean-main baseline.
-- Existing historical Phase 142/143 directories, archived v1.45 proof, deferred records and unrelated user state.json changes remain preserved. The Phase 144 forwarding gap is targeted by v1.46, not already resolved.
+- Existing historical Phase 142/143 directories, archived v1.45 proof, deferred records and unrelated user state.json changes remain preserved. Phase 167 supplies the native route repair; Phase 169 still owns migration/demo convergence for the historical Phase 144 forwarding workaround.
 
 ## Progress
 
-**Execution Order:** 167 → 168 → 169 → 170. Phase 167 has executed all three plans and awaits two verification decisions; Phases 168–170 have not started.
+**Execution Order:** 167 → 168 → 169 → 170. Phase 167 is complete (3/3 plans, four requirements, zero human UAT checks); Phases 168–170 have not started.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Needs Review | — |
+| 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 0/TBD | Not started | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
-**Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 functionally verified by Phase 167, with formal completion pending two prohibition decisions. Zero phases closed; remaining requirements retain their later owners.
+**Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 complete in Phase 167. One phase closed; the remaining eleven requirements retain their later owners. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
 ## Completed Backlog Scope
 

@@ -118,6 +118,8 @@ Once a repeatable check is automated and required CI proves it, do not add a man
 
 Before presenting a UAT checkpoint, map each criterion to current focused tests, end-to-end/smoke/seam checks, and required CI evidence. Add only missing deterministic checks with recurring regression value. If rendered or subjective acceptance belongs to a later phase, record that owner and reason instead of handing the same check to the user.
 
+The user reaffirmed this default during Phase 167 verification on 2026-10-22 and delegated routine verification classification and evidence review to the agent. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md): missing check descriptors are planning metadata to repair, not a reason to request maintainer signoff. Preserve explicit evidence limits and record each closure so later sessions do not repeat it.
+
 ## Recent Milestone: v1.40 Admin Operator UI Refinement (Completed 2026-10-10)
 
 **Goal:** Refine Lockspire's existing operator UI into a calm, coherent interface for configuration, investigation, and operations, with a working preview and bounded automated/browser verification.
@@ -352,14 +354,15 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Host-expanded admin routing, mount-path/action parity and public-route separation — v1.46 MNT-01..04, Phase 167.
 - [ ] Host-owned HTTP, connected-entry, navigation and reconnect authorization — v1.46 HAUTH-01..04, Phase 168.
 - [ ] Safe generated installation/upgrade, truthful diagnostics and consistent demo/docs — v1.46 HDX-01..04, Phase 169.
 - [ ] Packaged-host transport, exact-version runtime and required CI proof — v1.46 HPROOF-01..03, Phase 170.
 
-All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; implementation has not started.
+All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; Phase 167 is complete and Phases 168–170 remain.
 
 ### Validated
+
+- ✓ Host-expanded admin routing, full 29-route/action parity, configured mount journeys and independent public/consent routing — v1.46 MNT-01..04, Phase 167; 48 fresh focused tests, zero remaining human UAT checks.
 
 - ✓ Selected lifetime semantics, endpoint effects, offline limits and upgrade contract (DCR-02/03/04) — v1.45, Phase 162.
 - ✓ App lifetime persistence, current-authority enforcement, legacy migration and declared host-storage compatibility (DCR-05/06/13/14) — v1.45, Phase 163.
@@ -599,4 +602,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-22 after v1.46 roadmap approval*
+*Last updated: 2026-10-22 after Phase 167 automated verification and closure*

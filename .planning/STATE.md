@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
-current_phase: 167
-current_phase_name: Host-Expanded Admin Routing
-status: human_needed
-stopped_at: Phase 167 implemented; two prohibition verification decisions pending
-last_updated: "2026-10-22T21:29:58.124Z"
+current_phase: 168
+current_phase_name: Host-Owned LiveView Authorization
+status: planning
+stopped_at: Phase 167 complete, ready to plan Phase 168
+last_updated: "2026-10-22T23:27:26.221Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 167 has 22 of 22 truths verified; 48 focused tests passed; two prohibition decisions remain
-state_head: fa369ab3464675883316a30af8a7e8930769081b
+last_activity_desc: Phase 167 complete, transitioned to Phase 168
+state_head: 003c7a03e9ddbc6ebb64e6fb7c64fc8280bbf547
 progress:
   total_phases: 4
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 3
+  percent: 25
 ---
 
 # Project State
@@ -26,20 +26,22 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 167 implemented and functionally verified; two prohibition classification decisions await developer review. No visual or implementation gap.
+**Current focus:** Phase 168 — Host-Owned LiveView Authorization, ready to plan. Phase 167 is complete with zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
 
 ## Current Position
 
-Phase: 167 of 170 — Host-Expanded Admin Routing (implemented; human_needed)
-Plan: 3 of 3 complete
-Status: Human verification decisions pending
-Last activity: 2026-10-22 — Independent verifier confirmed all 22 truths and MNT-01 through MNT-04; 48 focused tests passed; human_needed solely for two unresolved descriptor-less prohibitions
+Phase: 168 of 170 (Host-Owned LiveView Authorization)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-22 — Phase 167 complete, transitioned to Phase 168
 
 ## Accumulated Context
 
 ### Decisions
 
-Phase 167 planning used the approved roadmap and requirements without CONTEXT.md, as explicitly selected by the user, followed by focused research. Its three plans settle native host-expanded routes, a scope-relative macro path, required host HTTP/on_mount wiring, fixed :lockspire_admin session, mount alignment and the retained legacy router. No implementation result is claimed; the fresh forward-only reproduction precedes replacement in the leading tracer. Full denial proof, install/upgrade convergence and transport/package/version proof retain their Phase 168–170 owners. See phases/167-host-expanded-admin-routing/167-CHECK.md for the final verification verdict and probe limitations.
+Phase 167 completed three plans: native host-expanded routes, required host pipelines/current-identity hooks, fixed :lockspire_admin session, mount alignment, 29-route parity and public/consent separation. Fresh verification passed 48 tests and all 22 truths; security closed 12/12 threats and code review found no issues. The two descriptor-less prohibition checkpoints were individually resolved through automated tests and delegated evidence review in 167-UAT.md. Canonical verification and the combined completion predicate passed; no override or human pass was assumed.
+
+The user reaffirmed automation-first verification on 2026-10-22: shift checks left, reuse CI coverage, hand off only genuinely necessary human work, and record closures to prevent repeat UAT. Follow VERIFICATION-POLICY.md and PROJECT.md. Missing check descriptors require classification/evidence, not an automatic maintainer prompt. Full denial proof, install/upgrade convergence and transport/package/exact-floor proof retain their Phase 168–170 owners.
 
 v1.46 scope and research are confirmed; all 15 requirements were approved on 2026-10-22. Approved phases 167–170 cover routing, host authorization, installation/upgrade convergence and packaged/runtime proof. The user approved the roadmap on 2026-10-22. Mechanical integration and automated acceptance only; no visual redesign, identity system or publication scope. Research was performed inline; no new subagents were spawned.
 
@@ -47,7 +49,7 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 
 ### Blockers/Concerns
 
-Phase 167 has no implementation gap (22/22 truths, four requirements verified). Verification status is human_needed solely because two plan-authored descriptor-less prohibitions remain unresolved: host ownership and truthful evidence boundaries. See phases/167-host-expanded-admin-routing/167-VERIFICATION.md and 167-UAT.md. Security audit closed 12/12 threats and code review found zero issues. The unclassified MNT-02 probe ledger remains explicit; no new mount semantics are inferred.
+No active Phase 167 blocker. Its two original prohibition flags are closed in the UAT ledger; do not recreate them from historical plan/report text without a relevant change or contradictory evidence. A-167-MNT-02 remains an unclassified probe without an additional acceptance predicate; the written mount criteria are verified. Preserve evidence boundaries for Phases 168–170.
 
 No active v1.45 implementation blocker. Its audit retains eight nonblocking debt entries and explicit undefined-probe/visual limits. [Audit](milestones/v1.45-MILESTONE-AUDIT.md). Latest verified public package remains 1.6.1; publication of the lifetime candidate is separate. Historical Phase 138/140/143 and visual exceptions are preserved in the archived pre-close state and the disclosure table below.
 
@@ -102,6 +104,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-22
-Stopped at: Phase 167 implemented; two prohibition verification decisions pending
+Stopped at: Phase 167 complete, ready to plan Phase 168
 Resume file: None
-Next: `$gsd-verify-work 167` to resolve the two recorded prohibition decisions in 167-UAT.md. No discuss-phase or visual signoff is required. Do not advance to 168 until verification passes; preserve the original unstaged state.json bytes.
+Next: `$gsd-plan-phase 168`. Apply the automation policy and retain the closed Phase 167 UAT dispositions. Preserve the original unstaged state.json bytes; no Phase 168 implementation has started.

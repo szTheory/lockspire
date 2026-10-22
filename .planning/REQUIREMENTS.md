@@ -11,10 +11,10 @@ Requirements cover the user-confirmed mechanical integration scope. They do not 
 
 ### Admin Mounting
 
-- [ ] **MNT-01**: A Phoenix host can mount the complete admin surface through one reusable integration that defines the LiveView routes inside its own router, without copying Lockspire's route list.
-- [ ] **MNT-02**: Staff can open, navigate and reconnect to admin pages at the default mount and supported custom mount paths, with links, redirects and task URLs retaining the configured prefix.
-- [ ] **MNT-03**: Existing admin URLs keep their corresponding LiveView and action, including list/detail/new/edit and policy/rotation task routes; adopting the new integration does not silently remove routes or change their meaning.
-- [ ] **MNT-04**: A host can protect admin pages independently while its public OAuth/OIDC endpoints and host-owned consent routes retain their intended access and routing behavior, without being shadowed by either mount.
+- [x] **MNT-01**: A Phoenix host can mount the complete admin surface through one reusable integration that defines the LiveView routes inside its own router, without copying Lockspire's route list.
+- [x] **MNT-02**: Staff can open, navigate and reconnect to admin pages at the default mount and supported custom mount paths, with links, redirects and task URLs retaining the configured prefix.
+- [x] **MNT-03**: Existing admin URLs keep their corresponding LiveView and action, including list/detail/new/edit and policy/rotation task routes; adopting the new integration does not silently remove routes or change their meaning.
+- [x] **MNT-04**: A host can protect admin pages independently while its public OAuth/OIDC endpoints and host-owned consent routes retain their intended access and routing behavior, without being shadowed by either mount.
 
 ### Host-Owned Authorization
 
@@ -72,10 +72,10 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 
 | Requirement | Phase | Status |
 |---|---|---|
-| MNT-01 | Phase 167 | Pending |
-| MNT-02 | Phase 167 | Pending |
-| MNT-03 | Phase 167 | Pending |
-| MNT-04 | Phase 167 | Pending |
+| MNT-01 | Phase 167 | Complete |
+| MNT-02 | Phase 167 | Complete |
+| MNT-03 | Phase 167 | Complete |
+| MNT-04 | Phase 167 | Complete |
 | HAUTH-01 | Phase 168 | Pending |
 | HAUTH-02 | Phase 168 | Pending |
 | HAUTH-03 | Phase 168 | Pending |
@@ -88,7 +88,7 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 | HPROOF-02 | Phase 170 | Pending |
 | HPROOF-03 | Phase 170 | Pending |
 
-**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 15 pending implementation. No implementation or runtime success is claimed by this document.
+**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 4 complete in Phase 167 and 11 pending in Phases 168–170. Evidence and limits are recorded in the Phase 167 verification report and completed UAT ledger.
 
 ---
-*Last updated: 2026-10-22 — all 15 requirements and four-phase roadmap approved by the user.*
+*Last updated: 2026-10-22 — MNT-01 through MNT-04 complete in Phase 167; eleven requirements retain their Phase 168–170 owners.*
