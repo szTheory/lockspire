@@ -10,11 +10,10 @@ defmodule Lockspire.CiTestMatrixContractTest do
     ci = File.read!(@ci)
     runner = File.read!(@runner)
 
-    assert mix =~
-             ~s("test.fast": ["test.setup", "test test/lockspire test/mix test/integration"])
+    assert mix =~ "test --exclude lifetime_package test/lockspire test/mix test/integration"
 
     assert mix =~
-             ~s("test --cover test/lockspire test/mix test/integration")
+             "test --cover --exclude lifetime_package test/lockspire test/mix test/integration"
 
     assert mix =~
              ~s("test.integration": ["test.setup", "test --only integration test/integration"])
