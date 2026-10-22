@@ -162,6 +162,10 @@ The host route macro and mount contract are ready for Plans 02 and 03. Generator
 *Phase: 167-host-expanded-admin-routing*
 *Completed: 2026-10-22*
 
+## Post-wave regression repair
+
+After the wave-one broad suite identified downstream test assumptions, the exported-function manifest now records `Config.normalize_mount_path!/1` as an additive extension while retaining the literal 76cf872 baseline. Admin route contract checks now inspect the compiled Phoenix route table and `route_info/4` instead of looking for route literals in `AdminRouter` source; their specific mounted paths and read-only source assertions remain intact. Focused compatibility, route, config, compile-contract and integration checks passed together: 39 tests.
+
 ## Self-Check: PASSED
 
 - All eight planned source and test files exist.
