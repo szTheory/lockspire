@@ -31,6 +31,7 @@ sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
 from build_client import patch_jose_record_extractors
 from build_provider import prepare_provider, run_child_command, run_child_command_output
+from lifetime_receipts import validate_lifetime_receipt, write_lifetime_receipt
 from package_input import (
     PackageInputError,
     clean_room_database_url,
@@ -81,8 +82,11 @@ class Browser:
         headers: dict[str, str] = dict(extra_headers or {})
         body = None
         if data is not None:
-            body = urlencode(data).encode()
-            headers["content-type"] = "application/x-www-form-urlencoded"
+            if headers.get("content-type") == "application/json":
+                body = json.dumps(data).encode()
+            else:
+                body = urlencode(data).encode()
+                headers["content-type"] = "application/x-www-form-urlencoded"
         if self.cookies:
             headers["cookie"] = "; ".join(f"{name}={value}" for name, value in self.cookies.items())
 
@@ -149,11 +153,15 @@ def safe_oauth_error_code(response: dict[str, object]) -> str:
     """
 
     try:
-        error = json.loads(str(response["body"])).get("error")
+        payload = json.loads(str(response["body"]))
+        error = payload.get("error")
+        description = payload.get("error_description")
     except (AttributeError, TypeError, json.JSONDecodeError):
         return ""
 
     if isinstance(error, str) and re.fullmatch(r"[a-z_]{1,64}", error):
+        if isinstance(description, str) and re.fullmatch(r"[a-z_]{1,64} for [a-z_]{1,64}", description):
+            return f" ({error}: {description})"
         return f" ({error})"
 
     return ""
@@ -456,6 +464,87 @@ def provider_path(endpoint: str) -> str:
     if f"{parsed.scheme}://{parsed.netloc}" != PROVIDER_ORIGIN:
         raise AssertionError("discovery endpoint left the provider origin")
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+
+
+def run_dcr_lifetime(provider: Browser, provider_child: Path, provider_environment: dict[str, str], handoff: Path) -> dict[str, object]:
+    """Register a fresh public client and redeem an S256 code through HTTP."""
+    discovery_response = provider.request("GET", "/lockspire/.well-known/openid-configuration")
+    require_status(discovery_response, 200, "DCR lifetime discovery")
+    discovery = json.loads(str(discovery_response["body"]))
+    endpoint = discovery.get("registration_endpoint")
+    if not isinstance(endpoint, str):
+        raise AssertionError("DCR lifetime discovery omitted the mounted registration endpoint")
+
+    redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
+    metadata = {
+        "client_name": "Lifetime journey",
+        "redirect_uris": [redirect_uri],
+        "grant_types": ["authorization_code"],
+        "response_types": ["code"],
+        "token_endpoint_auth_method": "none",
+        "scope": "openid profile",
+    }
+    registered = provider.request("POST", provider_path(endpoint), metadata, {"content-type": "application/json"})
+    require_status(registered, 201, "production DCR registration")
+    registration = json.loads(str(registered["body"]))
+    client_id = registration.get("client_id")
+    if not isinstance(client_id, str) or not client_id:
+        raise AssertionError("DCR registration omitted the created client identity")
+    for name in ("client_secret", "registration_access_token"):
+        register_secret(registration.get(name))
+
+    state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
+    verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    register_secret(verifier)
+    authorize = provider.request("GET", "/lockspire/authorize?" + urlencode({
+        "response_type": "code", "client_id": client_id, "redirect_uri": redirect_uri,
+        "scope": "openid profile", "state": state, "nonce": nonce,
+        "code_challenge": s256(verifier), "code_challenge_method": "S256",
+    }))
+    require_status(authorize, 302, "DCR authorization request")
+    login = provider.request("GET", redirect(authorize, "DCR authorization request"))
+    require_status(login, 200, "DCR host login")
+    login_redirect = redirect(provider.request("POST", "/login", {
+        "_csrf_token": csrf(login["body"]),
+        "return_to": re.search(r'name="return_to" value="([^"]*)"', str(login["body"])).group(1),
+        "interaction_id": re.search(r'name="interaction_id" value="([^"]*)"', str(login["body"])).group(1),
+        "account_id": "clean-room-user",
+    }), "DCR host login")
+    interaction_id = urlparse(login_redirect).path.rsplit("/", 1)[-1]
+    interaction = provider.request("GET", login_redirect)
+    require_status(interaction, 302, "DCR authorization interaction")
+    consent_location = redirect(interaction, "DCR authorization interaction")
+    consent = provider.request("GET", consent_location)
+    require_status(consent, 200, "DCR authorization consent")
+    approval = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
+        "decision": "approve", "remember": "false",
+    })
+    require_status(approval, 302, "DCR authorization approval")
+    callback = urlparse(redirect(approval, "DCR authorization approval"))
+    values = parse_qs(callback.query)
+    code = values.get("code", [None])[0]
+    if callback.scheme + "://" + callback.netloc != CLIENT_ORIGIN or values.get("state") != [state] or not isinstance(code, str):
+        raise AssertionError("DCR authorization callback did not contain the expected code and state")
+    register_secret(code)
+    exchanged = provider.request("POST", provider_path(str(discovery["token_endpoint"])), {
+        "grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri,
+        "code_verifier": verifier, "client_id": client_id,
+    })
+    require_status(exchanged, 200, "DCR S256 code redemption")
+    issued = decoded_secret_payload(exchanged["body"])
+    access_token = issued.get("access_token")
+    if not isinstance(access_token, str) or not access_token:
+        raise AssertionError("DCR code redemption did not issue an access token")
+    return {
+        "id": "fresh.register_use",
+        "leg": "fresh",
+        "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
+        "outcome": "passed",
+        "observations": {"registration_http_status": 201, "token_http_status": 200, "access_token_issued": True, "pkce_method": "S256"},
+        "event_counts": {"registration_succeeded": 1, "authorization_code_redeemed": 1},
+        "audit_counts": {},
+        "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+    }
 
 
 def lifecycle_code(
@@ -877,7 +966,9 @@ def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, 
 def main(argv: list[str]) -> int:
     global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop"))
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime"))
+    parser.add_argument("--receipt", type=Path)
+    parser.add_argument("--check-lifetime-receipt", type=Path)
     parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
     parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
@@ -887,6 +978,14 @@ def main(argv: list[str]) -> int:
     sources.add_argument("--hex-version")
     parser.add_argument("--package-sha256")
     args = parser.parse_args(argv)
+    if args.check_lifetime_receipt:
+        try:
+            validate_lifetime_receipt(args.check_lifetime_receipt, expected_scenarios=("fresh.register_use",))
+        except (AssertionError, OSError, json.JSONDecodeError) as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        print("lifetime receipt verified")
+        return 0
     if args.verify_concurrent_origins:
         return verify_concurrent_real_journeys()
     if args.verify_signal_cleanup:
@@ -895,6 +994,10 @@ def main(argv: list[str]) -> int:
         return verify_run_root_ownership()
     if not args.only:
         parser.error("at least one --only journey group is required")
+    if "dcr_lifetime" in args.only and (args.only != ["dcr_lifetime"] or args.receipt is None):
+        parser.error("dcr_lifetime requires --receipt and must run as its only journey group")
+    if args.receipt is not None and args.only != ["dcr_lifetime"]:
+        parser.error("--receipt is only supported with --only dcr_lifetime")
     signal.signal(signal.SIGINT, interruption_handler)
     signal.signal(signal.SIGTERM, interruption_handler)
     redactor = Redactor(SentinelSet.for_run())
@@ -906,6 +1009,11 @@ def main(argv: list[str]) -> int:
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
+    dcr_scenario: dict[str, object] | None = None
+    result_code = 0
+    cleanup = {"processes_stopped": False, "databases_removed": False, "temporary_roots_removed": False}
+    candidate: dict[str, str] | None = None
+    source_revision = ""
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
         run_root = Path(temporary)
         run_root_owner = claim_run_root(run_root)
@@ -930,9 +1038,26 @@ def main(argv: list[str]) -> int:
             assert_redaction_guard(redactor)
             selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
+            source_revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
+            generated_archive = run_root / f"lockspire-{package_identity.version}.tar"
+            run_child_command_output(Path(__file__).resolve().parents[2], os.environ.copy(), "hex.build", "--output", str(generated_archive))
+            tree_hash = hashlib.sha256()
+            for packaged_file in sorted(path for path in package_root.rglob("*") if path.is_file()):
+                relative = packaged_file.relative_to(package_root).as_posix().encode()
+                tree_hash.update(len(relative).to_bytes(4, "big"))
+                tree_hash.update(relative)
+                content_hash = hashlib.sha256(packaged_file.read_bytes()).digest()
+                tree_hash.update(content_hash)
+            candidate = {
+                "kind": package_identity.kind,
+                "version": package_identity.version,
+                "archive_sha256": hashlib.sha256(generated_archive.read_bytes()).hexdigest(),
+                "tree_sha256": tree_hash.hexdigest(),
+            }
             print(
-                "package provenance verified "
-                f"({package_identity.kind} lockspire-{package_identity.version} sha256:{package_identity.sha256})"
+                "package candidate built "
+                f"({package_identity.kind} lockspire-{package_identity.version} "
+                f"archive_sha256:{candidate['archive_sha256']} tree_sha256:{candidate['tree_sha256']})"
             )
             handoff = run_root / "handoff"
             provider_child = prepare_provider(
@@ -960,16 +1085,31 @@ def main(argv: list[str]) -> int:
             assert_bare_mix_tasks(provider_child, provider_environment, redactor)
             register_handoff_secrets(handoff)
             assert_redaction_guard(redactor, (handoff / "bearer-client.secret").read_text().strip())
-            client_child, client_environment = prepare_client(
-                run_root, client_database, handoff, client_port, package_root
-            )
+            if "dcr_lifetime" in args.only:
+                setup = run_child_command_output(
+                    provider_child,
+                    provider_environment,
+                    "run",
+                    "-e",
+                    '{:ok, policy} = Lockspire.Admin.ServerPolicy.put_dcr_policy(%{registration_policy: :open, dcr_allowed_scopes: ["profile"], dcr_allowed_grant_types: ["authorization_code"], dcr_allowed_response_types: ["code"], dcr_allowed_redirect_uri_schemes: ["http"], dcr_allowed_redirect_uri_hosts: ["127.0.0.1"], dcr_allowed_token_endpoint_auth_methods: ["none"]}); IO.puts("DCR_POLICY_READY " <> Enum.join(policy.dcr_allowed_grant_types, ","))',
+                )
+                if "DCR_POLICY_READY authorization_code" not in setup:
+                    raise AssertionError("clean-room DCR policy setup did not complete")
+            if "dcr_lifetime" not in args.only:
+                client_child, client_environment = prepare_client(
+                    run_root, client_database, handoff, client_port, package_root
+                )
             provider_process = start_process(provider_child, provider_environment, run_root / "provider.log")
-            client_process = start_process(client_child, client_environment, run_root / "client.log")
+            if client_child is not None and client_environment is not None:
+                client_process = start_process(client_child, client_environment, run_root / "client.log")
             wait_ready(PROVIDER_ORIGIN)
-            wait_ready(CLIENT_ORIGIN)
+            if client_process is not None:
+                wait_ready(CLIENT_ORIGIN)
             print("readiness complete")
             if args.hold_after_ready:
                 time.sleep(args.hold_after_ready)
+            if "dcr_lifetime" in args.only:
+                dcr_scenario = run_dcr_lifetime(Browser(PROVIDER_ORIGIN), provider_child, provider_environment, handoff)
             if "happy_path" in args.only:
                 run_happy()
             if "boundary" in args.only:
@@ -988,16 +1128,16 @@ def main(argv: list[str]) -> int:
                     track_provider_process,
                 )
             scan_evidence(run_root, redactor)
-            return 0
         except JourneyInterrupted:
             print("clean-room journey interrupted", file=sys.stderr)
-            return 130
+            result_code = 130
         except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(redactor.text(error), file=sys.stderr)
-            return 1
+            result_code = 1
         finally:
             stop_process(client_process)
             stop_process(provider_process)
+            cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
             try:
                 assert_owned_run_root(run_root, run_root_owner)
             except AssertionError as error:
@@ -1007,11 +1147,30 @@ def main(argv: list[str]) -> int:
                     drop_child_database(client_child, client_environment, "client")
                 if provider_child is not None and provider_environment is not None:
                     drop_child_database(provider_child, provider_environment, "provider")
+                cleanup["databases_removed"] = True
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
             print("cleanup complete")
+    cleanup["temporary_roots_removed"] = not run_root.exists()
+    if args.receipt is not None:
+        if dcr_scenario is None and result_code != 0:
+            dcr_scenario = {
+                "id": "fresh.register_use", "leg": "fresh",
+                "contract_case_ids": ["C-POL-01", "C-APP-06", "C-PROOF-01"],
+                "outcome": "failed", "observations": {}, "event_counts": {}, "audit_counts": {},
+                "counts": {"executed": 1, "passed": 0, "failed": 1, "skipped": 0},
+            }
+        if dcr_scenario is not None and candidate is not None:
+            write_lifetime_receipt(
+                args.receipt,
+                source_revision=source_revision,
+                candidate=candidate,
+                scenarios=[dcr_scenario],
+                cleanup=cleanup,
+            )
+    return result_code
 
 
 if __name__ == "__main__":
