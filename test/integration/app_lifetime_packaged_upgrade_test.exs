@@ -2,6 +2,7 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
   use ExUnit.Case, async: false
 
   @moduletag :integration
+  @moduletag :lifetime_package
   @moduletag timeout: 900_000
 
   Code.require_file("../clean_room/lifetime_upgrade_scenarios.exs", __DIR__)
@@ -24,7 +25,7 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
       Task.async(fn ->
         System.cmd(
           "python3",
-          [@runner, "--scenario", "all", "--receipt", receipt_path],
+          [@runner, "--scenario", "all", "--receipt", receipt_path] ++ package_arguments(),
           stderr_to_stdout: true
         )
       end)
@@ -72,6 +73,7 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
 
       assert scenario["old_read_write_count"] == 5
       assert scenario["old_writer_processes_stopped_before_v1"]
+
       assert scenario["legacy_http_use_observation"] ==
                Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_http_observation()
 
@@ -79,8 +81,15 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
                "LEGACY_HTTP_AUTH=1;LEGACY_V0_UNLIMITED=1;LEGACY_SECRET_PAST=1"
 
       promotion = scenario["legacy_promotion_observation"]
-      assert Map.take(promotion, Map.keys(Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_promotion_statuses())) ==
+
+      assert Map.take(
+               promotion,
+               Map.keys(
+                 Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_promotion_statuses()
+               )
+             ) ==
                Lockspire.CleanRoom.LifetimeUpgradeScenarios.required_legacy_promotion_statuses()
+
       assert promotion["wire_registration_access_token_expires_at"] > System.os_time(:second)
 
       assert scenario["legacy_promotion_process"]["output"] ==
@@ -90,6 +99,31 @@ defmodule Lockspire.Integration.AppLifetimePackagedUpgradeTest do
       assert scenario["historical_migration_checksums_preserved"]
       assert scenario["database_cleanup_process"]["exit_code"] == 0
       assert scenario["old_binary_after_v1_traffic"] == false
+    end
+
+    persist_lifetime_receipt(receipt_path, "legacy")
+  end
+
+  defp package_arguments do
+    case {System.get_env("LOCKSPIRE_LIFETIME_PACKAGE_TAR"),
+          System.get_env("LOCKSPIRE_LIFETIME_PACKAGE_SHA256"),
+          System.get_env("LOCKSPIRE_LIFETIME_SOURCE_REVISION")} do
+      {tar, sha, revision} when is_binary(tar) and is_binary(sha) and is_binary(revision) ->
+        ["--package-tar", tar, "--package-sha256", sha, "--source-revision", revision]
+
+      _ ->
+        []
+    end
+  end
+
+  defp persist_lifetime_receipt(source, name) do
+    case System.get_env("LOCKSPIRE_LIFETIME_RECEIPT_DIR") do
+      nil ->
+        :ok
+
+      directory ->
+        File.mkdir_p!(directory)
+        File.cp!(source, Path.join(directory, "#{name}.json"))
     end
   end
 end

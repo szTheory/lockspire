@@ -772,7 +772,7 @@ def validate_receipt(receipt: dict[str, object], expected_prefixes: set[str] | N
         raise PackageInputError("prefix scenarios do not share one candidate identity")
     try:
         validate_candidate_identity_agreement(
-            [{key: row["candidate_package"][key] for key in ("kind", "version", "archive_sha256", "tree_sha256")} for row in rows]
+            [{key: row["candidate_package"][key] for key in ("kind", "version", "archive_sha256", "tree_sha256", "source_revision")} for row in rows]
         )
     except (AssertionError, KeyError, TypeError):
         raise PackageInputError("prefix scenarios do not share one candidate identity") from None

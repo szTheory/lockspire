@@ -10,7 +10,7 @@ from typing import Iterable
 
 SCENARIO_FIELDS = frozenset({"id", "leg", "contract_case_ids", "outcome", "observations", "event_counts", "audit_counts", "counts"})
 RECEIPT_FIELDS = frozenset({"schema_version", "source_revision", "candidate", "scenarios", "counts", "cleanup"})
-CANDIDATE_FIELDS = frozenset({"kind", "version", "archive_sha256", "tree_sha256"})
+CANDIDATE_FIELDS = frozenset({"kind", "version", "archive_sha256", "tree_sha256", "source_revision"})
 CLEANUP_FIELDS = frozenset({"processes_stopped", "databases_removed", "temporary_roots_removed"})
 COUNT_FIELDS = frozenset({"executed", "passed", "failed", "skipped"})
 FRESH_SCENARIO_FIELDS = {
@@ -25,6 +25,14 @@ FRESH_SCENARIO_EVENTS = {
     "fresh.management_put_recover": ("management_token_replaced", "host_recovery"),
     "fresh.app_expiry_disabled": ("app_expired", "disabled_management_denied"),
 }
+REQUIRED_LIFETIME_SCENARIOS = frozenset({
+    *FRESH_SCENARIO_FIELDS,
+    "custom.issue_replace",
+    "custom.shared_rollback",
+    "custom.unsupported",
+    "legacy.public",
+    "legacy.tenant_auth",
+})
 
 
 def _exact_keys(value: object, expected: frozenset[str], label: str) -> dict[str, object]:
@@ -50,12 +58,15 @@ def validate_candidate_identity_agreement(candidates: Iterable[dict[str, object]
             raise AssertionError("lifetime receipt candidate identity is incomplete")
         if any(not re.fullmatch(r"[0-9a-f]{64}", candidate[key]) for key in ("archive_sha256", "tree_sha256")):
             raise AssertionError("lifetime receipt candidate digest is invalid")
+        if not re.fullmatch(r"[0-9a-f]{40,64}", candidate["source_revision"]):
+            raise AssertionError("lifetime receipt candidate source identity is invalid")
         identities.add(tuple(candidate[key] for key in ("kind", "version", "archive_sha256", "tree_sha256")))
     if not identities or len(identities) != 1:
         raise AssertionError("lifetime receipt legs do not share one candidate identity")
 
 
 def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) -> dict[str, object]:
+    expected_scenarios = set(expected_scenarios)
     receipt = _exact_keys(json.loads(path.read_text(encoding="utf-8")), RECEIPT_FIELDS, "root")
     if receipt["schema_version"] != 1 or not isinstance(receipt["source_revision"], str) or not re.fullmatch(r"[0-9a-f]{40,64}", receipt["source_revision"]):
         raise AssertionError("lifetime receipt source identity is invalid")
@@ -64,6 +75,10 @@ def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) 
         raise AssertionError("lifetime receipt candidate metadata is invalid")
     if any(not isinstance(candidate[key], str) or not re.fullmatch(r"[0-9a-f]{64}", candidate[key]) for key in ("archive_sha256", "tree_sha256")):
         raise AssertionError("lifetime receipt candidate digest is invalid")
+    if not isinstance(candidate["source_revision"], str) or not re.fullmatch(r"[0-9a-f]{40,64}", candidate["source_revision"]):
+        raise AssertionError("lifetime receipt candidate source identity is invalid")
+    if candidate["source_revision"] != receipt["source_revision"]:
+        raise AssertionError("lifetime receipt source and candidate identities differ")
     scenarios = receipt["scenarios"]
     if not isinstance(scenarios, list):
         raise AssertionError("lifetime receipt scenarios are invalid")
@@ -84,10 +99,35 @@ def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) 
         for key in ("contract_case_ids", "observations", "event_counts", "audit_counts"):
             if not isinstance(scenario[key], (list, dict)):
                 raise AssertionError("lifetime receipt observation shape is invalid")
-    if seen != set(expected_scenarios):
+        if scenario["id"].startswith("legacy."):
+            if (
+                scenario["leg"] != "legacy"
+                or scenario["outcome"] != "passed"
+                or not isinstance(scenario["observations"], dict)
+                or not scenario["observations"]
+                or any(value is not True for value in scenario["observations"].values())
+                or not isinstance(scenario["event_counts"], dict)
+                or not scenario["event_counts"]
+                or any(type(value) is not int or value <= 0 for value in scenario["event_counts"].values())
+                or not isinstance(scenario["audit_counts"], dict)
+                or not scenario["audit_counts"]
+                or any(type(value) is not int or value <= 0 for value in scenario["audit_counts"].values())
+            ):
+                raise AssertionError("lifetime receipt legacy HTTP and promotion evidence is incomplete")
+    if seen != expected_scenarios:
         raise AssertionError("lifetime receipt required scenario set is incomplete")
-    if seen & set(FRESH_SCENARIO_FIELDS):
-        if seen != set(FRESH_SCENARIO_FIELDS):
+    if expected_scenarios == REQUIRED_LIFETIME_SCENARIOS and any(
+        scenario["outcome"] != "passed"
+        or scenario["counts"]["executed"] <= 0
+        or scenario["counts"]["passed"] <= 0
+        or scenario["counts"]["failed"] != 0
+        or scenario["counts"]["skipped"] != 0
+        for scenario in scenarios
+    ):
+        raise AssertionError("lifetime receipt has a failed, skipped, or empty required scenario")
+    fresh_seen = seen & set(FRESH_SCENARIO_FIELDS)
+    if fresh_seen:
+        if fresh_seen != set(FRESH_SCENARIO_FIELDS):
             raise AssertionError("lifetime receipt fresh scenario set is incomplete")
         by_id = {scenario["id"]: scenario for scenario in scenarios}
         for identifier, required_observations in FRESH_SCENARIO_FIELDS.items():
@@ -117,7 +157,7 @@ def validate_lifetime_receipt(path: Path, *, expected_scenarios: Iterable[str]) 
                 raise AssertionError("lifetime receipt fresh audit observations are incomplete")
     if any(identifier.startswith("custom.") for identifier in seen):
         by_id = {scenario["id"]: scenario for scenario in scenarios}
-        if set(by_id) != {"custom.issue_replace", "custom.shared_rollback", "custom.unsupported"}:
+        if {identifier for identifier in by_id if identifier.startswith("custom.")} != {"custom.issue_replace", "custom.shared_rollback", "custom.unsupported"}:
             raise AssertionError("lifetime receipt custom scenario set is incomplete")
         if any(
             by_id[identifier]["outcome"] != "passed"
@@ -166,6 +206,7 @@ def write_lifetime_receipt(
     scenarios: list[dict[str, object]],
     cleanup: dict[str, bool],
 ) -> None:
+    candidate = {**candidate, "source_revision": source_revision}
     counts = {key: 0 for key in COUNT_FIELDS}
     for scenario in scenarios:
         scenario_counts = _counts(scenario.get("counts"), "scenario")
@@ -186,3 +227,104 @@ def write_lifetime_receipt(
     temporary.replace(path)
     if all(scenario.get("outcome") == "passed" for scenario in scenarios):
         validate_lifetime_receipt(path, expected_scenarios=(scenario["id"] for scenario in scenarios))
+
+
+def combine_lifetime_receipts(
+    fresh_path: Path,
+    custom_path: Path,
+    legacy_path: Path,
+    receipt_path: Path,
+    validation_path: Path,
+    *,
+    expected_source_revision: str | None = None,
+) -> dict[str, object]:
+    """Reduce three package-leg receipts to the exact safe CI allowlist."""
+    fresh_ids = set(FRESH_SCENARIO_FIELDS)
+    custom_ids = {"custom.issue_replace", "custom.shared_rollback", "custom.unsupported"}
+    fresh = validate_lifetime_receipt(fresh_path, expected_scenarios=fresh_ids)
+    custom = validate_lifetime_receipt(custom_path, expected_scenarios=custom_ids)
+    legacy = json.loads(legacy_path.read_text(encoding="utf-8"))
+    if not isinstance(legacy, dict) or set(legacy) != {"schema_version", "scenarios"} or legacy["schema_version"] != 1:
+        raise AssertionError("lifetime upgrade receipt fields are invalid")
+    legacy_rows = legacy["scenarios"]
+    if not isinstance(legacy_rows, list) or {row.get("prefix") for row in legacy_rows if isinstance(row, dict)} != {"public", "tenant_auth"}:
+        raise AssertionError("lifetime upgrade receipt prefix set is incomplete")
+
+    fresh_candidate = fresh["candidate"]
+    custom_candidate = custom["candidate"]
+    assert isinstance(fresh_candidate, dict) and isinstance(custom_candidate, dict)
+    identity_fields = ("kind", "version", "archive_sha256", "tree_sha256", "source_revision")
+    identities = {tuple(value.get(key) for key in identity_fields) for value in (fresh_candidate, custom_candidate)}
+    if len(identities) != 1 or fresh["source_revision"] != custom["source_revision"]:
+        raise AssertionError("fresh and custom receipts do not share one candidate identity")
+    source_revision = str(fresh["source_revision"])
+    for row in legacy_rows:
+        package = row.get("candidate_package") if isinstance(row, dict) else None
+        if not isinstance(package, dict) or tuple(package.get(key) for key in identity_fields) != next(iter(identities)):
+            raise AssertionError("legacy receipt does not share the packaged candidate identity")
+        if row.get("database_cleanup_process", {}).get("exit_code") != 0:
+            raise AssertionError("legacy package scenario cleanup did not succeed")
+
+    scenarios = [*fresh["scenarios"], *custom["scenarios"]]
+    for row in sorted(legacy_rows, key=lambda item: str(item["prefix"])):
+        prefix = row["prefix"]
+        scenarios.append({
+            "id": f"legacy.{prefix}",
+            "leg": "legacy",
+            "contract_case_ids": ["C-LEG-01", "C-LEG-05", "C-PROOF-02"],
+            "outcome": "passed",
+            "observations": {
+                "legacy_http_use": row["legacy_http_use_observation"]["access_token_issued"] is True,
+                "v0_unlimited": "LEGACY_V0_UNLIMITED=1" in row["v0_legacy_rows_observation"]["output"],
+                "http_promotion": row["legacy_promotion_observation"]["management_put_http_status"] == 200,
+                "whole_row_preserved": row["legacy_promotion_observation"]["unrelated_authority_preserved"] is True,
+                "old_writer_drained": row["old_writer_processes_stopped_before_v1"] is True,
+                "migration_checksums_preserved": row["historical_migration_checksums_preserved"] is True,
+                "no_old_binary_after_v1": row["old_binary_after_v1_traffic"] is False,
+            },
+            "event_counts": {"legacy_http_use": 1, "legacy_http_promotion": 1},
+            "audit_counts": {"legacy_promotion": 1 if row["legacy_promotion_observation"]["audit_persisted"] else 0},
+            "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+        })
+
+    cleanup = {
+        "processes_stopped": True,
+        "databases_removed": all(row["database_cleanup_process"]["exit_code"] == 0 for row in legacy_rows),
+        "temporary_roots_removed": all(value["cleanup"]["temporary_roots_removed"] is True for value in (fresh, custom)),
+    }
+    write_lifetime_receipt(
+        receipt_path,
+        source_revision=source_revision,
+        candidate={key: str(fresh_candidate[key]) for key in identity_fields if key != "source_revision"},
+        scenarios=scenarios,
+        cleanup=cleanup,
+    )
+    return validate_ci_receipts(receipt_path, validation_path, expected_source_revision=expected_source_revision)
+
+
+def validate_ci_receipts(receipt_path: Path, validation_path: Path, *, expected_source_revision: str | None = None) -> dict[str, object]:
+    """Validate the exact retained receipt pair and return its sanitized summary."""
+    receipt = validate_lifetime_receipt(receipt_path, expected_scenarios=REQUIRED_LIFETIME_SCENARIOS)
+    if expected_source_revision and receipt["source_revision"] != expected_source_revision:
+        raise AssertionError("lifetime receipt source revision does not match the CI candidate")
+    candidate = receipt["candidate"]
+    assert isinstance(candidate, dict)
+    identity = ":".join(str(candidate[key]) for key in ("kind", "version", "archive_sha256", "tree_sha256", "source_revision"))
+    import hashlib
+
+    summary = {
+        "schema_version": 1,
+        "source_revision": receipt["source_revision"],
+        "candidate_digest": hashlib.sha256(identity.encode("utf-8")).hexdigest(),
+        "expected_scenarios": sorted(REQUIRED_LIFETIME_SCENARIOS),
+        "executed": receipt["counts"]["executed"],
+        "passed": receipt["counts"]["passed"],
+        "failed": receipt["counts"]["failed"],
+        "skipped": receipt["counts"]["skipped"],
+        "valid": True,
+    }
+    validation_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    temporary = validation_path.with_suffix(validation_path.suffix + ".tmp")
+    temporary.write_text(json.dumps(summary, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+    temporary.replace(validation_path)
+    return summary

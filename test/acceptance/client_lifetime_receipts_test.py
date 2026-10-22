@@ -55,6 +55,14 @@ class LifetimeReceiptsTest(unittest.TestCase):
         receipt["candidate"]["source_revision"] = "d" * 40
         self.rejected(receipt)
 
+    def test_candidate_leg_identity_rejects_mismatched_package_trees(self) -> None:
+        from lifetime_receipts import validate_candidate_identity_agreement
+
+        first = {"kind": "tar", "version": "1.7.0", "archive_sha256": "b" * 64, "tree_sha256": "c" * 64, "source_revision": "a" * 40}
+        second = {**first, "tree_sha256": "d" * 64}
+        with self.assertRaises(AssertionError):
+            validate_candidate_identity_agreement([first, second])
+
     def test_missing_cleanup_observation_is_rejected(self) -> None:
         receipt = self.receipt()
         receipt["cleanup"]["temporary_roots_removed"] = False
@@ -82,14 +90,38 @@ class LifetimeReceiptsTest(unittest.TestCase):
         scenarios = []
         for identifier in REQUIRED:
             leg = identifier.split(".", 1)[0]
+            observations: dict[str, object] = {"proof_observed": True}
+            events = {"observed": 1}
+            audits = {"observed": 1}
+            if identifier == "fresh.register_use":
+                observations.update({"registration_http_status": 201, "token_http_status": 200, "access_token_issued": True, "pkce_method": "S256"})
+                events = {"registration_succeeded": 1, "authorization_code_redeemed": 1}
+            elif identifier == "fresh.secret_expiry_rotate":
+                observations.update({"expiry_rejected": True, "rotation_restored_auth": True, "unrelated_deadlines_preserved": True})
+                events = {"secret_expired": 1, "secret_rotated": 1}
+            elif identifier == "fresh.management_put_recover":
+                observations.update({"old_credential_rejected": True, "new_credential_accepted": True, "host_authorized_recovery": True, "unrelated_deadlines_preserved": True})
+                events = {"management_token_replaced": 1, "host_recovery": 1}
+            elif identifier == "fresh.app_expiry_disabled":
+                observations.update({"expired_get_allowed": True, "expired_delete_allowed": True, "expired_put_rejected": True, "disabled_management_denied": True, "state_retained": True})
+                events = {"app_expired": 1, "disabled_management_denied": 1}
+            elif identifier == "custom.issue_replace":
+                observations.update({"callbacks_executed": 6, "authority_shared": True, "management_credential_replaced": True, "example_executed": True})
+                events, audits = {}, {}
+            elif identifier == "custom.shared_rollback":
+                observations.update({"independent_observer": True, "rollback_preserved": True, "replacement_observed": True, "issuance_observed": True})
+                events, audits = {}, {}
+            elif identifier == "custom.unsupported":
+                observations.update({"unsupported_rejected": True, "example_executed": True})
+                events, audits = {}, {}
             scenarios.append({
                 "id": identifier,
                 "leg": leg,
                 "contract_case_ids": ["C-APP-06"],
                 "outcome": "passed",
-                "observations": {"proof_observed": True},
-                "event_counts": {"observed": 1},
-                "audit_counts": {"observed": 1},
+                "observations": observations,
+                "event_counts": events,
+                "audit_counts": audits,
                 "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
             })
         return {

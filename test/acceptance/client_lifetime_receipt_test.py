@@ -158,6 +158,7 @@ class LifetimeReceiptTest(unittest.TestCase):
             "candidate": {
                 "kind": "tar", "version": "1.7.0",
                 "archive_sha256": "b" * 64, "tree_sha256": "c" * 64,
+            "source_revision": "a" * 40,
             },
             "scenarios": [issue, rollback, unsupported],
             "counts": {"executed": 5, "passed": 5, "failed": 0, "skipped": 0},

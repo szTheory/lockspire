@@ -1420,18 +1420,13 @@ def main(argv: list[str]) -> int:
             source_revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
             generated_archive = run_root / f"lockspire-{package_identity.version}.tar"
             run_child_command_output(Path(__file__).resolve().parents[2], os.environ.copy(), "hex.build", "--output", str(generated_archive))
-            tree_hash = hashlib.sha256()
-            for packaged_file in sorted(path for path in package_root.rglob("*") if path.is_file()):
-                relative = packaged_file.relative_to(package_root).as_posix().encode()
-                tree_hash.update(len(relative).to_bytes(4, "big"))
-                tree_hash.update(relative)
-                content_hash = hashlib.sha256(packaged_file.read_bytes()).digest()
-                tree_hash.update(content_hash)
+            if package_identity.tree_sha256 is None:
+                raise PackageInputError("packaged candidate tree identity is unavailable")
             candidate = {
                 "kind": package_identity.kind,
                 "version": package_identity.version,
-                "archive_sha256": hashlib.sha256(generated_archive.read_bytes()).hexdigest(),
-                "tree_sha256": tree_hash.hexdigest(),
+                "archive_sha256": package_identity.archive_sha256 or hashlib.sha256(generated_archive.read_bytes()).hexdigest(),
+                "tree_sha256": package_identity.tree_sha256,
             }
             print(
                 "package candidate built "
