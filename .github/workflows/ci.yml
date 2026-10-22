@@ -271,6 +271,9 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
+    # The canonical local matrix measured 649s across broad integration (346s),
+    # packaged lifetimes (253s), receipt validation (0s), and clean-room (50s).
+    # Thirty minutes leaves ten minutes for setup plus bounded runtime headroom.
     timeout-minutes: 30
 
     services:
@@ -344,6 +347,74 @@ jobs:
       - name: Run integration suite including onboarding and OIDC E2E proof
         run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json .artifacts/ci/coverage/integration "${{ github.sha }}"
 
+      - name: Validate client lifetime receipt
+        id: validate-client-lifetime-receipt
+        if: always()
+        env:
+          EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+        run: |
+          test -s .artifacts/ci/client-lifetimes/receipt.json
+          test -s .artifacts/ci/client-lifetimes/validation.json
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          receipt = json.loads(Path(".artifacts/ci/client-lifetimes/receipt.json").read_text())
+          validation = json.loads(Path(".artifacts/ci/client-lifetimes/validation.json").read_text())
+          expected = os.environ["EXPECTED_SOURCE_REVISION"]
+          assert set(receipt) == {"schema_version", "source_revision", "candidate", "scenarios", "counts", "cleanup"}
+          assert set(receipt["candidate"]) == {
+              "kind", "version", "archive_sha256", "tree_sha256", "source_revision"
+          }
+          assert receipt["candidate"]["source_revision"] == expected
+          identity = ":".join(
+              str(receipt["candidate"][key])
+              for key in ("kind", "version", "archive_sha256", "tree_sha256", "source_revision")
+          )
+          candidate_digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()
+          scenarios = {
+              "fresh.register_use",
+              "fresh.secret_expiry_rotate",
+              "fresh.management_put_recover",
+              "fresh.app_expiry_disabled",
+              "custom.issue_replace",
+              "custom.shared_rollback",
+              "custom.unsupported",
+              "legacy.public",
+              "legacy.tenant_auth",
+          }
+          assert set(validation) == {
+              "schema_version", "source_revision", "candidate_digest", "expected_scenarios",
+              "executed", "passed", "failed", "skipped", "valid"
+          }
+          assert validation["valid"] is True
+          assert validation["source_revision"] == expected
+          assert validation["candidate_digest"] == candidate_digest
+          assert set(validation["expected_scenarios"]) == scenarios
+          assert validation["executed"] == validation["passed"] > 0
+          assert validation["failed"] == validation["skipped"] == 0
+          assert receipt["source_revision"] == expected
+          assert all(set(scenario) == {
+              "id", "leg", "contract_case_ids", "outcome", "observations", "event_counts", "audit_counts", "counts"
+          } for scenario in receipt["scenarios"])
+          assert {scenario["id"] for scenario in receipt["scenarios"]} == scenarios
+          assert receipt["counts"]["executed"] == receipt["counts"]["passed"] > 0
+          assert receipt["counts"]["failed"] == receipt["counts"]["skipped"] == 0
+          PY
+
+      - name: Upload SHA-bound client lifetime receipts
+        if: always() && steps.validate-client-lifetime-receipt.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-client-lifetimes-${{ github.sha }}
+          path: |
+            .artifacts/ci/client-lifetimes/receipt.json
+            .artifacts/ci/client-lifetimes/validation.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload SHA-bound integration coverage evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -353,14 +424,6 @@ jobs:
             .artifacts/ci/coverage/integration/integration.json
           if-no-files-found: error
           retention-days: 7
-
-      - name: Upload integration test timing
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: integration-test-timings
-          path: .artifacts/ci/integration-timings.json
-          retention-days: 14
 
   coverage-aggregate:
     name: Complete Coverage Evidence

@@ -131,7 +131,7 @@ case "$mode" in
     package_version=$(python3 -c 'import re; print(re.search(r"version: \"([^\"]+)\"", open("mix.exs").read()).group(1))')
     candidate_tar="$candidate_dir/lockspire-${package_version}.tar"
     expected_source=${source_sha:-$(git rev-parse HEAD)}
-    (umask 077; MIX_ENV=test mix hex.build --output "$candidate_tar")
+    (umask 077; env MIX_ENV=test mix hex.build --output "$candidate_tar")
     if command -v sha256sum >/dev/null 2>&1; then
       candidate_sha=$(sha256sum "$candidate_tar" | awk '{print $1}')
     else

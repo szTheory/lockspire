@@ -24,8 +24,6 @@ defmodule Lockspire.CiTestMatrixContractTest do
     refute ci =~ "Run Phase 3 protocol gate"
     assert ci =~ "scripts/ci/run_test_matrix.sh --fast"
     assert ci =~ "scripts/ci/run_test_matrix.sh --integration"
-    assert ci =~ "--exclude lifetime_package"
-    assert ci =~ "lifetime_package"
     assert length(Regex.scan(~r/CLEAN_ROOM_DB_USER: lockspire/, ci)) == 2
     assert runner =~ "mix test.phase3"
     assert runner =~ "exit_status"
@@ -35,6 +33,8 @@ defmodule Lockspire.CiTestMatrixContractTest do
     assert runner =~ "run_partition lifetimes"
     assert runner =~ "--only lifetime_package"
     assert runner =~ "run_partition lifetime_receipts"
+    assert runner =~ "--expected-source '$expected_source'"
+    assert runner =~ "--exclude lifetime_package"
     assert runner =~ "return 0"
     assert runner =~ ~s(exit "$overall_status")
 
