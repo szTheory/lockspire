@@ -105,11 +105,13 @@ defmodule Lockspire.Integration.ClientLifetimeInteractionsTest do
            ) == :eq
   end
 
-  test "C-APP-14 C-APP-15 C-APP-16: expired secret does not mask app equality or enablement state" do
+  test "C-APP-14 C-APP-15 C-APP-16 C-MGMT-03 C-MGMT-04 C-MGMT-09: independent app and management gates" do
     server_policy = policy(60, 10, 40)
     assert {:ok, _} = Repository.put_server_policy(server_policy)
     registered = register_at(server_policy)
-    original = persist_deadlines!(registered.client, @app_deadline, @secret_deadline, @management_deadline)
+
+    original =
+      persist_deadlines!(registered.client, @app_deadline, @secret_deadline, @management_deadline)
 
     assert {:ok, _new_token, recovered} =
              RegistrationManagement.rotate_registration_access_token(original,
@@ -144,6 +146,7 @@ defmodule Lockspire.Integration.ClientLifetimeInteractionsTest do
     refute deleted.active
 
     disabled_case = register_at(server_policy)
+
     disabled =
       persist_deadlines!(
         disabled_case.client,
