@@ -125,8 +125,8 @@ defmodule Lockspire.Release.Phase140ReadOnlyClosureContractTest do
          updated =
            String.replace(
              mix_file,
-             "test test/lockspire test/mix test/integration",
-             "test test/mix test/integration",
+             "test --exclude lifetime_package test/lockspire test/mix test/integration",
+             "test --exclude lifetime_package test/mix test/integration",
              global: false
            )
 
