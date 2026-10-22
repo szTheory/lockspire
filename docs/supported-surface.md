@@ -26,6 +26,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - Userinfo
 - Dynamic client registration and direct registration for the repo-proven RFC 7591/RFC 7592 slice: built-in `openid`, device-code-only clients without redirect URIs, and authorization-code clients with exact redirect validation; registration management includes create/read/update of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
 - Optional finite expiry for self-registered app management tokens, reported through Lockspire-owned Unix-second expiry extensions; management-token replacement is immediate, and expired authority is recovered only through the existing host-authorized operator workflow
+- Optional finite app and shared-secret lifetimes for self-registered apps; each deadline is snapshotted when issued, and policy changes do not rewrite existing deadlines
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration requiring exactly one inline `jwks` or HTTPS `jwks_uri`; an authorization-code or `code` response shape requires non-empty redirect URIs with the existing exact-match runtime validation
 - Bounded reactive remote-`jwks_uri` rollover support on the shipped remote-key surfaces (`private_key_jwt` direct-client authentication and JARM client-key resolution): Lockspire reads from cached remote JWKS material, forces one refresh when verification indicates stale or unknown key material, preserves the last known good cache entry when refresh fails, and fails the current authentication attempt closed
 - Confidential-client `client_secret_jwt` authentication on the same Lockspire-owned direct-client endpoints that reuse the shared verifier, limited to `HS256`, issuer-string `aud`, required `jti`, replay protection, and fail-closed `invalid_client` behavior with no silent fallback to `client_secret_basic` or `client_secret_post`
@@ -73,6 +74,20 @@ a universal RFC timeout for registration access tokens; finite expiry is an
 optional host policy with a partner lockout tradeoff. See
 [`docs/dynamic-registration.md`](dynamic-registration.md) for executable
 request and recovery examples.
+
+App expiry, shared-secret expiry, app management-token expiry, and disabled
+app state are independent. App expiry blocks new OAuth use; an expired but
+enabled app may still be read or deleted with a valid management token, while
+PUT is rejected. Expiring a shared secret blocks authentication with it but
+does not revoke already-issued tokens. Expiring the management token ends
+self-management access. Disabling an app blocks both protocol use and
+registration-management operations. App expiry has no renewal event; replacing
+a shared secret only issues a new secret deadline, and successful PUT or
+host-authorized recovery only issues a new management-token deadline. None of
+these actions clears host-owned browser sessions. Online Lockspire consumers
+check current app state, but offline JWT verification and caches may not see a
+later disablement or expiry immediately. See the [lifetime upgrade and storage
+guide](upgrading/client-lifetimes.md) for cutover, legacy, and storage limits.
 
 ### `client_secret_jwt` Direct-Client Slice
 

@@ -87,6 +87,17 @@ The host team can replace an app management token from the existing app detail t
 
 Recovery is available for self-registered apps and changes only management access. Rotating this token does not enable the app or extend app or client-secret expiry. A finite token lifetime is an optional provider policy: blank or `0` means no automatic expiry, while a positive duration applies to newly issued or replaced tokens and leaves existing tokens unchanged. A finite lifetime can lock a partner out of self-management after expiry, so the host team should be ready to rotate and securely deliver a replacement.
 
+Keep the three expiry states separate when helping a partner. An expired app
+cannot start new OAuth work, but while it remains enabled an eligible app
+management token can still read or delete its registration; PUT is blocked.
+An expired client secret cannot authenticate, but expiry alone does not revoke
+tokens already issued. An expired app management token cannot read, update, or
+delete the registration. Disabling an app blocks its protocol use and
+registration-management operations. These provider-side changes do not clear
+the host application's staff or end-user browser sessions. For the exact
+online checks and offline JWT limits, see [Supported Surface](supported-surface.md)
+and [Upgrade app lifetime storage](upgrading/client-lifetimes.md).
+
 ## Logout propagation workflow
 
 Each client has two separate logout-related settings:

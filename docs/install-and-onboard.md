@@ -6,6 +6,13 @@ If you plan to authenticate confidential clients with `private_key_jwt`, read `d
 
 If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
 
+If you configure finite DCR app, shared-secret, or app management-token
+lifetimes, follow the [lifetime storage upgrade guide](upgrading/client-lifetimes.md)
+for policy snapshots, the additive migration, custom-storage composition, and
+the old-writer cutover boundary. The guide also links the package-shipped host
+ExUnit/Ecto example; repository `test/` and `scripts/` commands are for Lockspire
+maintainers and require a source checkout.
+
 ## 1. Add Lockspire
 
 Add `:lockspire` to your dependencies and fetch deps.

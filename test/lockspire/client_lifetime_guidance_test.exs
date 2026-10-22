@@ -146,6 +146,7 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
   test "adopter storage guidance names only the executed public composition and example" do
     guide = File.read!(@guide)
     architecture = File.read!(Path.expand("../../docs/architecture.md", __DIR__))
+    onboarding = File.read!(Path.expand("../../docs/install-and-onboard.md", __DIR__))
 
     for phrase <- [
           "`:client_store` and",
@@ -171,5 +172,30 @@ defmodule Lockspire.ClientLifetimeGuidanceTest do
 
     assert architecture =~ "`:client_store` and `:transaction_store` selectors"
     assert architecture =~ "does not establish support for arbitrary datastore backends"
+    assert onboarding =~ "lifetime storage upgrade guide"
+    assert onboarding =~ "require a source checkout"
+  end
+
+  test "lifetime guidance keeps expiry, disablement, and host sessions distinct" do
+    dcr = File.read!(@dcr_guide) |> String.replace(~r/\s+/, " ")
+    operator = File.read!(@operator_guide) |> String.replace(~r/\s+/, " ")
+    support = File.read!(@supported_surface) |> String.replace(~r/\s+/, " ")
+
+    for phrase <- [
+          "`nil` or `0` means no automatic expiry",
+          "app deadline has no renewal event",
+          "Operator secret rotation issues a new shared-secret deadline",
+          "Successful PUT and authorized host recovery issue a new app management-token deadline",
+          "GET, authentication, enabling an app, and metadata-only changes do not renew them",
+          "Offline JWT verification cannot observe later app disablement or expiry"
+        ] do
+      assert dcr =~ phrase
+    end
+
+    assert operator =~ "These provider-side changes do not clear the host application's staff or end-user browser sessions."
+    assert operator =~ "An expired client secret cannot authenticate"
+    assert operator =~ "Disabling an app blocks its protocol use and registration-management operations."
+    assert support =~ "App expiry has no renewal event"
+    assert support =~ "offline JWT verification and caches may not see a"
   end
 end
