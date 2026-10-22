@@ -8,7 +8,20 @@ Lockspire is an embedded OAuth/OIDC authorization server library for Phoenix and
 
 A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-## Current Milestone: v1.45 DCR Lifetime Enforcement
+## Completed Milestone: v1.45 DCR Lifetime Enforcement (Completed 2026-10-22)
+
+**Delivered:** Phases 162–166 completed 40 plans and satisfied all 18 requirements. App, shared-secret and app-management-token lifetimes now use the selected issuance snapshots and strict boundary semantics, current-row authority, atomic rotation/recovery and compatible legacy promotion. Packaged fresh, both-prefix legacy and configured shared-PostgreSQL adapter journeys passed against candidate `f8dd7712af7f3ef906305db549c6312284339dba`. Required CI passed all seven contexts; nine package scenarios passed 49/49 checks; independent security closed 25/25 mitigations.
+
+**Closeout:** All five phase verification owners passed before archival. The audit is tech_debt with 18/18 requirements, 29/29 links and 6/6 flows. Recorded evidence limits and bookkeeping are accepted for archival; no undefined probe or unperformed visual review is relabeled as passing. See [audit](milestones/v1.45-MILESTONE-AUDIT.md), [roadmap](milestones/v1.45-ROADMAP.md) and [requirements](milestones/v1.45-REQUIREMENTS.md). Latest public package remains verified 1.6.1; this planning completion does not publish the candidate.
+
+## Next Milestone Goals
+
+No next milestone selected. Use `$gsd-new-milestone` to choose bounded scope and define fresh requirements. Existing candidates remain KEK-04, SEC-01, paged dry-run and legacy-plaintext test-fixture maintenance; retained v1.45 debt is recorded in its audit.
+
+<details>
+<summary>Original v1.45 intent (2026-10-20)</summary>
+
+### Milestone intent: v1.45 DCR Lifetime Enforcement
 
 **Goal:** Make registration and credential expiry trustworthy, with matching advertised and enforced behavior and an explicit upgrade path for existing Phoenix hosts.
 
@@ -19,6 +32,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - Prove boundary-time behavior, concurrency, redaction and complete host journeys; update operator and public guidance only after implementation is verified.
 
 **Inputs:** [DCR scope](research/dcr-lifetimes/SCOPE.md) and the completed [Phase 153 audit](milestones/v1.42-phases/153-configure-support-page-refinement/153-LIFETIME-TRUTH.md). Focused standards and compatibility research is approved. No new timeout, backfill or rejection policy is selected by initializing this milestone. Package publication is a separate verified step.
+
+</details>
 
 ## Completed Milestone: v1.44 Adopter Polish & Verified 1.6.0 (Completed 2026-10-20)
 
@@ -143,9 +158,9 @@ Before presenting a UAT checkpoint, map each criterion to current focused tests,
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). No new protocol milestone is active.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). No milestone is active; v1.45 has completed its implementation and proof, with package publication still separate.
 
-v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes remain a scoped candidate for their own protocol milestone.
+v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
 v1.43 Signing Key Encryption at Rest is complete and archived (2026-10-16). Phases 155–157 delivered all 16 requirements in 14 plans and closed CR-01: private signing keys are encrypted at rest under a rotatable host KEK, existing installs have a checked migration path, and redaction is proven across every surface. This work is now publicly shipped in 1.6.0 together with v1.44 adopter polish.
 
@@ -327,11 +342,15 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-v1.45 DCR Lifetime Enforcement: lifetime semantics and upgrade design first (Phase 162), followed by enforcement, rotation, host compatibility and executable proof. All eight outcome areas are approved and expanded into 18 [requirements](REQUIREMENTS.md). The approved [roadmap](ROADMAP.md) covers Phases 162–166. Phases 162–165 are independently complete:13/18 requirements. Phase166 retains the five final lifetime/security/guidance proof requirements and is ready for discussion.
-
-Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures. The DCR lifetime protocol implementation is verified through Phase165; the milestone remains open for final Phase166 proof.
+None; the next milestone will define fresh requirements. Deferred candidates: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-plaintext test fixtures and the explicitly retained v1.45 debt.
 
 ### Validated
+
+- ✓ Selected lifetime semantics, endpoint effects, offline limits and upgrade contract (DCR-02/03/04) — v1.45, Phase 162.
+- ✓ App lifetime persistence, current-authority enforcement, legacy migration and declared host-storage compatibility (DCR-05/06/13/14) — v1.45, Phase 163.
+- ✓ Truthful secret-expiry metadata, shared-secret authentication and atomic policy-derived rotation (DCR-07/08/09) — v1.45, Phase 164.
+- ✓ Management-token lifecycle, strict current-row management, atomic replacement and host-owned recovery (DCR-10/11/12) — v1.45, Phase 165.
+- ✓ Deterministic lifetime boundaries, PostgreSQL contention/rollback, packaged host journeys, scoped security/CI and evidence-aligned guidance (DCR-15/16/17/18/19) — v1.45, Phase 166; final candidate f8dd7712, 69 mapped cases, 49/49 package checks and seven successful required CI contexts. Undefined probes and descriptor-less prohibitions remain limited as recorded in the audit.
 
 - ✓ Policy-derived management-token issuance, strict current-row GET/PUT/DELETE authority, immediate atomic replacement and host-owned recovery (DCR-10/11/12) — Phase165;37/37 truths,19/19 threats closed,2,413-test fast gate plus independent integration/PostgreSQL and908-test prior-phase evidence.
 
@@ -442,6 +461,8 @@ Still deferred: KEK-04 (KMS/Vault), SEC-01, paged `--dry-run`, remaining legacy-
 
 ## Context
 
+v1.45 completed on 2026-10-22. The checked-in Elixir library contains 53,777 lines in 285 `lib/` files at the proven source candidate; test Elixir contains 92,299 lines in 384 files. Counts include comments and blanks. No dependency was added for lifetime enforcement. Current supported host composition and upgrade limits are documented in `docs/upgrading/client-lifetimes.md`. The audit retains bookkeeping, historical TDD and undefined-probe limits; public package publication remains separate.
+
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
 
 The short-to-medium-term project arc is now explicit: finish the most leverage-heavy real-integrator trust wedges first, keep the public support posture narrow and truthful, and only then spend milestone budget on broader certification depth or lower-leverage auth-method expansion. `.planning/EPIC.md` is the durable record of that arc. With v1.16 complete, `v1.17` shifted from release-truth alignment in git to the real public release cut and post-publish verification, and `v1.18` proved it in production.
@@ -461,6 +482,19 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Snapshot positive durations at issuance; nil/zero remain unlimited and equality is expired | Avoid retroactive policy changes and inconsistent boundary interpretations | ✓ Good — selected D-01–27 contract, implemented and verified across v1.45 |
+| Keep app, shared-secret and management-token expiry independent | Credential replacement must not renew app lifetime or unrelated credentials; issued-token/offline limits stay explicit | ✓ Good — independent-boundary and public-facade tests, Phase 166 |
+| Fail closed on missing/unknown lifetime versions and malformed authoritative dates | Only explicit v0 is legacy; no guessed rejection deadline from old timestamps | ✓ Good — storage, authentication, migration and package proof |
+| Guard current rows and verified method-specific identity under shared transaction authority | Avoid stale credential restoration and partial grant/token/audit commits; callback presence alone cannot prove atomicity | ✓ Good — real PostgreSQL waits and rollback conformance |
+| Sample final UTC-second clocks after blocking locks and derive one response/JWT/storage expiry | Prevent expiry crossing a wait from authorizing stale work; malformed clocks become controlled server errors | ✓ Good — current final-clock regression and exact-source CI |
+| Keep host claims/callbacks and preparation outside row locks; retain existing public approval and token APIs | Bound lock duration and preserve the narrow embedded host seam | ✓ Good — code/refresh/device/CIBA/RFC 8693 implementation and review |
+| Apply current policy only on explicit credential replacement; promote v0 from the current whole row | Preserve unrelated metadata and deadlines; historical secret dates remain advisory until replacement | ✓ Good — secret and management lifecycle proof under both prefixes |
+| Preserve method- and endpoint-specific errors and online/offline boundaries | Secret expiry gates secret authentication, not non-secret methods or previously issued tokens; offline JWT verification cannot observe later state | ✓ Good — current consumer inventory and focused tests |
+| Require maintenance cutover before v1 writes; do not promise old-binary rollback after activation | Explicit writer drain and migration order prevent mixed-version state corruption | ✓ Good — pinned-old packaged migration proof |
+| Expose only client_store and transaction_store selectors with Repository defaults | Support the named delegating PostgreSQL composition without inventing a general datastore registry | ✓ Good — real configured production HTTP and executed Markdown adapter example |
+| Replace management tokens immediately with one disclosed credential; recovery stays host-authorized | Lost responses need an explicit recovery path; no overlap, new public recovery route or app renewal | ✓ Good — HTTP, operator and PostgreSQL races |
+| Bind packaged proof to archive/tree/source identity and upload only validated allowlisted receipts | Reject skipped/missing scenarios and redact credentials, argv and host paths | ✓ Good — nine required scenarios, 49/49 checks, artifact-bound CI |
+| Preserve evidence reuse boundaries and unresolved predicates explicitly | Historical receipts, repeated test selections and code-only UI review must not imply new runtime/visual proof | ✓ Good — final audit and all five current owner projections; undefined probes remain unresolved |
 | Sample management time after locked-row preparation; prioritize credential401, app403, then metadata400 | Bind expiry/error decisions to current authority without leaking metadata on rejected credentials | Verified in Phase165 HTTP and PostgreSQL matrices |
 | Use current policy for immediate management replacement; keep recovery host-owned and app expiry unchanged | Make lost-response recovery explicit without overlap or unintended renewal | Verified in Phase165 transaction, rollback and mounted recovery tests |
 | Share KEK snippet generation between installer and print-only task; resolve env references at runtime and fail closed | Keep adopter setup consistent without writing secrets or hiding missing configuration | ✓ Good — Phase159 and public1.6.0, covered by generator/config/guidance contracts |
@@ -550,4 +584,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-21 after independently verified Phase 165 completion*
+*Last updated: 2026-10-22 after v1.45 milestone completion*
