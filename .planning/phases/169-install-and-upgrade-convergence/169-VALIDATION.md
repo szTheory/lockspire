@@ -149,6 +149,8 @@ Phase 170 owns packaged candidate adoption, real browser/socket transport and ex
 All final commands used the locked Elixir/Erlang prefix. Phase union and fast-suite
 logs are in `/tmp/lockspire169-plan05-union-final.log` and
 `/tmp/lockspire169-plan05-fast-final-clean.log` for this execution session.
+The tested docs/evidence tree is committed at `95a4f8d4`; the route, template,
+diagnostic, and source-contract corrections are in `13e673ce`.
 
 | Command | Result | Evidence boundary |
 |---------|--------|-------------------|
