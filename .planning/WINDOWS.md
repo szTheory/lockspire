@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 1
+open_count: 2
 waived_count: 0
 fixed_count: 9
-total_count: 10
-last_updated: 2026-10-09T21:35:14.803Z
+total_count: 11
+last_updated: 2026-10-23T00:10:29.843Z
 ---
 
 # Broken Windows Ledger
@@ -25,6 +25,7 @@ last_updated: 2026-10-09T21:35:14.803Z
 | 8 | 138 | deviation | scripts/maintainer/baseline_inventory.sh |  | Task 2 external per-field matcher caused contract timeouts; replaced by bounded Bash matching in fa1b8c46 | fixed |  | 2026-09-10T18:31:35.339Z | 2026-09-10T18:32:02.104Z |
 | 9 | 139 | deviation | test/support/lockspire/release_proof/package_assertions.ex |  | Added explicit real linked-worktree rejection coverage after the initial GREEN fixture | fixed |  | 2026-09-12T00:29:10.877Z | 2026-09-12T00:29:32.780Z |
 | 10 | 145 | unrun-verify | .planning/phases/145-configure-and-onboard/145-CREDENTIAL-BROWSER.md |  | Browser credential-changing handoff and narrow/200% zoom/reduced-motion states were intentionally left unobserved; ExUnit covers secret lifecycle and the remaining visual limits are documented. | open |  | 2026-10-09T21:35:14.803Z |  |
+| 11 | 168 | lint-warning | test/support/lockspire/web/admin_route_host.ex | 39 | Pre-existing duplicate record_trace/2 clauses in test host fixture emit compiler warnings. | open |  | 2026-10-23T00:10:29.843Z |  |
 
 ````json
 [
@@ -149,6 +150,19 @@ last_updated: 2026-10-09T21:35:14.803Z
     "recorded_at": "2026-10-09T21:35:14.803Z",
     "resolved_at": null,
     "milestone": "v1.40"
+  },
+  {
+    "id": 11,
+    "kind": "lint-warning",
+    "phase": "168",
+    "file": "test/support/lockspire/web/admin_route_host.ex",
+    "line": 39,
+    "description": "Pre-existing duplicate record_trace/2 clauses in test host fixture emit compiler warnings.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-23T00:10:29.843Z",
+    "resolved_at": null,
+    "milestone": "v1.46"
   }
 ]
 ````

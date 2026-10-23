@@ -18,8 +18,8 @@ Requirements cover the user-confirmed mechanical integration scope. They do not 
 
 ### Host-Owned Authorization
 
-- [ ] **HAUTH-01**: The host can enforce its staff-access policy on initial admin HTTP requests; unauthenticated and unauthorized visitors are denied before admin data is rendered or actions run.
-- [ ] **HAUTH-02**: The host can enforce its current staff-access policy before disconnected and connected admin mounts through an explicit LiveView authorization seam; missing required authorization wiring is refused rather than silently permitting access.
+- [x] **HAUTH-01**: The host can enforce its staff-access policy on initial admin HTTP requests; unauthenticated and unauthorized visitors are denied before admin data is rendered or actions run.
+- [x] **HAUTH-02**: The host can enforce its current staff-access policy before disconnected and connected admin mounts through an explicit LiveView authorization seam; missing required authorization wiring is refused rather than silently permitting access.
 - [ ] **HAUTH-03**: A visitor cannot bypass host staff checks by navigating from a public or consent LiveView into the admin surface or between admin destinations; every admin destination belongs to the protected admin session and receives its required host hooks.
 - [ ] **HAUTH-04**: A reconnect with an invalid session or no-longer-authorized host identity is denied by the host policy, while a currently authorized staff session reconnects successfully.
 
@@ -76,8 +76,8 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 | MNT-02 | Phase 167 | Complete |
 | MNT-03 | Phase 167 | Complete |
 | MNT-04 | Phase 167 | Complete |
-| HAUTH-01 | Phase 168 | Pending |
-| HAUTH-02 | Phase 168 | Pending |
+| HAUTH-01 | Phase 168 | Complete |
+| HAUTH-02 | Phase 168 | Complete |
 | HAUTH-03 | Phase 168 | Pending |
 | HAUTH-04 | Phase 168 | Pending |
 | HDX-01 | Phase 169 | Pending |

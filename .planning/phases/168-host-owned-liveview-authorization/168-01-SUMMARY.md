@@ -112,6 +112,7 @@ The evidence covers repository-level HTTP and server lifecycle behavior using th
 
 - The expanded matrix initially coupled allow controls to static HTML wording. It now checks successful HTTP status and the router’s resolved LiveView action, which directly verifies the intended route contract.
 - Expected compile diagnostics from tests that deliberately submit missing pipeline wiring appear in test output; the suite passes.
+- The state counter initially could not parse the legacy “Current Position” section, so the required plan position labels were added before advancing it. The progress helper has no matching body `Progress:` row in this repository; the plan-count frontmatter was updated from the measured summary count.
 
 ## User Setup Required
 

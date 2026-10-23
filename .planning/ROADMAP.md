@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 complete; Phase 168 ready to plan.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 complete; Phase 168 Plan 01 complete and Plan 02 ready to execute.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,7 +19,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is complete after automated verification and delegated evidence review; zero human UAT checks remain. Phase 168 is ready to plan.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is complete after automated verification and delegated evidence review; zero human UAT checks remain. Phase 168 Plan 01 is complete after focused automated entry checks; Plans 02 and 03 remain.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
@@ -72,11 +72,11 @@ Plans:
   3. Navigation from public/consent sessions into admin cannot skip its host checks, and every admin destination remains within the protected session with its required hooks. (HAUTH-03)
   4. Reconnecting with an invalid session or withdrawn host authority is denied, while currently authorized staff reconnect successfully. (HAUTH-04)
 
-**Plans**: 3 plans
+**Plans**: 1/3 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 168-01-PLAN.md — Current host policy at HTTP, disconnected and connected admin entry; required wiring refusal.
+- [x] 168-01-PLAN.md — Current host policy at HTTP, disconnected and connected admin entry; required wiring refusal.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 168-02-PLAN.md — Cached-session connected rejoin with current session, identity and staff-policy checks.
@@ -135,7 +135,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
-| 168. Host-Owned LiveView Authorization | v1.46 | 0/TBD | Not started | — |
+| 168. Host-Owned LiveView Authorization | v1.46 | 1/3 | In Progress | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
