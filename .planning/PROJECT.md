@@ -170,7 +170,7 @@ The user reaffirmed this default during Phase 167 verification on 2026-10-22 and
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is ready for Phase 167 planning; v1.45 has completed its implementation and proof, with package publication still separate.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability has completed Phases 167–168 and is ready for Phase 169 planning; v1.45 has completed its implementation and proof, with package publication still separate.
 
 v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
@@ -354,7 +354,6 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Host-owned HTTP, connected-entry, navigation and reconnect authorization — v1.46 HAUTH-01..04, Phase 168.
 - [ ] Safe generated installation/upgrade, truthful diagnostics and consistent demo/docs — v1.46 HDX-01..04, Phase 169.
 - [ ] Packaged-host transport, exact-version runtime and required CI proof — v1.46 HPROOF-01..03, Phase 170.
 
@@ -362,6 +361,7 @@ All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-ph
 
 ### Validated
 
+- ✓ Host-owned HTTP, disconnected/connected entry, cached-session rejoin, cross-session/admin navigation and native patch authorization — v1.46 HAUTH-01..04, Phase 168; 45 focused tests, 1,977 broad checks, 15/15 security threats closed, clean code review and zero human UAT checks. Browser/socket and exact-floor proof remains Phase 170.
 - ✓ Host-expanded admin routing, full 29-route/action parity, configured mount journeys and independent public/consent routing — v1.46 MNT-01..04, Phase 167; 48 fresh focused tests, zero remaining human UAT checks.
 
 - ✓ Selected lifetime semantics, endpoint effects, offline limits and upgrade contract (DCR-02/03/04) — v1.45, Phase 162.
@@ -602,4 +602,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-22 after Phase 167 automated verification and closure*
+*Last updated: 2026-10-22 after Phase 168 automated verification and closure*

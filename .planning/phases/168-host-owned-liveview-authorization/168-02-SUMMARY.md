@@ -77,7 +77,7 @@ plan_head_after: d49ddcf4386919dcc9ec448f90670c559a526280
 - **Executed revision:** `d49ddcf4386919dcc9ec448f90670c559a526280`.
 - **Runtime:** Elixir 1.20.4 / OTP 29.1.1; locked Phoenix 1.8.13 and Phoenix LiveView 1.2.10.
 - **Task 1 tracer:** `LOCKSPIRE_TEST_DB_NAME=lockspire_phase168_20261022 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs` — 19 passed.
-- **Task 2 and final focused verification:** same runtime command with `test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs` — 23 passed.
+- **Task 2 and final focused verification:** same runtime command with `test/lockspire/web/live/admin/admin_route_integration_test.exs` and `test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs` — 23 passed.
 - **Lifecycle contract:** installed `Phoenix.LiveViewTest.live/3` accepts a nil path; its sent-200 branch calls `connect_from_static_token/3` on the supplied response (`deps/phoenix_live_view/lib/phoenix_live_view/test/live_view_test.ex`, lines 263–276 and 329–336). The lifecycle reducer halts subsequent mount hooks when a hook returns `{:halt, socket}` (`deps/phoenix_live_view/lib/phoenix_live_view/lifecycle.ex`, lines 155–177).
 - **Observed:** the allowed default tracer rejoined the unchanged original response with a different PID. Each mount’s allowed control did the same. Twelve independent denied joins reached a fresh connected authorization decision and produced no destination view; session references and stale `host_staff_id` assigns remained in the retained conn while current authority denied access.
 

@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–170; Phase 167 complete; Phase 168 Plan 01 complete and Plan 02 ready to execute.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–168 complete; Phase 169 ready to plan.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,7 +19,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phase 167 is complete after automated verification and delegated evidence review; zero human UAT checks remain. Phase 168 Plan 01 is complete after focused automated entry checks; Plans 02 and 03 remain.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phases 167 and 168 are complete after automated verification and independent evidence review; zero human UAT checks remain. Phase 168 passed all four HAUTH requirements, security closed 15/15 threats, and final code review is clean. Phase 169 is ready to plan.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
@@ -28,7 +28,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 ## Phases
 
 - [x] **Phase 167: Host-Expanded Admin Routing** — Hosts mount the complete existing admin surface without copying route declarations. (completed 2026-10-22)
-- [ ] **Phase 168: Host-Owned LiveView Authorization** — Host staff checks protect HTTP, connected entry, reconnect and admin navigation boundaries.
+- [x] **Phase 168: Host-Owned LiveView Authorization** — Host staff checks protect HTTP, connected entry, reconnect and admin navigation boundaries. (completed 2026-10-22)
 - [ ] **Phase 169: Install and Upgrade Convergence** — Generated hosts, safe upgrades, diagnostics, docs and the demo use the same supported integration.
 - [ ] **Phase 170: Packaged Host and Compatibility Proof** — Candidate-package and exact-version runtime checks establish the complete integration in required CI.
 
@@ -72,7 +72,7 @@ Plans:
   3. Navigation from public/consent sessions into admin cannot skip its host checks, and every admin destination remains within the protected session with its required hooks. (HAUTH-03)
   4. Reconnecting with an invalid session or withdrawn host authority is denied, while currently authorized staff reconnect successfully. (HAUTH-04)
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -130,16 +130,16 @@ Plans:
 
 ## Progress
 
-**Execution Order:** 167 → 168 → 169 → 170. Phase 167 is complete (3/3 plans, four requirements, zero human UAT checks); Phases 168–170 have not started.
+**Execution Order:** 167 → 168 → 169 → 170. Phases 167 and 168 are complete (3/3 plans each, eight requirements combined, zero human UAT checks); Phases 169–170 have not started.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
-| 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | In Progress | — |
+| 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
-**Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 complete in Phase 167. One phase closed; the remaining eleven requirements retain their later owners. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
+**Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 and HAUTH-01 through HAUTH-04 complete in Phases 167–168. Two phases closed; the remaining seven requirements retain their Phase 169–170 owners. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
 ## Completed Backlog Scope
 

@@ -2,21 +2,21 @@
 gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
-current_phase: 168
-current_phase_name: Host-Owned LiveView Authorization
-current_plan: 3 of 3
-status: verifying
-stopped_at: Completed 168-03-PLAN.md
-last_updated: "2026-10-23T00:40:05.981Z"
+current_phase: 169
+current_phase_name: Install and Upgrade Convergence
+current_plan: Not started
+status: planning
+stopped_at: Phase 168 complete, ready to plan Phase 169
+last_updated: "2026-10-23T01:12:12.112Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 168 Plan 02 complete; cached-response rejoin authorization evidence passed
-state_head: 9c630565301adac32e0b120bf7c7248b85c69572
+last_activity_desc: Phase 168 complete, transitioned to Phase 169
+state_head: d3f0a7cf9e4abd2717b4bbaff3abb979f28f89ec
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
   completed_plans: 6
-  percent: 25
+  percent: 50
 ---
 
 # Project State
@@ -27,15 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 168 — Host-Owned LiveView Authorization. All three plans are complete; automated server-side acceptance is recorded in `168-VALIDATION.md`, and the phase is ready for verification. Phase 167 is complete with zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
+**Current focus:** Phase 169 — Install and Upgrade Convergence, ready to plan. Phase 168 passed all four HAUTH requirements and 13 grouped truths; security closed 15/15 threats and code review is clean. Phases 167 and 168 have zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
 
 ## Current Position
 
-Phase: 168 (Host-Owned LiveView Authorization) — VERIFYING
-Current Plan: 3 of 3 (complete)
-Total Plans in Phase: 3
-Status: Phase complete — ready for verification
-Last activity: 2026-10-22 — Plan 03 completed; automated evidence recorded.
+Phase: 169 — Install and Upgrade Convergence
+Current Plan: Not started
+Total Plans in Phase: 0
+Status: Ready to plan
+Last activity: 2026-10-22 — Phase 168 complete, transitioned to Phase 169
 
 ## Accumulated Context
 
@@ -113,9 +113,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-23T00:40:05.888Z
-Stopped at: Completed 168-03-PLAN.md
+Stopped at: Phase 168 complete, ready to plan Phase 169
 Resume file: None
-Next: `$gsd-verify-work 168` to verify the completed phase against its requirements and evidence. Preserve the original unstaged state.json bytes. Phase 168 proves server-side authorization and navigation; browser/socket and exact-floor proof remains with Phase 170.
+Next: `$gsd-plan-phase 169` or `$gsd-discuss-phase 169`. Phase 168 verification passed with no human items; final focused checks passed 45 tests and the broad suite passed 1,977 checks. Preserve original unstaged state.json bytes. Phase 168 proves server-side authorization and navigation; browser/socket, packaged and exact-floor proof remains Phase 170. No Phase 169 implementation has begun.
 
 ## Performance Metrics
 
