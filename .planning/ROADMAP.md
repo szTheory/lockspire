@@ -72,7 +72,7 @@ Plans:
   3. Navigation from public/consent sessions into admin cannot skip its host checks, and every admin destination remains within the protected session with its required hooks. (HAUTH-03)
   4. Reconnecting with an invalid session or withdrawn host authority is denied, while currently authorized staff reconnect successfully. (HAUTH-04)
 
-**Plans**: 2/3 plans executed
+**Plans**: 3/3 plans executed
 
 Plans:
 **Wave 1**
@@ -82,7 +82,7 @@ Plans:
 - [x] 168-02-PLAN.md — Cached-session connected rejoin with current session, identity and staff-policy checks.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 168-03-PLAN.md — Protected cross-session/admin navigation, native patches and automated evidence closure.
+- [x] 168-03-PLAN.md — Protected cross-session/admin navigation, native patches and automated evidence closure.
 
 **UI hint**: yes
 **UI scope**: Access and navigation mechanics only; no visual redesign or subjective UI signoff.
@@ -135,7 +135,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
-| 168. Host-Owned LiveView Authorization | v1.46 | 2/3 | In Progress | — |
+| 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | In Progress | — |
 | 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
