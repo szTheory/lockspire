@@ -313,6 +313,16 @@ defmodule Lockspire.Web.AdminRouteHost.Identity do
     end
   end
 
+  def record_probe_callback(callback, lifecycle) do
+    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
+      observer when is_pid(observer) ->
+        send(observer, {:probe_callback, lifecycle, callback})
+
+      nil ->
+        :ok
+    end
+  end
+
   defp authorize(authority, session) do
     identity_id = Map.get(session, "host_staff_id")
     session_id = Map.get(session, "host_session_id")
@@ -402,12 +412,41 @@ defmodule Lockspire.Web.AdminRouteHost.MountSentinelLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    Lockspire.Web.AdminRouteHost.Identity.record_mount()
-    {:ok, socket}
+    lifecycle = if Phoenix.LiveView.connected?(socket), do: :connected, else: :disconnected
+    Lockspire.Web.AdminRouteHost.Identity.record_probe_callback(:mount, lifecycle)
+
+    {:ok,
+     Phoenix.Component.assign(socket, :probe_lifecycle, lifecycle)
+     |> Phoenix.Component.assign(:probe_value, "admin-route-sensitive-id")}
   end
 
   @impl true
-  def render(assigns), do: ~H"<main>Mounted</main>"
+  def handle_params(_params, _uri, socket) do
+    lifecycle = if Phoenix.LiveView.connected?(socket), do: :connected, else: :disconnected
+    Lockspire.Web.AdminRouteHost.Identity.record_probe_callback(:params, lifecycle)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("probe_action", _params, socket) do
+    Lockspire.Web.AdminRouteHost.Identity.record_probe_callback(:action, :connected)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def render(assigns) do
+    Lockspire.Web.AdminRouteHost.Identity.record_probe_callback(
+      :render_data,
+      assigns.probe_lifecycle
+    )
+
+    ~H"""
+    <main>
+      <span><%= @probe_value %></span>
+      <button id="probe-action" phx-click="probe_action">Run probe action</button>
+    </main>
+    """
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.ForwardOnlyRouter do
@@ -444,6 +483,12 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
     plug(Lockspire.Web.AdminRouteHost.RequireStaff)
   end
 
+  pipeline :host_probe do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+  end
+
   pipeline :host_consent do
     plug(:fetch_session)
     plug(:protect_from_forgery)
@@ -464,7 +509,7 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
   Lockspire.Web.AdminRouteHost.host_consent_routes("/lockspire")
 
   scope "/" do
-    pipe_through(:browser)
+    pipe_through(:host_probe)
 
     Phoenix.LiveView.Router.live_session :host_auth_probe,
       on_mount: [Lockspire.Web.AdminRouteHost.LiveAuthorization] do

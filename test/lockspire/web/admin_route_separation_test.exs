@@ -237,6 +237,61 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
     refute_receive {:route_trace, "disallowed-staff-http", :admin_hook}
   end
 
+  test "concurrent allowed and denied host requests keep trace provenance after worker cleanup" do
+    install_authority()
+    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    parent = self()
+
+    cases = [
+      {"host-concurrent-allowed", AdminRouteHost.Identity.staff_session("staff-1"), 200},
+      {"host-concurrent-denied", AdminRouteHost.Identity.staff_session("staff-2"), 403}
+    ]
+
+    tasks =
+      Enum.map(cases, fn {trace, session, expected_status} ->
+        Task.async(fn ->
+          response =
+            build_conn()
+            |> put_req_header("x-route-trace", trace)
+            |> init_test_session(session)
+            |> get("/lockspire/admin")
+
+          send(parent, {:host_request_result, trace, response.status})
+
+          receive do
+            :release -> :released
+          end
+
+          {trace, expected_status}
+        end)
+      end)
+
+    for {trace, _session, expected_status} <- cases do
+      assert_receive {:host_request_result, ^trace, ^expected_status}
+
+      expected_surface =
+        if expected_status == 200, do: :admin_http_allowed, else: :admin_http_denied
+
+      assert_receive {:route_trace, ^trace, ^expected_surface}
+    end
+
+    for task <- tasks do
+      monitor = Process.monitor(task.pid)
+      assert Task.shutdown(task, :brutal_kill) == nil
+      assert_receive {:DOWN, ^monitor, :process, pid, _reason} when pid == task.pid
+    end
+
+    assert :ok =
+             AdminRouteHost.Identity.put_authority(AdminRouteHost.Identity.default_authority())
+
+    allowed_after_cleanup =
+      build_conn()
+      |> init_test_session(AdminRouteHost.Identity.staff_session("staff-1"))
+      |> get("/lockspire/admin")
+
+    assert allowed_after_cleanup.status == 200
+  end
+
   test "concurrent public, host consent and staff admin HTTP requests keep trace provenance" do
     cases = [
       {:public, "/lockspire/.well-known/openid-configuration", nil, 200},
