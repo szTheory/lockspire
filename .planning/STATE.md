@@ -4,13 +4,13 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 168
 current_phase_name: Host-Owned LiveView Authorization
-current_plan: 2 of 3
+current_plan: 3 of 3
 status: executing
-stopped_at: Completed 168-01-PLAN.md
-last_updated: "2026-10-23T00:11:09.082Z"
+stopped_at: Completed 168-02-PLAN.md
+last_updated: "2026-10-23T00:19:09.965Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 168 Plan 01 complete; focused entry authorization evidence passed
-state_head: d2ec0fe4544038108c150d30555d0d9513e6bdf8
+last_activity_desc: Phase 168 Plan 02 complete; cached-response rejoin authorization evidence passed
+state_head: 9948c2564d5603c3f096a941b85b4f1b4c39600a
 progress:
   total_phases: 4
   completed_phases: 1
@@ -32,10 +32,10 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 ## Current Position
 
 Phase: 168 (Host-Owned LiveView Authorization) — EXECUTING
-Current Plan: 2 of 3
+Current Plan: 3 of 3
 Total Plans in Phase: 3
 Status: Ready to execute
-Last activity: 2026-10-22 — Plan 01 completed; Plan 02 is next
+Last activity: 2026-10-22 — Plan 02 completed; Plan 03 is next
 
 ## Accumulated Context
 
@@ -52,6 +52,7 @@ v1.46 scope and research are confirmed; all 15 requirements were approved on 202
 v1.45 decisions and validated requirements are recorded in PROJECT.md and the archived phases. Full pre-close context, performance metrics and historical concerns are preserved in [v1.45-STATE.md](milestones/v1.45-STATE.md). All five phase verification owners passed immediately before archival; their original fingerprint paths remain historical checkout paths and were not restamped after the move.
 - [Phase 168]: Keep mutable host identity, session and staff policy in test-host authority; independently re-resolve it at HTTP and LiveView boundaries.
 - [Phase 168]: Prove connected denial from a successful static response using live(conn) after host-policy withdrawal.
+- [Phase 168]: Use public live(sent_conn) to prove a new server-side connected join checks current host authority; Phase 170 owns browser/socket transport proof.
 
 ### Blockers/Concerns
 
@@ -109,13 +110,14 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-23T00:10:49.325Z
-Stopped at: Completed 168-01-PLAN.md
+Last session: 2026-10-23T00:19:09.864Z
+Stopped at: Completed 168-02-PLAN.md
 Resume file: None
-Next: `$gsd-execute-phase 168`. Apply the automation policy and retain the closed Phase 167 UAT dispositions. Preserve the original unstaged state.json bytes; no Phase 168 implementation has started. The configured plan workflow auto-advances to execution after recording planning completion.
+Next: `$gsd-execute-phase 168` to execute Plan 03. Apply the automation policy and retain the closed Phase 167 UAT dispositions. Preserve the original unstaged state.json bytes. Plan 02 established cached-response server-side rejoin authorization; browser/socket and exact-floor proof remains with Phase 170.
 
 ## Performance Metrics
 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 168 P01 | 8m | 2 tasks | 5 files |
+| Phase 168 P02 | 8m | 2 tasks | 1 files |
