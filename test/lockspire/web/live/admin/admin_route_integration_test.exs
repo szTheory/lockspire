@@ -1202,6 +1202,68 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     end
   end
 
+  test "legacy HTTP fallback resolves only the explicit baseline identity" do
+    identity = AdminRouteHost.Identity
+    previous_authority = identity.authority_pointer()
+    identity.restore_authority(:unset)
+    on_exit(fn -> identity.restore_authority(previous_authority) end)
+
+    configure_mount("/lockspire")
+    fixtures = AdminRouteHost.seed_admin_records!()
+    refute identity.authority_installed?()
+
+    allowed_trace = "legacy-fallback-allowed"
+
+    allowed =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", allowed_trace)
+      |> Phoenix.ConnTest.init_test_session(%{"host_staff_id" => "staff-1"})
+      |> Phoenix.ConnTest.dispatch(
+        AdminRouteHost.DefaultEndpoint,
+        :get,
+        "/lockspire/admin/clients/#{fixtures.client.client_id}"
+      )
+
+    assert allowed.status == 200
+    assert allowed.resp_body =~ fixtures.client.client_id
+    assert_receive {:route_trace, ^allowed_trace, :admin_http_allowed}
+    assert_receive {:route_trace, ^allowed_trace, :admin_session}
+    assert_receive {:host_authorization, ^allowed_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:route_trace, ^allowed_trace, :admin_hook}
+    assert_receive {:host_live_hook, "staff-1"}
+
+    denied_cases = [
+      {:arbitrary, %{"host_staff_id" => "arbitrary-host-staff-42"}},
+      {:deleted, %{"host_staff_id" => "deleted-staff"}},
+      {:missing, %{}},
+      {:empty, %{"host_staff_id" => ""}}
+    ]
+
+    for {case_name, session} <- denied_cases do
+      trace = "legacy-fallback-#{case_name}"
+
+      conn =
+        build_conn()
+        |> Plug.Conn.put_req_header("x-route-trace", trace)
+        |> Phoenix.ConnTest.init_test_session(session)
+        |> Phoenix.ConnTest.dispatch(
+          AdminRouteHost.DefaultEndpoint,
+          :get,
+          "/lockspire/admin/clients/#{fixtures.client.client_id}"
+        )
+
+      assert conn.status == 403
+      assert conn.resp_body == "Forbidden"
+      refute conn.resp_body =~ fixtures.client.client_id
+      assert_receive {:route_trace, ^trace, :admin_http_denied}
+      refute_receive {:route_trace, ^trace, :admin_http_allowed}
+      refute_receive {:route_trace, ^trace, :admin_session}
+      refute_receive {:route_trace, ^trace, :admin_hook}
+      refute_receive {:host_authorization, ^trace, _, _, _}
+      refute_receive {:host_live_hook, _}
+    end
+  end
+
   test "HTTP authority denial precedes protected routes at default, nested and root mounts" do
     fixtures = AdminRouteHost.seed_admin_records!()
     {:ok, client_before} = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)

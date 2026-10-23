@@ -160,12 +160,12 @@ defmodule Lockspire.Web.AdminRouteHost.RequireStaff do
           conn |> send_resp(:forbidden, "Forbidden") |> halt()
       end
     else
-      case identity_id do
-        identity_id when is_binary(identity_id) and identity_id != "" ->
+      case Lockspire.Web.AdminRouteHost.Identity.resolve(identity_id) do
+        {:ok, staff} ->
           Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_allowed)
-          assign(conn, :host_staff_id, identity_id)
+          assign(conn, :host_staff_id, staff.id)
 
-        _missing ->
+        :error ->
           Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_denied)
           conn |> send_resp(:forbidden, "Forbidden") |> halt()
       end
