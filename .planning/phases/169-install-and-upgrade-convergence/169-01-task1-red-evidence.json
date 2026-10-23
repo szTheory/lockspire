@@ -1,0 +1,10 @@
+{
+  "command": "MIX_ENV=test ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test --formatter Lockspire169TapFormatter test/integration/install_admin_integration_test.exs --no-compile",
+  "exitCode": 2,
+  "output": "TAP version 14\nnot ok 1 - test installer-rendered router uses the canonical native admin integration\n1..1\n",
+  "targetTest": "test installer-rendered router uses the canonical native admin integration",
+  "targetFile": "test/integration/install_admin_integration_test.exs",
+  "expected": "The installer-rendered router invokes Lockspire.Web.AdminRoutes.lockspire_admin_routes.",
+  "actual": "The generated router still contains the legacy AdminRouter forward and fails the targeted assertion.",
+  "semanticAssessment": "The target test executed and failed on the intended canonical-route assertion; output is a TAP report produced by a temporary ExUnit formatter over the actual test run."
+}
