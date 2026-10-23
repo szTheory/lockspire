@@ -126,6 +126,71 @@ defmodule Lockspire.InstallUpgradeTest do
     assert manifest["inputs"]["mount_path"] == "/oauth"
   end
 
+  test "a checksum-tracked v1.45 forward helper converts and preserves recorded host inputs" do
+    install_fixture!([
+      "--mount-path",
+      "/teams/auth",
+      "--storage-prefix",
+      "tenant_data",
+      "--oban-prefix",
+      "tenant_jobs",
+      "--with-fapi-smoke"
+    ])
+
+    router_path = Path.join(@fixture_root, "lib/generated_host_app_web/router/lockspire.ex")
+    historical_router = historical_router_bytes()
+    File.write!(router_path, historical_router)
+
+    seam_path = Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex")
+    File.rm!(seam_path)
+
+    manifest = load_manifest!()
+    legacy_manifest =
+      manifest
+      |> Map.delete("migrations")
+      |> put_in(["inputs", "mount_path"], "/teams/auth")
+      |> put_in(["inputs", "storage_prefix"], "tenant_data")
+      |> put_in(["inputs", "oban_prefix"], "tenant_jobs")
+      |> put_in(["inputs", "with_fapi_smoke"], true)
+      |> update_in(["managed_files"], fn entries ->
+        Enum.map(entries, fn
+          %{"path" => "lib/generated_host_app_web/router/lockspire.ex"} = entry ->
+            %{entry | "checksum" => Manifest.checksum(historical_router)}
+
+          entry ->
+            entry
+        end)
+      end)
+
+    File.write!(Manifest.path(@fixture_root), Jason.encode!(legacy_manifest, pretty: true))
+    preserved = tree_snapshot(@fixture_root)
+
+    capture_io(fn -> upgrade_fixture!([]) end)
+
+    converted = File.read!(router_path)
+    assert converted =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
+    refute forwards_lockspire_router?(converted, "/teams/auth")
+    assert File.regular?(seam_path), "upgrade should create the absent authorization seam"
+    assert File.read!(seam_path) =~ "Admin access is not configured."
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(storage_prefix: "tenant_data")
+    assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
+             ~s(oban_prefix: "tenant_jobs")
+    assert load_manifest!()["inputs"] == legacy_manifest["inputs"]
+
+    refute "lib/generated_host_app_web/operator_authorization.ex" in Enum.map(
+             load_manifest!()["managed_files"],
+             & &1["path"]
+           )
+
+    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")) ==
+             preserved["lib/generated_host_app/lockspire/account_resolver.ex"]
+
+    first_result = tree_snapshot(@fixture_root)
+    capture_io(fn -> upgrade_fixture!([]) end)
+    assert tree_snapshot(@fixture_root) == first_result
+  end
+
   test "mix lockspire.upgrade refuses drifted managed files" do
     install_fixture!()
 
@@ -421,6 +486,29 @@ defmodule Lockspire.InstallUpgradeTest do
 
       Map.put(snapshot, relative_path, value)
     end)
+  end
+
+  defp historical_router_bytes do
+    assigns = %{
+      web_module: "GeneratedHostAppWeb",
+      web_path: "generated_host_app_web",
+      mount_path: "/teams/auth"
+    }
+
+    template =
+      Path.expand("../support/fixtures/install_upgrade/v1_45_forward_router.ex.eex", __DIR__)
+
+    rendered = EEx.eval_file(template, assigns: assigns)
+
+    header =
+      """
+      # Lockspire-managed scaffolding
+      # Safe to update later only through `mix lockspire.upgrade` when the manifest says this file is unchanged.
+      # Keep this file unchanged if you want future managed upgrades to apply automatically.
+
+      """
+
+    header <> rendered
   end
 
   defp forwards_lockspire_router?(source, mount_path) do
