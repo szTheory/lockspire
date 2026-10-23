@@ -147,7 +147,7 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
     assert emitted =~ "socket(\"/live\", Phoenix.LiveView.Socket"
     assert emitted =~ "connect_info: [session: @session_options]"
     assert emitted =~ "plug Plug.Session, @session_options"
-    assert emitted =~ "live_view: [signing_salt: \"clean-room-provider-live-view-salt\"]"
+    assert emitted =~ "live_view: [signing_salt: \"clean-room-provider-test-live-view-salt\"]"
   end
 
   test "clean-room overlay delegates admin routes and denies until host policy is configured" do
