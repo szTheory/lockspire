@@ -161,6 +161,10 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
   end
 
   test "cached-response denial halts before protected probe callbacks and actions" do
+    fixtures =
+      Lockspire.Web.AdminRouteHost.seed_admin_records!()
+
+    {:ok, client_before} = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
     install_authority()
     trace = "cached-probe-policy-withdrawn"
 
@@ -207,6 +211,8 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     assert_receive {:host_live_hook, :denied}
     refute_receive {:probe_callback, :connected, _callback}
     refute_receive {:host_session_callback, _label}
+    assert {:ok, client_after} = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+    assert client_after == client_before
   end
 
   test "connected entry rechecks current host policy against the already-rendered response" do
@@ -601,6 +607,7 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
   test "a cached default admin response rejoins a new process under current host policy" do
     configure_mount("/lockspire")
+    fixtures = AdminRouteHost.seed_admin_records!()
     install_authority()
 
     allowed_trace = "cached-rejoin-allowed"
@@ -658,6 +665,9 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     assert_receive {:host_live_hook, "staff-1"}
     stop_live_view(previously_allowed_view)
 
+    {:ok, client_before_denied_join} =
+      Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
     denied_authority =
       AdminRouteHost.Identity.default_authority()
       |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
@@ -675,6 +685,11 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     assert_receive {:host_live_hook, :denied}
     refute_receive {:host_session_callback, _label}
     refute_receive {:probe_callback, :connected, _callback}
+
+    assert {:ok, client_after_denied_join} =
+             Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
+    assert client_after_denied_join == client_before_denied_join
   end
 
   test "cached admin rejoin checks session, identity and policy at every mount" do
@@ -733,6 +748,10 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
       for {label, invalidate} <- invalidations do
         trace = "cached-denied-#{inspect(endpoint)}-#{label}"
         authority = AdminRouteHost.Identity.default_authority()
+
+        {:ok, client_before_denied_join} =
+          Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
         assert :ok = AdminRouteHost.Identity.put_authority(authority)
 
         {denied_conn, original_view, original_html} =
@@ -759,6 +778,11 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         refute_receive {:route_trace, ^trace, :admin_http_denied}
         refute_receive {:route_trace, ^trace, :admin_session}
         refute_receive {:probe_callback, :connected, _callback}
+
+        assert {:ok, client_after_denied_join} =
+                 Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
+        assert client_after_denied_join == client_before_denied_join
       end
     end
   end
@@ -1094,6 +1118,38 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
     assert denied_edit_result == {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
     assert_receive {:host_authorization, ^denied_edit_trace, :params, :denied, "staff-1"}
+
+    for {trace, label} <- [
+          {"client-policy-patch-denied", "Edit authorization request rules"},
+          {"client-rotation-patch-denied", "Rotate client secret"}
+        ] do
+      assert :ok =
+               AdminRouteHost.Identity.put_authority(AdminRouteHost.Identity.default_authority())
+
+      denied_session = Map.put(allowed_session, "trace_id", trace)
+
+      assert {:ok, denied_view, _html} =
+               endpoint_live(AdminRouteHost.DefaultEndpoint, show_path, denied_session)
+
+      assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+      assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+      assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+      assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+
+      assert :ok = AdminRouteHost.Identity.put_authority(denied_authority)
+
+      assert denied_view
+             |> element("a", label)
+             |> render_click() == {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+      assert_receive {:host_authorization, ^trace, :params, :denied, "staff-1"}
+      refute_receive {:host_authorization, ^trace, :params, :allowed, _}
+
+      assert {:ok, client_after_denied_patch} =
+               Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
+      assert client_after_denied_patch == client_before
+    end
 
     query_denied_trace = "client-query-patch-denied"
     query_denied_session = Map.put(allowed_session, "trace_id", query_denied_trace)
