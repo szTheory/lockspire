@@ -1,7 +1,7 @@
 # Phase 168: Host-Owned LiveView Authorization - Pattern Map
 
-**Mapped:** 2026-10-22  
-**Files analyzed:** 4 likely touched files (3 tests, 1 host fixture)  
+**Mapped:** 2026-10-22
+**Files analyzed:** 4 likely touched files (3 tests, 1 host fixture)
 **Analogs found:** 4 / 4
 
 ## File Classification
@@ -194,22 +194,22 @@ Installed `phoenix_live_view` is 1.2.10 in `mix.lock` (the project compatibility
 
 ### Current identity/policy
 
-**Source:** `test/support/lockspire/web/admin_route_host.ex:163-181`  
+**Source:** `test/support/lockspire/web/admin_route_host.ex:163-181`
 **Apply to:** fixture HTTP gate and LiveView authorization callback. Resolve the session identity against the fixture's mutable current authority store each time; don't trust a copied boolean or only the ID's non-emptiness.
 
 ### Denial ordering and observable sentinels
 
-**Source:** `test/lockspire/web/live/admin/admin_route_integration_test.exs:162-209`  
+**Source:** `test/lockspire/web/live/admin/admin_route_integration_test.exs:162-209`
 **Apply to:** HTTP, disconnected, connected, destination navigation and fresh-rejoin denial. Assert the expected response/redirect, hook-denial trace, and absence of protected mount/`handle_params`/`handle_event` markers. Direct callback tests are supplemental and never substitute for `live/2` lifecycle coverage.
 
 ### Route coverage
 
-**Source:** `test/lockspire/web/admin_route_inventory_test.exs:62-90`  
+**Source:** `test/lockspire/web/admin_route_inventory_test.exs:62-90`
 **Apply to:** all admin route/action declarations. Preserve the exact 29-entry inventory and assert the live session and ordered host + Lockspire hooks on each route.
 
 ### Public and consent isolation
 
-**Source:** `test/lockspire/web/admin_route_separation_test.exs:141-220`  
+**Source:** `test/lockspire/web/admin_route_separation_test.exs:141-220`
 **Apply to:** ensure public protocol and host consent still work without staff authorization while each fresh entry into admin runs staff checks.
 
 ## No Analog Found
@@ -220,6 +220,6 @@ Installed `phoenix_live_view` is 1.2.10 in `mix.lock` (the project compatibility
 
 ## Metadata
 
-**Analog search scope:** `test/support/lockspire/web`, `test/lockspire/web`, and the installed `deps/phoenix_live_view/lib/phoenix_live_view/test` implementation for API availability only.  
-**Files scanned:** 4 project analogs plus targeted installed LiveViewTest implementation sections.  
+**Analog search scope:** `test/support/lockspire/web`, `test/lockspire/web`, and the installed `deps/phoenix_live_view/lib/phoenix_live_view/test` implementation for API availability only.
+**Files scanned:** 4 project analogs plus targeted installed LiveViewTest implementation sections.
 **Pattern extraction date:** 2026-10-22

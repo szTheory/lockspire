@@ -1,7 +1,7 @@
 # Phase 168: Host-Owned LiveView Authorization - Research
 
-**Researched:** 2026-10-22  
-**Domain:** Phoenix host authorization and LiveView lifecycle  
+**Researched:** 2026-10-22
+**Domain:** Phoenix host authorization and LiveView lifecycle
 **Confidence:** HIGH for current code and locked dependency behavior; MEDIUM for lifecycle guidance cross-checked against official docs
 
 ## User Constraints [VERIFIED: `.planning/REQUIREMENTS.md:12-24`; `.planning/ROADMAP.md:64-78`; `.planning/VERIFICATION-POLICY.md:1-17`]
@@ -137,26 +137,26 @@ Use a host-fixture authorization resolver with independent cases for missing ide
 
 ### Pitfall 1: Treating static HTML success as authorization proof
 
-**What goes wrong:** A protected page may render during the disconnected HTTP request before a connected socket hook can run.  
-**Why it happens:** LiveView has a regular HTTP initial render and a later connected mount.  
+**What goes wrong:** A protected page may render during the disconnected HTTP request before a connected socket hook can run.
+**Why it happens:** LiveView has a regular HTTP initial render and a later connected mount.
 **How to avoid:** Deny in both host HTTP Plug and host `on_mount`; assert no protected content/action sentinel for denial. [CITED: https://hexdocs.pm/phoenix_live_view/1.1.28/Phoenix.LiveView.Router.html#live_session/3]
 
 ### Pitfall 2: Trusting copied session state as current authority
 
-**What goes wrong:** Deleted staff or changed policy remains admitted by a stale authorization flag.  
-**Why it happens:** Session carries host-supplied data, but current policy belongs to host logic.  
+**What goes wrong:** Deleted staff or changed policy remains admitted by a stale authorization flag.
+**Why it happens:** Session carries host-supplied data, but current policy belongs to host logic.
 **How to avoid:** Resolve the host identity using the host's current authority source on each mount/reconnect; test deletion/withdrawal and currently allowed reconnect separately. [VERIFIED: `.planning/REQUIREMENTS.md` — “conn.assigns or a copied session boolean is not current connected authority”; phase scope exact excerpt recorded in requirement discussion; fixture `test/support/lockspire/web/admin_route_host.ex:163-179`]
 
 ### Pitfall 3: Protecting the index but missing task destinations
 
-**What goes wrong:** A detail, edit, rotate, policy, or new action route bypasses the host session/hook.  
-**Why it happens:** Route inventories can drift or tests can exercise only the overview.  
+**What goes wrong:** A detail, edit, rotate, policy, or new action route bypasses the host session/hook.
+**Why it happens:** Route inventories can drift or tests can exercise only the overview.
 **How to avoid:** Keep the independent 29-route tuple baseline and assert every route's compiled live-session and hook metadata; add destination behavior coverage by action families and navigation boundary. [VERIFIED: `test/lockspire/web/admin_route_inventory_test.exs:1-88` — route count `29`, session `:lockspire_admin`, ordered hooks quoted above]
 
 ### Pitfall 4: Confusing session boundary checks with continuous revocation
 
-**What goes wrong:** A team assumes a permission change immediately terminates an already-connected LiveView.  
-**Why it happens:** `on_mount` authorizes entry/reconnect, not every later event.  
+**What goes wrong:** A team assumes a permission change immediately terminates an already-connected LiveView.
+**Why it happens:** `on_mount` authorizes entry/reconnect, not every later event.
 **How to avoid:** Host app owns logout/disconnect and event-level policy; no polling or immediate already-connected socket revocation promise. [CITED: https://hexdocs.pm/phoenix_live_view/1.1.28/Phoenix.LiveView.Router.html#live_session/3; `.planning/REQUIREMENTS.md` acceptance boundaries]
 
 ## Focused Runnable Checks
@@ -268,5 +268,5 @@ For targeted iteration once focused tests are added, run a single test file with
 - Architecture: HIGH — current macro, plug, fixture, and tests inspected; lifecycle cross-checked against official docs.
 - Pitfalls: HIGH — derive directly from accepted requirements and LiveView's documented lifecycle/security model.
 
-**Research date:** 2026-10-22  
+**Research date:** 2026-10-22
 **Valid until:** 2026-11-21 for stable architecture; verify locked dependency docs if the Phoenix/LiveView pair changes.

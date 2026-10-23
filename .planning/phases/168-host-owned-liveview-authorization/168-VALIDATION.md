@@ -43,7 +43,7 @@ Command aliases below expand to the full Test Infrastructure commands above; exe
 | 168-02 Task 1 (tracer) | HAUTH-02, HAUTH-04 | Original signed response joins a distinct connected process; policy withdrawal denies new join without another GET or session callback | 19-test plan result; final focused union | T-168-06, T-168-08 | passed |
 | 168-02 Task 2 | HAUTH-02, HAUTH-04 | Current session invalidation/binding removal, identity deletion and permission withdrawal denied; still-authorized allowed at default/nested/root; no protected callback/data/action | 23-test plan result; final focused union | T-168-06 through T-168-09 | passed |
 | 168-03 Task 1 (tracer) | HAUTH-03 | Connected consent cross-session error redirect, explicit fresh HTTP/live denial or allowed entry with current policy | 8 separation tests; cross-session matrix | T-168-10, T-168-13 | passed |
-| 168-03 Task 2 | HAUTH-01 through HAUTH-04 | Public/consent boundary matrix; 29 destination metadata and live-navigation outcomes at all mounts; native patch current-policy guard; complete evidence map | 44-test focused union, format check, `mix test.fast`, scoped diff checks | T-168-10 through T-168-14; final union covers all phase threats | passed with inherited source-base whitespace findings recorded below |
+| 168-03 Task 2 | HAUTH-01 through HAUTH-04 | Public/consent boundary matrix; 29 destination metadata and live-navigation outcomes at all mounts; native patch current-policy guard; complete evidence map | 44-test focused union, format check, `mix test.fast`, scoped diff checks | T-168-10 through T-168-14; final union covers all phase threats | passed; planning-document whitespace subsequently resolved without source changes |
 
 T-168-SC is reserved/shared across plans: no dependency installations are planned. ASVS L1, block critical/high; mitigate medium threats at primary boundaries. No new package legitimacy or schema push task is applicable: this phase changes only fixture/tests/evidence, no new package or schema files. If an install is proposed later, research legitimacy audit plus blocking assumed/suspect-package review must precede it.
 
@@ -146,7 +146,7 @@ Source revision for final tests: `d0f12976e85a83c5acfde310e000d17f555065a0` (fea
 | Format | `mix format --check-formatted`: passed after formatting only changed test files |
 | Broad selector | `HEX_HOME=/tmp/lockspire-phase168-hex LOCKSPIRE_TEST_DB_NAME=lockspire_phase168_20261022 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test.fast`: 1,976 passed (2 properties, 1,974 tests), 6 skipped, 497 excluded |
 | Working-tree whitespace | `git diff --check`: passed |
-| Phase-base whitespace | `git diff --check 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`: reports trailing whitespace in the already-authored `168-PATTERNS.md` and `168-RESEARCH.md`; no current task files are implicated. These pre-existing phase planning-document findings are deferred below, not changed as unrelated scope. |
+| Phase-base whitespace | `git diff --check 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`: initially reported trailing spaces in `168-PATTERNS.md` and `168-RESEARCH.md`. The orchestrator removed them after Plan 03 and reran this check successfully; no tested source changed. |
 
 The first broad run produced 22 release-artifact test setup failures because Hex attempted to write `/Users/jon/.hex/cache.ets` from the read-only home. `HEX_HOME=/tmp/lockspire-phase168-hex` allowed the release helper to run without installing packages; the one resulting broad rerun passed. The output contained pre-existing compiler warnings, including the duplicate `record_trace/2` clauses already tracked in `deferred-items.md`; no warning was introduced as part of this task.
 
@@ -180,3 +180,11 @@ None required by the approved Phase 168 acceptance scope. Browser/socket transpo
 - [x] Execution results, prohibition dispositions and evidence limits recorded.
 
 **Approval:** Approved requirement/roadmap scope; runtime evidence is complete for the approved automated server-side acceptance. The retained descriptor-less flags and three unresolved assumptions are not treated as human passes.
+
+## Validation Audit 2026-10-23
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
