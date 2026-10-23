@@ -4,18 +4,18 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 169
 current_phase_name: Install and Upgrade Convergence
-current_plan: Not started
+current_plan: 2
 status: executing
 stopped_at: Phase 169 planned and independently checked; ready to execute five plans
-last_updated: "2026-10-23T01:53:23.943Z"
+last_updated: "2026-10-23T21:31:47.248Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 169 planning complete; five plans in three waves passed independent verification
-state_head: 9500bb4707e24639886382ad5f5e0f0d89488bb9
+last_activity_desc: Phase 169 execution started
+state_head: 12d5fe2e7390a0bf1bfdb3a58a714817ebb2811c
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 11
-  completed_plans: 6
+  completed_plans: 7
   percent: 50
 ---
 
@@ -27,15 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 169 — Install and Upgrade Convergence, ready to execute five plans in three waves. Research, pattern mapping and independent plan verification are complete; all four HDX requirements are covered. Phases 167 and 168 have zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
+**Current focus:** Phase 169 — Install and Upgrade Convergence
 
 ## Current Position
 
-Phase: 169 (Install and Upgrade Convergence) — READY TO EXECUTE
-Current Plan: Not started
+Phase: 169 (Install and Upgrade Convergence) — EXECUTING
+Current Plan: 2
 Total Plans in Phase: 5
 Status: Ready to execute
-Last activity: 2026-10-22 — Phase 169 planning complete; five plans in three waves passed independent verification
+Last activity: 2026-10-22 — Phase 169 execution started
 
 ## Accumulated Context
 

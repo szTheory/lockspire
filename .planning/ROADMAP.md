@@ -99,11 +99,11 @@ Plans:
   3. `mix lockspire.verify` distinguishes complete canonical route/action/session/hook wiring from incomplete, shadowed or legacy forward-only mounts, with actionable secret-safe guidance that identifies its structural-policy limits. (HDX-03)
   4. The demo and maintained generated/clean-room hosts consume the same reusable admin declarations, and installation, upgrade, admin and supported-surface guidance match that executable path. (HDX-04)
 
-**Plans**: 5 plans
+**Plans**: 1/5 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 169-01-PLAN.md — Rendered-host native integration tracer, deny-first host seam and generated fixture parity.
+- [x] 169-01-PLAN.md — Rendered-host native integration tracer, deny-first host seam and generated fixture parity.
 
 **Wave 2** *(after Wave 1; independent file ownership)*
 - [ ] 169-02-PLAN.md — Trusted historical conversion, host policy preservation and read-only dry-run/recovery safety.
@@ -149,7 +149,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
-| 169. Install and Upgrade Convergence | v1.46 | 0/5 | Planned | — |
+| 169. Install and Upgrade Convergence | v1.46 | 1/5 | In Progress | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
 **Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 and HAUTH-01 through HAUTH-04 complete in Phases 167–168. Two phases closed; the remaining seven requirements retain their Phase 169–170 owners. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
