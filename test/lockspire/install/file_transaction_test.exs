@@ -181,6 +181,164 @@ defmodule Lockspire.Install.FileTransactionTest do
     assert FileTransaction.recovery_status(root) == :clean
   end
 
+  test "a write-ahead intent recovers a create interrupted before completion is journaled", %{
+    root: root
+  } do
+    path = "lib/example_web/operator_authorization.ex"
+
+    FileTransaction.with_test_failure({:after_target_write, path}, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :host_owned, :absent, "deny policy"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    assert File.read!(Path.join(root, path)) == "deny policy"
+    journal = Jason.decode!(File.read!(Path.join(root, ".lockspire/install_transaction.json")))
+    assert journal["pending"]["relative_path"] == path
+    assert journal["committed"] == []
+
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(Path.join(root, path))
+    refute File.exists?(Path.join(root, ".lockspire/install_transaction.json"))
+  end
+
+  test "an intent whose absent target now contains competing host bytes is preserved", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+
+    FileTransaction.with_test_failure(:after_intent_journal, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, :absent, "generated helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    File.mkdir_p!(Path.dirname(Path.join(root, path)))
+    File.write!(Path.join(root, path), "host-owned competing bytes")
+
+    assert {:error, [%{type: :recovery_required}]} = FileTransaction.recover(root)
+    assert File.read!(Path.join(root, path)) == "host-owned competing bytes"
+    assert File.exists?(Path.join(root, ".lockspire/install_transaction.json"))
+  end
+
+  test "updated policy and helper intents restore old bytes after an interrupted write", %{
+    root: root
+  } do
+    policy = "lib/example_web/operator_authorization.ex"
+    helper = "lib/example_web/router/lockspire.ex"
+    File.mkdir_p!(Path.dirname(Path.join(root, policy)))
+    File.mkdir_p!(Path.dirname(Path.join(root, helper)))
+    File.write!(Path.join(root, policy), "old policy")
+    File.write!(Path.join(root, helper), "old helper")
+
+    artifacts = [
+      artifact(policy, :host_owned, Manifest.checksum("old policy"), "new policy"),
+      artifact(helper, :managed, Manifest.checksum("old helper"), "new helper"),
+      manifest(:absent, "manifest")
+    ]
+
+    FileTransaction.with_test_failure({:after_target_write, helper}, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+    end)
+
+    assert File.read!(Path.join(root, policy)) == "new policy"
+    assert File.read!(Path.join(root, helper)) == "new helper"
+    assert :ok = FileTransaction.recover(root)
+    assert File.read!(Path.join(root, policy)) == "old policy"
+    assert File.read!(Path.join(root, helper)) == "old helper"
+  end
+
+  test "a failed journal replacement keeps the prior journal recoverable and does not mutate target",
+       %{root: root} do
+    path = "lib/example_web/operator_authorization.ex"
+
+    FileTransaction.with_test_failure(:before_intent_journal_replace, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :host_owned, :absent, "deny policy"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    refute File.exists?(Path.join(root, path))
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert is_nil(journal["pending"])
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(journal_path)
+  end
+
+  test "recovery finishes cleanup after a rolled-back terminal marker", %{root: root} do
+    path = "lib/example_web/operator_authorization.ex"
+
+    artifacts = [
+      artifact(path, :host_owned, :absent, "deny policy"),
+      manifest(:absent, "manifest")
+    ]
+
+    FileTransaction.with_test_failure(
+      [:after_rolled_back_terminal, {:ordinary_failure, :before_manifest_commit}],
+      fn ->
+        assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+      end
+    )
+
+    refute File.exists?(Path.join(root, path))
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert journal["terminal"] == "rolled_back"
+
+    journal =
+      Map.put(journal, "committed", [
+        %{
+          "relative_path" => path,
+          "action" => "created",
+          "checksum" => Manifest.checksum("deny policy")
+        }
+      ])
+
+    File.write!(journal_path, Jason.encode!(journal))
+
+    assert :ok = FileTransaction.recover(root)
+    assert :ok = FileTransaction.apply(root, artifacts)
+    assert File.read!(Path.join(root, path)) == "deny policy"
+  end
+
+  test "a legacy journal without pending or terminal fields still recovers", %{root: root} do
+    path = "priv/repo/migrations/legacy.exs"
+    tx_root = Path.join(root, ".lockspire/.install-tx-legacy")
+    stage_path = Path.join(tx_root, "staged-0")
+    target = Path.join(root, path)
+    File.mkdir_p!(Path.dirname(stage_path))
+    File.mkdir_p!(Path.dirname(target))
+    File.write!(stage_path, "legacy migration")
+    File.write!(target, "legacy migration")
+
+    File.write!(
+      Path.join(root, ".lockspire/install_transaction.json"),
+      Jason.encode!(%{
+        "root" => root,
+        "tx_root" => tx_root,
+        "artifacts" => [%{"relative_path" => path, "stage_path" => stage_path}],
+        "committed" => [
+          %{
+            "relative_path" => path,
+            "action" => "created",
+            "checksum" => Manifest.checksum("legacy migration")
+          }
+        ]
+      })
+    )
+
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(target)
+  end
+
   test "refuses a journal below a symlinked .lockspire directory without touching outside state",
        %{root: root} do
     outside = Path.join(root, "outside-state")
