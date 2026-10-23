@@ -21,6 +21,8 @@ defmodule Lockspire.Install.Verify do
     {:delete, "/authorized-apps/:id"}
   ]
 
+  @policy_limit "Structural checks do not prove arbitrary host authorization policy. Verify host-owned request and LiveView behavior with host tests; packaged browser transport and exact-floor runtime proof belong to Phase 170."
+
   @type result :: %{ok?: boolean(), checks: [Check.result()]}
 
   @doc """
@@ -188,15 +190,24 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp router_check(router, mount_path) when is_atom(router) do
-    case safely(fn -> Phoenix.Router.routes(router) end) do
-      {:ok, routes} ->
+    routes =
+      try do
+        {:ok, Phoenix.Router.routes(router)}
+      rescue
+        _error -> :unavailable
+      catch
+        _kind, _reason -> :unavailable
+      end
+
+    case routes do
+      {:ok, routes} when is_list(routes) ->
         router_result(router, routes, mount_path)
 
-      {:error, message} ->
+      _unavailable ->
         Check.error(
           :router,
-          "Host router module is unavailable",
-          message,
+          "Host router metadata is unavailable",
+          "compiled routes could not be inspected safely",
           "Compile the host router module and rerun `mix lockspire.verify`."
         )
     end
@@ -212,23 +223,36 @@ defmodule Lockspire.Install.Verify do
   end
 
   defp router_result(router, routes, mount_path) when is_binary(mount_path) do
-    admin_mount_path = admin_mount_path(mount_path)
-    missing_host_routes = missing_host_routes(routes)
-    consent_index = route_index(routes, &consent_route?(&1, mount_path))
-    admin_index = route_index(routes, &admin_mount_route?(&1, admin_mount_path))
-    public_index = route_index(routes, &public_mount_route?(&1, mount_path))
+    normalized_mount = Lockspire.Config.normalize_mount_path!(mount_path)
+    admin_mount = admin_mount_path(normalized_mount)
+    inventory = Lockspire.Web.AdminRoutes.__route_inventory__()
+
+    expected =
+      Enum.map(inventory, fn {path, view, action} ->
+        {admin_route_path(admin_mount, path), view, action}
+      end)
+
+    host_route_errors = missing_host_route_errors(missing_host_routes(routes))
+    namespace_routes = Enum.filter(routes, &path_in_namespace?(&1, admin_mount))
+    native_errors = native_inventory_errors(namespace_routes, expected, router)
+    dispatch_errors = dispatch_errors(router, expected)
+
+    consent_index = route_index(routes, &consent_route?(&1, normalized_mount))
+    admin_index = route_index(routes, &native_admin_root_route?(&1, admin_mount))
+    public_index = route_index(routes, &public_mount_route?(&1, normalized_mount))
 
     errors =
-      missing_host_route_errors(missing_host_routes) ++
+      host_route_errors ++
         missing_route_error(
           consent_index,
-          "generated consent LiveView #{mount_path}/consent/:interaction_id"
+          "generated consent LiveView #{consent_path(normalized_mount)}"
         ) ++
+        native_errors ++
+        dispatch_errors ++
         missing_route_error(
-          admin_index,
-          "generated admin forward #{admin_mount_path} -> Lockspire.Web.AdminRouter"
+          public_index,
+          "public forward #{public_route_path(normalized_mount)} -> Lockspire.Web.Router"
         ) ++
-        missing_route_error(public_index, "public forward #{mount_path} -> Lockspire.Web.Router") ++
         ordering_errors(consent_index, admin_index, public_index)
 
     case errors do
@@ -236,18 +260,26 @@ defmodule Lockspire.Install.Verify do
         Check.ok(
           :router,
           "Host router wiring is present",
-          "router=#{inspect(router)} public_mount=#{mount_path} admin_mount=#{admin_mount_path}",
-          "Keep generated host routes, admin forwarding, and public forwarding together. Verify your host-owned operator policy with host request tests."
+          "native_admin_routes=#{length(expected)} public_mount=#{public_route_path(normalized_mount)} admin_mount=#{admin_mount} session=:lockspire_admin; #{@policy_limit}",
+          "Keep the canonical native admin routes, host authorization pipeline/hook, and separate public forward together. #{@policy_limit}"
         )
 
       _ ->
         Check.error(
           :router,
           "Host router wiring is incomplete",
-          Enum.join(errors, "; "),
-          "Import the generated Lockspire router helper and call `lockspire_routes/0` after host browser routes. The generated macro requires :require_operator at compile time; verify host operator policy with host request tests."
+          Enum.join(Enum.uniq(errors), "; ") <> ". " <> @policy_limit,
+          "Import `Lockspire.Web.AdminRoutes`, call `lockspire_admin_routes/2` after defining nonempty host pipelines and host `on_mount` hooks, then keep the separate public forward after the consent and admin routes. Verify host authorization with host request and LiveView tests. #{@policy_limit}"
         )
     end
+  rescue
+    _error ->
+      Check.error(
+        :router,
+        "Host router metadata is malformed",
+        "compiled route structure could not be inspected safely. #{@policy_limit}",
+        "Compile the host router with the canonical `Lockspire.Web.AdminRoutes` macro, then rerun `mix lockspire.verify`. #{@policy_limit}"
+      )
   end
 
   defp router_result(_router, _routes, _mount_path) do
@@ -281,7 +313,7 @@ defmodule Lockspire.Install.Verify do
     )
     |> append_if(
       is_integer(admin_index) and admin_index > public_index,
-      "generated admin forward appears after the public Lockspire forward"
+      "canonical admin route appears after the public Lockspire forward"
     )
   end
 
@@ -292,9 +324,10 @@ defmodule Lockspire.Install.Verify do
 
   defp route_index(routes, predicate), do: Enum.find_index(routes, predicate)
 
-  defp consent_route?(route, mount_path) do
-    route.path == consent_path(mount_path) and is_tuple(route.metadata[:phoenix_live_view])
-  end
+  defp consent_route?(%{path: path, metadata: metadata}, mount_path) when is_map(metadata),
+    do: path == consent_path(mount_path) and is_tuple(metadata[:phoenix_live_view])
+
+  defp consent_route?(_route, _mount_path), do: false
 
   defp consent_path(""), do: "/consent/:interaction_id"
   defp consent_path("/"), do: "/consent/:interaction_id"
@@ -306,13 +339,188 @@ defmodule Lockspire.Install.Verify do
   defp admin_mount_path("/"), do: "/admin"
   defp admin_mount_path(mount_path), do: String.trim_trailing(mount_path, "/") <> "/admin"
 
-  defp public_mount_route?(route, mount_path) do
-    route.verb == :* and route.path == mount_path and route.plug == Lockspire.Web.Router
+  defp public_route_path(""), do: "/"
+  defp public_route_path(path), do: path
+
+  defp admin_route_path(admin_mount, "/"), do: admin_mount
+  defp admin_route_path(admin_mount, relative), do: admin_mount <> relative
+
+  defp public_mount_route?(%{verb: :*, path: path, plug: Lockspire.Web.Router}, mount_path),
+    do: path == public_route_path(mount_path)
+
+  defp public_mount_route?(_route, _mount_path), do: false
+
+  defp native_admin_root_route?(
+         %{verb: :get, path: path, plug: Phoenix.LiveView.Plug},
+         admin_mount
+       ),
+       do: path == admin_mount
+
+  defp native_admin_root_route?(_route, _admin_mount), do: false
+
+  defp path_in_namespace?(%{path: path}, namespace) when is_binary(path),
+    do: path == namespace or String.starts_with?(path, namespace <> "/")
+
+  defp path_in_namespace?(_route, _namespace), do: false
+
+  defp native_inventory_errors(routes, expected, expected_router) do
+    expected_by_path = Map.new(expected, fn {path, view, action} -> {path, {view, action}} end)
+
+    counts = Enum.frequencies_by(routes, &route_path/1)
+
+    missing_or_duplicate =
+      Enum.flat_map(expected, fn {path, view, action} ->
+        case Map.get(counts, path, 0) do
+          0 -> ["missing native admin route GET #{path} -> #{inspect(view)} action #{action}"]
+          1 -> []
+          _count -> ["duplicate native admin route GET #{path}"]
+        end
+      end)
+
+    tuple_errors =
+      Enum.flat_map(routes, fn route ->
+        path = route_path(route)
+
+        case Map.fetch(expected_by_path, path) do
+          :error ->
+            ["unexpected route in the canonical admin namespace"]
+
+          {:ok, {expected_view, expected_action}} ->
+            route_shape_errors(route, path, expected_view, expected_action, expected_router)
+        end
+      end)
+
+    missing_or_duplicate ++ tuple_errors
   end
 
-  defp admin_mount_route?(route, admin_mount_path) do
-    route.verb == :* and route.path == admin_mount_path and
-      route.plug == Lockspire.Web.AdminRouter
+  defp route_path(%{path: path}) when is_binary(path), do: path
+  defp route_path(_route), do: nil
+
+  defp route_shape_errors(route, path, expected_view, expected_action, expected_router) do
+    case live_view_metadata(route) do
+      {:ok, view, action, session} ->
+        log_module = Map.get(Map.get(route, :metadata, %{}), :log_module)
+
+        target_errors =
+          if Map.get(route, :plug) == Phoenix.LiveView.Plug and log_module == expected_view and
+               view == expected_view and action == expected_action do
+            []
+          else
+            [
+              "wrong native admin target or action at GET #{path}; expected #{inspect(expected_view)} action #{expected_action}"
+            ]
+          end
+
+        target_errors ++ admin_session_errors(route, path, session, expected_router)
+
+      :error ->
+        ["malformed native admin metadata at GET #{path}; expected a LiveView route"]
+    end
+  end
+
+  defp live_view_metadata(%{metadata: metadata}) when is_map(metadata) do
+    case Map.get(metadata, :phoenix_live_view) do
+      {view, action, _options, session} when is_atom(view) and is_atom(action) ->
+        {:ok, view, action, session}
+
+      _other ->
+        :error
+    end
+  end
+
+  defp live_view_metadata(_route), do: :error
+
+  defp admin_session_errors(_route, path, session, expected_router) when is_map(session) do
+    session_errors =
+      if Map.get(session, :name) == :lockspire_admin do
+        []
+      else
+        ["wrong native admin LiveView session at GET #{path}; expected :lockspire_admin"]
+      end
+
+    session_errors ++ admin_hook_errors(session, path, expected_router)
+  end
+
+  defp admin_session_errors(_route, path, _session, _expected_router),
+    do: ["malformed native admin session metadata at GET #{path}"]
+
+  defp admin_hook_errors(%{extra: %{on_mount: hooks}}, path, expected_router)
+       when is_list(hooks) do
+    hook_ids = Enum.map(hooks, &hook_id/1)
+
+    case List.last(hook_ids) do
+      {Lockspire.Web.AdminMount, {:mount_path, ^expected_router}} ->
+        host_hooks = Enum.drop(hook_ids, -1)
+
+        if host_hooks != [] and
+             Enum.all?(host_hooks, &match?({module, _arg} when is_atom(module), &1)) do
+          []
+        else
+          [
+            "missing host LiveView authorization hook before Lockspire.Web.AdminMount at GET #{path}"
+          ]
+        end
+
+      _other ->
+        [
+          "Lockspire.Web.AdminMount guard is missing, misordered, or has the wrong router argument at GET #{path}"
+        ]
+    end
+  end
+
+  defp admin_hook_errors(_session, path, _expected_router),
+    do: ["malformed native admin on_mount metadata at GET #{path}"]
+
+  defp hook_id(%{id: {module, argument}}) when is_atom(module), do: {module, argument}
+  defp hook_id(_hook), do: :invalid
+
+  defp dispatch_errors(router, expected) do
+    Enum.flat_map(expected, fn {path, view, action} ->
+      concrete = concrete_route_path(path)
+
+      selected =
+        try do
+          Phoenix.Router.route_info(router, "GET", concrete, "localhost")
+        rescue
+          _error -> :unavailable
+        catch
+          _kind, _reason -> :unavailable
+        end
+
+      case selected do
+        %{
+          route: ^path,
+          plug: Phoenix.LiveView.Plug,
+          log_module: ^view,
+          phoenix_live_view: {^view, ^action, _opts, session}
+        } ->
+          dispatch_metadata_errors(selected, path, session, router)
+
+        _other ->
+          ["first-match dispatch does not select the canonical admin route GET #{path}"]
+      end
+    end)
+  end
+
+  defp dispatch_metadata_errors(selected, path, session, router) do
+    pipes = Map.get(selected, :pipe_through)
+
+    pipeline_errors =
+      if is_list(pipes) and pipes != [] and List.last(pipes) == :lockspire_admin_mount and
+           Enum.all?(Enum.drop(pipes, -1), &(is_atom(&1) and &1 != :lockspire_admin_mount)) do
+        []
+      else
+        ["missing host authorization pipeline before :lockspire_admin_mount at GET #{path}"]
+      end
+
+    pipeline_errors ++ admin_session_errors(selected, path, session, router)
+  end
+
+  defp concrete_route_path(path) do
+    path
+    |> String.replace(":client_id", "lockspire-probe-client")
+    |> String.replace(":id", "lockspire-probe-id")
+    |> String.replace(":interaction_id", "lockspire-probe-interaction")
   end
 
   defp migrations_check(repo, project_root) do

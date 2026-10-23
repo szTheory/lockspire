@@ -93,7 +93,7 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     end
 
     scope "/lockspire" do
-      live("/consent/:interaction_id", ConsentLive, :show)
+      live("/consent/:interaction_id", Mix.Tasks.Lockspire.VerifyTest.ConsentLive, :show)
     end
 
     scope "/lockspire/admin" do
@@ -185,8 +185,7 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
         end
       end)
 
-    assert output =~ "generated admin forward"
-    assert output =~ "host routes"
+    assert output =~ "missing native admin route"
   end
 
   test "raises with actionable router guidance when verify routes are missing" do

@@ -267,7 +267,7 @@ defmodule Lockspire.Install.VerifyTest do
   test "returns a passing result set for a wired host router" do
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -296,6 +296,12 @@ defmodule Lockspire.Install.VerifyTest do
              Enum.find(result.checks, &(&1.id == :router))
   end
 
+  test "verifier reads the shared hidden route inventory" do
+    inventory = Lockspire.Web.AdminRoutes.__route_inventory__()
+    assert length(inventory) == 29
+    assert {"/clients/new", Lockspire.Web.Live.Admin.ClientsLive.Index, :new} in inventory
+  end
+
   test "returns a failing result set for missing verify routes" do
     result =
       Verify.run(
@@ -321,7 +327,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: MissingResolver,
         interaction_handler_module: MissingInteractionHandler,
         repo: Lockspire.TestRepo,
@@ -366,7 +372,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     defp verify_opts do
       [
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -434,7 +440,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     defp verify_kek_opts do
       [
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -466,7 +472,7 @@ defmodule Lockspire.Install.VerifyTest do
     defp storage_check(status_result, extra \\ []) do
       opts =
         [
-          router: Web.Router,
+          router: NativeAdminRouter,
           resolver_module: Scope.AccountResolver,
           interaction_handler_module: Scope.InteractionHandler,
           repo: Lockspire.TestRepo,
@@ -530,7 +536,7 @@ defmodule Lockspire.Install.VerifyTest do
         Enum.find(
           Verify.run(
             [
-              router: Web.Router,
+              router: NativeAdminRouter,
               resolver_module: Scope.AccountResolver,
               interaction_handler_module: Scope.InteractionHandler,
               repo: Lockspire.TestRepo,
@@ -547,7 +553,7 @@ defmodule Lockspire.Install.VerifyTest do
     test "a repo whose startup raises a connection error does not crash verification" do
       result =
         Verify.run(
-          router: Web.Router,
+          router: NativeAdminRouter,
           resolver_module: Scope.AccountResolver,
           interaction_handler_module: Scope.InteractionHandler,
           repo: Lockspire.Install.VerifyTest.FailingRepo,
@@ -585,7 +591,7 @@ defmodule Lockspire.Install.VerifyTest do
              Enum.find(result.checks, &(&1.id == :router))
 
     assert details =~ "get /verify"
-    assert fix =~ "lockspire_routes"
+    assert fix =~ "lockspire_admin_routes/2"
   end
 
   test "reports missing copied host migrations before database migration status" do
@@ -596,7 +602,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -633,11 +639,11 @@ defmodule Lockspire.Install.VerifyTest do
     assert %{status: :error, details: details, fix: fix} =
              Enum.find(result.checks, &(&1.id == :router))
 
-    assert details =~ "forward /lockspire/admin -> Lockspire.Web.AdminRouter"
-    assert fix =~ "host request tests"
+    assert details =~ "missing native admin route GET /lockspire/admin/"
+    assert fix =~ "host request and LiveView tests"
   end
 
-  test "reports admin mount shape without claiming to verify host operator policy" do
+  test "does not treat the legacy admin forward as complete native wiring" do
     result =
       Verify.run(
         router: RouterUnguardedAdmin,
@@ -647,7 +653,9 @@ defmodule Lockspire.Install.VerifyTest do
         mount_path: "/lockspire"
       )
 
-    assert result.ok?
+    refute result.ok?
+    assert %{status: :error, details: details} = Enum.find(result.checks, &(&1.id == :router))
+    assert details =~ "missing native admin route GET /lockspire/admin/"
   end
 
   test "returns a failing result when public forward shadows the admin mount" do
@@ -665,7 +673,7 @@ defmodule Lockspire.Install.VerifyTest do
     assert %{status: :error, details: details, fix: fix} =
              Enum.find(result.checks, &(&1.id == :router))
 
-    assert details =~ "generated admin forward appears after the public Lockspire forward"
-    assert fix =~ "host request tests"
+    assert details =~ "missing native admin route GET /lockspire/admin/"
+    assert fix =~ "host request and LiveView tests"
   end
 end

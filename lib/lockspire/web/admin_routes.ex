@@ -42,6 +42,9 @@ defmodule Lockspire.Web.AdminRoutes do
   ]
 
   @doc false
+  def __route_inventory__, do: @admin_live_routes
+
+  @doc false
   defmacro __admin_live_routes__ do
     route_calls =
       Enum.map(@admin_live_routes, fn {path, view, action} ->
