@@ -6,6 +6,8 @@ defmodule Lockspire.InstallUpgradeTest do
   alias Lockspire.Install.Manifest
   alias Lockspire.Install.FileTransaction
   alias Lockspire.Install.Migrations
+  alias Lockspire.Install.OperationPlan
+  alias Lockspire.Generators.Install
 
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
 
@@ -244,6 +246,59 @@ defmodule Lockspire.InstallUpgradeTest do
     capture_io(fn -> upgrade_fixture!([]) end)
     assert FileTransaction.recovery_status(@fixture_root) == :clean
     assert tree_snapshot(@fixture_root) != interrupted_snapshot
+  end
+
+  test "stale preflight and competing plans refuse without replacing host bytes" do
+    install_fixture!()
+    manifest = load_manifest!()
+    config_path = Path.join(@fixture_root, "config/lockspire.exs")
+    original_config = File.read!(config_path)
+
+    assigns =
+      Install.build_assigns(
+        web: "GeneratedHostAppWeb",
+        scope: "GeneratedHostApp.Lockspire",
+        path: @fixture_root
+      )
+
+    File.rm!(Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex"))
+    rendered = Install.rendered_templates(assigns)
+    {:ok, create_plan} = OperationPlan.upgrade(assigns, rendered, manifest)
+    policy_path = Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex")
+    File.write!(policy_path, "host policy wins")
+    competing_snapshot = tree_snapshot(@fixture_root)
+
+    assert {:error, [%{type: :approved_plan_changed}]} = OperationPlan.apply(create_plan)
+    assert tree_snapshot(@fixture_root) == competing_snapshot
+
+    changed_assigns = Map.put(assigns, :mount_path, "/oauth")
+
+    {:ok, update_plan} =
+      OperationPlan.upgrade(
+        changed_assigns,
+        Install.rendered_templates(changed_assigns),
+        manifest
+      )
+
+    File.write!(config_path, File.read!(config_path) <> "\n# concurrent host edit\n")
+    changed_snapshot = tree_snapshot(@fixture_root)
+
+    assert {:error, errors} = OperationPlan.apply(update_plan)
+    assert Enum.any?(errors, &(&1.type == :approved_plan_changed))
+    assert tree_snapshot(@fixture_root) == changed_snapshot
+
+    File.rm!(policy_path)
+    File.write!(config_path, original_config)
+    {:ok, first_plan} = OperationPlan.upgrade(assigns, rendered, manifest)
+    {:ok, second_plan} = OperationPlan.upgrade(assigns, rendered, manifest)
+    assert {:ok, _} = OperationPlan.apply(first_plan)
+    winning_policy = File.read!(policy_path)
+    winner_snapshot = tree_snapshot(@fixture_root)
+
+    assert {:error, errors} = OperationPlan.apply(second_plan)
+    assert Enum.any?(errors, &(&1.type == :approved_plan_changed))
+    assert File.read!(policy_path) == winning_policy
+    assert tree_snapshot(@fixture_root) == winner_snapshot
   end
 
   test "mix lockspire.upgrade refuses drifted managed files" do

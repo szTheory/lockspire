@@ -164,13 +164,18 @@ defmodule Lockspire.Install.FileTransactionTest do
       assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
     end)
 
-    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) == "deny policy"
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) ==
+             "deny policy"
+
     assert File.read!(Path.join(root, helper)) == "native helper"
     refute File.exists?(Path.join(root, ".lockspire/install_manifest.json"))
     assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
 
     assert :ok = FileTransaction.apply(root, artifacts)
-    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) == "deny policy"
+
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) ==
+             "deny policy"
+
     assert File.read!(Path.join(root, helper)) == "native helper"
     assert File.read!(Path.join(root, ".lockspire/install_manifest.json")) == "committed last"
     assert FileTransaction.recovery_status(root) == :clean

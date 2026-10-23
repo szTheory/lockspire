@@ -379,7 +379,8 @@ defmodule Lockspire.Install.FileTransaction do
          :ok <- checksum_stage(artifact),
          {:ok, committed} <- write_target(state, artifact, target),
          :ok <- write_journal(%{state | committed: [committed | state.committed]}),
-         :ok <- commit_hook(artifact, [committed | state.committed]) do
+         :ok <- commit_hook(artifact, [committed | state.committed]),
+         :ok <- maybe_fail({:after_artifact, artifact.relative_path}) do
       {:ok, %{state | committed: [committed | state.committed]}}
     end
   end
