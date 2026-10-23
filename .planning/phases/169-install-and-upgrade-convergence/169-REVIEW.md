@@ -1,6 +1,6 @@
 ---
 phase: 169-install-and-upgrade-convergence
-reviewed: 2026-10-23T23:04:36Z
+reviewed: 2026-10-23T23:11:53Z
 depth: standard
 files_reviewed: 41
 files_reviewed_list:
@@ -46,46 +46,37 @@ files_reviewed_list:
   - test/support/lockspire/release_proof/documentation_assertions.ex
   - test/support/lockspire/web/admin_proof/route_assertions.ex
 findings:
-  critical: 1
+  critical: 0
   warning: 1
   info: 0
-  total: 2
+  total: 1
 status: issues_found
 ---
 
 # Phase 169: Code Review Report
 
-**Reviewed:** 2026-10-23T23:04:36Z
-**Depth:** standard
-**Files Reviewed:** 41
+**Reviewed:** 2026-10-23T23:11:53Z  
+**Depth:** standard  
+**Files Reviewed:** 41  
 **Status:** issues_found
 
 ## Summary
 
-Re-reviewed the 41-file Phase 169 scope after fix commit `8d708bb1`. The two previously reported journal ordering and rollback retry defects are closed by the pending-intent journal and terminal cleanup state. A remaining write failure window can leave a partial newly-created destination that recovery cannot safely identify as transaction-owned; interrupted update staging can also leave an untracked temporary file beside the destination.
+Re-reviewed the unchanged 41-file Phase 169 scope, focusing on the transaction recovery and publication changes in `8d708bb1`, `aa758972`, and `827b24b7`. The four prior findings are closed: write-ahead intent and terminal rollback make recovery retryable, creates publish by exclusive hard link with staged inode proof, and updates/restores publish by renaming tracked transaction files. One process-interruption path still leaves an untracked transaction directory with no journal to recover or clean it.
 
 ## Narrative Findings (AI reviewer)
 
-## Critical Issues
-
-### CR-02: A partial create leaves recovery permanently blocked
-
-**Classification:** BLOCKER  
-**File:** `lib/lockspire/install/file_transaction.ex:449-453, 501-519`
-**Issue:** The create path writes directly to the final target with `File.write/3`. If that write is interrupted or fails after creating/writing only part of the file (for example, an I/O or space error), the pending intent remains durable but the target checksum does not match the intended artifact. Recovery's `"created"` branch treats any existing non-matching bytes as a competing host change and refuses rollback. The incomplete generated file then remains in place and subsequent install/upgrade attempts stay blocked in `recovery_required`.
-**Fix:** Write creates to an exclusive temporary file in the destination directory, verify its checksum, then rename it to the absent target. On recovery, a missing target is already a completed rollback; clean up only transaction-owned temporary files recorded in the intent (or use a deterministic transaction-specific temporary name and checksum validation).
-
 ## Warnings
 
-### WR-02: An interrupted update can leave an untracked sibling temporary file
+### WR-01: An interruption before journal publication leaves an undiscoverable transaction directory
 
 **Classification:** WARNING  
-**File:** `lib/lockspire/install/file_transaction.ex:457-472, 667-679`
-**Issue:** Updates stage replacement bytes in a `.lockspire-tx-*` file beside the destination and remove it in an `after` block. If the process stops after the temporary file is written but before `File.rename/2` or the `after` cleanup runs, recovery sees the old target and correctly considers rollback complete, but `cleanup/1` only removes the transaction directory and journal. The sibling temporary file is left in the host source tree after recovery.
-**Fix:** Include the update temporary path in the pending intent and have recovery remove it only after verifying it is a regular file with the staged checksum, or create it under the transaction directory when same-filesystem rename is guaranteed.
+**File:** `lib/lockspire/install/file_transaction.ex:284-313, 694-706`
+**Issue:** `stage/2` creates `.lockspire/.install-tx-*` and writes staged files before the first durable journal is published. If the process stops during staging or at the existing `:after_staging` interruption point, `apply/3` returns without cleanup and no journal exists; subsequent `recover/1` treats the project as clean, so the orphaned staged files persist. A similar orphan can remain if interruption occurs after `cleanup/1` removes the journal at line 703 but before it removes the transaction directory at line 704. Repeated interruptions can accumulate stale transaction directories in the host project.
+**Fix:** Make the staging directory discoverable before writing staged artifacts (for example, publish an initial valid journal with no committed or pending mutations, then update it once staging completes), so recovery can remove incomplete staging. For the post-commit cleanup window, preserve a durable completion/cleanup record until the transaction directory is removed, then remove that record; recovery should recognize the completed state and finish cleanup without attempting rollback.
 
 ---
 
-_Reviewed: 2026-10-23T23:04:36Z_
+_Reviewed: 2026-10-23T23:11:53Z_  
 _Reviewer: the agent (gsd-code-reviewer)_  
 _Depth: standard_
