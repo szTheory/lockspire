@@ -1,9 +1,9 @@
 ---
 phase: "169"
 slug: "install-and-upgrade-convergence"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-22"
 ---
 
@@ -171,17 +171,26 @@ The implementation, runtime-source explanation, and admin behavior tests do
 not establish candidate-package consumption, browser/socket transport, exact
 Phoenix 1.8.5 / LiveView 1.1.28 execution, or required CI. Phase 170 retains
 each of those evidence owners. No visual approval or user-reported pass is
-claimed. `status: draft`, `nyquist_compliant: false`, and the unchecked
-validation sign-off items remain unchanged pending the applicable validation
-workflow.
+claimed. The independent validation audit on 2026-10-23 inspected actual
+behavioral tests and the final logs, found no coverage gaps across all four
+requirements and ten tasks, and confirmed no implementation/test source
+changes after the tested source revision `13e673ce`.
 
 ## Validation Sign-Off
 
 - [x] Final task IDs, threat references and verification commands mapped after planning.
-- [ ] Every task has automated verification; no three consecutive tasks without it.
-- [ ] New test references have creation dependencies; no watch-mode commands.
-- [ ] Focused check timings measured and acceptable for per-edit feedback.
-- [ ] Execution outcomes, source revision and scope limits recorded.
-- [ ] `nyquist_compliant: true` set only when validated by the applicable workflow.
+- [x] Every task has automated verification; no three consecutive tasks without it.
+- [x] New test references have creation dependencies; no watch-mode commands.
+- [x] Focused check timings measured and acceptable for per-edit feedback; broad commands remain task/wave gates.
+- [x] Execution outcomes, source revision and scope limits recorded.
+- [x] `nyquist_compliant: true` set by the applicable validation workflow after independent audit.
 
-**Approval:** pending automated validation; no separate human UAT requested.
+**Approval:** automated validation verified 2026-10-23; no separate human UAT requested.
+
+## Validation Audit 2026-10-23
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
