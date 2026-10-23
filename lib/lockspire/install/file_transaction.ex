@@ -211,6 +211,15 @@ defmodule Lockspire.Install.FileTransaction do
       {:error, errors} when is_list(errors) ->
         {:error, errors}
 
+      {:simulated_interruption, hook} ->
+        {:error,
+         [
+           error(
+             :interrupted,
+             "Install transaction intentionally interrupted at #{inspect(hook)}; rerun the command to recover safely."
+           )
+         ]}
+
       _ ->
         {:error,
          [
@@ -350,6 +359,7 @@ defmodule Lockspire.Install.FileTransaction do
   defp halt_commit(current, {:error, reason}) do
     case rollback(current) do
       :ok -> rollback_completion(current, reason)
+      {:simulated_interruption, _} = interruption -> interruption
       {:error, rollback_reason} -> rollback_failure(reason, rollback_reason)
     end
   end
@@ -415,7 +425,12 @@ defmodule Lockspire.Install.FileTransaction do
 
   defp prepare_intent(_state, %{expected: :absent} = artifact, _target) do
     {:ok,
-     %{relative_path: artifact.relative_path, action: "created", checksum: artifact.checksum}}
+     %{
+       relative_path: artifact.relative_path,
+       action: "created",
+       checksum: artifact.checksum,
+       stage_path: artifact.stage_path
+     }}
   end
 
   defp prepare_intent(state, artifact, target) do
@@ -449,26 +464,18 @@ defmodule Lockspire.Install.FileTransaction do
   defp write_target(state, %{expected: :absent} = artifact, target, _intent) do
     with :ok <- File.mkdir_p(Path.dirname(target)),
          :ok <- safe_ancestry(state.root, target, allow_missing?: true),
-         :ok <- File.write(target, File.read!(artifact.stage_path), [:exclusive]) do
+         :ok <- maybe_fail({:before_create_publish, artifact.relative_path}),
+         :ok <- File.ln(artifact.stage_path, target) do
       :ok
     end
   end
 
   defp write_target(state, artifact, target, _intent) do
-    temporary =
-      Path.join(Path.dirname(target), ".lockspire-tx-#{System.unique_integer([:positive])}")
-
-    try do
-      with :ok <- File.write(temporary, File.read!(artifact.stage_path), [:exclusive]),
-           :ok <- safe_ancestry(state.root, target, allow_missing?: false),
-           :ok <- expected_preimage(target, artifact.expected),
-           :ok <- File.rename(temporary, target) do
-        :ok
-      else
-        {:error, reason} -> {:error, reason}
-      end
-    after
-      if File.exists?(temporary), do: File.rm(temporary)
+    with :ok <- safe_ancestry(state.root, target, allow_missing?: false),
+         :ok <- expected_preimage(target, artifact.expected),
+         :ok <- maybe_fail({:before_update_publish, artifact.relative_path}),
+         :ok <- File.rename(artifact.stage_path, target) do
+      :ok
     end
   end
 
@@ -511,7 +518,8 @@ defmodule Lockspire.Install.FileTransaction do
               not File.exists?(target) ->
                 :ok
 
-              checksum_file?(target, committed.checksum) ->
+              checksum_file?(target, committed.checksum) and
+                  created_target_is_transaction_file?(target, committed) ->
                 remove_created_target(state.root, target)
 
               true ->
@@ -525,15 +533,11 @@ defmodule Lockspire.Install.FileTransaction do
 
               checksum_file?(target, committed.checksum) and
                   checksum_file?(committed.backup, committed.backup_checksum) ->
-                restore =
-                  Path.join(
-                    Path.dirname(target),
-                    ".lockspire-restore-#{System.unique_integer([:positive])}"
-                  )
-
-                case File.write(restore, File.read!(committed.backup), [:exclusive]) do
-                  :ok -> File.rename(restore, target)
-                  error -> error
+                with :ok <- safe_ancestry(state.root, target, allow_missing?: false),
+                     :ok <- safe_ancestry(state.root, committed.backup, allow_missing?: false),
+                     :ok <- File.rename(committed.backup, target),
+                     :ok <- maybe_fail(:after_restore_publish) do
+                  :ok
                 end
 
               true ->
@@ -590,7 +594,26 @@ defmodule Lockspire.Install.FileTransaction do
       is_map(entry) and safe_relative?(entry["relative_path"] || "") and
         entry["action"] in ["created", "updated"] and
         (entry["action"] == "created" or safe_path?(tx_root, entry["backup"] || "")) and
+        (is_nil(entry["stage_path"]) or safe_path?(tx_root, entry["stage_path"])) and
         safe_path?(root, Path.join(root, entry["relative_path"] || ""))
+
+  defp created_target_is_transaction_file?(target, %{stage_path: stage_path})
+       when is_binary(stage_path) do
+    with {:ok, target_stat} <- File.lstat(target),
+         %{type: :regular} <- target_stat,
+         {:ok, stage_stat} <- File.lstat(stage_path),
+         %{type: :regular} <- stage_stat,
+         true <- target_stat.inode > 0,
+         true <- target_stat.inode == stage_stat.inode,
+         true <- target_stat.major_device == stage_stat.major_device,
+         true <- target_stat.minor_device == stage_stat.minor_device do
+      true
+    else
+      _ -> false
+    end
+  end
+
+  defp created_target_is_transaction_file?(_target, _committed), do: true
 
   defp write_journal(state) do
     temporary =
@@ -837,6 +860,7 @@ defmodule Lockspire.Install.FileTransaction do
 
   defp maybe_fail(hook) do
     configured = Process.get(@test_hook_key)
+    if is_function(configured, 1), do: configured.(hook)
 
     cond do
       configured_hook?(configured, hook) or migration_hook?(configured, hook) ->
@@ -873,7 +897,8 @@ defmodule Lockspire.Install.FileTransaction do
       action: map["action"],
       checksum: map["checksum"],
       backup: map["backup"],
-      backup_checksum: map["backup_checksum"]
+      backup_checksum: map["backup_checksum"],
+      stage_path: map["stage_path"]
     }
   end
 end

@@ -198,10 +198,101 @@ defmodule Lockspire.Install.FileTransactionTest do
     journal = Jason.decode!(File.read!(Path.join(root, ".lockspire/install_transaction.json")))
     assert journal["pending"]["relative_path"] == path
     assert journal["committed"] == []
+    stage_path = List.first(journal["artifacts"])["stage_path"]
+    assert File.stat!(Path.join(root, path)).inode == File.stat!(stage_path).inode
 
     assert :ok = FileTransaction.recover(root)
     refute File.exists?(Path.join(root, path))
     refute File.exists?(Path.join(root, ".lockspire/install_transaction.json"))
+  end
+
+  test "interruption after staging leaves the final create destination absent", %{root: root} do
+    path = "lib/example_web/router/lockspire.ex"
+
+    FileTransaction.with_test_failure(:after_staging, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, :absent, "complete staged helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    refute File.exists?(Path.join(root, path))
+  end
+
+  test "atomic create publication refuses a destination that appears at publication time", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+    target = Path.join(root, path)
+
+    FileTransaction.with_test_failure(
+      fn
+        {:before_create_publish, ^path} ->
+          File.write(target, "generated helper", [:exclusive])
+
+        _hook ->
+          :ok
+      end,
+      fn ->
+        assert {:error, errors} =
+                 FileTransaction.apply(root, [
+                   artifact(path, :managed, :absent, "generated helper"),
+                   manifest(:absent, "manifest")
+                 ])
+
+        assert Enum.any?(errors, &(&1.type == :rollback_failed))
+      end
+    )
+
+    assert File.read!(target) == "generated helper"
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+  end
+
+  test "an interrupted update before atomic publication leaves no host sibling temp", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+    target = Path.join(root, path)
+    File.mkdir_p!(Path.dirname(target))
+    File.write!(target, "old helper")
+
+    FileTransaction.with_test_failure({:before_update_publish, path}, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, Manifest.checksum("old helper"), "new helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    assert File.read!(target) == "old helper"
+    assert Path.wildcard(Path.join(Path.dirname(target), ".lockspire-tx-*")) == []
+    assert :ok = FileTransaction.recover(root)
+    assert Path.wildcard(Path.join(Path.dirname(target), ".lockspire-tx-*")) == []
+  end
+
+  test "interruption after rollback publishes its backup without leaving a sibling temp", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+    target = Path.join(root, path)
+    File.mkdir_p!(Path.dirname(target))
+    File.write!(target, "old helper")
+    artifact = artifact(path, :managed, Manifest.checksum("old helper"), "new helper")
+
+    FileTransaction.with_test_failure({:after_target_write, path}, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [artifact, manifest(:absent, "manifest")])
+    end)
+
+    FileTransaction.with_test_failure(:after_restore_publish, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.recover(root)
+    end)
+
+    assert File.read!(target) == "old helper"
+    assert Path.wildcard(Path.join(Path.dirname(target), ".lockspire-restore-*")) == []
+    assert :ok = FileTransaction.recover(root)
+    assert Path.wildcard(Path.join(Path.dirname(target), ".lockspire-restore-*")) == []
   end
 
   test "an intent whose absent target now contains competing host bytes is preserved", %{
