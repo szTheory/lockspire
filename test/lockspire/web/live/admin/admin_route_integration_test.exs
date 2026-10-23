@@ -160,6 +160,55 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
              )
   end
 
+  test "cached-response denial halts before protected probe callbacks and actions" do
+    install_authority()
+    trace = "cached-probe-policy-withdrawn"
+
+    initial_conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", trace)
+      |> Phoenix.ConnTest.init_test_session(
+        Map.put(
+          Lockspire.Web.AdminRouteHost.Identity.staff_session("staff-1"),
+          "trace_id",
+          trace
+        )
+      )
+      |> Phoenix.ConnTest.get("/admin-auth-probe")
+
+    assert initial_conn.status == 200
+    assert initial_conn.resp_body =~ "admin-route-sensitive-id"
+    assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:probe_callback, :disconnected, :mount}
+    assert_receive {:probe_callback, :disconnected, :params}
+    assert_receive {:probe_callback, :disconnected, :render_data}
+
+    assert {:ok, first_view, html} = live(initial_conn)
+    assert html =~ "admin-route-sensitive-id"
+    assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+    assert_receive {:probe_callback, :connected, :mount}
+    assert_receive {:probe_callback, :connected, :params}
+    assert_receive {:probe_callback, :connected, :render_data}
+
+    first_view |> element("#probe-action") |> render_click()
+    assert_receive {:probe_callback, :connected, :action}
+    stop_live_view(first_view)
+
+    authority =
+      Lockspire.Web.AdminRouteHost.Identity.default_authority()
+      |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+    assert :ok = Lockspire.Web.AdminRouteHost.Identity.put_authority(authority)
+
+    assert live(initial_conn) ==
+             {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+    assert_receive {:host_authorization, ^trace, :connected, :denied, "staff-1"}
+    assert_receive {:host_live_hook, :denied}
+    refute_receive {:probe_callback, :connected, _callback}
+    refute_receive {:host_session_callback, _label}
+  end
+
   test "connected entry rechecks current host policy against the already-rendered response" do
     install_authority()
 
@@ -390,6 +439,13 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
   defp restore_env(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)
   defp restore_env(key, :error), do: Application.delete_env(:lockspire, key)
 
+  defp stop_live_view(view) do
+    pid = view.pid
+    monitor = Process.monitor(pid)
+    GenServer.stop(pid)
+    assert_receive {:DOWN, ^monitor, :process, ^pid, _reason}
+  end
+
   defp restore_observer(:unset), do: :persistent_term.erase(:lockspire_admin_route_hook_observer)
 
   defp restore_observer(observer),
@@ -581,6 +637,92 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     assert_receive {:host_live_hook, :denied}
     refute_receive {:host_session_callback, _label}
     refute_receive {:probe_callback, :connected, _callback}
+  end
+
+  test "cached admin rejoin checks session, identity and policy at every mount" do
+    install_authority()
+    fixtures = AdminRouteHost.seed_admin_records!()
+    assert fixtures.client.client_id == "admin-route-client"
+
+    invalidations = [
+      {"invalid session",
+       fn authority ->
+         put_in(authority, [:sessions, "host-session-staff-1", :valid?], false)
+       end},
+      {"removed session binding",
+       fn authority ->
+         update_in(authority, [:sessions], &Map.delete(&1, "host-session-staff-1"))
+       end},
+      {"deleted identity",
+       fn authority ->
+         update_in(authority, [:identities], &Map.delete(&1, "staff-1"))
+       end},
+      {"withdrawn staff policy",
+       fn authority ->
+         put_in(authority, [:permissions, "staff-1"], false)
+       end}
+    ]
+
+    for {endpoint, _router, mount, base} <- @mounts do
+      configure_mount(mount)
+      route = base <> "/clients"
+      allowed_trace = "cached-allowed-#{inspect(endpoint)}"
+
+      assert :ok =
+               AdminRouteHost.Identity.put_authority(AdminRouteHost.Identity.default_authority())
+
+      {allowed_conn, first_view, first_html} =
+        connected_admin_response(endpoint, route, allowed_trace)
+
+      assert first_view.module == Lockspire.Web.Live.Admin.ClientsLive.Index
+      assert first_html != ""
+      assert Plug.Conn.get_session(allowed_conn, "host_session_id") == "host-session-staff-1"
+      first_pid = first_view.pid
+      stop_live_view(first_view)
+
+      assert {:ok, rejoined_view, rejoined_html} = live(allowed_conn)
+      assert rejoined_view.pid != first_pid
+      assert rejoined_view.module == Lockspire.Web.Live.Admin.ClientsLive.Index
+      assert rejoined_html != ""
+      assert_receive {:host_authorization, ^allowed_trace, :connected, :allowed, "staff-1"}
+      assert_receive {:route_trace, ^allowed_trace, :admin_hook}
+      assert_receive {:host_live_hook, "staff-1"}
+      refute_receive {:host_session_callback, _label}
+      refute_receive {:route_trace, ^allowed_trace, :admin_http_allowed}
+      refute_receive {:route_trace, ^allowed_trace, :admin_session}
+      stop_live_view(rejoined_view)
+
+      for {label, invalidate} <- invalidations do
+        trace = "cached-denied-#{inspect(endpoint)}-#{label}"
+        authority = AdminRouteHost.Identity.default_authority()
+        assert :ok = AdminRouteHost.Identity.put_authority(authority)
+
+        {denied_conn, original_view, original_html} =
+          connected_admin_response(endpoint, route, trace)
+
+        assert original_view.module == Lockspire.Web.Live.Admin.ClientsLive.Index
+        assert original_html != ""
+        assert Plug.Conn.get_session(denied_conn, "host_session_id") == "host-session-staff-1"
+        assert denied_conn.assigns.host_staff_id == "staff-1"
+        original_session = Plug.Conn.get_session(denied_conn)
+        stop_live_view(original_view)
+
+        assert :ok = AdminRouteHost.Identity.put_authority(invalidate.(authority))
+
+        assert live(denied_conn) ==
+                 {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+        assert Plug.Conn.get_session(denied_conn) == original_session
+        assert_receive {:host_authorization, ^trace, :connected, :denied, "staff-1"}
+        assert_receive {:route_trace, ^trace, :admin_hook_denied}
+        assert_receive {:host_live_hook, :denied}
+        refute_receive {:host_session_callback, _label}
+        refute_receive {:route_trace, ^trace, :admin_http_allowed}
+        refute_receive {:route_trace, ^trace, :admin_http_denied}
+        refute_receive {:route_trace, ^trace, :admin_session}
+        refute_receive {:probe_callback, :connected, _callback}
+      end
+    end
   end
 
   for {_endpoint, _router, _mount, path} <- @mounts do
@@ -939,6 +1081,29 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
       |> Phoenix.ConnTest.dispatch(endpoint, :get, path)
 
     {Phoenix.LiveViewTest.__live__(conn, nil, []), conn}
+  end
+
+  defp connected_admin_response(endpoint, path, trace) do
+    conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", trace)
+      |> init_test_session(AdminRouteHost.Identity.staff_session("staff-1"))
+      |> Phoenix.ConnTest.dispatch(endpoint, :get, path)
+
+    assert conn.status == 200
+    assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:route_trace, ^trace, :admin_http_allowed}
+    assert_receive {:route_trace, ^trace, :admin_session}
+    assert_receive {:route_trace, ^trace, :admin_hook}
+    assert_receive {:host_live_hook, "staff-1"}
+    assert_receive {:host_session_callback, _label}
+
+    assert {:ok, view, html} = live(conn)
+    assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+    assert_receive {:route_trace, ^trace, :admin_hook}
+    assert_receive {:host_live_hook, "staff-1"}
+
+    {conn, view, html}
   end
 
   defp route_path(base, "/", _fixtures), do: base
