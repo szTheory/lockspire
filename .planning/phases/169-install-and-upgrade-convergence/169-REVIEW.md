@@ -1,6 +1,6 @@
 ---
 phase: 169-install-and-upgrade-convergence
-reviewed: 2026-10-23T23:11:53Z
+reviewed: 2026-10-23T23:18:59Z
 depth: standard
 files_reviewed: 41
 files_reviewed_list:
@@ -47,36 +47,33 @@ files_reviewed_list:
   - test/support/lockspire/web/admin_proof/route_assertions.ex
 findings:
   critical: 0
-  warning: 1
+  warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 169: Code Review Report
 
-**Reviewed:** 2026-10-23T23:11:53Z  
-**Depth:** standard  
-**Files Reviewed:** 41  
-**Status:** issues_found
+**Reviewed:** 2026-10-23T23:18:59Z
+**Depth:** standard
+**Files Reviewed:** 41
+**Status:** clean
 
 ## Summary
 
-Re-reviewed the unchanged 41-file Phase 169 scope, focusing on the transaction recovery and publication changes in `8d708bb1`, `aa758972`, and `827b24b7`. The four prior findings are closed: write-ahead intent and terminal rollback make recovery retryable, creates publish by exclusive hard link with staged inode proof, and updates/restores publish by renaming tracked transaction files. One process-interruption path still leaves an untracked transaction directory with no journal to recover or clean it.
+Re-reviewed the preserved 41-file Phase 169 scope, concentrating on the final `FileTransaction` staging, intent publication, rollback, and cleanup transitions, with the transaction tests and their `OperationPlan` and upgrade callers. The five historical findings are closed: write-ahead mutation intent and terminal rollback support retryable recovery; create publication is exclusive and rollback verifies staged inode identity; update and backup restoration use tracked transaction files; initial staging is journaled before artifacts are written; and committed or rolled-back cleanup remains recoverable, including staging failures.
+
+The transaction test source covers the reviewed interruption cases. The review-fix record reports 24 focused transaction tests and 55 transaction, upgrade, and generator tests passing against a fresh database; those suites were not rerun for this read-only review. The current source contains no remaining actionable issue in the stated process-interruption scope.
 
 ## Narrative Findings (AI reviewer)
 
-## Warnings
+No actionable findings.
 
-### WR-01: An interruption before journal publication leaves an undiscoverable transaction directory
-
-**Classification:** WARNING  
-**File:** `lib/lockspire/install/file_transaction.ex:284-313, 694-706`
-**Issue:** `stage/2` creates `.lockspire/.install-tx-*` and writes staged files before the first durable journal is published. If the process stops during staging or at the existing `:after_staging` interruption point, `apply/3` returns without cleanup and no journal exists; subsequent `recover/1` treats the project as clean, so the orphaned staged files persist. A similar orphan can remain if interruption occurs after `cleanup/1` removes the journal at line 703 but before it removes the transaction directory at line 704. Repeated interruptions can accumulate stale transaction directories in the host project.
-**Fix:** Make the staging directory discoverable before writing staged artifacts (for example, publish an initial valid journal with no committed or pending mutations, then update it once staging completes), so recovery can remove incomplete staging. For the post-commit cleanup window, preserve a durable completion/cleanup record until the transaction directory is removed, then remove that record; recovery should recognize the completed state and finish cleanup without attempting rollback.
+The conclusions cover process interruption and ordinary staging or cleanup errors. They do not claim power-loss durability or containing-directory fsync guarantees, protection against hostile same-user path replacement, or safety for simultaneous writers. Hard-link publication and same-filesystem rename refuse unsupported or cross-filesystem operations without a destructive fallback.
 
 ---
 
-_Reviewed: 2026-10-23T23:11:53Z_  
-_Reviewer: the agent (gsd-code-reviewer)_  
+_Reviewed: 2026-10-23T23:18:59Z_
+_Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_

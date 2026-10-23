@@ -80,4 +80,3 @@ Regression coverage includes interruption before initial journal publication, af
 _Fixed: 2026-10-23T23:17:36Z_
 _Fixer: the agent (gsd-code-fixer)_
 _Iteration: 3_
-

@@ -1,7 +1,7 @@
 # Phase 169: Install and Upgrade Convergence - Research
 
-**Researched:** 2026-10-23  
-**Domain:** Phoenix host integration, generated install/upgrade safety, and structural diagnostics  
+**Researched:** 2026-10-23
+**Domain:** Phoenix host integration, generated install/upgrade safety, and structural diagnostics
 **Confidence:** HIGH for current repository seams, official LiveView security guidance, the selected generated denial contract and historical manifest provenance; implementation/runtime results remain pending execution.
 
 ## User Constraints
@@ -343,5 +343,5 @@ These are real existing test paths. Extend the generator/upgrade/verifier suites
 - Architecture: HIGH — source and compiled route tests establish current API and duplication points; generated denial and historical coverage choices are resolved above, with implementation tests pending and exact-floor runtime proof owned by Phase 170.
 - Pitfalls: HIGH — evidenced by current generated forward, demo duplication, verifier tests, and existing manifest/transaction checks.
 
-**Research date:** 2026-10-23  
+**Research date:** 2026-10-23
 **Valid until:** 2026-11-22 (stable repository architecture; re-check supported versions when planning Phase 170).
