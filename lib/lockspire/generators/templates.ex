@@ -16,6 +16,11 @@ defmodule Lockspire.Generators.Templates do
         ownership: :managed
       },
       %{
+        template: "operator_authorization.ex",
+        output: &"lib/#{&1.web_path}/operator_authorization.ex",
+        ownership: :host_owned
+      },
+      %{
         template: "config.exs",
         output: fn _assigns -> "config/lockspire.exs" end,
         ownership: :managed

@@ -132,12 +132,14 @@ defmodule Lockspire.Generators.Install do
       1. Import `config/lockspire.exs` from your main config files.
       2. Import `#{assigns.web_module}.Router.Lockspire` in `lib/#{assigns.web_path}/router.ex`.
       3. Call `lockspire_routes()` where your host wants the authorized-apps surface.
-      4. Implement `#{assigns.resolver_module}` with real account lookup and claims.
-      5. Point your login flow back through `#{assigns.interaction_handler_module}`.
-      6. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
-      7. Run `mix ecto.migrate`, create a client, and run `mix test test/#{assigns.app_path}/lockspire_smoke_e2e_test.exs` to verify discovery, JWKS, and an auth-code + PKCE flow.
-      8. If you explicitly operate a FAPI 2.0 security profile, generate its isolated proof with `mix lockspire.install --with-fapi-smoke`, then run `mix test test/#{assigns.app_path}/lockspire_fapi_smoke_e2e.exs --include fapi`.
-      9. Encrypt signing keys at rest. Add this block to `config/runtime.exs` (prod fails closed when the variable is missing):
+      4. Replace the always-deny `#{assigns.web_module}.OperatorAuthorization` Plug and LiveView hook with your host's current staff identity and authorization policy. Check the initial HTTP request, LiveView mount and reconnect, parameter navigation, sensitive actions, and logout behavior. Lockspire does not create staff accounts or choose your policy.
+      5. Keep the host `:browser` pipeline's `fetch_session`, CSRF protection, and secure response headers. Configure the endpoint `/live` socket with the same signed cookie session in `connect_info`, serve the LiveView JavaScript, and set a strong LiveView signing salt. The generated Plug and hook deny until you implement this host-owned seam.
+      6. Implement `#{assigns.resolver_module}` with real account lookup and claims.
+      7. Point your login flow back through `#{assigns.interaction_handler_module}`.
+      8. Review `docs/device-flow-host-guide.md` before shipping the generated `/verify` seam. Wire host auth/session behavior, keep GET prefill-only, and add rate limiting for both GET and POST.
+      9. Run `mix ecto.migrate`, create a client, and run `mix test test/#{assigns.app_path}/lockspire_smoke_e2e_test.exs` to verify discovery, JWKS, and an auth-code + PKCE flow.
+      10. If you explicitly operate a FAPI 2.0 security profile, generate its isolated proof with `mix lockspire.install --with-fapi-smoke`, then run `mix test test/#{assigns.app_path}/lockspire_fapi_smoke_e2e.exs --include fapi`.
+      11. Encrypt signing keys at rest. Add this block to `config/runtime.exs` (prod fails closed when the variable is missing):
 
     #{KekSnippet.prod_block(kek_id, 11)}
          And this block to `config/dev.exs` and `config/test.exs`:
