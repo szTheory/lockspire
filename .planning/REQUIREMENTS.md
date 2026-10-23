@@ -25,10 +25,10 @@ Requirements cover the user-confirmed mechanical integration scope. They do not 
 
 ### Installation, Upgrade and Diagnostics
 
-- [ ] **HDX-01**: A newly installing host receives scaffolding and instructions for the canonical route/session integration, required host authorization and endpoint/browser wiring, without an assumed account schema or an allow-all staff-policy default.
-- [ ] **HDX-02**: An existing host can migrate from the generated forwarded-admin integration through explicit guidance and safe managed-file upgrade behavior; dry runs write nothing, repeat runs are safe, drift is refused and host-owned policy files are preserved.
-- [ ] **HDX-03**: A maintainer can use `mix lockspire.verify` to distinguish complete canonical admin route/session/hook wiring from incomplete, shadowed or legacy forward-only wiring, with actionable secret-safe guidance and an explicit limit that structural checks do not prove arbitrary host policy.
-- [ ] **HDX-04**: Adopters can follow consistent supported-surface, installation, admin and upgrade guidance, and the demo and maintained host fixtures consume the same reusable admin integration without duplicated live-route inventories.
+- [x] **HDX-01**: A newly installing host receives scaffolding and instructions for the canonical route/session integration, required host authorization and endpoint/browser wiring, without an assumed account schema or an allow-all staff-policy default.
+- [x] **HDX-02**: An existing host can migrate from the generated forwarded-admin integration through explicit guidance and safe managed-file upgrade behavior; dry runs write nothing, repeat runs are safe, drift is refused and host-owned policy files are preserved.
+- [x] **HDX-03**: A maintainer can use `mix lockspire.verify` to distinguish complete canonical admin route/session/hook wiring from incomplete, shadowed or legacy forward-only wiring, with actionable secret-safe guidance and an explicit limit that structural checks do not prove arbitrary host policy.
+- [x] **HDX-04**: Adopters can follow consistent supported-surface, installation, admin and upgrade guidance, and the demo and maintained host fixtures consume the same reusable admin integration without duplicated live-route inventories.
 
 ### Executable Host Proof
 
@@ -80,15 +80,15 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 | HAUTH-02 | Phase 168 | Complete |
 | HAUTH-03 | Phase 168 | Complete |
 | HAUTH-04 | Phase 168 | Complete |
-| HDX-01 | Phase 169 | Pending |
-| HDX-02 | Phase 169 | Pending |
-| HDX-03 | Phase 169 | Pending |
-| HDX-04 | Phase 169 | Pending |
+| HDX-01 | Phase 169 | Complete |
+| HDX-02 | Phase 169 | Complete |
+| HDX-03 | Phase 169 | Complete |
+| HDX-04 | Phase 169 | Complete |
 | HPROOF-01 | Phase 170 | Pending |
 | HPROOF-02 | Phase 170 | Pending |
 | HPROOF-03 | Phase 170 | Pending |
 
-**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 8 complete in Phases 167–168 and 7 pending in Phases 169–170. Evidence and limits are recorded in each completed phase's verification report and automated UAT closure ledger.
+**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 12 complete in Phases 167–169 and 3 pending in Phase 170. Evidence and limits are recorded in each completed phase's verification report and automated UAT closure ledger.
 
 ---
-*Last updated: 2026-10-22 — MNT-01 through MNT-04 and HAUTH-01 through HAUTH-04 complete; seven requirements retain their Phase 169–170 owners.*
+*Last updated: 2026-10-23 — MNT-01..04, HAUTH-01..04 and HDX-01..04 complete; three HPROOF requirements retain their Phase 170 owner.*

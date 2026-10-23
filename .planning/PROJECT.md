@@ -26,6 +26,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **User direction:** Favor impactful mechanical fixes with little maintainer attention. No visual redesign or subjective UI signoff; focused research approved before requirements. Version and scope confirmed 2026-10-22. Phase numbering continues from 167.
 
+**Delivered through Phase 169 (2026-10-23):** Native host routing, host-owned authorization and install/upgrade convergence are verified. Fresh scaffolding denies until the host implements policy; checksum-controlled upgrades preserve host-owned files, previews are read-only, and process-interruption recovery is journaled and retryable. The verifier checks exact compiled routing with bounded policy claims. Demo, generated hosts, clean-room source and guidance share the supported integration. Phase 169 passed 160 focused tests, 63 prior-phase regression tests and 2,022 broad checks; security closed 22/22 threats and independent final code review is clean. Phase 170 retains candidate-package, browser/socket, exact-floor and required-CI proof.
+
 **Deferred:** Dedicated client-secret-JWT verifier encryption (SEC-01), KMS/Vault (KEK-04), paged key-maintenance dry-run, legacy-plaintext fixture maintenance and unrelated v1.45 debt remain separate work. Package publication and remote ref updates are separate actions.
 
 <details>
@@ -170,7 +172,7 @@ The user reaffirmed this default during Phase 167 verification on 2026-10-22 and
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability has completed Phases 167–168 and is ready for Phase 169 planning; v1.45 has completed its implementation and proof, with package publication still separate.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability has completed Phases 167–169 and is ready for Phase 170 planning; v1.45 has completed its implementation and proof, with package publication still separate.
 
 v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
@@ -354,13 +356,13 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Safe generated installation/upgrade, truthful diagnostics and consistent demo/docs — v1.46 HDX-01..04, Phase 169.
 - [ ] Packaged-host transport, exact-version runtime and required CI proof — v1.46 HPROOF-01..03, Phase 170.
 
-All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; Phase 167 is complete and Phases 168–170 remain.
+All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; Phases 167–169 are complete and Phase 170 remains.
 
 ### Validated
 
+- ✓ Safe generated installation/upgrade, truthful structural diagnostics and consistent demo/docs — v1.46 HDX-01..04, Phase 169; 160 phase tests, 63 prior-phase regression tests, 2,022 broad checks, 22/22 security threats closed, clean final review and zero human UAT checks. Package/browser/exact-floor/CI proof remains Phase 170.
 - ✓ Host-owned HTTP, disconnected/connected entry, cached-session rejoin, cross-session/admin navigation and native patch authorization — v1.46 HAUTH-01..04, Phase 168; 45 focused tests, 1,977 broad checks, 15/15 security threats closed, clean code review and zero human UAT checks. Browser/socket and exact-floor proof remains Phase 170.
 - ✓ Host-expanded admin routing, full 29-route/action parity, configured mount journeys and independent public/consent routing — v1.46 MNT-01..04, Phase 167; 48 fresh focused tests, zero remaining human UAT checks.
 
@@ -500,6 +502,10 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Generate a host-owned deny-first Plug and LiveView hook, with one canonical native route declaration | Preserve host identity/policy/layout ownership while preventing unfinished scaffolding from granting access | ✓ Good — rendered install, demo and maintained-host behavior verified in Phase 169 |
+| Authorize managed upgrade changes by checksums and create absent host policy only once | Keep editable host policy/configuration outside managed overwrite authority and refuse drift | ✓ Good — historical conversion, byte-preserving preview/repeat and preservation tests, Phase 169 |
+| Journal intent before publication and retain terminal state through cleanup | Process interruption must not lose mutation ownership, repeat rollback incorrectly or orphan undiscoverable staging | ✓ Good — five review findings fixed; 24 transaction tests and independent re-review, Phase 169; no power-loss or hostile-writer claim |
+| Treat compiled route diagnostics as structural evidence only | Hook/pipeline declarations cannot certify arbitrary host policy or untested client transport | ✓ Good — exact dispatch, redaction and output-limit tests, Phase 169; broader proof assigned to Phase 170 |
 | Snapshot positive durations at issuance; nil/zero remain unlimited and equality is expired | Avoid retroactive policy changes and inconsistent boundary interpretations | ✓ Good — selected D-01–27 contract, implemented and verified across v1.45 |
 | Keep app, shared-secret and management-token expiry independent | Credential replacement must not renew app lifetime or unrelated credentials; issued-token/offline limits stay explicit | ✓ Good — independent-boundary and public-facade tests, Phase 166 |
 | Fail closed on missing/unknown lifetime versions and malformed authoritative dates | Only explicit v0 is legacy; no guessed rejection deadline from old timestamps | ✓ Good — storage, authentication, migration and package proof |
@@ -602,4 +608,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-22 after Phase 168 automated verification and closure*
+*Last updated: 2026-10-23 after Phase 169 automated verification and closure*

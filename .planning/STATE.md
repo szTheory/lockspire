@@ -2,44 +2,46 @@
 gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
-current_phase: 169
-current_phase_name: Install and Upgrade Convergence
-current_plan: 5
-status: executing
-stopped_at: Phase 169 planned and independently checked; ready to execute five plans
-last_updated: "2026-10-23T22:13:58.196Z"
-last_activity: 2026-10-22
-last_activity_desc: Phase 169 execution started
-state_head: 0e25eb8937cf5f38b08433d7d66080e35c4e50de
+current_phase: 170
+current_phase_name: Packaged Host and Compatibility Proof
+current_plan: Not started
+status: planning
+stopped_at: Phase 169 complete, ready to plan Phase 170
+last_updated: "2026-10-23T23:33:26.542Z"
+last_activity: 2026-10-23
+last_activity_desc: Phase 169 complete, transitioned to Phase 170
+state_head: 5c4effb61b2fcb2d408a4ae72654176d37248ab8
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 11
-  completed_plans: 10
-  percent: 50
+  completed_plans: 11
+  percent: 75
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
+See: .planning/PROJECT.md (updated 2026-10-23 after Phase 169)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 169 — Install and Upgrade Convergence
+**Current focus:** Phase 170 — Packaged Host and Compatibility Proof, ready to plan. Phase 169 passed all four HDX requirements and 24 plan truths; security closed 22/22 threats, final review is clean and no human UAT remains.
 
 ## Current Position
 
-Phase: 169 (Install and Upgrade Convergence) — EXECUTING
-Current Plan: 5
-Total Plans in Phase: 5
-Status: Ready to execute
-Last activity: 2026-10-22 — Phase 169 execution started
+Phase: 170 — Packaged Host and Compatibility Proof
+Current Plan: Not started
+Total Plans in Phase: 0
+Status: Ready to plan
+Last activity: 2026-10-23 — Phase 169 complete, transitioned to Phase 170
 
 ## Accumulated Context
 
 ### Decisions
+
+Phase 169 completed five plans in three waves: generated deny-first native integration, checksum-controlled historical upgrades, read-only previews and retryable process-interruption recovery, exact compiled-route diagnostics, demo/clean-room convergence and consistent guidance. Final sequential evidence passed 160 phase tests, 63 prior-phase regression tests and 2,022 broad checks. All four HDX requirements and 24 plan truths passed independent goal verification; security closed 22/22 threats and all five review findings were fixed. The three descriptor-less prohibitions have individual automated closure records, with zero human UAT pending. A-169-HDX-04 remains an unclassified assumption without an additional predicate. Package/browser/socket/exact-floor/CI proof remains Phase 170.
 
 Phase 168 Plans 01–03 passed their focused runtime checks and the final `mix test.fast` selector. Coverage includes current host policy at HTTP, disconnected/connected entry, cached-response connected rejoin, public/consent cross-session entry, every admin destination and native params patches. All four HAUTH requirements are complete. Three unspecified probe assumptions remain flagged; both descriptor-less prohibitions have individual automated/source-evidence closure records. Browser/socket, packaged and exact-floor proof remains Phase 170; install/demo convergence remains Phase 169.
 
@@ -57,6 +59,8 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 - [Phase 168]: Model a cross-session redirect and fresh HTTP/live entry separately; do not claim browser transport proof.
 
 ### Blockers/Concerns
+
+No active Phase 169 blocker. Transaction evidence covers process interruption and ordinary errors; unsupported hard links/cross-filesystem publication refuse safely. Power-loss durability, directory fsync, hostile same-user replacement and simultaneous writers are not claimed. Run test selectors sequentially because they share a generated-host filesystem fixture, and use fresh disposable test databases to avoid persistent-row contamination. The unrelated original state.json bytes remain preserved.
 
 No active Phase 167 blocker. Its two original prohibition flags are closed in the UAT ledger; do not recreate them from historical plan/report text without a relevant change or contradictory evidence. A-167-MNT-02 remains an unclassified probe without an additional acceptance predicate; the written mount criteria are verified. Preserve evidence boundaries for Phases 168–170.
 
@@ -112,10 +116,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-23T00:40:05.888Z
-Stopped at: Phase 168 complete, ready to plan Phase 169
+Last session: 2026-10-23
+Stopped at: Phase 169 complete, ready to plan Phase 170
 Resume file: None
-Next: `$gsd-plan-phase 169` or `$gsd-discuss-phase 169`. Phase 168 verification passed with no human items; final focused checks passed 45 tests and the broad suite passed 1,977 checks. Preserve original unstaged state.json bytes. Phase 168 proves server-side authorization and navigation; browser/socket, packaged and exact-floor proof remains Phase 170. No Phase 169 implementation has begun.
+Next: `$gsd-plan-phase 170` or `$gsd-discuss-phase 170`. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
 
 ## Performance Metrics
 
