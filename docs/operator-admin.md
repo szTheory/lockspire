@@ -35,22 +35,27 @@ If you try to create a key before a key-encryption key is set up, Lockspire refu
 
 ## Mounting the admin surface
 
-Mount the admin pages behind your host application's staff sign-in and access checks. Lockspire does not sign in staff or decide who can access these pages.
-
-The generated router mounts `Lockspire.Web.AdminRouter` at `/lockspire/admin` before the general `Lockspire.Web.Router` forward:
+Mount the admin pages through the generated `lockspire_routes/0` helper. It
+expands the shared native LiveView route inventory through
+`Lockspire.Web.AdminRoutes.lockspire_admin_routes/2`, and places those routes
+before the public OAuth/OIDC forward:
 
 ```elixir
-scope "/lockspire/admin" do
-  pipe_through [:browser, :require_operator]
-  forward "/", Lockspire.Web.AdminRouter
-end
+import YourAppWeb.Router.Lockspire
 
-scope "/" do
-  forward "/lockspire", Lockspire.Web.Router
-end
+lockspire_routes()
 ```
 
-Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and related admin state after a request reaches its LiveViews. The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to these routes.
+The generated `OperatorAuthorization` module is a host-owned, deny-by-default
+seam. Implement its HTTP Plug and LiveView `on_mount` hook with your current
+staff identity and authorization policy before granting admin access. The host
+also owns staff sign-in, MFA, role checks, tenant and IP policy, layouts,
+branding, product-specific authorization, and audit framing. A mount hook
+checks policy at mount and navigation params; it does not promise continuous
+permission revocation while a page is idle.
+
+For the full browser pipeline, endpoint socket/session, signing-salt, asset,
+verification, and upgrade responsibilities, see the [canonical install guide](install-and-onboard.md) and [host admin integration upgrade guide](upgrading/host-admin-integration.md). Compiled verification establishes route and hook wiring; host-owned request and LiveView tests establish that your policy allows the right staff and denies everyone else.
 
 ## Admin navigation model
 
@@ -161,7 +166,7 @@ Shared components cover common admin needs: page headers, section cards, action 
 
 Use the shared button variants consistently: **primary** marks the page's main safe action, **secondary** marks navigation, support, recovery, or an alternate action, and **danger** marks a consequential destructive action. A danger style does not replace the consequence text or confirmation step. Keep task-return links secondary and form saves primary; confirmed client disable and credential rotation actions remain danger-styled.
 
-The component lab and stress surface are internal maintainer proof only. They render real admin primitives and redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRouter`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
+The component lab and stress surface are internal maintainer proof only. They render real admin primitives and redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRoutes`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
 
 Theme behavior is intentionally narrow:
 

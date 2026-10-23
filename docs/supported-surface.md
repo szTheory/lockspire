@@ -13,8 +13,8 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - Embedded Phoenix install flow through `mix lockspire.install`
 - One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology
 - New generated installs default Lockspire-owned tables and Lockspire's Oban tables into a dedicated `lockspire` Postgres schema; public/default schema use is explicit through `--storage-prefix public --oban-prefix public`
-- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, guarded admin mount, and prefix-aware migrations
-- `mix lockspire.upgrade` for manifest-tracked Lockspire-managed scaffolding only
+- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, compiled native admin routes/actions/session, host pipeline and LiveView hook declarations, route ordering and first-match dispatch, `/verify` routes, and prefix-aware migrations; it reports structural wiring and does not certify the host's authorization policy
+- `mix lockspire.upgrade` for checksum-matching manifest-tracked Lockspire-managed scaffolding, a create-only default-deny operator authorization seam when absent, and refusal with manual reconciliation guidance for unsupported or drifted state
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
@@ -44,7 +44,7 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams, including Sigra-shaped account resolution from `conn.assigns.current_scope.user`
-- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings, with a host-guarded `Lockspire.Web.AdminRouter` mount for applications that separate operator authentication from the public OAuth/OIDC router
+- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings, mounted as native routes through `Lockspire.Web.AdminRoutes.lockspire_admin_routes/2` behind host Plug and LiveView authorization
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
@@ -190,6 +190,10 @@ These are explicitly out of scope for the Lockspire-owned host-API protected-rou
 
 ## Trust posture
 
+The maintained generated host, adoption demo, and clean-room source use the same `lockspire_routes/0` helper and native `AdminRoutes` inventory. The generated operator authorization seam denies access until a host implements current staff policy. The HTTP Plug and LiveView hook are separate checks; the hook re-resolves policy at mount and navigation params and does not promise continuous revocation on idle pages. See the [install and onboarding guide](install-and-onboard.md), [admin guide](operator-admin.md), and [host admin integration upgrade guide](upgrading/host-admin-integration.md) for host-owned browser, endpoint, session, signing-salt, assets, policy, and migration responsibilities.
+
+Repository-source tests establish generated output, compiled Phoenix routing, current locked-runtime behavior, and server-side connected LiveView lifecycle. Those checks do not establish actual packaged-consumer adoption, browser/socket transport, or the exact Phoenix 1.8.5 / LiveView 1.1.28 dependency floor. Phase 170 owns those package, transport, exact-version, and required CI checks.
+
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
@@ -215,7 +219,7 @@ Historical Phase 37 external-suite wiring and any OIDF or FAPI Docker runs remai
 A 1.0 GA claim honestly says:
 
 - there is one canonical Phoenix onboarding path
-- the host app owns operator authentication before mounting `Lockspire.Web.AdminRouter`
+- the host app owns operator authentication in a Plug and LiveView hook passed to `Lockspire.Web.AdminRoutes.lockspire_admin_routes/2`
 - `--sigra-host` is guidance-only; it does not create a second install topology or a compile-time Sigra dependency
 - install diagnostics and managed-scaffolding upgrades are explicit (`mix lockspire.verify` and `mix lockspire.upgrade`)
 - the generated host seam resolves the signed-in user through host-owned session state such as `conn.assigns.current_scope.user`

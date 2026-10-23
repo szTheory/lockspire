@@ -220,6 +220,7 @@ defmodule Lockspire.MixProject do
         "docs/maintainer-conformance.md",
         "docs/maintainer-release.md",
         "docs/upgrading/v1.27.md",
+        "docs/upgrading/host-admin-integration.md",
         "docs/upgrading/client-lifetimes.md",
         "docs/examples/client-lifetime-adapter.md",
         "docs/upgrading/storage-prefix.md",
@@ -253,6 +254,7 @@ defmodule Lockspire.MixProject do
         ],
         Upgrade: [
           "docs/upgrading/v1.27.md",
+          "docs/upgrading/host-admin-integration.md",
           "docs/upgrading/client-lifetimes.md",
           "docs/examples/client-lifetime-adapter.md",
           "docs/upgrading/storage-prefix.md",
