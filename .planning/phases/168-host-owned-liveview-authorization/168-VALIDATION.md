@@ -195,3 +195,7 @@ None required by the approved Phase 168 acceptance scope. Browser/socket transpo
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Final Source Audit and Regression Gate
+
+Final tested source is 50035272236cd84ce9adc381bef0393f431ee5b7 after the no-store HTTP fallback allowlist correction. The final focused union passed 45 tests; mix test.fast passed 1,977 checks (6 skipped, 497 excluded). Independent code re-review is clean and the security freshness audit closed 15/15 threats. The orchestrator regression selection passed 59 tests plus 6 compatibility checks with exit zero. See 168-EXECUTION-GATES.md for exact scope and 168-REVIEW-FIX.md for the source attribution correction. Two prohibition closures are independently recorded in 168-UAT.md, without a human pass. No tested source changed during the report updates.
