@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/adoption_demo_admin_integration_test.exs --name-pattern \"demo router delegates\" --formatter Lockspire.GSDTapFormatter",
+  "exitCode": 2,
+  "output": "TAP version 14\nnot ok 1 - test demo router delegates its admin inventory to the canonical native route macro\n1..1\n",
+  "targetTest": "test demo router delegates its admin inventory to the canonical native route macro",
+  "targetFile": "test/lockspire/adoption_demo_admin_integration_test.exs",
+  "expected": "The actual demo router invokes the canonical native admin route macro.",
+  "actual": "The source assertion failed because the router still declares the copied admin routes.",
+  "semanticAssessment": "The targeted source contract assertion failed on the planned canonical route delegation behavior; TAP was emitted by a temporary ExUnit formatter during the actual test run."
+}
