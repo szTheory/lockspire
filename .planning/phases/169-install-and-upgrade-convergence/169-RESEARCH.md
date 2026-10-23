@@ -2,7 +2,7 @@
 
 **Researched:** 2026-10-23  
 **Domain:** Phoenix host integration, generated install/upgrade safety, and structural diagnostics  
-**Confidence:** HIGH for current repository seams and official LiveView security guidance; MEDIUM for the exact generated fail-closed placeholder shape.
+**Confidence:** HIGH for current repository seams, official LiveView security guidance, the selected generated denial contract and historical manifest provenance; implementation/runtime results remain pending execution.
 
 ## User Constraints
 
@@ -119,7 +119,7 @@ Keep the current ownership split. The generated `lib/<web>/router/lockspire.ex` 
 
 The guidance should also state that the host owns authorization inside sensitive LiveView actions/events and any logout/disconnect behavior. A mount hook does not establish continuous permission revocation for an already-connected socket. `[VERIFIED: .planning/phases/168-host-owned-liveview-authorization/168-VERIFICATION.md, Deferred Items; .planning/ROADMAP.md:88-89,121]`
 
-**Status:** The required fail-closed behavior is locked by HDX-01; the precise generated stub mechanism (always-deny until replaced versus an explicit raising placeholder) is an implementation choice. Prefer a compiling always-deny stub so fresh scaffolding compiles but cannot grant access. `[ASSUMED]`
+**Status: Resolved implementation choice.** Plan 169-01 selects a compiling host-owned `OperatorAuthorization`: its Plug sends 403 and halts; its `on_mount/4` returns a halted socket redirected to the host-local root `/`. Both always deny until the host implements current policy; no assumed login route or account schema is generated. This implements HDX-01 without adding a product approval requirement. Rendered-output HTTP/hook/connected regressions in Plan 169-01 must prove the behavior during execution. `[VERIFIED: .planning/phases/169-install-and-upgrade-convergence/169-01-PLAN.md, Task 1; test/support/lockspire/web/admin_route_host.ex:158-170,234-243]`
 
 ### Pattern 3: Verify Compiled Route Contract and Bound the Claim
 
@@ -232,20 +232,22 @@ Source: [test/lockspire/web/admin_routes_compile_test.exs:11-20](/Users/jon/proj
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | The safest compiling initial host policy stub is a generated Plug/hook that denies or redirects until the adopter replaces it. | Architecture Pattern 2 | If the chosen fail-closed contract differs, scaffold/tests/docs need to align; an allow-all implementation would violate HDX-01. |
+| A1 — resolved | Plan 169-01 selects a compiling host-owned Plug that sends 403 and halts, plus an always-deny LiveView hook that halts with a local-root redirect. | Architecture Pattern 2; resolved question 1 | Implementation tests remain pending; an allow-all implementation would violate HDX-01. |
 | A2 | Structural verification can reliably inspect the host's compiled route inventory and LiveView metadata for all canonical paths, hooks, pipeline ordering, and public-route separation on supported Phoenix versions. | Architecture Pattern 3 | Exact metadata shape can vary by Phoenix/LiveView version; Phase 170 must prove package behavior on exact floor and locked pair. |
-| A3 | Existing install manifests for generated forward-only installs track the helper as managed, allowing an unmodified helper to upgrade through checksum-controlled template updates. | Architecture Pattern 4 | If a legacy manifest omitted the helper or its checksum differs, upgrade must refuse and docs need a safe manual migration path. |
+| A3 — resolved for selected shapes | Historical source at `v1.45^{}` and `77d5ad90` marks the router helper managed and records per-file SHA-256 checksums; Plan 169-02 covers the v1.45 shape and older omitted optional fields. | Architecture Pattern 4; resolved question 2 | This is not blanket support for every historical inventory; missing, drifted or unsupported ownership states require refusal and manual reconciliation. |
 
-## Open Questions
+## Open Questions — Resolved
 
-1. **What exact first-run denial UX should the generated staff seam use?**
-   - What we know: HDX-01 requires no allow-all default; host owns sign-in and policy; the route macro requires host pipeline and hook.
-   - What's unclear: Always return 403, redirect to a documented host login placeholder, or raise an explicit “configure this seam” error.
-   - Recommendation: Keep all three outcomes fail-closed; prefer a compiling deterministic 403/denial seam unless product discussion selects a clearer host-owned redirect convention. Do not assume an account schema.
-2. **How many legacy manifest variants need explicit upgrade fixtures?**
-   - What we know: Current manifest supports a pre-`migrations` shape, and current upgrade tests cover drift and preservation of edited host-owned seams.
-   - What's unclear: Which historical generated helper/manifest versions are supported and whether any released versions had a different ownership entry.
-   - Recommendation: Inspect tracked generator history/package versions during planning, then make one representative forward-only legacy fixture plus a drifted helper case; route every unsupported/ambiguous shape to refusal with manual instructions.
+Both Phase 169 planning questions are resolved below as implementation decisions within the approved requirements. They do not assert new user/product approval or passing implementation tests.
+
+1. **Resolved: first-run denial contract.** Generate the compiling host-owned Plug/hook selected in Plan 169-01: HTTP sends 403 and halts; disconnected/connected LiveView entry halts with a redirect to `/`. The root is a local denial destination, not an invented login convention. The untouched seam never authorizes, including with nil/empty session data or fabricated assigns. The host replaces it with its own current-policy checks; installer guidance names the file and responsibility. Evidence: Plan 169-01 Task 1 specifies these exact behaviors; the existing host fixture demonstrates the 403/halt and `{:halt, redirect(...)}` contracts. Plan 169-01's rendered-output regressions establish implementation evidence during execution. `[VERIFIED: .planning/phases/169-install-and-upgrade-convergence/169-01-PLAN.md, Task 1; test/support/lockspire/web/admin_route_host.ex:158-170,234-243]`
+2. **Resolved: historical fixture coverage and authority.** Plan 169-02 uses one pinned forward-only router template and tests two manifest field shapes, plus drift/refusal cases:
+   - `v1.45` is annotated tag object `0f45d0c603c31d814cd9003848f6af508bb4e72c`, peeling to source commit `69c05922b880d1ee6e257e5a78f06a4e5755efcc`; that source's `mix.exs` declares package version `1.6.1`. Its router template forwards admin through `[:browser, :require_operator]`; `Templates` marks `lib/<web_path>/router/lockspire.ex` managed. `Install.render_template_content/3` prepends the ownership header, so fixture checksums must cover those complete rendered installed bytes. Its manifest contains `managed_files` path/checksum entries, `migrations`, and input `with_fapi_smoke`.
+   - Commit `77d5ad902cd401effdc106873d35712a64d19b3d` supplies the actual older field shape: generator/version, five mount/storage/Oban/web/scope inputs and managed path/checksum entries, with neither `migrations` nor `with_fapi_smoke`. Its `Templates` also marks the router helper managed and `Manifest.checksum/1` uses lowercase SHA-256. Use this shape to prove optional-field compatibility with valid installed-file checksum evidence; it does not certify every file inventory or generated-host behavior from that commit. In particular, its older FAPI managed filename differs from the current inventory; an unshipped tracked path remains unsupported and must refuse rather than gain authority from the release label.
+   - The manifest checksum matching actual installed managed bytes grants update authority, never a filename, version or fixture label. Missing tracked files, malformed/duplicate entries, drift, unsupported managed paths and unsafe/conflicting destinations refuse before writes with manual reconciliation guidance. Existing host policy/configuration stays preserved; a new authorization seam is create-only when absent and stays host-owned. Plan 169-02 owns conversion, omission compatibility, dry-run/retry/preservation and refusal regressions; these results remain pending execution.
+   - Evidence inspected: `git cat-file -p v1.45`, `git rev-parse 'v1.45^{}'`, and historical `mix.exs`, router template, `Templates`, `Install.ownership_header` and `Manifest.build/checksum` at the revisions above. The tag describes milestone completion and explicitly separates package publication; no publication claim follows from its package version. `[VERIFIED: v1.45:mix.exs; v1.45:priv/templates/lockspire.install/router.ex; v1.45:lib/lockspire/generators/templates.ex; v1.45:lib/lockspire/generators/install.ex; v1.45:lib/lockspire/install/manifest.ex; 77d5ad90:lib/lockspire/generators/templates.ex; 77d5ad90:lib/lockspire/install/manifest.ex; .planning/phases/169-install-and-upgrade-convergence/169-02-PLAN.md, Task 1]`
+
+**Evidence boundary:** No unresolved Phase 169 research question remains. A2 remains the distinct supported-version runtime uncertainty: Phase 170 owns exact Phoenix `1.8.5` / LiveView `1.1.28` and current-pair runtime proof, actual candidate-package adoption, browser/socket transport and required CI evidence. Source inspection and selected mechanisms do not establish those results. `[VERIFIED: .planning/ROADMAP.md, Phase 170 and Verification and Scope Boundaries]`
 
 ## Environment Availability
 
@@ -338,7 +340,7 @@ These are real existing test paths. Extend the generator/upgrade/verifier suites
 
 **Confidence breakdown:**
 - Standard stack: HIGH — versions are read from project AGENTS.md; runtime command prefix confirmed in Phase 168 and this environment.
-- Architecture: HIGH — source and compiled route tests establish current API and duplication points; future scaffold exact denial UX remains assumed.
+- Architecture: HIGH — source and compiled route tests establish current API and duplication points; generated denial and historical coverage choices are resolved above, with implementation tests pending and exact-floor runtime proof owned by Phase 170.
 - Pitfalls: HIGH — evidenced by current generated forward, demo duplication, verifier tests, and existing manifest/transaction checks.
 
 **Research date:** 2026-10-23  

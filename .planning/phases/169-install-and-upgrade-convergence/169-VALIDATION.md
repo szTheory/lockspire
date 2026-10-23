@@ -31,7 +31,7 @@ created: "2026-10-22"
 
 ## Requirement Verification Map
 
-The planner refines this into task IDs and phase-unique threat references once plans are finalized. All entries are pending execution.
+The final decomposition has five two-task plans in three waves. All implementation outcomes below remain pending execution.
 
 | Requirement | Secure behavior / acceptance | Type | Owning existing test files | Status |
 |-------------|------------------------------|------|----------------------------|--------|
@@ -50,6 +50,94 @@ ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test 
 
 Existing infrastructure covers the phase; no new framework or dependency setup is needed. Add regression cases to the owning files as part of implementation, and keep generated host fixtures coherent with the manifest ownership model. If new test files are introduced, declare their creation before any verification command references them.
 
+New tests are created before first use: `install_admin_integration_test.exs` in 169-01 Task 1; `adoption_demo_admin_integration_test.exs` in 169-04 Task 1; `clean_room_admin_integration_test.exs` in 169-04 Task 2. Each lives in the existing root test selector. No new framework, external API, package install, schema change or CI lane is planned.
+
+## Final Task / Command / Threat Map
+
+All Mix commands use the proven prefix `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec`. The table abbreviates only that prefix; PLAN task commands contain the complete invocation and an immediately following `fails_when`. Nonzero exit or zero executed tests fails any test row.
+
+| Wave | Task | Requirement | Exact command after prefix | Threat Ref | Expected evidence | Outcome |
+|------|------|-------------|----------------------------|------------|-------------------|---------|
+| 1 | 169-01-1 | HDX-01 | `mix test test/integration/install_admin_integration_test.exs` | T-169-01, T-169-02 | Actual rendered helper: HTTP denial, hook denial, explicit host-policy implementation and real connected overview | pending |
+| 1 | 169-01-2 | HDX-01, HDX-04 | `mix test test/integration/install_generator_test.exs test/integration/install_admin_integration_test.exs test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-03, T-169-04 | Ownership/parity, mount boundaries/order, concurrent immutable matching and stale install refusal | pending |
+| 2 | 169-02-1 | HDX-02 | `mix test test/integration/install_upgrade_test.exs` | T-169-05, T-169-06 | Pinned historical conversion, older optional fields, create-only policy, preservation/idempotence | pending |
+| 2 | 169-02-2 | HDX-02 | `mix test test/integration/install_upgrade_test.exs test/lockspire/install/file_transaction_test.exs` | T-169-07, T-169-08, T-169-09 | Full-tree read-only preview, interrupted apply/recovery and stale competitor refusal | pending |
+| 2 | 169-03-1 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-10, T-169-11 | Public native success/legacy failure and one inventory source | pending |
+| 2 | 169-03-2 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-12, T-169-13, T-169-14 | Exact malformed/incomplete/shadowed matrix, safe output and visible policy limit | pending |
+| 2 | 169-04-1 | HDX-04 | `mix test test/lockspire/adoption_demo_operator_guard_test.exs test/lockspire/adoption_demo_admin_integration_test.exs` | T-169-15, T-169-16, T-169-17 | Actual demo canonical router, HTTP/connected policy and no masking declaration | pending |
+| 2 | 169-04-2 | HDX-01, HDX-04 | `mix test test/lockspire/clean_room_release_source_contract_test.exs test/lockspire/clean_room_admin_integration_test.exs test/lockspire/web/admin_route_separation_test.exs` | T-169-18, T-169-19 | Emitted endpoint/session and actual overlay/helper compile/request denial | pending |
+| 3 | 169-05-1 | HDX-01–04 | `mix test test/lockspire/documentation_contract_test.exs test/integration/install_admin_integration_test.exs test/integration/install_upgrade_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-20 | Guide/package inventory and source-grounded behavioral walk-through | pending |
+| 3 | 169-05-2 | HDX-01–04 | Full phase union in 169-05 Task 2, `mix format --check-formatted`, `mix test.fast`; unprefixed `git diff --check 9500bb4707e24639886382ad5f5e0f0d89488bb9` | T-169-21; all phase threats | Final source-bound results and individual automated closure ledger | pending |
+
+Wave 1 proves the generated path before expansion. Wave 2 plans 02/03/04 have no modified-file overlap; their new tests must use unique temporary roots/namespaces, with only Plan 02 owning the existing fixed upgrade fixture. Wave 3 depends on all three. `T-169-SC` is reserved in every plan: no installation is planned, and any later package addition must satisfy the legitimacy gate before installation.
+
+## Probe Disposition and Explicit Criteria
+
+The supplied spec-less probe proposed eight items. Seven have defensible explicit predicates in PLAN must_haves; one stays an assumption. No backstop or invented passed probe is used.
+
+| Requirement / edge | Planned predicate | Evidence owner | Disposition |
+|--------------------|-------------------|----------------|-------------|
+| HDX-01 adjacency | Exact admin segments, literal new versus parameter path, adjacent-prefix nonmatches | 169-01-2 and existing route inventory tests | resolved: explicit |
+| HDX-01 empty | Missing/empty pipeline/hooks refuse compilation; nil/empty session cannot turn generated denial into allowance | 169-01-1/2 | resolved: explicit |
+| HDX-01 ordering | Canonical order, host-first hooks and consent/admin before public forward | 169-01-2 | resolved: explicit |
+| HDX-01 concurrency | Immutable repeated/concurrent matching plus stale install/preflight refusal preserves competing bytes | 169-01-2 | resolved: explicit, bounded |
+| HDX-02 concurrency | Interruption recovery and stale competing precomputed-plan/destination refusal; no simultaneous-writer promise | 169-02-2 | resolved: explicit, bounded |
+| HDX-03 boundary | Root/default/nested mounts and adjacent segment/parameter boundaries checked through compiled dispatch | 169-03-2 | resolved: explicit |
+| HDX-03 precision | Exact route/view/action/session/hook equality; one missing/duplicate/wrong tuple fails | 169-03-2 | resolved: explicit |
+| HDX-04 unclassified | A-169-HDX-04: no additional predicate was supplied; written HDX-04 criteria remain fully required | 169-05 and verification ledger | unresolved flagged assumption |
+
+Concurrency limits: stale operations, exclusive creates, immutable matching and recoverable interruption are tested; simultaneous generator writers and hostile same-user ancestor replacement are not newly guaranteed. FileTransaction's existing containment limit remains explicit.
+
+## Prohibition Recall and Automated Closure Rules
+
+Stage 1 adversarial recall considered ten candidates per requirement:
+
+| Requirement | Raw candidate concerns |
+|-------------|------------------------|
+| HDX-01 | Library-owned staff accounts; assumed roles; allow-all seam; cached authority; copied routes; missing endpoint session; missing JS; changed host branding; host login takeover; path collisions |
+| HDX-02 | Policy overwrite; runtime config overwrite; managed drift; invented historical authority; dry-run mutation; non-idempotent retry; partial apply; symlink escape; stale preflight; unexpected input reset |
+| HDX-03 | Policy certification; transport/package/floor overclaim; secret output; forward false positive; shadowing; approximate tuple match; crash on metadata; missing aggregate errors; guessed host identity; false success from empty hooks |
+| HDX-04 | Mandatory standalone service; duplicate demo route source; host layout takeover; policy takeover; contradictory guides; unsupported scope expansion; fake browser proof; package-proof claim from source; unseen fixture drift; manual approval substituted for tests |
+
+Stage 2 retained three bespoke product/ownership/transparency prohibitions. Routine matching, drift, idempotence, collision and fixture correctness belong to behavioral criteria/code review. Canon security concerns (generic access-control, secret disclosure and filesystem traversal) are referred to `$gsd-secure-phase` and the phase STRIDE mitigations rather than minted as extra prohibitions. Embedded-library/host-ownership and evidence limits are grouped into the three kept items below; no kept item was silently dismissed.
+
+The actual `projectProhibitions` serializer from `gsd-core/bin/lib/probe-core.cjs` produced descriptor-less `{statement, status: unresolved}` entries. Those exact projections are in Plans 01, 02 and 03. Initial disposition stays flagged-unverified, not silently green. Project VERIFICATION-POLICY resolves missing descriptors through the following explicit evidence rules, without automatic human UAT:
+
+| Item | Automated/source closure rule | Durable record |
+|------|--------------------------------|----------------|
+| P-169-01 | Rendered untouched HTTP/hook denial, host-owned manifest exclusion, implemented-host connected path, and source responsibility audit establish no identity/policy/layout takeover | Separate 169-UAT row: criterion, test names/method, result, revision, files and limits |
+| P-169-02 | Whole-tree policy/config preservation; create-only bootstrap; checksum/drift/refusal; byte-identical dry-run/repeat; interrupted recovery tests plus ownership source audit | Separate 169-UAT row with the same evidence fields |
+| P-169-03 | Public passing/failing output tests state structural limit; guide/source audit distinguishes policy/server-lifecycle/package/transport/exact-floor evidence; Phase 170 remains owner | Separate 169-UAT row with the same evidence fields |
+
+Any missing result remains an explicit verification gap. Reopen a closed record only for a relevant source/criterion change, regression or contradictory evidence; descriptor absence alone is not a reopening trigger. The unclassified edge remains an assumption, not an invented prohibition or human signoff.
+
+## Multi-Source Coverage Audit
+
+| Source | ID / item | Plan | Status | Notes |
+|--------|-----------|------|--------|-------|
+| GOAL | Safe fresh/existing canonical adoption, responsibilities and diagnosis | 01–05 | COVERED | Entire Phase 169 outcome |
+| REQ | HDX-01 | 01, 04, 05 | COVERED | Emitted native path/deny seam, browser/endpoint and host guidance |
+| REQ | HDX-02 | 02, 05 | COVERED | Trusted historical conversion and transactional safety |
+| REQ | HDX-03 | 03, 05 | COVERED | Exact metadata/dispatch, actionable safe bounded output |
+| REQ | HDX-04 | 01, 04, 05 | COVERED | Generated/demo/clean-room/docs converge |
+| RESEARCH | Single AdminRoutes inventory and native fixed-session contract | 01, 03, 04 | COVERED | No copied host inventory |
+| RESEARCH | Compiling always-deny host Plug/on_mount; no account schema | 01, 02, 04 | COVERED | A1 resolved as implementation choice; host policy stays editable |
+| RESEARCH | Current-policy mount/params and host event/logout responsibilities | 01, 04, 05 | COVERED | No continuous revocation promise |
+| RESEARCH | Browser/session/endpoint/assets/signing setup | 01, 04, 05 | COVERED | Declaration/guidance now, actual client transport Phase 170 |
+| RESEARCH | Exact routes/first-match shadowing/pipeline/hook diagnostics | 03 | COVERED | A2 current runtime, exact-floor validation Phase 170 |
+| RESEARCH | Real historical manifest ownership; optional field compatibility | 02 | COVERED | A3 grounded in pinned v1.45 and actual older manifest history |
+| RESEARCH | OperationPlan/FileTransaction, drift, dry-run, recovery and symlink bounds | 01, 02 | COVERED | No replacement writer or stronger hostile-writer claim |
+| RESEARCH | Redaction and honest policy proof limits | 03, 05 | COVERED | Sentinel cases and evidence audit |
+| RESEARCH | Supported/install/admin/demo/upgrade docs and runtime regressions | 01–05 | COVERED | Existing selectors reused; no UI redesign or package publication |
+| RESEARCH / contribution | External API capability gate | 01–05; COVERAGE.md | COVERED | Detector matched local endpoint wiring; reasoned no-external-API declaration records the actual scope |
+| CONTEXT | No CONTEXT.md or D-NN decisions exists | 01–05 | COVERED | User approved proceeding without it; requirements/roadmap constrain plans |
+
+Exclusions are not gaps: Phase 170 owns actual candidate-package, browser/socket, exact supported floor/current-pair integration and required CI proof. Existing protocol behavior/security defaults, host identity/login/layout ownership and unrelated prior debt remain unchanged in scope.
+
+## Planning Baseline
+
+At `9500bb4707e24639886382ad5f5e0f0d89488bb9`, the proven runtime command `mix test test/integration/install_generator_test.exs test/integration/install_upgrade_test.exs test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs` with the exact prefix above produced **50 passed in 14.4 seconds**. Existing compiler warnings were present. This grounds command paths/timing; it does not establish any new Phase 169 behavior. No implementation source was changed during planning.
+
 ## Manual-Only Verifications
 
 None planned. Follow `.planning/VERIFICATION-POLICY.md`: close routine acceptance and prohibitions with executable evidence and a durable closure ledger. A missing descriptor is a planning defect with an explicit closure rule, not an automatic human checkpoint. No UI copy overhaul or manual signoff is in scope.
@@ -58,7 +146,7 @@ Phase 170 owns packaged candidate adoption, real browser/socket transport and ex
 
 ## Validation Sign-Off
 
-- [ ] Final task IDs, threat references and verification commands mapped after planning.
+- [x] Final task IDs, threat references and verification commands mapped after planning.
 - [ ] Every task has automated verification; no three consecutive tasks without it.
 - [ ] New test references have creation dependencies; no watch-mode commands.
 - [ ] Focused check timings measured and acceptable for per-edit feedback.

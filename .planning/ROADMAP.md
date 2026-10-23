@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–168 complete; Phase 169 ready to plan.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–168 complete; Phase 169 planned and ready to execute.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -99,7 +99,20 @@ Plans:
   3. `mix lockspire.verify` distinguishes complete canonical route/action/session/hook wiring from incomplete, shadowed or legacy forward-only mounts, with actionable secret-safe guidance that identifies its structural-policy limits. (HDX-03)
   4. The demo and maintained generated/clean-room hosts consume the same reusable admin declarations, and installation, upgrade, admin and supported-surface guidance match that executable path. (HDX-04)
 
-**Plans**: TBD
+**Plans**: 5 plans
+
+Plans:
+**Wave 1**
+- [ ] 169-01-PLAN.md — Rendered-host native integration tracer, deny-first host seam and generated fixture parity.
+
+**Wave 2** *(after Wave 1; independent file ownership)*
+- [ ] 169-02-PLAN.md — Trusted historical conversion, host policy preservation and read-only dry-run/recovery safety.
+- [ ] 169-03-PLAN.md — Exact compiled routing/dispatch diagnostics with safe output and bounded policy claims.
+- [ ] 169-04-PLAN.md — Canonical adoption demo and maintained clean-room host integration.
+
+**Wave 3** *(after Wave 2)*
+- [ ] 169-05-PLAN.md — Consistent install/admin/upgrade guidance and automated acceptance/prohibition closure.
+
 **UI hint**: yes
 **UI scope**: Generated integration, diagnostic and guidance changes only; preserve host-owned layouts and branding. Read PRODUCT.md before any necessary admin-visible copy change; no copy overhaul or manual signoff.
 **Planning constraints**: Preserve manifest/file-transaction ownership and drift checks. Do not silently overwrite editable host hooks, claim arbitrary host policy is proven by static introspection, or keep duplicate demo routes as a fallback that masks the supported path. Add install/upgrade/verify regression tests in this phase.
@@ -136,7 +149,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
-| 169. Install and Upgrade Convergence | v1.46 | 0/TBD | Not started | — |
+| 169. Install and Upgrade Convergence | v1.46 | 0/5 | Planned | — |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
 
 **Coverage:** 15/15 requirements mapped exactly once; MNT-01 through MNT-04 and HAUTH-01 through HAUTH-04 complete in Phases 167–168. Two phases closed; the remaining seven requirements retain their Phase 169–170 owners. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.

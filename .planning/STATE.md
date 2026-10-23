@@ -5,16 +5,16 @@ milestone_name: Embedded Host Integration Reliability
 current_phase: 169
 current_phase_name: Install and Upgrade Convergence
 current_plan: Not started
-status: planning
-stopped_at: Phase 168 complete, ready to plan Phase 169
-last_updated: "2026-10-23T01:12:12.112Z"
+status: executing
+stopped_at: Phase 169 planned and independently checked; ready to execute five plans
+last_updated: "2026-10-23T01:53:23.943Z"
 last_activity: 2026-10-22
-last_activity_desc: Phase 168 complete, transitioned to Phase 169
-state_head: d3f0a7cf9e4abd2717b4bbaff3abb979f28f89ec
+last_activity_desc: Phase 169 planning complete; five plans in three waves passed independent verification
+state_head: 9500bb4707e24639886382ad5f5e0f0d89488bb9
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 6
+  total_plans: 11
   completed_plans: 6
   percent: 50
 ---
@@ -27,15 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 169 — Install and Upgrade Convergence, ready to plan. Phase 168 passed all four HAUTH requirements and 13 grouped truths; security closed 15/15 threats and code review is clean. Phases 167 and 168 have zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
+**Current focus:** Phase 169 — Install and Upgrade Convergence, ready to execute five plans in three waves. Research, pattern mapping and independent plan verification are complete; all four HDX requirements are covered. Phases 167 and 168 have zero remaining human UAT checks. Apply [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) before proposing verification handoffs.
 
 ## Current Position
 
-Phase: 169 — Install and Upgrade Convergence
+Phase: 169 (Install and Upgrade Convergence) — READY TO EXECUTE
 Current Plan: Not started
-Total Plans in Phase: 0
-Status: Ready to plan
-Last activity: 2026-10-22 — Phase 168 complete, transitioned to Phase 169
+Total Plans in Phase: 5
+Status: Ready to execute
+Last activity: 2026-10-22 — Phase 169 planning complete; five plans in three waves passed independent verification
 
 ## Accumulated Context
 
