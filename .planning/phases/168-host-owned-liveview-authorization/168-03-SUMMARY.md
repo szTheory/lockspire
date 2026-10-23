@@ -165,3 +165,13 @@ The automated host-owned authorization and navigation evidence is complete. Phas
 - Summary file exists and all four measured plan commits are ancestors of `HEAD`.
 - Plan-owned source and evidence files contain no added TODO/FIXME or placeholder stubs.
 - The preserved `.planning/state.json` still matches SHA1 `45470b25e06271a85e4947c9594dc7c2e0b11ff9`.
+
+## Security Audit Remediation Addendum — 2026-10-22
+
+The original summary predates two independent audit findings. Its broad statement that policy and secret-rotation patch denial was covered overstated the original tests; at that point, only edit and query patches had withdrawn-policy denials. The remediation commit `93b55580` adds real withdrawn-policy clicks for the authorization-policy and secret-rotation links, asserts the exact host redirect and denied params observation, and confirms the representative client record is unchanged. The same commit adds client snapshots around refused cached-response joins in the probe case, the default-mount policy-withdrawal case, and every invalid-session/binding/identity/policy-denial case across all mounts. Existing actual denied results, fresh-process/no-GET traces and protected-callback sentinels remain asserted.
+
+Remediation checks against source `93b555804a1a11ba08116cd44f8dc020abbd4ea9`: targeted integration selection **6 passed**, final Phase 168 focused union **44 passed**, `mix format --check-formatted` passed, and the single required final `mix test.fast` rerun passed **1,976 checks** (2 properties and 1,974 tests), with 6 skipped and 497 excluded. The phase-base `git diff --check` passed after phase-document whitespace cleanup.
+
+CI description correction: the GitHub workflow invokes `scripts/ci/run_test_matrix.sh --fast`, whose fast branch runs `MIX_ENV=test mix do test.setup + test`. This is distinct from the locally executed `mix test.fast`; the new untagged tests remain in the CI script's `mix test` selection. No remote CI result is claimed.
+
+See [168-REMEDIATION.md](./168-REMEDIATION.md) and the updated [168-VALIDATION.md](./168-VALIDATION.md). These artifacts record evidence for the independent auditor to recheck; they do not claim that audit has already closed either finding.

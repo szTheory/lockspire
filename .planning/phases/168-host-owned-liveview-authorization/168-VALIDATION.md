@@ -85,7 +85,7 @@ Additional research assumptions, not replacements for the eight rows:
 |----|--------------------|-------------------|
 | A-168-LV-REJOIN (research A1) | Passed server lifecycle contract. | 168-02 tests preserve the original signed response/session, stop the old PID, and connect a distinct process without another GET or session callback. Does not prove browser transport recovery. |
 | A-168-XSESSION | Passed cross-session server contract. | 168-03 proves distinct-session redirect followed by a separately dispatched fresh HTTP/live entry under current policy. Does not simulate an actual browser reload or network transport. |
-| A-168-PATCH | Passed same-view params boundary. | 168-03 attaches a host-owned handle_params hook through existing on_mount; current policy is re-resolved before protected params. Actual client edit/policy/rotation and query patches have allowed controls and withdrawal denials. Events and proactive logout/disconnect remain host responsibilities. |
+| A-168-PATCH | Passed same-view params boundary. | 168-03 attaches a host-owned handle_params hook through existing on_mount; current policy is re-resolved before protected params. Actual client edit/policy/rotation and query patches have allowed controls and withdrawal denials, added during audit remediation. Events and proactive logout/disconnect remain host responsibilities. |
 
 ### Prohibition recall and descriptor-less closure ledger
 
@@ -126,14 +126,14 @@ No in-scope source item is unplanned. Three missing probe contracts remain flagg
 
 ## CI and Evidence Closure Rules
 
-- Existing mix test.fast selects test/lockspire, test/mix and test/integration while excluding lifetime_package. All new acceptance cases remain unexcluded in existing test/lockspire files. `mix.exs`, `scripts/ci/run_test_matrix.sh`, and `.github/workflows/ci.yml` were checked; the existing fast CI job invokes this selector, with no duplicate job added and no remote run claimed.
+- GitHub Actions does not call `mix test.fast` for its fast CI partition. `.github/workflows/ci.yml` invokes `bash scripts/ci/run_test_matrix.sh --fast ...`; the script's `--fast` branch runs `MIX_ENV=test mix do test.setup + test`. The new tests are untagged under `test/lockspire` and remain in that selector. The local `mix test.fast` result below is a separate broad verification; no duplicate CI job or remote CI claim was added.
 - Capture command exit status, failed/selected test names, executed revision, actual versions and exact evidence kind. Tests must run before a result is called passed. A focused selection target is under 60 seconds after compilation; if exceeded, use deterministic tags with a recorded complete union, without omitting any acceptance row. Final test.fast may exceed 60 seconds; yield/poll and communicate during it.
 - Denial checks require positive marker controls and per-boundary fresh observations. HTTP 403 does not prove a connected hook; a synthetic connected socket is callback evidence only; a fresh GET rejoin does not alone prove cached-session new connected join.
 - No new visual/manual verification is scheduled. A specific unproven behavior remains a gap until suitable automated/source evidence exists. Record and reuse each closed ledger row while its source and acceptance remain valid.
 
 ## Execution Evidence
 
-Source revision for final tests: `d0f12976e85a83c5acfde310e000d17f555065a0` (feature source/test commit). Runtime was ASDF Elixir `1.20.4-otp-29` and Erlang/OTP `29.1.1`; locked versions were Phoenix `1.8.13`, Phoenix LiveView `1.2.10`, and Ecto SQL `3.13.5`. The isolated test database was `lockspire_phase168_20261022`; the shared default database was not used or dropped.
+Original Plan 03 final tests ran against source commit `d0f12976e85a83c5acfde310e000d17f555065a0`. Audit-remediation tests and the final broad rerun ran against source commit `93b555804a1a11ba08116cd44f8dc020abbd4ea9`. Runtime was ASDF Elixir `1.20.4-otp-29` and Erlang/OTP `29.1.1`; locked versions were Phoenix `1.8.13`, Phoenix LiveView `1.2.10`, and Ecto SQL `3.13.5`. The isolated test database was `lockspire_phase168_20261022`; the shared default database was not used or dropped.
 
 | Check | Result |
 |-------|--------|
@@ -141,24 +141,31 @@ Source revision for final tests: `d0f12976e85a83c5acfde310e000d17f555065a0` (fea
 | 168-02 tracer selection | 19 passed; plan final selection 23 passed, recorded in `168-02-SUMMARY.md` |
 | 168-03 cross-session tracer | `admin_route_separation_test.exs` cross-session cases passed (included in final union) |
 | 168-03 complete focused union | `mix test` over admin route compile, inventory, separation, route integration and LiveView runtime-contract files: 44 passed |
+| Audit-remediation targeted selection | Cached-response denial, default rejoin, all-mount rejoin matrix, and native client patch test locations: 6 passed |
+| Audit-remediation final focused union | Same five-file Phase 168 union at source commit `93b555804a1a11ba08116cd44f8dc020abbd4ea9`: 44 passed |
 | Route destinations | 29 concrete view/action routes × 3 mounts; 87 allowed destination navigations and 87 separately originated denied navigations passed |
-| Native client patches | Actual edit, authorization-policy, secret-rotation and query-filter patch controls passed; after authority withdrawal patch transitions returned the host sign-in redirect before protected params; existing client record remained unchanged |
+| Native client patches | Actual edit, authorization-policy, secret-rotation and query-filter patches have allowed controls; withdrawn-policy edit, policy, rotation and query patches returned the host sign-in redirect before protected params; client record snapshots were unchanged |
 | Format | `mix format --check-formatted`: passed after formatting only changed test files |
 | Broad selector | `HEX_HOME=/tmp/lockspire-phase168-hex LOCKSPIRE_TEST_DB_NAME=lockspire_phase168_20261022 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test.fast`: 1,976 passed (2 properties, 1,974 tests), 6 skipped, 497 excluded |
 | Working-tree whitespace | `git diff --check`: passed |
-| Phase-base whitespace | `git diff --check 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`: initially reported trailing spaces in `168-PATTERNS.md` and `168-RESEARCH.md`. The orchestrator removed them after Plan 03 and reran this check successfully; no tested source changed. |
+| Phase-base whitespace | `git diff --check 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`: passed after the orchestrator removed trailing spaces in the two newly authored phase planning documents; no tested source changed. |
 
 The first broad run produced 22 release-artifact test setup failures because Hex attempted to write `/Users/jon/.hex/cache.ets` from the read-only home. `HEX_HOME=/tmp/lockspire-phase168-hex` allowed the release helper to run without installing packages; the one resulting broad rerun passed. The output contained pre-existing compiler warnings, including the duplicate `record_trace/2` clauses already tracked in `deferred-items.md`; no warning was introduced as part of this task.
 
 Task 2 RED evidence is retained at `168-03-task2-red-evidence.json` and was accepted by `gsd_run check tdd-red-evidence`: the withdrawn-policy params patch reached the protected callback before the host guard. After implementing the host fixture `handle_params` hook, the marker was denied before the protected callback. The guard stores signed-session references and resolves current authority per params transition; it does not add a library role model or instrumentation.
 
+### Security Audit Remediation
+
+Commit `93b555804a1a11ba08116cd44f8dc020abbd4ea9` adds the missing high-severity T-168-07 state evidence and medium-severity T-168-14 withdrawn-patch controls. The T-168-07 client record is snapshotted immediately before each refused cached join and fetched again after the actual redirect at all three mounts; the original signed response/session and fresh connected-denial evidence remain in place. The T-168-14 test starts a fresh authorized show view for each policy/rotation link, withdraws policy, asserts the exact sign-in redirect plus a denied params observation and no allowed params observation, then compares the stored client record with its pre-transition snapshot. This is a representative mutation check, not a claim that every possible persistence side effect is impossible. The independent security auditor is expected to re-evaluate both findings.
+
 | Closure item | Automated/source criterion | Result and limit |
 |--------------|-----------------------------|------------------|
+| T-168-07 | Refused cached-response joins expose no protected view/output/action and leave domain records unchanged. | Added a representative client snapshot/re-read around the probe denial, default policy-withdrawal rejoin, and each invalid-session/binding/identity/policy denial at all three mounts. Existing actual redirect, distinct new PID, no-GET/session-callback traces and no protected callbacks remain asserted. This proves the representative client record is unchanged, not universal datastore immutability. |
 | T-168-10 | Public and consent sources retain independent sessions and cross-session redirects; fresh entry checks current authority at default/nested/root mounts. | Passed with missing, invalid-session, disallowed, and allowed cases for both sources at all three mounts. Fixture-only LiveViews are not protocol endpoints. |
 | T-168-11 | 29 exact selected view/action entries retain protected pipeline/session/ordered hook metadata and route boundaries. | Passed by the independent inventory and the 29-destination allowed/denied navigation matrix at all mounts. Existing repeated/concurrent/order/literal-vs-parameterized compile controls were retained. |
-| T-168-12 | Native same-view patches re-resolve host authority before protected destination params. | Passed for actual client edit, policy, rotation and filter query patches; allowed behavior is positive-controlled, withdrawn access redirects before protected params. |
+| T-168-12 | Native same-view patches re-resolve host authority before protected destination params. | Passed for actual client edit, authorization-policy, secret-rotation and filter-query patches. Each has an allowed control; withdrawn policy denies edit, policy, rotation and query transitions before protected params, with client state unchanged. |
 | T-168-13 | Public OAuth/OIDC and consent remain independent; no admin policy leaks into them. | Passed by existing anonymous discovery/JWKS and consent checks plus new fixture public/consent cross-session checks and callback provenance. |
-| T-168-14 | Phase claims stay within host-owned HTTP/server/navigation lifecycle; no production auth ownership or transport overclaim. | Passed by source review: production code unchanged; event authorization, active logout/disconnect and continuous old-socket revocation remain host responsibilities. Browser transport, packaged adoption and exact support-floor evidence remain Phase 170; generator/demo/install guidance convergence remains Phase 169. |
+| T-168-14 | Phase claims stay within host-owned HTTP/server/navigation lifecycle; no production auth ownership or transport overclaim. | Tests now directly cover withdrawn-policy authorization-policy and secret-rotation patch links, correcting the earlier summary overstatement. Source review confirms production code unchanged; event authorization, active logout/disconnect and continuous old-socket revocation remain host responsibilities. Browser transport, packaged adoption and exact support-floor evidence remain Phase 170; generator/demo/install guidance convergence remains Phase 169. Independent security-auditor recheck remains pending. |
 | T-168-SC | No dependency or schema installation/change. | Passed by task file review and unchanged dependency/schema files. No package install or schema push occurred. |
 
 The three assumptions `A-168-P02`, `A-168-P07`, and `A-168-P08` remain explicitly unresolved: no extra behavior or numeric contract was inferred. Existing Phase 167 UAT remains closed because this phase changed no Phase 167 source/claim. Local verification does not claim remote CI execution.
