@@ -412,6 +412,8 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
   alias Lockspire.Web.AdminRouteHost
 
+  @endpoint AdminRouteHost.DefaultEndpoint
+
   @mounts [
     {AdminRouteHost.DefaultEndpoint, AdminRouteHost.DefaultRouter, "/lockspire",
      "/lockspire/admin"},
@@ -501,6 +503,84 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     end)
 
     :ok
+  end
+
+  test "a cached default admin response rejoins a new process under current host policy" do
+    configure_mount("/lockspire")
+    install_authority()
+
+    allowed_trace = "cached-rejoin-allowed"
+    session = AdminRouteHost.Identity.staff_session("staff-1")
+
+    initial_conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", allowed_trace)
+      |> init_test_session(session)
+      |> Phoenix.ConnTest.dispatch(AdminRouteHost.DefaultEndpoint, :get, "/lockspire/admin")
+
+    assert initial_conn.status == 200
+    assert initial_conn.resp_body =~ "Overview"
+    assert_receive {:host_authorization, ^allowed_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_session_callback, "default"}
+
+    original_html = initial_conn.resp_body
+    original_session = Plug.Conn.get_session(initial_conn)
+    assert {:ok, first_view, first_html} = live(initial_conn)
+    assert first_view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
+    assert first_html =~ "Overview"
+    assert_receive {:host_authorization, ^allowed_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
+
+    stop_live_view(first_view)
+
+    assert initial_conn.resp_body == original_html
+    assert Plug.Conn.get_session(initial_conn) == original_session
+    assert Plug.Conn.get_session(initial_conn, "host_session_id") == "host-session-staff-1"
+
+    assert {:ok, rejoined_view, rejoined_html} = live(initial_conn)
+    assert rejoined_view.pid != first_view.pid
+    assert rejoined_view.module == first_view.module
+    assert rejoined_html =~ "Overview"
+    assert_receive {:host_authorization, ^allowed_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
+    refute_receive {:host_session_callback, _label}
+
+    stop_live_view(rejoined_view)
+
+    denied_trace = "cached-rejoin-policy-withdrawn"
+
+    denied_conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", denied_trace)
+      |> init_test_session(session)
+      |> Phoenix.ConnTest.dispatch(AdminRouteHost.DefaultEndpoint, :get, "/lockspire/admin")
+
+    assert denied_conn.status == 200
+    assert denied_conn.resp_body =~ "Overview"
+    assert_receive {:host_authorization, ^denied_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_session_callback, "default"}
+    assert {:ok, previously_allowed_view, _html} = live(denied_conn)
+    assert_receive {:host_authorization, ^denied_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
+    stop_live_view(previously_allowed_view)
+
+    denied_authority =
+      AdminRouteHost.Identity.default_authority()
+      |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+    assert :ok = AdminRouteHost.Identity.put_authority(denied_authority)
+    denied_html = denied_conn.resp_body
+    denied_session = Plug.Conn.get_session(denied_conn)
+
+    assert live(denied_conn) ==
+             {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+    assert denied_conn.resp_body == denied_html
+    assert Plug.Conn.get_session(denied_conn) == denied_session
+    assert_receive {:host_authorization, ^denied_trace, :connected, :denied, "staff-1"}
+    assert_receive {:host_live_hook, :denied}
+    refute_receive {:host_session_callback, _label}
+    refute_receive {:probe_callback, :connected, _callback}
   end
 
   for {_endpoint, _router, _mount, path} <- @mounts do
@@ -838,6 +918,13 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
     normalized = String.trim_trailing(mount, "/")
     Application.put_env(:lockspire, :mount_path, mount)
     Application.put_env(:lockspire, :issuer, "https://issuer.example" <> normalized)
+  end
+
+  defp stop_live_view(view) do
+    pid = view.pid
+    monitor = Process.monitor(pid)
+    GenServer.stop(pid)
+    assert_receive {:DOWN, ^monitor, :process, ^pid, _reason}
   end
 
   defp endpoint_live(endpoint, path, session) do
