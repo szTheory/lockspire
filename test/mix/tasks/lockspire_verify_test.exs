@@ -448,6 +448,25 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     assert key_output =~ "Structural checks do not prove arbitrary host authorization policy"
   end
 
+  test "unavailable router output retains the structural proof limit" do
+    output =
+      capture_io(fn ->
+        assert_raise Mix.Error, ~r/Lockspire verification failed/, fn ->
+          Mix.Tasks.Lockspire.Verify.run([
+            "--web",
+            "Mix.Tasks.Lockspire.VerifyTest.Web.Unavailable",
+            "--scope",
+            "Mix.Tasks.Lockspire.VerifyTest.Scope",
+            "--mount-path",
+            "/lockspire"
+          ])
+        end
+      end)
+
+    assert output =~ "compiled routes could not be inspected safely"
+    assert output =~ "Structural checks do not prove arbitrary host authorization policy"
+  end
+
   test "public diagnostic refuses the legacy admin forward" do
     output =
       capture_io(fn ->

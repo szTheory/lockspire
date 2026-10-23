@@ -207,8 +207,8 @@ defmodule Lockspire.Install.Verify do
         Check.error(
           :router,
           "Host router metadata is unavailable",
-          "compiled routes could not be inspected safely",
-          "Compile the host router module and rerun `mix lockspire.verify`."
+          "compiled routes could not be inspected safely. #{@policy_limit}",
+          "Compile the host router module and rerun `mix lockspire.verify`. #{@policy_limit}"
         )
     end
   end
@@ -217,8 +217,8 @@ defmodule Lockspire.Install.Verify do
     Check.error(
       :router,
       "Host router module is unavailable",
-      "no host router module was supplied",
-      "Pass --web YourAppWeb (or compile YourAppWeb.Router) before rerunning `mix lockspire.verify`."
+      "no host router module was supplied. #{@policy_limit}",
+      "Pass --web YourAppWeb (or compile YourAppWeb.Router) before rerunning `mix lockspire.verify`. #{@policy_limit}"
     )
   end
 
@@ -286,8 +286,8 @@ defmodule Lockspire.Install.Verify do
     Check.error(
       :router,
       "Host router wiring is incomplete",
-      "the configured :mount_path is missing or invalid",
-      "Set :mount_path in config/lockspire.exs, compile the host router, then rerun `mix lockspire.verify`."
+      "the configured :mount_path is missing or invalid. #{@policy_limit}",
+      "Set :mount_path in config/lockspire.exs, compile the host router, then rerun `mix lockspire.verify`. #{@policy_limit}"
     )
   end
 
