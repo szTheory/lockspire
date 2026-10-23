@@ -362,8 +362,15 @@ defmodule Lockspire.Install.FileTransaction do
          :ok <- maybe_fail(:after_staging) do
       {:ok, staged_state}
     else
-      {:simulated_interruption, _} = interruption -> interruption
-      {:error, reason} -> {:error, {:staging_failed, reason}}
+      {:simulated_interruption, _} = interruption ->
+        interruption
+
+      {:error, reason} ->
+        case cleanup(state) do
+          :ok -> {:error, {:staging_failed, reason}}
+          {:simulated_interruption, _} = interruption -> interruption
+          {:error, cleanup_reason} -> {:error, {:staging_cleanup_failed, reason, cleanup_reason}}
+        end
     end
   end
 

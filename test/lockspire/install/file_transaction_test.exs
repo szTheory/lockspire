@@ -289,6 +289,22 @@ defmodule Lockspire.Install.FileTransactionTest do
     assert transaction_dirs(root) == []
   end
 
+  test "an ordinary staging failure cleans its discoverable transaction", %{root: root} do
+    path = "lib/example_web/router/lockspire.ex"
+
+    FileTransaction.with_test_failure({:ordinary_failure, :after_staging}, fn ->
+      assert {:error, [%{type: :transaction_failed}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, :absent, "complete staged helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    refute File.exists?(Path.join(root, path))
+    refute File.exists?(Path.join(root, ".lockspire/install_transaction.json"))
+    assert transaction_dirs(root) == []
+  end
+
   test "committed terminal cleanup is retryable after staging removal and never rolls back", %{
     root: root
   } do
