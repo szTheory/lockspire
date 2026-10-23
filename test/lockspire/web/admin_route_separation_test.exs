@@ -214,6 +214,105 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
     refute_receive {:route_trace, "connected-consent-1", :admin_hook}
   end
 
+  test "consent cross-session navigation requires a fresh current-policy admin entry" do
+    install_authority()
+
+    denied_consent_conn =
+      build_conn()
+      |> put_req_header("x-route-trace", "consent-admin-missing")
+      |> get("/lockspire/consent/consent-admin-missing")
+
+    assert denied_consent_conn.status == 200
+    assert {:ok, denied_consent_view, denied_consent_html} = live(denied_consent_conn)
+    assert denied_consent_html =~ "Host consent"
+    assert_receive {:route_trace, "consent-admin-missing", :consent_session}
+    assert_receive {:route_trace, "consent-admin-missing", :consent_hook}
+
+    assert {:error, {:redirect, %{to: denied_admin_target}}} =
+             live_redirect(denied_consent_view, to: "/lockspire/admin")
+
+    assert URI.parse(denied_admin_target).path == "/lockspire/admin"
+
+    denied_admin_conn =
+      denied_consent_conn
+      |> recycle(["x-route-trace"])
+      |> get("/lockspire/admin")
+
+    assert denied_admin_conn.status == 403
+    refute denied_admin_conn.resp_body =~ "Overview"
+    assert_receive {:route_trace, "consent-admin-missing", :admin_http_denied}
+    refute_receive {:route_trace, "consent-admin-missing", :admin_session}
+    refute_receive {:route_trace, "consent-admin-missing", :admin_hook}
+    refute_receive :admin_mount_reached
+
+    allowed_session = AdminRouteHost.Identity.staff_session("staff-1")
+
+    allowed_consent_conn =
+      build_conn()
+      |> put_req_header("x-route-trace", "consent-admin-allowed")
+      |> init_test_session(allowed_session)
+      |> get("/lockspire/consent/consent-admin-allowed")
+
+    assert {:ok, allowed_consent_view, _html} = live(allowed_consent_conn)
+    assert_receive {:route_trace, "consent-admin-allowed", :consent_hook}
+
+    assert {:error, {:redirect, %{to: allowed_admin_target}}} =
+             live_redirect(allowed_consent_view, to: "/lockspire/admin")
+
+    assert URI.parse(allowed_admin_target).path == "/lockspire/admin"
+
+    assert :ok =
+             AdminRouteHost.Identity.put_authority(
+               put_in(AdminRouteHost.Identity.default_authority().permissions["staff-1"], false)
+             )
+
+    still_separate_consent =
+      build_conn()
+      |> get("/lockspire/consent/consent-still-separate")
+
+    assert still_separate_consent.status == 200
+    assert still_separate_consent.resp_body =~ "Host consent"
+
+    withdrawn_admin_conn =
+      allowed_consent_conn
+      |> recycle(["x-route-trace"])
+      |> get("/lockspire/admin")
+
+    assert withdrawn_admin_conn.status == 403
+    refute withdrawn_admin_conn.resp_body =~ "Overview"
+    assert_receive {:route_trace, "consent-admin-allowed", :admin_http_denied}
+    refute_receive {:route_trace, "consent-admin-allowed", :admin_session}
+    refute_receive {:route_trace, "consent-admin-allowed", :admin_hook}
+    refute_receive :admin_mount_reached
+
+    public_consent =
+      build_conn()
+      |> get("/lockspire/consent/consent-remains-public")
+
+    assert public_consent.status == 200
+    assert public_consent.resp_body =~ "Host consent"
+
+    allowed_authority = AdminRouteHost.Identity.default_authority()
+    assert :ok = AdminRouteHost.Identity.put_authority(allowed_authority)
+
+    allowed_admin_conn =
+      build_conn()
+      |> put_req_header("x-route-trace", "consent-admin-allowed-control")
+      |> init_test_session(allowed_session)
+      |> get("/lockspire/admin")
+
+    assert allowed_admin_conn.status == 200
+    assert_receive {:host_authorization, "consent-admin-allowed-control", :disconnected,
+                    :allowed, "staff-1"}
+    assert_receive {:route_trace, "consent-admin-allowed-control", :admin_session}
+
+    assert {:ok, admin_view, _admin_html} = live(allowed_admin_conn)
+    assert admin_view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
+    assert_receive {:host_authorization, "consent-admin-allowed-control", :connected, :allowed,
+                    "staff-1"}
+    assert_receive {:route_trace, "consent-admin-allowed-control", :admin_hook}
+  end
+
   test "current host policy rejects authenticated but disallowed staff before admin rendering" do
     install_authority()
 
