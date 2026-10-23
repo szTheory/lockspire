@@ -8,6 +8,7 @@ defmodule Lockspire.Web.AdminRouteHost do
   ]
 
   def session_options, do: @session_options
+  def admin_path(prefix), do: prefix <> "/admin"
 
   defmacro host_consent_routes(prefix) do
     quote do
@@ -16,11 +17,28 @@ defmodule Lockspire.Web.AdminRouteHost do
 
         Phoenix.LiveView.Router.live_session :host_consent,
           on_mount: [Lockspire.Web.AdminRouteHost.ConsentAuthorization],
-          session: {Lockspire.Web.AdminRouteHost.Identity, :consent_session, []} do
+          session: {Lockspire.Web.AdminRouteHost.Identity, :consent_session, [unquote(prefix)]} do
           Phoenix.LiveView.Router.live(
             "/consent/:interaction_id",
             Lockspire.Web.AdminRouteHost.ConsentLive,
             :show
+          )
+        end
+      end
+    end
+  end
+
+  defmacro host_public_routes(prefix) do
+    quote do
+      Phoenix.Router.scope unquote(prefix) do
+        Phoenix.Router.pipe_through(:host_public)
+
+        Phoenix.LiveView.Router.live_session :host_public,
+          session: {Lockspire.Web.AdminRouteHost.Identity, :public_session, [unquote(prefix)]} do
+          Phoenix.LiveView.Router.live(
+            "/public-admin-probe",
+            Lockspire.Web.AdminRouteHost.PublicLive,
+            :index
           )
         end
       end
@@ -194,6 +212,17 @@ defmodule Lockspire.Web.AdminRouteHost.LiveAuthorization do
         )
 
         Lockspire.Web.AdminRouteHost.record_trace(Map.get(session, "trace_id"), :admin_hook)
+
+        socket =
+          Phoenix.LiveView.attach_hook(
+            socket,
+            :host_current_authorization,
+            :handle_params,
+            fn params, uri, params_socket ->
+              authorize_params(session, params, uri, params_socket)
+            end
+          )
+
         {:cont, assign(socket, :host_staff, staff)}
 
       :error ->
@@ -209,6 +238,36 @@ defmodule Lockspire.Web.AdminRouteHost.LiveAuthorization do
         Lockspire.Web.AdminRouteHost.record_trace(
           Map.get(session, "trace_id"),
           :admin_hook_denied
+        )
+
+        {:halt, Phoenix.LiveView.redirect(socket, to: "/host/sign-in")}
+    end
+  end
+
+  defp authorize_params(session, _params, _uri, socket) do
+    case Lockspire.Web.AdminRouteHost.Identity.authorize_session(session) do
+      {:ok, staff} ->
+        Lockspire.Web.AdminRouteHost.Identity.record_authorization(
+          session,
+          :params,
+          :allowed,
+          staff.id
+        )
+
+        Lockspire.Web.AdminRouteHost.record_trace(Map.get(session, "trace_id"), :admin_params)
+        {:cont, socket}
+
+      :error ->
+        Lockspire.Web.AdminRouteHost.Identity.record_authorization(
+          session,
+          :params,
+          :denied,
+          Map.get(session, "host_staff_id")
+        )
+
+        Lockspire.Web.AdminRouteHost.record_trace(
+          Map.get(session, "trace_id"),
+          :admin_params_denied
         )
 
         {:halt, Phoenix.LiveView.redirect(socket, to: "/host/sign-in")}
@@ -373,10 +432,24 @@ defmodule Lockspire.Web.AdminRouteHost.Identity do
     Map.merge(host_session, %{"host_session_label" => label, "trace_id" => trace_id})
   end
 
-  def consent_session(conn) do
+  def consent_session(conn, prefix) do
     trace_id = conn |> Plug.Conn.get_req_header("x-route-trace") |> List.first()
     Lockspire.Web.AdminRouteHost.record_trace(trace_id, :consent_session)
-    %{"trace_id" => trace_id}
+
+    %{
+      "trace_id" => trace_id,
+      "admin_path" => Lockspire.Web.AdminRouteHost.admin_path(prefix)
+    }
+  end
+
+  def public_session(conn, prefix) do
+    trace_id = conn |> Plug.Conn.get_req_header("x-route-trace") |> List.first()
+    Lockspire.Web.AdminRouteHost.record_trace(trace_id, :public_session)
+
+    %{
+      "trace_id" => trace_id,
+      "admin_path" => Lockspire.Web.AdminRouteHost.admin_path(prefix)
+    }
   end
 end
 
@@ -397,12 +470,43 @@ defmodule Lockspire.Web.AdminRouteHost.ConsentLive do
   use Phoenix.LiveView
 
   @impl true
-  def mount(%{"interaction_id" => interaction_id}, _session, socket) do
-    {:ok, Phoenix.Component.assign(socket, :interaction_id, interaction_id)}
+  def mount(%{"interaction_id" => interaction_id}, session, socket) do
+    {:ok,
+     socket
+     |> Phoenix.Component.assign(:interaction_id, interaction_id)
+     |> Phoenix.Component.assign(:admin_path, Map.fetch!(session, "admin_path"))}
   end
 
   @impl true
-  def render(assigns), do: ~H"<main>Host consent <span><%= @interaction_id %></span></main>"
+  def render(assigns) do
+    ~H"""
+    <main>
+      Host consent <span><%= @interaction_id %></span>
+      <.link navigate={@admin_path}>Open admin</.link>
+    </main>
+    """
+  end
+end
+
+defmodule Lockspire.Web.AdminRouteHost.PublicLive do
+  @moduledoc false
+
+  use Phoenix.LiveView
+
+  @impl true
+  def mount(_params, session, socket) do
+    {:ok, Phoenix.Component.assign(socket, :admin_path, Map.fetch!(session, "admin_path"))}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <main>
+      Host public page
+      <.link navigate={@admin_path}>Open admin</.link>
+    </main>
+    """
+  end
 end
 
 defmodule Lockspire.Web.AdminRouteHost.MountSentinelLive do
@@ -496,6 +600,13 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
   end
 
+  pipeline :host_public do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_live_http)
+  end
+
   pipeline :public_surface do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
@@ -507,6 +618,7 @@ defmodule Lockspire.Web.AdminRouteHost.CanonicalRouter do
   )
 
   Lockspire.Web.AdminRouteHost.host_consent_routes("/lockspire")
+  Lockspire.Web.AdminRouteHost.host_public_routes("/lockspire")
 
   scope "/" do
     pipe_through(:host_probe)
@@ -574,6 +686,13 @@ defmodule Lockspire.Web.AdminRouteHost.DefaultRouter do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
   end
 
+  pipeline :host_public do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_live_http)
+  end
+
   pipeline :public_surface do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
@@ -585,6 +704,7 @@ defmodule Lockspire.Web.AdminRouteHost.DefaultRouter do
   )
 
   Lockspire.Web.AdminRouteHost.host_consent_routes("/lockspire")
+  Lockspire.Web.AdminRouteHost.host_public_routes("/lockspire")
 
   scope "/" do
     pipe_through(:public_surface)
@@ -613,6 +733,13 @@ defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
   end
 
+  pipeline :host_public do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_live_http)
+  end
+
   pipeline :public_surface do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
@@ -624,6 +751,7 @@ defmodule Lockspire.Web.AdminRouteHost.NestedRouter do
   )
 
   Lockspire.Web.AdminRouteHost.host_consent_routes("/teams/ops/identity")
+  Lockspire.Web.AdminRouteHost.host_public_routes("/teams/ops/identity")
 
   scope "/" do
     pipe_through(:public_surface)
@@ -652,6 +780,13 @@ defmodule Lockspire.Web.AdminRouteHost.RootRouter do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :consent_http)
   end
 
+  pipeline :host_public do
+    plug(:fetch_session)
+    plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
+    plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_live_http)
+  end
+
   pipeline :public_surface do
     plug(Lockspire.Web.AdminRouteHost.TraceSurface, :public_http)
   end
@@ -663,6 +798,7 @@ defmodule Lockspire.Web.AdminRouteHost.RootRouter do
   )
 
   Lockspire.Web.AdminRouteHost.host_consent_routes("")
+  Lockspire.Web.AdminRouteHost.host_public_routes("")
 
   scope "/" do
     pipe_through(:public_surface)

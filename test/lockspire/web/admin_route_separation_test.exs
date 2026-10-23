@@ -107,9 +107,15 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
       consent_index =
         route_index!(routes, &(&1.plug == Phoenix.LiveView.Plug and &1.path == consent_path))
 
+      public_path = prefix <> "/public-admin-probe"
+
+      public_index =
+        route_index!(routes, &(&1.plug == Phoenix.LiveView.Plug and &1.path == public_path))
+
       forward_index = route_index!(routes, &(&1.plug == Lockspire.Web.Router))
       assert admin_index < forward_index
       assert consent_index < forward_index
+      assert public_index < forward_index
 
       consent =
         Phoenix.Router.route_info(router, "GET", prefix <> "/consent/trace-1", "localhost")
@@ -119,6 +125,14 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
       {_view, :show, _opts, live_session} = consent.phoenix_live_view
       assert live_session.name == :host_consent
       assert consent.pipe_through == [:host_consent]
+
+      public = Phoenix.Router.route_info(router, "GET", public_path, "localhost")
+
+      assert public.plug == Phoenix.LiveView.Plug
+      assert public.log_module == AdminRouteHost.PublicLive
+      {_view, :index, _opts, public_session} = public.phoenix_live_view
+      assert public_session.name == :host_public
+      assert public.pipe_through == [:host_public]
 
       forward = Phoenix.Router.route_info(router, "GET", prefix <> "/jwks", "localhost")
       assert forward.plug == Lockspire.Web.Router
@@ -214,6 +228,94 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
     refute_receive {:route_trace, "connected-consent-1", :admin_hook}
   end
 
+  test "public and consent sessions cross into admin only through fresh current-policy entry" do
+    install_authority()
+
+    default_authority = AdminRouteHost.Identity.default_authority()
+
+    invalid_session_authority =
+      Map.update!(default_authority, :sessions, fn sessions ->
+        Map.put(sessions, "host-session-staff-1", %{identity_id: "staff-1", valid?: false})
+      end)
+
+    cases = [
+      {:missing, %{}, default_authority, 403},
+      {:invalid, AdminRouteHost.Identity.staff_session("staff-1"), invalid_session_authority,
+       403},
+      {:disallowed, AdminRouteHost.Identity.staff_session("staff-2"), default_authority, 403},
+      {:allowed, AdminRouteHost.Identity.staff_session("staff-1"), default_authority, 200}
+    ]
+
+    for {_router, endpoint, prefix, admin_path} <- @surface_mounts,
+        source <- [:public, :consent],
+        {case_name, session, authority, expected_status} <- cases do
+      mount_label = if prefix == "", do: "root", else: String.replace(prefix, "/", "-")
+      trace = "cross-session-#{source}-#{case_name}-#{mount_label}"
+
+      Application.put_env(:lockspire, :mount_path, prefix)
+
+      source_path =
+        if source == :public,
+          do: prefix <> "/public-admin-probe",
+          else: prefix <> "/consent/#{trace}"
+
+      assert :ok = AdminRouteHost.Identity.put_authority(authority)
+
+      source_conn =
+        build_conn()
+        |> put_req_header("x-route-trace", trace)
+        |> init_test_session(session)
+        |> Phoenix.ConnTest.dispatch(endpoint, :get, source_path)
+
+      assert source_conn.status == 200
+
+      source_surface = if source == :public, do: :public_live_http, else: :consent_http
+      assert_receive {:route_trace, ^trace, ^source_surface}
+
+      assert {:ok, source_view, source_html} = live(source_conn)
+      assert source_html =~ if(source == :public, do: "Host public page", else: "Host consent")
+
+      if source == :public do
+        assert source_view.module == AdminRouteHost.PublicLive
+        assert_receive {:route_trace, ^trace, :public_session}
+      else
+        assert source_view.module == AdminRouteHost.ConsentLive
+        assert_receive {:route_trace, ^trace, :consent_session}
+        assert_receive {:route_trace, ^trace, :consent_hook}
+      end
+
+      assert {:error, {:redirect, %{to: redirect_target}}} =
+               live_redirect(source_view, to: admin_path)
+
+      assert URI.parse(redirect_target).path == admin_path
+
+      admin_conn =
+        source_conn
+        |> recycle(["x-route-trace"])
+        |> Phoenix.ConnTest.dispatch(endpoint, :get, admin_path)
+
+      assert admin_conn.status == expected_status
+
+      if expected_status == 200 do
+        assert admin_conn.resp_body =~ "Overview"
+        assert_receive {:route_trace, ^trace, :admin_http_allowed}
+        assert_receive {:route_trace, ^trace, :admin_session}
+        assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+
+        assert {:ok, admin_view, admin_html} = live(admin_conn)
+        assert admin_view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
+        assert admin_html =~ "Overview"
+        assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+        assert_receive {:route_trace, ^trace, :admin_hook}
+      else
+        refute admin_conn.resp_body =~ "Overview"
+        assert_receive {:route_trace, ^trace, :admin_http_denied}
+        refute_receive {:route_trace, ^trace, :admin_session}
+        refute_receive {:route_trace, ^trace, :admin_hook}
+      end
+    end
+  end
+
   test "consent cross-session navigation requires a fresh current-policy admin entry" do
     install_authority()
 
@@ -302,14 +404,18 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
       |> get("/lockspire/admin")
 
     assert allowed_admin_conn.status == 200
-    assert_receive {:host_authorization, "consent-admin-allowed-control", :disconnected,
-                    :allowed, "staff-1"}
+
+    assert_receive {:host_authorization, "consent-admin-allowed-control", :disconnected, :allowed,
+                    "staff-1"}
+
     assert_receive {:route_trace, "consent-admin-allowed-control", :admin_session}
 
     assert {:ok, admin_view, _admin_html} = live(allowed_admin_conn)
     assert admin_view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
+
     assert_receive {:host_authorization, "consent-admin-allowed-control", :connected, :allowed,
                     "staff-1"}
+
     assert_receive {:route_trace, "consent-admin-allowed-control", :admin_hook}
   end
 

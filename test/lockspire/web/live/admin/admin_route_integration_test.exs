@@ -382,9 +382,9 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
 
     result = render_patch(view, "/admin-auth-probe?probe=denied")
 
+    assert result == {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
     assert_receive {:host_authorization, ^trace, :params, :denied, "staff-1"}
     refute_receive {:probe_callback, :connected, :params}
-    refute result =~ "admin-route-sensitive-id"
     refute_receive {:probe_callback, :connected, :action}
   end
 
@@ -833,6 +833,69 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
         assert_receive {:host_live_hook, "staff-1"}
         assert_receive {:host_session_callback, _label}
       end
+
+      install_authority()
+
+      for {{relative, expected_module, expected_action}, index} <- Enum.with_index(@journeys) do
+        route_path = route_path(path, relative, fixtures)
+        trace = "nav-allowed-#{inspect(path)}-#{index}"
+        session = Map.put(AdminRouteHost.Identity.staff_session("staff-1"), "trace_id", trace)
+
+        assert :ok =
+                 AdminRouteHost.Identity.put_authority(
+                   AdminRouteHost.Identity.default_authority()
+                 )
+
+        assert {:ok, origin, _origin_html} = endpoint_live(endpoint, path, session)
+        assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+
+        assert %{phoenix_live_view: {^expected_module, ^expected_action, _, _}} =
+                 Phoenix.Router.route_info(router, "GET", route_path, "www.example.com")
+
+        assert {:ok, destination, destination_html} = live_redirect(origin, to: route_path)
+        assert destination.module == expected_module
+        assert destination_html != ""
+        assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+        assert_receive {:host_live_hook, "staff-1"}
+        stop_live_view(destination)
+      end
+
+      client_before = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
+      for {{relative, _expected_module, _expected_action}, index} <- Enum.with_index(@journeys) do
+        route_path = route_path(path, relative, fixtures)
+        trace = "nav-denied-#{inspect(path)}-#{index}"
+        session = Map.put(AdminRouteHost.Identity.staff_session("staff-1"), "trace_id", trace)
+
+        assert :ok =
+                 AdminRouteHost.Identity.put_authority(
+                   AdminRouteHost.Identity.default_authority()
+                 )
+
+        assert {:ok, origin, _origin_html} = endpoint_live(endpoint, path, session)
+        assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+        assert_receive {:host_authorization, ^trace, :params, :allowed, "staff-1"}
+
+        denied_authority =
+          AdminRouteHost.Identity.default_authority()
+          |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+        assert :ok = AdminRouteHost.Identity.put_authority(denied_authority)
+
+        assert live_redirect(origin, to: route_path) ==
+                 {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+        assert_receive {:host_authorization, ^trace, :connected, :denied, "staff-1"}
+        assert_receive {:host_live_hook, :denied}
+        refute_receive {:host_authorization, ^trace, :params, _, _}
+      end
+
+      assert Lockspire.Admin.Clients.get_client(fixtures.client.client_id) == client_before
     end
   end
 
@@ -919,6 +982,147 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
       assert workflow_html =~ "Server sign-out notification URL"
     end
+  end
+
+  test "real client action and query patches check current host policy" do
+    configure_mount("/lockspire")
+    fixtures = AdminRouteHost.seed_admin_records!()
+    install_authority()
+
+    client_path = "/lockspire/admin/clients/#{fixtures.client.client_id}"
+    show_path = client_path
+    edit_path = client_path <> "/edit"
+    policy_path = client_path <> "/par-policy"
+    rotation_path = client_path <> "/rotate-secret"
+    allowed_trace = "client-patch-allowed"
+
+    allowed_session =
+      AdminRouteHost.Identity.staff_session("staff-1")
+      |> Map.put("trace_id", allowed_trace)
+
+    assert {:ok, client_view, show_html} =
+             endpoint_live(
+               AdminRouteHost.DefaultEndpoint,
+               show_path,
+               allowed_session
+             )
+
+    assert show_html =~ "Edit app details"
+    assert show_html =~ "Edit authorization request rules"
+    assert show_html =~ "Rotate client secret"
+    assert_receive {:host_authorization, ^allowed_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^allowed_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^allowed_trace, :params, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^allowed_trace, :params, :allowed, "staff-1"}
+
+    for {label, path, heading, action} <- [
+          {"Edit app details", edit_path, "Edit app settings", :edit},
+          {"Edit authorization request rules", policy_path, "Set authorization request rules",
+           :par_policy},
+          {"Rotate client secret", rotation_path, "Rotate client secret", :rotate_secret}
+        ] do
+      assert %{phoenix_live_view: {Lockspire.Web.Live.Admin.ClientsLive.Show, ^action, _, _}} =
+               Phoenix.Router.route_info(
+                 AdminRouteHost.DefaultRouter,
+                 "GET",
+                 path,
+                 "www.example.com"
+               )
+
+      patch_result = client_view |> element("a", label) |> render_click()
+      assert is_binary(patch_result)
+      assert_patch(client_view, path)
+      assert render(client_view) =~ heading
+      assert_receive {:host_authorization, ^allowed_trace, :params, :allowed, "staff-1"}
+
+      assert client_view |> render_patch(show_path) |> is_binary()
+      assert_patch(client_view, show_path)
+      assert_receive {:host_authorization, ^allowed_trace, :params, :allowed, "staff-1"}
+    end
+
+    index_path = "/lockspire/admin/clients"
+    query_view_trace = "client-query-patch-allowed"
+    query_session = Map.put(allowed_session, "trace_id", query_view_trace)
+
+    assert {:ok, query_view, _index_html} =
+             endpoint_live(AdminRouteHost.DefaultEndpoint, index_path, query_session)
+
+    assert_receive {:host_authorization, ^query_view_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_view_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_view_trace, :params, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_view_trace, :params, :allowed, "staff-1"}
+
+    query_view
+    |> form("form[phx-submit=filter_inventory]", %{
+      "q" => "admin-route",
+      "status" => "all",
+      "provenance" => "all"
+    })
+    |> render_submit()
+
+    query_path = index_path <> "?page=1&provenance=all&q=admin-route&status=all"
+    assert_patch(query_view, query_path)
+    assert_receive {:host_authorization, ^query_view_trace, :params, :allowed, "staff-1"}
+
+    {:ok, client_before} = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+
+    denied_edit_trace = "client-edit-patch-denied"
+    denied_edit_session = Map.put(allowed_session, "trace_id", denied_edit_trace)
+
+    assert {:ok, denied_edit_view, _html} =
+             endpoint_live(
+               AdminRouteHost.DefaultEndpoint,
+               show_path,
+               denied_edit_session
+             )
+
+    assert_receive {:host_authorization, ^denied_edit_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^denied_edit_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^denied_edit_trace, :params, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^denied_edit_trace, :params, :allowed, "staff-1"}
+
+    denied_authority =
+      AdminRouteHost.Identity.default_authority()
+      |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+    assert :ok = AdminRouteHost.Identity.put_authority(denied_authority)
+
+    denied_edit_result =
+      denied_edit_view
+      |> element("a", "Edit app details")
+      |> render_click()
+
+    assert denied_edit_result == {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+    assert_receive {:host_authorization, ^denied_edit_trace, :params, :denied, "staff-1"}
+
+    query_denied_trace = "client-query-patch-denied"
+    query_denied_session = Map.put(allowed_session, "trace_id", query_denied_trace)
+
+    assert :ok =
+             AdminRouteHost.Identity.put_authority(AdminRouteHost.Identity.default_authority())
+
+    assert {:ok, denied_query_view, _html} =
+             endpoint_live(
+               AdminRouteHost.DefaultEndpoint,
+               index_path,
+               query_denied_session
+             )
+
+    assert_receive {:host_authorization, ^query_denied_trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_denied_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_denied_trace, :params, :allowed, "staff-1"}
+    assert_receive {:host_authorization, ^query_denied_trace, :params, :allowed, "staff-1"}
+
+    assert :ok = AdminRouteHost.Identity.put_authority(denied_authority)
+
+    denied_query_path = index_path <> "?page=1&provenance=all&q=withheld&status=all"
+
+    assert render_patch(denied_query_view, denied_query_path) ==
+             {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+    assert_receive {:host_authorization, ^query_denied_trace, :params, :denied, "staff-1"}
+    assert {:ok, client_after} = Lockspire.Admin.Clients.get_client(fixtures.client.client_id)
+    assert client_after == client_before
   end
 
   test "missing detail records retain their prefixed recovery links" do
@@ -1113,10 +1317,18 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
   end
 
   defp endpoint_live_with_conn(endpoint, path, session) do
+    conn = build_conn()
+
     conn =
-      build_conn()
-      |> init_test_session(session)
-      |> Phoenix.ConnTest.dispatch(endpoint, :get, path)
+      case Map.get(session, "trace_id") do
+        trace_id when is_binary(trace_id) ->
+          Plug.Conn.put_req_header(conn, "x-route-trace", trace_id)
+
+        _missing ->
+          conn
+      end
+
+    conn = conn |> init_test_session(session) |> Phoenix.ConnTest.dispatch(endpoint, :get, path)
 
     {Phoenix.LiveViewTest.__live__(conn, nil, []), conn}
   end
