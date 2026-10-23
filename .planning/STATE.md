@@ -5,18 +5,18 @@ milestone_name: Embedded Host Integration Reliability
 current_phase: 170
 current_phase_name: Packaged Host and Compatibility Proof
 current_plan: Not started
-status: planning
-stopped_at: Phase 169 complete, ready to plan Phase 170
-last_updated: "2026-10-23T23:33:26.542Z"
+status: executing
+stopped_at: Phase 170 planned, ready to execute
+last_updated: "2026-10-23T23:58:46.866Z"
 last_activity: 2026-10-23
-last_activity_desc: Phase 169 complete, transitioned to Phase 170
-state_head: 5c4effb61b2fcb2d408a4ae72654176d37248ab8
+last_activity_desc: Phase 170 planned inline; 5 plans, 5 waves, 3/3 requirements covered
+state_head: acda9da47b141978a2a05c2ac795058257f93888
 progress:
   total_phases: 4
   completed_phases: 3
-  total_plans: 11
+  total_plans: 16
   completed_plans: 11
-  percent: 75
+  percent: 69
 ---
 
 # Project State
@@ -31,13 +31,15 @@ See: .planning/PROJECT.md (updated 2026-10-23 after Phase 169)
 
 ## Current Position
 
-Phase: 170 — Packaged Host and Compatibility Proof
+Phase: 170 (Packaged Host and Compatibility Proof) — READY TO EXECUTE
 Current Plan: Not started
-Total Plans in Phase: 0
-Status: Ready to plan
-Last activity: 2026-10-23 — Phase 169 complete, transitioned to Phase 170
+Total Plans in Phase: 5
+Status: Ready to execute
+Last activity: 2026-10-23 — Phase 170 planned inline; 5 plans in 5 waves, all 3 HPROOF requirements covered
 
 ## Accumulated Context
+
+Phase 170 planning is complete at source acda9da47b141978a2a05c2ac795058257f93888. The user accepted planning from approved requirements without a new CONTEXT interview and explicitly requested inline work. Research/pattern mapping/planning/checking ran inline; no independent-agent checker result is claimed. Five plans in five sequential waves cover all three HPROOF requirements: packaged Chrome/CDP tracer, 16-case three-mount matrix, exact locked/floor runtime, required existing CI wiring and evidence/docs closure. The plan check found zero blockers/warnings; 33 commands have failure signals. Existing command-grounding selector: 16 passed. New runtime/browser/package/CI behavior remains pending execution. User-requested planning stops at ready-to-execute; persistent auto_advance preference is unchanged. Preserve the original unrelated state.json bytes.
 
 ### Decisions
 
@@ -117,9 +119,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-23
-Stopped at: Phase 169 complete, ready to plan Phase 170
+Stopped at: Phase 170 planned, ready to execute
 Resume file: None
-Next: `$gsd-plan-phase 170` or `$gsd-discuss-phase 170`. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
+Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-compatibility-proof/*-PLAN.md` and 170-PLAN-CHECK.md first if desired. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
 
 ## Performance Metrics
 

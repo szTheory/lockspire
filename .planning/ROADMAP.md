@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–169 complete; Phase 170 ready to plan.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–169 complete; Phase 170 planned and ready to execute.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,7 +19,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phases 167–169 are complete after automated verification and independent evidence review; zero human UAT checks remain. Phase 169 passed all four HDX requirements and 24 plan truths, security closed 22/22 threats and final code review is clean. Phase 170 is ready to plan.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phases 167–169 are complete after automated verification and independent evidence review; zero human UAT checks remain. Phase 169 passed all four HDX requirements and 24 plan truths, security closed 22/22 threats and final code review is clean. Phase 170 has five verified plans and is ready to execute.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
@@ -128,7 +128,26 @@ Plans:
   3. Route/session, connected authorization and navigation regressions execute on both the current locked pair and exact Phoenix 1.8.5 / LiveView 1.1.28, with exact versions and runtime outcomes recorded. (HPROOF-02)
   4. Required CI executes the bounded integration checks, fails visibly on regressions and emits redaction-safe evidence tied to its source/package, without depending on manual visual approval. (HPROOF-03)
 
-**Plans**: TBD
+**Plans**: 5 plans in 5 sequential waves (0 complete)
+
+Plans:
+**Wave 1**
+- [ ] 170-01-PLAN.md — Candidate-installed real browser connection/navigation tracer and safe receipt boundary.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 170-02-PLAN.md — Default/nested/root connected operation, current-authority denial, reconnect/navigation and public separation.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 170-03-PLAN.md — Shared exact-floor runtime regressions and frozen-pair packaged browser matrix.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 170-04-PLAN.md — Required existing CI jobs, bounded canonical commands and strict source/package-bound evidence.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 170-05-PLAN.md — Executable maintainer guidance, final matrix and individual automated acceptance/prohibition closure.
+
+**Planning artifacts**: [Research](phases/170-packaged-host-and-compatibility-proof/170-RESEARCH.md), [validation strategy](phases/170-packaged-host-and-compatibility-proof/170-VALIDATION.md), [source coverage](phases/170-packaged-host-and-compatibility-proof/170-SOURCE-AUDIT.md), [inline plan check](phases/170-packaged-host-and-compatibility-proof/170-PLAN-CHECK.md). All 3 requirements are covered; runtime implementation remains pending.
+
 **UI hint**: yes
 **UI scope**: Automated connection/navigation proof only; no screenshots-as-design-approval requirement or subjective UI signoff.
 **Planning constraints**: Reuse the existing test/clean-room/demo and CI seams; introduce no new auth framework or dependency merely for this repair. Freeze exact commands and matrix during phase planning. Tests are added throughout earlier phases; this phase integrates candidate-package, transport and compatibility proof. Publication, merge and remote ref updates remain separate workflows.
@@ -143,14 +162,14 @@ Plans:
 
 ## Progress
 
-**Execution Order:** 167 → 168 → 169 → 170. Phases 167–169 are complete (11/11 plans, twelve requirements combined, zero human UAT checks); Phase 170 has not started.
+**Execution Order:** 167 → 168 → 169 → 170. Phases 167–169 are complete (11/11 plans, twelve requirements combined, zero human UAT checks); Phase 170 is planned (5 plans / 5 sequential waves); execution has not started.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 169. Install and Upgrade Convergence | v1.46 | 5/5 | Complete    | 2026-10-23 |
-| 170. Packaged Host and Compatibility Proof | v1.46 | 0/TBD | Not started | — |
+| 170. Packaged Host and Compatibility Proof | v1.46 | 0/5 | Planned | — |
 
 **Coverage:** 15/15 requirements mapped exactly once; MNT-01..04, HAUTH-01..04 and HDX-01..04 complete in Phases 167–169. Three phases closed; the remaining three HPROOF requirements retain their Phase 170 owner. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
