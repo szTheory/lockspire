@@ -48,8 +48,8 @@ defmodule Mix.Tasks.Lockspire.Verify do
       5. Confirm Lockspire and Oban migrations are applied in the configured schema/prefix
 
     Structural checks do not prove arbitrary host authorization policy. Verify host-owned request
-    and LiveView behavior with host tests. Packaged browser transport and exact-floor runtime proof
-    belong to Phase 170.
+    and LiveView behavior with host tests. Packaged-consumer browser transport and exact supported-
+    version runtime behavior require separate verification.
     """
   end
 

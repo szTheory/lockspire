@@ -21,7 +21,7 @@ defmodule Lockspire.Install.Verify do
     {:delete, "/authorized-apps/:id"}
   ]
 
-  @policy_limit "Structural checks do not prove arbitrary host authorization policy. Verify host-owned request and LiveView behavior with host tests; packaged browser transport and exact-floor runtime proof belong to Phase 170."
+  @policy_limit "Structural checks do not prove arbitrary host authorization policy. Verify host-owned request and LiveView behavior with host tests; packaged-consumer browser transport and exact supported-version runtime behavior require separate verification."
 
   @type result :: %{ok?: boolean(), checks: [Check.result()]}
 

@@ -51,6 +51,7 @@ defmodule <%= @web_module %>.Router.Lockspire do
       # Lockspire supplies the route inventory and fixed LiveView session. Your
       # host-owned Plug and hook must implement current staff authorization.
       require Lockspire.Web.AdminRoutes
+
       pipeline :lockspire_operator_authorization do
         plug(<%= @web_module %>.OperatorAuthorization)
       end

@@ -14,18 +14,20 @@ defmodule Lockspire.Web.Live.Admin.LiveViewRuntimeContractTest do
     layout_source =
       File.read!("examples/adoption_demo/lib/adoption_demo_web/admin_root/root.html.heex")
 
-    assert router_source =~ "scope \"/lockspire/admin\" do"
-    assert router_source =~ "pipe_through([:browser, :operator, :admin_live_view_root_layout])"
+    assert router_source =~
+             "Lockspire.Web.AdminRoutes.lockspire_admin_routes(\"/lockspire/admin\""
+
+    assert router_source =~ "pipe_through: [:browser, :operator, :admin_live_view_root_layout]"
+    assert router_source =~ "root_layout: {AdoptionDemoWeb.AdminRootLayout, :root}"
 
     assert router_source =~
              "Phoenix.Controller.put_root_layout(conn, html: {AdoptionDemoWeb.AdminRootLayout, :root})"
 
-    refute router_source =~ "scope \"/lockspire/adminfoo\""
+    refute router_source =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
 
     expected_paths =
-      Lockspire.Web.AdminRouter
-      |> Phoenix.Router.routes()
-      |> Enum.map(& &1.path)
+      Lockspire.Web.AdminRoutes.__route_inventory__()
+      |> Enum.map(fn {path, _view, _action} -> path end)
       |> MapSet.new()
 
     mounted_admin_routes =
@@ -61,7 +63,7 @@ defmodule Lockspire.Web.Live.Admin.LiveViewRuntimeContractTest do
                :admin_live_view_root_layout in pipeline
            end)
 
-    assert Enum.any?(
+    refute Enum.any?(
              Phoenix.Router.routes(AdoptionDemoWeb.Router),
              &(&1.plug == Lockspire.Web.AdminRouter)
            )
