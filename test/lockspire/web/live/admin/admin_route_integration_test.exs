@@ -213,6 +213,28 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     assert_receive {:host_live_hook, :denied}
   end
 
+  test "disconnected authorization probe reaches the host hook without the HTTP staff guard" do
+    install_authority()
+    trace = "probe-disconnected-denied"
+
+    response =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", trace)
+      |> Phoenix.ConnTest.init_test_session(
+        Map.put(
+          Lockspire.Web.AdminRouteHost.Identity.staff_session("staff-2"),
+          "trace_id",
+          trace
+        )
+      )
+      |> Phoenix.ConnTest.get("/admin-auth-probe")
+
+    assert response.status == 302
+    assert response.resp_body =~ "/host/sign-in"
+    assert_receive {:host_authorization, ^trace, :disconnected, :denied, "staff-2"}
+    refute_receive {:probe_callback, _, _}
+  end
+
   test "the host HTTP gate and current-identity hook deny before a view mounts" do
     denied_http = get(build_conn(), "/lockspire/admin")
     assert denied_http.status == 403
