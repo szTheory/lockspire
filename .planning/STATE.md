@@ -4,18 +4,18 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 169
 current_phase_name: Install and Upgrade Convergence
-current_plan: 2
+current_plan: 5
 status: executing
 stopped_at: Phase 169 planned and independently checked; ready to execute five plans
-last_updated: "2026-10-23T21:31:47.248Z"
+last_updated: "2026-10-23T22:13:58.196Z"
 last_activity: 2026-10-22
 last_activity_desc: Phase 169 execution started
-state_head: 12d5fe2e7390a0bf1bfdb3a58a714817ebb2811c
+state_head: 0e25eb8937cf5f38b08433d7d66080e35c4e50de
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 11
-  completed_plans: 7
+  completed_plans: 10
   percent: 50
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-22 for v1.46)
 ## Current Position
 
 Phase: 169 (Install and Upgrade Convergence) — EXECUTING
-Current Plan: 2
+Current Plan: 5
 Total Plans in Phase: 5
 Status: Ready to execute
 Last activity: 2026-10-22 — Phase 169 execution started
