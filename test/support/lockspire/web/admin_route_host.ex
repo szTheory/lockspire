@@ -124,14 +124,33 @@ defmodule Lockspire.Web.AdminRouteHost.RequireStaff do
 
   @impl true
   def call(conn, _opts) do
-    case get_session(conn, "host_staff_id") do
-      identity_id when is_binary(identity_id) and identity_id != "" ->
-        Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_allowed)
-        assign(conn, :host_staff_id, identity_id)
+    identity_id = get_session(conn, "host_staff_id")
 
-      _missing ->
-        Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_denied)
-        conn |> send_resp(:forbidden, "Forbidden") |> halt()
+    if Lockspire.Web.AdminRouteHost.Identity.authority_installed?() do
+      session = %{
+        "host_staff_id" => identity_id,
+        "host_session_id" => get_session(conn, "host_session_id")
+      }
+
+      case Lockspire.Web.AdminRouteHost.Identity.authorize_session(session) do
+        {:ok, staff} ->
+          Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_allowed)
+          assign(conn, :host_staff_id, staff.id)
+
+        :error ->
+          Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_denied)
+          conn |> send_resp(:forbidden, "Forbidden") |> halt()
+      end
+    else
+      case identity_id do
+        identity_id when is_binary(identity_id) and identity_id != "" ->
+          Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_allowed)
+          assign(conn, :host_staff_id, identity_id)
+
+        _missing ->
+          Lockspire.Web.AdminRouteHost.record_trace(trace_id(conn), :admin_http_denied)
+          conn |> send_resp(:forbidden, "Forbidden") |> halt()
+      end
     end
   end
 
@@ -161,14 +180,31 @@ defmodule Lockspire.Web.AdminRouteHost.LiveAuthorization do
   import Phoenix.Component, only: [assign: 3]
 
   def on_mount(_name, _params, session, socket) do
-    case Lockspire.Web.AdminRouteHost.Identity.resolve(Map.get(session, "host_staff_id")) do
+    lifecycle = if Phoenix.LiveView.connected?(socket), do: :connected, else: :disconnected
+
+    case Lockspire.Web.AdminRouteHost.Identity.authorize_session(session) do
       {:ok, staff} ->
         Lockspire.Web.AdminRouteHost.Identity.record_hook(staff.id)
+
+        Lockspire.Web.AdminRouteHost.Identity.record_authorization(
+          session,
+          lifecycle,
+          :allowed,
+          staff.id
+        )
+
         Lockspire.Web.AdminRouteHost.record_trace(Map.get(session, "trace_id"), :admin_hook)
         {:cont, assign(socket, :host_staff, staff)}
 
       :error ->
         Lockspire.Web.AdminRouteHost.Identity.record_hook(:denied)
+
+        Lockspire.Web.AdminRouteHost.Identity.record_authorization(
+          session,
+          lifecycle,
+          :denied,
+          Map.get(session, "host_staff_id")
+        )
 
         Lockspire.Web.AdminRouteHost.record_trace(
           Map.get(session, "trace_id"),
@@ -182,6 +218,115 @@ end
 
 defmodule Lockspire.Web.AdminRouteHost.Identity do
   @moduledoc false
+
+  @authority_key :lockspire_admin_route_identity_authority
+
+  def child_spec(opts) do
+    %{id: make_ref(), start: {__MODULE__, :start_link, [opts]}}
+  end
+
+  def start_link(opts) do
+    Agent.start_link(fn -> Keyword.fetch!(opts, :authority) end)
+  end
+
+  def default_authority do
+    %{
+      identities: %{
+        "staff-1" => %{id: "staff-1", role: :admin},
+        "staff-2" => %{id: "staff-2", role: :staff}
+      },
+      sessions: %{
+        "host-session-staff-1" => %{identity_id: "staff-1", valid?: true},
+        "host-session-staff-2" => %{identity_id: "staff-2", valid?: true}
+      },
+      permissions: %{"staff-1" => true, "staff-2" => false}
+    }
+  end
+
+  def staff_session(identity_id) when is_binary(identity_id) do
+    %{
+      "host_staff_id" => identity_id,
+      "host_session_id" => "host-session-#{identity_id}"
+    }
+  end
+
+  def authority_pointer do
+    case :persistent_term.get(@authority_key, :unset) do
+      :unset -> :unset
+      pid -> {:ok, pid}
+    end
+  end
+
+  def install_authority(pid) when is_pid(pid), do: :persistent_term.put(@authority_key, pid)
+
+  def restore_authority(:unset), do: :persistent_term.erase(@authority_key)
+  def restore_authority({:ok, pid}), do: :persistent_term.put(@authority_key, pid)
+
+  def authority_installed? do
+    :persistent_term.get(@authority_key, :unset) != :unset
+  end
+
+  def put_authority(authority) when is_map(authority) do
+    case :persistent_term.get(@authority_key, :unset) do
+      pid when is_pid(pid) ->
+        if Process.alive?(pid) do
+          Agent.update(pid, fn _current -> authority end)
+        else
+          :error
+        end
+
+      _missing ->
+        :error
+    end
+  catch
+    :exit, _reason -> :error
+  end
+
+  def authorize_session(session) when is_map(session) do
+    case :persistent_term.get(@authority_key, :unset) do
+      :unset ->
+        resolve(Map.get(session, "host_staff_id"))
+
+      pid when is_pid(pid) ->
+        if Process.alive?(pid) do
+          Agent.get(pid, fn authority -> authorize(authority, session) end)
+        else
+          :error
+        end
+
+      _invalid ->
+        :error
+    end
+  catch
+    :exit, _reason -> :error
+  end
+
+  def record_authorization(session, lifecycle, decision, identity_id) do
+    trace_id = Map.get(session, "trace_id")
+
+    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
+      observer when is_pid(observer) ->
+        send(observer, {:host_authorization, trace_id, lifecycle, decision, identity_id})
+
+      nil ->
+        :ok
+    end
+  end
+
+  defp authorize(authority, session) do
+    identity_id = Map.get(session, "host_staff_id")
+    session_id = Map.get(session, "host_session_id")
+
+    with true <- is_binary(identity_id) and identity_id != "",
+         true <- is_binary(session_id) and session_id != "",
+         %{identity_id: ^identity_id, valid?: true} <- Map.get(authority.sessions, session_id),
+         %{id: ^identity_id} = staff <- Map.get(authority.identities, identity_id),
+         true <- Map.get(authority.permissions, identity_id) == true do
+      {:ok, staff}
+    else
+      _denied -> :error
+    end
+  end
 
   def resolve("staff-1"), do: {:ok, %{id: "staff-1", role: :admin}}
   def resolve(_identity_id), do: :error
@@ -208,7 +353,14 @@ defmodule Lockspire.Web.AdminRouteHost.Identity do
 
     trace_id = conn |> Plug.Conn.get_req_header("x-route-trace") |> List.first()
     Lockspire.Web.AdminRouteHost.record_trace(trace_id, :admin_session)
-    %{"host_session_label" => label, "trace_id" => trace_id}
+
+    host_session =
+      ["host_staff_id", "host_session_id"]
+      |> Enum.map(&{&1, Plug.Conn.get_session(conn, &1)})
+      |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+      |> Map.new()
+
+    Map.merge(host_session, %{"host_session_label" => label, "trace_id" => trace_id})
   end
 
   def consent_session(conn) do

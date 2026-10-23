@@ -160,6 +160,59 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
              )
   end
 
+  test "connected entry rechecks current host policy against the already-rendered response" do
+    install_authority()
+
+    allowed_trace = "entry-allowed"
+
+    allowed_conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", allowed_trace)
+      |> Phoenix.ConnTest.init_test_session(
+        Lockspire.Web.AdminRouteHost.Identity.staff_session("staff-1")
+      )
+      |> Phoenix.ConnTest.get("/lockspire/admin")
+
+    assert allowed_conn.status == 200
+    assert allowed_conn.resp_body =~ "Overview"
+
+    assert_receive {:host_authorization, ^allowed_trace, :disconnected, :allowed, "staff-1"}
+
+    assert {:ok, allowed_view, allowed_html} = live(allowed_conn)
+    assert allowed_view.module == Lockspire.Web.Live.Admin.OverviewLive.Index
+    assert allowed_html =~ "Overview"
+    assert_receive {:host_authorization, ^allowed_trace, :connected, :allowed, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
+    assert_receive {:host_live_hook, "staff-1"}
+
+    denied_trace = "entry-withdrawn"
+
+    denied_conn =
+      build_conn()
+      |> Plug.Conn.put_req_header("x-route-trace", denied_trace)
+      |> Phoenix.ConnTest.init_test_session(
+        Lockspire.Web.AdminRouteHost.Identity.staff_session("staff-1")
+      )
+      |> Phoenix.ConnTest.get("/lockspire/admin")
+
+    assert denied_conn.status == 200
+    assert denied_conn.resp_body =~ "Overview"
+
+    assert_receive {:host_authorization, ^denied_trace, :disconnected, :allowed, "staff-1"}
+
+    denied_authority =
+      Lockspire.Web.AdminRouteHost.Identity.default_authority()
+      |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+    assert :ok = Lockspire.Web.AdminRouteHost.Identity.put_authority(denied_authority)
+
+    assert live(denied_conn) ==
+             {:error, {:redirect, %{status: 302, to: "/host/sign-in"}}}
+
+    assert_receive {:host_authorization, ^denied_trace, :connected, :denied, "staff-1"}
+    assert_receive {:host_live_hook, :denied}
+  end
+
   test "the host HTTP gate and current-identity hook deny before a view mounts" do
     denied_http = get(build_conn(), "/lockspire/admin")
     assert denied_http.status == 403
@@ -253,6 +306,14 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
 
   defp restore_observer(observer),
     do: :persistent_term.put(:lockspire_admin_route_hook_observer, observer)
+
+  defp install_authority do
+    identity = Lockspire.Web.AdminRouteHost.Identity
+    previous = identity.authority_pointer()
+    {:ok, pid} = start_supervised({identity, authority: identity.default_authority()})
+    identity.install_authority(pid)
+    on_exit(fn -> identity.restore_authority(previous) end)
+  end
 end
 
 defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do

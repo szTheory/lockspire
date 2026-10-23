@@ -215,9 +215,11 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
   end
 
   test "current host policy rejects authenticated but disallowed staff before admin rendering" do
+    install_authority()
+
     allowed =
       build_conn()
-      |> init_test_session(%{"host_staff_id" => "staff-1"})
+      |> init_test_session(AdminRouteHost.Identity.staff_session("staff-1"))
       |> get("/lockspire/admin")
 
     assert allowed.status == 200
@@ -225,7 +227,7 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
     denied =
       build_conn()
       |> put_req_header("x-route-trace", "disallowed-staff-http")
-      |> init_test_session(%{"host_staff_id" => "staff-2"})
+      |> init_test_session(AdminRouteHost.Identity.staff_session("staff-2"))
       |> get("/lockspire/admin")
 
     assert denied.status == 403
@@ -282,4 +284,12 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
 
   defp restore_observer(observer),
     do: :persistent_term.put(:lockspire_admin_route_hook_observer, observer)
+
+  defp install_authority do
+    identity = AdminRouteHost.Identity
+    previous = identity.authority_pointer()
+    {:ok, pid} = start_supervised({identity, authority: identity.default_authority()})
+    identity.install_authority(pid)
+    on_exit(fn -> identity.restore_authority(previous) end)
+  end
 end
