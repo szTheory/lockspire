@@ -175,6 +175,35 @@ defmodule Lockspire.InstallUpgradeTest do
     assert converted =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
     refute converted =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
     assert [{GeneratedHostAppWeb.Router.Lockspire, _}] = Code.compile_file(router_path)
+
+    compiled_router =
+      Code.compile_string("""
+      defmodule GeneratedHostAppWeb.Router do
+        use Phoenix.Router
+        import GeneratedHostAppWeb.Router.Lockspire
+
+        pipeline :browser do
+          plug(:accepts, ["html"])
+        end
+
+        lockspire_routes()
+      end
+      """)
+
+    assert Enum.any?(compiled_router, fn {module, _binary} ->
+             module == GeneratedHostAppWeb.Router
+           end)
+
+    assert Lockspire.Web.Live.Admin.OverviewLive.Index ==
+             Phoenix.Router.route_info(
+               GeneratedHostAppWeb.Router,
+               "GET",
+               "/teams/auth/admin",
+               "localhost"
+             )
+             |> Map.fetch!(:phoenix_live_view)
+             |> elem(0)
+
     assert File.regular?(seam_path), "upgrade should create the absent authorization seam"
     assert File.read!(seam_path) =~ "Admin access is not configured."
 
@@ -324,13 +353,19 @@ defmodule Lockspire.InstallUpgradeTest do
     resolver_path =
       Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
 
+    authorization_path =
+      Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex")
+
     File.write!(resolver_path, File.read!(resolver_path) <> "\n# host-owned edit\n")
+    File.write!(authorization_path, File.read!(authorization_path) <> "\n# host policy edit\n")
+    authorization = File.read!(authorization_path)
 
     capture_io(fn ->
       upgrade_fixture!(["--mount-path", "/oauth"])
     end)
 
     assert File.read!(resolver_path) =~ "# host-owned edit"
+    assert File.read!(authorization_path) == authorization
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(mount_path: "/oauth")
@@ -411,7 +446,11 @@ defmodule Lockspire.InstallUpgradeTest do
       fn _source_root ->
         capture_io(&install_fixture!/0)
 
-        legacy_manifest = load_manifest!() |> Map.delete("migrations")
+        legacy_manifest =
+          load_manifest!()
+          |> Map.delete("migrations")
+          |> update_in(["inputs"], &Map.delete(&1, "with_fapi_smoke"))
+
         File.write!(Manifest.path(@fixture_root), Jason.encode!(legacy_manifest, pretty: true))
 
         capture_io(fn ->
