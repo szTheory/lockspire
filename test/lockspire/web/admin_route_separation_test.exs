@@ -214,6 +214,27 @@ defmodule Lockspire.Web.AdminRouteSeparationTest do
     refute_receive {:route_trace, "connected-consent-1", :admin_hook}
   end
 
+  test "current host policy rejects authenticated but disallowed staff before admin rendering" do
+    allowed =
+      build_conn()
+      |> init_test_session(%{"host_staff_id" => "staff-1"})
+      |> get("/lockspire/admin")
+
+    assert allowed.status == 200
+
+    denied =
+      build_conn()
+      |> put_req_header("x-route-trace", "disallowed-staff-http")
+      |> init_test_session(%{"host_staff_id" => "staff-2"})
+      |> get("/lockspire/admin")
+
+    assert denied.status == 403
+    refute denied.resp_body =~ "Overview"
+    assert_receive {:route_trace, "disallowed-staff-http", :admin_http_denied}
+    refute_receive {:route_trace, "disallowed-staff-http", :admin_session}
+    refute_receive {:route_trace, "disallowed-staff-http", :admin_hook}
+  end
+
   test "concurrent public, host consent and staff admin HTTP requests keep trace provenance" do
     cases = [
       {:public, "/lockspire/.well-known/openid-configuration", nil, 200},
