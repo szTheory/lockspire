@@ -13,7 +13,7 @@ Lockspire fits teams that want to connect partner apps without moving user accou
 
 ## Install in your Phoenix app
 
-Follow the [canonical install and onboarding guide](docs/install-and-onboard.md). It covers the generated host files, migrations, `mix lockspire.verify`, and the host checks still needed after installation. If the OAuth/OIDC concepts or host responsibilities are new to you, start with [OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md).
+Follow the [canonical install and onboarding guide](docs/install-and-onboard.md). It covers the generated host files, migrations, `mix lockspire.verify`, and the host checks still needed after installation. Existing generated apps that still forward the admin router should use the [host admin integration upgrade guide](docs/upgrading/host-admin-integration.md). If the OAuth/OIDC concepts or host responsibilities are new to you, start with [OAuth/OIDC for Phoenix adopters](docs/oauth-oidc-for-phoenix-adopters.md).
 
 ## Choose your next task
 

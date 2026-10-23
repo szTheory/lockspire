@@ -9,7 +9,7 @@ created: "2026-10-22"
 
 # Phase 169 — Validation Strategy
 
-> Validate generated adoption, migration safety, structural diagnostics and maintained host convergence on the current locked runtime. Execution fills outcomes and source revisions; planning does not assert passing implementation tests.
+> Validate generated adoption, migration safety, structural diagnostics and maintained host convergence on the current locked runtime. Execution outcomes are recorded below; this artifact remains draft until the applicable validation workflow audits it.
 
 ## Test Infrastructure
 
@@ -31,14 +31,14 @@ created: "2026-10-22"
 
 ## Requirement Verification Map
 
-The final decomposition has five two-task plans in three waves. All implementation outcomes below remain pending execution.
+The final decomposition has five two-task plans in three waves. Phase 169 execution is complete; the automated evidence is recorded below without changing the validation draft or Nyquist sign-off status.
 
 | Requirement | Secure behavior / acceptance | Type | Owning existing test files | Status |
 |-------------|------------------------------|------|----------------------------|--------|
-| HDX-01 | Fresh helper compiles native shared routes; unfinished HTTP and LiveView authorization deny access; endpoint/browser/session guidance is explicit; no assumed host account schema | integration / compiled routes / connected mount | `test/integration/install_generator_test.exs`, `test/lockspire/web/admin_routes_compile_test.exs`, `test/lockspire/web/admin_route_inventory_test.exs` | pending |
-| HDX-02 | Legacy managed conversion; dry-run leaves bytes and manifest unchanged; repeat apply is safe; drift/collisions refuse; host policy/config bytes preserved; transaction/recovery stays intact | filesystem integration | `test/integration/install_upgrade_test.exs` | pending |
-| HDX-03 | Compiled route/action/session/pipeline/hook inventory and actual first-match dispatch distinguish canonical, incomplete, shadowed and legacy hosts; sentinel secrets absent; policy-proof limit explicit | unit / Mix task / compiled routing | `test/lockspire/install/verify_test.exs`, `test/mix/tasks/lockspire_verify_test.exs` | pending |
-| HDX-04 | Demo and maintained generated/clean-room hosts use reusable declarations; no duplicate inventory or masking admin forward; docs agree | source contract / compiled routing / connected lifecycle | `test/lockspire/adoption_demo_operator_guard_test.exs`, `test/lockspire/clean_room_release_source_contract_test.exs`, `test/lockspire/web/admin_route_separation_test.exs`, `test/lockspire/web/live/admin/admin_route_integration_test.exs` | pending |
+| HDX-01 | Fresh helper compiles native shared routes; unfinished HTTP and LiveView authorization deny access; endpoint/browser/session guidance is explicit; no assumed host account schema | integration / compiled routes / connected mount | `test/integration/install_generator_test.exs`, `test/lockspire/web/admin_routes_compile_test.exs`, `test/lockspire/web/admin_route_inventory_test.exs` | pass — Plans 01/04 and final 144-test union |
+| HDX-02 | Legacy managed conversion; dry-run leaves bytes and manifest unchanged; repeat apply is safe; drift/collisions refuse; host policy/config bytes preserved; transaction/recovery stays intact | filesystem integration | `test/integration/install_upgrade_test.exs` | pass — 15 conversion tests; 24 upgrade/transaction tests |
+| HDX-03 | Compiled route/action/session/pipeline/hook inventory and actual first-match dispatch distinguish canonical, incomplete, shadowed and legacy hosts; sentinel secrets absent; policy-proof limit explicit | unit / Mix task / compiled routing | `test/lockspire/install/verify_test.exs`, `test/mix/tasks/lockspire_verify_test.exs` | pass — 31 native verifier tests; 40 complete diagnostic tests |
+| HDX-04 | Demo and maintained generated/clean-room hosts use reusable declarations; no duplicate inventory or masking admin forward; docs agree | source contract / compiled routing / connected lifecycle | `test/lockspire/adoption_demo_operator_guard_test.exs`, `test/lockspire/clean_room_release_source_contract_test.exs`, `test/lockspire/web/admin_route_separation_test.exs`, `test/lockspire/web/live/admin/admin_route_integration_test.exs` | pass — 6 demo tests; 16 clean-room tests; final docs contract |
 
 Focused phase union:
 
@@ -58,16 +58,16 @@ All Mix commands use the proven prefix `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_E
 
 | Wave | Task | Requirement | Exact command after prefix | Threat Ref | Expected evidence | Outcome |
 |------|------|-------------|----------------------------|------------|-------------------|---------|
-| 1 | 169-01-1 | HDX-01 | `mix test test/integration/install_admin_integration_test.exs` | T-169-01, T-169-02 | Actual rendered helper: HTTP denial, hook denial, explicit host-policy implementation and real connected overview | pending |
-| 1 | 169-01-2 | HDX-01, HDX-04 | `mix test test/integration/install_generator_test.exs test/integration/install_admin_integration_test.exs test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-03, T-169-04 | Ownership/parity, mount boundaries/order, concurrent immutable matching and stale install refusal | pending |
-| 2 | 169-02-1 | HDX-02 | `mix test test/integration/install_upgrade_test.exs` | T-169-05, T-169-06 | Pinned historical conversion, older optional fields, create-only policy, preservation/idempotence | pending |
-| 2 | 169-02-2 | HDX-02 | `mix test test/integration/install_upgrade_test.exs test/lockspire/install/file_transaction_test.exs` | T-169-07, T-169-08, T-169-09 | Full-tree read-only preview, interrupted apply/recovery and stale competitor refusal | pending |
-| 2 | 169-03-1 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-10, T-169-11 | Public native success/legacy failure and one inventory source | pending |
-| 2 | 169-03-2 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-12, T-169-13, T-169-14 | Exact malformed/incomplete/shadowed matrix, safe output and visible policy limit | pending |
-| 2 | 169-04-1 | HDX-04 | `mix test test/lockspire/adoption_demo_operator_guard_test.exs test/lockspire/adoption_demo_admin_integration_test.exs` | T-169-15, T-169-16, T-169-17 | Actual demo canonical router, HTTP/connected policy and no masking declaration | pending |
-| 2 | 169-04-2 | HDX-01, HDX-04 | `mix test test/lockspire/clean_room_release_source_contract_test.exs test/lockspire/clean_room_admin_integration_test.exs test/lockspire/web/admin_route_separation_test.exs` | T-169-18, T-169-19 | Emitted endpoint/session and actual overlay/helper compile/request denial | pending |
-| 3 | 169-05-1 | HDX-01–04 | `mix test test/lockspire/documentation_contract_test.exs test/integration/install_admin_integration_test.exs test/integration/install_upgrade_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-20 | Guide/package inventory and source-grounded behavioral walk-through | pending |
-| 3 | 169-05-2 | HDX-01–04 | Full phase union in 169-05 Task 2, `mix format --check-formatted`, `mix test.fast`; unprefixed `git diff --check 9500bb4707e24639886382ad5f5e0f0d89488bb9` | T-169-21; all phase threats | Final source-bound results and individual automated closure ledger | pending |
+| 1 | 169-01-1 | HDX-01 | `mix test test/integration/install_admin_integration_test.exs` | T-169-01, T-169-02 | Actual rendered helper: HTTP denial, hook denial, explicit host-policy implementation and real connected overview | pass — Plan 01 summary |
+| 1 | 169-01-2 | HDX-01, HDX-04 | `mix test test/integration/install_generator_test.exs test/integration/install_admin_integration_test.exs test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-03, T-169-04 | Ownership/parity, mount boundaries/order, concurrent immutable matching and stale install refusal | pass — Plan 01 summary |
+| 2 | 169-02-1 | HDX-02 | `mix test test/integration/install_upgrade_test.exs` | T-169-05, T-169-06 | Pinned historical conversion, older optional fields, create-only policy, preservation/idempotence | pass — 15 tests |
+| 2 | 169-02-2 | HDX-02 | `mix test test/integration/install_upgrade_test.exs test/lockspire/install/file_transaction_test.exs` | T-169-07, T-169-08, T-169-09 | Full-tree read-only preview, interrupted apply/recovery and stale competitor refusal | pass — 24 tests |
+| 2 | 169-03-1 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs test/lockspire/web/admin_route_inventory_test.exs` | T-169-10, T-169-11 | Public native success/legacy failure and one inventory source | pass — 31 verifier tests |
+| 2 | 169-03-2 | HDX-03 | `mix test test/lockspire/install/verify_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-12, T-169-13, T-169-14 | Exact malformed/incomplete/shadowed matrix, safe output and visible policy limit | pass — 40 tests |
+| 2 | 169-04-1 | HDX-04 | `mix test test/lockspire/adoption_demo_operator_guard_test.exs test/lockspire/adoption_demo_admin_integration_test.exs` | T-169-15, T-169-16, T-169-17 | Actual demo canonical router, HTTP/connected policy and no masking declaration | pass — 6 tests |
+| 2 | 169-04-2 | HDX-01, HDX-04 | `mix test test/lockspire/clean_room_release_source_contract_test.exs test/lockspire/clean_room_admin_integration_test.exs test/lockspire/web/admin_route_separation_test.exs` | T-169-18, T-169-19 | Emitted endpoint/session and actual overlay/helper compile/request denial | pass — 16 tests |
+| 3 | 169-05-1 | HDX-01–04 | `mix test test/lockspire/documentation_contract_test.exs test/integration/install_admin_integration_test.exs test/integration/install_upgrade_test.exs test/mix/tasks/lockspire_verify_test.exs` | T-169-20 | Guide/package inventory and source-grounded behavioral walk-through | pass — 35 tests in 10.4s (seed 875269) |
+| 3 | 169-05-2 | HDX-01–04 | Full phase union in 169-05 Task 2, `mix format --check-formatted`, `mix test.fast`; unprefixed `git diff --check 9500bb4707e24639886382ad5f5e0f0d89488bb9` | T-169-21; all phase threats | Final source-bound results and individual automated closure ledger | pass — 144 tests in 52.1s (seed 61505); format passed; fast 2,006 tests in 192.8s (seed 78614); diff-check passed |
 
 Wave 1 proves the generated path before expansion. Wave 2 plans 02/03/04 have no modified-file overlap; their new tests must use unique temporary roots/namespaces, with only Plan 02 owning the existing fixed upgrade fixture. Wave 3 depends on all three. `T-169-SC` is reserved in every plan: no installation is planned, and any later package addition must satisfy the legitimacy gate before installation.
 
@@ -143,6 +143,35 @@ At `9500bb4707e24639886382ad5f5e0f0d89488bb9`, the proven runtime command `mix t
 None planned. Follow `.planning/VERIFICATION-POLICY.md`: close routine acceptance and prohibitions with executable evidence and a durable closure ledger. A missing descriptor is a planning defect with an explicit closure rule, not an automatic human checkpoint. No UI copy overhaul or manual signoff is in scope.
 
 Phase 170 owns packaged candidate adoption, real browser/socket transport and exact minimum dependency runtime proof. Current repository compile, connected LiveViewTest and source-contract checks establish only their stated properties.
+
+## Execution Results (169-05)
+
+All final commands used the locked Elixir/Erlang prefix. Phase union and fast-suite
+logs are in `/tmp/lockspire169-plan05-union-final.log` and
+`/tmp/lockspire169-plan05-fast-final-clean.log` for this execution session.
+
+| Command | Result | Evidence boundary |
+|---------|--------|-------------------|
+| Task 1 tracer: documentation contract, generated admin integration, upgrade integration, verifier task tests | 35 passed in 10.4s; seed 875269 | Repository tests and current locked runtime only. |
+| Final Phase 169 union from Plan 169-05 Task 2 | 144 passed in 52.1s; seed 61505 | Includes connected server-side LiveView tests; not browser/socket transport. |
+| `mix format --check-formatted` | Pass | Static formatting only. |
+| `mix test.fast` | 2,006 passed (2 properties and 2,004 tests), 6 skipped, 497 excluded; 192.8s; seed 78614 | Ran with `LOCKSPIRE_TEST_DB_NAME=lockspire_phase169_fast_final` and `HEX_HOME=/tmp/lockspire-phase169-hex`. `mix test.setup` migrates but does not clear a previously used test database; the default `lockspire_test` had stale rows, so final broad evidence uses a fresh disposable database. |
+| `git diff --check 9500bb4707e24639886382ad5f5e0f0d89488bb9` | Pass after removing two pre-existing trailing spaces in `169-PATTERNS.md` | Whitespace/conflict-marker check only. |
+
+Task 1's focused selector and tracer both passed 35 tests. During final broad
+verification, two stale static assertions were updated to the emitted
+`AdminRoutes` contract and its shared route inventory. The generated template
+was also aligned with the formatted maintained fixture. The final fast suite
+and phase union passed after those changes. Existing compiler/type-analysis and
+generated-fixture warnings remain; no unrelated warning cleanup was attempted.
+
+The implementation, runtime-source explanation, and admin behavior tests do
+not establish candidate-package consumption, browser/socket transport, exact
+Phoenix 1.8.5 / LiveView 1.1.28 execution, or required CI. Phase 170 retains
+each of those evidence owners. No visual approval or user-reported pass is
+claimed. `status: draft`, `nyquist_compliant: false`, and the unchecked
+validation sign-off items remain unchanged pending the applicable validation
+workflow.
 
 ## Validation Sign-Off
 

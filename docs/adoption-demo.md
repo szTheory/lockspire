@@ -1,6 +1,6 @@
 # Adoption Demo
 
-Try Lockspire in the repo-local Phoenix example at `examples/adoption_demo`. It uses **Billingo**, a fictional subscription billing app, with synthetic demo accounts and clients. Billingo is not a real customer or production integration. To install Lockspire in your own Phoenix app, start with the [canonical install and verification guide](install-and-onboard.md).
+Try Lockspire in the repo-local Phoenix example at `examples/adoption_demo`. It uses **Billingo**, a fictional subscription billing app, with synthetic demo accounts and clients. Billingo is not a real customer or production integration. To install Lockspire in your own Phoenix app, start with the [canonical install and verification guide](install-and-onboard.md). If your existing generated app still forwards `/admin` to `Lockspire.Web.AdminRouter`, follow the [host admin integration upgrade guide](upgrading/host-admin-integration.md) for the checksum-trusted migration and manual drift-reconciliation path.
 
 Docker is the recommended way to run the example. It starts Phoenix/Bandit and PostgreSQL, keeps state scoped to one Compose project, and prints the URLs to open. This local example is not a production deployment guide or hosted authentication service. See the [supported surface](supported-surface.md) for the canonical list of capabilities and limits.
 
