@@ -4,6 +4,7 @@ defmodule Lockspire.InstallUpgradeTest do
   import ExUnit.CaptureIO
 
   alias Lockspire.Install.Manifest
+  alias Lockspire.Install.FileTransaction
   alias Lockspire.Install.Migrations
 
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
@@ -145,6 +146,7 @@ defmodule Lockspire.InstallUpgradeTest do
     File.rm!(seam_path)
 
     manifest = load_manifest!()
+
     legacy_manifest =
       manifest
       |> Map.delete("migrations")
@@ -169,13 +171,17 @@ defmodule Lockspire.InstallUpgradeTest do
 
     converted = File.read!(router_path)
     assert converted =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
-    refute forwards_lockspire_router?(converted, "/teams/auth")
+    refute converted =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
+    assert [{GeneratedHostAppWeb.Router.Lockspire, _}] = Code.compile_file(router_path)
     assert File.regular?(seam_path), "upgrade should create the absent authorization seam"
     assert File.read!(seam_path) =~ "Admin access is not configured."
+
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(storage_prefix: "tenant_data")
+
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(oban_prefix: "tenant_jobs")
+
     assert load_manifest!()["inputs"] == legacy_manifest["inputs"]
 
     refute "lib/generated_host_app_web/operator_authorization.ex" in Enum.map(
@@ -183,12 +189,61 @@ defmodule Lockspire.InstallUpgradeTest do
              & &1["path"]
            )
 
-    assert File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")) ==
+    assert File.read!(
+             Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex")
+           ) ==
              preserved["lib/generated_host_app/lockspire/account_resolver.ex"]
 
     first_result = tree_snapshot(@fixture_root)
     capture_io(fn -> upgrade_fixture!([]) end)
     assert tree_snapshot(@fixture_root) == first_result
+  end
+
+  test "dry-run preserves the complete tree and refuses read-only while recovery is pending" do
+    install_fixture!()
+    clean_snapshot = tree_snapshot(@fixture_root)
+
+    capture_io(fn -> upgrade_fixture!(["--dry-run"]) end)
+    assert tree_snapshot(@fixture_root) == clean_snapshot
+
+    File.rm!(Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex"))
+    manifest_contents = File.read!(Manifest.path(@fixture_root))
+
+    artifacts = [
+      %{
+        relative_path: "lib/generated_host_app_web/operator_authorization.ex",
+        kind: :host_owned,
+        expected: :absent,
+        contents: "interrupted policy",
+        checksum: Manifest.checksum("interrupted policy"),
+        provenance: "test bootstrap"
+      },
+      %{
+        relative_path: ".lockspire/install_manifest.json",
+        kind: :manifest,
+        expected: Manifest.checksum(manifest_contents),
+        contents: manifest_contents,
+        checksum: Manifest.checksum(manifest_contents),
+        provenance: "test manifest"
+      }
+    ]
+
+    FileTransaction.with_test_failure(:after_host_owned_create, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(@fixture_root, artifacts)
+    end)
+
+    interrupted_snapshot = tree_snapshot(@fixture_root)
+    assert FileTransaction.recovery_status(@fixture_root) |> elem(0) == :recovery_required
+
+    assert_raise Mix.Error, ~r/Lockspire upgrade refused/, fn ->
+      capture_io(fn -> upgrade_fixture!(["--dry-run"]) end)
+    end
+
+    assert tree_snapshot(@fixture_root) == interrupted_snapshot
+
+    capture_io(fn -> upgrade_fixture!([]) end)
+    assert FileTransaction.recovery_status(@fixture_root) == :clean
+    assert tree_snapshot(@fixture_root) != interrupted_snapshot
   end
 
   test "mix lockspire.upgrade refuses drifted managed files" do
@@ -318,6 +373,24 @@ defmodule Lockspire.InstallUpgradeTest do
         assert [%{"version" => "20260826000100"}] = load_manifest!()["migrations"]
       end
     )
+  end
+
+  test "duplicate or malformed managed manifest entries refuse before host mutations" do
+    install_fixture!()
+    manifest = load_manifest!()
+    [entry | _] = manifest["managed_files"]
+
+    for entries <- [[entry, entry], [%{"path" => entry["path"]}]] do
+      candidate = %{manifest | "managed_files" => entries}
+      File.write!(Manifest.path(@fixture_root), Jason.encode!(candidate, pretty: true))
+      before = tree_snapshot(@fixture_root)
+
+      assert_raise Mix.Error, ~r/Lockspire upgrade refused/, fn ->
+        capture_io(fn -> upgrade_fixture!([]) end)
+      end
+
+      assert tree_snapshot(@fixture_root) == before
+    end
   end
 
   test "a late upgrade migration collision leaves earlier additive candidates and manifest unchanged" do

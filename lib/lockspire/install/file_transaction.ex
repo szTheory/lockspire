@@ -82,6 +82,98 @@ defmodule Lockspire.Install.FileTransaction do
     end
   end
 
+  @doc "Inspects transaction recovery state without creating, recovering, or removing files."
+  @spec recovery_status(String.t()) ::
+          :clean | {:recovery_required, String.t()} | {:error, [map()]}
+  def recovery_status(project_root) when is_binary(project_root) do
+    root = Path.expand(project_root)
+    journal = Path.join(root, @journal_rel)
+
+    case read_only_ancestry(root, journal) do
+      :ok ->
+        case File.lstat(journal) do
+          {:error, :enoent} ->
+            :clean
+
+          {:ok, %{type: :regular}} ->
+            recovery_journal_status(root, journal)
+
+          {:ok, %{type: :symlink}} ->
+            {:error, [error(:unsafe_path, "Refusing symlinked install transaction journal")]}
+
+          {:ok, _} ->
+            {:error, [error(:unsafe_path, "Refusing non-regular install transaction journal")]}
+
+          {:error, _reason} ->
+            {:error, [error(:unsafe_path, "Could not inspect install transaction journal")]}
+        end
+
+      {:error, :symlink_refused} ->
+        {:error, [error(:unsafe_path, "Refusing symlinked install transaction path")]}
+
+      {:error, _reason} ->
+        {:error, [error(:unsafe_path, "Could not safely inspect install transaction path")]}
+    end
+  end
+
+  defp recovery_journal_status(root, journal) do
+    with {:ok, encoded} <- File.read(journal),
+         {:ok, state} <- Jason.decode(encoded),
+         :ok <- valid_journal?(root, state) do
+      {:recovery_required,
+       "An interrupted install transaction needs recovery. Rerun `mix lockspire.upgrade` without `--dry-run` before previewing again."}
+    else
+      _ ->
+        {:recovery_required,
+         "Install transaction journal is invalid; inspect .lockspire/install_transaction.json before retrying."}
+    end
+  end
+
+  defp read_only_ancestry(root, target) do
+    cond do
+      not safe_path?(root, target) ->
+        {:error, :outside_project_root}
+
+      true ->
+        case File.lstat(root) do
+          {:error, :enoent} ->
+            :ok
+
+          {:ok, %{type: :directory}} ->
+            inspect_read_only_components(root, Path.relative_to(target, root))
+
+          {:ok, %{type: :symlink}} ->
+            {:error, :symlink_refused}
+
+          {:ok, _} ->
+            {:error, :invalid_project_root}
+
+          {:error, _} ->
+            {:error, :root_unavailable}
+        end
+    end
+  end
+
+  defp inspect_read_only_components(root, relative) do
+    relative
+    |> Path.split()
+    |> Enum.reduce_while({:ok, root}, fn component, {:ok, current} ->
+      next = Path.join(current, component)
+
+      case File.lstat(next) do
+        {:ok, %{type: :symlink}} -> {:halt, {:error, :symlink_refused}}
+        {:ok, _} -> {:cont, {:ok, next}}
+        {:error, :enoent} -> {:halt, :missing}
+        {:error, _} -> {:halt, {:error, :path_unavailable}}
+      end
+    end)
+    |> case do
+      {:ok, _} -> :ok
+      :missing -> :ok
+      error -> error
+    end
+  end
+
   defp inspect_journal(project_root, journal) do
     case File.lstat(journal) do
       {:error, :enoent} ->
@@ -161,7 +253,7 @@ defmodule Lockspire.Install.FileTransaction do
          checksum: checksum,
          provenance: provenance
        }) do
-    is_binary(path) and kind in [:migration, :managed, :manifest] and
+    is_binary(path) and kind in [:migration, :managed, :host_owned, :manifest] and
       (expected == :absent or is_binary(expected)) and is_binary(contents) and
       checksum == Manifest.checksum(contents) and is_binary(provenance) and safe_relative?(path)
   end
@@ -341,6 +433,12 @@ defmodule Lockspire.Install.FileTransaction do
 
   defp commit_hook(%{kind: :managed, expected: expected}, _committed) when expected != :absent,
     do: maybe_fail(:after_first_managed_update)
+
+  defp commit_hook(%{kind: :host_owned}, committed) do
+    if Enum.any?(committed, &(&1.action == "created")),
+      do: maybe_fail(:after_host_owned_create),
+      else: :ok
+  end
 
   defp commit_hook(%{kind: :manifest}, _committed), do: :ok
   defp commit_hook(_, _), do: :ok

@@ -38,9 +38,26 @@ defmodule Lockspire.Install.OperationPlan do
   end
 
   @spec upgrade(map(), [map()], map()) :: {:ok, t()} | {:error, [map()]}
-  def upgrade(assigns, rendered_templates, manifest) when is_map(manifest) do
-    with :ok <- FileTransaction.recover(assigns.project_root) do
-      build(assigns, :upgrade, rendered_templates, manifest)
+  def upgrade(assigns, rendered_templates, manifest),
+    do: upgrade(assigns, rendered_templates, manifest, [])
+
+  @spec upgrade(map(), [map()], map(), keyword()) :: {:ok, t()} | {:error, [map()]}
+  def upgrade(assigns, rendered_templates, manifest, opts)
+      when is_map(manifest) and is_list(opts) do
+    if Keyword.get(opts, :dry_run, false) do
+      with :clean <- FileTransaction.recovery_status(assigns.project_root) do
+        build(assigns, :upgrade, rendered_templates, manifest)
+      else
+        {:recovery_required, reason} ->
+          {:error, [error(:recovery_required, reason)]}
+
+        {:error, errors} ->
+          {:error, errors}
+      end
+    else
+      with :ok <- FileTransaction.recover(assigns.project_root) do
+        build(assigns, :upgrade, rendered_templates, manifest)
+      end
     end
   end
 
@@ -122,7 +139,7 @@ defmodule Lockspire.Install.OperationPlan do
       |> Enum.map(fn operation ->
         %{
           relative_path: operation.relative_path,
-          kind: :managed,
+          kind: Map.get(operation, :kind, :managed),
           expected:
             if(operation.status == :create, do: :absent, else: operation.expected_checksum),
           contents: operation.rendered,
@@ -191,28 +208,40 @@ defmodule Lockspire.Install.OperationPlan do
       |> Enum.filter(&(&1.template.ownership == :managed))
       |> Map.new(&{&1.relative_path, &1})
 
+    bootstrap =
+      Enum.filter(rendered_templates, &(&1.template.template == "operator_authorization.ex"))
+
     manifest_entries = Map.get(manifest, "managed_files", [])
 
     with {:ok, expected} <- manifest_entries(manifest_entries, managed),
          {:ok, tracked_operations} <- upgrade_operations(expected),
-         {:ok, new_operations} <- new_managed_operations(managed, expected) do
-      {:ok, Enum.sort_by(tracked_operations ++ new_operations, & &1.relative_path)}
+         {:ok, new_operations} <- new_managed_operations(managed, expected),
+         {:ok, bootstrap_operations} <- host_owned_bootstrap_operations(bootstrap) do
+      {:ok,
+       Enum.sort_by(
+         tracked_operations ++ new_operations ++ bootstrap_operations,
+         & &1.relative_path
+       )}
     end
   end
 
   defp manifest_entries(entries, managed) when is_list(entries) do
-    entries
-    |> Enum.map(fn entry ->
-      with path when is_binary(path) <- entry["path"],
-           checksum when is_binary(checksum) <- entry["checksum"],
-           {:ok, rendered} <- Map.fetch(managed, path) do
-        {:ok, {path, %{rendered: rendered, expected_checksum: checksum}}}
-      else
-        :error -> {:error, error(:invalid_manifest, "managed file is no longer shipped")}
-        _ -> {:error, error(:invalid_manifest, "managed file entry is malformed")}
-      end
-    end)
-    |> collect_pairs()
+    with :ok <- unique_manifest_paths(entries) do
+      entries
+      |> Enum.map(fn entry ->
+        with true <- is_map(entry),
+             path when is_binary(path) <- Map.get(entry, "path"),
+             checksum when is_binary(checksum) <- Map.get(entry, "checksum"),
+             true <- Regex.match?(~r/\A[0-9a-f]{64}\z/, checksum),
+             {:ok, rendered} <- Map.fetch(managed, path) do
+          {:ok, {path, %{rendered: rendered, expected_checksum: checksum}}}
+        else
+          :error -> {:error, error(:invalid_manifest, "managed file is no longer shipped")}
+          _ -> {:error, error(:invalid_manifest, "managed file entry is malformed")}
+        end
+      end)
+      |> collect_pairs()
+    end
   end
 
   defp manifest_entries(_entries, _managed),
@@ -254,6 +283,55 @@ defmodule Lockspire.Install.OperationPlan do
     |> collect_operations()
   end
 
+  defp unique_manifest_paths(entries) do
+    paths =
+      Enum.map(entries, fn entry -> if is_map(entry), do: Map.get(entry, "path"), else: nil end)
+
+    if Enum.any?(paths, &is_nil/1) or length(paths) != length(Enum.uniq(paths)),
+      do:
+        {:error,
+         [error(:invalid_manifest, "managed file entries contain a missing or duplicate path")]},
+      else: :ok
+  end
+
+  defp host_owned_bootstrap_operations(templates) do
+    templates
+    |> Enum.map(fn rendered ->
+      case File.lstat(rendered.destination) do
+        {:error, :enoent} ->
+          {:ok, host_owned_operation(rendered, :create)}
+
+        {:ok, %{type: :regular}} ->
+          {:ok, host_owned_operation(rendered, :unchanged)}
+
+        {:ok, %{type: :symlink}} ->
+          {:error, error(:unsafe_path, "Refusing symlinked host-owned authorization seam")}
+
+        {:ok, _} ->
+          {:error, error(:unsafe_path, "Host-owned authorization seam is not a regular file")}
+
+        {:error, reason} ->
+          {:error,
+           error(
+             :host_file_unavailable,
+             "Could not inspect host-owned authorization seam: #{inspect(reason)}"
+           )}
+      end
+    end)
+    |> collect_operations()
+  end
+
+  defp host_owned_operation(rendered, status) do
+    %{
+      relative_path: rendered.relative_path,
+      destination: rendered.destination,
+      rendered: if(status == :create, do: rendered.rendered, else: nil),
+      status: status,
+      expected_checksum: nil,
+      kind: :host_owned
+    }
+  end
+
   defp install_operation(rendered) do
     case File.read(rendered.destination) do
       {:error, :enoent} ->
@@ -291,7 +369,8 @@ defmodule Lockspire.Install.OperationPlan do
       destination: rendered.destination,
       rendered: rendered.rendered,
       status: status,
-      expected_checksum: expected_checksum
+      expected_checksum: expected_checksum,
+      kind: :managed
     }
   end
 
@@ -321,6 +400,8 @@ defmodule Lockspire.Install.OperationPlan do
         ]
     end
   end
+
+  defp file_operation_errors(%{kind: :host_owned, status: :unchanged}), do: []
 
   defp file_operation_errors(%{destination: destination, expected_checksum: expected_checksum}) do
     case File.read(destination) do

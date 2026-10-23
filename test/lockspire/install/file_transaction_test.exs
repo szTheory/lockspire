@@ -98,6 +98,58 @@ defmodule Lockspire.Install.FileTransactionTest do
     assert File.read!(Path.join(root, migration)) == "migration"
   end
 
+  test "read-only recovery status leaves an interrupted create transaction byte-identical and retry recovers it",
+       %{
+         root: root
+       } do
+    artifacts = [
+      artifact("lib/example_web/operator_authorization.ex", :host_owned, :absent, "deny policy"),
+      artifact("lib/example_web/router/lockspire.ex", :managed, :absent, "native helper"),
+      manifest(:absent, "committed last")
+    ]
+
+    FileTransaction.with_test_failure(:after_host_owned_create, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+    end)
+
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) ==
+             "deny policy"
+
+    assert FileTransaction.recovery_status(root) ==
+             {:recovery_required,
+              "An interrupted install transaction needs recovery. Rerun `mix lockspire.upgrade` without `--dry-run` before previewing again."}
+
+    interrupted = tree_snapshot(root)
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+    assert tree_snapshot(root) == interrupted
+
+    assert :ok = FileTransaction.apply(root, artifacts)
+
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) ==
+             "deny policy"
+
+    assert File.read!(Path.join(root, "lib/example_web/router/lockspire.ex")) == "native helper"
+    assert File.read!(Path.join(root, ".lockspire/install_manifest.json")) == "committed last"
+    assert FileTransaction.recovery_status(root) == :clean
+  end
+
+  test "read-only recovery status refuses symlinked journal ancestry without creating or changing paths",
+       %{
+         root: root
+       } do
+    before = tree_snapshot(root)
+    assert FileTransaction.recovery_status(root) == :clean
+    assert tree_snapshot(root) == before
+
+    outside = Path.join(root, "outside-state")
+    File.mkdir_p!(outside)
+    File.ln_s!(outside, Path.join(root, ".lockspire"))
+    snapshot = tree_snapshot(root)
+
+    assert {:error, [%{type: :unsafe_path}]} = FileTransaction.recovery_status(root)
+    assert tree_snapshot(root) == snapshot
+  end
+
   test "refuses a journal below a symlinked .lockspire directory without touching outside state",
        %{root: root} do
     outside = Path.join(root, "outside-state")
