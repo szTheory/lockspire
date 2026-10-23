@@ -169,7 +169,7 @@ defmodule Lockspire.Install.VerifyTest do
 
   defmodule RouteMetadataVariantRouter do
     def __routes__ do
-      routes = NativeAdminRouter.__routes__()
+      routes = NativeAdminRouter.__routes__() |> Enum.map(&remap_guard_router/1)
 
       case Application.get_env(:lockspire, :verify_route_variant) do
         :missing ->
@@ -234,6 +234,20 @@ defmodule Lockspire.Install.VerifyTest do
     def __match_route__(method, path, host) do
       result = NativeAdminRouter.__match_route__(method, path, host)
 
+      result =
+        case result do
+          {metadata, prepare, pipeline, dispatch} ->
+            metadata =
+              Map.update!(metadata, :phoenix_live_view, fn {view, action, options, session} ->
+                {view, action, options, remap_guard_session(session)}
+              end)
+
+            {metadata, prepare, pipeline, dispatch}
+
+          other ->
+            other
+        end
+
       if Application.get_env(:lockspire, :verify_route_variant) == :missing_pipeline do
         case result do
           {metadata, prepare, pipeline, dispatch} ->
@@ -249,6 +263,44 @@ defmodule Lockspire.Install.VerifyTest do
     end
 
     defp route_at(routes, path), do: Enum.find(routes, &(&1.path == path))
+
+    defp remap_guard_router(route) do
+      Map.update!(route, :metadata, fn metadata ->
+        case Map.get(metadata, :phoenix_live_view) do
+          {view, action, options, session} ->
+            Map.put(
+              metadata,
+              :phoenix_live_view,
+              {view, action, options, remap_guard_session(session)}
+            )
+
+          _other ->
+            metadata
+        end
+      end)
+    end
+
+    defp remap_guard_session(session) do
+      hooks = get_in(session, [:extra, :on_mount])
+
+      if is_list(hooks) and hooks != [] do
+        put_in(
+          session,
+          [:extra, :on_mount],
+          List.update_at(hooks, -1, fn hook ->
+            Map.update!(hook, :id, fn
+              {Lockspire.Web.AdminMount, {:mount_path, NativeAdminRouter}} ->
+                {Lockspire.Web.AdminMount, {:mount_path, __MODULE__}}
+
+              id ->
+                id
+            end)
+          end)
+        )
+      else
+        session
+      end
+    end
 
     defp update_route(routes, path, update) do
       Enum.map(routes, fn route -> if route.path == path, do: update.(route), else: route end)
@@ -293,7 +345,7 @@ defmodule Lockspire.Install.VerifyTest do
                 hooks,
                 -1,
                 Map.update!(guard, :id, fn {module, _arg} ->
-                  {module, {:mount_path, __MODULE__}}
+                  {module, {:mount_path, NativeAdminRouter}}
                 end)
               )
           end
@@ -582,9 +634,12 @@ defmodule Lockspire.Install.VerifyTest do
           {:extra_admin_view, "unexpected route in the canonical admin namespace"}
         ] do
       Application.put_env(:lockspire, :verify_route_variant, variant)
+      assert is_list(RouteMetadataVariantRouter.__routes__())
       check = verify_router_check(RouteMetadataVariantRouter, "/lockspire")
       assert check.status == :error, "variant #{variant} was unexpectedly accepted"
-      assert check.details =~ expected, "variant #{variant} lacked its structural diagnosis"
+
+      assert check.details =~ expected,
+             "variant #{variant} lacked its structural diagnosis: #{check.details}"
     end
   end
 

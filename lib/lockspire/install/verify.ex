@@ -505,9 +505,12 @@ defmodule Lockspire.Install.Verify do
   defp dispatch_metadata_errors(selected, path, session, router) do
     pipes = Map.get(selected, :pipe_through)
 
+    host_pipelines = if is_list(pipes), do: Enum.drop(pipes, -1), else: []
+
     pipeline_errors =
-      if is_list(pipes) and pipes != [] and List.last(pipes) == :lockspire_admin_mount and
-           Enum.all?(Enum.drop(pipes, -1), &(is_atom(&1) and &1 != :lockspire_admin_mount)) do
+      if host_pipelines != [] and is_list(pipes) and
+           List.last(pipes) == :lockspire_admin_mount and
+           Enum.all?(host_pipelines, &(is_atom(&1) and &1 != :lockspire_admin_mount)) do
         []
       else
         ["missing host authorization pipeline before :lockspire_admin_mount at GET #{path}"]
