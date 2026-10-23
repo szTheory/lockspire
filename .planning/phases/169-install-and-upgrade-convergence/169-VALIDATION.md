@@ -5,6 +5,7 @@ status: validated
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-10-22"
+source_revision: 04438699011fc22f52c5ea3ff4aa2f014520b26c
 ---
 
 # Phase 169 — Validation Strategy
