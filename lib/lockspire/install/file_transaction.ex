@@ -424,13 +424,15 @@ defmodule Lockspire.Install.FileTransaction do
   end
 
   defp prepare_intent(_state, %{expected: :absent} = artifact, _target) do
-    {:ok,
-     %{
-       relative_path: artifact.relative_path,
-       action: "created",
-       checksum: artifact.checksum,
-       stage_path: artifact.stage_path
-     }}
+    with {:ok, _identity} <- file_identity(artifact.stage_path) do
+      {:ok,
+       %{
+         relative_path: artifact.relative_path,
+         action: "created",
+         checksum: artifact.checksum,
+         stage_path: artifact.stage_path
+       }}
+    end
   end
 
   defp prepare_intent(state, artifact, target) do
@@ -599,21 +601,23 @@ defmodule Lockspire.Install.FileTransaction do
 
   defp created_target_is_transaction_file?(target, %{stage_path: stage_path})
        when is_binary(stage_path) do
-    with {:ok, target_stat} <- File.lstat(target),
-         %{type: :regular} <- target_stat,
-         {:ok, stage_stat} <- File.lstat(stage_path),
-         %{type: :regular} <- stage_stat,
-         true <- target_stat.inode > 0,
-         true <- target_stat.inode == stage_stat.inode,
-         true <- target_stat.major_device == stage_stat.major_device,
-         true <- target_stat.minor_device == stage_stat.minor_device do
-      true
-    else
+    case {file_identity(target), file_identity(stage_path)} do
+      {{:ok, target_identity}, {:ok, stage_identity}} -> target_identity == stage_identity
       _ -> false
     end
   end
 
   defp created_target_is_transaction_file?(_target, _committed), do: true
+
+  defp file_identity(path) do
+    with {:ok, %{type: :regular} = stat} <- File.lstat(path),
+         true <- is_integer(stat.inode) and stat.inode > 0,
+         true <- is_integer(stat.major_device) and is_integer(stat.minor_device) do
+      {:ok, {stat.major_device, stat.minor_device, stat.inode}}
+    else
+      _ -> {:error, :transaction_file_identity_unavailable}
+    end
+  end
 
   defp write_journal(state) do
     temporary =
