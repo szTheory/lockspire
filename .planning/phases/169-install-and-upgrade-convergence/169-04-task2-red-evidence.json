@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/clean_room_release_source_contract_test.exs --name-pattern \"builder endpoint shares\" --formatter Lockspire.GSDTapFormatter",
+  "exitCode": 2,
+  "output": "TAP version 14\nok 1 - test JOSE compatibility patch is idempotent and rejects unknown source shapes # SKIP\nok 2 - test one explicit package source is prepared once and shared by both roles # SKIP\nok 3 - test tar and Hex version arguments are exact, exclusive, and available through the real journey # SKIP\nok 4 - test clean-room overlay delegates admin routes and denies until host policy is configured # SKIP\nok 5 - test wrapper preserves probe diagnostics and routes release proof to the real journey # SKIP\nnot ok 6 - test builder endpoint shares the browser cookie session with LiveView connect_info\n1..6\n",
+  "targetTest": "test builder endpoint shares the browser cookie session with LiveView connect_info",
+  "targetFile": "test/lockspire/clean_room_release_source_contract_test.exs",
+  "expected": "The emitted endpoint uses one cookie session for Plug.Session and the LiveView socket, and has explicit LiveView signing configuration.",
+  "actual": "The generated endpoint has no shared socket session declaration.",
+  "semanticAssessment": "The target builder-emission assertion failed on the missing LiveView socket/session contract; five unrelated tests were explicitly skipped by ExUnit tag filtering, and the TAP report came from a temporary ExUnit formatter."
+}
