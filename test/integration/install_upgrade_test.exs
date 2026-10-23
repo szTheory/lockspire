@@ -174,13 +174,25 @@ defmodule Lockspire.InstallUpgradeTest do
     converted = File.read!(router_path)
     assert converted =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
     refute converted =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
-    assert [{GeneratedHostAppWeb.Router.Lockspire, _}] = Code.compile_file(router_path)
+    generated_web = "LockspireHistorical#{System.unique_integer([:positive])}Web"
+    isolated_helper = String.replace(converted, "GeneratedHostAppWeb", generated_web)
+    helper_module = Module.concat([generated_web, "Router", "Lockspire"])
+    router_module = Module.concat([generated_web, "Router"])
+
+    isolated_authorization =
+      seam_path
+      |> File.read!()
+      |> String.replace("GeneratedHostAppWeb", generated_web)
+
+    authorization_module = Module.concat([generated_web, "OperatorAuthorization"])
+    assert [{^authorization_module, _}] = Code.compile_string(isolated_authorization, seam_path)
+    assert [{^helper_module, _}] = Code.compile_string(isolated_helper, router_path)
 
     compiled_router =
       Code.compile_string("""
-      defmodule GeneratedHostAppWeb.Router do
+      defmodule #{router_module} do
         use Phoenix.Router
-        import GeneratedHostAppWeb.Router.Lockspire
+        import #{helper_module}
 
         pipeline :browser do
           plug(:accepts, ["html"])
@@ -190,13 +202,11 @@ defmodule Lockspire.InstallUpgradeTest do
       end
       """)
 
-    assert Enum.any?(compiled_router, fn {module, _binary} ->
-             module == GeneratedHostAppWeb.Router
-           end)
+    assert Enum.any?(compiled_router, fn {module, _binary} -> module == router_module end)
 
     assert Lockspire.Web.Live.Admin.OverviewLive.Index ==
              Phoenix.Router.route_info(
-               GeneratedHostAppWeb.Router,
+               router_module,
                "GET",
                "/teams/auth/admin",
                "localhost"
