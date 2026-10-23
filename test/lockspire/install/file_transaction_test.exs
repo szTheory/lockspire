@@ -218,6 +218,145 @@ defmodule Lockspire.Install.FileTransactionTest do
     end)
 
     refute File.exists?(Path.join(root, path))
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert length(journal["artifacts"]) == 2
+    assert journal["committed"] == []
+    assert transaction_dirs(root) != []
+
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(journal_path)
+    assert transaction_dirs(root) == []
+  end
+
+  test "an interruption after the initial journal is published is discoverable before staging", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+
+    FileTransaction.with_test_failure(:after_initial_journal, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, :absent, "complete staged helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert journal["artifacts"] == []
+    assert journal["committed"] == []
+    refute File.exists?(journal["tx_root"])
+    refute File.exists?(Path.join(root, path))
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(journal_path)
+  end
+
+  test "read-only status detects and recovery removes an abandoned initial journal temporary", %{
+    root: root
+  } do
+    journal = Path.join(root, ".lockspire/install_transaction.json")
+    temporary = journal <> ".initial-tmp"
+    File.mkdir_p!(Path.dirname(journal))
+    File.write!(temporary, "partial initial journal")
+    snapshot = tree_snapshot(root)
+
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+    assert tree_snapshot(root) == snapshot
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(temporary)
+    assert tree_snapshot(root) == %{}
+  end
+
+  test "initial journal publication interruption leaves no destination or staging directory", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+
+    FileTransaction.with_test_failure(:before_initial_journal_replace, fn ->
+      assert {:error, [%{type: :interrupted}]} =
+               FileTransaction.apply(root, [
+                 artifact(path, :managed, :absent, "complete staged helper"),
+                 manifest(:absent, "manifest")
+               ])
+    end)
+
+    refute File.exists?(Path.join(root, ".lockspire/install_transaction.json"))
+    refute File.exists?(Path.join(root, ".lockspire/install_transaction.json.initial-tmp"))
+    refute File.exists?(Path.join(root, path))
+    assert transaction_dirs(root) == []
+  end
+
+  test "committed terminal cleanup is retryable after staging removal and never rolls back", %{
+    root: root
+  } do
+    path = "lib/example_web/router/lockspire.ex"
+
+    artifacts = [
+      artifact(path, :managed, :absent, "complete helper"),
+      manifest(:absent, "manifest")
+    ]
+
+    FileTransaction.with_test_failure(:after_transaction_directory_cleanup, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+    end)
+
+    target = Path.join(root, path)
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert journal["terminal"] == "committed"
+    assert journal["committed"] == []
+    assert File.read!(target) == "complete helper"
+    refute File.exists?(journal["tx_root"])
+
+    legacy_committed = [
+      %{
+        "relative_path" => path,
+        "action" => "created",
+        "checksum" => Manifest.checksum("complete helper")
+      }
+    ]
+
+    File.write!(journal_path, Jason.encode!(Map.put(journal, "committed", legacy_committed)))
+    snapshot = tree_snapshot(root)
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+    assert tree_snapshot(root) == snapshot
+
+    assert :ok = FileTransaction.recover(root)
+    assert File.read!(target) == "complete helper"
+    refute File.exists?(journal_path)
+    assert transaction_dirs(root) == []
+  end
+
+  test "rolled-back terminal cleanup is retryable after staging removal and journal remains", %{
+    root: root
+  } do
+    path = "lib/example_web/operator_authorization.ex"
+
+    artifacts = [
+      artifact(path, :host_owned, :absent, "deny policy"),
+      manifest(:absent, "manifest")
+    ]
+
+    FileTransaction.with_test_failure(
+      [:after_transaction_directory_cleanup, {:ordinary_failure, :before_manifest_commit}],
+      fn ->
+        assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+      end
+    )
+
+    journal_path = Path.join(root, ".lockspire/install_transaction.json")
+    journal = Jason.decode!(File.read!(journal_path))
+    assert journal["terminal"] == "rolled_back"
+    refute File.exists?(Path.join(root, path))
+    refute File.exists?(journal["tx_root"])
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+
+    assert :ok = FileTransaction.recover(root)
+    refute File.exists?(journal_path)
+    refute File.exists?(Path.join(root, path))
   end
 
   test "atomic create publication refuses a destination that appears at publication time", %{
@@ -479,5 +618,12 @@ defmodule Lockspire.Install.FileTransactionTest do
       value = if File.regular?(path), do: File.read!(path), else: :directory
       Map.put(snapshot, relative, value)
     end)
+  end
+
+  defp transaction_dirs(root) do
+    case File.ls(Path.join(root, ".lockspire")) do
+      {:ok, entries} -> Enum.filter(entries, &String.starts_with?(&1, ".install-tx-"))
+      {:error, :enoent} -> []
+    end
   end
 end

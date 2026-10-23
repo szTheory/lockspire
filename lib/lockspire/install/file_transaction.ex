@@ -50,7 +50,7 @@ defmodule Lockspire.Install.FileTransaction do
          :ok <- validate(project_root, artifacts, opts),
          {:ok, state} <- stage(project_root, artifacts),
          {:ok, committed_state} <- commit(state),
-         :ok <- cleanup(committed_state) do
+         :ok <- finalize_committed(committed_state) do
       :ok
     else
       {:simulated_interruption, hook} ->
@@ -93,7 +93,7 @@ defmodule Lockspire.Install.FileTransaction do
       :ok ->
         case File.lstat(journal) do
           {:error, :enoent} ->
-            :clean
+            recovery_initial_journal_temp_status(root, journal)
 
           {:ok, %{type: :regular}} ->
             recovery_journal_status(root, journal)
@@ -113,6 +113,44 @@ defmodule Lockspire.Install.FileTransaction do
 
       {:error, _reason} ->
         {:error, [error(:unsafe_path, "Could not safely inspect install transaction path")]}
+    end
+  end
+
+  defp recovery_initial_journal_temp_status(root, journal) do
+    temporary = initial_journal_temporary(journal)
+
+    case read_only_ancestry(root, temporary) do
+      :ok ->
+        case File.lstat(temporary) do
+          {:error, :enoent} ->
+            :clean
+
+          {:ok, %{type: :regular}} ->
+            {:recovery_required,
+             "An interrupted install journal publication needs cleanup. Rerun the command without dry-run before previewing again."}
+
+          {:ok, _} ->
+            {:error,
+             [
+               error(
+                 :unsafe_path,
+                 "Refusing non-regular initial transaction journal temporary file"
+               )
+             ]}
+
+          {:error, _reason} ->
+            {:error,
+             [error(:unsafe_path, "Could not inspect initial transaction journal temporary file")]}
+        end
+
+      {:error, _reason} ->
+        {:error,
+         [
+           error(
+             :unsafe_path,
+             "Could not safely inspect initial transaction journal temporary file"
+           )
+         ]}
     end
   end
 
@@ -177,7 +215,7 @@ defmodule Lockspire.Install.FileTransaction do
   defp inspect_journal(project_root, journal) do
     case File.lstat(journal) do
       {:error, :enoent} ->
-        :ok
+        cleanup_unpublished_journal_temp(project_root, journal)
 
       {:ok, %{type: :symlink}} ->
         {:error, [error(:unsafe_path, "Refusing symlinked install transaction journal")]}
@@ -196,6 +234,18 @@ defmodule Lockspire.Install.FileTransaction do
              "Could not inspect install transaction journal: #{inspect(reason)}"
            )
          ]}
+    end
+  end
+
+  defp cleanup_unpublished_journal_temp(root, journal) do
+    temporary = initial_journal_temporary(journal)
+
+    with :ok <- safe_ancestry(root, temporary, allow_missing?: true),
+         :ok <- remove_regular_journal(temporary),
+         :ok <- remove_empty_transaction_parent(Path.dirname(journal)) do
+      :ok
+    else
+      {:error, reason} -> {:error, [error(:unsafe_path, safe_reason(reason))]}
     end
   end
 
@@ -231,7 +281,9 @@ defmodule Lockspire.Install.FileTransaction do
     end
   end
 
-  defp recover_rollback(%{terminal: "rolled_back"}), do: :ok
+  defp recover_rollback(%{terminal: terminal}) when terminal in ["rolled_back", "committed"],
+    do: :ok
+
   defp recover_rollback(state), do: rollback(state)
 
   defp validate(project_root, artifacts, opts) do
@@ -290,22 +342,25 @@ defmodule Lockspire.Install.FileTransaction do
 
     journal = Path.join(project_root, @journal_rel)
 
+    state = %{
+      root: project_root,
+      tx_root: tx_root,
+      journal: journal,
+      artifacts: [],
+      committed: [],
+      pending: nil
+    }
+
     with :ok <- safe_ancestry(project_root, Path.dirname(tx_root), allow_missing?: true),
+         :ok <- write_journal(state),
+         :ok <- maybe_fail(:after_initial_journal),
          :ok <- File.mkdir_p(tx_root),
          :ok <- safe_ancestry(project_root, tx_root, allow_missing?: false),
          {:ok, staged} <- stage_artifacts(tx_root, artifacts),
+         staged_state = %{state | artifacts: staged},
+         :ok <- write_journal(staged_state),
          :ok <- maybe_fail(:after_staging) do
-      state = %{
-        root: project_root,
-        tx_root: tx_root,
-        journal: journal,
-        artifacts: staged,
-        committed: [],
-        pending: nil
-      }
-
-      :ok = write_journal(state)
-      {:ok, state}
+      {:ok, staged_state}
     else
       {:simulated_interruption, _} = interruption -> interruption
       {:error, reason} -> {:error, {:staging_failed, reason}}
@@ -567,7 +622,7 @@ defmodule Lockspire.Install.FileTransaction do
          Enum.all?(artifacts, &safe_serialized_artifact?(&1, root)) and
          Enum.all?(committed, &safe_committed?(&1, root, tx_root)) and
          (is_nil(pending) or safe_committed?(pending, root, tx_root)) and
-         Map.get(journal, "terminal") in [nil, "rolled_back"],
+         Map.get(journal, "terminal") in [nil, "rolled_back", "committed"],
        do: :ok,
        else: {:error, :invalid_journal}
   end
@@ -620,11 +675,7 @@ defmodule Lockspire.Install.FileTransaction do
   end
 
   defp write_journal(state) do
-    temporary =
-      Path.join(
-        state.tx_root,
-        "journal-#{System.unique_integer([:positive, :monotonic])}.tmp"
-      )
+    temporary = journal_temporary(state)
 
     result =
       with :ok <- File.mkdir_p(Path.dirname(state.journal)),
@@ -643,6 +694,27 @@ defmodule Lockspire.Install.FileTransaction do
     if File.exists?(temporary), do: File.rm(temporary)
     result
   end
+
+  defp journal_temporary(state) do
+    case File.lstat(state.tx_root) do
+      {:error, :enoent} ->
+        initial_journal_temporary(state.journal)
+
+      {:ok, %{type: :directory}} ->
+        Path.join(
+          state.tx_root,
+          "journal-#{System.unique_integer([:positive, :monotonic])}.tmp"
+        )
+
+      _ ->
+        Path.join(
+          state.tx_root,
+          "journal-#{System.unique_integer([:positive, :monotonic])}.tmp"
+        )
+    end
+  end
+
+  defp initial_journal_temporary(journal), do: journal <> ".initial-tmp"
 
   defp write_synced_file(path, contents) do
     case :file.open(String.to_charlist(path), [:write, :binary, :exclusive]) do
@@ -664,6 +736,13 @@ defmodule Lockspire.Install.FileTransaction do
   defp maybe_fail_if_pending(%{pending: pending}) when not is_nil(pending),
     do: maybe_fail(:before_intent_journal_replace)
 
+  defp maybe_fail_if_pending(%{artifacts: [], committed: [], pending: nil, tx_root: tx_root}) do
+    case File.lstat(tx_root) do
+      {:error, :enoent} -> maybe_fail(:before_initial_journal_replace)
+      _ -> :ok
+    end
+  end
+
   defp maybe_fail_if_pending(_state), do: :ok
 
   defp journal_map(state),
@@ -675,6 +754,15 @@ defmodule Lockspire.Install.FileTransaction do
       terminal: Map.get(state, :terminal),
       pending: Map.get(state, :pending)
     }
+
+  defp finalize_committed(state) do
+    committed = Map.merge(state, %{committed: [], pending: nil, terminal: "committed"})
+
+    with :ok <- write_journal(committed),
+         :ok <- maybe_fail(:after_committed_terminal) do
+      cleanup(committed)
+    end
+  end
 
   defp finalize_rolled_back(state) do
     rolled_back = Map.merge(state, %{committed: [], pending: nil, terminal: "rolled_back"})
@@ -700,8 +788,13 @@ defmodule Lockspire.Install.FileTransaction do
     [
       fn -> safe_ancestry(state.root, state.journal, allow_missing?: true) end,
       fn -> safe_ancestry(state.root, state.tx_root, allow_missing?: true) end,
+      fn ->
+        with :ok <- remove_staging_directory(state.tx_root),
+             :ok <- maybe_fail(:after_transaction_directory_cleanup) do
+          :ok
+        end
+      end,
       fn -> remove_regular_journal(state.journal) end,
-      fn -> remove_staging_directory(state.tx_root) end,
       fn -> remove_empty_transaction_parent(Path.dirname(state.journal)) end
     ]
   end
