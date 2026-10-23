@@ -1,15 +1,15 @@
 ---
 phase: "168"
 slug: "host-owned-liveview-authorization"
-status: planned
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-22"
 ---
 
-# Phase 168 — Validation Strategy
+# Phase 168 — Validation Strategy and Results
 
-Planning contract only; no Phase 168 runtime result is claimed. Three plans contain six tasks across three sequential waves. Runtime evidence and closure dispositions remain pending execution. Authoring revision: `66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`; bind actual results to the executed source revision, rather than restamping this revision as a runtime pass.
+Phase 168 comprises three plans and six tasks across three sequential waves. Runtime evidence below is bound to completed plan commits `84e86387`, `b40f79e3`, and `d0f12976`; the final documentation commit records closure without changing tested source. Planning authoring revision: `66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`.
 
 ## Test Infrastructure
 
@@ -38,12 +38,12 @@ Command aliases below expand to the full Test Infrastructure commands above; exe
 
 | Plan/task | Requirement | Predicate and evidence | Automated selection | Threat Ref | Status |
 |-----------|-------------|------------------------|---------------------|------------|--------|
-| 168-01 Task 1 (tracer) | HAUTH-01, HAUTH-02 | Real default admin HTTP/connected success; authenticated policy refusal; connected denial after authorized static response and current-policy withdrawal | Runtime prefix + `mix test test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/admin_route_separation_test.exs` | T-168-01, T-168-02, T-168-04 | pending |
-| 168-01 Task 2 | HAUTH-01, HAUTH-02 | Missing/invalid/disallowed HTTP matrix; independent disconnected hook and connected probe sentinel ordering; concurrent provenance/cleanup; absent/nil/empty wiring refused | Runtime prefix + `mix test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/admin_route_separation_test.exs` | T-168-01 through T-168-05 | pending |
-| 168-02 Task 1 (tracer) | HAUTH-02, HAUTH-04 | Original signed response joins a distinct connected process; policy withdrawal denies new join without another GET or session callback | Quick run | T-168-06, T-168-08 | pending |
-| 168-02 Task 2 | HAUTH-02, HAUTH-04 | Current session invalidation/binding removal, identity deletion and permission withdrawal denied; still-authorized allowed at default/nested/root; no protected callback/data/action | Runtime prefix + `mix test test/lockspire/web/live/admin/admin_route_integration_test.exs test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs` | T-168-06 through T-168-09 | pending |
-| 168-03 Task 1 (tracer) | HAUTH-03 | Connected consent cross-session error redirect, explicit fresh HTTP/live denial or allowed entry with current policy | Runtime prefix + `mix test test/lockspire/web/admin_route_separation_test.exs` | T-168-10, T-168-13 | pending |
-| 168-03 Task 2 | HAUTH-01 through HAUTH-04 | Public/consent boundary matrix; 29 destination metadata and live-navigation outcomes at all mounts; native patch current-policy guard; complete evidence map | Focused union, Format, Full suite, `git diff --check` | T-168-10 through T-168-14; all phase threats in final union | pending |
+| 168-01 Task 1 (tracer) | HAUTH-01, HAUTH-02 | Real default admin HTTP/connected success; authenticated policy refusal; connected denial after authorized static response and current-policy withdrawal | 168-01 summary; final focused union | T-168-01, T-168-02, T-168-04 | passed |
+| 168-01 Task 2 | HAUTH-01, HAUTH-02 | Missing/invalid/disallowed HTTP matrix; independent disconnected hook and connected probe sentinel ordering; concurrent provenance/cleanup; absent/nil/empty wiring refused | 31-test plan result; final focused union | T-168-01 through T-168-05 | passed |
+| 168-02 Task 1 (tracer) | HAUTH-02, HAUTH-04 | Original signed response joins a distinct connected process; policy withdrawal denies new join without another GET or session callback | 19-test plan result; final focused union | T-168-06, T-168-08 | passed |
+| 168-02 Task 2 | HAUTH-02, HAUTH-04 | Current session invalidation/binding removal, identity deletion and permission withdrawal denied; still-authorized allowed at default/nested/root; no protected callback/data/action | 23-test plan result; final focused union | T-168-06 through T-168-09 | passed |
+| 168-03 Task 1 (tracer) | HAUTH-03 | Connected consent cross-session error redirect, explicit fresh HTTP/live denial or allowed entry with current policy | 8 separation tests; cross-session matrix | T-168-10, T-168-13 | passed |
+| 168-03 Task 2 | HAUTH-01 through HAUTH-04 | Public/consent boundary matrix; 29 destination metadata and live-navigation outcomes at all mounts; native patch current-policy guard; complete evidence map | 44-test focused union, format check, `mix test.fast`, scoped diff checks | T-168-10 through T-168-14; final union covers all phase threats | passed with inherited source-base whitespace findings recorded below |
 
 T-168-SC is reserved/shared across plans: no dependency installations are planned. ASVS L1, block critical/high; mitigate medium threats at primary boundaries. No new package legitimacy or schema push task is applicable: this phase changes only fixture/tests/evidence, no new package or schema files. If an install is proposed later, research legitimacy audit plus blocking assumed/suspect-package review must precede it.
 
@@ -83,9 +83,9 @@ Additional research assumptions, not replacements for the eight rows:
 
 | ID | Status / criterion | Evidence / limits |
 |----|--------------------|-------------------|
-| A-168-LV-REJOIN (research A1) | Mechanism grounded, runtime pending: public live(initial_sent_conn) must start a distinct connected lifecycle from unchanged initial signed HTML/session after old PID termination. | Installed LiveViewTest live/3 docs and source support already-rendered conn without GET; 168-02 requires runtime proof and no HTTP/session callback. If unsupported, retain failure and amend the server lifecycle plan; Phase 170 transport ownership does not waive this server proof. |
-| A-168-XSESSION | Mechanism grounded, runtime pending: live_redirect returns distinct-session error; fresh source-cookie HTTP/live entry rechecks current host policy. | Installed helper docs/source; 168-03.1/2 prove each stage. No actual browser reload is claimed. |
-| A-168-PATCH | Existing native patch links do not remount on_mount. | 168-03.2 composes a host-owned handle_params guard through the existing on_mount seam; current policy is resolved at each params transition before protected params. Events and proactive logout/disconnect remain host responsibilities. |
+| A-168-LV-REJOIN (research A1) | Passed server lifecycle contract. | 168-02 tests preserve the original signed response/session, stop the old PID, and connect a distinct process without another GET or session callback. Does not prove browser transport recovery. |
+| A-168-XSESSION | Passed cross-session server contract. | 168-03 proves distinct-session redirect followed by a separately dispatched fresh HTTP/live entry under current policy. Does not simulate an actual browser reload or network transport. |
+| A-168-PATCH | Passed same-view params boundary. | 168-03 attaches a host-owned handle_params hook through existing on_mount; current policy is re-resolved before protected params. Actual client edit/policy/rotation and query patches have allowed controls and withdrawal denials. Events and proactive logout/disconnect remain host responsibilities. |
 
 ### Prohibition recall and descriptor-less closure ledger
 
@@ -95,8 +95,8 @@ The two frontmatter entries were produced by the shared `projectProhibitions` se
 
 | ID / location | Criterion | Automated/source closure method | Result / revision | Evidence limits / reopen trigger |
 |---------------|-----------|----------------------------------|-------------------|----------------------------------|
-| P-168-01 / 168-01 must_haves.prohibitions | Lockspire retains no new staff identity/login/session/role policy implementation; required host pipeline/hooks and policy-owned redirect remain explicit. | Run focused union; inspect changed production diff (expected none) and host fixture separation. Confirm mutable identities/sessions/policy and params guard are confined to test/support. Bind findings to executed revision and actual paths. | Pending execution/source evaluation; authoring source 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f. | Proves this library seam/example, not arbitrary adopter authorization. Reopen only for relevant covered-source change or contradictory evidence. No human judgment is inherently required by missing descriptor. |
-| P-168-02 / 168-02 must_haves.prohibitions | Phase 168 claims HTTP/server lifecycle/navigation/rejoin only; no continuous old-socket revocation, real transport, package or exact-floor pass is implied. | Compare actual helpers, source/lock versions, focused results and SUMMARY/verification wording to claimed boundaries; 168-02 proves cached-response new connected process, 168-03 separates cross-session redirect and fresh GET. Record test facts separately from scoped source/evidence review. | Pending execution/evidence review; authoring source 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f. | New connected server join is not browser network recovery. Phase 170 owns transport/package/exact-floor proof; Phase 169 owns guidance convergence. Reopen on changed claims/helpers or contrary evidence. |
+| P-168-01 / 168-01 must_haves.prohibitions | Lockspire retains no new staff identity/login/session/role policy implementation; required host pipeline/hooks and policy-owned redirect remain explicit. | Focused union passed. Changed production diff is empty; mutable identity/session/policy fixture and params guard live only in `test/support/lockspire/web/admin_route_host.ex`; HTTP/nav/patch assertions are test-only. | **CLOSED by automated + source review** at source commit `d0f12976e85a83c5acfde310e000d17f555065a0`. | Proves this library seam/example, not arbitrary adopter authorization. Reopen only for relevant covered-source change or contradictory evidence. Original descriptor-less serialized flag remains retained. |
+| P-168-02 / 168-02 must_haves.prohibitions | Phase 168 claims HTTP/server lifecycle/navigation/rejoin only; no continuous old-socket revocation, real transport, package or exact-floor pass is implied. | Focused union and full `test.fast` passed; locked pair is Phoenix 1.8.13 / LiveView 1.2.10. Source and claims inspected: new connected server process, distinct-session redirect, explicit fresh entry, same-view params guard. No package/floor/transport claim was added. | **CLOSED by automated + scoped source/evidence review** at source commit `d0f12976e85a83c5acfde310e000d17f555065a0`. | New connected server join is not browser network recovery. Phase 170 owns transport/package/exact-floor proof; Phase 169 owns guidance convergence. Original descriptor-less serialized flag remains retained; reopen on changed claims/helpers or contrary evidence. |
 
 At closure record each item's criterion, method, actual result, source revision and limits in this ledger or a linked phase UAT/verification closure ledger; retain original serialized flags as historical metadata. If evidence is insufficient, record a specific gap and obtain/add the missing deterministic proof. Do not convert missing descriptors into a blanket human UAT request. Phase 167's two resolved prohibitions in 167-UAT.md remain closed; this phase evaluates only its changed/new source and claims, and any reopening must name a relevant changed-evidence trigger.
 
@@ -126,10 +126,42 @@ No in-scope source item is unplanned. Three missing probe contracts remain flagg
 
 ## CI and Evidence Closure Rules
 
-- Existing mix test.fast selects test/lockspire, test/mix and test/integration while excluding lifetime_package. All new acceptance cases remain unexcluded in existing test/lockspire files. Recheck that selector during 168-03.2; add no duplicate CI job.
+- Existing mix test.fast selects test/lockspire, test/mix and test/integration while excluding lifetime_package. All new acceptance cases remain unexcluded in existing test/lockspire files. `mix.exs`, `scripts/ci/run_test_matrix.sh`, and `.github/workflows/ci.yml` were checked; the existing fast CI job invokes this selector, with no duplicate job added and no remote run claimed.
 - Capture command exit status, failed/selected test names, executed revision, actual versions and exact evidence kind. Tests must run before a result is called passed. A focused selection target is under 60 seconds after compilation; if exceeded, use deterministic tags with a recorded complete union, without omitting any acceptance row. Final test.fast may exceed 60 seconds; yield/poll and communicate during it.
 - Denial checks require positive marker controls and per-boundary fresh observations. HTTP 403 does not prove a connected hook; a synthetic connected socket is callback evidence only; a fresh GET rejoin does not alone prove cached-session new connected join.
 - No new visual/manual verification is scheduled. A specific unproven behavior remains a gap until suitable automated/source evidence exists. Record and reuse each closed ledger row while its source and acceptance remain valid.
+
+## Execution Evidence
+
+Source revision for final tests: `d0f12976e85a83c5acfde310e000d17f555065a0` (feature source/test commit). Runtime was ASDF Elixir `1.20.4-otp-29` and Erlang/OTP `29.1.1`; locked versions were Phoenix `1.8.13`, Phoenix LiveView `1.2.10`, and Ecto SQL `3.13.5`. The isolated test database was `lockspire_phase168_20261022`; the shared default database was not used or dropped.
+
+| Check | Result |
+|-------|--------|
+| 168-01 plan focused selection | 31 passed, recorded in `168-01-SUMMARY.md` |
+| 168-02 tracer selection | 19 passed; plan final selection 23 passed, recorded in `168-02-SUMMARY.md` |
+| 168-03 cross-session tracer | `admin_route_separation_test.exs` cross-session cases passed (included in final union) |
+| 168-03 complete focused union | `mix test` over admin route compile, inventory, separation, route integration and LiveView runtime-contract files: 44 passed |
+| Route destinations | 29 concrete view/action routes × 3 mounts; 87 allowed destination navigations and 87 separately originated denied navigations passed |
+| Native client patches | Actual edit, authorization-policy, secret-rotation and query-filter patch controls passed; after authority withdrawal patch transitions returned the host sign-in redirect before protected params; existing client record remained unchanged |
+| Format | `mix format --check-formatted`: passed after formatting only changed test files |
+| Broad selector | `HEX_HOME=/tmp/lockspire-phase168-hex LOCKSPIRE_TEST_DB_NAME=lockspire_phase168_20261022 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test.fast`: 1,976 passed (2 properties, 1,974 tests), 6 skipped, 497 excluded |
+| Working-tree whitespace | `git diff --check`: passed |
+| Phase-base whitespace | `git diff --check 66fa5c7aa5ee873ecfb2746f52190d03fda97f5f`: reports trailing whitespace in the already-authored `168-PATTERNS.md` and `168-RESEARCH.md`; no current task files are implicated. These pre-existing phase planning-document findings are deferred below, not changed as unrelated scope. |
+
+The first broad run produced 22 release-artifact test setup failures because Hex attempted to write `/Users/jon/.hex/cache.ets` from the read-only home. `HEX_HOME=/tmp/lockspire-phase168-hex` allowed the release helper to run without installing packages; the one resulting broad rerun passed. The output contained pre-existing compiler warnings, including the duplicate `record_trace/2` clauses already tracked in `deferred-items.md`; no warning was introduced as part of this task.
+
+Task 2 RED evidence is retained at `168-03-task2-red-evidence.json` and was accepted by `gsd_run check tdd-red-evidence`: the withdrawn-policy params patch reached the protected callback before the host guard. After implementing the host fixture `handle_params` hook, the marker was denied before the protected callback. The guard stores signed-session references and resolves current authority per params transition; it does not add a library role model or instrumentation.
+
+| Closure item | Automated/source criterion | Result and limit |
+|--------------|-----------------------------|------------------|
+| T-168-10 | Public and consent sources retain independent sessions and cross-session redirects; fresh entry checks current authority at default/nested/root mounts. | Passed with missing, invalid-session, disallowed, and allowed cases for both sources at all three mounts. Fixture-only LiveViews are not protocol endpoints. |
+| T-168-11 | 29 exact selected view/action entries retain protected pipeline/session/ordered hook metadata and route boundaries. | Passed by the independent inventory and the 29-destination allowed/denied navigation matrix at all mounts. Existing repeated/concurrent/order/literal-vs-parameterized compile controls were retained. |
+| T-168-12 | Native same-view patches re-resolve host authority before protected destination params. | Passed for actual client edit, policy, rotation and filter query patches; allowed behavior is positive-controlled, withdrawn access redirects before protected params. |
+| T-168-13 | Public OAuth/OIDC and consent remain independent; no admin policy leaks into them. | Passed by existing anonymous discovery/JWKS and consent checks plus new fixture public/consent cross-session checks and callback provenance. |
+| T-168-14 | Phase claims stay within host-owned HTTP/server/navigation lifecycle; no production auth ownership or transport overclaim. | Passed by source review: production code unchanged; event authorization, active logout/disconnect and continuous old-socket revocation remain host responsibilities. Browser transport, packaged adoption and exact support-floor evidence remain Phase 170; generator/demo/install guidance convergence remains Phase 169. |
+| T-168-SC | No dependency or schema installation/change. | Passed by task file review and unchanged dependency/schema files. No package install or schema push occurred. |
+
+The three assumptions `A-168-P02`, `A-168-P07`, and `A-168-P08` remain explicitly unresolved: no extra behavior or numeric contract was inferred. Existing Phase 167 UAT remains closed because this phase changed no Phase 167 source/claim. Local verification does not claim remote CI execution.
 
 ## Planning-Time Gate Evidence
 
@@ -141,10 +173,10 @@ None required by the approved Phase 168 acceptance scope. Browser/socket transpo
 
 ## Validation Sign-Off
 
-- [ ] Final tasks mapped to automated checks and unique threat IDs.
-- [ ] New paths created before use and no watch-mode commands.
-- [ ] HTTP, disconnected/connected mount, cross-session navigation and reconnect are distinguished.
-- [ ] Denial matrix has absent, invalid, valid-but-disallowed and currently allowed controls with no protected data/action assertions.
-- [ ] Execution results and evidence limits recorded before setting nyquist_compliant true.
+- [x] Final tasks mapped to automated checks and unique threat IDs.
+- [x] New paths created before use and no watch-mode commands.
+- [x] HTTP, disconnected/connected mount, cross-session navigation and reconnect are distinguished.
+- [x] Denial matrix has absent, invalid, valid-but-disallowed and currently allowed controls with no protected data/action assertions.
+- [x] Execution results, prohibition dispositions and evidence limits recorded.
 
-**Approval:** Approved requirement/roadmap scope; plan validation and runtime execution evidence are separate. Runtime validation pending; do not set nyquist_compliant or wave_0_complete true before the required checks and closure records exist.
+**Approval:** Approved requirement/roadmap scope; runtime evidence is complete for the approved automated server-side acceptance. The retained descriptor-less flags and three unresolved assumptions are not treated as human passes.
