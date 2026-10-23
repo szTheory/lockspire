@@ -178,6 +178,22 @@ changes after the tested source revision `13e673ce`.
 
 ## Validation Sign-Off
 
+### Final recovery-remediation revalidation
+
+The final implementation/test revision is `04438699011fc22f52c5ea3ff4aa2f014520b26c`; later commits change documentation and audit evidence only. Review-driven recovery tests strengthen the existing HDX-02 task coverage without adding a new requirement or test-framework dependency. Independent final code review is clean across the preserved 41-file scope, and security re-audit closed all 22 planned threats at this revision.
+
+Final checks ran sequentially because selectors share `test/support/fixtures/generated_host_app`; separate databases alone do not isolate that filesystem fixture. Earlier concurrent union/fast attempts collided and are excluded from proof. The valid final runs are:
+
+| Gate | Final outcome | Log / environment |
+|------|---------------|-------------------|
+| Phase 169 union, all 16 paths from Plan 05 | 160 passed; 61.0s; seed 866719 | `/tmp/lockspire169-serial-union.log`; fresh DB `lockspire_phase169_serial_union` |
+| Prior Phase 167–168 bounded regression, six files | 63 passed; 31.4s; seed 527074 | `/tmp/lockspire169-final-regression.log`; fresh DB `lockspire_phase169_serial_regression` |
+| `mix test.fast` | 2,022 passed (2 properties, 2,020 tests); 6 skipped; 497 excluded; 206.0s; seed 198176 | `/tmp/lockspire169-serial-fast.log`; fresh DB `lockspire_phase169_serial_fast` |
+| `mix format --check-formatted` | Exit 0 | `/tmp/lockspire169-final-format.log` |
+| `git diff --check dd1521e2` | Exit 0 after audit-report whitespace correction | Entire Phase 169 baseline diff |
+
+All Mix commands used `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1` and the isolated `HEX_HOME=/tmp/lockspire-phase169-hex`. The transaction-only selector passed 24 tests and combined transaction/upgrade/generator selector passed 55 in the remediation run. No code changed after these final source-bound checks. Process-interruption/ordinary-error behavior is covered; power-loss durability, directory fsync, hostile same-user path replacement and simultaneous writers are not claimed. Phase 170 retains package/browser/socket/exact-floor/CI evidence.
+
 - [x] Final task IDs, threat references and verification commands mapped after planning.
 - [x] Every task has automated verification; no three consecutive tasks without it.
 - [x] New test references have creation dependencies; no watch-mode commands.
