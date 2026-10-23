@@ -24,10 +24,24 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     def consent_path(interaction_id), do: "/lockspire/consent/#{interaction_id}"
   end
 
+  defmodule HostAuthorizationPlug do
+    def init(opts), do: opts
+    def call(conn, _opts), do: conn
+  end
+
+  defmodule HostLiveAuthorization do
+    def on_mount(_name, _params, _session, socket), do: {:cont, socket}
+  end
+
   defmodule Web.Router do
     use Phoenix.Router
 
     import Phoenix.LiveView.Router
+    require Lockspire.Web.AdminRoutes
+
+    pipeline :operator_access do
+      plug(Mix.Tasks.Lockspire.VerifyTest.HostAuthorizationPlug)
+    end
 
     scope "/", Mix.Tasks.Lockspire.VerifyTest do
       get("/verify", PlaceholderController, :show)
@@ -42,6 +56,19 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
       live("/consent/:interaction_id", Mix.Tasks.Lockspire.VerifyTest.ConsentLive, :show)
     end
 
+    Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+      pipe_through: [:operator_access],
+      on_mount: Mix.Tasks.Lockspire.VerifyTest.HostLiveAuthorization
+    )
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+  end
+
+  defmodule RouterMissingVerify do
+    use Phoenix.Router
+
     scope "/lockspire/admin" do
       forward("/", Lockspire.Web.AdminRouter)
     end
@@ -51,8 +78,23 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     end
   end
 
-  defmodule RouterMissingVerify do
+  defmodule Web.LegacyAdmin.Router do
     use Phoenix.Router
+
+    import Phoenix.LiveView.Router
+
+    scope "/", Mix.Tasks.Lockspire.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", ConsentLive, :show)
+    end
 
     scope "/lockspire/admin" do
       forward("/", Lockspire.Web.AdminRouter)
@@ -126,6 +168,25 @@ defmodule Mix.Tasks.Lockspire.VerifyTest do
     assert output =~ "OK Runtime config :logout_path is present"
     assert output =~ "OK Host router wiring is present"
     assert output =~ "Lockspire verification passed."
+  end
+
+  test "public diagnostic refuses the legacy admin forward" do
+    output =
+      capture_io(fn ->
+        assert_raise Mix.Error, ~r/Lockspire verification failed/, fn ->
+          Mix.Tasks.Lockspire.Verify.run([
+            "--web",
+            "Mix.Tasks.Lockspire.VerifyTest.Web.LegacyAdmin",
+            "--scope",
+            "Mix.Tasks.Lockspire.VerifyTest.Scope",
+            "--mount-path",
+            "/lockspire"
+          ])
+        end
+      end)
+
+    assert output =~ "generated admin forward"
+    assert output =~ "host routes"
   end
 
   test "raises with actionable router guidance when verify routes are missing" do

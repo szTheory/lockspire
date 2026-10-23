@@ -30,6 +30,48 @@ defmodule Lockspire.Install.VerifyTest do
     def call(conn, _opts), do: conn
   end
 
+  defmodule HostAuthorizationPlug do
+    def init(opts), do: opts
+    def call(conn, _opts), do: conn
+  end
+
+  defmodule HostLiveAuthorization do
+    def on_mount(_name, _params, _session, socket), do: {:cont, socket}
+  end
+
+  defmodule NativeAdminRouter do
+    use Phoenix.Router
+
+    import Phoenix.LiveView.Router
+    require Lockspire.Web.AdminRoutes
+
+    pipeline :operator_access do
+      plug(Lockspire.Install.VerifyTest.HostAuthorizationPlug)
+    end
+
+    scope "/", Lockspire.Install.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", Lockspire.Install.VerifyTest.ConsentLive, :show)
+    end
+
+    Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+      pipe_through: [:operator_access],
+      on_mount: Lockspire.Install.VerifyTest.HostLiveAuthorization
+    )
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+  end
+
   defmodule Web.Router do
     use Phoenix.Router
 
@@ -237,6 +279,21 @@ defmodule Lockspire.Install.VerifyTest do
     assert Enum.all?(result.checks, &(&1.status == :ok))
     assert Enum.any?(result.checks, &(&1.id == :router))
     assert Enum.any?(result.checks, &(&1.id == :migrations))
+  end
+
+  test "accepts complete compiled native admin routes" do
+    result =
+      Verify.run(
+        router: NativeAdminRouter,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire",
+        key_storage_status: fn -> {:ok, ready_status()} end
+      )
+
+    assert %{status: :ok, summary: "Host router wiring is present"} =
+             Enum.find(result.checks, &(&1.id == :router))
   end
 
   test "returns a failing result set for missing verify routes" do
