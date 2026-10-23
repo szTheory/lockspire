@@ -350,6 +350,44 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     refute_receive {:probe_callback, :connected, _callback}
   end
 
+  test "native params patches recheck current host policy before protected params callbacks" do
+    install_authority()
+    trace = "params-patch-policy-withdrawn"
+
+    session =
+      Lockspire.Web.AdminRouteHost.Identity.staff_session("staff-1")
+      |> Map.put("trace_id", trace)
+
+    assert {:ok, view, html} =
+             build_conn()
+             |> Plug.Conn.put_req_header("x-route-trace", trace)
+             |> Phoenix.ConnTest.init_test_session(session)
+             |> live("/admin-auth-probe")
+
+    assert html =~ "admin-route-sensitive-id"
+    assert_receive {:host_authorization, ^trace, :disconnected, :allowed, "staff-1"}
+    assert_receive {:probe_callback, :disconnected, :mount}
+    assert_receive {:probe_callback, :disconnected, :params}
+    assert_receive {:probe_callback, :disconnected, :render_data}
+    assert_receive {:host_authorization, ^trace, :connected, :allowed, "staff-1"}
+    assert_receive {:probe_callback, :connected, :mount}
+    assert_receive {:probe_callback, :connected, :params}
+    assert_receive {:probe_callback, :connected, :render_data}
+
+    denied_authority =
+      Lockspire.Web.AdminRouteHost.Identity.default_authority()
+      |> Map.put(:permissions, %{"staff-1" => false, "staff-2" => false})
+
+    assert :ok = Lockspire.Web.AdminRouteHost.Identity.put_authority(denied_authority)
+
+    result = render_patch(view, "/admin-auth-probe?probe=denied")
+
+    assert_receive {:host_authorization, ^trace, :params, :denied, "staff-1"}
+    refute_receive {:probe_callback, :connected, :params}
+    refute result =~ "admin-route-sensitive-id"
+    refute_receive {:probe_callback, :connected, :action}
+  end
+
   test "the host HTTP gate and current-identity hook deny before a view mounts" do
     denied_http = get(build_conn(), "/lockspire/admin")
     assert denied_http.status == 403

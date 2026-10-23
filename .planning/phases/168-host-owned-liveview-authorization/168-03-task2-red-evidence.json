@@ -1,0 +1,11 @@
+{
+  "command": "LOCKSPIRE_TEST_DB_NAME=lockspire_phase168_20261022 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/live/admin/admin_route_integration_test.exs:354",
+  "exitCode": 2,
+  "output": "TAP version 13\nok 1 - connected probe denial after static success prevents connected protected callbacks\nnot ok 2 - native params patches recheck current host policy before protected params callbacks\n  ---\n  message: \"Assertion failed: expected the host params authorization observation, but the current implementation ran the protected params callback without rechecking authority\"\n  file: test/lockspire/web/live/admin/admin_route_integration_test.exs\n  line: 385\n  ...\n1..2\n",
+  "rawReport": "/tmp/lockspire-168-03-task2-red.txt",
+  "targetTest": "native params patches recheck current host policy before protected params callbacks",
+  "targetFile": "test/lockspire/web/live/admin/admin_route_integration_test.exs",
+  "expected": "A current-policy handle_params hook records denial and halts before MountSentinelLive.handle_params runs.",
+  "actual": "The authorized connected probe accepted the query patch after staff permission was withdrawn; no :params denial observation occurred, and the protected params callback ran.",
+  "semanticAssessment": "The named target executed against the pre-implementation fixture and failed because its expected host params authorization event was absent after a real LiveViewTest.render_patch. Logs show MountSentinelLive.handle_params received probe=denied. Setup, compilation, and the preceding control test passed. ExUnit's native report is retained at rawReport and adapted to the classifier's TAP input without changing the assertion outcome."
+}
