@@ -150,6 +150,32 @@ defmodule Lockspire.Install.FileTransactionTest do
     assert tree_snapshot(root) == snapshot
   end
 
+  test "an interruption after both the new policy seam and managed helper recovers before retry",
+       %{root: root} do
+    helper = "lib/example_web/router/lockspire.ex"
+
+    artifacts = [
+      artifact("lib/example_web/operator_authorization.ex", :host_owned, :absent, "deny policy"),
+      artifact(helper, :managed, :absent, "native helper"),
+      manifest(:absent, "committed last")
+    ]
+
+    FileTransaction.with_test_failure({:after_artifact, helper}, fn ->
+      assert {:error, [%{type: :interrupted}]} = FileTransaction.apply(root, artifacts)
+    end)
+
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) == "deny policy"
+    assert File.read!(Path.join(root, helper)) == "native helper"
+    refute File.exists?(Path.join(root, ".lockspire/install_manifest.json"))
+    assert FileTransaction.recovery_status(root) |> elem(0) == :recovery_required
+
+    assert :ok = FileTransaction.apply(root, artifacts)
+    assert File.read!(Path.join(root, "lib/example_web/operator_authorization.ex")) == "deny policy"
+    assert File.read!(Path.join(root, helper)) == "native helper"
+    assert File.read!(Path.join(root, ".lockspire/install_manifest.json")) == "committed last"
+    assert FileTransaction.recovery_status(root) == :clean
+  end
+
   test "refuses a journal below a symlinked .lockspire directory without touching outside state",
        %{root: root} do
     outside = Path.join(root, "outside-state")
