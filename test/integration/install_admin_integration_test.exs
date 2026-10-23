@@ -98,7 +98,55 @@ defmodule Lockspire.InstallAdminIntegrationTest do
     assert html =~ "Overview"
   end
 
-  defp build_host! do
+  test "rendered admin routes follow default, root and nested mount paths" do
+    for mount_path <- ["/lockspire", "/", "/teams/ops/identity"] do
+      host = build_host!(mount_path: mount_path)
+      seam_module = host.seam_module
+      helper_module = host.router_helper_module
+      assert [{^seam_module, _}] = Code.compile_file(host.seam_path)
+      assert [{^helper_module, _}] = Code.compile_file(host.router_helper_path)
+
+      assert_compiled!(
+        host.router_module,
+        Code.compile_string(host_router_source(host), host.root)
+      )
+
+      admin_prefix = if mount_path == "/", do: "/admin", else: mount_path <> "/admin"
+      routes = Phoenix.Router.routes(host.router_module)
+
+      admin_routes =
+        Enum.filter(
+          routes,
+          &(&1.path == admin_prefix or String.starts_with?(&1.path, admin_prefix <> "/"))
+        )
+
+      assert length(admin_routes) == 29
+
+      assert Enum.any?(
+               admin_routes,
+               &(&1.path == admin_prefix <> "/clients/new" and &1.plug_opts == :new)
+             )
+
+      assert Enum.any?(routes, &(&1.path == admin_prefix and &1.plug == Phoenix.LiveView.Plug))
+
+      refute Phoenix.Router.route_info(
+               host.router_module,
+               "GET",
+               admin_prefix <> "-extra/clients",
+               "localhost"
+             ).plug == Phoenix.LiveView.Plug
+
+      consent_path =
+        if mount_path == "/",
+          do: "/consent/:interaction_id",
+          else: mount_path <> "/consent/:interaction_id"
+
+      assert route_index!(routes, consent_path) < route_index!(routes, mount_path)
+    end
+  end
+
+  defp build_host!(opts \\ []) do
+    mount_path = Keyword.get(opts, :mount_path, "/lockspire")
     suffix = System.unique_integer([:positive])
     web_name = "LockspireFresh#{suffix}Web"
     scope_name = "LockspireFresh#{suffix}.Lockspire"
@@ -114,6 +162,8 @@ defmodule Lockspire.InstallAdminIntegrationTest do
         web_name,
         "--scope",
         scope_name,
+        "--mount-path",
+        mount_path,
         "--path",
         root
       ])
@@ -122,7 +172,7 @@ defmodule Lockspire.InstallAdminIntegrationTest do
     endpoint_module = Module.concat([web_name, "Endpoint"])
     previous_mount = Application.get_env(:lockspire, :mount_path)
     previous_endpoint = Application.get_env(:lockspire, endpoint_module)
-    Application.put_env(:lockspire, :mount_path, "/lockspire")
+    Application.put_env(:lockspire, :mount_path, mount_path)
 
     Application.put_env(:lockspire, endpoint_module,
       secret_key_base: String.duplicate("a", 64),
@@ -137,6 +187,7 @@ defmodule Lockspire.InstallAdminIntegrationTest do
 
     %{
       root: root,
+      mount_path: mount_path,
       endpoint_module: endpoint_module,
       router_module: Module.concat([web_name, "Router"]),
       router_helper_module: Module.concat([web_name, "Router", "Lockspire"]),
@@ -144,6 +195,10 @@ defmodule Lockspire.InstallAdminIntegrationTest do
       seam_path: Path.join(root, "lib/#{Macro.underscore(web_name)}/operator_authorization.ex"),
       router_helper_path: Path.join(root, "lib/#{Macro.underscore(web_name)}/router/lockspire.ex")
     }
+  end
+
+  defp route_index!(routes, path) do
+    Enum.find_index(routes, &(&1.path == path)) || flunk("missing route #{path}")
   end
 
   defp host_router_source(host) do

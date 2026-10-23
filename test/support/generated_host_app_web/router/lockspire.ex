@@ -42,24 +42,6 @@ defmodule GeneratedHostAppWeb.Router.Lockspire do
         delete("/authorized-apps/:id", AuthorizedAppsController, :delete)
       end
 
-      # Mount Lockspire's operator UI behind your host-owned operator auth
-      # pipeline before the general public OAuth/OIDC forward below.
-      #
-      # Example:
-      #
-      #   scope "/lockspire/admin" do
-      #     pipe_through [:browser, :require_operator]
-      #     forward "/", Lockspire.Web.AdminRouter
-      #   end
-      #
-      # Do not rely on Lockspire to authenticate your operators. Lockspire owns
-      # protocol/admin state after the request reaches these LiveViews; your host app
-      # owns who may reach them.
-      scope "/lockspire/admin" do
-        pipe_through([:browser, :require_operator])
-        forward("/", Lockspire.Web.AdminRouter)
-      end
-
       # This host-owned LiveView is intentionally defined before Lockspire's
       # public forward. It inherits the host browser pipeline and presentation
       # while obtaining all protocol facts from Lockspire.Web.ConsentContext.
@@ -69,6 +51,19 @@ defmodule GeneratedHostAppWeb.Router.Lockspire do
         pipe_through([:browser])
         live("/consent/:interaction_id", LockspireConsentLive, :show)
       end
+
+      # Lockspire supplies the route inventory and fixed LiveView session. Your
+      # host-owned Plug and hook must implement current staff authorization.
+      require Lockspire.Web.AdminRoutes
+      pipeline :lockspire_operator_authorization do
+        plug(GeneratedHostAppWeb.OperatorAuthorization)
+      end
+
+      Lockspire.Web.AdminRoutes.lockspire_admin_routes(
+        "/lockspire/admin",
+        pipe_through: [:browser, :lockspire_operator_authorization],
+        on_mount: GeneratedHostAppWeb.OperatorAuthorization
+      )
 
       scope "/" do
         forward("/lockspire", Lockspire.Web.Router)

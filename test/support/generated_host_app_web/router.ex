@@ -18,12 +18,6 @@ defmodule GeneratedHostAppWeb.Router do
     plug(:accepts, ["json"])
   end
 
-  # This is intentionally host-owned. Real applications replace the fixture's
-  # authorization plug with their operator session and product policy.
-  pipeline :require_operator do
-    plug(GeneratedHostAppWeb.Plugs.RequireOperator)
-  end
-
   pipeline :lockspire_protected_api do
     plug(Lockspire.Plug.VerifyToken, scopes: ["read:billing"], audience: "billing-api")
     plug(Lockspire.Plug.EnforceSenderConstraints)

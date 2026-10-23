@@ -56,7 +56,7 @@ defmodule <%= @web_module %>.Router.Lockspire do
       end
 
       Lockspire.Web.AdminRoutes.lockspire_admin_routes(
-        "<%= @mount_path %>/admin",
+        "<%= if @mount_path == "/", do: "", else: @mount_path %>/admin",
         pipe_through: [:browser, :lockspire_operator_authorization],
         on_mount: <%= @web_module %>.OperatorAuthorization
       )

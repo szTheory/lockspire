@@ -3,6 +3,8 @@ defmodule Lockspire.InstallGeneratorTest do
 
   import ExUnit.CaptureIO
 
+  alias Lockspire.Generators.Install
+  alias Lockspire.Install.OperationPlan
   alias Lockspire.Storage.Ecto.Repository
 
   @fixture_root Path.expand("../support/fixtures/generated_host_app", __DIR__)
@@ -58,10 +60,9 @@ defmodule Lockspire.InstallGeneratorTest do
         install_fixture!()
       end)
 
-    # Sanity check: total templates rendered. Update this constant if a future plan
-    # adds or removes a template. Baseline at Plan 43-04 write time was 11; the default
-    # smoke template makes it 12 while the FAPI proof remains opt-in.
-    assert length(Lockspire.Generators.Templates.all()) == 12
+    # Sanity check: total templates rendered. The generated authorization seam is
+    # host-owned and remains outside managed overwrite authority.
+    assert length(Lockspire.Generators.Templates.all()) == 13
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              "config :lockspire"
@@ -86,6 +87,15 @@ defmodule Lockspire.InstallGeneratorTest do
     assert "test/generated_host_app/lockspire_smoke_e2e_test.exs" in managed_paths
     refute Enum.any?(managed_paths, &String.contains?(&1, "fapi_smoke"))
     refute Enum.any?(managed_paths, &String.contains?(&1, "account_resolver.ex"))
+    refute "lib/generated_host_app_web/operator_authorization.ex" in managed_paths
+
+    operator_authorization_path =
+      Path.join(@fixture_root, "lib/generated_host_app_web/operator_authorization.ex")
+
+    assert File.read!(operator_authorization_path) ==
+             File.read!(Path.join(@runtime_fixture_root, "operator_authorization.ex"))
+
+    assert File.read!(operator_authorization_path) =~ "Admin access is not configured."
 
     assert File.read!(Path.join(@fixture_root, "config/lockspire.exs")) =~
              ~s(import_config "lockspire.exs")
@@ -117,16 +127,13 @@ defmodule Lockspire.InstallGeneratorTest do
     assert router =~ "post(\"/verify/:handle/deny\", LockspireVerificationController, :deny)"
     assert router =~ "prefill-only"
     assert router =~ "device-flow-host-guide.md"
-    assert router =~ ~s(scope "/lockspire/admin")
-    assert router =~ "pipe_through([:browser, :require_operator])"
-
-    assert router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
-
-    assert router =~ "Do not rely on Lockspire to authenticate your operators"
+    assert router =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
+    assert router =~ "pipe_through: [:browser, :lockspire_operator_authorization]"
+    assert router =~ "on_mount: GeneratedHostAppWeb.OperatorAuthorization"
+    assert router =~ "host-owned Plug and hook"
+    assert router =~ "current staff authorization"
+    refute router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
     assert router =~ "forward(\"/lockspire\", Lockspire.Web.Router)"
-
-    assert router =~
-             ~r/scope "\/lockspire\/admin" do\s+pipe_through\(\[:browser, :require_operator\]\)\s+forward\("\/", Lockspire.Web.AdminRouter\)\s+end/
 
     resolver =
       File.read!(Path.join(@fixture_root, "lib/generated_host_app/lockspire/account_resolver.ex"))
@@ -332,7 +339,7 @@ defmodule Lockspire.InstallGeneratorTest do
                )
 
       refute literal == extract_dev_literal!(second)
-      assert first =~ "8. If you explicitly operate a FAPI 2.0 security profile"
+      assert first =~ "10. If you explicitly operate a FAPI 2.0 security profile"
     end
 
     test "never records the key block in the install manifest" do
@@ -445,6 +452,7 @@ defmodule Lockspire.InstallGeneratorTest do
     )
   end
 
+  @tag :native_admin_fixture_parity
   test "the rendered router macro compiles through the generated host router" do
     capture_io(fn ->
       install_fixture!()
@@ -484,27 +492,58 @@ defmodule Lockspire.InstallGeneratorTest do
     assert admin_index < public_index
 
     admin_route = Enum.at(routes, admin_index)
-    assert admin_route.plug == Lockspire.Web.AdminRouter
+    assert admin_route.plug == Phoenix.LiveView.Plug
+
+    assert admin_route.metadata[:phoenix_live_view] |> elem(0) ==
+             Lockspire.Web.Live.Admin.OverviewLive.Index
+
+    assert admin_route.metadata[:phoenix_live_view] |> elem(1) == :index
+
+    assert Phoenix.Router.route_info(
+             GeneratedHostAppWeb.Router,
+             "GET",
+             "/lockspire/admin",
+             "localhost"
+           ).pipe_through == [
+             :browser,
+             :lockspire_operator_authorization,
+             :lockspire_admin_mount
+           ]
 
     consent_route = Enum.find(routes, &(&1.path == "/lockspire/consent/:interaction_id"))
 
     assert consent_route.metadata[:phoenix_live_view] |> elem(0) ==
              GeneratedHostAppWeb.LockspireConsentLive
 
-    assert_raise CompileError, fn ->
-      Code.compile_string("""
-      defmodule GeneratedHostAppWeb.RouterWithoutOperator do
-        use Phoenix.Router
-        import GeneratedHostAppWeb.Router.Lockspire
+    assert Enum.any?(routes, &(&1.path == "/lockspire/admin/clients/new"))
+  end
 
-        pipeline :browser do
-          plug :accepts, [\"html\"]
-        end
+  test "install refuses a host file that appears after preflight and preserves the tree" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "lockspire-stale-install-#{System.unique_integer([:positive])}"
+      )
 
-        lockspire_routes()
-      end
-      """)
-    end
+    File.mkdir_p!(root)
+    on_exit(fn -> File.rm_rf!(root) end)
+
+    assigns = %{Install.build_assigns(path: root) | project_root: root}
+    rendered = Install.rendered_templates(assigns)
+    assert {:ok, plan} = OperationPlan.install(assigns, rendered)
+
+    competing_path = Path.join(root, "lib/lockspire_web/operator_authorization.ex")
+    competing_bytes = "# created by the host after preflight\n"
+    File.mkdir_p!(Path.dirname(competing_path))
+    File.write!(competing_path, competing_bytes)
+    before = snapshot_tree!(root)
+
+    assert {:error, [%{type: :approved_plan_changed, message: message}]} =
+             OperationPlan.apply(plan)
+
+    assert message =~ "Host file appeared"
+    assert snapshot_tree!(root) == before
+    assert File.read!(competing_path) == competing_bytes
   end
 
   test "the installer-rendered consent LiveView matches and compiles as the executable fixture" do
@@ -737,6 +776,14 @@ defmodule Lockspire.InstallGeneratorTest do
     |> Path.wildcard(match_dot: true)
     |> Enum.reject(&File.dir?/1)
     |> Enum.map(&Path.relative_to(&1, root))
+  end
+
+  defp snapshot_tree!(root) do
+    root
+    |> Path.join("**/*")
+    |> Path.wildcard(match_dot: true)
+    |> Enum.reject(&File.dir?/1)
+    |> Map.new(fn path -> {Path.relative_to(path, root), File.read!(path)} end)
   end
 
   defp load_manifest! do
