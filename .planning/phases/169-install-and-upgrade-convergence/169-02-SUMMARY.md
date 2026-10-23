@@ -121,6 +121,10 @@ ExUnit's default text report is not accepted by the repository's TDD evidence cl
 
 **Total deviations:** 1 verification adaptation. **Impact:** TDD evidence remained machine-validated without changing project runtime or test dependencies.
 
+## Follow-up Deviation: Combined-wave test isolation
+
+The first combined Phase 169 Wave 2 run exposed test-order contamination: the historical conversion test redefined the shared `GeneratedHostAppWeb.Router.Lockspire` and `GeneratedHostAppWeb.Router` modules with a `/teams/auth` mount. Later generator tests then observed the altered route table and discovery returned 404. The conversion proof now compiles the generated authorization seam, helper, and router in a unique namespace, preserving the canonical overview-route assertion without replacing shared modules. Reproduction seed `179210` passes the combined `install_generator_test.exs`, `install_upgrade_test.exs`, and `file_transaction_test.exs` suite: **39 passed**. Correction commit: `b911a535`.
+
 ## Issues Encountered
 
 - The first RED test attempt exposed a wrong fixture-path assertion, which was changed to assert the intended missing-seam behavior directly before recording valid RED evidence.
@@ -141,6 +145,7 @@ HDX-02 has executable conversion, ownership, preview, stale-plan, interruption, 
 ## Self-Check: PASSED
 
 - Historical fixture, provenance README, and both RED evidence records exist.
-- All five task commits are ancestors of the current HEAD.
-- `gsd_run check evaluation-scope --plan "169-02" --commits-only --raw` resolved this plan and found five commits on the current branch.
+- All five original task commits and the test-isolation correction commit are ancestors of the current HEAD.
+- `gsd_run check evaluation-scope --plan "169-02" --commits-only --raw` resolved this plan and identified its commits on the current branch.
 - Focused integration and transaction verification passed with 24 tests.
+- The recorded Phase 169 Wave 2 combined-test reproduction passed with 39 tests after isolating generated router modules.
