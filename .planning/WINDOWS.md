@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 2
+open_count: 3
 waived_count: 0
 fixed_count: 9
-total_count: 11
-last_updated: 2026-10-23T00:10:29.843Z
+total_count: 12
+last_updated: 2026-10-24T03:08:29.033Z
 ---
 
 # Broken Windows Ledger
@@ -26,6 +26,7 @@ last_updated: 2026-10-23T00:10:29.843Z
 | 9 | 139 | deviation | test/support/lockspire/release_proof/package_assertions.ex |  | Added explicit real linked-worktree rejection coverage after the initial GREEN fixture | fixed |  | 2026-09-12T00:29:10.877Z | 2026-09-12T00:29:32.780Z |
 | 10 | 145 | unrun-verify | .planning/phases/145-configure-and-onboard/145-CREDENTIAL-BROWSER.md |  | Browser credential-changing handoff and narrow/200% zoom/reduced-motion states were intentionally left unobserved; ExUnit covers secret lifecycle and the remaining visual limits are documented. | open |  | 2026-10-09T21:35:14.803Z |  |
 | 11 | 168 | lint-warning | test/support/lockspire/web/admin_route_host.ex | 39 | Pre-existing duplicate record_trace/2 clauses in test host fixture emit compiler warnings. | open |  | 2026-10-23T00:10:29.843Z |  |
+| 12 | 170 | deviation | scripts/acceptance/clean_room_admin_journey.py |  | Runtime asset validation accepts only the isolated provider host or its pair-scoped dependency cache; root checkout sources are rejected. | open |  | 2026-10-24T03:08:29.033Z |  |
 
 ````json
 [
@@ -161,6 +162,19 @@ last_updated: 2026-10-23T00:10:29.843Z
     "status": "open",
     "reason": "",
     "recorded_at": "2026-10-23T00:10:29.843Z",
+    "resolved_at": null,
+    "milestone": "v1.46"
+  },
+  {
+    "id": 12,
+    "kind": "deviation",
+    "phase": "170",
+    "file": "scripts/acceptance/clean_room_admin_journey.py",
+    "line": null,
+    "description": "Runtime asset validation accepts only the isolated provider host or its pair-scoped dependency cache; root checkout sources are rejected.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-24T03:08:29.033Z",
     "resolved_at": null,
     "milestone": "v1.46"
   }
