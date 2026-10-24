@@ -129,3 +129,69 @@ or execution on CI's expected Elixir 1.19.5/OTP 28 and 1.18.4/OTP 27. No remote
 workflow, publication, push, or required-check update was dispatched. Historical
 plan summaries retain their original audit limits; the refreshed ledgers
 supersede the earlier zero-gap claim without rewriting that history.
+
+## Code-review reopening: CR-01 receipt-directory containment
+
+The later independent code review found that lexical `.artifacts/*` matching
+allowed traversal and symlink escapes before stale receipt deletion. This
+sixth confirmed gap was reopened without rewriting the five earlier findings
+or historical summaries. Runtime repair `0d646e36` validates the path before
+all mkdir/delete/staging actions: preserve the relative `.artifacts/` CLI,
+reject `..`, reject every existing symlink component including `.artifacts`
+root/intermediate/final directories, reject non-directory components, and
+require a strict canonical descendant of the canonical repo-local artifact
+root. Invalid input prints only `receipt directory must be below .artifacts`
+and exits 64. Existing directory components are checked under a single-user
+invocation boundary; no hostile concurrent same-user replacement guarantee is
+claimed.
+
+Test-first real-wrapper calls initially deleted all four external sentinel
+receipts for traversal/final-symlink inputs, and created forbidden directories
+for root/intermediate symlinks and contained traversal. Five subcases then
+passed. Final review identified a Bash command-substitution round-trip bypass:
+`.artifacts/link` plus a trailing newline validated as a different nonexistent
+path, then became the existing escaping symlink after Bash stripped the newline.
+A sixth subcase reproduced deletion again. Final runtime commit `7a845ba3e142f3ff1e717d85ebc017d02becfae2`
+rejects CR/LF before canonicalization. All six hostile subcases now preserve
+external contents exactly and return the fixed diagnostic/64. The normal
+success test creates a previously nonexistent nested receipt directory and
+stages all three validated fake-tool receipts successfully.
+
+Final verification after that runtime edit:
+
+- Python full harness suite: 36 passed in 30.031 seconds, including all six
+  real-wrapper hostile path subcases and ordinary nested output success.
+- Node browser suite: 8 passed in 5.197 seconds.
+- Affected host integration/CI matrix/docs contracts: 14 passed.
+- Workflow/shell lint, whole-project formatter, remediation-scoped baseline diff check and original
+  state byte comparison: passed.
+- Final locked wrapper: source `7a845ba3e142f3ff1e717d85ebc017d02becfae2`, 43 lifecycle checks,
+  3 mounts × 16 browser scenarios, reported workload 562 seconds; exit 0 after
+  owned lifecycle-database/raw-root cleanup.
+- Final floor wrapper: same source, 44 lifecycle checks, 3 × 16 scenarios,
+  reported workload 156 seconds; exit 0 after cleanup.
+
+The locked workload was slower than the superseded 138-second intermediate
+pass; its measured 562 seconds is retained, leaving 338 seconds inside the
+900-second workload cap. Both final runs used fresh
+`HEX_HOME=/private/tmp/lockspire-phase170-final-containment-hex.NJIhZ1`, fresh
+owned databases, normal Chrome sandboxing, and sequential Mix work. Exact
+candidate hashes, versions, runtime observations, per-mount timings and receipt
+paths are in [170-ACCEPTANCE.md](170-ACCEPTANCE.md). All six final browser
+receipts validate with all cleanup flags true. The `0d646e36` receipts at
+`.artifacts/phase170/containment-locked` are historical and superseded.
+
+The previous broad 2,027-check pass remains valid evidence for its recorded
+source; no fresh broad pass is claimed after this bounded wrapper-only change.
+The first final-source floor attempt reached the 900-second workload deadline
+after its 44 lifecycle checks, before browser_0. It returned 124 after the bounded
+cleanup trap, and its private raw root was removed;
+its lifecycle-only output at `.artifacts/phase170/final-containment-floor` is
+failed historical evidence, not a successful matrix. The unchanged-source retry
+is recorded separately at `.artifacts/phase170/final-containment-floor-retry`.
+Safe stage timing metadata is `/private/tmp/phase170-floor-retry-stage-timings.json`;
+raw child logs remain deleted. No budget or scenario was weakened for the retry.
+Independent CR-01 closure belongs to the reviewer; this report
+records repairs and evidence only. No remote workflow, push, publication or
+required-check update occurred. REVIEW/SECURITY/VERIFICATION and phase state/
+roadmap/requirements were not modified by this repair.

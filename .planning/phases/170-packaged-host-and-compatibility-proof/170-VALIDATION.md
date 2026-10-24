@@ -156,3 +156,27 @@ The original smoke failure did not recur in its focused or serialized broad
 rerun. Initial wrapper-build overlap is recorded as a possible source of test
 interference, not as a proven root cause. No hosted CI result or execution on
 the minimum CI BEAM is implied by these local checks.
+
+## Current receipt-directory review remediation (2026-10-24)
+
+CR-01 exposed a further artifact-ownership gap after the first security repair.
+Test-first real-wrapper regressions reproduced deletion of four external
+receipts through traversal/final symlink, and forbidden directory creation
+through root/intermediate symlinks and contained traversal. A sixth regression
+reproduced Bash stripping a trailing newline from an otherwise validated path.
+
+Final runtime source: `7a845ba3e142f3ff1e717d85ebc017d02becfae2` (`0d646e36` plus line-break refinement).
+Python 36 passed in 30.031 seconds; Node 8 passed in 5.197 seconds; affected
+host-proof/CI-matrix/documentation contracts 14 passed. Workflow/shell lint,
+whole-project formatter, remediation-scoped baseline diff check and preserved-state byte comparison
+passed. Both final canonical wrappers then ran sequentially with fresh Hex home
+and generated databases: locked 43 lifecycle / 3 × 16 browser cases, reported
+562 seconds; floor 44 / 3 × 16, reported 156 seconds. Both exited zero
+after bounded EXIT cleanup; all browser cleanup fields are true.
+
+Current receipt identities and paths are in [170-ACCEPTANCE.md](170-ACCEPTANCE.md).
+The intermediate `0d646e36` locked pass (138 seconds) is superseded by this
+final-runtime pair refresh. The preceding 2,027-check broad result is retained
+at its original source; this wrapper-only refinement received focused contracts,
+full harness regressions and real pair refresh, with no new broad claim. The
+independent reviewer owns final CR-01 disposition.

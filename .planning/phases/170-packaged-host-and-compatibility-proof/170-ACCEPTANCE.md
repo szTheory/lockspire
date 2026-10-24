@@ -1,6 +1,60 @@
 # Phase 170 — Final Acceptance Evidence
 
-## Current evidence after security remediation (2026-10-24)
+## Current evidence after receipt-directory review repair (2026-10-24)
+
+CR-01 reopened the wrapper's lexical receipt-path guard: traversal and symlink
+components could redirect stale-file deletion outside `.artifacts`. The repair
+in `0d646e36`, refined in `7a845ba3e142f3ff1e717d85ebc017d02becfae2`, validates a strict canonical
+repo-local artifact descendant before any mkdir/delete/staging, rejects every
+existing symlink component and parent traversal, and rejects line breaks that
+could change the path through Bash command substitution. Invalid paths return
+exit 64 and one fixed diagnostic; external sentinel files remain unchanged.
+The independent reviewer owns closure of CR-01; these are repair/runtime results.
+
+Both canonical wrappers were refreshed after the final runtime edit. Every
+current receipt identifies source `7a845ba3e142f3ff1e717d85ebc017d02becfae2`,
+`source_dirty: true`, Lockspire `1.6.1`, archive SHA-256 `a4cf36af08fca6fe11b7d7c39e7cb0224129f507cb009df13879d546198a946f`, and
+expanded-tree SHA-256 `fcb9ff7246b004b3dfb47d7f480a5bc41eb801e1704bc7a373bf70773e45701e`. The supplied `.planning/state.json` is still
+preserved byte-for-byte and unstaged. Runtime source did not change during
+these sequential pair runs.
+
+| Cell | Phoenix / LiveView | Mount | Result | Sum of scenario durations | Receipt |
+|---|---|---|---|---:|---|
+| locked-lockspire | 1.8.13 / 1.2.10 | `/lockspire` | 16/16; cleanup passed | 2.246 s | `.artifacts/phase170/final-containment-locked/locked-lockspire.json` |
+| locked-nested | 1.8.13 / 1.2.10 | `/teams/ops/identity` | 16/16; cleanup passed | 2.952 s | `.artifacts/phase170/final-containment-locked/locked-nested.json` |
+| locked-root | 1.8.13 / 1.2.10 | `/` | 16/16; cleanup passed | 2.192 s | `.artifacts/phase170/final-containment-locked/locked-root.json` |
+| floor-lockspire | 1.8.5 / 1.1.28 | `/lockspire` | 16/16; cleanup passed | 2.272 s | `.artifacts/phase170/final-containment-floor-retry/floor-lockspire.json` |
+| floor-nested | 1.8.5 / 1.1.28 | `/teams/ops/identity` | 16/16; cleanup passed | 2.264 s | `.artifacts/phase170/final-containment-floor-retry/floor-nested.json` |
+| floor-root | 1.8.5 / 1.1.28 | `/` | 16/16; cleanup passed | 2.691 s | `.artifacts/phase170/final-containment-floor-retry/floor-root.json` |
+
+| Pair | Reported workload duration | Lifecycle checks | Lifecycle receipt |
+|---|---:|---:|---|
+| locked | 562 s | 43 | `.artifacts/phase170/final-containment-locked/lifecycle.json` |
+| floor | 156 s | 44 | `.artifacts/phase170/final-containment-floor-retry/lifecycle.json` |
+
+Timings are the wrapper's report before independently bounded EXIT cleanup;
+both commands then exited zero after owned lifecycle-database disposal and raw
+root removal. Every browser receipt reports all four cleanup flags true. Both
+reported workloads fit the 900-second deadline; the locked run left 338 seconds.
+Actual local runtimes remain Elixir 1.20.4 / OTP 29, Node 26.10.0 and Chrome
+155.0.8059.85, using the normal browser sandbox. CI's minimum BEAM remains an
+expectation, with no hosted run dispatched or observed.
+
+```bash
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/phase170/final-containment-locked
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/phase170/final-containment-floor-retry
+```
+
+Both inherited fresh `HEX_HOME=/private/tmp/lockspire-phase170-final-containment-hex.NJIhZ1`
+and generated fresh owned lifecycle/admin databases. Current Python regressions
+pass 36 tests; Node passes 8; affected CI/docs contracts pass 14. Workflow/shell
+lint, formatting, diff and preserved-state checks pass. The prior 2,027-check
+broad pass remains historical evidence at its recorded source; no new broad
+pass is claimed for this wrapper-only path change. Detailed red/green evidence
+and the superseded intermediate run are in [170-REMEDIATION.md](170-REMEDIATION.md).
+
+
+## Historical first security-remediation evidence (2026-10-24)
 
 The audit reproduced nested diagnostic-key disclosure and incomplete interruption,
 exception, and database cleanup in the original harness. Those paths were repaired
