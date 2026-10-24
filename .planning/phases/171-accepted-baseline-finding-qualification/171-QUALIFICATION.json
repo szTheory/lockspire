@@ -1588,10 +1588,14 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+        "sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
+        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json",
         "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764"
       },
       {
@@ -1643,7 +1647,23 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "7f130404435d8cf42733d9eafcfa915e1ab512ac395119bfabb1b4d04793ff37",
+    "input_digest": "5d0e8ff2c57c57e714aad6f5bbf385dd48c006fc2bf63c0f1c6ddb1f751d6e3b",
+    "input_manifest_audits": [
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b",
+        "reason": "WR-02 tightened consent-location classification and interaction lookup; the live probe will be requalified after the source stabilizes."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json",
+        "previous_sha256": null,
+        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
+        "reason": "Preserve original controlled-probe bytes and source attribution before recording the post-WR-02 observation."
+      }
+    ],
     "metadata_audits": [
       {
         "date": "2026-10-24",

@@ -339,6 +339,12 @@ the seven-category coverage, all six downstream requirement dispositions,
 and the case-backed references and owners. A-EDGE-FIND-02 remains unclassified;
 descriptorless prohibitions remain `flagged-unverified`.
 
+Review audit (2026-10-24): the frozen input manifest now records the hardened
+phase-local probe source checksum and a byte-identical dated copy of the
+pre-review probe evidence. These entries preserve the original observation
+while the consent-location proof is strengthened; the ordered manifest digest
+was recalculated from only those reviewed input changes.
+
 The requirement and roadmap amendments narrow Phase 172 to A171-003's unsupported
 `response_mode` correction while carrying forward the existing authorization
 proof. Phase 173 is narrowed to P171-005's pushed-scope authority correction

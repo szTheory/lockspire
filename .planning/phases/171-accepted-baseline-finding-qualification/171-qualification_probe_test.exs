@@ -139,6 +139,19 @@ defmodule Lockspire.Phase171.QualificationProbeTest do
     )
   end
 
+  test "consent classification accepts only the exact relative host route" do
+    assert location_kind("/lockspire/consent/interaction-123") == "host_consent"
+
+    for location <- [
+          "https://attacker.example/lockspire/consent/interaction-123",
+          "//attacker.example/lockspire/consent/interaction-123",
+          "/lockspire/consent.evil/interaction-123",
+          "/lockspire/consent/interaction-123/extra"
+        ] do
+      assert location_kind(location) == "other", "unexpected consent classification: #{location}"
+    end
+  end
+
   defp direct_params do
     %{
       "client_id" => @client_id,
@@ -186,7 +199,9 @@ defmodule Lockspire.Phase171.QualificationProbeTest do
 
   defp authorize(client_id, params) do
     params = Map.put(params, "client_id", client_id)
-    build_conn(:get, "/authorize", params) |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    build_conn(:get, "/authorize", params)
+    |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
   end
 
   defp authorization_projection(conn, client_id) do
@@ -194,14 +209,7 @@ defmodule Lockspire.Phase171.QualificationProbeTest do
     kind = location_kind(location)
 
     interaction =
-      if kind == "host_consent" do
-        interaction_id =
-          location
-          |> URI.parse()
-          |> Map.fetch!(:path)
-          |> String.split("/")
-          |> List.last()
-
+      if interaction_id = host_consent_interaction_id(location) do
         case Repository.fetch_interaction(interaction_id) do
           {:ok, interaction} -> interaction
           _other -> nil
@@ -234,12 +242,29 @@ defmodule Lockspire.Phase171.QualificationProbeTest do
 
     cond do
       uri.scheme == "https" and uri.host == "client.example.com" and
-          uri.path == "/callback" -> "registered_callback"
+          uri.path == "/callback" ->
+        "registered_callback"
 
-      uri.path && String.starts_with?(uri.path, "/lockspire/consent/") -> "host_consent"
-      true -> "other"
+      host_consent_interaction_id(location) != nil ->
+        "host_consent"
+
+      true ->
+        "other"
     end
   end
+
+  defp host_consent_interaction_id(location) when is_binary(location) do
+    uri = URI.parse(location)
+
+    if is_nil(uri.scheme) and is_nil(uri.host) and is_nil(uri.userinfo) and is_nil(uri.port) do
+      case Regex.run(~r{\A/lockspire/consent/([^/?#]+)\z}, uri.path || "") do
+        [_, interaction_id] -> interaction_id
+        _ -> nil
+      end
+    end
+  end
+
+  defp host_consent_interaction_id(_), do: nil
 
   defp error_parameter_names(conn) do
     location = conn |> get_resp_header("location") |> List.first()
