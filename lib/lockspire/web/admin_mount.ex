@@ -17,18 +17,11 @@ defmodule Lockspire.Web.AdminMount do
     conn
   end
 
-  def on_mount({:mount_path, router}, _params, _session, socket) do
-    {path, host} = request_context(socket)
-    assert_mount_alignment!(effective_path!(router, "GET", path, host), :live_view)
+  def on_mount({:mount_path, _router}, _params, _session, socket) do
+    # The original page request was checked by call/2 before LiveView rendered
+    # its signed static token. A connected LiveView socket only exposes the
+    # websocket URI, not that page path, so mount alignment belongs at HTTP entry.
     {:cont, socket}
-  end
-
-  defp request_context(%{private: %{connect_info: %Plug.Conn{} = conn}}) do
-    {conn.request_path, conn.host}
-  end
-
-  defp request_context(%{host_uri: uri}) do
-    {uri.path, uri.host}
   end
 
   defp effective_path!(router, method, path, host) do

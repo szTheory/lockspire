@@ -60,6 +60,7 @@ def write_host_runtime(
     storage_prefix: str = "lockspire",
     *,
     custom_lifetime_adapter: bool = False,
+    mount_path: str = "/lockspire",
 ) -> None:
     (child / "config").mkdir(parents=True, exist_ok=True)
     (child / "lib" / "clean_room_provider_web").mkdir(parents=True, exist_ok=True)
@@ -90,6 +91,13 @@ config :lockspire,
 config :lockspire, Lockspire.Web.Endpoint,
   secret_key_base: System.get_env(\"LOCKSPIRE_SECRET_KEY_BASE\", \"clean-room-lockspire-secret-key-base-0123456789\")
 """
+    )
+    config_path = child / "config" / "config.exs"
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            'mount_path: "/lockspire"', f'mount_path: "{mount_path}"'
+        ),
+        encoding="utf-8",
     )
     if custom_lifetime_adapter:
         with (child / "config" / "config.exs").open("a", encoding="utf-8") as config:
@@ -137,6 +145,9 @@ end
   @session_options [store: :cookie, key: \"_clean_room_provider\", signing_salt: \"clean-room-salt\"]
   socket(\"/live\", Phoenix.LiveView.Socket, websocket: [connect_info: [session: @session_options]])
   plug Plug.Parsers, parsers: [:urlencoded, :multipart, :json], pass: ["*/*"], json_decoder: Jason
+  plug Plug.Static, at: "/lockspire-assets", from: :phoenix, only: ~w(phoenix.js)
+  plug Plug.Static, at: "/lockspire-assets", from: :phoenix_live_view, only: ~w(phoenix_live_view.js)
+  plug Plug.Static, at: "/lockspire-assets", from: :clean_room_provider, only: ~w(lockspire-admin-live-view.js)
   plug Plug.Session, @session_options
   plug CleanRoomProviderWeb.Router
 
@@ -154,9 +165,11 @@ end
     )
 
 
-def apply_host_overlays(child: Path) -> None:
+def apply_host_overlays(child: Path, *, admin_proof: bool = False) -> None:
     for source in OVERLAY_ROOT.rglob("*"):
         if source.is_file():
+            if admin_proof and source.name == "operator_authorization.ex":
+                continue
             relative = source.relative_to(OVERLAY_ROOT)
             destination = child / "lib" / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -165,6 +178,60 @@ def apply_host_overlays(child: Path) -> None:
     router_patch = child / "lib" / "clean_room_provider_web" / "router_patch.exs"
     router = child / "lib" / "clean_room_provider_web" / "router.ex"
     router_patch.replace(router)
+
+    if admin_proof:
+        proof_source = PROJECT_ROOT / "test" / "clean_room" / "provider_host" / "admin_proof.exs"
+        proof_js = PROJECT_ROOT / "test" / "clean_room" / "provider_host" / "admin_proof_live_view.js"
+        if not proof_source.is_file() or not proof_js.is_file():
+            raise PackageInputError("admin proof host source is missing")
+        shutil.copy2(proof_source, child / "lib" / "clean_room_provider_web" / "admin_proof.ex")
+        static_dir = child / "priv" / "static"
+        static_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(proof_js, static_dir / "lockspire-admin-live-view.js")
+        application = child / "lib" / "clean_room_provider" / "application.ex"
+        content = application.read_text(encoding="utf-8")
+        marker = "children = [CleanRoomProvider.Repo,"
+        if content.count(marker) != 1:
+            raise PackageInputError("provider application supervision insertion point changed")
+        application.write_text(
+            content.replace(marker, "children = [CleanRoomProviderWeb.AdminProof.Store, CleanRoomProvider.Repo,"),
+            encoding="utf-8",
+        )
+        generated_routes = child / "lib" / "clean_room_provider_web" / "router" / "lockspire.ex"
+        content = generated_routes.read_text(encoding="utf-8")
+        content = content.replace(
+            "CleanRoomProviderWeb.OperatorAuthorization",
+            "CleanRoomProviderWeb.AdminProof.OperatorAuthorization",
+        )
+        marker = "on_mount: CleanRoomProviderWeb.AdminProof.OperatorAuthorization"
+        if content.count(marker) != 1:
+            raise PackageInputError("generated admin route authorization seam changed")
+        generated_routes.write_text(
+            content.replace(
+                marker,
+                marker + ",\n        root_layout: {CleanRoomProviderWeb.AdminRootLayout, :root},\n        session: {CleanRoomProviderWeb.AdminProof, :session, []}",
+            ),
+            encoding="utf-8",
+        )
+        content = router.read_text(encoding="utf-8")
+        content = content.replace("SessionController", "AdminProof.SessionController")
+        control_routes = '''
+  pipeline :proof_control do
+    plug(CleanRoomProviderWeb.AdminProof.Control)
+    plug(:accepts, ["json"])
+  end
+
+  scope "/__proof", CleanRoomProviderWeb.AdminProof do
+    pipe_through(:proof_control)
+    post("/withdraw", Controller, :withdraw)
+    post("/restore", Controller, :restore)
+    get("/observations", Controller, :observations)
+  end
+'''
+        anchor = "  lockspire_routes()"
+        if content.count(anchor) != 1:
+            raise PackageInputError("provider router proof-control insertion point changed")
+        router.write_text(content.replace(anchor, control_routes + "\n" + anchor), encoding="utf-8")
 
 
 def audit_boundary(child: Path, package_root: Path) -> None:
@@ -186,6 +253,8 @@ def audit_boundary(child: Path, package_root: Path) -> None:
 
     for source in OVERLAY_ROOT.rglob("*"):
         if source.is_file():
+            if (child / "lib" / "clean_room_provider_web" / "admin_proof.ex").is_file() and source.name == "operator_authorization.ex":
+                continue
             relative = source.relative_to(OVERLAY_ROOT)
             destination = child / "lib" / relative
 
@@ -193,6 +262,15 @@ def audit_boundary(child: Path, package_root: Path) -> None:
                 destination = destination.with_name("router.ex")
 
             host_sources.append(destination)
+
+    host_sources.extend(
+        path
+        for path in (
+            child / "lib" / "clean_room_provider_web" / "admin_proof.ex",
+            child / "priv" / "static" / "lockspire-admin-live-view.js",
+        )
+        if path.is_file()
+    )
 
     adapter_source = child / "lib" / "clean_room_provider" / "lifetime_client_store.ex"
     adapter_text = adapter_source.read_text() if adapter_source.is_file() else ""
@@ -273,10 +351,14 @@ def prepare_provider(
     storage_prefix: str = "lockspire",
     candidate_identity: PackageIdentity | None = None,
     custom_lifetime_adapter: bool = False,
+    admin_proof: bool = False,
+    mount_path: str = "/lockspire",
 ) -> Path:
     probe_environment()
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
         raise PackageInputError("invalid Lockspire storage prefix")
+    if mount_path not in {"/lockspire", "/teams/ops/identity", "/"}:
+        raise PackageInputError("invalid admin proof mount path")
     if package_root is None:
         package_root, _ = build_package(run_root)
     if candidate_identity is None:
@@ -304,6 +386,7 @@ def prepare_provider(
             database_url,
             storage_prefix,
             custom_lifetime_adapter=custom_lifetime_adapter,
+            mount_path=mount_path,
         )
     vendor = child / "vendor" / "lockspire"
     # Validate all bytes already on disk before Mix is allowed to inspect or load
@@ -327,7 +410,7 @@ def prepare_provider(
         "MIX_HOME": str(isolated_mix_home),
     }
     resolved = verify_child("provider_host", child, dependency_cache, isolated_environment)
-    print("provider dependency provenance verified")
+    print("provider dependency provenance verified", flush=True)
     verify_candidate_host(package_root, child, candidate_identity, vendor, resolved)
     environment = locked_environment(child, "provider_host", dependency_cache)
     environment.update(isolated_environment)
@@ -348,6 +431,8 @@ def prepare_provider(
         return child
 
     if reuse:
+        if admin_proof and not (child / "lib" / "clean_room_provider_web" / "admin_proof.ex").is_file():
+            raise PackageInputError("reused provider was not prepared with admin proof host")
         if not (child / ".lockspire-candidate.json").exists():
             run(("mix", "compile"), cwd=child, env=environment)
             bind_compiled_candidate(child, candidate_identity, vendor, resolved)
@@ -356,7 +441,7 @@ def prepare_provider(
     patch_jose_record_extractors(child, environment)
 
     install_result = subprocess.run(
-        ("mix", "lockspire.install", "--web", "CleanRoomProviderWeb", "--scope", "CleanRoomProvider.Lockspire", "--path", str(child), "--mount-path", "/lockspire", "--storage-prefix", storage_prefix, "--oban-prefix", storage_prefix),
+        ("mix", "lockspire.install", "--web", "CleanRoomProviderWeb", "--scope", "CleanRoomProvider.Lockspire", "--path", str(child), "--mount-path", mount_path, "--storage-prefix", storage_prefix, "--oban-prefix", storage_prefix),
         cwd=child,
         env=environment,
         stdin=subprocess.DEVNULL,
@@ -366,10 +451,10 @@ def prepare_provider(
     )
     if install_result.returncode != 0:
         raise PackageInputError("provider installer failed")
-    apply_host_overlays(child)
-    print("provider host overlays applied")
+    apply_host_overlays(child, admin_proof=admin_proof)
+    print("provider host overlays applied", flush=True)
     audit_boundary(child, package_root)
-    print("provider boundary audit complete")
+    print("provider boundary audit complete", flush=True)
     run(("mix", "compile"), cwd=child, env=environment)
     built_apps = sorted(
         path.name

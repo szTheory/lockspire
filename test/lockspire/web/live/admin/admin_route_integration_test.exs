@@ -457,27 +457,18 @@ defmodule Lockspire.Web.Live.Admin.CanonicalAdminRouteIntegrationTest do
     refute Exception.message(error) =~ "cookie"
   end
 
-  test "a runtime mount mismatch also fails at the LiveView mount boundary" do
-    Application.put_env(:lockspire, :mount_path, "/different-secret-prefix")
-
+  test "LiveView mount tolerates a websocket URI without the original admin path" do
     socket = %Phoenix.LiveView.Socket{
-      host_uri: URI.parse("http://www.example.com/lockspire/admin")
+      host_uri: URI.parse("http://www.example.com")
     }
 
-    error =
-      assert_raise ArgumentError, fn ->
-        Lockspire.Web.AdminMount.on_mount(
-          {:mount_path, Lockspire.Web.AdminRouteHost.CanonicalRouter},
-          %{},
-          %{},
-          socket
-        )
-      end
-
-    assert Exception.message(error) =~ "does not match configured :lockspire, :mount_path"
-    assert Exception.message(error) =~ "/lockspire/admin"
-    refute Exception.message(error) =~ "staff-1"
-    refute Exception.message(error) =~ "csrf"
+    assert {:cont, ^socket} =
+             Lockspire.Web.AdminMount.on_mount(
+               {:mount_path, Lockspire.Web.AdminRouteHost.CanonicalRouter},
+               %{},
+               %{},
+               socket
+             )
   end
 
   defp restore_env(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)
