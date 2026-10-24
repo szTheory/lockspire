@@ -1,33 +1,33 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.44 — Adopter Polish & Verified 1.6.0",
+  "milestone": "v1.47 — OAuth/OIDC Core Interoperability & Hardening",
   "phases": [
     {
-      "number": "158",
-      "name": "Mix Task Repo Start",
-      "status": "complete"
+      "number": "171",
+      "name": "Accepted Baseline & Finding Qualification",
+      "status": "in_progress"
     },
     {
-      "number": "159",
-      "name": "Key-Encryption Key Setup DX",
+      "number": "172",
+      "name": "Authorization Responses",
       "status": "pending"
     },
     {
-      "number": "160",
-      "name": "Admin Key Protection & Missing-KEK Copy",
+      "number": "173",
+      "name": "Conditional PAR & Profile Boundaries",
       "status": "pending"
     },
     {
-      "number": "161",
-      "name": "Docs & Verified 1.6.0 Release",
+      "number": "174",
+      "name": "Packaged Proof & Delivery Handoff",
       "status": "pending"
     }
   ],
   "next": {
-    "command": "/gsd-progress --next",
-    "label": "Advance to the next step (plan phase 159)",
-    "reason": "Phase 2 of 4 — needs a plan"
+    "command": "$gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 1 of 4 · 0% · executing"
   },
-  "updated_at": "2026-10-19T04:00:45.126Z"
+  "updated_at": "2026-10-24T19:48:19.176Z"
 }

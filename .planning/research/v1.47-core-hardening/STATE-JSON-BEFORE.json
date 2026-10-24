@@ -1,0 +1,12 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v1.45 — DCR Lifetime Enforcement",
+  "phases": [],
+  "next": {
+    "command": "$gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 4 of 5 · 60% · executing"
+  },
+  "updated_at": "2026-10-21T17:38:53.519Z"
+}

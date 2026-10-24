@@ -1,70 +1,37 @@
 # Project Research Summary
 
-**Project:** Lockspire v1.46 Embedded Host Integration Reliability
-**Domain:** Embedded Phoenix admin routing and host-owned staff authorization
-**Researched:** 2026-10-22
-**Confidence:** HIGH for constraints; MEDIUM for final API pending reproduction
-
-## Executive Summary
-
-The highest-value mechanical fix is to converge the supported installation path and the working demo on one host-expanded admin route integration. The generator forwards AdminRouter; the demo duplicates its live routes to obtain correct host-path signing; the verifier currently treats the forward as healthy. Native LiveView routing documentation supports replacing that mismatch with direct declarations in the host router.
-
-Keep staff identity and decisions in the host. Explicit HTTP and LiveView authorization, an admin live-session boundary, compatible upgrades and connected packaged proof are required. Add no dependency and no visual redesign. Work was researched inline under the skill's Codex fallback; no research or roadmapper subagents were spawned.
+**Project:** Lockspire v1.47 OAuth/OIDC Core Interoperability & Hardening
+**Researched:** 2026-10-24
+**Confidence:** High for current source/support boundaries and chosen direction; historical external failures require fresh attribution.
 
 ## Key Findings
 
-### Recommended Stack
+Three focused subagents considered interoperability, security/distributed storage and delivery/CI; the orchestrator synthesized the decisions. v1.47 should first qualify retained OIDC authorization-error and FAPI PAR/TLS/WebRunner findings, then correct only selected supported-surface behavior with deterministic and package-level proof. No current defect or fresh runtime result is claimed by this research.
 
-Use the existing Phoenix/LiveView route, session and hook primitives. Root locks are Phoenix 1.8.13 / LiveView 1.2.10; the exact supported floor remains Phoenix 1.8.5 / LiveView 1.1.28. The compatibility job presently compiles the fixture and needs scoped runtime coverage for the repaired integration. See [STACK.md](STACK.md).
+No dependency or platform upgrade is selected. Use existing tooling and reviewed primitives. Preserve pinned historical suite inputs for comparable reproduction; explicitly review any required input refresh. Keep protocol and harness fixes distinct.
 
-### Expected Features
-
-One reusable route integration; existing route/action and default/custom mount parity; host-owned request and connected authorization; isolated admin navigation; safe install/upgrade; truthful diagnostics; packaged and supported-floor lifecycle tests in CI. Defer visual work, new auth/identity systems, continuous permission polling, KMS and unrelated encryption/maintenance work. See [FEATURES.md](FEATURES.md).
-
-### Architecture Approach
-
-Library declarations expand in the host router with an explicit live_session and required host authorization hook. Generated helpers, demo and clean-room hosts consume that same API. Existing manifest and file-transaction safety governs upgrades; verification inspects the new route/session shape without claiming to validate arbitrary host policy. See [ARCHITECTURE.md](ARCHITECTURE.md).
-
-### Critical Pitfalls
-
-Connected success is distinct from HTTP rendering; an HTTP staff plug is insufficient for stateful entry; duplicated demo routes can hide generator defects; custom mount links and route order must be tested end to end; compile-only version checks cannot establish runtime compatibility. Mount-only authorization does not promise immediate revocation of an already connected socket. See [PITFALLS.md](PITFALLS.md).
+SEC-01 dedicated client-auth verifier key isolation is the preferred separate provisional v1.48. Existing refresh/replay/rollback coverage is substantial; additional concurrency scope requires evidence. OPS-03 paging and KEK-04 provider work require measured/operator triggers.
 
 ## Implications for Roadmap
 
-| Proposed phase | Outcome | Reason for order |
+| Phase | Outcome | Decision gate |
 |---|---|---|
-| 167 — Host-Expanded Admin Routing | Reproduce forward-only failure and deliver one route/session contract with parity | Establish the integration primitive first |
-| 168 — Host-Owned LiveView Authorization | Prove host checks on request, connection/reconnect and session/navigation boundaries | Secure the primitive before generating it |
-| 169 — Install and Upgrade Convergence | Generated helper, safe migration, verifier, demo and docs agree | Make the supported path installable |
-| 170 — Packaged Host and Compatibility Proof | Real connected journeys and runtime floor run in required CI | Validate the delivered package and complete integration |
+| 171 | Current baseline, reproducible findings and finite case ownership | Accepted-main implementation entry; exact input identities and supported/normative attribution |
+| 172 | Selected authorization responses and silent-auth/freshness cases | Only qualified cases; reuse correct proof and fix reproduced defects |
+| 173 | Selected PAR/profile boundary cases | Transport/issuer/browser issues attributed first; conditional scope may shrink |
+| 174 | Package-level proof, required candidate checks and delivery handoff | All selected acceptance; honest supplemental disposition; no publication claim |
 
-Every phase adds its own focused regression checks. Phase 170 integrates proof; it is not the first test phase.
+The roadmap maps all 14 requirements exactly once to these phases; no implementation plans have been created. Phase 171 must settle the downstream case inventory before dependent plans fan out. If no material correction or proof gap survives, explicitly narrow/replan rather than force four implementation phases.
 
-## Confidence Assessment
+## Decision Resolution
 
-| Area | Confidence | Evidence / limitation |
-|---|---|---|
-| Stack | High | Official baseline docs and local installed source; no new dependencies |
-| Features | High | User-approved scope and current template/demo/verify mismatch |
-| Architecture | Medium | Native APIs exist; exact signature and upgrade behavior need a red reproduction |
-| Pitfalls | High | Framework lifecycle documentation and local coverage limits |
+Normative standards plus current support and reproduction outrank suite labels. Full external-suite success/certification is not milestone acceptance. Required selected behavior remains mandatory; a documented blocked external probe does not become a pass. Reuse existing tests for already-correct cases and preserve unqualified findings with owners. Keep entry maintenance separate from protocol expansion.
 
-### Gaps to Address
-
-- Phase 167 must freshly reproduce the forwarded connection problem; current research makes no new runtime/exploit claim.
-- Settle route API signature, session name and hook composition, supported mount normalization, layout/session options and AdminRouter compatibility in phase context/planning.
-- Determine the smallest reusable client/socket harness and precise CI command in Phase 170; do not claim visual verification or whole-protocol recertification.
-- Existing Phase 142/143 directories are historical evidence, not outgoing v1.45 work; v1.45's phases were already archived. Preserve them and the original dirty state.json bytes.
-- The source candidate is still on feat/164-client-secret-lifetimes. This planning run does not merge, push or publish it and does not establish a clean-main baseline; refresh exact repository/CI state before implementation/ship decisions.
+Remote main was observed green at a1e39a01 with matching CI and Release push no-publish shape. The feature checkout is not yet synchronized/accepted main; [baseline](v1.47-core-hardening/BASELINE.md) records prior delivery, worktrees and preserved machine-state bytes. Do not spend dependent implementation work until that entry gate and case qualification are settled.
 
 ## Sources
 
-- [LiveView 1.1.28 routing](https://hexdocs.pm/phoenix_live_view/1.1.28/Phoenix.LiveView.Router.html#live_session/3).
-- [LiveView 1.1.28 lifecycle hooks](https://hexdocs.pm/phoenix_live_view/1.1.28/Phoenix.LiveView.html#on_mount/1).
-- [LiveView 1.1.28 tests](https://hexdocs.pm/phoenix_live_view/1.1.28/Phoenix.LiveViewTest.html).
-- [Phoenix 1.8.5 routing](https://hexdocs.pm/phoenix/1.8.5/Phoenix.Router.html).
-- [Current LiveView security guide](https://hexdocs.pm/phoenix_live_view/security-model.html), served v1.2.13 at access time.
-- Local: mix.exs/mix.lock; AdminRouter; generated router template; demo router; Install.Verify; Install.OperationPlan; Install.Manifest; compatibility fixture and CI. Prior canonical research was preserved byte-for-byte in research/archive/pre-v1.46/.
-
----
-*Research completed: 2026-10-22. Ready for requirements confirmation; final API and runtime claims await implementation proof.*
+- [Interoperability and primary standards](v1.47-core-hardening/INTEROPERABILITY.md): OIDC Core, RFC 9700/9126, FAPI final specifications and OIDF tooling/process.
+- [Security and sequencing](v1.47-core-hardening/SECURITY-AND-SEQUENCING.md): current verifier-key coupling, existing token/storage evidence and bounded migration decisions.
+- [Delivery](v1.47-core-hardening/DELIVERY.md): repository train, exact-main and workspace handoff.
+- [Scope and decisions](v1.47-core-hardening/SCOPE.md), [rolling roadmap](../MILESTONE-ARC.md).

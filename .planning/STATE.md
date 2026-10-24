@@ -1,40 +1,53 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.46
-milestone_name: Embedded Host Integration Reliability
-current_phase: 170
-status: completed
-stopped_at: v1.46 archived — awaiting next milestone
-last_updated: "2026-10-24T15:55:51Z"
+milestone: v1.47
+milestone_name: OAuth/OIDC Core Interoperability & Hardening
+current_phase: 171
+current_phase_name: Accepted Baseline & Finding Qualification
+status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
+stopped_at: Accepted main fe38beee receipt be2cdf5f retained; newownedmilestonebranch fromacceptedSHA with44attributedplanningpaths; resume171-01 tracer/contract, thenwaves2/3;0/3plans
+last_updated: "2026-10-24T19:50:10.483Z"
 last_activity: 2026-10-24
-last_activity_desc: v1.46 archived with local milestone tag; next scope unselected
-state_head: b547e556d7bc40a41a72e6ee0f5f665a5fec33d3
+last_activity_desc: Phase 171 execution started
+state_head: fe38beee987b135e87c99e7aa7f2488b4c8613e8
 progress:
   total_phases: 4
-  completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-24 after v1.46 completion)
+See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Planning next milestone; no scope selected.
+**Current focus:** Phase171 qualification from accepted fe38beee on milestone/v1.47-core-hardening; preserve exact receipt and execute real case evidence.
 
 ## Current Position
 
-Phase: Milestone v1.46 complete (last implementation phase 170)
-Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-10-24 — v1.46 archived
+Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
+Plan: 0 of 3 complete; 171-01 entry gate satisfied, tracer and contract pending
+Status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
+Last activity: 2026-10-24 — Phase 171 execution started
+
+Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 0/3 Phase 171 plans complete; downstream plans gated.
+
+## Performance Metrics
+
+v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 3 sequential waves. Execution has not started. Historical velocity/evidence remains in the milestone archives.
 
 ## Accumulated Context
+
+**Current decision posture:** The user selected v1.47 and delegated upstream research, adversarial synthesis and routine scoped decisions. Use the [standing guide](MILESTONE-GUIDE.txt), [rolling ranking](MILESTONE-ARC.md), [scope](research/v1.47-core-hardening/SCOPE.md) and [research](research/v1.47-core-hardening/SUMMARY.md); prefer small, flat dependencies and existing vetted primitives, refresh future candidates at each boundary, and preserve honest green-main/clean-workspace handoffs.
+
+**Entry limits:** Phase 171 may be planned here; this feature checkout is not accepted main. Before product implementation, reconcile cumulative prior delivery and edit/worktree ownership, then obtain fresh exact-main acceptance through the existing [hygiene checklist](REPO-HYGIENE-CHECKLIST.md). Freeze the finite ledger before dependent plans; replan invalidated slices and reuse already-correct evidence. The [dated baseline](research/v1.47-core-hardening/BASELINE.md) records unqualified historical findings and delivery limits; [original machine-state bytes](research/v1.47-core-hardening/STATE-JSON-BEFORE.json) remain preserved, while the SDK owns the new v1.47 projection. Do not clear historical phase directories 142/143. Selected behavior is mandatory; full external suites remain supplemental/non-certifying.
+
+**Phase 171 entry preflight (2026-10-24, after planning commit 322ae40f):** Independent checker passed all 3 plans; 4/4 requirements covered. Read-only GitHub API still reports main `a1e39a01aca258d0ac5f36414bf47c45686d92c1`; local main is `a1a55de0a931c641fbe176e5c3f9c4737aa62b9d`. The planning branch has 414 commits beyond observed origin/main and is not accepted main. All four registered worktrees are clean, but the three prior-agent worktrees retain the unresolved ownership/disposition recorded in BASELINE.md. Automatic advancement stops before acceptance, qualification or product edits; no plan is complete. Next owner: executing maintainer; next action: complete 171-01's reviewed cumulative-delivery and worktree/edit ownership reconciliation, preserving unknown work, before choosing an integration route and running exact-main acceptance. Runtime availability is not the blocker: process-local `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix --version` succeeds (Mix 1.19.5 / OTP 28), without changing toolchain files or installing anything. No acceptance/profile/test execution is claimed by this preflight.
 
 v1.46 completed four phases, 16 plans and all 15 requirements. All four verification owners passed immediately before phase archival; [closeout projection](milestones/v1.46-CLOSEOUT.json) preserves that check. The [audit](milestones/v1.46-MILESTONE-AUDIT.md) records 14/14 integration boundaries, 6/6 flows, four Nyquist-compliant phases and 68/68 security threats closed. No phase-verification override or human UAT remains. Archived covered_files paths retain their original checkout meaning; reports are not restamped after relocation.
 
@@ -44,7 +57,7 @@ Local package/browser/runtime receipts retain exact source and package identitie
 
 ### Pending Todos
 
-- SEC-01, KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners; next scope is unselected.
+- SEC-01 remains preferred provisional v1.48; KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners and triggers outside selected v1.47.
 - Phase 138 UAT #100 remains pending an authorized live snapshot refresh; inventory dispositions remain proposal-only.
 - Phase 140 WR-01 stays deferred unless the exact sealed Release Please relation rejection recurs.
 - Supplemental OIDF/FAPI evidence remains bounded, redacted and non-certifying.
@@ -95,7 +108,15 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24
-Stopped at: v1.46 archived; awaiting next milestone
-Resume file: None
-Next: `$gsd-new-milestone` — select scope and define fresh requirements, continuing phase numbering at 171.
+Last session: 2026-10-24T19:50:10.365Z
+Stopped at: Accepted main fe38beee receipt be2cdf5f retained; newownedmilestonebranch fromacceptedSHA with44attributedplanningpaths; resume171-01 tracer/contract, thenwaves2/3;0/3plans
+Resume file: .planning/phases/171-accepted-baseline-finding-qualification/171-01-PLAN.md
+Next: Execute remaining171-01 tracer and contracts; then171-02 and171-03 through normal execute-phase gates. Do not rerun exact-main authority merely for ledger edits.
+
+### Blockers
+
+None
+
+## Decisions
+
+- [Phase 171]: Maintainer delegated delivery reconciliation; current run owns preservation decisions. Retain historical worktrees and original local main; deliver completed v1.45/v1.46 separately from unfinished v1.47 planning. — Preserve unique history without inferring old ownership; fresh protected checks and exact-main acceptance remain required.

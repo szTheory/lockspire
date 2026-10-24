@@ -20,9 +20,27 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Closeout:** Audit tech_debt with no blockers. The duplicate trace-clause fixture warning is accepted for archival and remains deferred; no phase-verification verdict was overridden. See [audit](milestones/v1.46-MILESTONE-AUDIT.md), [roadmap](milestones/v1.46-ROADMAP.md) and [requirements](milestones/v1.46-REQUIREMENTS.md). Package publication is separate.
 
-## Next Milestone Goals
+## Current Milestone: v1.47 OAuth/OIDC Core Interoperability & Hardening
 
-No next scope is selected. Define fresh requirements through `$gsd-new-milestone`, continuing phase numbering at 171. SEC-01, KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt remain separate candidates with their existing owners.
+**Goal:** Clients using the supported embedded Phoenix surface receive secure, standards-grounded authorization and PAR/profile behavior, with reproducible evidence for each selected correction.
+
+**Target features:**
+- Qualify historical OIDC authorization-error and FAPI PAR/TLS/WebRunner findings against exact current inputs; distinguish protocol, harness, infrastructure and unsupported cases.
+- Correct selected authorization-response and PAR/profile boundaries only where fresh evidence warrants it; reuse existing proof for already-correct behavior.
+- Prove selected outcomes through a packaged host, focused security review and required contributor/CI checks while keeping external suites supplemental and non-certifying.
+- Leave a reviewed, green-main and clean-workspace handoff through the existing development/release train; refresh the rolling milestone ranking at every boundary.
+
+**Selected:** User approved the core-hardening direction and delegated upstream research, adversarial synthesis and routine scoped decisions on 2026-10-24. Continue phase numbering at 171. [Scope](research/v1.47-core-hardening/SCOPE.md), [research](research/v1.47-core-hardening/SUMMARY.md), [rolling roadmap](MILESTONE-ARC.md).
+
+**Entry condition:** Planning may proceed here; product implementation requires reviewed reconciliation of the accumulated prior delivery, a fresh accepted main baseline and explicit worktree ownership. The [dated baseline](research/v1.47-core-hardening/BASELINE.md) records current remote CI and local limits; this checkout is not yet accepted main.
+
+**Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
+
+## Standing Planning and Delivery Posture
+
+Use [MILESTONE-GUIDE.txt](MILESTONE-GUIDE.txt) for durable user preferences and [MILESTONE-ARC.md](MILESTONE-ARC.md) for the live chunked direction. Research consequential decisions through relevant stakeholder lenses and reputable primary sources, adversarially compare alternatives, then synthesize one coherent scoped recommendation before downstream implementation. Stop at diminishing returns; automate routine decisions within the approved scope and avoid speculative future plans.
+
+Prefer small auditable local glue to another dependency when simpler; keep the tree small and flat, retaining vetted crypto/framework primitives and adding maintained packages when their benefit justifies the cost. At run/milestone boundaries, commit owned work, preserve unknown edits/unique commits, safely clean owned worktrees/resources, record exact evidence and next action, and establish fresh green main through the existing train before starting the next implementation milestone.
 
 <details>
 <summary>Original v1.46 intent and execution handoff</summary>
@@ -187,7 +205,7 @@ The user reaffirmed this default during Phase 167 verification on 2026-10-22 and
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is complete, audited and archived (2026-10-24): 4 phases, 16 plans, 15/15 requirements. The next milestone is unselected; publication of v1.45/v1.46 work remains separate.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is complete, audited and archived (2026-10-24): 4 phases, 16 plans, 15/15 requirements. v1.47 core interoperability is selected for planning; implementation awaits the recorded delivery-baseline gate. Integration/publication of v1.45/v1.46 work remains separate.
 
 v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
@@ -371,7 +389,11 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No implementation requirement remains active. All 15 v1.46 requirements are validated and [archived](milestones/v1.46-REQUIREMENTS.md). Fresh requirements belong to the next milestone.
+- [ ] Qualify the current repository baseline and finite supported-case ledger before dependent implementation (v1.47 BASE-01..02, FIND-01..02).
+- [ ] Establish selected authorization-response, silent-auth/freshness and PAR/profile outcomes with evidence-led corrections only where warranted (AUTHR-01..03, PARB-01..03).
+- [ ] Bind regressions, packaged proof, security/candidate gates and clean delivery/rolling-roadmap handoff to exact evidence (CPROOF-01..02, DELIV-01..02).
+
+See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
 
@@ -614,6 +636,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Validate exact compiled first-match routing and state structural proof limits | Detect shadowed/legacy/incomplete wiring without claiming arbitrary policy correctness | ✓ Good — v1.46 verifier contracts |
 | Keep lifecycle and Chrome/CDP receipts separate and bind source/package/pair/mount/run identities | Establish transport/runtime behavior and fail visibly on missing or malformed proof | ✓ Good — v1.46 six-cell matrix and containment review |
 | Preserve local/hosted evidence limits and historical verification paths at archival | Avoid converting local success or relocation into unsupported CI or new runtime claims | ✓ Good — v1.46 audit and closeout projection |
+| Select v1.47 core interoperability with a rolling evidence-led milestone sequence | User approved research/fan-out, adversarial synthesis, small dependency trees and clean green-main/worktree boundaries; settle consequential decisions upstream and stop at diminishing returns | Adopted 2026-10-24; MILESTONE-GUIDE.txt and MILESTONE-ARC.md own durable posture/ranking |
+| Keep SEC-01 separate as provisional v1.48 and later scope conditional | Avoid mixing protocol corrections with persistence/key migration; existing token coverage should not be rebuilt without evidence | Adopted 2026-10-24; re-rank at milestone boundaries |
 
 ## Evolution
 
@@ -632,6 +656,8 @@ This document evolves at phase transitions and milestone boundaries.
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
+5. Refresh MILESTONE-ARC.md against current evidence; preserve candidate rationale/triggers, mark shipped or stale scope, and record the next default action.
+6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 after v1.46 milestone completion*
+*Last updated: 2026-10-24 for v1.47 scope and rolling-roadmap posture*

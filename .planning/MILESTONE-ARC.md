@@ -1,239 +1,54 @@
-# Lockspire Milestone Arc
+# Lockspire Rolling Milestone Roadmap
 
-**Created:** 2026-05-23  
-**Purpose:** Current milestone-selection source of truth for post-v1.21 planning. Use this file to choose what to build next without rediscovering the repo's adopter story from scratch.
+**Reviewed:** 2026-10-24, after v1.46 archival and user approval of the core-hardening direction.
+**Owner:** The agent starting or closing a milestone refreshes this document.
+**Authority:** This is the live candidate ranking. [ROADMAP.md](ROADMAP.md) owns scheduled phases; [PROJECT.md](PROJECT.md) owns product scope; [MILESTONE-GUIDE.txt](MILESTONE-GUIDE.txt) owns standing decision posture. Current source, supported-surface contracts and fresh evidence outrank dated proposals.
 
-For the durable Lockspire-specific intent, user/operator lenses, milestone
-selection loop, provisional near/mid/long-horizon candidates, and delivery
-bar, also consult `.planning/MILESTONE-GUIDE.txt`. Refresh those candidates
-against current evidence; this guide does not override current GSD state,
-`docs/supported-surface.md`, or the release/development train.
+## Direction
 
-## Current Product Judgment
+Improve the trustworthiness of the existing embedded Phoenix OAuth/OIDC provider. v1.45 delivered registration/credential lifetimes; v1.46 delivered native host integration and authorization. The next selected work concerns protocol interoperability. UI work is not the default. Keep accounts, login, consent presentation, branding and product policy host-owned.
 
-Lockspire is **strong-to-near-done for its stated scope** as an embedded OAuth/OIDC provider for Phoenix apps.
+The user approved this rolling-roadmap posture on 2026-10-24: research and adversarially examine consequential decisions upstream, synthesize a coherent recommendation, execute within the selected scope with little interruption, and leave a verifiable delivery handoff. Future candidates are adjustable hypotheses, not automatic execution authority.
 
-- **Rough done-ness:** `~88-92%`
-- **Territory:** finish the last important wedges
-- **Primary risk now:** treating patch-truth drift or adoption/operator seams as either "nothing to do" or as an excuse for adjacent protocol breadth
+## Ranked Milestone Sequence
 
-This judgment is based on current repo-local truth, especially:
+| Order / handle | Outcome and bounded scope | Status / entry trigger | Exit evidence |
+|---|---|---|---|
+| Entry maintenance | Deliver or explicitly reconcile the accumulated v1.45/v1.46 branch delta; establish clean synchronized green main, owned worktrees and coherent GSD state | Required before v1.47 product implementation; planning may proceed while this gate is pending | Exact-main acceptance receipt, required CI, Release push no-publish shape, reviewed prior-delta disposition and safe worktree handoff |
+| **v1.47 OAuth/OIDC Core Interoperability & Hardening** | Reproduce historical OIDC/FAPI findings; correct selected authorization-response and PAR/profile boundaries only where supported-surface evidence warrants it; prove fixes through a packaged host | **Selected; requirements and roadmap being established.** Start at Phase 171; runtime findings remain unqualified until fresh reproduction | Finding-to-standard-to-regression ledger; selected packaged HTTP cases; focused security review; full contributor/required CI gates; refreshed roadmap and clean delivery handoff |
+| **v1.48 Client Authentication Key Isolation & Rotation** | SEC-01: dedicated-purpose rotatable encryption for client_secret_jwt verifier material, legacy reads/rewrap, mixed-version rollout, status and loss recovery | **Preferred next, provisional.** Re-rank at v1.47 close or sooner if an urgent supported-core issue appears | Existing clients survive documented upgrade/rotation; tampering/missing/retired keys fail closed; concurrent rewrite and secret rotation are safe; package upgrade and redaction proof |
+| Next available version: Token Lifecycle Resilience | A narrow refresh/revocation/replay or selected-store transaction invariant | **Conditional.** Fresh deterministic counterexample or a material uncovered invariant; much of this is already implemented/tested | Reproducer plus actual PostgreSQL concurrency/rollback proof for the selected invariant; preserve family-wide reuse containment |
+| Next available version: Key Maintenance at Scale | OPS-03: paged re-encryption dry-run and measured status-read improvements | **Conditional.** Measured memory/query/latency problem on realistic row counts | Bounded resource use, stable iteration, truthful partial progress/status, retry-safe and concurrent-update behavior |
+| Next available version: Host Key Provider Integration | KEK-04: narrow host-controlled KMS/Vault provider seam | **Conditional.** Concrete adopter custody need with outage/latency/rotation requirements | Host-owned adapter and explicit failure contract; core library keeps a small dependency closure and embedded shape |
+| Sustaining train | Focused fixes, dependency/security maintenance and truthful releases | Default between milestones or if no candidate has material value | Green exact main, coherent support/release truth, intentional clean workspaces |
 
-- `docs/supported-surface.md`
-- `docs/install-and-onboard.md`
-- `docs/protect-phoenix-api-routes.md`
-- `docs/private-key-jwt-host-guide.md`
-- `docs/device-flow-host-guide.md`
-- `docs/operator-admin.md`
-- `test/integration/install_generator_test.exs`
-- `test/integration/phase6_onboarding_e2e_test.exs`
-- `test/integration/phase81_generated_host_route_protection_e2e_test.exs`
-- `test/lockspire/release_readiness_contract_test.exs`
-- `test/lockspire/workers/backchannel_logout_delivery_worker_test.exs`
-- `test/integration/phase54_resource_indicators_e2e_test.exs`
-- `test/integration/phase55_rar_intake_e2e_test.exs`
+Only v1.47 has scheduled phase numbers. Do not reserve later phase numbers or create detailed downstream plans until their evidence/entry decisions are settled. Provisional version handles may change. An urgent security finding can change this ordering.
 
-## What Is Already Strong
+## v1.47 Scope and Decision Gates
 
-Lockspire already has a serious adopter story for Phoenix SaaS teams that want to become an OAuth/OIDC provider without standing up a separate auth service.
+See [scope and decisions](research/v1.47-core-hardening/SCOPE.md), [research synthesis](research/v1.47-core-hardening/SUMMARY.md) and [requirements](REQUIREMENTS.md).
 
-The shipped repo-proven story includes:
+1. Phase 171 qualifies exact inputs, current failures and ownership; old suite_failure summaries are not proof of current bugs.
+2. Authorization error/redirect/silent-auth cases are the first likely vertical slice. PAR/FAPI boundary cases follow only after transport/issuer/WebRunner attribution.
+3. For each included case, specify the observable response, applicable standard, current support boundary, positive/negative proof and owner before implementation fans out.
+4. If a candidate is already correct, reuse its evidence; do not manufacture a fix or duplicate a test. If no material findings remain, narrow/replan to an honest evidence/maintenance closeout.
+5. Keep external-suite results supplemental and non-certifying. Overall full-FAPI success is not a new release gate. Selected repo-native acceptance remains mandatory.
+6. SEC-01 storage migration, KMS, broad grant rewrites, new flows and UI redesign remain outside this milestone.
 
-- generator-backed install via `mix lockspire.install`
-- post-install diagnostics via `mix lockspire.verify`
-- managed scaffolding upgrades via `mix lockspire.upgrade`
-- host-owned login, consent, branding, policy, and `/verify` seams
-- auth code + PKCE
-- discovery, JWKS, userinfo, revocation, introspection, and refresh rotation
-- PAR, JAR, JWE request-object decryption
-- DCR and RFC 7592 management
-- device authorization flow
-- DPoP
-- FAPI 2.0 security and message-signing tiers
-- Token Exchange
-- CIBA
-- RAR and Resource Indicators
-- `private_key_jwt`
-- mTLS and certificate-bound tokens
-- host Phoenix API route protection for Lockspire-issued tokens
-- operator/admin surfaces for clients, consents, keys, tokens, policies, and logout propagation
-- repo-native proof and release-truth discipline
+## Refresh at Every Boundary
 
-## Current Adopter Gaps
+At milestone start and close, compare this ranking against fresh branch/main/CI state, supported-surface docs, current code/tests, adopter evidence and retained findings. Mark candidates selected, shipped, deferred, obsolete or rejected with a reason and source/date. Carry unresolved owners and next triggers forward. Change stale proposals rather than restarting the discussion or inheriting their claims.
 
-There is **no broad protocol gap** after `v1.25`, but repo inspection found a practical maintenance-first sequence before the next milestone decision.
+At each run stop, record base and head SHAs, owned edits/worktrees, validation commands/results, blockers, remaining cleanup, and the next exact action in STATE.md or its linked handoff. Planning completion, implementation completion, integration into green main and public publication are distinct states.
 
-### Highest-Leverage Gaps
+## Delivery Posture
 
-- Restore green `main` after PR #31 by fixing test application-env leakage around root-mount integration suites and back-channel logout worker issuer validation.
-- Close patch-truth drift before feature work: CIBA discovery/runtime support, JAR/request-object docs versus shipped by-value behavior, and JTBD wording that still reads older than the shipped protected-route story.
-- If opening a feature milestone, make it adoption/operator hardening rather than protocol breadth: host account/claims recipes, client bootstrap ergonomics, admin-route boundary clarity, and diagnostic/operator docs.
+Use the existing [development train](DEVELOPMENT-TRAIN.md), [release train](RELEASE-TRAIN.md) and [hygiene checklist](REPO-HYGIENE-CHECKLIST.md). Commit owned changes, preserve unknown edits and unique commits, retire owned temporary worktrees/resources once safely integrated, and re-observe main after merge. A retained workspace requires an explicit owner/purpose/next action; it is not a clean-baseline pass. Never force cleanup to make a status display green.
 
-### Useful But Secondary
+The [dated baseline](research/v1.47-core-hardening/BASELINE.md) shows remote main green but this checkout not yet accepted as a clean implementation base. Refresh it before execution. No merge, push, publish or worktree deletion is implied by this planning record.
 
-- release or maintenance work that keeps the already-shipped support contract trustworthy
-- narrowly scoped follow-ons only when repeated adopter evidence shows a concrete embedded-library friction wedge
-- broader doctor/support console expansion after the adoption/operator boundary work proves the remaining support gaps are real
+## History and Stop Rule
 
-## Candidate Milestones
+Older ranking/guide content is preserved in [pre-v1.47 research history](research/archive/pre-v1.47/); completed milestone scope remains in [MILESTONES.md](MILESTONES.md). Do not re-open shipped DPoP nonce, DCR metadata, UI or host-integration milestones because an older strategic file still calls them candidates.
 
-Treat these as historical context plus the current ordering rule for the next `$gsd-new-milestone` run.
-
-### Candidate 1
-
-- **name:** `v1.22 DPoP Nonce Support`
-- **status:** `shipped`
-- **priority:** `completed`
-- **recommendation:** archived milestone
-- **why now:** closed the most obvious remaining trust gap in a surface Lockspire already positions as serious and production-worthy
-- **target slice:**
-  - nonce challenge and validation on the shipped DPoP surfaces that need it
-  - truthful docs and discovery/support language
-  - regression and negative-path proof in repo-native tests
-- **non-goals:**
-  - generic gateway or third-party issuer middleware
-  - broader protected-resource product expansion
-
-### Candidate 2
-
-- **name:** `v1.23 DCR Logout Metadata`
-- **status:** `shipped`
-- **priority:** `completed`
-- **recommendation:** archived milestone
-- **why now:** turned an already-shipped operator-only logout propagation surface into a more partner-buildable self-service story
-- **target slice:**
-  - accept/store/validate logout propagation metadata in DCR and management updates
-  - keep provenance and admin workflows truthful
-  - update docs, discovery language where relevant, and proof
-- **non-goals:**
-  - full federation metadata ingestion
-  - expanding beyond the current logout propagation truth model
-
-### Candidate 3
-
-- **name:** `v1.24 client_secret_jwt`
-- **status:** `shipped`
-- **priority:** `completed`
-- **recommendation:** archived milestone
-- **why now:** DCR logout metadata was shipped, leaving `client_secret_jwt` as the most practical remaining direct-client auth gap
-- **target slice:**
-  - narrow shared verifier on Lockspire-owned direct-client endpoints
-  - strict replay, audience, algorithm, and docs posture
-  - support-truth and proof updates
-- **non-goals:**
-  - generic JWT client auth
-  - broader federation-style trust expansion
-  - any new claim that shared-secret JWT auth satisfies Lockspire's higher-trust FAPI or mTLS posture
-
-### Candidate 4
-
-- **name:** `Support-Burden Reduction`
-- **status:** `shipped`
-- **priority:** `completed`
-- **recommendation:** archived milestone
-- **why now:** the remaining repo risk is support cost and advanced setup ambiguity, not missing foundational protocol coverage
-- **target slice:**
-  - better diagnostics and docs truth for `jwks_uri` rotation
-  - clearer operator guidance for mTLS, logout propagation, and protected-route setup
-  - repo-native proof for the highest-friction support paths that still generate ambiguity
-- **non-goals:**
-  - broad new protocol families
-  - generic CIAM or hosted-auth expansion
-  - auth-method parity work that does not materially reduce adopter friction
-- **activated:** `2026-05-25`
-- **version:** `v1.25`
-- **shipped:** `2026-05-26`
-
-### Candidate 5
-
-- **name:** `Green-Main Patch`
-- **status:** `active patch`
-- **priority:** `immediate`
-- **recommendation:** merge before any roadmap or release work
-- **why now:** main CI failed after PR #31 because integration tests leaked root-mount application env into later worker tests, undermining the release-train premise
-- **target slice:**
-  - isolate/restore `:issuer`, `:mount_path`, and adjacent Lockspire app env in the leaking integration tests
-  - pin the back-channel logout worker test to its own issuer/mount config
-  - prove with the worker test, `mix test.integration`, `mix ci`, and repo hygiene
-- **non-goals:**
-  - changing runtime issuer validation
-  - broad test-suite refactors unrelated to the leak
-
-### Candidate 6
-
-- **name:** `Support-Truth Patch Train`
-- **status:** `recommended next patch`
-- **priority:** `next`
-- **recommendation:** do before feature milestone planning
-- **why now:** the repo is mostly strong, but several public-truth seams lag shipped behavior and are exactly the kind of friction that hurts a mature auth library
-- **target slice:**
-  - align CIBA discovery with shipped Poll/Ping/Push support or explicitly document why discovery remains narrower
-  - align JAR/request-object docs with actual by-value request object support
-  - refresh adopter JTBD wording where older docs still understate shipped protected-route and onboarding proof
-- **non-goals:**
-  - new protocol features
-  - certification breadth
-  - changing support scope without runtime proof
-
-### Candidate 7
-
-- **name:** `v1.26 Host Integration & Operator Boundary Hardening`
-- **status:** `candidate`
-- **priority:** `first feature milestone candidate`
-- **recommendation:** open only after green-main and support-truth patch work
-- **why now:** the most adopter-facing friction is no longer missing OAuth/OIDC machinery; it is making the host seam, client bootstrap, and admin/operator boundary feel obvious to a Phoenix SaaS team
-- **target slice:**
-  - account resolver and claims recipes that demonstrate realistic SaaS integration patterns
-  - client bootstrap guidance or generator ergonomics for first real partner client setup
-  - explicit admin-route authorization boundary in generated host examples/docs
-  - sharper operator docs for common client, consent, token, and key support workflows
-- **non-goals:**
-  - hosted auth/control plane
-  - SAML/LDAP/CIAM expansion
-  - generic gateway/service-mesh productization
-  - auth-method parity that does not reduce adopter friction
-
-## Stop Rules
-
-Assume Lockspire should **probably stop soon** after the patch-truth cleanup and, at most, one adoption/operator-hardening milestone unless real adopter evidence suggests otherwise.
-
-Do **not** default into more work just because a protocol feature is interesting.
-
-Prefer to stop when:
-
-- the remaining requests are mostly auth-method parity or certification theater
-- the repo can already tell one coherent embedded Phoenix adoption story
-- additional milestones would mostly broaden scope rather than remove serious adopter friction
-
-## Diminishing-Returns Warnings
-
-These are tempting, but currently look like lower-value or overbuild territory relative to Lockspire's stated scope:
-
-- generic API gateway or service-mesh protected-resource middleware
-- broad third-party issuer resource-server productization
-- more JAR/request-object expansion beyond the shipped support-truth cleanup
-- hosted-auth or control-plane expansion
-- SAML / LDAP / workforce or CIAM platform expansion
-- certification-breadth chasing beyond the repo-native support contract
-
-## Recommended Ordering
-
-1. Restore green `main` with the env-isolation patch.
-2. Run the support-truth patch train for CIBA discovery, JAR docs/runtime truth, and JTBD wording.
-3. If feature work is still justified, open `v1.26 Host Integration & Operator Boundary Hardening` on `milestone/v1.26-host-integration-operator-boundary`.
-4. Consider doctor/support-console expansion only after v1.26 reveals concrete residual support drag.
-
-## Selection Rules For Future Milestones
-
-When choosing the next milestone:
-
-1. Prefer wedges that remove real Phoenix SaaS adopter friction.
-2. Prefer trust and install/support clarity over checklist protocol breadth.
-3. Preserve the embedded-library shape and host-owned seams.
-4. Treat `docs/supported-surface.md` and repo-native proof as more authoritative than older sequencing docs.
-5. If a candidate does not materially improve the adopter story, do not build it by default.
-
-## Confidence And Drift Notes
-
-- Confidence is **high** in the done-ness assessment because the repo has unusually strong support-truth and proof surfaces.
-- Confidence is **lower** in older strategic sequencing docs. `EPIC.md` was useful historical context, but it drifted behind shipped reality and should not be treated as the live next-milestone source of truth.
+Stop broad research when additional perspectives no longer change a consequential decision, acceptance case, risk control or sequence. Prefer targeted reproduction over another ecosystem survey. Sustain or stop when the remaining candidates offer only speculative breadth.
