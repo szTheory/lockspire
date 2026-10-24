@@ -1,9 +1,9 @@
 ---
 phase: "173"
 slug: "conditional-par-profile-boundaries"
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-10-24"
 ---
 
@@ -26,16 +26,16 @@ Quick feedback: tagged new Phase 15 PAR integration regression with `--include i
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 173-01-01 | 173-01 | 1 | PARB-02 | T-173-01, T-173-04 | Two real independent PAR references; reference-only control first; conflicting outer scope preserves pushed client/scopes/state/nonce at exact relative consent route; actual same-test RED/GREEN | Router/integration | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs --trace --only phase173_par_authority` | Existing file; named/tagged regression to add | pending |
-| 173-01-01 | 173-01 | 1 | PARB-01, PARB-02 | T-173-01, T-173-02, T-173-03 | Existing client lookup/policy/eligibility, binding/expiry/one-use/wrong-client burn, required-PAR, distinct request/request_uri collision and stored redirect/PKCE/nonce/state authority | Protocol/controllers | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/lockspire/web/authorize_controller_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-02, T-173-03, T-173-04 | Reuse P171-001/004 complete required-PAR/S256/replay owner and P171-006 configured issuer/mounted discovery metadata; external profiles stay unavailable | Integration/controller | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs test/lockspire/web/discovery_controller_test.exs` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-02 | T-173-03 | Retain strict profile and existing prompt/max_age/auth_time/host-seam outcomes after shared validator change | Integration | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-02 | T-173-03 | Phase 172 supported-mode control and unsupported-mode first-party HTTP 400 remain intact | Router/regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/authorize_controller_test.exs --trace --only phase172_response_mode` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Edited source/test formatting | Static | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix format --check-formatted lib/lockspire/protocol/authorization_request.ex test/lockspire/protocol/authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-03, T-173-04 | Strict lint without new suppression or dependency | Static | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix credo --strict` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Cases, source observations, frozen fields and historical bytes preserved; owned manifest/audit chain only | Provenance invariant | Exact executable Python command in Provenance invariant below (identical to plan Task 173-01-02) | Existing ledger and historical artifacts | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Actual reviewed Phase 15 and roadmap selector hashes/digest match canonical ledger | Contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | yes | pending |
-| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Owned diff has no whitespace/conflict-marker diagnostics | Static | `git diff --check -- lib/lockspire/protocol/authorization_request.ex test/lockspire/protocol/authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json .planning/phases/173-conditional-par-profile-boundaries/173-01-SUMMARY.md` | Existing sources; summary to create | pending |
+| 173-01-01 | 173-01 | 1 | PARB-02 | T-173-01, T-173-04 | Two real independent PAR references; reference-only control first; conflicting outer scope preserves pushed client/scopes/state/nonce at exact relative consent route; actual same-test RED/GREEN | Router/integration | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs --trace --only phase173_par_authority` | Existing file; named/tagged regression to add | green |
+| 173-01-01 | 173-01 | 1 | PARB-01, PARB-02 | T-173-01, T-173-02, T-173-03 | Existing client lookup/policy/eligibility, binding/expiry/one-use/wrong-client burn, required-PAR, distinct request/request_uri collision and stored redirect/PKCE/nonce/state authority | Protocol/controllers | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/lockspire/web/authorize_controller_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-02, T-173-03, T-173-04 | Reuse P171-001/004 complete required-PAR/S256/replay owner and P171-006 configured issuer/mounted discovery metadata; external profiles stay unavailable | Integration/controller | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs test/lockspire/web/discovery_controller_test.exs` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-02 | T-173-03 | Retain strict profile and existing prompt/max_age/auth_time/host-seam outcomes after shared validator change | Integration | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-02 | T-173-03 | Phase 172 supported-mode control and unsupported-mode first-party HTTP 400 remain intact | Router/regression | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/authorize_controller_test.exs --trace --only phase172_response_mode` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Edited source/test formatting | Static | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix format --check-formatted lib/lockspire/protocol/authorization_request.ex test/lockspire/protocol/authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-03, T-173-04 | Strict lint without new suppression or dependency | Static | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix credo --strict` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Cases, source observations, frozen fields and historical bytes preserved; owned manifest/audit chain only | Provenance invariant | Exact executable Python command in Provenance invariant below (identical to plan Task 173-01-02) | Existing ledger and historical artifacts | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Actual reviewed Phase 15 and roadmap selector hashes/digest match canonical ledger | Contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | yes | green |
+| 173-01-02 | 173-01 | 1 | PARB-01, PARB-02, PARB-03 | T-173-04 | Owned diff has no whitespace/conflict-marker diagnostics | Static | `git diff --check -- lib/lockspire/protocol/authorization_request.ex test/lockspire/protocol/authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json .planning/phases/173-conditional-par-profile-boundaries/173-01-SUMMARY.md` | Existing sources; summary to create | green |
 
 ### Failing directions
 
@@ -65,11 +65,19 @@ All selected behavior has automated owners. Unavailable external transport/brows
 
 ## Validation Sign-Off
 
-- [ ] Plan task IDs, threats and executable commands mapped
-- [ ] All tasks have automated verification, no three-task sampling gap
-- [ ] Actual normative RED and identical-test GREEN recorded
-- [ ] Shared lifecycle/policy/metadata behavior preserved
-- [ ] Historical evidence preserved and selective ledger audit passes
-- [ ] Actual timings recorded; final validation audit sets status and Nyquist fields
+- [x] Plan task IDs, threats and executable commands mapped
+- [x] All tasks have automated verification, no three-task sampling gap
+- [x] Actual normative RED and identical-test GREEN recorded
+- [x] Shared lifecycle/policy/metadata behavior preserved
+- [x] Historical evidence preserved and selective ledger audit passes
+- [x] Actual timings recorded; final validation audit sets status and Nyquist fields
 
-Approval: pending execution and audit.
+Approval: green and audit.
+
+## Validation Audit 2026-10-24
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |

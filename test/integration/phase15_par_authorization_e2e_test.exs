@@ -556,7 +556,7 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
 
     assert conn.status == 201
     assert [content_type] = get_resp_header(conn, "content-type")
-    assert String.starts_with?(content_type, "application/json")
+    assert content_type |> String.split(";", parts: 2) |> hd() == "application/json"
 
     response = Jason.decode!(conn.resp_body)
     request_uri = response["request_uri"]

@@ -1653,7 +1653,7 @@
       },
       {
         "path": "test/integration/phase15_par_authorization_e2e_test.exs",
-        "sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413"
+        "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30"
       },
       {
         "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "ed2ef990dd80b0eab18e3ad69400870cb54c01899464137697a6e9e3b58f371e",
+    "input_digest": "e09f20b3b3dad59caa1b97179d43b5b9674201de31ba6014deb7f929ebe3d2ee",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1895,6 +1895,15 @@
         "sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
         "source_sha": "a15e397441017d2c6199ed6a5eb21cb67ebc0e36",
         "reason": "Add the durable P171-005 Router regression with independent control, exact relative consent route, persisted pushed authority, and actual normative RED/GREEN evidence."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "c6d4d3fac68914a4c3c3014ec68f6973d10b9e3b",
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "previous_sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
+        "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30",
+        "reason": "Phase 173 WR-01: compare exact application/json media type after separating charset parameters; reject application/jsonp prefix without changing runtime behavior."
       }
     ],
     "metadata_audits": [
