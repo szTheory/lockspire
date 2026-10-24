@@ -38,16 +38,25 @@ have_version actionlint "${ACTIONLINT_VERSION}"
 have_version shellcheck "${SHELLCHECK_VERSION}"
 
 workflows=()
-while IFS= read -r workflow; do
-  workflows+=("$workflow")
-done < <(find .github/workflows -type f -name '*.yml' -print | sort)
-
 scripts=()
-while IFS= read -r script; do
-  scripts+=("$script")
-done < <(find . -type f \( -name '*.sh' -o -perm -u+x \) \
-  -not -path './.git/*' -not -path './deps/*' -not -path './_build/*' -not -path './.github/actions/release-please/runtime/node_modules/*' \
-  -exec sh -c 'head -n 1 "$1" | grep -qE "^#!.*(ba)?sh"' _ {} \; -print | sort)
+shell_shebang_re='^#!.*(ba)?sh'
+while IFS= read -r -d '' tracked_path; do
+  # `git ls-files -z` excludes generated/untracked dependencies and keeps paths
+  # with spaces intact. Match find's old `-type f` behavior by excluding symlinks.
+  [[ -f "$tracked_path" && ! -L "$tracked_path" ]] || continue
+
+  if [[ "$tracked_path" == .github/workflows/*.yml ]]; then
+    workflows+=("./$tracked_path")
+  fi
+
+  if [[ "$tracked_path" == *.sh || -x "$tracked_path" ]]; then
+    first_line=''
+    IFS= read -r first_line < "$tracked_path" || true
+    if [[ "$first_line" =~ $shell_shebang_re ]]; then
+      scripts+=("./$tracked_path")
+    fi
+  fi
+done < <(git ls-files -z)
 
 test "${#workflows[@]}" -gt 0
 test "${#scripts[@]}" -gt 0
