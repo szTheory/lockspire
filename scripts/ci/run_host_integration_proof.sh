@@ -67,25 +67,52 @@ run_bounded() {
   remaining=$((deadline - SECONDS))
   ((remaining > 0)) || { echo "pair proof exceeded its 900 second budget" >&2; return 124; }
   if ((limit > 0 && limit < remaining)); then remaining=$limit; fi
-  python3 - "$remaining" "$log" "$@" <<'PY'
+  python3 - "$remaining" "$log" "${command_cwd:-$repo_root}" "$@" <<'PY' &
 import os, signal, subprocess, sys
+sys.path.insert(0, os.path.join(os.getcwd(), "scripts", "acceptance", "clean_room"))
+from package_input import stop_process_group
+class Interrupted(Exception): pass
+def interrupt(signum, _frame): raise Interrupted(signum)
+for sig in (signal.SIGTERM, signal.SIGINT): signal.signal(sig, interrupt)
 with open(sys.argv[2], "wb") as output:
-    process = subprocess.Popen(sys.argv[3:], stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, start_new_session=True, close_fds=True)
+    process = subprocess.Popen(sys.argv[4:], cwd=sys.argv[3], stdin=subprocess.DEVNULL, stdout=output, stderr=subprocess.STDOUT, start_new_session=True, close_fds=True)
     try:
         status = process.wait(timeout=int(sys.argv[1]))
-    except subprocess.TimeoutExpired:
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-            process.wait(timeout=5)
-        except (OSError, subprocess.TimeoutExpired):
-            try: os.killpg(process.pid, signal.SIGKILL)
-            except OSError: pass
-            process.wait()
-        print("bounded child timed out", file=sys.stderr)
-        raise SystemExit(124)
+    except (subprocess.TimeoutExpired, Interrupted) as error:
+        for sig in (signal.SIGTERM, signal.SIGINT): signal.signal(sig, signal.SIG_IGN)
+        stop_process_group(process, grace=14 if int(sys.argv[1]) > 6 else 1)
+        if isinstance(error, subprocess.TimeoutExpired):
+            print("bounded child timed out", file=sys.stderr)
+            raise SystemExit(124)
+        raise SystemExit(128 + error.args[0])
 raise SystemExit(status if status >= 0 else 128 - status)
 PY
+  bounded_pid=$!
+  local child_status=0
+  wait "$bounded_pid" || child_status=$?
+  bounded_pid=""
+  return "$child_status"
 }
+run_in_test() { local command_cwd=$test_cwd; run_bounded "$@"; }
+cleanup_owned() {
+  original_status=$?
+  trap '' TERM INT
+  if [[ -n "${bounded_pid:-}" ]]; then
+    kill -TERM "$bounded_pid" 2>/dev/null || true
+    wait "$bounded_pid" 2>/dev/null || true
+  fi
+  # Only the generated lifecycle database belongs to this wrapper. Cleanup is
+  # independently bounded after the pair budget, and raw log removal always runs.
+  cleanup_status=0
+  deadline=$((SECONDS + 10))
+  run_in_test 6 "$private_logs/database-drop.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" ecto.drop --repo Lockspire.TestRepo --force || cleanup_status=$?
+  rm -rf -- "$raw_root" || cleanup_status=1
+  if ((original_status != 0)); then exit "$original_status"; fi
+  if ((cleanup_status != 0)); then echo "host integration proof cleanup failed" >&2; exit 1; fi
+}
+trap cleanup_owned EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
 fail_stage() { stage=$1; status=$2; echo "host integration proof failed at $stage (exit $status)" >&2; exit "$status"; }
 command -v node >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15" >&2; exit 1; }
 node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 15)) process.exit(1)' >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15 with built-in WebSocket" >&2; exit 1; }
@@ -125,20 +152,20 @@ source_revision=${GITHUB_SHA:-$(git rev-parse HEAD)}
 [[ "$source_revision" =~ ^[0-9a-f]{40,64}$ && -n "$candidate_version" && "$candidate_sha" =~ ^[0-9a-f]{64}$ && "$candidate_tree" =~ ^[0-9a-f]{64}$ ]] || fail_stage package_identity 1
 runtime_expression='Application.load(:phoenix); Application.load(:phoenix_live_view); IO.puts("PAIR_RUNTIME|" <> to_string(Application.spec(:phoenix, :vsn)) <> "|" <> to_string(Application.spec(:phoenix_live_view, :vsn)) <> "|" <> System.version() <> "|" <> to_string(:erlang.system_info(:otp_release)))'
 status=0
-(cd "$test_cwd" && run_bounded 0 "$private_logs/runtime.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" run --no-start -e "$runtime_expression") || status=$?
+run_in_test 0 "$private_logs/runtime.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" run --no-start -e "$runtime_expression" || status=$?
 ((status == 0)) || fail_stage lifecycle_runtime "$status"
 runtime_line=$(grep -E '^PAIR_RUNTIME\|' "$private_logs/runtime.log" | tail -n 1 || true)
 IFS='|' read -r _ actual_phoenix actual_live_view actual_elixir actual_otp <<<"$runtime_line"
 [[ "$actual_phoenix" == "$expected_phoenix" && "$actual_live_view" == "$expected_live_view" && -n "$actual_elixir" && -n "$actual_otp" ]] || fail_stage lifecycle_runtime 1
 if [[ "$pair" == locked ]]; then setup_task=test.setup; else setup_task=lockspire.test.setup; fi
 status=0
-(cd "$test_cwd" && run_bounded 0 "$private_logs/setup.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" "$setup_task") || status=$?
+run_in_test 0 "$private_logs/setup.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" "$setup_task" || status=$?
 ((status == 0)) || fail_stage lifecycle_setup "$status"
 status=0
 if [[ "$pair" == locked ]]; then
-  (cd "$test_cwd" && run_bounded 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_route_separation_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs) || status=$?
+  run_in_test 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_route_separation_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs || status=$?
 else
-  (cd "$test_cwd" && run_bounded 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/admin_host_runtime_test.exs) || status=$?
+  run_in_test 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/admin_host_runtime_test.exs || status=$?
 fi
 ((status == 0)) || fail_stage lifecycle_tests "$status"
 test_count=$(python3 - "$private_logs/tests.log" <<'PY'

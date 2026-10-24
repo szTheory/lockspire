@@ -1,4 +1,9 @@
 import copy
+import contextlib
+import io
+import signal
+import time
+from types import SimpleNamespace
 import inspect
 import json
 import os
@@ -370,6 +375,134 @@ class AdminReceiptTests(unittest.TestCase):
                     validate_receipt(full, expected_scenario_set="full")
 
 
+class AdminCleanupRegressionTests(unittest.TestCase):
+    def test_nested_diagnostics_never_copy_unknown_keys_or_values(self):
+        sentinel = "phase170-private-nested-key-sentinel"
+        for malformed in (sentinel, [], {}):
+            with self.subTest(malformed=type(malformed).__name__):
+                observed = {"scenarios": [{
+                    "id": malformed, "failure": malformed, "outcome": malformed,
+                    "counts": {sentinel: sentinel, 7: sentinel, "assets": sentinel},
+                    "observations": {sentinel: sentinel, 7: False, "static_200": False},
+                }]}
+                rendered = json.dumps(admin_journey.safe_browser_failure_summary(observed))
+                self.assertNotIn(sentinel, rendered)
+                self.assertNotIn('"7"', rendered)
+                self.assertIn("unknown", rendered)
+                observed["scenarios"][0]["counts"].pop(7)
+                observed["scenarios"][0]["observations"].pop(7)
+                self.assertNotIn(sentinel, json.dumps(admin_journey.safe_browser_failure_summary(observed)))
+
+    def test_main_removes_raw_root_and_writes_failed_receipt_when_drop_raises(self):
+        for fault in (subprocess.TimeoutExpired("secret-command", 30), OSError("private-error")):
+            with self.subTest(fault=type(fault).__name__), tempfile.TemporaryDirectory() as temporary:
+                base = Path(temporary) / "run"
+                base.mkdir()
+                (base / "provider.log").write_text("phase170-private-log-sentinel")
+                identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+                captured = {}
+                def retain(_path, receipt, **_kwargs):
+                    captured.update(receipt)
+                output = io.StringIO()
+                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command", side_effect=RuntimeError("phase170-private-exception-sentinel")), patch.object(admin_journey, "bounded_run", side_effect=fault), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), patch.object(admin_journey, "write_receipt", side_effect=retain), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                    status = admin_journey.main(["--pair", "locked", "--mount", "/lockspire", "--scenario", "tracer", "--receipt", str(Path(temporary) / "receipt.json")])
+                self.assertEqual(status, 1)
+                self.assertFalse(base.exists())
+                self.assertFalse(captured["cleanup"]["database_removed"])
+                self.assertTrue(captured["cleanup"]["run_root_removed"])
+                self.assertEqual(captured["result"], "failed")
+                self.assertNotIn("private", output.getvalue())
+
+
+    def test_main_never_retains_nested_hostile_browser_data(self):
+        sentinel = "phase170-private-browser-key-and-value"
+        hostile = {"id": [], "failure": {}, "outcome": [], "counts": {sentinel: sentinel}, "observations": {sentinel: sentinel}}
+        observation = {"id": "full", "outcome": "failed", "scenarios": [hostile] * 16}
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary) / "run"
+            base.mkdir()
+            receipt = Path(temporary) / "receipt.json"
+            identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+            output = io.StringIO()
+            with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observation), returncode=1), SimpleNamespace(returncode=0)]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                status = admin_journey.main(["--pair", "locked", "--mount", "/", "--receipt", str(receipt)])
+            self.assertEqual(status, 1)
+            self.assertNotIn(sentinel, output.getvalue())
+            self.assertFalse(receipt.exists())
+            self.assertFalse(base.exists())
+
+    def test_real_runner_interruption_and_browser_timeout_remove_owned_resources(self):
+        root = Path(__file__).resolve().parents[2]
+        for mode in ("SIGTERM", "SIGINT", "timeout"):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                task_root = Path(temporary)
+                tools = task_root / "bin"
+                tools.mkdir()
+                fake = """#!/usr/bin/env python3
+import os, signal, sys, time
+from pathlib import Path
+if 'ecto.drop' in sys.argv: raise SystemExit(0)
+name = Path(sys.argv[0]).name
+Path(os.environ['PROOF_TEST_ROOT'], name + '.pid').write_text(str(os.getpid()))
+print('phase170-private-child-output', flush=True)
+while True: time.sleep(1)
+"""
+                for name in ("mix", "node"):
+                    executable = tools / name
+                    executable.write_text(fake)
+                    executable.chmod(0o700)
+                driver = task_root / "driver.py"
+                driver.write_text("""
+import json, os, sys
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
+sys.path.insert(0, sys.argv[1] + '/scripts/acceptance')
+import clean_room_admin_journey as journey
+root = Path(os.environ['PROOF_TEST_ROOT'])
+base = root / 'private-run'
+base.mkdir()
+(root / 'base').write_text(str(base))
+identity = SimpleNamespace(source_revision='a' * 40, version='1.6.1', archive_sha256='b' * 64, tree_sha256='c' * 64)
+def retain(_path, receipt, **kwargs):
+    (root / 'cleanup.json').write_text(json.dumps(receipt['cleanup']))
+original = journey.bounded_run
+def bounded(command, **kwargs):
+    if command[0] == 'node' and os.environ['PROOF_TEST_MODE'] == 'timeout': kwargs['timeout'] = .2
+    return original(command, **kwargs)
+with patch.object(journey.tempfile, 'mkdtemp', return_value=str(base)), patch.object(journey, 'package_source'), patch.object(journey, 'prepare_package', return_value=(base, [], identity)), patch.object(journey, 'prepare_provider', return_value=base), patch.object(journey, 'run_child_command'), patch.object(journey, 'runtime_versions', return_value={'phoenix':'1.8.13','live_view':'1.2.10'}), patch.object(journey, 'wait_ready'), patch.object(journey, 'write_receipt', side_effect=retain), patch.object(journey, 'bounded_run', side_effect=bounded):
+    raise SystemExit(journey.main(['--pair','locked','--mount','/','--scenario','tracer','--receipt',str(root / 'receipt.json')]))
+""")
+                environment = {**os.environ, "PATH": str(tools) + os.pathsep + os.environ["PATH"], "PROOF_TEST_ROOT": str(task_root), "PROOF_TEST_MODE": mode}
+                process = subprocess.Popen([sys.executable, str(driver), str(root)], env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+                try:
+                    deadline = time.monotonic() + 5
+                    while not (task_root / "node.pid").exists() and process.poll() is None and time.monotonic() < deadline:
+                        time.sleep(.02)
+                    self.assertTrue((task_root / "node.pid").exists(), "real Node child started")
+                    if mode != "timeout":
+                        process.send_signal(getattr(signal, mode))
+                    output, _ = process.communicate(timeout=12)
+                    self.assertNotEqual(process.returncode, 0)
+                    self.assertNotIn("phase170-private", output)
+                    self.assertFalse((task_root / "private-run").exists())
+                    self.assertTrue(all(json.loads((task_root / "cleanup.json").read_text()).values()))
+                    for name in ("mix", "node"):
+                        with self.assertRaises(ProcessLookupError):
+                            os.kill(int((task_root / (name + ".pid")).read_text()), 0)
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                    process.communicate()
+                    for name in ("mix", "node"):
+                        pid_file = task_root / (name + ".pid")
+                        if pid_file.exists():
+                            try:
+                                os.killpg(int(pid_file.read_text()), signal.SIGKILL)
+                            except ProcessLookupError:
+                                pass
+
+
 class HostProofWrapperFailureTests(unittest.TestCase):
     ROOT = Path(__file__).resolve().parents[2]
     SENTINEL = "phase170-fake-tool-secret-sentinel"
@@ -402,11 +535,18 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "    print('PAIR_RUNTIME|1.8.13|1.2.10|1.20.4|29')\n"
             "elif args[0] in {'test.setup', 'lockspire.test.setup'}:\n"
             "    pass\n"
+            "elif args[0] == 'ecto.drop':\n"
+            "    with open(os.environ['LOCKSPIRE_PROOF_DROP_RECORD'], 'a') as output: output.write(os.environ['LOCKSPIRE_TEST_DB_NAME'] + '\\n')\n"
+            "    if stage in {'drop-failure', 'shared-drop-failure'}: raise SystemExit(49)\n"
+            "    if stage == 'drop-timeout': time.sleep(30)\n"
             "elif args[0] == 'test':\n"
             "    if stage in {'shared-failure', 'signal', 'timeout'}: print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr, flush=True)\n"
-            "    if stage == 'shared-failure': raise SystemExit(37)\n"
+            "    if stage in {'shared-failure', 'shared-drop-failure'}: raise SystemExit(37)\n"
             "    if stage == 'signal': os.kill(os.getpid(), signal.SIGTERM)\n"
-            "    if stage == 'timeout': time.sleep(30)\n"
+            "    if stage in {'timeout', 'wrapper-signal'}:\n"
+            "        from pathlib import Path\n"
+            "        Path(os.environ['LOCKSPIRE_PROOF_READY']).write_text(str(os.getpid()))\n"
+            "        time.sleep(30)\n"
             "    print('Result: 43 passed')\n"
             "else:\n"
             "    raise SystemExit(2)\n",
@@ -422,7 +562,7 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "stage = os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE', '')\n"
             "print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr)\n"
             "if stage == 'browser-failure': raise SystemExit(41)\n"
-            "payload = {'evidence': 'safe'} if stage == 'success' else {'unsafe': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}\n"
+            "payload = {'evidence': 'safe'} if stage in {'success', 'drop-failure', 'drop-timeout'} else {'unsafe': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}\n"
             "Path(sys.argv[sys.argv.index('--receipt') + 1]).write_text(json.dumps(payload))\n",
             encoding="utf-8",
         )
@@ -433,7 +573,7 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "#!/usr/bin/env python3\n"
             "import os\n"
             "print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=__import__('sys').stderr)\n"
-            "raise SystemExit(0 if os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE') == 'success' else 43)\n",
+            "raise SystemExit(0 if os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE') in {'success', 'drop-failure', 'drop-timeout'} else 43)\n",
             encoding="utf-8",
         )
         cls.fake_validator.chmod(cls.fake_validator.stat().st_mode | stat.S_IXUSR)
@@ -446,7 +586,7 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def tearDownClass(cls):
         cls._temporary.cleanup()
 
-    def run_wrapper(self, stage, *, timeout_seconds=None, stale_receipt=False):
+    def run_wrapper(self, stage, *, timeout_seconds=None, stale_receipt=False, interrupt=None):
         artifact_root = self.ROOT / ".artifacts" / "phase170"
         artifact_root.mkdir(parents=True, exist_ok=True)
         receipt_dir = Path(tempfile.mkdtemp(prefix="fake-proof-", dir=artifact_root))
@@ -455,8 +595,11 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         if stale_receipt:
             stale_path.write_text(self.SENTINEL, encoding="utf-8")
 
+        raw_parent = Path(tempfile.mkdtemp(prefix="proof-raw-parent-", dir=self.tools))
+        self.addCleanup(shutil.rmtree, raw_parent)
         environment = os.environ.copy()
         environment.update({
+            "TMPDIR": str(raw_parent),
             "LOCKSPIRE_PROOF_TEST_MODE": "true",
             "LOCKSPIRE_PROOF_TEST_MIX_BIN": str(self.fake_mix),
             "LOCKSPIRE_PROOF_TEST_JOURNEY_BIN": str(self.fake_journey),
@@ -465,21 +608,39 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "LOCKSPIRE_PROOF_FAKE_STAGE": stage,
             "LOCKSPIRE_PROOF_FAKE_SECRET": self.SENTINEL,
             "CHROME_BIN": str(self.fake_chrome),
+            "LOCKSPIRE_PROOF_DROP_RECORD": str(receipt_dir / "drop-record"),
+            "LOCKSPIRE_PROOF_READY": str(raw_parent / "ready"),
         })
         if timeout_seconds is not None:
             environment["LOCKSPIRE_PROOF_TEST_TIMEOUT_SECONDS"] = str(timeout_seconds)
         else:
             environment.pop("LOCKSPIRE_PROOF_TEST_TIMEOUT_SECONDS", None)
-        result = subprocess.run(
-            ["bash", str(self.ROOT / "scripts" / "ci" / "run_host_integration_proof.sh"), "--pair", "locked", "--receipt-dir", str(receipt_dir.relative_to(self.ROOT))],
-            cwd=self.ROOT,
-            env=environment,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=45,
-            check=False,
-        )
+        command = ["bash", str(self.ROOT / "scripts" / "ci" / "run_host_integration_proof.sh"), "--pair", "locked", "--receipt-dir", str(receipt_dir.relative_to(self.ROOT))]
+        process = subprocess.Popen(command, cwd=self.ROOT, env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+        try:
+            if interrupt is not None:
+                deadline = time.monotonic() + 10
+                while not (raw_parent / "ready").exists() and process.poll() is None and time.monotonic() < deadline:
+                    time.sleep(.02)
+                self.assertTrue((raw_parent / "ready").exists(), "actual bounded child must start before signal")
+                process.send_signal(interrupt)
+            output, _ = process.communicate(timeout=45)
+            result = subprocess.CompletedProcess(command, process.returncode, output)
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.communicate()
+        ready = raw_parent / "ready"
+        if ready.exists():
+            owned_pid = int(ready.read_text())
+            ready.unlink()
+            with self.assertRaises(ProcessLookupError):
+                os.kill(owned_pid, 0)
+        self.assertEqual(list(raw_parent.iterdir()), [], "private logs and raw receipts must be removed")
+        drop_record = receipt_dir / "drop-record"
+        self.assertTrue(drop_record.exists(), "the wrapper must drop its lifecycle database on every exit")
+        self.assertRegex(drop_record.read_text(), r"^lockspire_proof_locked_[a-f0-9]{20}\n$")
+        drop_record.unlink()
         return result, receipt_dir
 
     def assert_staging_redacted(self, receipt_dir):
@@ -525,6 +686,24 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         self.assertNotIn(self.SENTINEL, result.stdout)
         self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
         self.assert_staging_redacted(receipt_dir)
+
+    def test_signalling_wrapper_stops_owned_child_drops_database_and_removes_logs(self):
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            with self.subTest(signal=sig):
+                result, receipt_dir = self.run_wrapper("wrapper-signal", interrupt=sig)
+                self.assertEqual(result.returncode, 128 + sig)
+                self.assertNotIn(self.SENTINEL, result.stdout)
+                self.assert_staging_redacted(receipt_dir)
+
+    def test_database_cleanup_failure_turns_success_into_failure(self):
+        for stage in ("drop-failure", "drop-timeout", "shared-drop-failure"):
+            with self.subTest(stage=stage):
+                started = time.monotonic()
+                result, receipt_dir = self.run_wrapper(stage)
+                self.assertLess(time.monotonic() - started, 15)
+                self.assertEqual(result.returncode, 37 if stage == "shared-drop-failure" else 1)
+                self.assertNotIn(self.SENTINEL, result.stdout)
+                self.assert_staging_redacted(receipt_dir)
 
     def test_successful_validated_staging_contains_no_fake_child_secrets(self):
         result, receipt_dir = self.run_wrapper("success")

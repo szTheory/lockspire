@@ -25,6 +25,18 @@ defmodule Lockspire.HostIntegrationCIContractTest do
     assert compatibility =~
              "host-proof-floor-test-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}"
 
+    for job <- [integration, compatibility] do
+      for {name, value} <- [
+            {"HOST", "127.0.0.1"},
+            {"USER", "lockspire"},
+            {"PASSWORD", "lockspire"}
+          ] do
+        assert job =~ "CLEAN_ROOM_DB_#{name}: #{value}"
+      end
+
+      assert job =~ ~s(CLEAN_ROOM_DB_PORT: "5432")
+    end
+
     refute integration =~ "continue-on-error: true"
     refute compatibility =~ "continue-on-error: true"
   end

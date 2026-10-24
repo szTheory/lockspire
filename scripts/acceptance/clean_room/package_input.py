@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -104,8 +105,45 @@ def clean_room_database_url(role: str) -> str:
     return f"postgres://{user}:{password}@{host}:{port}/{database}"
 
 
+def stop_process_group(process: subprocess.Popen, grace: float = 3) -> bool:
+    """Stop only this child's session, including descendants after its leader exits."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(process.pid, sig)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            return False
+        try:
+            process.wait(timeout=grace if sig == signal.SIGTERM else 1)
+        except subprocess.TimeoutExpired:
+            continue
+        # A terminated leader can leave descendants in the owned group.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            return False
+        return True
+    return False
+
+
+def bounded_run(command: Sequence[str], *, timeout: float = 120, stop_grace: float = 4, **kwargs) -> subprocess.CompletedProcess:
+    """Run a finite, owned child session; timeout/interruption cannot orphan it."""
+    kwargs.pop("check", None)
+    input_value = kwargs.pop("input", None)
+    with subprocess.Popen(command, start_new_session=True, **kwargs) as process:
+        try:
+            stdout, stderr = process.communicate(input_value, timeout=timeout)
+        except BaseException:
+            stop_process_group(process, grace=stop_grace)
+            raise
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
 def run(command: Sequence[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:
-    completed = subprocess.run(
+    completed = bounded_run(
         command,
         cwd=cwd,
         env=env,
@@ -180,7 +218,7 @@ def package_tree_digest(root: Path) -> str:
 def source_revision() -> str:
     result = subprocess.run(
         ("git", "rev-parse", "HEAD"), cwd=PROJECT_ROOT, stdin=subprocess.DEVNULL,
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
     )
     value = result.stdout.decode().strip()
     if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40,64}", value):
@@ -492,7 +530,7 @@ def verify_child(
     run(("mix", "deps.get", "--check-locked"), cwd=child_root, env=environment)
     run(("mix", "deps"), cwd=child_root, env=environment)
 
-    dependency_path = subprocess.run(
+    dependency_path = bounded_run(
         (
             "mix",
             "run",

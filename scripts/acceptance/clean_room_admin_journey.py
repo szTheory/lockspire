@@ -33,7 +33,7 @@ from build_provider import (
     run_child_command,
     run_child_command_output,
 )
-from package_input import PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
+from package_input import bounded_run, stop_process_group, PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
 from redaction import Redactor, SentinelSet
 
 
@@ -66,6 +66,10 @@ BROWSER_STAGES = frozenset({
 })
 BROWSER_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"})
 BROWSER_OBSERVATIONS = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"})
+
+
+def safe_enum(value: object, allowed, fallback: str = "unknown") -> str:
+    return value if isinstance(value, str) and value in allowed else fallback
 
 
 def safe_browser_failure_summary(observed: object) -> dict[str, object]:
@@ -101,11 +105,11 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
         raw_case_counts = first.get("counts")
         raw_case_observations = first.get("observations")
         result["first_case"] = {
-            "id": first.get("id") if first.get("id") in FULL_REQUIRED else "unknown",
-            "failure": first.get("failure") if first.get("failure") in BROWSER_FAILURES else "failure_unrecognized",
-            "outcome": first.get("outcome") if first.get("outcome") in {"passed", "failed"} else "unknown",
-            "count_fields": sorted(raw_case_counts) if isinstance(raw_case_counts, dict) and all(isinstance(key, str) for key in raw_case_counts) else [],
-            "observation_fields": sorted(raw_case_observations) if isinstance(raw_case_observations, dict) and all(isinstance(key, str) for key in raw_case_observations) else [],
+            "id": safe_enum(first.get("id"), FULL_REQUIRED),
+            "failure": safe_enum(first.get("failure"), BROWSER_FAILURES, "failure_unrecognized"),
+            "outcome": safe_enum(first.get("outcome"), {"passed", "failed"}),
+            "count_fields": sorted(key for key in raw_case_counts if isinstance(key, str) and key in BROWSER_COUNTS | {"params_checks", "http_checks", "staff_checks"}) if isinstance(raw_case_counts, dict) else [],
+            "observation_fields": sorted(key for key in raw_case_observations if isinstance(key, str) and key in FULL_OBSERVATIONS) if isinstance(raw_case_observations, dict) else [],
         }
         issues = []
         for item in scenarios:
@@ -114,17 +118,17 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
                 continue
             obs = item.get("observations")
             if not isinstance(obs, dict):
-                issues.append({"id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown", "problem": "observations_not_object"})
+                issues.append({"id": safe_enum(item.get("id"), FULL_REQUIRED), "problem": "observations_not_object"})
                 continue
             keys = set(obs)
             if keys != set(FULL_OBSERVATIONS):
                 issues.append({
-                    "id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown",
+                    "id": safe_enum(item.get("id"), FULL_REQUIRED),
                     "missing": sorted(set(FULL_OBSERVATIONS) - keys),
-                    "extra": sorted(key for key in keys - set(FULL_OBSERVATIONS) if isinstance(key, str)),
+                    "unknown_field_count": len(keys - set(FULL_OBSERVATIONS)),
                 })
             elif any(type(value) is not bool for value in obs.values()):
-                issues.append({"id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown", "problem": "observation_not_boolean"})
+                issues.append({"id": safe_enum(item.get("id"), FULL_REQUIRED), "problem": "observation_not_boolean"})
         if issues:
             result["scenario_shape_issues"] = issues[:8]
         failed_cases = []
@@ -132,8 +136,8 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
             if isinstance(item, dict) and item.get("outcome") != "passed":
                 obs = item.get("observations")
                 failed_cases.append({
-                    "id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown",
-                    "failure": item.get("failure") if item.get("failure") in BROWSER_FAILURES else "failure_unrecognized",
+                    "id": safe_enum(item.get("id"), FULL_REQUIRED),
+                    "failure": safe_enum(item.get("failure"), BROWSER_FAILURES, "failure_unrecognized"),
                     "false_evidence": sorted(key for key, value in obs.items() if value is False and key in FULL_OBSERVATIONS) if isinstance(obs, dict) else [],
                 })
         if failed_cases:
@@ -219,21 +223,15 @@ def wait_ready(origin: str, process: subprocess.Popen[bytes], timeout: float = 3
 
 
 def stop_owned(process: subprocess.Popen[bytes] | None) -> bool:
-    if process is None:
-        return True
-    if process.poll() is not None:
-        return True
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=5)
-        return True
-    except (OSError, subprocess.TimeoutExpired):
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=5)
-            return True
-        except (OSError, subprocess.TimeoutExpired):
-            return False
+    return process is None or stop_process_group(process, grace=2)
+
+
+class ProofInterrupted(BaseException):
+    pass
+
+
+def interrupt_run(signum, _frame):
+    raise ProofInterrupted("proof_interrupted")
 
 
 def main(argv: Sequence[str]) -> int:
@@ -250,6 +248,7 @@ def main(argv: Sequence[str]) -> int:
     started = time.monotonic()
     base = Path(tempfile.mkdtemp(prefix="lockspire-admin-proof-"))
     os.chmod(base, 0o700)
+    previous_handlers = {sig: signal.signal(sig, interrupt_run) for sig in (signal.SIGTERM, signal.SIGINT)}
     source_revision = ""
     package_root: Path | None = None
     identity = None
@@ -311,7 +310,7 @@ def main(argv: Sequence[str]) -> int:
         stage = "browser"
         browser_script = Path(__file__).resolve().parents[2] / "test" / "browser" / "packaged_admin_proof.mjs"
         request = json.dumps({"capability": capability, "origin": origin, "mount": args.mount, "scenario": args.scenario, "runRoot": str(base)})
-        browser = subprocess.run(("node", str(browser_script), "--origin", origin, "--mount", args.mount, "--scenario", args.scenario, "--run-root", str(base)), input=request, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=180, check=False)
+        browser = bounded_run(("node", str(browser_script), "--origin", origin, "--mount", args.mount, "--scenario", args.scenario, "--run-root", str(base)), input=request, stdin=subprocess.PIPE, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=180, check=False)
         try:
             observed = json.loads(browser.stdout.strip().splitlines()[-1])
         except (json.JSONDecodeError, IndexError):
@@ -376,19 +375,30 @@ def main(argv: Sequence[str]) -> int:
             ) if needle in lowered), "database_command_failed")
         print(f"admin browser proof failed at {stage} {type(error).__name__} ({safe_detail})", file=sys.stderr)
     finally:
-        cleanup["processes_stopped"] = stop_owned(process)
+        # Ignore repeated interruption while independent bounded cleanup actions run.
+        for sig in previous_handlers:
+            signal.signal(sig, signal.SIG_IGN)
+        try:
+            cleanup["processes_stopped"] = stop_owned(process)
+        except Exception:
+            cleanup["processes_stopped"] = False
+        cleanup["database_removed"] = not database_created
         if child is not None and database_created:
-            completed = subprocess.run(("mix", "ecto.drop"), cwd=child, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, check=False)
-            cleanup["database_removed"] = completed.returncode == 0
-        else:
-            cleanup["database_removed"] = not database_created
+            try:
+                completed = bounded_run(("mix", "ecto.drop"), cwd=child, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4, stop_grace=0.5)
+                cleanup["database_removed"] = completed.returncode == 0
+            except Exception:
+                cleanup["database_removed"] = False
         try:
             shutil.rmtree(base)
             cleanup["run_root_removed"] = not base.exists()
         except OSError:
             cleanup["run_root_removed"] = False
+        cleanup["profile_removed"] = cleanup["profile_removed"] or cleanup["run_root_removed"]
+        for sig, handler in previous_handlers.items():
+            signal.signal(sig, handler)
 
-    source_dirty = bool(subprocess.run(("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False).stdout.strip())
+    source_dirty = bool(subprocess.run(("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10).stdout.strip())
     candidate = {
         "version": getattr(identity, "version", "unknown"),
         "archive_sha256": getattr(identity, "archive_sha256", None) or getattr(identity, "sha256", "0" * 64),
@@ -416,7 +426,7 @@ def main(argv: Sequence[str]) -> int:
     try:
         write_receipt(args.receipt, receipt, expected_run_id=run_id, expected_source=source_revision, expected_pair=args.pair, expected_mount=args.mount, expected_archive=candidate["archive_sha256"], expected_tree=candidate["tree_sha256"], expected_scenario_set=args.scenario)
     except (OSError, ValueError) as error:
-        detail = str(error) if isinstance(error, ValueError) else "receipt_write_failed"
+        detail = "receipt_invalid" if isinstance(error, ValueError) else "receipt_write_failed"
         print(f"admin browser proof receipt validation failed: {detail}", file=sys.stderr)
         return 1
     print(json.dumps({"result": receipt["result"], "scenario_count": len(receipt["scenarios"]), "cleanup": cleanup}, sort_keys=True))

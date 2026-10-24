@@ -464,6 +464,40 @@ async function main() {
     observations: { login: false, overview: false, clients: false, authorized_http: false, connected_hook: false },
     runtime: { node: process.versions.node, chrome: "unknown" }
   };
+  let cleanupPromise;
+  const cleanup = () => cleanupPromise ||= (async () => {
+    try { cdp?.socket.close(); } catch {}
+    if (browser?.pid) {
+      const exited = browser.exitCode !== null || browser.signalCode !== null;
+      const waiting = exited ? Promise.resolve() : new Promise((resolve) => browser.once("exit", resolve));
+      try {
+        if (process.platform === "win32") browser.kill("SIGTERM");
+        else process.kill(-browser.pid, "SIGTERM");
+        await timed(waiting, 2500, "chrome_stop_timeout").catch(() => {});
+      } catch {}
+      try {
+        if (process.platform === "win32") browser.kill("SIGKILL");
+        else process.kill(-browser.pid, "SIGKILL");
+      } catch {}
+      await timed(waiting, 1000, "chrome_stop_timeout").catch(() => {});
+    }
+    if (profile) {
+      try { rmSync(profile, { recursive: true, force: false }); result.profile_removed = true; }
+      catch { result.profile_removed = false; }
+    }
+  })();
+  let interrupted = false;
+  const interrupt = (code) => {
+    if (interrupted) return;
+    interrupted = true;
+    result.outcome = "failed";
+    cleanup().finally(() => process.exit(code));
+  };
+  const terminate = () => interrupt(143);
+  const cancel = () => interrupt(130);
+  process.on("SIGTERM", terminate);
+  process.on("SIGINT", cancel);
+  const deadline = setTimeout(() => interrupt(124), 175000);
   const started = performance.now();
   let stage = "preflight";
   let loginGetStatus = 0;
@@ -678,21 +712,10 @@ async function main() {
   } finally {
     result.stage = stage;
     result.duration_ms = Math.max(0, Math.round(performance.now() - started));
-    try { cdp?.socket.close(); } catch {}
-    if (browser && browser.exitCode === null) {
-      try {
-        if (process.platform === "win32") browser.kill();
-        else process.kill(-browser.pid, "SIGTERM");
-        await timed(new Promise((resolve) => browser.once("exit", resolve)), 3000, "chrome_stop_timeout").catch(() => {
-          if (process.platform === "win32") browser.kill("SIGKILL");
-          else process.kill(-browser.pid, "SIGKILL");
-        });
-      } catch {}
-    }
-    if (profile) {
-      try { rmSync(profile, { recursive: true, force: false }); } catch { result.profile_removed = false; }
-      if (result.profile_removed !== false) result.profile_removed = true;
-    }
+    await cleanup();
+    clearTimeout(deadline);
+    process.off("SIGTERM", terminate);
+    process.off("SIGINT", cancel);
     console.log(JSON.stringify(result));
   }
   return result.outcome === "passed" && result.profile_removed === true ? 0 : 1;

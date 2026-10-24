@@ -76,5 +76,48 @@ test("tracer evidence requires transport reconnect and four native transitions",
 test("the Node suite retains its exact known case count", async () => {
   const { readFile } = await import("node:fs/promises");
   const source = await readFile(new URL("./packaged_admin_proof_test.mjs", import.meta.url), "utf8");
-  assert.equal([...source.matchAll(/^test\(/gm)].length, 7);
+  assert.equal([...source.matchAll(/^test\(/gm)].length, 8);
+});
+
+
+test("SIGTERM and SIGINT remove the owned Chrome process and profile", { timeout: 15000 }, async () => {
+  const { mkdtemp, writeFile, readFile, access, rm, chmod } = await import("node:fs/promises");
+  const { spawn } = await import("node:child_process");
+  const { tmpdir } = await import("node:os");
+  const root = await mkdtemp(`${tmpdir()}/lockspire-node-signal-`);
+  try {
+    const fake = `${root}/chrome`;
+    await writeFile(fake, `#!/usr/bin/env python3
+import os, signal, sys, time
+from pathlib import Path
+root = Path(os.environ['PROOF_SIGNAL_ROOT'])
+profile = next(arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('--user-data-dir='))
+(root / 'owned').write_text(str(os.getpid()) + '\\n' + profile)
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+while True: time.sleep(1)
+`);
+    await chmod(fake, 0o700);
+    for (const sig of ["SIGTERM", "SIGINT"]) {
+      await rm(`${root}/owned`, { force: true });
+      const child = spawn(process.execPath, [new URL("./packaged_admin_proof.mjs", import.meta.url).pathname], {
+        env: { ...process.env, CHROME_BIN: fake, PROOF_SIGNAL_ROOT: root }, stdio: ["pipe", "pipe", "pipe"]
+      });
+      let output = "";
+      child.stdout.on("data", (chunk) => { output += chunk; });
+      child.stderr.on("data", (chunk) => { output += chunk; });
+      child.stdin.end(JSON.stringify({ capability: "x".repeat(48), origin: "http://127.0.0.1:12345", mount: "/", runRoot: root }));
+      let owned;
+      for (let n = 0; n < 100; n++) {
+        try { owned = (await readFile(`${root}/owned`, "utf8")).split("\n"); break; } catch {}
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      assert.ok(owned, "fake Chrome actually started");
+      const exited = new Promise((resolve) => child.once("exit", (code) => resolve(code)));
+      child.kill(sig);
+      assert.equal(await exited, sig === "SIGTERM" ? 143 : 130);
+      assert.throws(() => process.kill(Number(owned[0]), 0));
+      await assert.rejects(access(owned[1]));
+      assert.doesNotMatch(output, /x{48}/);
+    }
+  } finally { await rm(root, { recursive: true, force: true }); }
 });

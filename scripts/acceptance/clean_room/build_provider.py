@@ -23,6 +23,7 @@ import urllib.request
 
 from package_input import (
     PROJECT_ROOT,
+    bounded_run,
     PackageInputError,
     assert_below,
     build_package,
@@ -547,7 +548,7 @@ def prepare_provider(
 
     patch_jose_record_extractors(child, environment)
 
-    install_result = subprocess.run(
+    install_result = bounded_run(
         ("mix", "lockspire.install", "--web", "CleanRoomProviderWeb", "--scope", "CleanRoomProvider.Lockspire", "--path", str(child), "--mount-path", mount_path, "--storage-prefix", storage_prefix, "--oban-prefix", storage_prefix),
         cwd=child,
         env=environment,
@@ -585,7 +586,7 @@ def prepare_provider(
 
 
 def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...]) -> bytes:
-    completed = subprocess.run(
+    completed = bounded_run(
         ("mix", *command),
         cwd=child,
         env=environment,
@@ -759,7 +760,7 @@ def check_gen_kek() -> None:
         cold.pop("LOCKSPIRE_KEY_ENCRYPTION_KEY", None)
 
         def mix(*command: str) -> "subprocess.CompletedProcess[str]":
-            return subprocess.run(
+            return bounded_run(
                 ("mix", *command),
                 cwd=child,
                 env=cold,
