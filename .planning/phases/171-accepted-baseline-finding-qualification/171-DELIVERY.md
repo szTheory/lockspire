@@ -291,3 +291,17 @@ ledger. Phase 171 Plan 01 is still in progress until its contract and negative
 fixtures pass; the full finite FIND-01 inventory and frozen matrix remain for
 the later phase plan.
 
+## Custody and path handoff
+
+The current delegated maintainer run owns this qualification work on
+`milestone/v1.47-core-hardening`, now descended from the accepted implementation
+base. Its newly created ledger and contract test live in this primary checkout;
+they are not copied into the retained historical feature branch or the original
+acceptance clone. The accepted receipt path above is a byte-preserved artifact
+copied into this checkout after acceptance, not an acceptance rerun. The original
+feature branch and three secondary worktrees remain preserved at the identities
+and dispositions recorded above. Their historical operator identities remain
+unknown, so no worktree ownership is transferred by this handoff. Next owner for
+the finite inventory is the Phase 171 maintainer; next action is to complete
+plan 171-02 after this plan's contract and closeout pass. No other retained path
+is being merged, rebased, reset, or retired here.

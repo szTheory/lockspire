@@ -14,7 +14,94 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert validate(ledger) == []
   end
 
-  defp validate(ledger) do
+  test "the contract rejects missing or mismatched accepted-base identity" do
+    ledger = load_ledger()
+
+    assert_rejected(update_in(ledger, ["baseline", "implementation_base"], fn _ -> nil end))
+
+    assert_rejected(
+      update_in(ledger, ["baseline", "implementation_base"], fn _ ->
+        "a" <> String.duplicate("0", 39)
+      end)
+    )
+  end
+
+  test "the contract rejects missing, empty, or nonpassing required gate evidence" do
+    ledger = load_ledger()
+    receipt = load_receipt(ledger)
+
+    assert_rejected(ledger, Map.delete(receipt, "required_ci"))
+    assert_rejected(ledger, Map.delete(receipt, "release_no_publish"))
+    assert_rejected(ledger, put_in(receipt, ["required_ci", "status"], ""))
+    assert_rejected(ledger, put_in(receipt, ["required_ci", "status"], "fail"))
+    assert_rejected(ledger, put_in(receipt, ["release_no_publish", "status"], ""))
+    assert_rejected(ledger, put_in(receipt, ["release_no_publish", "status"], "fail"))
+  end
+
+  test "the contract rejects a zero local test count and incomplete warning dispositions" do
+    ledger = load_ledger()
+    receipt = load_receipt(ledger)
+
+    assert_rejected(ledger, put_in(receipt, ["local_gate", "exunit_tests"], 0))
+    assert_rejected(ledger, put_in(receipt, ["warn_dispositions"], []))
+  end
+
+  test "the contract rejects duplicate cases and ownerless evidence" do
+    ledger = load_ledger()
+    [item] = ledger["cases"]
+
+    assert_rejected(%{ledger | "cases" => [item, item]})
+    assert_rejected(update_in(ledger, ["cases", Access.at(0), "next_owner"], fn _ -> "" end))
+
+    assert_rejected(
+      update_in(ledger, ["cases", Access.at(0), "regression_owner"], fn _ -> nil end)
+    )
+  end
+
+  test "the contract rejects missing observed-versus-expected evidence" do
+    ledger = load_ledger()
+
+    assert_rejected(
+      update_in(ledger, ["cases", Access.at(0), "observed_outcome"], fn _ -> "" end)
+    )
+
+    assert_rejected(
+      update_in(ledger, ["cases", Access.at(0), "expected_outcome"], fn _ -> "" end)
+    )
+
+    equal_outcomes =
+      update_in(ledger, ["cases", Access.at(0), "expected_outcome"], fn _ ->
+        get_in(ledger, ["cases", Access.at(0), "observed_outcome"])
+      end)
+
+    assert validate(equal_outcomes) == []
+  end
+
+  test "the contract does not accept an external suite run as source-host case proof" do
+    ledger = load_ledger()
+
+    external_evidence =
+      update_in(ledger, ["cases", Access.at(0), "repro", "evidence_kind"], fn _ ->
+        "external_suite_run"
+      end)
+
+    assert_rejected(external_evidence)
+  end
+
+  defp load_ledger, do: @ledger_path |> File.read!() |> Jason.decode!()
+
+  defp load_receipt(ledger) do
+    ledger["baseline"]["receipt_ref"]
+    |> then(&Path.join(@repo_root, &1))
+    |> File.read!()
+    |> Jason.decode!()
+  end
+
+  defp assert_rejected(ledger, receipt_override \\ nil) do
+    assert validate(ledger, receipt_override) != []
+  end
+
+  defp validate(ledger, receipt_override \\ nil) do
     baseline = Map.get(ledger, "baseline", %{})
     cases = Map.get(ledger, "cases", [])
     receipt_path = Path.join(@repo_root, baseline["receipt_ref"] || "")
@@ -34,17 +121,17 @@ defmodule Lockspire.QualificationLedgerContractTest do
     )
     |> require(is_list(ledger["blockers"]), "blockers must be an array")
     |> require(is_list(ledger["exclusions"]), "exclusions must be an array")
-    |> validate_baseline(baseline, receipt_path)
+    |> validate_baseline(baseline, receipt_path, receipt_override)
     |> validate_case_ids(cases)
     |> validate_cases(cases, receipt_path)
   end
 
-  defp validate_baseline(errors, baseline, receipt_path) do
+  defp validate_baseline(errors, baseline, receipt_path, receipt_override) do
     receipt =
-      if File.exists?(receipt_path) do
-        receipt_path |> File.read!() |> Jason.decode!()
-      else
-        %{}
+      cond do
+        is_map(receipt_override) -> receipt_override
+        File.exists?(receipt_path) -> receipt_path |> File.read!() |> Jason.decode!()
+        true -> %{}
       end
 
     receipt_sha256 =
