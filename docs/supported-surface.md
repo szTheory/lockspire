@@ -213,6 +213,21 @@ establish a remote CI result. CI uses Elixir 1.19.5 / OTP 28 with PostgreSQL 16
 for the locked pair, and Elixir 1.18.4 / OTP 27 with PostgreSQL 14 for the
 minimum-supported pair.
 
+### Compatibility floor security status
+
+Phoenix 1.8.5 / LiveView 1.1.28 is retained for isolated compatibility testing.
+As of 2026-10-24, that historical pair has published upstream advisories for
+[channel join exhaustion](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-6983-jfq8-485w),
+[long-poll memory exhaustion](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-628h-q48j-jr6q),
+[Presence key collisions](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-63mc-hw7g-86rr),
+and [LiveView redirect validation](https://github.com/phoenixframework/phoenix_live_view/security/advisories/GHSA-36m4-rm57-3prf).
+Passing that fixture establishes compatibility; it does not establish dependency
+security or recommend those versions for deployment. Production hosts should
+use security-patched framework releases within the declared dependency ranges
+and audit their resolved dependencies. Disposable proof hosts use loopback
+listeners and synthetic credentials. Changing the tested compatibility floor
+requires a separate support-policy decision.
+
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path

@@ -158,6 +158,48 @@ prerequisites that the local contributor alias did not exercise:
 The corrected PR head must receive fresh protected checks; the first run's
 partial successes do not authorize merging a later head.
 
+### All maintained host lockfiles and the historical framework floor
+
+The demo and compatibility hosts also locked `plug_crypto 2.2.0` and
+`decimal 3.1.1`. Commit `ece7e94a` advances only those existing transitive
+entries to 2.2.1 and 3.1.2. Decimal's maintainer
+[3.1.2 security changelog](https://github.com/ericmj/decimal/blob/main/CHANGELOG.md#v312-2026-10-10)
+identifies CVE-2026-97853; use that patch rather than its broader 3.2 minor.
+An isolated temporary Mix project with an exact 3.1.2 requirement generated the
+signed lock identity; neither host's direct manifest or framework version was
+changed. Both hosts compiled with warnings-as-errors. The demo's complete Hex
+audit passed; the root audit had already passed.
+
+The exact historical compatibility pair Phoenix 1.8.5 / LiveView 1.1.28 retains
+four upstream framework advisories: Phoenix channel-join exhaustion, long-poll
+allocation and Presence key collisions, plus LiveView local redirect validation.
+The compatibility host's audit remains **failing**. The independent security
+review recommended preserving this exact compatibility experiment, disclosing
+the advisories in `docs/supported-surface.md`, and keeping it isolated from
+deployment. Current delegated custody accepts only the bounded test exposure:
+disposable proof hosts bind loopback, use synthetic credentials, and receive no
+production traffic/secrets. No advisory is suppressed or called resolved, and
+no compatibility-audit pass is claimed. Root/source acceptance remains its own
+existing exact-SHA contract using the maintained patched framework pair.
+
+Repository maintainer owns a separate secure-supported-floor policy decision
+before any deployment recommendation involving the historical pair. This run
+does not silently raise the public compatibility floor or widen Phase 171.
+The public caveat and unchanged integration boundaries passed docs generation
+and 18 documentation/support/compatibility contract tests.
+
+### Remaining packaged-journey prerequisite
+
+Run `40118254627` passed Release Hygiene, Dialyzer, Fast Checks, Minimum
+Supported Elixir/OTP and Adoption Demo Smoke. Integration's 199 source tests
+passed, but the package-only upgrade and HTTP journeys failed after provider
+readiness; Complete Coverage was consequently skipped. These are unresolved
+delivery blockers. Dedicated diagnosis is reproducing the exact package
+failure and separating package provenance/harness from product behavior.
+No correction, main integration, receipt, or Phase 171 completion is inferred
+from the partial run. Any fix will be scoped as a separate prior-delivery
+prerequisite and receive fresh review and exact-head protected checks.
+
 ## Lessons applied
 
 1. Separate historical ownership from current delegated custody, containment,
@@ -184,3 +226,7 @@ partial successes do not authorize merging a later head.
    exercise a clean test-environment warnings-as-errors compile and the
    privileged release runtime's npm audit; cached local compilation can hide
    acknowledged warnings that correctly block a clean hosted build.
+9. Audit all maintained host lockfiles together when applying a security patch.
+   Separate a deliberately historical compatibility experiment from a production
+   security recommendation, preserve failing audit facts, and document the
+   isolation and owner of any unresolved floor-policy decision.
