@@ -1588,7 +1588,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b"
+        "sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
@@ -1647,7 +1647,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "04caf065be45ffe8cfa363ddac367c1b415d7829df2189d36fb74330435e155d",
+    "input_digest": "d83b7d08410b27928e02f6fceaaad52d5894caf0a2daf902a01c9f3607d97a3b",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1662,6 +1662,13 @@
         "previous_sha256": null,
         "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
         "reason": "Preserve original controlled-probe bytes and source attribution before recording the post-WR-02 observation."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b",
+        "sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec",
+        "reason": "Keep the two controlled HTTP cases and original actual test count by embedding adversarial route assertions before A171-003's live control."
       },
       {
         "date": "2026-10-24",
