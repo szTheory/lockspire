@@ -194,6 +194,25 @@ The maintained generated host, adoption demo, and clean-room source use the same
 
 Repository-source tests establish generated output, compiled Phoenix routing, current locked-runtime behavior, and server-side connected LiveView lifecycle. Those checks do not establish actual packaged-consumer adoption, browser/socket transport, or the exact Phoenix 1.8.5 / LiveView 1.1.28 dependency floor. Phase 170 owns those package, transport, exact-version, and required CI checks.
 
+The packaged-host proof runs the real Lockspire archive in a disposable Phoenix
+host at the default, nested, and root mounts. It checks the locked Phoenix
+1.8.13 / LiveView 1.2.10 pair and the exact floor Phoenix 1.8.5 / LiveView
+1.1.28 pair. The browser cases cover host-owned staff policy at HTTP and
+LiveView boundaries, assets, navigation, reconnect, and independent public
+OIDC endpoints. The host retains ownership of accounts, staff identity,
+authorization policy, login, layouts, and branding. LiveView policy is checked
+at the exercised HTTP, join, reconnect, and params boundaries; this does not
+promise continuous revocation for an idle connected page.
+
+The documented proof command and its local prerequisites are in the
+[maintainer release guide](maintainer-release.md#packaged-host-compatibility-proof).
+These checks establish package, browser-transport, and exact dependency-runtime
+behavior for the recorded matrix. They do not substitute compilation or
+server-only lifecycle checks for browser evidence, and local execution does not
+establish a remote CI result. CI uses Elixir 1.19.5 / OTP 28 with PostgreSQL 16
+for the locked pair, and Elixir 1.18.4 / OTP 27 with PostgreSQL 14 for the
+minimum-supported pair.
+
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path

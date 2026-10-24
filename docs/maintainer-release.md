@@ -130,6 +130,58 @@ Dialyzer is a required, cached PR CI job with a zero-warning baseline and no war
 
 Release Please generated PR checks are informative review context. They are not authoritative release proof, because trusted proof starts only after merge in the protected `hex-publish` lane.
 
+## Packaged host compatibility proof
+
+The required Integration Checks job runs the `locked` pair and the Minimum
+Supported Elixir/OTP job runs the `floor` pair through the same wrapper. Run
+either command from the repository root with a fresh receipt directory:
+
+```bash
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 \
+  bash scripts/ci/run_host_integration_proof.sh \
+  --pair locked --receipt-dir .artifacts/phase170/final-locked
+
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 \
+  bash scripts/ci/run_host_integration_proof.sh \
+  --pair floor --receipt-dir .artifacts/phase170/final-floor
+```
+
+The pair selects Phoenix 1.8.13 / LiveView 1.2.10 (`locked`) or Phoenix 1.8.5
+/ LiveView 1.1.28 (`floor`). CI runs those pairs on Elixir 1.19.5 / OTP 28 with
+PostgreSQL 16, and Elixir 1.18.4 / OTP 27 with PostgreSQL 14, respectively.
+Those are the CI job expectations; the wrapper records the actual local Elixir
+and OTP versions separately. Each run builds and hashes one candidate archive,
+runs the same original server lifecycle tests for the selected dependency pair,
+then checks all 16 packaged browser cases at `/lockspire`,
+`/teams/ops/identity`, and `/`. This separates source/lifecycle evidence from
+real Chrome/CDP transport evidence.
+
+Local requirements are Bash, Python 3, Mix dependencies for the selected pair,
+Node.js 22.15 or newer with built-in `fetch` and `WebSocket`, and an installed
+Chrome-compatible browser. The wrapper discovers Chrome from the standard
+macOS application path or `google-chrome`, `chromium`, or `chromium-browser` on
+`PATH`; if the browser runner is invoked directly, `CHROME_BIN` can name the
+installed executable. PostgreSQL must be reachable using the existing
+`LOCKSPIRE_TEST_DB_*` settings; packaged child hosts use `CLEAN_ROOM_DB_*`.
+The wrapper chooses a fresh test database name and prepares/cleans its test
+database. Do not point these settings at a database with valuable data.
+
+The output directory contains one lifecycle summary and three validated,
+allowlisted browser receipts. It is safe evidence, not raw browser output:
+HTML, frames, cookies, headers, signed tokens, secrets, and process logs are
+not retained there. The wrapper removes prior named receipts and rejects any
+other pre-existing directory entry, so use a fresh empty directory for each
+run. Partial, failed, stale, wrong-pair, wrong-mount, wrong-source, wrong-
+package, or incomplete-case receipts cannot pass validation. Raw logs and
+browser profiles remain in a private temporary directory and are removed at
+exit. A nonzero proof result remains a failure even if artifact handling or
+cleanup succeeds.
+
+This is local/checked-in proof only. A remote result is recorded only after
+observing an actual workflow run for its exact source SHA. Merge, publication,
+remote branch-protection settings, and release approvals remain separate
+workflows.
+
 Keep the Release Please invocation repo-controlled. `.github/workflows/release.yml` should call `./.github/actions/release-please`, and that checked-in action should remain the only implementation detail between the workflow contract and the upstream `release-please` runtime.
 
 ## Maintainer-only release gate

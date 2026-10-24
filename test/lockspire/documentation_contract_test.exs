@@ -7,6 +7,8 @@ defmodule Lockspire.DocumentationContractTest do
   @readme_path Path.join(@repo_root, "README.md")
   @getting_started_path Path.join(@repo_root, "docs/getting-started.md")
   @install_path Path.join(@repo_root, "docs/install-and-onboard.md")
+  @supported_surface_path Path.join(@repo_root, "docs/supported-surface.md")
+  @maintainer_release_path Path.join(@repo_root, "docs/maintainer-release.md")
 
   test "every maintained guide appears once in a reader-task ExDoc group and package" do
     docs = Mix.Project.config() |> Keyword.fetch!(:docs)
@@ -110,6 +112,17 @@ defmodule Lockspire.DocumentationContractTest do
     assert install =~ "host app"
     assert install =~ "host request tests"
     assert Code.ensure_loaded?(Mix.Tasks.Ecto.Migrate)
+  end
+
+  test "maintainer compatibility proof links the exact pair commands to the wrapper" do
+    supported = File.read!(@supported_surface_path)
+    maintainer = File.read!(@maintainer_release_path)
+    wrapper = Path.join(@repo_root, "scripts/ci/run_host_integration_proof.sh")
+
+    assert File.regular?(wrapper)
+    assert supported =~ "maintainer-release.md#packaged-host-compatibility-proof"
+    assert maintainer =~ "--pair locked --receipt-dir .artifacts/phase170/final-locked"
+    assert maintainer =~ "--pair floor --receipt-dir .artifacts/phase170/final-floor"
   end
 
   test "HTML docs use the Lockspire favicon and pinned theme-aware Mermaid hook" do
