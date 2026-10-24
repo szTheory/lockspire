@@ -131,6 +131,31 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert_rejected(put_in(ledger, ["matrix", "rows"], nil))
   end
 
+  test "malformed nested evidence values return validation errors instead of crashing" do
+    ledger = load_ledger()
+    profile = List.replace_at(ledger["profiles"], 0, "phase37")
+    case_item = List.replace_at(ledger["cases"], 0, nil)
+    row = List.replace_at(ledger["matrix"]["rows"], 0, 42)
+
+    disposition =
+      List.replace_at(ledger["matrix"]["requirement_dispositions"], 0, "AUTHR-01")
+
+    malformed = [
+      %{ledger | "profiles" => profile},
+      %{ledger | "cases" => case_item},
+      put_in(ledger, ["matrix", "rows"], row),
+      put_in(ledger, ["matrix", "requirement_dispositions"], disposition),
+      put_in(
+        ledger,
+        ["matrix", "requirement_dispositions", Access.at(0), "existing_proof"],
+        "A171-001"
+      ),
+      put_in(ledger, ["matrix", "requirement_dispositions", Access.at(0), "existing_proof"], nil)
+    ]
+
+    Enum.each(malformed, &assert_rejected/1)
+  end
+
   test "source and input identities and all three case owners are required" do
     ledger = load_ledger()
 
@@ -546,6 +571,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
     )
     |> require(is_list(ledger["blockers"]), "blockers must be an array")
     |> require(is_list(ledger["exclusions"]), "exclusions must be an array")
+    |> validate_nested_shapes(ledger)
     |> validate_selection_state(ledger, cases)
     |> validate_baseline(baseline, receipt_path, receipt_override)
     |> validate_profiles(ledger["profiles"])
@@ -561,11 +587,40 @@ defmodule Lockspire.QualificationLedgerContractTest do
     |> validate_cases(cases, receipt_path)
   end
 
+  defp validate_nested_shapes(errors, ledger) do
+    matrix = Map.get(ledger, "matrix", %{})
+    profiles = Map.get(ledger, "profiles")
+    cases = Map.get(ledger, "cases")
+    rows = if is_map(matrix), do: Map.get(matrix, "rows"), else: nil
+    dispositions = if is_map(matrix), do: Map.get(matrix, "requirement_dispositions"), else: nil
+
+    errors
+    |> require(is_list(profiles) and all_maps?(profiles), "profile entries must be objects")
+    |> require(is_list(cases) and all_maps?(cases), "case entries must be objects")
+    |> require(is_list(rows) and all_maps?(rows), "matrix row entries must be objects")
+    |> require(
+      is_list(dispositions) and valid_disposition_shapes?(dispositions),
+      "requirement disposition entries must be objects with case_ids, existing_proof, and retained_cases arrays"
+    )
+  end
+
+  defp valid_disposition_shapes?(dispositions) when is_list(dispositions) do
+    Enum.all?(dispositions, fn disposition ->
+      is_map(disposition) and
+        Enum.all?(["case_ids", "existing_proof", "retained_cases"], &is_list(disposition[&1]))
+    end)
+  end
+
+  defp valid_disposition_shapes?(_), do: false
+
+  defp all_maps?(values) when is_list(values), do: Enum.all?(values, &is_map/1)
+  defp all_maps?(_), do: false
+
   defp validate_selection_state(errors, ledger, cases) do
     revision = Map.get(ledger, "scope_revision", %{})
 
     cond do
-      not is_list(cases) ->
+      not is_list(cases) or not all_maps?(cases) or not is_map(revision) ->
         errors
 
       cases == [] ->
@@ -677,6 +732,16 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp validate_profiles(errors, profiles) when is_list(profiles) do
+    if all_maps?(profiles) do
+      validate_profile_entries(errors, profiles)
+    else
+      require(errors, false, "profile entries must be objects")
+    end
+  end
+
+  defp validate_profiles(errors, _), do: require(errors, false, "profiles must be an array")
+
+  defp validate_profile_entries(errors, profiles) do
     Enum.reduce(profiles, errors, fn profile, acc ->
       attempt = Map.get(profile, "profile_attempt", %{})
       output = Map.get(profile, "artifact_output", %{})
@@ -721,9 +786,17 @@ defmodule Lockspire.QualificationLedgerContractTest do
     end)
   end
 
-  defp validate_profiles(errors, _), do: require(errors, false, "profiles must be an array")
-
   defp validate_case_ids(errors, cases, rows) when is_list(cases) and is_list(rows) do
+    if all_maps?(cases) and all_maps?(rows) do
+      validate_case_id_entries(errors, cases, rows)
+    else
+      require(errors, false, "case and matrix row entries must be objects")
+    end
+  end
+
+  defp validate_case_ids(errors, _, _), do: errors
+
+  defp validate_case_id_entries(errors, cases, rows) do
     ids = Enum.map(cases, & &1["id"])
     row_ids = Enum.map(rows, & &1["case_id"])
 
@@ -741,10 +814,18 @@ defmodule Lockspire.QualificationLedgerContractTest do
     )
   end
 
-  defp validate_case_ids(errors, _, _), do: errors
-
   defp validate_matrix_rows(errors, cases, rows, blockers)
        when is_list(cases) and is_list(rows) and is_list(blockers) do
+    if all_maps?(cases) and all_maps?(rows) do
+      validate_matrix_row_entries(errors, cases, rows, blockers)
+    else
+      require(errors, false, "case and matrix row entries must be objects")
+    end
+  end
+
+  defp validate_matrix_rows(errors, _, _, _), do: errors
+
+  defp validate_matrix_row_entries(errors, cases, rows, blockers) do
     case_map = Map.new(cases, &{&1["id"], &1})
 
     Enum.reduce(rows, errors, fn row, acc ->
@@ -791,10 +872,23 @@ defmodule Lockspire.QualificationLedgerContractTest do
     end)
   end
 
-  defp validate_matrix_rows(errors, _, _, _), do: errors
-
   defp validate_requirement_dispositions(errors, dispositions, cases, rows)
        when is_list(dispositions) and is_list(cases) and is_list(rows) do
+    if valid_disposition_shapes?(dispositions) and all_maps?(cases) and all_maps?(rows) do
+      validate_disposition_entries(errors, dispositions, cases, rows)
+    else
+      require(
+        errors,
+        false,
+        "requirement disposition entries must be objects with case_ids, existing_proof, and retained_cases arrays"
+      )
+    end
+  end
+
+  defp validate_requirement_dispositions(errors, _, _, _),
+    do: require(errors, false, "requirement_dispositions must be an array")
+
+  defp validate_disposition_entries(errors, dispositions, cases, rows) do
     ids = Enum.map(dispositions, & &1["requirement_id"])
     case_map = Map.new(cases, &{&1["id"], &1})
     row_map = Map.new(rows, &{&1["case_id"], &1})
@@ -861,13 +955,19 @@ defmodule Lockspire.QualificationLedgerContractTest do
     end)
   end
 
-  defp validate_requirement_dispositions(errors, _, _, _),
-    do: require(errors, false, "requirement_dispositions must be an array")
-
   defp validate_frozen_matrix(errors, ledger, cases, rows) do
     matrix = Map.get(ledger, "matrix", %{})
 
-    if matrix["status"] == "frozen" do
+    if not is_map(matrix) do
+      errors
+    else
+      validate_frozen_matrix_status(errors, ledger, cases, rows, matrix)
+    end
+  end
+
+  defp validate_frozen_matrix_status(errors, ledger, cases, rows, matrix) do
+    if matrix["status"] == "frozen" and all_maps?(cases) and all_maps?(rows) and
+         valid_disposition_shapes?(Map.get(matrix, "requirement_dispositions", [])) do
       manifest = matrix["input_manifest"]
 
       errors
@@ -1075,6 +1175,17 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp validate_category_references(errors, categories, cases)
        when is_list(categories) and is_list(cases) do
+    if all_maps?(categories) and all_maps?(cases) do
+      validate_category_entries(errors, categories, cases)
+    else
+      require(errors, false, "category and case entries must be objects")
+    end
+  end
+
+  defp validate_category_references(errors, _, _),
+    do: require(errors, false, "category_coverage must be an array")
+
+  defp validate_category_entries(errors, categories, cases) do
     ids = Enum.map(cases, & &1["id"])
 
     refs =
@@ -1096,16 +1207,17 @@ defmodule Lockspire.QualificationLedgerContractTest do
     )
   end
 
-  defp validate_category_references(errors, _, _),
-    do: require(errors, false, "category_coverage must be an array")
-
   defp validate_cases(errors, cases, receipt_path) when is_list(cases) do
-    Enum.reduce(cases, errors, fn item, acc ->
-      acc
-      |> validate_case_fields(item)
-      |> validate_case_references(item)
-      |> validate_case_proof(item, receipt_path)
-    end)
+    if all_maps?(cases) do
+      Enum.reduce(cases, errors, fn item, acc ->
+        acc
+        |> validate_case_fields(item)
+        |> validate_case_references(item)
+        |> validate_case_proof(item, receipt_path)
+      end)
+    else
+      require(errors, false, "case entries must be objects")
+    end
   end
 
   defp validate_cases(errors, _, _), do: errors

@@ -1600,7 +1600,7 @@
       },
       {
         "path": "test/lockspire/qualification_ledger_contract_test.exs",
-        "sha256": "fcb19db18957a217c0767843213eec331284cf7ad567af133eef95030a0eeb7b"
+        "sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1"
       },
       {
         "path": "test/test_helper.exs",
@@ -1647,7 +1647,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "5d0e8ff2c57c57e714aad6f5bbf385dd48c006fc2bf63c0f1c6ddb1f751d6e3b",
+    "input_digest": "04caf065be45ffe8cfa363ddac367c1b415d7829df2189d36fb74330435e155d",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1662,6 +1662,13 @@
         "previous_sha256": null,
         "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
         "reason": "Preserve original controlled-probe bytes and source attribution before recording the post-WR-02 observation."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "fcb19db18957a217c0767843213eec331284cf7ad567af133eef95030a0eeb7b",
+        "sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
+        "reason": "WR-03 adds type-negative evidence fixtures and shape validation before nested traversal; existing proof requirements remain unchanged."
       }
     ],
     "metadata_audits": [
