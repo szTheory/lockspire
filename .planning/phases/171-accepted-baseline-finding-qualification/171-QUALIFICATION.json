@@ -251,181 +251,1088 @@
     "rationale": null
   },
   "category_coverage": [
-    {"category": "unsafe and valid callbacks; OAuth error/state and query encoding", "case_ids": ["A171-001", "A171-002"], "status": "enumerated"},
-    {"category": "unsupported response mode boundary", "case_ids": ["A171-003"], "status": "proof_gap"},
-    {"category": "prompt=none, max_age, and host-owned auth_time", "case_ids": ["A171-004", "A171-005", "A171-006"], "status": "enumerated"},
-    {"category": "PAR client binding, expiry, and one-use/replay", "case_ids": ["P171-001", "P171-002", "P171-003"], "status": "enumerated"},
-    {"category": "pushed versus front-channel conflicts and required-PAR", "case_ids": ["P171-004", "P171-005"], "status": "policy_gap"},
-    {"category": "configured issuer and advertised discovery metadata", "case_ids": ["P171-006"], "status": "enumerated"},
-    {"category": "external provider-origin, TLS/proxy, and browser reachability", "case_ids": [], "status": "excluded_unavailable", "rationale": "Supplemental profile wrappers did not start because the locked Python environment is absent. External origin/TLS/browser behavior is unobserved; this does not establish a Lockspire product defect or selected mandatory case."}
+    {
+      "category": "unsafe and valid callbacks; OAuth error/state and query encoding",
+      "case_ids": [
+        "A171-001",
+        "A171-002"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "unsupported response mode boundary",
+      "case_ids": [
+        "A171-003"
+      ],
+      "status": "qualified_counterexample"
+    },
+    {
+      "category": "prompt=none, max_age, and host-owned auth_time",
+      "case_ids": [
+        "A171-004",
+        "A171-005",
+        "A171-006"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "PAR client binding, expiry, and one-use/replay",
+      "case_ids": [
+        "P171-001",
+        "P171-002",
+        "P171-003"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "pushed versus front-channel conflicts and required-PAR",
+      "case_ids": [
+        "P171-004",
+        "P171-005"
+      ],
+      "status": "qualified_counterexample"
+    },
+    {
+      "category": "configured issuer and advertised discovery metadata",
+      "case_ids": [
+        "P171-006"
+      ],
+      "status": "enumerated"
+    },
+    {
+      "category": "external provider-origin, TLS/proxy, and browser reachability",
+      "case_ids": [],
+      "status": "excluded_unavailable",
+      "rationale": "Supplemental profile wrappers did not start because the locked Python environment is absent. External origin/TLS/browser behavior is unobserved; this does not establish a Lockspire product defect or selected mandatory case."
+    }
   ],
   "cases": [
     {
-      "id": "A171-001", "category": "callback_safety", "family": "registered redirect URI exact match", "priority": "P1", "condition_id": "invalid-trailing-slash-callback", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"},
-      "provider_identity": "GeneratedHostApp Phoenix endpoint from source checkout, mounted at /lockspire; no package receipt.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "request": "Authorization Code request uses https://client.example.com/callback/ while the synthetic client registered https://client.example.com/callback."},
-      "supported_mount": "Generated host /lockspire/authorize endpoint", "profile": "authorization code with PKCE S256", "auth_mode": "synthetic public client; rejection precedes host authentication", "safe_condition": "A trailing-slash mismatch is an invalid redirect URI.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError", "section": "OIDC Core 3.1.2.6", "basis": "An invalid Redirection URI must not receive an error redirect."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Phase 37 strictness slice includes exact redirect_uri matching."},
-      "observed_outcome": "HTTP 400 first-party error; no Location header.", "expected_outcome": "Reject the mismatched URI without redirecting the user agent to it.", "cause": "already_correct_not_reproduced", "cause_detail": "The current source-host test matched the exact-match safety expectation; no current protocol defect was reproduced.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_name": "exact redirect_uri mismatches stay on the browser-safe surface", "test_line": 105, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "A171-001-20261024-01", "date": "2026-10-24", "condition_id": "invalid-trailing-slash-callback", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire maintainers", "regression_owner": "Lockspire maintainers", "disposition": "Current deterministic proof supports this one unsafe-callback boundary; it makes no valid-callback package or certification claim."
+      "id": "A171-001",
+      "category": "callback_safety",
+      "family": "registered redirect URI exact match",
+      "priority": "P1",
+      "condition_id": "invalid-trailing-slash-callback",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint from source checkout, mounted at /lockspire; no package receipt.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Authorization Code request uses https://client.example.com/callback/ while the synthetic client registered https://client.example.com/callback."
+      },
+      "supported_mount": "Generated host /lockspire/authorize endpoint",
+      "profile": "authorization code with PKCE S256",
+      "auth_mode": "synthetic public client; rejection precedes host authentication",
+      "safe_condition": "A trailing-slash mismatch is an invalid redirect URI.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "An invalid Redirection URI must not receive an error redirect."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness slice includes exact redirect_uri matching."
+      },
+      "observed_outcome": "HTTP 400 first-party error; no Location header.",
+      "expected_outcome": "Reject the mismatched URI without redirecting the user agent to it.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The current source-host test matched the exact-match safety expectation; no current protocol defect was reproduced.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "exact redirect_uri mismatches stay on the browser-safe surface",
+        "test_line": 105,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-001-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "invalid-trailing-slash-callback",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire maintainers",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Current deterministic proof supports this one unsafe-callback boundary; it makes no valid-callback package or certification claim."
     },
     {
-      "id": "A171-002", "category": "error_state_encoding", "family": "valid callback error/state and query encoding", "priority": "P1", "condition_id": "registered-query-callback-error-state", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"},
-      "provider_identity": "Lockspire.Web.Router test host with configured issuer https://issuer.test/lockspire and /lockspire mount.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "request": "Registered callback https://client.example.com/callback?foo=bar&state=old-state plus a safe validation error; synthetic client values."},
-      "supported_mount": "Lockspire.Web.Router /authorize", "profile": "authorization code; default query response mode", "auth_mode": "synthetic registered client", "safe_condition": "The callback is the exact registered URI including its query component; new OAuth error/state fields are encoded without replacing unrelated query data or trusting stale state.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError", "section": "OIDC Core 3.1.2.6", "basis": "For a valid Redirection URI, return the appropriate error and state parameters."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Authorization code is supported with exact redirect URI matching."},
-      "observed_outcome": "302/303 to the registered callback; foo=bar and state=state-123 remain, error=invalid_request is present, and state=old-state is absent.", "expected_outcome": "Return the OAuth error and current state through the exact valid callback while preserving unrelated registered query data.", "cause": "already_correct_not_reproduced", "cause_detail": "The focused controller test passed for this exact registered callback and query condition.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_name": "redirect-safe validation failures merge existing redirect query params canonically", "test_line": 274, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "A171-002-20261024-01", "date": "2026-10-24", "condition_id": "registered-query-callback-error-state", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Web.AuthorizeControllerTest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic proof is reused; callback mismatch policy remains unchanged."
+      "id": "A171-002",
+      "category": "error_state_encoding",
+      "family": "valid callback error/state and query encoding",
+      "priority": "P1",
+      "condition_id": "registered-query-callback-error-state",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router test host with configured issuer https://issuer.test/lockspire and /lockspire mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "Registered callback https://client.example.com/callback?foo=bar&state=old-state plus a safe validation error; synthetic client values."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "authorization code; default query response mode",
+      "auth_mode": "synthetic registered client",
+      "safe_condition": "The callback is the exact registered URI including its query component; new OAuth error/state fields are encoded without replacing unrelated query data or trusting stale state.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "For a valid Redirection URI, return the appropriate error and state parameters."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Authorization code is supported with exact redirect URI matching."
+      },
+      "observed_outcome": "302/303 to the registered callback; foo=bar and state=state-123 remain, error=invalid_request is present, and state=old-state is absent.",
+      "expected_outcome": "Return the OAuth error and current state through the exact valid callback while preserving unrelated registered query data.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The focused controller test passed for this exact registered callback and query condition.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "redirect-safe validation failures merge existing redirect query params canonically",
+        "test_line": 274,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-002-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "registered-query-callback-error-state",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic proof is reused; callback mismatch policy remains unchanged."
     },
     {
-      "id": "A171-003", "category": "response_mode_boundary", "family": "unsupported response mode error boundary", "priority": "P1", "condition_id": "unsupported-response-mode", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test_inventory", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"},
-      "provider_identity": "Lockspire.Web.Router source-host test boundary, /lockspire/authorize.", "input_identity": {"kind": "planned_repository_repro", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "request": "Authorization Code request supplies an unsupported response_mode value with an otherwise valid synthetic callback."},
-      "supported_mount": "Lockspire.Web.Router /authorize", "profile": "authorization code response-mode validation", "auth_mode": "synthetic registered client", "safe_condition": "Response mode is unsupported, so the server cannot safely encode the error using that mode.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError", "section": "OIDC Core 3.1.2.6", "basis": "An unsupported Response Mode results in HTTP 400 without OAuth error response parameters."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Only repo-proven authorization-code and response representations are claimed."},
-      "observed_outcome": "Not observed: the focused source run contains no named assertion for this unsupported-mode condition.", "expected_outcome": "HTTP 400 without OAuth error response parameters when response_mode is unsupported.", "cause": "unresolved", "cause_detail": "This is a supported authorization boundary with a normative expected result but no current deterministic counterexample or proof in the selected test set.",
-      "repro": {"status": "not_run", "evidence_kind": "none", "reason": "Smallest repro owner should add or identify one controller-level assertion; no duplicate test or product correction is selected here."},
-      "observations": [{"observation_id": "A171-003-20261024-01", "date": "2026-10-24", "condition_id": "unsupported-response-mode", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32", "status": "not_observed"}],
-      "next_owner": "Phase 171 executing maintainer; replan proof in Plan 03", "repro_owner": "Lockspire.Web.AuthorizeControllerTest", "regression_owner": "Lockspire maintainers", "disposition": "Proof gap only; no protocol defect is asserted."
+      "id": "A171-003",
+      "category": "response_mode_boundary",
+      "family": "unsupported response mode error boundary",
+      "priority": "P1",
+      "condition_id": "unsupported-response-mode",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+      },
+      "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "request": "Valid registered authorization-code request with scope openid email, state, nonce and S256; candidate changes only response_mode to binary."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "authorization code response-mode validation",
+      "auth_mode": "synthetic registered client",
+      "safe_condition": "Response mode is unsupported, so the server cannot safely encode the error using that mode.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "An unsupported Response Mode requires HTTP 400 without Error Response parameters."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Only repo-proven authorization-code and response representations are claimed."
+      },
+      "observed_outcome": "HTTP 302 to the registered callback with error, error_description, iss, and state parameters.",
+      "expected_outcome": "HTTP 400 without OAuth Error Response parameters for unsupported response_mode.",
+      "cause": "protocol",
+      "cause_detail": "The controlled request reached the named final assertion; the source returned a registered-callback redirect with OAuth error parameters instead of HTTP 400 without them.",
+      "repro": {
+        "status": "counterexample",
+        "evidence_kind": "controlled_http_probe",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_name": "A171-003 valid direct consent control then requires unsupported mode to be HTTP 400 without OAuth error parameters",
+        "test_count": 2,
+        "failure_count": 2,
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "probe_observation_id": "phase171-probe-20261024T204101Z",
+        "assertion_id": "A171-003:http-error-disposition",
+        "controls_passed": true,
+        "control_ids": [
+          "A171-003:query-mode-consent"
+        ],
+        "expected_projection": {
+          "status": 400,
+          "location_kind": "none",
+          "error_parameter_names": []
+        },
+        "observed_projection": {
+          "status": 302,
+          "location_kind": "registered_callback",
+          "error_parameter_names": [
+            "error",
+            "error_description",
+            "iss",
+            "state"
+          ]
+        },
+        "reason": "The controlled request reached the named final assertion; the source returned a registered-callback redirect with OAuth error parameters instead of HTTP 400 without them."
+      },
+      "observations": [
+        {
+          "observation_id": "A171-003-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "status": "not_observed"
+        },
+        {
+          "observation_id": "A171-003-20261024-02",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "status": "counterexample",
+          "assertion_id": "A171-003:http-error-disposition",
+          "probe_observation_id": "phase171-probe-20261024T204101Z"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "A current supported normative failure was reproduced with valid controls; carry it as correction input to the downstream owner."
     },
     {
-      "id": "A171-004", "category": "silent_auth", "family": "prompt=none without host session", "priority": "P1", "condition_id": "prompt-none-no-visible-session", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"},
-      "provider_identity": "GeneratedHostApp Phoenix endpoint with host-owned account resolver and session, mounted at /lockspire.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "request": "Public code+PKCE request uses prompt=none without a visible host session."},
-      "supported_mount": "Generated host /lockspire/authorize", "profile": "OIDC authorization code with host-owned sessions", "auth_mode": "public client with PKCE S256; no host session", "safe_condition": "prompt=none must not display or redirect into host login when the user is not silently authenticated.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest", "section": "OIDC Core 3.1.2.3", "basis": "With prompt=none the Authorization Server must not interact and must return an error when the user cannot be silently authenticated."}, {"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError", "section": "OIDC Core 3.1.2.6", "basis": "login_required is an allowed error for an unsatisfied prompt=none request."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "The Phase 37 strictness slice includes prompt=none returning redirect-safe login_required."},
-      "observed_outcome": "302/303 to the registered callback with login_required and original state; no host /login redirect.", "expected_outcome": "Return redirect-safe login_required without interactive host login.", "cause": "already_correct_not_reproduced", "cause_detail": "The deterministic host integration test passed for the no-session case.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_name": "prompt=none with no visible host session returns login_required without host login redirection", "test_line": 125, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "A171-004-20261024-01", "date": "2026-10-24", "condition_id": "prompt-none-no-visible-session", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused; host session policy remains host-owned."
+      "id": "A171-004",
+      "category": "silent_auth",
+      "family": "prompt=none without host session",
+      "priority": "P1",
+      "condition_id": "prompt-none-no-visible-session",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with host-owned account resolver and session, mounted at /lockspire.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Public code+PKCE request uses prompt=none without a visible host session."
+      },
+      "supported_mount": "Generated host /lockspire/authorize",
+      "profile": "OIDC authorization code with host-owned sessions",
+      "auth_mode": "public client with PKCE S256; no host session",
+      "safe_condition": "prompt=none must not display or redirect into host login when the user is not silently authenticated.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.3",
+          "basis": "With prompt=none the Authorization Server must not interact and must return an error when the user cannot be silently authenticated."
+        },
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OIDC Core 3.1.2.6",
+          "basis": "login_required is an allowed error for an unsatisfied prompt=none request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "The Phase 37 strictness slice includes prompt=none returning redirect-safe login_required."
+      },
+      "observed_outcome": "302/303 to the registered callback with login_required and original state; no host /login redirect.",
+      "expected_outcome": "Return redirect-safe login_required without interactive host login.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host integration test passed for the no-session case.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "prompt=none with no visible host session returns login_required without host login redirection",
+        "test_line": 125,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-004-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "prompt-none-no-visible-session",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; host session policy remains host-owned."
     },
     {
-      "id": "A171-005", "category": "freshness", "family": "stale host auth_time under max_age", "priority": "P1", "condition_id": "stale-auth-time-max-age", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"},
-      "provider_identity": "GeneratedHostApp endpoint uses host-owned current_account_id and current_auth_time_unix session fields.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "request": "Authenticated host session has auth_time 600 seconds old; request uses max_age=60 and prompt=none."},
-      "supported_mount": "Generated host /lockspire/authorize", "profile": "OIDC authorization code with host-owned session freshness", "auth_mode": "public client with PKCE S256 and a stale host session", "safe_condition": "The configured host resolver's old authentication time exceeds the request's max_age.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest", "section": "OIDC Core 3.1.2.2 max_age", "basis": "The OP must attempt active reauthentication when elapsed time exceeds max_age."}, {"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest", "section": "OIDC Core 3.1.2.3", "basis": "prompt=none prevents interaction and requires an error when silent authentication cannot satisfy the request."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Phase 37 strictness includes durable max_age/auth_time handling."},
-      "observed_outcome": "302/303 to the registered callback with login_required and original state.", "expected_outcome": "Do not treat a stale host auth_time as fresh; return login_required without interaction under prompt=none.", "cause": "already_correct_not_reproduced", "cause_detail": "The deterministic host-session test passed for max_age=60 against stale auth_time.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_name": "prompt=none plus stale auth_time under max_age returns login_required", "test_line": 149, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "A171-005-20261024-01", "date": "2026-10-24", "condition_id": "stale-auth-time-max-age", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused; the host remains authoritative for account authentication time."
+      "id": "A171-005",
+      "category": "freshness",
+      "family": "stale host auth_time under max_age",
+      "priority": "P1",
+      "condition_id": "stale-auth-time-max-age",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp endpoint uses host-owned current_account_id and current_auth_time_unix session fields.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Authenticated host session has auth_time 600 seconds old; request uses max_age=60 and prompt=none."
+      },
+      "supported_mount": "Generated host /lockspire/authorize",
+      "profile": "OIDC authorization code with host-owned session freshness",
+      "auth_mode": "public client with PKCE S256 and a stale host session",
+      "safe_condition": "The configured host resolver's old authentication time exceeds the request's max_age.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.2 max_age",
+          "basis": "The OP must attempt active reauthentication when elapsed time exceeds max_age."
+        },
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.3",
+          "basis": "prompt=none prevents interaction and requires an error when silent authentication cannot satisfy the request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness includes durable max_age/auth_time handling."
+      },
+      "observed_outcome": "302/303 to the registered callback with login_required and original state.",
+      "expected_outcome": "Do not treat a stale host auth_time as fresh; return login_required without interaction under prompt=none.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host-session test passed for max_age=60 against stale auth_time.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "prompt=none plus stale auth_time under max_age returns login_required",
+        "test_line": 149,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-005-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "stale-auth-time-max-age",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; the host remains authoritative for account authentication time."
     },
     {
-      "id": "A171-006", "category": "freshness", "family": "fresh host auth_time claim", "priority": "P1", "condition_id": "fresh-auth-time-id-token-claim", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"},
-      "provider_identity": "GeneratedHostApp endpoint and test AccountResolver map host session auth_time into ID-token claims.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "request": "Fresh host authentication time with max_age or explicit claims.id_token.auth_time request."},
-      "supported_mount": "Generated host /lockspire/authorize and /token", "profile": "OIDC authorization code with host-owned session freshness", "auth_mode": "public client with PKCE S256 and a fresh host session", "safe_condition": "When max_age or explicit auth_time demand is met, emitted ID Token auth_time is an integer equal to the host-provided Unix second.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest", "section": "OIDC Core 3.1.2.2 max_age", "basis": "When max_age is used, the ID Token must include auth_time."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Phase 37 strictness includes integer auth_time emission when requested."},
-      "observed_outcome": "Both fresh max_age and explicit auth_time flows emit the configured integer auth_time claim.", "expected_outcome": "ID Token includes integer auth_time matching the host-provided authentication time when required.", "cause": "already_correct_not_reproduced", "cause_detail": "The deterministic host integration test passed both request variants.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs", "test_name": "fresh auth emits integer auth_time in the ID token when max_age or explicit auth_time demand is present", "test_line": 179, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "A171-006-20261024-01", "date": "2026-10-24", "condition_id": "fresh-auth-time-id-token-claim", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused; this does not assert user-supplied or package auth_time policy."
+      "id": "A171-006",
+      "category": "freshness",
+      "family": "fresh host auth_time claim",
+      "priority": "P1",
+      "condition_id": "fresh-auth-time-id-token-claim",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_file_sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      "provider_identity": "GeneratedHostApp endpoint and test AccountResolver map host session auth_time into ID-token claims.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Fresh host authentication time with max_age or explicit claims.id_token.auth_time request."
+      },
+      "supported_mount": "Generated host /lockspire/authorize and /token",
+      "profile": "OIDC authorization code with host-owned session freshness",
+      "auth_mode": "public client with PKCE S256 and a fresh host session",
+      "safe_condition": "When max_age or explicit auth_time demand is met, emitted ID Token auth_time is an integer equal to the host-provided Unix second.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest",
+          "section": "OIDC Core 3.1.2.2 max_age",
+          "basis": "When max_age is used, the ID Token must include auth_time."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness includes integer auth_time emission when requested."
+      },
+      "observed_outcome": "Both fresh max_age and explicit auth_time flows emit the configured integer auth_time claim.",
+      "expected_outcome": "ID Token includes integer auth_time matching the host-provided authentication time when required.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The deterministic host integration test passed both request variants.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "fresh auth emits integer auth_time in the ID token when max_age or explicit auth_time demand is present",
+        "test_line": 179,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "A171-006-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "fresh-auth-time-id-token-claim",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase37_protocol_strictness_e2e_test.exs@81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase37ProtocolStrictnessE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; this does not assert user-supplied or package auth_time policy."
     },
     {
-      "id": "P171-001", "category": "par_lifecycle", "family": "PAR request_uri single-use replay", "priority": "P1", "condition_id": "same-client-request-uri-replay", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"},
-      "provider_identity": "GeneratedHostApp Phoenix endpoint with Ecto test repository; Lockspire-issued urn:ietf:params:oauth:request_uri.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "request": "Same public client submits the same issued request_uri to /authorize a second time after the first flow consumed it."},
-      "supported_mount": "Generated host /par and /authorize", "profile": "PAR over authorization code + PKCE", "auth_mode": "public client with PKCE S256", "safe_condition": "One pushed reference is not reopened by replay after successful authorization-code use.",
-      "normative_references": [{"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4", "section": "RFC 9126 Section 4", "basis": "The client must use each request_uri once; expired references must be rejected."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Pushed authorization requests use Lockspire-issued request_uri references."},
-      "observed_outcome": "Second /authorize use returns HTTP 400 with request_uri invalid, expired, or already used.", "expected_outcome": "A consumed request_uri cannot reopen the authorization flow.", "cause": "already_correct_not_reproduced", "cause_detail": "The required-PAR source integration test completed the first flow and rejected replay.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow", "test_line": 92, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "P171-001-20261024-01", "date": "2026-10-24", "condition_id": "same-client-request-uri-replay", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused; no FAPI certification claim."
+      "id": "P171-001",
+      "category": "par_lifecycle",
+      "family": "PAR request_uri single-use replay",
+      "priority": "P1",
+      "condition_id": "same-client-request-uri-replay",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with Ecto test repository; Lockspire-issued urn:ietf:params:oauth:request_uri.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "request": "Same public client submits the same issued request_uri to /authorize a second time after the first flow consumed it."
+      },
+      "supported_mount": "Generated host /par and /authorize",
+      "profile": "PAR over authorization code + PKCE",
+      "auth_mode": "public client with PKCE S256",
+      "safe_condition": "One pushed reference is not reopened by replay after successful authorization-code use.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "The client must use each request_uri once; expired references must be rejected."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Pushed authorization requests use Lockspire-issued request_uri references."
+      },
+      "observed_outcome": "Second /authorize use returns HTTP 400 with request_uri invalid, expired, or already used.",
+      "expected_outcome": "A consumed request_uri cannot reopen the authorization flow.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The required-PAR source integration test completed the first flow and rejected replay.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-001-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "same-client-request-uri-replay",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused; no FAPI certification claim."
     },
     {
-      "id": "P171-002", "category": "par_lifecycle", "family": "PAR request_uri client binding", "priority": "P1", "condition_id": "foreign-client-uses-issued-reference", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"},
-      "provider_identity": "Lockspire.Web.Router with two synthetic clients and durable PAR store.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "request": "Client B submits Client A's valid request_uri to /authorize; synthetic credentials only."},
-      "supported_mount": "Lockspire.Web.Router /par and /authorize", "profile": "PAR client binding", "auth_mode": "registered confidential clients", "safe_condition": "Only the posting client can use the resulting request_uri.",
-      "normative_references": [{"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.2", "section": "RFC 9126 Section 2.2", "basis": "The request_uri value must be bound to the client that posted the authorization request."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "PAR is supported as Lockspire-issued request_uri references."},
-      "observed_outcome": "Wrong-client use returns HTTP 400; the request_uri is burned and subsequent owner use is also rejected.", "expected_outcome": "Reject a request_uri presented by a different client and prevent cross-client reuse.", "cause": "already_correct_not_reproduced", "cause_detail": "The current controller test verified rejection and burn behavior.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_name": "wrong-client par attempts are rejected and burn the request_uri", "test_line": 630, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "P171-002-20261024-01", "date": "2026-10-24", "condition_id": "foreign-client-uses-issued-reference", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Web.AuthorizeControllerTest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused."
+      "id": "P171-002",
+      "category": "par_lifecycle",
+      "family": "PAR request_uri client binding",
+      "priority": "P1",
+      "condition_id": "foreign-client-uses-issued-reference",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router with two synthetic clients and durable PAR store.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "Client B submits Client A's valid request_uri to /authorize; synthetic credentials only."
+      },
+      "supported_mount": "Lockspire.Web.Router /par and /authorize",
+      "profile": "PAR client binding",
+      "auth_mode": "registered confidential clients",
+      "safe_condition": "Only the posting client can use the resulting request_uri.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.2",
+          "section": "RFC 9126 Section 2.2",
+          "basis": "The request_uri value must be bound to the client that posted the authorization request."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR is supported as Lockspire-issued request_uri references."
+      },
+      "observed_outcome": "Wrong-client use returns HTTP 400; the request_uri is burned and subsequent owner use is also rejected.",
+      "expected_outcome": "Reject a request_uri presented by a different client and prevent cross-client reuse.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The current controller test verified rejection and burn behavior.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "wrong-client par attempts are rejected and burn the request_uri",
+        "test_line": 630,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-002-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "foreign-client-uses-issued-reference",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused."
     },
     {
-      "id": "P171-003", "category": "par_lifecycle", "family": "expired PAR request_uri", "priority": "P1", "condition_id": "expired-issued-reference", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"},
-      "provider_identity": "Lockspire.Web.Router controller test with synthetic already-expired PAR entry.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/authorize_controller_test.exs", "request": "The host stores a request_uri with expiry 600 seconds in the past, then receives it at /authorize."},
-      "supported_mount": "Lockspire.Web.Router /authorize", "profile": "PAR expiry", "auth_mode": "registered public client", "safe_condition": "A stored request_uri is past its expires_at timestamp.",
-      "normative_references": [{"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4", "section": "RFC 9126 Section 4", "basis": "An expired request_uri must be rejected as invalid."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "PAR references extend the existing authorization code + PKCE flow."},
-      "observed_outcome": "HTTP 400 first-party error; no redirect to a callback.", "expected_outcome": "Reject an expired reference and do not continue authorization.", "cause": "already_correct_not_reproduced", "cause_detail": "The named browser-surface controller test passed.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/lockspire/web/authorize_controller_test.exs", "test_name": "expired par request_uris fail safely at the browser surface", "test_line": 577, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "P171-003-20261024-01", "date": "2026-10-24", "condition_id": "expired-issued-reference", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Web.AuthorizeControllerTest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host proof is reused."
+      "id": "P171-003",
+      "category": "par_lifecycle",
+      "family": "expired PAR request_uri",
+      "priority": "P1",
+      "condition_id": "expired-issued-reference",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_file_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      "provider_identity": "Lockspire.Web.Router controller test with synthetic already-expired PAR entry.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "request": "The host stores a request_uri with expiry 600 seconds in the past, then receives it at /authorize."
+      },
+      "supported_mount": "Lockspire.Web.Router /authorize",
+      "profile": "PAR expiry",
+      "auth_mode": "registered public client",
+      "safe_condition": "A stored request_uri is past its expires_at timestamp.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "An expired request_uri must be rejected as invalid."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR references extend the existing authorization code + PKCE flow."
+      },
+      "observed_outcome": "HTTP 400 first-party error; no redirect to a callback.",
+      "expected_outcome": "Reject an expired reference and do not continue authorization.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The named browser-surface controller test passed.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/lockspire/web/authorize_controller_test.exs",
+        "test_name": "expired par request_uris fail safely at the browser surface",
+        "test_line": 577,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-003-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "expired-issued-reference",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/authorize_controller_test.exs@382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.AuthorizeControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host proof is reused."
     },
     {
-      "id": "P171-004", "category": "par_policy", "family": "required PAR versus direct authorization", "priority": "P1", "condition_id": "required-par-direct-and-pushed-paths", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"},
-      "provider_identity": "GeneratedHostApp Phoenix endpoint with global required-PAR policy and host-owned consent flow.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "request": "Compare direct /authorize without request_uri to a pushed request_uri flow for the same synthetic public client."},
-      "supported_mount": "Generated host /par, /authorize, and /token", "profile": "authorization code + PKCE with required PAR", "auth_mode": "public client with S256", "safe_condition": "Global required-PAR policy rejects authorization data sent only front-channel, while a valid pushed request can complete the flow and token exchange.",
-      "normative_references": [{"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4", "section": "RFC 9126 Section 4", "basis": "Authorization Server policy may require PAR and refuse requests lacking a PAR-issued request_uri."}, {"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.3", "section": "RFC 9126 Section 2.3", "basis": "PAR endpoint errors use the OAuth error response format."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "Global and client-specific PAR policies may be required or optional."},
-      "observed_outcome": "Direct request returns invalid_request and state to the exact callback; the pushed code+PKCE flow completes; replay is rejected.", "expected_outcome": "Required-PAR rejects direct authorization data and permits the valid pushed flow.", "cause": "already_correct_not_reproduced", "cause_detail": "The named end-to-end source-host test passed both direct rejection and canonical pushed flow.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow", "test_line": 92, "test_count": 1, "command_total_tests": 44, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "P171-004-20261024-01", "date": "2026-10-24", "condition_id": "required-par-direct-and-pushed-paths", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Existing deterministic source-host policy evidence is reused."
+      "id": "P171-004",
+      "category": "par_policy",
+      "family": "required PAR versus direct authorization",
+      "priority": "P1",
+      "condition_id": "required-par-direct-and-pushed-paths",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint with global required-PAR policy and host-owned consent flow.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "request": "Compare direct /authorize without request_uri to a pushed request_uri flow for the same synthetic public client."
+      },
+      "supported_mount": "Generated host /par, /authorize, and /token",
+      "profile": "authorization code + PKCE with required PAR",
+      "auth_mode": "public client with S256",
+      "safe_condition": "Global required-PAR policy rejects authorization data sent only front-channel, while a valid pushed request can complete the flow and token exchange.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "Authorization Server policy may require PAR and refuse requests lacking a PAR-issued request_uri."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-2.3",
+          "section": "RFC 9126 Section 2.3",
+          "basis": "PAR endpoint errors use the OAuth error response format."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Global and client-specific PAR policies may be required or optional."
+      },
+      "observed_outcome": "Direct request returns invalid_request and state to the exact callback; the pushed code+PKCE flow completes; replay is rejected.",
+      "expected_outcome": "Required-PAR rejects direct authorization data and permits the valid pushed flow.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "The named end-to-end source-host test passed both direct rejection and canonical pushed flow.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs test/lockspire/web/authorize_controller_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "test_name": "required-PAR rejects direct authorize but still completes the canonical PAR auth-code plus PKCE flow",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 44,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-004-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "required-par-direct-and-pushed-paths",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/integration/phase15_par_authorization_e2e_test.exs@a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Existing deterministic source-host policy evidence is reused."
     },
     {
-      "id": "P171-005", "category": "par_policy", "family": "pushed versus front-channel parameter conflict", "priority": "P1", "condition_id": "par-reference-plus-conflicting-front-channel-scope", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test_inventory", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "test_file_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"},
-      "provider_identity": "GeneratedHostApp /authorize endpoint consuming a Lockspire-issued reference; no external profile path observed.", "input_identity": {"kind": "planned_repository_repro", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/integration/phase15_par_authorization_e2e_test.exs", "request": "Push scope=openid email, then request /authorize with the resulting request_uri plus conflicting front-channel scope=profile."},
-      "supported_mount": "Generated host /par and /authorize", "profile": "PAR request-intake conflict boundary", "auth_mode": "synthetic public client with PKCE S256", "safe_condition": "The browser request presents parameters that disagree with values stored behind a valid pushed request_uri.",
-      "normative_references": [{"url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4", "section": "RFC 9126 Section 4", "basis": "The request_uri references the pushed authorization request data; the standard does not uniquely prescribe how this implementation handles duplicate conflicting front-channel parameters."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "PAR is supported as Lockspire-issued references extending the authorization code + PKCE flow."},
-      "observed_outcome": "Not observed: current named owners cover required-PAR, replay, client binding, and expiry, but no conflicting duplicated front-channel value assertion.", "expected_outcome": "Policy unresolved: decide whether conflicting duplicate fields are rejected or ignored in favor of the pushed request; do not merge them implicitly.", "cause": "unresolved", "cause_detail": "The normative reference establishes the pushed reference and integrity boundary but does not choose between rejection and ignore for this exact duplicate-parameter case.",
-      "repro": {"status": "not_run", "evidence_kind": "none", "reason": "Plan 03 must replan this exact conflict and its smallest deterministic end-to-end repro after the policy owner resolves the safe handling choice."},
-      "observations": [{"observation_id": "P171-005-20261024-01", "date": "2026-10-24", "condition_id": "par-reference-plus-conflicting-front-channel-scope", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32", "status": "not_observed"}],
-      "next_owner": "Phase 171 executing maintainer; policy decision and proof replan in Plan 03", "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest", "regression_owner": "Lockspire maintainers", "disposition": "Unresolved supported-surface policy/proof boundary; no implementation defect is asserted."
+      "id": "P171-005",
+      "category": "par_policy",
+      "family": "pushed versus front-channel parameter conflict",
+      "priority": "P1",
+      "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+      },
+      "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "request": "Two form PAR POSTs push scope openid email; reference-only control reaches consent; candidate adds only front-channel scope profile to a fresh reference."
+      },
+      "supported_mount": "Generated host /par and /authorize",
+      "profile": "PAR request-intake conflict boundary",
+      "auth_mode": "synthetic public client with PKCE S256",
+      "safe_condition": "The browser request presents parameters that disagree with values stored behind a valid pushed request_uri.",
+      "normative_references": [
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9126.html#section-4",
+          "section": "RFC 9126 Section 4",
+          "basis": "The returned request_uri references pushed authorization request data and directs its use in the authorization request."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-5",
+          "section": "RFC 9101 Section 5",
+          "basis": "Authorization request parameters may be duplicated between the request object and outer request."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-6.3",
+          "section": "RFC 9101 Section 6.3",
+          "basis": "The referenced request object is authoritative for duplicated parameters and client-ID equality remains required."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc9101.html#section-10.7",
+          "section": "RFC 9101 Section 10.7",
+          "basis": "The integrity rationale protects request parameters from browser-front-channel modification."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "PAR is supported as Lockspire-issued references extending the authorization code + PKCE flow."
+      },
+      "observed_outcome": "The reference-only control reaches consent with pushed openid/email; the candidate conflicting outer scope receives HTTP 400 before consent.",
+      "expected_outcome": "The valid reference reaches consent using pushed openid/email, ignoring outer scope=profile without union or override.",
+      "cause": "protocol",
+      "cause_detail": "Both independent PAR POSTs and the reference-only consent control passed; the conflicting outer scope request was rejected with HTTP 400 before consent instead of using the pushed scope. Settled scope interpretation is attributed in 171-QUALIFICATION-DECISIONS.md; the completed controlled HTTP observation reproduces the blanket rejection.",
+      "repro": {
+        "status": "counterexample",
+        "evidence_kind": "controlled_http_probe",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
+        "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "test_name": "P171-005 valid pushed-reference control requires pushed scopes to remain authoritative over front-channel scope",
+        "test_count": 2,
+        "failure_count": 2,
+        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "probe_observation_id": "phase171-probe-20261024T204101Z",
+        "assertion_id": "P171-005:pushed-scope-authority",
+        "controls_passed": true,
+        "control_ids": [
+          "P171-005:form-par-post",
+          "P171-005:reference-only-consent",
+          "P171-005:independent-candidate-par-post"
+        ],
+        "expected_projection": {
+          "status_class": "redirect",
+          "location_kind": "host_consent",
+          "scopes": [
+            "email",
+            "openid"
+          ],
+          "state_matches": true,
+          "nonce_matches": true,
+          "client_matches": true
+        },
+        "observed_projection": {
+          "status": 400,
+          "status_class": "other",
+          "location_kind": "none",
+          "scopes": null,
+          "state_matches": false,
+          "nonce_matches": false,
+          "client_matches": false
+        },
+        "reason": "Both independent PAR POSTs and the reference-only consent control passed; the conflicting outer scope request was rejected with HTTP 400 before consent instead of using the pushed scope."
+      },
+      "observations": [
+        {
+          "observation_id": "P171-005-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "focused source-test inventory at 9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "status": "not_observed"
+        },
+        {
+          "observation_id": "P171-005-20261024-02",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+          "status": "counterexample",
+          "assertion_id": "P171-005:pushed-scope-authority",
+          "probe_observation_id": "phase171-probe-20261024T204101Z"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Integration.Phase15ParAuthorizationE2ETest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "A current supported normative failure was reproduced with valid controls; carry it as correction input to the downstream owner.",
+      "policy_interpretation": {
+        "date": "2026-10-24",
+        "decision": "For a valid Lockspire-issued reference, the pushed scope is authoritative; ignore the duplicate outer scope without merging or overriding it.",
+        "basis": "Linked-clause interpretation: RFC 9126 Section 4 incorporates RFC 9101 request semantics; RFC 9101 Sections 5 and 6.3 establish duplicate and authoritative parameter handling, and Section 10.7 explains the integrity rationale. This is not a direct quotation from RFC 9126.",
+        "boundaries": [
+          "PAR may be plain form-encoded; no JWT/JAR requirement is introduced.",
+          "Client-ID equality/binding remains required.",
+          "request and request_uri remain mutually exclusive."
+        ]
+      }
     },
     {
-      "id": "P171-006", "category": "discovery_metadata", "family": "configured issuer and advertised endpoints", "priority": "P1", "condition_id": "configured-mounted-issuer-metadata", "requirement_ids": ["FIND-01"],
-      "source": {"kind": "repository_test", "date": "2026-10-24", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/discovery_controller_test.exs", "test_file_sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"},
-      "provider_identity": "Lockspire.Web.Router with configured issuer https://example.test/lockspire and mount path /lockspire.", "input_identity": {"kind": "repository_test", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "test_path": "test/lockspire/web/discovery_controller_test.exs", "request": "GET /.well-known/openid-configuration with a source-host issuer configured to include the Lockspire mount path."},
-      "supported_mount": "Lockspire.Web.Router /.well-known/openid-configuration", "profile": "OIDC discovery for mounted authorization-code + PAR endpoints", "auth_mode": "source-host configuration, no user session", "safe_condition": "Issuer and endpoint metadata are derived from the configured issuer and mount path; only advertised response modes correspond to supported capability entries.",
-      "normative_references": [{"url": "https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata", "section": "OpenID Connect Discovery 1.0 Section 3", "basis": "Provider metadata identifies the issuer and endpoint locations used by relying parties."}, {"url": "https://www.rfc-editor.org/rfc/rfc8414.html#section-2", "section": "RFC 8414 Section 2", "basis": "Authorization server metadata publishes endpoint locations and capabilities."}],
-      "support_reference": {"path": "docs/supported-surface.md", "claim": "OIDC discovery and truthful FAPI metadata are part of the supported surface."},
-      "observed_outcome": "The discovery test reports issuer https://example.test/lockspire and authorization, token, userinfo, JWKS, PAR, revocation, introspection endpoints under that mount; supported response-mode values are listed.", "expected_outcome": "Advertised issuer and endpoint metadata match the configured issuer and mounted route shape.", "cause": "already_correct_not_reproduced", "cause_detail": "Seven discovery controller tests passed, including truthful mounted metadata; this does not exercise external reverse-proxy/TLS/browser reachability.",
-      "repro": {"status": "pass", "evidence_kind": "repository_test", "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/discovery_controller_test.exs", "test_path": "test/lockspire/web/discovery_controller_test.exs", "test_name": "GET /.well-known/openid-configuration publishes truthful mounted metadata", "test_line": 92, "test_count": 1, "command_total_tests": 7, "failure_count": 0, "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"},
-      "observations": [{"observation_id": "P171-006-20261024-01", "date": "2026-10-24", "condition_id": "configured-mounted-issuer-metadata", "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32", "input_identity": "test/lockspire/web/discovery_controller_test.exs@4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc", "status": "pass"}],
-      "next_owner": "Phase 171 executing maintainer", "repro_owner": "Lockspire.Web.DiscoveryControllerTest", "regression_owner": "Lockspire maintainers", "disposition": "Current source-host metadata proof passes; external issuer/TLS/proxy/browser reachability remains excluded pending an available exact-input profile run."
+      "id": "P171-006",
+      "category": "discovery_metadata",
+      "family": "configured issuer and advertised endpoints",
+      "priority": "P1",
+      "condition_id": "configured-mounted-issuer-metadata",
+      "requirement_ids": [
+        "FIND-01"
+      ],
+      "source": {
+        "kind": "repository_test",
+        "date": "2026-10-24",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "test_file_sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+      },
+      "provider_identity": "Lockspire.Web.Router with configured issuer https://example.test/lockspire and mount path /lockspire.",
+      "input_identity": {
+        "kind": "repository_test",
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "request": "GET /.well-known/openid-configuration with a source-host issuer configured to include the Lockspire mount path."
+      },
+      "supported_mount": "Lockspire.Web.Router /.well-known/openid-configuration",
+      "profile": "OIDC discovery for mounted authorization-code + PAR endpoints",
+      "auth_mode": "source-host configuration, no user session",
+      "safe_condition": "Issuer and endpoint metadata are derived from the configured issuer and mount path; only advertised response modes correspond to supported capability entries.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata",
+          "section": "OpenID Connect Discovery 1.0 Section 3",
+          "basis": "Provider metadata identifies the issuer and endpoint locations used by relying parties."
+        },
+        {
+          "url": "https://www.rfc-editor.org/rfc/rfc8414.html#section-2",
+          "section": "RFC 8414 Section 2",
+          "basis": "Authorization server metadata publishes endpoint locations and capabilities."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "OIDC discovery and truthful FAPI metadata are part of the supported surface."
+      },
+      "observed_outcome": "The discovery test reports issuer https://example.test/lockspire and authorization, token, userinfo, JWKS, PAR, revocation, introspection endpoints under that mount; supported response-mode values are listed.",
+      "expected_outcome": "Advertised issuer and endpoint metadata match the configured issuer and mounted route shape.",
+      "cause": "already_correct_not_reproduced",
+      "cause_detail": "Seven discovery controller tests passed, including truthful mounted metadata; this does not exercise external reverse-proxy/TLS/browser reachability.",
+      "repro": {
+        "status": "pass",
+        "evidence_kind": "repository_test",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/discovery_controller_test.exs",
+        "test_path": "test/lockspire/web/discovery_controller_test.exs",
+        "test_name": "GET /.well-known/openid-configuration publishes truthful mounted metadata",
+        "test_line": 92,
+        "test_count": 1,
+        "command_total_tests": 7,
+        "failure_count": 0,
+        "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32"
+      },
+      "observations": [
+        {
+          "observation_id": "P171-006-20261024-01",
+          "date": "2026-10-24",
+          "condition_id": "configured-mounted-issuer-metadata",
+          "source_sha": "9454d6cee59ab01cbea10bac49abc07ffc510c32",
+          "input_identity": "test/lockspire/web/discovery_controller_test.exs@4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc",
+          "status": "pass"
+        }
+      ],
+      "next_owner": "Phase 171 executing maintainer",
+      "repro_owner": "Lockspire.Web.DiscoveryControllerTest",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "Current source-host metadata proof passes; external issuer/TLS/proxy/browser reachability remains excluded pending an available exact-input profile run."
     }
   ],
   "matrix": {
     "status": "draft",
     "rows": [
-      {"case_id": "A171-001", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "A171-002", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "A171-003", "priority": "P1", "classification": "unresolved", "next_owner": "Phase 171 executing maintainer; replan proof in Plan 03"},
-      {"case_id": "A171-004", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "A171-005", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "A171-006", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "P171-001", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "P171-002", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "P171-003", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "P171-004", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"},
-      {"case_id": "P171-005", "priority": "P1", "classification": "unresolved", "next_owner": "Phase 171 executing maintainer; policy decision and proof replan in Plan 03"},
-      {"case_id": "P171-006", "priority": "P1", "classification": "already_correct_not_reproduced", "next_owner": "Phase 171 executing maintainer"}
+      {
+        "case_id": "A171-001",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "A171-002",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "A171-003",
+        "priority": "P1",
+        "classification": "protocol",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "A171-004",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "A171-005",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "A171-006",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-001",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-002",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-003",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-004",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-005",
+        "priority": "P1",
+        "classification": "protocol",
+        "next_owner": "Phase 171 executing maintainer"
+      },
+      {
+        "case_id": "P171-006",
+        "priority": "P1",
+        "classification": "already_correct_not_reproduced",
+        "next_owner": "Phase 171 executing maintainer"
+      }
     ],
     "requirement_dispositions": []
   },
   "blockers": [
-    "A171-003: unsupported response_mode requires a named deterministic controller proof before selection is frozen.",
-    "P171-005: conflicting pushed/front-channel request parameters require a policy choice and scoped repro before selection is frozen.",
     "Phase37 and FAPI2 exact-input supplemental observations remain unavailable pending the pinned Python environment and retry."
   ],
   "exclusions": [

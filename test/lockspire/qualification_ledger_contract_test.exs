@@ -176,10 +176,10 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert get_in(repeated, ["cases", Access.at(0), "id"]) == "A171-001"
   end
 
-  test "unresolved conditions stay explicit and interrupted or suite-level results cannot prove a case" do
+  test "qualified counterexamples stay distinct and interrupted or suite-level results cannot prove a case" do
     ledger = load_ledger()
-    assert get_in(ledger, ["cases", Access.at(2), "cause"]) == "unresolved"
-    assert get_in(ledger, ["cases", Access.at(2), "repro", "status"]) == "not_run"
+    assert get_in(ledger, ["cases", Access.at(2), "cause"]) == "protocol"
+    assert get_in(ledger, ["cases", Access.at(2), "repro", "status"]) == "counterexample"
 
     interrupted =
       ledger
@@ -192,6 +192,27 @@ defmodule Lockspire.QualificationLedgerContractTest do
       put_in(ledger, ["cases", Access.at(0), "repro", "evidence_kind"], "external_suite_run")
 
     assert_rejected(external)
+  end
+
+  test "controlled protocol counterexamples require the named final assertion and passing controls" do
+    ledger = load_ledger()
+    index = Enum.find_index(ledger["cases"], &(&1["id"] == "A171-003"))
+    repro_path = ["cases", Access.at(index), "repro"]
+
+    assert get_in(ledger, repro_path ++ ["status"]) == "counterexample"
+    assert validate(ledger) == []
+
+    assert_rejected(put_in(ledger, repro_path ++ ["controls_passed"], false))
+    assert_rejected(put_in(ledger, repro_path ++ ["assertion_id"], nil))
+    assert_rejected(put_in(ledger, repro_path ++ ["observed_projection"], %{}))
+    assert_rejected(put_in(ledger, repro_path ++ ["probe_observation_id"], "missing"))
+
+    falsely_passed =
+      ledger
+      |> put_in(repro_path ++ ["status"], "pass")
+      |> put_in(repro_path ++ ["failure_count"], 0)
+
+    assert_rejected(falsely_passed)
   end
 
   test "profile unavailability does not fabricate wrapper or receipt outcomes" do
@@ -564,9 +585,18 @@ defmodule Lockspire.QualificationLedgerContractTest do
       (repro["status"] == "pass" and nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
          nonempty?(repro["test_name"]) and repro["evidence_kind"] == "repository_test" and
          File.exists?(Path.join(@repo_root, repro["test_path"]))) or
+        (repro["status"] == "counterexample" and item["cause"] == "protocol" and
+           repro["evidence_kind"] == "controlled_http_probe" and
+           nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
+           nonempty?(repro["test_name"]) and File.exists?(Path.join(@repo_root, repro["test_path"])) and
+           nonempty?(repro["assertion_id"]) and repro["controls_passed"] == true and
+           is_list(repro["control_ids"]) and repro["control_ids"] != [] and
+           is_map(repro["expected_projection"]) and is_map(repro["observed_projection"]) and
+           repro["expected_projection"] != repro["observed_projection"] and
+           full_sha256?(repro["test_file_sha256"]) and nonempty?(repro["probe_observation_id"])) or
         (repro["status"] == "not_run" and item["cause"] == "unresolved" and
            repro["evidence_kind"] == "none" and nonempty?(repro["reason"])),
-      "reproduction must be a named repository test or an explicit unresolved not-run boundary"
+      "reproduction must be a named test, a controlled counterexample, or an explicit unresolved not-run boundary"
     )
     |> require(
       is_list(item["normative_references"]) and item["normative_references"] != [] and
@@ -589,14 +619,38 @@ defmodule Lockspire.QualificationLedgerContractTest do
         repro["source_sha"] == item["source"]["source_sha"] and
         repro["evidence_kind"] == "repository_test"
 
+    controlled_counterexample =
+      repro["status"] == "counterexample" and item["cause"] == "protocol" and
+        repro["source_sha"] == item["source"]["source_sha"] and
+        repro["evidence_kind"] == "controlled_http_probe" and
+        is_integer(repro["test_count"]) and repro["test_count"] > 0 and
+        is_integer(repro["failure_count"]) and repro["failure_count"] > 0 and
+        repro["controls_passed"] == true and nonempty?(repro["assertion_id"]) and
+        probe_counterexample_matches?(item, repro)
+
     unresolved_not_run =
       repro["status"] == "not_run" and item["cause"] == "unresolved" and
         is_list(obs) and Enum.all?(obs, &(&1["status"] == "not_observed"))
 
+    observations_match_result =
+      cond do
+        deterministic_pass -> Enum.all?(obs, &(&1["status"] == "pass"))
+        controlled_counterexample ->
+          Enum.count(obs, &(&1["status"] == "counterexample")) == 1 and
+            Enum.any?(obs, fn observation ->
+              observation["status"] == "counterexample" and
+                observation["assertion_id"] == repro["assertion_id"] and
+                observation["probe_observation_id"] == repro["probe_observation_id"]
+            end)
+
+        unresolved_not_run -> true
+        true -> false
+      end
+
     errors
     |> require(
-      deterministic_pass or unresolved_not_run,
-      "only a deterministic source-host pass or explicit unresolved not-run case is valid"
+      deterministic_pass or controlled_counterexample or unresolved_not_run,
+      "only a deterministic pass, controlled normative counterexample, or explicit unresolved not-run case is valid"
     )
     |> require(
       source_revision_exists?(item["source"]["source_sha"]),
@@ -613,12 +667,16 @@ defmodule Lockspire.QualificationLedgerContractTest do
         Enum.all?(obs, fn observation ->
           nonempty?(observation["observation_id"]) and
             observation["condition_id"] == item["condition_id"] and
-            observation["source_sha"] == item["source"]["source_sha"] and
+          full_sha?(observation["source_sha"]) and source_revision_exists?(observation["source_sha"]) and
             nonempty?(observation["input_identity"]) and observation["date"] != nil and
-            observation["status"] == if(deterministic_pass, do: "pass", else: "not_observed")
+          observation["status"] in ["pass", "not_observed", "counterexample"] and
+          (observation["status"] != "counterexample" or
+             (controlled_counterexample and observation["assertion_id"] == repro["assertion_id"] and
+                observation["probe_observation_id"] == repro["probe_observation_id"]))
         end),
-      "observations must retain stable condition, source, and outcome identities"
+      "observations must retain their own source, input, and outcome identities"
     )
+    |> require(observations_match_result, "observations must support the current result at its own source identity")
     |> require(
       is_list(obs) and
         length(Enum.map(obs, & &1["observation_id"])) ==
@@ -632,9 +690,35 @@ defmodule Lockspire.QualificationLedgerContractTest do
     do: is_binary(url) and String.starts_with?(url, "https://") and nonempty?(section)
 
   defp valid_url_reference?(_), do: false
+
+  defp probe_counterexample_matches?(item, repro) do
+    path = Path.join(@phase_dir, "171-QUALIFICATION-PROBE.json")
+
+    with {:ok, body} <- File.read(path),
+         {:ok, probe} <- Jason.decode(body),
+         result when is_map(result) <- Enum.find(probe["cases"], &(&1["case_id"] == item["id"])) do
+      probe["observation_id"] == repro["probe_observation_id"] and
+        probe["source_identity"]["source_sha_before"] == repro["source_sha"] and
+        probe["source_identity"]["source_sha_after"] == repro["source_sha"] and
+        probe["source_identity"]["changed_during_observation"] == false and
+        probe["source_identity"]["probe_sha256"] == repro["test_file_sha256"] and
+        probe["execution"]["mix_exit_code"] == 2 and
+        probe["execution"]["test_count"] == repro["test_count"] and
+        probe["execution"]["failure_count"] == repro["failure_count"] and
+        result["assertion_id"] == repro["assertion_id"] and
+        result["expected_projection"] == repro["expected_projection"] and
+        result["observed_projection"] == repro["observed_projection"] and
+        result["protocol_assertion_status"] == "counterexample" and
+        result["controls"] != [] and Enum.all?(result["controls"], &(&1["status"] == "pass"))
+    else
+      _ -> false
+    end
+  end
+
   defp require(errors, true, _message), do: errors
   defp require(errors, false, message), do: [message | errors]
   defp full_sha?(value), do: is_binary(value) and String.match?(value, ~r/\A[0-9a-f]{40}\z/)
+  defp full_sha256?(value), do: is_binary(value) and String.match?(value, ~r/\A[0-9a-f]{64}\z/)
   defp nonempty?(value), do: is_binary(value) and String.trim(value) != ""
 
   defp source_revision_exists?(sha) when is_binary(sha) do
