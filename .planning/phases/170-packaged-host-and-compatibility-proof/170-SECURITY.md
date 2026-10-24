@@ -8,8 +8,8 @@ threats_closed: 19
 asvs_level: 1
 block_on: high
 created: "2026-10-24"
-audited_head: 14e9fa173e21a20d764f3730f221d51f9db3d9eb
-runtime_evidence_source: ef9ef86030467792346d1b674c58b44d8db30d38
+audited_head: a62b712ff6fed647c17b3a1f6e37f56759dd5d83
+runtime_evidence_source: 7a845ba3e142f3ff1e717d85ebc017d02becfae2
 ---
 
 # Phase 170 — Security
@@ -62,12 +62,24 @@ No accepted risks.
 |---|---|---|---|---|---|
 | Initial independent L1 audit | 04137365578662af6680adab5f50ac9ca4880aa0 | 14 | 3 | 2 | Nested diagnostic keys leaked; drop exceptions skipped raw-root cleanup; interruption and lifecycle DB cleanup incomplete |
 | Independent re-audit | 14e9fa173e21a20d764f3730f221d51f9db3d9eb | 19 | 0 | 0 | Prior fault reproductions closed after ef9ef860, debd3d28 and 8f775485; refreshed evidence recorded by 14e9fa17 |
+| Final containment delta audit | a62b712ff6fed647c17b3a1f6e37f56759dd5d83 | 19 | 0 | 0 | CR-01 strengthens T-170-04/13/14; actual guard rejected ten hostile paths and accepted nested staging before mutation; six current browser receipts and two lifecycle records revalidated |
 
 Fresh auditor checks: Node 8/8, 18 selected Python checks, hostile nested
 diagnostics, actual-main drop timeout/error probes, and an owned child ignoring
 SIGTERM terminated by its deadline. Six browser receipts and both lifecycle
-identities/versions were independently revalidated. Recorded full remediation
-checks are Python 35, CI/docs 14 and serialized broad suite 2,027 passed.
+identities/versions were independently revalidated. Final containment checks
+are Python 36, Node 8 and CI/docs 14. The serialized broad suite of 2,027
+checks remains historical at its recorded source; no new broad run is claimed
+after the wrapper-only containment changes.
+
+The final delta audit inspected the guard before all directory mutations and
+verified traversal, symlink components, non-directories and CR/LF rejection.
+Current receipts bind source 7a845ba3: locked 43 lifecycle checks plus three
+mounts x 16 browser cases in 562 seconds; floor retry 44 plus three x 16 in
+156 seconds. Both exited zero after cleanup. The initial floor 900-second
+timeout/exit 124 has lifecycle evidence only and remains failed historical
+evidence, excluded from the passing matrix. No concurrent same-user filesystem
+replacement protection is claimed.
 
 See 170-REMEDIATION.md for fixes, reproduction methods and exact commands;
 170-ACCEPTANCE.md records the refreshed pair/mount evidence and timing boundary.
@@ -78,7 +90,7 @@ ASVS L1 verification of the declared register, not certification. Local runtime
 evidence is 43/44 lifecycle tests plus three mounts x 16 browser cases per pair.
 Authorization is established at tested boundaries; continuous socket revocation
 is not claimed. No hosted CI run or execution on CI's expected BEAM versions
-was observed. Runtime implementation is unchanged since receipt source ef9ef860.
+was observed. Runtime implementation is unchanged since receipt source 7a845ba3.
 
 - [x] Every registered threat has a disposition and implementation evidence.
 - [x] Initial audit gaps have explicit repairs and independent re-verification.
