@@ -66,7 +66,7 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 
 ### Blockers/Concerns
 
-No active Phase 170 blocker or human UAT remains. Hosted CI and its expected BEAM versions are unobserved; no branch protection or publication action ran. Run shared generated-host selectors sequentially with fresh databases and a writable Hex home. A cold floor attempt hit the unchanged 900s budget and is retained as failed; same-source retry passed in 156s. Concurrent same-user filesystem replacement protection is not claimed. Completion tooling emitted five nonblocking warnings by treating command strings in SUMMARY verification refs as file paths; the actual targets exist and were executed. Historical summaries remain unchanged to preserve evidence and the verification fingerprint.
+No active Phase 170 blocker or human UAT remains. Milestone archival is not yet verified: canonical readiness reports phases 167, 168 and 169 stale after shared-source changes. Their 202 regression checks pass, but each earlier phase needs its verification-only execute-phase route to regenerate its own report/fingerprint before milestone close; no override was accepted. Hosted CI and its expected BEAM versions are unobserved; no branch protection or publication action ran. Run shared generated-host selectors sequentially with fresh databases and a writable Hex home. A cold floor attempt hit the unchanged 900s budget and is retained as failed; same-source retry passed in 156s. Concurrent same-user filesystem replacement protection is not claimed. Completion tooling emitted five nonblocking warnings by treating command strings in SUMMARY verification refs as file paths; the actual targets exist and were executed. Historical summaries remain unchanged to preserve evidence and the verification fingerprint.
 
 No active Phase 169 blocker. Transaction evidence covers process interruption and ordinary errors; unsupported hard links/cross-filesystem publication refuse safely. Power-loss durability, directory fsync, hostile same-user replacement and simultaneous writers are not claimed. Run test selectors sequentially because they share a generated-host filesystem fixture, and use fresh disposable test databases to avoid persistent-row contamination. The unrelated original state.json bytes remain preserved.
 
@@ -127,7 +127,7 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 Last session: 2026-10-24
 Stopped at: Phase 170 complete — all phases complete
 Resume file: None
-Next: `$gsd-audit-milestone` — audit v1.46 before archival. Phase 170 verification passed, 5/5 plans complete; no phase execution remains. Original unrelated state.json bytes are preserved.
+Next: `$gsd-execute-phase 167`, then 168 and 169 (verification-only resume; all plans are summarized), then `$gsd-audit-milestone` before archival. Phase 170 verification passed, 5/5 plans complete; no phase execution remains. Original unrelated state.json bytes are preserved.
 
 ## Performance Metrics
 

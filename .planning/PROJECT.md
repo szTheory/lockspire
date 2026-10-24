@@ -356,7 +356,7 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No implementation requirements remain active for v1.46. Milestone audit, remote CI observation and publication remain separate actions.
+No implementation requirements remain active for v1.46. Before milestone archival, refresh the stale phase 167–169 verification owners after shared-source changes, then run the milestone audit. Remote CI observation and publication remain separate actions.
 
 All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; All four implementation phases (167–170) are complete; milestone audit/archival has not run.
 
