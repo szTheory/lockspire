@@ -166,8 +166,12 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     refute redirected?(binary_conn)
     assert binary_conn.resp_body =~ "Authorization request rejected"
     assert binary_conn.resp_body =~ "response_mode is invalid or unsupported"
-    refute binary_conn.resp_body =~ ~r/<input\b[^>]*\bname=[\"'](?:error|error_description|error_uri|state|iss)[\"']/i
-    refute binary_conn.resp_body =~ ~r/(?:\?|&|%3[fF]|%26)(?:error|error_description|error_uri|state|iss)=/i
+
+    refute binary_conn.resp_body =~
+             ~r/<input\b[^>]*\bname=[\"'](?:error|error_description|error_uri|state|iss)[\"']/i
+
+    refute binary_conn.resp_body =~
+             ~r/(?:\?|&|%3[fF]|%26)(?:error|error_description|error_uri|state|iss)=/i
   end
 
   test "mismatched redirect_uri renders a first-party error response" do
