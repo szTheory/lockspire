@@ -67,7 +67,7 @@ two product counterexamples assigned to phases 172/173.
 
 The two controlled normative failures remain assigned to phases 172/173. Both
 optional external profiles remain unlaunched. The four review warnings were subsequently fixed; fresh full Credo is clean and
-the ledger contract passes 20 tests. The strengthened consent-origin control
+the ledger contract passes 21 tests. The strengthened consent-origin control
 rejects off-origin, network-path and lookalike routes before interaction lookup.
 The new dated probe repeated both controlled normative failures and preserves
 the original observation. This strengthens T-171-11/12 without changing the

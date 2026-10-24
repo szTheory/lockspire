@@ -1599,7 +1599,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
-        "sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c"
+        "sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
@@ -1670,7 +1670,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "ca0ccc00ad999090ed24fe721831f9a7923f037f4d2505a2f7d3c3fbd90b8907",
+    "input_digest": "d5b940b749cdb217bf096237cb466ed8f6df95812a819ba73e82da491728ed5f",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1752,6 +1752,14 @@
         "previous_sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24",
         "sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
         "reason": "Append post-review test/lint and fresh probe evidence audit; no selected case, expected outcome, runtime input or original observation changed by this metadata update."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
+        "sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "reason": "Final WR-05 verification-count audit; selected cases, expected outcomes, runtime inputs and probe observations unchanged."
       }
     ]
   },
