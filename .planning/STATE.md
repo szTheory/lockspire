@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
-current_phase: 173
-current_phase_name: Conditional PAR & Profile Boundaries
-status: Awaiting phase verification
-stopped_at: Completed 173-01-PLAN.md
-last_updated: "2026-10-24T23:33:19.563Z"
+current_phase: 174
+current_phase_name: Packaged Proof & Delivery Handoff
+status: planning
+stopped_at: Phase 173 complete with two judgment flags; completion metadata audited; continue Phase 174
+last_updated: "2026-10-24T23:54:45.133Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 172 complete, transitioned to Phase 173
-state_head: 88f6bb3d72b8dda3ffcf83cf804209ae7e2cde35
+last_activity_desc: Phase 173 complete, transitioned to Phase 174
+state_head: cdc64295ee3ce89e2da42de070775b30eed7fd9a
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
   completed_plans: 6
-  percent: 50
+  percent: 75
 ---
 
 # Project State
@@ -26,20 +26,20 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 173: correct only P171-005 conflicting outer scope handling; preserve pushed-request lifecycle and host account/session authority.
+**Current focus:** Phase 174: packaged proof for the two selected corrections, contributor/required CI gates and exact delivery handoff; preserve profile limits and judgment flags.
 
 ## Current Position
 
-Phase: 173 (Conditional PAR & Profile Boundaries) — READY TO EXECUTE
-Plan: 1 of 1
-Status: Awaiting phase verification
-Last activity: 2026-10-24 — Phase 172 complete, transitioned to Phase 173
+Phase: 174 — Packaged Proof & Delivery Handoff
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-10-24 — Phase 173 complete, transitioned to Phase 174
 
-Progress: [█████░░░░░] 50% — 2/4 phases complete; Phases 171 and 172 verified; Phase 173 ready to plan.
+Progress: [████████░░] 75% — 3/4 phases complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews; Phase 174 ready to plan.
 
 ## Performance Metrics
 
-v1.47: 2 completed phases, 5 completed plans; Phase 172 passed 11/11 goal verification. Phase 173 is next. Historical velocity/evidence remains in milestone archives.
+v1.47: 3 completed phases, 6 completed plans. Phase 173 passed six behavioral truths with two non-authoritative judgment flags. Phase 174 packaged proof and delivery is next.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -118,10 +118,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T23:32:38.676Z
-Stopped at: Completed 173-01-PLAN.md
+Last session: 2026-10-24T23:54:44.963Z
+Stopped at: Phase 173 complete with two judgment flags; completion metadata audited; continue Phase 174
 Resume file: None
-Next: Run the Phase 173 verifier after completion metadata settles; Phase 174 remains parent-owned.
+Next: Continue Phase 174 planning for packaged proof and delivery; first reconcile prior verification-owner freshness after Phase 173 completion metadata.
 
 ### Blockers
 

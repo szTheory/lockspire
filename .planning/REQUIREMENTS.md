@@ -22,9 +22,9 @@
 
 ### PAR and Profile Boundaries
 
-- [ ] **PARB-01**: A client using selected pushed-request cases observes the supported client binding, expiry and one-use semantics; invalid, mismatched or reused references fail according to the qualified contract.
-- [ ] **PARB-02**: A client receives the qualified outcome for selected pushed-versus-front-channel parameter conflicts and required-PAR profile cases, preserving existing PKCE and security-profile boundaries.
-- [ ] **PARB-03**: A host/integrator can distinguish public issuer/TLS/proxy/browser-harness failures from the selected PAR/profile assertions, with advertised endpoints and tested configured surface agreeing for those cases.
+- [x] **PARB-01**: A client using selected pushed-request cases observes the supported client binding, expiry and one-use semantics; invalid, mismatched or reused references fail according to the qualified contract.
+- [x] **PARB-02**: A client receives the qualified outcome for selected pushed-versus-front-channel parameter conflicts and required-PAR profile cases, preserving existing PKCE and security-profile boundaries.
+- [x] **PARB-03**: A host/integrator can distinguish public issuer/TLS/proxy/browser-harness failures from the selected PAR/profile assertions, with advertised endpoints and tested configured surface agreeing for those cases.
 
 ### Proof and Delivery
 
@@ -77,9 +77,9 @@ All 14 requirements map to exactly one of phases 171–174. Conditional scopes m
 | AUTHR-01 | Phase 172 | Complete |
 | AUTHR-02 | Phase 172 | Complete |
 | AUTHR-03 | Phase 172 | Complete |
-| PARB-01 | Phase 173 | Pending |
-| PARB-02 | Phase 173 | Pending |
-| PARB-03 | Phase 173 | Pending |
+| PARB-01 | Phase 173 | Complete |
+| PARB-02 | Phase 173 | Complete |
+| PARB-03 | Phase 173 | Complete |
 | CPROOF-01 | Phase 174 | Pending |
 | CPROOF-02 | Phase 174 | Pending |
 | DELIV-01 | Phase 174 | Pending |

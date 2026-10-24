@@ -1585,7 +1585,7 @@
       {
         "path": ".planning/ROADMAP.md",
         "selector": "phases-172-173-contract",
-        "sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266"
+        "sha256": "27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "e09f20b3b3dad59caa1b97179d43b5b9674201de31ba6014deb7f929ebe3d2ee",
+    "input_digest": "8f111348ddee95720218b4461f5f3c5c44f203f7a482bf72c8953557514317f4",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1904,6 +1904,15 @@
         "previous_sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
         "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30",
         "reason": "Phase 173 WR-01: compare exact application/json media type after separating charset parameters; reject application/jsonp prefix without changing runtime behavior."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "cdc64295ee3ce89e2da42de070775b30eed7fd9a",
+        "path": ".planning/ROADMAP.md#phases-172-173-contract",
+        "previous_sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266",
+        "sha256": "27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7",
+        "reason": "Reviewed SDK phase.complete173 plan count and completion checkbox after passed six behavioral truths with two explicit judgment flags; selected contracts unchanged."
       }
     ],
     "metadata_audits": [

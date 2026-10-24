@@ -389,12 +389,13 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Establish selected PAR/profile outcomes with evidence-led corrections only where warranted (PARB-01..03).
 - [ ] Bind regressions, packaged proof, security/candidate gates and clean delivery/rolling-roadmap handoff to exact evidence (CPROOF-01..02, DELIV-01..02).
 
 See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
+
+- ✓ Selected pushed-request authority, retained lifecycle/required-PAR and configured metadata — v1.47 PARB-01..03, Phase 173; six verified behavioral truths, actual real-PAR RED/GREEN, 132 passing selected regression tests, five verified mitigations and one documented low accepted boundary. Two non-authoritative judgment prohibitions retain prominent human-review recommendations; external profiles remain unlaunched.
 
 - ✓ Selected authorization responses and preserved callback/silent-authentication outcomes — v1.47 AUTHR-01..03, Phase 172; 11/11 goal verification, actual Router RED/GREEN, 131 passing selected regression tests, six planned threats closed and all review findings fixed. Only the unsupported-mode classification changed production behavior; host accounts/sessions remain host-owned.
 
@@ -547,6 +548,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Qualify exact supported cases before changing protocol behavior | Coarse suite failures and unavailable infrastructure do not establish product defects | Phase 171 passed; ten existing proofs reused, two source-host counterexamples assigned to 172/173 |
 | Preserve original evidence and distinguish deliberate normative RED from setup failure or protocol pass | Repeated probes and metadata edits must not rewrite observed history | Phase 171 controlled observations, dated archive, focused contract and clean review |
 | Classify unsupported response mode at the existing protocol boundary | Reuse safe first-party HTML delivery and preserve strict/PAR/host seams without another abstraction or dependency | Phase 172 actual Router RED/GREEN and passed 11/11 verification |
+| Preserve stored PAR authority rather than rejecting all outer parameters | Remove the blanket conflict gate while retaining stored-only reconstruction, current policy and client-bound one-use consumption | Phase 173 actual Router RED/GREEN and six verified behavioral truths |
+| Record judgment lifecycles explicitly in autonomous work | Resolved/judgment keeps non-authoritative flags visible without inventing mechanical proof or a human confirmation; real behavior gaps still block | Phase 173 canonical-contract review and independent autonomous verification |
 | Require actual candidate/browser evidence distinct from server lifecycle and compilation | Supported integration claims need real assets, signed sessions, joins, navigation and current-authority denial at each mount | ✓ Good — Phase 170 six-cell matrix and independent goal verification |
 | Validate page mount alignment at HTTP entry and retain current host authority at LiveView boundaries | Connected sockets expose the WebSocket URI rather than the original page path; account/policy ownership stays with the host | ✓ Good — Phase 170 real browser regression and host authorization tests |
 | Retain only independently validated evidence and bound cleanup to owned resources | Hostile diagnostics, failed cleanup and artifact traversal must fail visibly without leaking or deleting external data | ✓ Good — Phase 170 security remediation, containment regressions and independent clean re-review |
@@ -666,4 +669,4 @@ This document evolves at phase transitions and milestone boundaries.
 6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 after Phase 172 authorization response correction and transition to Phase 173*
+*Last updated: 2026-10-24 after Phase 173 pushed-request authority correction and transition to Phase 174*
