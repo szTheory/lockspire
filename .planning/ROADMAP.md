@@ -24,7 +24,7 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
 
 ## Phases
 
-- [ ] **Phase 171: Accepted Baseline & Finding Qualification** - Establish delivery readiness and freeze the finite, attributable case ledger before dependent plans.
+- [x] **Phase 171: Accepted Baseline & Finding Qualification** - Establish delivery readiness and freeze the finite, attributable case ledger before dependent plans. (completed 2026-10-24)
 - [ ] **Phase 172: Authorization Responses** - Deliver the qualified safe-callback, error/state, response-mode and silent-auth outcomes.
 - [ ] **Phase 173: Conditional PAR & Profile Boundaries** - Deliver only qualified pushed-request and profile cases after transport and harness attribution.
 - [ ] **Phase 174: Packaged Proof & Delivery Handoff** - Prove all selected behavior, pass required gates and leave an exact, resumable delivery record.
@@ -109,7 +109,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 171. Accepted Baseline & Finding Qualification | 4/4 | In Progress; plan execution complete, awaiting independent verification | - |
+| 171. Accepted Baseline & Finding Qualification | 4/4 | Complete    | 2026-10-24 |
 | 172. Authorization Responses | 0 plans | Not planned; gated on Phase 171 verification | - |
 | 173. Conditional PAR & Profile Boundaries | 0 plans | Not planned; gated on Phase 171 verification and Phase 172 completion | - |
 | 174. Packaged Proof & Delivery Handoff | 0 plans | Not planned; gated on Phase 171 verification and Phases 172 and 173 completion | - |

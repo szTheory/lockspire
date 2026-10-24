@@ -1,21 +1,27 @@
 ---
 phase: 171-accepted-baseline-finding-qualification
-verified: 2026-10-24T21:34:36Z
-status: gaps_found
-score: 9/10 must-haves verified
+verified: 2026-10-24T22:10:04Z
+status: passed
+score: 10/10 must-haves verified
 covered_files:
+  - .planning/REQUIREMENTS.md
+  - .planning/ROADMAP.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-01-PLAN.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-02-SUMMARY.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-03-SUMMARY.md
+  - .planning/phases/171-accepted-baseline-finding-qualification/171-04-PLAN.md
+  - .planning/phases/171-accepted-baseline-finding-qualification/171-04-SUMMARY.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-DELIVERY.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json
+  - .planning/phases/171-accepted-baseline-finding-qualification/171-PATTERNS.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json
+  - .planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-REVIEW-DISPOSITION.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-REVIEW-FIX.iter2.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-REVIEW-FIX.md
@@ -33,41 +39,35 @@ covered_files:
   - scripts/conformance/oidf-suite-lock.json
   - scripts/conformance/phase37-plan.json
   - scripts/conformance/run_ephemeral_oidf_profile.sh
-  - scripts/conformance/runner-requirements.lock
   - scripts/maintainer/repo_hygiene_check.sh
   - test/integration/phase15_par_authorization_e2e_test.exs
   - test/integration/phase37_protocol_strictness_e2e_test.exs
+  - test/lockspire/protocol/pushed_authorization_request_test.exs
   - test/lockspire/qualification_ledger_contract_test.exs
   - test/lockspire/web/authorize_controller_test.exs
   - test/lockspire/web/discovery_controller_test.exs
   - test/support/config_case.ex
   - test/support/test_account_resolver.ex
   - test/test_helper.exs
-covered_digest: "v3:sha256:c2d7bab769164f9bc0277261254aaa25eea97401342398d898f6d2dc38887851"
-behavior_unverified: 1
+covered_digest: "v3:sha256:73450df2c041e335bba6f597c42620a84d84001ba5951c15210fe27a24e17c72"
+behavior_unverified: 0
 overrides_applied: 0
-behavior_unverified_items:
-  - truth: Shared-profile runs are serialized across the disposable database, port 4100, Compose resources and artifact directories, and interruption preserves the actual exit/classification.
-    test: Keep the two selected wrappers recorded as unlaunched; before asserting the broader guarantee, either scope it to explicit sequential operation or exercise overlap/interruption in an isolated runner environment.
-    expected: Record that zero processes launched, so no shared-resource or interruption event occurred and no execution/cleanup result is claimed; any broader serialization/classification guarantee has separate evidence or is narrowed.
-    why_human: The authorized unavailable path was used. Static wrapper traps and contract checks do not empirically prove concurrent-run or interruption behavior.
-gaps:
-  - truth: Files changed by Phase 171 contain no unreferenced debt markers.
-    status: failed
-    reason: The phase modified .planning/ROADMAP.md, which still contains six unreferenced TBD markers for Phase 172–174 plan/progress placeholders. The verifier debt-marker gate treats each unreferenced TBD in a phase-modified file as a blocker.
-    artifacts:
-      - path: .planning/ROADMAP.md
-        issue: 'The phrases "Plans: TBD" and "0/TBD" remain in downstream phase entries without a same-line issue, PR, or DEF reference.'
-    missing:
-      - Replace the markers with explicit auditable downstream planning status or attach the formal follow-up reference before closing verification.
+re_verification:
+  previous_status: gaps_found
+  previous_score: 9/10
+  gaps_closed:
+    - "Six unreferenced Phase 172–174 TBD plan/progress placeholders are replaced with explicit unplanned states and prerequisites."
+    - "The broad automatic profile overlap/interruption claim is narrowed to the recorded sequential operator procedure; the old claim remains dated and explicitly UNVERIFIED."
+  gaps_remaining: []
+  regressions: []
 ---
 
 # Phase 171: Accepted Baseline & Finding Qualification Verification Report
 
 **Phase Goal:** Maintainers can identify an accepted implementation base and a finite set of current, supported cases whose expected outcomes and owners are settled before dependent planning.
-**Verified:** 2026-10-24T21:34:36Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Verified:** 2026-10-24T22:10:04Z
+**Status:** passed
+**Re-verification:** Yes — after Plan 04 gap closure
 
 ## Goal Achievement
 
@@ -75,122 +75,118 @@ gaps:
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
-| 1 | The accepted implementation base is backed by reviewed delivery reconciliation and the original exact-main authority receipt. | ✓ VERIFIED | `171-DELIVERY.md` records PR #138 integration and custody dispositions. The receipt is 1,933 bytes, hashes to `be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`, and names base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`; its JSON records local gate pass (199 ExUnit), same-SHA CI pass, Release no-publish pass, 22 PASS / 2 WARN / 0 BLOCK, and both warning dispositions. The authority was not rerun. |
-| 2 | The selected external profiles have exact immutable inputs and their unavailable prerequisite boundary is visible. | ✓ VERIFIED | The two profile records identify source host/SHA, suite commit/tag, lock, archive/helper and image hashes, exact plan hashes, required/observed Python and pip, the interpreter lookup exit 2, dependency-closure exit 1, and concrete retry owner/action. Both wrappers are explicitly NOT LAUNCHED with null exits/classifications and no receipts; they are not protocol passes. |
-| 3 | The finite ledger attributes twelve current cases with distinct conditions, expected/observed outcomes, normative/support sources, repro identities and owners. | ✓ VERIFIED | `171-QUALIFICATION.json` contains A171-001…006 and P171-001…006. Ten rows cite source-host tests and two cite controlled HTTP observations; the ledger separates support/cause, source date/hash, observations, reproducible command and owners. The current allowlisted probe record binds both named assertions and positive controls to source `30e385a33bb2a7f67d94c558dedf7691ecde5863` and probe SHA-256 `0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5`. |
-| 4 | The two actual counterexamples qualify downstream corrections without being described as product passes or fixes. | ✓ VERIFIED | The recorded run completed 2 tests with 2 named normative failures, 0 skipped, exit 2, and all positive controls passed. A171-003 observed HTTP 302 with OAuth error parameters where OIDC Core 3.1.2.6 expects HTTP 400 without them. P171-005 observed HTTP 400 before consent where the attributed RFC 9126 §4 → RFC 9101 §§5, 6.3, 10.7 interpretation expects consent under pushed `openid email`; the addendum explicitly says this is a linked-clause interpretation and adds no JAR requirement. Neither behavior is claimed fixed. The probe was not rerun for verification, as instructed; its source-bound observation and assertions were inspected. |
-| 5 | All six AUTHR/PARB requirements have explicit evidence-backed dispositions and dependent phase scope reflects only the two reproduced corrections. | ✓ VERIFIED | Matrix lists all six dispositions. Phase 172 is narrowed to A171-003; Phase 173 to P171-005; other ten proofs are reused. Requirements retain all six IDs as pending behavior acceptance and Phase 174 retains correction RED/GREEN, negative/security, packaged proof and delivery obligations. |
-| 6 | The frozen matrix is finite, ordered, identity-bound and protected against drift. | ✓ VERIFIED | Matrix is `frozen`, has twelve sorted rows, six dispositions, no blocking entries, and 30 ordered manifest inputs. Current `input_digest` is `26648970ba7164cf9fa357c6ff03d819fa7643736bce2127208670e713d5346c`. The independently rerun ledger contract validates current references and manifest: 21 tests, 0 failures. |
-| 7 | Unresolved selected-case/security/API/support choices and missing mandatory repro evidence block planning instead of being silently approved. | ✓ VERIFIED | The final ledger has no blockers because both selected cases have controlled observations and the scoped normative interpretation is recorded. The unavailable optional profiles remain explicitly supplemental. No product runtime change, install, input refresh, publication or merge is claimed. |
-| 8 | The owner/provenance, ordering and malformed-ledger contracts distinguish equal outcomes and reject incomplete or empty inventories without an explicit replan. | ✓ VERIFIED | `test/lockspire/qualification_ledger_contract_test.exs` exercises unique IDs, source/reference validation, malformed types, evidence boundaries, requirement coverage, ordering, empty/single inventories and freeze consistency. Focused run: 21 tests, 0 failures. |
-| 9 | Profile retries sharing resources are serialized, and interruptions preserve the actual exit/classification. | ⚠️ PRESENT_BEHAVIOR_UNVERIFIED | The plans require serial profile execution and wrapper source contains INT/TERM handling. Both selected wrappers were explicitly not launched: zero processes means no resource collision, interruption, or cleanup event occurred. No test exercises concurrent overlap or interruption, so the broader state/order claim is not behaviorally proven. See Human Verification Required. |
-| 10 | The completed phase leaves an auditable handoff with accepted base, preserved ownership, current branch and explicit next actions. | ✓ VERIFIED | `171-DELIVERY.md` separates accepted main from the feature branch, preserves unknown worktrees and histories, records the original receipt and warns that supplemental profile preparation is optional. Current Phase 172/173 correction owners and Phase 174 delivery obligations are explicit. |
+| 1 | The accepted implementation base is backed by reviewed delivery reconciliation and the original exact-main authority receipt. | ✓ VERIFIED | `171-DELIVERY.md` records PR #138 and custody dispositions. The unchanged 1,933-byte receipt SHA-256 is `be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`, identifying accepted base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, with its original local/canonical CI/Release no-publish evidence and warning dispositions. The authority was not rerun. |
+| 2 | Selected external profiles have exact immutable inputs and their unavailable prerequisite boundary is visible. | ✓ VERIFIED | Both ledger observations bind source/provider, suite, archive/helper/image and plan identities. Required Python 3.13.15/pip 26.2.1 and locked closure were unavailable. Both wrappers are `NOT LAUNCHED`, with `started=false`, `interrupted=false`, null exit/classification and no receipt. No profile result is presented as protocol acceptance. |
+| 3 | The finite ledger attributes twelve current cases with conditions, expected/observed outcomes, support/normative sources, repro identities and owners. | ✓ VERIFIED | The ledger retains ordered A171-001…006 and P171-001…006, ten existing source-host proofs and two controlled observations, with distinct conditions and ownership. Current input manifest has 33 resolving entries and digest `c20ab6075973d27eb0e15d9de70910fd25ddde8bf2e5864d653cd1fab3e73c93`. |
+| 4 | The two actual counterexamples qualify downstream corrections without being described as product passes or fixes. | ✓ VERIFIED | Bound probe records show 2 tests, 2 named normative assertion failures, 0 skipped, exit 2, with positive controls passing. A171-003 observed HTTP 302 with OAuth error parameters where OIDC Core 3.1.2.6 requires HTTP 400 without them. P171-005 observed rejection before consent despite valid pushed `openid email`; its expected interpretation is attributed to RFC 9126 §4 → RFC 9101 §§5, 6.3, 10.7. No product fix or probe rerun is claimed. |
+| 5 | All six AUTHR/PARB requirements have evidence-backed dispositions, and dependent scope reflects only the two reproduced corrections. | ✓ VERIFIED | The current matrix has six dispositions for the twelve cases. Phases 172 and 173 name only A171-003 and P171-005 respectively; the remaining ten proofs are reused, and Phase 174 retains packaged-proof, security and delivery obligations. |
+| 6 | The frozen matrix is finite, ordered, identity-bound and protected against drift. | ✓ VERIFIED | JSON is `frozen`, retains the 12 ordered case IDs, six requirement dispositions, frozen timestamp and qualification SHA. Its 33-entry ordered manifest digest matches the value above. The fresh focused ledger contract validates the frozen references and negative fixtures: 22 tests, 0 failures. |
+| 7 | Selected-case/security/API/support choices and mandatory repro evidence do not silently pass unresolved. | ✓ VERIFIED | Both selected correction cases have source-bound controls and observations; optional external profiles remain supplemental and unavailable. Current roadmap makes downstream prerequisites explicit. Delegated maintainer decisions are dated in DECISIONS, DELIVERY and VALIDATION; A-EDGE-BASE-01/A-EDGE-FIND-02 and descriptor-less prohibitions remain flagged-unverified, not claimed as human approval or wired enforcement. |
+| 8 | Owner/provenance, ordering and malformed-ledger contracts distinguish equal outcomes and reject incomplete or empty inventories without an explicit replan. | ✓ VERIFIED | `test/lockspire/qualification_ledger_contract_test.exs` has negative fixtures for identity, ownership, source/reference, malformed, empty/single inventory, ordering and freeze cases. Fresh focused run: 22 tests, 0 failures. |
+| 9 | Optional profile retries follow the explicit sequential operator procedure for shared resources; unlaunched attempts do not claim overlap, interruption or cleanup outcomes. | ✓ VERIFIED | Current Plan 02 truth is procedure-scoped. Both attempts record zero launches and no execution/cleanup event. The contract rejects `interrupted=true` in a draft unlaunched profile independently of manifest drift. The former broader automatic guarantee remains quoted with date and marked UNVERIFIED; this report does not claim it. |
+| 10 | The handoff identifies the accepted base, preserved ownership, current branch and explicit next actions before dependent planning. | ✓ VERIFIED | `171-DELIVERY.md` separates accepted main from the feature branch, preserves unknown worktrees/history, and records the original receipt and optional retry owner/actions. Roadmap phases 172–174 now state `0 — Not planned` with precise prerequisites; no dependent plan exists. |
 
-**Score:** 9/10 must-haves verified (1 present, behavior-unverified).
+**Score:** 10/10 truths verified (0 behavior-unverified).
 
 ### Deferred Items
 
-None. The two protocol counterexamples are qualified inputs for Phases 172/173, not failures of Phase 171’s qualification goal.
+None. The two qualified protocol corrections remain assigned to Phases 172/173 and are part of this phase's handoff, not Phase 171 gaps.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
-| `171-DELIVERY.md` | Reviewed reconciliation, accepted-base handoff and preserved ownership | ✓ VERIFIED | Substantive inventory, PR/receipt history, retained resources and next actions. |
-| `171-MAIN-ACCEPTANCE.json` | Original successful exact-main receipt | ✓ VERIFIED | 1,933-byte receipt; content hash matches the canonical ledger reference. |
-| `171-QUALIFICATION.json` | Finite case ledger, profiles, frozen matrix and manifest | ✓ VERIFIED | Parsed JSON; 12 case IDs, 7 category entries, 6 dispositions, zero selected-case blockers and 30 ordered manifest entries. |
-| `171-QUALIFICATION-PROBE.json` | Allowlisted controls, expected/observed projections and named outcomes | ✓ VERIFIED | Two actual counterexamples, both with passing controls, source/probe hashes and no skipped cases. |
-| `171-qualification_probe_test.exs` | Explicit two-case HTTP qualification outside default test discovery | ✓ VERIFIED | Substantive router/repository HTTP tests with controlled setup and final normative assertions; probe observation identifies exact source and file hash. |
-| `qualification_ledger_contract_test.exs` | Executable ledger and frozen-matrix consistency contract | ✓ VERIFIED | 21 focused tests pass; negative fixtures cover shape/reference/evidence and freeze drift. |
-| `171-QUALIFICATION-DECISIONS.md` | Attributed normative and support interpretation | ✓ VERIFIED | Distinguishes direct OIDC rule from RFC linked-clause interpretation and preserves plain PAR boundary. |
-| `171-SECURITY.md`, `171-REVIEW.md` | Mitigation/review evidence for phase artifacts | ✓ VERIFIED | Security report records 13/13 threats closed; final review records zero findings and disposition has zero open items. |
+| `171-DELIVERY.md` | Reviewed reconciliation, accepted-base handoff and preserved ownership | ✓ VERIFIED | Substantive custody record, PR #138 delivery and current next actions. |
+| `171-MAIN-ACCEPTANCE.json` | Original exact-main receipt | ✓ VERIFIED | Original bytes/hash and accepted SHA match the ledger. |
+| `171-QUALIFICATION.json` | Finite ledger, profile observations, frozen matrix and manifest | ✓ VERIFIED | 12 cases, 6 dispositions, 33 manifest inputs; contract passes. |
+| `171-QUALIFICATION-PROBE.json` and dated archive | Allowlisted source-bound expectations, observations and named outcomes | ✓ VERIFIED | Current and archived observation identities preserved; outcome inspected, not repeated. |
+| `171-qualification_probe_test.exs` | Controlled A171-003/P171-005 HTTP qualification | ✓ VERIFIED | Two named HTTP cases and successful positive controls are bound to source/probe hashes. |
+| `test/lockspire/qualification_ledger_contract_test.exs` | Ledger and frozen-matrix consistency contract | ✓ VERIFIED | Fresh run: 22 tests, 0 failures; interrupted-unlaunched negative regression included. |
+| `171-QUALIFICATION-DECISIONS.md`, `171-RESEARCH.md`, `171-VALIDATION.md` | Attributed interpretation, preserved uncertainty and current verification record | ✓ VERIFIED | Dated selections preserve original questions, unavailable history and external boundaries. |
+| `171-SECURITY.md`, `171-REVIEW.md`, `171-REVIEW-DISPOSITION.md` | Threat closure and clean review evidence | ✓ VERIFIED | Security reports 15/15 threats closed; current review is clean with 0 findings, and prior five warnings have fixed dispositions. |
 
-The plan artifact CLI returned all artifacts present/substantive: 4/4 for Plan 01, 2/2 for Plan 02, and 6/6 for Plan 03. No runtime UI/data rendering is in scope; the ledger’s case values flow from source-bound tests/probe records into the matrix and are checked by the contract, rather than from a hardcoded user-facing data source.
+All plan-declared artifacts passed the GSD CLI checks: Plan 01 4/4, Plan 02 2/2, Plan 03 6/6, Plan 04 6/6. No UI or dynamic data-rendering artifact is in scope; Level 4 UI data-flow tracing is not applicable.
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
-| Delivery handoff | `scripts/maintainer/repo_hygiene_check.sh` | Reviewed reconciliation precedes exact-main authority | ✓ WIRED | CLI link check found target; receipt matches the ledger’s accepted SHA. |
-| Qualification ledger | `test/integration/phase37_protocol_strictness_e2e_test.exs` | A171-001 source-host proof | ✓ WIRED | Named redirect-mismatch test and source revision are recorded. |
-| Qualification ledger | `scripts/conformance/oidf-suite-lock.json` | Immutable suite identity | ✓ WIRED | Lock hash and exact input fields are recorded. |
-| Qualification ledger | `test/integration/phase15_par_authorization_e2e_test.exs` | PAR proof owner | ✓ WIRED | Existing cases reference named assertions from this test file. |
-| Qualification ledger | `171-qualification_probe_test.exs` | Controlled A171-003/P171-005 observations | ✓ WIRED | Both case references resolve to named assertions and bounded observations. |
-| Qualification ledger | `.planning/REQUIREMENTS.md` | Six downstream requirement dispositions | ✓ WIRED | All AUTHR/PARB IDs appear in the matrix and requirement mapping. |
-| Qualification ledger | `.planning/ROADMAP.md` | Narrowed downstream phase contracts | ✓ WIRED | Roadmap Phase 172/173 goals match retained corrections. |
+| `171-DELIVERY.md` | `scripts/maintainer/repo_hygiene_check.sh` | Reviewed reconciliation precedes acceptance | ✓ WIRED | Plan 01 CLI link resolves; original receipt names the accepted SHA. |
+| `171-QUALIFICATION.json` | `test/integration/phase37_protocol_strictness_e2e_test.exs` | A171-001 proof owner | ✓ WIRED | Named source-host assertion and source SHA recorded. |
+| `171-QUALIFICATION.json` | `scripts/conformance/oidf-suite-lock.json` | Immutable suite identity | ✓ WIRED | Exact lock and plan inputs recorded. |
+| `171-QUALIFICATION.json` | `test/integration/phase15_par_authorization_e2e_test.exs` | PAR proof owner | ✓ WIRED | Named existing PAR evidence recorded. |
+| `171-QUALIFICATION.json` | `171-qualification_probe_test.exs` | A171-003/P171-005 observations | ✓ WIRED | Named assertions and bounded outcomes resolve. |
+| `171-QUALIFICATION.json` | `.planning/REQUIREMENTS.md` | Case-backed requirements | ✓ WIRED | All six AUTHR/PARB IDs appear in dispositions. |
+| `171-QUALIFICATION.json` | `.planning/ROADMAP.md` | Frozen downstream scope | ✓ WIRED | CLI link verifies current case-backed amendments and prerequisites. |
+| `171-QUALIFICATION.json` | `171-02-PLAN.md` | Consumed current profile-claim authority | ✓ WIRED | Exact hash is included in the manifest. |
+| `171-VALIDATION.md` | `171-04-PLAN.md` | Wave 4 task records | ✓ WIRED | Current execution records resolve to the gap-closure plan. |
+| `171-QUALIFICATION.json` | `.planning/ROADMAP.md` | Phase 172–174 plan gates | ✓ WIRED | CLI verifies the reviewed downstream contract selector. |
 
-CLI key-link check: 7/7 verified. Data-flow tracing is not applicable to dynamic UI/API output; there is no rendered data artifact in this phase.
+Plan-declared key links: 10/10 verified by the CLI (2 + 2 + 3 + 3).
+
+### Data-Flow Trace (Level 4)
+
+| Artifact | Data Variable | Source | Produces Real Data | Status |
+|---|---|---|---|---|
+| Frozen case ledger | Case observations and matrix rows | Source-bound existing tests and the two controlled HTTP observations | Yes; manifest and contract bind the input identities and assertions | ✓ FLOWING |
 
 ### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |---|---|---|---|
-| Frozen ledger validation and negative fixtures | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | 21 tests, 0 failures, 9.0s | ✓ PASS |
-| Controlled A171-003/P171-005 source-host observations | Recorded command in `171-QUALIFICATION-PROBE.json` | Earlier process completed 2 tests, 2 named normative failures, 0 skipped; verification did not rerun it | ✓ EVIDENCE INSPECTED |
-| Exact-main authority | Original `171-MAIN-ACCEPTANCE.json` | Original receipt hash and exact-base identity match; authority not rerun | ✓ EVIDENCE INSPECTED |
-
-No full suite, external profile, server, package installation or main acceptance gate was rerun.
+| Frozen ledger and negative fixtures | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | 22 tests, 0 failures, 8.4s | ✓ PASS |
+| Current roadmap statuses and prerequisites | Read Phase 172–174 roadmap sections | All three explicitly `0 — Not planned` and gated; no plan placeholders remain | ✓ PASS |
 
 ### Probe Execution
 
 | Probe | Command | Result | Status |
 |---|---|---|---|
-| `.planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs` | Recorded explicit command, Elixir 1.19.5 / OTP 28.5, dedicated DB `lockspire_171_main_20261024b` | Observation source `30e385a33bb2a7f67d94c558dedf7691ecde5863`, probe hash `0f32ab…9972f5`, exit 2, 2 tests / 2 expected normative failures / 0 skipped; all controls passed | COMPLETED COUNTEREXAMPLE; inspected, not rerun |
-| `phase37` and `fapi2` optional wrappers | Recorded profile attempts in qualification ledger | Authorized unavailable path: zero processes launched, interpreter lookup exit 2, locked closure check exit 1, wrapper exit/classification null, no receipts and no cleanup event | UNAVAILABLE, NOT A PROTOCOL RESULT |
+| `171-qualification_probe_test.exs` | No rerun; inspected `171-QUALIFICATION-PROBE.json` and dated archive | Original source-bound observation: exit 2, 2 named normative failures, 0 skipped, controls passed; source SHA `30e385a33bb2a7f67d94c558dedf7691ecde5863`, probe SHA `0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5` | EVIDENCE INSPECTED, NOT RERUN |
+| `phase37` and `fapi2` wrappers | No rerun | Both recorded `NOT LAUNCHED`; null exits/classifications and no receipts | UNAVAILABLE, NOT A PROTOCOL RESULT |
+| Exact-main acceptance authority | No rerun | Original receipt hash and base identity inspected | EVIDENCE INSPECTED, NOT RERUN |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |---|---|---|---|---|
-| BASE-01 | 171-01 | Reviewed delivery reconciliation and fresh accepted-main evidence | ✓ SATISFIED | Delivery record plus unchanged exact receipt and matching SHA/CI/no-publish evidence. |
-| BASE-02 | 171-02 | Exact immutable profile identities and honest unavailable-input behavior | ✓ SATISFIED | Exact input hashes and failed prerequisites are recorded; wrappers remain visibly unlaunched, supplemental and owned for retry. |
-| FIND-01 | 171-01/02 | Finite attributable case ledger with current proof and honest cause | ✓ SATISFIED | Twelve cases, ten existing proofs, two actual controls-backed counterexamples, normative/support references and owners. |
-| FIND-02 | 171-03 | Frozen matrix and qualification-driven downstream scope | ✓ SATISFIED | 12-row frozen matrix, all six requirement dispositions, 30-entry digest and explicit Phase 172/173 narrowing. |
+| BASE-01 | 171-01 | Reviewed delivery reconciliation and accepted main | ✓ SATISFIED | DELIVERY plus original receipt and exact-base identity. |
+| BASE-02 | 171-02, 171-04 | Immutable profile identities and honest unavailable boundary | ✓ SATISFIED | Exact identities, explicit zero-launch outcomes, concrete owner/actions and contract. |
+| FIND-01 | 171-01, 171-02 | Finite attributable ledger with current proof and honest cause | ✓ SATISFIED | Twelve cases with distinct conditions, sources, observations and owners. |
+| FIND-02 | 171-03, 171-04 | Frozen matrix and qualification-driven downstream scope | ✓ SATISFIED | Frozen 12-row matrix, six dispositions, current prerequisites and scoped procedure. |
 
-No orphaned Phase 171 requirement IDs were found.
+No orphaned Phase 171 requirement IDs were found. REQUIREMENTS.md still contains its prior “Gaps Found” phase-status labels pending workflow projection; the per-requirement evidence above is this independent current assessment.
 
 ### Test Quality Audit
 
-The active contract test contains no disabled/skipped test markers. Its assertions check exact field/value/reference/freeze properties and malformed-input rejection, rather than only file presence. The phase-local probe compares independently recorded normative expectations against actual HTTP projections; its intentional RED assertions remain outside default test discovery. No test-generated expected-value loop or production result capture was found in the reviewed evidence path.
+| Test File | Linked Requirement | Active | Skipped | Circular | Assertion Level | Verdict |
+|---|---|---:|---:|---:|---|---|
+| `test/lockspire/qualification_ledger_contract_test.exs` | BASE-01, BASE-02, FIND-01, FIND-02 | 22 | 0 | 0 | Value and behavioral contract assertions over synthetic malformed inputs and actual frozen references | PASS |
+| `171-qualification_probe_test.exs` | FIND-01, FIND-02 | 2 | 0 | 0 | Named HTTP behavior, independent normative expectation and valid controls | Evidence inspected; intentionally not rerun |
+
+The active contract has no disabled-test markers. The phase probe stores redacted observations rather than generating expected outcomes from the system under test.
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 |---|---:|---|---|---|
-| `.planning/ROADMAP.md` | 67, 79, 92, 110–112 | Unreferenced `TBD` placeholders (`Plans: TBD`, `0/TBD`) | 🛑 Blocker | The roadmap was modified by this phase and these six markers have no same-line issue/PR/DEF follow-up reference. The verifier debt-marker gate makes this a gap even though the placeholders describe future downstream planning. |
-| `171-03-SUMMARY.md`, `171-REVIEW.md` | — | Older manifest digest narratives | ℹ️ Info | SUMMARY reports the earlier 29-entry digest `cf44…`; review reports `d5b…`. The current canonical ledger and passing contract use the 30-entry digest `26648970…`. The older narratives were not used as verification evidence. |
+| `171-04-PLAN.md` | 115 | Literal `TBD` string inside the automated check that rejects roadmap placeholders | ℹ️ Info | Verification-code pattern only; the current roadmap contains no remaining Phase 172–174 plan/progress placeholders. |
+| `171-04-SUMMARY.md` | — | Reports an earlier 33-entry manifest digest `dc60a6b7…` | ℹ️ Info | The current canonical JSON digest is `c20ab607…`; the final VALIDATION identity refresh occurred after the summary's recorded digest. Current JSON plus the passing contract, not the older narrative, is authoritative. |
+
+No unreferenced debt marker or implementation stub was found in the modified implementation/evidence files. The fresh review is clean; the five earlier review warnings have recorded fixed dispositions.
+
+### Unverified Boundaries
+
+Both optional profile wrappers remain unlaunched, so external profile behavior and automatic overlap/interruption/cleanup behavior remain unverified. The broader automatic guarantee is retained as dated history with an owner and a future evidence action; it is not part of the narrowed current truth or a Phase 171 requirement. A-EDGE-BASE-01, A-EDGE-FIND-02 and all three descriptor-less prohibitions remain flagged-unverified. Their current scope dispositions do not claim wired enforcement or human-person approval; no new mandatory policy choice was identified.
 
 ### Human Verification Required
 
-1. **Review scoped normative interpretation and phase changes**
-
-   **Test:** Review `171-QUALIFICATION-DECISIONS.md` and the REQUIREMENTS/ROADMAP amendments before dependent plans are authored; acknowledge the RFC 9126 → RFC 9101 interpretation and whether the two unclassified A-EDGE assumptions remain material.
-   **Expected:** The maintainer confirms the selected expectations and scope are acceptable, while keeping the two observed product counterexamples assigned to Phases 172/173.
-   **Why human:** The plan explicitly deferred this normative/support judgment and the two assumptions remain flagged-unverified; a contract test cannot supply maintainer policy judgment.
-
-2. **Resolve descriptor-less plan prohibitions**
-
-   **Test:** Review the three unresolved plan prohibitions and decide whether their current documented constraints are sufficient or need executable descriptors.
-   **Expected:** Each prohibition receives an explicit human disposition; none is silently treated as enforced or passing.
-   **Why human:** Each is marked unresolved and has no wired verification descriptor.
-
-3. **Accept the optional-profile unavailable boundary**
-
-   **Test:** Review both profile records, null wrapper results and concrete preparation/retry owner/actions before deciding whether any later optional retry is needed.
-   **Expected:** Missing CPython/pip/locked dependencies remain an infrastructure-unavailable result, with no protocol pass inferred and no unreviewed installation/input refresh.
-   **Why human:** The wrappers did not launch, so external provider/profile behavior was not observed; retry setup is a maintainer decision.
-
-4. **Exercise profile overlap and interruption behavior**
-
-   **Test:** Record that the explicitly authorized unavailable path launched zero profile processes. Before carrying the broad guarantee forward, either narrow the wording to the documented sequential retry procedure or gather overlap/interruption evidence in an isolated runner environment.
-   **Expected:** No resource collision, interruption, or cleanup outcome is claimed for this run; any broader guarantee has separate evidence or is scoped down.
-   **Why human:** The selected wrappers were not launched. Static signal traps and contract tests do not establish concurrent-run ordering or interrupted-result behavior.
+N/A — this planning/evidence foundation phase has no user-facing behavior to test. The previously deferred normative, support and retry judgments now have dated delegated maintainer dispositions under the user's autonomous-unblock instruction. External behavior stays explicitly unavailable and is not represented as verified.
 
 ### Gaps Summary
 
-The baseline receipt, finite ledger, two real controlled counterexamples, six requirement dispositions, narrowed downstream scope and current manifest drift contract are evidenced. Phase 171 cannot report `passed` because `.planning/ROADMAP.md`, a phase-modified file, retains six unreferenced `TBD` markers and the mandatory debt-marker gate classifies them as blockers. The separate human-review items remain visible; the two known product defects are valid Phase 172/173 inputs, not Phase 171 gaps.
+Both carried-forward gaps are closed. Roadmap entries for Phases 172–174 now state that they are unplanned and identify their actual gates. The current Plan 02 claim now matches the observed sequential procedure and zero-launch profile records; the broader automatic concurrency/interruption/cleanup behavior remains explicitly unverified, with a future owner/action. The selected cases, accepted receipt, profile identities, source observations and frozen selection remain unchanged. No implementation correction, external profile result, publication or additional human approval is claimed.
 
 ---
 
-_Verified: 2026-10-24T21:34:36Z_  
+_Verified: 2026-10-24T22:10:04Z_
 _Verifier: the agent (gsd-verifier)_
