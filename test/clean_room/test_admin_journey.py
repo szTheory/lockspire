@@ -110,7 +110,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 8)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 9)
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
@@ -130,6 +130,12 @@ class AdminReceiptTests(unittest.TestCase):
         self.assertEqual(set(summary), {"failure", "stage", "outcome", "counts", "observations"})
         self.assertEqual(summary["counts"], {})
         self.assertEqual(summary["observations"], {})
+
+    def test_runtime_versions_cannot_retain_arbitrary_child_strings(self):
+        malformed = copy.deepcopy(self.receipt)
+        malformed["runtime"]["node"] = "phase170-private-cookie-sentinel"
+        with self.assertRaises(ValueError):
+            validate_receipt(malformed)
 
 
 if __name__ == "__main__":
