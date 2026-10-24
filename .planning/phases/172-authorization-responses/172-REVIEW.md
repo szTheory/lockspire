@@ -1,6 +1,6 @@
 ---
 phase: 172-authorization-responses
-reviewed: 2026-10-24T22:58:37Z
+reviewed: 2026-10-24T23:05:38Z
 depth: standard
 files_reviewed: 3
 files_reviewed_list:
@@ -17,32 +17,30 @@ status: issues_found
 
 # Phase 172: Code Review Report
 
-**Reviewed:** 2026-10-24T22:58:37Z
+**Reviewed:** 2026-10-24T23:05:38Z
 **Depth:** standard
 **Files Reviewed:** 3
 **Status:** issues_found
 
 ## Summary
 
-Reviewed the authorization mode classification and both new controller regressions. The unsupported-mode branch uses the existing browser error contract, while the Router test covers the query-mode host handoff and HTTP 400 HTML outcome. The PAR regression verifies the JSON payload and persistence behavior but omits the response media type assertion, leaving part of the stated JSON contract unprotected.
+Re-reviewed the authorization mode branch and both controller regressions against the original base. The unsupported-mode classification remains narrowly scoped. WR-01 is fixed: the PAR regression now asserts the `application/json` content type; the recorded post-fix run passed 131 tests with no failures. The completion metadata audit preserves the prior selector audit and appends the current roadmap-selector identity.
 
-The summary and qualification ledger were inspected for provenance. `A-EDGE-AUTHR-03` and the two descriptor-less prohibitions remain flagged-unverified as documented; this review does not treat the test results as disposing of them.
+The phase dispositions retain the scoped treatment of `A-EDGE-AUTHR-03` and keep the original fallback items flagged and descriptor-less. The historical-evidence and host-ownership prohibitions are recorded as scoped dispositions; those do not establish broader external-profile or packaged-host claims.
+
+One completion-metadata issue remains: the state file's next action still says to plan completed Phase 172, contradicting its current Phase 173 position.
 
 ## Warnings
 
-### WR-01: PAR regression does not assert JSON media type
+### WR-02: State continuation points back to completed Phase 172
 
-**File:** `test/lockspire/web/pushed_authorization_request_controller_test.exs:170-177`
+**File:** `.planning/STATE.md:123`
 **Severity:** WARNING
-**Issue:** The test decodes the response body as JSON, but never checks the `Content-Type` header. It would still pass if the PAR endpoint returned the same JSON bytes labeled as `text/html` or another media type, despite claiming to preserve OAuth JSON responses.
-**Fix:** Assert that the response content type is `application/json`, for example:
-
-```elixir
-assert get_resp_header(conn, "content-type") |> List.first() =~ "application/json"
-```
+**Issue:** The same state file sets `current_phase` to 173, says Phase 172 is complete, and marks Phase 173 ready to plan, but its `Next` instruction still tells the next session to plan Phase 172 against A171-003. Resuming from this state can send the workflow back to a completed phase.
+**Fix:** Update the `Next` instruction to continue Phase 173 planning from its P171-005 scope, consistent with the current phase and stopped-at fields.
 
 ---
 
-_Reviewed: 2026-10-24T22:58:37Z_
+_Reviewed: 2026-10-24T23:05:38Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
