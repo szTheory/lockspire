@@ -16,18 +16,42 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
     end
   end
 
-  defp initial_state, do: %{enabled: true, http: 0, live_mount: 0, live_connected: 0, params: 0}
+  defp initial_state do
+    %{
+      enabled: true,
+      identity_present: true,
+      session_valid: true,
+      http: 0,
+      http_allowed: 0,
+      http_denied: 0,
+      live_mount: 0,
+      live_mount_allowed: 0,
+      live_mount_denied: 0,
+      live_connected: 0,
+      live_connected_allowed: 0,
+      live_connected_denied: 0,
+      protected_callbacks: 0,
+      params: 0,
+      params_denied: 0
+    }
+  end
 
   def allowed?(session, connected?) do
     ensure_started()
 
     Agent.get_and_update(__MODULE__, fn state ->
-      permitted =
-        state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
-          Map.get(session, "host_session_id") == "proof-session"
-
+      permitted = permitted?(state, session)
       count = if connected?, do: :live_connected, else: :live_mount
-      {permitted, Map.update!(state, count, &(&1 + 1))}
+
+      outcome =
+        case {connected?, permitted} do
+          {true, true} -> :live_connected_allowed
+          {true, false} -> :live_connected_denied
+          {false, true} -> :live_mount_allowed
+          {false, false} -> :live_mount_denied
+        end
+
+      {permitted, state |> Map.update!(count, &(&1 + 1)) |> Map.update!(outcome, &(&1 + 1))}
     end)
   end
 
@@ -35,8 +59,7 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
     ensure_started()
 
     Agent.get(__MODULE__, fn state ->
-      state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
-        Map.get(session, "host_session_id") == "proof-session"
+      permitted?(state, session)
     end)
   end
 
@@ -44,11 +67,9 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
     ensure_started()
 
     Agent.get_and_update(__MODULE__, fn state ->
-      permitted =
-        state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
-          Map.get(session, "host_session_id") == "proof-session"
-
-      {permitted, %{state | http: state.http + 1}}
+      permitted = permitted?(state, session)
+      counter = if permitted, do: :http_allowed, else: :http_denied
+      {permitted, state |> Map.update!(:http, &(&1 + 1)) |> Map.update!(counter, &(&1 + 1))}
     end)
   end
 
@@ -57,23 +78,62 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
     Agent.update(__MODULE__, &%{&1 | params: &1.params + 1})
   end
 
+  def record_params_denied do
+    ensure_started()
+    Agent.update(__MODULE__, &%{&1 | params_denied: &1.params_denied + 1})
+  end
+
+  def record_protected_callback do
+    ensure_started()
+    Agent.update(__MODULE__, &%{&1 | protected_callbacks: &1.protected_callbacks + 1})
+  end
+
   def set_enabled(enabled) when is_boolean(enabled) do
     ensure_started()
     Agent.update(__MODULE__, &%{&1 | enabled: enabled})
   end
 
+  def invalidate_session do
+    ensure_started()
+    Agent.update(__MODULE__, &%{&1 | session_valid: false})
+  end
+
+  def delete_identity do
+    ensure_started()
+    Agent.update(__MODULE__, &%{&1 | identity_present: false})
+  end
+
   def observations do
     ensure_started()
-    Agent.get(__MODULE__, &Map.take(&1, [:http, :live_mount, :live_connected, :params]))
+
+    Agent.get(__MODULE__, fn state ->
+      Map.take(state, [
+        :http,
+        :http_allowed,
+        :http_denied,
+        :live_mount,
+        :live_mount_allowed,
+        :live_mount_denied,
+        :live_connected,
+        :live_connected_allowed,
+        :live_connected_denied,
+        :protected_callbacks,
+        :params,
+        :params_denied
+      ])
+    end)
   end
 
   def reset do
     ensure_started()
 
-    Agent.update(
-      __MODULE__,
-      &%{&1 | enabled: true, http: 0, live_mount: 0, live_connected: 0, params: 0}
-    )
+    Agent.update(__MODULE__, fn _state -> initial_state() end)
+  end
+
+  defp permitted?(state, session) do
+    state.enabled and state.identity_present and state.session_valid and
+      Map.get(session, "host_staff_id") == "proof-staff" and
+      Map.get(session, "host_session_id") == "proof-session"
   end
 end
 
@@ -139,6 +199,16 @@ defmodule CleanRoomProviderWeb.AdminProof.Controller do
     CleanRoomProviderWeb.AdminProof.Store.reset()
     send_resp(conn, 204, "")
   end
+
+  def invalidate_session(conn, _params) do
+    CleanRoomProviderWeb.AdminProof.Store.invalidate_session()
+    send_resp(conn, 204, "")
+  end
+
+  def delete_identity(conn, _params) do
+    CleanRoomProviderWeb.AdminProof.Store.delete_identity()
+    send_resp(conn, 204, "")
+  end
 end
 
 defmodule CleanRoomProviderWeb.AdminProof.SessionController do
@@ -158,6 +228,13 @@ defmodule CleanRoomProviderWeb.AdminProof.SessionController do
       <button type="submit">Sign in</button>
     </form></body></html>
     """)
+  end
+
+  def create(conn, %{"mode" => "nonstaff"}) do
+    conn
+    |> put_session("host_staff_id", "proof-nonstaff")
+    |> put_session("host_session_id", "proof-nonstaff-session")
+    |> redirect(to: System.get_env("LOCKSPIRE_PROOF_ADMIN_PATH", "/lockspire/admin"))
   end
 
   def create(conn, _params) do
@@ -195,15 +272,19 @@ defmodule CleanRoomProviderWeb.AdminProof.OperatorAuthorization do
   def on_mount(:default, _params, session, socket) do
     case CleanRoomProviderWeb.AdminProof.authorize(session, socket) do
       :ok ->
+        CleanRoomProviderWeb.AdminProof.Store.record_protected_callback()
+
         socket =
           Phoenix.LiveView.attach_hook(socket, :proof_current_policy, :handle_params, fn _params,
                                                                                          _uri,
                                                                                          live_socket ->
-            CleanRoomProviderWeb.AdminProof.Store.record_params()
-
-            if CleanRoomProviderWeb.AdminProof.Store.current_allowed?(session),
-              do: {:cont, live_socket},
-              else: {:halt, Phoenix.LiveView.redirect(live_socket, to: "/login")}
+            if CleanRoomProviderWeb.AdminProof.Store.current_allowed?(session) do
+              CleanRoomProviderWeb.AdminProof.Store.record_params()
+              {:cont, live_socket}
+            else
+              CleanRoomProviderWeb.AdminProof.Store.record_params_denied()
+              {:halt, Phoenix.LiveView.redirect(live_socket, to: "/login")}
+            end
           end)
 
         {:cont, Phoenix.Component.assign(socket, :host_staff_id, session["host_staff_id"])}
@@ -230,6 +311,50 @@ defmodule CleanRoomProviderWeb.AdminProof do
     if CleanRoomProviderWeb.AdminProof.Store.allowed?(session, lifecycle == :connected),
       do: :ok,
       else: :error
+  end
+end
+
+defmodule CleanRoomProviderWeb.AdminProof.PublicLive do
+  @moduledoc false
+  use Phoenix.LiveView
+
+  def session(conn),
+    do:
+      Map.put(
+        CleanRoomProviderWeb.AdminProof.session(conn),
+        "host_public_id",
+        "proof-public-user"
+      )
+
+  def render(assigns) do
+    ~H"""
+    <main data-proof-public-session>
+      <h1>Host public session</h1>
+      <.link href={System.get_env("LOCKSPIRE_PROOF_ADMIN_PATH", "/lockspire/admin")}>Open admin</.link>
+    </main>
+    """
+  end
+end
+
+defmodule CleanRoomProviderWeb.AdminProof.ConsentLive do
+  @moduledoc false
+  use Phoenix.LiveView
+
+  def session(conn),
+    do:
+      Map.put(
+        CleanRoomProviderWeb.AdminProof.session(conn),
+        "host_consent_id",
+        "proof-consent-interaction"
+      )
+
+  def render(assigns) do
+    ~H"""
+    <main data-proof-consent-session>
+      <h1>Host consent session</h1>
+      <.link href={System.get_env("LOCKSPIRE_PROOF_ADMIN_PATH", "/lockspire/admin")}>Open admin</.link>
+    </main>
+    """
   end
 end
 

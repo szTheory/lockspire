@@ -26,6 +26,38 @@ RUNTIME_PATTERNS = {
 SCENARIO_FIELDS = frozenset({"id", "outcome", "counts", "duration_ms", "observations"})
 CLEANUP_FIELDS = frozenset({"processes_stopped", "database_removed", "profile_removed", "run_root_removed"})
 REQUIRED = frozenset({"tracer.browser_join_navigation"})
+FULL_REQUIRED = frozenset({
+    "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task", "allowed_reconnect",
+    "anonymous_http_denied", "nonstaff_http_denied", "cached_join_denied", "reconnect_denied",
+    "params_denied", "public_session_denied", "consent_session_denied", "public_discovery",
+    "public_jwks", "public_protocol_error",
+})
+FULL_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations", "params_checks", "http_checks", "staff_checks"})
+FULL_OBSERVATIONS = frozenset({
+    "static_200", "assets_200", "join_allowed", "protected_content", "live_navigation", "params_patch",
+    "detail_task", "socket_closed", "reconnect_join", "interaction_after_reconnect", "anonymous_denied",
+    "nonstaff_denied", "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
+    "consent_session_denied", "discovery_200", "jwks_200", "protocol_error_shape", "no_staff_checks",
+    "protected_content_absent", "prefix_ok",
+})
+FULL_CASE_EVIDENCE = {
+    "allowed_entry": {"static_200", "join_allowed", "protected_content", "prefix_ok"},
+    "assets": {"assets_200"},
+    "live_navigation": {"live_navigation", "prefix_ok"},
+    "params_patch": {"params_patch", "prefix_ok"},
+    "detail_task": {"detail_task", "prefix_ok"},
+    "allowed_reconnect": {"socket_closed", "reconnect_join", "interaction_after_reconnect"},
+    "anonymous_http_denied": {"anonymous_denied", "protected_content_absent", "prefix_ok"},
+    "nonstaff_http_denied": {"nonstaff_denied", "protected_content_absent", "prefix_ok"},
+    "cached_join_denied": {"static_200", "cached_join_denied", "protected_content_absent"},
+    "reconnect_denied": {"reconnect_denied", "protected_content_absent"},
+    "params_denied": {"params_denied", "protected_content_absent"},
+    "public_session_denied": {"public_session_denied", "protected_content_absent"},
+    "consent_session_denied": {"consent_session_denied", "protected_content_absent"},
+    "public_discovery": {"discovery_200", "no_staff_checks"},
+    "public_jwks": {"jwks_200", "no_staff_checks"},
+    "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
+}
 MOUNTS = frozenset({"/lockspire", "/teams/ops/identity", "/"})
 
 
@@ -86,36 +118,64 @@ def validate_receipt(
         raise ValueError("passed receipt runtime versions are incomplete")
     if not isinstance(receipt["scenarios"], list):
         raise ValueError("receipt scenarios are invalid")
+    if expected_scenario_set not in {"tracer", "full"}:
+        raise ValueError("receipt scenario set is unsupported")
+    scenario_ids = REQUIRED if expected_scenario_set == "tracer" else FULL_REQUIRED
     seen: set[str] = set()
     for scenario_raw in receipt["scenarios"]:
         scenario = _exact(scenario_raw, SCENARIO_FIELDS, "scenario")
         identifier = scenario["id"]
-        if not isinstance(identifier, str) or identifier not in REQUIRED or identifier in seen:
+        if not isinstance(identifier, str) or identifier not in scenario_ids or identifier in seen:
             raise ValueError("receipt scenario identity is unknown or duplicated")
         seen.add(identifier)
         if not isinstance(scenario["outcome"], str) or scenario["outcome"] not in {"passed", "failed"}:
             raise ValueError("receipt scenario outcome is invalid")
         if type(scenario["duration_ms"]) is not int or scenario["duration_ms"] < 0:
             raise ValueError("receipt scenario duration is invalid")
-        counts = _exact(scenario["counts"], frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"}), "counts")
+        count_fields = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"}) if expected_scenario_set == "tracer" else FULL_COUNTS
+        counts = _exact(scenario["counts"], count_fields, "counts")
         if any(type(value) is not int or value < 0 for value in counts.values()):
             raise ValueError("receipt scenario counts are invalid")
-        observations = _exact(scenario["observations"], frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"}), "observations")
+        observation_fields = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"}) if expected_scenario_set == "tracer" else FULL_OBSERVATIONS
+        observations = _exact(scenario["observations"], observation_fields, "observations")
         if any(type(value) is not bool for value in observations.values()):
             raise ValueError("receipt scenario observations are invalid")
         passed = scenario["outcome"] == "passed"
-        if passed and (
-            counts["assets"] < 2 or counts["websocket_handshakes"] < 1 or
-            counts["successful_joins"] < 2 or counts["websocket_handshakes"] < 2 or counts["navigations"] < 4 or
+        if passed and expected_scenario_set == "tracer" and (
+            counts["assets"] < 2 or counts["websocket_handshakes"] < 2 or
+            counts["successful_joins"] < 2 or counts["navigations"] < 4 or
             not all(observations.values())
         ):
             raise ValueError("receipt scenario does not prove a successful browser join and navigation")
-    if expected_scenario_set == "tracer" and seen != REQUIRED:
+        if passed and expected_scenario_set == "full":
+            true_observations = {key for key, value in observations.items() if value}
+            if not FULL_CASE_EVIDENCE[identifier].issubset(true_observations):
+                raise ValueError("receipt full scenario lacks its required boundary evidence")
+            if identifier == "allowed_entry" and (counts["assets"] < 2 or counts["successful_joins"] < 1):
+                raise ValueError("receipt allowed entry lacks package assets or a successful join")
+            if identifier == "allowed_reconnect" and (counts["websocket_handshakes"] < 2 or counts["successful_joins"] < 2):
+                raise ValueError("receipt allowed reconnect lacks a new handshake and successful join")
+            if identifier in {"live_navigation", "params_patch", "detail_task"} and counts["navigations"] < 1:
+                raise ValueError("receipt native transition lacks a navigation observation")
+            required_counts = {
+                "anonymous_http_denied": {"http_checks": 1, "staff_checks": 1},
+                "nonstaff_http_denied": {"http_checks": 1, "staff_checks": 1},
+                "cached_join_denied": {"staff_checks": 1},
+                "reconnect_denied": {"staff_checks": 1},
+                "params_denied": {"params_checks": 1, "staff_checks": 1},
+                "public_session_denied": {"staff_checks": 1},
+                "consent_session_denied": {"staff_checks": 1},
+            }.get(identifier, {})
+            if any(counts[key] < minimum for key, minimum in required_counts.items()):
+                raise ValueError("receipt full scenario lacks its required current-authority counter")
+            if identifier in {"public_discovery", "public_jwks", "public_protocol_error"} and counts["staff_checks"] != 0:
+                raise ValueError("receipt public protocol scenario includes a staff authorization check")
+    if seen != scenario_ids:
         raise ValueError("receipt scenario set is incomplete")
     cleanup = _exact(receipt["cleanup"], CLEANUP_FIELDS, "cleanup")
     if any(type(value) is not bool for value in cleanup.values()):
         raise ValueError("receipt cleanup results are invalid")
-    expected_result = "passed" if seen == REQUIRED and all(cleanup.values()) and all(item["outcome"] == "passed" for item in receipt["scenarios"]) else "failed"
+    expected_result = "passed" if seen == scenario_ids and all(cleanup.values()) and all(item["outcome"] == "passed" for item in receipt["scenarios"]) else "failed"
     if receipt["result"] != expected_result:
         raise ValueError("receipt result contradicts its scenarios or cleanup")
     return receipt
@@ -150,7 +210,7 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--expected-mount", choices=tuple(sorted(MOUNTS)), required=True)
     parser.add_argument("--expected-archive", required=True)
     parser.add_argument("--expected-tree", required=True)
-    parser.add_argument("--expected-scenario-set", choices=("tracer",), required=True)
+    parser.add_argument("--expected-scenario-set", choices=("tracer", "full"), required=True)
     args = parser.parse_args(argv)
     try:
         validate_receipt(json.loads(args.check.read_text(encoding="utf-8")), expected_run_id=args.expected_run_id, expected_source=args.expected_source, expected_pair=args.expected_pair, expected_mount=args.expected_mount, expected_archive=args.expected_archive, expected_tree=args.expected_tree, expected_scenario_set=args.expected_scenario_set)

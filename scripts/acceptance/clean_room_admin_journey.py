@@ -24,7 +24,7 @@ from typing import Sequence
 CLEAN_ROOM_DIR = Path(__file__).resolve().parent / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
-from admin_receipts import write_receipt
+from admin_receipts import FULL_OBSERVATIONS, FULL_REQUIRED, write_receipt
 from build_provider import allocate_port, prepare_provider, run_child_command, run_child_command_output
 from package_input import PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
 from redaction import Redactor, SentinelSet
@@ -48,11 +48,14 @@ BROWSER_FAILURES = frozenset({
     "cdp_connect_timeout", "cdp_command_failed", "cdp_command_timeout", "page_evaluation_failed",
     "clients_link_missing", "host_observations_failed", "control_capability_missing", "browser_failure",
     "clients_destination_timeout", "clients_content_timeout", "clients_hook_timeout", "document_reload_during_navigation",
+    "case_failed", "assets_missing", "http_denial_missing", "cached_static_missing", "denied_join_missing",
+    "denied_params_missing", "cross_session_link_missing", "cross_session_admin_denial_missing",
+    "public_route_staff_check", "public_protocol_status_invalid",
 })
 BROWSER_STAGES = frozenset({
     "preflight", "chrome_start", "cdp_setup", "login_load", "login_submit", "login_redirect",
     "overview_render", "live_socket_connected", "live_join", "clients_navigation", "clients_render",
-    "clients_destination", "clients_content", "clients_hook",
+    "clients_destination", "clients_content", "clients_hook", "full_matrix",
 })
 BROWSER_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"})
 BROWSER_OBSERVATIONS = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"})
@@ -84,14 +87,70 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
         isinstance(raw_observations, dict) and set(raw_observations) == BROWSER_OBSERVATIONS and
         all(type(value) is bool for value in raw_observations.values())
     ) else {}
-    return {"failure": failure, "stage": stage, "outcome": outcome, "counts": counts, "observations": observations}
+    result = {"failure": failure, "stage": stage, "outcome": outcome, "counts": counts, "observations": observations}
+    scenarios = observed.get("scenarios")
+    if isinstance(scenarios, list) and scenarios and isinstance(scenarios[0], dict):
+        first = scenarios[0]
+        raw_case_counts = first.get("counts")
+        raw_case_observations = first.get("observations")
+        result["first_case"] = {
+            "id": first.get("id") if first.get("id") in FULL_REQUIRED else "unknown",
+            "failure": first.get("failure") if first.get("failure") in BROWSER_FAILURES else "failure_unrecognized",
+            "outcome": first.get("outcome") if first.get("outcome") in {"passed", "failed"} else "unknown",
+            "count_fields": sorted(raw_case_counts) if isinstance(raw_case_counts, dict) and all(isinstance(key, str) for key in raw_case_counts) else [],
+            "observation_fields": sorted(raw_case_observations) if isinstance(raw_case_observations, dict) and all(isinstance(key, str) for key in raw_case_observations) else [],
+        }
+        issues = []
+        for item in scenarios:
+            if not isinstance(item, dict):
+                issues.append({"id": "unknown", "problem": "case_not_object"})
+                continue
+            obs = item.get("observations")
+            if not isinstance(obs, dict):
+                issues.append({"id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown", "problem": "observations_not_object"})
+                continue
+            keys = set(obs)
+            if keys != set(FULL_OBSERVATIONS):
+                issues.append({
+                    "id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown",
+                    "missing": sorted(set(FULL_OBSERVATIONS) - keys),
+                    "extra": sorted(key for key in keys - set(FULL_OBSERVATIONS) if isinstance(key, str)),
+                })
+            elif any(type(value) is not bool for value in obs.values()):
+                issues.append({"id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown", "problem": "observation_not_boolean"})
+        if issues:
+            result["scenario_shape_issues"] = issues[:8]
+        failed_cases = []
+        for item in scenarios:
+            if isinstance(item, dict) and item.get("outcome") != "passed":
+                obs = item.get("observations")
+                failed_cases.append({
+                    "id": item.get("id") if item.get("id") in FULL_REQUIRED else "unknown",
+                    "failure": item.get("failure") if item.get("failure") in BROWSER_FAILURES else "failure_unrecognized",
+                    "false_evidence": sorted(key for key, value in obs.items() if value is False and key in FULL_OBSERVATIONS) if isinstance(obs, dict) else [],
+                })
+        if failed_cases:
+            result["failed_cases"] = failed_cases[:8]
+    return result
+
+
+def full_scenarios_from_observation(observed: object) -> list[dict[str, object]]:
+    if not isinstance(observed, dict) or not isinstance(observed.get("scenarios"), list):
+        return []
+    scenarios = observed["scenarios"]
+    if len(scenarios) != len(FULL_REQUIRED):
+        return []
+    return [
+        {key: item.get(key) for key in ("id", "outcome", "duration_ms", "counts", "observations")}
+        for item in scenarios if isinstance(item, dict)
+    ]
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--pair", choices=("locked",), required=True)
     parser.add_argument("--mount", choices=("/lockspire", "/teams/ops/identity", "/"), required=True)
-    parser.add_argument("--scenario", choices=("tracer",), default="tracer")
+    parser.add_argument("--scenario", choices=("full", "tracer"), default="full")
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--run-id", default=str(uuid.uuid4()))
     parser.add_argument("--package-tar", type=Path)
@@ -173,6 +232,8 @@ def main(argv: Sequence[str]) -> int:
     cleanup = {"processes_stopped": True, "database_removed": False, "profile_removed": True, "run_root_removed": False}
     stage = "candidate"
     failed = False
+    scenario_passed = False
+    full_scenarios: list[dict[str, object]] = []
     try:
         selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
         package_root, _entries, identity = prepare_package(base, selected_source)
@@ -214,25 +275,41 @@ def main(argv: Sequence[str]) -> int:
             wait_ready(origin, process)
         stage = "browser"
         browser_script = Path(__file__).resolve().parents[2] / "test" / "browser" / "packaged_admin_proof.mjs"
-        request = json.dumps({"capability": capability, "origin": origin, "mount": args.mount, "runRoot": str(base)})
+        request = json.dumps({"capability": capability, "origin": origin, "mount": args.mount, "scenario": args.scenario, "runRoot": str(base)})
         browser = subprocess.run(("node", str(browser_script), "--origin", origin, "--mount", args.mount, "--scenario", args.scenario, "--run-root", str(base)), input=request, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=100, check=False)
         try:
             observed = json.loads(browser.stdout.strip().splitlines()[-1])
         except (json.JSONDecodeError, IndexError):
             observed = {}
-        if not isinstance(observed, dict) or observed.get("id") != scenario["id"]:
-            print("browser proof failed: observation_malformed", file=sys.stderr)
-        if isinstance(observed, dict) and observed.get("id") == scenario["id"]:
-            scenario.update({key: observed.get(key, scenario[key]) for key in ("outcome", "duration_ms", "counts", "observations")})
-            if observed.get("runtime", {}).get("node"):
-                runtime["node"] = observed["runtime"]["node"]
-            if observed.get("runtime", {}).get("chrome"):
-                runtime["chrome"] = observed["runtime"]["chrome"]
-        if (browser.returncode != 0 or scenario["outcome"] != "passed") and isinstance(observed, dict):
+        if args.scenario == "tracer":
+            if not isinstance(observed, dict) or observed.get("id") != scenario["id"]:
+                print("browser proof failed: observation_malformed", file=sys.stderr)
+            if isinstance(observed, dict) and observed.get("id") == scenario["id"]:
+                scenario.update({key: observed.get(key, scenario[key]) for key in ("outcome", "duration_ms", "counts", "observations")})
+                if isinstance(observed.get("runtime"), dict):
+                    if observed["runtime"].get("node"):
+                        runtime["node"] = observed["runtime"]["node"]
+                    if observed["runtime"].get("chrome"):
+                        runtime["chrome"] = observed["runtime"]["chrome"]
+        else:
+            if not isinstance(observed, dict) or observed.get("id") != "full" or not isinstance(observed.get("scenarios"), list):
+                print("browser proof failed: observation_malformed", file=sys.stderr)
+            else:
+                full_scenarios = full_scenarios_from_observation(observed)
+            if isinstance(observed, dict) and isinstance(observed.get("runtime"), dict):
+                if observed["runtime"].get("node"):
+                    runtime["node"] = observed["runtime"]["node"]
+                if observed["runtime"].get("chrome"):
+                    runtime["chrome"] = observed["runtime"]["chrome"]
+        cleanup["profile_removed"] = observed.get("profile_removed") is True if isinstance(observed, dict) else False
+        scenario_passed = scenario["outcome"] == "passed" if args.scenario == "tracer" else (
+            isinstance(observed, dict) and observed.get("outcome") == "passed" and
+            len(full_scenarios) == len(FULL_REQUIRED) and all(item.get("outcome") == "passed" for item in full_scenarios)
+        )
+        if (browser.returncode != 0 or not scenario_passed) and isinstance(observed, dict):
             summary = safe_browser_failure_summary(observed)
             print("browser proof failed: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
-        cleanup["profile_removed"] = observed.get("profile_removed") is True if isinstance(observed, dict) else False
-        if browser.returncode != 0 or scenario["outcome"] != "passed":
+        if browser.returncode != 0 or not scenario_passed:
             failed = True
     except BaseException as error:
         failed = True
@@ -290,15 +367,16 @@ def main(argv: Sequence[str]) -> int:
         "schema_version": 1, "run_id": run_id, "source_revision": source_revision,
         "source_dirty": source_dirty, "candidate": candidate, "pair": args.pair,
         "runtime": runtime, "mount": args.mount, "evidence_kind": "real_browser_cdp",
-        "scenarios": [scenario], "cleanup": cleanup,
-        "result": "passed" if not failed and all(cleanup.values()) and scenario["outcome"] == "passed" else "failed",
+        "scenarios": full_scenarios if args.scenario == "full" else [scenario], "cleanup": cleanup,
+        "result": "passed" if not failed and all(cleanup.values()) and scenario_passed else "failed",
     }
     try:
-        write_receipt(args.receipt, receipt, expected_run_id=run_id, expected_source=source_revision, expected_pair=args.pair, expected_mount=args.mount, expected_archive=candidate["archive_sha256"], expected_tree=candidate["tree_sha256"], expected_scenario_set="tracer")
-    except (OSError, ValueError):
-        print("admin browser proof receipt validation failed", file=sys.stderr)
+        write_receipt(args.receipt, receipt, expected_run_id=run_id, expected_source=source_revision, expected_pair=args.pair, expected_mount=args.mount, expected_archive=candidate["archive_sha256"], expected_tree=candidate["tree_sha256"], expected_scenario_set=args.scenario)
+    except (OSError, ValueError) as error:
+        detail = str(error) if isinstance(error, ValueError) else "receipt_write_failed"
+        print(f"admin browser proof receipt validation failed: {detail}", file=sys.stderr)
         return 1
-    print(json.dumps({"result": receipt["result"], "scenario_count": 1, "cleanup": cleanup}, sort_keys=True))
+    print(json.dumps({"result": receipt["result"], "scenario_count": len(receipt["scenarios"]), "cleanup": cleanup}, sort_keys=True))
     return 0 if receipt["result"] == "passed" else 1
 
 

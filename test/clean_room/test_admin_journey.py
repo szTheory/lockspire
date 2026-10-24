@@ -10,6 +10,52 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "accept
 import clean_room_admin_journey as admin_journey
 from admin_receipts import validate_receipt, write_receipt
 
+FULL_CASE_IDS = (
+    "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
+    "allowed_reconnect", "anonymous_http_denied", "nonstaff_http_denied",
+    "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
+    "consent_session_denied", "public_discovery", "public_jwks", "public_protocol_error",
+)
+FULL_CASE_EVIDENCE = {
+    "allowed_entry": {"static_200", "join_allowed", "protected_content", "prefix_ok"},
+    "assets": {"assets_200"},
+    "live_navigation": {"live_navigation", "prefix_ok"},
+    "params_patch": {"params_patch", "prefix_ok"},
+    "detail_task": {"detail_task", "prefix_ok"},
+    "allowed_reconnect": {"socket_closed", "reconnect_join", "interaction_after_reconnect"},
+    "anonymous_http_denied": {"anonymous_denied", "protected_content_absent", "prefix_ok"},
+    "nonstaff_http_denied": {"nonstaff_denied", "protected_content_absent", "prefix_ok"},
+    "cached_join_denied": {"static_200", "cached_join_denied", "protected_content_absent"},
+    "reconnect_denied": {"reconnect_denied", "protected_content_absent"},
+    "params_denied": {"params_denied", "protected_content_absent"},
+    "public_session_denied": {"public_session_denied", "protected_content_absent"},
+    "consent_session_denied": {"consent_session_denied", "protected_content_absent"},
+    "public_discovery": {"discovery_200", "no_staff_checks"},
+    "public_jwks": {"jwks_200", "no_staff_checks"},
+    "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
+}
+FULL_OBSERVATIONS = frozenset().union(*FULL_CASE_EVIDENCE.values()) | {"assets_200"}
+
+
+def full_scenario(case_id):
+    flags = {name: name in FULL_CASE_EVIDENCE[case_id] for name in FULL_OBSERVATIONS}
+    counts = {name: 0 for name in ("assets", "websocket_handshakes", "successful_joins", "navigations", "params_checks", "http_checks", "staff_checks")}
+    if case_id == "allowed_entry":
+        counts.update(assets=2, successful_joins=1, http_checks=1, staff_checks=1)
+    elif case_id == "assets":
+        counts.update(assets=2)
+    elif case_id == "allowed_reconnect":
+        counts.update(websocket_handshakes=2, successful_joins=2, staff_checks=2)
+    elif case_id in {"live_navigation", "params_patch", "detail_task"}:
+        counts.update(navigations=1, params_checks=1, staff_checks=1)
+    elif case_id in {"anonymous_http_denied", "nonstaff_http_denied"}:
+        counts.update(http_checks=1, staff_checks=1)
+    elif case_id in {"cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied", "consent_session_denied"}:
+        counts.update(staff_checks=1)
+        if case_id == "params_denied":
+            counts["params_checks"] = 1
+    return {"id": case_id, "outcome": "passed", "duration_ms": 20, "counts": counts, "observations": flags}
+
 
 class AdminReceiptTests(unittest.TestCase):
     def setUp(self):
@@ -110,7 +156,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 11)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 13)
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
@@ -138,44 +184,48 @@ class AdminReceiptTests(unittest.TestCase):
             validate_receipt(malformed)
 
     def test_full_receipt_accepts_all_sixteen_named_boundary_cases(self):
-        case_ids = (
-            "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
-            "allowed_reconnect", "anonymous_http_denied", "nonstaff_http_denied",
-            "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
-            "consent_session_denied", "public_discovery", "public_jwks", "public_protocol_error",
-        )
         full = copy.deepcopy(self.receipt)
-        full["scenarios"] = [
-            {**copy.deepcopy(self.receipt["scenarios"][0]), "id": case_id}
-            for case_id in case_ids
-        ]
+        full["scenarios"] = [full_scenario(case_id) for case_id in FULL_CASE_IDS]
         try:
             validated = validate_receipt(full, expected_scenario_set="full")
         except ValueError as error:
             self.fail(f"complete full case-set receipt should validate: {error}")
         self.assertEqual(validated["result"], "passed")
-        self.assertEqual({item["id"] for item in validated["scenarios"]}, set(case_ids))
+        self.assertEqual({item["id"] for item in validated["scenarios"]}, set(FULL_CASE_IDS))
+
+    def test_full_scenario_extraction_preserves_each_case_outcome(self):
+        observed = {"scenarios": [full_scenario(case_id) for case_id in FULL_CASE_IDS]}
+        observed["scenarios"][-1]["outcome"] = "failed"
+        extracted = admin_journey.full_scenarios_from_observation(observed)
+        self.assertEqual(len(extracted), 16)
+        self.assertEqual([item["outcome"] for item in extracted].count("passed"), 15)
+        self.assertEqual(extracted[-1]["outcome"], "failed")
 
     def test_full_receipt_rejects_missing_duplicate_and_unknown_case_ids(self):
-        case_ids = (
-            "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
-            "allowed_reconnect", "anonymous_http_denied", "nonstaff_http_denied",
-            "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
-            "consent_session_denied", "public_discovery", "public_jwks", "public_protocol_error",
-        )
         for label, ids in (
-            ("missing", case_ids[:-1]),
-            ("duplicate", case_ids[:-1] + (case_ids[0], case_ids[0])),
-            ("unknown", case_ids[:-1] + ("secret_cookie",)),
+            ("missing", FULL_CASE_IDS[:-1]),
+            ("duplicate", FULL_CASE_IDS[:-1] + (FULL_CASE_IDS[0], FULL_CASE_IDS[0])),
+            ("unknown", FULL_CASE_IDS[:-1] + ("secret_cookie",)),
         ):
             with self.subTest(label=label):
                 malformed = copy.deepcopy(self.receipt)
                 malformed["scenarios"] = [
-                    {**copy.deepcopy(self.receipt["scenarios"][0]), "id": case_id}
+                    full_scenario(case_id) if case_id in FULL_CASE_EVIDENCE
+                    else {**full_scenario(FULL_CASE_IDS[0]), "id": case_id}
                     for case_id in ids
                 ]
                 with self.assertRaises(ValueError):
                     validate_receipt(malformed, expected_scenario_set="full")
+
+    def test_full_receipt_requires_live_boundary_counters_before_and_after_mutation(self):
+        for case_id, counter in (("cached_join_denied", "staff_checks"), ("reconnect_denied", "staff_checks"), ("params_denied", "params_checks")):
+            with self.subTest(case_id=case_id):
+                full = copy.deepcopy(self.receipt)
+                full["scenarios"] = [full_scenario(item) for item in FULL_CASE_IDS]
+                selected = next(item for item in full["scenarios"] if item["id"] == case_id)
+                selected["counts"][counter] = 0
+                with self.assertRaises(ValueError):
+                    validate_receipt(full, expected_scenario_set="full")
 
 
 if __name__ == "__main__":

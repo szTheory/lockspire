@@ -165,7 +165,7 @@ end
     )
 
 
-def apply_host_overlays(child: Path, *, admin_proof: bool = False) -> None:
+def apply_host_overlays(child: Path, *, admin_proof: bool = False, mount_path: str = "/lockspire") -> None:
     for source in OVERLAY_ROOT.rglob("*"):
         if source.is_file():
             if admin_proof and source.name == "operator_authorization.ex":
@@ -225,6 +225,8 @@ def apply_host_overlays(child: Path, *, admin_proof: bool = False) -> None:
     pipe_through(:proof_control)
     post("/withdraw", Controller, :withdraw)
     post("/restore", Controller, :restore)
+    post("/invalidate-session", Controller, :invalidate_session)
+    post("/delete-identity", Controller, :delete_identity)
     get("/observations", Controller, :observations)
     post("/seed", Controller, :seed)
     post("/reset", Controller, :reset)
@@ -233,7 +235,25 @@ def apply_host_overlays(child: Path, *, admin_proof: bool = False) -> None:
         anchor = "  lockspire_routes()"
         if content.count(anchor) != 1:
             raise PackageInputError("provider router proof-control insertion point changed")
-        router.write_text(content.replace(anchor, control_routes + "\n" + anchor), encoding="utf-8")
+        mount_scope = "/" if mount_path == "/" else mount_path
+        session_routes = f'''
+  scope "{mount_scope}" do
+    pipe_through(:browser)
+
+    live_session :phase170_public,
+      session: {{CleanRoomProviderWeb.AdminProof.PublicLive, :session, []}},
+      root_layout: {{CleanRoomProviderWeb.AdminRootLayout, :root}} do
+      live("/__proof/public", CleanRoomProviderWeb.AdminProof.PublicLive, :index)
+    end
+
+    live_session :phase170_consent,
+      session: {{CleanRoomProviderWeb.AdminProof.ConsentLive, :session, []}},
+      root_layout: {{CleanRoomProviderWeb.AdminRootLayout, :root}} do
+      live("/__proof/consent", CleanRoomProviderWeb.AdminProof.ConsentLive, :index)
+    end
+  end
+'''
+        router.write_text(content.replace(anchor, control_routes + session_routes + "\n" + anchor), encoding="utf-8")
 
 
 def audit_boundary(child: Path, package_root: Path) -> None:
@@ -453,7 +473,7 @@ def prepare_provider(
     )
     if install_result.returncode != 0:
         raise PackageInputError("provider installer failed")
-    apply_host_overlays(child, admin_proof=admin_proof)
+    apply_host_overlays(child, admin_proof=admin_proof, mount_path=mount_path)
     print("provider host overlays applied", flush=True)
     audit_boundary(child, package_root)
     print("provider boundary audit complete", flush=True)
