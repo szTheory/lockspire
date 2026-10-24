@@ -38,12 +38,16 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
   def assert_repository_hygiene! do
     script = Paths.read!("scripts/maintainer/repo_hygiene_check.sh")
     ci = Paths.read!(".github/workflows/ci.yml")
+    release = Paths.read!(".github/workflows/release.yml")
     adoption_docs = Paths.read!("docs/adoption-demo.md")
 
     assert script =~ "ci_source_contract_checks"
     assert script =~ "repo_hygiene_check.sh [--ci] [--project NAME]"
     assert ci =~ "bash ./scripts/maintainer/repo_hygiene_check.sh --ci"
     assert ci =~ "python3 scripts/demo/adoption_smoke.py"
+    assert release =~ "name: Record terminal release outcome"
+    assert release =~ "always() && github.event_name == 'workflow_dispatch'"
+    assert script =~ "Record terminal release outcome|skipped"
     assert adoption_docs =~ "black-box OAuth/OIDC proof"
     assert adoption_docs =~ "not a production deployment guide"
     refute ci =~ "docker compose"
@@ -91,6 +95,13 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
     assert receipt["hygiene"]["block"] == 0
     assert receipt["required_ci"]["run_id"] == 1001
     assert receipt["release_no_publish"]["outcome"] == "no_publish"
+    assert length(receipt["release_no_publish"]["jobs"]) == 6
+
+    assert Enum.count(receipt["release_no_publish"]["jobs"], fn job ->
+             job["name"] == "Record terminal release outcome" and
+               job["status"] == "completed" and job["conclusion"] == "skipped"
+           end) == 1
+
     assert receipt["warn_dispositions"] == []
 
     assert receipt["supplemental_oidf"] == %{
@@ -413,6 +424,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"successful publication job", "release-published", []},
       {"missing publication job", "release-job-missing", []},
       {"duplicated publication job", "release-job-duplicate", []},
+      {"missing terminal release job", "release-job-terminal-missing", []},
+      {"successful terminal release job", "release-job-terminal-success", []},
+      {"failed terminal release job", "release-job-terminal-failure", []},
+      {"unexpected terminal release job conclusion", "release-job-terminal-unexpected", []},
+      {"duplicated terminal release job", "release-job-terminal-duplicate", []},
       {"Docker running-container list failure", "docker-running-list-failure", []},
       {"Docker stopped-container list failure", "docker-stopped-list-failure", []},
       {"identity movement during Docker inspection", "docker-main-race", []},
@@ -775,10 +791,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
         printf '%s\n' '{"total_count":8,"jobs":[]}' ;;
       "api repos/szTheory/lockspire/actions/runs/2001/jobs?per_page=100&page=1")
         case "$scenario" in
-          release-published) publication=success; total=5; tail='' ;;
+          release-published) publication=success; total=6; tail='' ;;
           release-job-missing) publication=skipped; total=4; tail='' ;;
-          release-job-duplicate) publication=skipped; total=6; tail=',{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}' ;;
-          *) publication=skipped; total=5; tail='' ;;
+          release-job-duplicate) publication=skipped; total=7; tail=',{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}' ;;
+          release-job-terminal-missing) publication=skipped; total=5; tail='' ;;
+          release-job-terminal-success) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"success"}' ;;
+          release-job-terminal-failure) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"failure"}' ;;
+          release-job-terminal-unexpected) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"cancelled"}' ;;
+          release-job-terminal-duplicate) publication=skipped; total=7; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"},{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"}' ;;
+          *) publication=skipped; total=6; tail=',{"name":"Record terminal release outcome","status":"completed","conclusion":"skipped"}' ;;
         esac
         jobs='[{"name":"Maintain Release Please PR","status":"completed","conclusion":"success"},{"name":"Validate exact main head and CI evidence","status":"completed","conclusion":"skipped"},{"name":"Prove exact package before publication","status":"completed","conclusion":"skipped"},{"name":"Publish verified release to Hex","status":"completed","conclusion":"'"$publication"'"},{"name":"Verify public install truth","status":"completed","conclusion":"skipped"}'
         [ "$scenario" = "release-job-missing" ] && jobs='[{"name":"Maintain Release Please PR","status":"completed","conclusion":"success"},{"name":"Validate exact main head and CI evidence","status":"completed","conclusion":"skipped"},{"name":"Prove exact package before publication","status":"completed","conclusion":"skipped"},{"name":"Publish verified release to Hex","status":"completed","conclusion":"skipped"}'
