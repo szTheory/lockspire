@@ -5,33 +5,34 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Delivery record reports a stale final contract count"
   - id: WR-02
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Consent control accepts an off-origin redirect"
   - id: WR-03
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Malformed nested ledger entries can crash validation"
   - id: WR-04
     severity: warning
-    disposition: open
+    disposition: fixed
     title: "Validator complexity exceeds the project Credo limit"
-open: 4
+open: 0
 total: 4
-recorded: 2026-10-24T21:06:41.964Z
+unparsed: 1
+recorded: 2026-10-24T21:23:09.007Z
 ---
 
 # Phase 171: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
-| WR-02 | warning | open | - |
-| WR-03 | warning | open | - |
-| WR-04 | warning | open | - |
+| WR-01 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
+| WR-02 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
+| WR-03 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
+| WR-04 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
