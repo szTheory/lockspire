@@ -11,8 +11,10 @@ defmodule Lockspire.Web.AdminRouteHost do
   def admin_path(prefix), do: prefix <> "/admin"
 
   defmacro host_consent_routes(prefix) do
+    scope_prefix = if prefix == "", do: "/", else: prefix
+
     quote do
-      Phoenix.Router.scope unquote(prefix) do
+      Phoenix.Router.scope unquote(scope_prefix) do
         Phoenix.Router.pipe_through(:host_consent)
 
         Phoenix.LiveView.Router.live_session :host_consent,
@@ -29,8 +31,10 @@ defmodule Lockspire.Web.AdminRouteHost do
   end
 
   defmacro host_public_routes(prefix) do
+    scope_prefix = if prefix == "", do: "/", else: prefix
+
     quote do
-      Phoenix.Router.scope unquote(prefix) do
+      Phoenix.Router.scope unquote(scope_prefix) do
         Phoenix.Router.pipe_through(:host_public)
 
         Phoenix.LiveView.Router.live_session :host_public,
@@ -44,15 +48,6 @@ defmodule Lockspire.Web.AdminRouteHost do
       end
     end
   end
-
-  def record_trace(trace_id, surface) when is_binary(trace_id) and trace_id != "" do
-    case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
-      observer when is_pid(observer) -> send(observer, {:route_trace, trace_id, surface})
-      nil -> :ok
-    end
-  end
-
-  def record_trace(_trace_id, _surface), do: :ok
 
   def record_trace(trace_id, surface) when is_binary(trace_id) and trace_id != "" do
     case :persistent_term.get(:lockspire_admin_route_hook_observer, nil) do
