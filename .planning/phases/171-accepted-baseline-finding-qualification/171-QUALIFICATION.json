@@ -1609,7 +1609,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
-        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb"
+        "sha256": "c63e7dac8728642879a528a964071667f047d048e989e2205fd14a3cf5812739"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "dc60a6b7e106c34be3b496e0d59e44c5d3ecc195fb76f8f1f4ddbc81c4e38d1b",
+    "input_digest": "c20ab6075973d27eb0e15d9de70910fd25ddde8bf2e5864d653cd1fab3e73c93",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1900,6 +1900,14 @@
         "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
         "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
         "reason": "Refresh only the reviewed VALIDATION identity after recording actual final test, format, Credo and scoped-diff results; matrix selection and all runtime/source observations remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "sha256": "c63e7dac8728642879a528a964071667f047d048e989e2205fd14a3cf5812739",
+        "reason": "Make the executed Wave 4 task map reference its canonical gap-plan source explicitly; no task result, selected case, expectation or original observation changed."
       }
     ]
   },

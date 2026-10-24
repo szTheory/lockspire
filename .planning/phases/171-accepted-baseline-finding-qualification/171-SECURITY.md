@@ -43,6 +43,8 @@ two product counterexamples assigned to phases 172/173.
 | T-171-10 | Repudiation | medium | mitigate | Dated REQUIREMENTS/ROADMAP scope amendments preserve IDs and pending correction status | closed |
 | T-171-11 | Information disclosure | high | mitigate | Probe retains only status/location category, scope/parameter names and equality booleans; no reference/connection/body values | closed |
 | T-171-12 | Tampering | high | mitigate | Positive controls before named assertions; contract binds controls, actual exit/count, source/probe hashes and distinct expected/observed projections | closed |
+| T-171-13 | Tampering | medium | mitigate | Dated procedure-scoped claim and retained no-launch evidence; draft fixture specifically rejects interrupted=true for an unlaunched profile | closed |
+| T-171-14 | Repudiation | high | mitigate | Attributed delegated dispositions preserve uncertainty and original observations; reviewed changed manifest identities have source, old/new hashes and reasons | closed |
 | T-171-SC | Tampering | high | accept | Existing accepted no-install boundary explicitly logged below | closed |
 
 ## Accepted Risks Log
@@ -60,15 +62,19 @@ two product counterexamples assigned to phases 172/173.
 
 ## Sign-Off
 
-- [x] All thirteen unique planned threats have a disposition and evidence.
+- [x] All fifteen unique planned threats have a disposition and evidence.
 - [x] Existing accepted risk is explicitly recorded.
 - [x] No open threat at or above the high blocking threshold remains.
 - [x] No protocol correction, external-suite execution, certification or human confirmation is claimed.
 
 The two controlled normative failures remain assigned to phases 172/173. Both
 optional external profiles remain unlaunched. The four review warnings were subsequently fixed; fresh full Credo is clean and
-the ledger contract passes 21 tests. The strengthened consent-origin control
+the ledger contract passes 22 tests. The strengthened consent-origin control
 rejects off-origin, network-path and lookalike routes before interaction lookup.
 The new dated probe repeated both controlled normative failures and preserves
 the original observation. This strengthens T-171-11/12 without changing the
 planned risk disposition or claiming either product defect corrected.
+
+## Gap-plan mitigation audit — 2026-10-24
+
+The executing maintainer checked new T-171-13/14 at ASVS L1 after Plan 04 execution. The procedure amendment and unavailable broader claim are explicit in Plan 02, DECISIONS, DELIVERY and VALIDATION. The isolated draft fixture first failed, then the new unavailable-profile predicate rejected impossible interruption evidence; final contract: 22 tests, 0 failures. The three delegated judgments name sources and preserve flagged assumptions/prohibitions and absent human confirmation. Manifest audits preserve original cases, receipts, profiles and probe observations while attributing changed authority references. Both new planned mitigations are present; fifteen unique threats are closed and threats_open remains zero. No optional profile operation or new risk acceptance occurred.
