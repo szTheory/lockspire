@@ -3,20 +3,25 @@ phase: 172
 review: 172-REVIEW.md
 titles: json
 findings:
+  - id: WR-02
+    severity: warning
+    disposition: fixed
+    title: "State continuation points back to completed Phase 172"
   - id: WR-01
     severity: warning
     disposition: fixed
     title: "PAR regression does not assert JSON media type"
 open: 0
-total: 1
-recorded: 2026-10-24T23:00:01.096Z
+total: 2
+recorded: 2026-10-24T23:06:12.207Z
 ---
 
 # Phase 172: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 172-REVIEW-FIX.md |
+| WR-02 | warning | fixed | 172-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 172-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
