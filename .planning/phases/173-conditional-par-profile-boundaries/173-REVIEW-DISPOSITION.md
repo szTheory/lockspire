@@ -9,14 +9,14 @@ findings:
     title: "WARNING — PAR response media type assertion accepts invalid types"
 open: 0
 total: 1
-recorded: 2026-10-24T23:41:07.437Z
+recorded: 2026-10-24T23:57:09.923Z
 ---
 
 # Phase 173: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | fixed | 173-REVIEW-FIX.md |
+| WR-01 | warning | fixed | 173-REVIEW-FIX.md (not in the current review) |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
