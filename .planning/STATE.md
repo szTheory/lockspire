@@ -6,16 +6,16 @@ current_phase: 170
 current_phase_name: Packaged Host and Compatibility Proof
 current_plan: 5
 status: executing
-stopped_at: Completed 170-04-PLAN.md
-last_updated: "2026-10-24T03:41:38.953Z"
+stopped_at: Completed 170-05-PLAN.md
+last_updated: "2026-10-24T07:24:58.429Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 170 Plan 04 completed; Plan 05 is next
-state_head: 907eccbc3bbfea0118204b7f7c17c90f0e28ddd2
+state_head: 8c5e8f45cd70067493e4cec3c68358c36f48a55d
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 15
+  completed_plans: 16
   percent: 75
 ---
 
@@ -70,6 +70,9 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 - [Phase 170]: Keep existing required job names, triggers, immutable pins, and 30-minute job limits; each proof pair has its own 900-second deadline.
 - [Phase 170]: Upload only validated safe evidence while preserving nonzero proof status and requiring artifacts to exist.
 - [Phase 170]: Report local proof results separately; no remote CI run was dispatched or observed.
+- [Phase 170]: Keep local Elixir/OTP observations distinct from CI BEAM and PostgreSQL expectations; no remote job was observed.
+- [Phase 170]: Preserve host-owned identity and policy and the unconditional generated authorization deny default; synthetic authority remains in the disposable proof host.
+- [Phase 170]: Exclude only the exact safe data-phx-link-state push/replace metadata from protocol field-name scans; retain raw OAuth-state sentinel checks.
 
 ### Blockers/Concerns
 
@@ -129,8 +132,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T03:41:38.773Z
-Stopped at: Completed 170-04-PLAN.md
+Last session: 2026-10-24T07:24:58.222Z
+Stopped at: Completed 170-05-PLAN.md
 Resume file: None
 Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-compatibility-proof/*-PLAN.md` and 170-PLAN-CHECK.md first if desired. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
 
@@ -145,3 +148,4 @@ Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-c
 | Phase 170 P02 | 50m | 2 tasks | 10 files |
 | Phase 170 P03 | 38min | 2 tasks | 11 files |
 | Phase 170 P04 | 31min | 2 tasks | 8 files |
+| Phase 170 P05 | 3h 41m | 2 tasks | 9 files |
