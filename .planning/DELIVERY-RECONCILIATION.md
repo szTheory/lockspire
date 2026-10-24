@@ -62,7 +62,8 @@ a focused review, not an exhaustive fresh audit of every planning artifact.
   keep lint thresholds and security checks unchanged, then rerun the gate.
 
 Existing debt remains explicit: v1.45 undefined probes/descriptor-less
-prohibitions and historical summary metadata; v1.46 duplicate fixture warnings.
+prohibitions and historical summary metadata. The historically acknowledged
+v1.46 fixture warnings are corrected below; archived evidence stays unchanged.
 The security review also noted inconsistent attribution of malformed app lifetime
 configuration (`invalid_client_metadata` versus `server_error` for the other
 lifetime policies). No new exploit was identified; keep that classification
@@ -135,6 +136,28 @@ The tested source bytes are committed at `ddb9237d`; the only dependency change
 is the `plug_crypto` lock entry, 2.2.0 to 2.2.1. The temporary database is owned
 only by this run and may be retired after its evidence is retained.
 
+The first PR check run `40117908804` then found two additional repository-only
+prerequisites that the local contributor alias did not exercise:
+
+* The Release Please npm audit rejected existing `undici 6.29.0`. The upstream
+  [EventSource advisory](https://github.com/nodejs/undici/security/advisories/GHSA-4qv8-2p9j-2685)
+  and [content-encoding advisory](https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c)
+  both prescribe 6.29.1 on this major line. Commit `1177aa33` changes only that
+  lock entry, preserving the dependency count and direct manifest. Clean
+  `npm ci --ignore-scripts`, moderate-threshold npm audit (zero vulnerabilities),
+  the actual ESM import, and all three release-runtime contract tests pass.
+  An owned `/tmp` npm cache avoids changing global cache permissions.
+* Clean test-environment compilation uses `--warnings-as-errors` in hosted CI.
+  Remove the duplicate unreachable trace helper and normalize only the router
+  scope's empty prefix to `/`; keep the logical session prefix unchanged.
+  `MIX_ENV=test mix compile --force --warnings-as-errors` passed, followed by
+  34 admin-route inventory/compilation/integration regression tests with zero
+  failures. This repairs fixture debt without changing product behavior or
+  weakening CI warning policy.
+
+The corrected PR head must receive fresh protected checks; the first run's
+partial successes do not authorize merging a later head.
+
 ## Lessons applied
 
 1. Separate historical ownership from current delegated custody, containment,
@@ -157,3 +180,7 @@ only by this run and may be retired after its evidence is retained.
    diagnose provenance before changing copy or weakening assertions. Register
    cleanup before constructing partially committing fixtures in future test
    hardening; the historical leak's exact cause was not proven here.
+8. Distinguish the local contributor alias from every hosted job. In particular,
+   exercise a clean test-environment warnings-as-errors compile and the
+   privileged release runtime's npm audit; cached local compilation can hide
+   acknowledged warnings that correctly block a clean hosted build.
