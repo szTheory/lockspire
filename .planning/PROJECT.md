@@ -32,7 +32,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Selected:** User approved the core-hardening direction and delegated upstream research, adversarial synthesis and routine scoped decisions on 2026-10-24. Continue phase numbering at 171. [Scope](research/v1.47-core-hardening/SCOPE.md), [research](research/v1.47-core-hardening/SUMMARY.md), [rolling roadmap](MILESTONE-ARC.md).
 
-**Entry condition:** Planning may proceed here; product implementation requires reviewed reconciliation of the accumulated prior delivery, a fresh accepted main baseline and explicit worktree ownership. The [dated baseline](research/v1.47-core-hardening/BASELINE.md) records current remote CI and local limits; this checkout is not yet accepted main.
+**Entry condition satisfied — Phase 171:** Reviewed cumulative delivery in PR #138 and the original exact-main receipt establish accepted base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, with preserved history and delegated resource custody. The implementation branch remains distinct from accepted main. [Phase 171 verification](phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md) passed 10/10; its frozen twelve-case matrix reuses ten proofs and assigns A171-003 to Phase 172 and P171-005 to Phase 173. Optional external profiles remain unlaunched and non-certifying; later milestone delivery/publication remains separate.
 
 **Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
 
@@ -389,13 +389,14 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Qualify the current repository baseline and finite supported-case ledger before dependent implementation (v1.47 BASE-01..02, FIND-01..02).
 - [ ] Establish selected authorization-response, silent-auth/freshness and PAR/profile outcomes with evidence-led corrections only where warranted (AUTHR-01..03, PARB-01..03).
 - [ ] Bind regressions, packaged proof, security/candidate gates and clean delivery/rolling-roadmap handoff to exact evidence (CPROOF-01..02, DELIV-01..02).
 
 See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
+
+- ✓ Accepted implementation base and finite supported-case qualification — v1.47 BASE-01..02, FIND-01..02, Phase 171; 10/10 goal verification, 22 passing ledger tests, two controlled counterexamples retained for downstream correction, 15 planned threats closed and clean review. External profiles were not launched.
 
 - ✓ Packaged-host transport, exact-version runtime and required CI wiring — v1.46 HPROOF-01..03, Phase 170; six cells × 16 browser cases, 43/44 lifecycle checks, 202 prior-phase regressions, 19/19 security threats closed and no human UAT. See [verification](milestones/v1.46-phases/170-packaged-host-and-compatibility-proof/170-VERIFICATION.md). Hosted CI remains unobserved.
 
@@ -541,6 +542,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Qualify exact supported cases before changing protocol behavior | Coarse suite failures and unavailable infrastructure do not establish product defects | Phase 171 passed; ten existing proofs reused, two source-host counterexamples assigned to 172/173 |
+| Preserve original evidence and distinguish deliberate normative RED from setup failure or protocol pass | Repeated probes and metadata edits must not rewrite observed history | Phase 171 controlled observations, dated archive, focused contract and clean review |
 | Require actual candidate/browser evidence distinct from server lifecycle and compilation | Supported integration claims need real assets, signed sessions, joins, navigation and current-authority denial at each mount | ✓ Good — Phase 170 six-cell matrix and independent goal verification |
 | Validate page mount alignment at HTTP entry and retain current host authority at LiveView boundaries | Connected sockets expose the WebSocket URI rather than the original page path; account/policy ownership stays with the host | ✓ Good — Phase 170 real browser regression and host authorization tests |
 | Retain only independently validated evidence and bound cleanup to owned resources | Hostile diagnostics, failed cleanup and artifact traversal must fail visibly without leaking or deleting external data | ✓ Good — Phase 170 security remediation, containment regressions and independent clean re-review |
@@ -660,4 +663,4 @@ This document evolves at phase transitions and milestone boundaries.
 6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 for v1.47 scope and rolling-roadmap posture*
+*Last updated: 2026-10-24 after Phase 171 qualification and transition to Phase 172*
