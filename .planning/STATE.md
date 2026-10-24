@@ -5,11 +5,11 @@ milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 173
 current_phase_name: Conditional PAR & Profile Boundaries
 status: planning
-stopped_at: Phase 172 passed 11/11; completion metadata reconciled; continue Phase 173 planning
-last_updated: "2026-10-24T23:06:09.725Z"
+stopped_at: Phase 173 context captured; continue scoped implementation research and planning
+last_updated: "2026-10-24T23:11:41.344Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 172 complete, transitioned to Phase 173
-state_head: 26c8da316ab6d16c2d04cb751c1f87cdbea84fed
+state_head: 06e7c5a4dde5f6846b819cfeaef3c181b34c9df5
 progress:
   total_phases: 4
   completed_phases: 2
@@ -117,9 +117,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T23:03:48.495Z
-Stopped at: Phase 172 passed 11/11; completion metadata reconciled; continue Phase 173 planning
-Resume file: None
+Last session: 2026-10-24T23:11:41.181Z
+Stopped at: Phase 173 context captured; continue scoped implementation research and planning
+Resume file: .planning/phases/173-conditional-par-profile-boundaries/173-CONTEXT.md
 Next: Continue Phase 173 planning against frozen P171-005 scope: pushed parameters remain authoritative; preserve existing PAR lifecycle and profile boundaries.
 
 ### Blockers
