@@ -171,65 +171,64 @@ defmodule Lockspire.Install.VerifyTest do
     def __routes__ do
       routes = NativeAdminRouter.__routes__() |> Enum.map(&remap_guard_router/1)
 
-      case Application.get_env(:lockspire, :verify_route_variant) do
-        :missing ->
-          Enum.reject(routes, &(&1.path == "/lockspire/admin/clients/new"))
-
-        :duplicate ->
-          routes ++ [route_at(routes, "/lockspire/admin/clients/new")]
-
-        :wrong_action ->
-          update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :action))
-
-        :wrong_view ->
-          update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :view))
-
-        :wrong_target ->
-          update_route(
-            routes,
-            "/lockspire/admin/clients/new",
-            &Map.put(&1, :plug, Phoenix.Controller)
-          )
-
-        :wrong_session ->
-          update_route(
-            routes,
-            "/lockspire/admin/clients/new",
-            &change_session(&1, :wrong_session)
-          )
-
-        :missing_hook ->
-          update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :missing))
-
-        :guard_first ->
-          update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :guard_first))
-
-        :wrong_guard_router ->
-          update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :wrong_router))
-
-        :malformed ->
-          update_route(
-            routes,
-            "/lockspire/admin/clients/new",
-            &Map.update!(&1, :metadata, fn metadata ->
-              Map.put(metadata, :phoenix_live_view, "PRIVATE_METADATA_SENTINEL")
-            end)
-          )
-
-        :extra_admin_view ->
-          routes ++
-            [
-              Map.put(
-                route_at(routes, "/lockspire/admin/clients"),
-                :path,
-                "/lockspire/admin/clients-extra"
-              )
-            ]
-
-        _other ->
-          routes
-      end
+      vary_routes(routes, Application.get_env(:lockspire, :verify_route_variant))
     end
+
+    defp vary_routes(routes, :missing),
+      do: Enum.reject(routes, &(&1.path == "/lockspire/admin/clients/new"))
+
+    defp vary_routes(routes, :duplicate),
+      do: routes ++ [route_at(routes, "/lockspire/admin/clients/new")]
+
+    defp vary_routes(routes, :wrong_action),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :action))
+
+    defp vary_routes(routes, :wrong_view),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :view))
+
+    defp vary_routes(routes, :wrong_target),
+      do:
+        update_route(
+          routes,
+          "/lockspire/admin/clients/new",
+          &Map.put(&1, :plug, Phoenix.Controller)
+        )
+
+    defp vary_routes(routes, :wrong_session),
+      do:
+        update_route(routes, "/lockspire/admin/clients/new", &change_session(&1, :wrong_session))
+
+    defp vary_routes(routes, :missing_hook),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :missing))
+
+    defp vary_routes(routes, :guard_first),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :guard_first))
+
+    defp vary_routes(routes, :wrong_guard_router),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :wrong_router))
+
+    defp vary_routes(routes, :malformed) do
+      update_route(
+        routes,
+        "/lockspire/admin/clients/new",
+        &Map.update!(&1, :metadata, fn metadata ->
+          Map.put(metadata, :phoenix_live_view, "PRIVATE_METADATA_SENTINEL")
+        end)
+      )
+    end
+
+    defp vary_routes(routes, :extra_admin_view) do
+      routes ++
+        [
+          Map.put(
+            route_at(routes, "/lockspire/admin/clients"),
+            :path,
+            "/lockspire/admin/clients-extra"
+          )
+        ]
+    end
+
+    defp vary_routes(routes, _other), do: routes
 
     def __match_route__(method, path, host) do
       result = NativeAdminRouter.__match_route__(method, path, host)

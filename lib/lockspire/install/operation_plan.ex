@@ -45,9 +45,10 @@ defmodule Lockspire.Install.OperationPlan do
   def upgrade(assigns, rendered_templates, manifest, opts)
       when is_map(manifest) and is_list(opts) do
     if Keyword.get(opts, :dry_run, false) do
-      with :clean <- FileTransaction.recovery_status(assigns.project_root) do
-        build(assigns, :upgrade, rendered_templates, manifest)
-      else
+      case FileTransaction.recovery_status(assigns.project_root) do
+        :clean ->
+          build(assigns, :upgrade, rendered_templates, manifest)
+
         {:recovery_required, reason} ->
           {:error, [error(:recovery_required, reason)]}
 

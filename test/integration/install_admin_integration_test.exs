@@ -267,7 +267,7 @@ defmodule Lockspire.InstallAdminIntegrationTest do
       |> init_test_session(session)
       |> Plug.Conn.put_private(:phoenix_endpoint, host.endpoint_module)
 
-    apply(host.endpoint_module, :call, [conn, apply(host.endpoint_module, :init, [[]])])
+    host.endpoint_module.call(conn, host.endpoint_module.init([]))
   end
 
   defp start_endpoint!(host), do: start_supervised!(host.endpoint_module)

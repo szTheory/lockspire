@@ -249,11 +249,7 @@ defmodule Lockspire.Web.AdminRoutes do
   defp validate_admin_path!(path, label) when is_binary(path) and path != "" do
     segments = String.split(path, "/", trim: false)
 
-    invalid_segment? =
-      Enum.any?(segments, fn segment ->
-        segment in [".", ".."] or String.contains?(segment, [":", "*", "\\"]) or
-          Regex.match?(~r/%2f|%5c/i, segment)
-      end)
+    invalid_segment? = Enum.any?(segments, &invalid_admin_path_segment?/1)
 
     invalid? =
       not String.starts_with?(path, "/") or String.contains?(path, "//") or invalid_segment? or
@@ -267,5 +263,10 @@ defmodule Lockspire.Web.AdminRoutes do
 
   defp validate_admin_path!(_path, label) do
     raise ArgumentError, "#{label} must be a literal nonempty slash-prefixed path"
+  end
+
+  defp invalid_admin_path_segment?(segment) do
+    segment in [".", ".."] or String.contains?(segment, [":", "*", "\\"]) or
+      Regex.match?(~r/%2f|%5c/i, segment)
   end
 end

@@ -71,20 +71,19 @@ defmodule Lockspire.CleanRoomAdminIntegrationTest do
              ).plug ==
                Lockspire.Web.Router
 
-      denied_http =
-        apply(host.authorization_module, :call, [:get |> conn(admin_prefix), []])
+      denied_http = host.authorization_module.call(:get |> conn(admin_prefix), [])
 
       assert denied_http.halted
       assert denied_http.status == 403
       assert denied_http.resp_body == "operator authorization required"
 
       assert {:halt, denied_live} =
-               apply(host.authorization_module, :on_mount, [
+               host.authorization_module.on_mount(
                  :default,
                  %{},
                  %{"host_staff_id" => "forged"},
                  %Phoenix.LiveView.Socket{}
-               ])
+               )
 
       assert denied_live.redirected == {:redirect, %{status: 302, to: "/"}}
     end

@@ -168,27 +168,25 @@ defmodule Lockspire.Install.FileTransaction do
   end
 
   defp read_only_ancestry(root, target) do
-    cond do
-      not safe_path?(root, target) ->
-        {:error, :outside_project_root}
+    if safe_path?(root, target) do
+      case File.lstat(root) do
+        {:error, :enoent} ->
+          :ok
 
-      true ->
-        case File.lstat(root) do
-          {:error, :enoent} ->
-            :ok
+        {:ok, %{type: :directory}} ->
+          inspect_read_only_components(root, Path.relative_to(target, root))
 
-          {:ok, %{type: :directory}} ->
-            inspect_read_only_components(root, Path.relative_to(target, root))
+        {:ok, %{type: :symlink}} ->
+          {:error, :symlink_refused}
 
-          {:ok, %{type: :symlink}} ->
-            {:error, :symlink_refused}
+        {:ok, _} ->
+          {:error, :invalid_project_root}
 
-          {:ok, _} ->
-            {:error, :invalid_project_root}
-
-          {:error, _} ->
-            {:error, :root_unavailable}
-        end
+        {:error, _} ->
+          {:error, :root_unavailable}
+      end
+    else
+      {:error, :outside_project_root}
     end
   end
 
@@ -528,18 +526,16 @@ defmodule Lockspire.Install.FileTransaction do
   defp write_target(state, %{expected: :absent} = artifact, target, _intent) do
     with :ok <- File.mkdir_p(Path.dirname(target)),
          :ok <- safe_ancestry(state.root, target, allow_missing?: true),
-         :ok <- maybe_fail({:before_create_publish, artifact.relative_path}),
-         :ok <- File.ln(artifact.stage_path, target) do
-      :ok
+         :ok <- maybe_fail({:before_create_publish, artifact.relative_path}) do
+      File.ln(artifact.stage_path, target)
     end
   end
 
   defp write_target(state, artifact, target, _intent) do
     with :ok <- safe_ancestry(state.root, target, allow_missing?: false),
          :ok <- expected_preimage(target, artifact.expected),
-         :ok <- maybe_fail({:before_update_publish, artifact.relative_path}),
-         :ok <- File.rename(artifact.stage_path, target) do
-      :ok
+         :ok <- maybe_fail({:before_update_publish, artifact.relative_path}) do
+      File.rename(artifact.stage_path, target)
     end
   end
 
@@ -575,42 +571,49 @@ defmodule Lockspire.Install.FileTransaction do
     |> Enum.reduce_while(:ok, fn committed, :ok ->
       target = Path.join(state.root, committed.relative_path)
 
-      result =
-        case committed.action do
-          "created" ->
-            cond do
-              not File.exists?(target) ->
-                :ok
-
-              checksum_file?(target, committed.checksum) and
-                  created_target_is_transaction_file?(target, committed) ->
-                remove_created_target(state.root, target)
-
-              true ->
-                {:error, :created_target_changed}
-            end
-
-          "updated" ->
-            cond do
-              checksum_file?(target, committed.backup_checksum) ->
-                :ok
-
-              checksum_file?(target, committed.checksum) and
-                  checksum_file?(committed.backup, committed.backup_checksum) ->
-                with :ok <- safe_ancestry(state.root, target, allow_missing?: false),
-                     :ok <- safe_ancestry(state.root, committed.backup, allow_missing?: false),
-                     :ok <- File.rename(committed.backup, target),
-                     :ok <- maybe_fail(:after_restore_publish) do
-                  :ok
-                end
-
-              true ->
-                {:error, :updated_target_changed}
-            end
-        end
+      result = rollback_entry(state, committed, target)
 
       if result == :ok, do: {:cont, :ok}, else: {:halt, result}
     end)
+  end
+
+  defp rollback_entry(state, committed, target) do
+    case committed.action do
+      "created" -> rollback_created(state, committed, target)
+      "updated" -> rollback_updated(state, committed, target)
+    end
+  end
+
+  defp rollback_created(state, committed, target) do
+    cond do
+      not File.exists?(target) ->
+        :ok
+
+      checksum_file?(target, committed.checksum) and
+          created_target_is_transaction_file?(target, committed) ->
+        remove_created_target(state.root, target)
+
+      true ->
+        {:error, :created_target_changed}
+    end
+  end
+
+  defp rollback_updated(state, committed, target) do
+    cond do
+      checksum_file?(target, committed.backup_checksum) ->
+        :ok
+
+      checksum_file?(target, committed.checksum) and
+          checksum_file?(committed.backup, committed.backup_checksum) ->
+        with :ok <- safe_ancestry(state.root, target, allow_missing?: false),
+             :ok <- safe_ancestry(state.root, committed.backup, allow_missing?: false),
+             :ok <- File.rename(committed.backup, target) do
+          maybe_fail(:after_restore_publish)
+        end
+
+      true ->
+        {:error, :updated_target_changed}
+    end
   end
 
   defp valid_journal?(
@@ -657,7 +660,11 @@ defmodule Lockspire.Install.FileTransaction do
     do:
       is_map(entry) and safe_relative?(entry["relative_path"] || "") and
         entry["action"] in ["created", "updated"] and
-        (entry["action"] == "created" or safe_path?(tx_root, entry["backup"] || "")) and
+        safe_committed_paths?(entry, root, tx_root)
+
+  defp safe_committed_paths?(entry, root, tx_root),
+    do:
+      (entry["action"] == "created" or safe_path?(tx_root, entry["backup"] || "")) and
         (is_nil(entry["stage_path"]) or safe_path?(tx_root, entry["stage_path"])) and
         safe_path?(root, Path.join(root, entry["relative_path"] || ""))
 
@@ -727,9 +734,8 @@ defmodule Lockspire.Install.FileTransaction do
     case :file.open(String.to_charlist(path), [:write, :binary, :exclusive]) do
       {:ok, io} ->
         result =
-          with :ok <- :file.write(io, contents),
-               :ok <- :file.sync(io) do
-            :ok
+          with :ok <- :file.write(io, contents) do
+            :file.sync(io)
           end
 
         close_result = :file.close(io)
@@ -796,9 +802,8 @@ defmodule Lockspire.Install.FileTransaction do
       fn -> safe_ancestry(state.root, state.journal, allow_missing?: true) end,
       fn -> safe_ancestry(state.root, state.tx_root, allow_missing?: true) end,
       fn ->
-        with :ok <- remove_staging_directory(state.tx_root),
-             :ok <- maybe_fail(:after_transaction_directory_cleanup) do
-          :ok
+        with :ok <- remove_staging_directory(state.tx_root) do
+          maybe_fail(:after_transaction_directory_cleanup)
         end
       end,
       fn -> remove_regular_journal(state.journal) end,
