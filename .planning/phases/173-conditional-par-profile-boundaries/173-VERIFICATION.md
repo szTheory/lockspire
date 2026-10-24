@@ -1,8 +1,8 @@
 ---
 phase: 173-conditional-par-profile-boundaries
-verified: 2026-10-24T23:48:14Z
-status: human_needed
-score: 6/8 must-haves verified
+verified: 2026-10-24T23:53:28Z
+status: passed
+score: 6/6 behavioral truths verified
 covered_files:
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json
   - .planning/phases/173-conditional-par-profile-boundaries/173-01-PLAN.md
@@ -10,16 +10,20 @@ covered_files:
   - lib/lockspire/protocol/authorization_request.ex
   - test/integration/phase15_par_authorization_e2e_test.exs
   - test/lockspire/protocol/authorization_request_test.exs
-covered_digest: "v3:sha256:423675265409c9afe3f914ee7e3f354a21f1edc5eb2374b13fe1fdbe27b23eb2"
+covered_digest: "v3:sha256:e92957ff84436999ff706650cc3db0fd46bf094c979411f7c9f0d6dc85338203"
 behavior_unverified: 0
 overrides_applied: 0
-human_verification:
-  - test: "Choose a disposition for the unresolved frozen-evidence prohibition."
-    expected: "Record an explicit resolution or retain it as unresolved after reviewing the scoped ledger evidence."
-    why_human: "The plan leaves this must-NOT item unresolved; the canonical prohibition lifecycle treats unresolved items as carried-forward and flagged, and current evidence does not change that lifecycle field."
-  - test: "Choose a disposition for the unresolved host-ownership prohibition."
-    expected: "Record an explicit resolution or retain it as unresolved after reviewing the scoped source and handoff evidence."
-    why_human: "The plan leaves this must-NOT item unresolved; the canonical prohibition lifecycle treats unresolved items as carried-forward and flagged, and current evidence does not change that lifecycle field."
+flagged_prohibitions:
+  count: 2
+  items:
+    - statement: "MUST NOT reattribute frozen qualification observations, accepted-main evidence, or unavailable external profiles as Phase 173 current-source, packaged-host, transport, or certification proof."
+      verification: judgment
+      verdict: "Scoped ledger review found no reattribution in this Phase 173 change; non-authoritative."
+      flag: "unverified-prohibition — human review recommended"
+    - statement: "MUST NOT move host-owned account, session, login, consent presentation, claims, or product policy into Lockspire as a consequence of the PAR authority correction."
+      verification: judgment
+      verdict: "Scoped source and handoff review found no ownership movement in this Phase 173 change; non-authoritative."
+      flag: "unverified-prohibition — human review recommended"
 decision_coverage:
   honored: 9
   total: 9
@@ -29,8 +33,8 @@ decision_coverage:
 # Phase 173: Conditional PAR & Profile Boundaries Verification Report
 
 **Phase Goal:** Correct only P171-005's reproduced rejection of a conflicting outer scope for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
-**Verified:** 2026-10-24T23:48:14Z
-**Status:** human_needed
+**Verified:** 2026-10-24T23:53:28Z
+**Status:** passed — 6/6 behavioral truths verified; 2 judgment-tier prohibitions flagged for human review
 **Re-verification:** No — initial verification
 
 ## Goal Achievement
@@ -39,16 +43,23 @@ decision_coverage:
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
-| 1 | P171-005 reaches the exact relative consent route with stored openid/email scopes, state, nonce and client despite outer scope=profile; the regression records source-bound RED/GREEN. | ✓ VERIFIED | The current tagged Phase 15 Router test passed (4 tests, 0 failures) and asserts the persisted interaction after an independent control. Final post-review test hash is 9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30; original RED/GREEN test hash matches at commits d23e05f0 and a15e3974 (9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413). Protocol source hashes at qualified and corrected commits match recorded 2279206b3c3b27b5f1526b426863089b81b06883d586a97aa3e90fd8cc320e3a and 3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da. The summary records the candidate's expected HTTP 400 as RED after controls passed, then GREEN with the same test bytes. |
-| 2 | P171-001/002/003 lifecycle cases and P171-004 required-PAR continue to enforce binding, expiry, one-use/replay, wrong-client burn and PKCE behavior. | ✓ VERIFIED | Focused protocol tests for expiry, replay, wrong-client burn, conflict and collision passed (5/0). The Phase 15 required-PAR authorization-code/PKCE flow passed and exercises replay rejection after use. |
-| 3 | Stored PAR fields are validated under current client/security policy without weakening exact redirect, S256, strict signing, collision or Phase 172 response-mode behavior. | ✓ VERIFIED | validate/2 resolves current client/profile before stored-request validation; the resolver retains the distinct request-object collision check and calls client-bound consumption before rebuilding a stored-only map. Strict consumed-PAR signing passed (1/0); Phase 37 exact-redirect and Phase 172 response-mode owners passed in the retained-owner run. The conflicting-values and collision protocol tests passed. |
-| 4 | P171-006 configured source-host issuer and mounted discovery endpoints remain consistent; external provider-origin, TLS/proxy and browser reachability stay supplemental and unavailable. | ✓ VERIFIED | Configured discovery test passed and asserts issuer https://example.test/lockspire plus mounted authorization, token, userinfo, JWKS, PAR, revocation and introspection endpoints. Dispositions retain external profiles as unlaunched, with no reachability or certification claim. |
-| 5 | Qualification history and owned input identities remain auditable without rewriting frozen cases, observations, receipts, probes or prior audit records. | ✓ VERIFIED | The independent preservation command passed: “Frozen content/history preserved; owned manifest audit chain verified”. The frozen-input ledger contract test passed (1/0). Final ordered digest is e09f20b3b3dad59caa1b97179d43b5b9674201de31ba6014deb7f929ebe3d2ee; only the existing Phase 15 test and roadmap selector are audited owned identities. |
-| 6 | The selected change does not move host-owned account/session/login/consent or product policy into Lockspire. | ✓ VERIFIED | Implementation diff is limited to the private protocol resolver; host resolver, controller and consent ownership are unchanged. Current interaction assertions verify the host handoff seam. |
-| 7 | Frozen qualification observations and unavailable external profiles are not reattributed as current packaged-host proof. | ? UNCERTAIN | The source/ledger audit and scoped dispositions support this result, but the plan's prohibition remains unresolved and has no verification tier. Human disposition is required. |
-| 8 | Host-owned account, session, login, consent presentation, claims and product policy are not moved into Lockspire. | ? UNCERTAIN | The source diff and tests support this result, but the plan's prohibition remains unresolved and has no verification tier. Human disposition is required. |
+| 1 | A valid P171-005 pushed request reaches exact relative consent with stored openid/email scopes, state, nonce and client despite outer scope=profile. | ✓ VERIFIED | The tagged Phase 15 Router regression passed (4 tests, 0 failures); it first proves an independent reference-only control, then asserts the distinct candidate's persisted interaction projection. |
+| 2 | The same durable regression records normative RED at the qualified source and GREEN after correction with the same test bytes. | ✓ VERIFIED | Commit contents confirm the original test hash 9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413 at d23e05f0 and a15e3974; qualified/corrected protocol hashes are 2279206b3c3b27b5f1526b426863089b81b06883d586a97aa3e90fd8cc320e3a and 3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da. The recorded RED occurs after both PAR controls pass; GREEN passes the same test bytes. |
+| 3 | P171-001/002/003 lifecycle cases and P171-004 required-PAR continue to enforce binding, expiry, one-use/replay, wrong-client burn and PKCE behavior. | ✓ VERIFIED | Focused protocol tests for expiry, replay and wrong-client burn passed (5 total with conflict/collision checks, 0 failures). The Phase 15 required-PAR authorization-code/PKCE flow passed and exercises replay rejection after use. |
+| 4 | Stored PAR fields are validated under current client/security policy without weakening exact redirect, S256, strict signing, collision or Phase 172 response-mode behavior. | ✓ VERIFIED | validate/2 resolves current client/profile before stored-request validation; the resolver retains the distinct request-object collision check and calls client-bound consumption before rebuilding a stored-only map. Strict consumed-PAR signing passed (1/0); Phase 37 exact-redirect and Phase 172 response-mode owners passed. Conflicting-values and collision protocol tests passed. |
+| 5 | P171-006 configured source-host issuer and mounted discovery endpoints remain consistent; external provider-origin, TLS/proxy and browser reachability stay supplemental and unavailable. | ✓ VERIFIED | Configured discovery passed and asserts https://example.test/lockspire plus mounted authorization, token, userinfo, JWKS, PAR, revocation and introspection endpoints. External profiles remain unlaunched, with no reachability or certification claim. |
+| 6 | Qualification history and owned input identities remain auditable without rewriting frozen cases, observations, receipts, probes or prior audit records. | ✓ VERIFIED | The independent preservation command passed: “Frozen content/history preserved; owned manifest audit chain verified”. The frozen-input ledger contract test passed (1/0). Final ordered digest is e09f20b3b3dad59caa1b97179d43b5b9674201de31ba6014deb7f929ebe3d2ee; only the existing Phase 15 test and roadmap selector are audited owned identities. |
 
-**Score:** 6/8 must-haves verified (0 present, behavior-unverified; 2 prohibition declarations need human disposition)
+**Score:** 6/6 behavioral truths verified (0 present, behavior-unverified). Two judgment-tier prohibitions are separately flagged below; they are not counted as mechanically verified truths.
+
+### Prohibition Judgments — Autonomous Soft-Gate
+
+Both plan items are now status resolved, verification judgment. The two scoped verdicts below are non-authoritative and remain flagged exactly as required by the autonomous soft-gate. They are not human confirmation, wired enforcement evidence, or universal claims.
+
+| Prohibition | Non-authoritative scoped judgment | Required flag |
+|---|---|---|
+| MUST NOT reattribute frozen qualification observations, accepted-main evidence, or unavailable external profiles as Phase 173 current-source, packaged-host, transport, or certification proof. | Frozen-content/history and owned-input audits found no reattribution in this Phase 173 change. | unverified-prohibition — human review recommended |
+| MUST NOT move host-owned account, session, login, consent presentation, claims, or product policy into Lockspire as a consequence of the PAR authority correction. | Source diff and host handoff tests found no ownership movement in this Phase 173 change. | unverified-prohibition — human review recommended |
 
 ### Required Artifacts
 
@@ -125,38 +136,13 @@ All 9 trackable CONTEXT decisions are honored by shipped artifacts.
 
 ### Human Verification Required
 
-This protocol/library phase has no user-facing UI. The following two plan prohibitions remain unresolved and descriptor-less. Scoped evidence is recorded above, but a human must choose whether to resolve or retain each item.
-
-| Plan prohibition | Lifecycle | Scoped evidence | Routing |
-|---|---|---|---|
-| MUST NOT reattribute frozen qualification observations, accepted-main evidence, or unavailable external profiles as Phase 173 current-source, packaged-host, transport, or certification proof. | unresolved | Frozen content/history and owned-input audit passed; external profiles remain unlaunched and non-certifying. | Human disposition |
-| MUST NOT move host-owned account, session, login, consent presentation, claims, or product policy into Lockspire as a consequence of the PAR authority correction. | unresolved | Source diff changes only the private protocol resolver; host resolver/controller/consent seam remains in place. | Human disposition |
-
-Canonical routing: /Users/jon/.codex/gsd-core/references/prohibition-probe.md defines unresolved as carried forward and flagged, with a verification tier only when resolved. /Users/jon/.codex/gsd-core/agents/gsd-verifier.md requires flagged prohibitions to route to human_verification or gaps_found, never silently into passed. The missing verification value is consistent with the unresolved lifecycle state; no resolved test or judgment tier is recorded.
-
-#### 1. Frozen-evidence provenance prohibition
-
-**Test:** Choose a disposition for the first unresolved prohibition after reviewing the canonical ledger and Phase 173 append records.
-
-**Expected:** Record an explicit resolution or retain it as unresolved; the frozen records remain unchanged.
-
-**Why human:** The plan marks this prohibition unresolved. The canonical prohibition lifecycle requires the unresolved state to remain flagged until a disposition is made.
-
-#### 2. Host-ownership prohibition
-
-**Test:** Choose a disposition for the second unresolved prohibition after reviewing the implementation diff and integration handoff.
-
-**Expected:** Record an explicit resolution or retain it as unresolved; account, session, login, consent, claims and product policy remain host-owned.
-
-**Why human:** The plan marks this prohibition unresolved. The canonical prohibition lifecycle requires the unresolved state to remain flagged until a disposition is made.
-
-Provider-origin, TLS/proxy and browser profiles remain supplemental and unlaunched; these are not human-verification requirements for this selected phase and no reachability or certification claim is made.
+None as a blocking checkpoint. Autonomous mode is active (mode=yolo, auto_advance=true). The two resolved/judgment prohibitions carry non-authoritative scoped judgments and the explicit “unverified-prohibition — human review recommended” flag; this is a soft recommendation, not human confirmation or a hard halt. Provider-origin, TLS/proxy and browser profiles remain supplemental and unlaunched; no reachability or certification claim is made.
 
 ### Gaps Summary
 
-No implementation or requirement gaps were found. The selected P171-005 correction is present and connected through the real Router handoff; lifecycle, required-PAR, strictness, discovery and provenance owners remain intact. Overall status is human_needed because the two plan prohibitions are unresolved and lack verification tiers. Generic concurrency/unclassified edges and unavailable external profiles remain scoped limits, not new universal guarantees or certification claims.
+No implementation or requirement gaps were found. The selected P171-005 correction is present and connected through the real Router handoff; lifecycle, required-PAR, strictness, discovery and provenance owners remain intact. Six behavioral truths are verified. Two resolved/judgment prohibitions remain prominently flagged for human review and are not counted as mechanically verified truths. The three generic edge assumptions remain unresolved and flagged; unavailable external profiles remain supplemental. None of these limits creates a universal concurrency, reachability or certification claim.
 
 ---
 
-_Verified: 2026-10-24T23:48:14Z_
+_Verified: 2026-10-24T23:53:28Z_
 _Verifier: the agent (gsd-verifier)_
