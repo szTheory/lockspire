@@ -4,12 +4,12 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
-status: Plans complete; frozen qualification matrix awaiting phase review and goal verification
+status: "Phase 171 verification gaps: downstream planning placeholders and overbroad optional-runner claim; scoped gap planning next"
 stopped_at: Phase 171 plans complete; qualification matrix frozen
-last_updated: "2026-10-24T20:57:57.193Z"
+last_updated: "2026-10-24T21:37:16.434Z"
 last_activity: 2026-10-24
 last_activity_desc: Completed all Phase 171 plans and froze the qualified case matrix
-state_head: c61441a74b3727fc079107e6a6327b5c52d63f99
+state_head: ee389e2dcf6dad0d255d5fda1e9827d1cff89013
 progress:
   total_phases: 4
   completed_phases: 0
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
 Plan: 3 of 3 complete; awaiting phase review and verification
-Status: Plans complete; frozen qualification matrix awaiting phase review and goal verification
+Status: Phase 171 verification gaps: downstream planning placeholders and overbroad optional-runner claim; scoped gap planning next
 Last activity: 2026-10-24 — Completed all Phase 171 plans and froze the qualified case matrix
 
 Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 2/3 Phase 171 plans complete; Plan 03 remains gated on qualification proof and policy review.
