@@ -4,19 +4,19 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 170
 current_phase_name: Packaged Host and Compatibility Proof
-current_plan: Not started
+current_plan: 2
 status: executing
-stopped_at: Phase 170 planned, ready to execute
-last_updated: "2026-10-23T23:58:46.866Z"
+stopped_at: Completed 170-01-PLAN.md
+last_updated: "2026-10-24T02:15:44.011Z"
 last_activity: 2026-10-23
-last_activity_desc: Phase 170 planned inline; 5 plans, 5 waves, 3/3 requirements covered
-state_head: acda9da47b141978a2a05c2ac795058257f93888
+last_activity_desc: Phase 170 Plan 01 completed; Plan 02 is next
+state_head: 6c71243cf1de996e9f975962c2a58c40d8ec77ea
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -27,15 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-23 after Phase 169)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 170 — Packaged Host and Compatibility Proof, ready to plan. Phase 169 passed all four HDX requirements and 24 plan truths; security closed 22/22 threats, final review is clean and no human UAT remains.
+**Current focus:** Phase 170 — Packaged Host and Compatibility Proof
 
 ## Current Position
 
-Phase: 170 (Packaged Host and Compatibility Proof) — READY TO EXECUTE
-Current Plan: Not started
+Phase: 170 (Packaged Host and Compatibility Proof) — EXECUTING
+Current Plan: 2
 Total Plans in Phase: 5
-Status: Ready to execute
-Last activity: 2026-10-23 — Phase 170 planned inline; 5 plans in 5 waves, all 3 HPROOF requirements covered
+Status: Executing Phase 170; Plan 01 complete, Plan 02 next
+Last activity: 2026-10-24 — Phase 170 Plan 01 completed
 
 ## Accumulated Context
 
@@ -59,6 +59,9 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 - [Phase 168]: Use public live(sent_conn) to prove a new server-side connected join checks current host authority; Phase 170 owns browser/socket transport proof.
 - [Phase 168]: Re-resolve current host authority at every params transition through the existing on_mount seam; keep identity, roles, events, and logout policy host-owned.
 - [Phase 168]: Model a cross-session redirect and fresh HTTP/live entry separately; do not claim browser transport proof.
+- [Phase 170]: Validate the admin route at HTTP entry because connected LiveView sockets expose the WebSocket URI rather than the original page path.
+- [Phase 170]: Keep proof authority state supervised and confined to the disposable host.
+- [Phase 170]: Use real Chrome/CDP observations and fixed receipt allowlists; do not synthesize LiveView transport frames.
 
 ### Blockers/Concerns
 
@@ -118,8 +121,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-23
-Stopped at: Phase 170 planned, ready to execute
+Last session: 2026-10-24T02:15:43.837Z
+Stopped at: Completed 170-01-PLAN.md
 Resume file: None
 Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-compatibility-proof/*-PLAN.md` and 170-PLAN-CHECK.md first if desired. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
 
@@ -130,3 +133,4 @@ Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-c
 | Phase 168 P01 | 8m | 2 tasks | 5 files |
 | Phase 168 P02 | 8m | 2 tasks | 1 files |
 | Phase 168 P03 | 18m | 2 tasks | 6 files |
+| Phase 170 P01 | 114m | 2 tasks | 13 files |

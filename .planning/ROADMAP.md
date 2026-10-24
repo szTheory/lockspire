@@ -128,11 +128,11 @@ Plans:
   3. Route/session, connected authorization and navigation regressions execute on both the current locked pair and exact Phoenix 1.8.5 / LiveView 1.1.28, with exact versions and runtime outcomes recorded. (HPROOF-02)
   4. Required CI executes the bounded integration checks, fails visibly on regressions and emits redaction-safe evidence tied to its source/package, without depending on manual visual approval. (HPROOF-03)
 
-**Plans**: 5 plans in 5 sequential waves (0 complete)
+**Plans**: 1/5 plans executed in 5 sequential waves (1 complete)
 
 Plans:
 **Wave 1**
-- [ ] 170-01-PLAN.md — Candidate-installed real browser connection/navigation tracer and safe receipt boundary.
+- [x] 170-01-PLAN.md — Candidate-installed real browser connection/navigation tracer and safe receipt boundary.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 170-02-PLAN.md — Default/nested/root connected operation, current-authority denial, reconnect/navigation and public separation.
@@ -169,7 +169,7 @@ Plans:
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 169. Install and Upgrade Convergence | v1.46 | 5/5 | Complete    | 2026-10-23 |
-| 170. Packaged Host and Compatibility Proof | v1.46 | 0/5 | Planned | — |
+| 170. Packaged Host and Compatibility Proof | v1.46 | 1/5 | In Progress | — |
 
 **Coverage:** 15/15 requirements mapped exactly once; MNT-01..04, HAUTH-01..04 and HDX-01..04 complete in Phases 167–169. Three phases closed; the remaining three HPROOF requirements retain their Phase 170 owner. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
