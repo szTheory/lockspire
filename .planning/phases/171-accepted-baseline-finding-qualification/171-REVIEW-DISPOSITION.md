@@ -3,6 +3,10 @@ phase: 171
 review: 171-REVIEW.md
 titles: json
 findings:
+  - id: WR-05
+    severity: warning
+    disposition: open
+    title: "Scalar case requirement IDs can still crash validation"
   - id: WR-01
     severity: warning
     disposition: fixed
@@ -19,16 +23,16 @@ findings:
     severity: warning
     disposition: fixed
     title: "Validator complexity exceeds the project Credo limit"
-open: 0
-total: 4
-unparsed: 1
-recorded: 2026-10-24T21:23:09.007Z
+open: 1
+total: 5
+recorded: 2026-10-24T21:23:22.499Z
 ---
 
 # Phase 171: Code Review Disposition
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
+| WR-05 | warning | open | - |
 | WR-01 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
 | WR-02 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
 | WR-03 | warning | fixed | 171-REVIEW-FIX.md (not in the current review) |
