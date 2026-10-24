@@ -4,17 +4,17 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
-status: "Phase 171 verification gaps: downstream planning placeholders and overbroad optional-runner claim; scoped gap planning next"
-stopped_at: Phase 171 plans complete; qualification matrix frozen
-last_updated: "2026-10-24T21:37:16.434Z"
+status: Phase 171 plan execution complete; independent verification pending
+stopped_at: Completed 171-04-PLAN.md
+last_updated: "2026-10-24T22:01:55.464Z"
 last_activity: 2026-10-24
 last_activity_desc: Completed all Phase 171 plans and froze the qualified case matrix
-state_head: ee389e2dcf6dad0d255d5fda1e9827d1cff89013
+state_head: 4687344b71cbf5204a7b2f59a92fc53fe2c74d53
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 4
+  completed_plans: 4
   percent: 0
 ---
 
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 ## Current Position
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
-Plan: 3 of 3 complete; awaiting phase review and verification
-Status: Phase 171 verification gaps: downstream planning placeholders and overbroad optional-runner claim; scoped gap planning next
+Plan: 4 of 4 plans complete; awaiting independent Phase 171 verification
+Status: Phase 171 plan execution complete; independent verification pending
 Last activity: 2026-10-24 — Completed all Phase 171 plans and froze the qualified case matrix
 
-Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 2/3 Phase 171 plans complete; Plan 03 remains gated on qualification proof and policy review.
+Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; Phase 171 plan execution 4/4 complete, awaiting independent verification.
 
 ## Performance Metrics
 
@@ -47,6 +47,7 @@ v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 
 | Phase 171 P01 | 17 min | 2 tasks | 3 files |
 | Phase 171 P02 | 14min | 2 tasks | 2 files |
 | Phase 171 P03 | 31min | 3 tasks | 7 files |
+| Phase 171 P04 | 6 min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -115,8 +116,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T20:55:47.171Z
-Stopped at: Phase 171 plans complete; qualification matrix frozen
+Last session: 2026-10-24T22:01:32.478Z
+Stopped at: Completed 171-04-PLAN.md
 Resume file: None
 Next: Run configured validation/security/code review and goal verification; then plan Phase 172 against frozen A171-003 scope.
 
@@ -136,3 +137,6 @@ None
 - [Phase 171]: A171-003 requires HTTP 400 without OAuth Error Response parameters for unsupported response_mode; the controlled request reproduced the contrary redirect.
 - [Phase 171]: For P171-005, the valid pushed scope is authoritative over the conflicting outer scope under the documented RFC 9126 to RFC 9101 clause chain; plain form PAR remains supported.
 - [Phase 171]: Retain only the two reproduced correction scopes, reuse existing proof for the other ten cases, and keep unavailable optional external profiles supplemental.
+- [Phase 171]: Limit current optional-profile claims to the sequential operator procedure; automatic overlap, interruption and cleanup remain UNVERIFIED because both wrappers were not launched.
+- [Phase 171]: Select no optional profile retry; retain the existing unavailable owner and exact-environment actions.
+- [Phase 171]: Leave Phase 171 requirements and phase-passed status for independent re-verification after this gap closure.

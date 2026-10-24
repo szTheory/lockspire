@@ -42,7 +42,7 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
   3. The maintainer can inspect one finite, redacted case ledger with source/date and exact identities, normative/support references, observed and expected outcomes, deterministic repro commands, regression owners and dispositions distinguishing protocol, harness/transport/browser, infrastructure, unsupported and already-correct/not-reproduced cases.
   4. Downstream implementers can use the frozen AUTHR/PARB case matrix before dependent plans are created or executed; unresolved security/API/support decisions block that planning, current proof is reused for correct cases, and invalidated slices explicitly narrow/replan requirements and roadmap rather than receive a fabricated pass.
 
-**Plans**: 3 of 4 plans complete; Plan 171-04 is executing
+**Plans**: 4/4 plans complete; awaiting independent Phase 171 verification
 
 Plans:
 **Wave 1**
@@ -55,7 +55,7 @@ Plans:
 - [x] 171-03-PLAN.md — Qualified matrix freeze and explicit downstream scope reconciliation.
 
 **Wave 4** *(after Wave 3; verification-gap closure)*
-- [ ] 171-04-PLAN.md — Close downstream planning placeholders and qualify the unlaunched-profile evidence boundary.
+- [x] 171-04-PLAN.md — Closed downstream planning states and qualified the unlaunched-profile evidence boundary.
 
 ### Phase 172: Authorization Responses
 
@@ -105,11 +105,11 @@ Plans:
 
 ## Progress
 
-**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. Phase 171 has three completed plans and Plan 171-04 executing; downstream phases remain unplanned until their explicit prerequisites below are met. 0 of 4 phases are complete.
+**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. All four Phase 171 plans are complete; independent phase verification is pending. Downstream phases remain unplanned until their explicit prerequisites below are met. 0 of 4 phases are complete.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 171. Accepted Baseline & Finding Qualification | 3/4 | In Progress; Plan 171-04 executing before independent verification | - |
+| 171. Accepted Baseline & Finding Qualification | 4/4 | In Progress; plan execution complete, awaiting independent verification | - |
 | 172. Authorization Responses | 0 plans | Not planned; gated on Phase 171 verification | - |
 | 173. Conditional PAR & Profile Boundaries | 0 plans | Not planned; gated on Phase 171 verification and Phase 172 completion | - |
 | 174. Packaged Proof & Delivery Handoff | 0 plans | Not planned; gated on Phase 171 verification and Phases 172 and 173 completion | - |
