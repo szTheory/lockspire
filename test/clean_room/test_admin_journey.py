@@ -528,6 +528,48 @@ with patch.object(journey.tempfile, 'mkdtemp', return_value=str(base)), patch.ob
                                 pass
 
 
+class HostProofReceiptDirectoryTests(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parents[2]
+    DIAGNOSTIC = "receipt directory must be below .artifacts"
+
+    def test_unsafe_receipt_directories_are_rejected_before_any_file_changes(self):
+        for case in ("traversal", "contained_traversal", "symlink_root", "symlink_parent", "symlink_destination"):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
+                task_root = Path(temporary)
+                repo = task_root / "repo"
+                repo.mkdir()
+                subprocess.run(["git", "init", "--quiet", str(repo)], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=10)
+                outside = repo / "outside"
+                outside.mkdir()
+                sentinels = {name: ("private-external-" + name).encode() for name in ("lifecycle.json", "locked-lockspire.json", "locked-nested.json", "locked-root.json")}
+                for name, data in sentinels.items():
+                    (outside / name).write_bytes(data)
+                artifacts = repo / ".artifacts"
+                if case == "symlink_root":
+                    artifacts.symlink_to(outside, target_is_directory=True)
+                    receipt_dir = ".artifacts/new-output"
+                else:
+                    artifacts.mkdir()
+                    if case == "traversal":
+                        receipt_dir = ".artifacts/../outside"
+                    elif case == "contained_traversal":
+                        receipt_dir = ".artifacts/new-parent/../new-output"
+                    elif case == "symlink_parent":
+                        (artifacts / "link").symlink_to(outside, target_is_directory=True)
+                        receipt_dir = ".artifacts/link/new-output"
+                    else:
+                        (artifacts / "link").symlink_to(outside, target_is_directory=True)
+                        receipt_dir = ".artifacts/link"
+                before = {path.relative_to(repo): path.read_bytes() for path in outside.rglob("*") if path.is_file()}
+                result = subprocess.run(["bash", str(self.ROOT / "scripts/ci/run_host_integration_proof.sh"), "--pair", "locked", "--receipt-dir", receipt_dir], cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=15, check=False)
+                after = {path.relative_to(repo): path.read_bytes() for path in outside.rglob("*") if path.is_file()}
+                self.assertEqual(after, before, "external receipt sentinels and directory contents must remain untouched")
+                self.assertFalse((artifacts / "new-parent").exists(), "reject before creating any component")
+                self.assertFalse((outside / "new-output").exists(), "reject symlinks before mkdir")
+                self.assertEqual(result.returncode, 64, result.stdout)
+                self.assertEqual(result.stdout.strip(), self.DIAGNOSTIC)
+
+
 class HostProofWrapperFailureTests(unittest.TestCase):
     ROOT = Path(__file__).resolve().parents[2]
     SENTINEL = "phase170-fake-tool-secret-sentinel"
@@ -611,11 +653,13 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def tearDownClass(cls):
         cls._temporary.cleanup()
 
-    def run_wrapper(self, stage, *, timeout_seconds=None, stale_receipt=False, interrupt=None):
+    def run_wrapper(self, stage, *, timeout_seconds=None, stale_receipt=False, interrupt=None, nested=False):
         artifact_root = self.ROOT / ".artifacts" / "phase170"
         artifact_root.mkdir(parents=True, exist_ok=True)
         receipt_dir = Path(tempfile.mkdtemp(prefix="fake-proof-", dir=artifact_root))
         self.addCleanup(shutil.rmtree, receipt_dir)
+        if nested:
+            receipt_dir = receipt_dir / "new-parent" / "new-output"
         stale_path = receipt_dir / "locked-lockspire.json"
         if stale_receipt:
             stale_path.write_text(self.SENTINEL, encoding="utf-8")
@@ -731,8 +775,9 @@ class HostProofWrapperFailureTests(unittest.TestCase):
                 self.assert_staging_redacted(receipt_dir)
 
     def test_successful_validated_staging_contains_no_fake_child_secrets(self):
-        result, receipt_dir = self.run_wrapper("success")
+        result, receipt_dir = self.run_wrapper("success", nested=True)
 
+        self.assertTrue(receipt_dir.is_dir())
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(len(list(receipt_dir.glob("locked-*.json"))), 3)
         self.assert_staging_redacted(receipt_dir)

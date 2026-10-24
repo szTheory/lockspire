@@ -15,7 +15,34 @@ done
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 export MIX_ENV=test
-case "$receipt_dir" in .artifacts/*) ;; *) echo "receipt directory must be below .artifacts" >&2; exit 64 ;; esac
+# Validate every existing component before mkdir, stale-receipt deletion, or
+# staging. This is a single-user invocation boundary, not a filesystem-race guard.
+if ! stage_dir=$(python3 - "$repo_root" "$receipt_dir" <<'PY'
+from pathlib import Path
+import sys
+try:
+    repo = Path(sys.argv[1]).resolve(strict=True)
+    requested = Path(sys.argv[2])
+    parts = requested.parts
+    if not sys.argv[2].startswith(".artifacts/") or requested.is_absolute() or len(parts) < 2 or parts[0] != ".artifacts" or ".." in parts:
+        raise ValueError
+    current = repo
+    for part in parts:
+        current = current / part
+        if current.is_symlink() or (current.exists() and not current.is_dir()):
+            raise ValueError
+    artifact_root = (repo / ".artifacts").resolve()
+    destination = current.resolve()
+    if destination == artifact_root or not destination.is_relative_to(artifact_root):
+        raise ValueError
+except (OSError, RuntimeError, ValueError):
+    print("receipt directory must be below .artifacts", file=sys.stderr)
+    raise SystemExit(1)
+print(destination)
+PY
+); then
+  exit 64
+fi
 if [[ "$pair" == locked ]]; then
   expected_phoenix=1.8.13
   expected_live_view=1.2.10
@@ -29,7 +56,6 @@ else
   test_cwd=$repo_root/compatibility/phoenix_1_8_live_view_1_1
   db_name=lockspire_proof_floor_$(python3 -c 'import uuid; print(uuid.uuid4().hex[:20])')
 fi
-case "$receipt_dir" in /*) stage_dir=$receipt_dir ;; *) stage_dir=$repo_root/$receipt_dir ;; esac
 mkdir -p "$stage_dir"
 for name in lifecycle.json "$pair-lockspire.json" "$pair-nested.json" "$pair-root.json"; do
   if [[ -e "$stage_dir/$name" ]]; then rm -f -- "$stage_dir/$name"; fi
