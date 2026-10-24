@@ -225,6 +225,24 @@ provider/database/run-root cleanup. Debug hooks were confined to owned `/tmp`
 paths. These corrections still require fresh exact-head protected checks;
 no main integration, acceptance or Phase 171 completion is claimed here.
 
+### Generated-dependency lint false positive
+
+At corrected PR head `8e6a0acd`, minimum-runtime CI found one non-product
+failure: the repository shell-lint contract recursively selected an untracked
+Git hook inside `tmp/lockspire-compatibility-fixture/deps/lazy_html/.../.git`.
+ShellCheck correctly warned about that third-party sample, but it is outside
+the maintained repository inventory. Commit `ff935001` changes discovery to
+NUL-delimited `git ls-files`, preserving tracked extensionless shebang scripts,
+filenames with spaces, and the old regular-file-only behavior. Actual
+actionlint/ShellCheck severity and failure policy stay unchanged; generated
+dependencies and unknown files are preserved rather than edited or deleted.
+
+The regression failed before the inventory fix and passed afterward. The
+existing hygiene suite passed **11 tests / 0 failures**; real-root workflow and
+shell lint, formatting, shell syntax and diff checks passed. This is another
+separate CI-hygiene prerequisite, not Phase 171 protocol work. All seven
+protected checks remain mandatory at the next published candidate head.
+
 ## Lessons applied
 
 1. Separate historical ownership from current delegated custody, containment,
@@ -260,3 +278,7 @@ no main integration, acceptance or Phase 171 completion is claimed here.
     and keep legacy admin pipelines denying by default. A safe structural
     exception probe can locate a masked error without retaining raw logs or
     weakening redaction. Reuse the original packaged regressions as final proof.
+11. Discover maintained lint targets from the repository index rather than the
+    entire working filesystem. Generated dependency trees and their Git hooks
+    are not repository-owned source; keep checking tracked extensionless files
+    and preserve safe filename handling instead of weakening the linter.
