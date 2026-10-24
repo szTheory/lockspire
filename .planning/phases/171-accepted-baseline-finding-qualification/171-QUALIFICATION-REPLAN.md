@@ -1,0 +1,36 @@
+# Phase 171 Plan 03 qualification addendum
+
+**Date:** 2026-10-24. **Planning source:** `48cf0928dd474de308f89fdb8a6bb7e9abc41b59` on `milestone/v1.47-core-hardening`.
+
+The user delegated autonomous scoped research, synthesis and routine decisions. This addendum revises only the unexecuted Plan 03. Completed Plans 01/02, their observations and historical assertions retain their original meaning. No phase CONTEXT.md or D-NN decision set exists. This document settles the missing interpretation and reproducible proof route; it records no new runtime observation or defect verdict.
+
+## Evidence and interpretation
+
+| Case | Primary basis | Scoped decision | Current proof state |
+|---|---|---|---|
+| A171-003 | [OIDC Core 3.1.2.6](https://openid.net/specs/openid-connect-core-1_0.html#AuthError) specifies HTTP 400 without Error Response parameters for an unsupported Response Mode. | Test an otherwise valid OIDC code request with registered callback, openid/email, state, nonce and S256, changing only response_mode to binary. Ordinary text on a first-party error page is distinct from structured Error Response parameters. | Inspection suggests a redirect error at authorization_request.ex:582–592 and controller redirect handling. Inspection is not a current HTTP counterexample. |
+| P171-005 | [RFC 9126 Section 4](https://www.rfc-editor.org/rfc/rfc9126.html#section-4) directs use of the returned reference in an authorization request defined by RFC 9101. [RFC 9101 Section 5](https://www.rfc-editor.org/rfc/rfc9101.html#section-5) permits duplicated outer parameters; [Section 6.3](https://www.rfc-editor.org/rfc/rfc9101.html#section-6.3) makes the referenced object authoritative and checks client-ID equality. [Section 10.7](https://www.rfc-editor.org/rfc/rfc9101.html#section-10.7) explains protection against parameter mismatch attacks. | For this selected valid PAR reference, use pushed openid/email and ignore outer scope=profile, with no union or override. This is a linked-clause interpretation; RFC 9126 does not literally contain a blanket ignore sentence. Preserve client binding and the distinct request/request_uri exclusion. | Existing tests prove binding, expiry, one-use and required PAR. Inspection shows a blanket nonempty outer-parameter rejection, but the exact conflicting-scope HTTP request has not been executed. |
+
+RFC 9126 Section 2.1 permits plain form-encoded pushed authorization parameters. Its reference semantics do not make every PAR payload a signed JWT. The selected scope rule applies to the stored pushed payload; it adds no JAR support, JWT requirement, host policy or new flow. The earlier ledger statement that this case is an unconstrained reject-versus-ignore policy choice was based on incomplete clause research. Preserve that dated observation, append this interpretation, and replace its current unresolved expectation before freezing.
+
+Retaining blanket rejection would preserve present behavior but reject outer duplicates permitted by the incorporated request semantics. Merging or overriding scope would give front-channel input authority over the pushed request. Using only the pushed scope preserves that integrity boundary and the selected interoperability expectation. No new user decision is needed within the delegated scope; a genuinely new support/security boundary still blocks dependent planning.
+
+## Smallest durable proof
+
+Plan 03 adds one phase-local two-test ExUnit probe, outside default test discovery and invoked explicitly. It reuses Phoenix.ConnTest, Lockspire.Web.Router, the existing sandbox/client patterns and compiled synthetic account resolver. Each case first proves a valid path, then changes one input. The PAR case uses two real successful POSTs so the control cannot consume the candidate reference. Candidate observations contain only status, Location kind, parameter-presence/equality booleans and requested scope names. No token exchange or new harness is needed for intake qualification.
+
+Each final assertion demands the settled required outcome. If both expected mismatches occur after successful controls, the run has two normative RED assertions, an actual nonzero Mix exit and completed observation execution. It has zero protocol passes for those cases. A compile/setup/control failure cannot count as this outcome. Retained JSON separates expected projections, actual projections, assertion identity, exit/count and source/probe hashes; raw connection structures, reference values, tokens, configuration and logs remain ephemeral. A true GREEN removes that correction premise and triggers honest scope reconciliation.
+
+The existing ledger contract must evolve its draft-only, pass-or-not-run guards to support controlled counterexamples and a reviewed freeze, preserving all prior negative fixtures. Earlier observation identities stay unchanged when a new observation is appended. Later phases move the required assertions into their established regression owners and obtain failing-before/passing-after proof; the phase-local probe does not lock incorrect behavior into the default green suite.
+
+## Downstream contract
+
+If reproduced, Phase 172 corrects A171-003 only, carrying A171-001/002/004/005/006 proof forward. Phase 173 corrects P171-005 only, carrying P171-001/002/003/004/006 proof forward. All six AUTHR/PARB requirement IDs remain case-backed, and Phase 174 retains correction regressions, security and packaged-host obligations. A freeze means cases and owners are qualified, not that reproduced defects are fixed. Neither mandatory case may be excluded to avoid missing proof.
+
+The accepted-main receipt remains byte-for-byte immutable at SHA-256 `be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`, identifying accepted main `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. Do not rerun it. Both supplemental Python-dependent wrappers remain NOT LAUNCHED with null exits/classifications, absent receipts and their recorded preparation/retry owner. That limitation blocks an optional wrapper retry, not the selected local HTTP qualification. Failed mandatory probes remain blocking.
+
+## Capability applicability and preserved uncertainty
+
+The planner loaded the contribution fragments from the supplied plan:pre hook result verbatim. Existing research, pattern map and validation are reused with this dated amendment. AI and UI design contracts do not apply: the revision adds no AI system or UI work. The API coverage detector examined all three phase plans plus the Phase 171 roadmap section and returned detected:false with no signals (its documented negative-verdict exit was 1). A local HTTP test exercises the existing router and does not integrate an external API/SDK/service. No schema file changes or schema-push task apply. Security enforcement remains ASVS L1 with explicit probe disclosure and false-attribution threats. No package installation is selected. The assumption-delta scan for Phase 171 returned detected:false with no signals; case identity remains the stable original case ID with dated observations.
+
+A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified, flagged-unverified. All descriptor-less prohibitions retain that status. Defined controls and contracts prove only their specified conditions; they do not invent a passing assumption probe or wired prohibition descriptor.
