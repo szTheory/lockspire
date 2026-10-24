@@ -80,6 +80,7 @@ def validate_receipt(
     expected_mount: str | None = None,
     expected_archive: str | None = None,
     expected_tree: str | None = None,
+    expected_version: str | None = None,
     expected_scenario_set: str = "tracer",
 ) -> dict[str, Any]:
     receipt = _exact(raw, ROOT_FIELDS, "root")
@@ -100,6 +101,8 @@ def validate_receipt(
     candidate = _exact(receipt["candidate"], CANDIDATE_FIELDS, "candidate")
     if not isinstance(candidate["version"], str) or not candidate["version"]:
         raise ValueError("receipt candidate version is invalid")
+    if expected_version is not None and candidate["version"] != expected_version:
+        raise ValueError("receipt candidate version differs from the expected candidate")
     for field, expected in (("archive_sha256", expected_archive), ("tree_sha256", expected_tree)):
         if not isinstance(candidate[field], str) or not re.fullmatch(r"[0-9a-f]{64}", candidate[field]):
             raise ValueError(f"receipt candidate {field} is invalid")
@@ -215,14 +218,15 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--check", type=Path, required=True)
     parser.add_argument("--expected-run-id", required=True)
     parser.add_argument("--expected-source", required=True)
-    parser.add_argument("--expected-pair", choices=("locked",), required=True)
+    parser.add_argument("--expected-pair", choices=("locked", "floor"), required=True)
     parser.add_argument("--expected-mount", choices=tuple(sorted(MOUNTS)), required=True)
     parser.add_argument("--expected-archive", required=True)
     parser.add_argument("--expected-tree", required=True)
+    parser.add_argument("--expected-version", required=True)
     parser.add_argument("--expected-scenario-set", choices=("tracer", "full"), required=True)
     args = parser.parse_args(argv)
     try:
-        validate_receipt(json.loads(args.check.read_text(encoding="utf-8")), expected_run_id=args.expected_run_id, expected_source=args.expected_source, expected_pair=args.expected_pair, expected_mount=args.expected_mount, expected_archive=args.expected_archive, expected_tree=args.expected_tree, expected_scenario_set=args.expected_scenario_set)
+        validate_receipt(json.loads(args.check.read_text(encoding="utf-8")), expected_run_id=args.expected_run_id, expected_source=args.expected_source, expected_pair=args.expected_pair, expected_mount=args.expected_mount, expected_archive=args.expected_archive, expected_tree=args.expected_tree, expected_version=args.expected_version, expected_scenario_set=args.expected_scenario_set)
     except (OSError, ValueError, json.JSONDecodeError):
         print("receipt validation failed")
         return 1

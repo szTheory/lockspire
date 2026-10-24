@@ -265,6 +265,25 @@ jobs:
         working-directory: compatibility/phoenix_1_8_live_view_1_1
         run: mix compile --warnings-as-errors
 
+      - name: Restore floor host proof dependency cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tmp/host-integration-cache/floor
+          key: ${{ runner.os }}-host-proof-floor-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}
+
+      - name: Run exact-floor packaged host proof
+        id: host-proof-floor
+        run: bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor
+
+      - name: Upload validated exact-floor host proof receipts
+        if: always() && steps.host-proof-floor.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-host-integration-${{ github.sha }}-floor
+          path: .artifacts/ci/host-integration/floor/*.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Verify compatibility fixture lock stayed unchanged
         run: git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock
 
@@ -332,6 +351,12 @@ jobs:
             tmp/clean-room-cache/client/deps
           key: ${{ runner.os }}-clean-room-deps-v1-provider-client-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock', 'test/clean_room/confidential_client/mix.lock') }}
 
+      - name: Restore locked host proof dependency cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tmp/host-integration-cache/locked
+          key: ${{ runner.os }}-host-proof-locked-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}
+
       - name: Install dependencies
         run: mix deps.get --check-locked
 
@@ -346,6 +371,19 @@ jobs:
 
       - name: Run integration suite including onboarding and OIDC E2E proof
         run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json .artifacts/ci/coverage/integration "${{ github.sha }}"
+
+      - name: Run locked packaged host proof
+        id: host-proof-locked
+        run: bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked
+
+      - name: Upload validated locked host proof receipts
+        if: always() && steps.host-proof-locked.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-host-integration-${{ github.sha }}-locked
+          path: .artifacts/ci/host-integration/locked/*.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Validate client lifetime receipt
         id: validate-client-lifetime-receipt

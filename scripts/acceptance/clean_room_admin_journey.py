@@ -279,9 +279,11 @@ def main(argv: Sequence[str]) -> int:
         redactor.register_material(os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
         child = prepare_provider(
             base, database_url, package_root=package_root, candidate_identity=identity,
-            port=port, admin_proof=True, proof_pair=args.pair, mount_path=args.mount,
+            port=port, cache_root=Path(os.environ["CLEAN_ROOM_CACHE_ROOT"]) if os.environ.get("CLEAN_ROOM_CACHE_ROOT") else None,
+            admin_proof=True, proof_pair=args.pair, mount_path=args.mount,
         )
-        dependency_cache = proof_pair_cache_root(base / "deps-cache", args.pair)
+        configured_cache = Path(os.environ["CLEAN_ROOM_CACHE_ROOT"]) if os.environ.get("CLEAN_ROOM_CACHE_ROOT") else base / "deps-cache"
+        dependency_cache = proof_pair_cache_root(configured_cache, args.pair, os.environ.get("MIX_ENV"))
         environment = locked_environment(child, "provider_host", dependency_cache)
         environment.update({
             "DATABASE_URL": database_url,
@@ -309,7 +311,7 @@ def main(argv: Sequence[str]) -> int:
         stage = "browser"
         browser_script = Path(__file__).resolve().parents[2] / "test" / "browser" / "packaged_admin_proof.mjs"
         request = json.dumps({"capability": capability, "origin": origin, "mount": args.mount, "scenario": args.scenario, "runRoot": str(base)})
-        browser = subprocess.run(("node", str(browser_script), "--origin", origin, "--mount", args.mount, "--scenario", args.scenario, "--run-root", str(base)), input=request, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=100, check=False)
+        browser = subprocess.run(("node", str(browser_script), "--origin", origin, "--mount", args.mount, "--scenario", args.scenario, "--run-root", str(base)), input=request, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=180, check=False)
         try:
             observed = json.loads(browser.stdout.strip().splitlines()[-1])
         except (json.JSONDecodeError, IndexError):
@@ -386,7 +388,7 @@ def main(argv: Sequence[str]) -> int:
         except OSError:
             cleanup["run_root_removed"] = False
 
-    source_dirty = bool(subprocess.run(("git", "status", "--porcelain", "--untracked-files=no"), cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False).stdout.strip())
+    source_dirty = bool(subprocess.run(("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False).stdout.strip())
     candidate = {
         "version": getattr(identity, "version", "unknown"),
         "archive_sha256": getattr(identity, "archive_sha256", None) or getattr(identity, "sha256", "0" * 64),
@@ -396,7 +398,12 @@ def main(argv: Sequence[str]) -> int:
         # A receipt without a source identity cannot be validated or treated as evidence.
         print("admin browser proof failed before candidate identity was available", file=sys.stderr)
         return 1
-    scenario["duration_ms"] = max(0, int(scenario.get("duration_ms", round((time.monotonic() - started) * 1000))))
+    duration_ms = scenario.get("duration_ms", int((time.monotonic() - started) * 1000))
+    if type(duration_ms) is not int or duration_ms < 0:
+        failed = True
+        scenario["outcome"] = "failed"
+        duration_ms = 0
+    scenario["duration_ms"] = duration_ms
     if failed or not all(cleanup.values()):
         scenario["outcome"] = "failed"
     receipt = {

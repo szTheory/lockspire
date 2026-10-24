@@ -6,7 +6,7 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
   @ci Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @fixture Path.expand("../../compatibility/phoenix_1_8_live_view_1_1", __DIR__)
 
-  test "minimum compatibility job compiles the exact host fixture on PostgreSQL 14" do
+  test "minimum compatibility job runs the exact-floor packaged host proof on PostgreSQL 14" do
     compatibility_job = ci_job!(File.read!(@ci), "compatibility")
 
     assert compatibility_job =~ "elixir-version: ${{ env.MIN_ELIXIR_VERSION }}"
@@ -17,6 +17,10 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     assert compatibility_job =~ "compatibility/phoenix_1_8_live_view_1_1/mix.lock"
     assert compatibility_job =~ "working-directory: compatibility/phoenix_1_8_live_view_1_1"
     assert compatibility_job =~ "mix deps.get --check-locked"
+    assert compatibility_job =~ "run_host_integration_proof.sh --pair floor"
+    assert compatibility_job =~ "Upload validated exact-floor host proof receipts"
+    assert compatibility_job =~ "steps.host-proof-floor.outcome == 'success'"
+    refute compatibility_job =~ "continue-on-error: true"
 
     assert compatibility_job =~
              "git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock"
