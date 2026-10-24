@@ -1,6 +1,6 @@
 ---
 phase: 172-authorization-responses
-verified: 2026-10-24T23:02:16Z
+verified: 2026-10-24T23:07:18Z
 status: passed
 score: 11/11 must-haves verified
 covered_files:
@@ -8,6 +8,7 @@ covered_files:
   - .planning/phases/172-authorization-responses/172-01-PLAN.md
   - .planning/phases/172-authorization-responses/172-01-SUMMARY.md
   - .planning/phases/172-authorization-responses/172-DISPOSITIONS.md
+  - .planning/phases/172-authorization-responses/172-LEARNINGS.md
   - .planning/phases/172-authorization-responses/172-REVIEW-DISPOSITION.md
   - .planning/phases/172-authorization-responses/172-REVIEW-FIX.md
   - .planning/phases/172-authorization-responses/172-REVIEW.md
@@ -16,7 +17,7 @@ covered_files:
   - lib/lockspire/protocol/authorization_request.ex
   - test/lockspire/web/authorize_controller_test.exs
   - test/lockspire/web/pushed_authorization_request_controller_test.exs
-covered_digest: "v3:sha256:7b338a2360ba6577ea03aa888750b5f09281faac541730e3cbfe6b237c07b8ec"
+covered_digest: "v3:sha256:dbe6ef32d8abe8d147a26fceeee27f72c44cc3ab25a7a52ae7eb2de93837ad62"
 behavior_unverified: 0
 overrides_applied: 0
 ---
@@ -24,7 +25,7 @@ overrides_applied: 0
 # Phase 172: Authorization Responses Verification Report
 
 **Phase Goal:** Correct only the reproduced unsupported `response_mode` disposition in A171-003 while carrying forward existing callback and silent-auth proof; preserve host account/session authority.
-**Verified:** 2026-10-24T23:02:16Z
+**Verified:** 2026-10-24T23:07:18Z
 **Status:** passed
 **Re-verification:** No — initial verification
 
@@ -52,6 +53,8 @@ overrides_applied: 0
 
 `172-DISPOSITIONS.md` records the delegated maintainer's bounded decisions under the user's authority. The original descriptorless prohibition entries and `A-EDGE-AUTHR-03` provenance remain visible and are not relabeled as human confirmation or wired checks. For this phase only, the two prohibitions are satisfied by the scoped evidence: the implementation changes only the unsupported-mode classification, the host resolver/account/session ownership remains unchanged, and new-source RED/GREEN is kept separate from the historical Phase 171 probe. The unclassified edge disposition selects no additional case; this report makes no claim that it proves every possible silent-authentication behavior. No human checkpoint remains for the selected scope.
 
+The completion audit changes only the Phase 172–173 roadmap selector identity in the Phase 171 ledger and appends its old/new/source/reason record. The new ordered manifest digest is `dec0b516d3ecad9c76cefa0f3c0113f3f714a120ef1ed510b7f2e7e8c0581011`; the ledger contract passed again after that update. The audit reports no change to cases, receipts, probes, frozen time, or qualification SHA. The full roadmap and mutable state are not fingerprinted; the ledger records the specific selector identity.
+
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
@@ -71,6 +74,12 @@ overrides_applied: 0
 | `authorize_controller_test.exs` | `router.ex` | `call_authorize/1` | ✓ WIRED | Helper calls the production `Lockspire.Web.Router`; tagged regression passed through it. |
 | `qualification_ledger_contract_test.exs` | qualification JSON | Selective hashes and ordered digest validation | ✓ WIRED | Owning CLI verified the link; current ledger contract passed. |
 
+### Completion Metadata and Review Follow-Up
+
+The completion CLI advanced state to Phase 173, marked AUTHR-01/02/03 and the Phase 172 plan complete, and updated the roadmap selector covered by the ledger audit. The Phase 172 completion call was not repeated.
+
+The review follow-up contains WR-01 and WR-02 as fixed, with `open: 0`; the fix report records the missing JSON media-type assertion and the state continuation update. The re-review's body still documents WR-02 as a warning at the time of review, before the state correction. The disposition and fix artifacts record its later closure.
+
 ### Data-Flow Trace (Level 4)
 
 Not applicable to these protocol, test, and evidence artifacts: no rendered dynamic data or UI data source is introduced. The existing first-party error HTML renderer is unchanged.
@@ -82,6 +91,7 @@ Not applicable to these protocol, test, and evidence artifacts: no rendered dyna
 | Unsupported mode returns browser HTTP 400 after valid query handoff | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/authorize_controller_test.exs --trace --only phase172_response_mode` | 1 test, 0 failures; both query and unsupported requests reached the controller through Router | ✓ PASS |
 | Qualified exact callback and silent-auth outcomes remain valid | Same runtime prefix with `mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs` | 5 tests, 0 failures | ✓ PASS |
 | Current controller, PAR, protocol, Phase 37, and ledger owners | Same runtime prefix with the six selected test files listed in the validation record | 121 tests, 0 failures, integration included | ✓ PASS |
+| Completion-time frozen-ledger contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | 22 tests, 0 failures, 11.0s after selector-audit append | ✓ PASS |
 
 The two attempted `--only` filters for named, untagged tests matched ExUnit tag names incorrectly and executed zero tests; they are not counted as evidence. The encompassing 121-test run executed those owners successfully.
 
@@ -95,9 +105,9 @@ The two attempted `--only` filters for named, untagged tests matched ExUnit tag 
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |---|---|---|---|---|
-| AUTHR-01 | `172-01-PLAN.md` | Safe response for qualified authorization errors and exact registered-redirect validation | ✓ SATISFIED | A171-001 exact callback and invalid-callback browser-safe owners passed; current implementation validates before delivery. |
-| AUTHR-02 | `172-01-PLAN.md` | Selected callback error/state and response-mode representations | ✓ SATISFIED | A171-002 merge, A171-003 HTTP 400, supported/default/strict/JWT modes, and PAR JSON owners passed. |
-| AUTHR-03 | `172-01-PLAN.md` | Selected prompt-none/max-age outcomes and host-owned freshness/session authority | ✓ SATISFIED | Phase 37 absent/stale/fresh tests passed; resolver/controller host seam unchanged. |
+| AUTHR-01 | `172-01-PLAN.md` | Safe response for qualified authorization errors and exact registered-redirect validation | ✓ SATISFIED | A171-001 exact callback and invalid-callback browser-safe owners passed; completion metadata marks this requirement complete. |
+| AUTHR-02 | `172-01-PLAN.md` | Selected callback error/state and response-mode representations | ✓ SATISFIED | A171-002 merge, A171-003 HTTP 400, supported/default/strict/JWT modes, and PAR JSON owners passed; completion metadata marks this requirement complete. |
+| AUTHR-03 | `172-01-PLAN.md` | Selected prompt-none/max-age outcomes and host-owned freshness/session authority | ✓ SATISFIED | Phase 37 absent/stale/fresh tests passed; resolver/controller host seam unchanged; completion metadata marks this requirement complete. |
 
 No orphaned requirement IDs were found for Phase 172.
 
@@ -115,11 +125,15 @@ All 8 trackable CONTEXT.md decisions are honored by shipped artifacts (decision 
 
 None. No frontend markup, styling, copy, or interaction changed, so no visual claim is made. The bounded dispositions above remain maintainer judgments, not human confirmations.
 
+### Verification Status Owner
+
+After completion metadata changed, the status owner initially returned `stale` for the old fingerprint (exit 0). The report was regenerated with the completion audit, review follow-up, and new CLI fingerprint. The current `gsd-tools query verification.status .planning/phases/172-authorization-responses --pick status` returns `passed` with exit 0.
+
 ### Gaps Summary
 
 The phase goal is achieved for its selected scope. The unsupported-mode correction is narrowly implemented and exercised through the production Router; reused callback and silent-auth owners pass; PAR representation and historical manifest identity are preserved. Phase 171's probe, receipts, and case observations remain historical. No certification, packaged proof, external profile result, or universal silent-auth claim is asserted.
 
 ---
 
-_Verified: 2026-10-24T23:02:16Z_  
+_Verified: 2026-10-24T23:07:18Z_  
 _Verifier: the agent (gsd-verifier)_

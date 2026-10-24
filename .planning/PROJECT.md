@@ -396,7 +396,7 @@ See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain vali
 
 ### Validated
 
-- ✓ Selected authorization responses and preserved callback/silent-authentication outcomes — v1.47 AUTHR-01..03, Phase 172; 11/11 goal verification, actual Router RED/GREEN, 131 passing selected regression tests, six planned threats closed and one review warning fixed. Only the unsupported-mode classification changed production behavior; host accounts/sessions remain host-owned.
+- ✓ Selected authorization responses and preserved callback/silent-authentication outcomes — v1.47 AUTHR-01..03, Phase 172; 11/11 goal verification, actual Router RED/GREEN, 131 passing selected regression tests, six planned threats closed and all review findings fixed. Only the unsupported-mode classification changed production behavior; host accounts/sessions remain host-owned.
 
 - ✓ Accepted implementation base and finite supported-case qualification — v1.47 BASE-01..02, FIND-01..02, Phase 171; 10/10 goal verification, 22 passing ledger tests, two controlled counterexamples retained for downstream correction, 15 planned threats closed and clean review. External profiles were not launched.
 
