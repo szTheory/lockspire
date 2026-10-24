@@ -23,13 +23,12 @@ Quick check: `mix test test/lockspire/web/authorize_controller_test.exs` with th
 
 ## Per-Task Verification Map
 
-Planner must replace provisional task identifiers with actual plan task IDs and threat references before sealing the plan.
+The single Wave 1 plan is `172-01-PLAN.md`. Both tasks use the existing infrastructure; execution must supply actual results and timings before validation sign-off.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| provisional-172-implementation | pending | 1 | AUTHR-01, AUTHR-02 | pending | Unsupported mode returns HTTP 400 with no callback or structured OAuth parameters; valid query control preserves host handoff | Router/controller | Prefixed controller suite above, named regression for RED/GREEN | Existing file; new regression pending | pending |
-| provisional-172-preservation | pending | 1 | AUTHR-01, AUTHR-02, AUTHR-03 | pending | Preserve exact redirects, supported/strict modes, PAR normalization, silent auth and freshness | Unit/integration | Prefixed shared-path suites and Phase 37 integration above | yes | pending |
-| provisional-172-provenance | pending | 1 | AUTHR-01, AUTHR-02, AUTHR-03 | pending | Selectively audit intentional frozen-input changes; preserve original receipt, cases and probe | Contract | Prefixed `mix test test/lockspire/qualification_ledger_contract_test.exs` | yes | pending |
+| 172-01-01 | 172-01 | 1 | AUTHR-01, AUTHR-02 | T-172-01, T-172-02, T-172-03, T-172-SC | Exact OIDC Router regression proves actual RED then HTTP 400/no Location/no structured OAuth response GREEN; valid query control preserves ordinary host handoff. Preserve strict/JWT modes and PAR HTTP JSON/no durable row creation. | Router/controller, protocol | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/web/authorize_controller_test.exs --trace --only phase172_response_mode`; task verify also runs controller/PAR/protocol suites with `--include integration` | Existing owners; tagged Router and targeted PAR assertions pending | pending execution |
+| 172-01-02 | 172-01 | 1 | AUTHR-01, AUTHR-02, AUTHR-03 | T-172-04, T-172-05 | Preserve A171-001/002/004/005/006 callback/silent/freshness proof and host account/session authority; selectively audit intentional controller/roadmap hashes and preserve frozen historical receipt/probe/case identities. | Integration, evidence contract | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs`; same prefix with `mix test test/lockspire/qualification_ledger_contract_test.exs`; task verify also runs frozen-content/byte preservation, strict Credo, format and scoped diff checks | yes; execution summary pending | pending execution |
 
 ## Wave 0 Requirements
 

@@ -67,7 +67,10 @@ Plans:
   2. Reuse A171-001 and A171-002 proof for exact redirect safety and registered-callback error/state encoding; do not schedule duplicate correction work for those already-proven cases.
   3. Reuse A171-004, A171-005 and A171-006 proof for `prompt=none`, `max_age` and host-provided `auth_time`; preserve host ownership of accounts and sessions.
 
-**Plans**: 0 — Not planned; starts after Phase 171 verification passes.
+**Plans**: 1 plan
+
+Plans:
+- [ ] 172-01-PLAN.md — Unsupported-mode HTTP 400 correction, Router RED/GREEN and existing authorization proof preservation.
 
 ### Phase 173: Conditional PAR & Profile Boundaries
 
