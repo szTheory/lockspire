@@ -1,6 +1,7 @@
 defmodule Lockspire.Storage.RepositoryTest do
   use Lockspire.DataCase, async: false
 
+  import Ecto.Query
   import ExUnit.CaptureLog
 
   @moduletag :integration
@@ -44,6 +45,7 @@ defmodule Lockspire.Storage.RepositoryTest do
              ServerPolicyStore.get_server_policy(Lockspire.TestRepo)
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "explicit-client-store",
       client_type: :public,
       redirect_uris: ["https://client.example.com/callback"],
@@ -108,6 +110,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
   test "registers and fetches a client through the repository contract" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "client_123",
       client_secret_hash: "argon2id$hash",
       client_secret_jwt_verifier_encrypted: "sealed-verifier-123",
@@ -142,6 +145,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, %Client{} = first_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "alpha-client",
                client_secret_hash: "argon2id$hash",
                client_secret_jwt_verifier_encrypted: "sealed-alpha",
@@ -160,6 +164,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _second_client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "beta-client",
                client_type: :public,
                name: "Beta Client",
@@ -228,6 +233,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
   test "rolls back the durable mutation and appended audit row when the wrapped write fails" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "rolled-back-client",
       client_secret_hash: "argon2id$hash",
       client_type: :confidential,
@@ -259,12 +265,22 @@ defmodule Lockspire.Storage.RepositoryTest do
                {:error, :forced_failure}
              end)
 
-    assert [] = Lockspire.TestRepo.all(AuditEventRecord)
-    assert [] = Lockspire.TestRepo.all(ClientRecord)
+    assert [] =
+             Lockspire.TestRepo.all(
+               from(event in AuditEventRecord,
+                 where: event.resource_id == ^client.client_id
+               )
+             )
+
+    assert [] =
+             Lockspire.TestRepo.all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id)
+             )
   end
 
   test "rolls back the durable mutation when the appended audit row is invalid" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "invalid-audit-client",
       client_secret_hash: "argon2id$hash",
       client_type: :confidential,
@@ -295,8 +311,18 @@ defmodule Lockspire.Storage.RepositoryTest do
              end)
 
     assert %{resource_id: ["can't be blank"]} = errors_on(changeset)
-    assert [] = Lockspire.TestRepo.all(AuditEventRecord)
-    assert [] = Lockspire.TestRepo.all(ClientRecord)
+
+    assert [] =
+             Lockspire.TestRepo.all(
+               from(event in AuditEventRecord,
+                 where: event.resource_id == ^client.client_id
+               )
+             )
+
+    assert [] =
+             Lockspire.TestRepo.all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id)
+             )
   end
 
   test "suppresses SQL bind logging for sensitive token lookup and audit insert paths" do
@@ -309,6 +335,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "sensitive-client",
                client_secret_hash: "argon2id$top-secret-hash",
                client_type: :confidential,
@@ -365,6 +392,7 @@ defmodule Lockspire.Storage.RepositoryTest do
 
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: "debug-client",
                client_secret_hash: "argon2id$hash",
                client_type: :confidential,

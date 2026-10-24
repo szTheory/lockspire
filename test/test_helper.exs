@@ -14,7 +14,7 @@ exclude =
   if explicit_test_target? or integration_requested? do
     []
   else
-    [integration: true]
+    [integration: true, lifetime_package: true]
   end
 
 ExUnit.start(exclude: exclude)

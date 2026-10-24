@@ -16,13 +16,15 @@ defmodule Lockspire.TestSupport.ReleaseProof.DocumentationAssertions do
     assert readme =~ "from your existing Phoenix app"
     assert readme =~ "without moving user accounts or login into a separate service"
     assert onboarding =~ "Lockspire runs inside your app"
-    assert onboarding =~ "host-owned seams"
-    assert operator =~ "host owns staff sessions, MFA, role checks"
+    assert onboarding =~ "Host-owned seams"
+    assert operator =~ "host-owned, deny-by-default"
 
     assert supported_surface =~
              "embedded OAuth/OIDC authorization server library for Phoenix and Elixir"
 
-    assert supported_surface =~ "host-guarded `Lockspire.Web.AdminRouter`"
+    assert supported_surface =~
+             "native routes through `Lockspire.Web.AdminRoutes.lockspire_admin_routes/2`"
+
     refute operator =~ "Lockspire authenticates your operators"
   end
 

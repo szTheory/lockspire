@@ -6,7 +6,7 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
   @ci Path.expand("../../.github/workflows/ci.yml", __DIR__)
   @fixture Path.expand("../../compatibility/phoenix_1_8_live_view_1_1", __DIR__)
 
-  test "minimum compatibility job compiles the exact host fixture on PostgreSQL 14" do
+  test "minimum compatibility job runs the exact-floor packaged host proof on PostgreSQL 14" do
     compatibility_job = ci_job!(File.read!(@ci), "compatibility")
 
     assert compatibility_job =~ "elixir-version: ${{ env.MIN_ELIXIR_VERSION }}"
@@ -17,6 +17,10 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     assert compatibility_job =~ "compatibility/phoenix_1_8_live_view_1_1/mix.lock"
     assert compatibility_job =~ "working-directory: compatibility/phoenix_1_8_live_view_1_1"
     assert compatibility_job =~ "mix deps.get --check-locked"
+    assert compatibility_job =~ "run_host_integration_proof.sh --pair floor"
+    assert compatibility_job =~ "Upload validated exact-floor host proof receipts"
+    assert compatibility_job =~ "steps.host-proof-floor.outcome == 'success'"
+    refute compatibility_job =~ "continue-on-error: true"
 
     assert compatibility_job =~
              "git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock"
@@ -26,15 +30,38 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     mixfile = File.read!(Path.join(@fixture, "mix.exs"))
     lock = File.read!(Path.join(@fixture, "mix.lock"))
     router = File.read!(Path.join(@fixture, "lib/lockspire_compatibility_fixture.ex"))
+    test_helper = File.read!(Path.join(@fixture, "test/test_helper.exs"))
+    runtime_entry = File.read!(Path.join(@fixture, "test/admin_host_runtime_test.exs"))
 
     assert mixfile =~ "{:lockspire, path: \"../..\"}"
     assert mixfile =~ "{:phoenix, \"== 1.8.5\"}"
     assert mixfile =~ "{:phoenix_live_view, \"== 1.1.28\"}"
+    assert mixfile =~ "config_path: \"../../config/config.exs\""
+    assert mixfile =~ "{:bandit, \"== 1.13.1\"}"
+    assert mixfile =~ "{:lazy_html, \"~> 0.1.0\", only: :test}"
     assert lock =~ "\"phoenix\": {:hex, :phoenix, \"1.8.5\""
     assert lock =~ "\"phoenix_live_view\": {:hex, :phoenix_live_view, \"1.1.28\""
     assert router =~ "Lockspire.Web.Router"
-    assert router =~ "Lockspire.Web.AdminRouter"
+    assert router =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
+    assert router =~ "LockspireCompatibilityFixture.RequireStaff"
+    refute router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
     assert router =~ "use Phoenix.LiveView"
+    assert test_helper =~ "test/support/test_account_resolver.ex"
+    assert test_helper =~ "test/support/lockspire/web/admin_route_host.ex"
+    assert test_helper =~ "test/support/error_view.ex"
+    refute test_helper =~ "test/support/\""
+
+    for source <- [
+          "test/lockspire/web/admin_routes_compile_test.exs",
+          "test/lockspire/web/admin_route_inventory_test.exs",
+          "test/lockspire/web/admin_route_separation_test.exs",
+          "test/lockspire/web/live/admin/admin_route_integration_test.exs"
+        ] do
+      assert runtime_entry =~ source
+    end
+
+    assert runtime_entry =~ "Application.spec(:phoenix, :vsn)"
+    assert runtime_entry =~ "Application.spec(:phoenix_live_view, :vsn)"
   end
 
   test "all PostgreSQL workflow services remain immutable" do
@@ -52,13 +79,28 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     Enum.each(Manifest.modules(), fn {module, expected_functions} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"
 
+      extensions = Map.get(Manifest.extensions(), module, [])
+
       actual_functions =
         module.__info__(:functions)
         |> Enum.reject(fn {name, _arity} -> String.starts_with?(Atom.to_string(name), "__") end)
 
-      assert actual_functions == expected_functions,
+      assert Enum.reject(actual_functions, &(&1 in extensions)) == expected_functions,
              "#{inspect(module)} public functions drifted from the literal 76cf872 baseline"
+
+      assert Enum.filter(actual_functions, &(&1 in extensions)) == extensions,
+             "#{inspect(module)} additive public functions drifted from the declared extensions"
     end)
+
+    assert Manifest.extensions() == %{
+             Lockspire.Config => [client_store: 0, normalize_mount_path!: 1, transaction_store: 0],
+             Lockspire.Protocol.AuthorizationRequest => [validate: 2, validate_pushed: 3],
+             Lockspire.Protocol.RegistrationManagement => [
+               delete: 3,
+               read: 3,
+               rotate_registration_access_token: 2
+             ]
+           }
 
     Enum.each(Manifest.structs(), fn {module, keys} ->
       assert Code.ensure_loaded?(module), "#{inspect(module)} is not loadable"

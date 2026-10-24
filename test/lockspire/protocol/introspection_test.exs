@@ -27,6 +27,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
 
     {:ok, confidential_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -44,6 +45,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection-other",
         client_secret_hash: client_secret_hash("other-introspection-secret"),
         client_type: :confidential,
@@ -61,6 +63,7 @@ defmodule Lockspire.Protocol.IntrospectionTest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection-public",
         client_secret_hash: nil,
         client_type: :public,

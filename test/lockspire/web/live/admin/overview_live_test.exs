@@ -48,6 +48,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "overview-client",
         client_type: :confidential,
         name: "Overview Client",
@@ -615,6 +616,7 @@ defmodule Lockspire.Web.Live.Admin.OverviewLiveTest do
   defp register_overview_client(client_id, provenance) do
     assert {:ok, _client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: client_id,
                client_type: :confidential,
                name: "#{client_id} Name",

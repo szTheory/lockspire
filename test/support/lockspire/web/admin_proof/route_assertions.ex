@@ -23,8 +23,7 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
   ]
 
   def assert_mounted_routes! do
-    router = File.read!(Paths.admin_router())
-    mounted = Lockspire.Web.AdminRouter |> Phoenix.Router.routes() |> Enum.map(& &1.path)
+    mounted = compiled_route_paths()
 
     for route <- [
           "/",
@@ -38,8 +37,8 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
           "/device_authorizations",
           "/logouts"
         ] do
-      assert route in mounted
-      assert router =~ route
+      assert route in mounted, "missing compiled admin route #{route}"
+      assert_live_route!(route)
     end
   end
 
@@ -47,19 +46,17 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     guide = File.read!(Paths.operator_admin_doc())
 
     assert guide =~
-             "Lockspire owns protocol and related admin state after a request reaches its LiveViews"
+             "The generated `OperatorAuthorization` module is a host-owned, deny-by-default"
 
-    assert guide =~
-             "The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization"
+    assert guide =~ "Compiled verification establishes route and hook wiring"
   end
 
   def assert_read_only_operate_surfaces! do
-    router = File.read!(Paths.admin_router())
-
     for {route, {relative_path, redaction_contract}} <- @operate_sources do
       source = source(relative_path)
 
-      assert router =~ String.replace_prefix(route, "/admin", "")
+      assert route in compiled_route_paths(), "missing compiled admin route #{route}"
+      assert_live_route!(route)
 
       if redaction_contract do
         assert source =~ redaction_contract
@@ -136,6 +133,17 @@ defmodule Lockspire.Web.AdminProof.RouteAssertions do
     end
 
     refute File.read!(Paths.mix_file()) =~ ~r/files:\s+~w\([^)]*test\/support/
+  end
+
+  defp compiled_route_paths do
+    Lockspire.Web.AdminRouter
+    |> Phoenix.Router.routes()
+    |> Enum.map(& &1.path)
+  end
+
+  defp assert_live_route!(path) do
+    assert %{plug: Phoenix.LiveView.Plug, route: ^path} =
+             Phoenix.Router.route_info(Lockspire.Web.AdminRouter, "GET", path, "www.example.com")
   end
 
   defp source(relative_path), do: Paths.root() |> Path.join(relative_path) |> File.read!()

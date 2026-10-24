@@ -6,6 +6,7 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationManagement
   alias Lockspire.Storage.Ecto.AuditEventRecord
+  alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.Test.Fixtures.InitialAccessTokenFixtures
 
@@ -65,6 +66,7 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
       _rat = success.registration_access_token_plaintext
       client = success.client
       server_policy = DcrFixtures.server_policy(%{})
+      assert {:ok, _} = Repository.put_server_policy(server_policy)
 
       {:ok, _} = RegistrationManagement.read(client.client_id, client)
 
@@ -74,12 +76,17 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
       # D-19 LOCKED: update/2 with bundled-request map. Do NOT call update/4.
       {:ok, update_success} =
         RegistrationManagement.update(client.client_id, %{
-          metadata: DcrFixtures.valid_metadata(),
+          metadata: Map.put(DcrFixtures.valid_metadata(), "client_id", client.client_id),
           server_policy: server_policy,
           client: client
         })
 
-      {:error, %Registration.Error{}} =
+      assert {:ok, _recovered_plaintext, recovered_client} =
+               RegistrationManagement.rotate_registration_access_token(update_success.client)
+
+      # Recovery above rotated the current RAT, so the stale snapshot takes precedence over
+      # invalid metadata and does not disclose that validation result.
+      {:error, :invalid_token} =
         RegistrationManagement.update(update_success.client.client_id, %{
           metadata: DcrFixtures.invalid_redirect_uri_metadata(),
           server_policy: server_policy,
@@ -93,7 +100,7 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
           client: update_success.client
         })
 
-      :ok = RegistrationManagement.delete(update_success.client.client_id, update_success.client)
+      :ok = RegistrationManagement.delete(recovered_client.client_id, recovered_client)
 
       # ── 5. Sweep audit rows ─────────────────────────────────────────────────
       rows =
@@ -106,19 +113,39 @@ defmodule Lockspire.Protocol.DcrAuditAttributionTest do
 
       assert rows != [], "expected DCR audit rows to be present from the exercise"
 
-      offenders = Enum.filter(rows, &(&1.actor_type == "operator"))
+      recovery_rows = Enum.filter(rows, &(&1.action == "dcr_management_rat_rotated"))
+
+      assert recovery_rows != [], "expected host recovery audit evidence"
+
+      assert Enum.all?(
+               recovery_rows,
+               &(&1.actor_type == "operator" and &1.actor_id == "admin-ui")
+             ),
+             "host recovery audit rows must identify the host operator"
+
+      offenders =
+        Enum.filter(
+          rows,
+          &(&1.actor_type == "operator" and &1.action != "dcr_management_rat_rotated")
+        )
 
       assert offenders == [],
              "DCR audit rows attributed to :operator: " <>
                inspect(Enum.map(offenders, &Map.take(&1, [:id, :action, :actor_type, :actor_id])))
 
       # And every DCR row must be either "dcr" or "self_registered_client"
-      allowed_actor_types = ["dcr", "self_registered_client"]
+      allowed_actor_types = ["dcr", "self_registered_client", "operator"]
 
       unknown =
         Enum.filter(rows, fn row -> row.actor_type not in allowed_actor_types end)
 
-      assert unknown == [],
+      unknown_operator_rows =
+        Enum.filter(
+          rows,
+          &(&1.actor_type == "operator" and &1.action != "dcr_management_rat_rotated")
+        )
+
+      assert unknown == [] and unknown_operator_rows == [],
              "DCR audit rows with unexpected actor_type: " <>
                inspect(Enum.map(unknown, &Map.take(&1, [:id, :action, :actor_type])))
     end

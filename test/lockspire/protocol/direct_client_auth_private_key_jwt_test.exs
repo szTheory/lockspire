@@ -19,6 +19,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
 
     Process.put(:direct_client_auth_client, %Client{
       client_id: "direct-client",
+      lifetime_version: 0,
       client_type: :confidential,
       token_endpoint_auth_method: :private_key_jwt,
       jwks: keys.pub_jwk_map,
@@ -68,6 +69,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
                opts: [
                  client_store: __MODULE__.SharedStore,
                  token_store: __MODULE__.TokenStore,
+                 transaction_store: __MODULE__.TransactionStore,
                  now: fn -> now end
                ]
              })
@@ -90,6 +92,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
                opts: [
                  client_store: __MODULE__.SharedStore,
                  token_store: __MODULE__.TokenStore,
+                 transaction_store: __MODULE__.TransactionStore,
                  now: fn -> now end
                ]
              })
@@ -115,6 +118,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
                opts: [
                  client_store: __MODULE__.SharedStore,
                  device_authorization_store: __MODULE__.DeviceAuthorizationStore,
+                 transaction_store: __MODULE__.TransactionStore,
                  verification_uri: "https://example.test/device",
                  now: now
                ]
@@ -138,6 +142,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
                opts: [
                  client_store: __MODULE__.SharedStore,
                  ciba_authorization_store: __MODULE__.CibaAuthorizationStore,
+                 transaction_store: __MODULE__.TransactionStore,
                  account_resolver: __MODULE__.AccountResolver,
                  now: now
                ]
@@ -184,6 +189,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
           opts: [
             client_store: __MODULE__.SharedStore,
             device_authorization_store: __MODULE__.DeviceAuthorizationStore,
+            transaction_store: __MODULE__.TransactionStore,
             verification_uri: "https://example.test/device",
             now: now
           ]
@@ -197,6 +203,7 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
           opts: [
             client_store: __MODULE__.SharedStore,
             ciba_authorization_store: __MODULE__.CibaAuthorizationStore,
+            transaction_store: __MODULE__.TransactionStore,
             account_resolver: __MODULE__.AccountResolver,
             now: now
           ]
@@ -212,6 +219,20 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
   end
 
   defmodule SharedStore do
+    def lifetime_contract,
+      do: %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest.TransactionStore.transaction_authority()
+      }
+
+    def lock_clients([client_id]) do
+      case fetch_client_by_id(client_id) do
+        {:ok, %Client{} = client} -> {:ok, [client]}
+        {:ok, nil} -> {:ok, []}
+      end
+    end
+
     def fetch_client_by_id(client_id) do
       client = Process.get(:direct_client_auth_client)
       {:ok, if(client.client_id == client_id, do: client, else: nil)}
@@ -269,6 +290,29 @@ defmodule Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest do
 
   defmodule CibaAuthorizationStore do
     def put_ciba_authorization(ciba_authorization), do: {:ok, ciba_authorization}
+  end
+
+  defmodule TransactionStore do
+    def transaction_authority do
+      %{
+        identity: :direct_client_private_key_test,
+        participants: %{
+          client_store: Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest.SharedStore,
+          device_authorization_store:
+            Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest.DeviceAuthorizationStore,
+          ciba_authorization_store:
+            Lockspire.Protocol.DirectClientAuthPrivateKeyJwtTest.CibaAuthorizationStore,
+          transaction_store: __MODULE__
+        }
+      }
+    end
+
+    def transact(fun) do
+      case fun.() do
+        {:ok, value} -> {:ok, value}
+        {:error, reason} -> {:error, reason}
+      end
+    end
   end
 
   defmodule AccountResolver do

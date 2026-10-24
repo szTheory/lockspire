@@ -35,6 +35,7 @@ defmodule Lockspire.Protocol.Registration do
   alias Lockspire.Protocol.MessageSigningProfile
   alias Lockspire.Protocol.RegistrationAccessToken
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Storage.ClientLifetime
 
   defmodule Success do
     @moduledoc false
@@ -64,12 +65,17 @@ defmodule Lockspire.Protocol.Registration do
       when is_map(metadata) do
     iat = Map.get(request, :iat)
     source = Map.get(request, :source, %{ip: nil, user_agent: nil})
+    issued_at = request |> Map.get(:now, DateTime.utc_now()) |> DateTime.truncate(:second)
 
-    with :ok <- require_iat_when_policy_demands(server_policy, iat),
+    with :ok <- ensure_client_lifetime_configured(),
+         :ok <- require_iat_when_policy_demands(server_policy, iat),
          {:ok, iat_record} <- maybe_redeem_iat(iat),
          {:ok, %Resolved{} = resolved} <- resolve_policy(server_policy, iat_record, metadata),
          :ok <- validate_intake_metadata(metadata, resolved, server_policy, nil),
-         credentials <- generate_credentials(metadata, Map.get(request, :secret_key_base)),
+         credentials <-
+           metadata
+           |> generate_credentials(Map.get(request, :secret_key_base))
+           |> Map.put(:issued_at, issued_at),
          {:ok, %Client{} = client} <-
            persist_client(metadata, resolved, iat_record, credentials, source) do
       emit_succeeded(client, iat_record, source)
@@ -84,6 +90,13 @@ defmodule Lockspire.Protocol.Registration do
       {:error, %Error{} = error} ->
         emit_rejected(error, source)
         {:error, error}
+    end
+  end
+
+  defp ensure_client_lifetime_configured do
+    case ClientLifetime.configured() do
+      {:ok, _stores} -> :ok
+      {:error, reason} -> {:error, %Error{code: :server_error, reason: reason}}
     end
   end
 
@@ -122,6 +135,9 @@ defmodule Lockspire.Protocol.Registration do
            reason: reason,
            allowed: Map.get(info, :allowed)
          }}
+
+      {:error, :server_error, %{field: field, reason: reason}} ->
+        {:error, %Error{code: :server_error, field: field, reason: reason}}
     end
   end
 
@@ -138,12 +154,34 @@ defmodule Lockspire.Protocol.Registration do
           :ok | {:error, Error.t()}
   def validate_intake_metadata(metadata, %Resolved{} = _resolved, server_policy, current_client)
       when is_map(metadata) do
-    with :ok <- validate_registration_shape(metadata, server_policy),
+    with :ok <- validate_lifecycle_extension_intake(metadata, current_client),
+         :ok <- validate_registration_shape(metadata, server_policy),
          :ok <- validate_authorization_response_encryption_metadata(metadata),
          :ok <- validate_logout_metadata(metadata),
          :ok <- validate_token_endpoint_auth_metadata(metadata, server_policy),
          :ok <- validate_fapi_2_0_readiness(metadata, server_policy, current_client) do
       validate_pkce_floor(metadata)
+    end
+  end
+
+  defp validate_lifecycle_extension_intake(_metadata, %Client{}), do: :ok
+
+  defp validate_lifecycle_extension_intake(metadata, nil) do
+    case Enum.find(
+           [
+             {"lockspire_client_expires_at", :lockspire_client_expires_at},
+             {
+               "lockspire_registration_access_token_expires_at",
+               :lockspire_registration_access_token_expires_at
+             }
+           ],
+           fn {field, _atom} -> Map.has_key?(metadata, field) end
+         ) do
+      nil ->
+        :ok
+
+      {_field, atom} ->
+        {:error, %Error{code: :invalid_client_metadata, field: atom, reason: :not_allowed}}
     end
   end
 

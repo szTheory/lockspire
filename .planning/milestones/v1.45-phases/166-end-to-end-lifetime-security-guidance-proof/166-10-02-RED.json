@@ -1,0 +1,10 @@
+{
+  "command": "python3 /private/tmp/lockspire_166_10_red_adapter.py",
+  "exitCode": 1,
+  "output": "FAIL: test_exunit_ci_workflow_contracts (__main__.CiWorkflowContractRedEvidence.test_exunit_ci_workflow_contracts)\nAssertionError: 2 != 0 : ExUnit reported 4 tests, 2 failures. Target failures: test lifetime proof retains only validated SHA-bound receipts for fourteen days and test default CI owns each test partition once and keeps focused aliases. Both fail because --exclude lifetime_package is absent from the active Integration Checks workflow/run matrix.\nRan 1 test in 0.587s\nFAILED (failures=1)",
+  "targetTest": "test_exunit_ci_workflow_contracts",
+  "targetFile": "test/lockspire/ci_test_matrix_contract_test.exs",
+  "expected": "The ExUnit source contract suite fails because the active integration workflow has not yet excluded lifetime_package from broad integration selection",
+  "actual": "The targeted ExUnit suite exited 2 with 4 tests and 2 failures; both target contracts fail at the missing --exclude lifetime_package assertion",
+  "semanticAssessment": "The supported Python unittest adapter ran the real targeted ExUnit suite, confirmed the planned target assertion failures, and failed only because ExUnit exited nonzero"
+}

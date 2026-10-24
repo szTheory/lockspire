@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_rotation_test.exs --formatter Lockspire.Test.Phase164TapFormatter --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - Lockspire.ClientSecretLifetimeRotationTest.test operator rotation uses the current DCR policy and one deferred decision time\n1..1",
+  "targetTest": "Lockspire.ClientSecretLifetimeRotationTest.test operator rotation uses the current DCR policy and one deferred decision time",
+  "targetFile": "test/integration/client_secret_lifetime_rotation_test.exs",
+  "expected": "Rotation samples the injected time after the current row and policy are loaded, then uses that same time for the replacement and audit.",
+  "actual": "With time sampling moved before the injected clock, the replacement timestamp differs from the expected fixed decision time.",
+  "semanticAssessment": "Valid RED: the complete TAP report contains one executed target test and the target fails because the replacement timestamp does not use the injected post-lock decision time. The normal ExUnit run previously showed the same behavior before implementation. No setup, compile, collection, or unrelated failure occurred."
+}

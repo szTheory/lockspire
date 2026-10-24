@@ -30,6 +30,7 @@ defmodule Lockspire.Web.DeviceAuthorizationControllerTest do
         client_type: :public,
         token_endpoint_auth_method: :none,
         allowed_grant_types: ["urn:ietf:params:oauth:grant-type:device_code"],
+        lifetime_version: 0,
         created_at: DateTime.utc_now()
       })
 

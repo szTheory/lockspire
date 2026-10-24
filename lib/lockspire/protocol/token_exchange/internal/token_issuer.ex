@@ -26,12 +26,38 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  def prepare_refresh_access(%Client{} = client, %Dependencies{} = dependencies),
+    do: AccessTokenSigner.prepare(client, dependencies)
+
+  @doc false
+  def issue_prepared_refresh_access(
+        %Token{} = token,
+        %Client{} = client,
+        prepared_signing
+      ),
+      do: AccessTokenSigner.issue_prepared(token, client, prepared_signing)
+
+  @doc false
   @spec issue_exchange(token_for_issuance(), Client.t(), map(), Dependencies.t()) ::
           {:ok, String.t(), String.t()} | {:error, Error.t()}
   def issue_exchange(%Token{} = token, %Client{} = client, claims, %Dependencies{} = dependencies)
       when is_map(claims) do
     AccessTokenSigner.issue_exchange(token, client, claims, %{}, dependencies)
   end
+
+  @doc false
+  def prepare_exchange(%Client{} = client, %Dependencies{} = dependencies),
+    do: AccessTokenSigner.prepare_exchange(client, dependencies)
+
+  @doc false
+  def issue_prepared_exchange(
+        %Token{} = token,
+        %Client{} = client,
+        claims,
+        prepared
+      )
+      when is_map(claims),
+      do: AccessTokenSigner.issue_prepared_exchange(token, client, claims, prepared)
 
   @doc false
   @spec issue_grant(Client.t(), Token.t(), DateTime.t(), map(), Dependencies.t()) ::
@@ -80,6 +106,110 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
   end
 
   @doc false
+  @spec prepare_code_grant(Client.t(), Token.t(), map(), Dependencies.t()) ::
+          {:ok,
+           %{
+             access_signing: AccessTokenSigner.prepared_signing(),
+             formatted_refresh_token: AccessTokenSigner.formatted_token() | nil,
+             cnf: term()
+           }}
+          | {:error, Error.t()}
+  def prepare_code_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        issuance_context,
+        %Dependencies{} = dependencies
+      ) do
+    with {:ok, access_signing} <- AccessTokenSigner.prepare(client, dependencies) do
+      {:ok,
+       %{
+         access_signing: access_signing,
+         formatted_refresh_token: maybe_format_refresh_token(client, grant, dependencies),
+         cnf: Map.get(issuance_context, :cnf)
+       }}
+    end
+  end
+
+  @doc false
+  @spec prepare_poll_grant(Client.t(), Token.t(), map(), Dependencies.t()) ::
+          {:ok,
+           %{
+             access_signing: AccessTokenSigner.prepared_signing(),
+             formatted_refresh_token: AccessTokenSigner.formatted_token() | nil,
+             cnf: term()
+           }}
+          | {:error, Error.t()}
+  def prepare_poll_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        issuance_context,
+        %Dependencies{} = dependencies
+      ),
+      do: prepare_code_grant(client, grant, issuance_context, dependencies)
+
+  @doc false
+  @spec issue_prepared_code_grant(
+          Client.t(),
+          Token.t(),
+          DateTime.t(),
+          DateTime.t(),
+          map(),
+          Dependencies.t()
+        ) :: {:ok, %{access_token: Token.t(), raw_access_token: String.t()}} | {:error, Error.t()}
+  def issue_prepared_code_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        %DateTime{} = issued_at,
+        %DateTime{} = access_expires_at,
+        %{access_signing: access_signing, cnf: cnf, formatted_refresh_token: refresh},
+        %Dependencies{}
+      ) do
+    access_token = %Token{
+      token_type: :access_token,
+      family_id: if(refresh, do: refresh.token_hash),
+      generation: 0,
+      client_id: client.client_id,
+      account_id: grant.account_id,
+      interaction_id: grant.interaction_id,
+      consent_grant_id: grant.consent_grant_id,
+      sid: grant.sid,
+      scopes: grant.scopes,
+      audience: grant.audience,
+      cnf: cnf,
+      issued_at: issued_at,
+      expires_at: access_expires_at
+    }
+
+    with {:ok, raw_access_token, token_hash} <-
+           AccessTokenSigner.issue_prepared(access_token, client, access_signing) do
+      {:ok,
+       %{
+         access_token: %Token{access_token | token_hash: token_hash},
+         raw_access_token: raw_access_token
+       }}
+    end
+  end
+
+  @doc false
+  def issue_prepared_poll_grant(
+        %Client{} = client,
+        %Token{} = grant,
+        %DateTime{} = issued_at,
+        %DateTime{} = access_expires_at,
+        prepared_issuance,
+        %Dependencies{} = dependencies
+      ),
+      do:
+        issue_prepared_code_grant(
+          client,
+          grant,
+          issued_at,
+          access_expires_at,
+          prepared_issuance,
+          dependencies
+        )
+
+  @doc false
   @spec build_success(
           Client.t(),
           Token.t(),
@@ -100,6 +230,51 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
         raw_refresh_token,
         %Dependencies{} = dependencies
       ) do
+    build_success_with_expires_in(
+      client,
+      grant,
+      persisted_access_token,
+      raw_access_token,
+      issuance_context,
+      issued_at,
+      raw_refresh_token,
+      %{expires_in: TokenLifetime.access_token(), dependencies: dependencies}
+    )
+  end
+
+  @doc false
+  def build_code_success(
+        %Client{} = client,
+        %Token{} = grant,
+        %Token{} = persisted_access_token,
+        raw_access_token,
+        issuance_context,
+        %DateTime{} = issued_at,
+        raw_refresh_token,
+        %{expires_in: expires_in, dependencies: %Dependencies{} = dependencies}
+      ) do
+    build_success_with_expires_in(
+      client,
+      grant,
+      persisted_access_token,
+      raw_access_token,
+      issuance_context,
+      issued_at,
+      raw_refresh_token,
+      %{expires_in: expires_in, dependencies: dependencies}
+    )
+  end
+
+  defp build_success_with_expires_in(
+         %Client{} = client,
+         %Token{} = grant,
+         %Token{} = persisted_access_token,
+         raw_access_token,
+         issuance_context,
+         %DateTime{} = issued_at,
+         raw_refresh_token,
+         %{expires_in: expires_in, dependencies: %Dependencies{} = dependencies}
+       ) do
     with {:ok, id_token} <-
            maybe_issue_id_token(
              client,
@@ -114,7 +289,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.TokenIssuer do
         refresh_token: raw_refresh_token,
         id_token: id_token,
         token_type: issuance_context.token_type,
-        expires_in: TokenLifetime.access_token(),
+        expires_in: expires_in,
         scope: Enum.join(persisted_access_token.scopes, " ")
       }
     end

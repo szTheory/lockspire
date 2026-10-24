@@ -1,3 +1,53 @@
+defmodule Lockspire.Install.VerifyTest.RouterGenerator do
+  defmacro define_native_host_router(name, mount_path) do
+    name = Macro.expand(name, __CALLER__)
+    mount_path = Macro.expand(mount_path, __CALLER__)
+
+    admin_path =
+      if mount_path in ["", "/"],
+        do: "/admin",
+        else: String.trim_trailing(mount_path, "/") <> "/admin"
+
+    consent_path =
+      if mount_path in ["", "/"],
+        do: "/consent/:interaction_id",
+        else: String.trim_trailing(mount_path, "/") <> "/consent/:interaction_id"
+
+    public_path = if mount_path in ["", "/"], do: "/", else: String.trim_trailing(mount_path, "/")
+
+    quote do
+      defmodule unquote(name) do
+        use Phoenix.Router
+        import Phoenix.LiveView.Router
+        require Lockspire.Web.AdminRoutes
+
+        pipeline :selected_host_authorization do
+          plug(Lockspire.Install.VerifyTest.HostAuthorizationPlug)
+        end
+
+        scope "/", Lockspire.Install.VerifyTest do
+          get("/verify", PlaceholderController, :show)
+          post("/verify", PlaceholderController, :lookup)
+          post("/verify/:handle/approve", PlaceholderController, :approve)
+          post("/verify/:handle/deny", PlaceholderController, :deny)
+          get("/authorized-apps", PlaceholderController, :index)
+          delete("/authorized-apps/:id", PlaceholderController, :delete)
+        end
+
+        Lockspire.Web.AdminRoutes.lockspire_admin_routes(unquote(admin_path),
+          pipe_through: [:selected_host_authorization],
+          on_mount: Lockspire.Install.VerifyTest.HostLiveAuthorization
+        )
+
+        scope "/" do
+          live(unquote(consent_path), Lockspire.Install.VerifyTest.ConsentLive, :show)
+          forward(unquote(public_path), Lockspire.Web.Router)
+        end
+      end
+    end
+  end
+end
+
 defmodule Lockspire.Install.VerifyTest do
   use ExUnit.Case, async: false
 
@@ -28,6 +78,296 @@ defmodule Lockspire.Install.VerifyTest do
   defmodule OperatorGuard do
     def init(opts), do: opts
     def call(conn, _opts), do: conn
+  end
+
+  defmodule HostAuthorizationPlug do
+    def init(opts), do: opts
+    def call(conn, _opts), do: conn
+  end
+
+  defmodule HostLiveAuthorization do
+    def on_mount(_name, _params, _session, socket), do: {:cont, socket}
+  end
+
+  require Lockspire.Install.VerifyTest.RouterGenerator
+
+  Lockspire.Install.VerifyTest.RouterGenerator.define_native_host_router(
+    RootMountNativeRouter,
+    ""
+  )
+
+  Lockspire.Install.VerifyTest.RouterGenerator.define_native_host_router(
+    NestedMountNativeRouter,
+    "/teams/ops/identity"
+  )
+
+  defmodule NativeAdminRouter do
+    use Phoenix.Router
+
+    import Phoenix.LiveView.Router
+    require Lockspire.Web.AdminRoutes
+
+    pipeline :operator_access do
+      plug(Lockspire.Install.VerifyTest.HostAuthorizationPlug)
+    end
+
+    scope "/", Lockspire.Install.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", Lockspire.Install.VerifyTest.ConsentLive, :show)
+    end
+
+    Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+      pipe_through: [:operator_access],
+      on_mount: Lockspire.Install.VerifyTest.HostLiveAuthorization
+    )
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+  end
+
+  defmodule ShadowedAdminRouter do
+    use Phoenix.Router
+
+    import Phoenix.LiveView.Router
+    require Lockspire.Web.AdminRoutes
+
+    pipeline :operator_access do
+      plug(Lockspire.Install.VerifyTest.HostAuthorizationPlug)
+    end
+
+    scope "/", Lockspire.Install.VerifyTest do
+      get("/verify", PlaceholderController, :show)
+      post("/verify", PlaceholderController, :lookup)
+      post("/verify/:handle/approve", PlaceholderController, :approve)
+      post("/verify/:handle/deny", PlaceholderController, :deny)
+      get("/authorized-apps", PlaceholderController, :index)
+      delete("/authorized-apps/:id", PlaceholderController, :delete)
+    end
+
+    scope "/" do
+      forward("/lockspire", Lockspire.Web.Router)
+    end
+
+    Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+      pipe_through: [:operator_access],
+      on_mount: Lockspire.Install.VerifyTest.HostLiveAuthorization
+    )
+
+    scope "/lockspire" do
+      live("/consent/:interaction_id", Lockspire.Install.VerifyTest.ConsentLive, :show)
+    end
+  end
+
+  defmodule RouteMetadataVariantRouter do
+    def __routes__ do
+      routes = NativeAdminRouter.__routes__() |> Enum.map(&remap_guard_router/1)
+
+      vary_routes(routes, Application.get_env(:lockspire, :verify_route_variant))
+    end
+
+    defp vary_routes(routes, :missing),
+      do: Enum.reject(routes, &(&1.path == "/lockspire/admin/clients/new"))
+
+    defp vary_routes(routes, :duplicate),
+      do: routes ++ [route_at(routes, "/lockspire/admin/clients/new")]
+
+    defp vary_routes(routes, :wrong_action),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :action))
+
+    defp vary_routes(routes, :wrong_view),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_view(&1, :view))
+
+    defp vary_routes(routes, :wrong_target),
+      do:
+        update_route(
+          routes,
+          "/lockspire/admin/clients/new",
+          &Map.put(&1, :plug, Phoenix.Controller)
+        )
+
+    defp vary_routes(routes, :wrong_session),
+      do:
+        update_route(routes, "/lockspire/admin/clients/new", &change_session(&1, :wrong_session))
+
+    defp vary_routes(routes, :missing_hook),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :missing))
+
+    defp vary_routes(routes, :guard_first),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :guard_first))
+
+    defp vary_routes(routes, :wrong_guard_router),
+      do: update_route(routes, "/lockspire/admin/clients/new", &change_hooks(&1, :wrong_router))
+
+    defp vary_routes(routes, :malformed) do
+      update_route(
+        routes,
+        "/lockspire/admin/clients/new",
+        &Map.update!(&1, :metadata, fn metadata ->
+          Map.put(metadata, :phoenix_live_view, "PRIVATE_METADATA_SENTINEL")
+        end)
+      )
+    end
+
+    defp vary_routes(routes, :extra_admin_view) do
+      routes ++
+        [
+          Map.put(
+            route_at(routes, "/lockspire/admin/clients"),
+            :path,
+            "/lockspire/admin/clients-extra"
+          )
+        ]
+    end
+
+    defp vary_routes(routes, _other), do: routes
+
+    def __match_route__(method, path, host) do
+      result = NativeAdminRouter.__match_route__(method, path, host)
+
+      result =
+        case result do
+          {metadata, prepare, pipeline, dispatch} ->
+            metadata =
+              Map.update!(metadata, :phoenix_live_view, fn {view, action, options, session} ->
+                {view, action, options, remap_guard_session(session)}
+              end)
+
+            {metadata, prepare, pipeline, dispatch}
+
+          other ->
+            other
+        end
+
+      if Application.get_env(:lockspire, :verify_route_variant) == :missing_pipeline do
+        case result do
+          {metadata, prepare, pipeline, dispatch} ->
+            {Map.put(metadata, :pipe_through, [:lockspire_admin_mount]), prepare, pipeline,
+             dispatch}
+
+          other ->
+            other
+        end
+      else
+        result
+      end
+    end
+
+    defp route_at(routes, path), do: Enum.find(routes, &(&1.path == path))
+
+    defp remap_guard_router(route) do
+      Map.update!(route, :metadata, fn metadata ->
+        case Map.get(metadata, :phoenix_live_view) do
+          {view, action, options, session} ->
+            Map.put(
+              metadata,
+              :phoenix_live_view,
+              {view, action, options, remap_guard_session(session)}
+            )
+
+          _other ->
+            metadata
+        end
+      end)
+    end
+
+    defp remap_guard_session(session) do
+      hooks = get_in(session, [:extra, :on_mount])
+
+      if is_list(hooks) and hooks != [] do
+        put_in(
+          session,
+          [:extra, :on_mount],
+          List.update_at(hooks, -1, fn hook ->
+            Map.update!(hook, :id, fn
+              {Lockspire.Web.AdminMount, {:mount_path, NativeAdminRouter}} ->
+                {Lockspire.Web.AdminMount, {:mount_path, __MODULE__}}
+
+              id ->
+                id
+            end)
+          end)
+        )
+      else
+        session
+      end
+    end
+
+    defp update_route(routes, path, update) do
+      Enum.map(routes, fn route -> if route.path == path, do: update.(route), else: route end)
+    end
+
+    defp change_view(route, :action) do
+      Map.update!(route, :metadata, fn metadata ->
+        Map.update!(metadata, :phoenix_live_view, fn {view, _action, options, session} ->
+          {view, :index, options, session}
+        end)
+      end)
+    end
+
+    defp change_view(route, :view) do
+      Map.update!(route, :metadata, fn metadata ->
+        Map.update!(metadata, :phoenix_live_view, fn {_view, action, options, session} ->
+          {Lockspire.Web.Live.Admin.OverviewLive.Index, action, options, session}
+        end)
+      end)
+    end
+
+    defp change_session(route, name) do
+      update_session(route, fn session -> Map.put(session, :name, name) end)
+    end
+
+    defp change_hooks(route, mode) do
+      update_session(route, fn session ->
+        hooks = get_in(session, [:extra, :on_mount])
+        guard = List.last(hooks)
+        host = hd(hooks)
+
+        changed =
+          case mode do
+            :missing ->
+              [guard]
+
+            :guard_first ->
+              [guard, host]
+
+            :wrong_router ->
+              List.replace_at(
+                hooks,
+                -1,
+                Map.update!(guard, :id, fn {module, _arg} ->
+                  {module, {:mount_path, NativeAdminRouter}}
+                end)
+              )
+          end
+
+        update_in(session, [:extra, :on_mount], fn _hooks -> changed end)
+      end)
+    end
+
+    defp update_session(route, update) do
+      Map.update!(route, :metadata, fn metadata ->
+        Map.update!(metadata, :phoenix_live_view, fn {view, action, options, session} ->
+          {view, action, options, update.(session)}
+        end)
+      end)
+    end
+  end
+
+  defmodule MalformedRoutesRouter do
+    def __routes__, do: :malformed
+  end
+
+  defmodule ExceptionRoutesRouter do
+    def __routes__, do: raise("ROUTER_EXCEPTION_SENTINEL")
   end
 
   defmodule Web.Router do
@@ -225,7 +565,7 @@ defmodule Lockspire.Install.VerifyTest do
   test "returns a passing result set for a wired host router" do
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -237,6 +577,93 @@ defmodule Lockspire.Install.VerifyTest do
     assert Enum.all?(result.checks, &(&1.status == :ok))
     assert Enum.any?(result.checks, &(&1.id == :router))
     assert Enum.any?(result.checks, &(&1.id == :migrations))
+  end
+
+  test "accepts complete compiled native admin routes" do
+    result =
+      Verify.run(
+        router: NativeAdminRouter,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: "/lockspire",
+        key_storage_status: fn -> {:ok, ready_status()} end
+      )
+
+    assert %{status: :ok, summary: "Host router wiring is present"} =
+             Enum.find(result.checks, &(&1.id == :router))
+  end
+
+  test "verifier reads the shared hidden route inventory" do
+    inventory = Lockspire.Web.AdminRoutes.__route_inventory__()
+    assert length(inventory) == 29
+    assert {"/clients/new", Lockspire.Web.Live.Admin.ClientsLive.Index, :new} in inventory
+  end
+
+  test "accepts default, root, and nested host mounts" do
+    for {router, mount_path} <- [
+          {NativeAdminRouter, "/lockspire"},
+          {RootMountNativeRouter, "/"},
+          {NestedMountNativeRouter, "/teams/ops/identity"}
+        ] do
+      assert %{status: :ok} = verify_router_check(router, mount_path)
+    end
+  end
+
+  test "rejects exact compiled inventory, session, pipeline, and hook defects" do
+    on_exit(fn -> Application.delete_env(:lockspire, :verify_route_variant) end)
+
+    for {variant, expected} <- [
+          {:missing, "missing native admin route GET /lockspire/admin/clients/new"},
+          {:duplicate, "duplicate native admin route GET /lockspire/admin/clients/new"},
+          {:wrong_action,
+           "wrong native admin target or action at GET /lockspire/admin/clients/new"},
+          {:wrong_view,
+           "wrong native admin target or action at GET /lockspire/admin/clients/new"},
+          {:wrong_target,
+           "wrong native admin target or action at GET /lockspire/admin/clients/new"},
+          {:wrong_session,
+           "wrong native admin LiveView session at GET /lockspire/admin/clients/new"},
+          {:missing_pipeline,
+           "missing host authorization pipeline before :lockspire_admin_mount"},
+          {:missing_hook, "missing host LiveView authorization hook"},
+          {:guard_first, "guard is missing, misordered, or has the wrong router argument"},
+          {:wrong_guard_router, "guard is missing, misordered, or has the wrong router argument"},
+          {:malformed, "malformed native admin metadata at GET /lockspire/admin/clients/new"},
+          {:extra_admin_view, "unexpected route in the canonical admin namespace"}
+        ] do
+      Application.put_env(:lockspire, :verify_route_variant, variant)
+      assert is_list(RouteMetadataVariantRouter.__routes__())
+      check = verify_router_check(RouteMetadataVariantRouter, "/lockspire")
+      assert check.status == :error, "variant #{variant} was unexpectedly accepted"
+
+      assert check.details =~ expected,
+             "variant #{variant} lacked its structural diagnosis: #{check.details}"
+    end
+  end
+
+  test "a compiled public forward that wins first-match dispatch is rejected" do
+    assert Phoenix.Router.route_info(
+             ShadowedAdminRouter,
+             "GET",
+             "/lockspire/admin/overview",
+             "localhost"
+           ).plug == Lockspire.Web.Router
+
+    check = verify_router_check(ShadowedAdminRouter, "/lockspire")
+    assert check.status == :error
+    assert check.details =~ "first-match dispatch does not select the canonical admin route"
+    assert check.details =~ "canonical admin route appears after the public Lockspire forward"
+  end
+
+  test "malformed and exception route metadata produce bounded errors" do
+    for router <- [MalformedRoutesRouter, ExceptionRoutesRouter] do
+      check = verify_router_check(router, "/lockspire")
+      assert check.status == :error
+      assert check.summary =~ "router metadata"
+      refute inspect(check) =~ "ROUTER_EXCEPTION_SENTINEL"
+      refute inspect(check) =~ "PRIVATE_METADATA_SENTINEL"
+    end
   end
 
   test "returns a failing result set for missing verify routes" do
@@ -264,7 +691,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: MissingResolver,
         interaction_handler_module: MissingInteractionHandler,
         repo: Lockspire.TestRepo,
@@ -309,7 +736,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     defp verify_opts do
       [
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -377,7 +804,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     defp verify_kek_opts do
       [
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -409,7 +836,7 @@ defmodule Lockspire.Install.VerifyTest do
     defp storage_check(status_result, extra \\ []) do
       opts =
         [
-          router: Web.Router,
+          router: NativeAdminRouter,
           resolver_module: Scope.AccountResolver,
           interaction_handler_module: Scope.InteractionHandler,
           repo: Lockspire.TestRepo,
@@ -473,7 +900,7 @@ defmodule Lockspire.Install.VerifyTest do
         Enum.find(
           Verify.run(
             [
-              router: Web.Router,
+              router: NativeAdminRouter,
               resolver_module: Scope.AccountResolver,
               interaction_handler_module: Scope.InteractionHandler,
               repo: Lockspire.TestRepo,
@@ -490,7 +917,7 @@ defmodule Lockspire.Install.VerifyTest do
     test "a repo whose startup raises a connection error does not crash verification" do
       result =
         Verify.run(
-          router: Web.Router,
+          router: NativeAdminRouter,
           resolver_module: Scope.AccountResolver,
           interaction_handler_module: Scope.InteractionHandler,
           repo: Lockspire.Install.VerifyTest.FailingRepo,
@@ -514,6 +941,20 @@ defmodule Lockspire.Install.VerifyTest do
     status
   end
 
+  defp verify_router_check(router, mount_path) do
+    result =
+      Verify.run(
+        router: router,
+        resolver_module: Scope.AccountResolver,
+        interaction_handler_module: Scope.InteractionHandler,
+        repo: Lockspire.TestRepo,
+        mount_path: mount_path,
+        key_storage_status: fn -> {:ok, ready_status()} end
+      )
+
+    Enum.find(result.checks, &(&1.id == :router))
+  end
+
   test "reports missing generated authorized-app and consent routes together" do
     result =
       Verify.run(
@@ -528,7 +969,7 @@ defmodule Lockspire.Install.VerifyTest do
              Enum.find(result.checks, &(&1.id == :router))
 
     assert details =~ "get /verify"
-    assert fix =~ "lockspire_routes"
+    assert fix =~ "lockspire_admin_routes/2"
   end
 
   test "reports missing copied host migrations before database migration status" do
@@ -539,7 +980,7 @@ defmodule Lockspire.Install.VerifyTest do
 
     result =
       Verify.run(
-        router: Web.Router,
+        router: NativeAdminRouter,
         resolver_module: Scope.AccountResolver,
         interaction_handler_module: Scope.InteractionHandler,
         repo: Lockspire.TestRepo,
@@ -576,11 +1017,11 @@ defmodule Lockspire.Install.VerifyTest do
     assert %{status: :error, details: details, fix: fix} =
              Enum.find(result.checks, &(&1.id == :router))
 
-    assert details =~ "forward /lockspire/admin -> Lockspire.Web.AdminRouter"
-    assert fix =~ "host request tests"
+    assert details =~ "missing native admin route GET /lockspire/admin/"
+    assert fix =~ "host request and LiveView tests"
   end
 
-  test "reports admin mount shape without claiming to verify host operator policy" do
+  test "does not treat the legacy admin forward as complete native wiring" do
     result =
       Verify.run(
         router: RouterUnguardedAdmin,
@@ -590,7 +1031,9 @@ defmodule Lockspire.Install.VerifyTest do
         mount_path: "/lockspire"
       )
 
-    assert result.ok?
+    refute result.ok?
+    assert %{status: :error, details: details} = Enum.find(result.checks, &(&1.id == :router))
+    assert details =~ "missing native admin route GET /lockspire/admin/"
   end
 
   test "returns a failing result when public forward shadows the admin mount" do
@@ -608,7 +1051,7 @@ defmodule Lockspire.Install.VerifyTest do
     assert %{status: :error, details: details, fix: fix} =
              Enum.find(result.checks, &(&1.id == :router))
 
-    assert details =~ "generated admin forward appears after the public Lockspire forward"
-    assert fix =~ "host request tests"
+    assert details =~ "missing native admin route GET /lockspire/admin/"
+    assert fix =~ "host request and LiveView tests"
   end
 end

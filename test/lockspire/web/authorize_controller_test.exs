@@ -81,6 +81,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_123",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
@@ -129,6 +130,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
       {:ok, client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "client_jar",
           client_secret_hash: "sha256:salt:hash",
           client_type: :confidential,
@@ -480,6 +482,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_jarm_browser_fail_closed",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
@@ -629,6 +632,7 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_456",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,

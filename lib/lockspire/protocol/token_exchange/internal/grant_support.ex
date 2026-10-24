@@ -573,33 +573,29 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          request,
          requested_resources
        ) do
-    issued_at = now(request)
+    grant = %Token{authorization_code | audience: requested_resources}
+    dependencies = Dependencies.fetch!(request)
 
-    case TokenIssuer.issue_grant(
-           client,
-           %Token{authorization_code | audience: requested_resources},
-           issued_at,
-           issuance_context,
-           Dependencies.fetch!(request)
-         ) do
-      {:ok,
-       %{
-         access_token: %Token{} = access_token,
-         raw_access_token: raw_access_token,
-         formatted_refresh_token: formatted_refresh_token
-       }} ->
+    case TokenIssuer.prepare_code_grant(client, grant, issuance_context, dependencies) do
+      {:ok, prepared_issuance} ->
         with :ok <- ensure_code_redemption_capabilities(request) do
           case persist_authorization_code_grant(
                  code_hash,
-                 issued_at,
-                 access_token,
+                 client,
                  authorization_code,
-                 formatted_refresh_token,
+                 requested_resources,
+                 prepared_issuance,
                  issuance_context,
                  request
                ) do
-            {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-              TokenIssuer.build_success(
+            {:ok,
+             %{
+               access_token: %Token{} = persisted_access_token,
+               raw_access_token: raw_access_token,
+               issued_at: issued_at,
+               expires_in: expires_in
+             } = persisted_grant} ->
+              TokenIssuer.build_code_success(
                 client,
                 authorization_code,
                 persisted_access_token,
@@ -607,8 +603,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
                 issuance_context,
                 issued_at,
                 Map.get(persisted_grant, :refresh_token_raw),
-                Dependencies.fetch!(request)
+                %{expires_in: expires_in, dependencies: Dependencies.fetch!(request)}
               )
+
+            {:error, %Error{} = error} ->
+              {:error, error}
 
             {:error, :already_redeemed} ->
               {:error,
@@ -664,12 +663,26 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         request
       ) do
     with {:ok, %Token{} = device_grant} <- build_device_grant(device_authorization),
+         issuance_context <-
+           Map.put(
+             issuance_context,
+             :verified_client_identity,
+             ClientAuthentication.verified_identity(client)
+           ),
+         {:ok, prepared_issuance} <-
+           TokenIssuer.prepare_poll_grant(
+             client,
+             device_grant,
+             issuance_context,
+             Dependencies.fetch!(request)
+           ),
          %Success{} = success <-
            redeem_device_grant(
              client,
              device_grant,
              device_authorization,
              issuance_context,
+             prepared_issuance,
              request
            ) do
       GrantObservability.emit_poll_success(
@@ -713,12 +726,26 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
         request
       ) do
     with {:ok, %Token{} = ciba_grant} <- build_ciba_grant(ciba_authorization),
+         issuance_context <-
+           Map.put(
+             issuance_context,
+             :verified_client_identity,
+             ClientAuthentication.verified_identity(client)
+           ),
+         {:ok, prepared_issuance} <-
+           TokenIssuer.prepare_poll_grant(
+             client,
+             ciba_grant,
+             issuance_context,
+             Dependencies.fetch!(request)
+           ),
          %Success{} = success <-
            redeem_ciba_grant(
              client,
              ciba_grant,
              ciba_authorization,
              issuance_context,
+             prepared_issuance,
              request
            ) do
       GrantObservability.emit_poll_success(
@@ -774,73 +801,68 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          %Token{} = ciba_grant,
          %CibaAuthorization{} = ciba_authorization,
          issuance_context,
+         prepared_issuance,
          request
        ) do
-    issued_at = now(request)
+    dependencies = Dependencies.fetch!(request)
 
     with {:ok, validated_audience} <-
            validate_grant_resources(request_params(request), ciba_grant),
-         {:ok,
-          %{
-            access_token: %Token{} = access_token,
-            raw_access_token: raw_access_token,
-            formatted_refresh_token: formatted_refresh_token
-          }} <-
-           TokenIssuer.issue_grant(
+         {:ok, persisted_grant} <-
+           persist_ciba_authorization_grant(
+             ciba_authorization,
              client,
              %Token{ciba_grant | audience: validated_audience},
-             issued_at,
-             issuance_context,
-             Dependencies.fetch!(request)
-           ) do
-      case persist_ciba_authorization_grant(
-             ciba_authorization,
-             issued_at,
-             access_token,
-             ciba_grant,
-             formatted_refresh_token,
+             prepared_issuance,
              issuance_context,
              request
            ) do
-        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-          TokenIssuer.build_success(
-            client,
-            ciba_grant,
-            persisted_access_token,
-            raw_access_token,
-            issuance_context,
-            issued_at,
-            Map.get(persisted_grant, :refresh_token_raw),
-            Dependencies.fetch!(request)
-          )
-
-        {:error, :invalid_state} ->
-          {:error,
-           invalid_grant(
-             "The CIBA authorization has already been redeemed",
-             :ciba_authorization_consumed
-           )}
-
-        {:error, _reason} ->
-          {:error,
-           oauth_error(
-             500,
-             "server_error",
-             "Unable to redeem CIBA authorization",
-             :ciba_authorization_redemption_failed
-           )}
-      end
+      TokenIssuer.build_code_success(
+        client,
+        ciba_grant,
+        persisted_grant.access_token,
+        persisted_grant.raw_access_token,
+        issuance_context,
+        persisted_grant.issued_at,
+        persisted_grant.refresh_token_raw,
+        %{expires_in: persisted_grant.expires_in, dependencies: dependencies}
+      )
     else
-      {:error, %Error{} = error} -> {:error, error}
+      {:error, :invalid_state} ->
+        {:error,
+         invalid_grant(
+           "The CIBA authorization has already been redeemed",
+           :ciba_authorization_consumed
+         )}
+
+      {:error, :expired_token} ->
+        {:error,
+         oauth_error(
+           400,
+           "expired_token",
+           "The CIBA authorization has expired",
+           :ciba_authorization_expired
+         )}
+
+      {:error, %Error{} = error} ->
+        {:error, error}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to redeem CIBA authorization",
+           :ciba_authorization_redemption_failed
+         )}
     end
   end
 
   defp persist_ciba_authorization_grant(
          %CibaAuthorization{} = ciba_authorization,
-         issued_at,
-         %Token{} = access_token,
+         %Client{} = client,
          %Token{} = ciba_grant,
-         formatted_refresh_token,
+         prepared_issuance,
          issuance_context,
          request
        ) do
@@ -849,10 +871,9 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     GrantPersistence.redeem_ciba_authorization(
       %{
         authorization: ciba_authorization,
-        issued_at: issued_at,
-        access_token: access_token,
+        client: client,
         grant: ciba_grant,
-        formatted_refresh_token: formatted_refresh_token,
+        prepared_issuance: prepared_issuance,
         issuance_context: issuance_context,
         audit_event:
           GrantObservability.poll_redemption_audit_event(
@@ -896,64 +917,60 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
          %Token{} = device_grant,
          %DeviceAuthorizationState{} = device_authorization,
          issuance_context,
+         prepared_issuance,
          request
        ) do
-    issued_at = now(request)
+    dependencies = Dependencies.fetch!(request)
 
     with {:ok, validated_audience} <-
            validate_grant_resources(request_params(request), device_grant),
-         {:ok,
-          %{
-            access_token: %Token{} = access_token,
-            raw_access_token: raw_access_token,
-            formatted_refresh_token: formatted_refresh_token
-          }} <-
-           TokenIssuer.issue_grant(
+         {:ok, persisted_grant} <-
+           persist_device_authorization_grant(
+             device_authorization,
              client,
              %Token{device_grant | audience: validated_audience},
-             issued_at,
-             issuance_context,
-             Dependencies.fetch!(request)
-           ) do
-      case persist_device_authorization_grant(
-             device_authorization,
-             issued_at,
-             access_token,
-             device_grant,
-             formatted_refresh_token,
+             prepared_issuance,
              issuance_context,
              request
            ) do
-        {:ok, %{access_token: %Token{} = persisted_access_token} = persisted_grant} ->
-          TokenIssuer.build_success(
-            client,
-            device_grant,
-            persisted_access_token,
-            raw_access_token,
-            issuance_context,
-            issued_at,
-            Map.get(persisted_grant, :refresh_token_raw),
-            Dependencies.fetch!(request)
-          )
-
-        {:error, :invalid_state} ->
-          {:error,
-           invalid_grant(
-             "The device authorization has already been redeemed",
-             :device_authorization_consumed
-           )}
-
-        {:error, _reason} ->
-          {:error,
-           oauth_error(
-             500,
-             "server_error",
-             "Unable to redeem device authorization",
-             :device_authorization_redemption_failed
-           )}
-      end
+      TokenIssuer.build_code_success(
+        client,
+        device_grant,
+        persisted_grant.access_token,
+        persisted_grant.raw_access_token,
+        issuance_context,
+        persisted_grant.issued_at,
+        persisted_grant.refresh_token_raw,
+        %{expires_in: persisted_grant.expires_in, dependencies: dependencies}
+      )
     else
-      {:error, %Error{} = error} -> {:error, error}
+      {:error, :invalid_state} ->
+        {:error,
+         invalid_grant(
+           "The device authorization has already been redeemed",
+           :device_authorization_consumed
+         )}
+
+      {:error, :expired_token} ->
+        {:error,
+         oauth_error(
+           400,
+           "expired_token",
+           "The device authorization has expired",
+           :device_authorization_expired
+         )}
+
+      {:error, %Error{} = error} ->
+        {:error, error}
+
+      {:error, _reason} ->
+        {:error,
+         oauth_error(
+           500,
+           "server_error",
+           "Unable to redeem device authorization",
+           :device_authorization_redemption_failed
+         )}
     end
   end
 
@@ -1004,47 +1021,18 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   defp persist_device_authorization_grant(
          %DeviceAuthorizationState{} = device_authorization,
-         issued_at,
-         %Token{} = access_token,
+         %Client{} = client,
          %Token{} = device_grant,
-         nil,
+         prepared_issuance,
          issuance_context,
          request
        ) do
     GrantPersistence.redeem_device_authorization(
       %{
         authorization: device_authorization,
-        issued_at: issued_at,
-        access_token: access_token,
+        client: client,
         grant: device_grant,
-        formatted_refresh_token: nil,
-        issuance_context: issuance_context,
-        audit_event:
-          GrantObservability.poll_redemption_audit_event(
-            %Client{client_id: device_grant.client_id},
-            device_authorization
-          )
-      },
-      Dependencies.fetch!(request)
-    )
-  end
-
-  defp persist_device_authorization_grant(
-         %DeviceAuthorizationState{} = device_authorization,
-         issued_at,
-         %Token{} = access_token,
-         %Token{} = device_grant,
-         formatted_refresh_token,
-         issuance_context,
-         request
-       ) do
-    GrantPersistence.redeem_device_authorization(
-      %{
-        authorization: device_authorization,
-        issued_at: issued_at,
-        access_token: access_token,
-        grant: device_grant,
-        formatted_refresh_token: formatted_refresh_token,
+        prepared_issuance: prepared_issuance,
         issuance_context: issuance_context,
         audit_event:
           GrantObservability.poll_redemption_audit_event(
@@ -1058,10 +1046,10 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
 
   defp persist_authorization_code_grant(
          code_hash,
-         issued_at,
-         %Token{} = access_token,
+         %Client{} = client,
          %Token{} = authorization_code,
-         formatted_refresh_token,
+         selected_audience,
+         prepared_issuance,
          issuance_context,
          request
        ) do
@@ -1070,10 +1058,11 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.GrantSupport do
     GrantPersistence.redeem_authorization_code(
       %{
         code_hash: code_hash,
-        issued_at: issued_at,
-        access_token: access_token,
+        client: client,
         authorization_code: authorization_code,
-        formatted_refresh_token: formatted_refresh_token,
+        selected_audience: selected_audience,
+        prepared_issuance: prepared_issuance,
+        formatted_refresh_token: prepared_issuance.formatted_refresh_token,
         issuance_context: issuance_context,
         audit_event:
           GrantObservability.authorization_code_redemption_audit_event(

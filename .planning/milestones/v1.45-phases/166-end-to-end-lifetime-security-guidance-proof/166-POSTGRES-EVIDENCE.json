@@ -1,0 +1,132 @@
+{
+  "source_revision": "56369d7175db91bb8de733d15b6de0c572f2e30d",
+  "environment": {
+    "elixir": "1.18.4-otp-27",
+    "erlang": "27.3.4.15",
+    "database": "lockspire_phase165_validation",
+    "setup_command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test.setup",
+    "setup_result": "TestRepo storage existed; migrations already up."
+  },
+  "session_and_observation_contract": {
+    "helper": "test/support/client_lifetime_race_helpers.ex",
+    "independent_sessions": "Sandbox.unboxed_run sessions obtain pg_backend_pid; each named holder and contender pair asserts distinct backend IDs.",
+    "blocker_observed_before_release": "await_blocker!/4 polls pg_blocking_pids(contender) until it equals the expected holder PID; the test releases the holder only after this returns.",
+    "ordering_sleep_used": false,
+    "shared_sandbox_independent_session_claim": false,
+    "durable_observation_limit": "Wait and contention tests use distinct PostgreSQL sessions and then assert committed current row, grant/token, or audit outcomes in their test observer. Focused rollback tests that do not create an explicit holder/contender pair assert transaction rollback in the test transaction. This is not the configured packaged-adapter independent rollback observation assigned to plan 166-08."
+  },
+  "schedules": [
+    {
+      "case_ids": ["C-RACE-01"],
+      "test_ref": "test/lockspire/storage/management_token_replacement_race_test.exs: same-fingerprint PUT/PUT, PUT/recovery, recovery/PUT, and recovery/recovery have one winner; a losing legacy promotion cannot restore advisory dates or version zero",
+      "backend_sessions_distinct": true,
+      "blocker_observed": true,
+      "post_wait_check": "After the first writer commits, the blocked management operation revalidates current-row identity. Exactly one fingerprint winner remains valid; the loser is invalid, does not add an audit event, and legacy promotion does not restore version zero/advisory dates.",
+      "durable_assertions": ["current management-token hash verifies only the winner", "loser token rejected", "exactly one winner audit after contention", "current lifecycle version and deadlines preserved", "subsequent authorized replacement succeeds"],
+      "status": "passed"
+    },
+    {
+      "case_ids": ["C-RACE-02"],
+      "test_ref": "test/lockspire/storage/management_token_mutation_race_test.exs: stale included secret rejected after wait; omitted secret preserves committed rotation; host recovery preserves committed rotation; committed disablement survives PUT/recovery; contended write/audit failures roll back promotion",
+      "backend_sessions_distinct": true,
+      "blocker_observed": true,
+      "post_wait_check": "PUT/recovery rereads current secret, enabled state, and current row after the lock. Stale credential material is rejected; omitted material retains the winning rotation; neither stale management update nor recovery re-enables a disabled client.",
+      "durable_assertions": ["secret hash and verifier retain the committed rotation", "disabled state remains false after stale rejection/recovery", "rejection adds no success audit", "injected write/audit failure leaves client promotion and audit state unchanged", "no replacement token disclosed on failure"],
+      "status": "passed"
+    },
+    {
+      "case_ids": ["C-RACE-03"],
+      "test_ref": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs plus test/lockspire/storage/client_secret_lifetime_client_wait_test.exs and client_secret_lifetime_grant_wait_test.exs: authorized replacements serialize; post-wait current credential/time is checked at client, authorization-code, refresh-family, device, CIBA, and exchange waits",
+      "backend_sessions_distinct": true,
+      "blocker_observed": true,
+      "post_wait_check": "Each holder/contender gets its own PostgreSQL backend; current credential provenance and secret equality are evaluated after the blocked client/grant/token lock. Authorized replacement writers serialize, with the last committed secret current.",
+      "durable_assertions": ["last committed secret hash/verifier/deadline and rotation timestamp are current", "app and management deadlines remain unchanged", "expired or replaced preverified authority cannot redeem grant/token", "replacement write/audit failure preserves old credential and audit state"],
+      "status": "passed"
+    },
+    {
+      "case_ids": ["C-RACE-04"],
+      "test_ref": "test/lockspire/storage/client_lifetime_rollback_test.exs, test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs, test/lockspire/storage/management_token_rollback_test.exs, and test/lockspire/storage/management_token_mutation_race_test.exs: focused late write/audit failure and rejected-promotion rollback assertions",
+      "backend_sessions_distinct": false,
+      "blocker_observed": false,
+      "post_wait_check": "Not applicable to focused same-transaction rollback selections; contention-specific rollback cases are separately exercised in C-RACE-02 and C-RACE-03.",
+      "durable_assertions": ["complete client credential/verifier/version/deadline/metadata/enabled row equals pre-operation state", "grant consumption and output token insertion roll back together", "refresh family, device/CIBA, exchange inputs and audit rows remain unchanged on injected failure", "failed operation returns no replacement credential or success audit"],
+      "status": "passed_with_same_transaction_observation"
+    },
+    {
+      "case_ids": ["C-RACE-05"],
+      "test_ref": "test/lockspire/storage/client_lifetime_client_wait_test.exs and client_lifetime_grant_wait_test.exs: code redemption rechecks app equality and enabled/current state after client and code-row waits",
+      "backend_sessions_distinct": true,
+      "blocker_observed": true,
+      "post_wait_check": "After the observed client/code row blocker is released, the redemption path samples the current time and client row again; equality and committed disablement reject stale redemption.",
+      "durable_assertions": ["authorization code/grant remains unconsumed after rejection", "no output token or success audit is created", "current disabled state is preserved", "opposing subject/actor exchange waits complete with both current identities"],
+      "status": "passed"
+    },
+    {
+      "case_ids": ["C-RACE-06"],
+      "test_ref": "test/lockspire/storage/management_token_client_wait_test.exs: GET/PUT/DELETE reject equality/after-expiry only after confirmed row wait and lose authority after real replacement commits",
+      "backend_sessions_distinct": true,
+      "blocker_observed": true,
+      "post_wait_check": "Each operation waits behind a distinct client-row holder, then checks current management credential identity and expiry before permitting the operation.",
+      "durable_assertions": ["expired or replaced management token cannot read/update/delete", "committed replacement remains current", "stale operation creates no mutation or success audit", "already-authorized read linearizes before replacement as documented by its schedule"],
+      "status": "passed"
+    },
+    {
+      "case_ids": ["C-DEP-03"],
+      "test_ref": "test/lockspire/storage/client_lifetime_promotion_test.exs: secret replacement canonicalizes v0 historical date classes and preserves the unrelated management credential/deadlines",
+      "backend_sessions_distinct": false,
+      "blocker_observed": false,
+      "post_wait_check": "Not a wait schedule; deterministic whole-row promotion assertions check current state.",
+      "durable_assertions": ["legacy version changes to v1", "advisory historical deadlines become canonical nil on promotion", "secret replacement preserves management credential and unrelated deadline", "management promotion preserves secret verifier, metadata, and disabled state"],
+      "status": "passed_with_same_transaction_observation"
+    }
+  ],
+  "runs": [
+    {
+      "name": "client and grant expiry/current-state waits",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration --include postgres_race test/lockspire/storage/client_lifetime_client_wait_test.exs test/lockspire/storage/client_lifetime_grant_wait_test.exs test/lockspire/storage/client_secret_lifetime_client_wait_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs test/lockspire/storage/management_token_client_wait_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": ["C-RACE-03", "C-RACE-05", "C-RACE-06"],
+      "test_count": 16,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1,
+      "duration_semantics": "Measured wall time rounded to nearest second (the ExUnit runner reported 0.7 seconds)."
+    },
+    {
+      "name": "management contention, replacement, and legacy promotion",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include postgres_race test/lockspire/storage/management_token_client_wait_test.exs test/lockspire/storage/management_token_replacement_race_test.exs test/lockspire/storage/management_token_mutation_race_test.exs test/lockspire/storage/management_token_rollback_test.exs test/lockspire/storage/client_lifetime_conformance_test.exs test/lockspire/storage/client_lifetime_promotion_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": ["C-RACE-01", "C-RACE-02", "C-RACE-06", "C-DEP-03"],
+      "test_count": 34,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1,
+      "duration_semantics": "Measured wall time rounded to nearest second (the ExUnit runner reported 1.0 seconds)."
+    },
+    {
+      "name": "secret rotation serialization and lifecycle rollback",
+      "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation mix test --include integration --include postgres_race test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs test/lockspire/storage/client_lifetime_rollback_test.exs --max-failures 1 --timeout 55000",
+      "case_ids": ["C-RACE-03", "C-RACE-04"],
+      "test_count": 13,
+      "failure_count": 0,
+      "excluded_count": 0,
+      "skipped_count": 0,
+      "duration_seconds": 1,
+      "duration_semantics": "Measured wall time rounded to nearest second (the ExUnit runner reported 0.4 seconds)."
+    }
+  ],
+  "totals": {
+    "test_invocations": 63,
+    "failure_count": 0,
+    "excluded_count": 0,
+    "skipped_count": 0,
+    "duration_seconds": 3,
+    "test_count_semantics": "Sum across three successful ExUnit invocations; selections overlap and 63 is not a unique-test count.",
+    "limits": [
+      "No shared-Sandbox same-transaction run is represented as independent-session ordering evidence.",
+      "Focused rollback and v0 promotion assertions that do not orchestrate a holder/contender pair remain same-transaction observation.",
+      "This evidence does not prove the configured packaged adapter's independent durable rollback observation; plan 166-08 owns that.",
+      "Future packaged/custom-host, live CI, scoped security review, and guidance work remains pending in other Phase 166 plans."
+    ]
+  }
+}

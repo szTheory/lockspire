@@ -239,7 +239,8 @@ defmodule Lockspire.Protocol.LogoutPropagationTest do
       allowed_grant_types: ["authorization_code", "refresh_token"],
       allowed_response_types: ["code"],
       token_endpoint_auth_method: :client_secret_basic,
-      subject_type: :public
+      subject_type: :public,
+      lifetime_version: 0
     }
 
     struct!(base, overrides)

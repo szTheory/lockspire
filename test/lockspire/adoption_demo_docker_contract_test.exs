@@ -148,16 +148,19 @@ defmodule Lockspire.AdoptionDemoDockerContractTest do
     refute source =~ "docker compose"
   end
 
-  test "adoption demo routes client creation before the dynamic client detail route" do
+  test "adoption demo mounts the canonical inventory with client creation before dynamic details" do
     source = File.read!(@adoption_demo_router_path)
-    create_route = "live(\"/clients/new\", Lockspire.Web.Live.Admin.ClientsLive.Index, :new)"
+    assert source =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes(\"/lockspire/admin\""
 
-    detail_route =
-      "live(\"/clients/:client_id\", Lockspire.Web.Live.Admin.ClientsLive.Show, :show)"
+    inventory = Lockspire.Web.AdminRoutes.__route_inventory__()
+    create_index = Enum.find_index(inventory, fn {path, _, _} -> path == "/clients/new" end)
 
-    assert source =~ create_route
-    assert source =~ detail_route
-    assert :binary.match(source, create_route) < :binary.match(source, detail_route)
+    detail_index =
+      Enum.find_index(inventory, fn {path, _, _} -> path == "/clients/:client_id" end)
+
+    assert is_integer(create_index)
+    assert is_integer(detail_index)
+    assert create_index < detail_index
   end
 
   test "admin-ui wrapper owns simple detached lifecycle commands" do

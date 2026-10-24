@@ -66,6 +66,26 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     assert Jason.decode!(conn.resp_body)["client_id"] != nil
   end
 
+  test "registration returns server_error for a corrupt stored secret policy" do
+    Repository.put_server_policy(DcrFixtures.server_policy(%{registration_policy: :open}))
+
+    Ecto.Adapters.SQL.query!(
+      Lockspire.TestRepo,
+      "UPDATE lockspire_server_policies SET dcr_default_client_secret_lifetime_seconds = -1 WHERE id = 1",
+      []
+    )
+
+    {:ok, clients_before} = Repository.list_clients()
+
+    conn =
+      build_conn(:post, "/register", DcrFixtures.valid_metadata())
+      |> dispatch()
+
+    assert conn.status == 500
+    assert Jason.decode!(conn.resp_body)["error"] == "server_error"
+    assert {:ok, ^clients_before} = Repository.list_clients()
+  end
+
   test "public DCR clients receive no shared secret" do
     Repository.put_server_policy(DcrFixtures.server_policy(%{registration_policy: :open}))
 
@@ -138,6 +158,27 @@ defmodule Lockspire.Web.RegistrationControllerTest do
       |> dispatch()
 
     assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Bearer realm=\"Lockspire Dynamic Client Registration\""
+           ]
+
+    assert conn.resp_body == ""
+  end
+
+  test "show marks a supplied unknown RAT as invalid_token" do
+    conn =
+      build_conn(:get, "/register/client-123")
+      |> put_req_header("authorization", "Bearer supplied-but-unknown")
+      |> dispatch()
+
+    assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Bearer realm=\"Lockspire Dynamic Client Registration\", error=\"invalid_token\""
+           ]
+
+    assert conn.resp_body == ""
   end
 
   test "update yields 401 without RAT" do
@@ -161,7 +202,11 @@ defmodule Lockspire.Web.RegistrationControllerTest do
     prior_rat = create_body["registration_access_token"]
 
     update_conn =
-      build_conn(:put, "/register/#{client_id}", DcrFixtures.replacement_logout_metadata())
+      build_conn(
+        :put,
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.replacement_logout_metadata(), "client_id", client_id)
+      )
       |> put_req_header("authorization", "Bearer #{prior_rat}")
       |> dispatch()
 
@@ -169,6 +214,8 @@ defmodule Lockspire.Web.RegistrationControllerTest do
 
     update_body = Jason.decode!(update_conn.resp_body)
     assert update_body["registration_access_token"] != prior_rat
+    assert is_integer(update_body["lockspire_client_expires_at"])
+    assert is_integer(update_body["lockspire_registration_access_token_expires_at"])
 
     assert update_body["backchannel_logout_uri"] ==
              "https://rp.example.test/replaced-backchannel-logout"
@@ -201,12 +248,13 @@ defmodule Lockspire.Web.RegistrationControllerTest do
 
     assert create_conn.status == 201
     create_body = Jason.decode!(create_conn.resp_body)
+    client_id = create_body["client_id"]
 
     update_conn =
       build_conn(
         :put,
-        "/register/#{create_body["client_id"]}",
-        DcrFixtures.invalid_backchannel_logout_uri_metadata()
+        "/register/#{client_id}",
+        Map.put(DcrFixtures.invalid_backchannel_logout_uri_metadata(), "client_id", client_id)
       )
       |> put_req_header("authorization", "Bearer #{create_body["registration_access_token"]}")
       |> dispatch()

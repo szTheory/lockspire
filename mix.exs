@@ -90,10 +90,13 @@ defmodule Lockspire.MixProject do
   defp aliases do
     aliases = [
       "test.setup": ["lockspire.test.setup"],
-      "test.fast": ["test.setup", "test test/lockspire test/mix test/integration"],
+      "test.fast": [
+        "test.setup",
+        "test --exclude lifetime_package test/lockspire test/mix test/integration"
+      ],
       "test.coverage": [
         "test.setup",
-        "test --cover test/lockspire test/mix test/integration"
+        "test --cover --exclude lifetime_package test/lockspire test/mix test/integration"
       ],
       "test.integration": ["test.setup", "test --only integration test/integration"],
       "test.clean-room.e2e": [
@@ -217,6 +220,9 @@ defmodule Lockspire.MixProject do
         "docs/maintainer-conformance.md",
         "docs/maintainer-release.md",
         "docs/upgrading/v1.27.md",
+        "docs/upgrading/host-admin-integration.md",
+        "docs/upgrading/client-lifetimes.md",
+        "docs/examples/client-lifetime-adapter.md",
         "docs/upgrading/storage-prefix.md",
         "docs/upgrading/signing-key-encryption.md",
         "docs/sigra-companion-host.md"
@@ -248,6 +254,9 @@ defmodule Lockspire.MixProject do
         ],
         Upgrade: [
           "docs/upgrading/v1.27.md",
+          "docs/upgrading/host-admin-integration.md",
+          "docs/upgrading/client-lifetimes.md",
+          "docs/examples/client-lifetime-adapter.md",
           "docs/upgrading/storage-prefix.md",
           "docs/upgrading/signing-key-encryption.md"
         ],

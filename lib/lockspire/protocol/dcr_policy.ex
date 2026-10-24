@@ -75,10 +75,13 @@ defmodule Lockspire.Protocol.DcrPolicy do
               default_registration_access_token_lifetime_seconds: nil
   end
 
-  @type error_detail :: %{field: atom(), reason: atom(), allowed: list()}
+  @type error_detail :: %{field: atom(), reason: atom(), allowed: list() | nil}
+  @type error ::
+          {:error, :invalid_client_metadata, error_detail()}
+          | {:error, :server_error, %{field: atom(), reason: atom()}}
 
   @spec resolve(ServerPolicy.t(), map() | keyword() | nil, map()) ::
-          {:ok, struct()} | {:error, :invalid_client_metadata, error_detail()}
+          {:ok, struct()} | error()
   # `iat_overrides` MUST be a plain map or nil. Structs are maps in Elixir, so without the
   # `not is_struct(iat_overrides)` guard a caller could pass an `%InitialAccessToken{}`
   # struct directly (instead of `iat_struct.policy_overrides`) and the resolver would
@@ -88,7 +91,17 @@ defmodule Lockspire.Protocol.DcrPolicy do
       when (is_nil(iat_overrides) or
               (is_map(iat_overrides) and not is_struct(iat_overrides))) and
              is_map(inbound_metadata) do
-    with {:ok, scopes} <-
+    with :ok <-
+           validate_default_client_lifetime(server_policy.dcr_default_client_lifetime_seconds),
+         :ok <-
+           validate_default_client_secret_lifetime(
+             server_policy.dcr_default_client_secret_lifetime_seconds
+           ),
+         :ok <-
+           validate_default_registration_access_token_lifetime(
+             server_policy.dcr_default_registration_access_token_lifetime_seconds
+           ),
+         {:ok, scopes} <-
            intersect_axis(
              :scope,
              scope_inbound(inbound_metadata),
@@ -139,6 +152,33 @@ defmodule Lockspire.Protocol.DcrPolicy do
            server_policy.dcr_default_registration_access_token_lifetime_seconds
        }}
     end
+  end
+
+  defp validate_default_client_lifetime(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_default_client_lifetime(_value) do
+    {:error, :invalid_client_metadata,
+     %{field: :default_client_lifetime_seconds, reason: :invalid_duration, allowed: nil}}
+  end
+
+  defp validate_default_client_secret_lifetime(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_default_client_secret_lifetime(_value) do
+    {:error, :server_error,
+     %{field: :default_client_secret_lifetime_seconds, reason: :invalid_duration}}
+  end
+
+  defp validate_default_registration_access_token_lifetime(value)
+       when is_nil(value) or (is_integer(value) and value >= 0 and value <= 2_147_483_647),
+       do: :ok
+
+  defp validate_default_registration_access_token_lifetime(_value) do
+    {:error, :server_error,
+     %{field: :default_registration_access_token_lifetime_seconds, reason: :invalid_duration}}
   end
 
   defp intersect_axis(field, requested_list, server_allowlist, iat_override_list) do

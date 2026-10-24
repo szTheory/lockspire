@@ -479,9 +479,10 @@ Validate exact main head and CI evidence|skipped
 Prove exact package before publication|skipped
 Publish verified release to Hex|skipped
 Verify public install truth|skipped
+Record terminal release outcome|skipped
 EOF
 
-  if [[ "$(jq -r 'length' <<<"$RELEASE_JOBS")" != "5" ]]; then
+  if [[ "$(jq -r 'length' <<<"$RELEASE_JOBS")" != "6" ]]; then
     acceptance_block "release no-publish" "Release job graph contained unexpected jobs"
     return
   fi

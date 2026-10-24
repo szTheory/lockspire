@@ -70,6 +70,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -156,6 +157,57 @@ defmodule Lockspire.Web.TokenControllerTest do
     assert persisted_token.token_hash == TokenFormatter.hash_token(body["access_token"])
   end
 
+  @tag :secret_expiry_contract
+  test "POST /token keeps the generic invalid_client response for an expired shared secret" do
+    secret = "expired-token-controller-secret"
+    expired_at = DateTime.utc_now() |> DateTime.add(-60, :second) |> DateTime.truncate(:second)
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        lifetime_version: 1,
+        client_id: "client-expired-secret-token",
+        client_secret_hash: client_secret_hash(secret),
+        client_type: :confidential,
+        name: "Expired Secret Token Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        client_secret_expires_at: expired_at,
+        metadata: %{}
+      })
+
+    conn =
+      build_conn(:post, "/token", %{
+        "grant_type" => "authorization_code",
+        "code" => "unused"
+      })
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Basic realm=\"Lockspire Token Endpoint\""
+           ]
+
+    assert get_resp_header(conn, "cache-control") == ["no-store"]
+    assert get_resp_header(conn, "pragma") == ["no-cache"]
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    refute conn.resp_body =~ "expires_at"
+    refute conn.resp_body =~ "expired"
+  end
+
   test "POST /token preserves the authorization-code replay OAuth wire contract", %{
     public_client: public_client
   } do
@@ -215,6 +267,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns token_type DPoP for DPoP-mode clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop",
         client_secret_hash: nil,
         client_type: :public,
@@ -301,6 +354,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns invalid_dpop_proof when proof iat is a string" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop-invalid-iat",
         client_secret_hash: nil,
         client_type: :public,
@@ -376,6 +430,7 @@ defmodule Lockspire.Web.TokenControllerTest do
   test "POST /token returns use_dpop_nonce and a retry nonce when a DPoP proof omits nonce" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-public-dpop-nonce",
         client_secret_hash: nil,
         client_type: :public,
@@ -609,6 +664,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-controller-refresh",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -668,6 +724,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-controller-replay",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -1054,6 +1111,7 @@ defmodule Lockspire.Web.TokenControllerTest do
 
   defp register_device_client(client_id, secret, opts \\ []) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash: client_secret_hash(secret),
       client_type: :confidential,

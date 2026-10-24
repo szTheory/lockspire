@@ -1,17 +1,21 @@
 defmodule CleanRoomProviderWeb.Router do
   use Phoenix.Router
+  import Phoenix.LiveView.Router
   import CleanRoomProviderWeb.Router.Lockspire
 
   pipeline :browser do
     plug(:accepts, ["html"])
     plug(:fetch_session)
+    plug(:fetch_live_flash)
     plug(:protect_from_forgery)
+    plug(:put_secure_browser_headers)
   end
 
   pipeline :api do
     plug(:accepts, ["json"])
   end
 
+  # The pinned pre-upgrade installer uses this host-owned pipeline for admin routes.
   pipeline :require_operator do
     plug(CleanRoomProviderWeb.OperatorAuthorization)
   end

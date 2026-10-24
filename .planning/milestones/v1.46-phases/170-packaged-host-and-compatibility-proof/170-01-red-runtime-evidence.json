@@ -1,0 +1,10 @@
+{
+  "command": "NO_COLOR=1 python3 -m unittest discover -s test/clean_room -p test_admin_journey.py",
+  "exitCode": 1,
+  "output": "....F....\n======================================================================\nFAIL: test_runtime_versions_cannot_retain_arbitrary_child_strings (test_admin_journey.AdminReceiptTests.test_runtime_versions_cannot_retain_arbitrary_child_strings)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/clean_room/test_admin_journey.py\", line 137, in test_runtime_versions_cannot_retain_arbitrary_child_strings\n    with self.assertRaises(ValueError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^\nAssertionError: ValueError not raised\n\n----------------------------------------------------------------------\nRan 9 tests in 0.002s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_runtime_versions_cannot_retain_arbitrary_child_strings",
+  "targetFile": "test_admin_journey.py",
+  "expected": "receipt runtime values match safe observed version formats",
+  "actual": "arbitrary Node string was accepted and retained",
+  "semanticAssessment": "The named unittest failed on its planned validation assertion: an arbitrary child-provided Node string passes receipt validation instead of being restricted to an observed version identifier."
+}

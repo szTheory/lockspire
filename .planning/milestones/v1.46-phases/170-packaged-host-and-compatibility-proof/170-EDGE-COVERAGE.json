@@ -1,0 +1,50 @@
+{
+  "items": [
+    {
+      "requirement_id": "HPROOF-01",
+      "category": "unclassified",
+      "status": "unresolved",
+      "verification": null,
+      "resolution": null,
+      "reason": null,
+      "probe": "unclassified — review manually"
+    },
+    {
+      "requirement_id": "HPROOF-02",
+      "category": "unclassified",
+      "status": "unresolved",
+      "verification": null,
+      "resolution": null,
+      "reason": null,
+      "probe": "unclassified — review manually"
+    },
+    {
+      "requirement_id": "HPROOF-03",
+      "category": "boundary",
+      "status": "unresolved",
+      "verification": null,
+      "resolution": null,
+      "reason": null,
+      "probe": "What happens exactly at each min/max/threshold — and one step either side?"
+    },
+    {
+      "requirement_id": "HPROOF-03",
+      "category": "precision",
+      "status": "unresolved",
+      "verification": null,
+      "resolution": null,
+      "reason": null,
+      "probe": "Where can precision loss, overflow, or rounding/tie-breaking occur — and what is the exact contract (e.g. half-up vs half-to-even, ceil/floor/truncate)?"
+    }
+  ],
+  "coverage": {
+    "applicable": 4,
+    "resolved": 0,
+    "unresolved": 4,
+    "unclassified": 2,
+    "byVerification": {
+      "explicit": 0,
+      "backstop": 0
+    }
+  }
+}

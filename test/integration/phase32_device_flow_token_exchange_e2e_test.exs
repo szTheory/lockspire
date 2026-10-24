@@ -44,6 +44,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase32-device-client",
         name: "Bedroom TV",
         client_type: :public,
@@ -169,6 +170,7 @@ defmodule Lockspire.Integration.Phase32DeviceFlowTokenExchangeE2ETest do
     # Use a confidential client so the e2e can authenticate to introspection.
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase32-device-dpop-client",
         client_secret_hash: Policy.hash_client_secret(@dpop_client_secret),
         client_type: :confidential,

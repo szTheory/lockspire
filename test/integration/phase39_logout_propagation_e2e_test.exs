@@ -215,6 +215,7 @@ defmodule Lockspire.Integration.Phase39LogoutPropagationE2ETest do
       token_endpoint_auth_method: :client_secret_basic,
       pkce_required: true,
       subject_type: :public,
+      lifetime_version: 0,
       created_at: DateTime.utc_now(),
       metadata: %{}
     }

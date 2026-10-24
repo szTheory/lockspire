@@ -1,5 +1,61 @@
 # Milestones
 
+## v1.46 Embedded Host Integration Reliability (Completed: 2026-10-24)
+
+**Delivered:** Native Phoenix admin integration, host-owned authorization, safe install/upgrade convergence and reproducible packaged compatibility proof.
+
+**Phases completed:** 4 phases (167–170), 16 plans, 32 planned task elements. The CLI aggregates 30 tasks from varied SUMMARY metadata; 32 is the PLAN task-element count, not measured execution telemetry. All 15 requirements are satisfied.
+
+**Key accomplishments:**
+- Host-native admin routing shares all 29 existing routes across default, nested and root mounts, with independent public and consent routing.
+- Current host authority protects HTTP, disconnected/connected entry, cached-response rejoin and navigation while staff identity and policy remain host-owned.
+- Generated installs deny by default; checksum-controlled upgrades preserve host files, provide read-only previews and recover process interruptions.
+- Compiled-route diagnostics, adoption demo, clean-room fixtures and adopter guidance use the same supported integration.
+- Candidate-installed Chrome/CDP proof covers six exact-version/mount cells with 16 cases each, plus separate 43/44 lifecycle checks.
+- Existing required CI jobs invoke bounded proof commands with strict source/package-bound receipts, failure propagation, redaction and owned cleanup; hosted execution remains unobserved.
+
+**Stats:** 195 files changed, 24060 insertions(+), 1285 deletions(-) (including planning); 147 commits in `v1.45..b547e556d7bc40a41a72e6ee0f5f665a5fec33d3`; 2026-10-22 → 2026-10-24 (two calendar days). Library/template Elixir contains 56,656 lines including comments and blanks.
+
+**Closeout:** override_closeout. Known verification overrides: 1 newly acknowledged, 3 carried forward from a prior close (see STATE.md Deferred Items). The new acknowledgment covers only the existing duplicate record_trace/2 fixture warning; all four phase verification owners passed immediately before archival. Historical suppressed records retain their verdicts.
+
+**Audit:** tech_debt, no blockers; 15/15 requirements, 14/14 integration boundaries, 6/6 flows, all four phases Nyquist-compliant and security closed 68/68 threats. Local browser evidence covers 96 cases; lifecycle evidence is distinct. Hosted CI and minimum CI BEAM remain unobserved.
+
+**Archives:** [roadmap](milestones/v1.46-ROADMAP.md), [requirements](milestones/v1.46-REQUIREMENTS.md), [audit](milestones/v1.46-MILESTONE-AUDIT.md), [phases](milestones/v1.46-phases/), [pre-close state](milestones/v1.46-STATE.md), [pre-close projection](milestones/v1.46-CLOSEOUT.json). Tag v1.46 marks local planning completion; no publication or remote ref update.
+
+**Next:** `$gsd-new-milestone` to select scope and create fresh requirements. SEC-01, KEK-04, OPS-03 and existing debt retain their owners. Older quick tasks stay in place.
+
+---
+
+## v1.45 DCR Lifetime Enforcement (Completed: 2026-10-22)
+
+**Delivered:** Consistent app, shared-secret and management-token lifetimes, atomic rotation/recovery, compatible host upgrades and candidate-bound executable proof.
+
+**Phases completed:** 5 phases (162–166), 40 canonical plans, 92 planned task elements. The CLI aggregates 66 tasks from varied SUMMARY metadata; 92 is the PLAN task-element count, not measured execution telemetry. All 18 requirements are satisfied; all five phase verification owners passed immediately before archival.
+
+**Key accomplishments:**
+- Selected one lifetime and upgrade contract with 69 traceable cases and explicit nil/zero/positive and exact-boundary semantics.
+- Enforced current app authority across authentication, browser flows, grants and online token consumers, with final decisions sampled after locks.
+- Made shared-secret issuance, authentication and operator rotation use atomic, policy-derived lifecycle state.
+- Added finite management-token enforcement, atomic replacement and host-authorized recovery without extending unrelated lifetimes.
+- Proved legacy upgrades under both prefixes and a configured host adapter sharing PostgreSQL transaction authority.
+- Bound nine packaged HTTP scenarios and 49 passing checks to exact-source CI, scoped security review, redaction and executable guidance.
+
+**Stats:** 421 files changed, 48,362 insertions and 1,190 deletions (including planning); 253 commits in `e090ed9f7864f151624c26ccf54d1557bfec93af..67a7eb2d8fcb386b6fc06d53ce7d5b52d14c81e1`; 2026-10-20 → 2026-10-22 (two calendar days).
+
+**Closeout:** verified_closeout. Known verification overrides: 0 newly acknowledged, 3 carried forward from a prior close (see STATE.md Deferred Items). The artifact audit found zero open items. Existing suppressed historical records retain their verdicts. User accepted the published audit’s nonblocking debt by invoking completion; quick tasks were explicitly left in place.
+
+**Accepted debt:** The audit’s eight entries are accepted for archival: Phase 163 wave0 bookkeeping; historical TDD classifier limits in 164-06 and 165-04; optional Phase 165 confirmation copy/rendered accessibility review; three undefined probes (A-EDGE-16/17/19); two descriptor-less prohibitions still flagged-unverified; eight missing historical SUMMARY completion fields; and the stale original REQUIREMENTS footer. The archived requirements footer is reconciled at closeout, while the original remains in git history. No historical RED evidence, passing probe or subjective review is invented.
+
+**Audit:** [milestone audit](milestones/v1.45-MILESTONE-AUDIT.md), tech_debt with no blockers: 18/18 requirements, 29/29 integration links and 6/6 flows; all five phases Nyquist-compliant. [Integration trace](milestones/v1.45-INTEGRATION-AUDIT.md). The audit’s per-requirement historical freshness labels were not rewritten; its final freshness table and pre-close CLI projection establish all five reports passed at closeout.
+
+**Proven candidate:** `f8dd7712af7f3ef906305db549c6312284339dba`; [CI 39816801430](https://github.com/szTheory/lockspire/actions/runs/39816801430), seven required checks successful; packaged proof 9 scenarios/49 checks, zero failures/skips; independent security SECURED 25/25. Archive commits change planning only.
+
+**Archives:** [roadmap](milestones/v1.45-ROADMAP.md), [requirements](milestones/v1.45-REQUIREMENTS.md), [phases](milestones/v1.45-phases/), [pre-close state](milestones/v1.45-STATE.md). Tag v1.45 marks planning completion. Latest verified public package remains 1.6.1; package publication is a separate release step.
+
+**Next:** Select the next scope with `$gsd-new-milestone`; create fresh requirements there. No next feature milestone has been selected.
+
+---
+
 ## v1.44 Adopter Polish & Verified 1.6.0 (Shipped: 2026-10-20)
 
 **Delivered:** Repo-safe host tasks, print-only KEK setup, runtime environment configuration, truthful admin key protection and accurate guides, shipped together with v1.43 as publicly verified Lockspire1.6.0.

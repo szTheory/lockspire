@@ -4,10 +4,11 @@ defmodule Lockspire.Web.RegistrationController do
   alias Lockspire.Protocol.Registration
   alias Lockspire.Protocol.RegistrationManagement
   alias Lockspire.Protocol.RegistrationAccessToken
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Web.RegistrationJSON
 
-  plug(:ensure_dcr_enabled)
+  plug(:ensure_dcr_enabled when action in [:create])
 
   def create(conn, params) do
     source = %{
@@ -46,33 +47,50 @@ defmodule Lockspire.Web.RegistrationController do
             handle_error(conn, error)
         end
 
-      {:error, :invalid_token} ->
-        handle_error(conn, :invalid_token)
+      {:error, reason} ->
+        handle_lookup_error(conn, reason)
     end
   end
 
-  def update(conn, %{"client_id" => client_id} = params) do
+  def update(conn, _params) do
+    client_id = conn.path_params["client_id"]
+    metadata = conn.body_params
+
     case lookup_client_by_rat(conn) do
       {:ok, client} ->
-        {:ok, server_policy} = Repository.get_server_policy()
-        metadata = Map.delete(params, "client_id")
+        case {client_id, metadata, Repository.get_server_policy()} do
+          {client_id, metadata, {:ok, server_policy}}
+          when is_binary(client_id) and is_map(metadata) ->
+            request_map = %{
+              metadata: metadata,
+              server_policy: server_policy,
+              client: client
+            }
 
-        request_map = %{
-          metadata: metadata,
-          server_policy: server_policy,
-          client: client
-        }
+            case RegistrationManagement.update(client_id, request_map) do
+              {:ok, success} ->
+                json(conn, RegistrationJSON.update_response(success))
 
-        case RegistrationManagement.update(client_id, request_map) do
-          {:ok, success} ->
-            json(conn, RegistrationJSON.update_response(success))
+              {:error, error} ->
+                handle_error(conn, error)
+            end
 
-          {:error, error} ->
-            handle_error(conn, error)
+          {_client_id, _metadata, {:error, _reason}} ->
+            handle_error(conn, :server_error)
+
+          _invalid_request ->
+            handle_error(
+              conn,
+              %Registration.Error{
+                code: :invalid_client_metadata,
+                field: :client_id,
+                reason: :required
+              }
+            )
         end
 
-      {:error, :invalid_token} ->
-        handle_error(conn, :invalid_token)
+      {:error, reason} ->
+        handle_lookup_error(conn, reason)
     end
   end
 
@@ -87,8 +105,8 @@ defmodule Lockspire.Web.RegistrationController do
             handle_error(conn, error)
         end
 
-      {:error, :invalid_token} ->
-        handle_error(conn, :invalid_token)
+      {:error, reason} ->
+        handle_lookup_error(conn, reason)
     end
   end
 
@@ -112,14 +130,47 @@ defmodule Lockspire.Web.RegistrationController do
   end
 
   defp lookup_client_by_rat(conn) do
-    with token when is_binary(token) <- extract_bearer_token(conn),
-         hash <- RegistrationAccessToken.hash(token),
-         {:ok, %Lockspire.Domain.Client{} = client} <-
-           Repository.get_client_by_registration_access_token_hash(hash) do
-      {:ok, client}
-    else
-      _ -> {:error, :invalid_token}
+    case extract_bearer_token(conn) do
+      nil ->
+        {:error, :missing_credential}
+
+      token when is_binary(token) ->
+        case ClientLifetime.configured() do
+          {:ok, stores} ->
+            case stores.client_store.get_client_by_registration_access_token_hash(
+                   RegistrationAccessToken.hash(token)
+                 ) do
+              {:ok, %Lockspire.Domain.Client{} = client} ->
+                {:ok, client}
+
+              {:ok, nil} ->
+                {:error, :invalid_token}
+
+              {:error, _reason} ->
+                {:error, :server_error}
+
+              _unsupported ->
+                {:error, :server_error}
+            end
+
+          {:error, _reason} ->
+            {:error, :server_error}
+        end
     end
+  end
+
+  defp handle_lookup_error(conn, :missing_credential), do: handle_error(conn, :missing_credential)
+  defp handle_lookup_error(conn, :invalid_token), do: handle_error(conn, :invalid_token)
+  defp handle_lookup_error(conn, _reason), do: handle_error(conn, :server_error)
+
+  defp handle_error(conn, :missing_credential) do
+    conn
+    |> put_status(401)
+    |> put_resp_header(
+      "www-authenticate",
+      "Bearer realm=\"Lockspire Dynamic Client Registration\""
+    )
+    |> send_resp(401, "")
   end
 
   defp handle_error(conn, %Registration.Error{code: :invalid_token}) do
@@ -142,6 +193,14 @@ defmodule Lockspire.Web.RegistrationController do
     |> send_resp(401, "")
   end
 
+  defp handle_error(conn, %Registration.Error{code: :server_error}),
+    do: server_error_response(conn)
+
+  defp handle_error(conn, %Registration.Error{code: :persistence_error}),
+    do: server_error_response(conn)
+
+  defp handle_error(conn, :server_error), do: server_error_response(conn)
+
   defp handle_error(conn, %Registration.Error{code: :invalid_client_metadata} = e) do
     conn
     |> put_status(400)
@@ -155,12 +214,22 @@ defmodule Lockspire.Web.RegistrationController do
         :invalid_client -> 401
         :unauthorized_client -> 401
         :access_denied -> 403
+        :registration_expired -> 403
         :server_error -> 500
+        :persistence_error -> 500
         _ -> 400
       end
 
     conn
     |> put_status(status)
     |> json(RegistrationJSON.error_response(e))
+  end
+
+  defp handle_error(conn, _reason), do: server_error_response(conn)
+
+  defp server_error_response(conn) do
+    conn
+    |> put_status(500)
+    |> json(%{error: "server_error"})
   end
 end

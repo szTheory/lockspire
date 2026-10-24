@@ -26,6 +26,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_123",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
@@ -43,6 +44,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_456",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
@@ -698,6 +700,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: client_id,
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,
@@ -1070,6 +1073,7 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
 
   defp register_jar_client!(pub_jwk_map, client_id) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash: "sha256:salt:hash",
       client_type: :confidential,

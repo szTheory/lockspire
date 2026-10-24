@@ -70,6 +70,7 @@ defmodule Lockspire.Integration.Phase36AuthCodeDpopE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase36-dpop-public",
         client_secret_hash: nil,
         client_type: :public,

@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m unittest discover -s test/clean_room -p test_admin_journey.py",
+  "exitCode": 1,
+  "output": "...F................\n======================================================================\nFAIL: test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence (test_admin_journey.AdminReceiptTests.test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/clean_room/test_admin_journey.py\", line 284, in test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence\n    self.assertNotEqual(result.returncode, 0, \"a failed receipt cannot be accepted as success evidence\")\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 0 == 0 : a failed receipt cannot be accepted as success evidence\n\n----------------------------------------------------------------------\nRan 21 tests in 0.059s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_admin_journey.AdminReceiptTests.test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence",
+  "targetFile": "test/clean_room/test_admin_journey.py",
+  "expected": "The receipt CLI returns nonzero for a structurally valid receipt whose result is failed.",
+  "actual": "The receipt CLI returned zero; the planned assertion failed with 0 == 0.",
+  "semanticAssessment": "The named target test executed and failed on its assertion about the receipt CLI status. The full unittest report shows 21 tests ran with exactly this one failure. The other 20 passed, including strict duration integer and expected-version binding cases; the run has no fixture, collection, import, or syntax failure. This is intentional RED evidence for success-only receipt validation."
+}

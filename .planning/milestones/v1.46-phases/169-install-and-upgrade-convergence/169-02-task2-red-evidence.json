@@ -1,0 +1,10 @@
+{
+  "command": "GSD_TAP_REPORT=/tmp/169-02-task2-red.tap ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test --name-pattern \\\"interruption after both\\\" test/lockspire/install/file_transaction_test.exs --formatter Lockspire.GSDTapFormatter",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test an interruption after both the new policy seam and managed helper recovers before retry\n1..1\n",
+  "targetTest": "test an interruption after both the new policy seam and managed helper recovers before retry",
+  "targetFile": "test/lockspire/install/file_transaction_test.exs",
+  "expected": "Transaction reports interruption after the new policy seam and helper are committed, then recovers both before retry",
+  "actual": "The requested post-helper interruption hook was ignored and apply returned :ok",
+  "semanticAssessment": "The filtered target test compiled and failed on the intended transaction interruption assertion; no fixture or setup failure occurred."
+}

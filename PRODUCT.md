@@ -128,6 +128,7 @@ Last reviewed: 2026-10-19. When an admin change introduces a domain concept, add
 | consent grant | consent grant | Yes |
 | refresh token family | token family | Yes, on token details |
 | `client_secret_expires_at` | secret expiry date | No |
+| shared-secret lifetime | how long an app secret remains valid | No |
 | PAR, DPoP, FAPI, JARM, PKCE | the same abbreviation, explained in plain words beside it | Yes |
 | `token_endpoint_auth_method` | how the app authenticates | In option help text only |
 | `client_secret_basic` / `client_secret_post` | client secret in the request header / body | No |
@@ -165,6 +166,21 @@ The admin UI must not contain these phrases. `test/lockspire/web/live/admin/voca
 | None (Standard OIDC) | Standard OAuth and OpenID Connect |
 | login or consent | sign-in or consent |
 | logout deliveries | sign-out notices |
+| Apps will be told their secret has already expired | No automatic expiry |
+| apps are told their secret has already expired | No automatic expiry |
+| Lockspire still accepts a secret after its expiry date | A positive value applies to new or replaced app secrets |
+| Lockspire saves them but doesn't enforce any expiry yet | Lockspire enforces app and secret expiry; app management-token expiry is not enforced yet |
+| Leave blank unless your own code checks this value. | How long a new app may use Lockspire. |
+| Lockspire saves this value but never disables an app when the time runs out. | Lockspire stops an app from using OAuth when its expiry date is reached. |
+| Existing secrets keep their current expiry when you change this setting. | Changing this setting does not change expiry on existing app secrets; some older apps may have an advisory expiry date. |
+| App management-token expiry is not enforced yet. | Lockspire enforces app, client secret and app management token expiry. |
+| Lockspire saves this value but doesn't expire these tokens. | A positive duration applies to new or replaced app management tokens. |
+| To stop an app from changing its registration, replace its token or disable the app. | Expiry blocks reading, updating or deleting an app registration until an authorized team member rotates the token. |
+| Apps use this token to update or delete their own registration. Leave blank so it keeps working. | Leave blank or enter 0 for no automatic expiry. A positive duration applies to new or replaced app management tokens. |
+| This token lets the app update its registration. The current token stops working after rotation. | The previous app management token stops working immediately. |
+| The current token stops working after rotation. | The previous app management token stops working immediately. |
+| The current token stops working when you create a new one. | The previous app management token stops working immediately. |
+| I understand the current token stops working after rotation. | The previous app management token stops working immediately. |
 | client class | app type |
 | assertion-key | signing keys |
 | destructive actions | (name the action) |

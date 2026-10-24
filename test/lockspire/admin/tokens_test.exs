@@ -24,6 +24,7 @@ defmodule Lockspire.Admin.TokensTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "token-client",
         client_secret_hash: "sha256:token:hash",
         client_type: :confidential,

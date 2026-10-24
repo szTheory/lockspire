@@ -39,6 +39,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "consent-ui-client",
         client_secret_hash: "sha256:consent-ui:hash",
         client_type: :confidential,
@@ -564,6 +565,7 @@ defmodule Lockspire.Web.Live.Admin.ConsentsLiveTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: long_client_id,
         client_secret_hash: "sha256:consent-proof-secret-hash",
         client_type: :confidential,

@@ -4,6 +4,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AuthorizationCodeGrant do
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Token
   alias Lockspire.Protocol.TokenExchange.Internal.Dependencies
+  alias Lockspire.Protocol.TokenExchange.Internal.ClientAuthentication
   alias Lockspire.Protocol.TokenExchange.Internal.GrantSupport
   alias Lockspire.Protocol.TokenExchange.Internal.TokenEndpointDPoP
   alias Lockspire.Protocol.TokenResult.Error
@@ -21,6 +22,13 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.AuthorizationCodeGrant do
          {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request, dependencies),
          {:ok, %Token{} = code, code_hash} <-
            GrantSupport.fetch_authorization_code(params, request, dependencies) do
+      context =
+        Map.put(
+          context,
+          :verified_client_identity,
+          ClientAuthentication.verified_identity(client)
+        )
+
       GrantSupport.handle_code_exchange(
         client,
         code,

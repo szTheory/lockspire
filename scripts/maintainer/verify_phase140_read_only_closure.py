@@ -444,7 +444,7 @@ def validate_automated_contract(root: Path, sha: str, script_file: Path) -> dict
         minimum_job["body"],
     ):
         fail("minimum-supported CI does not run the fast test suite")
-    if '"test test/lockspire test/mix test/integration"' not in mix_file:
+    if '"test --exclude lifetime_package test/lockspire test/mix test/integration"' not in mix_file:
         fail("mix test.fast does not include the committed lockspire contract tests")
     if "Phase140ReadOnlyClosureContractTest" not in test_file or "--output" not in test_file:
         fail("the committed closure contract does not exercise the executable entry point")

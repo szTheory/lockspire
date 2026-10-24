@@ -45,6 +45,7 @@ defmodule Lockspire.Integration.Phase6OnboardingE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase6-onboarding-public",
         client_secret_hash: nil,
         client_type: :public,

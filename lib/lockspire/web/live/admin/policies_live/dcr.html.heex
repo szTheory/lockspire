@@ -118,14 +118,14 @@
         <Lockspire.Web.Components.AdminComponents.workflow_shell
           title="Expiry limits"
         >
-          <p class="lockspire-admin-help">Enter times in seconds. These apply to apps that register from now on. Lockspire saves them but doesn't enforce any expiry yet.</p>
+          <p class="lockspire-admin-help">Lockspire enforces app, client secret and app management token expiry. Changing a lifetime only affects new or replaced items.</p>
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_lifetime_seconds"
             label="App lifetime (seconds)"
-            help="Leave blank unless your own code checks this value."
+            help="How long a new app may use Lockspire."
             errors={field_errors(@form_errors, :dcr_default_client_lifetime_seconds)}
           >
-            <:info label="About app lifetime">Lockspire saves this value but never disables an app when the time runs out.</:info>
+            <:info label="About app lifetime">Lockspire stops an app from using OAuth when its expiry date is reached. This setting applies to new apps.</:info>
             <input
               type="number"
               min="0"
@@ -144,10 +144,10 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_client_secret_lifetime_seconds"
             label="Client secret lifetime (seconds)"
-            help="Tells each new app when its secret expires. Match how often secrets get replaced."
+            help="Sets how long shared secrets for new apps remain valid. Replacing a secret uses the current setting."
             errors={field_errors(@form_errors, :dcr_default_client_secret_lifetime_seconds)}
           >
-            <:info label="About client secret lifetime">For example, 2592000 is 30 days. If you leave this blank or enter 0, apps are told their secret has already expired. Lockspire still accepts a secret after its expiry date.</:info>
+            <:info label="About client secret lifetime">For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Changing this setting does not change expiry on existing app secrets. Some older apps may have an advisory expiry date; replacing the secret sets its new expiry using the current setting.</:info>
             <input
               type="number"
               min="0"
@@ -166,10 +166,10 @@
           <Lockspire.Web.Components.AdminComponents.form_field
             id="dcr_default_registration_access_token_lifetime_seconds"
             label="App management token lifetime (seconds)"
-            help="Apps use this token to update or delete their own registration. Leave blank so it keeps working."
+            help="Leave blank or enter 0 for no automatic expiry. A positive duration applies to new or replaced app management tokens."
             errors={field_errors(@form_errors, :dcr_default_registration_access_token_lifetime_seconds)}
           >
-            <:info label="About app management token lifetime">Lockspire saves this value but doesn't expire these tokens. To stop an app from changing its registration, replace its token or disable the app.</:info>
+            <:info label="About app management token lifetime">Changing this setting does not change existing app management tokens. Expiry blocks reading, updating or deleting an app registration until an authorized team member rotates the token. If an app loses access or a successful update response is lost, ask your provider team to rotate the token. Rotating the token does not renew the app or its client secret.</:info>
             <input
               type="number"
               min="0"

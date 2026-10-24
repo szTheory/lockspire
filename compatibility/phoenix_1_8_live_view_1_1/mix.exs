@@ -6,6 +6,7 @@ defmodule LockspireCompatibilityFixture.MixProject do
       app: :lockspire_compatibility_fixture,
       version: "0.1.0",
       elixir: "~> 1.18",
+      config_path: "../../config/config.exs",
       build_path: "../../tmp/lockspire-compatibility-fixture/_build",
       deps_path: "../../tmp/lockspire-compatibility-fixture/deps",
       start_permanent: Mix.env() == :prod,
@@ -19,7 +20,9 @@ defmodule LockspireCompatibilityFixture.MixProject do
     [
       {:lockspire, path: "../.."},
       {:phoenix, "== 1.8.5"},
-      {:phoenix_live_view, "== 1.1.28"}
+      {:phoenix_live_view, "== 1.1.28"},
+      {:bandit, "== 1.13.1"},
+      {:lazy_html, "~> 0.1.0", only: :test}
     ]
   end
 end

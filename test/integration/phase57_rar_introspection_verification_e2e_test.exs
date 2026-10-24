@@ -90,6 +90,7 @@ defmodule Lockspire.Integration.Phase57RarIntrospectionVerificationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase57-client",
         client_type: :confidential,
         client_secret_hash: Policy.hash_client_secret("secret"),
@@ -162,6 +163,7 @@ defmodule Lockspire.Integration.Phase57RarIntrospectionVerificationE2ETest do
              Repository.fetch_refresh_token(Policy.hash_token(token_response["refresh_token"]))
 
     assert access_token.audience == ["https://api.one"]
+    assert refresh_token.audience == ["https://api.one"]
     assert is_integer(access_token.consent_grant_id)
     assert access_token.consent_grant_id == refresh_token.consent_grant_id
     refute Map.has_key?(Map.from_struct(access_token), :authorization_details)
@@ -184,11 +186,14 @@ defmodule Lockspire.Integration.Phase57RarIntrospectionVerificationE2ETest do
 
     assert rotated_access_token.consent_grant_id == access_token.consent_grant_id
     assert rotated_refresh_token.consent_grant_id == refresh_token.consent_grant_id
+    assert rotated_access_token.audience == ["https://api.one"]
+    assert rotated_refresh_token.audience == ["https://api.one"]
 
     refresh_introspection = introspect!(client, rotated["refresh_token"])
 
     assert refresh_introspection["active"] == true
     assert refresh_introspection["token_type"] == "refresh_token"
+    assert refresh_introspection["aud"] == ["https://api.one"]
     assert refresh_introspection["authorization_details"] == normalized_details
   end
 

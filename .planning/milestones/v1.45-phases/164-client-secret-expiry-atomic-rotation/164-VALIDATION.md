@@ -1,0 +1,302 @@
+---
+phase: "164"
+slug: "client-secret-expiry-atomic-rotation"
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
+created: "2026-10-20"
+---
+
+# Phase 164 — Validation Strategy
+
+Executed validation map, updated by the independent Nyquist audit. No strict phase-wide TDD mode is enabled. All task behavior blocks specify regression expectations.
+
+## Infrastructure and environment
+
+Every command below uses Elixir 1.18.4 / OTP 27.3.4.15, supplied isolated Mix/Hex homes and LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation. Never omit the dedicated database variable or use the shared default. PostgreSQL is available; the fresh database is not yet created. Task 164-01-01 runs mix test.setup first.
+
+Existing ExUnit, Ecto sandbox, transaction fixtures and ClientLifetimeRaceHelpers provide infrastructure; no installs are required. Every new test file is explicitly created in its owning task before its command runs. Wave 0 remains incomplete until setup/selections actually run.
+
+## Sampling and budgets
+
+Run exact focused commands after each task; target feedback under 60 seconds with per-test timeout 55000. Split measured longer focused selections without dropping tests. The normal full suite has the configured 1800-second budget; stream/poll output and communicate within 60 seconds.
+
+Wave 2 plans have disjoint files and rollback-isolated fixtures; neither resets the DB. Independent committed-session tests run in wave 4. Run normal unfiltered mix test.fast and separately include postgres_race with explicit files; the three new race modules carry integration and postgres_race tags. Excluded totals never prove race execution.
+
+Prior normal baseline: 2 properties, 2291 tests, 0 failures, 398 excluded, 6 skipped. Keep exclusions/skips visible and record actual new counts. Existing heavyweight packaged upgrade proof is not repeated unless schema/install/migration/package inputs change. Final cross-phase packaged proof remains Phase 166.
+
+## Per-task verification map
+
+Every task has automated and fails_when clauses in its PLAN. Existing files are grounded in git; newly named tests are created by the referenced task.
+
+| Task ID | Plan | Wave | Requirement | Threat Ref | Secure behavior | Exact command IDs | Status |
+|---|---|---:|---|---|---|---|---|
+| 164-01-01 | 01 | 1 | DCR-07/08 | T-164-01/02/03 | Register one finite Basic secret and prove its actual boundary | C011 | passed |
+| 164-01-02 | 01 | 1 | DCR-07/08 | T-164-01 | Reject invalid secret policy at write and use boundaries | C012 | passed |
+| 164-01-03 | 01 | 1 | DCR-07/08 | T-164-03 | Complete unlimited, provenance, legacy and no-secret metadata cases | C013 | passed |
+| 164-02-01 | 02 | 2 | DCR-08 | T-164-04/06 | Apply one strict secret gate across every auth method | C021 | passed |
+| 164-02-02 | 02 | 2 | DCR-08 | T-164-05/06 | Recheck current secret authority after code and refresh locks | C022 | passed |
+| 164-02-03 | 02 | 2 | DCR-08 | T-164-07 | Preserve endpoint errors for expired secret callers | C023 | passed |
+| 164-03-01 | 03 | 2 | DCR-07/09 | T-164-08/10/12 | Rotate from the locked row using current policy and deferred time | C031 | passed |
+| 164-03-02 | 03 | 2 | DCR-07/09 | T-164-09 | Prove adapter transport and whole-row legacy canonicalization | C032 | passed |
+| 164-03-03 | 03 | 2 | DCR-07/09 | T-164-11/12 | Preserve operator policy and roll back failed secret delivery | C033 | passed |
+| 164-04-01 | 04 | 3 | DCR-08 | T-164-13/14/15 | Guard authenticated device and CIBA polls without gating queued push | C041 | passed |
+| 164-04-02 | 04 | 3 | DCR-08 | T-164-15/16 | Revalidate only the RFC 8693 requesting secret after token locks | C042 | passed |
+| 164-04-03 | 04 | 3 | DCR-08 | T-164-15 | Prove existing tokens and non-secret finalizers remain usable | C043 | passed |
+| 164-05-01 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry and committed replacement during a client-row wait | C051 | passed |
+| 164-05-02 | 05 | 4 | DCR-08/09 | T-164-17 | Prove expiry during every later grant or token wait | C052 | passed |
+| 164-05-03 | 05 | 4 | DCR-08/09 | T-164-18/19/20 | Prove serialized operator winners, post-wait truth and rollback | C053 | passed |
+| 164-06-01 | 06 | 5 | DCR-07/08/09 | T-164-21 | Observe finite-secret events and prove redaction | C061 | passed |
+| 164-06-02 | 06 | 5 | DCR-07/08/09 | T-164-22 | Make secret lifetime admin guidance truthful | C062 | passed |
+| 164-06-03 | 06 | 5 | DCR-07/08/09 | T-164-23 | Reconcile host guidance and execute the complete phase gate | C063a, C063b, C063c | passed |
+
+## Exact command registry
+
+Commands run from repository root. Pending selections are not current runtime evidence.
+
+### C011 — 164-01-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test.setup && env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_registration_test.exs --max-failures 1 --timeout 55000
+```
+
+### C012 — 164-01-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_policy_test.exs test/lockspire/web/controllers/registration_controller_test.exs --max-failures 1 --timeout 55000
+```
+
+### C013 — 164-01-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_registration_test.exs test/lockspire/web/registration_json_test.exs --max-failures 1 --timeout 55000
+```
+
+### C021 — 164-02-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_auth_test.exs test/lockspire/protocol/direct_client_auth_client_secret_jwt_test.exs --max-failures 1 --timeout 55000
+```
+
+### C022 — 164-02-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_code_refresh_test.exs test/integration/app_lifetime_code_redemption_test.exs test/integration/app_lifetime_refresh_test.exs --max-failures 1 --timeout 55000
+```
+
+### C023 — 164-02-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/web/token_controller_test.exs test/lockspire/web/introspection_controller_test.exs test/lockspire/web/revocation_controller_test.exs --max-failures 1 --timeout 55000
+```
+
+### C031 — 164-03-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_rotation_test.exs test/lockspire/admin/clients_test.exs --max-failures 1 --timeout 55000
+```
+
+### C032 — 164-03-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/storage/client_lifetime_conformance_test.exs test/lockspire/storage/client_lifetime_promotion_test.exs test/lockspire/client_lifecycle_test.exs test/lockspire/compatibility_baseline_contract_test.exs --max-failures 1 --timeout 55000
+```
+
+### C033 — 164-03-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/admin/clients_test.exs test/lockspire/storage/client_lifetime_rollback_test.exs test/integration/client_secret_lifetime_rotation_test.exs --max-failures 1 --timeout 55000
+```
+
+### C041 — 164-04-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_poll_exchange_test.exs test/integration/app_lifetime_ciba_push_test.exs test/integration/app_lifetime_poll_issuance_test.exs --max-failures 1 --timeout 55000
+```
+
+### C042 — 164-04-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_poll_exchange_test.exs test/integration/app_lifetime_rfc8693_test.exs --max-failures 1 --timeout 55000
+```
+
+### C043 — 164-04-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/integration/client_secret_lifetime_existing_tokens_test.exs test/integration/client_secret_lifetime_poll_exchange_test.exs test/integration/app_lifetime_online_consumers_test.exs --max-failures 1 --timeout 55000
+```
+
+### C051 — 164-05-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_client_wait_test.exs --max-failures 1 --timeout 55000
+```
+
+### C052 — 164-05-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs --max-failures 1 --timeout 55000
+```
+
+### C053 — 164-05-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs --max-failures 1 --timeout 55000
+```
+
+### C061 — 164-06-01
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/dcr_telemetry_redaction_test.exs test/lockspire/redaction/redaction_test.exs --max-failures 1 --timeout 55000
+```
+
+### C062 — 164-06-02
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/web/live/admin/policies_live/dcr/lifetime_hint_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs --max-failures 1 --timeout 55000
+```
+
+### C063a — 164-06-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/client_lifetime_guidance_test.exs test/lockspire/architecture_fitness_test.exs test/lockspire/compatibility_baseline_contract_test.exs --max-failures 1 --timeout 55000
+```
+
+### C063b — 164-06-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test.fast
+```
+
+### C063c — 164-06-03
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_client_wait_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs test/lockspire/storage/client_lifetime_rollback_test.exs test/lockspire/storage/client_lifetime_conformance_test.exs --max-failures 1 --timeout 55000
+```
+
+## Required evidence
+
+- Real registration → fetched durable deadline → wire value → actual Basic verification before/equality/after. Include nil/zero, policy edits, provenance, microsecond/default clocks, v0/no-secret representations.
+- Every method uses real verification. Three secret methods agree; JWT algorithm/claims/timing/JTI remain independent. Corrupt policy/state/clock is server_error, not invalid_client or unlimited.
+- Code, refresh, device, CIBA polling and RFC requester recheck locked identity plus fresh time after final required locks. Denials preserve full code/request/token/family/audit state.
+- Existing token validity, non-secret methods, issuer/online targets and queued push remain secret-independent; confidential refresh still authenticates.
+- Rotation uses current locked provenance/policy and post-wait time; hash/verifier/time/deadline/version/audit commit/rollback together. V0 clears ALL old dates, v1 preserves unrelated state. Preserve no-old-proof, no-renewal, last-commit-winner behavior.
+- Actual independent PostgreSQL sessions have distinct backend PIDs, exact pg_blocking_pids proof, later-lock NOWAIT probes, barrier clocks advanced only after observation and bounded cleanup. All five shipped finalizers have later-lock cases; client wait/committed replacement are separate.
+- Reached write and audit failure compare complete durable state and return no success plaintext.
+- Every subscribed finite-secret lifecycle event class must have a present, positive integer observed count before redaction assertions; negative controls reject missing/nil counts and detect sensitive keys nested under tuples.
+- Literal public compatibility/architecture pass; changed rendered copy/docs match runtime and PRODUCT retired wording. No Phase 165 policy is added.
+
+Any failed command or missing evidence remains a visible gap. ASVS level 1 high/critical mitigations block completion. All three unclassified edge-probe entries remain flagged unresolved in plans/source audit; concrete tests derive from requirements/CONTEXT rather than fabricated detector resolution.
+
+## Manual-only checks
+
+None planned. No external account/API setup or new irreversible decision is introduced; stored/wire format is already settled by the normative contract.
+
+## Phase 164 plan 164-06 execution results
+
+All Mix commands ran from the repository root with Elixir `1.18.4-otp-27`, OTP `27.3.4.15`, the supplied Mix/Hex homes, `MIX_ENV=test`, and the dedicated `LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation` database.
+
+| Command | Result | Notes |
+|---|---|---|
+| C061 — finite-secret redaction and redaction matcher | **26 tests, 0 failures** | Rerun after independent-review correction. Every subscribed event class must have a present, positive integer count; negative controls reject missing and nil counts and detect a nested-tuple sensitive key. The live lifecycle exercises finite Basic token issuance, expiry rejection, and rotation plus finite JWT registration and rotation. Old/new persisted encrypted JWT verifier values are unsealed and matched against their generated plaintexts, then scanned with available hashes across captured telemetry, audit rows for both clients, captured failure logs, and public errors. Independent security re-audit remains pending. |
+| C062 — admin hint, rendered DCR page, vocabulary contract | **23 tests, 0 failures** | Blank and zero display no automatic expiry; positive duration remains readable; help explains prospective issue/replacement behavior; retired wording is recorded in `PRODUCT.md`. UI-copy audit follow-up selection (rendered DCR page, lifetime hints, vocabulary contract, and host guidance) also passed: **28 tests, 0 failures**. It asserts accurate app/secret enforcement versus app management-token deferral, and that older secret expiry dates may be advisory until replacement. |
+| C063a — guidance, architecture, public compatibility | **20 tests, 0 failures** | Re-run after the final documentation edits. |
+| C063b — `mix test.fast` | **2 properties, 2,348 tests, 0 failures, 440 excluded, 6 skipped** | Normal suite only; the exclusions and skips remain visible and are not race or packaged-upgrade evidence. |
+| C063c — explicit PostgreSQL race, rollback, and adapter-conformance files with `--include postgres_race` | **32 tests, 0 failures** | Included the three real PostgreSQL race modules, secret rollback coverage, and adapter conformance. The dedicated database was queried afterward: `current_database()` was `lockspire_phase164_validation`; counts for `secret-%` clients and related audit, token, JTI, interaction, device, and CIBA rows were all zero; singleton server-policy rows were zero. |
+
+The separate PostgreSQL run includes all selected cases and passes with the explicit race tag enabled. Phase 164 plan 164-05's previously measured race-only subset was 11 tests, 0 failures, and no exclusions; C063c adds the rollback and adapter-conformance modules to that evidence. Adapter failures are covered by the conformance tests, and write/audit rollback failures by `client_lifetime_rollback_test.exs` and the rotation race suite.
+
+The C061 follow-up closes the assertion and coverage gaps recorded by independent security review. No runtime leakage was observed in the exercised outputs; security sign-off is still pending the independent auditor's recheck.
+
+The packaged clean-room upgrade proof was not rerun because plan 164-06 changed no schema, migration, installer, package, or generated-host input. Phase 166 retains the final packaged cross-phase proof. Management-token lifetime and recovery remain owned by Phase 165. The Nyquist audit below records the exact task mapping and its supplemental authentication test. It does not claim a separate security audit or phase-wide strict TDD compliance.
+
+## Validation sign-off
+
+- [x] Every exact task selection passes on the named database.
+- [x] New tests exist and execute rather than being excluded.
+- [x] Actual independent-session races prove every blocker and durable outcome.
+- [x] Finite-secret event counts are nonzero and every channel is redacted.
+- [x] Normal counts/exclusions/skips and separate race counts are recorded.
+- [x] Adapter conformance and architecture/public compatibility pass.
+- [x] Changed guidance/copy matches behavior and scope.
+- [x] Independent Nyquist coverage audit justifies `nyquist_compliant: true`.
+
+Approval: validation and Nyquist coverage complete; separate security sign-off is outside this audit.
+
+## Independent Nyquist audit
+
+The audit matched all 18 task IDs to executed selections and behavioral assertions in the six plan summaries. Results by task are below; counts are from the executed task selections, while C063b/C063c provide the later integrated normal-suite and explicit PostgreSQL evidence.
+
+| Task ID | Result | Executed behavioral selection |
+|---|---|---|
+| 164-01-01 | green | C011, 3 tests: real DCR row, wire deadline, Basic before/equality/after |
+| 164-01-02 | green | C012, 15 tests: supported and rejected policy values, write/use errors |
+| 164-01-03 | green | C013, 13 tests: unlimited, prospective policy, method-aware metadata, v0/no-secret serialization |
+| 164-02-01 | green | C021, 35 tests: Basic/post/JWT expiry gate and existing JWT algorithm/claims/replay checks; see supplemental test below |
+| 164-02-02 | green | C022, 9 tests: code/refresh final guards, unchanged grants/tokens on denial, valid JWT JTI replay-once |
+| 164-02-03 | green | C023, 40 tests: endpoint response and challenge behavior |
+| 164-03-01 | green | C031, 39 tests: real operator replacement, current policy, deferred time, preserved v1 state/audit |
+| 164-03-02 | green | C032, 27 tests: built-in/custom adapter replacement, deferred clock, and v0 canonicalization |
+| 164-03-03 | green | C033, 51 tests; plan-wide rerun 78 tests: operator behavior and durable rollback |
+| 164-04-01 | green | C041, 9 tests: device/CIBA authenticated polls and queued push exemption |
+| 164-04-02 | green | C042, 11 tests: RFC 8693 requester authority after input-token lock |
+| 164-04-03 | green | C043, 15 tests: existing token validity and non-secret finalizer behavior |
+| 164-05-01 | green | C051, included in C063c's explicit `postgres_race` selection; committed replacement and client-row wait proof |
+| 164-05-02 | green | C052, included in C063c's explicit `postgres_race` selection; later grant/token wait proof for all five finalizers |
+| 164-05-03 | green | C053, included in C063c's explicit `postgres_race` selection; serialized winners, current-row policy/time and write/audit rollback |
+| 164-06-01 | green | C061, 26 tests: positive integer counts for all subscribed event classes, missing/nil and tuple-recursion negative controls, and actual finite JWT verifier material redaction scan; independent security re-audit pending |
+| 164-06-02 | green | C062, 23 tests: rendered guidance and vocabulary contract |
+| 164-06-03 | green | C063a 20 tests; C063b 2 properties + 2,348 tests (440 excluded, 6 skipped); C063c 32 tests (11 race tests, no exclusions) |
+
+The audit found one focused DCR-08 edge that the existing tests split across a finite JWT equality rejection and an unlimited JWT success/replay test: successful authentication of a finite secret-JWT assertion before its deadline, then a single-use replay attempt, and strict rejection at equality while a fresh assertion remains within its own `iat`/`exp` window. The additional behavioral test was executed with the pinned environment:
+
+```sh
+env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs --max-failures 1 --timeout 55000
+```
+
+Result: **1 test, 0 failures**. It asserts finite-secret JWT authentication at deadline minus one second, replay rejection for that same JTI, secret-expiry rejection at equality for a second still-valid assertion, and one in-test observation per distinct JTI. Existing `JarTest` coverage separately exercises expired `exp`, future `iat`, and configured skew; the direct-client JWT suite exercises signature, audience, replay, algorithm, and method mismatch.
+
+All three source-audit edge probes remain flagged unresolved/unclassified assumptions. They are not treated as additional policy requirements. The checks above cover the concrete DCR-07/08/09 behaviors in the locked context; the phase summaries explicitly record that 164-06-01 lacks classifier-validated semantic RED evidence, so this audit makes no strict TDD claim. Management-token lifecycle and packaged cross-phase proof remain Phase 165 and 166 scope.
+
+## Validation Audit 2026-10-21
+
+| Metric | Count |
+|---|---|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
+
+## Final Reviewed-Tree Regression Gate
+
+Executed 2026-10-21 after security/UI corrections and independent clean 49-file code review. A new isolated database `lockspire_phase164_final_validation` was created through `mix test.setup`; the shared default database was not used. Every command used pinned Elixir/OTP and supplied task-local Mix/Hex homes.
+
+- `mix compile --warnings-as-errors`: exit 0.
+- `mix test.fast`: **2 properties, 2,349 tests, 0 failures, 440 excluded, 6 skipped**. Log: `/private/tmp/lockspire164-final-fast.log`.
+- `mix test --include postgres_race test/lockspire/storage/client_secret_lifetime_client_wait_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs test/lockspire/storage/client_lifetime_client_wait_test.exs test/lockspire/storage/client_lifetime_grant_wait_test.exs test/lockspire/storage/client_lifetime_rollback_test.exs test/lockspire/storage/client_lifetime_conformance_test.exs --max-failures 1 --timeout 55000`: **38 tests, 0 failures, none excluded**. This expands the earlier 32-case selection with prior app-lifetime client/grant wait regressions; the new 11 genuine PostgreSQL races and prior rollback/wait cases remain explicit. Log: `/private/tmp/lockspire164-final-postgres.log`.
+- After the explicit committed-session selection, `current_database()` confirmed the final isolated database. Clients, singleton policies, tokens, used JTIs, interactions, device requests and CIBA requests had zero rows. Three audit-only rows from the prior Phase 163 CIBA push/RFC lock-order regression fixtures remain (actors `lifetime-push-lock-release-*` and `rfc-order-*`); none belong to the new Phase 164 secret fixtures. They contain no live credential/token state. The earlier 32-case Phase 164 selection had zero audit rows; the expanded final 38-case selection is accurately distinguished here. Log: `/private/tmp/lockspire164-final-db-cleanup.log`.
+
+The standard fast suite excludes integration cases by alias invocation; earlier targeted integration selections in each plan and the separate PostgreSQL selection remain required evidence. Previously excluded clean-room/package work remains Phase 166; unchanged packaged upgrade proof from Phase 163 was not rerun. No strict phase-wide TDD claim is made.
+
+## Validation refresh (2026-10-22)
+
+This refresh audited the six Phase 164 plans and summaries, all 18 task verify blocks, and current test/source paths. It re-ran a bounded secret-lifetime integration selection and rendered-copy/guidance tests on a fresh isolated PostgreSQL database. It did not rerun the broad suite or the package process.
+
+| Check | Command / evidence | Result |
+|---|---|---|
+| Fresh database setup | `env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_refresh_20261022 mix test.setup` | Passed; created the isolated test storage and applied all migrations. |
+| Secret-lifetime behavior selection | Same environment, then `mix test --include integration --include postgres_race test/integration/client_secret_lifetime_registration_test.exs test/lockspire/protocol/client_secret_lifetime_auth_test.exs test/lockspire/protocol/direct_client_auth_client_secret_jwt_test.exs test/lockspire/protocol/client_secret_lifetime_jwt_boundary_test.exs test/integration/client_secret_lifetime_code_refresh_test.exs test/integration/client_secret_lifetime_rotation_test.exs test/integration/client_secret_lifetime_poll_exchange_test.exs test/integration/client_secret_lifetime_existing_tokens_test.exs test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs --max-failures 1 --timeout 55000` | 28 tests, 0 failures. Exercises shared-secret registration, authentication methods and JWT boundaries/replay, code/refresh rechecks, rotation, polls/exchange, existing tokens, and a PostgreSQL rotation race. |
+| Rendered copy, vocabulary and host guidance | Same toolchain/database, then `mix test test/lockspire/web/live/admin/policies_live/dcr/lifetime_hint_test.exs test/lockspire/web/live/admin/policies_live/dcr_test.exs test/lockspire/web/live/admin/vocabulary_contract_test.exs test/lockspire/client_lifetime_guidance_test.exs test/lockspire/architecture_fitness_test.exs test/lockspire/compatibility_baseline_contract_test.exs --max-failures 1 --timeout 55000` | 47 tests, 0 failures. Covers rendered LiveView text, vocabulary/retired wording, and the updated host lifetime guidance assertions. |
+| Six-plan / 18-task discovery | Read all six PLAN and SUMMARY artifacts; extracted every `<verify>` block and checked referenced ExUnit paths. | 18/18 blocks contain automated commands; all referenced test paths exist. Existing 164-COVERAGE entries report all 18 tasks passed; no missing behavioral test path found for DCR-07/08/09. |
+| Retained final runtime/package evidence | `.planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-CI-EVIDENCE.json` and private receipt `/private/tmp/lockspire-166-12-0bd4070d-artifact/receipt.json`; candidate, receipt digest, counts and cleanup checked directly. | Runtime/package candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`, canonical CI run 39776185275; 7/7 required contexts passed and nine package scenarios recorded 49 checks passed, 0 failed/skipped, cleanup complete. The receipt SHA-256 matches the manifest. |
+
+The runtime/package evidence remains bound to candidate `0bd4070d862c53cb3e8dfc4d1cf25535b232aaed`. At the time of the initial refresh, before the WR-01 correction below, the relevant tracked behavior-adjacent changes since that candidate were `docs/upgrading/client-lifetimes.md` and its existing assertions in `test/lockspire/client_lifetime_guidance_test.exs` (commit `cecd4bdb`); both guidance and rendered-copy selections above were run on the current tree. No runtime implementation file had changed at that point. The WR-01 correction below subsequently changed runtime source; the old candidate CI/package evidence is historical and a new final-candidate CI gate remains pending. The package process was not repeated in this phase refresh.
+
+Probe assumptions A-EDGE-16, A-EDGE-17 and A-EDGE-19 remain unresolved; descriptor-less prohibitions prohibition-1 and prohibition-2 remain flagged-unverified in the Phase 166 evidence. Strict phase-wide TDD is not claimed: `workflow.tdd_mode` is false, and the historical task summaries retain their specific RED/GREEN evidence caveats. No existing caveat was converted into a passing strict-TDD claim by this refresh.
+
+## WR-01 current-tree regression correction (2026-10-22)
+
+Bounded code review found that RFC 8693's final clock callback could return malformed data that escaped as a `FunctionClauseError`. The plan's D-02 server-error contract requires a controlled error. `GrantPersistence.final_exchange_time/1` now accepts a DateTime result or returns `server_error(:clock_unavailable)` before token validation, signing, writes or audit. The permanent public-facade regression uses a valid initial time and malformed time after the mock input-token lock, and asserts unchanged token inventory and no audit event.
+
+- RED: `mix test test/lockspire/protocol/rfc8693_exchange_test.exs --max-failures 1 --timeout 55000` against the original runtime raised `FunctionClauseError`; 8 tests executed, 1 failure before the stop. Log `/tmp/phase164-clock-red.log`.
+- GREEN: same task-local environment/database as above, `mix test test/lockspire/protocol/rfc8693_exchange_test.exs test/integration/app_lifetime_rfc8693_test.exs test/integration/client_secret_lifetime_poll_exchange_test.exs test/lockspire/storage/client_secret_lifetime_grant_wait_test.exs --include integration --include postgres_race --max-failures 1 --timeout 55000` passed 27 tests, 0 failures. This also rechecks the affected prior-phase app-lifetime RFC boundary and genuine PostgreSQL grant waits. Log `/tmp/phase164-clock-green.log`.
+- Runtime change is limited to the final clock-result guard; the existing RFC test module adds the public-error/no-mutation regression and mock lock/audit observations. Broad required CI/package proof for this new runtime candidate is pending the final milestone refresh. Run 39776185275 and its 9/49 package receipt verify only earlier candidate 0bd4070d, not this correction.

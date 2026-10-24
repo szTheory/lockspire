@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_policy_test.exs --timeout 55000 --formatter Lockspire.Test.Phase164TapFormatter",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..4\nok 1 - test test supported secret duration values persist and resolve\nnot ok 2 - test test rejects string-valued programmatic secret duration instead of Ecto-coercing it\nnot ok 3 - test test secret policy failure at registration use is a server error without writes\nok 4 - test test DCR policy form casts blank and numeric secret duration text and rejects bad ranges\n",
+  "targetTest": "test test rejects string-valued programmatic secret duration instead of Ecto-coercing it",
+  "targetFile": "test/lockspire/protocol/client_secret_lifetime_policy_test.exs",
+  "expected": "Programmatic policy values must be nil or integers within 0..2147483647; string-valued duration \"1\" must be rejected before Ecto coercion.",
+  "actual": "The target test fails because the ServerPolicyRecord changeset accepts the string-valued duration \"1\" as valid. The registration-use test also fails because malformed policy reaches secret deadline construction rather than becoming server_error.",
+  "semanticAssessment": "Valid RED: TAP shows four tests ran, with the two intended invalid-policy boundaries failing. The first failure directly demonstrates Ecto accepting a string where original programmatic policy validation must reject it; the second demonstrates corrupt policy is not mapped to a server error. No setup, compile, collection, syntax, or unrelated failure occurred."
+}

@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase164_validation mix test test/lockspire/protocol/client_secret_lifetime_auth_test.exs --formatter Lockspire.Test.Phase164TapFormatter --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\nok 1 - Elixir.Lockspire.Protocol.ClientSecretLifetimeAuthTest.test basic and post reject a secret at the strict deadline\nnot ok 2 - Elixir.Lockspire.Protocol.ClientSecretLifetimeAuthTest.test basic and post share one decision instant for secret and app eligibility\n1..2",
+  "targetTest": "Elixir.Lockspire.Protocol.ClientSecretLifetimeAuthTest.test basic and post share one decision instant for secret and app eligibility",
+  "targetFile": "test/lockspire/protocol/client_secret_lifetime_auth_test.exs",
+  "expected": "Authentication samples one decision instant and applies it to both shared-secret and app eligibility.",
+  "actual": "The target test receives invalid_client with reason_code client_app_expired because secret eligibility samples the pre-deadline instant and app eligibility independently samples the deadline instant.",
+  "semanticAssessment": "Valid RED: the TAP report shows two executed tests and the named target fails on the planned single-decision-instant behavior. The normal ExUnit report confirms the failure is the target assertion: expected {:ok, Client}, received invalid_client/client_app_expired after the injected clock advanced between the two eligibility checks. No setup, compilation, collection, syntax, or unrelated failure occurred."
+}

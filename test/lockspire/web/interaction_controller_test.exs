@@ -79,6 +79,7 @@ defmodule Lockspire.Web.InteractionControllerTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client_123",
         client_secret_hash: "sha256:salt:hash",
         client_type: :confidential,

@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation elixir -r /private/tmp/lockspire-phase165-tap-formatter.ex -S mix test test/lockspire/protocol/registration_management_test.exs --only phase165_delete_clock --formatter LockspirePhase165TapFormatter --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..1\nnot ok 1 - test test update/2 — RAT rotation delete/3 accepts the final decision time and stores it in disabled_at\n",
+  "targetTest": "test test update/2 — RAT rotation delete/3 accepts the final decision time and stores it in disabled_at",
+  "targetFile": "test/lockspire/protocol/registration_management_test.exs",
+  "expected": "The existing delete/2 entry point must have a compatible delete/3 option that uses the same final decision DateTime for eligibility and disabled_at.",
+  "actual": "RegistrationManagement did not export delete/3, so callers cannot supply the post-lock decision time.",
+  "semanticAssessment": "Valid RED: the named target test executed and failed on its public API assertion. The failure is the planned missing additive arity; test compilation completed, and the assertion—not a setup or runtime exception—reported the behavior absent."
+}

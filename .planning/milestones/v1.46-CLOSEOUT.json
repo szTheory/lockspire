@@ -1,0 +1,79 @@
+{
+  "checked_at": "2026-10-24T15:54:16.097720+00:00",
+  "head": "b547e556d7bc40a41a72e6ee0f5f665a5fec33d3",
+  "closeout_type": "override_closeout",
+  "reason": "One previously disclosed nonblocking fixture warning acknowledged; no phase-verification override.",
+  "newly_acknowledged": 1,
+  "carried_forward": 3,
+  "phase_projection": [
+    {
+      "number": "167",
+      "plan_count": 3,
+      "summary_count": 3,
+      "phase_complete": true,
+      "verification_status": "passed"
+    },
+    {
+      "number": "168",
+      "plan_count": 3,
+      "summary_count": 3,
+      "phase_complete": true,
+      "verification_status": "passed"
+    },
+    {
+      "number": "169",
+      "plan_count": 5,
+      "summary_count": 5,
+      "phase_complete": true,
+      "verification_status": "passed"
+    },
+    {
+      "number": "170",
+      "plan_count": 5,
+      "summary_count": 5,
+      "phase_complete": true,
+      "verification_status": "passed"
+    }
+  ],
+  "artifact_audit": {
+    "scanned_at": "2026-10-24T15:54:16.022Z",
+    "has_open_items": false,
+    "counts": {
+      "debug_sessions": 0,
+      "quick_tasks": 0,
+      "threads": 0,
+      "todos": 0,
+      "seeds": 0,
+      "uat_gaps": 0,
+      "verification_gaps": 0,
+      "context_questions": 0,
+      "deferred_items": 0,
+      "total": 0
+    },
+    "acknowledged": {
+      "debug_sessions": 0,
+      "quick_tasks": 1,
+      "threads": 0,
+      "todos": 0,
+      "seeds": 0,
+      "uat_gaps": 0,
+      "verification_gaps": 2,
+      "context_questions": 0,
+      "deferred_items": 1,
+      "total": 4
+    },
+    "items": {
+      "debug_sessions": [],
+      "quick_tasks": [],
+      "threads": [],
+      "todos": [],
+      "seeds": [],
+      "uat_gaps": [],
+      "verification_gaps": [],
+      "context_questions": [],
+      "deferred_items": []
+    }
+  },
+  "state_json_preserved_sha256": "cf20f8428c4777a3e99478b2b4e56750ebed2d74d0761bf74fdc6c28e36b1b80",
+  "archive_note": "Phase covered_files paths and recorded results remain original historical checkout evidence; relocation is not a new verification run."
+}

@@ -14,6 +14,7 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     allowed_grant_types: ["authorization_code", "refresh_token"],
     allowed_response_types: ["code"],
     inserted_at: @now,
+    lifetime_version: 0,
     client_secret_expires_at: nil,
     dpop_policy: :dpop,
     backchannel_logout_uri: "https://rp.example.test/backchannel-logout",
@@ -118,6 +119,149 @@ defmodule Lockspire.Web.RegistrationJSONTest do
     refute Map.has_key?(result, :backchannel_logout_session_required)
     refute Map.has_key?(result, :frontchannel_logout_uri)
     refute Map.has_key?(result, :frontchannel_logout_session_required)
+  end
+
+  test "serializer ignores advisory metadata and uses only the effective secret deadline" do
+    client = %Client{
+      @client
+      | token_endpoint_auth_method: :client_secret_basic,
+        lifetime_version: 1,
+        client_secret_expires_at: DateTime.from_unix!(110),
+        client_secret_hash: "dormant-hash",
+        client_secret_jwt_verifier_encrypted: "dormant-verifier",
+        metadata:
+          @client.metadata
+          |> Map.put("client_secret_expires_at", 999)
+          |> Map.put("client_secret", "metadata-secret")
+    }
+
+    read = RegistrationJSON.read_response(client)
+
+    assert read.client_secret_expires_at == 110
+    refute Map.has_key?(read, "client_secret_expires_at")
+    refute Map.has_key?(read, "client_secret")
+    refute Map.has_key?(read, :client_secret)
+
+    update =
+      RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+        client: client,
+        registration_access_token_plaintext: "rat"
+      })
+
+    refute Map.has_key?(update, "client_secret")
+    refute Map.has_key?(update, :client_secret)
+  end
+
+  test "responses advertise effective management deadlines and discard metadata aliases" do
+    client = %Client{
+      @client
+      | lifetime_version: 1,
+        registration_access_token_expires_at: DateTime.from_unix!(120),
+        metadata:
+          @client.metadata
+          |> Map.put("lockspire_registration_access_token_expires_at", 999)
+          |> Map.put(:lockspire_registration_access_token_expires_at, 998)
+          |> Map.put("registration_access_token", "metadata-token")
+          |> Map.put(:registration_access_token, "atom-metadata-token")
+    }
+
+    assert RegistrationJSON.read_response(client).lockspire_registration_access_token_expires_at ==
+             120
+
+    for response <- [
+          RegistrationJSON.success_response(%Registration.Success{
+            client: client,
+            client_secret_plaintext: nil,
+            registration_access_token_plaintext: "fresh-token"
+          }),
+          RegistrationJSON.read_response(client),
+          RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+            client: client,
+            registration_access_token_plaintext: "rotated-token"
+          })
+        ] do
+      assert response.lockspire_registration_access_token_expires_at == 120
+      refute response["lockspire_registration_access_token_expires_at"]
+      refute response["registration_access_token"]
+      refute response[:registration_access_token] in ["metadata-token", "atom-metadata-token"]
+    end
+
+    unlimited = %Client{@client | lifetime_version: 1}
+    legacy = %Client{@client | lifetime_version: 0}
+
+    assert RegistrationJSON.read_response(unlimited).lockspire_registration_access_token_expires_at ==
+             0
+
+    assert RegistrationJSON.read_response(legacy).lockspire_registration_access_token_expires_at ==
+             0
+  end
+
+  test "serializer reports unsupported management lifetime state as a server failure" do
+    invalid = %Client{@client | lifetime_version: 2}
+
+    assert_raise ArgumentError, fn ->
+      RegistrationJSON.read_response(invalid)
+    end
+  end
+
+  test "non-secret methods omit secret expiry even with dormant material and v0 dates are advisory" do
+    for method <- [:none, :private_key_jwt, :tls_client_auth, :self_signed_tls_client_auth] do
+      client = %Client{
+        @client
+        | token_endpoint_auth_method: method,
+          lifetime_version: 1,
+          client_secret_expires_at: DateTime.from_unix!(110),
+          client_secret_hash: "dormant-hash",
+          client_secret_jwt_verifier_encrypted: "dormant-verifier"
+      }
+
+      refute Map.has_key?(RegistrationJSON.read_response(client), :client_secret_expires_at)
+
+      success =
+        RegistrationJSON.success_response(%Registration.Success{
+          client: client,
+          client_secret_plaintext: nil,
+          registration_access_token_plaintext: "rat"
+        })
+
+      update =
+        RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+          client: client,
+          registration_access_token_plaintext: "rat"
+        })
+
+      refute Map.has_key?(success, :client_secret_expires_at)
+      refute Map.has_key?(update, :client_secret_expires_at)
+    end
+
+    legacy = %Client{
+      @client
+      | token_endpoint_auth_method: :client_secret_basic,
+        lifetime_version: 0,
+        client_secret_expires_at: DateTime.from_unix!(50)
+    }
+
+    assert RegistrationJSON.success_response(%Registration.Success{
+             client: legacy,
+             client_secret_plaintext: "secret",
+             registration_access_token_plaintext: "rat"
+           }).client_secret_expires_at == 0
+
+    assert RegistrationJSON.read_response(legacy).client_secret_expires_at == 0
+
+    assert RegistrationJSON.update_response(%RegistrationManagement.UpdateSuccess{
+             client: legacy,
+             registration_access_token_plaintext: "rat"
+           }).client_secret_expires_at == 0
+  end
+
+  test "operator secret registration does not inherit the DCR secret policy" do
+    assert {:ok, nil} =
+             Client.secret_deadline(
+               %Client{token_endpoint_auth_method: :client_secret_basic, provenance: :operator},
+               DateTime.from_unix!(100),
+               10
+             )
   end
 
   test "error_response/1 maps code to error string" do

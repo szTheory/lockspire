@@ -10,11 +10,10 @@ defmodule Lockspire.CiTestMatrixContractTest do
     ci = File.read!(@ci)
     runner = File.read!(@runner)
 
-    assert mix =~
-             ~s("test.fast": ["test.setup", "test test/lockspire test/mix test/integration"])
+    assert mix =~ "test --exclude lifetime_package test/lockspire test/mix test/integration"
 
     assert mix =~
-             ~s("test --cover test/lockspire test/mix test/integration")
+             "test --cover --exclude lifetime_package test/lockspire test/mix test/integration"
 
     assert mix =~
              ~s("test.integration": ["test.setup", "test --only integration test/integration"])
@@ -24,12 +23,23 @@ defmodule Lockspire.CiTestMatrixContractTest do
     refute ci =~ "Run Phase 3 protocol gate"
     assert ci =~ "scripts/ci/run_test_matrix.sh --fast"
     assert ci =~ "scripts/ci/run_test_matrix.sh --integration"
-    assert length(Regex.scan(~r/CLEAN_ROOM_DB_USER: lockspire/, ci)) == 2
+
+    for job_name <- ["fast", "compatibility", "integration"] do
+      [_, job] = Regex.run(~r/  #{job_name}:\n(.*?)(?=\n  [a-z][\w-]*:|\z)/s, ci)
+      assert job =~ "CLEAN_ROOM_DB_USER: lockspire"
+      assert job =~ "CLEAN_ROOM_DB_PASSWORD: lockspire"
+    end
+
     assert runner =~ "mix test.phase3"
     assert runner =~ "exit_status"
     assert runner =~ "elapsed_seconds"
     assert runner =~ "overall_status=0"
     assert runner =~ "overall_status=$status"
+    assert runner =~ "run_partition lifetimes"
+    assert runner =~ "--only lifetime_package"
+    assert runner =~ "run_partition lifetime_receipts"
+    assert runner =~ "--expected-source '$expected_source'"
+    assert runner =~ "--exclude lifetime_package"
     assert runner =~ "return 0"
     assert runner =~ ~s(exit "$overall_status")
 

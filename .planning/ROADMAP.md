@@ -2,6 +2,8 @@
 
 ## Milestones
 
+- ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
+- ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
 - ✅ [v1.42 Admin UI Clarity & Workflow Refinement](milestones/v1.42-ROADMAP.md) — completed 2026-10-15; Phases 151–154; no protocol changes or package release.
@@ -13,57 +15,9 @@
 
 Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and preserved under `.planning/milestones/`.
 
-## Current Direction
+## Next Milestone
 
-v1.44 is complete and archived. Lockspire 1.6.0 is publicly verified; see [the audit](milestones/v1.44-MILESTONE-AUDIT.md) for all 13 requirements and retained debt. The bounded keys.reencrypt RepoRunner/TaskError follow-up is shipped in verified1.6.1. DCR lifetimes remain a [separately scoped candidate](research/dcr-lifetimes/SCOPE.md); no new protocol scope is active.
-
-## Phases
-
-<details>
-<summary>✅ v1.44 Adopter Polish & Verified 1.6.0 (Phases 158–161) — completed 2026-10-20</summary>
-
-- [x] Phase 158: Mix Task Repo Start (3/3 plans).
-- [x] Phase 159: Key-Encryption Key Setup DX (3/3 plans).
-- [x] Phase 160: Admin Key Protection & Missing-KEK Copy (2/2 plans).
-- [x] Phase 161: Docs & Verified 1.6.0 Release (9/9 plans).
-
-**Audit:** 13/13 requirements, 6/6 integration links and 4/4 flows; no blockers. See [archived details](milestones/v1.44-ROADMAP.md).
-
-</details>
-
-<details>
-<summary>✅ v1.43 Signing Key Encryption at Rest (Phases 155–157) — completed 2026-10-16</summary>
-
-- [x] Phase 155: Crypto Core, Config Seam & Bandit Baseline (5/5 plans) — Bandit 1.13.1 hosts; KEK config seam; every new signing key sealed as an `LSK` envelope that all six consumers read.
-- [x] Phase 156: Legacy Migration, KEK Rotation & Plaintext Refusal (3/3 plans) — locked, CAS-guarded re-encryption and KEK rotation, `--check` readiness, opt-in `legacy_plaintext: :reject`.
-- [x] Phase 157: Host Surfaces, Redaction Sweep & Release Proof (6/6 plans) — fail-closed install KEK block, structural redaction sweep, upgrade-journey and CI proof, HexDocs upgrade guide.
-
-**Audit:** [v1.43 milestone audit](milestones/v1.43-MILESTONE-AUDIT.md) — 16/16 requirements, 15/15 integration, 4/4 flows; `tech_debt`, no blockers; override closeout for stale 155/156 reports.
-
-</details>
-
-<details>
-<summary>✅ v1.42 Admin UI Clarity & Workflow Refinement (Phases 151–154) — completed 2026-10-15</summary>
-
-- [x] Phase 151: Focused Client Registration & Settings (2/2 plans) — its own registration route, focused app task pages, and a primary/secondary/danger action rule.
-- [x] Phase 152: Overview & Queue State Clarity (5/5 plans) — overview counts open exact read-only queue subsets, with hedged reuse and sign-out evidence.
-- [x] Phase 153: Configure & Support Page Refinement (7/7 plans) — plain language and clear page hierarchy across all 30 admin paths.
-- [x] Phase 154: Responsive, Theme & Route Proof (7/7 plans) — contrast, focus and layout fixes with redaction-safe evidence across 7 widths and 3 themes.
-
-**Audit:** [v1.42 milestone audit](milestones/v1.42-MILESTONE-AUDIT.md) — 9/9 requirements, no gaps; bounded UI polish and pre-existing debt accepted.
-
-</details>
-
-<details>
-<summary>✅ v1.41 Product Language & Repository Clarity (Phases 148–150) — completed 2026-10-11</summary>
-
-- [x] Phase 148: User-Facing Admin Language (7/7 plans) — task-centered copy that preserves OAuth/OIDC meaning and truthful outcomes.
-- [x] Phase 149: Repository Ownership and Lifecycle (1/1 plan) — lifecycle map and evidence-backed preservation decisions.
-- [x] Phase 150: Adopter and Maintainer Documentation (2/2 plans) — canonical adoption path and task-grouped HexDocs.
-
-**Audit:** [v1.41 milestone audit](milestones/v1.41-MILESTONE-AUDIT.md) — no requirement or integration gaps; bounded maintenance debt accepted.
-
-</details>
+No next scope selected. Run `$gsd-new-milestone` to define fresh requirements; continue phase numbering at 171.
 
 ## Completed Backlog Scope
 

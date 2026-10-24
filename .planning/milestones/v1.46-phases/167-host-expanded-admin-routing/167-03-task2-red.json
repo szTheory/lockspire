@@ -1,0 +1,10 @@
+{
+  "command": "LOCKSPIRE_TEST_DB_NAME=lockspire_phase167_20261022_1754 ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test --no-compile --formatter Lockspire.TemporaryTapFormatter --no-color test/lockspire/web/admin_route_separation_test.exs:98",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test admin and host consent are ordered before each broad public forward\n1..1\n",
+  "targetTest": "test admin and host consent are ordered before each broad public forward",
+  "targetFile": "test/lockspire/web/admin_route_separation_test.exs",
+  "expected": "A host-owned consent LiveView route is present before the public forward at each supported mount.",
+  "actual": "The host consent route was absent from the current canonical host router.",
+  "semanticAssessment": "The target ExUnit test executed and failed on its planned route-presence assertion; setup and test collection succeeded."
+}

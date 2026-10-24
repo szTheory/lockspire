@@ -1,0 +1,11 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test --formatter Lockspire169TapFormatter test/mix/tasks/lockspire_verify_test.exs:235",
+  "exitCode": 2,
+  "output": "TAP version 14\nok 1 - test prints OK lines for a passing verify run # SKIP\nok 2 - test successful output does not disclose session or arbitrary route metadata # SKIP\nok 3 - test public diagnostic refuses the legacy admin forward # SKIP\nok 4 - test exception and key configuration output do not disclose injected sentinels # SKIP\nok 5 - test raises with actionable router guidance when verify routes are missing # SKIP\nnot ok 6 - test help states native routing and the structural proof limit\n1..6",
+  "consoleOutput": "The targeted ExUnit test failed because mix lockspire.verify --help does not yet describe native admin routes and the structural proof boundary.",
+  "targetTest": "test help states native routing and the structural proof limit",
+  "targetFile": "test/mix/tasks/lockspire_verify_test.exs",
+  "expected": "Help documents native admin routes and the structural proof boundary.",
+  "actual": "Help output omits both required phrases; the targeted assertion failed.",
+  "semanticAssessment": "The exact named ExUnit test executed and failed on missing help content; compilation succeeded and unrelated tests were explicitly skipped by line selection."
+}

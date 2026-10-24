@@ -207,6 +207,46 @@ defmodule Lockspire.Install.MigrationsTest do
     assert File.read!(destination) == "host bytes"
   end
 
+  test "the lifetime expansion is a new additive package asset with a stable checksum", %{
+    project_root: project_root
+  } do
+    package_root = Path.expand("../../../priv/repo/migrations", __DIR__)
+    filename = "20261021000000_add_client_lifetime_contract.exs"
+    packaged = Path.join(package_root, filename)
+    original = File.read!(packaged)
+    expected_checksum = Lockspire.Install.Manifest.checksum(original)
+
+    assert {:ok, plan} = Migrations.plan(source_root: package_root, project_root: project_root)
+
+    assert [%{relative_path: relative_path, checksum: ^expected_checksum} = operation] =
+             Enum.filter(
+               plan.operations,
+               &(&1.relative_path == "priv/repo/migrations/#{filename}")
+             )
+
+    assert relative_path == "priv/repo/migrations/#{filename}"
+
+    assert {:ok, %{operations: [%{status: :copied, checksum: ^expected_checksum}]}} =
+             Migrations.apply(%{plan | operations: [operation]})
+
+    destination = Path.join(project_root, "priv/repo/migrations/#{filename}")
+    assert File.read!(destination) == original
+
+    assert {:ok, next_plan} =
+             Migrations.plan(source_root: package_root, project_root: project_root)
+
+    assert [%{status: :unchanged, checksum: ^expected_checksum} = next_operation] =
+             Enum.filter(
+               next_plan.operations,
+               &(&1.relative_path == "priv/repo/migrations/#{filename}")
+             )
+
+    assert {:ok, %{operations: [%{status: :unchanged, checksum: ^expected_checksum}]}} =
+             Migrations.apply(%{next_plan | operations: [next_operation]})
+
+    assert File.read!(packaged) == original
+  end
+
   defp write_migration!(source_root, filename, contents) do
     path = Path.join(source_root, filename)
     File.write!(path, contents)

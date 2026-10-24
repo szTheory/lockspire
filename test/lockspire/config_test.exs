@@ -37,6 +37,60 @@ defmodule Lockspire.ConfigTest do
     assert Lockspire.account_resolver!() == Lockspire.TestAccountResolver
   end
 
+  test "mount_path canonicalizes root and one trailing slash" do
+    for {input, expected} <- [
+          {"", ""},
+          {"/", ""},
+          {"/lockspire/", "/lockspire"},
+          {"/teams/ops/identity/", "/teams/ops/identity"}
+        ] do
+      put_lockspire_env(:mount_path, input)
+      assert Lockspire.Config.mount_path() == expected
+      put_lockspire_env(:mount_path, expected)
+      assert Lockspire.Config.mount_path() == expected
+    end
+  end
+
+  test "mount_path rejects malformed static prefixes without echoing secrets" do
+    for input <- [
+          "relative",
+          "/a//b",
+          "/../admin",
+          "/:tenant/admin",
+          "/a/*rest",
+          "/a%2fb",
+          "/a\\b",
+          "/a?token=secret",
+          "https://host/path"
+        ] do
+      put_lockspire_env(:mount_path, input)
+      error = assert_raise ArgumentError, fn -> Lockspire.Config.mount_path() end
+      refute Exception.message(error) =~ "secret"
+    end
+  end
+
+  test "client and transaction store selectors default to Repository and preserve explicit values" do
+    delete_lockspire_env(:client_store)
+    delete_lockspire_env(:transaction_store)
+
+    assert Lockspire.Config.client_store() == Lockspire.Storage.Ecto.Repository
+    assert Lockspire.Config.transaction_store() == Lockspire.Storage.Ecto.Repository
+
+    put_lockspire_env(:client_store, CustomClientStore)
+    put_lockspire_env(:transaction_store, CustomTransactionStore)
+
+    assert Lockspire.Config.client_store() == CustomClientStore
+    assert Lockspire.Config.transaction_store() == CustomTransactionStore
+  end
+
+  test "invalid explicit store selector values are not replaced by defaults" do
+    put_lockspire_env(:client_store, :invalid_client_store)
+    put_lockspire_env(:transaction_store, "invalid transaction store")
+
+    assert Lockspire.Config.client_store() == :invalid_client_store
+    assert Lockspire.Config.transaction_store() == "invalid transaction store"
+  end
+
   test "storage_prefix/0 keeps missing config legacy-compatible and validates explicit values" do
     delete_lockspire_env(:storage_prefix)
     delete_lockspire_env(:oban_prefix)

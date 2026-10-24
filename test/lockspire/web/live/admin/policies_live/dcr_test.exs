@@ -123,6 +123,22 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
     assert html =~ "Save app registration settings"
     assert html =~ "These rules apply to new app registrations only."
 
+    assert rendered_text(html) =~ "Leave blank or enter 0 for no automatic expiry."
+
+    assert rendered_text(html) =~
+             "A positive duration applies to new or replaced app management tokens."
+
+    assert rendered_text(html) =~
+             "Changing this setting does not change existing app management tokens."
+
+    assert rendered_text(html) =~
+             "Expiry blocks reading, updating or deleting an app registration until an authorized team member rotates the token."
+
+    assert rendered_text(html) =~
+             "Rotating the token does not renew the app or its client secret."
+
+    refute rendered_text(html) =~ "Lockspire saves this value but doesn't expire these tokens."
+
     for name <- [
           "policy[registration_policy]",
           "policy[dcr_allowed_scopes]",
@@ -214,13 +230,16 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     assert rendered_text(blank_limits_html) =~
-             "Lockspire saves this value but never disables an app"
+             "Lockspire enforces app, client secret and app management token expiry. Changing a lifetime only affects new or replaced items."
 
     assert rendered_text(blank_limits_html) =~
-             "Apps will be told their secret has already expired"
+             "Lockspire stops an app from using OAuth when its expiry date is reached. This setting applies to new apps."
 
     assert rendered_text(blank_limits_html) =~
-             "If you leave this blank or enter 0, apps are told their secret has already expired."
+             "No automatic expiry"
+
+    assert rendered_text(blank_limits_html) =~
+             "For example, 2592000 is 30 days. Leave blank or enter 0 for no automatic expiry. A positive value applies to new or replaced app secrets. Changing this setting does not change expiry on existing app secrets. Some older apps may have an advisory expiry date; replacing the secret sets its new expiry using the current setting."
 
     refute has_element?(view, ".lockspire-admin-field-errors")
   end
@@ -423,12 +442,12 @@ defmodule Lockspire.Web.Live.Admin.PoliciesLive.DcrTest do
       })
 
     assert duration_hint(html, "dcr_default_client_secret_lifetime_seconds") ==
-             "Apps will be told their secret has already expired"
+             "No automatic expiry"
 
     assert has_element?(
              view,
              "#dcr_default_client_secret_lifetime_seconds-info[role=tooltip]",
-             "still accepts a secret after its expiry date"
+             "A positive value applies to new or replaced app secrets"
            )
   end
 

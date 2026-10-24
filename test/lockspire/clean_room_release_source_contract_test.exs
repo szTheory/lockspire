@@ -5,6 +5,7 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
   @journey Path.expand("../../scripts/acceptance/clean_room_saas_journey.py", __DIR__)
   @provider Path.expand("../../scripts/acceptance/clean_room/build_provider.py", __DIR__)
   @wrapper Path.expand("../../scripts/acceptance/run_clean_room_saas_journey.sh", __DIR__)
+  @overlay_root Path.expand("../clean_room/provider_host/lib/clean_room_provider_web", __DIR__)
 
   test "one explicit package source is prepared once and shared by both roles" do
     input = File.read!(@package_input)
@@ -111,5 +112,58 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
                env: [{"LOCKSPIRE_PROVIDER_BUILDER", @provider}],
                stderr_to_stdout: true
              )
+  end
+
+  test "builder endpoint shares the browser cookie session with LiveView connect_info" do
+    script = """
+    import importlib.util
+    import os
+    from pathlib import Path
+    import sys
+    import tempfile
+
+    provider_path = Path(os.environ["LOCKSPIRE_PROVIDER_BUILDER"])
+    sys.path.insert(0, str(provider_path.parent))
+    spec = importlib.util.spec_from_file_location("build_provider", provider_path)
+    provider = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(provider)
+
+    with tempfile.TemporaryDirectory() as temporary:
+        child = Path(temporary)
+        provider.write_host_runtime(child, "postgres://localhost/clean_room")
+        endpoint = (child / "lib/clean_room_provider_web/endpoint.ex").read_text()
+        config = (child / "config/config.exs").read_text()
+        print(endpoint)
+        print(config)
+    """
+
+    assert {emitted, 0} =
+             System.cmd("python3", ["-c", script],
+               env: [{"LOCKSPIRE_PROVIDER_BUILDER", @provider}],
+               stderr_to_stdout: true
+             )
+
+    assert emitted =~ "@session_options"
+    assert emitted =~ "socket(\"/live\", Phoenix.LiveView.Socket"
+    assert emitted =~ "connect_info: [session: @session_options]"
+    assert emitted =~ "plug Plug.Session, @session_options"
+    assert emitted =~ "live_view: [signing_salt: \"clean-room-provider-test-live-view-salt\"]"
+  end
+
+  test "clean-room overlay delegates admin routes and denies until host policy is configured" do
+    router = File.read!(Path.join(@overlay_root, "router_patch.exs"))
+    authorization = File.read!(Path.join(@overlay_root, "operator_authorization.ex"))
+
+    assert router =~ "import CleanRoomProviderWeb.Router.Lockspire"
+    assert router =~ "lockspire_routes()"
+    assert router =~ "plug(:fetch_live_flash)"
+    assert router =~ "plug(:put_secure_browser_headers)"
+    refute router =~ "Lockspire.Web.AdminRouter"
+    refute router =~ "Phoenix.LiveView.Router.live"
+
+    assert authorization =~ "@behaviour Plug"
+    assert authorization =~ "send_resp(:forbidden, \"operator authorization required\")"
+    assert authorization =~ "def on_mount(_name, _params, _session, socket)"
+    assert authorization =~ "{:halt, redirect(socket, to: \"/\")}"
   end
 end

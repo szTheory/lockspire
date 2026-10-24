@@ -340,6 +340,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlugTest do
 
       {:ok, fapi_client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "fapi-only-g1",
           client_secret_hash: Policy.hash_client_secret("g1-secret"),
           client_type: :confidential,
@@ -376,6 +377,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlugTest do
 
       {:ok, exempted_client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "none-override-g2",
           client_secret_hash: Policy.hash_client_secret("g2-secret"),
           client_type: :confidential,
@@ -410,6 +412,7 @@ defmodule Lockspire.Protocol.FAPI20EnforcerPlugTest do
 
   defp register_client(client_id) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash: Policy.hash_client_secret("test-secret-#{client_id}"),
       client_type: :confidential,

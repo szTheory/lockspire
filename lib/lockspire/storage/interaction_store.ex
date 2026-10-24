@@ -12,7 +12,11 @@ defmodule Lockspire.Storage.InteractionStore do
               {:ok, Interaction.t() | nil} | {:error, store_error()}
   @callback fetch_active_interaction(String.t()) ::
               {:ok, Interaction.t() | nil} | {:error, store_error()}
-  @callback transition_interaction(String.t(), [Interaction.status()], map()) ::
+  @callback transition_interaction(
+              String.t(),
+              [Interaction.status()],
+              map() | (Interaction.t() -> {:ok, map()} | {:error, store_error()})
+            ) ::
               {:ok, Interaction.t()} | {:error, store_error()}
   @callback list_interactions(keyword()) :: {:ok, [Interaction.t()]} | {:error, store_error()}
 end

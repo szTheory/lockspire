@@ -3,6 +3,8 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   @moduletag :integration
 
+  import Ecto.Query
+
   alias Lockspire.Audit.Event
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.Interaction
@@ -155,6 +157,7 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   test "repository transaction wrapper commits the durable mutation and audit row together" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "client_with_audit",
       client_secret_hash: "argon2id$hash",
       client_type: :confidential,
@@ -185,7 +188,13 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
     assert record.client_id == client.client_id
 
-    assert [%AuditEventRecord{} = stored_audit] = Lockspire.TestRepo.all(AuditEventRecord)
+    assert [%AuditEventRecord{} = stored_audit] =
+             Lockspire.TestRepo.all(
+               from(event in AuditEventRecord,
+                 where: event.resource_id == ^client.client_id
+               )
+             )
+
     assert stored_audit.action == "client_created"
     assert stored_audit.resource_id == client.client_id
   end
@@ -362,6 +371,7 @@ defmodule Lockspire.Audit.AuditWriterTest do
 
   defp register_client(client_id, now, auth_method \\ :none) do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_secret_hash:
         if(auth_method == :none, do: "argon2id$hash", else: client_secret_hash("secret")),

@@ -5,6 +5,7 @@ defmodule Lockspire.Protocol.DeviceVerification do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.DeviceAuthorization
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   defmodule PendingAuthorization do
@@ -45,16 +46,11 @@ defmodule Lockspire.Protocol.DeviceVerification do
   def approve_device_authorization(verification_handle, actor_context, opts \\ [])
       when is_binary(verification_handle) and is_map(actor_context) and is_list(opts) do
     with {:ok, subject_id} <- actor_subject_id(actor_context),
-         {:ok, approved} <-
-           device_authorization_store(opts).transition_device_authorization(
-             verification_handle,
-             [:pending],
-             %{
-               status: :approved,
-               subject_id: subject_id,
-               approved_at: now(opts)
-             }
-           ) do
+         {:ok, %DeviceAuthorization{} = pending} <-
+           device_authorization_store(opts).fetch_device_authorization_by_verification_handle(
+             verification_handle
+           ),
+         {:ok, approved} <- guarded_approval(pending, subject_id, opts) do
       Lockspire.Observability.emit(
         :device_authorization,
         :approved,
@@ -67,6 +63,9 @@ defmodule Lockspire.Protocol.DeviceVerification do
       )
 
       {:ok, approved}
+    else
+      {:ok, nil} -> {:error, :not_found}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -117,7 +116,8 @@ defmodule Lockspire.Protocol.DeviceVerification do
          normalized_user_code,
          opts
        ) do
-    with {:ok, client_name} <- client_name(authorization.client_id, opts) do
+    with {:ok, client} <- current_eligible_client(authorization.client_id, opts),
+         client_name <- display_client_name(client) do
       {:ok,
        %PendingAuthorization{
          verification_handle: authorization.verification_handle,
@@ -129,14 +129,137 @@ defmodule Lockspire.Protocol.DeviceVerification do
     end
   end
 
-  defp client_name(client_id, opts) do
-    case client_store(opts).fetch_client_by_id(client_id) do
-      {:ok, %Client{name: name}} when is_binary(name) and name != "" -> {:ok, name}
-      {:ok, %Client{client_id: client_id}} -> {:ok, client_id}
-      {:ok, nil} -> {:ok, client_id}
+  defp current_eligible_client(client_id, opts) do
+    store = client_store(opts)
+
+    with {:ok, lifetime} <- client_lifetime(opts),
+         {:ok, %Client{} = client} <- store.fetch_client_by_id(client_id),
+         {:ok, client} <- ClientLifetime.validate_client(client),
+         :ok <- Client.app_eligibility(client, clock(opts).(), :device_verification) do
+      _ = lifetime
+      {:ok, client}
+    else
+      {:ok, nil} -> {:error, :not_found}
+      {:error, :expired} -> {:error, :expired}
+      {:error, :disabled} -> {:error, :not_active}
       {:error, reason} -> {:error, reason}
     end
   end
+
+  defp display_client_name(%Client{name: name}) when is_binary(name) and name != "", do: name
+  defp display_client_name(%Client{client_id: client_id}), do: client_id
+
+  defp guarded_approval(%DeviceAuthorization{} = pending, subject_id, opts) do
+    client_store = client_store(opts)
+    device_store = device_authorization_store(opts)
+    audit_store = Keyword.get(opts, :audit_store, Repository)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+    clock = clock(opts)
+
+    with {:ok, _lifetime} <- client_lifetime(opts),
+         :ok <-
+           participants(
+             transaction_store.transaction_authority(),
+             client_store,
+             device_store,
+             audit_store,
+             transaction_store
+           ),
+         {:ok, approved} <-
+           transaction_store.transact(fn ->
+             with {:ok, [current_client]} <- client_store.lock_clients([pending.client_id]),
+                  {:ok, result} <-
+                    device_store.transition_device_authorization(
+                      pending.verification_handle,
+                      [:pending],
+                      fn current_authorization ->
+                        decision_time = clock.()
+
+                        cond do
+                          current_authorization.client_id != current_client.client_id ->
+                            {:error, :invalid_state}
+
+                          DateTime.compare(current_authorization.expires_at, decision_time) != :gt ->
+                            {:error, :expired}
+
+                          :ok != app_eligibility(current_client, decision_time) ->
+                            {:error, eligibility_error(current_client, decision_time)}
+
+                          true ->
+                            %{
+                              status: :approved,
+                              subject_id: subject_id,
+                              approved_at: decision_time
+                            }
+                        end
+                      end
+                    ),
+                  {:ok, _event} <-
+                    audit_store.append_audit_event(%{
+                      action: "device_authorization_approved",
+                      outcome: "approved",
+                      actor: %{type: "host", id: subject_id},
+                      resource: %{
+                        type: "device_authorization",
+                        id: result.verification_handle
+                      },
+                      metadata: %{client_id: result.client_id}
+                    }) do
+               {:ok, result}
+             else
+               {:ok, []} -> {:error, :not_found}
+               {:error, reason} -> {:error, reason}
+             end
+           end) do
+      {:ok, approved}
+    else
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp eligibility_error(client, now) do
+    case app_eligibility(client, now) do
+      {:error, :expired} -> :expired
+      {:error, :disabled} -> :not_active
+      {:error, _} -> :client_lifetime_unavailable
+      :ok -> :invalid_state
+    end
+  end
+
+  defp app_eligibility(%Client{} = client, %DateTime{} = now) do
+    with {:ok, client} <- ClientLifetime.validate_client(client) do
+      Client.app_eligibility(client, now, :device_approval)
+    end
+  end
+
+  defp client_lifetime(opts) do
+    client_store = client_store(opts)
+    transaction_store = Keyword.get(opts, :transaction_store, Repository)
+
+    case ClientLifetime.adapt(client_store, transaction_store.transaction_authority()) do
+      {:ok, lifetime} -> {:ok, lifetime}
+      {:error, reason} -> {:error, reason}
+    end
+  rescue
+    _error -> {:error, :client_lifetime_unavailable}
+  end
+
+  defp participants(%{identity: identity, participants: participants}, client, device, audit, tx)
+       when not is_nil(identity) and is_map(participants) do
+    if Map.get(participants, :client_store) == client and
+         Map.get(participants, :device_authorization_store) == device and
+         Map.get(participants, :audit_store) == audit and
+         Map.get(participants, :transaction_store) == tx do
+      :ok
+    else
+      {:error, :transaction_authority_mismatch}
+    end
+  end
+
+  defp participants(_authority, _client, _device, _audit, _tx),
+    do: {:error, :transaction_authority_unavailable}
 
   defp actor_subject_id(%{subject_id: subject_id})
        when is_binary(subject_id) and subject_id != "",
@@ -154,6 +277,13 @@ defmodule Lockspire.Protocol.DeviceVerification do
   defp client_store(opts),
     do: Keyword.get(opts, :client_store, Repository)
 
-  defp now(opts),
-    do: Keyword.get_lazy(opts, :now, &DateTime.utc_now/0)
+  defp clock(opts) do
+    case Keyword.get(opts, :now, &DateTime.utc_now/0) do
+      %DateTime{} = now -> fn -> now end
+      now when is_function(now, 0) -> now
+      _other -> fn -> nil end
+    end
+  end
+
+  defp now(opts), do: clock(opts).()
 end

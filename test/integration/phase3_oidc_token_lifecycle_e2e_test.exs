@@ -68,9 +68,14 @@ defmodule Lockspire.Integration.Phase3OidcTokenLifecycleE2ETest do
 
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    {:ok, server_policy} = Repository.get_server_policy()
+
+    {:ok, _server_policy} =
+      Repository.put_server_policy(%{server_policy | registration_policy: :disabled})
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase3-e2e-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -90,6 +95,7 @@ defmodule Lockspire.Integration.Phase3OidcTokenLifecycleE2ETest do
 
     {:ok, confidential_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase3-e2e-confidential",
         client_secret_hash: client_secret_hash(confidential_secret),
         client_type: :confidential,

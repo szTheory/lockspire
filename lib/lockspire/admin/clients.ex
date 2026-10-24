@@ -165,26 +165,33 @@ defmodule Lockspire.Admin.Clients do
   end
 
   def rotate_client_secret(client_id, attrs) when is_binary(client_id) and is_map(attrs) do
-    rotated_at = Map.get(attrs, :rotated_at, DateTime.utc_now())
+    rotation_clock =
+      case Map.fetch(attrs, :rotated_at) do
+        {:ok, %DateTime{} = rotated_at} -> rotated_at
+        :error -> Map.get(attrs, :now, &DateTime.utc_now/0)
+      end
+
     actor = actor_from_attrs(attrs)
 
     with {:ok, %Client{} = client} <- get_client(client_id),
          :ok <- ensure_confidential_client(client) do
       secret_material = Clients.rotate_secret_material()
 
-      audit_event =
-        client_audit_event(:client_secret_rotated, :succeeded, client, actor, %{
-          rotated_at: rotated_at
-        })
-
       case ClientLifecycle.rotate_operator_secret(
              client,
              secret_material,
-             rotated_at,
-             audit_event
+             rotation_clock,
+             fn %Client{last_secret_rotated_at: committed_at} = updated_client ->
+               client_audit_event(:client_secret_rotated, :succeeded, updated_client, actor, %{
+                 rotated_at: committed_at
+               })
+             end
            ) do
         {:ok, %Client{} = updated_client} ->
-          emit(:client, :secret_rotated, updated_client, actor, %{rotated_at: rotated_at})
+          emit(:client, :secret_rotated, updated_client, actor, %{
+            rotated_at: updated_client.last_secret_rotated_at
+          })
+
           {:ok, %{client: updated_client, client_secret: secret_material.client_secret}}
 
         {:error, reason} ->

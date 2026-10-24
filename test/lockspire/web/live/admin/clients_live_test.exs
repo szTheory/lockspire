@@ -42,6 +42,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _alpha} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "alpha-client",
         client_secret_hash: "sha256:alpha:hash",
         client_type: :confidential,
@@ -59,6 +60,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _beta} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "beta-client",
         client_type: :public,
         name: "Beta Client",
@@ -76,6 +78,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _gamma} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "gamma-client",
         client_type: :confidential,
         name: "Gamma Client",
@@ -523,6 +526,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
   test "client IDs with reserved URL characters are encoded in app links" do
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "odd/id?x#y",
         client_secret_hash: "sha256:odd",
         client_type: :confidential,
@@ -559,6 +563,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     for n <- 1..9 do
       {:ok, _client} =
         Repository.register_client(%Client{
+          lifetime_version: 0,
           client_id: "paged-client-#{n}",
           client_secret_hash: "sha256:paged:#{n}",
           client_type: :confidential,
@@ -620,6 +625,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
 
     {:ok, _disabled_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: long_client_id,
         client_secret_hash: "sha256:disabled:secret:hash",
         client_type: :confidential,
@@ -815,8 +821,8 @@ defmodule Lockspire.Web.Live.Admin.ClientsLiveTest do
     rat_prompt_html = render(view)
 
     assert rat_prompt_html =~ "Rotate app management token"
-    assert rat_prompt_html =~ "current token stops working after rotation"
-    assert rat_prompt_html =~ "new token is shown once, right after you confirm"
+    assert rat_prompt_html =~ "The previous app management token stops working immediately."
+    assert rat_prompt_html =~ "new token is shown once after you confirm"
     refute rat_prompt_html =~ "Rotate Registration Access Token (RAT)"
 
     # Reject without confirm

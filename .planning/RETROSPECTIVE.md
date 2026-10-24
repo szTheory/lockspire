@@ -425,12 +425,81 @@ No reliable total model/session telemetry is claimed. Existing deterministic tes
 
 ---
 
+## Milestone: v1.45 — DCR Lifetime Enforcement
+
+**Completed:** 2026-10-22
+**Phases:** 5 | **Plans:** 40 | **Planned task elements:** 92 (CLI SUMMARY aggregate: 66)
+
+### What Was Built
+
+- Selected one lifetime and upgrade contract with 69 traceable cases and explicit nil/zero/positive and exact-boundary semantics.
+- Enforced current app authority across authentication, browser flows, grants and online token consumers, with final decisions sampled after locks.
+- Made shared-secret issuance, authentication and operator rotation use atomic, policy-derived lifecycle state.
+- Added finite management-token enforcement, atomic replacement and host-authorized recovery without extending unrelated lifetimes.
+- Proved legacy upgrades under both prefixes and a configured host adapter sharing PostgreSQL transaction authority.
+- Bound nine packaged HTTP scenarios and 49 passing checks to exact-source CI, scoped security review, redaction and executable guidance.
+
+### What Worked
+
+Selecting the 27-decision contract before implementation made consumer boundaries and legacy treatment explicit. Independent PostgreSQL sessions established actual waits and rollback; one candidate archive fed fresh, configured-store and both-prefix legacy host journeys. Strict safe receipt parsing tied all nine scenarios to required CI. Existing tests and independent reviews caught stale guide wording and the malformed final-clock exception before closeout.
+
+### What Was Inefficient
+
+Later shared-file and evidence-binding changes repeatedly invalidated earlier phase fingerprints. Final proof was refreshed in dependency order (166 before its dependent 163 report). Historical SUMMARY metadata varied enough for the CLI to count 66 tasks against 92 PLAN elements; eight requirement completion fields required manual reconciliation. Broad test selections overlap and cannot be summed as unique test totals.
+
+### Patterns Established
+
+Current-row authority and post-lock clocks govern durable work; credential lifetimes remain independent. Host adapter support is demonstrated only under declared shared PostgreSQL authority. Executed Markdown examples, immutable case mapping and allowlisted receipt pairs are maintained proof seams. Archived fingerprint paths and verdicts remain historical rather than being restamped after relocation.
+
+### Key Lessons
+
+Freeze source before final CI/security/receipt binding; regenerate dependent verifications last. Keep requirement metadata and validation flags consistent as work lands. Define every probe predicate before asking evidence to satisfy it. Separate milestone archive tags from package release claims and keep quick tasks in place unless their broad opt-in archive is wanted.
+
+### Cost Observations
+
+- Model mix and session totals: not reliably recorded; no percentages inferred.
+- Timeline: two calendar days (2026-10-20 → 2026-10-22); 253 commits from first contract plan through final audit.
+- Evidence: seven required CI contexts successful; package 49/49; security 25/25; all five phase owners passed pre-close. Historical TDD classifier and rendered-review limits remain in the audit.
+
+## Milestone: v1.46 — Embedded Host Integration Reliability
+
+**Completed:** 2026-10-24
+**Phases:** 4 | **Plans:** 16 | **Planned task elements:** 32 (CLI SUMMARY aggregate: 30)
+
+### What Was Built
+
+Native host-expanded admin routes, current host-owned authorization, deny-first installation, safe checksum-controlled upgrades, compiled-route diagnostics and package/browser proof across locked and exact-floor pairs.
+
+### What Worked
+
+A retained forward-only negative control and literal 29-route baseline anchored the repair. Current authority was independently checked at HTTP, join, cached-response rejoin and params boundaries. Candidate-bound real Chrome receipts established transport behavior beyond LiveViewTest. Independent security/review found and closed cleanup, redaction and artifact-path containment faults.
+
+### What Was Inefficient
+
+Shared-source edits invalidated earlier verification fingerprints, requiring a final verification-only refresh. Generated-host selectors shared filesystem fixtures and needed sequential runs with disposable databases. A cold floor run hit the 900-second limit; its failed evidence was retained and a same-source retry passed. Missing terminal UAT metadata created a false closeout gap; varied task metadata produced 30 CLI tasks versus 32 PLAN elements.
+
+### Patterns Established
+
+Use native host routing and one shared inventory, retain deny-by-default host policy ownership, and distinguish structural diagnostics from host authorization behavior. Separate lifecycle and browser receipts; require exact source/package/pair/mount/run bindings and independently guarded cleanup. Preserve local/remote and historical evidence boundaries at archival.
+
+### Key Lessons
+
+Freeze source before final cross-phase fingerprints. Run shared generated-host selectors sequentially. Test signal, timeout, malformed receipt and path-containment failures as first-class harness behavior. Add terminal ledger metadata when closing automated acceptance. Keep milestone tags distinct from package publication and leave older quick tasks in place unless opted into archival.
+
+### Cost Observations
+
+- Model mix and session totals: not reliably recorded; no percentages inferred.
+- Timeline: two calendar days (2026-10-22 → 2026-10-24), 147 commits through the milestone audit.
+- Evidence: all four phase owners passed pre-close; 96 browser cases and separate 43/44 lifecycle checks at recorded sources; 68/68 security threats closed. Hosted CI remains unobserved.
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.46 | N/A | 4 | Native host routing, current authority, exact-pair real-browser proof and failure-tested receipt containment. |
+| v1.45 | N/A | 5 | Selected contract, actual lock waits, candidate-bound package proof and verification dependency ordering. |
 | v1.43 | N/A | 3 | Closed CR-01 with envelope encryption at rest, a checked migration path, and one structural leak matcher shared by every redaction test. |
 | v1.42 | N/A | 4 | Admin UI clarity backed by CI page/contrast contracts plus a local-only, navigate-only browser evidence harness. |
 | v1.39 | N/A | 2 | Verified the public 1.5.1 artifact across exact-source CI, protected publication, and install proof while retaining a separate accepted merge-provenance gap. |
@@ -447,6 +516,8 @@ No reliable total model/session telemetry is claimed. Existing deterministic tes
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.46 | 96 recorded browser cases, separate 43/44 lifecycle checks; four phase owners passed pre-close | Four Nyquist-compliant phases; hosted CI unobserved | Shared route inventory, host seams and bounded receipt harness |
+| v1.45 | Seven required CI contexts; 9 package scenarios/49 checks; 69 mapped cases; all five phase owners passed pre-close | Five Nyquist-compliant phases; undefined probes remain explicit | Current-row lifetime guards, declared adapter composition and strict receipts |
 | v1.43 | Sentinel key-material leak tests across repo telemetry, logs, admin and operator output; real-concurrency reencrypt proofs; upgrade-journey integration test; demo and clean-room `--check`/doctor CI checks | High | OTP `:crypto` envelope cipher, key-material matcher, reencrypt engine |
 | v1.42 | 1573 fast-suite tests; page contract on every admin route; computed contrast contract; 928 local browser checks | High | Page contract helper, contrast assertions, local agent-browser route-proof harness |
 | v1.39 | Focused release contracts, exact-main CI, package checksum, tag/docs/install, and terminal receipt | N/A (release-engineering milestone) | Manifest-bound publisher, exact tag checks, per-stage terminal release receipts |

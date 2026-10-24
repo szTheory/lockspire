@@ -83,6 +83,7 @@ defmodule Lockspire.Integration.Phase37ProtocolStrictnessE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase37-strictness-client",
         client_secret_hash: nil,
         client_type: :public,

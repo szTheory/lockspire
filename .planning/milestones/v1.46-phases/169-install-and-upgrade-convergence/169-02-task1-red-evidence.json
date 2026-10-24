@@ -1,0 +1,10 @@
+{
+  "command": "GSD_TAP_REPORT=/tmp/169-02-task1-red.tap ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test --name-pattern \\\"checksum-tracked v1.45\\\" test/integration/install_upgrade_test.exs --formatter Lockspire.GSDTapFormatter",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test a checksum-tracked v1.45 forward helper converts and preserves recorded host inputs\n1..1\n",
+  "targetTest": "test a checksum-tracked v1.45 forward helper converts and preserves recorded host inputs",
+  "targetFile": "test/integration/install_upgrade_test.exs",
+  "expected": "Upgrade creates absent host-owned authorization seam while converting the tracked historical router",
+  "actual": "Target assertion failed because the upgrade did not create the absent seam",
+  "semanticAssessment": "The filtered target test executed, compiled, and failed on the planned missing-seam assertion; no setup or unrelated failure occurred."
+}

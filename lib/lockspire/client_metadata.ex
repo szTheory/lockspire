@@ -41,7 +41,11 @@ defmodule Lockspire.ClientMetadata do
   @spec build_dcr_client(map(), map(), term(), map()) :: Client.t()
   def build_dcr_client(metadata, resolved, iat_record, credentials)
       when is_map(metadata) and is_map(credentials) do
-    now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+    now =
+      credentials
+      |> Map.get(:issued_at, DateTime.utc_now())
+      |> DateTime.truncate(:second)
+
     logout_metadata = normalize_logout_metadata(metadata)
 
     auth_method =
@@ -97,7 +101,14 @@ defmodule Lockspire.ClientMetadata do
       security_profile:
         atomize_security_profile(Map.get(metadata, "security_profile", "inherit")),
       client_id_issued_at: now,
-      client_secret_expires_at: client_secret_expires_at(now, resolved, credentials),
+      client_secret_expires_at: client_secret_expires_at(now, resolved, credentials, auth_method),
+      lifetime_version: 1,
+      client_expires_at: app_expires_at(now, Map.get(resolved, :default_client_lifetime_seconds)),
+      registration_access_token_expires_at:
+        management_expires_at(
+          now,
+          Map.get(resolved, :default_registration_access_token_lifetime_seconds)
+        ),
       metadata:
         metadata |> Map.take(["client_uri"]) |> Map.reject(fn {_key, value} -> is_nil(value) end)
     }
@@ -274,20 +285,47 @@ defmodule Lockspire.ClientMetadata do
 
   defp parse_scope(_), do: []
 
-  defp client_secret_expires_at(_now, _resolved, %{client_secret_hash: nil}), do: nil
+  defp client_secret_expires_at(_now, _resolved, %{client_secret_hash: nil}, _method), do: nil
 
-  defp client_secret_expires_at(now, resolved, _credentials) do
-    DateTime.add(
-      now,
-      Map.get(resolved, :default_client_secret_lifetime_seconds, 0) || 0,
-      :second
-    )
+  defp client_secret_expires_at(now, resolved, credentials, method) do
+    client = %Client{
+      provenance: :self_registered,
+      token_endpoint_auth_method: method,
+      client_secret_hash: credentials.client_secret_hash
+    }
+
+    case Client.secret_deadline(
+           client,
+           now,
+           Map.get(resolved, :default_client_secret_lifetime_seconds)
+         ) do
+      {:ok, deadline} -> deadline
+      {:error, _reason} -> raise ArgumentError, "invalid DCR client secret lifetime"
+    end
+  end
+
+  defp app_expires_at(_now, lifetime_seconds) when lifetime_seconds in [nil, 0], do: nil
+
+  defp app_expires_at(now, lifetime_seconds)
+       when is_integer(lifetime_seconds) and lifetime_seconds > 0 do
+    DateTime.add(now, lifetime_seconds, :second)
+  end
+
+  defp management_expires_at(now, lifetime_seconds) do
+    client = %Client{provenance: :self_registered}
+
+    case Client.management_deadline(client, now, lifetime_seconds) do
+      {:ok, deadline} -> deadline
+      {:error, _reason} -> raise ArgumentError, "invalid DCR management-token lifetime"
+    end
   end
 
   defp atomize_auth_method("client_secret_post"), do: :client_secret_post
   defp atomize_auth_method("client_secret_jwt"), do: :client_secret_jwt
   defp atomize_auth_method("private_key_jwt"), do: :private_key_jwt
   defp atomize_auth_method("none"), do: :none
+  defp atomize_auth_method("tls_client_auth"), do: :tls_client_auth
+  defp atomize_auth_method("self_signed_tls_client_auth"), do: :self_signed_tls_client_auth
   defp atomize_auth_method(_), do: :client_secret_basic
   defp client_type_from_auth_method(:none), do: :public
   defp client_type_from_auth_method(_), do: :confidential

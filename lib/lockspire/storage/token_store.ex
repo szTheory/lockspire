@@ -22,6 +22,8 @@ defmodule Lockspire.Storage.TokenStore do
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_lifecycle_token(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
+  @callback lock_lifecycle_tokens([String.t()]) ::
+              {:ok, [Token.t()]} | {:error, store_error()}
   @callback fetch_refresh_token(String.t()) ::
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback fetch_active_authorization_code(String.t()) ::
@@ -32,15 +34,28 @@ defmodule Lockspire.Storage.TokenStore do
               {:ok, Token.t() | nil} | {:error, store_error()}
   @callback mark_authorization_code_redeemed(String.t(), DateTime.t()) ::
               {:ok, Token.t()} | {:error, store_error()}
-  @callback redeem_authorization_code(String.t(), DateTime.t(), Token.t()) ::
+  @type redemption_builder :: (Token.t() ->
+                                 {:ok,
+                                  %{
+                                    required(:redeemed_at) => DateTime.t(),
+                                    required(:access_token) => Token.t(),
+                                    optional(atom()) => term()
+                                  }}
+                                 | {:error, store_error()})
+
+  @callback redeem_authorization_code(
+              String.t(),
+              DateTime.t() | nil,
+              Token.t() | redemption_builder()
+            ) ::
               {:ok, %{authorization_code: Token.t(), access_token: Token.t()}}
               | {:error, store_error()}
   @callback rotate_refresh_token(
               String.t(),
               String.t(),
               DateTime.t(),
-              Token.t(),
-              Token.t(),
+              Token.t() | refresh_rotation_builder(),
+              Token.t() | nil,
               expected_cnf()
             ) ::
               {:ok,
@@ -50,4 +65,12 @@ defmodule Lockspire.Storage.TokenStore do
                  access_token: Token.t()
                }}
               | {:error, store_error()}
+  @type refresh_rotation_builder :: (Token.t() ->
+                                       {:ok,
+                                        %{
+                                          required(:rotated_at) => DateTime.t(),
+                                          required(:refresh_token) => Token.t(),
+                                          required(:access_token) => Token.t()
+                                        }}
+                                       | {:error, store_error()})
 end

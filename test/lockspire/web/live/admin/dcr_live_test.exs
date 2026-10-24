@@ -162,6 +162,7 @@ defmodule Lockspire.Web.Live.Admin.DcrLiveTest do
   defp register_self_registered_client(client_id, name) do
     assert {:ok, client} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: client_id,
                client_secret_hash: "sha256:synthetic-secret-hash",
                client_type: :confidential,

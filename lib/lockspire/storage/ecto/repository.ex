@@ -72,6 +72,32 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @behaviour AuditStore
 
   @impl ClientStore
+  def lifetime_contract do
+    %{version: 1, transaction_authority: transaction_authority()}
+  end
+
+  @impl TransactionStore
+  def transaction_authority do
+    %{
+      identity: {:ecto_repo, repo()},
+      participants: %{
+        client_store: __MODULE__,
+        token_store: __MODULE__,
+        device_authorization_store: __MODULE__,
+        ciba_authorization_store: __MODULE__,
+        interaction_store: __MODULE__,
+        audit_store: __MODULE__,
+        transaction_store: __MODULE__
+      }
+    }
+  end
+
+  @impl ClientStore
+  def lock_clients(client_ids) when is_list(client_ids) do
+    EctoClientStore.lock_clients(repo(), client_ids)
+  end
+
+  @impl ClientStore
   def register_client(%Client{} = client) do
     EctoClientStore.register_client(repo(), client)
   end
@@ -142,7 +168,7 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl ClientStore
   def rotate_client_secret(%Client{id: id} = client, secret_hash, verifier_encrypted, rotated_at)
       when is_integer(id) and is_binary(secret_hash) and is_binary(verifier_encrypted) and
-             is_struct(rotated_at, DateTime) do
+             (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) do
     EctoClientStore.rotate_client_secret(
       repo(),
       client,
@@ -180,7 +206,8 @@ defmodule Lockspire.Storage.Ecto.Repository do
 
   @impl InteractionStore
   def transition_interaction(interaction_id, expected_statuses, attrs)
-      when is_binary(interaction_id) and is_list(expected_statuses) and is_map(attrs) do
+      when is_binary(interaction_id) and is_list(expected_statuses) and
+             (is_map(attrs) or is_function(attrs, 1)) do
     EctoInteractionStore.transition_interaction(repo(), interaction_id, expected_statuses, attrs)
   end
 
@@ -280,13 +307,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl DeviceAuthorizationStore
-  def transition_device_authorization(verification_handle, expected_statuses, attrs)
-      when is_binary(verification_handle) and is_list(expected_statuses) and is_map(attrs) do
+  def transition_device_authorization(verification_handle, expected_statuses, attrs_or_mutation)
+      when is_binary(verification_handle) and is_list(expected_statuses) and
+             (is_map(attrs_or_mutation) or is_function(attrs_or_mutation, 1)) do
     EctoDeviceAuthorizationStore.transition_device_authorization(
       repo(),
       verification_handle,
       expected_statuses,
-      attrs
+      attrs_or_mutation
     )
   end
 
@@ -311,13 +339,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
   end
 
   @impl CibaAuthorizationStore
-  def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs)
-      when is_binary(auth_req_id_hash) and is_list(expected_statuses) and is_map(attrs) do
+  def transition_ciba_authorization(auth_req_id_hash, expected_statuses, attrs_or_mutation)
+      when is_binary(auth_req_id_hash) and is_list(expected_statuses) and
+             (is_map(attrs_or_mutation) or is_function(attrs_or_mutation, 1)) do
     EctoCibaAuthorizationStore.transition_ciba_authorization(
       repo(),
       auth_req_id_hash,
       expected_statuses,
-      attrs
+      attrs_or_mutation
     )
   end
 
@@ -428,6 +457,11 @@ defmodule Lockspire.Storage.Ecto.Repository do
   @impl TokenStore
   def fetch_lifecycle_token(token_hash) when is_binary(token_hash) do
     EctoTokenStore.fetch_lifecycle_token(repo(), token_hash)
+  end
+
+  @impl TokenStore
+  def lock_lifecycle_tokens(hashes) when is_list(hashes) do
+    EctoTokenStore.lock_lifecycle_tokens(repo(), hashes)
   end
 
   @impl TokenStore
@@ -542,9 +576,14 @@ defmodule Lockspire.Storage.Ecto.Repository do
       do: EctoSigningKeyStore.reencrypt_signing_key(repo(), id, decide, opts)
 
   @impl TokenStore
-  def redeem_authorization_code(token_hash, redeemed_at, %Token{} = access_token)
-      when is_binary(token_hash) and is_struct(redeemed_at, DateTime) do
-    EctoTokenStore.redeem_authorization_code(repo(), token_hash, redeemed_at, access_token)
+  def redeem_authorization_code(token_hash, redeemed_at, access_token_or_builder)
+      when is_binary(token_hash) and (is_struct(redeemed_at, DateTime) or is_nil(redeemed_at)) do
+    EctoTokenStore.redeem_authorization_code(
+      repo(),
+      token_hash,
+      redeemed_at,
+      access_token_or_builder
+    )
   end
 
   @impl false
@@ -571,17 +610,19 @@ defmodule Lockspire.Storage.Ecto.Repository do
         token_hash,
         client_id,
         rotated_at,
-        %Token{} = refresh_token,
-        %Token{} = access_token,
+        refresh_or_builder,
+        access_token,
         expected_cnf
       )
-      when is_binary(token_hash) and is_binary(client_id) and is_struct(rotated_at, DateTime) do
+      when is_binary(token_hash) and is_binary(client_id) and
+             (is_struct(rotated_at, DateTime) or
+                (is_nil(rotated_at) and is_function(refresh_or_builder, 1))) do
     EctoTokenStore.rotate_refresh_token(
       repo(),
       token_hash,
       client_id,
       rotated_at,
-      refresh_token,
+      refresh_or_builder,
       access_token,
       expected_cnf
     )

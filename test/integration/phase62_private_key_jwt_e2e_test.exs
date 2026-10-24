@@ -89,6 +89,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
 
     {:ok, inline_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase62-inline-client",
         client_type: :confidential,
         token_endpoint_auth_method: :private_key_jwt,
@@ -104,6 +105,7 @@ defmodule Lockspire.Integration.Phase62PrivateKeyJwtE2ETest do
 
     {:ok, remote_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase62-remote-client",
         client_type: :confidential,
         token_endpoint_auth_method: :private_key_jwt,

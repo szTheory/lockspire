@@ -3,6 +3,7 @@ defmodule Lockspire.ClientLifecycle do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Observability
+  alias Lockspire.Storage.ClientLifetime
   alias Lockspire.Storage.Ecto.Repository
 
   @type result :: {:ok, Client.t()} | {:error, term()}
@@ -19,7 +20,19 @@ defmodule Lockspire.ClientLifecycle do
       metadata: %{client_id: client.client_id, provenance: client.provenance}
     }
 
-    case Repository.transact_with_audit(audit_event, fn -> Repository.register_client(client) end) do
+    result =
+      with {:ok, stores} <- ClientLifetime.configured() do
+        stores.transaction_store.transact(fn ->
+          with {:ok, persisted} <- stores.client_store.register_client(client),
+               {:ok, _event} <- Repository.append_audit_event(audit_event) do
+            {:ok, persisted}
+          else
+            {:error, reason} -> stores.transaction_store.rollback(reason)
+          end
+        end)
+      end
+
+    case result do
       {:ok, %Client{} = persisted} ->
         Observability.emit(:dcr, :client_created, %{}, %{
           actor_type: actor[:type],
@@ -49,27 +62,52 @@ defmodule Lockspire.ClientLifecycle do
     do: Repository.set_client_active(client, true, %{disabled_at: nil, disabled_by: nil})
 
   @doc false
-  @spec rotate_operator_secret(Client.t(), map(), DateTime.t(), map()) ::
+  @spec rotate_operator_secret(
+          Client.t(),
+          map(),
+          DateTime.t() | (-> DateTime.t()),
+          map() | (Client.t() -> map())
+        ) ::
           result()
   def rotate_operator_secret(
         %Client{} = client,
         secret_material,
-        %DateTime{} = rotated_at,
-        audit_event
+        rotated_at,
+        build_audit_event
       )
-      when is_map(secret_material) and is_map(audit_event) do
-    transact_with_audit(
-      fn ->
-        Repository.rotate_client_secret(
-          client,
-          secret_material.client_secret_hash,
-          secret_material.client_secret_jwt_verifier_encrypted,
-          rotated_at
-        )
-      end,
-      fn _updated_client -> audit_event end
-    )
+      when is_map(secret_material) and
+             (is_struct(rotated_at, DateTime) or is_function(rotated_at, 0)) and
+             (is_map(build_audit_event) or is_function(build_audit_event, 1)) do
+    with {:ok, stores} <- ClientLifetime.configured(),
+         :ok <- ClientLifetime.ensure_secret_rotation_available(stores.client_store) do
+      rotate_with_stores(stores, client, secret_material, rotated_at, build_audit_event)
+    end
   end
+
+  defp rotate_with_stores(stores, client, secret_material, rotated_at, build_audit_event) do
+    stores.transaction_store.transact(fn ->
+      case stores.client_store.rotate_client_secret(
+             client,
+             secret_material.client_secret_hash,
+             secret_material.client_secret_jwt_verifier_encrypted,
+             rotated_at
+           ) do
+        {:ok, %Client{} = updated} ->
+          audit_event = build_secret_rotation_audit_event(build_audit_event, updated)
+
+          case Repository.append_audit_event(audit_event) do
+            {:ok, _event} -> {:ok, updated}
+            {:error, reason} -> stores.transaction_store.rollback(reason)
+          end
+
+        {:error, reason} ->
+          stores.transaction_store.rollback(reason)
+      end
+    end)
+  end
+
+  defp build_secret_rotation_audit_event(event, _updated) when is_map(event), do: event
+  defp build_secret_rotation_audit_event(builder, updated), do: builder.(updated)
 
   @doc false
   @spec disable_operator(Client.t(), DateTime.t(), String.t() | nil, map()) ::
@@ -92,7 +130,9 @@ defmodule Lockspire.ClientLifecycle do
           result()
   def rotate_registration_access_token(%Client{} = client, new_rat_hash, audit_event)
       when is_binary(new_rat_hash) and is_map(audit_event) do
-    Repository.rotate_registration_access_token(client, new_rat_hash, audit_event)
+    with {:ok, stores} <- ClientLifetime.configured() do
+      stores.client_store.rotate_registration_access_token(client, new_rat_hash, audit_event)
+    end
   end
 
   @doc false
@@ -111,34 +151,68 @@ defmodule Lockspire.ClientLifecycle do
   @spec replace_dcr(Client.t(), map(), String.t()) :: result()
   def replace_dcr(%Client{} = client, metadata, new_rat_hash)
       when is_map(metadata) and is_binary(new_rat_hash) do
+    replace_dcr(
+      client,
+      metadata,
+      new_rat_hash,
+      client.registration_access_token_expires_at,
+      client.updated_at || DateTime.utc_now() |> DateTime.truncate(:second)
+    )
+  end
+
+  @doc false
+  @spec replace_dcr(Client.t(), map(), String.t(), DateTime.t() | nil, DateTime.t()) :: result()
+  def replace_dcr(%Client{} = client, metadata, new_rat_hash, deadline, %DateTime{} = updated_at)
+      when is_map(metadata) and is_binary(new_rat_hash) and
+             (is_nil(deadline) or is_struct(deadline, DateTime)) do
     updated_client = Lockspire.ClientMetadata.apply_dcr_metadata(client, metadata)
 
-    Repository.replace_client_registration(client, updated_client, new_rat_hash, %{
-      action: :dcr_management_updated,
-      outcome: :success,
-      actor: %{type: :self_registered_client, id: client.client_id},
-      resource: %{type: :client, id: client.client_id},
-      metadata: %{}
-    })
+    updated_client = %{
+      updated_client
+      | registration_access_token_expires_at: deadline,
+        updated_at: updated_at
+    }
+
+    with {:ok, stores} <- ClientLifetime.configured() do
+      stores.client_store.replace_client_registration(client, updated_client, new_rat_hash, %{
+        action: :dcr_management_updated,
+        outcome: :success,
+        actor: %{type: :self_registered_client, id: client.client_id},
+        resource: %{type: :client, id: client.client_id},
+        metadata: %{rotated_at: updated_at}
+      })
+    end
   end
 
   @spec disable_dcr(Client.t()) :: result()
-  def disable_dcr(%Client{} = client) do
+  def disable_dcr(%Client{} = client),
+    do: disable_dcr(client, DateTime.utc_now())
+
+  @spec disable_dcr(Client.t(), DateTime.t()) :: result()
+  def disable_dcr(%Client{} = client, %DateTime{} = disabled_at) do
     audit_event = %{
       action: :client_disabled,
       outcome: :succeeded,
       reason_code: :client_disabled,
       actor: %{type: :self_registered_client, id: client.client_id},
       resource: %{type: :client, id: client.client_id},
-      metadata: %{disabled_by: "dcr_self_delete"}
+      metadata: %{disabled_by: "dcr_self_delete", disabled_at: disabled_at}
     }
 
-    Repository.transact_with_audit(audit_event, fn ->
-      Repository.set_client_active(client, false, %{
-        disabled_at: DateTime.utc_now(),
-        disabled_by: "dcr_self_delete"
-      })
-    end)
+    with {:ok, stores} <- ClientLifetime.configured() do
+      stores.transaction_store.transact(fn ->
+        with {:ok, updated} <-
+               stores.client_store.set_client_active(client, false, %{
+                 disabled_at: disabled_at,
+                 disabled_by: "dcr_self_delete"
+               }),
+             {:ok, _event} <- Repository.append_audit_event(audit_event) do
+          {:ok, updated}
+        else
+          {:error, reason} -> stores.transaction_store.rollback(reason)
+        end
+      end)
+    end
   end
 
   defp append_audit_event(build_audit_event, result) do

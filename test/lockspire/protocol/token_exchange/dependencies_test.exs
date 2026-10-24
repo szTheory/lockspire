@@ -74,7 +74,11 @@ defmodule Lockspire.Protocol.TokenExchange.DependenciesTest do
   test "reports a missing declared durable capability as a deterministic safe token error" do
     assert {:ok, dependencies} =
              LegacyOptions.from_request(%{
-               opts: [token_store: __MODULE__, capabilities: %{token_store: []}]
+               opts: [
+                 client_store: __MODULE__.CapabilityClientStore,
+                 token_store: __MODULE__,
+                 capabilities: %{token_store: []}
+               ]
              })
 
     assert {:error, error} = Dependencies.validate(dependencies, :refresh)
@@ -82,5 +86,78 @@ defmodule Lockspire.Protocol.TokenExchange.DependenciesTest do
     assert error.error == "server_error"
     assert error.reason_code == :dependency_capability_unavailable
     assert error.error_description == "Token exchange dependencies are unavailable"
+  end
+
+  def authority do
+    %{
+      identity: {:dependency_test, __MODULE__},
+      participants: %{
+        client_store: __MODULE__.ClientStore,
+        token_store: __MODULE__.TokenStore,
+        device_authorization_store: __MODULE__.DeviceStore,
+        ciba_authorization_store: __MODULE__.CibaStore,
+        interaction_store: __MODULE__.InteractionStore,
+        key_store: __MODULE__.KeyStore,
+        server_policy_store: __MODULE__.PolicyStore,
+        dpop_replay_store: __MODULE__.ReplayStore,
+        audit_store: __MODULE__.TokenStore,
+        transaction_store: __MODULE__.TokenStore
+      }
+    }
+  end
+
+  def transaction_authority do
+    %{
+      identity: {:dependency_test, __MODULE__},
+      participants: %{
+        client_store: __MODULE__.CapabilityClientStore,
+        token_store: __MODULE__,
+        audit_store: __MODULE__,
+        transaction_store: __MODULE__
+      }
+    }
+  end
+
+  defmodule ClientStore do
+    def lifetime_contract,
+      do: %{
+        version: 1,
+        transaction_authority: Lockspire.Protocol.TokenExchange.DependenciesTest.authority()
+      }
+
+    def lock_clients(_ids), do: {:ok, []}
+  end
+
+  defmodule TokenStore do
+    def transaction_authority, do: Lockspire.Protocol.TokenExchange.DependenciesTest.authority()
+  end
+
+  defmodule CapabilityClientStore do
+    def lifetime_contract,
+      do: %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.TokenExchange.DependenciesTest.transaction_authority()
+      }
+
+    def lock_clients(_ids), do: {:ok, []}
+  end
+
+  defmodule DeviceStore do
+  end
+
+  defmodule CibaStore do
+  end
+
+  defmodule InteractionStore do
+  end
+
+  defmodule KeyStore do
+  end
+
+  defmodule PolicyStore do
+  end
+
+  defmodule ReplayStore do
   end
 end

@@ -2,9 +2,20 @@
 
 This guide is the canonical path for installing Lockspire in an existing Phoenix app. Lockspire runs inside your app; your team keeps its accounts, sign-in pages, layouts, branding, and product policy. Check the [supported capabilities and limits](supported-surface.md) before relying on a feature or deployment shape.
 
+For an existing generated app that still forwards `/admin` to
+`Lockspire.Web.AdminRouter`, follow the [host admin integration upgrade
+guide](upgrading/host-admin-integration.md) before changing its router.
+
 If you plan to authenticate confidential clients with `private_key_jwt`, read `docs/private-key-jwt-host-guide.md` for the shipped `jwks` / `jwks_uri` support slice, issuer-string `aud` requirement, bounded reactive rollover truth, and runtime remote-key diagnosis path.
 
 If you plan to authenticate confidential clients with `client_secret_jwt`, read `docs/client-secret-jwt-host-guide.md` for the shipped `HS256`-only direct-client slice, issuer-string `aud` requirement, required `jti`, replay prevention, and explicit non-claims.
+
+If you configure finite DCR app, shared-secret, or app management-token
+lifetimes, follow the [lifetime storage upgrade guide](upgrading/client-lifetimes.md)
+for policy snapshots, the additive migration, custom-storage composition, and
+the old-writer cutover boundary. The guide also links the package-shipped host
+ExUnit/Ecto example; repository `test/` and `scripts/` commands are for Lockspire
+maintainers and require a source checkout.
 
 ## 1. Add Lockspire
 
@@ -72,26 +83,56 @@ Import `config/lockspire.exs` from your main config entrypoint.
 
 Import `YourAppWeb.Router.Lockspire` from your host router and call the imported
 `lockspire_routes/0` macro where your product wants the Lockspire routes to
-live. The host router must already define its normal `:browser` pipeline and a
-host-owned `:require_operator` pipeline:
+live. The host router must already define a `:browser` pipeline with session
+fetching, LiveView flash, CSRF protection, and secure browser headers. The
+generated helper adds a host-owned `:lockspire_operator_authorization` pipeline
+for admin HTTP requests and adds your `OperatorAuthorization.on_mount/4` hook
+to every admin LiveView:
 
 ```elixir
 import YourAppWeb.Router.Lockspire
 
-pipeline :require_operator do
-  plug YourAppWeb.Plugs.RequireOperator
-end
-
 lockspire_routes()
 ```
 
-The generated route helper separates host-owned account routes, an admin mount, and the public OAuth/OIDC mount. Keep `Lockspire.Web.AdminRouter` behind your host-owned `:require_operator` pipeline and before the general `Lockspire.Web.Router` forward. Lockspire does not sign in or authorize your staff. Your host app must enforce staff sessions, MFA, role checks, and any IP or tenant policy before requests reach the admin pages. `mix lockspire.verify` checks the compiled mount shape and order; add host request tests to prove that unauthenticated or unauthorized staff cannot reach the admin mount.
+The generated host uses its host-owned `OperatorAuthorization` Plug and hook.
+The shared
+`Lockspire.Web.AdminRoutes.lockspire_admin_routes/2` macro supplies all 29
+native admin LiveView routes and Lockspire's fixed `:lockspire_admin` LiveView
+session. Keep host account routes, the consent LiveView, the admin routes, and
+the public OAuth/OIDC forward as separate route surfaces in the generated
+order. Do not add a second admin forward or copy the admin route list.
 
-The generated macro mounts the host-owned `/verify` and `/authorized-apps`
-routes, then the generated `lockspire_consent_live.ex` seam, then the guarded
-admin router, and finally the public Lockspire router. Do not replace this with
-hand-written route source strings: `mix lockspire.verify` checks the compiled
-Phoenix route table and its order.
+The generated `lib/<web>/operator_authorization.ex` denies every admin request
+and LiveView mount until you implement it. Resolve the current staff member
+through your host's normal session and identity code, then apply your MFA,
+role, tenant, IP, and other product rules. The Plug must deny and halt when
+authorization fails; the LiveView hook must independently resolve the current
+staff identity from the LiveView session and halt when policy denies access.
+Do not rely on cached `conn.assigns` or a copied session boolean as
+authorization. Account resolution, user login, consent policy, branding, and
+logout remain host responsibilities.
+
+The host also owns the LiveView browser and endpoint contract:
+
+- Keep `fetch_session`, `fetch_live_flash`, `protect_from_forgery`, and
+  `put_secure_browser_headers` in the browser pipeline used by the admin
+  session.
+- Configure the endpoint's `/live` socket with
+  `connect_info: [session: @session_options]`, using the same cookie options
+  passed to `Plug.Session`. Cookie signing, encryption, domain, and lifetime
+  are host decisions.
+- Configure a LiveView `signing_salt` in endpoint app configuration.
+- Serve the Phoenix, Phoenix LiveView, and Lockspire admin JavaScript assets
+  from the dependency at paths used by the host layout. The adoption demo's
+  endpoint and root layout show the maintained example.
+
+`mix lockspire.verify` checks compiled route/action/session, pipeline and hook
+declarations, route ordering, and first-match dispatch. Those structural checks
+do not prove that your Plug or hook implements correct policy. Add host-owned
+request and LiveView tests for both allowed staff and denied or withdrawn
+staff. The hook checks at LiveView mount and navigation params; it does not
+promise continuous permission revocation while a page is idle. Add host request tests.
 
 Implement the generated `AccountResolver` with:
 
@@ -214,10 +255,9 @@ tests in your host app.
   `mount_path`, `logout_path`, and the Lockspire Oban runtime contract
 - the generated account-resolver and interaction-handler modules
 - compiled host `/verify`, `/authorized-apps`, and consent routes
-- the compiled generated admin forward, its named host-owned `:require_operator`
-  pipeline,
-  and its position before the public Lockspire forward at your configured
-  mount path
+- the compiled native admin route/action/session inventory, its host-owned
+  authorization pipeline and LiveView hook, ordering, and first-match dispatch
+  before the public Lockspire forward at the configured mount path
 - the packaged migration inventory in host `priv/repo/migrations` and its
   applied database state
 
@@ -278,6 +318,12 @@ For a human-pokable host app, see `docs/adoption-demo.md`. That demo boots a sma
 
 ## 7. Upgrade managed artifacts and migrations
 
+For the historical forwarded-admin helper, follow the
+[host admin integration upgrade guide](upgrading/host-admin-integration.md).
+It explains manifest-trusted conversion, manual reconciliation for drift or
+unsupported historical files, and how to move old authorization rules into
+the new host-owned Plug and LiveView hook.
+
 When a newer Lockspire version changes generated managed files, preview the update with:
 
 ```bash
@@ -290,7 +336,13 @@ Apply it with:
 mix lockspire.upgrade
 ```
 
-`mix lockspire.upgrade` only touches manifest-tracked managed scaffolding that is still unchanged and copies only newly packaged migrations into the host's normal `priv/repo/migrations` path. It never rewrites host-owned seams or migrations, and it refuses risky overwrites when a managed file or migration has drifted from the recorded checksum. Run `mix ecto.migrate` after every successful upgrade that reports copied migrations.
+`mix lockspire.upgrade` only updates tracked managed scaffolding whose current
+bytes still match the manifest checksum. It also creates the default-deny
+operator authorization seam once if it is absent; an existing host-owned seam
+is left unchanged. It copies only newly packaged migrations into the host's
+normal `priv/repo/migrations` path and refuses drift or conflicting files.
+Run `mix ecto.migrate` after every successful upgrade that reports copied
+migrations.
 
 ## 8. Finish the verification seam before shipping device login
 

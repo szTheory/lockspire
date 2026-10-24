@@ -25,6 +25,21 @@ The registration shape is:
 
 Lockspire does not silently infer `HS256` from a broader algorithm family and does not accept `HS384` or `HS512` for this slice.
 
+## Shared-secret lifetime
+
+The DCR shared-secret lifetime applies to newly issued or operator-replaced
+secrets for eligible self-registered apps. A blank or zero setting means no
+automatic expiry. A positive setting records an expiry from the time the secret
+is issued or replaced. Changing policy does not rewrite an existing secret's
+stored expiry; legacy secret dates remain advisory until an operator replaces
+the secret. Authentication fails at the exact stored expiry time.
+
+This deadline applies to the shared secret used to sign assertions. It does not
+replace assertion `exp`, `iat`, audience, algorithm, or replay checks. Expiring
+the secret does not revoke tokens issued earlier, which retain their own
+validity periods. Public-key and mTLS authentication are not subject to the
+shared-secret deadline.
+
 ## Assertion requirements
 
 Client assertions must be signed JWTs. Lockspire does not allow `alg=none`.
@@ -69,6 +84,8 @@ Your host app still owns:
 - branding and layouts
 - consent and product policy
 - rate limiting and perimeter controls around the mounted Lockspire routes
-- secret issuance, rotation operations, and partner coordination around credential rollout
+- partner coordination around credential rollout
 
-Lockspire owns the protocol verification path described here. The host app still owns the human-facing application behavior and operating procedures around it.
+Lockspire owns the protocol verification and operator secret-rotation path
+described here. The host app still owns the human-facing application behavior
+and partner coordination around credential rollout.

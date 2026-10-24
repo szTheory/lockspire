@@ -13,8 +13,8 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - Embedded Phoenix install flow through `mix lockspire.install`
 - One canonical Phoenix onboarding path, with `--sigra-host` limited to comments and guidance for the host-owned seam rather than a second topology
 - New generated installs default Lockspire-owned tables and Lockspire's Oban tables into a dedicated `lockspire` Postgres schema; public/default schema use is explicit through `--storage-prefix public --oban-prefix public`
-- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, router wiring, `/verify` routes, guarded admin mount, and prefix-aware migrations
-- `mix lockspire.upgrade` for manifest-tracked Lockspire-managed scaffolding only
+- `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, compiled native admin routes/actions/session, host pipeline and LiveView hook declarations, route ordering and first-match dispatch, `/verify` routes, and prefix-aware migrations; it reports structural wiring and does not certify the host's authorization policy
+- `mix lockspire.upgrade` for checksum-matching manifest-tracked Lockspire-managed scaffolding, a create-only default-deny operator authorization seam when absent, and refusal with manual reconciliation guidance for unsupported or drifted state
 - Authorization code flow with PKCE S256
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
@@ -25,6 +25,8 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - `authorization_details_types_supported` in discovery only when the mounted authorization-code surface is usable and the host has configured at least one RAR validator type
 - Userinfo
 - Dynamic client registration and direct registration for the repo-proven RFC 7591/RFC 7592 slice: built-in `openid`, device-code-only clients without redirect URIs, and authorization-code clients with exact redirect validation; registration management includes create/read/update of the four existing logout propagation metadata fields: `backchannel_logout_uri`, `backchannel_logout_session_required`, `frontchannel_logout_uri`, and `frontchannel_logout_session_required`
+- Optional finite expiry for self-registered app management tokens, reported through Lockspire-owned Unix-second expiry extensions; management-token replacement is immediate, and expired authority is recovered only through the existing host-authorized operator workflow
+- Optional finite app and shared-secret lifetimes for self-registered apps; each deadline is snapshotted when issued, and policy changes do not rewrite existing deadlines
 - Confidential-client `private_key_jwt` authentication on Lockspire-owned direct-client endpoints, with registration requiring exactly one inline `jwks` or HTTPS `jwks_uri`; an authorization-code or `code` response shape requires non-empty redirect URIs with the existing exact-match runtime validation
 - Bounded reactive remote-`jwks_uri` rollover support on the shipped remote-key surfaces (`private_key_jwt` direct-client authentication and JARM client-key resolution): Lockspire reads from cached remote JWKS material, forces one refresh when verification indicates stale or unknown key material, preserves the last known good cache entry when refresh fails, and fails the current authentication attempt closed
 - Confidential-client `client_secret_jwt` authentication on the same Lockspire-owned direct-client endpoints that reuse the shared verifier, limited to `HS256`, issuer-string `aud`, required `jti`, replay protection, and fail-closed `invalid_client` behavior with no silent fallback to `client_secret_basic` or `client_secret_post`
@@ -42,12 +44,52 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - A generated, host-owned custom RAR consent seam through `lockspire_consent_live.ex`, with an illustrative `payment_initiation` walkthrough in `docs/rar-consent-host-guide.md`
 - RP-initiated logout plus logout propagation from the protocol-owned `/end_session/complete` seam: durable back-channel enqueueing with Oban and Req, plus front-channel iframe cleanup as best effort browser choreography only
 - Host-owned login redirects and consent handoff seams, including Sigra-shaped account resolution from `conn.assigns.current_scope.user`
-- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings, with a host-guarded `Lockspire.Web.AdminRouter` mount for applications that separate operator authentication from the public OAuth/OIDC router
+- LiveView and admin workflows for clients, consents, tokens, keys, PAR/DPoP/DCR policies, and operator-managed logout propagation settings, mounted as native routes through `Lockspire.Web.AdminRoutes.lockspire_admin_routes/2` behind host Plug and LiveView authorization
 - Phoenix-first onboarding docs and generated host integration files
 - FAPI 2.0 Security Profile enforcement when `security_profile: :fapi_2_0_security` is set globally or per-client: PAR-required at /authorize, DPoP sender-constrained access tokens, ES256/PS256 signing only, exact-match redirect URIs with zero tolerance for trailing slashes or query drift
 - FAPI 2.0 Message Signing strict enforcement when `security_profile: :fapi_2_0_message_signing` is set globally or per-client: the baseline optional JARM and RFC 9701 capabilities above become explicit requirements, `/authorize` requires JARM, `/introspect` requires `Accept: application/token-introspection+jwt`, and client `:none` overrides remain intentional mixed-mode escape hatches
 - RFC 9207 `iss` parameter emitted on every authorization-response redirect (success, denial, and error) for all clients regardless of profile
 - Truthful FAPI 2.0 keys in `.well-known/openid-configuration`: `authorization_response_iss_parameter_supported` always true; `require_pushed_authorization_requests` true only when the global server policy is `:fapi_2_0_security`
+
+### Dynamic-registration management-token lifecycle
+
+The host can leave app management-token expiry unlimited or configure a positive
+duration for newly issued and replaced tokens. A policy change does not alter
+existing token deadlines, and GET does not renew a token. Lockspire reports app
+and management-token expiry with the server-owned
+`lockspire_client_expires_at` and
+`lockspire_registration_access_token_expires_at` response extensions. A PUT
+must include the unchanged `client_id`; it may omit the expiry extensions or
+echo their current values, but cannot change them. A successful PUT immediately
+invalidates the previous management token and returns its replacement once.
+
+An expired management token cannot read, update, or delete its registration.
+An expired but enabled app can still be read or deleted with an eligible
+management token, while PUT is rejected. A disabled app cannot use
+registration management. If the response to a successful PUT is lost, replay
+of the old token cannot retrieve the replacement; the host team must use its
+existing authorized, confirmed, one-time recovery task. Recovery does not
+enable the app or extend app or client-secret expiry. Lockspire does not require
+a universal RFC timeout for registration access tokens; finite expiry is an
+optional host policy with a partner lockout tradeoff. See
+[`docs/dynamic-registration.md`](dynamic-registration.md) for executable
+request and recovery examples.
+
+App expiry, shared-secret expiry, app management-token expiry, and disabled
+app state are independent. App expiry blocks new OAuth use; an expired but
+enabled app may still be read or deleted with a valid management token, while
+PUT is rejected. Expiring a shared secret blocks authentication with it but
+does not revoke already-issued tokens. Expiring the management token ends
+self-management access. Disabling an app blocks both protocol use and
+registration-management operations. App expiry has no renewal event; replacing
+a shared secret only issues a new secret deadline, and successful PUT or
+host-authorized recovery only issues a new management-token deadline. None of
+these actions clears host-owned browser sessions. Online Lockspire consumers
+check current app state, but offline JWT verification and caches may not see a
+later disablement or expiry immediately. See the [lifetime upgrade and storage
+guide](upgrading/client-lifetimes.md) for cutover, legacy, and storage limits.
+Maintainers can trace the lifetime contract to its [maintainer case
+evidence](https://github.com/szTheory/lockspire/blob/93bb6e386d6751873ec2c090bd751ddfbd575a7d/.planning/phases/166-end-to-end-lifetime-security-guidance-proof/166-EVIDENCE-MAP.json).
 
 ### `client_secret_jwt` Direct-Client Slice
 
@@ -148,6 +190,44 @@ These are explicitly out of scope for the Lockspire-owned host-API protected-rou
 
 ## Trust posture
 
+The maintained generated host, adoption demo, and clean-room source use the same `lockspire_routes/0` helper and native `AdminRoutes` inventory. The generated operator authorization seam denies access until a host implements current staff policy. The HTTP Plug and LiveView hook are separate checks; the hook re-resolves policy at mount and navigation params and does not promise continuous revocation on idle pages. See the [install and onboarding guide](install-and-onboard.md), [admin guide](operator-admin.md), and [host admin integration upgrade guide](upgrading/host-admin-integration.md) for host-owned browser, endpoint, session, signing-salt, assets, policy, and migration responsibilities.
+
+Repository-source tests establish generated output, compiled Phoenix routing, current locked-runtime behavior, and server-side connected LiveView lifecycle. Those checks do not establish actual packaged-consumer adoption, browser/socket transport, or the exact Phoenix 1.8.5 / LiveView 1.1.28 dependency floor. Phase 170 owns those package, transport, exact-version, and required CI checks.
+
+The packaged-host proof runs the real Lockspire archive in a disposable Phoenix
+host at the default, nested, and root mounts. It checks the locked Phoenix
+1.8.13 / LiveView 1.2.10 pair and the exact floor Phoenix 1.8.5 / LiveView
+1.1.28 pair. The browser cases cover host-owned staff policy at HTTP and
+LiveView boundaries, assets, navigation, reconnect, and independent public
+OIDC endpoints. The host retains ownership of accounts, staff identity,
+authorization policy, login, layouts, and branding. LiveView policy is checked
+at the exercised HTTP, join, reconnect, and params boundaries; this does not
+promise continuous revocation for an idle connected page.
+
+The documented proof command and its local prerequisites are in the
+[maintainer release guide](maintainer-release.md#packaged-host-compatibility-proof).
+These checks establish package, browser-transport, and exact dependency-runtime
+behavior for the recorded matrix. They do not substitute compilation or
+server-only lifecycle checks for browser evidence, and local execution does not
+establish a remote CI result. CI uses Elixir 1.19.5 / OTP 28 with PostgreSQL 16
+for the locked pair, and Elixir 1.18.4 / OTP 27 with PostgreSQL 14 for the
+minimum-supported pair.
+
+### Compatibility floor security status
+
+Phoenix 1.8.5 / LiveView 1.1.28 is retained for isolated compatibility testing.
+As of 2026-10-24, that historical pair has published upstream advisories for
+[channel join exhaustion](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-6983-jfq8-485w),
+[long-poll memory exhaustion](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-628h-q48j-jr6q),
+[Presence key collisions](https://github.com/phoenixframework/phoenix/security/advisories/GHSA-63mc-hw7g-86rr),
+and [LiveView redirect validation](https://github.com/phoenixframework/phoenix_live_view/security/advisories/GHSA-36m4-rm57-3prf).
+Passing that fixture establishes compatibility; it does not establish dependency
+security or recommend those versions for deployment. Production hosts should
+use security-patched framework releases within the declared dependency ranges
+and audit their resolved dependencies. Disposable proof hosts use loopback
+listeners and synthetic credentials. Changing the tested compatibility floor
+requires a separate support-policy decision.
+
 Lockspire maintains its 1.0 GA posture because public claims are backed by what this repo can prove today. Repo-owned proof for this posture lives in:
 
 - `docs/install-and-onboard.md` as the canonical Phoenix host onboarding path
@@ -173,7 +253,7 @@ Historical Phase 37 external-suite wiring and any OIDF or FAPI Docker runs remai
 A 1.0 GA claim honestly says:
 
 - there is one canonical Phoenix onboarding path
-- the host app owns operator authentication before mounting `Lockspire.Web.AdminRouter`
+- the host app owns operator authentication in a Plug and LiveView hook passed to `Lockspire.Web.AdminRoutes.lockspire_admin_routes/2`
 - `--sigra-host` is guidance-only; it does not create a second install topology or a compile-time Sigra dependency
 - install diagnostics and managed-scaffolding upgrades are explicit (`mix lockspire.verify` and `mix lockspire.upgrade`)
 - the generated host seam resolves the signed-in user through host-owned session state such as `conn.assigns.current_scope.user`

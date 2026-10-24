@@ -63,6 +63,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: client_id,
         name: "Ping Mode Client",
         client_type: :public,
@@ -138,6 +139,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: client_id,
         name: "Push Mode Client",
         client_type: :public,
@@ -205,6 +207,7 @@ defmodule Lockspire.Integration.Phase53CibaDeliveryModesE2ETest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: client_id,
         client_type: :public,
         token_endpoint_auth_method: :none,

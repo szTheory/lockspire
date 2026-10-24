@@ -29,6 +29,7 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "par-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -80,6 +81,7 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "par-confidential",
         client_secret_hash: Policy.hash_client_secret(secret),
         client_type: :confidential,

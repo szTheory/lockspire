@@ -19,6 +19,7 @@ defmodule Lockspire.ClientLifecycleTest do
     actor_id = "iat-#{client_id}"
 
     client = %Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_type: :public,
       redirect_uris: ["https://client.example.test/callback"],
@@ -58,6 +59,7 @@ defmodule Lockspire.ClientLifecycleTest do
     client_id = "lifecycle-operator-#{System.unique_integer([:positive])}"
 
     client = %Client{
+      lifetime_version: 0,
       client_id: client_id,
       client_type: :confidential,
       client_secret_hash: "old-secret-hash",
@@ -125,6 +127,93 @@ defmodule Lockspire.ClientLifecycleTest do
                  )
                )
     end
+  end
+
+  test "secret lifecycle accepts a deferred clock and builds audit from committed time" do
+    client_id = "lifecycle-clock-#{System.unique_integer([:positive])}"
+
+    client = %Client{
+      lifetime_version: 0,
+      client_id: client_id,
+      client_type: :confidential,
+      client_secret_hash: "old-secret-hash",
+      redirect_uris: ["https://client.example.test/callback"],
+      token_endpoint_auth_method: :client_secret_basic
+    }
+
+    assert {:ok, persisted} = ClientLifecycle.persist_direct(client)
+    now = ~U[2030-01-02 03:04:05Z]
+
+    material = %{
+      client_secret_hash: "replacement-hash",
+      client_secret_jwt_verifier_encrypted: "replacement-verifier"
+    }
+
+    assert {:ok, rotated} =
+             ClientLifecycle.rotate_operator_secret(
+               persisted,
+               material,
+               fn -> now end,
+               fn %Client{last_secret_rotated_at: committed_at} = updated ->
+                 audit_event(:client_secret_rotated, updated, %{rotated_at: committed_at})
+               end
+             )
+
+    assert DateTime.compare(rotated.last_secret_rotated_at, now) == :eq
+
+    assert %AuditEventRecord{metadata: %{"rotated_at" => audit_time}} =
+             Lockspire.TestRepo.one!(
+               from(audit in AuditEventRecord,
+                 where:
+                   audit.action == "client_secret_rotated" and audit.resource_id == ^client_id
+               )
+             )
+
+    assert {:ok, parsed_audit_time, 0} = DateTime.from_iso8601(audit_time)
+    assert DateTime.compare(parsed_audit_time, now) == :eq
+  end
+
+  test "host management rotation persists the intended deadline and decision instant" do
+    client_id = "lifecycle-management-clock-#{System.unique_integer([:positive])}"
+    app_deadline = ~U[2030-01-02 03:05:00Z]
+    secret_deadline = ~U[2030-01-02 03:04:30Z]
+
+    client = %Client{
+      lifetime_version: 1,
+      client_id: client_id,
+      client_type: :confidential,
+      client_secret_hash: "current-secret-hash",
+      client_secret_jwt_verifier_encrypted: "current-secret-verifier",
+      registration_access_token_hash: "current-rat-hash",
+      client_expires_at: app_deadline,
+      client_secret_expires_at: secret_deadline,
+      registration_access_token_expires_at: nil,
+      redirect_uris: ["https://client.example.test/callback"],
+      token_endpoint_auth_method: :client_secret_basic
+    }
+
+    assert {:ok, persisted} = ClientLifecycle.persist_direct(client)
+    now = ~U[2030-01-02 03:04:05Z]
+    deadline = DateTime.add(now, 40, :second)
+    candidate = %{persisted | registration_access_token_expires_at: deadline, updated_at: now}
+
+    assert {:ok, rotated} =
+             ClientLifecycle.rotate_registration_access_token(
+               candidate,
+               "replacement-rat-hash",
+               audit_event(:dcr_management_rat_rotated, persisted, %{rotated_at: now})
+             )
+
+    assert rotated.registration_access_token_hash == "replacement-rat-hash"
+    assert DateTime.compare(rotated.registration_access_token_expires_at, deadline) == :eq
+    assert DateTime.compare(rotated.client_expires_at, app_deadline) == :eq
+    assert DateTime.compare(rotated.client_secret_expires_at, secret_deadline) == :eq
+    assert rotated.client_secret_hash == client.client_secret_hash
+
+    assert rotated.client_secret_jwt_verifier_encrypted ==
+             client.client_secret_jwt_verifier_encrypted
+
+    assert DateTime.compare(rotated.updated_at, now) == :eq
   end
 
   defp audit_event(action, %Client{} = client, metadata) do

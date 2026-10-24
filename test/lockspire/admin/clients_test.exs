@@ -7,8 +7,10 @@ defmodule Lockspire.Admin.ClientsTest do
   alias Lockspire.Admin.Clients
   alias Lockspire.Clients.RegistrationResult
   alias Lockspire.Domain.Client
+  alias Lockspire.Domain.ServerPolicy
   alias Lockspire.Storage.Ecto.AuditEventRecord
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Web.RegistrationJSON
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -25,6 +27,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-client",
         client_secret_hash: "sha256:old-salt:old-hash",
         client_type: :confidential,
@@ -99,6 +102,7 @@ defmodule Lockspire.Admin.ClientsTest do
       {client_secret_hash, _plaintext} = Lockspire.Clients.rotate_secret_hash()
 
       client = %Lockspire.Domain.Client{
+        lifetime_version: 0,
         client_id: "ls_dcr_test_" <> Integer.to_string(System.unique_integer([:positive])),
         client_secret_hash: client_secret_hash,
         client_type: :confidential,
@@ -225,6 +229,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 reports bounded reactive support truth for jwks_uri clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-summary",
         client_secret_hash: "sha256:remote:hash",
         client_type: :confidential,
@@ -261,6 +266,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 also applies to JARM-only jwks_uri clients" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-jarm",
         client_secret_hash: "sha256:remote:jarm",
         client_type: :confidential,
@@ -291,6 +297,7 @@ defmodule Lockspire.Admin.ClientsTest do
   test "remote_jwks_summary/1 reuses the shared incident taxonomy from client metadata" do
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "admin-remote-jwks-incident",
         client_secret_hash: "sha256:remote:incident",
         client_type: :confidential,
@@ -396,6 +403,7 @@ defmodule Lockspire.Admin.ClientsTest do
 
     assert {:ok, %Client{} = created} =
              Repository.register_client(%Client{
+               lifetime_version: 0,
                client_id: client_id,
                client_secret_hash: "sha256:logout-salt:logout-hash",
                client_type: :confidential,
@@ -862,6 +870,95 @@ defmodule Lockspire.Admin.ClientsTest do
     assert audit.resource_id == "admin-client"
     assert audit.actor_id == "ops-rotate"
     assert audit.reason_code == "client_secret_rotated"
+  end
+
+  test "direct operator rotations ignore finite DCR policy" do
+    client_id = "operator-rotation-policy-#{System.unique_integer([:positive])}"
+
+    assert {:ok, _} =
+             Repository.put_server_policy(%ServerPolicy{
+               dcr_default_client_secret_lifetime_seconds: 45
+             })
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               lifetime_version: 1,
+               client_id: client_id,
+               client_secret_hash: "old-operator-secret",
+               client_type: :confidential,
+               name: "Direct Operator Client",
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               provenance: :operator,
+               client_expires_at: DateTime.add(DateTime.utc_now(), 3_600, :second),
+               registration_access_token_expires_at:
+                 DateTime.add(DateTime.utc_now(), 7_200, :second)
+             })
+
+    assert {:ok, %{client: rotated, client_secret: plaintext}} =
+             Clients.rotate_client_secret(client_id, %{actor: %{type: :operator, id: "ops"}})
+
+    assert is_binary(plaintext)
+    assert is_nil(rotated.client_secret_expires_at)
+    assert rotated.provenance == :operator
+  end
+
+  test "rotation recovers expired secrets without reviving disabled or expired apps" do
+    client_id = "operator-rotation-recovery-#{System.unique_integer([:positive])}"
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+    past = DateTime.add(now, -60, :second)
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               lifetime_version: 1,
+               client_id: client_id,
+               client_secret_hash: "expired-old-secret",
+               client_type: :confidential,
+               name: "Expired Disabled Client",
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :client_secret_basic,
+               active: false,
+               disabled_at: past,
+               disabled_by: "ops-disabled",
+               client_expires_at: past,
+               client_secret_expires_at: past
+             })
+
+    assert {:ok, %{client: rotated, client_secret: plaintext}} =
+             Clients.rotate_client_secret(client_id, %{actor: %{type: :operator, id: "ops"}})
+
+    assert is_binary(plaintext)
+    refute rotated.active
+    assert DateTime.compare(rotated.disabled_at, past) == :eq
+    assert rotated.disabled_by == "ops-disabled"
+    assert DateTime.compare(rotated.client_expires_at, past) == :eq
+    assert is_nil(rotated.client_secret_expires_at)
+  end
+
+  test "dormant secret rotation remains supported for private-key clients" do
+    client_id = "operator-rotation-dormant-#{System.unique_integer([:positive])}"
+
+    assert {:ok, _client} =
+             Repository.register_client(%Client{
+               lifetime_version: 1,
+               client_id: client_id,
+               client_secret_hash: "dormant-old-secret",
+               client_secret_jwt_verifier_encrypted: "dormant-old-verifier",
+               client_type: :confidential,
+               name: "Private Key Client",
+               allowed_grant_types: ["authorization_code"],
+               token_endpoint_auth_method: :private_key_jwt,
+               token_endpoint_auth_signing_alg: :RS256,
+               jwks: %{"keys" => []}
+             })
+
+    assert {:ok, %{client: rotated, client_secret: plaintext}} =
+             Clients.rotate_client_secret(client_id, %{actor: %{type: :operator, id: "ops"}})
+
+    assert is_binary(plaintext)
+    assert rotated.client_secret_hash != plaintext
+    assert {:ok, :inapplicable} = Client.effective_secret_deadline(rotated)
+    refute Map.has_key?(RegistrationJSON.read_response(rotated), :client_secret_expires_at)
   end
 
   test "disable_client/2 and enable_client/2 expose queryable lifecycle state with operator evidence" do

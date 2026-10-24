@@ -69,6 +69,7 @@ defmodule Lockspire.Integration.Phase52HostDelegationE2ETest do
 
     {:ok, client_normal} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "ciba-client-normal",
         name: "CIBA Normal",
         client_type: :public,
@@ -79,6 +80,7 @@ defmodule Lockspire.Integration.Phase52HostDelegationE2ETest do
 
     {:ok, client_user_code} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "ciba-client-user-code",
         name: "CIBA User Code Required",
         client_type: :public,

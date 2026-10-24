@@ -12,7 +12,13 @@ defmodule Lockspire.Storage.Ecto.ServerPolicyRecordTest do
   end
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
+    owner = Ecto.Adapters.SQL.Sandbox.start_owner!(Lockspire.TestRepo, shared: true)
+    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(owner) end)
+
+    # This fixed-ID policy is a singleton and may remain from an earlier test run.
+    # Keep these record-level insert tests deterministic inside a rollback-only sandbox.
+    Lockspire.TestRepo.delete_all(ServerPolicyRecord)
+
     :ok
   end
 

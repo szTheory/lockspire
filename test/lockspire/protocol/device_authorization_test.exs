@@ -7,8 +7,29 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
   alias Lockspire.TestSupport.TelemetryCapture
 
   defmodule FakeClientStore do
+    def lifetime_contract do
+      %{
+        version: 1,
+        transaction_authority:
+          Lockspire.Protocol.DeviceAuthorizationTest.FakeTransactionStore.transaction_authority()
+      }
+    end
+
+    def lock_clients([client_id]) do
+      case fetch_client_by_id(client_id) do
+        {:ok, %Client{} = client} -> {:ok, [client]}
+        {:ok, nil} -> {:ok, []}
+      end
+    end
+
     def fetch_client_by_id("valid_client"),
-      do: {:ok, %Client{client_id: "valid_client", token_endpoint_auth_method: :none}}
+      do:
+        {:ok,
+         %Client{
+           client_id: "valid_client",
+           token_endpoint_auth_method: :none,
+           lifetime_version: 0
+         }}
 
     def fetch_client_by_id(_), do: {:ok, nil}
   end
@@ -17,6 +38,23 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
     def put_device_authorization(%DeviceAuthorizationState{} = device_auth) do
       {:ok, device_auth}
     end
+  end
+
+  defmodule FakeTransactionStore do
+    def transaction_authority do
+      %{
+        identity: :device_test,
+        participants: %{
+          client_store: Lockspire.Protocol.DeviceAuthorizationTest.FakeClientStore,
+          device_authorization_store: Lockspire.Protocol.DeviceAuthorizationTest.FakeDeviceStore,
+          transaction_store: __MODULE__
+        }
+      }
+    end
+
+    def transact(fun), do: normalize(fun.())
+    defp normalize({:ok, value}), do: {:ok, value}
+    defp normalize({:error, reason}), do: {:error, reason}
   end
 
   describe "authorize/1" do
@@ -32,6 +70,7 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
         opts: [
           client_store: FakeClientStore,
           device_authorization_store: FakeDeviceStore,
+          transaction_store: FakeTransactionStore,
           verification_uri: "https://example.com/device"
         ]
       }
@@ -62,7 +101,8 @@ defmodule Lockspire.Protocol.DeviceAuthorizationTest do
         authorization: nil,
         opts: [
           client_store: FakeClientStore,
-          device_authorization_store: FakeDeviceStore
+          device_authorization_store: FakeDeviceStore,
+          transaction_store: FakeTransactionStore
         ]
       }
 

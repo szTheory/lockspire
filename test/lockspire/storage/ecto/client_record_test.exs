@@ -22,6 +22,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     expires_at = DateTime.add(issued_at, 7_776_000, :second)
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "dcr_client_round_trip",
       client_type: :confidential,
       client_secret_jwt_verifier_encrypted: "sealed-dcr-verifier",
@@ -64,6 +65,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "operator_client_default",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -90,6 +92,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "mtls_client_round_trip",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -126,6 +129,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "logout_round_trip",
       client_type: :confidential,
       redirect_uris: ["https://app.example.test/callback"],
@@ -160,6 +164,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "client_secret_jwt_verifier_round_trip",
       client_type: :confidential,
       client_secret_hash: "sha256:salt:hash",
@@ -203,6 +208,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "operator_client_update_test",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -242,6 +248,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "jarm_encryption_round_trip",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -274,6 +281,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     valid_client = %Client{
+      lifetime_version: 0,
       client_id: "jarm_encryption_valid_algs",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -334,6 +342,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "jarm_encryption_optional",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -362,6 +371,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
   test "changeset/2 accepts :fapi_2_0_security security_profile and is valid" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "fapi_client_changeset_test",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -383,6 +393,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
   test "changeset/2 accepts :fapi_2_0_message_signing security_profile and is valid" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "fapi_message_signing_client_changeset_test",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -406,6 +417,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "inherit_security_profile_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -433,6 +445,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "update_security_profile_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -471,6 +484,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "bogus_security_profile_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -502,6 +516,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
   test "changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_security is enabled" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "fapi_rs256_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -526,6 +541,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "update_fapi_rs256_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -556,6 +572,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
   test "changeset/2 rejects RS256 id_token_signed_response_alg when fapi_2_0_message_signing is enabled" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "fapi_message_signing_rs256_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -580,6 +597,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "update_none_rs256_client",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -615,6 +633,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
 
   test "changeset/2 casting access_token_format \"opaque\" yields :opaque" do
     client = %Client{
+      lifetime_version: 0,
       client_id: "atf_changeset_opaque",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -638,6 +657,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "atf_update_jwt",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -677,6 +697,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "atf_inherit_nil",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],
@@ -703,6 +724,7 @@ defmodule Lockspire.Storage.Ecto.ClientRecordTest do
     repo = Lockspire.TestRepo
 
     client = %Client{
+      lifetime_version: 0,
       client_id: "atf_changeset_jwt_round_trip",
       client_type: :confidential,
       redirect_uris: ["https://app.example.com/cb"],

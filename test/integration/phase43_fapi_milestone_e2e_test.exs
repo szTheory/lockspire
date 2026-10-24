@@ -79,6 +79,7 @@ defmodule Lockspire.Integration.Phase43FapiMilestoneE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase43-fapi-client",
         client_secret_hash: Policy.hash_client_secret(secret),
         client_type: :confidential,

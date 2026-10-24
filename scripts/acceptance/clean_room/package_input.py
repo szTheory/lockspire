@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -40,6 +41,9 @@ class PackageIdentity:
     kind: str
     version: str
     sha256: str
+    archive_sha256: str | None = None
+    tree_sha256: str | None = None
+    source_revision: str | None = None
 
     def safe_receipt(self) -> dict[str, object]:
         return {
@@ -48,6 +52,9 @@ class PackageIdentity:
             "package": "lockspire",
             "version": self.version,
             "sha256": self.sha256,
+            "archive_sha256": self.archive_sha256 or self.sha256,
+            "tree_sha256": self.tree_sha256 or "unavailable",
+            "source_revision": self.source_revision or "unavailable",
         }
 
 
@@ -98,8 +105,45 @@ def clean_room_database_url(role: str) -> str:
     return f"postgres://{user}:{password}@{host}:{port}/{database}"
 
 
+def stop_process_group(process: subprocess.Popen, grace: float = 3) -> bool:
+    """Stop only this child's session, including descendants after its leader exits."""
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(process.pid, sig)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            return False
+        try:
+            process.wait(timeout=grace if sig == signal.SIGTERM else 1)
+        except subprocess.TimeoutExpired:
+            continue
+        # A terminated leader can leave descendants in the owned group.
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        except OSError:
+            return False
+        return True
+    return False
+
+
+def bounded_run(command: Sequence[str], *, timeout: float = 120, stop_grace: float = 4, **kwargs) -> subprocess.CompletedProcess:
+    """Run a finite, owned child session; timeout/interruption cannot orphan it."""
+    kwargs.pop("check", None)
+    input_value = kwargs.pop("input", None)
+    with subprocess.Popen(command, start_new_session=True, **kwargs) as process:
+        try:
+            stdout, stderr = process.communicate(input_value, timeout=timeout)
+        except BaseException:
+            stop_process_group(process, grace=stop_grace)
+            raise
+        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
 def run(command: Sequence[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:
-    completed = subprocess.run(
+    completed = bounded_run(
         command,
         cwd=cwd,
         env=env,
@@ -133,15 +177,13 @@ def inventory(root: Path) -> tuple[str, ...]:
 
 
 def build_package(run_root: Path) -> tuple[Path, tuple[str, ...]]:
-    """Build a local Hex-style unpacked tree before any child app is started."""
+    """Build and unpack one concrete local Hex archive before any child starts."""
     require_command("mix")
     package_root = run_root / "package" / "lockspire"
     package_root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-
-    run(
-        ("mix", "hex.build", "--unpack", "--output", str(package_root)),
-        cwd=PROJECT_ROOT,
-    )
+    archive = run_root / "package" / f"lockspire-{package_version(PROJECT_ROOT)}.tar"
+    run(("mix", "hex.build", "--output", str(archive)), cwd=PROJECT_ROOT)
+    unpack_hex_tarball(archive, package_root)
 
     return package_root.resolve(strict=True), inventory(package_root)
 
@@ -152,6 +194,165 @@ def sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def package_tree_digest(root: Path) -> str:
+    """Hash sorted relative names and bytes, rejecting links and empty trees."""
+    digest = hashlib.sha256()
+    paths = sorted(root.rglob("*"))
+    for path in paths:
+        if path.is_symlink():
+            raise PackageInputError("candidate tree contains a symlink")
+        if path.is_file():
+            digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+            digest.update(b"\0")
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            digest.update(b"\0")
+    if not any(path.is_file() for path in paths):
+        raise PackageInputError("candidate tree contains no files")
+    return digest.hexdigest()
+
+
+def source_revision() -> str:
+    result = subprocess.run(
+        ("git", "rev-parse", "HEAD"), cwd=PROJECT_ROOT, stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
+    )
+    value = result.stdout.decode().strip()
+    if result.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40,64}", value):
+        raise PackageInputError("candidate source revision could not be identified")
+    return value
+
+
+def verify_candidate_input(archive: Path, package_root: Path, identity: PackageIdentity) -> None:
+    """Verify the source artifact and extracted tree before any child can reuse them."""
+    if not archive.is_file() or sha256(archive) != (identity.archive_sha256 or identity.sha256):
+        raise PackageInputError("candidate archive identity mismatch")
+    if not package_root.is_dir() or package_tree_digest(package_root) != identity.tree_sha256:
+        raise PackageInputError("candidate extracted tree identity mismatch")
+    if package_version(package_root) != identity.version:
+        raise PackageInputError("candidate package version identity mismatch")
+    with tempfile.TemporaryDirectory(prefix="lockspire-candidate-verify-") as temporary:
+        extracted = Path(temporary) / "lockspire"
+        try:
+            unpack_hex_tarball(archive, extracted)
+        except PackageInputError:
+            raise PackageInputError("candidate archive could not be verified against its extracted tree") from None
+        if package_tree_digest(extracted) != identity.tree_sha256:
+            raise PackageInputError("candidate archive and extracted tree differ")
+
+
+def _compiled_candidate_digest(child_root: Path, vendor_root: Path) -> str | None:
+    # MIX_BUILD_PATH is an exact path override, so it omits Mix's default
+    # environment subdirectory. Accept that direct shape as well as default
+    # dev/test paths used by older clean-room hosts.
+    roots = (
+        child_root / "_build" / "lib" / "lockspire",
+        child_root / "_build" / "dev" / "lib" / "lockspire",
+        child_root / "_build" / "test" / "lib" / "lockspire",
+    )
+    existing = [root for root in roots if root.exists()]
+    if not existing:
+        return None
+    vendor_realpath = vendor_root.resolve(strict=True)
+    digest = hashlib.sha256()
+    for root in existing:
+        for path in sorted(root.rglob("*")):
+            if path.is_symlink():
+                try:
+                    resolved_target = path.resolve(strict=True)
+                except OSError:
+                    raise PackageInputError(
+                        "compiled candidate contains a broken symlink: "
+                        + path.name
+                        + " -> "
+                        + os.readlink(path)
+                    ) from None
+                if resolved_target == vendor_realpath or vendor_realpath not in resolved_target.parents:
+                    raise PackageInputError("compiled candidate contains an unapproved symlink: " + path.name)
+                digest.update(path.relative_to(child_root).as_posix().encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(resolved_target.relative_to(vendor_realpath).as_posix().encode("utf-8"))
+                digest.update(b"\0")
+            if path.is_file():
+                digest.update(path.relative_to(child_root).as_posix().encode("utf-8"))
+                digest.update(b"\0")
+                digest.update(path.read_bytes())
+                digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def bind_compiled_candidate(child_root: Path, identity: PackageIdentity, vendor_root: Path, resolved_root: Path) -> None:
+    try:
+        compiled = _compiled_candidate_digest(child_root, vendor_root)
+    except PackageInputError as error:
+        print("compiled candidate provenance rejected: " + str(error))
+        raise
+    if compiled is None:
+        raise PackageInputError("compiled candidate is missing after host preparation")
+    marker = {
+        "source_revision": identity.source_revision,
+        "archive_sha256": identity.archive_sha256,
+        "tree_sha256": identity.tree_sha256,
+        "vendor_tree_sha256": package_tree_digest(vendor_root),
+        "compiled_candidate_sha256": compiled,
+        "resolved_dependency": str(resolved_root.resolve(strict=True)),
+        "resolved_dependency_verified": True,
+    }
+    marker_path = child_root / ".lockspire-candidate.json"
+    marker_path.write_text(json.dumps(marker, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8")
+
+
+def verify_candidate_host(
+    package_root: Path, child_root: Path, identity: PackageIdentity,
+    vendor_root: Path, resolved_dependency: Path,
+) -> None:
+    """Reject package, vendor, resolver, or compiled drift before a host is reused."""
+    expected = identity.tree_sha256
+    if not expected or package_tree_digest(package_root) != expected:
+        raise PackageInputError("candidate source tree identity mismatch")
+    if package_tree_digest(vendor_root) != expected:
+        raise PackageInputError("candidate vendor tree identity mismatch")
+    vendor = vendor_root.resolve(strict=True)
+    resolved = resolved_dependency.resolve(strict=True)
+    if resolved != vendor:
+        raise PackageInputError("candidate resolved dependency identity mismatch")
+    compiled = _compiled_candidate_digest(child_root, vendor_root)
+    marker_path = child_root / ".lockspire-candidate.json"
+    if compiled is None and not marker_path.exists():
+        return
+    if compiled is None or not marker_path.is_file():
+        raise PackageInputError("candidate compiled state identity mismatch")
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise PackageInputError("candidate compiled state identity mismatch") from None
+    expected_marker = {
+        "source_revision": identity.source_revision,
+        "archive_sha256": identity.archive_sha256,
+        "tree_sha256": expected,
+        "vendor_tree_sha256": expected,
+        "compiled_candidate_sha256": compiled,
+        "resolved_dependency": str(vendor),
+        "resolved_dependency_verified": True,
+    }
+    if marker != expected_marker:
+        raise PackageInputError("candidate compiled state identity mismatch")
+
+
+def candidate_host_provenance(child_root: Path) -> dict[str, object]:
+    """Return only non-path provenance fields from a previously verified host binding."""
+    try:
+        marker = json.loads((child_root / ".lockspire-candidate.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise PackageInputError("candidate compiled state identity mismatch") from None
+    return {
+        "vendor_tree_sha256": marker.get("vendor_tree_sha256"),
+        "compiled_candidate_sha256": marker.get("compiled_candidate_sha256"),
+        "resolved_dependency_verified": marker.get("resolved_dependency_verified") is True,
+    }
 
 
 def exact_version(value: str) -> str:
@@ -185,9 +386,11 @@ end
 
 
 def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str | None) -> tuple[Path, str, str]:
+    if path.is_symlink():
+        raise PackageInputError("Lockspire package tar must be a regular file")
     resolved = path.resolve(strict=True)
     allowed = allowed_root.resolve(strict=True)
-    if not resolved.is_file() or resolved.is_symlink():
+    if not resolved.is_file():
         raise PackageInputError("Lockspire package tar must be a regular file")
     if resolved.parent != allowed and allowed not in resolved.parents:
         raise PackageInputError("Lockspire package tar escapes its declared root")
@@ -207,11 +410,19 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     package_root = run_root / "package" / "lockspire"
 
     if source.kind == "checkout":
+        tarball = run_root / "package" / f"lockspire-{package_version(PROJECT_ROOT)}.tar"
+        if package_root.is_dir() and tarball.is_file():
+            version = package_version(package_root)
+            checksum = sha256(tarball)
+            tree = package_tree_digest(package_root)
+            identity = PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
+            verify_candidate_input(tarball, package_root, identity)
+            return package_root.resolve(strict=True), inventory(package_root), identity
         package_root, entries = build_package(run_root)
         version = package_version(package_root)
-        tarball = PROJECT_ROOT / f"lockspire-{version}.tar"
-        checksum = sha256(tarball) if tarball.is_file() else "unavailable"
-        return package_root, entries, PackageIdentity("checkout", version, checksum)
+        checksum = sha256(tarball)
+        tree = package_tree_digest(package_root)
+        return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
 
     if source.kind == "hex":
         version = exact_version(source.value or "")
@@ -228,13 +439,22 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         raise PackageInputError("unknown Lockspire package source")
 
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
+    if package_root.is_dir():
+        identity = PackageIdentity(
+            source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+        )
+        verify_candidate_input(tarball, package_root, identity)
+        return package_root.resolve(strict=True), inventory(package_root), identity
     unpack_hex_tarball(tarball, package_root)
     unpacked_version = package_version(package_root)
     if unpacked_version != version:
         raise PackageInputError("Lockspire package filename and metadata versions differ")
 
     entries = inventory(package_root)
-    return package_root.resolve(strict=True), entries, PackageIdentity(source.kind, version, checksum)
+    package_root = package_root.resolve(strict=True)
+    return package_root, entries, PackageIdentity(
+        source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+    )
 
 
 def assert_below(path: Path, root: Path, label: str) -> Path:
@@ -272,7 +492,17 @@ def copy_child_template(role: str, run_root: Path, package_root: Path) -> Path:
 
 def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> dict[str, str]:
     environment = os.environ.copy()
-    environment["MIX_BUILD_PATH"] = str(child_root / "_build")
+    mix_env = environment.get("MIX_ENV")
+    if mix_env not in {"dev", "test", "prod"}:
+        mix_env = "dev"
+    # MIX_BUILD_PATH is the exact build directory, not the root that Mix
+    # augments with an environment segment. Keep the environment segment so
+    # path-dependency asset links (notably priv/) resolve inside the host.
+    # Canonicalize the build path before Mix calculates relative `priv/`
+    # links. On macOS, TMPDIR commonly enters through /var but resolves to
+    # /private/var; mixing those spellings makes valid package links point
+    # past the host root.
+    environment["MIX_BUILD_PATH"] = str((child_root / "_build" / mix_env).resolve())
 
     if cache_root is not None:
         cache_realpath = cache_root.resolve()
@@ -290,7 +520,7 @@ def locked_environment(child_root: Path, role: str, cache_root: Path | None) -> 
 
 def verify_child(
     role: str, child_root: Path, cache_root: Path | None, extra_environment: dict[str, str] | None = None
-) -> None:
+) -> Path:
     before_manifest = (child_root / "mix.exs").read_bytes()
     before_lock = (child_root / "mix.lock").read_bytes()
     environment = locked_environment(child_root, role, cache_root)
@@ -300,7 +530,7 @@ def verify_child(
     run(("mix", "deps.get", "--check-locked"), cwd=child_root, env=environment)
     run(("mix", "deps"), cwd=child_root, env=environment)
 
-    dependency_path = subprocess.run(
+    dependency_path = bounded_run(
         (
             "mix",
             "run",
@@ -342,6 +572,7 @@ def verify_child(
 
     label = "provider" if role == "provider_host" else "client"
     print(f"{label} provenance verified")
+    return resolved
 
 
 def prepare_children(run_root: Path, cache_root: Path | None = None) -> None:

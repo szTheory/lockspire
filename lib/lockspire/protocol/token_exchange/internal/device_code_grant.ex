@@ -26,6 +26,7 @@ defmodule Lockspire.Protocol.TokenExchange.Internal.DeviceCodeGrant do
              dependencies
            ),
          {:ok, context} <- TokenEndpointDPoP.resolve_context(client, request, dependencies),
+         context = Map.put(context, :authentication_authority, :client_request),
          {:ok, %Success{} = success} <-
            GrantSupport.redeem_device_authorization(
              client,

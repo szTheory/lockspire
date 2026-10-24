@@ -35,6 +35,7 @@ defmodule Lockspire.Integration.Phase30DeviceAuthorizationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "phase30-device-client",
         name: "Kitchen TV",
         client_type: :public,

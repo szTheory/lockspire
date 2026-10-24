@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation elixir -r /private/tmp/lockspire-gsd-tap-formatter.exs -S mix test test/lockspire/protocol/dcr_telemetry_redaction_test.exs:146 --formatter LockspireGsdTapFormatter --no-color --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..3\nok 1 - test finite secret issuance, token use, expiry rejection, and operator replacement are observed and redacted (Lockspire.Protocol.DcrTelemetryRedactionTest)\nok 2 - test DCR telemetry redaction sweep (DCR-23) RAT/IAT/client_secret plaintext is absent from every captured event payload, every audit row payload, and every audit row metadata column (Lockspire.Protocol.DcrTelemetryRedactionTest)\nnot ok 3 - test self PUT and host recovery use distinct management actors (Lockspire.Protocol.DcrTelemetryRedactionTest)",
+  "targetTest": "test self PUT and host recovery use distinct management actors (Lockspire.Protocol.DcrTelemetryRedactionTest)",
+  "targetFile": "test/lockspire/protocol/dcr_telemetry_redaction_test.exs",
+  "expected": "At least one observed [:lockspire, :dcr, :rotate] event has actor_type operator and actor_id admin-ui for committed host recovery.",
+  "actual": "No host rotation telemetry event has the operator/admin-ui actor; existing emitter labels it self_registered_client.",
+  "semanticAssessment": "The named ExUnit test compiled and executed the full successful self PUT and host recovery path. It failed on the planned actor assertion because the observed host rotation was attributed as self-management."
+}

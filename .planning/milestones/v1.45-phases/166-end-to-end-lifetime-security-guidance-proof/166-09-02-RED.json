@@ -1,0 +1,10 @@
+{
+  "command": "python3 -m unittest discover -s test/acceptance -p 'client_lifetime_upgrade_test.py' -v",
+  "exitCode": 1,
+  "output": "test_legacy_prefix_requires_http_use_promotion_and_state_preservation (client_lifetime_upgrade_test.LegacyUpgradeReceiptTest.test_legacy_prefix_requires_http_use_promotion_and_state_preservation) ... FAIL\n\n======================================================================\nFAIL: test_legacy_prefix_requires_http_use_promotion_and_state_preservation (client_lifetime_upgrade_test.LegacyUpgradeReceiptTest.test_legacy_prefix_requires_http_use_promotion_and_state_preservation)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_lifetime_upgrade_test.py\", line 17, in test_legacy_prefix_requires_http_use_promotion_and_state_preservation\n    with self.assertRaises(PackageInputError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^\nAssertionError: PackageInputError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_legacy_prefix_requires_http_use_promotion_and_state_preservation",
+  "targetFile": "test/acceptance/client_lifetime_upgrade_test.py",
+  "expected": "upgrade receipt rejects a schema-only legacy prefix without HTTP use and promotion evidence",
+  "actual": "current receipt validator accepted a prefix with no runtime HTTP evidence",
+  "semanticAssessment": "target executed and failed on the planned absence-of-evidence assertion"
+}

@@ -22,6 +22,7 @@ defmodule Mix.Tasks.Lockspire.Doctor.RemoteJwksTest do
 
     {:ok, _client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "doctor-remote-jwks-client",
         client_secret_hash: "sha256:doctor:hash",
         client_type: :confidential,

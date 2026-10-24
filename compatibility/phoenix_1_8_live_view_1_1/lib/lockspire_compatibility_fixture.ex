@@ -1,3 +1,22 @@
+defmodule LockspireCompatibilityFixture.RequireStaff do
+  @moduledoc false
+  import Plug.Conn
+
+  def init(opts), do: opts
+
+  def call(conn, _opts) do
+    conn
+    |> send_resp(:forbidden, "Forbidden")
+    |> halt()
+  end
+end
+
+defmodule LockspireCompatibilityFixture.LiveAuthorization do
+  @moduledoc false
+
+  def on_mount(_name, _params, _session, socket), do: {:halt, socket}
+end
+
 defmodule LockspireCompatibilityFixture.Router do
   use Phoenix.Router
 
@@ -5,12 +24,15 @@ defmodule LockspireCompatibilityFixture.Router do
 
   pipeline :host_operator do
     plug(:accepts, ["html"])
+    plug(LockspireCompatibilityFixture.RequireStaff)
   end
 
-  scope "/lockspire/admin" do
-    pipe_through(:host_operator)
-    forward("/", Lockspire.Web.AdminRouter)
-  end
+  require Lockspire.Web.AdminRoutes
+
+  Lockspire.Web.AdminRoutes.lockspire_admin_routes("/lockspire/admin",
+    pipe_through: [:host_operator],
+    on_mount: LockspireCompatibilityFixture.LiveAuthorization
+  )
 
   scope "/lockspire" do
     forward("/", Lockspire.Web.Router)

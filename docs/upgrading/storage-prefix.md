@@ -17,3 +17,9 @@ Do not add `storage_prefix: "lockspire"` to an existing production app until you
 - run an explicit data-move plan, then rerun `mix lockspire.verify`
 
 Lockspire does not silently move production data during a normal dependency upgrade.
+
+For the additive app-lifetime migration, keep the configured Lockspire storage
+prefix aligned with the host repository and review the PostgreSQL lock and
+writer-drain procedure in [Upgrade app lifetime storage](client-lifetimes.md).
+The migration preserves prior packaged migration files and does not move data
+between schemas.

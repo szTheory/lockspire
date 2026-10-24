@@ -1,0 +1,10 @@
+{
+  "command": "NO_COLOR=1 python3 -m unittest discover -s test/clean_room -p test_admin_journey.py",
+  "exitCode": 1,
+  "output": "F.......\n======================================================================\nFAIL: test_browser_failure_summary_discards_hostile_child_fields (test_admin_journey.AdminReceiptTests.test_browser_failure_summary_discards_hostile_child_fields)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/clean_room/test_admin_journey.py\", line 117, in test_browser_failure_summary_discards_hostile_child_fields\n    self.assertTrue(callable(summarize), \"browser diagnostics must pass through a strict allowlist\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : browser diagnostics must pass through a strict allowlist\n\n----------------------------------------------------------------------\nRan 8 tests in 0.002s\n\nFAILED (failures=1)\n",
+  "targetTest": "test_browser_failure_summary_discards_hostile_child_fields",
+  "targetFile": "test_admin_journey.py",
+  "expected": "untrusted nested browser fields are dropped before diagnostic output",
+  "actual": "runner has no strict browser diagnostic allowlist helper",
+  "semanticAssessment": "The named unittest failed on the assertion that the runner should expose a strict diagnostic allowlist; no helper exists, so current summary construction trusts nested browser dictionaries."
+}

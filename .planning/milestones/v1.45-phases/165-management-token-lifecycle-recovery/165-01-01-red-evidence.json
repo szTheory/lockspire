@@ -1,0 +1,10 @@
+{
+  "command": "env ASDF_ELIXIR_VERSION=1.18.4-otp-27 ASDF_ERLANG_VERSION=27.3.4.15 MIX_ENV=test MIX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/mix-home HEX_HOME=/private/tmp/lockspire-163-13-debug-8/old-public/hex-home LOCKSPIRE_TEST_DB_NAME=lockspire_phase165_validation elixir -r /private/tmp/lockspire-phase165-tap-formatter.ex -S mix test test/integration/management_token_lifetime_access_test.exs --only management_expiry --formatter LockspirePhase165TapFormatter --max-failures 1 --timeout 55000",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..1\nnot ok 1 - test test GET rejects a persisted management token after its stored deadline\n",
+  "targetTest": "test test GET rejects a persisted management token after its stored deadline",
+  "targetFile": "test/integration/management_token_lifetime_access_test.exs",
+  "expected": "A persisted enabled v1 client's management token must be rejected after its deadline with HTTP 401 and a Bearer invalid_token challenge.",
+  "actual": "The HTTP request returned 200 while the persisted registration_access_token_expires_at was one second in the past.",
+  "semanticAssessment": "Valid RED: the TAP report shows the named target test executed and failed on its planned status assertion. Registration, database checkout, controller routing, and fixture setup completed; the existing implementation authorized the expired management credential."
+}

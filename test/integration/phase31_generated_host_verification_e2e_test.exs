@@ -40,6 +40,7 @@ defmodule Lockspire.Integration.Phase31GeneratedHostVerificationE2ETest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "generated-host-device-client",
         name: "Living Room TV",
         client_type: :public,

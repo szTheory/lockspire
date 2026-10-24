@@ -35,22 +35,27 @@ If you try to create a key before a key-encryption key is set up, Lockspire refu
 
 ## Mounting the admin surface
 
-Mount the admin pages behind your host application's staff sign-in and access checks. Lockspire does not sign in staff or decide who can access these pages.
-
-The generated router mounts `Lockspire.Web.AdminRouter` at `/lockspire/admin` before the general `Lockspire.Web.Router` forward:
+Mount the admin pages through the generated `lockspire_routes/0` helper. It
+expands the shared native LiveView route inventory through
+`Lockspire.Web.AdminRoutes.lockspire_admin_routes/2`, and places those routes
+before the public OAuth/OIDC forward:
 
 ```elixir
-scope "/lockspire/admin" do
-  pipe_through [:browser, :require_operator]
-  forward "/", Lockspire.Web.AdminRouter
-end
+import YourAppWeb.Router.Lockspire
 
-scope "/" do
-  forward "/lockspire", Lockspire.Web.Router
-end
+lockspire_routes()
 ```
 
-Keep the more specific admin forward before the general public OAuth/OIDC forward. Lockspire owns protocol and related admin state after a request reaches its LiveViews. The host owns staff sessions, MFA, role checks, tenant policy, layouts, branding, product-specific authorization, IP policy, and audit framing around access to these routes.
+The generated `OperatorAuthorization` module is a host-owned, deny-by-default
+seam. Implement its HTTP Plug and LiveView `on_mount` hook with your current
+staff identity and authorization policy before granting admin access. The host
+also owns staff sign-in, MFA, role checks, tenant and IP policy, layouts,
+branding, product-specific authorization, and audit framing. A mount hook
+checks policy at mount and navigation params; it does not promise continuous
+permission revocation while a page is idle.
+
+For the full browser pipeline, endpoint socket/session, signing-salt, asset,
+verification, and upgrade responsibilities, see the [canonical install guide](install-and-onboard.md) and [host admin integration upgrade guide](upgrading/host-admin-integration.md). Compiled verification establishes route and hook wiring; host-owned request and LiveView tests establish that your policy allows the right staff and denies everyone else.
 
 ## Admin navigation model
 
@@ -80,6 +85,23 @@ Keep DCR onboarding separate from DCR policy:
 - **DCR policy** lives at `/admin/policies/dcr`. It covers issuer registration posture, allowed registration methods, and whether registration is disabled, IAT-gated, or open.
 
 These workflows are connected, but they are not the same job. Admin users may start in DCR onboarding, find that issuer policy blocks registration, then update the policy before returning to onboarding.
+
+### Recovering an app management token
+
+The host team can replace an app management token from the existing app detail task when a partner loses the token or its configured expiry passes. The action requires the normal host staff authorization and confirmation. Lockspire displays the committed replacement token once; deliver it securely to the partner. The old token stops working immediately, including after a successful registration update whose response was lost. Replaying that old token cannot recover the replacement.
+
+Recovery is available for self-registered apps and changes only management access. Rotating this token does not enable the app or extend app or client-secret expiry. A finite token lifetime is an optional provider policy: blank or `0` means no automatic expiry, while a positive duration applies to newly issued or replaced tokens and leaves existing tokens unchanged. A finite lifetime can lock a partner out of self-management after expiry, so the host team should be ready to rotate and securely deliver a replacement.
+
+Keep the three expiry states separate when helping a partner. An expired app
+cannot start new OAuth work, but while it remains enabled an eligible app
+management token can still read or delete its registration; PUT is blocked.
+An expired client secret cannot authenticate, but expiry alone does not revoke
+tokens already issued. An expired app management token cannot read, update, or
+delete the registration. Disabling an app blocks its protocol use and
+registration-management operations. These provider-side changes do not clear
+the host application's staff or end-user browser sessions. For the exact
+online checks and offline JWT limits, see [Supported Surface](supported-surface.md)
+and [Upgrade app lifetime storage](upgrading/client-lifetimes.md).
 
 ## Logout propagation workflow
 
@@ -144,7 +166,7 @@ Shared components cover common admin needs: page headers, section cards, action 
 
 Use the shared button variants consistently: **primary** marks the page's main safe action, **secondary** marks navigation, support, recovery, or an alternate action, and **danger** marks a consequential destructive action. A danger style does not replace the consequence text or confirmation step. Keep task-return links secondary and form saves primary; confirmed client disable and credential rotation actions remain danger-styled.
 
-The component lab and stress surface are internal maintainer proof only. They render real admin primitives and redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRouter`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
+The component lab and stress surface are internal maintainer proof only. They render real admin primitives and redaction-safe fixture states for tests and local review, but they are not mounted through `Lockspire.Web.AdminRoutes`, not a supported admin route, not a host extension point, and not part of `docs/supported-surface.md`.
 
 Theme behavior is intentionally narrow:
 

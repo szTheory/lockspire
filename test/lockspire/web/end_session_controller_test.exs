@@ -277,6 +277,7 @@ defmodule Lockspire.Web.EndSessionControllerTest do
 
   defp register_client do
     Repository.register_client(%Client{
+      lifetime_version: 0,
       client_id: "logout-client",
       client_secret_hash: "sha256:logout:hash",
       client_type: :confidential,

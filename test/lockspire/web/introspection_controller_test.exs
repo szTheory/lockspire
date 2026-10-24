@@ -3,6 +3,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
   @moduletag :integration
 
+  import Ecto.Query
   import Phoenix.ConnTest
   import Plug.Conn
 
@@ -13,6 +14,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
   alias Lockspire.JarTestHelpers
   alias Lockspire.Protocol.TokenFormatter
   alias Lockspire.Storage.Ecto.Repository
+  alias Lockspire.Storage.Ecto.ClientRecord
   alias Lockspire.Storage.Ecto.SigningKeyRecord
 
   setup_all do
@@ -34,6 +36,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     {:ok, client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection-controller",
         client_secret_hash: client_secret_hash(secret),
         client_type: :confidential,
@@ -51,6 +54,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     {:ok, public_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection-controller-public",
         client_secret_hash: nil,
         client_type: :public,
@@ -68,6 +72,7 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
 
     {:ok, other_client} =
       Repository.register_client(%Client{
+        lifetime_version: 0,
         client_id: "client-introspection-controller-other",
         client_secret_hash: client_secret_hash("other-introspection-controller-secret"),
         client_type: :confidential,
@@ -492,6 +497,65 @@ defmodule Lockspire.Web.IntrospectionControllerTest do
     assert Jason.decode!(conn.resp_body) == %{
              "error" => "invalid_client",
              "error_description" => "Client authentication failed"
+           }
+  end
+
+  @tag :secret_expiry_contract
+  test "POST /introspect keeps the generic invalid_client response for an expired shared secret",
+       %{
+         client: client,
+         secret: secret
+       } do
+    expired_at = DateTime.add(DateTime.utc_now(), -60, :second) |> DateTime.truncate(:second)
+
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id),
+               set: [lifetime_version: 1, client_secret_expires_at: expired_at]
+             )
+
+    conn =
+      build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"})
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 401
+
+    assert get_resp_header(conn, "www-authenticate") == [
+             "Basic realm=\"Lockspire Token Endpoint\""
+           ]
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    refute conn.resp_body =~ "expires_at"
+    refute conn.resp_body =~ "expired"
+  end
+
+  test "POST /introspect reports malformed durable lifetime state as server_error", %{
+    client: client,
+    secret: secret
+  } do
+    assert {1, _} =
+             Lockspire.TestRepo.update_all(
+               from(record in ClientRecord, where: record.client_id == ^client.client_id),
+               set: [lifetime_version: 99, client_secret_expires_at: nil]
+             )
+
+    conn =
+      build_conn(:post, "/introspect", %{"token" => "controller-introspect-access"})
+      |> put_req_header("authorization", basic_auth(client.client_id, secret))
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 500
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "server_error",
+             "error_description" => "Unable to validate client lifetime state"
            }
   end
 
