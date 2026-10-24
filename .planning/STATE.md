@@ -5,16 +5,16 @@ milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
 status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
-stopped_at: Completed 171-02-PLAN.md
-last_updated: "2026-10-24T20:23:58.244Z"
+stopped_at: Completed 171-03-PLAN.md
+last_updated: "2026-10-24T20:54:35.261Z"
 last_activity: 2026-10-24
 last_activity_desc: Completed 171-02 profile observations, case ledger, and contract verification
-state_head: 5d73b211bf369476c3681186eaa5bb8ba6e4af70
+state_head: ef28e0fe6b237d0fa17282f09c875bc48f677923
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 ## Current Position
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
-Plan: 2 of 3 complete; 171-03 next for matrix freeze and scope review
+Plan: 3 of 3 complete; 171-03 next for matrix freeze and scope review
 Status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
 Last activity: 2026-10-24 — Completed 171-02 profile observations, case ledger, and contract verification
 
@@ -46,6 +46,7 @@ v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 
 |------|----------|-------|-------|
 | Phase 171 P01 | 17 min | 2 tasks | 3 files |
 | Phase 171 P02 | 14min | 2 tasks | 2 files |
+| Phase 171 P03 | 31min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -114,8 +115,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T20:23:10.715Z
-Stopped at: Completed 171-02-PLAN.md
+Last session: 2026-10-24T20:54:35.247Z
+Stopped at: Completed 171-03-PLAN.md
 Resume file: None
 Next: Execute 171-03: review the ledger, replan A171-003 proof, settle P171-005 policy, and keep external profile evidence supplemental.
 
@@ -132,3 +133,6 @@ None
 - [Phase 171]: Unlaunched OIDF profiles retain null wrapper exits/classifications and no receipts; environment readiness is not protocol acceptance.
 - [Phase 171]: A171-003 unsupported response_mode and P171-005 pushed/front-channel scope conflict remain explicit required proof/policy gaps for Plan 03.
 - [Phase 171]: External issuer/TLS/proxy/browser reachability is supplemental unavailable evidence, not a selected product defect.
+- [Phase 171]: A171-003 requires HTTP 400 without OAuth Error Response parameters for unsupported response_mode; the controlled request reproduced the contrary redirect.
+- [Phase 171]: For P171-005, the valid pushed scope is authoritative over the conflicting outer scope under the documented RFC 9126 to RFC 9101 clause chain; plain form PAR remains supported.
+- [Phase 171]: Retain only the two reproduced correction scopes, reuse existing proof for the other ten cases, and keep unavailable optional external profiles supplemental.
