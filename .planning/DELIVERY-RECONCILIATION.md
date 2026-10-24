@@ -188,17 +188,42 @@ does not silently raise the public compatibility floor or widen Phase 171.
 The public caveat and unchanged integration boundaries passed docs generation
 and 18 documentation/support/compatibility contract tests.
 
-### Remaining packaged-journey prerequisite
+### Packaged-journey prerequisite resolved
 
 Run `40118254627` passed Release Hygiene, Dialyzer, Fast Checks, Minimum
 Supported Elixir/OTP and Adoption Demo Smoke. Integration's 199 source tests
 passed, but the package-only upgrade and HTTP journeys failed after provider
-readiness; Complete Coverage was consequently skipped. These are unresolved
-delivery blockers. Dedicated diagnosis is reproducing the exact package
-failure and separating package provenance/harness from product behavior.
-No correction, main integration, receipt, or Phase 171 completion is inferred
-from the partial run. Any fix will be scoped as a separate prior-delivery
-prerequisite and receive fresh review and exact-head protected checks.
+readiness; Complete Coverage was consequently skipped. Separate prerequisite
+diagnosis established two proof-host integration bugs, not protocol defects:
+
+1. The pinned old installer references host pipeline `:require_operator`, which
+   the newer overlay omitted. The real checksum-pinned old template fails in
+   0.38 seconds with that pipeline missing; adding only the existing denying
+   operator plug makes it compile in 0.63 seconds.
+2. The current fixture account resolver reads `Plug.Conn.get_session/2` on an
+   endpoint connection whose session is installed but not fetched. Repeated
+   HTTP tests observed authorization 500 instead of 302. A pure actual-resolver
+   probe reproduces `ArgumentError`; fetching that same session first returns
+   the expected login redirect in 0.46 seconds. A secondary absent error renderer
+   had masked the original exception. Diagnostics retained only numeric status,
+   exception type and source locations, never bodies or argument values.
+
+Commit `4fcb7486` restores the host-owned denying legacy admin pipeline and
+fetches the session immediately before the host resolver's own cookie read.
+It changes no runtime library, generator, route policy or CSRF behavior. A new
+real-resolver regression failed before the fix and passed afterward; both
+mount integrations passed (2 tests total), the legacy compile loop passed, and
+strict Credo found no issues. No broad browser/CSRF middleware was added to
+public token or DCR routes.
+
+The original complete package regression command then passed at that source:
+`CLEAN_ROOM_CACHE_ROOT=/tmp/lockspire-171-package-debug-cache LOCKSPIRE_TEST_DB_NAME=lockspire_171_delivery_20261024a ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix test --include lifetime_package test/integration/client_lifetime_packaged_journey_test.exs test/integration/app_lifetime_packaged_upgrade_test.exs`.
+Exit zero, 244.7 seconds, **3 tests / 0 failures**, including both candidate
+HTTP journeys and the pinned old/candidate public and tenant-prefix upgrade.
+Every live diagnostic attempt and the final verification completed owned
+provider/database/run-root cleanup. Debug hooks were confined to owned `/tmp`
+paths. These corrections still require fresh exact-head protected checks;
+no main integration, acceptance or Phase 171 completion is claimed here.
 
 ## Lessons applied
 
@@ -230,3 +255,8 @@ prerequisite and receive fresh review and exact-head protected checks.
    Separate a deliberately historical compatibility experiment from a production
    security recommendation, preserve failing audit facts, and document the
    isolation and owner of any unresolved floor-policy decision.
+10. Preserve host adapter contracts across installer generations. Test the
+    actual cookie-reading callback with the endpoint's lazy session state,
+    and keep legacy admin pipelines denying by default. A safe structural
+    exception probe can locate a masked error without retaining raw logs or
+    weakening redaction. Reuse the original packaged regressions as final proof.
