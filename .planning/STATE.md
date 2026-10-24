@@ -4,12 +4,12 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
-status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
+status: Plans complete; frozen qualification matrix awaiting phase review and goal verification
 stopped_at: Phase 171 plans complete; qualification matrix frozen
-last_updated: "2026-10-24T20:55:47.186Z"
+last_updated: "2026-10-24T20:57:57.193Z"
 last_activity: 2026-10-24
-last_activity_desc: Completed 171-02 profile observations, case ledger, and contract verification
-state_head: af3ac783316611008a5ceb0b94c7231b83f9ce99
+last_activity_desc: Completed all Phase 171 plans and froze the qualified case matrix
+state_head: c61441a74b3727fc079107e6a6327b5c52d63f99
 progress:
   total_phases: 4
   completed_phases: 0
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 171 Plan 03: resolve the explicit authorization proof and PAR policy gaps before freezing downstream scope.
+**Current focus:** Phase 171 verification: validate frozen evidence and hand off A171-003/P171-005 corrections to phases 172/173.
 
 ## Current Position
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
-Plan: 3 of 3 complete; 171-03 next for matrix freeze and scope review
-Status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
-Last activity: 2026-10-24 — Completed 171-02 profile observations, case ledger, and contract verification
+Plan: 3 of 3 complete; awaiting phase review and verification
+Status: Plans complete; frozen qualification matrix awaiting phase review and goal verification
+Last activity: 2026-10-24 — Completed all Phase 171 plans and froze the qualified case matrix
 
 Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 2/3 Phase 171 plans complete; Plan 03 remains gated on qualification proof and policy review.
 
@@ -118,7 +118,7 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 Last session: 2026-10-24T20:55:47.171Z
 Stopped at: Phase 171 plans complete; qualification matrix frozen
 Resume file: None
-Next: Execute 171-03: review the ledger, replan A171-003 proof, settle P171-005 policy, and keep external profile evidence supplemental.
+Next: Run configured validation/security/code review and goal verification; then plan Phase 172 against frozen A171-003 scope.
 
 ### Blockers
 
