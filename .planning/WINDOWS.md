@@ -2,9 +2,9 @@
 schema_version: 1
 open_count: 3
 waived_count: 0
-fixed_count: 9
-total_count: 12
-last_updated: 2026-10-24T03:08:29.033Z
+fixed_count: 11
+total_count: 14
+last_updated: 2026-10-24T07:25:44.957Z
 ---
 
 # Broken Windows Ledger
@@ -27,6 +27,8 @@ last_updated: 2026-10-24T03:08:29.033Z
 | 10 | 145 | unrun-verify | .planning/phases/145-configure-and-onboard/145-CREDENTIAL-BROWSER.md |  | Browser credential-changing handoff and narrow/200% zoom/reduced-motion states were intentionally left unobserved; ExUnit covers secret lifecycle and the remaining visual limits are documented. | open |  | 2026-10-09T21:35:14.803Z |  |
 | 11 | 168 | lint-warning | test/support/lockspire/web/admin_route_host.ex | 39 | Pre-existing duplicate record_trace/2 clauses in test host fixture emit compiler warnings. | open |  | 2026-10-23T00:10:29.843Z |  |
 | 12 | 170 | deviation | scripts/acceptance/clean_room_admin_journey.py |  | Runtime asset validation accepts only the isolated provider host or its pair-scoped dependency cache; root checkout sources are rejected. | open |  | 2026-10-24T03:08:29.033Z |  |
+| 13 | 170 | deviation | test/lockspire/web/live/admin/interactions_live_test.exs |  | Allow only safe data-phx-link-state push/replace metadata while preserving OAuth state and token sentinel assertions. | fixed |  | 2026-10-24T07:25:37.986Z | 2026-10-24T07:25:40.649Z |
+| 14 | 170 | deviation | test/lockspire/host_integration_ci_contract_test.exs |  | Formatted the phase-owned Plan 04 CI contract after the whole-project formatter exposed its long assertions; behavior unchanged. | fixed |  | 2026-10-24T07:25:42.812Z | 2026-10-24T07:25:44.957Z |
 
 ````json
 [
@@ -176,6 +178,32 @@ last_updated: 2026-10-24T03:08:29.033Z
     "reason": "",
     "recorded_at": "2026-10-24T03:08:29.033Z",
     "resolved_at": null,
+    "milestone": "v1.46"
+  },
+  {
+    "id": 13,
+    "kind": "deviation",
+    "phase": "170",
+    "file": "test/lockspire/web/live/admin/interactions_live_test.exs",
+    "line": null,
+    "description": "Allow only safe data-phx-link-state push/replace metadata while preserving OAuth state and token sentinel assertions.",
+    "status": "fixed",
+    "reason": "",
+    "recorded_at": "2026-10-24T07:25:37.986Z",
+    "resolved_at": "2026-10-24T07:25:40.649Z",
+    "milestone": "v1.46"
+  },
+  {
+    "id": 14,
+    "kind": "deviation",
+    "phase": "170",
+    "file": "test/lockspire/host_integration_ci_contract_test.exs",
+    "line": null,
+    "description": "Formatted the phase-owned Plan 04 CI contract after the whole-project formatter exposed its long assertions; behavior unchanged.",
+    "status": "fixed",
+    "reason": "",
+    "recorded_at": "2026-10-24T07:25:42.812Z",
+    "resolved_at": "2026-10-24T07:25:44.957Z",
     "milestone": "v1.46"
   }
 ]
