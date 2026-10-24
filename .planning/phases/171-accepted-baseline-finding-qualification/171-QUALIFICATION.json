@@ -1585,7 +1585,7 @@
       {
         "path": ".planning/ROADMAP.md",
         "selector": "phases-172-173-contract",
-        "sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6"
+        "sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
@@ -1653,7 +1653,7 @@
       },
       {
         "path": "test/integration/phase15_par_authorization_e2e_test.exs",
-        "sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+        "sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413"
       },
       {
         "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "dec0b516d3ecad9c76cefa0f3c0113f3f714a120ef1ed510b7f2e7e8c0581011",
+    "input_digest": "ed2ef990dd80b0eab18e3ad69400870cb54c01899464137697a6e9e3b58f371e",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1876,6 +1876,25 @@
         "previous_sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
         "sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6",
         "reason": "Reviewed SDK phase.complete 172 updates only plan count and completed checkbox after independent passed 11/11 verification; Phase 173 selected contract unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6",
+        "sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266",
+        "source_sha": "a15e397441017d2c6199ed6a5eb21cb67ebc0e36",
+        "reason": "Phase 173 planning commit 79048ed2 added the one-plan entry to the Phase 172\u2013173 selector; audit only the reviewed selector slice authorized by D-07."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "previous_sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be",
+        "sha256": "9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413",
+        "source_sha": "a15e397441017d2c6199ed6a5eb21cb67ebc0e36",
+        "reason": "Add the durable P171-005 Router regression with independent control, exact relative consent route, persisted pushed authority, and actual normative RED/GREEN evidence."
       }
     ],
     "metadata_audits": [
