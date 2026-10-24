@@ -3,43 +3,42 @@ gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 170
-current_phase_name: Packaged Host and Compatibility Proof
-current_plan: 5
-status: executing
-stopped_at: Completed 170-05-PLAN.md
-last_updated: "2026-10-24T07:24:58.429Z"
+current_plan: Complete (5/5)
+status: completed
+stopped_at: Phase 170 complete — all phases complete
+last_updated: "2026-10-24T10:06:24.465Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 170 Plan 04 completed; Plan 05 is next
-state_head: 8c5e8f45cd70067493e4cec3c68358c36f48a55d
+last_activity_desc: Phase 170 complete
+state_head: 9ecd7d15eb1b07ac00cabc82bc88fb8aa8145c47
 progress:
   total_phases: 4
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
   completed_plans: 16
-  percent: 75
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-23 after Phase 169)
+See: .planning/PROJECT.md (updated 2026-10-24 after Phase 170)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 170 — Packaged Host and Compatibility Proof
+**Current focus:** v1.46 implementation complete — ready for milestone audit
 
 ## Current Position
 
-Phase: 170 (Packaged Host and Compatibility Proof) — EXECUTING
-Current Plan: 5
+Phase: 170
+Current Plan: Complete (5/5)
 Total Plans in Phase: 5
-Status: EXECUTING — Plan 05 is next
-Last activity: 2026-10-24 — Phase 170 Plan 04 completed; Plan 05 is next
+Status: All phases complete
+Last activity: 2026-10-24 — Phase 170 complete
 
 ## Accumulated Context
 
-Phase 170 planning is complete at source acda9da47b141978a2a05c2ac795058257f93888. The user accepted planning from approved requirements without a new CONTEXT interview and explicitly requested inline work. Research/pattern mapping/planning/checking ran inline; no independent-agent checker result is claimed. Five plans in five sequential waves cover all three HPROOF requirements: packaged Chrome/CDP tracer, 16-case three-mount matrix, exact locked/floor runtime, required existing CI wiring and evidence/docs closure. The plan check found zero blockers/warnings; 33 commands have failure signals. Existing command-grounding selector: 16 passed. Plans 01–04 are complete: locked and exact-floor pairs passed the three-mount matrix, and required CI wiring preserves failures and safe evidence. Plan 05 owns final evidence/docs closure. Persistent auto_advance preference is unchanged. Preserve the original unrelated state.json bytes.
+Phase 170 is verified and complete: five plans in five sequential waves, all HPROOF-01/02/03 requirements and 24 roadmap/plan truths pass; P-170-01/02 are individually closed and A-170-01/02 remain unclassified without added predicates. Final runtime source 7a845ba3e142f3ff1e717d85ebc017d02becfae2 has six source/package/pair/mount-bound browser receipts (16 cases each), separate 43/44 lifecycle checks, and owned cleanup. Locked workload was 562s; floor retry was 156s. The earlier 900s floor timeout remains failed historical evidence. Independent security closed 19/19 threats; code review CR-01 containment was fixed and independently re-reviewed clean. Fresh verifier checks passed Node 8, Python 36, root contracts 19 and floor fixture 44; prior-phase regression gate passed 202 tests. Broad 2,027 checks passed at their recorded earlier source and are not restamped as a new run. No remote CI run or visual/manual signoff is claimed. All milestone implementation phases are complete; audit/archival and publication remain separate. The original unrelated state.json bytes remain preserved.
 
 ### Decisions
 
@@ -59,22 +58,15 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 - [Phase 168]: Use public live(sent_conn) to prove a new server-side connected join checks current host authority; Phase 170 owns browser/socket transport proof.
 - [Phase 168]: Re-resolve current host authority at every params transition through the existing on_mount seam; keep identity, roles, events, and logout policy host-owned.
 - [Phase 168]: Model a cross-session redirect and fresh HTTP/live entry separately; do not claim browser transport proof.
-- [Phase 170]: Validate the admin route at HTTP entry because connected LiveView sockets expose the WebSocket URI rather than the original page path.
-- [Phase 170]: Keep proof authority state supervised and confined to the disposable host.
-- [Phase 170]: Use real Chrome/CDP observations and fixed receipt allowlists; do not synthesize LiveView transport frames.
-- [Phase 170]: Keep tracer and exact 16-case full receipts as distinct contracts.
-- [Phase 170]: Use real browser transport and boundary counters, with no continuous reauthorization claim.
-- [Phase 170]: Keep floor selection opt-in to admin proof so ordinary provider behavior retains its locked dependencies.
-- [Phase 170]: Bound runtime code and assets to the unique provider host or its pair-scoped dependency cache.
-- [Phase 170]: Record local Elixir/OTP separately from the exact Phoenix/LiveView compatibility floor.
-- [Phase 170]: Keep existing required job names, triggers, immutable pins, and 30-minute job limits; each proof pair has its own 900-second deadline.
-- [Phase 170]: Upload only validated safe evidence while preserving nonzero proof status and requiring artifacts to exist.
-- [Phase 170]: Report local proof results separately; no remote CI run was dispatched or observed.
-- [Phase 170]: Keep local Elixir/OTP observations distinct from CI BEAM and PostgreSQL expectations; no remote job was observed.
-- [Phase 170]: Preserve host-owned identity and policy and the unconditional generated authorization deny default; synthetic authority remains in the disposable proof host.
-- [Phase 170]: Exclude only the exact safe data-phx-link-state push/replace metadata from protocol field-name scans; retain raw OAuth-state sentinel checks.
+- [Phase 170]: Validate page mount alignment at HTTP entry; use real signed LiveView transport and current host authority at tested lifecycle boundaries.
+- [Phase 170]: Keep exact dependency pairs, package provenance, server lifecycle and browser evidence distinct; retain local/remote runtime limits.
+- [Phase 170]: Keep synthetic identity/session authority supervised and disposable, with unchanged generated deny defaults and host ownership.
+- [Phase 170]: Apply strict nested diagnostic allowlists, independently guarded cleanup, finite owned children and lifecycle database disposal.
+- [Phase 170]: Contain artifact paths before mutation; reject traversal, symlinks and CR/LF and preserve failed/stale evidence as failed.
 
 ### Blockers/Concerns
+
+No active Phase 170 blocker or human UAT remains. Hosted CI and its expected BEAM versions are unobserved; no branch protection or publication action ran. Run shared generated-host selectors sequentially with fresh databases and a writable Hex home. A cold floor attempt hit the unchanged 900s budget and is retained as failed; same-source retry passed in 156s. Concurrent same-user filesystem replacement protection is not claimed. Completion tooling emitted five nonblocking warnings by treating command strings in SUMMARY verification refs as file paths; the actual targets exist and were executed. Historical summaries remain unchanged to preserve evidence and the verification fingerprint.
 
 No active Phase 169 blocker. Transaction evidence covers process interruption and ordinary errors; unsupported hard links/cross-filesystem publication refuse safely. Power-loss durability, directory fsync, hostile same-user replacement and simultaneous writers are not claimed. Run test selectors sequentially because they share a generated-host filesystem fixture, and use fresh disposable test databases to avoid persistent-row contamination. The unrelated original state.json bytes remain preserved.
 
@@ -132,10 +124,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T07:24:58.222Z
-Stopped at: Completed 170-05-PLAN.md
+Last session: 2026-10-24
+Stopped at: Phase 170 complete — all phases complete
 Resume file: None
-Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-compatibility-proof/*-PLAN.md` and 170-PLAN-CHECK.md first if desired. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
+Next: `$gsd-audit-milestone` — audit v1.46 before archival. Phase 170 verification passed, 5/5 plans complete; no phase execution remains. Original unrelated state.json bytes are preserved.
 
 ## Performance Metrics
 

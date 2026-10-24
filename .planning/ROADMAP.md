@@ -30,7 +30,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 - [x] **Phase 167: Host-Expanded Admin Routing** — Hosts mount the complete existing admin surface without copying route declarations. (completed 2026-10-22)
 - [x] **Phase 168: Host-Owned LiveView Authorization** — Host staff checks protect HTTP, connected entry, reconnect and admin navigation boundaries. (completed 2026-10-22)
 - [x] **Phase 169: Install and Upgrade Convergence** — Generated hosts, safe upgrades, diagnostics, docs and the demo use the same supported integration. (completed 2026-10-23)
-- [ ] **Phase 170: Packaged Host and Compatibility Proof** — Candidate-package and exact-version runtime checks establish the complete integration in required CI.
+- [x] **Phase 170: Packaged Host and Compatibility Proof** — Candidate-package and exact-version runtime checks establish the complete integration in required CI. (completed 2026-10-24)
 
 ## Phase Details
 
@@ -128,7 +128,7 @@ Plans:
   3. Route/session, connected authorization and navigation regressions execute on both the current locked pair and exact Phoenix 1.8.5 / LiveView 1.1.28, with exact versions and runtime outcomes recorded. (HPROOF-02)
   4. Required CI executes the bounded integration checks, fails visibly on regressions and emits redaction-safe evidence tied to its source/package, without depending on manual visual approval. (HPROOF-03)
 
-**Plans**: 5/5 plans executed in 5 sequential waves (1 complete)
+**Plans**: 5/5 plans complete in 5 sequential waves (1 complete)
 
 Plans:
 **Wave 1**
@@ -169,7 +169,7 @@ Plans:
 | 167. Host-Expanded Admin Routing | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 168. Host-Owned LiveView Authorization | v1.46 | 3/3 | Complete    | 2026-10-22 |
 | 169. Install and Upgrade Convergence | v1.46 | 5/5 | Complete    | 2026-10-23 |
-| 170. Packaged Host and Compatibility Proof | v1.46 | 5/5 | In Progress | — |
+| 170. Packaged Host and Compatibility Proof | v1.46 | 5/5 | Complete    | 2026-10-24 |
 
 **Coverage:** 15/15 requirements mapped exactly once; MNT-01..04, HAUTH-01..04 and HDX-01..04 complete in Phases 167–169. HPROOF-01..03 are complete from Phase 170 plans 02–04; Plan 05 remains for final evidence/docs closure. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
