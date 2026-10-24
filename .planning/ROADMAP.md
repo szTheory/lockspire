@@ -42,7 +42,7 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
   3. The maintainer can inspect one finite, redacted case ledger with source/date and exact identities, normative/support references, observed and expected outcomes, deterministic repro commands, regression owners and dispositions distinguishing protocol, harness/transport/browser, infrastructure, unsupported and already-correct/not-reproduced cases.
   4. Downstream implementers can use the frozen AUTHR/PARB case matrix before dependent plans are created or executed; unresolved security/API/support decisions block that planning, current proof is reused for correct cases, and invalidated slices explicitly narrow/replan requirements and roadmap rather than receive a fabricated pass.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3 of 4 plans complete; Plan 171-04 is executing
 
 Plans:
 **Wave 1**
@@ -54,6 +54,9 @@ Plans:
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 171-03-PLAN.md — Qualified matrix freeze and explicit downstream scope reconciliation.
 
+**Wave 4** *(after Wave 3; verification-gap closure)*
+- [ ] 171-04-PLAN.md — Close downstream planning placeholders and qualify the unlaunched-profile evidence boundary.
+
 ### Phase 172: Authorization Responses
 
 **Goal**: Correct only the reproduced unsupported `response_mode` disposition in A171-003 while carrying forward existing callback and silent-auth proof; preserve host account/session authority.
@@ -64,7 +67,7 @@ Plans:
   2. Reuse A171-001 and A171-002 proof for exact redirect safety and registered-callback error/state encoding; do not schedule duplicate correction work for those already-proven cases.
   3. Reuse A171-004, A171-005 and A171-006 proof for `prompt=none`, `max_age` and host-provided `auth_time`; preserve host ownership of accounts and sessions.
 
-**Plans**: TBD
+**Plans**: 0 — Not planned; starts after Phase 171 verification passes.
 
 ### Phase 173: Conditional PAR & Profile Boundaries
 
@@ -76,7 +79,7 @@ Plans:
   2. Reuse P171-001, P171-002 and P171-003 proof for client binding, expiry and one-use; reuse P171-004 proof for required-PAR, preserving existing PKCE and security-profile boundaries.
   3. Reuse P171-006 source-host issuer/discovery metadata proof. External provider-origin, TLS/proxy and browser reachability remain supplemental and unavailable; that limitation does not create another selected code or infrastructure project.
 
-**Plans**: TBD
+**Plans**: 0 — Not planned; starts after Phase 171 verification passes and Phase 172 completes.
 
 ### Phase 174: Packaged Proof & Delivery Handoff
 
@@ -89,7 +92,7 @@ Plans:
   3. The maintainer can review current source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks, with support/guidance matching delivered behavior and unresolved external limits explicit.
   4. The next run can resume from a dated handoff identifying reviewed integration and fresh main acceptance or explicit remaining delivery blockers, owned resource/worktree cleanup or retained owner/purpose/next action, preserved unknown edits/unique commits, and a refreshed ranked milestone direction with sources and triggers.
 
-**Plans**: TBD
+**Plans**: 0 — Not planned; starts after Phase 171 verification passes and Phases 172 and 173 complete.
 
 ## Execution Gates and Limits
 
@@ -102,14 +105,14 @@ Plans:
 
 ## Progress
 
-**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. Phase 171 has 3 verified plans; downstream plans remain gated on its accepted baseline and frozen case matrix. 0 of 4 phases are complete.
+**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. Phase 171 has three completed plans and Plan 171-04 executing; downstream phases remain unplanned until their explicit prerequisites below are met. 0 of 4 phases are complete.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 171. Accepted Baseline & Finding Qualification | 3/3 | In Progress; execution gated | - |
-| 172. Authorization Responses | 0/TBD | Not started | - |
-| 173. Conditional PAR & Profile Boundaries | 0/TBD | Not started | - |
-| 174. Packaged Proof & Delivery Handoff | 0/TBD | Not started | - |
+| 171. Accepted Baseline & Finding Qualification | 3/4 | In Progress; Plan 171-04 executing before independent verification | - |
+| 172. Authorization Responses | 0 plans | Not planned; gated on Phase 171 verification | - |
+| 173. Conditional PAR & Profile Boundaries | 0 plans | Not planned; gated on Phase 171 verification and Phase 172 completion | - |
+| 174. Packaged Proof & Delivery Handoff | 0 plans | Not planned; gated on Phase 171 verification and Phases 172 and 173 completion | - |
 
 ## Next Milestone
 
