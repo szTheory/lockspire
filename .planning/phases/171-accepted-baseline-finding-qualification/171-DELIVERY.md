@@ -345,6 +345,23 @@ pre-review probe evidence. These entries preserve the original observation
 while the consent-location proof is strengthened; the ordered manifest digest
 was recalculated from only those reviewed input changes.
 
+WR-02 was requalified on 2026-10-24 at source
+`30e385a33bb2a7f67d94c558dedf7691ecde5863` with probe SHA-256
+`0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5`. The exact
+probe command completed with Mix exit 2, 2 tests, 2 failures and 0 skipped.
+Synthetic consent-route checks, the valid query-mode consent control, both
+independent PAR POST controls, and the reference-only consent control passed
+before the two named normative assertions failed. The dated original probe
+bytes and observation remain available in
+`171-QUALIFICATION-PROBE-20261024T204101Z.json`; the current probe JSON records
+the new observation separately.
+
+The review hardening checks then passed: the contract suite reported 20 tests
+with 0 failures, and `mix credo --strict` exited 0 with no issues. These later
+counts supplement the original 18-test run, the final 19-test post-metadata
+run, and the separate two-test qualification probe; they do not replace those
+dated results.
+
 The requirement and roadmap amendments narrow Phase 172 to A171-003's unsupported
 `response_mode` correction while carrying forward the existing authorization
 proof. Phase 173 is narrowed to P171-005's pushed-scope authority correction

@@ -460,16 +460,16 @@
       "source": {
         "kind": "repository_test",
         "date": "2026-10-24",
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
         "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
       },
       "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
       "input_identity": {
         "kind": "repository_test",
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
         "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
         "request": "Valid registered authorization-code request with scope openid email, state, nonce and S256; candidate changes only response_mode to binary."
       },
       "supported_mount": "Lockspire.Web.Router /authorize",
@@ -499,12 +499,13 @@
         "test_name": "A171-003 valid direct consent control then requires unsupported mode to be HTTP 400 without OAuth error parameters",
         "test_count": 2,
         "failure_count": 2,
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
-        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
-        "probe_observation_id": "phase171-probe-20261024T204101Z",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "probe_observation_id": "phase171-probe-20261024T211604Z",
         "assertion_id": "A171-003:http-error-disposition",
         "controls_passed": true,
         "control_ids": [
+          "A171-003:consent-route-origin-guard",
           "A171-003:query-mode-consent"
         ],
         "expected_projection": {
@@ -543,6 +544,17 @@
           "status": "counterexample",
           "assertion_id": "A171-003:http-error-disposition",
           "probe_observation_id": "phase171-probe-20261024T204101Z"
+        },
+        {
+          "observation_id": "A171-003-20261024-03",
+          "date": "2026-10-24",
+          "condition_id": "unsupported-response-mode",
+          "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "status": "counterexample",
+          "assertion_id": "A171-003:http-error-disposition",
+          "probe_observation_id": "phase171-probe-20261024T211604Z"
         }
       ],
       "next_owner": "Phase 171 executing maintainer",
@@ -1068,16 +1080,16 @@
       "source": {
         "kind": "repository_test",
         "date": "2026-10-24",
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
         "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
       },
       "provider_identity": "Lockspire.Web.Router source-host test host configured with the synthetic issuer and /lockspire consent mount.",
       "input_identity": {
         "kind": "repository_test",
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
         "test_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+        "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
         "request": "Two form PAR POSTs push scope openid email; reference-only control reaches consent; candidate adds only front-channel scope profile to a fresh reference."
       },
       "supported_mount": "Generated host /par and /authorize",
@@ -1122,9 +1134,9 @@
         "test_name": "P171-005 valid pushed-reference control requires pushed scopes to remain authoritative over front-channel scope",
         "test_count": 2,
         "failure_count": 2,
-        "source_sha": "3561a51d032e86dc10607b37f78c14313dcb1872",
-        "test_file_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
-        "probe_observation_id": "phase171-probe-20261024T204101Z",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "test_file_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "probe_observation_id": "phase171-probe-20261024T211604Z",
         "assertion_id": "P171-005:pushed-scope-authority",
         "controls_passed": true,
         "control_ids": [
@@ -1173,6 +1185,17 @@
           "status": "counterexample",
           "assertion_id": "P171-005:pushed-scope-authority",
           "probe_observation_id": "phase171-probe-20261024T204101Z"
+        },
+        {
+          "observation_id": "P171-005-20261024-03",
+          "date": "2026-10-24",
+          "condition_id": "par-reference-plus-conflicting-front-channel-scope",
+          "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+          "input_identity": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs@0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+          "status": "counterexample",
+          "assertion_id": "P171-005:pushed-scope-authority",
+          "probe_observation_id": "phase171-probe-20261024T211604Z"
         }
       ],
       "next_owner": "Phase 171 executing maintainer",
@@ -1527,7 +1550,7 @@
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
         "selector": "cases",
-        "sha256": "5fdb81f30a08635a165ed308ba75cecaf170d3879e0ca9d60217f270fe4e0f22"
+        "sha256": "efa0fdc23474156128f6d1182e7ec91edd8a20deb72ac79ec15a7ffa9fd1d434"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
@@ -1592,7 +1615,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
-        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764"
+        "sha256": "2c3930ae0142b764dcf06708480da6fc8adc3183f08c6bc0ad27022c8e31fe6f"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE-20261024T204101Z.json",
@@ -1600,7 +1623,7 @@
       },
       {
         "path": "test/lockspire/qualification_ledger_contract_test.exs",
-        "sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1"
+        "sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b"
       },
       {
         "path": "test/test_helper.exs",
@@ -1647,7 +1670,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "0dfb22d7298615117d924dcb630c6641adf4a541b1804f06b6bb330c36bfc927",
+    "input_digest": "0459ea5a1f9a55e48ce452d1f48c981168ef69cd40ba1e34e9c519e74e0c9967",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1683,6 +1706,27 @@
         "previous_sha256": "fcb19db18957a217c0767843213eec331284cf7ad567af133eef95030a0eeb7b",
         "sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
         "reason": "WR-03 adds type-negative evidence fixtures and shape validation before nested traversal; existing proof requirements remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
+        "previous_sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764",
+        "sha256": "2c3930ae0142b764dcf06708480da6fc8adc3183f08c6bc0ad27022c8e31fe6f",
+        "reason": "Append the completed post-WR-02 observation with its actual source/probe hashes, exit/counts and passed controls."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json#cases",
+        "previous_sha256": "5fdb81f30a08635a165ed308ba75cecaf170d3879e0ca9d60217f270fe4e0f22",
+        "sha256": "efa0fdc23474156128f6d1182e7ec91edd8a20deb72ac79ec15a7ffa9fd1d434",
+        "reason": "Bind A171-003 and P171-005 to the newly observed source revision and append the actual dated probe observations while retaining their earlier records."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
+        "sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
+        "reason": "WR-04 decomposes proof, reference, shape, and matrix-disposition checks into cohesive helpers without removing required predicates."
       }
     ],
     "metadata_audits": [

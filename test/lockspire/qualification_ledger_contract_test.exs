@@ -595,8 +595,14 @@ defmodule Lockspire.QualificationLedgerContractTest do
     dispositions = if is_map(matrix), do: Map.get(matrix, "requirement_dispositions"), else: nil
 
     errors
-    |> require(is_list(profiles) and all_maps?(profiles), "profile entries must be objects")
-    |> require(is_list(cases) and all_maps?(cases), "case entries must be objects")
+    |> require(
+      valid_profile_shapes?(profiles),
+      "profile entries and nested evidence must be objects"
+    )
+    |> require(
+      valid_case_shapes?(cases),
+      "case entries and nested evidence must have valid shapes"
+    )
     |> require(is_list(rows) and all_maps?(rows), "matrix row entries must be objects")
     |> require(
       is_list(dispositions) and valid_disposition_shapes?(dispositions),
@@ -612,6 +618,36 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp valid_disposition_shapes?(_), do: false
+
+  defp valid_profile_shapes?(profiles) when is_list(profiles) do
+    Enum.all?(profiles, fn profile ->
+      is_map(profile) and
+        Enum.all?(
+          ["profile_attempt", "artifact_output", "source_host", "suite_inputs", "preflight"],
+          fn key ->
+            is_map(Map.get(profile, key, %{}))
+          end
+        ) and
+        is_map(get_in(profile, ["preflight", "immutable_input_validator"]) || %{})
+    end)
+  end
+
+  defp valid_profile_shapes?(_), do: false
+
+  defp valid_case_shapes?(cases) when is_list(cases) do
+    Enum.all?(cases, fn item ->
+      is_map(item) and
+        Enum.all?(["source", "input_identity", "repro", "support_reference"], fn key ->
+          is_map(Map.get(item, key, %{}))
+        end) and
+        is_list(Map.get(item, "normative_references", [])) and
+        all_maps?(Map.get(item, "normative_references", [])) and
+        is_list(Map.get(item, "observations", [])) and
+        all_maps?(Map.get(item, "observations", []))
+    end)
+  end
+
+  defp valid_case_shapes?(_), do: false
 
   defp all_maps?(values) when is_list(values), do: Enum.all?(values, &is_map/1)
   defp all_maps?(_), do: false
@@ -732,7 +768,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp validate_profiles(errors, profiles) when is_list(profiles) do
-    if all_maps?(profiles) do
+    if valid_profile_shapes?(profiles) do
       validate_profile_entries(errors, profiles)
     else
       require(errors, false, "profile entries must be objects")
@@ -743,51 +779,67 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp validate_profile_entries(errors, profiles) do
     Enum.reduce(profiles, errors, fn profile, acc ->
-      attempt = Map.get(profile, "profile_attempt", %{})
-      output = Map.get(profile, "artifact_output", %{})
-      source = Map.get(profile, "source_host", %{})
-      inputs = Map.get(profile, "suite_inputs", %{})
-      preflight = Map.get(profile, "preflight", %{})
-
       acc
-      |> require(
-        nonempty?(profile["observation_id"]) and nonempty?(profile["operator"]),
-        "profile observation identity and operator are required"
-      )
-      |> require(
-        source["kind"] == "repository_source_host" and full_sha?(source["source_sha"]),
-        "source-host identity is required"
-      )
-      |> require(full_sha?(inputs["suite_commit"]), "profile suite commit is required")
-      |> require(
-        String.match?(inputs["plan_sha256"] || "", ~r/\A[0-9a-f]{64}\z/),
-        "profile plan checksum must be SHA-256"
-      )
-      |> require(
-        String.match?(inputs["lock_sha256"] || "", ~r/\A[0-9a-f]{64}\z/),
-        "profile lock checksum must be SHA-256"
-      )
-      |> require(
-        preflight["immutable_input_validator"]["exit_code"] == 0,
-        "immutable profile inputs must validate"
-      )
-      |> require(
-        nonempty?(profile["next_owner"]) and nonempty?(profile["next_action"]),
-        "unavailable profile owner and retry action are required"
-      )
-      |> require(
-        profile["status"] != "unavailable" or
-          (attempt["started"] == false and attempt["exit_code"] == nil and
-             attempt["result_classification"] == nil and
-             output["receipt_path"] == nil and output["receipt_sha256"] == nil and
-             nonempty?(profile["unavailable_cause"])),
-        "an unlaunched profile cannot claim wrapper or receipt outcomes"
-      )
+      |> validate_profile_identity(profile)
+      |> validate_profile_inputs(profile)
+      |> validate_profile_attempt(profile)
     end)
   end
 
+  defp validate_profile_identity(errors, profile) do
+    source = profile["source_host"] || %{}
+
+    errors
+    |> require(
+      nonempty?(profile["observation_id"]) and nonempty?(profile["operator"]),
+      "profile observation identity and operator are required"
+    )
+    |> require(
+      source["kind"] == "repository_source_host" and full_sha?(source["source_sha"]),
+      "source-host identity is required"
+    )
+    |> require(
+      nonempty?(profile["next_owner"]) and nonempty?(profile["next_action"]),
+      "unavailable profile owner and retry action are required"
+    )
+  end
+
+  defp validate_profile_inputs(errors, profile) do
+    inputs = profile["suite_inputs"] || %{}
+    preflight = profile["preflight"] || %{}
+
+    errors
+    |> require(full_sha?(inputs["suite_commit"]), "profile suite commit is required")
+    |> require(
+      String.match?(inputs["plan_sha256"] || "", ~r/\A[0-9a-f]{64}\z/),
+      "profile plan checksum must be SHA-256"
+    )
+    |> require(
+      String.match?(inputs["lock_sha256"] || "", ~r/\A[0-9a-f]{64}\z/),
+      "profile lock checksum must be SHA-256"
+    )
+    |> require(
+      preflight["immutable_input_validator"]["exit_code"] == 0,
+      "immutable profile inputs must validate"
+    )
+  end
+
+  defp validate_profile_attempt(errors, profile) do
+    attempt = profile["profile_attempt"] || %{}
+    output = profile["artifact_output"] || %{}
+
+    require(
+      errors,
+      profile["status"] != "unavailable" or
+        (attempt["started"] == false and attempt["exit_code"] == nil and
+           attempt["result_classification"] == nil and output["receipt_path"] == nil and
+           output["receipt_sha256"] == nil and nonempty?(profile["unavailable_cause"])),
+      "an unlaunched profile cannot claim wrapper or receipt outcomes"
+    )
+  end
+
   defp validate_case_ids(errors, cases, rows) when is_list(cases) and is_list(rows) do
-    if all_maps?(cases) and all_maps?(rows) do
+    if valid_case_shapes?(cases) and all_maps?(rows) do
       validate_case_id_entries(errors, cases, rows)
     else
       require(errors, false, "case and matrix row entries must be objects")
@@ -816,7 +868,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp validate_matrix_rows(errors, cases, rows, blockers)
        when is_list(cases) and is_list(rows) and is_list(blockers) do
-    if all_maps?(cases) and all_maps?(rows) do
+    if valid_case_shapes?(cases) and all_maps?(rows) do
       validate_matrix_row_entries(errors, cases, rows, blockers)
     else
       require(errors, false, "case and matrix row entries must be objects")
@@ -828,53 +880,73 @@ defmodule Lockspire.QualificationLedgerContractTest do
   defp validate_matrix_row_entries(errors, cases, rows, blockers) do
     case_map = Map.new(cases, &{&1["id"], &1})
 
-    Enum.reduce(rows, errors, fn row, acc ->
-      item = Map.get(case_map, row["case_id"], %{})
-      disposition = row["disposition"]
-      readiness = row["readiness"]
+    Enum.reduce(rows, errors, &validate_matrix_row(&2, &1, case_map, blockers))
+  end
 
-      disposition_valid =
-        case disposition do
-          "reuse_existing" ->
-            item["repro"]["status"] == "pass" and readiness == "ready"
+  defp validate_matrix_row(errors, row, case_map, blockers) do
+    item = Map.get(case_map, row["case_id"], %{})
 
-          "retain_correction" ->
-            item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
-              item["repro"]["controls_passed"] == true and readiness == "ready"
+    errors
+    |> require(
+      nonempty?(item["expected_outcome"]) and nonempty?(item["regression_owner"]),
+      "retained matrix case needs an expected outcome and regression owner"
+    )
+    |> require(
+      valid_matrix_disposition?(row, item, blockers),
+      "matrix disposition must match proof and readiness"
+    )
+    |> require(
+      row["requirement_ids"] == item["requirement_ids"],
+      "matrix requirement IDs must match case data"
+    )
+  end
 
-          "retain_proof" ->
-            item["repro"]["status"] == "pass" and readiness == "ready"
+  defp valid_matrix_disposition?(row, item, blockers) do
+    case row["disposition"] do
+      "reuse_existing" ->
+        valid_reuse_row?(row, item)
 
-          "exclude" ->
-            nonempty?(row["reason"]) and nonempty?(row["next_owner"]) and readiness == "excluded"
+      "retain_correction" ->
+        valid_correction_row?(row, item)
 
-          "blocked" ->
-            readiness == "blocked" and nonempty?(row["blocking_reason"]) and
-              Enum.any?(blockers, &String.contains?(&1, row["case_id"]))
+      "retain_proof" ->
+        valid_retained_proof_row?(row, item)
 
-          _ ->
-            false
-        end
+      "exclude" ->
+        valid_excluded_row?(row)
 
-      expected_facts_present =
-        nonempty?(item["expected_outcome"]) and nonempty?(item["regression_owner"])
+      "blocked" ->
+        valid_blocked_row?(row, blockers)
 
-      acc
-      |> require(
-        expected_facts_present,
-        "retained matrix case needs an expected outcome and regression owner"
-      )
-      |> require(disposition_valid, "matrix disposition must match proof and readiness")
-      |> require(
-        row["requirement_ids"] == item["requirement_ids"],
-        "matrix requirement IDs must match case data"
-      )
-    end)
+      _ ->
+        false
+    end
+  end
+
+  defp valid_reuse_row?(row, item),
+    do: item["repro"]["status"] == "pass" and row["readiness"] == "ready"
+
+  defp valid_correction_row?(row, item) do
+    item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
+      item["repro"]["controls_passed"] == true and row["readiness"] == "ready"
+  end
+
+  defp valid_retained_proof_row?(row, item),
+    do: item["repro"]["status"] == "pass" and row["readiness"] == "ready"
+
+  defp valid_excluded_row?(row) do
+    nonempty?(row["reason"]) and nonempty?(row["next_owner"]) and
+      row["readiness"] == "excluded"
+  end
+
+  defp valid_blocked_row?(row, blockers) do
+    row["readiness"] == "blocked" and nonempty?(row["blocking_reason"]) and
+      Enum.any?(blockers, &String.contains?(&1, row["case_id"]))
   end
 
   defp validate_requirement_dispositions(errors, dispositions, cases, rows)
        when is_list(dispositions) and is_list(cases) and is_list(rows) do
-    if valid_disposition_shapes?(dispositions) and all_maps?(cases) and all_maps?(rows) do
+    if valid_disposition_shapes?(dispositions) and valid_case_shapes?(cases) and all_maps?(rows) do
       validate_disposition_entries(errors, dispositions, cases, rows)
     else
       require(
@@ -901,72 +973,101 @@ defmodule Lockspire.QualificationLedgerContractTest do
       )
 
     Enum.reduce(dispositions, initial_errors, fn disposition, acc ->
-      requirement_id = disposition["requirement_id"]
-      case_ids = disposition["case_ids"]
-      existing = disposition["existing_proof"]
-      retained = disposition["retained_cases"]
-
-      ids_valid =
-        is_list(case_ids) and is_list(existing) and is_list(retained) and
-          case_ids == Enum.sort(Enum.uniq(case_ids)) and
-          Enum.all?(case_ids, &Map.has_key?(case_map, &1)) and
-          Enum.sort(case_ids) == Enum.sort(Enum.uniq(existing ++ retained)) and
-          Enum.all?(case_ids, fn case_id ->
-            requirement_id in Map.get(case_map, case_id, %{})["requirement_ids"]
-          end)
-
-      proof_valid =
-        Enum.all?(existing, fn case_id ->
-          item = Map.get(case_map, case_id, %{})
-
-          item["repro"]["status"] == "pass" and
-            Map.get(row_map, case_id, %{})["disposition"] == "reuse_existing"
-        end) and
-          Enum.all?(retained, fn case_id ->
-            item = Map.get(case_map, case_id, %{})
-
-            item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
-              Map.get(row_map, case_id, %{})["disposition"] == "retain_correction"
-          end)
-
-      disposition_valid =
-        cond do
-          case_ids == [] ->
-            disposition["disposition"] in ["revise", "remove"] and
-              nonempty?(disposition["amendment_ref"]) and nonempty?(disposition["rationale"])
-
-          retained != [] ->
-            disposition["disposition"] == "retain_correction"
-
-          true ->
-            disposition["disposition"] == "reuse_existing" and existing != []
-        end
-
-      acc
-      |> require(
-        ids_valid,
-        "requirement disposition case references must be complete and case-backed"
-      )
-      |> require(proof_valid, "requirement disposition proof must match the case evidence")
-      |> require(
-        disposition_valid and nonempty?(disposition["rationale"]),
-        "requirement disposition needs an explicit rationale"
-      )
+      validate_disposition_entry(acc, disposition, case_map, row_map)
     end)
+  end
+
+  defp validate_disposition_entry(errors, disposition, case_map, row_map) do
+    errors
+    |> validate_disposition_references(disposition, case_map)
+    |> validate_disposition_proof(disposition, case_map, row_map)
+    |> validate_disposition_decision(disposition)
+  end
+
+  defp validate_disposition_references(errors, disposition, case_map) do
+    case_ids = disposition["case_ids"]
+    proof_ids = disposition["existing_proof"] ++ disposition["retained_cases"]
+
+    valid =
+      case_ids == Enum.sort(Enum.uniq(case_ids)) and
+        Enum.all?(case_ids, &Map.has_key?(case_map, &1)) and
+        Enum.sort(case_ids) == Enum.sort(Enum.uniq(proof_ids)) and
+        Enum.all?(case_ids, fn case_id ->
+          disposition["requirement_id"] in Map.get(case_map, case_id, %{})["requirement_ids"]
+        end)
+
+    require(
+      errors,
+      valid,
+      "requirement disposition case references must be complete and case-backed"
+    )
+  end
+
+  defp validate_disposition_proof(errors, disposition, case_map, row_map) do
+    existing_valid? =
+      Enum.all?(disposition["existing_proof"], &existing_case_proof?(&1, case_map, row_map))
+
+    retained_valid? =
+      Enum.all?(disposition["retained_cases"], &retained_case_proof?(&1, case_map, row_map))
+
+    require(
+      errors,
+      existing_valid? and retained_valid?,
+      "requirement disposition proof must match the case evidence"
+    )
+  end
+
+  defp existing_case_proof?(case_id, case_map, row_map) do
+    item = Map.get(case_map, case_id, %{})
+
+    item["repro"]["status"] == "pass" and
+      Map.get(row_map, case_id, %{})["disposition"] == "reuse_existing"
+  end
+
+  defp retained_case_proof?(case_id, case_map, row_map) do
+    item = Map.get(case_map, case_id, %{})
+
+    item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
+      Map.get(row_map, case_id, %{})["disposition"] == "retain_correction"
+  end
+
+  defp validate_disposition_decision(errors, disposition) do
+    case_ids = disposition["case_ids"]
+    retained = disposition["retained_cases"]
+    existing = disposition["existing_proof"]
+
+    valid =
+      cond do
+        case_ids == [] ->
+          disposition["disposition"] in ["revise", "remove"] and
+            nonempty?(disposition["amendment_ref"])
+
+        retained != [] ->
+          disposition["disposition"] == "retain_correction"
+
+        true ->
+          disposition["disposition"] == "reuse_existing" and existing != []
+      end
+
+    require(
+      errors,
+      valid and nonempty?(disposition["rationale"]),
+      "requirement disposition needs an explicit rationale"
+    )
   end
 
   defp validate_frozen_matrix(errors, ledger, cases, rows) do
     matrix = Map.get(ledger, "matrix", %{})
 
-    if not is_map(matrix) do
-      errors
-    else
+    if is_map(matrix) do
       validate_frozen_matrix_status(errors, ledger, cases, rows, matrix)
+    else
+      errors
     end
   end
 
   defp validate_frozen_matrix_status(errors, ledger, cases, rows, matrix) do
-    if matrix["status"] == "frozen" and all_maps?(cases) and all_maps?(rows) and
+    if matrix["status"] == "frozen" and valid_case_shapes?(cases) and all_maps?(rows) and
          valid_disposition_shapes?(Map.get(matrix, "requirement_dispositions", [])) do
       manifest = matrix["input_manifest"]
 
@@ -1013,53 +1114,85 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp frozen_scope_reconciled?(ledger, [], _rows) do
     matrix = ledger["matrix"]
-    amendments = matrix["amendments"]
-    files = if is_list(amendments), do: Enum.map(amendments, & &1["file"]), else: []
-    dispositions = matrix["requirement_dispositions"]
+    revision = Map.get(ledger, "scope_revision", %{})
 
-    matrix["replan_required"] == true and ledger["scope_revision"]["required"] == true and
-      ".planning/REQUIREMENTS.md" in files and ".planning/ROADMAP.md" in files and
-      is_list(dispositions) and
-      Enum.all?(dispositions, &(&1["disposition"] in ["revise", "remove"])) and
-      Enum.all?(amendments, &(nonempty?(&1["anchor"]) and nonempty?(&1["reason"])))
+    is_map(revision) and matrix["replan_required"] == true and
+      revision["required"] == true and valid_scope_amendments?(matrix["amendments"]) and
+      valid_empty_scope_dispositions?(matrix["requirement_dispositions"])
   end
 
   defp frozen_scope_reconciled?(ledger, cases, rows) when is_list(cases) and cases != [] do
     matrix = ledger["matrix"]
-    amendments = matrix["amendments"]
-    files = if is_list(amendments), do: Enum.map(amendments, & &1["file"]), else: []
 
-    is_list(amendments) and is_list(rows) and
-      is_list(matrix["requirement_dispositions"]) and matrix["replan_required"] == true and
-      Enum.all?(cases, fn item ->
-        row = Enum.find(rows, &(&1["case_id"] == item["id"])) || %{}
-        row["disposition"] in ["reuse_existing", "retain_correction", "retain_proof", "exclude"]
-      end) and
-      Enum.all?(matrix["requirement_dispositions"], fn disposition ->
-        disposition["disposition"] in ["reuse_existing", "retain_correction"] and
-          nonempty?(disposition["rationale"])
-      end) and
-      ".planning/REQUIREMENTS.md" in files and ".planning/ROADMAP.md" in files and
-      Enum.all?(amendments, &(nonempty?(&1["anchor"]) and nonempty?(&1["reason"])))
+    matrix["replan_required"] == true and valid_nonempty_scope_rows?(cases, rows) and
+      valid_retained_scope_dispositions?(matrix["requirement_dispositions"]) and
+      valid_scope_amendments?(matrix["amendments"])
   end
 
   defp frozen_scope_reconciled?(_ledger, _cases, _rows), do: false
 
-  defp valid_input_manifest?(ledger, manifest, digest) when is_list(manifest) do
-    valid_entries =
-      Enum.all?(manifest, fn entry ->
-        is_map(entry) and is_binary(entry["path"]) and nonempty?(entry["path"]) and
-          full_sha256?(entry["sha256"]) and entry["sha256"] == input_entry_hash(ledger, entry)
+  defp valid_scope_amendments?(amendments) when is_list(amendments) and amendments != [] do
+    if all_maps?(amendments) do
+      files = Enum.map(amendments, & &1["file"])
+
+      ".planning/REQUIREMENTS.md" in files and ".planning/ROADMAP.md" in files and
+        Enum.all?(amendments, &(nonempty?(&1["anchor"]) and nonempty?(&1["reason"])))
+    else
+      false
+    end
+  end
+
+  defp valid_scope_amendments?(_), do: false
+
+  defp valid_empty_scope_dispositions?(dispositions) when is_list(dispositions) do
+    all_maps?(dispositions) and
+      Enum.all?(dispositions, &(&1["disposition"] in ["revise", "remove"]))
+  end
+
+  defp valid_empty_scope_dispositions?(_), do: false
+
+  defp valid_retained_scope_dispositions?(dispositions) when is_list(dispositions) do
+    all_maps?(dispositions) and
+      Enum.all?(dispositions, fn disposition ->
+        disposition["disposition"] in ["reuse_existing", "retain_correction"] and
+          nonempty?(disposition["rationale"])
       end)
+  end
 
-    identities = if valid_entries, do: Enum.map(manifest, &manifest_identity/1), else: []
+  defp valid_retained_scope_dispositions?(_), do: false
 
-    is_binary(digest) and String.match?(digest, ~r/\A[0-9a-f]{64}\z/) and
-      valid_entries and length(identities) == length(Enum.uniq(identities)) and
-      digest == manifest_digest(manifest)
+  defp valid_nonempty_scope_rows?(cases, rows) when is_list(rows) do
+    all_maps?(cases) and all_maps?(rows) and
+      Enum.all?(cases, fn item ->
+        row = Enum.find(rows, &(&1["case_id"] == item["id"])) || %{}
+        row["disposition"] in ["reuse_existing", "retain_correction", "retain_proof", "exclude"]
+      end)
+  end
+
+  defp valid_nonempty_scope_rows?(_, _), do: false
+
+  defp valid_input_manifest?(ledger, manifest, digest) when is_list(manifest) do
+    valid_manifest_entries?(ledger, manifest) and valid_manifest_digest?(manifest, digest)
   end
 
   defp valid_input_manifest?(_, _, _), do: false
+
+  defp valid_manifest_entries?(ledger, manifest) do
+    Enum.all?(manifest, fn entry ->
+      is_map(entry) and is_binary(entry["path"]) and nonempty?(entry["path"]) and
+        full_sha256?(entry["sha256"]) and entry["sha256"] == input_entry_hash(ledger, entry)
+    end) and unique_manifest_identities?(manifest)
+  end
+
+  defp unique_manifest_identities?(manifest) do
+    identities = Enum.map(manifest, &manifest_identity/1)
+    length(identities) == length(Enum.uniq(identities))
+  end
+
+  defp valid_manifest_digest?(manifest, digest) do
+    is_binary(digest) and String.match?(digest, ~r/\A[0-9a-f]{64}\z/) and
+      digest == manifest_digest(manifest)
+  end
 
   defp manifest_identity(entry),
     do:
@@ -1208,7 +1341,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp validate_cases(errors, cases, receipt_path) when is_list(cases) do
-    if all_maps?(cases) do
+    if valid_case_shapes?(cases) do
       Enum.reduce(cases, errors, fn item, acc ->
         acc
         |> validate_case_fields(item)
@@ -1223,10 +1356,16 @@ defmodule Lockspire.QualificationLedgerContractTest do
   defp validate_cases(errors, _, _), do: errors
 
   defp validate_case_fields(errors, item) do
-    source = Map.get(item, "source", %{})
-    input = Map.get(item, "input_identity", %{})
-    observations = Map.get(item, "observations")
+    errors
+    |> validate_case_identity(item)
+    |> validate_case_ownership(item)
+    |> validate_case_source_identity(item)
+    |> validate_case_input_identity(item)
+    |> validate_case_supported_surface(item)
+    |> validate_case_observation_presence(item)
+  end
 
+  defp validate_case_identity(errors, item) do
     causes = [
       "protocol",
       "harness_transport_browser",
@@ -1254,11 +1393,21 @@ defmodule Lockspire.QualificationLedgerContractTest do
       item["cause"] in causes and nonempty?(item["cause_detail"]),
       "case cause must use a supported classification and explanation"
     )
-    |> require(
+  end
+
+  defp validate_case_ownership(errors, item) do
+    require(
+      errors,
       nonempty?(item["next_owner"]) and nonempty?(item["repro_owner"]) and
         nonempty?(item["regression_owner"]),
       "case proof and regression owners are required"
     )
+  end
+
+  defp validate_case_source_identity(errors, item) do
+    source = Map.get(item, "source", %{})
+
+    errors
     |> require(
       source["kind"] in ["repository_test", "repository_test_inventory"] and
         nonempty?(source["date"]) and full_sha?(source["source_sha"]),
@@ -1268,6 +1417,13 @@ defmodule Lockspire.QualificationLedgerContractTest do
       String.match?(source["test_file_sha256"] || "", ~r/\A[0-9a-f]{64}\z/),
       "case test file checksum is required"
     )
+  end
+
+  defp validate_case_input_identity(errors, item) do
+    input = Map.get(item, "input_identity", %{})
+    source = Map.get(item, "source", %{})
+
+    errors
     |> require(
       input["kind"] in ["repository_test", "planned_repository_repro"] and
         full_sha?(input["source_sha"]) and nonempty?(input["test_path"]) and
@@ -1278,6 +1434,10 @@ defmodule Lockspire.QualificationLedgerContractTest do
       input["source_sha"] == source["source_sha"] and input["test_path"] == source["test_path"],
       "case source and input identities must align"
     )
+  end
+
+  defp validate_case_supported_surface(errors, item) do
+    errors
     |> require(
       nonempty?(item["provider_identity"]) and nonempty?(item["supported_mount"]),
       "provider and mounted surface identity are required"
@@ -1287,8 +1447,12 @@ defmodule Lockspire.QualificationLedgerContractTest do
         nonempty?(item["safe_condition"]),
       "profile, auth mode and safe condition are required"
     )
-    |> require(
-      is_list(observations) and observations != [],
+  end
+
+  defp validate_case_observation_presence(errors, item) do
+    require(
+      errors,
+      is_list(item["observations"]) and item["observations"] != [],
       "case observations must be a nonempty array"
     )
   end
@@ -1303,119 +1467,216 @@ defmodule Lockspire.QualificationLedgerContractTest do
       "input reference must identify test and request"
     )
     |> require(
-      (repro["status"] == "pass" and nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
-         nonempty?(repro["test_name"]) and repro["evidence_kind"] == "repository_test" and
-         File.exists?(Path.join(@repo_root, repro["test_path"]))) or
-        (repro["status"] == "counterexample" and item["cause"] == "protocol" and
-           repro["evidence_kind"] == "controlled_http_probe" and
-           nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
-           nonempty?(repro["test_name"]) and
-           File.exists?(Path.join(@repo_root, repro["test_path"])) and
-           nonempty?(repro["assertion_id"]) and repro["controls_passed"] == true and
-           is_list(repro["control_ids"]) and repro["control_ids"] != [] and
-           is_map(repro["expected_projection"]) and is_map(repro["observed_projection"]) and
-           repro["expected_projection"] != repro["observed_projection"] and
-           full_sha256?(repro["test_file_sha256"]) and nonempty?(repro["probe_observation_id"])) or
-        (repro["status"] == "not_run" and item["cause"] == "unresolved" and
-           repro["evidence_kind"] == "none" and nonempty?(repro["reason"])),
+      valid_reproduction_reference?(item, repro),
       "reproduction must be a named test, a controlled counterexample, or an explicit unresolved not-run boundary"
     )
     |> require(
-      is_list(item["normative_references"]) and item["normative_references"] != [] and
-        Enum.all?(item["normative_references"], &valid_url_reference?/1),
+      valid_normative_references?(item["normative_references"]),
       "normative references must be resolvable URLs"
     )
     |> require(
-      is_binary(item["support_reference"]["path"]) and
-        File.exists?(Path.join(@repo_root, item["support_reference"]["path"])),
+      valid_support_reference?(item["support_reference"]),
       "support reference must resolve"
     )
   end
 
+  defp valid_reproduction_reference?(item, repro) do
+    valid_named_test_reference?(repro) or valid_counterexample_reference?(item, repro) or
+      valid_unresolved_reference?(item, repro)
+  end
+
+  defp valid_named_test_reference?(repro) do
+    repro["status"] == "pass" and nonempty?(repro["command"]) and
+      nonempty?(repro["test_path"]) and nonempty?(repro["test_name"]) and
+      repro["evidence_kind"] == "repository_test" and existing_repo_file?(repro["test_path"])
+  end
+
+  defp valid_counterexample_reference?(item, repro) do
+    valid_counterexample_identity?(item, repro) and valid_counterexample_controls?(repro) and
+      valid_counterexample_projections?(repro)
+  end
+
+  defp valid_counterexample_identity?(item, repro) do
+    repro["status"] == "counterexample" and item["cause"] == "protocol" and
+      repro["evidence_kind"] == "controlled_http_probe" and
+      nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
+      nonempty?(repro["test_name"]) and existing_repo_file?(repro["test_path"])
+  end
+
+  defp valid_counterexample_controls?(repro) do
+    nonempty?(repro["assertion_id"]) and repro["controls_passed"] == true and
+      is_list(repro["control_ids"]) and repro["control_ids"] != [] and
+      full_sha256?(repro["test_file_sha256"]) and nonempty?(repro["probe_observation_id"])
+  end
+
+  defp valid_counterexample_projections?(repro) do
+    is_map(repro["expected_projection"]) and is_map(repro["observed_projection"]) and
+      repro["expected_projection"] != repro["observed_projection"]
+  end
+
+  defp valid_unresolved_reference?(item, repro) do
+    repro["status"] == "not_run" and item["cause"] == "unresolved" and
+      repro["evidence_kind"] == "none" and nonempty?(repro["reason"])
+  end
+
+  defp valid_normative_references?(references) when is_list(references) and references != [],
+    do: Enum.all?(references, &valid_url_reference?/1)
+
+  defp valid_normative_references?(_), do: false
+
+  defp valid_support_reference?(%{"path" => path}) when is_binary(path),
+    do: existing_repo_file?(path)
+
+  defp valid_support_reference?(_), do: false
+
+  defp existing_repo_file?(path) when is_binary(path),
+    do: File.exists?(Path.join(@repo_root, path))
+
+  defp existing_repo_file?(_), do: false
+
   defp validate_case_proof(errors, item, receipt_path) do
     repro = Map.get(item, "repro", %{})
     obs = Map.get(item, "observations", [])
+    proof = case_proof_status(item, repro, obs)
 
+    errors
+    |> require(
+      proof.deterministic_pass or proof.controlled_counterexample or proof.unresolved_not_run,
+      "only a deterministic pass, controlled normative counterexample, or explicit unresolved not-run case is valid"
+    )
+    |> require(
+      source_revision_exists?(get_in(item, ["source", "source_sha"])),
+      "case source SHA must resolve to a Git commit"
+    )
+    |> require(
+      not proof.deterministic_pass or passing_repro_counts?(repro),
+      "passing repro must record positive tests and zero failures"
+    )
+    |> validate_case_observations(item, repro, obs, proof)
+    |> require(File.exists?(receipt_path), "accepted receipt must resolve")
+  end
+
+  defp case_proof_status(item, repro, observations) do
     deterministic_pass =
       repro["status"] == "pass" and
-        repro["source_sha"] == item["source"]["source_sha"] and
+        repro["source_sha"] == get_in(item, ["source", "source_sha"]) and
         repro["evidence_kind"] == "repository_test"
 
-    controlled_counterexample =
-      repro["status"] == "counterexample" and item["cause"] == "protocol" and
-        repro["source_sha"] == item["source"]["source_sha"] and
-        repro["evidence_kind"] == "controlled_http_probe" and
-        is_integer(repro["test_count"]) and repro["test_count"] > 0 and
-        is_integer(repro["failure_count"]) and repro["failure_count"] > 0 and
-        repro["controls_passed"] == true and nonempty?(repro["assertion_id"]) and
-        probe_counterexample_matches?(item, repro)
+    controlled_counterexample = valid_controlled_counterexample?(item, repro)
+    unresolved_not_run = valid_unresolved_not_run?(item, repro, observations)
 
-    unresolved_not_run =
-      repro["status"] == "not_run" and item["cause"] == "unresolved" and
-        is_list(obs) and Enum.all?(obs, &(&1["status"] == "not_observed"))
+    %{
+      deterministic_pass: deterministic_pass,
+      controlled_counterexample: controlled_counterexample,
+      unresolved_not_run: unresolved_not_run,
+      assertion_id: repro["assertion_id"],
+      probe_observation_id: repro["probe_observation_id"]
+    }
+  end
 
-    observations_match_result =
+  defp valid_controlled_counterexample?(item, repro) do
+    valid_counterexample_result?(item, repro) and
+      valid_counterexample_counts?(repro) and probe_counterexample_matches?(item, repro)
+  end
+
+  defp valid_counterexample_result?(item, repro) do
+    repro["status"] == "counterexample" and item["cause"] == "protocol" and
+      repro["source_sha"] == get_in(item, ["source", "source_sha"]) and
+      repro["evidence_kind"] == "controlled_http_probe" and
+      repro["controls_passed"] == true and nonempty?(repro["assertion_id"])
+  end
+
+  defp valid_counterexample_counts?(repro) do
+    is_integer(repro["test_count"]) and repro["test_count"] > 0 and
+      is_integer(repro["failure_count"]) and repro["failure_count"] > 0
+  end
+
+  defp valid_unresolved_not_run?(item, repro, observations) do
+    repro["status"] == "not_run" and item["cause"] == "unresolved" and
+      all_maps?(observations) and Enum.all?(observations, &(&1["status"] == "not_observed"))
+  end
+
+  defp passing_repro_counts?(repro) do
+    is_integer(repro["test_count"]) and repro["test_count"] > 0 and
+      repro["failure_count"] == 0
+  end
+
+  defp validate_case_observations(errors, item, repro, observations, proof) do
+    errors
+    |> require(
+      is_list(observations) and
+        Enum.all?(observations, &valid_observation_identity?(&1, item, proof)),
+      "observations must retain their own source, input, and outcome identities"
+    )
+    |> require(
+      observations_match_result?(observations, repro, proof),
+      "observations must support the current result at its own source identity"
+    )
+    |> require(
+      observation_ids_unique?(observations),
+      "observation IDs must be unique within a case"
+    )
+  end
+
+  defp valid_observation_identity?(observation, item, proof) when is_map(observation) do
+    nonempty?(observation["observation_id"]) and
+      observation["condition_id"] == item["condition_id"] and
+      full_sha?(observation["source_sha"]) and source_revision_exists?(observation["source_sha"]) and
+      nonempty?(observation["input_identity"]) and observation["date"] != nil and
+      observation["status"] in ["pass", "not_observed", "counterexample"] and
+      valid_counterexample_observation?(observation, item, proof)
+  end
+
+  defp valid_observation_identity?(_, _, _), do: false
+
+  defp valid_counterexample_observation?(observation, item, proof) do
+    if observation["status"] == "counterexample" do
+      proof.controlled_counterexample and probe_observation_resolves?(item["id"], observation)
+    else
+      true
+    end
+  end
+
+  defp observations_match_result?(observations, repro, proof) when is_list(observations) do
+    if all_maps?(observations) do
       cond do
-        deterministic_pass ->
-          Enum.all?(obs, &(&1["status"] == "pass"))
+        proof.deterministic_pass ->
+          Enum.all?(observations, &(&1["status"] == "pass"))
 
-        controlled_counterexample ->
-          Enum.count(obs, &(&1["status"] == "counterexample")) == 1 and
-            Enum.any?(obs, fn observation ->
-              observation["status"] == "counterexample" and
-                observation["assertion_id"] == repro["assertion_id"] and
-                observation["probe_observation_id"] == repro["probe_observation_id"]
-            end)
+        proof.controlled_counterexample ->
+          current_counterexample_present?(observations, repro)
 
-        unresolved_not_run ->
+        proof.unresolved_not_run ->
           true
 
         true ->
           false
       end
-
-    errors
-    |> require(
-      deterministic_pass or controlled_counterexample or unresolved_not_run,
-      "only a deterministic pass, controlled normative counterexample, or explicit unresolved not-run case is valid"
-    )
-    |> require(
-      source_revision_exists?(item["source"]["source_sha"]),
-      "case source SHA must resolve to a Git commit"
-    )
-    |> require(
-      not deterministic_pass or
-        (is_integer(repro["test_count"]) and repro["test_count"] > 0 and
-           repro["failure_count"] == 0),
-      "passing repro must record positive tests and zero failures"
-    )
-    |> require(
-      is_list(obs) and
-        Enum.all?(obs, fn observation ->
-          nonempty?(observation["observation_id"]) and
-            observation["condition_id"] == item["condition_id"] and
-            full_sha?(observation["source_sha"]) and
-            source_revision_exists?(observation["source_sha"]) and
-            nonempty?(observation["input_identity"]) and observation["date"] != nil and
-            observation["status"] in ["pass", "not_observed", "counterexample"] and
-            (observation["status"] != "counterexample" or
-               (controlled_counterexample and observation["assertion_id"] == repro["assertion_id"] and
-                  observation["probe_observation_id"] == repro["probe_observation_id"]))
-        end),
-      "observations must retain their own source, input, and outcome identities"
-    )
-    |> require(
-      observations_match_result,
-      "observations must support the current result at its own source identity"
-    )
-    |> require(
-      is_list(obs) and
-        length(Enum.map(obs, & &1["observation_id"])) ==
-          length(Enum.uniq(Enum.map(obs, & &1["observation_id"]))),
-      "observation IDs must be unique within a case"
-    )
-    |> require(File.exists?(receipt_path), "accepted receipt must resolve")
+    else
+      false
+    end
   end
+
+  defp observations_match_result?(_, _, _), do: false
+
+  defp current_counterexample_present?(observations, repro) do
+    Enum.any?(observations, fn observation ->
+      observation["status"] == "counterexample" and
+        observation["assertion_id"] == repro["assertion_id"] and
+        observation["probe_observation_id"] == repro["probe_observation_id"]
+    end)
+  end
+
+  defp observation_ids_unique?(observations) when is_list(observations) do
+    if all_maps?(observations) do
+      ids = Enum.map(observations, & &1["observation_id"])
+      length(ids) == length(Enum.uniq(ids))
+    else
+      false
+    end
+  end
+
+  defp observation_ids_unique?(_), do: false
 
   defp valid_url_reference?(%{"url" => url, "section" => section}),
     do: is_binary(url) and String.starts_with?(url, "https://") and nonempty?(section)
@@ -1427,24 +1688,79 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
     with {:ok, body} <- File.read(path),
          {:ok, probe} <- Jason.decode(body),
-         result when is_map(result) <- Enum.find(probe["cases"], &(&1["case_id"] == item["id"])) do
-      probe["observation_id"] == repro["probe_observation_id"] and
-        probe["source_identity"]["source_sha_before"] == repro["source_sha"] and
-        probe["source_identity"]["source_sha_after"] == repro["source_sha"] and
-        probe["source_identity"]["changed_during_observation"] == false and
-        probe["source_identity"]["probe_sha256"] == repro["test_file_sha256"] and
-        probe["execution"]["mix_exit_code"] == 2 and
-        probe["execution"]["test_count"] == repro["test_count"] and
-        probe["execution"]["failure_count"] == repro["failure_count"] and
-        result["assertion_id"] == repro["assertion_id"] and
-        result["expected_projection"] == repro["expected_projection"] and
-        result["observed_projection"] == repro["observed_projection"] and
-        result["protocol_assertion_status"] == "counterexample" and
-        result["controls"] != [] and Enum.all?(result["controls"], &(&1["status"] == "pass"))
+         result when is_map(result) <- find_probe_case(probe, item["id"]) do
+      probe_source_matches?(probe, repro) and probe_execution_matches?(probe, repro) and
+        probe_result_matches?(result, repro)
     else
       _ -> false
     end
   end
+
+  defp find_probe_case(%{"cases" => cases}, case_id) when is_list(cases) do
+    Enum.find(cases, fn item -> is_map(item) and item["case_id"] == case_id end)
+  end
+
+  defp find_probe_case(_, _), do: nil
+
+  defp probe_source_matches?(probe, repro) do
+    source = probe["source_identity"]
+
+    is_map(source) and probe["observation_id"] == repro["probe_observation_id"] and
+      source["source_sha_before"] == repro["source_sha"] and
+      source["source_sha_after"] == repro["source_sha"] and
+      source["changed_during_observation"] == false and
+      source["probe_sha256"] == repro["test_file_sha256"]
+  end
+
+  defp probe_execution_matches?(probe, repro) do
+    execution = probe["execution"]
+
+    is_map(execution) and execution["mix_exit_code"] == 2 and
+      execution["test_count"] == repro["test_count"] and
+      execution["failure_count"] == repro["failure_count"]
+  end
+
+  defp probe_result_matches?(result, repro) do
+    controls = result["controls"]
+
+    result["assertion_id"] == repro["assertion_id"] and
+      result["expected_projection"] == repro["expected_projection"] and
+      result["observed_projection"] == repro["observed_projection"] and
+      result["protocol_assertion_status"] == "counterexample" and is_list(controls) and
+      controls != [] and Enum.all?(controls, &(is_map(&1) and &1["status"] == "pass"))
+  end
+
+  defp probe_observation_resolves?(case_id, observation) do
+    @phase_dir
+    |> Path.join("171-QUALIFICATION-PROBE*.json")
+    |> Path.wildcard()
+    |> Enum.any?(&probe_file_matches_observation?(&1, case_id, observation))
+  end
+
+  defp probe_file_matches_observation?(path, case_id, observation) do
+    with {:ok, body} <- File.read(path),
+         {:ok, probe} when is_map(probe) <- Jason.decode(body),
+         result when is_map(result) <- find_probe_case(probe, case_id) do
+      source = probe["source_identity"]
+
+      is_map(source) and probe["observation_id"] == observation["probe_observation_id"] and
+        source["source_sha_before"] == observation["source_sha"] and
+        source["source_sha_after"] == observation["source_sha"] and
+        source["changed_during_observation"] == false and
+        source["probe_sha256"] == observation["probe_sha256"] and
+        result["protocol_assertion_status"] == "counterexample" and
+        result["assertion_id"] == observation["assertion_id"] and
+        probe_controls_passed?(result["controls"])
+    else
+      _ -> false
+    end
+  end
+
+  defp probe_controls_passed?(controls) when is_list(controls) and controls != [] do
+    Enum.all?(controls, &(is_map(&1) and &1["status"] == "pass"))
+  end
+
+  defp probe_controls_passed?(_), do: false
 
   defp require(errors, true, _message), do: errors
   defp require(errors, false, message), do: [message | errors]

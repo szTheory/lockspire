@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "observation_id": "phase171-probe-20261024T204101Z",
-  "observed_at": "2026-10-24T20:41:01Z",
-  "operator": "Codex gsd-executor (Phase 171 Plan 03)",
+  "observation_id": "phase171-probe-20261024T211604Z",
+  "observed_at": "2026-10-24T21:16:04Z",
+  "operator": "Codex gsd-code-fixer (Phase 171 WR-02 requalification)",
   "execution": {
     "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs --seed 0",
     "mix_exit_code": 2,
@@ -19,11 +19,11 @@
     "database_identity": "lockspire_171_main_20261024b"
   },
   "source_identity": {
-    "source_sha_before": "3561a51d032e86dc10607b37f78c14313dcb1872",
-    "source_sha_after": "3561a51d032e86dc10607b37f78c14313dcb1872",
+    "source_sha_before": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+    "source_sha_after": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
     "changed_during_observation": false,
     "probe_path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-    "probe_sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207",
+    "probe_sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
     "runtime_and_fixture_inputs": [
       {"path": "test/test_helper.exs", "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"},
       {"path": "test/support/config_case.ex", "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"},
@@ -46,6 +46,7 @@
       "test_count": 1,
       "failure_count": 1,
       "controls": [
+        {"id": "A171-003:consent-route-origin-guard", "status": "pass", "observed": {"exact_relative_route_accepted": true, "https_off_origin_rejected": true, "network_path_rejected": true, "lookalike_route_rejected": true}},
         {"id": "A171-003:query-mode-consent", "status": "pass", "observed": {"status_class": "redirect", "location_kind": "host_consent", "scopes": ["email", "openid"], "state_matches": true, "nonce_matches": true, "client_matches": true}}
       ],
       "expected_projection": {"status": 400, "location_kind": "none", "error_parameter_names": []},
