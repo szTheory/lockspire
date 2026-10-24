@@ -10,8 +10,8 @@
 ### Baseline and Finding Qualification
 
 - [x] **BASE-01**: Maintainer can start product implementation from a fresh accepted main baseline after reviewed prior-delivery reconciliation, with exact SHA, complete local contributor checks, matching canonical CI/Release no-publish evidence, and explicit worktree/edit ownership.
-- [ ] **BASE-02**: Maintainer can run the selected existing conformance profiles with explicit provider/package, suite, image/helper and plan identities; missing or obsolete inputs fail visibly and any input update is reviewed separately from protocol corrections.
-- [ ] **FIND-01**: Maintainer can inspect a finite redacted ledger attributing each selected historical/current finding to protocol behavior, harness/transport/browser setup, infrastructure, unsupported scope or already-correct/not-reproduced behavior, with normative/support references and a next owner.
+- [x] **BASE-02**: Maintainer can run the selected existing conformance profiles with explicit provider/package, suite, image/helper and plan identities; missing or obsolete inputs fail visibly and any input update is reviewed separately from protocol corrections.
+- [x] **FIND-01**: Maintainer can inspect a finite redacted ledger attributing each selected historical/current finding to protocol behavior, harness/transport/browser setup, infrastructure, unsupported scope or already-correct/not-reproduced behavior, with normative/support references and a next owner.
 - [ ] **FIND-02**: Downstream implementers can use a qualified case matrix that fixes expected outcomes, repro commands, regression owners and exclusions before dependent implementation plans are created or executed; qualification that removes the corrective premise explicitly narrows/replans the milestone.
 
 ### Authorization Responses
@@ -65,8 +65,8 @@ All 14 requirements map to exactly one of phases 171–174. Conditional scopes m
 | Requirement | Phase | Status |
 |---|---|---|
 | BASE-01 | Phase 171 | Complete |
-| BASE-02 | Phase 171 | Pending |
-| FIND-01 | Phase 171 | Pending |
+| BASE-02 | Phase 171 | Complete |
+| FIND-01 | Phase 171 | Complete |
 | FIND-02 | Phase 171 | Pending |
 | AUTHR-01 | Phase 172 | Pending |
 | AUTHR-02 | Phase 172 | Pending |

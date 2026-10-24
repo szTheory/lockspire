@@ -4,17 +4,17 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
-status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
-stopped_at: Completed 171-01-PLAN.md
-last_updated: "2026-10-24T20:08:40.174Z"
+status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
+stopped_at: Completed 171-02-PLAN.md
+last_updated: "2026-10-24T20:23:58.244Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 171 execution started
-state_head: a40ba2af0dd7cb68a1340c4614030de63a98bde6
+last_activity_desc: Completed 171-02 profile observations, case ledger, and contract verification
+state_head: 5d73b211bf369476c3681186eaa5bb8ba6e4af70
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,16 +26,16 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase171 qualification from accepted fe38beee on milestone/v1.47-core-hardening; preserve exact receipt and execute real case evidence.
+**Current focus:** Phase 171 Plan 03: resolve the explicit authorization proof and PAR policy gaps before freezing downstream scope.
 
 ## Current Position
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
-Plan: 1 of 3 complete; 171-01 entry gate satisfied, tracer and contract pending
-Status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
-Last activity: 2026-10-24 — Phase 171 execution started
+Plan: 2 of 3 complete; 171-03 next for matrix freeze and scope review
+Status: In progress — 171-02 ledger complete; 171-03 next to resolve two mandatory proof/policy gaps
+Last activity: 2026-10-24 — Completed 171-02 profile observations, case ledger, and contract verification
 
-Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 0/3 Phase 171 plans complete; downstream plans gated.
+Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 2/3 Phase 171 plans complete; Plan 03 remains gated on qualification proof and policy review.
 
 ## Performance Metrics
 
@@ -45,6 +45,7 @@ v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 
 | Plan | Duration | Tasks | Files |
 |------|----------|-------|-------|
 | Phase 171 P01 | 17 min | 2 tasks | 3 files |
+| Phase 171 P02 | 14min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -113,10 +114,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T20:08:40.157Z
-Stopped at: Completed 171-01-PLAN.md
+Last session: 2026-10-24T20:23:10.715Z
+Stopped at: Completed 171-02-PLAN.md
 Resume file: None
-Next: Execute remaining171-01 tracer and contracts; then171-02 and171-03 through normal execute-phase gates. Do not rerun exact-main authority merely for ledger edits.
+Next: Execute 171-03: review the ledger, replan A171-003 proof, settle P171-005 policy, and keep external profile evidence supplemental.
 
 ### Blockers
 
@@ -128,3 +129,6 @@ None
 - [Phase 171]: Preserve and reuse the original accepted-main receipt; do not rerun the exact-main authority after ledger edits.
 - [Phase 171]: Keep source-host, package, and external-suite evidence distinct; explicitly mark package and suite evidence not applicable for A171-001.
 - [Phase 171]: Observed and expected outcomes may be equal when each is separately attributed in the evidence.
+- [Phase 171]: Unlaunched OIDF profiles retain null wrapper exits/classifications and no receipts; environment readiness is not protocol acceptance.
+- [Phase 171]: A171-003 unsupported response_mode and P171-005 pushed/front-channel scope conflict remain explicit required proof/policy gaps for Plan 03.
+- [Phase 171]: External issuer/TLS/proxy/browser reachability is supplemental unavailable evidence, not a selected product defect.

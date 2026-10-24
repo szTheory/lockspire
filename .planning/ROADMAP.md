@@ -42,14 +42,14 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
   3. The maintainer can inspect one finite, redacted case ledger with source/date and exact identities, normative/support references, observed and expected outcomes, deterministic repro commands, regression owners and dispositions distinguishing protocol, harness/transport/browser, infrastructure, unsupported and already-correct/not-reproduced cases.
   4. Downstream implementers can use the frozen AUTHR/PARB case matrix before dependent plans are created or executed; unresolved security/API/support decisions block that planning, current proof is reused for correct cases, and invalidated slices explicitly narrow/replan requirements and roadmap rather than receive a fabricated pass.
 
-**Plans**: 1/3 plans executed
+**Plans**: 2/3 plans executed
 
 Plans:
 **Wave 1**
 - [x] 171-01-PLAN.md — Reviewed delivery/exact-main entry and one end-to-end qualification tracer.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 171-02-PLAN.md — Exact immutable profile observations and finite attributable case ledger.
+- [x] 171-02-PLAN.md — Exact immutable profile observations and finite attributable case ledger.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 171-03-PLAN.md — Qualified matrix freeze and explicit downstream scope reconciliation.
@@ -106,7 +106,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 171. Accepted Baseline & Finding Qualification | 1/3 | In Progress; execution gated | - |
+| 171. Accepted Baseline & Finding Qualification | 2/3 | In Progress; execution gated | - |
 | 172. Authorization Responses | 0/TBD | Not started | - |
 | 173. Conditional PAR & Profile Boundaries | 0/TBD | Not started | - |
 | 174. Packaged Proof & Delivery Handoff | 0/TBD | Not started | - |
