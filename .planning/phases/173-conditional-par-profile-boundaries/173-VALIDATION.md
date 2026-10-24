@@ -53,7 +53,7 @@ Fails when non-zero exit, any frozen/unowned/audit-chain/historical-byte asserti
 
 ### Explicit fallback limits
 
-A-EDGE-PARB-01 and A-EDGE-PARB-03 generic interrupted/parallel probes remain unresolved and flagged; A-EDGE-PARB-02 remains unclassified, unresolved and flagged. No broad concurrency or external-wrapper guarantee is inferred from selected tests. Both descriptor-less prohibition projections remain flagged-unverified until an explicit scoped review disposition; no check fields or fabricated approvals are introduced. T-173-05 records the unselected external execution boundary; T-173-SC records zero selected package installs.
+A-EDGE-PARB-01 and A-EDGE-PARB-03 generic interrupted/parallel probes remain unresolved and flagged; A-EDGE-PARB-02 remains unclassified, unresolved and flagged. No broad concurrency or external-wrapper guarantee is inferred from selected tests. Both descriptor-less prohibition projections retain their original unresolved provenance; the later explicit resolved/judgment lifecycle and prominent non-authoritative flags are recorded in 173-DISPOSITIONS.md. No check fields or fabricated approvals are introduced. T-173-05 records the unselected external execution boundary; T-173-SC records zero selected package installs.
 
 ## Wave 0 Requirements
 

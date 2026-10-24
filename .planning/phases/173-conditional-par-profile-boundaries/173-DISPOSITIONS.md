@@ -10,7 +10,7 @@ Recorded by the executing Codex maintainer under the user's explicit authority t
 | Historical-evidence prohibition | Satisfied for reviewed Phase 173 scope | Independent audit confirmed unchanged cases, source observations, receipt/probe bytes and prior audit chain. Summary distinguishes actual current-source RED/GREEN from frozen qualification. No packaged/profile/certification pass was invented. |
 | Host-ownership prohibition | Satisfied for reviewed Phase 173 scope | Runtime diff only removes the blanket outer-parameter rejection/helper. Existing host resolver/controller/consent seam remains unchanged. Stored interaction and Phase37/172 owners pass; no account/session/policy ownership moved. |
 
-The plan keeps all three unresolved edge rows and both descriptor-less prohibitions without check_kind/check_target/check_rule. These explicit maintainer dispositions permit the selected correction to advance without silently treating passing ExUnit as a universal negative proof.
+The plan keeps all three unresolved edge rows. Both prohibitions retain their descriptor-less fallback provenance; their later lifecycle resolution is recorded below. No check_kind/check_target/check_rule is invented, and passing ExUnit is not a universal negative proof.
 
 ## Current evidence
 
@@ -19,3 +19,13 @@ Typed security auditor verified five mitigations and one documented low accepted
 ## Review follow-up
 
 WR-01's permissive JSON media-type prefix was replaced with exact base media-type equality. Post-fix selected regression: 132 tests, 0 failures, 14.2 seconds. Phase15 identity `9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30` and digest `e09f20b3b3dad59caa1b97179d43b5b9674201de31ba6014deb7f929ebe3d2ee` are recorded in the selective appended audit; original RED/GREEN identities stay intact. The typed UI auditor confirmed N/A: no frontend/controller/HTML/admin source changed and no visual/browser claim is made.
+
+## Prohibition lifecycle resolution — 2026-10-24
+
+The first independent report verified six behavioral truths but returned human_needed because the two plan prohibitions still had their original automatic `unresolved` lifecycle. That report is preserved in git; favorable evidence was not silently treated as a mechanical green check.
+
+After inspecting the canonical prohibition contract, the typed planner recommended the documented `status: resolved`, `verification: judgment` lifecycle for both items. Root adopted that recommendation under the user's explicit autonomous-unblock and recommendation-following authority. Security audit, source-bound provenance checks, code review and the verifier's own source inspection supply scoped judgment evidence. No actual user confirmation, wired mechanical enforcement or universal proof is claimed.
+
+**unverified-prohibition — human review recommended (2 items).** The two judgments are non-authoritative LLM/maintainer reviews: (1) frozen evidence was not reattributed in this Phase 173 change; (2) host-owned account/session/login/consent/claims/product policy did not move into Lockspire in this change. These remain prominent review recommendations, not two mechanically verified truths.
+
+The autonomous-specific soft-gate in `gsd-verifier.md` Step 2b and `references/prohibition-probe.md` governs resolved judgment-tier items: non-authoritative judgment plus explicit flags, never a silent pass or a hard halt of an unattended run. Generic required-human behavior and real gaps still block. The independent verifier must regenerate the report and digest under this declared mode; root does not rewrite its verdict. Completion may only be described as six verified behavioral truths with two flagged judgment-tier prohibitions, never unqualified 8/8 mechanical verification.

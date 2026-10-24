@@ -175,3 +175,7 @@ The selected Phase 173 source behavior and retained source-host checks are compl
 ---
 *Phase: 173-conditional-par-profile-boundaries*
 *Completed: 2026-10-24*
+
+## Post-Execution Prohibition Lifecycle — 2026-10-24
+
+The initial verifier returned human_needed solely for the two automatically unresolved prohibition items, after verifying all six behavioral truths. The original report is preserved in git. A subsequent canonical-contract review classifies both as resolved/judgment, supported by scoped independent reviews under the user's delegated autonomous authority. See 173-DISPOSITIONS.md. **unverified-prohibition — human review recommended (2 items).** These non-authoritative judgments are not mechanical verification or human confirmation; all three generic edge assumptions retain their unresolved provenance. The verification owner must regenerate the report under the documented autonomous judgment soft-gate. No runtime or test code changed for this lifecycle correction.
