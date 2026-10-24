@@ -156,6 +156,21 @@ defmodule Lockspire.QualificationLedgerContractTest do
     Enum.each(malformed, &assert_rejected/1)
   end
 
+  test "malformed case requirement IDs return validation errors instead of crashing" do
+    ledger = load_ledger()
+    [disposition | _] = ledger["matrix"]["requirement_dispositions"]
+    [case_id | _] = disposition["case_ids"]
+    case_index = Enum.find_index(ledger["cases"], &(&1["id"] == case_id))
+
+    malformed = [
+      put_in(ledger, ["cases", Access.at(case_index), "requirement_ids"], "AUTHR-01"),
+      put_in(ledger, ["cases", Access.at(case_index), "requirement_ids"], nil),
+      put_in(ledger, ["cases", Access.at(case_index), "requirement_ids"], ["AUTHR-01", 42])
+    ]
+
+    Enum.each(malformed, &assert_rejected/1)
+  end
+
   test "source and input identities and all three case owners are required" do
     ledger = load_ledger()
 
@@ -637,6 +652,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
   defp valid_case_shapes?(cases) when is_list(cases) do
     Enum.all?(cases, fn item ->
       is_map(item) and
+        valid_requirement_ids?(item) and
         Enum.all?(["source", "input_identity", "repro", "support_reference"], fn key ->
           is_map(Map.get(item, key, %{}))
         end) and
@@ -648,6 +664,11 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp valid_case_shapes?(_), do: false
+
+  defp valid_requirement_ids?(item) do
+    requirement_ids = Map.get(item, "requirement_ids")
+    is_list(requirement_ids) and Enum.all?(requirement_ids, &nonempty?/1)
+  end
 
   defp all_maps?(values) when is_list(values), do: Enum.all?(values, &is_map/1)
   defp all_maps?(_), do: false

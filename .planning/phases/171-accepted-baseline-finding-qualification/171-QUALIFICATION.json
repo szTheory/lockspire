@@ -1623,7 +1623,7 @@
       },
       {
         "path": "test/lockspire/qualification_ledger_contract_test.exs",
-        "sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b"
+        "sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08"
       },
       {
         "path": "test/test_helper.exs",
@@ -1670,7 +1670,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "3e54d2a6812baa435ad6f6dbb9d1e73566d25927cc3b8880ce8318106b6deecf",
+    "input_digest": "ca0ccc00ad999090ed24fe721831f9a7923f037f4d2505a2f7d3c3fbd90b8907",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1727,6 +1727,13 @@
         "previous_sha256": "bd4471ce2aff8c3e67b21666634cef01a84e80f25f3e8db701de8f1230c0eec1",
         "sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
         "reason": "WR-04 decomposes proof, reference, shape, and matrix-disposition checks into cohesive helpers without removing required predicates."
+      },
+      {
+        "date": "2026-10-24",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
+        "sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08",
+        "reason": "WR-05 adds a referenced-case malformed requirement_ids regression and requires a list of nonempty strings before disposition-reference traversal; qualification cases, outcomes, observations, and the normative probe remain unchanged."
       }
     ],
     "metadata_audits": [
