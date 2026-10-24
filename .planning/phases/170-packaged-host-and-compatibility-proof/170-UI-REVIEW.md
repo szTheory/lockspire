@@ -1,8 +1,8 @@
 # Phase 170 — UI Review
 
-**Audited:** 2026-10-24  
-**Baseline:** Bounded code assessment against abstract 6-pillar standards; no UI-SPEC or CONTEXT exists. Phase 170 is mechanical integration and automated proof, not a visual redesign.  
-**Screenshots:** Not captured (per accepted scope; no visual inspection requested or used)  
+**Audited:** 2026-10-24
+**Baseline:** Bounded code assessment against abstract 6-pillar standards; no UI-SPEC or CONTEXT exists. Phase 170 is mechanical integration and automated proof, not a visual redesign.
+**Screenshots:** Not captured (per accepted scope; no visual inspection requested or used)
 **Interaction captures:** off (workflow.ui_interaction_capture is false)
 
 This is a **code-only, provisional assessment** of the three production UI-adjacent edits in the phase diff from `acda9da47b141978a2a05c2ac795058257f93888`: native LiveView navigation for two existing admin links, and moving mount-path alignment validation to HTTP entry because the connected socket does not expose the original page path. The phase UAT explicitly has no visual/manual-signoff criterion. Its 96 browser cases across dependency pairs and mounts are functional evidence for navigation and host integration, not evidence of visual quality. Scores below describe only the in-scope code; they do not grade the rest of the admin UI.
@@ -73,4 +73,3 @@ This is a **code-only, provisional assessment** of the three production UI-adjac
 - `.planning/phases/170-packaged-host-and-compatibility-proof/170-REMEDIATION.md`
 - Phase 170 plans and execution summaries (`170-01` through `170-05`)
 - `PRODUCT.md`, `AGENTS.md`, and `.planning/VERIFICATION-POLICY.md`
-
