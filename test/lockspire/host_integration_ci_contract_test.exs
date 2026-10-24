@@ -12,10 +12,19 @@ defmodule Lockspire.HostIntegrationCIContractTest do
 
     assert integration =~ "name: Integration Checks"
     assert compatibility =~ "name: Minimum Supported Elixir/OTP"
-    assert integration =~ "run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked"
-    assert compatibility =~ "run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor"
-    assert integration =~ "host-proof-locked-test-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}"
-    assert compatibility =~ "host-proof-floor-test-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}"
+
+    assert integration =~
+             "run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked"
+
+    assert compatibility =~
+             "run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor"
+
+    assert integration =~
+             "host-proof-locked-test-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}"
+
+    assert compatibility =~
+             "host-proof-floor-test-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}"
+
     refute integration =~ "continue-on-error: true"
     refute compatibility =~ "continue-on-error: true"
   end

@@ -1,15 +1,17 @@
 ---
 phase: "170"
 slug: "packaged-host-and-compatibility-proof"
-status: draft
-nyquist_compliant: false
+status: execution_evidence_recorded
+nyquist_compliant: true
 wave_0_complete: false
 created: "2026-10-23"
 ---
 
 # Phase 170 — Validation Strategy
 
-Planning contract only. No new implementation/browser/floor/CI outcome is claimed. Run status fields remain draft/pending until execution provides evidence.
+The planning matrix below has execution outcomes recorded after the final local
+commands. The verifier makes the independent phase-goal judgment; this file
+records command results and evidence limits only.
 
 ## Test infrastructure and prerequisites
 
@@ -62,8 +64,8 @@ CI calls the same wrapper with its setup-beam environment and `.artifacts/ci/hos
 | 170-03-2 | 3 | HPROOF-02 | T-170-09..11 | Wrong runtime/cache/provenance refuses | P, S + baseline contract + 3 explicit floor mount runs + no lock drift | Existing files with pair support added here | pending |
 | 170-04-1 | 4 | HPROOF-01..03 | T-170-12..15 | Required job executes exact proof, safe upload boundary | L + new workflow contract + compatibility baseline + pinned workflow lint | Wrapper/workflow test created in tracer | pending |
 | 170-04-2 | 4 | HPROOF-03 | T-170-12..15 | Faults/stale/missing/coerced evidence cannot seal green | P + workflow subprocess fault tests + F | Existing before invocation | pending |
-| 170-05-1 | 5 | HPROOF-01..03 | T-170-16..18 | Documented command and accurate evidence interpretation | L + existing documentation_contract_test | Existing before invocation | pending |
-| 170-05-2 | 5 | HPROOF-01..03 | T-170-16..18 | Final matrix, honest source/evidence closure | F, N, P, format, test.fast, diff check | Existing before invocation | pending |
+| 170-05-1 | 5 | HPROOF-01..03 | T-170-16..18 | Documented command and accurate evidence interpretation | L + existing documentation_contract_test | Existing before invocation | passed: locked wrapper 137s; docs contract 9 passed |
+| 170-05-2 | 5 | HPROOF-01..03 | T-170-16..18 | Final matrix, honest source/evidence closure | F, N, P, format, test.fast, diff check | Existing before invocation | passed: floor 138s; Node 7; Python 28; format; mix test.fast 2027; diff check |
 
 T-170-SC in each plan covers dependency/toolchain provenance. New runtime files are explicit plan outputs, not MISSING placeholders. No separate Wave 0 scaffold or package installation is needed; execution must create each owning test before running it, and can never count a stub/zero-test run as a pass.
 
@@ -81,7 +83,27 @@ None planned. Every scoped behavior has machine evidence or a bounded source-res
 - [x] Every new command target is created in its owning task or earlier dependency.
 - [x] No watch mode or silent zero-test acceptance.
 - [x] Fast feedback and intentional real-browser/runtime gate latency are identified.
-- [ ] Actual execution outcomes recorded after implementation.
-- [ ] Nyquist runtime compliance validated after execution.
+- [x] Actual execution outcomes recorded after implementation.
+- [x] Nyquist runtime compliance validated after execution.
 
 Approval: planning self-check only, 2026-10-23; not runtime approval.
+
+## Execution outcomes (2026-10-24)
+
+| Check | Command / source | Result |
+|---|---|---|
+| Locked pair | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/phase170/final-locked` | passed in 137s; 43 lifecycle tests; three mounts × 16 browser cases; receipt identity and cleanup passed |
+| Floor pair | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/phase170/final-floor` | passed in 138s; 44 lifecycle tests; three mounts × 16 browser cases; exact Phoenix 1.8.5 / LiveView 1.1.28 and cleanup passed |
+| Documentation contract | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/documentation_contract_test.exs` | 9 passed |
+| Browser harness | `node --test test/browser/packaged_admin_proof_test.mjs` | 7 passed |
+| Receipt/failure suite | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 python3 -m unittest discover -s test/clean_room -p test_admin_journey.py` | 28 passed |
+| Guardrail false-positive regression | `LOCKSPIRE_TEST_DB_NAME=lockspire_phase170_plan05_redaction_20261024 ... asdf exec mix test test/lockspire/web/live/admin/interactions_live_test.exs test/lockspire/web/live/admin/device_authorizations_live_test.exs` after `mix test.setup` | 21 passed; safe `data-phx-link-state` excluded only from protocol field-name scan; raw sentinel checks retained |
+| CI and documentation focused contracts | `asdf exec mix test test/lockspire/host_integration_ci_contract_test.exs test/lockspire/documentation_contract_test.exs` | 13 passed |
+| Formatting | `asdf exec mix format --check-formatted` | passed after formatting the previously unformatted Plan 04 contract test as a Rule 1 fix |
+| Broad suite | `LOCKSPIRE_TEST_DB_NAME=lockspire_phase170_plan05_final_20261024 HEX_HOME=/private/tmp/lockspire-phase170-hex-home ... asdf exec mix test.fast` | 2027 passed (2 properties, 2025 tests), 6 skipped, 497 excluded; exit 0 |
+| Diff check | `git diff --check acda9da47b141978a2a05c2ac795058257f93888` | passed |
+
+The local BEAM was Elixir 1.20.4 / OTP 29. This is separate from the CI
+expectations of Elixir 1.19.5 / OTP 28 with PostgreSQL 16 (locked) and Elixir
+1.18.4 / OTP 27 with PostgreSQL 14 (floor). No remote run was dispatched or
+observed. The two otherwise unclassified probe assumptions remain so.

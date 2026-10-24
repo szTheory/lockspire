@@ -554,6 +554,10 @@ defmodule Lockspire.Web.Live.Admin.InteractionsLiveTest do
   end
 
   defp refute_protocol_field_context(html, field_name) do
+    # Phoenix emits this safe navigation mode after the admin links switched to
+    # native LiveView navigation. It is framework metadata, not OAuth state.
+    html = Regex.replace(~r/\sdata-phx-link-state="(?:push|replace)"/i, html, " ")
+
     refute Regex.match?(
              ~r/(?:\b#{Regex.escape(field_name)}=|"#{Regex.escape(field_name)}"\s*:|\b#{Regex.escape(field_name)}:)/i,
              html
