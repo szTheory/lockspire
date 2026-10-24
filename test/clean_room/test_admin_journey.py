@@ -4,6 +4,7 @@ import tempfile
 import sys
 import unittest
 import uuid
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "accept
 import clean_room_admin_journey as admin_journey
 from admin_receipts import validate_receipt, write_receipt
 import build_provider as provider_builder
+from package_input import PackageInputError
 
 FULL_CASE_IDS = (
     "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
@@ -119,6 +121,11 @@ class AdminReceiptTests(unittest.TestCase):
 
         self.assertEqual(validated["pair"], "floor")
 
+        floor_receipt["runtime"]["phoenix"] = "1.8.13"
+        floor_receipt["runtime"]["live_view"] = "1.2.10"
+        with self.assertRaisesRegex(ValueError, "do not match selected pair"):
+            validate_receipt(floor_receipt, expected_pair="floor")
+
     def test_runner_and_provider_expose_explicit_floor_pair_selection(self):
         args = admin_journey.parse_args(
             ["--pair", "floor", "--mount", "/lockspire", "--receipt", "receipt.json"]
@@ -126,6 +133,67 @@ class AdminReceiptTests(unittest.TestCase):
 
         self.assertEqual(args.pair, "floor")
         self.assertIn("proof_pair", inspect.signature(provider_builder.prepare_provider).parameters)
+
+    def test_runtime_sources_may_use_only_the_child_or_pair_dependency_cache(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            child = root / "host"
+            deps = root / "pair-cache" / "provider" / "deps"
+            child.mkdir()
+            deps.mkdir(parents=True)
+            sources = [child / "module.beam", child / "phoenix.beam", deps / "phoenix.js", deps / "live_view.js"]
+            for source in sources:
+                source.touch()
+            proof = "RUNTIME_PROOF|1.8.5|1.1.28|1.20.4|29|" + "|".join(map(str, sources))
+            with patch.object(admin_journey, "run_child_command_output", return_value=proof):
+                runtime = admin_journey.runtime_versions(child, {"MIX_DEPS_PATH": str(deps)})
+            self.assertEqual((runtime["phoenix"], runtime["live_view"]), ("1.8.5", "1.1.28"))
+
+            outside = root / "root-checkout" / "phoenix.js"
+            outside.parent.mkdir()
+            outside.touch()
+            sources[-2] = outside
+            proof = "RUNTIME_PROOF|1.8.5|1.1.28|1.20.4|29|" + "|".join(map(str, sources))
+            with patch.object(admin_journey, "run_child_command_output", return_value=proof):
+                with self.assertRaises(PackageInputError):
+                    admin_journey.runtime_versions(child, {"MIX_DEPS_PATH": str(deps)})
+
+    def test_floor_pair_uses_its_frozen_lock_and_isolated_environment_cache(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            child = Path(temporary) / "provider_host"
+            child.mkdir()
+            (child / "mix.exs").write_bytes((provider_builder.PROVIDER_TEMPLATE / "mix.exs").read_bytes())
+            (child / "mix.lock").write_bytes((provider_builder.PROVIDER_TEMPLATE / "mix.lock").read_bytes())
+
+            lock_hash = provider_builder.configure_proof_pair(child, "floor", admin_proof=True)
+            floor_lock = provider_builder.FLOOR_TEMPLATE / "mix.lock"
+            manifest = (child / "mix.exs").read_text()
+            marker = (child / provider_builder.PROOF_PAIR_MARKER).read_text()
+            floor_cache = provider_builder.proof_pair_cache_root(Path(temporary) / "cache", "floor", "test")
+            locked_cache = provider_builder.proof_pair_cache_root(Path(temporary) / "cache", "locked", "test")
+
+            self.assertEqual((child / "mix.lock").read_bytes(), floor_lock.read_bytes())
+            self.assertIn('{:phoenix, "== 1.8.5"}', manifest)
+            self.assertIn('{:phoenix_live_view, "== 1.1.28"}', manifest)
+            self.assertEqual(marker, f"pair=floor\nlock_sha256={lock_hash}\n")
+            self.assertIn("/floor/", str(floor_cache))
+            self.assertIn("/test", str(floor_cache))
+            self.assertNotEqual(floor_cache, locked_cache)
+
+    def test_reused_pair_mismatch_and_wrong_runtime_are_refused(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            child = Path(temporary) / "provider_host"
+            child.mkdir()
+            (child / "mix.exs").write_bytes((provider_builder.PROVIDER_TEMPLATE / "mix.exs").read_bytes())
+            (child / "mix.lock").write_bytes((provider_builder.PROVIDER_TEMPLATE / "mix.lock").read_bytes())
+            provider_builder.configure_proof_pair(child, "floor", admin_proof=True)
+            (child / provider_builder.PROOF_PAIR_MARKER).write_text("pair=locked\nlock_sha256=wrong\n")
+
+            with self.assertRaisesRegex(PackageInputError, "reused provider proof pair"):
+                provider_builder.configure_proof_pair(child, "floor", admin_proof=True, reused=True)
+
+        with self.assertRaisesRegex(PackageInputError, "do not match selected pair"):
+            admin_journey.validate_pair_runtime("floor", {"phoenix": "1.8.13", "live_view": "1.2.10"})
 
     def test_passed_receipt_requires_positive_browser_join_and_navigation(self):
         for key, value in (("assets", 1), ("websocket_handshakes", 0), ("successful_joins", 0), ("navigations", 0)):
@@ -176,7 +244,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 15)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 18)
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)

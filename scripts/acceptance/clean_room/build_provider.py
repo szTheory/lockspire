@@ -44,6 +44,17 @@ from package_input import (
 
 
 OVERLAY_ROOT = PROJECT_ROOT / "test" / "clean_room" / "provider_host" / "lib"
+PROVIDER_TEMPLATE = PROJECT_ROOT / "test" / "clean_room" / "provider_host"
+FLOOR_TEMPLATE = PROJECT_ROOT / "compatibility" / "phoenix_1_8_live_view_1_1"
+PROOF_PAIR_VERSIONS = {
+    "locked": ("1.8.13", "1.2.10"),
+    "floor": ("1.8.5", "1.1.28"),
+}
+PROOF_PAIR_LOCKS = {
+    "locked": PROVIDER_TEMPLATE / "mix.lock",
+    "floor": FLOOR_TEMPLATE / "mix.lock",
+}
+PROOF_PAIR_MARKER = ".lockspire-admin-proof-pair"
 FORBIDDEN = (
     "Lockspire.Protocol.",
     "Lockspire.Storage.",
@@ -52,6 +63,70 @@ FORBIDDEN = (
     "Router.call(",
     "forward(\"/lockspire\", CleanRoomProvider",
 )
+
+
+def proof_pair_lock_hash(proof_pair: str) -> str:
+    lock_path = PROOF_PAIR_LOCKS.get(proof_pair)
+    if lock_path is None or not lock_path.is_file():
+        raise PackageInputError("admin proof dependency pair is unavailable")
+    return sha256(lock_path)
+
+
+def proof_pair_cache_root(cache_root: Path, proof_pair: str, mix_env: str | None = None) -> Path:
+    lock_hash = proof_pair_lock_hash(proof_pair)
+    selected_env = mix_env or os.environ.get("MIX_ENV", "dev")
+    if selected_env not in {"dev", "test", "prod"}:
+        selected_env = "dev"
+    return cache_root / proof_pair / lock_hash / selected_env
+
+
+def configure_proof_pair(
+    child: Path, proof_pair: str, *, admin_proof: bool, reused: bool = False
+) -> str | None:
+    if proof_pair not in PROOF_PAIR_VERSIONS:
+        raise PackageInputError("unsupported admin proof dependency pair")
+    if proof_pair != "locked" and not admin_proof:
+        raise PackageInputError("floor dependency selection requires admin proof opt-in")
+    if not admin_proof:
+        return None
+
+    lock_path = PROOF_PAIR_LOCKS[proof_pair]
+    if not lock_path.is_file():
+        raise PackageInputError("admin proof dependency lock is missing")
+    lock_hash = sha256(lock_path)
+    manifest_path = child / "mix.exs"
+    lock_target = child / "mix.lock"
+    marker_path = child / PROOF_PAIR_MARKER
+    manifest = manifest_path.read_text(encoding="utf-8")
+    marker = f"pair={proof_pair}\nlock_sha256={lock_hash}\n"
+    phoenix_version, live_view_version = PROOF_PAIR_VERSIONS[proof_pair]
+
+    if reused:
+        if not marker_path.is_file() or marker_path.read_text(encoding="utf-8") != marker:
+            raise PackageInputError("reused provider proof pair does not match selected pair")
+        if not lock_target.is_file() or sha256(lock_target) != lock_hash:
+            raise PackageInputError("reused provider proof lock does not match selected pair")
+    else:
+        for dependency, expected in (("phoenix", "1.8.13"), ("phoenix_live_view", "1.2.10")):
+            locked_pin = f'{{:{dependency}, "== {expected}"}}'
+            if manifest.count(locked_pin) != 1:
+                raise PackageInputError("provider manifest dependency pins changed")
+        if proof_pair == "floor":
+            manifest = manifest.replace('{:phoenix, "== 1.8.13"}', '{:phoenix, "== 1.8.5"}', 1)
+            manifest = manifest.replace(
+                '{:phoenix_live_view, "== 1.2.10"}',
+                '{:phoenix_live_view, "== 1.1.28"}',
+                1,
+            )
+            manifest_path.write_text(manifest, encoding="utf-8")
+        shutil.copy2(lock_path, lock_target)
+        marker_path.write_text(marker, encoding="utf-8")
+
+    for dependency, version in (("phoenix", phoenix_version), ("phoenix_live_view", live_view_version)):
+        if manifest.count(f'{{:{dependency}, "== {version}"}}') != 1:
+            raise PackageInputError("provider manifest does not match selected proof pair")
+
+    return lock_hash
 
 
 def write_host_runtime(
@@ -374,6 +449,7 @@ def prepare_provider(
     candidate_identity: PackageIdentity | None = None,
     custom_lifetime_adapter: bool = False,
     admin_proof: bool = False,
+    proof_pair: str = "locked",
     mount_path: str = "/lockspire",
 ) -> Path:
     probe_environment()
@@ -381,6 +457,10 @@ def prepare_provider(
         raise PackageInputError("invalid Lockspire storage prefix")
     if mount_path not in {"/lockspire", "/teams/ops/identity", "/"}:
         raise PackageInputError("invalid admin proof mount path")
+    if proof_pair not in PROOF_PAIR_VERSIONS:
+        raise PackageInputError("unsupported admin proof dependency pair")
+    if proof_pair != "locked" and not admin_proof:
+        raise PackageInputError("floor dependency selection requires admin proof opt-in")
     if package_root is None:
         package_root, _ = build_package(run_root)
     if candidate_identity is None:
@@ -410,6 +490,9 @@ def prepare_provider(
             custom_lifetime_adapter=custom_lifetime_adapter,
             mount_path=mount_path,
         )
+    proof_lock_hash = configure_proof_pair(
+        child, proof_pair, admin_proof=admin_proof, reused=reuse
+    )
     vendor = child / "vendor" / "lockspire"
     # Validate all bytes already on disk before Mix is allowed to inspect or load
     # the reusable child. The resolver probe below then confirms the observed path.
@@ -423,6 +506,8 @@ def prepare_provider(
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
     dependency_cache = cache_root or run_root / "deps-cache"
+    if admin_proof:
+        dependency_cache = proof_pair_cache_root(dependency_cache, proof_pair)
     isolated_hex_home = run_root / "hex-home"
     isolated_mix_home = run_root / "mix-home"
     isolated_hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)

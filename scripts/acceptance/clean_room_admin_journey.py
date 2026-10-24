@@ -25,7 +25,14 @@ CLEAN_ROOM_DIR = Path(__file__).resolve().parent / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
 from admin_receipts import FULL_OBSERVATIONS, FULL_REQUIRED, write_receipt
-from build_provider import allocate_port, prepare_provider, run_child_command, run_child_command_output
+from build_provider import (
+    PROOF_PAIR_VERSIONS,
+    allocate_port,
+    prepare_provider,
+    proof_pair_cache_root,
+    run_child_command,
+    run_child_command_output,
+)
 from package_input import PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
 from redaction import Redactor, SentinelSet
 
@@ -148,7 +155,7 @@ def full_scenarios_from_observation(observed: object) -> list[dict[str, object]]
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pair", choices=("locked",), required=True)
+    parser.add_argument("--pair", choices=("locked", "floor"), required=True)
     parser.add_argument("--mount", choices=("/lockspire", "/teams/ops/identity", "/"), required=True)
     parser.add_argument("--scenario", choices=("full", "tracer"), default="full")
     parser.add_argument("--receipt", type=Path, required=True)
@@ -162,14 +169,38 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 def runtime_versions(child: Path, env: dict[str, str]) -> dict[str, str]:
     source = (
         'Application.load(:phoenix); Application.load(:phoenix_live_view); '
-        'IO.puts([Application.spec(:phoenix, :vsn), Application.spec(:phoenix_live_view, :vsn), '
-        'System.version(), :erlang.system_info(:otp_release)] |> Enum.map(&to_string/1) |> Enum.join("|"))'
+        'Code.ensure_loaded!(Phoenix.Router); Code.ensure_loaded!(Phoenix.LiveView); '
+        'paths = [:code.which(Phoenix.Router), :code.which(Phoenix.LiveView), '
+        'Application.app_dir(:phoenix, "priv/static/phoenix.js"), '
+        'Application.app_dir(:phoenix_live_view, "priv/static/phoenix_live_view.js")]; '
+        'IO.puts("RUNTIME_PROOF|" <> Enum.join([Application.spec(:phoenix, :vsn), '
+        'Application.spec(:phoenix_live_view, :vsn), System.version(), '
+        ':erlang.system_info(:otp_release)] ++ Enum.map(paths, &to_string/1), "|"))'
     )
     output = run_child_command_output(child, env, "run", "--no-start", "-e", source)
-    match = re.search(r"(?m)^([0-9][^|\s]*)\|([0-9][^|\s]*)\|([0-9][^|\s]*)\|([0-9][^|\s]*)$", output)
-    if not match:
+    match = re.search(r"(?m)^RUNTIME_PROOF\|(.+)$", output)
+    fields = match.group(1).split("|") if match else []
+    if len(fields) != 8 or any(not value for value in fields):
         raise PackageInputError("runtime versions could not be observed")
-    return {"phoenix": match.group(1), "live_view": match.group(2), "elixir": match.group(3), "otp": match.group(4)}
+    allowed_roots = [child.resolve()]
+    dependency_root = env.get("MIX_DEPS_PATH")
+    if dependency_root:
+        allowed_roots.append(Path(dependency_root).resolve())
+    for source_path in fields[4:]:
+        resolved_source = Path(source_path).resolve()
+        if not resolved_source.is_file() or not any(
+            resolved_source.is_relative_to(allowed_root) for allowed_root in allowed_roots
+        ):
+            raise PackageInputError("compiled runtime or asset source escaped the isolated provider host")
+    return {"phoenix": fields[0], "live_view": fields[1], "elixir": fields[2], "otp": fields[3]}
+
+
+def validate_pair_runtime(proof_pair: str, runtime: dict[str, str]) -> None:
+    expected = PROOF_PAIR_VERSIONS.get(proof_pair)
+    if expected is None:
+        raise PackageInputError("unsupported admin proof dependency pair")
+    if (runtime.get("phoenix"), runtime.get("live_view")) != expected:
+        raise PackageInputError("observed Phoenix and LiveView versions do not match selected pair")
 
 
 def wait_ready(origin: str, process: subprocess.Popen[bytes], timeout: float = 30) -> None:
@@ -248,9 +279,10 @@ def main(argv: Sequence[str]) -> int:
         redactor.register_material(os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
         child = prepare_provider(
             base, database_url, package_root=package_root, candidate_identity=identity,
-            port=port, admin_proof=True, mount_path=args.mount,
+            port=port, admin_proof=True, proof_pair=args.pair, mount_path=args.mount,
         )
-        environment = locked_environment(child, "provider_host", base / "deps-cache")
+        dependency_cache = proof_pair_cache_root(base / "deps-cache", args.pair)
+        environment = locked_environment(child, "provider_host", dependency_cache)
         environment.update({
             "DATABASE_URL": database_url,
             "PORT": str(port),
@@ -266,6 +298,7 @@ def main(argv: Sequence[str]) -> int:
         run_child_command(child, environment, "ecto.migrate", "--migrations-path", "priv/repo/migrations")
         stage = "runtime_versions"
         runtime.update(runtime_versions(child, environment))
+        validate_pair_runtime(args.pair, runtime)
         stage = "host_start"
         port = int(environment["PORT"])
         origin = f"http://127.0.0.1:{port}"
@@ -322,6 +355,9 @@ def main(argv: Sequence[str]) -> int:
             "provider boundary audit found forbidden lifetime-adapter reference",
             "provider lifetime adapter is missing a documented public seam",
             "provider vendor inventory drifted after installation", "provider package installer failed",
+            "runtime versions could not be observed",
+            "compiled runtime or asset source escaped the isolated provider host",
+            "observed Phoenix and LiveView versions do not match selected pair",
         )
         safe_detail = next((candidate for candidate in safe_errors if detail.startswith(candidate)), "unknown")
         if safe_detail == "unknown" and re.fullmatch(r"[A-Za-z0-9_.-]+ failed with exit status [0-9]+", detail):

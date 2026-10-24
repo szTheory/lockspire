@@ -59,6 +59,10 @@ FULL_CASE_EVIDENCE = {
     "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
 }
 MOUNTS = frozenset({"/lockspire", "/teams/ops/identity", "/"})
+PAIR_RUNTIME_VERSIONS = {
+    "locked": ("1.8.13", "1.2.10"),
+    "floor": ("1.8.5", "1.1.28"),
+}
 
 
 def _exact(value: object, fields: frozenset[str], name: str) -> dict[str, Any]:
@@ -101,8 +105,11 @@ def validate_receipt(
             raise ValueError(f"receipt candidate {field} is invalid")
         if expected is not None and candidate[field] != expected:
             raise ValueError(f"receipt candidate {field} differs from the expected candidate")
-    if receipt["pair"] != "locked" or expected_pair not in (None, "locked"):
+    pair = receipt["pair"]
+    if not isinstance(pair, str) or pair not in PAIR_RUNTIME_VERSIONS:
         raise ValueError("receipt runtime pair is invalid")
+    if expected_pair is not None and pair != expected_pair:
+        raise ValueError("receipt runtime pair differs from the expected pair")
     if not isinstance(receipt["mount"], str) or receipt["mount"] not in MOUNTS or (expected_mount is not None and receipt["mount"] != expected_mount):
         raise ValueError("receipt mount differs from the expected mount")
     if receipt["evidence_kind"] != "real_browser_cdp":
@@ -116,6 +123,8 @@ def validate_receipt(
         raise ValueError("receipt runtime versions are incomplete")
     if receipt["result"] == "passed" and any(value == "unknown" for value in runtime.values()):
         raise ValueError("passed receipt runtime versions are incomplete")
+    if (runtime["phoenix"], runtime["live_view"]) != PAIR_RUNTIME_VERSIONS[pair]:
+        raise ValueError("receipt runtime versions do not match selected pair")
     if not isinstance(receipt["scenarios"], list):
         raise ValueError("receipt scenarios are invalid")
     if expected_scenario_set not in {"tracer", "full"}:

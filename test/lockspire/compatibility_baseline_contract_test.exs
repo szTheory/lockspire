@@ -26,15 +26,38 @@ defmodule Lockspire.CompatibilityBaselineContractTest do
     mixfile = File.read!(Path.join(@fixture, "mix.exs"))
     lock = File.read!(Path.join(@fixture, "mix.lock"))
     router = File.read!(Path.join(@fixture, "lib/lockspire_compatibility_fixture.ex"))
+    test_helper = File.read!(Path.join(@fixture, "test/test_helper.exs"))
+    runtime_entry = File.read!(Path.join(@fixture, "test/admin_host_runtime_test.exs"))
 
     assert mixfile =~ "{:lockspire, path: \"../..\"}"
     assert mixfile =~ "{:phoenix, \"== 1.8.5\"}"
     assert mixfile =~ "{:phoenix_live_view, \"== 1.1.28\"}"
+    assert mixfile =~ "config_path: \"../../config/config.exs\""
+    assert mixfile =~ "{:bandit, \"== 1.13.1\"}"
+    assert mixfile =~ "{:lazy_html, \"~> 0.1.0\", only: :test}"
     assert lock =~ "\"phoenix\": {:hex, :phoenix, \"1.8.5\""
     assert lock =~ "\"phoenix_live_view\": {:hex, :phoenix_live_view, \"1.1.28\""
     assert router =~ "Lockspire.Web.Router"
-    assert router =~ "Lockspire.Web.AdminRouter"
+    assert router =~ "Lockspire.Web.AdminRoutes.lockspire_admin_routes"
+    assert router =~ "LockspireCompatibilityFixture.RequireStaff"
+    refute router =~ "forward(\"/\", Lockspire.Web.AdminRouter)"
     assert router =~ "use Phoenix.LiveView"
+    assert test_helper =~ "test/support/test_account_resolver.ex"
+    assert test_helper =~ "test/support/lockspire/web/admin_route_host.ex"
+    assert test_helper =~ "test/support/error_view.ex"
+    refute test_helper =~ "test/support/\""
+
+    for source <- [
+          "test/lockspire/web/admin_routes_compile_test.exs",
+          "test/lockspire/web/admin_route_inventory_test.exs",
+          "test/lockspire/web/admin_route_separation_test.exs",
+          "test/lockspire/web/live/admin/admin_route_integration_test.exs"
+        ] do
+      assert runtime_entry =~ source
+    end
+
+    assert runtime_entry =~ "Application.spec(:phoenix, :vsn)"
+    assert runtime_entry =~ "Application.spec(:phoenix_live_view, :vsn)"
   end
 
   test "all PostgreSQL workflow services remain immutable" do
