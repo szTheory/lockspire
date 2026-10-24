@@ -533,7 +533,7 @@ class HostProofReceiptDirectoryTests(unittest.TestCase):
     DIAGNOSTIC = "receipt directory must be below .artifacts"
 
     def test_unsafe_receipt_directories_are_rejected_before_any_file_changes(self):
-        for case in ("traversal", "contained_traversal", "symlink_root", "symlink_parent", "symlink_destination"):
+        for case in ("traversal", "contained_traversal", "symlink_root", "symlink_parent", "symlink_destination", "newline_suffix"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
                 task_root = Path(temporary)
                 repo = task_root / "repo"
@@ -559,7 +559,7 @@ class HostProofReceiptDirectoryTests(unittest.TestCase):
                         receipt_dir = ".artifacts/link/new-output"
                     else:
                         (artifacts / "link").symlink_to(outside, target_is_directory=True)
-                        receipt_dir = ".artifacts/link"
+                        receipt_dir = ".artifacts/link\n" if case == "newline_suffix" else ".artifacts/link"
                 before = {path.relative_to(repo): path.read_bytes() for path in outside.rglob("*") if path.is_file()}
                 result = subprocess.run(["bash", str(self.ROOT / "scripts/ci/run_host_integration_proof.sh"), "--pair", "locked", "--receipt-dir", receipt_dir], cwd=repo, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=15, check=False)
                 after = {path.relative_to(repo): path.read_bytes() for path in outside.rglob("*") if path.is_file()}

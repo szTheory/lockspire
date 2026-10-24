@@ -22,6 +22,10 @@ from pathlib import Path
 import sys
 try:
     repo = Path(sys.argv[1]).resolve(strict=True)
+    # Command substitution strips trailing newlines; never validate one path
+    # and then hand the shell a different path.
+    if "\n" in sys.argv[2] or "\r" in sys.argv[2]:
+        raise ValueError
     requested = Path(sys.argv[2])
     parts = requested.parts
     if not sys.argv[2].startswith(".artifacts/") or requested.is_absolute() or len(parts) < 2 or parts[0] != ".artifacts" or ".." in parts:
