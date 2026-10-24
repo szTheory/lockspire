@@ -25,7 +25,7 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
 ## Phases
 
 - [x] **Phase 171: Accepted Baseline & Finding Qualification** - Establish delivery readiness and freeze the finite, attributable case ledger before dependent plans. (completed 2026-10-24)
-- [ ] **Phase 172: Authorization Responses** - Deliver the qualified safe-callback, error/state, response-mode and silent-auth outcomes.
+- [x] **Phase 172: Authorization Responses** - Deliver the qualified safe-callback, error/state, response-mode and silent-auth outcomes. (completed 2026-10-24)
 - [ ] **Phase 173: Conditional PAR & Profile Boundaries** - Deliver only qualified pushed-request and profile cases after transport and harness attribution.
 - [ ] **Phase 174: Packaged Proof & Delivery Handoff** - Prove all selected behavior, pass required gates and leave an exact, resumable delivery record.
 
@@ -67,10 +67,10 @@ Plans:
   2. Reuse A171-001 and A171-002 proof for exact redirect safety and registered-callback error/state encoding; do not schedule duplicate correction work for those already-proven cases.
   3. Reuse A171-004, A171-005 and A171-006 proof for `prompt=none`, `max_age` and host-provided `auth_time`; preserve host ownership of accounts and sessions.
 
-**Plans**: 1 plan
+**Plans**: 1/1 plans complete
 
 Plans:
-- [ ] 172-01-PLAN.md — Unsupported-mode HTTP 400 correction, Router RED/GREEN and existing authorization proof preservation.
+- [x] 172-01-PLAN.md — Unsupported-mode HTTP 400 correction, Router RED/GREEN and existing authorization proof preservation.
 
 ### Phase 173: Conditional PAR & Profile Boundaries
 
@@ -113,7 +113,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 171. Accepted Baseline & Finding Qualification | 4/4 | Complete    | 2026-10-24 |
-| 172. Authorization Responses | 0 plans | Not planned; gated on Phase 171 verification | - |
+| 172. Authorization Responses | 1/1 | Complete    | 2026-10-24 |
 | 173. Conditional PAR & Profile Boundaries | 0 plans | Not planned; gated on Phase 171 verification and Phase 172 completion | - |
 | 174. Packaged Proof & Delivery Handoff | 0 plans | Not planned; gated on Phase 171 verification and Phases 172 and 173 completion | - |
 

@@ -16,9 +16,9 @@
 
 ### Authorization Responses
 
-- [ ] **AUTHR-01**: A client receives the applicable safe response for each qualified authorization-error case, preserving exact registered-redirect validation and returning no attacker-controlled redirect for an invalid client/redirect combination.
-- [ ] **AUTHR-02**: A client receives the specified error/state and supported response-mode representation for each selected valid-callback case, with reserved/error parameters encoded unambiguously and adversarial cases covered.
-- [ ] **AUTHR-03**: A client using selected prompt=none or max_age cases receives the applicable protocol outcome and authentication-freshness claims without an inappropriate host login redirect, while account/session authority stays host-owned.
+- [x] **AUTHR-01**: A client receives the applicable safe response for each qualified authorization-error case, preserving exact registered-redirect validation and returning no attacker-controlled redirect for an invalid client/redirect combination.
+- [x] **AUTHR-02**: A client receives the specified error/state and supported response-mode representation for each selected valid-callback case, with reserved/error parameters encoded unambiguously and adversarial cases covered.
+- [x] **AUTHR-03**: A client using selected prompt=none or max_age cases receives the applicable protocol outcome and authentication-freshness claims without an inappropriate host login redirect, while account/session authority stays host-owned.
 
 ### PAR and Profile Boundaries
 
@@ -74,9 +74,9 @@ All 14 requirements map to exactly one of phases 171–174. Conditional scopes m
 | BASE-02 | Phase 171 | Complete |
 | FIND-01 | Phase 171 | Complete |
 | FIND-02 | Phase 171 | Complete |
-| AUTHR-01 | Phase 172 | Pending |
-| AUTHR-02 | Phase 172 | Pending |
-| AUTHR-03 | Phase 172 | Pending |
+| AUTHR-01 | Phase 172 | Complete |
+| AUTHR-02 | Phase 172 | Complete |
+| AUTHR-03 | Phase 172 | Complete |
 | PARB-01 | Phase 173 | Pending |
 | PARB-02 | Phase 173 | Pending |
 | PARB-03 | Phase 173 | Pending |

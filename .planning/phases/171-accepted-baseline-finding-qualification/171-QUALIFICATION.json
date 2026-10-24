@@ -1539,12 +1539,12 @@
       },
       {
         "file": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
-        "anchor": "must_haves.truths[2] and dated Verification gap disposition — 2026-10-24",
+        "anchor": "must_haves.truths[2] and dated Verification gap disposition \u2014 2026-10-24",
         "reason": "Replace the unverified automatic serialization/interruption claim with the actual sequential operator procedure; both wrappers were not launched, so no overlap, interruption or cleanup outcome was observed."
       },
       {
         "file": ".planning/ROADMAP.md",
-        "anchor": "Phases 172–174 Plans fields and Progress rows",
+        "anchor": "Phases 172\u2013174 Plans fields and Progress rows",
         "reason": "Replace unknown plan totals with explicit unplanned states and prerequisites, retaining the two selected corrections and Phase 174 obligations."
       }
     ],
@@ -1585,7 +1585,7 @@
       {
         "path": ".planning/ROADMAP.md",
         "selector": "phases-172-173-contract",
-        "sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f"
+        "sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "294a30ba5593c55ecb35e475f3e9f26897bbc448b15d4d90cc3d22b271d7da0c",
+    "input_digest": "dec0b516d3ecad9c76cefa0f3c0113f3f714a120ef1ed510b7f2e7e8c0581011",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1857,7 +1857,7 @@
         "selector": "phases-172-173-contract",
         "previous_sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af",
         "sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
-        "reason": "Reconcile the Phase 172–173 planning selector after the plan/count update committed in 6e160651; no runtime source was changed."
+        "reason": "Reconcile the Phase 172\u2013173 planning selector after the plan/count update committed in 6e160651; no runtime source was changed."
       },
       {
         "date": "2026-10-24",
@@ -1867,6 +1867,15 @@
         "previous_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
         "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05",
         "reason": "Add the durable A171-003 Router regression and valid query-mode control with actual RED/GREEN proof."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "e64a3994b62aae7b84db05548fcd2b66bbffa188",
+        "path": ".planning/ROADMAP.md#phases-172-173-contract",
+        "previous_sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
+        "sha256": "c565ffa0bd38152b2c309ef8a9936df3499768754e95981378ab6e623e7e94f6",
+        "reason": "Reviewed SDK phase.complete 172 updates only plan count and completed checkbox after independent passed 11/11 verification; Phase 173 selected contract unchanged."
       }
     ],
     "metadata_audits": [

@@ -389,12 +389,14 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Establish selected authorization-response, silent-auth/freshness and PAR/profile outcomes with evidence-led corrections only where warranted (AUTHR-01..03, PARB-01..03).
+- [ ] Establish selected PAR/profile outcomes with evidence-led corrections only where warranted (PARB-01..03).
 - [ ] Bind regressions, packaged proof, security/candidate gates and clean delivery/rolling-roadmap handoff to exact evidence (CPROOF-01..02, DELIV-01..02).
 
 See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
+
+- ✓ Selected authorization responses and preserved callback/silent-authentication outcomes — v1.47 AUTHR-01..03, Phase 172; 11/11 goal verification, actual Router RED/GREEN, 131 passing selected regression tests, six planned threats closed and one review warning fixed. Only the unsupported-mode classification changed production behavior; host accounts/sessions remain host-owned.
 
 - ✓ Accepted implementation base and finite supported-case qualification — v1.47 BASE-01..02, FIND-01..02, Phase 171; 10/10 goal verification, 22 passing ledger tests, two controlled counterexamples retained for downstream correction, 15 planned threats closed and clean review. External profiles were not launched.
 
@@ -544,6 +546,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 |----------|-----------|---------|
 | Qualify exact supported cases before changing protocol behavior | Coarse suite failures and unavailable infrastructure do not establish product defects | Phase 171 passed; ten existing proofs reused, two source-host counterexamples assigned to 172/173 |
 | Preserve original evidence and distinguish deliberate normative RED from setup failure or protocol pass | Repeated probes and metadata edits must not rewrite observed history | Phase 171 controlled observations, dated archive, focused contract and clean review |
+| Classify unsupported response mode at the existing protocol boundary | Reuse safe first-party HTML delivery and preserve strict/PAR/host seams without another abstraction or dependency | Phase 172 actual Router RED/GREEN and passed 11/11 verification |
 | Require actual candidate/browser evidence distinct from server lifecycle and compilation | Supported integration claims need real assets, signed sessions, joins, navigation and current-authority denial at each mount | ✓ Good — Phase 170 six-cell matrix and independent goal verification |
 | Validate page mount alignment at HTTP entry and retain current host authority at LiveView boundaries | Connected sockets expose the WebSocket URI rather than the original page path; account/policy ownership stays with the host | ✓ Good — Phase 170 real browser regression and host authorization tests |
 | Retain only independently validated evidence and bound cleanup to owned resources | Hostile diagnostics, failed cleanup and artifact traversal must fail visibly without leaking or deleting external data | ✓ Good — Phase 170 security remediation, containment regressions and independent clean re-review |
@@ -663,4 +666,4 @@ This document evolves at phase transitions and milestone boundaries.
 6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 after Phase 171 qualification and transition to Phase 172*
+*Last updated: 2026-10-24 after Phase 172 authorization response correction and transition to Phase 173*

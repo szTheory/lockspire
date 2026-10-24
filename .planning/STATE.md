@@ -2,20 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
-current_phase: 172
-current_phase_name: Authorization Responses
-status: executing
-stopped_at: Completed 172-01 plan; awaiting independent Phase 172 verification
-last_updated: "2026-10-24T22:53:09.729Z"
+current_phase: 173
+current_phase_name: Conditional PAR & Profile Boundaries
+status: planning
+stopped_at: Phase 172 passed 11/11; completion metadata reconciled; continue Phase 173 planning
+last_updated: "2026-10-24T23:04:26.362Z"
 last_activity: 2026-10-24
-last_activity_desc: Phase 171 complete, transitioned to Phase 172
-state_head: a615410b4c86d5a37437b24afe490ee67580b7be
+last_activity_desc: Phase 172 complete, transitioned to Phase 173
+state_head: e64a3994b62aae7b84db05548fcd2b66bbffa188
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
   completed_plans: 5
-  percent: 25
+  percent: 50
 ---
 
 # Project State
@@ -26,20 +26,20 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 172: correct only qualified A171-003 unsupported response_mode disposition; reuse existing authorization proof and preserve host-owned accounts/sessions.
+**Current focus:** Phase 173: correct only P171-005 conflicting outer scope handling; preserve pushed-request lifecycle and host account/session authority.
 
 ## Current Position
 
-Phase: 172 (Authorization Responses) — READY TO EXECUTE
+Phase: 173 — Conditional PAR & Profile Boundaries
 Plan: Not started
-Status: Ready to execute
-Last activity: 2026-10-24 — Phase 171 complete, transitioned to Phase 172
+Status: Ready to plan
+Last activity: 2026-10-24 — Phase 172 complete, transitioned to Phase 173
 
-Progress: [███░░░░░░░] 25% — 0/4 phases complete; Phase 171 plan execution 4/4 complete, awaiting independent verification.
+Progress: [█████░░░░░] 50% — 2/4 phases complete; Phases 171 and 172 verified; Phase 173 ready to plan.
 
 ## Performance Metrics
 
-v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 3 sequential waves. Execution has not started. Historical velocity/evidence remains in the milestone archives.
+v1.47: 2 completed phases, 5 completed plans; Phase 172 passed 11/11 goal verification. Phase 173 is next. Historical velocity/evidence remains in milestone archives.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -117,9 +117,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T22:53:09.657Z
-Stopped at: Completed 172-01 plan; awaiting independent Phase 172 verification
-Resume file: .planning/phases/172-authorization-responses/172-01-SUMMARY.md
+Last session: 2026-10-24T23:03:48.495Z
+Stopped at: Phase 172 passed 11/11; completion metadata reconciled; continue Phase 173 planning
+Resume file: None
 Next: Run configured validation/security/code review and goal verification; then plan Phase 172 against frozen A171-003 scope.
 
 ### Blockers
