@@ -4,18 +4,18 @@ milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 170
 current_phase_name: Packaged Host and Compatibility Proof
-current_plan: 2
+current_plan: 3
 status: executing
-stopped_at: Completed 170-01-PLAN.md
-last_updated: "2026-10-24T02:15:44.011Z"
-last_activity: 2026-10-23
+stopped_at: Completed 170-02-PLAN.md
+last_updated: "2026-10-24T02:52:30.428Z"
+last_activity: 2026-10-24
 last_activity_desc: Phase 170 Plan 01 completed; Plan 02 is next
-state_head: 6c71243cf1de996e9f975962c2a58c40d8ec77ea
+state_head: ce660c0eda0567ee2c56a6fe6152ac62612fa986
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 16
-  completed_plans: 12
+  completed_plans: 13
   percent: 75
 ---
 
@@ -32,9 +32,9 @@ See: .planning/PROJECT.md (updated 2026-10-23 after Phase 169)
 ## Current Position
 
 Phase: 170 (Packaged Host and Compatibility Proof) — EXECUTING
-Current Plan: 2
+Current Plan: 3
 Total Plans in Phase: 5
-Status: Executing Phase 170; Plan 01 complete, Plan 02 next
+Status: Ready to execute
 Last activity: 2026-10-24 — Phase 170 Plan 01 completed
 
 ## Accumulated Context
@@ -62,6 +62,8 @@ v1.45 decisions and validated requirements are recorded in PROJECT.md and the ar
 - [Phase 170]: Validate the admin route at HTTP entry because connected LiveView sockets expose the WebSocket URI rather than the original page path.
 - [Phase 170]: Keep proof authority state supervised and confined to the disposable host.
 - [Phase 170]: Use real Chrome/CDP observations and fixed receipt allowlists; do not synthesize LiveView transport frames.
+- [Phase 170]: Keep tracer and exact 16-case full receipts as distinct contracts.
+- [Phase 170]: Use real browser transport and boundary counters, with no continuous reauthorization claim.
 
 ### Blockers/Concerns
 
@@ -121,8 +123,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T02:15:43.837Z
-Stopped at: Completed 170-01-PLAN.md
+Last session: 2026-10-24T02:52:30.260Z
+Stopped at: Completed 170-02-PLAN.md
 Resume file: None
 Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-compatibility-proof/*-PLAN.md` and 170-PLAN-CHECK.md first if desired. Phase 169 is complete with no human items: 160 phase tests, 63 prior-phase regressions and 2,022 broad checks passed at the final source. Preserve original unstaged state.json bytes. Phase 170 owns packaged adoption, actual browser/socket transport, exact-floor runtime and required CI proof. The automatic run stopped after Phase 169 as requested by its `--no-transition` handoff.
 
@@ -134,3 +136,4 @@ Next: `$gsd-execute-phase 170`. Review `.planning/phases/170-packaged-host-and-c
 | Phase 168 P02 | 8m | 2 tasks | 1 files |
 | Phase 168 P03 | 18m | 2 tasks | 6 files |
 | Phase 170 P01 | 114m | 2 tasks | 13 files |
+| Phase 170 P02 | 50m | 2 tasks | 10 files |
