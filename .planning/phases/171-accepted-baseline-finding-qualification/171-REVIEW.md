@@ -35,9 +35,9 @@ Rechecked the four prior review findings against the current fixes. The stale de
 
 ## Narrative Findings (AI reviewer)
 
-### Warnings
+## Warnings
 
-#### WR-05: Scalar case requirement IDs can still crash validation
+### WR-05: Scalar case requirement IDs can still crash validation
 
 **File:** `test/lockspire/qualification_ledger_contract_test.exs:637-646, 995-997`
 **Severity:** WARNING
