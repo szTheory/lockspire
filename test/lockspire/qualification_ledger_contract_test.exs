@@ -4,6 +4,14 @@ defmodule Lockspire.QualificationLedgerContractTest do
   @repo_root Path.expand("../..", __DIR__)
   @phase_dir Path.join(@repo_root, ".planning/phases/171-accepted-baseline-finding-qualification")
   @ledger_path Path.join(@phase_dir, "171-QUALIFICATION.json")
+  @downstream_requirement_ids [
+    "AUTHR-01",
+    "AUTHR-02",
+    "AUTHR-03",
+    "PARB-01",
+    "PARB-02",
+    "PARB-03"
+  ]
 
   test "the phase qualification ledger exists and its evidence references resolve" do
     assert File.exists?(@ledger_path),
@@ -48,6 +56,73 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert_rejected(put_in(ledger, ["matrix", "rows", Access.at(0), "case_id"], "orphan"))
     assert_rejected(%{ledger | "cases" => Enum.reverse(ledger["cases"])})
     assert_rejected(put_in(ledger, ["matrix", "rows"], Enum.reverse(ledger["matrix"]["rows"])))
+
+    assert_rejected(
+      put_in(
+        ledger,
+        ["matrix", "requirement_dispositions", Access.at(0), "requirement_id"],
+        "ORPHAN"
+      )
+    )
+  end
+
+  test "a draft matrix requires all downstream dispositions and case-backed expected outcomes" do
+    ledger = load_ledger()
+    assert validate(ledger) == []
+
+    assert Enum.map(ledger["matrix"]["requirement_dispositions"], & &1["requirement_id"]) ==
+             @downstream_requirement_ids
+
+    assert_rejected(
+      put_in(
+        ledger,
+        ["matrix", "requirement_dispositions"],
+        Enum.drop(ledger["matrix"]["requirement_dispositions"], -1)
+      )
+    )
+
+    assert_rejected(
+      update_in(ledger, ["cases", Access.at(0), "expected_outcome"], fn _ -> nil end)
+    )
+
+    assert_rejected(
+      update_in(ledger, ["cases", Access.at(0), "regression_owner"], fn _ -> nil end)
+    )
+  end
+
+  test "only a proved current counterexample may retain a correction" do
+    ledger = load_ledger()
+    correction_index = Enum.find_index(ledger["matrix"]["rows"], &(&1["case_id"] == "A171-003"))
+
+    assert_rejected(
+      put_in(
+        ledger,
+        ["matrix", "rows", Access.at(correction_index), "disposition"],
+        "retain_proof"
+      )
+    )
+
+    no_failure =
+      ledger
+      |> put_in(["cases", Access.at(2), "repro", "status"], "pass")
+      |> put_in(["cases", Access.at(2), "repro", "failure_count"], 0)
+
+    assert_rejected(no_failure)
+  end
+
+  test "blocked rows cannot be presented as ready" do
+    ledger = load_ledger()
+    index = Enum.find_index(ledger["matrix"]["rows"], &(&1["case_id"] == "P171-006"))
+
+    blocked_but_ready =
+      ledger
+      |> put_in(["matrix", "rows", Access.at(index), "disposition"], "blocked")
+      |> put_in(
+        ["matrix", "rows", Access.at(index), "blocking_reason"],
+        "Synthetic unresolved proof"
+      )
+
+    assert_rejected(blocked_but_ready)
   end
 
   test "null case and matrix collections are rejected" do
@@ -88,6 +163,21 @@ defmodule Lockspire.QualificationLedgerContractTest do
         ["scope_revision", "rationale"],
         "Synthetic empty fixture requires an explicit scope review."
       )
+      |> put_in(["matrix", "replan_required"], true)
+      |> put_in(
+        ["matrix", "requirement_dispositions"],
+        Enum.map(@downstream_requirement_ids, fn id ->
+          %{
+            "requirement_id" => id,
+            "disposition" => "revise",
+            "case_ids" => [],
+            "existing_proof" => [],
+            "retained_cases" => [],
+            "rationale" => "Synthetic explicit empty-scope replan.",
+            "amendment_ref" => "REQUIREMENTS.md and ROADMAP.md synthetic fixture"
+          }
+        end)
+      )
       |> update_in(["category_coverage"], fn categories ->
         Enum.map(categories, &%{&1 | "case_ids" => [], "status" => "excluded_fixture"})
       end)
@@ -96,6 +186,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert_rejected(put_in(empty, ["scope_revision", "rationale"], nil))
     assert_rejected(%{empty | "selection_status" => "draft"})
     assert_rejected(put_in(empty, ["scope_revision", "required"], false))
+    assert_rejected(put_in(empty, ["matrix", "replan_required"], false))
   end
 
   test "a valid single case and matrix row remain admissible" do
@@ -119,6 +210,30 @@ defmodule Lockspire.QualificationLedgerContractTest do
               "status" => if(ids == [], do: "excluded_fixture", else: "enumerated")
           }
         end)
+      end)
+      |> update_in(["cases"], fn cases ->
+        Enum.map(cases, fn case_item ->
+          if case_item["id"] == item["id"],
+            do: %{case_item | "requirement_ids" => ["FIND-01" | @downstream_requirement_ids]},
+            else: case_item
+        end)
+      end)
+      |> put_in(
+        ["matrix", "requirement_dispositions"],
+        Enum.map(@downstream_requirement_ids, fn id ->
+          %{
+            "requirement_id" => id,
+            "disposition" => "reuse_existing",
+            "case_ids" => [item["id"]],
+            "existing_proof" => [item["id"]],
+            "retained_cases" => [],
+            "rationale" => "Synthetic single-case evidence fixture."
+          }
+        end)
+      )
+      |> update_in(["matrix", "rows"], fn rows ->
+        [row] = rows
+        [%{row | "requirement_ids" => ["FIND-01" | @downstream_requirement_ids]}]
       end)
 
     assert validate(single) == []
@@ -151,6 +266,35 @@ defmodule Lockspire.QualificationLedgerContractTest do
             category
             | "case_ids" => ids,
               "status" => if(ids == [], do: "excluded_fixture", else: "enumerated")
+          }
+        end)
+      end)
+      |> update_in(["cases"], fn cases ->
+        Enum.map(cases, fn case_item ->
+          if case_item["id"] in [first["id"], same_outcomes["id"]],
+            do: %{case_item | "requirement_ids" => ["FIND-01" | @downstream_requirement_ids]},
+            else: case_item
+        end)
+      end)
+      |> put_in(
+        ["matrix", "requirement_dispositions"],
+        Enum.map(@downstream_requirement_ids, fn id ->
+          %{
+            "requirement_id" => id,
+            "disposition" => "reuse_existing",
+            "case_ids" => [first["id"], same_outcomes["id"]],
+            "existing_proof" => [first["id"], same_outcomes["id"]],
+            "retained_cases" => [],
+            "rationale" => "Synthetic equal-outcome identity fixture."
+          }
+        end)
+      )
+      |> update_in(["matrix", "rows"], fn rows ->
+        Enum.map(rows, fn row ->
+          %{
+            row
+            | "classification" => first["cause"],
+              "requirement_ids" => ["FIND-01" | @downstream_requirement_ids]
           }
         end)
       end)
@@ -273,8 +417,8 @@ defmodule Lockspire.QualificationLedgerContractTest do
     |> require(ledger["matrix"]["status"] == "draft", "matrix status must be draft")
     |> require(is_list(rows), "matrix rows must be an array, not null")
     |> require(
-      ledger["matrix"]["requirement_dispositions"] == [],
-      "draft requirement dispositions must be empty"
+      is_list(ledger["matrix"]["requirement_dispositions"]),
+      "requirement dispositions must be an array"
     )
     |> require(is_list(ledger["blockers"]), "blockers must be an array")
     |> require(is_list(ledger["exclusions"]), "exclusions must be an array")
@@ -282,6 +426,12 @@ defmodule Lockspire.QualificationLedgerContractTest do
     |> validate_baseline(baseline, receipt_path, receipt_override)
     |> validate_profiles(ledger["profiles"])
     |> validate_case_ids(cases, rows)
+    |> validate_matrix_rows(cases, rows, ledger["blockers"])
+    |> validate_requirement_dispositions(
+      ledger["matrix"]["requirement_dispositions"],
+      cases,
+      rows
+    )
     |> validate_category_references(ledger["category_coverage"], cases)
     |> validate_cases(cases, receipt_path)
   end
@@ -302,6 +452,10 @@ defmodule Lockspire.QualificationLedgerContractTest do
         |> require(
           revision["required"] == true and nonempty?(revision["rationale"]),
           "empty case set requires scope-revision rationale"
+        )
+        |> require(
+          ledger["matrix"]["replan_required"] == true,
+          "empty case set requires explicit matrix replan"
         )
         |> require(
           Enum.all?(Map.get(ledger, "category_coverage", []), &(&1["case_ids"] == [])),
@@ -464,6 +618,127 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp validate_case_ids(errors, _, _), do: errors
 
+  defp validate_matrix_rows(errors, cases, rows, blockers)
+       when is_list(cases) and is_list(rows) and is_list(blockers) do
+    case_map = Map.new(cases, &{&1["id"], &1})
+
+    Enum.reduce(rows, errors, fn row, acc ->
+      item = Map.get(case_map, row["case_id"], %{})
+      disposition = row["disposition"]
+      readiness = row["readiness"]
+
+      disposition_valid =
+        case disposition do
+          "reuse_existing" ->
+            item["repro"]["status"] == "pass" and readiness == "ready"
+
+          "retain_correction" ->
+            item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
+              item["repro"]["controls_passed"] == true and readiness == "ready"
+
+          "retain_proof" ->
+            item["repro"]["status"] == "pass" and readiness == "ready"
+
+          "exclude" ->
+            nonempty?(row["reason"]) and nonempty?(row["next_owner"]) and readiness == "excluded"
+
+          "blocked" ->
+            readiness == "blocked" and nonempty?(row["blocking_reason"]) and
+              Enum.any?(blockers, &String.contains?(&1, row["case_id"]))
+
+          _ ->
+            false
+        end
+
+      expected_facts_present =
+        nonempty?(item["expected_outcome"]) and nonempty?(item["regression_owner"])
+
+      acc
+      |> require(
+        expected_facts_present,
+        "retained matrix case needs an expected outcome and regression owner"
+      )
+      |> require(disposition_valid, "matrix disposition must match proof and readiness")
+      |> require(
+        row["requirement_ids"] == item["requirement_ids"],
+        "matrix requirement IDs must match case data"
+      )
+    end)
+  end
+
+  defp validate_matrix_rows(errors, _, _, _), do: errors
+
+  defp validate_requirement_dispositions(errors, dispositions, cases, rows)
+       when is_list(dispositions) and is_list(cases) and is_list(rows) do
+    ids = Enum.map(dispositions, & &1["requirement_id"])
+    case_map = Map.new(cases, &{&1["id"], &1})
+    row_map = Map.new(rows, &{&1["case_id"], &1})
+
+    initial_errors =
+      require(
+        errors,
+        ids == @downstream_requirement_ids,
+        "all six downstream requirement IDs must have exactly one sorted disposition"
+      )
+
+    Enum.reduce(dispositions, initial_errors, fn disposition, acc ->
+      requirement_id = disposition["requirement_id"]
+      case_ids = disposition["case_ids"]
+      existing = disposition["existing_proof"]
+      retained = disposition["retained_cases"]
+
+      ids_valid =
+        is_list(case_ids) and is_list(existing) and is_list(retained) and
+          case_ids == Enum.sort(Enum.uniq(case_ids)) and
+          Enum.all?(case_ids, &Map.has_key?(case_map, &1)) and
+          Enum.sort(case_ids) == Enum.sort(Enum.uniq(existing ++ retained)) and
+          Enum.all?(case_ids, fn case_id ->
+            requirement_id in Map.get(case_map, case_id, %{})["requirement_ids"]
+          end)
+
+      proof_valid =
+        Enum.all?(existing, fn case_id ->
+          item = Map.get(case_map, case_id, %{})
+
+          item["repro"]["status"] == "pass" and
+            Map.get(row_map, case_id, %{})["disposition"] == "reuse_existing"
+        end) and
+          Enum.all?(retained, fn case_id ->
+            item = Map.get(case_map, case_id, %{})
+
+            item["cause"] == "protocol" and item["repro"]["status"] == "counterexample" and
+              Map.get(row_map, case_id, %{})["disposition"] == "retain_correction"
+          end)
+
+      disposition_valid =
+        cond do
+          case_ids == [] ->
+            disposition["disposition"] in ["revise", "remove"] and
+              nonempty?(disposition["amendment_ref"]) and nonempty?(disposition["rationale"])
+
+          retained != [] ->
+            disposition["disposition"] == "retain_correction"
+
+          true ->
+            disposition["disposition"] == "reuse_existing" and existing != []
+        end
+
+      acc
+      |> require(
+        ids_valid,
+        "requirement disposition case references must be complete and case-backed"
+      )
+      |> require(proof_valid, "requirement disposition proof must match the case evidence")
+      |> require(
+        disposition_valid and nonempty?(disposition["rationale"]),
+        "requirement disposition needs an explicit rationale"
+      )
+    end)
+  end
+
+  defp validate_requirement_dispositions(errors, _, _, _),
+    do: require(errors, false, "requirement_dispositions must be an array")
+
   defp validate_category_references(errors, categories, cases)
        when is_list(categories) and is_list(cases) do
     ids = Enum.map(cases, & &1["id"])
@@ -588,7 +863,8 @@ defmodule Lockspire.QualificationLedgerContractTest do
         (repro["status"] == "counterexample" and item["cause"] == "protocol" and
            repro["evidence_kind"] == "controlled_http_probe" and
            nonempty?(repro["command"]) and nonempty?(repro["test_path"]) and
-           nonempty?(repro["test_name"]) and File.exists?(Path.join(@repo_root, repro["test_path"])) and
+           nonempty?(repro["test_name"]) and
+           File.exists?(Path.join(@repo_root, repro["test_path"])) and
            nonempty?(repro["assertion_id"]) and repro["controls_passed"] == true and
            is_list(repro["control_ids"]) and repro["control_ids"] != [] and
            is_map(repro["expected_projection"]) and is_map(repro["observed_projection"]) and
@@ -634,7 +910,9 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
     observations_match_result =
       cond do
-        deterministic_pass -> Enum.all?(obs, &(&1["status"] == "pass"))
+        deterministic_pass ->
+          Enum.all?(obs, &(&1["status"] == "pass"))
+
         controlled_counterexample ->
           Enum.count(obs, &(&1["status"] == "counterexample")) == 1 and
             Enum.any?(obs, fn observation ->
@@ -643,8 +921,11 @@ defmodule Lockspire.QualificationLedgerContractTest do
                 observation["probe_observation_id"] == repro["probe_observation_id"]
             end)
 
-        unresolved_not_run -> true
-        true -> false
+        unresolved_not_run ->
+          true
+
+        true ->
+          false
       end
 
     errors
@@ -667,16 +948,20 @@ defmodule Lockspire.QualificationLedgerContractTest do
         Enum.all?(obs, fn observation ->
           nonempty?(observation["observation_id"]) and
             observation["condition_id"] == item["condition_id"] and
-          full_sha?(observation["source_sha"]) and source_revision_exists?(observation["source_sha"]) and
+            full_sha?(observation["source_sha"]) and
+            source_revision_exists?(observation["source_sha"]) and
             nonempty?(observation["input_identity"]) and observation["date"] != nil and
-          observation["status"] in ["pass", "not_observed", "counterexample"] and
-          (observation["status"] != "counterexample" or
-             (controlled_counterexample and observation["assertion_id"] == repro["assertion_id"] and
-                observation["probe_observation_id"] == repro["probe_observation_id"]))
+            observation["status"] in ["pass", "not_observed", "counterexample"] and
+            (observation["status"] != "counterexample" or
+               (controlled_counterexample and observation["assertion_id"] == repro["assertion_id"] and
+                  observation["probe_observation_id"] == repro["probe_observation_id"]))
         end),
       "observations must retain their own source, input, and outcome identities"
     )
-    |> require(observations_match_result, "observations must support the current result at its own source identity")
+    |> require(
+      observations_match_result,
+      "observations must support the current result at its own source identity"
+    )
     |> require(
       is_list(obs) and
         length(Enum.map(obs, & &1["observation_id"])) ==

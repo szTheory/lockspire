@@ -314,7 +314,8 @@
       "priority": "P1",
       "condition_id": "invalid-trailing-slash-callback",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-01"
       ],
       "source": {
         "kind": "repository_test",
@@ -383,7 +384,8 @@
       "priority": "P1",
       "condition_id": "registered-query-callback-error-state",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-02"
       ],
       "source": {
         "kind": "repository_test",
@@ -452,7 +454,8 @@
       "priority": "P1",
       "condition_id": "unsupported-response-mode",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-02"
       ],
       "source": {
         "kind": "repository_test",
@@ -554,7 +557,8 @@
       "priority": "P1",
       "condition_id": "prompt-none-no-visible-session",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-03"
       ],
       "source": {
         "kind": "repository_test",
@@ -628,7 +632,8 @@
       "priority": "P1",
       "condition_id": "stale-auth-time-max-age",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-03"
       ],
       "source": {
         "kind": "repository_test",
@@ -702,7 +707,8 @@
       "priority": "P1",
       "condition_id": "fresh-auth-time-id-token-claim",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "AUTHR-03"
       ],
       "source": {
         "kind": "repository_test",
@@ -771,7 +777,8 @@
       "priority": "P1",
       "condition_id": "same-client-request-uri-replay",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-01"
       ],
       "source": {
         "kind": "repository_test",
@@ -840,7 +847,8 @@
       "priority": "P1",
       "condition_id": "foreign-client-uses-issued-reference",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-01"
       ],
       "source": {
         "kind": "repository_test",
@@ -909,7 +917,8 @@
       "priority": "P1",
       "condition_id": "expired-issued-reference",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-01"
       ],
       "source": {
         "kind": "repository_test",
@@ -978,7 +987,8 @@
       "priority": "P1",
       "condition_id": "required-par-direct-and-pushed-paths",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-02"
       ],
       "source": {
         "kind": "repository_test",
@@ -1052,7 +1062,8 @@
       "priority": "P1",
       "condition_id": "par-reference-plus-conflicting-front-channel-scope",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-02"
       ],
       "source": {
         "kind": "repository_test",
@@ -1186,7 +1197,8 @@
       "priority": "P1",
       "condition_id": "configured-mounted-issuer-metadata",
       "requirement_ids": [
-        "FIND-01"
+        "FIND-01",
+        "PARB-03"
       ],
       "source": {
         "kind": "repository_test",
@@ -1261,83 +1273,268 @@
         "case_id": "A171-001",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-01"
+        ]
       },
       {
         "case_id": "A171-002",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-02"
+        ]
       },
       {
         "case_id": "A171-003",
         "priority": "P1",
         "classification": "protocol",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "retain_correction",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-02"
+        ]
       },
       {
         "case_id": "A171-004",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
       },
       {
         "case_id": "A171-005",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
       },
       {
         "case_id": "A171-006",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "AUTHR-03"
+        ]
       },
       {
         "case_id": "P171-001",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
       },
       {
         "case_id": "P171-002",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
       },
       {
         "case_id": "P171-003",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-01"
+        ]
       },
       {
         "case_id": "P171-004",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-02"
+        ]
       },
       {
         "case_id": "P171-005",
         "priority": "P1",
         "classification": "protocol",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "retain_correction",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-02"
+        ]
       },
       {
         "case_id": "P171-006",
         "priority": "P1",
         "classification": "already_correct_not_reproduced",
-        "next_owner": "Phase 171 executing maintainer"
+        "next_owner": "Phase 171 executing maintainer",
+        "disposition": "reuse_existing",
+        "readiness": "ready",
+        "requirement_ids": [
+          "FIND-01",
+          "PARB-03"
+        ]
       }
     ],
-    "requirement_dispositions": []
+    "requirement_dispositions": [
+      {
+        "requirement_id": "AUTHR-01",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "A171-001"
+        ],
+        "existing_proof": [
+          "A171-001"
+        ],
+        "retained_cases": [],
+        "rationale": "A171-001 is current passing exact-match invalid-callback proof; no valid-callback package behavior is inferred."
+      },
+      {
+        "requirement_id": "AUTHR-02",
+        "disposition": "retain_correction",
+        "case_ids": [
+          "A171-002",
+          "A171-003"
+        ],
+        "existing_proof": [
+          "A171-002"
+        ],
+        "retained_cases": [
+          "A171-003"
+        ],
+        "rationale": "Reuse registered callback error/state proof; correct only the reproduced unsupported response_mode HTTP disposition."
+      },
+      {
+        "requirement_id": "AUTHR-03",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "A171-004",
+          "A171-005",
+          "A171-006"
+        ],
+        "existing_proof": [
+          "A171-004",
+          "A171-005",
+          "A171-006"
+        ],
+        "retained_cases": [],
+        "rationale": "Current source-host prompt=none, max_age and host-owned auth_time evidence remains applicable; Phase 171 schedules no duplicate correction."
+      },
+      {
+        "requirement_id": "PARB-01",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "P171-001",
+          "P171-002",
+          "P171-003"
+        ],
+        "existing_proof": [
+          "P171-001",
+          "P171-002",
+          "P171-003"
+        ],
+        "retained_cases": [],
+        "rationale": "Reuse current PAR client-binding, expiry and one-use proof."
+      },
+      {
+        "requirement_id": "PARB-02",
+        "disposition": "retain_correction",
+        "case_ids": [
+          "P171-004",
+          "P171-005"
+        ],
+        "existing_proof": [
+          "P171-004"
+        ],
+        "retained_cases": [
+          "P171-005"
+        ],
+        "rationale": "Reuse required-PAR proof; correct only the reproduced outer-scope rejection while preserving PKCE and security-profile boundaries."
+      },
+      {
+        "requirement_id": "PARB-03",
+        "disposition": "reuse_existing",
+        "case_ids": [
+          "P171-006"
+        ],
+        "existing_proof": [
+          "P171-006"
+        ],
+        "retained_cases": [],
+        "rationale": "Reuse configured-issuer/source-host discovery metadata proof; external origin/TLS/browser observations remain supplemental and unavailable, not a selected product failure."
+      }
+    ],
+    "replan_required": true,
+    "amendments": []
   },
-  "blockers": [
-    "Phase37 and FAPI2 exact-input supplemental observations remain unavailable pending the pinned Python environment and retry."
-  ],
+  "blockers": [],
   "exclusions": [
     "External OIDF/FAPI suites are supplemental and are not case-level evidence; both current profile wrappers were not launched.",
     "External provider-origin, TLS/proxy, and browser reachability are explicitly excluded from selected protocol cases until a valid exact-input profile can run.",
     "No case changes policy for valid callback behavior or conflates identical outcomes across distinct request conditions."
+  ],
+  "supplemental_limitations": [
+    {
+      "observation_ids": [
+        "phase37-20261024T201228Z"
+      ],
+      "status": "unavailable",
+      "blocking_for_171_freeze": false,
+      "blocks": "The optional external profile wrapper retry only.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "The exact CPython 3.13.15/pip 26.2.1 locked environment is unavailable; no wrapper was launched, classified or issued a receipt.",
+      "owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check and this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_ids": [
+        "fapi2-20261024T201228Z"
+      ],
+      "status": "unavailable",
+      "blocking_for_171_freeze": false,
+      "blocks": "The optional external profile wrapper retry only.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "The exact CPython 3.13.15/pip 26.2.1 locked environment is unavailable; no wrapper was launched, classified or issued a receipt.",
+      "owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check, confirm the disposable provider-origin/TLS/browser path, and run this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    }
   ]
 }
