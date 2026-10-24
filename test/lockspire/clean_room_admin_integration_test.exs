@@ -8,6 +8,53 @@ defmodule Lockspire.CleanRoomAdminIntegrationTest do
   @builder Path.join(@repo_root, "scripts/acceptance/clean_room/build_provider.py")
   @overlay_root Path.join(@repo_root, "test/clean_room/provider_host/lib")
 
+  test "clean-room account resolution fetches the endpoint session before reading it" do
+    namespace = "CleanRoomSessionTest#{System.unique_integer([:positive])}"
+    resolver = Module.concat([namespace, "Lockspire", "AccountResolver"])
+    accounts = Module.concat([namespace, "Accounts"])
+
+    for relative_path <- [
+          "clean_room_provider/accounts.ex",
+          "clean_room_provider/lockspire/account_resolver.ex"
+        ] do
+      source =
+        @overlay_root
+        |> Path.join(relative_path)
+        |> File.read!()
+        |> String.replace("CleanRoomProvider", namespace)
+
+      Code.compile_string(source)
+    end
+
+    on_exit(fn ->
+      for module <- [resolver, accounts] do
+        :code.purge(module)
+        :code.delete(module)
+      end
+    end)
+
+    session_options =
+      Plug.Session.init(store: :cookie, key: "_clean_room_session_probe", signing_salt: "probe")
+
+    endpoint_conn =
+      %{conn(:get, "/lockspire/authorize") | secret_key_base: String.duplicate("s", 64)}
+      |> Plug.Session.call(session_options)
+
+    context = %{return_to: "/continue", interaction_id: "session-probe"}
+
+    assert {:redirect, redirect} = resolver.resolve_current_account(endpoint_conn, context)
+    assert redirect.login_path == "/login"
+    assert redirect.return_to == "/continue"
+
+    authenticated_conn =
+      endpoint_conn
+      |> Plug.Conn.fetch_session()
+      |> Plug.Conn.put_session("account_id", "fixture-account")
+
+    assert {:ok, %{id: "fixture-account"}} =
+             resolver.resolve_current_account(authenticated_conn, context)
+  end
+
   test "clean-room overlay compiles installer routes at default and custom mounts and denies by default" do
     for mount_path <- ["/lockspire", "/teams/ops/identity"] do
       host = install_overlay_host!(mount_path)

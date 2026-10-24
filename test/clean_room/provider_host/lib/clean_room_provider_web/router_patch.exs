@@ -15,6 +15,11 @@ defmodule CleanRoomProviderWeb.Router do
     plug(:accepts, ["json"])
   end
 
+  # The pinned pre-upgrade installer uses this host-owned pipeline for admin routes.
+  pipeline :require_operator do
+    plug(CleanRoomProviderWeb.OperatorAuthorization)
+  end
+
   pipeline :lockspire_protected_api do
     plug(Lockspire.Plug.VerifyToken,
       scopes: ["read:billing"],

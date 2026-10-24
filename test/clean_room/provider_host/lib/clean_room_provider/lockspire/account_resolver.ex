@@ -7,7 +7,9 @@ defmodule CleanRoomProvider.Lockspire.AccountResolver do
 
   @impl true
   def resolve_current_account(%Plug.Conn{} = conn, context) do
-    case Plug.Conn.get_session(conn, "account_id") do
+    account_id = conn |> Plug.Conn.fetch_session() |> Plug.Conn.get_session("account_id")
+
+    case account_id do
       id when is_binary(id) and id != "" -> Accounts.fetch(id)
       _ -> {:redirect, redirect_for_login(conn, context)}
     end
