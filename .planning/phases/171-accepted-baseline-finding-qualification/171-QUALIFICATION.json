@@ -1587,7 +1587,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
-        "sha256": "aa32831de91898a4a870bb41a371968750f2bceb31f731fe9cff397f45f51d88"
+        "sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
@@ -1670,7 +1670,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "d5b940b749cdb217bf096237cb466ed8f6df95812a819ba73e82da491728ed5f",
+    "input_digest": "26648970ba7164cf9fa357c6ff03d819fa7643736bce2127208670e713d5346c",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1760,6 +1760,14 @@
         "previous_sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
         "sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
         "reason": "Final WR-05 verification-count audit; selected cases, expected outcomes, runtime inputs and probe observations unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "previous_sha256": "aa32831de91898a4a870bb41a371968750f2bceb31f731fe9cff397f45f51d88",
+        "sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b",
+        "reason": "Correct key-link orientation: canonical ledger references the explicitly invoked probe; probe intentionally does not mutate/read the ledger. No task behavior, selected case, normative expectation or evidence changed."
       }
     ]
   },
