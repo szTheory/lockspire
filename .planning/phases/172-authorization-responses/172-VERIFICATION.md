@@ -135,5 +135,5 @@ The phase goal is achieved for its selected scope. The unsupported-mode correcti
 
 ---
 
-_Verified: 2026-10-24T23:07:18Z_  
+_Verified: 2026-10-24T23:07:18Z_
 _Verifier: the agent (gsd-verifier)_
