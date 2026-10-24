@@ -5,16 +5,16 @@ milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 171
 current_phase_name: Accepted Baseline & Finding Qualification
 status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
-stopped_at: Accepted main fe38beee receipt be2cdf5f retained; newownedmilestonebranch fromacceptedSHA with44attributedplanningpaths; resume171-01 tracer/contract, thenwaves2/3;0/3plans
-last_updated: "2026-10-24T19:50:10.483Z"
+stopped_at: Completed 171-01-PLAN.md
+last_updated: "2026-10-24T20:08:40.174Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 171 execution started
-state_head: fe38beee987b135e87c99e7aa7f2488b4c8613e8
+state_head: a40ba2af0dd7cb68a1340c4614030de63a98bde6
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
   percent: 0
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 ## Current Position
 
 Phase: 171 (Accepted Baseline & Finding Qualification) — EXECUTING
-Plan: 0 of 3 complete; 171-01 entry gate satisfied, tracer and contract pending
+Plan: 1 of 3 complete; 171-01 entry gate satisfied, tracer and contract pending
 Status: Executing171-01 on accepted main fe38beee; prior delivery and sole original receipt complete; tracer/contract work remains
 Last activity: 2026-10-24 — Phase 171 execution started
 
@@ -40,6 +40,11 @@ Progress: [░░░░░░░░░░] 0% — 0/4 phases complete; 0/3 Phase
 ## Performance Metrics
 
 v1.47: 0 completed phases, 0 completed plans; Phase 171 has 3 verified plans in 3 sequential waves. Execution has not started. Historical velocity/evidence remains in the milestone archives.
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 171 P01 | 17 min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -108,9 +113,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T19:50:10.365Z
-Stopped at: Accepted main fe38beee receipt be2cdf5f retained; newownedmilestonebranch fromacceptedSHA with44attributedplanningpaths; resume171-01 tracer/contract, thenwaves2/3;0/3plans
-Resume file: .planning/phases/171-accepted-baseline-finding-qualification/171-01-PLAN.md
+Last session: 2026-10-24T20:08:40.157Z
+Stopped at: Completed 171-01-PLAN.md
+Resume file: None
 Next: Execute remaining171-01 tracer and contracts; then171-02 and171-03 through normal execute-phase gates. Do not rerun exact-main authority merely for ledger edits.
 
 ### Blockers
@@ -120,3 +125,6 @@ None
 ## Decisions
 
 - [Phase 171]: Maintainer delegated delivery reconciliation; current run owns preservation decisions. Retain historical worktrees and original local main; deliver completed v1.45/v1.46 separately from unfinished v1.47 planning. — Preserve unique history without inferring old ownership; fresh protected checks and exact-main acceptance remain required.
+- [Phase 171]: Preserve and reuse the original accepted-main receipt; do not rerun the exact-main authority after ledger edits.
+- [Phase 171]: Keep source-host, package, and external-suite evidence distinct; explicitly mark package and suite evidence not applicable for A171-001.
+- [Phase 171]: Observed and expected outcomes may be equal when each is separately attributed in the evidence.
