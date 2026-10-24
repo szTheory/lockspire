@@ -3,13 +3,12 @@ gsd_state_version: "1.0"
 milestone: v1.46
 milestone_name: Embedded Host Integration Reliability
 current_phase: 170
-current_plan: Complete (5/5)
 status: completed
-stopped_at: Milestone audit complete — tech_debt; ready for archival
-last_updated: "2026-10-24T15:49:26Z"
+stopped_at: v1.46 archived — awaiting next milestone
+last_updated: "2026-10-24T15:55:51Z"
 last_activity: 2026-10-24
-last_activity_desc: v1.46 audit complete — 15/15 requirements, no blockers, one fixture-cleanup debt item
-state_head: b625572ed0308f75a25db84657683ed99d7671c9
+last_activity_desc: v1.46 archived with local milestone tag; next scope unselected
+state_head: b547e556d7bc40a41a72e6ee0f5f665a5fec33d3
 progress:
   total_phases: 4
   completed_phases: 4
@@ -22,65 +21,33 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-24 after Phase 170)
+See: .planning/PROJECT.md (updated 2026-10-24 after v1.46 completion)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.46 audited — 15/15 requirements; no blockers; ready for archival with one nonblocking fixture-cleanup item
+**Current focus:** Planning next milestone; no scope selected.
 
 ## Current Position
 
-Phase: 170
-Current Plan: Complete (5/5)
-Total Plans in Phase: 5
-Status: All phases complete
-Last activity: 2026-10-24 — v1.46 milestone audit complete (tech_debt)
+Phase: Milestone v1.46 complete (last implementation phase 170)
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-10-24 — v1.46 archived
 
 ## Accumulated Context
 
-Milestone audit [v1.46-MILESTONE-AUDIT.md](v1.46-MILESTONE-AUDIT.md) cross-checks all 15 requirements across traceability, verification and 16 plan summaries. All four verification owners are current/passed; 14/14 integration boundaries and 6/6 flows are complete; Nyquist is compliant and security has 68/68 threats closed. Six retained browser receipts (96 cases) and two lifecycle receipts were freshly validated, and Node passed 8 tests. Verdict is tech_debt for the existing duplicate trace-clause fixture warning only; no blocker or human verification remains. Hosted CI is wired but unobserved. ROADMAP/REQUIREMENTS stale progress prose is reconciled. Next: `$gsd-complete-milestone v1.46`; no archival, tag, merge or publication ran. Original state.json bytes remain preserved.
+v1.46 completed four phases, 16 plans and all 15 requirements. All four verification owners passed immediately before phase archival; [closeout projection](milestones/v1.46-CLOSEOUT.json) preserves that check. The [audit](milestones/v1.46-MILESTONE-AUDIT.md) records 14/14 integration boundaries, 6/6 flows, four Nyquist-compliant phases and 68/68 security threats closed. No phase-verification override or human UAT remains. Archived covered_files paths retain their original checkout meaning; reports are not restamped after relocation.
 
-Phase 170 is verified and complete: five plans in five sequential waves, all HPROOF-01/02/03 requirements and 24 roadmap/plan truths pass; P-170-01/02 are individually closed and A-170-01/02 remain unclassified without added predicates. Final runtime source 7a845ba3e142f3ff1e717d85ebc017d02becfae2 has six source/package/pair/mount-bound browser receipts (16 cases each), separate 43/44 lifecycle checks, and owned cleanup. Locked workload was 562s; floor retry was 156s. The earlier 900s floor timeout remains failed historical evidence. Independent security closed 19/19 threats; code review CR-01 containment was fixed and independently re-reviewed clean. Fresh verifier checks passed Node 8, Python 36, root contracts 19 and floor fixture 44; prior-phase regression gate passed 202 tests. Broad 2,027 checks passed at their recorded earlier source and are not restamped as a new run. No remote CI run or visual/manual signoff is claimed. All milestone implementation phases are complete; audit/archival and publication remain separate. The original unrelated state.json bytes remain preserved.
+Closeout type: override_closeout. Known verification overrides: 1 newly acknowledged, 3 carried forward from a prior close (see STATE.md Deferred Items). The new acknowledgment covers only the existing duplicate record_trace/2 fixture warning; all four phase verification owners passed immediately before archival. Historical suppressed records retain their verdicts.
 
-### Decisions
-
-Phase 169 completed five plans in three waves: generated deny-first native integration, checksum-controlled historical upgrades, read-only previews and retryable process-interruption recovery, exact compiled-route diagnostics, demo/clean-room convergence and consistent guidance. Final sequential evidence passed 160 phase tests, 63 prior-phase regression tests and 2,022 broad checks. All four HDX requirements and 24 plan truths passed independent goal verification; security closed 22/22 threats and all five review findings were fixed. The three descriptor-less prohibitions have individual automated closure records, with zero human UAT pending. A-169-HDX-04 remains an unclassified assumption without an additional predicate. Package/browser/socket/exact-floor/CI proof remains Phase 170.
-
-Phase 168 Plans 01–03 passed their focused runtime checks and the final `mix test.fast` selector. Coverage includes current host policy at HTTP, disconnected/connected entry, cached-response connected rejoin, public/consent cross-session entry, every admin destination and native params patches. All four HAUTH requirements are complete. Three unspecified probe assumptions remain flagged; both descriptor-less prohibitions have individual automated/source-evidence closure records. Browser/socket, packaged and exact-floor proof remains Phase 170; install/demo convergence remains Phase 169.
-
-Phase 167 completed three plans: native host-expanded routes, required host pipelines/current-identity hooks, fixed :lockspire_admin session, mount alignment, 29-route parity and public/consent separation. Fresh verification passed 48 tests and all 22 truths; security closed 12/12 threats and code review found no issues. The two descriptor-less prohibition checkpoints were individually resolved through automated tests and delegated evidence review in 167-UAT.md. Canonical verification and the combined completion predicate passed; no override or human pass was assumed.
-
-The user reaffirmed automation-first verification on 2026-10-22: shift checks left, reuse CI coverage, hand off only genuinely necessary human work, and record closures to prevent repeat UAT. Follow VERIFICATION-POLICY.md and PROJECT.md. Missing check descriptors require classification/evidence, not an automatic maintainer prompt. Full denial proof, install/upgrade convergence and transport/package/exact-floor proof retain their Phase 168–170 owners.
-
-v1.46 scope and research are confirmed; all 15 requirements were approved on 2026-10-22. Approved phases 167–170 cover routing, host authorization, installation/upgrade convergence and packaged/runtime proof. The user approved the roadmap on 2026-10-22. Mechanical integration and automated acceptance only; no visual redesign, identity system or publication scope. Research was performed inline; no new subagents were spawned.
-
-v1.45 decisions and validated requirements are recorded in PROJECT.md and the archived phases. Full pre-close context, performance metrics and historical concerns are preserved in [v1.45-STATE.md](milestones/v1.45-STATE.md). All five phase verification owners passed immediately before archival; their original fingerprint paths remain historical checkout paths and were not restamped after the move.
-- [Phase 168]: Keep mutable host identity, session and staff policy in test-host authority; independently re-resolve it at HTTP and LiveView boundaries.
-- [Phase 168]: Prove connected denial from a successful static response using live(conn) after host-policy withdrawal.
-- [Phase 168]: Use public live(sent_conn) to prove a new server-side connected join checks current host authority; Phase 170 owns browser/socket transport proof.
-- [Phase 168]: Re-resolve current host authority at every params transition through the existing on_mount seam; keep identity, roles, events, and logout policy host-owned.
-- [Phase 168]: Model a cross-session redirect and fresh HTTP/live entry separately; do not claim browser transport proof.
-- [Phase 170]: Validate page mount alignment at HTTP entry; use real signed LiveView transport and current host authority at tested lifecycle boundaries.
-- [Phase 170]: Keep exact dependency pairs, package provenance, server lifecycle and browser evidence distinct; retain local/remote runtime limits.
-- [Phase 170]: Keep synthetic identity/session authority supervised and disposable, with unchanged generated deny defaults and host ownership.
-- [Phase 170]: Apply strict nested diagnostic allowlists, independently guarded cleanup, finite owned children and lifecycle database disposal.
-- [Phase 170]: Contain artifact paths before mutation; reject traversal, symlinks and CR/LF and preserve failed/stale evidence as failed.
-
-### Blockers/Concerns
-
-No active phase blocker or human UAT remains. The inline verification-only refresh for Phases 167–169 passed at source aaca516d: 211 combined tests, 6 compatibility tests and 36 Python harness tests. Their covered-input fingerprints were regenerated through the CLI; all four phase verification owners now report passed. Milestone audit and archival remain separate. Hosted CI and its expected BEAM versions are unobserved; no branch protection or publication action ran. Run shared generated-host selectors sequentially with fresh databases and a writable Hex home. Phase 170's cold floor timeout remains failed historical evidence; same-source retry passed in 156s. Concurrent same-user filesystem replacement protection is not claimed. Historical summaries and the original unrelated state.json bytes remain unchanged.
-
-No active Phase 169 blocker. Transaction evidence covers process interruption and ordinary errors; unsupported hard links/cross-filesystem publication refuse safely. Power-loss durability, directory fsync, hostile same-user replacement and simultaneous writers are not claimed. Run test selectors sequentially because they share a generated-host filesystem fixture, and use fresh disposable test databases to avoid persistent-row contamination. The unrelated original state.json bytes remain preserved.
-
-No active Phase 167 blocker. Its two original prohibition flags are closed in the UAT ledger; do not recreate them from historical plan/report text without a relevant change or contradictory evidence. A-167-MNT-02 remains an unclassified probe without an additional acceptance predicate; the written mount criteria are verified. Preserve evidence boundaries for Phases 168–170.
-
-No active v1.45 implementation blocker. Its audit retains eight nonblocking debt entries and explicit undefined-probe/visual limits. [Audit](milestones/v1.45-MILESTONE-AUDIT.md). Latest verified public package remains 1.6.1; publication of the lifetime candidate is separate. Historical Phase 138/140/143 and visual exceptions are preserved in the archived pre-close state and the disclosure table below.
+Local package/browser/runtime receipts retain exact source and package identities. Hosted CI, minimum CI BEAM and branch protection remain unobserved. Publication is separate; no remote refs were updated. Original unrelated state.json bytes remain preserved and excluded from commits. Older quick tasks remain in place. Detailed phase decisions and evidence remain in [pre-close state](milestones/v1.46-STATE.md), [phase archive](milestones/v1.46-phases/) and PROJECT.md.
 
 ### Pending Todos
 
-- Phase 138: UAT #100 remains pending an authorized live snapshot refresh; current inventory dispositions remain proposal-only until exact-target revalidation and action authority.
-- Phase 140: WR-01 remains deferred with unknown cause; reopen only if the exact sealed Release Please relation rejection recurs, then capture stage-specific evidence.
-- Future bounded conformance: supplemental OIDF/FAPI evidence remains redacted, supplemental, and non-certifying.
+- SEC-01, KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners; next scope is unselected.
+- Phase 138 UAT #100 remains pending an authorized live snapshot refresh; inventory dispositions remain proposal-only.
+- Phase 140 WR-01 stays deferred unless the exact sealed Release Please relation rejection recurs.
+- Supplemental OIDF/FAPI evidence remains bounded, redacted and non-certifying.
 
 ### Quick Tasks Completed
 
@@ -118,6 +85,8 @@ Items acknowledged and deferred at milestone close; acknowledgment preserves the
 
 | todos | 2026-10-19-keys-reencrypt-via-repo-runner.md | Deferred follow-up after approved v1.44 closeout; not resolved | 2026-10-20 | v1.44 |
 
+| deferred_items | 168/deferred-items.md: The test-host fixture has duplicate `record_trace/2` clauses and emits compiler warnings. status: open **Found:** Present before Phase 168 edits; unrelated to the authorization behavior. **Scope:** Deferred to a fixture cleanup task if warning cleanup is needed. | acknowledged for archival; warning unresolved | 2026-10-24 | v1.46 |
+
 ### v1.45 Accepted Debt
 
 The audit’s eight entries are accepted for archival: Phase 163 wave0 bookkeeping; historical TDD classifier limits in 164-06 and 165-04; optional Phase 165 confirmation copy/rendered accessibility review; three undefined probes (A-EDGE-16/17/19); two descriptor-less prohibitions still flagged-unverified; eight missing historical SUMMARY completion fields; and the stale original REQUIREMENTS footer. The archived requirements footer is reconciled at closeout, while the original remains in git history. No historical RED evidence, passing probe or subjective review is invented.
@@ -127,19 +96,6 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-24
-Stopped at: Verification refresh complete — ready for milestone audit
+Stopped at: v1.46 archived; awaiting next milestone
 Resume file: None
-Next: `$gsd-audit-milestone` before archival. Verification-only refresh for Phases 167–169 passed inline; all four reports are current. See [refresh evidence](verification-refresh-167-169.md). Phase 170 retains its existing package/browser/exact-floor proof; no new remote CI or visual approval is claimed. Original unrelated state.json bytes are preserved.
-
-## Performance Metrics
-
-| Plan | Duration | Tasks | Files |
-|------|----------|-------|-------|
-| Phase 168 P01 | 8m | 2 tasks | 5 files |
-| Phase 168 P02 | 8m | 2 tasks | 1 files |
-| Phase 168 P03 | 18m | 2 tasks | 6 files |
-| Phase 170 P01 | 114m | 2 tasks | 13 files |
-| Phase 170 P02 | 50m | 2 tasks | 10 files |
-| Phase 170 P03 | 38min | 2 tasks | 11 files |
-| Phase 170 P04 | 31min | 2 tasks | 8 files |
-| Phase 170 P05 | 3h 41m | 2 tasks | 9 files |
+Next: `$gsd-new-milestone` — select scope and define fresh requirements, continuing phase numbering at 171.

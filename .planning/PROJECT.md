@@ -14,7 +14,20 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Closeout:** All five phase verification owners passed before archival. The audit is tech_debt with 18/18 requirements, 29/29 links and 6/6 flows. Recorded evidence limits and bookkeeping are accepted for archival; no undefined probe or unperformed visual review is relabeled as passing. See [audit](milestones/v1.45-MILESTONE-AUDIT.md), [roadmap](milestones/v1.45-ROADMAP.md) and [requirements](milestones/v1.45-REQUIREMENTS.md). Latest public package remains verified 1.6.1; this planning completion does not publish the candidate.
 
-## Current Milestone: v1.46 Embedded Host Integration Reliability
+## Completed Milestone: v1.46 Embedded Host Integration Reliability (Completed 2026-10-24)
+
+**Delivered:** Native Phoenix admin integration, host-owned authorization, safe install/upgrade convergence and reproducible packaged compatibility proof. Phases 167–170 completed all 16 plans and 15 requirements. All four phase owners passed immediately before archival; integration passed 14/14 boundaries and 6/6 flows, with 68/68 security threats closed. Local Chrome/CDP receipts cover 96 cases across two exact dependency pairs and three mounts; separate lifecycle receipts contain 43/44 checks. Hosted CI remains unobserved.
+
+**Closeout:** Audit tech_debt with no blockers. The duplicate trace-clause fixture warning is accepted for archival and remains deferred; no phase-verification verdict was overridden. See [audit](milestones/v1.46-MILESTONE-AUDIT.md), [roadmap](milestones/v1.46-ROADMAP.md) and [requirements](milestones/v1.46-REQUIREMENTS.md). Package publication is separate.
+
+## Next Milestone Goals
+
+No next scope is selected. Define fresh requirements through `$gsd-new-milestone`, continuing phase numbering at 171. SEC-01, KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt remain separate candidates with their existing owners.
+
+<details>
+<summary>Original v1.46 intent and execution handoff</summary>
+
+### Original milestone: v1.46 Embedded Host Integration Reliability
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire’s admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
@@ -29,6 +42,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 **Delivered through Phase 170 (2026-10-24):** Native host routing, host-owned authorization, install/upgrade convergence and packaged compatibility proof are complete. Phase 170 proves 16 browser cases at each of three mounts on both exact Phoenix/LiveView pairs (96 cases), with separate 43/44 lifecycle checks. Final independent verification passed all 24 roadmap/plan truths and all three HPROOF requirements; security closed 19/19 threats and code re-review has no open findings. Fresh prior-phase regressions passed 202 tests. The broad 2,027-check result retains its recorded source, separate from later focused wrapper-containment checks. Local Elixir/OTP results do not claim hosted CI execution; milestone audit and publication remain separate.
 
 **Deferred:** Dedicated client-secret-JWT verifier encryption (SEC-01), KMS/Vault (KEK-04), paged key-maintenance dry-run, legacy-plaintext fixture maintenance and unrelated v1.45 debt remain separate work. Package publication and remote ref updates are separate actions.
+
+</details>
 
 <details>
 <summary>Original v1.45 intent (2026-10-20)</summary>
@@ -172,7 +187,7 @@ The user reaffirmed this default during Phase 167 verification on 2026-10-22 and
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability has completed Phases 167–170 and is ready for milestone audit; v1.45 has completed its implementation and proof, with package publication still separate.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is complete, audited and archived (2026-10-24): 4 phases, 16 plans, 15/15 requirements. The next milestone is unselected; publication of v1.45/v1.46 work remains separate.
 
 v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
@@ -356,13 +371,11 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No implementation requirements remain active for v1.46. Before milestone archival, refresh the stale phase 167–169 verification owners after shared-source changes, then run the milestone audit. Remote CI observation and publication remain separate actions.
-
-All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-phase roadmap](ROADMAP.md) was also approved on 2026-10-22; All four implementation phases (167–170) are complete; milestone audit/archival has not run.
+No implementation requirement remains active. All 15 v1.46 requirements are validated and [archived](milestones/v1.46-REQUIREMENTS.md). Fresh requirements belong to the next milestone.
 
 ### Validated
 
-- ✓ Packaged-host transport, exact-version runtime and required CI wiring — v1.46 HPROOF-01..03, Phase 170; six cells × 16 browser cases, 43/44 lifecycle checks, 202 prior-phase regressions, 19/19 security threats closed and no human UAT. See [verification](phases/170-packaged-host-and-compatibility-proof/170-VERIFICATION.md). Hosted CI remains unobserved.
+- ✓ Packaged-host transport, exact-version runtime and required CI wiring — v1.46 HPROOF-01..03, Phase 170; six cells × 16 browser cases, 43/44 lifecycle checks, 202 prior-phase regressions, 19/19 security threats closed and no human UAT. See [verification](milestones/v1.46-phases/170-packaged-host-and-compatibility-proof/170-VERIFICATION.md). Hosted CI remains unobserved.
 
 - ✓ Safe generated installation/upgrade, truthful structural diagnostics and consistent demo/docs — v1.46 HDX-01..04, Phase 169; 160 phase tests, 63 prior-phase regression tests, 2,022 broad checks, 22/22 security threats closed, clean final review and zero human UAT checks. Package/browser/exact-floor/CI proof remains Phase 170.
 - ✓ Host-owned HTTP, disconnected/connected entry, cached-session rejoin, cross-session/admin navigation and native patch authorization — v1.46 HAUTH-01..04, Phase 168; 45 focused tests, 1,977 broad checks, 15/15 security threats closed, clean code review and zero human UAT checks. Browser/socket and exact-floor proof remains Phase 170.
@@ -483,6 +496,8 @@ All 15 [requirements](REQUIREMENTS.md) were approved on 2026-10-22. The [four-ph
 
 ## Context
 
+v1.46 completed on 2026-10-24 with native host routes, current host-policy boundaries, safe generated upgrades and packaged proof. Library/template Elixir contains 56,656 lines (tracked `.ex`/`.exs` under lib/ and priv/, including comments and blanks). No library dependency was added. Hosted CI remains unobserved; local exact dependency-pair and browser proof retains its source identity.
+
 v1.45 completed on 2026-10-22. The checked-in Elixir library contains 53,777 lines in 285 `lib/` files at the proven source candidate; test Elixir contains 92,299 lines in 384 files. Counts include comments and blanks. No dependency was added for lifetime enforcement. Current supported host composition and upgrade limits are documented in `docs/upgrading/client-lifetimes.md`. The audit retains bookkeeping, historical TDD and undefined-probe limits; public package publication remains separate.
 
 Lockspire is a greenfield OSS library project with a substantial prep corpus in `prompts/` defining product thesis, domain language, market positioning, implementation shape, operator workflows, telemetry, release readiness, and security posture. The core target is Phoenix SaaS teams that need provider-side OAuth/OIDC for partner ecosystems, integration marketplaces, or Auth0 exit paths. The project should follow Doorkeeper-style install DX, node-oidc-provider-style protocol seriousness and extensibility, OpenIddict-style separation between core, storage, and host seams, and Rodauth-style security defaults.
@@ -593,6 +608,12 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Encrypt in place with a self-describing envelope header and no schema migration or decrypted-key cache | Avoids host migration cost and keeps plaintext out of memory caches; the `private_jwk_encrypted` name becomes true | ✓ Good — SAFE-01 gate green |
 | Enforce `legacy_plaintext: :reject` and KEK rotation with each node's boot-cached key set, with ordering documented rather than coordinated | Avoids a cross-node coordination mechanism; `--check` and the upgrade guide gate the switch | ⚠️ Revisit — accepted risk AR-156-01 if operators report rolling-restart issues |
 | Route bare-mix DB tasks through `TaskError.run/2` wrapping `RepoRunner.run/2`, with fixed classifier phrases instead of exception text | Real failure reasons without leaking SQL, host, values or secrets; reuses the pool when the host already runs it | ✓ Good — Phase 158; review fixes narrowed the migrate hint to undefined table/column and raised the log guard to `:warning` |
+| Expand one shared admin route inventory inside the host router with fixed :lockspire_admin session | Preserve native path signing and 29-route parity without copying routes or Phoenix internals | ✓ Good — v1.46 routing and package/browser proof |
+| Require host HTTP policy and current-identity hooks; re-resolve policy on navigation | Keep accounts, login, roles, logout and event policy host-owned | ✓ Good — denied and allowed lifecycle/browser boundaries; no continuous revocation claim |
+| Generate deny-first host-owned policy; checksum-authorize managed conversion and create host files only when absent | Preserve adopter ownership while making upgrades retryable and previews read-only | ✓ Good — v1.46 install/upgrade and interruption proof |
+| Validate exact compiled first-match routing and state structural proof limits | Detect shadowed/legacy/incomplete wiring without claiming arbitrary policy correctness | ✓ Good — v1.46 verifier contracts |
+| Keep lifecycle and Chrome/CDP receipts separate and bind source/package/pair/mount/run identities | Establish transport/runtime behavior and fail visibly on missing or malformed proof | ✓ Good — v1.46 six-cell matrix and containment review |
+| Preserve local/hosted evidence limits and historical verification paths at archival | Avoid converting local success or relocation into unsupported CI or new runtime claims | ✓ Good — v1.46 audit and closeout projection |
 
 ## Evolution
 
@@ -613,4 +634,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-24 after Phase 170 verified execution and handoff*
+*Last updated: 2026-10-24 after v1.46 milestone completion*

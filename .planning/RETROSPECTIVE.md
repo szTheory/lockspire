@@ -461,12 +461,44 @@ Freeze source before final CI/security/receipt binding; regenerate dependent ver
 - Timeline: two calendar days (2026-10-20 → 2026-10-22); 253 commits from first contract plan through final audit.
 - Evidence: seven required CI contexts successful; package 49/49; security 25/25; all five phase owners passed pre-close. Historical TDD classifier and rendered-review limits remain in the audit.
 
+## Milestone: v1.46 — Embedded Host Integration Reliability
+
+**Completed:** 2026-10-24
+**Phases:** 4 | **Plans:** 16 | **Planned task elements:** 32 (CLI SUMMARY aggregate: 30)
+
+### What Was Built
+
+Native host-expanded admin routes, current host-owned authorization, deny-first installation, safe checksum-controlled upgrades, compiled-route diagnostics and package/browser proof across locked and exact-floor pairs.
+
+### What Worked
+
+A retained forward-only negative control and literal 29-route baseline anchored the repair. Current authority was independently checked at HTTP, join, cached-response rejoin and params boundaries. Candidate-bound real Chrome receipts established transport behavior beyond LiveViewTest. Independent security/review found and closed cleanup, redaction and artifact-path containment faults.
+
+### What Was Inefficient
+
+Shared-source edits invalidated earlier verification fingerprints, requiring a final verification-only refresh. Generated-host selectors shared filesystem fixtures and needed sequential runs with disposable databases. A cold floor run hit the 900-second limit; its failed evidence was retained and a same-source retry passed. Missing terminal UAT metadata created a false closeout gap; varied task metadata produced 30 CLI tasks versus 32 PLAN elements.
+
+### Patterns Established
+
+Use native host routing and one shared inventory, retain deny-by-default host policy ownership, and distinguish structural diagnostics from host authorization behavior. Separate lifecycle and browser receipts; require exact source/package/pair/mount/run bindings and independently guarded cleanup. Preserve local/remote and historical evidence boundaries at archival.
+
+### Key Lessons
+
+Freeze source before final cross-phase fingerprints. Run shared generated-host selectors sequentially. Test signal, timeout, malformed receipt and path-containment failures as first-class harness behavior. Add terminal ledger metadata when closing automated acceptance. Keep milestone tags distinct from package publication and leave older quick tasks in place unless opted into archival.
+
+### Cost Observations
+
+- Model mix and session totals: not reliably recorded; no percentages inferred.
+- Timeline: two calendar days (2026-10-22 → 2026-10-24), 147 commits through the milestone audit.
+- Evidence: all four phase owners passed pre-close; 96 browser cases and separate 43/44 lifecycle checks at recorded sources; 68/68 security threats closed. Hosted CI remains unobserved.
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
 
 | Milestone | Sessions | Phases | Key Change |
 |-----------|----------|--------|------------|
+| v1.46 | N/A | 4 | Native host routing, current authority, exact-pair real-browser proof and failure-tested receipt containment. |
 | v1.45 | N/A | 5 | Selected contract, actual lock waits, candidate-bound package proof and verification dependency ordering. |
 | v1.43 | N/A | 3 | Closed CR-01 with envelope encryption at rest, a checked migration path, and one structural leak matcher shared by every redaction test. |
 | v1.42 | N/A | 4 | Admin UI clarity backed by CI page/contrast contracts plus a local-only, navigate-only browser evidence harness. |
@@ -484,6 +516,7 @@ Freeze source before final CI/security/receipt binding; regenerate dependent ver
 
 | Milestone | Tests | Coverage | Zero-Dep Additions |
 |-----------|-------|----------|-------------------|
+| v1.46 | 96 recorded browser cases, separate 43/44 lifecycle checks; four phase owners passed pre-close | Four Nyquist-compliant phases; hosted CI unobserved | Shared route inventory, host seams and bounded receipt harness |
 | v1.45 | Seven required CI contexts; 9 package scenarios/49 checks; 69 mapped cases; all five phase owners passed pre-close | Five Nyquist-compliant phases; undefined probes remain explicit | Current-row lifetime guards, declared adapter composition and strict receipts |
 | v1.43 | Sentinel key-material leak tests across repo telemetry, logs, admin and operator output; real-concurrency reencrypt proofs; upgrade-journey integration test; demo and clean-room `--check`/doctor CI checks | High | OTP `:crypto` envelope cipher, key-material matcher, reencrypt engine |
 | v1.42 | 1573 fast-suite tests; page contract on every admin route; computed contrast contract; 928 local browser checks | High | Page contract helper, contrast assertions, local agent-browser route-proof harness |

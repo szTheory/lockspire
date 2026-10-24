@@ -1,5 +1,31 @@
 # Milestones
 
+## v1.46 Embedded Host Integration Reliability (Completed: 2026-10-24)
+
+**Delivered:** Native Phoenix admin integration, host-owned authorization, safe install/upgrade convergence and reproducible packaged compatibility proof.
+
+**Phases completed:** 4 phases (167–170), 16 plans, 32 planned task elements. The CLI aggregates 30 tasks from varied SUMMARY metadata; 32 is the PLAN task-element count, not measured execution telemetry. All 15 requirements are satisfied.
+
+**Key accomplishments:**
+- Host-native admin routing shares all 29 existing routes across default, nested and root mounts, with independent public and consent routing.
+- Current host authority protects HTTP, disconnected/connected entry, cached-response rejoin and navigation while staff identity and policy remain host-owned.
+- Generated installs deny by default; checksum-controlled upgrades preserve host files, provide read-only previews and recover process interruptions.
+- Compiled-route diagnostics, adoption demo, clean-room fixtures and adopter guidance use the same supported integration.
+- Candidate-installed Chrome/CDP proof covers six exact-version/mount cells with 16 cases each, plus separate 43/44 lifecycle checks.
+- Existing required CI jobs invoke bounded proof commands with strict source/package-bound receipts, failure propagation, redaction and owned cleanup; hosted execution remains unobserved.
+
+**Stats:** 195 files changed, 24060 insertions(+), 1285 deletions(-) (including planning); 147 commits in `v1.45..b547e556d7bc40a41a72e6ee0f5f665a5fec33d3`; 2026-10-22 → 2026-10-24 (two calendar days). Library/template Elixir contains 56,656 lines including comments and blanks.
+
+**Closeout:** override_closeout. Known verification overrides: 1 newly acknowledged, 3 carried forward from a prior close (see STATE.md Deferred Items). The new acknowledgment covers only the existing duplicate record_trace/2 fixture warning; all four phase verification owners passed immediately before archival. Historical suppressed records retain their verdicts.
+
+**Audit:** tech_debt, no blockers; 15/15 requirements, 14/14 integration boundaries, 6/6 flows, all four phases Nyquist-compliant and security closed 68/68 threats. Local browser evidence covers 96 cases; lifecycle evidence is distinct. Hosted CI and minimum CI BEAM remain unobserved.
+
+**Archives:** [roadmap](milestones/v1.46-ROADMAP.md), [requirements](milestones/v1.46-REQUIREMENTS.md), [audit](milestones/v1.46-MILESTONE-AUDIT.md), [phases](milestones/v1.46-phases/), [pre-close state](milestones/v1.46-STATE.md), [pre-close projection](milestones/v1.46-CLOSEOUT.json). Tag v1.46 marks local planning completion; no publication or remote ref update.
+
+**Next:** `$gsd-new-milestone` to select scope and create fresh requirements. SEC-01, KEK-04, OPS-03 and existing debt retain their owners. Older quick tasks stay in place.
+
+---
+
 ## v1.45 DCR Lifetime Enforcement (Completed: 2026-10-22)
 
 **Delivered:** Consistent app, shared-secret and management-token lifetimes, atomic rotation/recovery, compatible host upgrades and candidate-bound executable proof.

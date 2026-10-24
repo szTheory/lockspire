@@ -51,7 +51,7 @@ covered_files:
   - test/lockspire/web/live/admin/admin_route_integration_test.exs
   - test/lockspire/web/live/admin/device_authorizations_live_test.exs
   - test/lockspire/web/live/admin/interactions_live_test.exs
-covered_digest: "v3:sha256:49f6876c77e90751e27ede65aef1962da8fc961a47bce671d3fab6824f2dd39c"
+covered_digest: "v3:sha256:4c49358a44761765ce02246c66e6cca4e28e0555e2c2b609b6e405938f7f0f5b"
 behavior_unverified: 0
 overrides_applied: 0
 human_verification: []
@@ -217,3 +217,7 @@ No blocking gaps. All roadmap criteria, 20 plan truths, 3 requirements and both 
 
 _Verified: 2026-10-24T10:03:44Z_
 _Verifier: the agent (gsd-verifier)_
+
+## Closeout metadata reconciliation — 2026-10-24
+
+The completed automated UAT ledger now declares `status: complete`; its entire evidence body is unchanged. The closeout scan reports no remaining UAT gap. All implementation, test, receipt and workflow bytes are unchanged from the milestone audit. The covered-input digest was recomputed with the owning CLI solely for this metadata correction; recorded runtime results and their source limits are preserved.
