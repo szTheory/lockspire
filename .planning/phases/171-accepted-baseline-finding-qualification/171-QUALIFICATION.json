@@ -1585,7 +1585,7 @@
       {
         "path": ".planning/ROADMAP.md",
         "selector": "phases-172-173-contract",
-        "sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af"
+        "sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
@@ -1649,7 +1649,7 @@
       },
       {
         "path": "test/lockspire/web/authorize_controller_test.exs",
-        "sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+        "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05"
       },
       {
         "path": "test/integration/phase15_par_authorization_e2e_test.exs",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "c20ab6075973d27eb0e15d9de70910fd25ddde8bf2e5864d653cd1fab3e73c93",
+    "input_digest": "294a30ba5593c55ecb35e475f3e9f26897bbc448b15d4d90cc3d22b271d7da0c",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1848,6 +1848,25 @@
         "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
         "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
         "reason": "Record final measured task 171-04 check output and completed task statuses before final identity refresh; no case, profile, receipt, probe or runtime input changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "d7fa46e209a71b25ab8ab380f2ad707d494f329c",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af",
+        "sha256": "029eb665d728efda5ea6d348ac562d2e7948e7ed881170b55b4a2ced6ea2b08f",
+        "reason": "Reconcile the Phase 172–173 planning selector after the plan/count update committed in 6e160651; no runtime source was changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "d7fa46e209a71b25ab8ab380f2ad707d494f329c",
+        "path": "test/lockspire/web/authorize_controller_test.exs",
+        "previous_sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590",
+        "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05",
+        "reason": "Add the durable A171-003 Router regression and valid query-mode control with actual RED/GREEN proof."
       }
     ],
     "metadata_audits": [
