@@ -27,7 +27,7 @@ Independent gsd-security-auditor reviewed the plan-authored register at `a45dc1e
 | Threat ID | Category | Component | Severity | Disposition | Mitigation evidence | Status |
 |-----------|----------|-----------|----------|-------------|---------------------|--------|
 | T-167-01 | Elevation of privilege | Required host authorization wiring | high | mitigate | admin_routes.ex:77,100,126; admin_route_integration_test.exs:178 explicitly tests disconnected/connected socket state, missing/deleted identity, halt and host redirect before mount sentinel | closed |
-| T-167-02 | Tampering | Path and mount alignment | high | mitigate | admin_routes.ex:95,225,246; admin_mount.ex:9,20,45 validate path and guard both entry points | closed |
+| T-167-02 | Tampering | Path and mount alignment | high | mitigate | Current AdminRoutes path validation and AdminMount.call/2 guard the original HTTP page path before signed HTML; on_mount accepts transport URI, with current host hooks first. See 2026-10-24 refresh boundary below | closed |
 | T-167-03 | Spoofing | Native session/options/hooks | high | mitigate | admin_routes.ex:80,102,163; admin_routes_compile_test.exs:129,162,180; native duplicate/nesting rules | closed |
 | T-167-04 | Information disclosure | Configuration/entry errors | medium | mitigate | admin_mount.ex:20,49 ignores session payload; config.ex:125 and config_test.exs:54 reject malformed values safely | closed |
 | T-167-05 | Elevation of privilege | Prefixed action/navigation paths | high | mitigate | admin_route_integration_test.exs:357,430,515,574 covers connected route matrix, navigation, recovery and root variants | closed |
@@ -70,3 +70,15 @@ The repair's direct socket assertions prove callback behavior for both connectio
 | Threats found | 12 |
 | Closed | 12 |
 | Open | 0 |
+
+## Source refresh 2026-10-24T15:38:53Z
+
+Inline L1 recheck at `aaca516db3f33409feb5f4709887ba14a87a51b1` retained the planned threat register and
+zero open threats. Required host authorization, exact native route/session
+composition and redacted diagnostics remain wired; the fresh combined tests
+exercise their behavior. HTTP page entry is the mount-alignment boundary;
+current host policy is independently rechecked at connected lifecycle boundaries.
+Phase 170's correction removes an invalid WebSocket page-path lookup and does
+not add library-owned identity or an allow-all host seam. Existing accepted-risk
+and proof-scope limits remain unchanged. No new risk acceptance or independent
+security-agent audit is claimed. See the shared refresh ledger for commands.

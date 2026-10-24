@@ -72,3 +72,23 @@ Fresh remediation verification: 6 targeted checks, 44 focused tests and 1,976 br
 At `50035272236cd84ce9adc381bef0393f431ee5b7`, the auditor independently inspected WR-01's final delta. The no-store HTTP fallback now calls Identity.resolve/1 (fixture:163), which permits only staff-1 (fixture:400); unknown/deleted/missing/empty controls at integration:1205 receive 403 before callbacks and protected output. Mutable authority checks, the params guard, and the other fourteen mitigations are unchanged. All 15 threats remain closed, threats_open: 0. No source change occurred during this audit.
 
 Final source verification: 45 focused tests and 1,977 broad checks passed (6 skipped, 497 excluded), with compile, format and complete phase diff checks green. This supersedes earlier source/count attribution for current evidence; earlier audit rows remain historical.
+
+## Security Audit 2026-10-24
+
+| Metric | Count |
+|---|---|
+| Threats found | 15 |
+| Closed | 15 |
+| Open | 0 |
+
+## Source refresh 2026-10-24T15:38:53Z
+
+Inline L1 recheck at `aaca516db3f33409feb5f4709887ba14a87a51b1` retained the planned threat register and
+zero open threats. Required host authorization, exact native route/session
+composition and redacted diagnostics remain wired; the fresh combined tests
+exercise their behavior. HTTP page entry is the mount-alignment boundary;
+current host policy is independently rechecked at connected lifecycle boundaries.
+Phase 170's correction removes an invalid WebSocket page-path lookup and does
+not add library-owned identity or an allow-all host seam. Existing accepted-risk
+and proof-scope limits remain unchanged. No new risk acceptance or independent
+security-agent audit is claimed. See the shared refresh ledger for commands.

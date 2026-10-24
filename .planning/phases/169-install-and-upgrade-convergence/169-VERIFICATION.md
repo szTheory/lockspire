@@ -1,73 +1,80 @@
 ---
 phase: 169-install-and-upgrade-convergence
-verified: 2026-10-23T23:32:10Z
+verified: 2026-10-24T15:38:53Z
 status: passed
 score: 4/4 roadmap truths verified; 24/24 plan truths verified
 covered_files:
-  - .planning/VERIFICATION-POLICY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-01-PLAN.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-01-SUMMARY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-02-PLAN.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-02-SUMMARY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-03-PLAN.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-03-SUMMARY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-04-PLAN.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-04-SUMMARY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-05-PLAN.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-05-SUMMARY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-EXECUTION-GATES.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-PATTERNS.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-RESEARCH.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-REVIEW-DISPOSITION.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-REVIEW-FIX.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-REVIEW.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-SECURITY.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-UAT.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-UI-REVIEW.md
-  - .planning/phases/169-install-and-upgrade-convergence/169-VALIDATION.md
-  - PRODUCT.md
-  - README.md
-  - docs/adoption-demo.md
-  - docs/install-and-onboard.md
-  - docs/operator-admin.md
-  - docs/supported-surface.md
-  - docs/upgrading/host-admin-integration.md
-  - examples/adoption_demo/lib/adoption_demo_web/operator_authorization.ex
-  - examples/adoption_demo/lib/adoption_demo_web/plugs/require_operator.ex
-  - examples/adoption_demo/lib/adoption_demo_web/router.ex
-  - lib/lockspire/generators/install.ex
-  - lib/lockspire/generators/templates.ex
-  - lib/lockspire/install/file_transaction.ex
-  - lib/lockspire/install/operation_plan.ex
-  - lib/lockspire/install/verify.ex
-  - lib/lockspire/web/admin_routes.ex
-  - lib/mix/tasks/lockspire.upgrade.ex
-  - lib/mix/tasks/lockspire.verify.ex
-  - mix.exs
-  - priv/templates/lockspire.install/operator_authorization.ex
-  - priv/templates/lockspire.install/router.ex
-  - scripts/acceptance/clean_room/build_provider.py
-  - test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex
-  - test/clean_room/provider_host/lib/clean_room_provider_web/router_patch.exs
-  - test/integration/install_admin_integration_test.exs
-  - test/integration/install_generator_test.exs
-  - test/integration/install_upgrade_test.exs
-  - test/lockspire/adoption_demo_admin_integration_test.exs
-  - test/lockspire/adoption_demo_docker_contract_test.exs
-  - test/lockspire/clean_room_admin_integration_test.exs
-  - test/lockspire/clean_room_release_source_contract_test.exs
-  - test/lockspire/install/file_transaction_test.exs
-  - test/lockspire/install/verify_test.exs
-  - test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs
-  - test/mix/tasks/lockspire_verify_test.exs
-  - test/support/fixtures/install_upgrade/README.md
-  - test/support/fixtures/install_upgrade/v1_45_forward_router.ex.eex
-  - test/support/generated_host_app_web/operator_authorization.ex
-  - test/support/generated_host_app_web/router.ex
-  - test/support/generated_host_app_web/router/lockspire.ex
-  - test/support/lockspire/release_proof/documentation_assertions.ex
-  - test/support/lockspire/web/admin_proof/route_assertions.ex
-covered_digest: "v3:sha256:ee260fcdb0ff135796e905bfb08298ea6b63928847d128cb42e1d65a610d9491"
+- .planning/VERIFICATION-POLICY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-01-PLAN.md
+- .planning/phases/169-install-and-upgrade-convergence/169-01-SUMMARY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-02-PLAN.md
+- .planning/phases/169-install-and-upgrade-convergence/169-02-SUMMARY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-03-PLAN.md
+- .planning/phases/169-install-and-upgrade-convergence/169-03-SUMMARY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-04-PLAN.md
+- .planning/phases/169-install-and-upgrade-convergence/169-04-SUMMARY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-05-PLAN.md
+- .planning/phases/169-install-and-upgrade-convergence/169-05-SUMMARY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-EXECUTION-GATES.md
+- .planning/phases/169-install-and-upgrade-convergence/169-PATTERNS.md
+- .planning/phases/169-install-and-upgrade-convergence/169-RESEARCH.md
+- .planning/phases/169-install-and-upgrade-convergence/169-REVIEW-DISPOSITION.md
+- .planning/phases/169-install-and-upgrade-convergence/169-REVIEW-FIX.md
+- .planning/phases/169-install-and-upgrade-convergence/169-REVIEW.md
+- .planning/phases/169-install-and-upgrade-convergence/169-SECURITY.md
+- .planning/phases/169-install-and-upgrade-convergence/169-UAT.md
+- .planning/phases/169-install-and-upgrade-convergence/169-UI-REVIEW.md
+- .planning/phases/169-install-and-upgrade-convergence/169-VALIDATION.md
+- PRODUCT.md
+- README.md
+- docs/adoption-demo.md
+- docs/install-and-onboard.md
+- docs/operator-admin.md
+- docs/supported-surface.md
+- docs/upgrading/host-admin-integration.md
+- examples/adoption_demo/lib/adoption_demo_web/operator_authorization.ex
+- examples/adoption_demo/lib/adoption_demo_web/plugs/require_operator.ex
+- examples/adoption_demo/lib/adoption_demo_web/router.ex
+- lib/lockspire/generators/install.ex
+- lib/lockspire/generators/templates.ex
+- lib/lockspire/install/file_transaction.ex
+- lib/lockspire/install/operation_plan.ex
+- lib/lockspire/install/verify.ex
+- lib/lockspire/web/admin_routes.ex
+- lib/mix/tasks/lockspire.upgrade.ex
+- lib/mix/tasks/lockspire.verify.ex
+- mix.exs
+- mix.lock
+- priv/templates/lockspire.install/operator_authorization.ex
+- priv/templates/lockspire.install/router.ex
+- scripts/acceptance/clean_room/admin_receipts.py
+- scripts/acceptance/clean_room/build_provider.py
+- scripts/acceptance/clean_room/package_input.py
+- scripts/acceptance/clean_room_admin_journey.py
+- test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex
+- test/clean_room/provider_host/lib/clean_room_provider_web/router_patch.exs
+- test/clean_room/test_admin_journey.py
+- test/integration/install_admin_integration_test.exs
+- test/integration/install_generator_test.exs
+- test/integration/install_upgrade_test.exs
+- test/lockspire/adoption_demo_admin_integration_test.exs
+- test/lockspire/adoption_demo_docker_contract_test.exs
+- test/lockspire/adoption_demo_operator_guard_test.exs
+- test/lockspire/clean_room_admin_integration_test.exs
+- test/lockspire/clean_room_release_source_contract_test.exs
+- test/lockspire/documentation_contract_test.exs
+- test/lockspire/install/file_transaction_test.exs
+- test/lockspire/install/verify_test.exs
+- test/lockspire/web/live/admin/admin_liveview_runtime_contract_test.exs
+- test/mix/tasks/lockspire_verify_test.exs
+- test/support/fixtures/install_upgrade/README.md
+- test/support/fixtures/install_upgrade/v1_45_forward_router.ex.eex
+- test/support/generated_host_app_web/operator_authorization.ex
+- test/support/generated_host_app_web/router.ex
+- test/support/generated_host_app_web/router/lockspire.ex
+- test/support/lockspire/release_proof/documentation_assertions.ex
+- test/support/lockspire/web/admin_proof/route_assertions.ex
+covered_digest: v3:sha256:c1989e7aea4dee1ffa0c918ed6cc4c1ec23496817fcdea754b7fb73eaec7be80
 behavior_unverified: 0
 overrides_applied: 0
 assumptions:
@@ -82,16 +89,68 @@ deferred:
   - truth: Candidate-package adoption, real browser/socket transport, exact Phoenix 1.8.5 / LiveView 1.1.28 runtime proof, and required CI execution.
     addressed_in: Phase 170
     evidence: Phase 170 roadmap scope and the Phase 169 UAT/validation limits explicitly assign these checks to Phase 170.
+source_revision: aaca516db3f33409feb5f4709887ba14a87a51b1
+re_verification:
+  previous_status: passed
+  previous_effective_status: stale
+  previous_verified: "2026-10-23 23:32:10+00:00"
+  gaps_closed: []
+  gaps_remaining: []
+  regressions: []
+human_verification: []
 ---
 
 # Phase 169: Install and Upgrade Convergence — Verification Report
 
 **Phase Goal:** A new or existing Phoenix host can adopt the canonical admin integration safely, understand its remaining host responsibilities and diagnose incomplete wiring.
-**Verified:** 2026-10-23T23:32:10Z
+**Verified:** 2026-10-24T15:38:53Z
 **Status:** passed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — stale covered inputs rechecked inline; no implementation replay
 
 ## Goal Achievement
+
+### Re-verification at aaca516d
+
+Re-ran the verification-only execute-phase route inline on 2026-10-24T15:38:53Z. All plans
+already have summaries; no implementation task was repeated. The shared record
+is [verification-refresh-167-169.md](../../verification-refresh-167-169.md).
+
+The current-source combined selector passed **211 tests in 63.3 seconds** across
+19 files. A separate compatibility selector passed **6 tests**. The clean-room
+Python harness passed **36 tests in 35.198 seconds** with the documented BEAM
+environment. Setup and every final selector exited zero. These runs used a fresh
+disposable database and serialized Mix selectors; the exact environment, commands,
+files and logs are recorded in the shared record. This one union supplies both
+phase checks and prior-phase regression coverage without repeating shared tests.
+
+Rechecked the roadmap criteria, plan truths, required artifacts, links, test
+assertions and existing per-prohibition closure records against current source.
+No disabled requirement tests, circular inventory oracle, stub implementation,
+new goal gap or reopened prohibition was found. Prior broad-suite counts below
+remain historical evidence; no fresh broad, browser, package, exact-floor or remote
+CI execution is claimed by this refresh. Phase 170 retains its own proof records.
+
+### Changed-input review
+
+Only `docs/supported-surface.md` and the clean-room `build_provider.py` moved
+within the earlier report's covered set. The docs now describe Phase 170's
+separately recorded local proof and distinguish expected CI runtimes from
+observed local execution. The builder retains default deny-first installer
+output and requires explicit `admin_proof` opt-in for synthetic policy, proof
+routes and exact-floor selection. Frozen pair locks, reused-pair refusal,
+bounded subprocesses, endpoint session wiring and overlay separation were
+reviewed; the existing source/compile contracts and Python tests exercise them.
+Installer ownership, checksum/transaction recovery and structural diagnostics
+remain wired and pass the shared behavior selector. No new issue was found.
+
+### Advisory (New Scope, Unevidenced)
+
+None.
+
+### Decision Coverage
+
+No CONTEXT.md - nothing to check. The owner query skipped cleanly; no decisions
+were inferred.
 
 The goal is achieved for the repository-source, host-server lifecycle, and guidance scope assigned to Phase 169. The four roadmap success criteria and all 24 plan-level must-have truths are supported by implementation, connected/compiled behavior tests, and the final sequential test evidence below. No user-reported pass is used.
 
@@ -177,7 +236,7 @@ The original plans' missing prohibition descriptors are planning metadata; the p
 - Tests exercise repository source and current locked runtime. They do not establish candidate-package consumer adoption, actual browser/socket transport, exact Phoenix 1.8.5 / LiveView 1.1.28 behavior, or remote required-CI results. Those checks remain assigned to Phase 170.
 - The roadmap query still displays `4/5 plans executed` and 169-05 unchecked even though `169-05-SUMMARY.md`, UAT and final validation evidence exist. This is a roadmap bookkeeping discrepancy; it does not contradict the observed implementation or test outcomes and was not edited as part of this verification.
 
-### Behavioral Spot-Checks
+### Historical Behavioral Spot-Checks
 
 | Behavior | Command/evidence | Result | Status |
 |---|---|---|---|
@@ -186,9 +245,9 @@ The original plans' missing prohibition descriptors are planning metadata; the p
 | Verifier rejects incomplete/shadowed structure and redacts sentinels | Final union includes verifier, route compile/inventory and Mix task tests | Union: 160 passed | ✓ PASS |
 | Demo and clean-room hosts use actual canonical declarations | Final union includes demo and clean-room connected/compiled integration tests | Union: 160 passed | ✓ PASS |
 
-### Test and Quality Evidence
+### Historical Test and Quality Evidence
 
-Final checks ran sequentially with Elixir 1.20.4-otp-29 / Erlang 29.1.1 and fresh isolated databases. The full suite was not rerun during this verification; the final artifacts and logs were inspected directly.
+Final checks ran sequentially with Elixir 1.20.4-otp-29 / Erlang 29.1.1 and fresh isolated databases. These original full-suite artifacts remain historical; this refresh reran the bounded shared selection described above.
 
 | Check | Recorded outcome | Evidence |
 |---|---|---|
@@ -221,5 +280,5 @@ No Phase 169 goal gaps remain. Phase 170's package, browser/socket, exact-floor 
 
 ---
 
-_Verified: 2026-10-23T23:32:10Z_
+_Verified: 2026-10-24T15:38:53Z_
 _Verifier: the agent (gsd-verifier)_

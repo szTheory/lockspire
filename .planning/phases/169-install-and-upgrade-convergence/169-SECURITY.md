@@ -93,3 +93,23 @@ Untouched generated denial establishes HTTP denial plus direct disconnected/conn
 - [x] `status: verified` set after independent audit.
 
 **Approval:** verified 2026-10-23; no user-reported pass inferred.
+
+## Security Audit 2026-10-24
+
+| Metric | Count |
+|---|---|
+| Threats found | 22 |
+| Closed | 22 |
+| Open | 0 |
+
+## Source refresh 2026-10-24T15:38:53Z
+
+Inline L1 recheck at `aaca516db3f33409feb5f4709887ba14a87a51b1` retained the planned threat register and
+zero open threats. Required host authorization, exact native route/session
+composition and redacted diagnostics remain wired; the fresh combined tests
+exercise their behavior. HTTP page entry is the mount-alignment boundary;
+current host policy is independently rechecked at connected lifecycle boundaries.
+Phase 170's correction removes an invalid WebSocket page-path lookup and does
+not add library-owned identity or an allow-all host seam. Existing accepted-risk
+and proof-scope limits remain unchanged. No new risk acceptance or independent
+security-agent audit is claimed. See the shared refresh ledger for commands.
