@@ -583,9 +583,8 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
     if MapSet.member?(@allowed_response_modes, mode) do
       {:ok, resolve_default_delivery_mode(mode, params["response_type"])}
     else
-      {:redirect_error,
-       redirect_error(
-         params,
+      {:browser_error,
+       browser_error(
          :invalid_request,
          "response_mode is invalid or unsupported",
          :invalid_response_mode
