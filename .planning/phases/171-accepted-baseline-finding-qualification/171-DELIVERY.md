@@ -266,3 +266,28 @@ Planning transport normalized seven preexisting Markdown hard-break trailing-spa
 lines for the staged whitespace check. Original bytes remain in the preserved
 feature branch; no recorded facts, JSON before-images or original receipt bytes
 were changed.
+
+## Current qualification tracer — 2026-10-24
+
+The accepted entry is unchanged: `171-MAIN-ACCEPTANCE.json` remains the original
+1,933-byte stdout receipt with SHA-256
+`be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39` and
+`baseline_sha` `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. It was verified in
+place; the exact-main authority was not rerun for ledger bookkeeping.
+
+At source SHA `5cefc4ea31c812ac19f513fb3ee0c5dcc275cf83`, the named repository
+test `test/integration/phase37_protocol_strictness_e2e_test.exs:106` ran with
+`mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs:106`.
+Result: 1 test, 0 failures, 4 excluded. A request whose redirect URI differed
+from its registered URI by a trailing slash returned HTTP 400, a browser-safe
+error body, and no `Location` header. This records A171-001 against OIDC Core
+3.1.2.6 and the exact-match support statement in `docs/supported-surface.md`;
+it does not establish behavior for valid callbacks.
+
+This is source-host evidence for Lockspire's generated Phoenix endpoint. No
+package was installed or tested and no external conformance suite ran; those
+evidence categories are explicitly `not_applicable` in the draft qualification
+ledger. Phase 171 Plan 01 is still in progress until its contract and negative
+fixtures pass; the full finite FIND-01 inventory and frozen matrix remain for
+the later phase plan.
+

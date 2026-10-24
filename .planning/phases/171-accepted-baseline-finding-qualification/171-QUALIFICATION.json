@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "phase": 171,
+  "selection_status": "draft",
+  "baseline": {
+    "accepted_sha": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
+    "implementation_base": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
+    "receipt_ref": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
+    "receipt_sha256": "be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39",
+    "receipt_schema": "lockspire-phase-139-acceptance-v1"
+  },
+  "profiles": [],
+  "cases": [
+    {
+      "id": "A171-001",
+      "family": "redirect_uri mismatch",
+      "requirement_ids": ["FIND-01"],
+      "source": {
+        "kind": "repository",
+        "date": "2026-10-24",
+        "historical_availability": "The named test existed before this qualification run."
+      },
+      "provider_identity": "GeneratedHostApp Phoenix endpoint mounted at /lockspire; source-host integration test, not a package receipt.",
+      "input_reference": {
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "request": "Authorization Code request for a registered https://client.example.com/callback URI using a trailing-slash mismatch; synthetic client and request values."
+      },
+      "run_reference": "Local Mix ExUnit invocation at the implementation branch source SHA.",
+      "supported_mount": "Generated host authorization endpoint at /lockspire.",
+      "profile": "default supported authorization-code surface",
+      "auth_mode": "public client with PKCE S256; invalid redirect is rejected before host authentication or redirect",
+      "safe_condition": "A redirect_uri differing by a trailing slash from the registered URI is invalid; the user agent remains on Lockspire's browser-safe error surface.",
+      "normative_references": [
+        {
+          "url": "https://openid.net/specs/openid-connect-core-1_0.html#AuthError",
+          "section": "OpenID Connect Core 1.0 incorporating errata set 2, 3.1.2.6",
+          "basis": "If the Redirection URI is invalid, the Authorization Server MUST NOT redirect the User Agent to that invalid URI."
+        }
+      ],
+      "support_reference": {
+        "path": "docs/supported-surface.md",
+        "claim": "Phase 37 strictness slice includes exact redirect_uri matching."
+      },
+      "observed_outcome": "HTTP 400; response body says Authorization request rejected and redirect_uri must match a registered URI; no Location header.",
+      "expected_outcome": "The mismatched URI is rejected without redirecting the user agent to it.",
+      "cause": "The requested URI has a trailing slash absent from the client's registered redirect URI.",
+      "repro": {
+        "evidence_kind": "repository_test",
+        "command": "mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs:106",
+        "test_path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "test_name": "exact redirect_uri mismatches stay on the browser-safe surface",
+        "result": "pass",
+        "test_count": 1,
+        "failure_count": 0,
+        "excluded_count": 4,
+        "source_sha": "5cefc4ea31c812ac19f513fb3ee0c5dcc275cf83"
+      },
+      "source_sha": "5cefc4ea31c812ac19f513fb3ee0c5dcc275cf83",
+      "external_run": {
+        "status": "not_applicable",
+        "reason": "This is a repository-host integration test; no OIDF/FAPI or other external suite ran."
+      },
+      "package_receipt": {
+        "status": "not_applicable",
+        "reason": "This source-host test did not install or test a published package."
+      },
+      "next_owner": "Phase 171 ledger owner",
+      "regression_owner": "Lockspire maintainers",
+      "disposition": "qualified source-host behavior for this one redirect-mismatch case; no package or certification claim"
+    }
+  ],
+  "matrix": {
+    "status": "draft",
+    "rows": [],
+    "requirement_dispositions": []
+  },
+  "blockers": [],
+  "exclusions": [
+    "External OIDF/FAPI suites are supplemental and were not run for A171-001.",
+    "This case does not set or revise policy for valid redirect callbacks."
+  ]
+}
