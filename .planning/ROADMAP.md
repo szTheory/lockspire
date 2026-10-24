@@ -82,7 +82,10 @@ Plans:
   2. Reuse P171-001, P171-002 and P171-003 proof for client binding, expiry and one-use; reuse P171-004 proof for required-PAR, preserving existing PKCE and security-profile boundaries.
   3. Reuse P171-006 source-host issuer/discovery metadata proof. External provider-origin, TLS/proxy and browser reachability remain supplemental and unavailable; that limitation does not create another selected code or infrastructure project.
 
-**Plans**: 0 — Not planned; starts after Phase 171 verification passes and Phase 172 completes.
+**Plans**: 1 plan
+
+Plans:
+- [ ] 173-01-PLAN.md — Pushed-parameter authority correction, real PAR RED/GREEN and retained lifecycle/profile proof.
 
 ### Phase 174: Packaged Proof & Delivery Handoff
 
