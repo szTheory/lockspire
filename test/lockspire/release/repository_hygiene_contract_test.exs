@@ -87,6 +87,8 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
       {_, 0} = System.cmd("git", ["-C", repo, "add", "--", tracked_script, tracked_workflow])
 
+      workflow_marker = Path.join(fixture, "actionlint-workflow-arg")
+
       write_executable_stub!(bin, "actionlint", """
       #!/bin/sh
       if [ "${1:-}" = "--version" ]; then
@@ -94,10 +96,15 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
         exit 0
       fi
       case " $* " in
-        *".github/workflows/ci.yml"*) exit 0 ;;
+        *".github/workflows/ci.yml"*)
+          printf '%s\\n' "$*" > "$FAKE_WORKFLOW_MARKER"
+          exit 0
+          ;;
         *) echo 'tracked workflow was not linted' >&2; exit 3 ;;
       esac
       """)
+
+      shell_marker = Path.join(fixture, "shellcheck-script-arg")
 
       write_executable_stub!(bin, "shellcheck", """
       #!/bin/sh
@@ -108,7 +115,10 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
       tracked=0
       for file in "$@"; do
         case "$file" in
-          *quality\\ check) tracked=1 ;;
+          *quality\\ check)
+            tracked=1
+            printf '%s\\n' "$file" >> "$FAKE_SHELL_MARKER"
+            ;;
           *pre-commit.sample)
             echo 'SC2046 untracked vendor pre-commit hook was linted' >&2
             exit 2
@@ -123,11 +133,17 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
       {output, status} =
         System.cmd("bash", [script_path],
           cd: repo,
-          env: [{"PATH", bin <> ":" <> System.get_env("PATH", "")}],
+          env: [
+            {"PATH", bin <> ":" <> System.get_env("PATH", "")},
+            {"FAKE_WORKFLOW_MARKER", workflow_marker},
+            {"FAKE_SHELL_MARKER", shell_marker}
+          ],
           stderr_to_stdout: true
         )
 
       assert status == 0, output
+      assert File.read!(workflow_marker) =~ "ci.yml"
+      assert File.read!(shell_marker) == "./scripts/maintainer/quality check\n"
     after
       File.rm_rf!(fixture)
     end
