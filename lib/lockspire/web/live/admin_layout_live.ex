@@ -370,14 +370,14 @@ defmodule Lockspire.Web.Live.AdminLayoutLive do
       assign(assigns, :class, nav_class(assigns.item, assigns.current_section))
 
     ~H"""
-    <a
-      href={if @item.enabled, do: @item.href, else: "#"}
+    <.link
+      navigate={if @item.enabled, do: @item.href, else: "#"}
       aria-disabled={if @item.enabled, do: "false", else: "true"}
       aria-current={if @item.key == @current_section, do: "page", else: nil}
       class={@class}
     >
       {@item.label}
-    </a>
+    </.link>
     """
   end
 

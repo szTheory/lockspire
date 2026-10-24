@@ -226,6 +226,8 @@ def apply_host_overlays(child: Path, *, admin_proof: bool = False) -> None:
     post("/withdraw", Controller, :withdraw)
     post("/restore", Controller, :restore)
     get("/observations", Controller, :observations)
+    post("/seed", Controller, :seed)
+    post("/reset", Controller, :reset)
   end
 '''
         anchor = "  lockspire_routes()"

@@ -933,6 +933,7 @@ defmodule Lockspire.Web.Live.Admin.ExpandedAdminRouteIntegrationTest do
 
       assert clients.module == Lockspire.Web.Live.Admin.ClientsLive.Index
       assert clients_html =~ ~s(href="#{client_path}/new?)
+      assert clients_html =~ ~s(data-phx-link="redirect")
       assert clients_html =~ ~s(href="#{detail_path}")
       assert_receive {:host_live_hook, "staff-1"}
 

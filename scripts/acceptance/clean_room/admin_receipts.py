@@ -106,7 +106,7 @@ def validate_receipt(
         passed = scenario["outcome"] == "passed"
         if passed and (
             counts["assets"] < 2 or counts["websocket_handshakes"] < 1 or
-            counts["successful_joins"] < 1 or counts["navigations"] < 1 or
+            counts["successful_joins"] < 2 or counts["websocket_handshakes"] < 2 or counts["navigations"] < 4 or
             not all(observations.values())
         ):
             raise ValueError("receipt scenario does not prove a successful browser join and navigation")

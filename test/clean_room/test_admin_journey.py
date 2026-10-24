@@ -42,7 +42,7 @@ class AdminReceiptTests(unittest.TestCase):
                 "id": "tracer.browser_join_navigation",
                 "outcome": "passed",
                 "duration_ms": 20,
-                "counts": {"assets": 2, "websocket_handshakes": 1, "successful_joins": 1, "navigations": 1},
+                "counts": {"assets": 2, "websocket_handshakes": 2, "successful_joins": 2, "navigations": 4},
                 "observations": {"login": True, "overview": True, "clients": True, "authorized_http": True, "connected_hook": True},
             }],
             "cleanup": {"processes_stopped": True, "database_removed": True, "profile_removed": True, "run_root_removed": True},

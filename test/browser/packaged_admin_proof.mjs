@@ -19,6 +19,15 @@ export function validateBrowserObservation(value) {
     Object.keys(value).length === fields.length && fields.every((field) => value[field]);
 }
 
+export function validateTracerEvidence(observations, counts) {
+  return validateBrowserObservation(observations) &&
+    counts && typeof counts === "object" &&
+    Number.isInteger(counts.assets) && counts.assets >= 2 &&
+    Number.isInteger(counts.websocket_handshakes) && counts.websocket_handshakes >= 2 &&
+    Number.isInteger(counts.successful_joins) && counts.successful_joins >= 2 &&
+    Number.isInteger(counts.navigations) && counts.navigations >= 4;
+}
+
 export function isSuccessfulJoinFrame(payload) {
   try {
     const frame = JSON.parse(payload);
@@ -175,6 +184,9 @@ async function main() {
     const requestMethods = new Map();
     let handshakes = 0;
     let joins = 0;
+    let socketCloses = 0;
+    let documentNavigations = 0;
+    let mainLoaderId = null;
     cdp.on("Network.responseReceived", ({ response }) => {
       if (response.status >= 200 && response.status < 300 && /\/(?:phoenix\.js|phoenix_live_view\.js)$/.test(response.url)) assets.add(response.url);
     });
@@ -202,6 +214,13 @@ async function main() {
     cdp.on("Network.webSocketFrameReceived", ({ response }) => {
       if (isSuccessfulJoinFrame(response.payloadData)) joins += 1;
     });
+    cdp.on("Network.webSocketClosed", () => { socketCloses += 1; });
+    cdp.on("Page.frameNavigated", ({ frame }) => {
+      if (!frame.parentId && frame.loaderId) {
+        if (mainLoaderId && mainLoaderId !== frame.loaderId) documentNavigations += 1;
+        mainLoaderId = frame.loaderId;
+      }
+    });
     await cdp.send("Page.enable");
     await cdp.send("Runtime.enable");
     await cdp.send("Network.enable");
@@ -214,6 +233,18 @@ async function main() {
     await cdp.evaluate("document.querySelector('form')?.requestSubmit()");
     loginSubmitEventSeen = await cdp.evaluate("window.__phase170SubmitSeen === true");
     const adminPath = `${mount}/admin` || "/admin";
+    const control = async (route, method = "POST") => {
+      const response = await fetch(`${origin.origin}/__proof/${route}`, {
+        method,
+        headers: { "x-lockspire-proof-capability": input.capability },
+        signal: AbortSignal.timeout(5000)
+      });
+      if (!response.ok) throw new Error("host_observations_failed");
+      return response;
+    };
+    const hostObservations = async () => (await (await control("observations", "GET")).json());
+    const seeded = await (await control("seed")).json();
+    if (seeded.client_id !== "phase170-browser-client") throw new Error("host_observations_failed");
     stage = "login_redirect";
     await waitFor(() => cdp.evaluate("location.pathname"), (pathname) => pathname === adminPath);
     result.observations.login = true;
@@ -228,13 +259,52 @@ async function main() {
     await waitFor(() => joins, (count) => count > 0);
     const expectedClients = `${adminPath}/clients`;
     stage = "clients_navigation";
-    const clicked = await cdp.evaluate(`(() => { const link = [...document.querySelectorAll('a[href]')].find((node) => new URL(node.href).pathname === ${JSON.stringify(expectedClients)}); if (!link) return false; link.click(); return true; })()`);
+    const beforeClientsHook = (await hostObservations()).live_connected;
+    const beforeClientsDocument = documentNavigations;
+    const clicked = await cdp.evaluate(`(() => { const link = [...document.querySelectorAll('a[data-phx-link][href]')].find((node) => new URL(node.href).pathname === ${JSON.stringify(expectedClients)}); if (!link) return false; link.click(); return true; })()`);
     if (!clicked) throw new Error("clients_link_missing");
-    stage = "clients_render";
-    await waitFor(() => cdp.evaluate("({path: location.pathname, text: document.body.innerText})"), (page) => page.path === expectedClients && page.text.includes("Apps"));
-    await waitFor(() => joins, (count) => count > 0);
+    stage = "clients_destination";
+    await waitFor(() => cdp.evaluate("location.pathname"), (pathname) => pathname === expectedClients);
+    stage = "clients_content";
+    await waitFor(() => cdp.evaluate("document.body.innerText"), (text) => text.includes("Apps"));
+    stage = "clients_hook";
+    await waitFor(async () => (await hostObservations()).live_connected, (count) => count > beforeClientsHook);
+    if (documentNavigations !== beforeClientsDocument) throw new Error("document_reload_during_navigation");
     result.observations.clients = true;
     result.counts.navigations = 1;
+    let beforeParams = (await hostObservations()).params;
+    const filterSubmitted = await cdp.evaluate(`(() => { const form = document.querySelector('form[phx-submit="filter_inventory"]'); const field = document.querySelector('#client_search'); if (!form || !field) return false; field.value = "Phase 170 Browser App"; field.dispatchEvent(new Event('input', {bubbles: true})); form.requestSubmit(); return true; })()`);
+    if (!filterSubmitted) throw new Error("clients_link_missing");
+    await waitFor(() => cdp.evaluate("({search: location.search, text: document.body.innerText})"), (page) => page.search.includes("Phase+170+Browser+App") || page.search.includes("Phase%20170%20Browser%20App"));
+    const afterParams = await waitFor(async () => (await hostObservations()).params, (count) => count > beforeParams);
+    if (afterParams <= beforeParams) throw new Error("browser_failure");
+    result.counts.navigations += 1;
+    const detailPath = `${expectedClients}/phase170-browser-client`;
+    beforeParams = afterParams;
+    const beforeDetailDocument = documentNavigations;
+    const detailClicked = await cdp.evaluate(`(() => { const link = [...document.querySelectorAll('a[data-phx-link][href]')].find((node) => new URL(node.href).pathname === ${JSON.stringify(detailPath)}); if (!link) return false; link.click(); return true; })()`);
+    if (!detailClicked) throw new Error("clients_link_missing");
+    await waitFor(() => cdp.evaluate("({path: location.pathname, text: document.body.innerText})"), (page) => page.path === detailPath && page.text.includes("Phase 170 Browser App"));
+    await waitFor(async () => (await hostObservations()).params, (count) => count > beforeParams);
+    if (documentNavigations !== beforeDetailDocument) throw new Error("document_reload_during_navigation");
+    result.counts.navigations += 1;
+    const editPath = `${detailPath}/edit`;
+    const beforeEditParams = (await hostObservations()).params;
+    const beforeEditDocument = documentNavigations;
+    const editClicked = await cdp.evaluate(`(() => { const link = [...document.querySelectorAll('a[data-phx-link][href]')].find((node) => new URL(node.href).pathname === ${JSON.stringify(editPath)}); if (!link) return false; link.click(); return true; })()`);
+    if (!editClicked) throw new Error("clients_link_missing");
+    await waitFor(() => cdp.evaluate("({path: location.pathname, marker: !!document.querySelector('[data-client-task-context]')})"), (page) => page.path === editPath && page.marker);
+    await waitFor(async () => (await hostObservations()).params, (count) => count > beforeEditParams);
+    if (documentNavigations !== beforeEditDocument) throw new Error("document_reload_during_navigation");
+    result.counts.navigations += 1;
+    const beforeClose = socketCloses;
+    const beforeReconnectJoin = joins;
+    await cdp.evaluate("window.liveSocket.disconnect()");
+    await waitFor(() => socketCloses, (count) => count > beforeClose);
+    await cdp.evaluate("window.liveSocket.connect()");
+    await waitFor(() => joins, (count) => count > beforeReconnectJoin);
+    await waitFor(() => cdp.evaluate("document.querySelector('.phx-connected') !== null"), Boolean);
+    result.counts.navigations += 1;
     const observationsResponse = await fetch(`${origin.origin}/__proof/observations`, {
       headers: { "x-lockspire-proof-capability": input.capability }, signal: AbortSignal.timeout(5000)
     });
@@ -246,8 +316,7 @@ async function main() {
     result.counts.websocket_handshakes = handshakes;
     result.counts.successful_joins = joins;
     result.runtime.chrome = (await cdp.send("Browser.getVersion")).product;
-    result.outcome = result.observations.login && result.observations.overview && result.observations.clients &&
-      result.observations.authorized_http && result.observations.connected_hook && assets.size >= 2 && handshakes > 0 && joins > 0 ? "passed" : "failed";
+    result.outcome = socketCloses > 0 && validateTracerEvidence(result.observations, result.counts) ? "passed" : "failed";
   } catch (error) {
     const message = String(error?.message || "");
     const timeoutFailure = message === "browser_timeout" ? `${stage}_timeout` : null;
@@ -259,7 +328,7 @@ async function main() {
       ? loginPostFailed ? "login_post_network_failed" : loginPostSeen ? "login_post_no_redirect" : loginSubmitEventSeen ? "login_post_not_observed" : "login_post_not_sent"
       : null;
     const loginPageFailure = message === "login_form_missing" ? "login_form_missing" : message.startsWith("login_page_status_") && /^login_page_status_(?:200|403|404|500)$/.test(message) ? message : null;
-    const allowed = new Set(["chrome_missing", "node_unsupported", "origin_invalid", "mount_invalid", "chrome_spawn_failed", "chrome_start_failed", "chrome_target_failed", "browser_timeout", "login_load_timeout", "login_response_non_html", "login_response_empty", "login_path_mismatch", "login_form_missing", "login_content_type_invalid", "login_response_content_missing", "login_page_status_200", "login_page_status_403", "login_page_status_404", "login_page_status_500", "login_redirect_timeout", "login_post_not_sent", "login_post_not_observed", "login_post_network_failed", "login_post_no_redirect", "login_redirect_status_302", "login_redirect_status_403", "login_redirect_status_404", "login_redirect_status_422", "login_redirect_status_500", "overview_render_timeout", "live_socket_connected_timeout", "live_join_timeout", "clients_render_timeout", "cdp_connect_failed", "cdp_connect_timeout", "cdp_command_failed", "cdp_command_timeout", "page_evaluation_failed", "clients_link_missing", "host_observations_failed", "control_capability_missing"]);
+    const allowed = new Set(["chrome_missing", "node_unsupported", "origin_invalid", "mount_invalid", "chrome_spawn_failed", "chrome_start_failed", "chrome_target_failed", "browser_timeout", "login_load_timeout", "login_response_non_html", "login_response_empty", "login_path_mismatch", "login_form_missing", "login_content_type_invalid", "login_response_content_missing", "login_page_status_200", "login_page_status_403", "login_page_status_404", "login_page_status_500", "login_redirect_timeout", "login_post_not_sent", "login_post_not_observed", "login_post_network_failed", "login_post_no_redirect", "login_redirect_status_302", "login_redirect_status_403", "login_redirect_status_404", "login_redirect_status_422", "login_redirect_status_500", "overview_render_timeout", "live_socket_connected_timeout", "live_join_timeout", "clients_render_timeout", "clients_destination_timeout", "clients_content_timeout", "clients_hook_timeout", "document_reload_during_navigation", "cdp_connect_failed", "cdp_connect_timeout", "cdp_command_failed", "cdp_command_timeout", "page_evaluation_failed", "clients_link_missing", "host_observations_failed", "control_capability_missing"]);
     result.failure = loginLoadFailure && allowed.has(loginLoadFailure) ? loginLoadFailure : loginPageFailure && allowed.has(loginPageFailure) ? loginPageFailure : safeFailure && allowed.has(safeFailure) ? safeFailure : loginSubmissionFailure && allowed.has(loginSubmissionFailure) ? loginSubmissionFailure : timeoutFailure && allowed.has(timeoutFailure) ? timeoutFailure : allowed.has(message) ? message : "browser_failure";
   } finally {
     result.stage = stage;

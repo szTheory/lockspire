@@ -22,8 +22,10 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
     ensure_started()
 
     Agent.get_and_update(__MODULE__, fn state ->
-      permitted = state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
-        Map.get(session, "host_session_id") == "proof-session"
+      permitted =
+        state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
+          Map.get(session, "host_session_id") == "proof-session"
+
       count = if connected?, do: :live_connected, else: :live_mount
       {permitted, Map.update!(state, count, &(&1 + 1))}
     end)
@@ -31,6 +33,7 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
 
   def current_allowed?(session) do
     ensure_started()
+
     Agent.get(__MODULE__, fn state ->
       state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
         Map.get(session, "host_session_id") == "proof-session"
@@ -39,9 +42,12 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
 
   def authorize_http(session) do
     ensure_started()
+
     Agent.get_and_update(__MODULE__, fn state ->
-      permitted = state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
-        Map.get(session, "host_session_id") == "proof-session"
+      permitted =
+        state.enabled and Map.get(session, "host_staff_id") == "proof-staff" and
+          Map.get(session, "host_session_id") == "proof-session"
+
       {permitted, %{state | http: state.http + 1}}
     end)
   end
@@ -59,6 +65,15 @@ defmodule CleanRoomProviderWeb.AdminProof.Store do
   def observations do
     ensure_started()
     Agent.get(__MODULE__, &Map.take(&1, [:http, :live_mount, :live_connected, :params]))
+  end
+
+  def reset do
+    ensure_started()
+
+    Agent.update(
+      __MODULE__,
+      &%{&1 | enabled: true, http: 0, live_mount: 0, live_connected: 0, params: 0}
+    )
   end
 end
 
@@ -101,6 +116,29 @@ defmodule CleanRoomProviderWeb.AdminProof.Controller do
   def observations(conn, _params) do
     json(conn, CleanRoomProviderWeb.AdminProof.Store.observations())
   end
+
+  def seed(conn, _params) do
+    attrs = %{
+      client_id: "phase170-browser-client",
+      name: "Phase 170 Browser App",
+      client_type: :confidential,
+      redirect_uris: ["https://phase170.example.test/callback"],
+      allowed_scopes: ["openid", "profile"],
+      allowed_grant_types: ["authorization_code"],
+      token_endpoint_auth_method: :client_secret_basic,
+      actor: %{type: :operator, id: "phase170-proof"}
+    }
+
+    case Lockspire.Admin.create_client(attrs) do
+      {:ok, _result} -> json(conn, %{client_id: attrs.client_id})
+      {:error, _reason} -> send_resp(conn, :internal_server_error, "proof seed failed")
+    end
+  end
+
+  def reset(conn, _params) do
+    CleanRoomProviderWeb.AdminProof.Store.reset()
+    send_resp(conn, 204, "")
+  end
 end
 
 defmodule CleanRoomProviderWeb.AdminProof.SessionController do
@@ -110,15 +148,16 @@ defmodule CleanRoomProviderWeb.AdminProof.SessionController do
 
   def new(conn, _params) do
     csrf = Plug.CSRFProtection.get_csrf_token()
+
     conn
     |> put_resp_content_type("text/html")
     |> send_resp(200, """
-       <!doctype html><html><head><meta name="csrf-token" content="#{escape(csrf)}"></head>
-       <body><form method="post" action="/login">
-         <input type="hidden" name="_csrf_token" value="#{escape(csrf)}">
-         <button type="submit">Sign in</button>
-       </form></body></html>
-       """)
+    <!doctype html><html><head><meta name="csrf-token" content="#{escape(csrf)}"></head>
+    <body><form method="post" action="/login">
+      <input type="hidden" name="_csrf_token" value="#{escape(csrf)}">
+      <button type="submit">Sign in</button>
+    </form></body></html>
+    """)
   end
 
   def create(conn, _params) do
@@ -156,10 +195,17 @@ defmodule CleanRoomProviderWeb.AdminProof.OperatorAuthorization do
   def on_mount(:default, _params, session, socket) do
     case CleanRoomProviderWeb.AdminProof.authorize(session, socket) do
       :ok ->
-        socket = Phoenix.LiveView.attach_hook(socket, :proof_current_policy, :handle_params, fn _params, _uri, live_socket ->
-          CleanRoomProviderWeb.AdminProof.Store.record_params()
-          if CleanRoomProviderWeb.AdminProof.Store.current_allowed?(session), do: {:cont, live_socket}, else: {:halt, Phoenix.LiveView.redirect(live_socket, to: "/login")}
-        end)
+        socket =
+          Phoenix.LiveView.attach_hook(socket, :proof_current_policy, :handle_params, fn _params,
+                                                                                         _uri,
+                                                                                         live_socket ->
+            CleanRoomProviderWeb.AdminProof.Store.record_params()
+
+            if CleanRoomProviderWeb.AdminProof.Store.current_allowed?(session),
+              do: {:cont, live_socket},
+              else: {:halt, Phoenix.LiveView.redirect(live_socket, to: "/login")}
+          end)
+
         {:cont, Phoenix.Component.assign(socket, :host_staff_id, session["host_staff_id"])}
 
       :error ->
@@ -180,7 +226,10 @@ defmodule CleanRoomProviderWeb.AdminProof do
 
   def authorize(session, socket) do
     lifecycle = if Phoenix.LiveView.connected?(socket), do: :connected, else: :disconnected
-    if CleanRoomProviderWeb.AdminProof.Store.allowed?(session, lifecycle == :connected), do: :ok, else: :error
+
+    if CleanRoomProviderWeb.AdminProof.Store.allowed?(session, lifecycle == :connected),
+      do: :ok,
+      else: :error
   end
 end
 

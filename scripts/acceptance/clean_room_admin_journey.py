@@ -47,10 +47,12 @@ BROWSER_FAILURES = frozenset({
     "live_socket_connected_timeout", "live_join_timeout", "clients_render_timeout", "cdp_connect_failed",
     "cdp_connect_timeout", "cdp_command_failed", "cdp_command_timeout", "page_evaluation_failed",
     "clients_link_missing", "host_observations_failed", "control_capability_missing", "browser_failure",
+    "clients_destination_timeout", "clients_content_timeout", "clients_hook_timeout", "document_reload_during_navigation",
 })
 BROWSER_STAGES = frozenset({
     "preflight", "chrome_start", "cdp_setup", "login_load", "login_submit", "login_redirect",
     "overview_render", "live_socket_connected", "live_join", "clients_navigation", "clients_render",
+    "clients_destination", "clients_content", "clients_hook",
 })
 BROWSER_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"})
 BROWSER_OBSERVATIONS = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"})

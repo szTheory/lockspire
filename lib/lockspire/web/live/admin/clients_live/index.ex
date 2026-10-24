@@ -289,7 +289,7 @@ defmodule Lockspire.Web.Live.Admin.ClientsLive.Index do
                   <AdminComponents.status_badge status={client.provenance} />
                 </:status>
                 <:actions>
-                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" href={client_show_path(client.client_id, @filters)}>
+                  <.link class="lockspire-admin-btn lockspire-admin-btn-secondary" navigate={client_show_path(client.client_id, @filters)}>
                     View app
                   </.link>
                 </:actions>

@@ -4,7 +4,8 @@ import test from "node:test";
 import {
   isSuccessfulJoinFrame,
   supportedNode,
-  validateBrowserObservation
+  validateBrowserObservation,
+  validateTracerEvidence
 } from "./packaged_admin_proof.mjs";
 
 test("supportedNode accepts the documented Node floor", () => {
@@ -35,8 +36,16 @@ test("only a successful Phoenix LiveView join reply counts as a join", () => {
   assert.equal(isSuccessfulJoinFrame("not-json"), false);
 });
 
+test("tracer evidence requires transport reconnect and four native transitions", () => {
+  const observations = { login: true, overview: true, clients: true, authorized_http: true, connected_hook: true };
+  const counts = { assets: 2, websocket_handshakes: 2, successful_joins: 2, navigations: 4 };
+  assert.equal(validateTracerEvidence(observations, counts), true);
+  assert.equal(validateTracerEvidence(observations, { ...counts, websocket_handshakes: 1 }), false);
+  assert.equal(validateTracerEvidence(observations, { ...counts, navigations: 1 }), false);
+});
+
 test("the Node suite retains its exact known case count", async () => {
   const { readFile } = await import("node:fs/promises");
   const source = await readFile(new URL("./packaged_admin_proof_test.mjs", import.meta.url), "utf8");
-  assert.equal([...source.matchAll(/^test\(/gm)].length, 4);
+  assert.equal([...source.matchAll(/^test\(/gm)].length, 5);
 });
