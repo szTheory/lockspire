@@ -34,8 +34,8 @@ Run from repository root. New targets below are created by their owning plans be
 
 | ID | Command | Evidence / budget |
 |---|---|---|
-| N | `node --test test/browser/packaged_admin_proof_test.mjs` | Deterministic harness branches, expected <5s |
-| P | `python3 -m unittest discover -s test/clean_room -p test_admin_journey.py` | Receipt/provenance/cleanup/failure branches, expected <5s |
+| N | `node --test test/browser/packaged_admin_proof_test.mjs` | Deterministic harness and real signal-process branches, approximately 6s |
+| P | `python3 -m unittest discover -s test/clean_room -p test_admin_journey.py` | Receipt/provenance/cleanup/failure branches with bounded deadline tests, approximately 31s |
 | L | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/phase170/final-locked` | Locked shared lifecycle + actual candidate/browser three mounts; <=900s |
 | F | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/phase170/final-floor` | Exact-floor shared lifecycle + actual candidate/browser three mounts; <=900s |
 | S | `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 asdf exec mix test test/lockspire/web/admin_routes_compile_test.exs test/lockspire/web/admin_route_inventory_test.exs test/lockspire/web/admin_route_separation_test.exs test/lockspire/web/live/admin/admin_route_integration_test.exs` | Four original shared server test files under root locked deps; budget 60s warm |
@@ -88,7 +88,7 @@ None planned. Every scoped behavior has machine evidence or a bounded source-res
 
 Approval: planning self-check only, 2026-10-23; not runtime approval.
 
-## Execution outcomes (2026-10-24)
+## Historical Plan 05 execution outcomes (2026-10-24)
 
 | Check | Command / source | Result |
 |---|---|---|
@@ -108,10 +108,51 @@ expectations of Elixir 1.19.5 / OTP 28 with PostgreSQL 16 (locked) and Elixir
 1.18.4 / OTP 27 with PostgreSQL 14 (floor). No remote run was dispatched or
 observed. The two otherwise unclassified probe assumptions remain so.
 
-## Validation Audit 2026-10-24
+## Historical validation audit 2026-10-24 (superseded)
 
 | Metric | Count |
 |---|---|
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Security remediation validation (2026-10-24)
+
+The historical zero-gap audit above was superseded by five confirmed findings:
+nested diagnostic-key disclosure, exception-skipped cleanup, interruption and
+unbounded preparation, missing lifecycle-database disposal, and missing floor
+CI clean-room credentials. Reproductions, repairs, and current results are
+recorded in [170-REMEDIATION.md](170-REMEDIATION.md).
+
+Fresh real-browser receipts in [170-ACCEPTANCE.md](170-ACCEPTANCE.md) identify
+`ef9ef86030467792346d1b674c58b44d8db30d38`, the repaired runtime harness.
+Locked reported 145 seconds with 43 lifecycle checks; floor reported 144
+seconds with 44, each followed by successful bounded EXIT cleanup. Each pair passed three mounts × 16 browser cases and all
+cleanup flags. The package archive/tree remained identical to Plan 05 because
+these repairs change acceptance tooling and CI, outside the package input.
+The subsequent `debd3d28` commit changes only an existing CI contract test.
+
+| Current check | Result |
+|---|---|
+| Python receipt/runner/wrapper regression suite | 35 passed; 29.234 seconds |
+| Node browser harness regression suite | 8 passed; 5.185 seconds |
+| CI and host integration contracts | 5 passed after per-job credential assertions |
+| Generated-host installer plus CI contract, original failing seed `106565` | 16 passed on a fresh dedicated database |
+| CI/docs/clean-room contracts | 20 passed; later CI/docs subset 13 passed |
+| Workflow and shell lint | `bash scripts/ci/lint_workflows.sh` exit 0; pinned actionlint 1.7.12 / shellcheck 0.11.0 |
+| Formatting | `mix format --check-formatted` exit 0 |
+| Diff and preserved user state | `git diff --check` and byte comparison with supplied state snapshot passed |
+
+The first broad remediation run found the stale CI credential-count assertion
+and a generated-host smoke failure. The credential assertion was corrected;
+the smoke passed its isolated rerun at the same seed. The serialized final
+broad rerun passed all 2,027 checks (2 properties, 2,025 tests), with 6 skipped
+and 497 excluded, in 177.8 seconds at seed `106565`. It used
+`LOCKSPIRE_TEST_DB_NAME=lockspire_phase170_final_65caf16ba7d4` and
+`HEX_HOME=/private/tmp/lockspire-phase170-final-broad-hex.ddjmB3`, with no
+concurrent Mix wrapper/selector. Source was `debd3d28`; subsequent `8f775485`
+adds only the Python failed-receipt regression verified by the final 35-test run.
+The original smoke failure did not recur in its focused or serialized broad
+rerun. Initial wrapper-build overlap is recorded as a possible source of test
+interference, not as a proven root cause. No hosted CI result or execution on
+the minimum CI BEAM is implied by these local checks.

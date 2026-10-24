@@ -1,5 +1,67 @@
 # Phase 170 — Final Acceptance Evidence
 
+## Current evidence after security remediation (2026-10-24)
+
+The audit reproduced nested diagnostic-key disclosure and incomplete interruption,
+exception, and database cleanup in the original harness. Those paths were repaired
+in `ef9ef86030467792346d1b674c58b44d8db30d38`; the original Plan 05
+results below remain historical. [170-REMEDIATION.md](170-REMEDIATION.md) records
+fault reproductions, controls, regression evidence, and limits.
+
+Both canonical wrappers were rerun after the final runtime harness changes.
+All eight refreshed receipts bind source
+`ef9ef86030467792346d1b674c58b44d8db30d38`, `source_dirty: true`, Lockspire
+`1.6.1`, archive SHA-256
+`a4cf36af08fca6fe11b7d7c39e7cb0224129f507cb009df13879d546198a946f`, and
+expanded-tree SHA-256
+`fcb9ff7246b004b3dfb47d7f480a5bc41eb801e1704bc7a373bf70773e45701e`.
+The source remains marked dirty because the supplied `.planning/state.json` was
+preserved byte-for-byte. The later `debd3d28` change updates only the existing
+CI credential test; `8f775485` adds a receipt regression only. Neither changes
+the runtime harness or package bytes.
+
+Every browser receipt reports `processes_stopped`, `database_removed`,
+`profile_removed`, and `run_root_removed` as true. The wrapper independently
+drops its generated lifecycle database before a successful exit. Raw process
+logs and profiles are removed; validated receipts retain only schema-bound
+identity, runtime, booleans, counts, and known scenario IDs.
+
+| Cell | Phoenix / LiveView | Mount | Result | Sum of scenario durations | Receipt |
+|---|---|---|---|---:|---|
+| locked-lockspire | 1.8.13 / 1.2.10 | `/lockspire` | 16/16; cleanup passed | 2.378 s | `.artifacts/phase170/remediation-locked/locked-lockspire.json` |
+| locked-nested | 1.8.13 / 1.2.10 | `/teams/ops/identity` | 16/16; cleanup passed | 2.257 s | `.artifacts/phase170/remediation-locked/locked-nested.json` |
+| locked-root | 1.8.13 / 1.2.10 | `/` | 16/16; cleanup passed | 2.355 s | `.artifacts/phase170/remediation-locked/locked-root.json` |
+| floor-lockspire | 1.8.5 / 1.1.28 | `/lockspire` | 16/16; cleanup passed | 2.274 s | `.artifacts/phase170/remediation-floor/floor-lockspire.json` |
+| floor-nested | 1.8.5 / 1.1.28 | `/teams/ops/identity` | 16/16; cleanup passed | 2.316 s | `.artifacts/phase170/remediation-floor/floor-nested.json` |
+| floor-root | 1.8.5 / 1.1.28 | `/` | 16/16; cleanup passed | 2.236 s | `.artifacts/phase170/remediation-floor/floor-root.json` |
+
+Actual local runtimes in every refreshed browser receipt: Elixir `1.20.4`,
+OTP `29`, Node `26.10.0`, and Chrome `155.0.8059.85`, with normal browser
+sandboxing. These are local runtime observations, separate from CI expectations.
+
+| Pair | Reported workload duration | Lifecycle tests | Lifecycle receipt |
+|---|---:|---:|---|
+| locked | 145 s | 43 | `.artifacts/phase170/remediation-locked/lifecycle.json` |
+| floor | 144 s | 44 | `.artifacts/phase170/remediation-floor/lifecycle.json` |
+
+The pair workload deadline is 900 seconds; owned child termination allows at
+most 15 seconds for cooperative cleanup and escalation. The wrapper's owned
+lifecycle database cleanup has its own finite budget after that deadline.
+The reported 145/144 seconds precede the EXIT cleanup. Both runs then exited
+zero after successful bounded final cleanup and remained inside 900 seconds.
+No hosted CI run, remote required-check configuration, or minimum CI BEAM
+execution was observed or changed.
+
+```bash
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/phase170/remediation-locked
+ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/phase170/remediation-floor
+```
+
+## Historical Plan 05 evidence (before the security remediation)
+
+The following original results are retained for provenance. They do not prove
+the repaired fault paths and are superseded by the refreshed evidence above.
+
 ## Evidence boundary
 
 The pair wrapper installs the actual Lockspire 1.6.1 candidate archive into a
