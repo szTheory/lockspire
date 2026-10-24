@@ -9,7 +9,243 @@
     "receipt_sha256": "be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39",
     "receipt_schema": "lockspire-phase-139-acceptance-v1"
   },
-  "profiles": [],
+  "profiles": [
+    {
+      "observation_id": "phase37-20261024T201228Z",
+      "profile": "phase37",
+      "observed_at": "2026-10-24T20:12:28Z",
+      "operator": "Codex gsd-executor (Phase 171 Plan 02)",
+      "status": "unavailable",
+      "unavailable_cause": "infrastructure_prerequisite",
+      "source_identity_check": {
+        "before_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "after_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "changed_during_observation": false
+      },
+      "source_host": {
+        "kind": "repository_source_host",
+        "source_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "path": "examples/adoption_demo",
+        "identity": "Billingo adoption host source wrapped by scripts/conformance/run_ephemeral_oidf_profile.sh; this is not a packaged-host run.",
+        "public_origin_observed": false
+      },
+      "package_identity": {
+        "status": "not_applicable",
+        "reason": "The existing wrapper runs examples/adoption_demo from this source checkout and does not install a package."
+      },
+      "suite_inputs": {
+        "lock_path": "scripts/conformance/oidf-suite-lock.json",
+        "lock_sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590",
+        "suite_tag": "release-v5.1.43",
+        "suite_commit": "16ad152b1b2c0baacd3d2519128340d95deb2b8c",
+        "archive_sha256": "c11be330b5a731bf3bca312f7b44d6bfe3981b448d5f58ec3dc2e48f3f509c8e",
+        "helper_sha256": {
+          "docker-compose-prebuilt.yml": "9ca2b63066e6d545edca39c59830c5afb5d569d19e14815a0f53a4682f717f2b",
+          "scripts/run-test-plan.py": "abf7b2637accfbf06a1b7f370bc16516b5ba303e7784eea387e59c74877827e1",
+          "scripts/conformance.py": "927709c76c4be48d52abaa36b5e52804803c72155695991df5a9645a9303a49f",
+          "scripts/test_plan_parser.py": "2b00870b2dc46f1d44d047c715c0ef6978f24ece97a4a9d3b48ceeea8d01830f"
+        },
+        "image_digests": {
+          "server": "sha256:f6b1bb02bc746dd216506f773bc19997b113072fd22dec515f7e3357e218d950",
+          "nginx": "sha256:6a13e1c9ae2d19f2d0fea0a371905d580d61b960e0da84c01d5006729a5f1426",
+          "mongodb": "sha256:b415b12f638e2685d06c58ab7fb5943577c50fadec6d9340ef67d21aeac72070"
+        },
+        "plan_path": "scripts/conformance/phase37-plan.json",
+        "plan_sha256": "ccf89451c2cf0d2bff8521584821a143bcb8b38fcf18d51447056814894ee820",
+        "suite_plan": "oidcc-test-plan",
+        "modules": [
+          "oidcc-prompt-none-not-logged-in",
+          "oidcc-ensure-registered-redirect-uri",
+          "oidcc-redirect-uri-query-mismatch",
+          "oidcc-redirect-uri-query-OK",
+          "oidcc-prompt-none-logged-in",
+          "oidcc-max-age-10000"
+        ]
+      },
+      "preflight": {
+        "immutable_input_validator": {
+          "command": "python3 scripts/conformance/oidf_inputs.py --lock scripts/conformance/oidf-suite-lock.json --validate-only",
+          "exit_code": 0
+        },
+        "mix_check": {
+          "command": "mix lockspire.oidf_conformance --check",
+          "exit_code": 0,
+          "diagnostic": "The command reported OK, but a separate locked-closure check showed missing or mismatched Python distributions; do not treat this preflight as dependency readiness."
+        },
+        "python": {
+          "required_version": "3.13.15",
+          "observed_version": "3.13.2",
+          "required_pip": "26.2.1",
+          "observed_pip": "25.0",
+          "exact_interpreter_lookup": {
+            "command": "UV_CACHE_DIR=/tmp/lockspire-171-uv-cache uv python find 3.13.15",
+            "exit_code": 2,
+            "result": "No interpreter found for Python 3.13.15 in virtual environments, managed installations, or search path"
+          },
+          "locked_dependencies": {
+            "command": "python3.13 metadata check against scripts/conformance/runner-requirements.lock",
+            "exit_code": 1,
+            "mismatches": [
+              "anyio 4.14.2: missing",
+              "certifi 2026.7.22: installed 2025.1.31",
+              "h11 0.16.0: missing",
+              "httpcore 1.0.9: missing",
+              "httpx 0.28.1: missing",
+              "idna 3.19: missing",
+              "pyparsing 3.3.2: missing"
+            ]
+          }
+        },
+        "resources": {
+          "docker_server": "29.5.2 available",
+          "docker_compose": "v5.1.3 available",
+          "curl": "available",
+          "jq": "available",
+          "postgres": "accepting connections at /tmp:5432",
+          "port_4100": "no listener observed"
+        }
+      },
+      "profile_attempt": {
+        "command": "LOCKSPIRE_OIDF_EPHEMERAL_DB=true LOCKSPIRE_PHASE37_ARTIFACT_DIR=.artifacts/conformance/phase37/171-02-retry-20261024T201228Z bash scripts/conformance/run_ephemeral_oidf_profile.sh phase37",
+        "started": false,
+        "interrupted": false,
+        "exit_code": null,
+        "result_classification": null,
+        "reason": "Not launched: the selected interpreter, pip, and locked dependency closure are unavailable."
+      },
+      "artifact_output": {
+        "directory_allocated": false,
+        "receipt_path": null,
+        "receipt_sha256": null,
+        "cleanup": "Not applicable; the profile wrapper and disposable resources were not started."
+      },
+      "historical_observation": {
+        "documented_run_id": "33139876101",
+        "documented_status": "suite_failure",
+        "documented_artifact": "downloaded Phase 37 receipt artifact reported in 137-VERIFICATION.md",
+        "receipt_bytes_in_current_checkout": false,
+        "summary_only_detail": "The historical verification says authorization error behavior remained; it contains no exact module assertion or per-module result.",
+        "exact_historical_assertion": "unavailable"
+      },
+      "next_owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check and this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_id": "fapi2-20261024T201228Z",
+      "profile": "fapi2",
+      "observed_at": "2026-10-24T20:12:28Z",
+      "operator": "Codex gsd-executor (Phase 171 Plan 02)",
+      "status": "unavailable",
+      "unavailable_cause": "infrastructure_prerequisite",
+      "source_identity_check": {
+        "before_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "after_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "changed_during_observation": false
+      },
+      "source_host": {
+        "kind": "repository_source_host",
+        "source_sha": "d78f0fd944b8c8612261883e09cfb844a698bd92",
+        "path": "examples/adoption_demo",
+        "identity": "Billingo adoption host source wrapped by scripts/conformance/run_ephemeral_oidf_profile.sh; this is not a packaged-host run.",
+        "public_origin_observed": false
+      },
+      "package_identity": {
+        "status": "not_applicable",
+        "reason": "The existing wrapper runs examples/adoption_demo from this source checkout and does not install a package."
+      },
+      "suite_inputs": {
+        "lock_path": "scripts/conformance/oidf-suite-lock.json",
+        "lock_sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590",
+        "suite_tag": "release-v5.1.43",
+        "suite_commit": "16ad152b1b2c0baacd3d2519128340d95deb2b8c",
+        "archive_sha256": "c11be330b5a731bf3bca312f7b44d6bfe3981b448d5f58ec3dc2e48f3f509c8e",
+        "helper_sha256": {
+          "docker-compose-prebuilt.yml": "9ca2b63066e6d545edca39c59830c5afb5d569d19e14815a0f53a4682f717f2b",
+          "scripts/run-test-plan.py": "abf7b2637accfbf06a1b7f370bc16516b5ba303e7784eea387e59c74877827e1",
+          "scripts/conformance.py": "927709c76c4be48d52abaa36b5e52804803c72155695991df5a9645a9303a49f",
+          "scripts/test_plan_parser.py": "2b00870b2dc46f1d44d047c715c0ef6978f24ece97a4a9d3b48ceeea8d01830f"
+        },
+        "image_digests": {
+          "server": "sha256:f6b1bb02bc746dd216506f773bc19997b113072fd22dec515f7e3357e218d950",
+          "nginx": "sha256:6a13e1c9ae2d19f2d0fea0a371905d580d61b960e0da84c01d5006729a5f1426",
+          "mongodb": "sha256:b415b12f638e2685d06c58ab7fb5943577c50fadec6d9340ef67d21aeac72070"
+        },
+        "plan_path": "scripts/conformance/fapi2-plan.json",
+        "plan_sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583",
+        "suite_plan": "fapi2-security-profile-final-test-plan",
+        "modules": [],
+        "empty_modules_meaning": "Module selection is delegated to the named upstream suite plan; this is not a zero-test profile."
+      },
+      "preflight": {
+        "immutable_input_validator": {
+          "command": "python3 scripts/conformance/oidf_inputs.py --lock scripts/conformance/oidf-suite-lock.json --validate-only",
+          "exit_code": 0
+        },
+        "mix_check": {
+          "command": "mix lockspire.oidf_conformance --check",
+          "exit_code": 0,
+          "diagnostic": "The command reported OK, but a separate locked-closure check showed missing or mismatched Python distributions; do not treat this preflight as dependency readiness."
+        },
+        "python": {
+          "required_version": "3.13.15",
+          "observed_version": "3.13.2",
+          "required_pip": "26.2.1",
+          "observed_pip": "25.0",
+          "exact_interpreter_lookup": {
+            "command": "UV_CACHE_DIR=/tmp/lockspire-171-uv-cache uv python find 3.13.15",
+            "exit_code": 2,
+            "result": "No interpreter found for Python 3.13.15 in virtual environments, managed installations, or search path"
+          },
+          "locked_dependencies": {
+            "command": "python3.13 metadata check against scripts/conformance/runner-requirements.lock",
+            "exit_code": 1,
+            "mismatches": [
+              "anyio 4.14.2: missing",
+              "certifi 2026.7.22: installed 2025.1.31",
+              "h11 0.16.0: missing",
+              "httpcore 1.0.9: missing",
+              "httpx 0.28.1: missing",
+              "idna 3.19: missing",
+              "pyparsing 3.3.2: missing"
+            ]
+          }
+        },
+        "resources": {
+          "docker_server": "29.5.2 available",
+          "docker_compose": "v5.1.3 available",
+          "curl": "available",
+          "jq": "available",
+          "postgres": "accepting connections at /tmp:5432",
+          "port_4100": "no listener observed",
+          "fapi2_provider_origin_tls_browser_path": "unavailable; no profile/container/host was started, so external provider origin, TLS termination and browser path were not observed"
+        }
+      },
+      "profile_attempt": {
+        "command": "LOCKSPIRE_OIDF_EPHEMERAL_DB=true LOCKSPIRE_FAPI2_ARTIFACT_DIR=.artifacts/conformance/fapi2/171-02-retry-20261024T201228Z bash scripts/conformance/run_ephemeral_oidf_profile.sh fapi2",
+        "started": false,
+        "interrupted": false,
+        "exit_code": null,
+        "result_classification": null,
+        "reason": "Not launched: the selected interpreter, pip, and locked dependency closure are unavailable; the disposable provider-origin/TLS/browser path has not been observed."
+      },
+      "artifact_output": {
+        "directory_allocated": false,
+        "receipt_path": null,
+        "receipt_sha256": null,
+        "cleanup": "Not applicable; the profile wrapper and disposable resources were not started."
+      },
+      "historical_observation": {
+        "documented_run_id": "33139876101",
+        "documented_status": "suite_failure",
+        "documented_artifact": "downloaded FAPI 2.0 receipt artifact reported in 137-VERIFICATION.md",
+        "receipt_bytes_in_current_checkout": false,
+        "summary_only_detail": "The historical verification summarizes PAR/TLS/WebRunner interoperability; it contains no exact module assertion or per-module result.",
+        "exact_historical_assertion": "unavailable"
+      },
+      "next_owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
+      "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check, confirm the disposable provider-origin/TLS/browser path, and run this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    }
+  ],
   "cases": [
     {
       "id": "A171-001",
