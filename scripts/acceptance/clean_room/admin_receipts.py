@@ -15,6 +15,14 @@ from typing import Any, Sequence
 ROOT_FIELDS = frozenset({"schema_version", "run_id", "source_revision", "source_dirty", "candidate", "pair", "runtime", "mount", "evidence_kind", "scenarios", "cleanup", "result"})
 CANDIDATE_FIELDS = frozenset({"version", "archive_sha256", "tree_sha256"})
 RUNTIME_FIELDS = frozenset({"phoenix", "live_view", "elixir", "otp", "node", "chrome"})
+RUNTIME_PATTERNS = {
+    "phoenix": r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?",
+    "live_view": r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?",
+    "elixir": r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?",
+    "otp": r"\d+",
+    "node": r"\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?",
+    "chrome": r"Chrome/\d+(?:\.\d+){1,3}",
+}
 SCENARIO_FIELDS = frozenset({"id", "outcome", "counts", "duration_ms", "observations"})
 CLEANUP_FIELDS = frozenset({"processes_stopped", "database_removed", "profile_removed", "run_root_removed"})
 REQUIRED = frozenset({"tracer.browser_join_navigation"})
@@ -68,8 +76,14 @@ def validate_receipt(
     if receipt["evidence_kind"] != "real_browser_cdp":
         raise ValueError("receipt evidence kind is invalid")
     runtime = _exact(receipt["runtime"], RUNTIME_FIELDS, "runtime")
-    if any(not isinstance(value, str) or not value for value in runtime.values()):
+    if any(
+        not isinstance(value, str) or
+        (value != "unknown" and not re.fullmatch(RUNTIME_PATTERNS[key], value))
+        for key, value in runtime.items()
+    ):
         raise ValueError("receipt runtime versions are incomplete")
+    if receipt["result"] == "passed" and any(value == "unknown" for value in runtime.values()):
+        raise ValueError("passed receipt runtime versions are incomplete")
     if not isinstance(receipt["scenarios"], list):
         raise ValueError("receipt scenarios are invalid")
     seen: set[str] = set()

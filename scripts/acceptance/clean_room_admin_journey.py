@@ -35,6 +35,54 @@ DEFAULTS = {
     "counts": {"assets": 0, "websocket_handshakes": 0, "successful_joins": 0, "navigations": 0},
     "observations": {"login": False, "overview": False, "clients": False, "authorized_http": False, "connected_hook": False},
 }
+BROWSER_FAILURES = frozenset({
+    "chrome_missing", "node_unsupported", "origin_invalid", "mount_invalid", "chrome_spawn_failed",
+    "chrome_start_failed", "chrome_target_failed", "browser_timeout", "login_load_timeout",
+    "login_response_non_html", "login_response_empty", "login_path_mismatch", "login_form_missing",
+    "login_content_type_invalid", "login_response_content_missing", "login_page_status_200",
+    "login_page_status_403", "login_page_status_404", "login_page_status_500", "login_redirect_timeout",
+    "login_post_not_sent", "login_post_not_observed", "login_post_network_failed", "login_post_no_redirect",
+    "login_redirect_status_302", "login_redirect_status_403", "login_redirect_status_404",
+    "login_redirect_status_422", "login_redirect_status_500", "overview_render_timeout",
+    "live_socket_connected_timeout", "live_join_timeout", "clients_render_timeout", "cdp_connect_failed",
+    "cdp_connect_timeout", "cdp_command_failed", "cdp_command_timeout", "page_evaluation_failed",
+    "clients_link_missing", "host_observations_failed", "control_capability_missing", "browser_failure",
+})
+BROWSER_STAGES = frozenset({
+    "preflight", "chrome_start", "cdp_setup", "login_load", "login_submit", "login_redirect",
+    "overview_render", "live_socket_connected", "live_join", "clients_navigation", "clients_render",
+})
+BROWSER_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"})
+BROWSER_OBSERVATIONS = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"})
+
+
+def safe_browser_failure_summary(observed: object) -> dict[str, object]:
+    """Reduce untrusted Node output to fixed failure codes, counters, and booleans."""
+    if not isinstance(observed, dict):
+        observed = {}
+    raw_failure = observed.get("failure")
+    if raw_failure is None:
+        failure = "failure_missing"
+    elif not isinstance(raw_failure, str):
+        failure = "failure_non_string"
+    else:
+        failure = raw_failure if raw_failure in BROWSER_FAILURES else "failure_unrecognized"
+    raw_stage = observed.get("stage")
+    stage = raw_stage if isinstance(raw_stage, str) and raw_stage in BROWSER_STAGES else "unknown"
+    outcome = observed.get("outcome")
+    if not isinstance(outcome, str) or outcome not in {"passed", "failed"}:
+        outcome = "unknown"
+    raw_counts = observed.get("counts")
+    counts = raw_counts if (
+        isinstance(raw_counts, dict) and set(raw_counts) == BROWSER_COUNTS and
+        all(type(value) is int and value >= 0 for value in raw_counts.values())
+    ) else {}
+    raw_observations = observed.get("observations")
+    observations = raw_observations if (
+        isinstance(raw_observations, dict) and set(raw_observations) == BROWSER_OBSERVATIONS and
+        all(type(value) is bool for value in raw_observations.values())
+    ) else {}
+    return {"failure": failure, "stage": stage, "outcome": outcome, "counts": counts, "observations": observations}
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -179,20 +227,7 @@ def main(argv: Sequence[str]) -> int:
             if observed.get("runtime", {}).get("chrome"):
                 runtime["chrome"] = observed["runtime"]["chrome"]
         if (browser.returncode != 0 or scenario["outcome"] != "passed") and isinstance(observed, dict):
-            failure_code = observed.get("failure")
-            if failure_code is None:
-                failure_code = "failure_missing"
-            elif not isinstance(failure_code, str):
-                failure_code = "failure_non_string"
-            elif not re.fullmatch(r"[a-z0-9_]{1,48}", failure_code):
-                failure_code = "failure_unrecognized"
-            summary = {
-                "failure": failure_code,
-                "stage": observed.get("stage") if isinstance(observed.get("stage"), str) and re.fullmatch(r"[a-z_]{1,32}", observed["stage"]) else "unknown",
-                "outcome": observed.get("outcome") if observed.get("outcome") in {"passed", "failed"} else "unknown",
-                "counts": observed.get("counts") if isinstance(observed.get("counts"), dict) else {},
-                "observations": observed.get("observations") if isinstance(observed.get("observations"), dict) else {},
-            }
+            summary = safe_browser_failure_summary(observed)
             print("browser proof failed: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
         cleanup["profile_removed"] = observed.get("profile_removed") is True if isinstance(observed, dict) else False
         if browser.returncode != 0 or scenario["outcome"] != "passed":
