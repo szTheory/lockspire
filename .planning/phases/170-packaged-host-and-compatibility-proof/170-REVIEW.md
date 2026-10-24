@@ -1,6 +1,6 @@
 ---
 phase: 170-packaged-host-and-compatibility-proof
-reviewed: 2026-10-24T08:45:14Z
+reviewed: 2026-10-24T09:50:18Z
 depth: standard
 files_reviewed: 27
 files_reviewed_list:
@@ -32,38 +32,46 @@ files_reviewed_list:
   - test/lockspire/web/live/admin/device_authorizations_live_test.exs
   - test/lockspire/web/live/admin/interactions_live_test.exs
 findings:
-  critical: 1
+  critical: 0
   warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 170: Code Review Report
 
-**Reviewed:** 2026-10-24T08:45:14Z
+**Reviewed:** 2026-10-24T09:50:18Z
 **Depth:** standard
 **Files Reviewed:** 27
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-Reviewed all changed non-planning files in the supplied phase scope, excluding the compatibility lockfile. The package, browser, CI, and LiveView changes were inspected in context. One path-traversal flaw in the CI wrapper's receipt-directory guard can make its stale-file cleanup delete files outside the intended `.artifacts` tree.
+Re-reviewed the 27 changed non-planning files in the supplied scope, excluding the compatibility lockfile. The prior CR-01 receipt-path traversal issue is fixed: the wrapper validates every path component, rejects `..`, symlink components, non-directory components, absolute paths, and CR/LF, and requires the resolved destination to be a strict descendant of the resolved `.artifacts` root before staging mutations. No open findings remain in the reviewed scope.
 
-## Critical Issues
+The focused unsafe-path regression passed and confirmed external sentinel files remain unchanged. The normal nested staging regression also passed. `git diff --check` passed. No remote CI execution was observed or claimed; the wrapper explicitly does not defend against concurrent filesystem replacement between validation and use, as documented in its source comment.
 
-### CR-01: Receipt directory traversal lets cleanup delete outside `.artifacts`
+## Narrative Findings (AI reviewer)
 
-**File:** `scripts/ci/run_host_integration_proof.sh:18`
-**Issue:** The guard accepts any string beginning with `.artifacts/`, so values such as `.artifacts/../../tmp/proof` pass. An existing symlink below `.artifacts` also passes. The script then uses the resulting path at lines 32–36 and removes `lifecycle.json` and the pair's named receipt files from that directory before validating its contents. A caller can therefore make this proof command delete matching files outside the intended artifact directory, creating a concrete data-loss risk.
-**Fix:** Canonicalize the requested directory and `.artifacts` root, reject traversal and symlink escapes, and verify the resolved destination remains a strict descendant of the resolved root before any `mkdir`, `rm`, or write. For example, resolve both paths with Python `Path.resolve()` and reject unless `stage_dir.is_relative_to(artifact_root)`; also reject a pre-existing symlink destination or symlinked parent components.
+No open findings.
 
-## Warnings
+### CR-01: Receipt directory traversal — resolved
 
-## Info
+**Original issue:** The prior lexical `.artifacts/*` check allowed traversal or symlink paths to direct stale-file cleanup outside the artifact tree.
+
+**Resolution verified:** `scripts/ci/run_host_integration_proof.sh:18-48` now rejects traversal and all existing symlink path components, blocks CR/LF command-substitution changes, and verifies strict canonical containment before `mkdir`, deletion, or staging.
+
+**Focused evidence:**
+
+- `python3 test/clean_room/test_admin_journey.py HostProofReceiptDirectoryTests.test_unsafe_receipt_directories_are_rejected_before_any_file_changes` — passed. Cases cover traversal, contained traversal, symlinked artifact root/parent/destination, and newline suffix; external sentinel files remained byte-identical.
+- `ASDF_ELIXIR_VERSION=1.20.4-otp-29 ASDF_ERLANG_VERSION=29.1.1 python3 test/clean_room/test_admin_journey.py HostProofWrapperFailureTests.test_successful_validated_staging_contains_no_fake_child_secrets` — passed, including successful nested output staging.
+- `git diff --check ec9f7446^ ec9f7446 -- . ':!.planning'` — passed.
+
+**Review limits:** The compatibility lockfile was excluded from this source review. The reported refreshed local package/browser and exact-floor evidence is not a hosted CI result; no remote workflow run was observed.
 
 ---
 
-_Reviewed: 2026-10-24T08:45:14Z_
+_Reviewed: 2026-10-24T09:50:18Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
