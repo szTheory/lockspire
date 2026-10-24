@@ -6,6 +6,8 @@ import uuid
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance"))
+import clean_room_admin_journey as admin_journey
 from admin_receipts import validate_receipt, write_receipt
 
 
@@ -108,7 +110,26 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 7)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 8)
+
+    def test_browser_failure_summary_discards_hostile_child_fields(self):
+        summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
+        self.assertTrue(callable(summarize), "browser diagnostics must pass through a strict allowlist")
+        if not callable(summarize):
+            return
+        sentinel = "phase170-private-cookie-sentinel"
+        summary = summarize({
+            "failure": sentinel,
+            "stage": sentinel,
+            "outcome": "failed",
+            "counts": {"assets": sentinel, "cookie": sentinel},
+            "observations": {"login": sentinel, "session": sentinel},
+        })
+        rendered = __import__("json").dumps(summary)
+        self.assertNotIn(sentinel, rendered)
+        self.assertEqual(set(summary), {"failure", "stage", "outcome", "counts", "observations"})
+        self.assertEqual(summary["counts"], {})
+        self.assertEqual(summary["observations"], {})
 
 
 if __name__ == "__main__":
