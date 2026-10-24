@@ -318,7 +318,6 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   defp resolve_authorization_params(%{"request_uri" => request_uri} = params, %Client{} = client)
        when is_binary(request_uri) and request_uri != "" do
     with :ok <- reject_request_uri_and_request_conflict(params),
-         :ok <- reject_request_uri_conflicts(params),
          :ok <- validate_lockspire_request_uri(request_uri),
          {:ok, %PushedAuthorizationRequest{} = request} <-
            consume_pushed_authorization_request(request_uri, client.client_id) do
@@ -867,26 +866,6 @@ defmodule Lockspire.Protocol.AuthorizationRequest do
   end
 
   defp maybe_reject_inbound_request_uri(_params, false), do: :ok
-
-  defp reject_request_uri_conflicts(params) do
-    conflict_keys =
-      params
-      |> Enum.reject(fn {key, _value} -> key in ["client_id", "request_uri"] end)
-      |> Enum.filter(fn {_key, value} -> present?(value) end)
-
-    case conflict_keys do
-      [] ->
-        :ok
-
-      _other ->
-        {:browser_error,
-         browser_error(
-           :invalid_request,
-           "request_uri cannot be combined with raw authorization parameters",
-           :request_uri_conflict
-         )}
-    end
-  end
 
   defp validate_lockspire_request_uri(request_uri) do
     if String.starts_with?(request_uri, PushedAuthorizationRequest.request_uri_prefix()) do
