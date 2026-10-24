@@ -56,25 +56,25 @@ Plans:
 
 ### Phase 172: Authorization Responses
 
-**Goal**: Clients receive the qualified authorization-response and authentication-freshness outcomes while callback safety and host account/session authority remain intact.
+**Goal**: Correct only the reproduced unsupported `response_mode` disposition in A171-003 while carrying forward existing callback and silent-auth proof; preserve host account/session authority.
 **Depends on**: Phase 171; its accepted-main gate and frozen authorization case matrix must be satisfied before implementation planning.
 **Requirements**: AUTHR-01, AUTHR-02, AUTHR-03
 **Success Criteria** (what must be TRUE):
-  1. A client receives the selected safe authorization-error response for each qualified invalid-client/redirect case; exact registered-redirect checks prevent an attacker-controlled callback.
-  2. A client with a valid callback receives the qualified error/state and supported response-mode representation, with reserved/error parameters encoded unambiguously under the selected adversarial inputs.
-  3. A client using the selected prompt=none or max_age cases receives the applicable protocol outcome and authentication-freshness claims without an inappropriate host login redirect; the host remains authoritative for accounts and sessions.
+  1. A171-003 receives HTTP 400 without OAuth Error Response parameters for unsupported `response_mode`; move this required assertion to its existing regression owner and show RED at the qualified source followed by GREEN after correction.
+  2. Reuse A171-001 and A171-002 proof for exact redirect safety and registered-callback error/state encoding; do not schedule duplicate correction work for those already-proven cases.
+  3. Reuse A171-004, A171-005 and A171-006 proof for `prompt=none`, `max_age` and host-provided `auth_time`; preserve host ownership of accounts and sessions.
 
 **Plans**: TBD
 
 ### Phase 173: Conditional PAR & Profile Boundaries
 
-**Goal**: Clients and integrators can rely on the selected supported PAR/profile contract and distinguish its assertions from issuer, TLS, proxy and browser-harness failures.
+**Goal**: Correct only P171-005's reproduced rejection of a conflicting outer `scope` for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
 **Depends on**: Phase 172 and Phase 171's frozen PAR/profile case matrix; retained scope must survive qualification before implementation planning.
 **Requirements**: PARB-01, PARB-02, PARB-03
 **Success Criteria** (what must be TRUE):
-  1. A client using selected pushed-request references observes the qualified client binding, expiry and one-use semantics; invalid, mismatched and reused references receive the specified failures.
-  2. A client receives the qualified outcome for selected pushed-versus-front-channel parameter conflicts and required-PAR cases while existing PKCE and security-profile boundaries remain effective.
-  3. An integrator can distinguish the selected PAR/profile assertions from public issuer/TLS/proxy/browser-harness failures, using redacted evidence whose advertised endpoints and tested configured surface agree for those cases.
+  1. For P171-005, a valid PAR reference reaches consent with pushed `openid email`; a conflicting outer `scope=profile` is ignored without union or override, with state and nonce preserved. Move this assertion to its existing regression owner and show RED at the qualified source followed by GREEN after correction.
+  2. Reuse P171-001, P171-002 and P171-003 proof for client binding, expiry and one-use; reuse P171-004 proof for required-PAR, preserving existing PKCE and security-profile boundaries.
+  3. Reuse P171-006 source-host issuer/discovery metadata proof. External provider-origin, TLS/proxy and browser reachability remain supplemental and unavailable; that limitation does not create another selected code or infrastructure project.
 
 **Plans**: TBD
 

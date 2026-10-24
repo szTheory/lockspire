@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "phase": 171,
-  "selection_status": "draft",
+  "selection_status": "frozen",
   "baseline": {
     "accepted_sha": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
     "implementation_base": "fe38beee987b135e87c99e7aa7f2488b4c8613e8",
@@ -1267,7 +1267,7 @@
     }
   ],
   "matrix": {
-    "status": "draft",
+    "status": "frozen",
     "rows": [
       {
         "case_id": "A171-001",
@@ -1503,7 +1503,147 @@
       }
     ],
     "replan_required": true,
-    "amendments": []
+    "amendments": [
+      {
+        "file": ".planning/REQUIREMENTS.md",
+        "anchor": "Qualification-driven scope reconciliation (2026-10-24)",
+        "reason": "Map all six requirements to the twelve qualified cases; retain only the two reproduced corrections and preserve Phase 174 proof obligations."
+      },
+      {
+        "file": ".planning/ROADMAP.md",
+        "anchor": "Phase 172: Authorization Responses / Phase 173: Conditional PAR & Profile Boundaries",
+        "reason": "Narrow dependent work to A171-003 and P171-005 correction contracts; carry existing case proof forward and keep external profile limits supplemental."
+      }
+    ],
+    "frozen_at": "2026-10-24T20:49:46Z",
+    "qualification_sha": "6d9a5db65f8cc3cb8c64ea0dd51ad022a6b18945",
+    "blocking_entries": [],
+    "input_manifest": [
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "matrix-selection",
+        "sha256": "cf3e205c4ccf57e5bcdcd413e60be568d1f4484aacd83c2de2e9f5075d09041f"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "cases",
+        "sha256": "5fdb81f30a08635a165ed308ba75cecaf170d3879e0ca9d60217f270fe4e0f22"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "profiles",
+        "sha256": "5d429db5ece4a46a617644ad78de4454d866282ec1d56d7461c20594402ea59a"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "category-coverage",
+        "sha256": "8302c0fe8260e6f80938d5f7967f4a2f4651f92ab1be76be94b4826db531aed9"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "scope-revision",
+        "sha256": "c7b53a87b1b4da8e42a04137aa3dc9ff23daf1f489b207ea87328b2c727111be"
+      },
+      {
+        "path": ".planning/REQUIREMENTS.md",
+        "selector": "qualification-scope-map",
+        "sha256": "32a7b0dc957b64ad10de00fd636e98d4379b35ed5750f068a279a272dbcc111b"
+      },
+      {
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "sha256": "796b5496393344eb733a664b6fcbc30ce89e2579678ccfe9a1764da2d705afb8"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
+        "sha256": "be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md",
+        "sha256": "419430c58fd083f980f8eafb39c45adaf03b4cdc6c9dfccc35871d7dcaa03304"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "sha256": "aa32831de91898a4a870bb41a371968750f2bceb31f731fe9cff397f45f51d88"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
+        "sha256": "a816ea5b3814230795cb86f1b3352de8d251b9fe3ad6798dec04f2fd12575905"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-PATTERNS.md",
+        "sha256": "f9924c94ad413ef461fc474d0958f5e2a53a1fed26c96a623ebce7cbe6c91c61"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "sha256": "6c1d1ab5d5fc48ed980449ce536a90c9e14d185f8573f7d97ed53890d6f8e985"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
+        "sha256": "e6462dbf111e3e0bbed567eda294530366193001ad73f1241fb91583d8a040b3"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-SUMMARY.md",
+        "sha256": "2af034235bacb8b670a3070c376fd1129193c792f1241ae4a2f8d6626cfaca6e"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "sha256": "0f1b9dcf5f4a5e5eca75befd2c87bff9865ef515b151a6b93b066cd4e0389207"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
+        "sha256": "3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764"
+      },
+      {
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "sha256": "fcb19db18957a217c0767843213eec331284cf7ad567af133eef95030a0eeb7b"
+      },
+      {
+        "path": "test/test_helper.exs",
+        "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"
+      },
+      {
+        "path": "test/support/config_case.ex",
+        "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"
+      },
+      {
+        "path": "test/support/test_account_resolver.ex",
+        "sha256": "bd8e9f723a67b3bd719084ea9a37cb6df52aebefa38da9bc209737b3bc3fe6f8"
+      },
+      {
+        "path": "test/lockspire/web/authorize_controller_test.exs",
+        "sha256": "382ce013af67d40df21f12d49e4918a9442b8bae52d788becdd92ebc8edd6590"
+      },
+      {
+        "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+        "sha256": "a1529fd15509347e9ea76fdcc3d603182c3582d9cb105c47e18d2bf0b5df69be"
+      },
+      {
+        "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+        "sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+      },
+      {
+        "path": "test/lockspire/web/discovery_controller_test.exs",
+        "sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+      },
+      {
+        "path": "docs/supported-surface.md",
+        "sha256": "078b723ec78a7005bf76633ca5fe47c2a7504b203a5c9a87de366a31f876c6bb"
+      },
+      {
+        "path": "scripts/conformance/runner-requirements.lock",
+        "sha256": "b79d63fff6ca0af43d87db1d90e18552a4765644123159427ca0de3eed632e66"
+      },
+      {
+        "path": "scripts/conformance/oidf-suite-lock.json",
+        "sha256": "7d5463f1e2913bd8b8d88abc491a50a848e88a9d93debf4f049c75395592b590"
+      },
+      {
+        "path": "scripts/conformance/fapi2-plan.json",
+        "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
+      }
+    ],
+    "input_digest": "cf44b71ae6aeaa52338f20d6cd307518d569ed6be078a7c665f91cc699b62e5b"
   },
   "blockers": [],
   "exclusions": [

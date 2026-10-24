@@ -155,6 +155,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
     empty =
       ledger
+      |> draft_matrix("empty_requires_replan")
       |> Map.put("cases", [])
       |> Map.put("selection_status", "empty_requires_replan")
       |> put_in(["matrix", "rows"], [])
@@ -189,12 +190,107 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert_rejected(put_in(empty, ["matrix", "replan_required"], false))
   end
 
+  test "a frozen empty inventory requires real requirement and roadmap amendments" do
+    ledger = load_ledger()
+
+    empty =
+      ledger
+      |> Map.put("cases", [])
+      |> Map.put("selection_status", "empty_requires_replan")
+      |> put_in(["matrix", "rows"], [])
+      |> put_in(["scope_revision", "required"], true)
+      |> put_in(["scope_revision", "rationale"], "No correction survives qualification.")
+      |> put_in(["matrix", "replan_required"], true)
+      |> put_in(
+        ["matrix", "requirement_dispositions"],
+        Enum.map(@downstream_requirement_ids, fn id ->
+          %{
+            "requirement_id" => id,
+            "disposition" => "revise",
+            "case_ids" => [],
+            "existing_proof" => [],
+            "retained_cases" => [],
+            "rationale" => "The case inventory is empty and the downstream scope is revised.",
+            "amendment_ref" => "REQUIREMENTS.md and ROADMAP.md"
+          }
+        end)
+      )
+      |> put_in(["matrix", "amendments"], [
+        %{
+          "file" => ".planning/REQUIREMENTS.md",
+          "anchor" => "qualification-driven scope",
+          "reason" => "Revise empty scope."
+        },
+        %{
+          "file" => ".planning/ROADMAP.md",
+          "anchor" => "phases 172-173",
+          "reason" => "Revise empty scope."
+        }
+      ])
+      |> update_in(["category_coverage"], fn categories ->
+        Enum.map(categories, &%{&1 | "case_ids" => [], "status" => "excluded_fixture"})
+      end)
+
+    empty =
+      empty
+      |> put_in(["matrix", "status"], "frozen")
+      |> put_in(["selection_status"], "frozen")
+      |> put_in(["matrix", "frozen_at"], "2026-10-24T20:49:46Z")
+      |> put_in(["matrix", "qualification_sha"], "6d9a5db65f8cc3cb8c64ea0dd51ad022a6b18945")
+      |> put_in(["matrix", "blocking_entries"], [])
+      |> put_in(["blockers"], [])
+
+    empty = put_in(empty, ["matrix", "input_manifest"], frozen_empty_manifest(empty))
+
+    empty =
+      put_in(
+        empty,
+        ["matrix", "input_digest"],
+        manifest_digest(empty["matrix"]["input_manifest"])
+      )
+
+    assert validate(empty) == []
+    assert_rejected(put_in(empty, ["matrix", "amendments"], []))
+
+    assert_rejected(
+      put_in(
+        empty,
+        ["matrix", "requirement_dispositions", Access.at(0), "disposition"],
+        "reuse_existing"
+      )
+    )
+  end
+
+  test "a frozen matrix rejects drifted inputs, retained blockers, and omitted requirements" do
+    ledger = load_ledger()
+    assert validate(ledger) == []
+
+    assert_rejected(
+      put_in(
+        ledger,
+        ["matrix", "input_manifest", Access.at(0), "sha256"],
+        String.duplicate("0", 64)
+      )
+    )
+
+    assert_rejected(put_in(ledger, ["matrix", "blocking_entries"], ["unresolved input"]))
+
+    assert_rejected(
+      put_in(
+        ledger,
+        ["matrix", "requirement_dispositions"],
+        Enum.drop(ledger["matrix"]["requirement_dispositions"], -1)
+      )
+    )
+  end
+
   test "a valid single case and matrix row remain admissible" do
     ledger = load_ledger()
     [item | _] = ledger["cases"]
 
     single =
       ledger
+      |> draft_matrix("selected")
       |> Map.put("cases", [item])
       |> Map.put("selection_status", "selected")
       |> put_in(["matrix", "rows"], [
@@ -255,6 +351,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
     pair =
       ledger
+      |> draft_matrix("selected")
       |> Map.put("cases", [first, same_outcomes])
       |> Map.put("selection_status", "selected")
       |> put_in(["matrix", "rows"], Enum.take(ledger["matrix"]["rows"], 2))
@@ -315,6 +412,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
           %{hd(observations) | "observation_id" => "A171-001-20261025-02", "date" => "2026-10-25"}
         ]
       end)
+      |> draft_matrix("selected")
 
     assert validate(repeated) == []
     assert get_in(repeated, ["cases", Access.at(0), "id"]) == "A171-001"
@@ -385,6 +483,32 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp load_ledger, do: @ledger_path |> File.read!() |> Jason.decode!()
 
+  defp draft_matrix(ledger, selection_status) do
+    ledger
+    |> put_in(["selection_status"], selection_status)
+    |> put_in(["matrix", "status"], "draft")
+  end
+
+  @ledger_relative_path ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json"
+
+  defp frozen_empty_manifest(ledger) do
+    [
+      {@ledger_relative_path, "matrix-selection"},
+      {@ledger_relative_path, "cases"},
+      {".planning/REQUIREMENTS.md", "qualification-scope-map"},
+      {".planning/ROADMAP.md", "phases-172-173-contract"}
+    ]
+    |> Enum.map(fn {path, selector} ->
+      entry = %{"path" => path, "selector" => selector}
+      Map.put(entry, "sha256", input_entry_hash(ledger, entry))
+    end)
+  end
+
+  defp manifest_digest(manifest) do
+    payload = Enum.map_join(manifest, "", &(manifest_identity(&1) <> " " <> &1["sha256"] <> "\n"))
+    sha256(payload)
+  end
+
   defp load_receipt(ledger) do
     ledger["baseline"]["receipt_ref"]
     |> then(&Path.join(@repo_root, &1))
@@ -405,7 +529,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
     |> require(ledger["schema_version"] == 1, "schema_version must be 1")
     |> require(ledger["phase"] == 171, "phase must be 171")
     |> require(
-      ledger["selection_status"] in ["draft", "selected", "empty_requires_replan"],
+      ledger["selection_status"] in ["draft", "selected", "empty_requires_replan", "frozen"],
       "selection_status is invalid"
     )
     |> require(
@@ -414,7 +538,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
     )
     |> require(is_list(cases), "cases must be an array, not null")
     |> require(is_map(ledger["matrix"]), "matrix must be an object")
-    |> require(ledger["matrix"]["status"] == "draft", "matrix status must be draft")
+    |> require(ledger["matrix"]["status"] in ["draft", "frozen"], "matrix status is invalid")
     |> require(is_list(rows), "matrix rows must be an array, not null")
     |> require(
       is_list(ledger["matrix"]["requirement_dispositions"]),
@@ -432,6 +556,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
       cases,
       rows
     )
+    |> validate_frozen_matrix(ledger, cases, rows)
     |> validate_category_references(ledger["category_coverage"], cases)
     |> validate_cases(cases, receipt_path)
   end
@@ -446,7 +571,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
       cases == [] ->
         errors
         |> require(
-          ledger["selection_status"] == "empty_requires_replan",
+          ledger["selection_status"] in ["empty_requires_replan", "frozen"],
           "empty case set requires a replan marker"
         )
         |> require(
@@ -465,7 +590,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
       true ->
         errors
         |> require(
-          ledger["selection_status"] in ["draft", "selected"],
+          ledger["selection_status"] in ["draft", "selected", "frozen"],
           "nonempty case set has invalid selection status"
         )
         |> require(
@@ -738,6 +863,215 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp validate_requirement_dispositions(errors, _, _, _),
     do: require(errors, false, "requirement_dispositions must be an array")
+
+  defp validate_frozen_matrix(errors, ledger, cases, rows) do
+    matrix = Map.get(ledger, "matrix", %{})
+
+    if matrix["status"] == "frozen" do
+      manifest = matrix["input_manifest"]
+
+      errors
+      |> require(
+        ledger["selection_status"] == "frozen",
+        "frozen matrix requires frozen selection status"
+      )
+      |> require(valid_iso8601?(matrix["frozen_at"]), "frozen matrix requires a UTC timestamp")
+      |> require(
+        full_sha?(matrix["qualification_sha"]) and
+          source_revision_exists?(matrix["qualification_sha"]),
+        "qualification SHA must resolve to a source commit"
+      )
+      |> require(
+        matrix["blocking_entries"] == [],
+        "frozen matrix must have zero blocking entries"
+      )
+      |> require(ledger["blockers"] == [], "frozen matrix cannot retain selected-case blockers")
+      |> require(
+        is_list(matrix["amendments"]) and matrix["amendments"] != [],
+        "frozen matrix requires explicit amendments or no-change decisions"
+      )
+      |> require(
+        is_list(manifest) and manifest != [],
+        "frozen matrix requires an ordered input manifest"
+      )
+      |> require(
+        valid_input_manifest?(ledger, manifest, matrix["input_digest"]),
+        "frozen matrix input manifest or digest is invalid or drifted"
+      )
+      |> require(
+        frozen_scope_reconciled?(ledger, cases, rows),
+        "frozen scope requires requirement and roadmap reconciliation"
+      )
+    else
+      require(
+        errors,
+        ledger["selection_status"] != "frozen",
+        "draft matrix cannot claim frozen selection status"
+      )
+    end
+  end
+
+  defp frozen_scope_reconciled?(ledger, [], _rows) do
+    matrix = ledger["matrix"]
+    amendments = matrix["amendments"]
+    files = if is_list(amendments), do: Enum.map(amendments, & &1["file"]), else: []
+    dispositions = matrix["requirement_dispositions"]
+
+    matrix["replan_required"] == true and ledger["scope_revision"]["required"] == true and
+      ".planning/REQUIREMENTS.md" in files and ".planning/ROADMAP.md" in files and
+      is_list(dispositions) and
+      Enum.all?(dispositions, &(&1["disposition"] in ["revise", "remove"])) and
+      Enum.all?(amendments, &(nonempty?(&1["anchor"]) and nonempty?(&1["reason"])))
+  end
+
+  defp frozen_scope_reconciled?(ledger, cases, rows) when is_list(cases) and cases != [] do
+    matrix = ledger["matrix"]
+    amendments = matrix["amendments"]
+    files = if is_list(amendments), do: Enum.map(amendments, & &1["file"]), else: []
+
+    is_list(amendments) and is_list(rows) and
+      is_list(matrix["requirement_dispositions"]) and matrix["replan_required"] == true and
+      Enum.all?(cases, fn item ->
+        row = Enum.find(rows, &(&1["case_id"] == item["id"])) || %{}
+        row["disposition"] in ["reuse_existing", "retain_correction", "retain_proof", "exclude"]
+      end) and
+      Enum.all?(matrix["requirement_dispositions"], fn disposition ->
+        disposition["disposition"] in ["reuse_existing", "retain_correction"] and
+          nonempty?(disposition["rationale"])
+      end) and
+      ".planning/REQUIREMENTS.md" in files and ".planning/ROADMAP.md" in files and
+      Enum.all?(amendments, &(nonempty?(&1["anchor"]) and nonempty?(&1["reason"])))
+  end
+
+  defp frozen_scope_reconciled?(_ledger, _cases, _rows), do: false
+
+  defp valid_input_manifest?(ledger, manifest, digest) when is_list(manifest) do
+    valid_entries =
+      Enum.all?(manifest, fn entry ->
+        is_map(entry) and is_binary(entry["path"]) and nonempty?(entry["path"]) and
+          full_sha256?(entry["sha256"]) and entry["sha256"] == input_entry_hash(ledger, entry)
+      end)
+
+    identities = if valid_entries, do: Enum.map(manifest, &manifest_identity/1), else: []
+
+    is_binary(digest) and String.match?(digest, ~r/\A[0-9a-f]{64}\z/) and
+      valid_entries and length(identities) == length(Enum.uniq(identities)) and
+      digest == manifest_digest(manifest)
+  end
+
+  defp valid_input_manifest?(_, _, _), do: false
+
+  defp manifest_identity(entry),
+    do:
+      entry["path"] <>
+        if(nonempty?(entry["selector"]), do: "#" <> entry["selector"], else: "")
+
+  defp input_entry_hash(ledger, %{
+         "path" =>
+           ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+         "selector" => selector
+       }) do
+    value =
+      case selector do
+        "matrix-selection" ->
+          %{
+            "matrix" =>
+              Map.take(ledger["matrix"], [
+                "status",
+                "rows",
+                "requirement_dispositions",
+                "replan_required",
+                "amendments",
+                "blocking_entries"
+              ]),
+            "blockers" => ledger["blockers"],
+            "exclusions" => ledger["exclusions"],
+            "supplemental_limitations" => ledger["supplemental_limitations"]
+          }
+
+        "cases" ->
+          ledger["cases"]
+
+        "profiles" ->
+          ledger["profiles"]
+
+        "category-coverage" ->
+          ledger["category_coverage"]
+
+        "scope-revision" ->
+          ledger["scope_revision"]
+
+        _ ->
+          nil
+      end
+
+    if is_nil(value), do: nil, else: sha256(canonical_json(value))
+  end
+
+  defp input_entry_hash(_ledger, %{
+         "path" => ".planning/REQUIREMENTS.md",
+         "selector" => "qualification-scope-map"
+       }) do
+    @repo_root
+    |> Path.join(".planning/REQUIREMENTS.md")
+    |> File.read!()
+    |> extract_section("## Qualification-driven scope reconciliation (2026-10-24)", "\n## ")
+    |> sha256()
+  end
+
+  defp input_entry_hash(_ledger, %{
+         "path" => ".planning/ROADMAP.md",
+         "selector" => "phases-172-173-contract"
+       }) do
+    @repo_root
+    |> Path.join(".planning/ROADMAP.md")
+    |> File.read!()
+    |> extract_section("### Phase 172: Authorization Responses", "\n### Phase 174:")
+    |> sha256()
+  end
+
+  defp input_entry_hash(_ledger, %{"path" => path} = entry) when is_binary(path) do
+    full_path = Path.join(@repo_root, path)
+
+    if is_nil(entry["selector"]) and File.regular?(full_path) do
+      full_path |> File.read!() |> sha256()
+    else
+      nil
+    end
+  end
+
+  defp input_entry_hash(_, _), do: nil
+
+  defp extract_section(content, start_marker, end_marker) do
+    with {start, _} <- :binary.match(content, start_marker),
+         tail <- binary_part(content, start, byte_size(content) - start),
+         {finish, _} <- :binary.match(tail, end_marker) do
+      binary_part(tail, 0, finish)
+    else
+      _ -> ""
+    end
+  end
+
+  defp canonical_json(value), do: value |> canonical_term() |> Jason.encode!()
+  defp canonical_term(value) when is_list(value), do: Enum.map(value, &canonical_term/1)
+
+  defp canonical_term(value) when is_map(value) do
+    value
+    |> Enum.sort_by(fn {key, _value} -> key end)
+    |> Map.new(fn {key, child} -> {key, canonical_term(child)} end)
+  end
+
+  defp canonical_term(value), do: value
+  defp sha256(value), do: :crypto.hash(:sha256, value) |> Base.encode16(case: :lower)
+
+  defp valid_iso8601?(value) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, _datetime, 0} -> true
+      _ -> false
+    end
+  end
+
+  defp valid_iso8601?(_), do: false
 
   defp validate_category_references(errors, categories, cases)
        when is_list(categories) and is_list(cases) do

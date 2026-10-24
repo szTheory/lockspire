@@ -305,3 +305,50 @@ unknown, so no worktree ownership is transferred by this handoff. Next owner for
 the finite inventory is the Phase 171 maintainer; next action is to complete
 plan 171-02 after this plan's contract and closeout pass. No other retained path
 is being merged, rebased, reset, or retired here.
+
+## Frozen FIND-02 handoff — 2026-10-24
+
+Plan 171-03 completed on `milestone/v1.47-core-hardening`, based on accepted
+main `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. The frozen qualification
+source revision is `6d9a5db65f8cc3cb8c64ea0dd51ad022a6b18945`; the selected-input
+manifest has 29 ordered entries and digest
+`d8c54d497be1a2e6a6a5a5e2a2bb3da311253a4c4a5ad62a87931755f2996fad`.
+The original accepted receipt remains byte-identical (1,933 bytes; SHA-256
+`be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`). No
+product runtime, dependency, migration, public API, runner or default test
+discovery files changed. No external suite or Python wrapper was launched; its
+exact-environment prerequisite and original owner/action remain recorded as a
+nonblocking supplemental limitation. Existing historical worktrees and shared
+resources remain preserved; this execution created no worktree and performed
+no cleanup or publication action. Release auto-merge remains paused.
+
+The explicitly invoked qualification probe ran two controlled HTTP cases and
+exited 2 with 2 tests, 2 failures, 0 skipped: both valid-path controls passed,
+then the expected normative assertions failed. A171-003 observed HTTP 302 to
+the registered callback with `error`, `error_description`, `iss`, and `state`
+parameters where HTTP 400 without Error Response parameters was required.
+P171-005 observed HTTP 400 rather than consent with pushed `openid email`,
+unchanged state/nonce and no outer `profile`. These are source-bound protocol
+counterexamples assigned to Phases 172 and 173, not passes or unresolved
+qualification blockers. The matrix contract now passes 18 tests, including
+negative drift/blocker/disposition checks and a valid empty-scope frozen fixture
+that requires explicit requirement and roadmap amendments without inventing
+passing case evidence. The frozen artifact preserves all twelve case IDs,
+the seven-category coverage, all six downstream requirement dispositions,
+and the case-backed references and owners. A-EDGE-FIND-02 remains unclassified;
+descriptorless prohibitions remain `flagged-unverified`.
+
+The requirement and roadmap amendments narrow Phase 172 to A171-003's unsupported
+`response_mode` correction while carrying forward the existing authorization
+proof. Phase 173 is narrowed to P171-005's pushed-scope authority correction
+while carrying forward existing PAR lifecycle, required-PAR and source-host
+metadata proof. Both corrections require the existing regression owner to show
+RED at the qualified source and GREEN after correction. Phase 174's CPROOF and
+DELIV proof obligations remain intact. Planning may proceed against this frozen
+scope after the existing accepted-main prerequisite; this handoff does not
+claim milestone integration or publication.
+
+Two durable lessons: follow normative reference chains before treating a
+behavior as discretionary policy; and model deliberate normative RED as an
+observation task rather than a green-tracer expansion gate. Preserve the actual
+expected failures visibly so correction owners can reproduce them.

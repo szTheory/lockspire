@@ -39,6 +39,12 @@ Phase 171 must enumerate the finite cases for AUTHR/PARB and select the actual d
 
 Every selected case needs its applicable automated evidence. An infrastructure failure is not a protocol pass. External-suite success remains supplemental and non-certifying; full FAPI plan success is not required by implication. Preserve S256 PKCE, exact redirects, hashed client secrets, single-use short-lived codes, refresh rotation/family reuse revocation, no implicit flow, no alg=none, redaction and narrow host ownership.
 
+## Qualification-driven scope reconciliation (2026-10-24)
+
+All six authorization/PAR requirements remain pending. Phase 171 qualifies the following cases without marking downstream behavior accepted: AUTHR-01 reuses A171-001; AUTHR-02 reuses A171-002 and retains A171-003 as a correction; AUTHR-03 reuses A171-004, A171-005 and A171-006; PARB-01 reuses P171-001, P171-002 and P171-003; PARB-02 reuses P171-004 and retains P171-005 as a correction; PARB-03 reuses P171-006 source-host metadata proof. See the frozen Phase 171 matrix for exact requests, expected projections, evidence identities and owners.
+
+The A171-003 correction is limited to unsupported `response_mode` returning HTTP 400 without OAuth Error Response parameters. The P171-005 correction is limited to a valid pushed reference using pushed `openid email` despite outer `scope=profile`; the linked-clause interpretation is documented in `171-QUALIFICATION-DECISIONS.md`. Existing proofs carry forward without duplicate corrections. Neither unavailable optional profile wrapper is treated as product evidence or as a selected-case blocker. CPROOF-01/02 and DELIV-01/02 remain for Phase 174, including each actual correction's RED/GREEN proof, applicable negative/security coverage and packaged-host proof.
+
 ## Future Requirements and Triggers
 
 - **SEC-01**: Preferred provisional v1.48 — dedicated-purpose rotatable verifier encryption with explicit legacy read/rewrap, mixed-node compatibility, key-loss recovery and package upgrade proof. Settle its design in that milestone.
