@@ -330,7 +330,8 @@ parameters where HTTP 400 without Error Response parameters was required.
 P171-005 observed HTTP 400 rather than consent with pushed `openid email`,
 unchanged state/nonce and no outer `profile`. These are source-bound protocol
 counterexamples assigned to Phases 172 and 173, not passes or unresolved
-qualification blockers. The matrix contract now passes 18 tests, including
+qualification blockers. The earlier matrix-contract run passed 18 tests. The
+final post-metadata-audit run passed 19 tests with 0 failures, including
 negative drift/blocker/disposition checks and a valid empty-scope frozen fixture
 that requires explicit requirement and roadmap amendments without inventing
 passing case evidence. The frozen artifact preserves all twelve case IDs,
