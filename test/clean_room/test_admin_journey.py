@@ -1,6 +1,9 @@
 import copy
 import inspect
 import json
+import os
+import shutil
+import stat
 import subprocess
 import tempfile
 import sys
@@ -246,7 +249,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 21)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 22)
 
     def test_receipt_durations_accept_only_nonnegative_integer_milliseconds(self):
         for duration in (True, 1.5, -1, float("inf"), float("nan")):
@@ -259,6 +262,20 @@ class AdminReceiptTests(unittest.TestCase):
     def test_receipt_cli_binding_compares_expected_candidate_version_exactly(self):
         with self.assertRaisesRegex(ValueError, "candidate version differs from the expected candidate"):
             validate_receipt(self.receipt, expected_version="1.6.10")
+
+    def test_receipt_rejects_stale_run_source_pair_and_mount_bindings(self):
+        wrong_expectations = (
+            {"expected_run_id": str(uuid.uuid4())},
+            {"expected_source": "d" * 40},
+            {"expected_pair": "floor"},
+            {"expected_mount": "/"},
+            {"expected_archive": "d" * 64},
+            {"expected_tree": "d" * 64},
+        )
+        for expected in wrong_expectations:
+            with self.subTest(expected=sorted(expected)):
+                with self.assertRaises(ValueError):
+                    validate_receipt(self.receipt, **expected)
 
     def test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence(self):
         failed = copy.deepcopy(self.receipt)
@@ -351,6 +368,170 @@ class AdminReceiptTests(unittest.TestCase):
                 selected["counts"][counter] = 0
                 with self.assertRaises(ValueError):
                     validate_receipt(full, expected_scenario_set="full")
+
+
+class HostProofWrapperFailureTests(unittest.TestCase):
+    ROOT = Path(__file__).resolve().parents[2]
+    SENTINEL = "phase170-fake-tool-secret-sentinel"
+
+    @classmethod
+    def setUpClass(cls):
+        cls._temporary = tempfile.TemporaryDirectory(prefix="lockspire-host-proof-fakes-")
+        cls.tools = Path(cls._temporary.name)
+        package_dir = cls.tools / "package"
+        package_dir.mkdir()
+        version = __import__("re").search(r'version: "([^"]+)"', (cls.ROOT / "mix.exs").read_text()).group(1)
+        cls.package_template = package_dir / f"lockspire-{version}.tar"
+        subprocess.run(
+            ["mix", "hex.build", "--output", str(cls.package_template)],
+            cwd=cls.ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+
+        cls.fake_mix = cls.tools / "mix-fake.py"
+        cls.fake_mix.write_text(
+            "#!/usr/bin/env python3\n"
+            "import os, signal, shutil, sys, time\n"
+            "args = sys.argv[1:]\n"
+            "stage = os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE', '')\n"
+            "if args[0] == 'hex.build':\n"
+            "    shutil.copyfile(os.environ['LOCKSPIRE_PROOF_TEST_PACKAGE_TEMPLATE'], args[args.index('--output') + 1])\n"
+            "elif args[0] == 'run':\n"
+            "    print('PAIR_RUNTIME|1.8.13|1.2.10|1.20.4|29')\n"
+            "elif args[0] in {'test.setup', 'lockspire.test.setup'}:\n"
+            "    pass\n"
+            "elif args[0] == 'test':\n"
+            "    if stage in {'shared-failure', 'signal', 'timeout'}: print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr, flush=True)\n"
+            "    if stage == 'shared-failure': raise SystemExit(37)\n"
+            "    if stage == 'signal': os.kill(os.getpid(), signal.SIGTERM)\n"
+            "    if stage == 'timeout': time.sleep(30)\n"
+            "    print('Result: 43 passed')\n"
+            "else:\n"
+            "    raise SystemExit(2)\n",
+            encoding="utf-8",
+        )
+        cls.fake_mix.chmod(cls.fake_mix.stat().st_mode | stat.S_IXUSR)
+
+        cls.fake_journey = cls.tools / "journey-fake.py"
+        cls.fake_journey.write_text(
+            "#!/usr/bin/env python3\n"
+            "import json, os, sys\n"
+            "from pathlib import Path\n"
+            "stage = os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE', '')\n"
+            "print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr)\n"
+            "if stage == 'browser-failure': raise SystemExit(41)\n"
+            "payload = {'evidence': 'safe'} if stage == 'success' else {'unsafe': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}\n"
+            "Path(sys.argv[sys.argv.index('--receipt') + 1]).write_text(json.dumps(payload))\n",
+            encoding="utf-8",
+        )
+        cls.fake_journey.chmod(cls.fake_journey.stat().st_mode | stat.S_IXUSR)
+
+        cls.fake_validator = cls.tools / "validator-fake.py"
+        cls.fake_validator.write_text(
+            "#!/usr/bin/env python3\n"
+            "import os\n"
+            "print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=__import__('sys').stderr)\n"
+            "raise SystemExit(0 if os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE') == 'success' else 43)\n",
+            encoding="utf-8",
+        )
+        cls.fake_validator.chmod(cls.fake_validator.stat().st_mode | stat.S_IXUSR)
+
+        cls.fake_chrome = cls.tools / "chrome-fake.sh"
+        cls.fake_chrome.write_text("#!/bin/sh\nprintf '%s\\n' 'Google Chrome 155.0.8059.85'\n", encoding="utf-8")
+        cls.fake_chrome.chmod(cls.fake_chrome.stat().st_mode | stat.S_IXUSR)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._temporary.cleanup()
+
+    def run_wrapper(self, stage, *, timeout_seconds=None, stale_receipt=False):
+        artifact_root = self.ROOT / ".artifacts" / "phase170"
+        artifact_root.mkdir(parents=True, exist_ok=True)
+        receipt_dir = Path(tempfile.mkdtemp(prefix="fake-proof-", dir=artifact_root))
+        self.addCleanup(shutil.rmtree, receipt_dir)
+        stale_path = receipt_dir / "locked-lockspire.json"
+        if stale_receipt:
+            stale_path.write_text(self.SENTINEL, encoding="utf-8")
+
+        environment = os.environ.copy()
+        environment.update({
+            "LOCKSPIRE_PROOF_TEST_MODE": "true",
+            "LOCKSPIRE_PROOF_TEST_MIX_BIN": str(self.fake_mix),
+            "LOCKSPIRE_PROOF_TEST_JOURNEY_BIN": str(self.fake_journey),
+            "LOCKSPIRE_PROOF_TEST_VALIDATOR_BIN": str(self.fake_validator),
+            "LOCKSPIRE_PROOF_TEST_PACKAGE_TEMPLATE": str(self.package_template),
+            "LOCKSPIRE_PROOF_FAKE_STAGE": stage,
+            "LOCKSPIRE_PROOF_FAKE_SECRET": self.SENTINEL,
+            "CHROME_BIN": str(self.fake_chrome),
+        })
+        if timeout_seconds is not None:
+            environment["LOCKSPIRE_PROOF_TEST_TIMEOUT_SECONDS"] = str(timeout_seconds)
+        else:
+            environment.pop("LOCKSPIRE_PROOF_TEST_TIMEOUT_SECONDS", None)
+        result = subprocess.run(
+            ["bash", str(self.ROOT / "scripts" / "ci" / "run_host_integration_proof.sh"), "--pair", "locked", "--receipt-dir", str(receipt_dir.relative_to(self.ROOT))],
+            cwd=self.ROOT,
+            env=environment,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=45,
+            check=False,
+        )
+        return result, receipt_dir
+
+    def assert_staging_redacted(self, receipt_dir):
+        for path in receipt_dir.iterdir():
+            if path.is_file():
+                self.assertNotIn(self.SENTINEL, path.read_text(encoding="utf-8"))
+
+    def test_shared_test_failure_preserves_status_without_printing_child_secret(self):
+        result, receipt_dir = self.run_wrapper("shared-failure", stale_receipt=True)
+
+        self.assertEqual(result.returncode, 37)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
+        self.assert_staging_redacted(receipt_dir)
+
+    def test_signalled_test_process_remains_a_failure_without_printing_child_secret(self):
+        result, _receipt_dir = self.run_wrapper("signal")
+
+        self.assertEqual(result.returncode, 143)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assert_staging_redacted(_receipt_dir)
+
+    def test_deadline_kills_the_test_process_and_keeps_the_proof_failed(self):
+        result, _receipt_dir = self.run_wrapper("timeout", timeout_seconds=8)
+
+        self.assertEqual(result.returncode, 124)
+        self.assertIn("bounded child timed out", result.stdout)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assert_staging_redacted(_receipt_dir)
+
+    def test_browser_failure_preserves_its_status_and_never_stages_stale_output(self):
+        result, receipt_dir = self.run_wrapper("browser-failure", stale_receipt=True)
+
+        self.assertEqual(result.returncode, 41)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
+        self.assert_staging_redacted(receipt_dir)
+
+    def test_validator_failure_preserves_its_status_and_never_stages_raw_receipt(self):
+        result, receipt_dir = self.run_wrapper("validator-failure")
+
+        self.assertEqual(result.returncode, 43)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
+        self.assert_staging_redacted(receipt_dir)
+
+    def test_successful_validated_staging_contains_no_fake_child_secrets(self):
+        result, receipt_dir = self.run_wrapper("success")
+
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(len(list(receipt_dir.glob("locked-*.json"))), 3)
+        self.assert_staging_redacted(receipt_dir)
 
 
 if __name__ == "__main__":

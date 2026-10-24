@@ -226,7 +226,9 @@ def main(argv: Sequence[str]) -> int:
     parser.add_argument("--expected-scenario-set", choices=("tracer", "full"), required=True)
     args = parser.parse_args(argv)
     try:
-        validate_receipt(json.loads(args.check.read_text(encoding="utf-8")), expected_run_id=args.expected_run_id, expected_source=args.expected_source, expected_pair=args.expected_pair, expected_mount=args.expected_mount, expected_archive=args.expected_archive, expected_tree=args.expected_tree, expected_version=args.expected_version, expected_scenario_set=args.expected_scenario_set)
+        receipt = validate_receipt(json.loads(args.check.read_text(encoding="utf-8")), expected_run_id=args.expected_run_id, expected_source=args.expected_source, expected_pair=args.expected_pair, expected_mount=args.expected_mount, expected_archive=args.expected_archive, expected_tree=args.expected_tree, expected_version=args.expected_version, expected_scenario_set=args.expected_scenario_set)
+        if receipt["result"] != "passed":
+            raise ValueError("receipt result is failed")
     except (OSError, ValueError, json.JSONDecodeError):
         print("receipt validation failed")
         return 1

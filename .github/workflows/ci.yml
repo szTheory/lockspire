@@ -269,7 +269,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/host-integration-cache/floor
-          key: ${{ runner.os }}-host-proof-floor-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}
+          key: ${{ runner.os }}-host-proof-floor-test-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}
 
       - name: Run exact-floor packaged host proof
         id: host-proof-floor
@@ -290,9 +290,9 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
-    # The canonical local matrix measured 649s across broad integration (346s),
-    # packaged lifetimes (253s), receipt validation (0s), and clean-room (50s).
-    # Thirty minutes leaves ten minutes for setup plus bounded runtime headroom.
+    # The canonical local matrix measured 649s; the new locked host proof measured
+    # 143s. Those known partitions total 792s, leaving 1,008s in the existing
+    # 30-minute cap for setup and variance. Keep the cap; remote headroom is unobserved.
     timeout-minutes: 30
 
     services:
@@ -355,7 +355,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: tmp/host-integration-cache/locked
-          key: ${{ runner.os }}-host-proof-locked-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}
+          key: ${{ runner.os }}-host-proof-locked-test-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}
 
       - name: Install dependencies
         run: mix deps.get --check-locked

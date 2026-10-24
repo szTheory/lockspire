@@ -14,8 +14,8 @@ defmodule Lockspire.HostIntegrationCIContractTest do
     assert compatibility =~ "name: Minimum Supported Elixir/OTP"
     assert integration =~ "run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked"
     assert compatibility =~ "run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor"
-    assert integration =~ "host-proof-locked-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}"
-    assert compatibility =~ "host-proof-floor-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}"
+    assert integration =~ "host-proof-locked-test-v1-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('test/clean_room/provider_host/mix.lock') }}"
+    assert compatibility =~ "host-proof-floor-test-v1-${{ env.MIN_OTP_VERSION }}-${{ env.MIN_ELIXIR_VERSION }}-${{ hashFiles('compatibility/phoenix_1_8_live_view_1_1/mix.lock') }}"
     refute integration =~ "continue-on-error: true"
     refute compatibility =~ "continue-on-error: true"
   end
@@ -38,7 +38,9 @@ defmodule Lockspire.HostIntegrationCIContractTest do
   test "wrapper strictly parses its two required arguments and enforces bounded failure" do
     runner = File.read!(@runner)
     assert runner =~ "usage: $0 --pair locked|floor --receipt-dir DIR"
-    assert runner =~ "deadline=$((started + 900))"
+    assert runner =~ "pair_budget=900"
+    assert runner =~ "deadline=$((started + pair_budget))"
+    assert runner =~ "LOCKSPIRE_PROOF_TEST_MODE"
     assert runner =~ "run_bounded 180"
     assert runner =~ "--package-tar"
     assert runner =~ "--package-sha256"
