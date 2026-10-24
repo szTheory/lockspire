@@ -29,7 +29,7 @@ created: "2026-10-24"
 
 ## Per-Task Verification Map
 
-Plan 03 task map revised on 2026-10-24 using 171-QUALIFICATION-REPLAN.md. Plans 01/02 have completed summaries; their rows below preserve the original planned commands, not instructions to rerun acceptance or profile attempts. Plan 03 remains pending. Reuse the original accepted-main receipt and the actual Plan 02 source-host results. Both supplemental wrappers were NOT LAUNCHED and have no live profile receipt. External gates and actual review remain distinct from artifact contracts and normative assertions.
+Plan 03 task map revised on 2026-10-24 using 171-QUALIFICATION-DECISIONS.md. Plans 01/02 have completed summaries; their rows below preserve the original planned commands, not instructions to rerun acceptance or profile attempts. Plan 03 remains pending. Reuse the original accepted-main receipt and the actual Plan 02 source-host results. Both supplemental wrappers were NOT LAUNCHED and have no live profile receipt. External gates and actual review remain distinct from artifact contracts and normative assertions.
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---|---|---|---|---|---|---|---|---|---|
