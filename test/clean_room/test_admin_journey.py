@@ -110,7 +110,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 9)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 11)
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
@@ -136,6 +136,46 @@ class AdminReceiptTests(unittest.TestCase):
         malformed["runtime"]["node"] = "phase170-private-cookie-sentinel"
         with self.assertRaises(ValueError):
             validate_receipt(malformed)
+
+    def test_full_receipt_accepts_all_sixteen_named_boundary_cases(self):
+        case_ids = (
+            "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
+            "allowed_reconnect", "anonymous_http_denied", "nonstaff_http_denied",
+            "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
+            "consent_session_denied", "public_discovery", "public_jwks", "public_protocol_error",
+        )
+        full = copy.deepcopy(self.receipt)
+        full["scenarios"] = [
+            {**copy.deepcopy(self.receipt["scenarios"][0]), "id": case_id}
+            for case_id in case_ids
+        ]
+        try:
+            validated = validate_receipt(full, expected_scenario_set="full")
+        except ValueError as error:
+            self.fail(f"complete full case-set receipt should validate: {error}")
+        self.assertEqual(validated["result"], "passed")
+        self.assertEqual({item["id"] for item in validated["scenarios"]}, set(case_ids))
+
+    def test_full_receipt_rejects_missing_duplicate_and_unknown_case_ids(self):
+        case_ids = (
+            "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
+            "allowed_reconnect", "anonymous_http_denied", "nonstaff_http_denied",
+            "cached_join_denied", "reconnect_denied", "params_denied", "public_session_denied",
+            "consent_session_denied", "public_discovery", "public_jwks", "public_protocol_error",
+        )
+        for label, ids in (
+            ("missing", case_ids[:-1]),
+            ("duplicate", case_ids[:-1] + (case_ids[0], case_ids[0])),
+            ("unknown", case_ids[:-1] + ("secret_cookie",)),
+        ):
+            with self.subTest(label=label):
+                malformed = copy.deepcopy(self.receipt)
+                malformed["scenarios"] = [
+                    {**copy.deepcopy(self.receipt["scenarios"][0]), "id": case_id}
+                    for case_id in ids
+                ]
+                with self.assertRaises(ValueError):
+                    validate_receipt(malformed, expected_scenario_set="full")
 
 
 if __name__ == "__main__":
