@@ -60,7 +60,7 @@ defmodule Lockspire.Phase171.QualificationProbeTest do
 
   test "A171-003 valid direct consent control then requires unsupported mode to be HTTP 400 without OAuth error parameters",
        %{client: client} do
-    assert_consent_location_classification!
+    assert_consent_location_classification!()
 
     control = authorize(client.client_id, direct_params())
     control_projection = authorization_projection(control, client.client_id)

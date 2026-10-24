@@ -1588,7 +1588,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
-        "sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec"
+        "sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-PROBE.json",
@@ -1647,7 +1647,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "d83b7d08410b27928e02f6fceaaad52d5894caf0a2daf902a01c9f3607d97a3b",
+    "input_digest": "0dfb22d7298615117d924dcb630c6641adf4a541b1804f06b6bb330c36bfc927",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1669,6 +1669,13 @@
         "previous_sha256": "2397a84044549b1f4f779846967ab657e522c8b3dee3d2c2f571d7cce2086e6b",
         "sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec",
         "reason": "Keep the two controlled HTTP cases and original actual test count by embedding adversarial route assertions before A171-003's live control."
+      },
+      {
+        "date": "2026-10-24",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs",
+        "previous_sha256": "a829ac577caa6d2bdc4b72bdcf0df6e9da2196457e65aaabe0d4538593d731ec",
+        "sha256": "0f32ab008fe4ebffc17d471ffd0959fe55861d418ce62fe8f636330f6f9972f5",
+        "reason": "Invoke the consent-location adversarial assertion helper as a function so the probe compiles and reaches its controlled HTTP checks."
       },
       {
         "date": "2026-10-24",
