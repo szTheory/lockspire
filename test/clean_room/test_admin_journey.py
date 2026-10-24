@@ -414,6 +414,31 @@ class AdminCleanupRegressionTests(unittest.TestCase):
                 self.assertNotIn("private", output.getvalue())
 
 
+    def test_completed_browser_keeps_a_valid_failed_receipt_when_drop_raises(self):
+        observed = {
+            "id": "tracer.browser_join_navigation", "outcome": "passed", "duration_ms": 20,
+            "counts": {"assets": 2, "websocket_handshakes": 2, "successful_joins": 2, "navigations": 4},
+            "observations": {"login": True, "overview": True, "clients": True, "authorized_http": True, "connected_hook": True},
+            "runtime": {"node": "26.10.0", "chrome": "Chrome/155.0.8059.85"}, "profile_removed": True,
+        }
+        for fault in (subprocess.TimeoutExpired("private-command", 30), OSError("private-error")):
+            with self.subTest(fault=type(fault).__name__), tempfile.TemporaryDirectory() as temporary:
+                base = Path(temporary) / "run"
+                base.mkdir()
+                receipt_path = Path(temporary) / "receipt.json"
+                identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+                output = io.StringIO()
+                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10", "elixir": "1.20.4", "otp": "29"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observed), returncode=0), fault]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                    status = admin_journey.main(["--pair", "locked", "--mount", "/", "--scenario", "tracer", "--receipt", str(receipt_path)])
+                self.assertEqual(status, 1)
+                retained = validate_receipt(json.loads(receipt_path.read_text()))
+                self.assertEqual(retained["result"], "failed")
+                self.assertFalse(retained["cleanup"]["database_removed"])
+                self.assertTrue(retained["cleanup"]["run_root_removed"])
+                self.assertFalse(base.exists())
+                self.assertNotIn("private", output.getvalue())
+                self.assertNotIn("private", receipt_path.read_text())
+
     def test_main_never_retains_nested_hostile_browser_data(self):
         sentinel = "phase170-private-browser-key-and-value"
         hostile = {"id": [], "failure": {}, "outcome": [], "counts": {sentinel: sentinel}, "observations": {sentinel: sentinel}}
