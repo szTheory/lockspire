@@ -1,4 +1,5 @@
 import copy
+import inspect
 import tempfile
 import sys
 import unittest
@@ -9,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "accept
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance"))
 import clean_room_admin_journey as admin_journey
 from admin_receipts import validate_receipt, write_receipt
+import build_provider as provider_builder
 
 FULL_CASE_IDS = (
     "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
@@ -107,6 +109,24 @@ class AdminReceiptTests(unittest.TestCase):
         )
         self.assertEqual(validated["result"], "passed")
 
+    def test_floor_pair_accepts_only_the_exact_floor_runtime(self):
+        floor_receipt = copy.deepcopy(self.receipt)
+        floor_receipt["pair"] = "floor"
+        floor_receipt["runtime"]["phoenix"] = "1.8.5"
+        floor_receipt["runtime"]["live_view"] = "1.1.28"
+
+        validated = validate_receipt(floor_receipt, expected_pair="floor")
+
+        self.assertEqual(validated["pair"], "floor")
+
+    def test_runner_and_provider_expose_explicit_floor_pair_selection(self):
+        args = admin_journey.parse_args(
+            ["--pair", "floor", "--mount", "/lockspire", "--receipt", "receipt.json"]
+        )
+
+        self.assertEqual(args.pair, "floor")
+        self.assertIn("proof_pair", inspect.signature(provider_builder.prepare_provider).parameters)
+
     def test_passed_receipt_requires_positive_browser_join_and_navigation(self):
         for key, value in (("assets", 1), ("websocket_handshakes", 0), ("successful_joins", 0), ("navigations", 0)):
             with self.subTest(key=key):
@@ -156,7 +176,7 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 13)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 15)
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
