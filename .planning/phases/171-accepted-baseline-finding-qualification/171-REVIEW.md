@@ -1,6 +1,6 @@
 ---
 phase: 171-accepted-baseline-finding-qualification
-reviewed: 2026-10-24T21:22:01Z
+reviewed: 2026-10-24T21:27:48Z
 depth: standard
 files_reviewed: 10
 files_reviewed_list:
@@ -16,36 +16,31 @@ files_reviewed_list:
   - .planning/ROADMAP.md
 findings:
   critical: 0
-  warning: 1
+  warning: 0
   info: 0
-  total: 1
-status: issues_found
+  total: 0
+status: clean
 ---
 
 # Phase 171: Code Review Report
 
-**Reviewed:** 2026-10-24T21:22:01Z
+**Reviewed:** 2026-10-24T21:27:48Z
 **Depth:** standard
 **Files Reviewed:** 10
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-Rechecked the four prior review findings against the current fixes. The stale delivery count is explicitly distinguished from later runs; consent classification now rejects absolute off-origin, network-path, and lookalike routes before interaction lookup; malformed top-level entries have guarded fixtures; and the validator helpers have been split without Credo suppression. The current and archived probe identities, source hashes, 30-entry frozen manifest, original receipt digest, and handoff outcomes reconcile. One malformed nested case shape remains unchecked and can still crash the contract validator.
+The independent re-review confirms all five previously reported warnings are closed: the delivery record distinguishes dated contract-test counts; consent interaction lookup accepts only the exact relative consent route and rejects off-origin, network-path, and lookalike inputs; malformed nested ledger entries return validation errors; validator helpers meet the strict Credo check without suppressions; and case `requirement_ids` must be a list of nonempty strings before disposition-reference membership checks. The new scalar, null, and non-string fixtures target a referenced case, covering the WR-05 crash path. The recorded final focused contract result is 21 tests with 0 failures, and full strict Credo reports no issues.
+
+The qualification evidence and immutable inputs remain internally consistent: the final input manifest records 30 ordered entries and digest `d5b940b749cdb217bf096237cb466ed8f6df95812a819ba73e82da491728ed5f`; the accepted-main receipt SHA-256 remains `be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`; and the original probe archive retains its recorded SHA-256 `3f1fd7c2797614b98bfdb6466942a06c05ea11ec908f31f944bd6adaf26ad764`. The current tightened probe records two named normative counterexamples after all controls passed, with no skipped tests. A171-003 and P171-005 remain assigned to Phases 172/173; this review does not characterize them as corrected behavior. Supplemental external profiles remain unlaunched and explicitly non-certifying.
 
 ## Narrative Findings (AI reviewer)
 
-## Warnings
-
-### WR-05: Scalar case requirement IDs can still crash validation
-
-**File:** `test/lockspire/qualification_ledger_contract_test.exs:637-646, 995-997`
-**Severity:** WARNING
-**Issue:** `valid_case_shapes?/1` checks the case's nested maps and reference/observation collections, but does not require `requirement_ids` to be a list. If a case's `requirement_ids` is changed to a scalar while its ID remains referenced by a requirement disposition, `validate_disposition_references/3` evaluates `disposition["requirement_id"] in case["requirement_ids"]`; the non-list right-hand side raises instead of returning a validation error. This leaves the malformed-input crash class from WR-03 partially unresolved.
-**Fix:** Require `is_list(Map.get(item, "requirement_ids"))` (and validate its entries) in `valid_case_shapes?/1`. Add a malformed fixture that replaces a case's `requirement_ids` with a scalar and assert that `validate/1` returns errors without raising.
+No open findings in the reviewed scope.
 
 ---
 
-_Reviewed: 2026-10-24T21:22:01Z_
+_Reviewed: 2026-10-24T21:27:48Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: standard_
