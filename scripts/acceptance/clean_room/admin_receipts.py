@@ -63,7 +63,7 @@ def validate_receipt(
             raise ValueError(f"receipt candidate {field} differs from the expected candidate")
     if receipt["pair"] != "locked" or expected_pair not in (None, "locked"):
         raise ValueError("receipt runtime pair is invalid")
-    if receipt["mount"] not in MOUNTS or (expected_mount is not None and receipt["mount"] != expected_mount):
+    if not isinstance(receipt["mount"], str) or receipt["mount"] not in MOUNTS or (expected_mount is not None and receipt["mount"] != expected_mount):
         raise ValueError("receipt mount differs from the expected mount")
     if receipt["evidence_kind"] != "real_browser_cdp":
         raise ValueError("receipt evidence kind is invalid")
@@ -76,10 +76,10 @@ def validate_receipt(
     for scenario_raw in receipt["scenarios"]:
         scenario = _exact(scenario_raw, SCENARIO_FIELDS, "scenario")
         identifier = scenario["id"]
-        if identifier not in REQUIRED or identifier in seen:
+        if not isinstance(identifier, str) or identifier not in REQUIRED or identifier in seen:
             raise ValueError("receipt scenario identity is unknown or duplicated")
         seen.add(identifier)
-        if scenario["outcome"] not in {"passed", "failed"}:
+        if not isinstance(scenario["outcome"], str) or scenario["outcome"] not in {"passed", "failed"}:
             raise ValueError("receipt scenario outcome is invalid")
         if type(scenario["duration_ms"]) is not int or scenario["duration_ms"] < 0:
             raise ValueError("receipt scenario duration is invalid")
