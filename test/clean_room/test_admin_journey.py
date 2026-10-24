@@ -1,5 +1,7 @@
 import copy
 import inspect
+import json
+import subprocess
 import tempfile
 import sys
 import unittest
@@ -244,7 +246,42 @@ class AdminReceiptTests(unittest.TestCase):
             self.assertEqual(validate_receipt(__import__("json").loads(destination.read_text()))["result"], "passed")
 
     def test_suite_has_exact_known_case_count(self):
-        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 18)
+        self.assertEqual(sum(name.startswith("test_") for name in dir(type(self))), 21)
+
+    def test_receipt_durations_accept_only_nonnegative_integer_milliseconds(self):
+        for duration in (True, 1.5, -1, float("inf"), float("nan")):
+            with self.subTest(duration=duration):
+                malformed = copy.deepcopy(self.receipt)
+                malformed["scenarios"][0]["duration_ms"] = duration
+                with self.assertRaises(ValueError):
+                    validate_receipt(malformed)
+
+    def test_receipt_cli_binding_compares_expected_candidate_version_exactly(self):
+        with self.assertRaisesRegex(ValueError, "candidate version differs from the expected candidate"):
+            validate_receipt(self.receipt, expected_version="1.6.10")
+
+    def test_cli_rejects_a_well_formed_failed_receipt_as_success_evidence(self):
+        failed = copy.deepcopy(self.receipt)
+        failed["scenarios"][0]["outcome"] = "failed"
+        failed["result"] = "failed"
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt_path = Path(temporary) / "failed-receipt.json"
+            receipt_path.write_text(json.dumps(failed), encoding="utf-8")
+            validator_path = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room" / "admin_receipts.py"
+            result = subprocess.run(
+                [
+                    sys.executable, str(validator_path), "--check", str(receipt_path),
+                    "--expected-run-id", self.run_id, "--expected-source", self.source,
+                    "--expected-pair", "locked", "--expected-mount", "/lockspire",
+                    "--expected-archive", self.archive, "--expected-tree", self.tree,
+                    "--expected-version", "1.6.1", "--expected-scenario-set", "tracer",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                check=False,
+            )
+        self.assertNotEqual(result.returncode, 0, "a failed receipt cannot be accepted as success evidence")
 
     def test_browser_failure_summary_discards_hostile_child_fields(self):
         summarize = getattr(admin_journey, "safe_browser_failure_summary", None)
