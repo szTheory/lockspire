@@ -4,17 +4,17 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 173
 current_phase_name: Conditional PAR & Profile Boundaries
-status: executing
-stopped_at: Phase 173 context captured; continue scoped implementation research and planning
-last_updated: "2026-10-24T23:25:49.254Z"
+status: Awaiting phase verification
+stopped_at: Completed 173-01-PLAN.md
+last_updated: "2026-10-24T23:33:19.563Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 172 complete, transitioned to Phase 173
-state_head: 921606a6816217b8284444962af3121740a009fd
+state_head: 88f6bb3d72b8dda3ffcf83cf804209ae7e2cde35
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 50
 ---
 
@@ -31,8 +31,8 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 ## Current Position
 
 Phase: 173 (Conditional PAR & Profile Boundaries) — READY TO EXECUTE
-Plan: Not started
-Status: Ready to execute
+Plan: 1 of 1
+Status: Awaiting phase verification
 Last activity: 2026-10-24 — Phase 172 complete, transitioned to Phase 173
 
 Progress: [█████░░░░░] 50% — 2/4 phases complete; Phases 171 and 172 verified; Phase 173 ready to plan.
@@ -49,6 +49,7 @@ v1.47: 2 completed phases, 5 completed plans; Phase 172 passed 11/11 goal verifi
 | Phase 171 P03 | 31min | 3 tasks | 7 files |
 | Phase 171 P04 | 6 min | 2 tasks | 8 files |
 | Phase 172 P01 | 6min | 2 tasks | 5 files |
+| Phase 173 P01 | 5 min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -117,10 +118,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-24T23:11:41.181Z
-Stopped at: Phase 173 context captured; continue scoped implementation research and planning
-Resume file: .planning/phases/173-conditional-par-profile-boundaries/173-CONTEXT.md
-Next: Continue Phase 173 planning against frozen P171-005 scope: pushed parameters remain authoritative; preserve existing PAR lifecycle and profile boundaries.
+Last session: 2026-10-24T23:32:38.676Z
+Stopped at: Completed 173-01-PLAN.md
+Resume file: None
+Next: Run the Phase 173 verifier after completion metadata settles; Phase 174 remains parent-owned.
 
 ### Blockers
 
@@ -142,3 +143,6 @@ None
 - [Phase 171]: Select no optional profile retry; retain the existing unavailable owner and exact-environment actions.
 - [Phase 171]: Leave Phase 171 requirements and phase-passed status for independent re-verification after this gap closure.
 - [Phase 172]: Classify unsupported binary response_mode as the existing browser_error/3 disposition; retain supported modes, strict-signing behavior, and host login ownership.
+- [Phase 173]: Removed the blanket outer-parameter rejection at the existing resolver; stored pushed values remain authoritative and the distinct request plus request_uri collision guard remains.
+- [Phase 173]: Used independent real PAR references and asserted the exact relative consent route plus persisted client, scopes, state and nonce.
+- [Phase 173]: External provider-origin, TLS, proxy and browser profiles remain supplemental and unlaunched; Phase 174 owns packaging and delivery.
