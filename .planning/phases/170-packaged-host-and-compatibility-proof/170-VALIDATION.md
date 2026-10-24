@@ -1,9 +1,9 @@
 ---
 phase: "170"
 slug: "packaged-host-and-compatibility-proof"
-status: execution_evidence_recorded
+status: validated
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-10-23"
 ---
 
@@ -56,14 +56,14 @@ CI calls the same wrapper with its setup-beam environment and `.artifacts/ci/hos
 
 | Task | Wave | Requirements | Threat refs | Secure behavior | Checks | Target status | Runtime result |
 |---|---|---|---|---|---|---|---|
-| 170-01-1 | 1 | HPROOF-01 | T-170-01..04 | Real package/browser join/navigation, strict cleanup/identity | New runner --scenario tracer --pair locked --mount /lockspire | Created in same tracer before invocation | pending |
-| 170-01-2 | 1 | HPROOF-01 | T-170-01..04 | Failures and injected secrets cannot pass/leak | N, P, existing clean_room_admin_integration + clean_room_release_source_contract tests | New N/P tests created in this task | pending |
-| 170-02-1 | 2 | HPROOF-01 | T-170-05..08 | Correct native path/navigation/reconnect | N + nested tracer | Existing by wave 1 | pending |
-| 170-02-2 | 2 | HPROOF-01 | T-170-05..08 | Deny current-authority/cross-session paths; public routes stay public | N, P + 3 explicit locked full mount runs | Existing by wave 1; case additions owned here | pending |
-| 170-03-1 | 3 | HPROOF-02 | T-170-09..11 | Shared tests really execute on exact floor | SF + no root/provider lock drift | New fixture helper/runtime entry created in same tracer | pending |
-| 170-03-2 | 3 | HPROOF-02 | T-170-09..11 | Wrong runtime/cache/provenance refuses | P, S + baseline contract + 3 explicit floor mount runs + no lock drift | Existing files with pair support added here | pending |
-| 170-04-1 | 4 | HPROOF-01..03 | T-170-12..15 | Required job executes exact proof, safe upload boundary | L + new workflow contract + compatibility baseline + pinned workflow lint | Wrapper/workflow test created in tracer | pending |
-| 170-04-2 | 4 | HPROOF-03 | T-170-12..15 | Faults/stale/missing/coerced evidence cannot seal green | P + workflow subprocess fault tests + F | Existing before invocation | pending |
+| 170-01-1 | 1 | HPROOF-01 | T-170-01..04 | Real package/browser join/navigation, strict cleanup/identity | New runner --scenario tracer --pair locked --mount /lockspire | Created in same tracer before invocation | passed: actual Chrome tracer; 170-01-SUMMARY.md |
+| 170-01-2 | 1 | HPROOF-01 | T-170-01..04 | Failures and injected secrets cannot pass/leak | N, P, existing clean_room_admin_integration + clean_room_release_source_contract tests | New N/P tests created in this task | passed: Node 4, Python 9, clean-room contracts 7; final N/P supersede helper counts |
+| 170-02-1 | 2 | HPROOF-01 | T-170-05..08 | Correct native path/navigation/reconnect | N + nested tracer | Existing by wave 1 | passed: nested tracer and route tests 24; 170-02-SUMMARY.md |
+| 170-02-2 | 2 | HPROOF-01 | T-170-05..08 | Deny current-authority/cross-session paths; public routes stay public | N, P + 3 explicit locked full mount runs | Existing by wave 1; case additions owned here | passed: three mounts x 16 cases; final L refresh in 170-ACCEPTANCE.md |
+| 170-03-1 | 3 | HPROOF-02 | T-170-09..11 | Shared tests really execute on exact floor | SF + no root/provider lock drift | New fixture helper/runtime entry created in same tracer | passed: exact floor 44 tests and lock checks; 170-03-SUMMARY.md |
+| 170-03-2 | 3 | HPROOF-02 | T-170-09..11 | Wrong runtime/cache/provenance refuses | P, S + baseline contract + 3 explicit floor mount runs + no lock drift | Existing files with pair support added here | passed: locked selector 49, Python 18, floor three mounts x 16; final F refresh recorded |
+| 170-04-1 | 4 | HPROOF-01..03 | T-170-12..15 | Required job executes exact proof, safe upload boundary | L + new workflow contract + compatibility baseline + pinned workflow lint | Wrapper/workflow test created in tracer | passed: L 143s, lifecycle 43, three mounts x 16, focused contracts 10, workflow lint |
+| 170-04-2 | 4 | HPROOF-03 | T-170-12..15 | Faults/stale/missing/coerced evidence cannot seal green | P + workflow subprocess fault tests + F | Existing before invocation | passed: Python 28, focused contracts 10, F 141s and three mounts x 16 |
 | 170-05-1 | 5 | HPROOF-01..03 | T-170-16..18 | Documented command and accurate evidence interpretation | L + existing documentation_contract_test | Existing before invocation | passed: locked wrapper 137s; docs contract 9 passed |
 | 170-05-2 | 5 | HPROOF-01..03 | T-170-16..18 | Final matrix, honest source/evidence closure | F, N, P, format, test.fast, diff check | Existing before invocation | passed: floor 138s; Node 7; Python 28; format; mix test.fast 2027; diff check |
 
@@ -107,3 +107,11 @@ The local BEAM was Elixir 1.20.4 / OTP 29. This is separate from the CI
 expectations of Elixir 1.19.5 / OTP 28 with PostgreSQL 16 (locked) and Elixir
 1.18.4 / OTP 27 with PostgreSQL 14 (floor). No remote run was dispatched or
 observed. The two otherwise unclassified probe assumptions remain so.
+
+## Validation Audit 2026-10-24
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
