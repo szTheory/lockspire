@@ -88,7 +88,7 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 | HPROOF-02 | Phase 170 | Complete |
 | HPROOF-03 | Phase 170 | Complete |
 
-**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 12 complete in Phases 167–169 and 3 pending in Phase 170. Evidence and limits are recorded in each completed phase's verification report and automated UAT closure ledger.
+**Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; all 15 complete across Phases 167–170. The milestone audit cross-checks traceability, phase verification and all 16 plan summaries. Evidence and limits are recorded in each phase's verification report and automated UAT closure ledger.
 
 ---
-*Last updated: 2026-10-23 — MNT-01..04, HAUTH-01..04 and HDX-01..04 complete; three HPROOF requirements retain their Phase 170 owner.*
+*Last updated: 2026-10-24 — milestone audit reconciled all 15 completed requirements, including HPROOF-01..03 in Phase 170.*

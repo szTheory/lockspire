@@ -5,11 +5,11 @@ milestone_name: Embedded Host Integration Reliability
 current_phase: 170
 current_plan: Complete (5/5)
 status: completed
-stopped_at: Verification refresh complete — ready for milestone audit
-last_updated: "2026-10-24T10:06:24.465Z"
+stopped_at: Milestone audit complete — tech_debt; ready for archival
+last_updated: "2026-10-24T15:49:26Z"
 last_activity: 2026-10-24
-last_activity_desc: Phases 167–169 verification refreshed inline
-state_head: 9ecd7d15eb1b07ac00cabc82bc88fb8aa8145c47
+last_activity_desc: v1.46 audit complete — 15/15 requirements, no blockers, one fixture-cleanup debt item
+state_head: b625572ed0308f75a25db84657683ed99d7671c9
 progress:
   total_phases: 4
   completed_phases: 4
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-24 after Phase 170)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.46 implementation complete — verification current; ready for milestone audit
+**Current focus:** v1.46 audited — 15/15 requirements; no blockers; ready for archival with one nonblocking fixture-cleanup item
 
 ## Current Position
 
@@ -34,9 +34,11 @@ Phase: 170
 Current Plan: Complete (5/5)
 Total Plans in Phase: 5
 Status: All phases complete
-Last activity: 2026-10-24 — Phase 170 complete
+Last activity: 2026-10-24 — v1.46 milestone audit complete (tech_debt)
 
 ## Accumulated Context
+
+Milestone audit [v1.46-MILESTONE-AUDIT.md](v1.46-MILESTONE-AUDIT.md) cross-checks all 15 requirements across traceability, verification and 16 plan summaries. All four verification owners are current/passed; 14/14 integration boundaries and 6/6 flows are complete; Nyquist is compliant and security has 68/68 threats closed. Six retained browser receipts (96 cases) and two lifecycle receipts were freshly validated, and Node passed 8 tests. Verdict is tech_debt for the existing duplicate trace-clause fixture warning only; no blocker or human verification remains. Hosted CI is wired but unobserved. ROADMAP/REQUIREMENTS stale progress prose is reconciled. Next: `$gsd-complete-milestone v1.46`; no archival, tag, merge or publication ran. Original state.json bytes remain preserved.
 
 Phase 170 is verified and complete: five plans in five sequential waves, all HPROOF-01/02/03 requirements and 24 roadmap/plan truths pass; P-170-01/02 are individually closed and A-170-01/02 remain unclassified without added predicates. Final runtime source 7a845ba3e142f3ff1e717d85ebc017d02becfae2 has six source/package/pair/mount-bound browser receipts (16 cases each), separate 43/44 lifecycle checks, and owned cleanup. Locked workload was 562s; floor retry was 156s. The earlier 900s floor timeout remains failed historical evidence. Independent security closed 19/19 threats; code review CR-01 containment was fixed and independently re-reviewed clean. Fresh verifier checks passed Node 8, Python 36, root contracts 19 and floor fixture 44; prior-phase regression gate passed 202 tests. Broad 2,027 checks passed at their recorded earlier source and are not restamped as a new run. No remote CI run or visual/manual signoff is claimed. All milestone implementation phases are complete; audit/archival and publication remain separate. The original unrelated state.json bytes remain preserved.
 
