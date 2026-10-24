@@ -168,6 +168,7 @@ defmodule Lockspire.Web.PushedAuthorizationRequestControllerTest do
       |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
 
     assert conn.status == 400
+    assert get_resp_header(conn, "content-type") |> List.first() =~ "application/json"
     assert get_resp_header(conn, "location") == []
     assert get_resp_header(conn, "cache-control") == ["no-store"]
     assert get_resp_header(conn, "pragma") == ["no-cache"]
