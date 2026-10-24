@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–169 complete; Phase 170 planned and ready to execute.
+- ◆ **v1.46 Embedded Host Integration Reliability** — approved 2026-10-22; Phases 167–169 complete; Phase 170 is in progress with one plan remaining.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
 - ✅ [v1.44 Adopter Polish & Verified 1.6.0](milestones/v1.44-ROADMAP.md) — completed 2026-10-20; Phases 158–161; shipped in Lockspire 1.6.0.
 - ✅ [v1.43 Signing Key Encryption at Rest](milestones/v1.43-ROADMAP.md) — completed 2026-10-16; Phases 155–157; closes CR-01; no OAuth/OIDC behavior change.
@@ -19,7 +19,7 @@ Earlier milestone history is indexed in [MILESTONES.md](MILESTONES.md) and prese
 
 **Goal:** A Phoenix host can install, mount and securely use Lockspire's admin LiveViews through one supported integration, with reliable connections and navigation and executable proof.
 
-**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phases 167–169 are complete after automated verification and independent evidence review; zero human UAT checks remain. Phase 169 passed all four HDX requirements and 24 plan truths, security closed 22/22 threats and final code review is clean. Phase 170 has five verified plans and is ready to execute.
+**Approval:** The user approved all 15 requirements and this four-phase roadmap on 2026-10-22. Phases 167–169 are complete after automated verification and independent evidence review; zero human UAT checks remain. Phase 169 passed all four HDX requirements and 24 plan truths, security closed 22/22 threats and final code review is clean. Phase 170 has five verified plans; four are complete and the final evidence/docs plan remains.
 
 **Scope:** Mechanical host integration and automated verification. Keep accounts, staff identity, login UX, layouts, branding and product policy host-owned. Preserve public protocol behavior and security defaults. No visual redesign or subjective UI signoff.
 
@@ -162,7 +162,7 @@ Plans:
 
 ## Progress
 
-**Execution Order:** 167 → 168 → 169 → 170. Phases 167–169 are complete (11/11 plans, twelve requirements combined, zero human UAT checks); Phase 170 is planned (5 plans / 5 sequential waves); execution has not started.
+**Execution Order:** 167 → 168 → 169 → 170. Phases 167–169 are complete (11/11 plans, twelve requirements combined, zero human UAT checks); Phase 170 is in progress (4/5 plans complete, one sequential wave remains).
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -171,7 +171,7 @@ Plans:
 | 169. Install and Upgrade Convergence | v1.46 | 5/5 | Complete    | 2026-10-23 |
 | 170. Packaged Host and Compatibility Proof | v1.46 | 4/5 | In Progress | — |
 
-**Coverage:** 15/15 requirements mapped exactly once; MNT-01..04, HAUTH-01..04 and HDX-01..04 complete in Phases 167–169. Three phases closed; the remaining three HPROOF requirements retain their Phase 170 owner. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
+**Coverage:** 15/15 requirements mapped exactly once; MNT-01..04, HAUTH-01..04 and HDX-01..04 complete in Phases 167–169. HPROOF-01..03 are complete from Phase 170 plans 02–04; Plan 05 remains for final evidence/docs closure. Follow [VERIFICATION-POLICY.md](VERIFICATION-POLICY.md) for automated acceptance and durable closure records.
 
 ## Completed Backlog Scope
 
