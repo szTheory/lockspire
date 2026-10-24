@@ -92,3 +92,9 @@ The required runtime, baseline receipt, ownership reconciliation and ledger cont
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Post-review validation (2026-10-24)
+
+At correction commit `9d774872`, the nested-type regression is covered and the contract passes **20 tests, 0 failures**; formatting passes for both changed ExUnit files and full `mix credo --strict` exits 0 with no issues. The earlier 19-test audit above remains its dated prior observation. No additional broad suite was repeated.
+
+The tightened consent-origin probe ran at source `30e385a33bb2a7f67d94c558dedf7691ecde5863`: exit 2, 2 tests, 2 named normative assertion failures, 0 skipped, with valid-path and off-origin/network-path/lookalike controls passing. Its new dated observation is canonical; the original observation bytes and source/probe identities remain in the dated archive and ledger history. The two protocol failures still belong to downstream correction work. All four review findings have concrete fixes and await independent re-review; no human confirmation is asserted.

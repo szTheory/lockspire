@@ -1599,7 +1599,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
-        "sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24"
+        "sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
@@ -1670,7 +1670,7 @@
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
       }
     ],
-    "input_digest": "0459ea5a1f9a55e48ce452d1f48c981168ef69cd40ba1e34e9c519e74e0c9967",
+    "input_digest": "3e54d2a6812baa435ad6f6dbb9d1e73566d25927cc3b8880ce8318106b6deecf",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1737,6 +1737,14 @@
         "previous_sha256": "6c1d1ab5d5fc48ed980449ce536a90c9e14d185f8573f7d97ed53890d6f8e985",
         "sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24",
         "reason": "Post-execution Nyquist status/task evidence audit; selected cases, probe, receipt, normative expectations and source runtime inputs unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "61e0cf05140f546f143c3403a24d691b5941bb0108af316cc28794f722e17c24",
+        "sha256": "6169f2c670bf59a066fd76cb661ed5338ad34fa9fba0b3ec53723345ce2a469c",
+        "reason": "Append post-review test/lint and fresh probe evidence audit; no selected case, expected outcome, runtime input or original observation changed by this metadata update."
       }
     ]
   },

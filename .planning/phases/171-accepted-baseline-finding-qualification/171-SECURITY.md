@@ -66,6 +66,9 @@ two product counterexamples assigned to phases 172/173.
 - [x] No protocol correction, external-suite execution, certification or human confirmation is claimed.
 
 The two controlled normative failures remain assigned to phases 172/173. Both
-optional external profiles remain unlaunched. Credo complexity findings in the
-new test validator are pending quality fixes and do not represent a completed
-contributor gate.
+optional external profiles remain unlaunched. The four review warnings were subsequently fixed; fresh full Credo is clean and
+the ledger contract passes 20 tests. The strengthened consent-origin control
+rejects off-origin, network-path and lookalike routes before interaction lookup.
+The new dated probe repeated both controlled normative failures and preserves
+the original observation. This strengthens T-171-11/12 without changing the
+planned risk disposition or claiming either product defect corrected.
