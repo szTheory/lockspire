@@ -34,7 +34,7 @@ Requirements cover the user-confirmed mechanical integration scope. They do not 
 
 - [x] **HPROOF-01**: Maintainers can run a packaged clean-room host journey proving connected admin operation at default and custom mounts, reconnect/navigation and denied access, alongside successful public-route access that does not require staff authentication.
 - [x] **HPROOF-02**: Maintainers can run the relevant route/session, connected authorization and navigation regressions on both the current locked Phoenix/LiveView pair and the exact supported floor (Phoenix 1.8.5 / LiveView 1.1.28), with runtime evidence rather than compilation alone.
-- [ ] **HPROOF-03**: Required CI runs the bounded host-integration checks and reports failures with redaction-safe source-bound evidence, so acceptance does not depend on manual visual review or an untracked local workaround.
+- [x] **HPROOF-03**: Required CI runs the bounded host-integration checks and reports failures with redaction-safe source-bound evidence, so acceptance does not depend on manual visual review or an untracked local workaround.
 
 ## Acceptance Boundaries
 
@@ -86,7 +86,7 @@ Requirements confirmed by the user on 2026-10-22. Approved roadmap continues pha
 | HDX-04 | Phase 169 | Complete |
 | HPROOF-01 | Phase 170 | Complete |
 | HPROOF-02 | Phase 170 | Complete |
-| HPROOF-03 | Phase 170 | Pending |
+| HPROOF-03 | Phase 170 | Complete |
 
 **Coverage:** 15 requirements defined; 15 mapped exactly once; 0 unmapped; 12 complete in Phases 167–169 and 3 pending in Phase 170. Evidence and limits are recorded in each completed phase's verification report and automated UAT closure ledger.
 
