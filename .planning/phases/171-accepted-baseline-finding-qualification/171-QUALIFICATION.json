@@ -1536,6 +1536,16 @@
         "file": ".planning/ROADMAP.md",
         "anchor": "Phase 172: Authorization Responses / Phase 173: Conditional PAR & Profile Boundaries",
         "reason": "Narrow dependent work to A171-003 and P171-005 correction contracts; carry existing case proof forward and keep external profile limits supplemental."
+      },
+      {
+        "file": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "anchor": "must_haves.truths[2] and dated Verification gap disposition — 2026-10-24",
+        "reason": "Replace the unverified automatic serialization/interruption claim with the actual sequential operator procedure; both wrappers were not launched, so no overlap, interruption or cleanup outcome was observed."
+      },
+      {
+        "file": ".planning/ROADMAP.md",
+        "anchor": "Phases 172–174 Plans fields and Progress rows",
+        "reason": "Replace unknown plan totals with explicit unplanned states and prerequisites, retaining the two selected corrections and Phase 174 obligations."
       }
     ],
     "frozen_at": "2026-10-24T20:49:46Z",
@@ -1545,7 +1555,7 @@
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
         "selector": "matrix-selection",
-        "sha256": "cf3e205c4ccf57e5bcdcd413e60be568d1f4484aacd83c2de2e9f5075d09041f"
+        "sha256": "8c5a3aa70e6a12b95eb8cd9d7b8dc96b271e776313d2848a1d50c47498675876"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
@@ -1575,7 +1585,7 @@
       {
         "path": ".planning/ROADMAP.md",
         "selector": "phases-172-173-contract",
-        "sha256": "796b5496393344eb733a664b6fcbc30ce89e2579678ccfe9a1764da2d705afb8"
+        "sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-MAIN-ACCEPTANCE.json",
@@ -1583,7 +1593,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md",
-        "sha256": "419430c58fd083f980f8eafb39c45adaf03b4cdc6c9dfccc35871d7dcaa03304"
+        "sha256": "5becc7fd092ddfc74d16fbb08c696e7319d1b46fa7a57f6061d055819bdba2bb"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
@@ -1591,7 +1601,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
-        "sha256": "a816ea5b3814230795cb86f1b3352de8d251b9fe3ad6798dec04f2fd12575905"
+        "sha256": "9f9d5b27b7f855280becd28d2bfb60d6ff8c2f6c66014494144c8284a913cf5c"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-PATTERNS.md",
@@ -1599,7 +1609,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
-        "sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96"
+        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-01-SUMMARY.md",
@@ -1623,7 +1633,7 @@
       },
       {
         "path": "test/lockspire/qualification_ledger_contract_test.exs",
-        "sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08"
+        "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6"
       },
       {
         "path": "test/test_helper.exs",
@@ -1668,9 +1678,21 @@
       {
         "path": "scripts/conformance/fapi2-plan.json",
         "sha256": "5b8f1e196da86e8d022e592d1ced5c7033667c413b64ae7b4df38c7c2b857583"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "sha256": "6fada9064b91f3c4692177eafd5d824dc3d72f277b4f0b920576698da1d175ac"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-04-PLAN.md",
+        "sha256": "511a29d2807ab2fbfbbf0cc917b81feae8ea428a63ea0f23cc0fd2b38aae6de6"
+      },
+      {
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-DELIVERY.md",
+        "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "26648970ba7164cf9fa357c6ff03d819fa7643736bce2127208670e713d5346c",
+    "input_digest": "dc60a6b7e106c34be3b496e0d59e44c5d3ecc195fb76f8f1f4ddbc81c4e38d1b",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1734,6 +1756,98 @@
         "previous_sha256": "41adfc03d97d63c0f6daae0bf4429832f0192529fb9cff5ad6872c6588117c9b",
         "sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08",
         "reason": "WR-05 adds a referenced-case malformed requirement_ids regression and requires a list of nonempty strings before disposition-reference traversal; qualification cases, outcomes, observations, and the normative probe remain unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+        "selector": "matrix-selection",
+        "previous_sha256": "cf3e205c4ccf57e5bcdcd413e60be568d1f4484aacd83c2de2e9f5075d09041f",
+        "sha256": "8c5a3aa70e6a12b95eb8cd9d7b8dc96b271e776313d2848a1d50c47498675876",
+        "reason": "Record the procedure-scoped claim amendment and a nonblocking limitation for unverified broader overlap/interruption/cleanup behavior."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/ROADMAP.md",
+        "selector": "phases-172-173-contract",
+        "previous_sha256": "796b5496393344eb733a664b6fcbc30ce89e2579678ccfe9a1764da2d705afb8",
+        "sha256": "f064cef43676cc0db066ecfcb321f6e2351a1c08b0fe137f13e34d1c812ec9af",
+        "reason": "Set explicit downstream phase planning states/prerequisites while retaining correction and Phase 174 obligations."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION-DECISIONS.md",
+        "previous_sha256": "419430c58fd083f980f8eafb39c45adaf03b4cdc6c9dfccc35871d7dcaa03304",
+        "sha256": "5becc7fd092ddfc74d16fbb08c696e7319d1b46fa7a57f6061d055819bdba2bb",
+        "reason": "Append delegated maintainer review dispositions with preserved assumptions and no fabricated human confirmation."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
+        "previous_sha256": "a816ea5b3814230795cb86f1b3352de8d251b9fe3ad6798dec04f2fd12575905",
+        "sha256": "9f9d5b27b7f855280becd28d2bfb60d6ff8c2f6c66014494144c8284a913cf5c",
+        "reason": "Append dated Phase 171 question dispositions preserving historical unavailability and source-host/external boundaries."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "reason": "Record dated delegated dispositions, the completed 04-01 checks, and 04-02 RED/GREEN and lint evidence before final verification."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": "test/lockspire/qualification_ledger_contract_test.exs",
+        "previous_sha256": "caaab1b50ab5c887fe688f68ab04d5b31c00b3051c58345b38d2c5e7b6eb2f08",
+        "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6",
+        "reason": "Add a draft-matrix negative regression and only the interruption=false predicate for unlaunched profile outcomes."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-02-PLAN.md",
+        "previous_sha256": null,
+        "sha256": "6fada9064b91f3c4692177eafd5d824dc3d72f277b4f0b920576698da1d175ac",
+        "reason": "Add the current procedure-scoped profile truth and preserve the former truth in a dated amendment."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-04-PLAN.md",
+        "previous_sha256": null,
+        "sha256": "511a29d2807ab2fbfbbf0cc917b81feae8ea428a63ea0f23cc0fd2b38aae6de6",
+        "reason": "Record the consumed gap-closure authority for scoped claims, dispositions, regression and manifest changes."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-DELIVERY.md",
+        "previous_sha256": null,
+        "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1",
+        "reason": "Append actual delegated review dispositions and preserve no-launch, evidence and uncertainty boundaries."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "reason": "Record final measured task 171-04 check output and completed task statuses before final identity refresh; no case, profile, receipt, probe or runtime input changed."
       }
     ],
     "metadata_audits": [
@@ -1768,6 +1882,24 @@
         "previous_sha256": "aa32831de91898a4a870bb41a371968750f2bceb31f731fe9cff397f45f51d88",
         "sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b",
         "reason": "Correct key-link orientation: canonical ledger references the explicitly invoked probe; probe intentionally does not mutate/read the ledger. No task behavior, selected case, normative expectation or evidence changed."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "7c309f05d560d36fb404798c8f696274260eb564d2ee1cc88a38ff7347262a96",
+        "sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "reason": "Record the scoped 171-04 document checks and actual TDD/lint outputs before the final contract verification; selected cases, runtime inputs, receipt and probe observations are unchanged."
+      },
+      {
+        "date": "2026-10-24",
+        "operator": "Codex executing maintainer",
+        "source_sha": "30e385a33bb2a7f67d94c558dedf7691ecde5863",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md",
+        "previous_sha256": "b9fa20c0a22d4fd48235470cf150079be0c0b004baa09207e96a5e59010fd19c",
+        "sha256": "de2b11d1a0ab4ff59267ab4e776c722c64c78f07ccfb19cb9876ca463b1a54fb",
+        "reason": "Refresh only the reviewed VALIDATION identity after recording actual final test, format, Credo and scoped-diff results; matrix selection and all runtime/source observations remain unchanged."
       }
     ]
   },
@@ -1801,6 +1933,19 @@
       "reason": "The exact CPython 3.13.15/pip 26.2.1 locked environment is unavailable; no wrapper was launched, classified or issued a receipt.",
       "owner": "Phase 171 executing maintainer (Codex gsd-executor, Plan 02)",
       "next_action": "Prepare or select the existing workflow environment at source SHA d78f0fd944b8c8612261883e09cfb844a698bd92 with Elixir 1.19.5/OTP 28 and CPython 3.13.15/pip 26.2.1. Verify all seven distributions and wheel-lock versions from runner-requirements.lock; then retry mix lockspire.oidf_conformance --check, confirm the disposable provider-origin/TLS/browser path, and run this wrapper serially using the recorded lock and plan identities and the new artifact directory above. Keep unavailable until a real profile receipt is produced."
+    },
+    {
+      "observation_ids": [
+        "phase37-20261024T201228Z",
+        "fapi2-20261024T201228Z"
+      ],
+      "status": "UNVERIFIED",
+      "blocking_for_171_freeze": false,
+      "blocks": "Any broader optional-retry claim about automatic overlap, interruption or cleanup behavior.",
+      "does_not_block": "The selected source-host HTTP cases, matrix review or qualification freeze.",
+      "reason": "Both wrappers were NOT LAUNCHED; no overlap, interruption or cleanup event was observed. The sequential operator procedure, static traps and existing contracts do not prove the broader behavior.",
+      "owner": "Phase 171 executing maintainer",
+      "next_action": "Before any future broader optional-retry claim, separately scope and gather overlap/interruption evidence in an owned isolated environment, preserving output and recording actual exit, classification and cleanup. This amendment selects no retry, runner feature or environment preparation."
     }
   ]
 }

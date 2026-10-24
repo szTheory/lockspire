@@ -504,6 +504,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
     for profile <- ledger["profiles"] do
       assert profile["status"] == "unavailable"
       assert profile["profile_attempt"]["started"] == false
+      assert profile["profile_attempt"]["interrupted"] == false
       assert profile["profile_attempt"]["exit_code"] == nil
       assert profile["profile_attempt"]["result_classification"] == nil
       assert profile["artifact_output"]["receipt_path"] == nil
@@ -519,6 +520,21 @@ defmodule Lockspire.QualificationLedgerContractTest do
       )
 
     assert_rejected(fabricated)
+  end
+
+  test "an unlaunched profile cannot claim interruption" do
+    ledger = load_ledger()
+    assert validate(draft_matrix(ledger, "draft")) == []
+
+    interrupted =
+      put_in(
+        ledger,
+        ["profiles", Access.at(0), "profile_attempt", "interrupted"],
+        true
+      )
+
+    errors = validate(draft_matrix(interrupted, "draft"))
+    assert "an unlaunched profile cannot claim wrapper or receipt outcomes" in errors
   end
 
   defp load_ledger, do: @ledger_path |> File.read!() |> Jason.decode!()
@@ -851,12 +867,16 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
     require(
       errors,
-      profile["status"] != "unavailable" or
-        (attempt["started"] == false and attempt["exit_code"] == nil and
-           attempt["result_classification"] == nil and output["receipt_path"] == nil and
-           output["receipt_sha256"] == nil and nonempty?(profile["unavailable_cause"])),
+      profile["status"] != "unavailable" or valid_unlaunched_profile?(profile, attempt, output),
       "an unlaunched profile cannot claim wrapper or receipt outcomes"
     )
+  end
+
+  defp valid_unlaunched_profile?(profile, attempt, output) do
+    attempt["started"] == false and attempt["interrupted"] == false and
+      attempt["exit_code"] == nil and attempt["result_classification"] == nil and
+      output["receipt_path"] == nil and output["receipt_sha256"] == nil and
+      nonempty?(profile["unavailable_cause"])
   end
 
   defp validate_case_ids(errors, cases, rows) when is_list(cases) and is_list(rows) do
