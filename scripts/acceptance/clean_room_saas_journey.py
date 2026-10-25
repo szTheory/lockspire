@@ -693,6 +693,13 @@ def run_selected_authorization_case(
         params.update({"max_age": "60", "prompt": "none"})
         response = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
         print(f"selected A171-005 status {response['status']}", flush=True)
+        if response["status"] == 500:
+            try:
+                log = (run_root / "provider.log").read_text(errors="replace")
+            except OSError:
+                log = ""
+            crash_types = re.findall(r"\*\* \(([A-Za-z][A-Za-z0-9_.]+)\)", log)
+            print("selected A171-005 provider error type " + (crash_types[-1] if crash_types else "unclassified"), flush=True)
         require_status_in(response, (302, 303), "A171-005 stale host authentication")
         location = urlparse(redirect(response, "A171-005 stale host authentication"))
         values = parse_qs(location.query, keep_blank_values=True)
