@@ -48,7 +48,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 - Retry-safe maintenance that preserves concurrent secret rotation, truthful redacted status and documented key-loss recovery.
 - Fresh-install and packaged-upgrade proof across the existing supported direct-client authentication surface, with unchanged secret hashes and protocol/security defaults.
 
-**Selected:** On 2026-10-25 the owner said “follow ur recs” after the milestone-selection checkpoint. This retains the recommended SEC-01-first ordering and selects v1.48. Requirements and roadmap remain subject to their GSD gates; no product implementation is started by this selection. Continue after Phase 174, using the completed milestone records rather than the initializer's stale v1.44 completion field.
+**Selected:** On 2026-10-25 the owner said “follow ur recs” after the milestone-selection checkpoint. This retains the recommended SEC-01-first ordering and selects v1.48. Focused research is complete and the owner approved all 18 requirements; the owner approved the four-phase roadmap on 2026-10-25. No product implementation is started by this selection. Continue after Phase 174, using the completed milestone records rather than the initializer's stale v1.44 completion field.
 
 **Planning entry:** [Baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records the planning branch and retained prior history. Fresh synchronized-main acceptance and delivery reconciliation are required before product implementation. Preserve historical Phase 142/143 directories; v1.47 phases are already archived.
 
@@ -407,7 +407,7 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-Selected v1.48 scope: independent verifier-key custody and rotation, compatible legacy/mixed-version upgrades, safe maintenance/recovery and packaged proof. Detailed requirements are being defined through `$gsd-new-milestone`; none is implemented or verified yet.
+Selected v1.48 scope: independent verifier-key custody and rotation, compatible legacy/mixed-version upgrades, safe maintenance/recovery and packaged proof. The owner approved all 18 [requirements](REQUIREMENTS.md) on 2026-10-25; the four-phase roadmap is approved. None is implemented or verified yet.
 
 Completed scope remains in [v1.47 requirements](milestones/v1.47-REQUIREMENTS.md) and [v1.46 requirements](milestones/v1.46-REQUIREMENTS.md).
 
@@ -674,7 +674,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Return unsupported response_mode through first-party browser error and consume only stored PAR fields | Preserve safe callback/error disposition and pushed integrity using existing seams | ✓ Good — actual Router RED/GREEN, package12/12 and accepted main |
 | Archive milestone-only frozen planning validation with its evidence | Avoid permanent test discovery depending on mutable active planning paths or rewriting historical hashes | ✓ Good — independent lifecycle review; byte-preserved contract and pre-close22/22 result |
-| Select v1.48 SEC-01 before UI quality, preserving the completed UI interview | Owner accepted the recommended order on 2026-10-25; key custody needs its own migration and rotation proof | Selected; requirements/research/roadmap gates remain |
+| Select v1.48 SEC-01 before UI quality, preserving the completed UI interview | Owner accepted the recommended order on 2026-10-25; key custody needs its own migration and rotation proof | Selected; focused research, 18 requirements and four-phase roadmap approved |
 
 ## Evolution
 

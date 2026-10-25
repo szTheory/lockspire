@@ -15,14 +15,14 @@ One synthetic probe against installed Plug.Crypto 2.2.1 confirmed a two-day-old 
 
 ## Implications for Roadmap
 
-Four dependent outcomes are recommended, starting after Phase 174; no phase sequence is approved yet:
+The owner approved four dependent outcomes as Phases 175–178 on 2026-10-25:
 
 1. Accepted implementation baseline and finite custody/legacy-age/rollout/storage contract, with acceptance ownership.
 2. Dedicated key custody and canonical production readers/writers, preserving existing crypto and protocol behavior.
 3. Safe rewrap/check/status, concurrent update protection, install/upgrade guidance and key-loss recovery.
 4. Package-installed fresh/upgrade/rotation/mixed-version proof, focused security/review, required contributor/CI gates and accepted-main delivery.
 
-The owner has approved SEC-01-first selection and focused research. Requirements and roadmap confirmation remain ahead. Inline investigation replaces subagent fan-out because no explicit subagent authorization was supplied; no independent agent review is claimed.
+The owner has approved SEC-01-first selection and focused research. All 18 requirements and the four-phase roadmap are approved. Next: `$gsd-discuss-phase 175`; implementation entry remains gated on fresh exact-main acceptance. Inline investigation replaces subagent fan-out because no explicit subagent authorization was supplied; no independent agent review is claimed.
 
 ## Sources
 

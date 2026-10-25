@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; proposed roadmap awaiting approval. No requirement implemented or verified.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. No requirement implemented or verified.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -62,7 +62,7 @@
 
 ## Traceability
 
-Each approved requirement maps exactly once to the proposed roadmap, continuing after Phase 174. Phase approval remains pending; all implementation statuses are Pending.
+Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. All implementation statuses are Pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
@@ -85,7 +85,7 @@ Each approved requirement maps exactly once to the proposed roadmap, continuing 
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped. Proposed roadmap approval is pending.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped. Roadmap approved 2026-10-25.
 
 ---
-*Last updated: 2026-10-25 after requirements approval and proposed roadmap traceability.*
+*Last updated: 2026-10-25 after requirements and roadmap approval.*

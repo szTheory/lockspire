@@ -2,6 +2,7 @@
 
 ## Milestones
 
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 approved; 18 approved requirements; ready for Phase 175 discussion; product implementation requires fresh accepted main.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -18,9 +19,83 @@
 
 **Selected 2026-10-25:** The owner accepted the recommended SEC-01-first order. A Phoenix host can protect and rotate `client_secret_jwt` verifier material independently of endpoint/session secrets while preserving existing clients through an explicit upgrade path.
 
-**Planning status:** Focused research is approved and in progress; scoped requirements and roadmap approval remain ahead. Continue numbering at Phase 175 after the completed v1.47 Phase 174; no phase sequence is approved yet. Preserve historical Phase 142/143 directories. [Planning baseline and implementation-entry gate](research/v1.48-client-auth-key-isolation/BASELINE.md).
+**Planning status:** Focused research is complete and the owner approved all 18 requirements with “lgtm” on 2026-10-25. The owner approved the four-phase roadmap on 2026-10-25. Preserve historical Phase 142/143 directories. [Planning baseline and implementation-entry gate](research/v1.48-client-auth-key-isolation/BASELINE.md), [requirements](REQUIREMENTS.md), [research](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
 **Next candidate:** UI Stories & Continuous Quality follows SEC-01, preserving its completed Q1–Q10 interview and confirmed final summary. No UI version/phases are reserved. [Ranking and triggers](MILESTONE-ARC.md), [UI proposal](research/ui-quality-engine/MILESTONE-PROPOSAL.md).
+
+## Phases
+
+- [ ] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract.
+- [ ] **Phase 176: Dedicated Verifier Custody & Compatible Runtime** - Wire independent keys through every production reader/writer and prove the supported rolling transition.
+- [ ] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials.
+- [ ] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
+
+## Phase Details
+
+### Phase 175: Accepted Baseline & Verifier Compatibility Contract
+
+**Goal**: Maintainer can identify a fresh accepted implementation base and a finite, reviewable verifier-custody/compatibility contract before dependent implementation is planned.
+**Depends on**: Nothing (first phase of v1.48); uses completed v1.47 evidence without restamping it.
+**Requirements**: VBASE-01, VBASE-02
+**Success Criteria** (what must be TRUE):
+  1. Maintainer can inspect reviewed retained-delivery/worktree disposition and a fresh receipt from the existing exact-main helper binding synchronized main, local contributor checks, matching canonical CI/Release no-publish and explicit warning/resource dispositions before product implementation.
+  2. Maintainer can reproduce the qualified legacy-age behavior through its actual caller/lifecycle seam and inspect distinct dispositions for usable, aged, malformed and configured-expired credentials; no age override or security-policy change is silently selected.
+  3. Implementers can inspect a frozen finite ledger covering every writer/reader, stable client-identity sealing, text format/key configuration, missing-key behavior, supported custom-store transaction/capability contract, rollout/rollback states, expected outcomes and automated proof owners.
+  4. Unresolved material policy/API/support changes stop dependent planning; evidence that invalidates the recommended no-schema/no-new-dependency scope produces an explicit GSD revision rather than an unreviewed expansion. Historical Phase 142/143 and immutable receipts remain intact.
+
+**Plans**: To be created by `$gsd-plan-phase 175` after phase discussion.
+
+### Phase 176: Dedicated Verifier Custody & Compatible Runtime
+
+**Goal**: Host can use independent verifier keys across existing credential creation, rotation and authentication paths, with deliberate legacy compatibility and safe reader-first rollout.
+**Depends on**: Phase 175; accepted-main entry and frozen contract must pass before dependent implementation planning.
+**Requirements**: SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, VUP-01, VUP-02
+**Success Criteria** (what must be TRUE):
+  1. Host explicitly configures independent verifier read/write keys and transition mode; dedicated writes use the current key without endpoint/signing-key fallback, while malformed/missing required configuration fails through the qualified redacted contract without a surprise unrelated-auth boot failure.
+  2. Direct registration, DCR and operator secret rotation persist coherent hash/verifier pairs bound to canonical client identity; new text-safe envelopes reject key/version/header/tag/client/purpose tampering, and existing signing-envelope bytes and key behavior remain compatible.
+  3. Supported token, introspection, revocation, device-authorization and CIBA paths accept valid dedicated verifiers and reject invalid ones while preserving existing HS256, audience, JTI/replay, configured lifetimes and PAR/FAPI boundaries.
+  4. Qualified usable legacy rows read only within the explicit compatibility policy and fail under legacy rejection; aged/unreadable rows follow the frozen disposition, with no silent credential-expiry or authority change.
+  5. Maintainer can execute the finite reader-first/writer-activation/rollback cases: old code is never exposed to unsupported writes in the supported sequence, and after activation the documented rollback boundary is truthful.
+
+**Plans**: To be created after Phase 175 qualification; no task count or speculative implementation plan is reserved.
+
+### Phase 177: Safe Verifier Maintenance & Recovery
+
+**Goal**: Operator can inspect, rewrap and rotate verifier-key custody safely, and recover affected clients after key loss, without changing partner secrets or hiding failed work.
+**Depends on**: Phase 176.
+**Requirements**: VUP-03, VOPS-01, VOPS-02, VOPS-03, VOPS-04, VPROOF-01
+**Success Criteria** (what must be TRUE):
+  1. Maintainer can run repo-safe preview/apply/check and retry a partial run idempotently; failures/conflicts are distinct and requested readiness/completion fails when unfulfilled, with accurate operator guidance and bare-Mix startup behavior.
+  2. Actual PostgreSQL contention/rollback cases prove verifier-only writes and audit atomicity through the selected supported store/transaction authority, preserving concurrent secret/hash/client updates, lifetimes and rotation timestamps; unsupported adapter capability fails before mutation.
+  3. Status accounts for all stored material, including inactive/expired/non-JWT-method clients, and distinguishes legacy/current/old-key/unknown/malformed/unreadable/uninspected states. No partial/local check claims complete/fleet-wide readiness.
+  4. Operator can introduce/read a new key, activate writes, rewrap and safely retire the old key; missing/lost-key cases identify affected clients and demonstrate valid-key restoration or existing authorized secret rotation/reprovision while affected JWT auth fails closed.
+  5. Sentinel-based proof across crypto/runtime/task/storage failures shows no verifier plaintext, encryption key or ciphertext in logs/SQL diagnostics, telemetry, audit, operator reports or protocol responses. Endpoint/session secrets, signing custody and unrelated supported methods remain intact.
+
+**Plans**: To be created after the runtime boundary is verified; no broad admin redesign or new UI quality machinery.
+
+### Phase 178: Packaged Upgrade Proof & Delivery Handoff
+
+**Goal**: Maintainer can reproduce the complete selected adoption/upgrade/rotation story and assess a reviewed delivery with accurate guidance and intentional resource custody.
+**Depends on**: Phase 177 and all prior selected acceptance outcomes.
+**Requirements**: VPROOF-02, VDELIV-01, VDELIV-02
+**Success Criteria** (what must be TRUE):
+  1. Source/package-bound fresh and legacy-installed hosts on both existing dependency pairs reproduce the selected upgrade, mixed-version/key, writer activation, rewrap/rotation, legacy rejection, rollback limits and recovery cases, including the declared configured-store composition. Missing/unavailable proof stays a blocker, not a pass.
+  2. Reviewer can inspect required actual PostgreSQL concurrency/rollback evidence, focused security/code review, all 18 verified requirements and the milestone audit, plus passing full contributor and canonical candidate CI gates at exact identities.
+  3. Fresh-install, generator, upgrade, diagnostic and support guidance matches verified behavior without changing public protocol scope, signing format, host ownership, schema or runtime dependencies unless explicitly re-scoped through GSD.
+  4. A dated handoff records reviewed integration and fresh exact-main acceptance or explicit unresolved delivery blockers, resource owners/purpose/next actions and preserved unknown work; UI quality remains the next substantial candidate with the completed interview intact. No package publication is inferred.
+
+**Plans**: To be created after prior outcomes pass; the normal milestone PR and protected release train remain distinct.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|---|---|---|---|
+| 175. Accepted Baseline & Verifier Compatibility Contract | 0/0 | Not started | — |
+| 176. Dedicated Verifier Custody & Compatible Runtime | 0/0 | Not started | — |
+| 177. Safe Verifier Maintenance & Recovery | 0/0 | Not started | — |
+| 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
+
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; 0 implementation plans or completed phases. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 

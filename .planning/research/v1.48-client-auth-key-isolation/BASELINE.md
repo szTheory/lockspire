@@ -37,6 +37,8 @@ Use the SDK `state.milestone-switch` for the new frontmatter/body reset. Before 
 
 During initialization, `state.record-session` re-counted retained Phase 142/143 plans into v1.48 before a scoped roadmap existed (2 phases, 10 plans, 7 completed). This was incorrect current progress, not newly completed work. Re-running the SDK milestone switch restored zero new-milestone progress. Do not call a disk-counting state updater until the new scoped phase list exists; verify that only 175–178 are current afterward. Historical directories remain untouched.
 
+**Initialization approved:** The owner approved all 18 requirements with “lgtm,” then explicitly approved the four-phase roadmap on 2026-10-25. Current phases are 175–178, with no plans or implementation completed. The generated state-contract shortcut is `$gsd-progress --next` with a “plan phase 175” label; this does not establish that discussion occurred. The explicit next action is `$gsd-discuss-phase 175`, consistent with configured `skip_discuss: false`, followed by phase planning. No pending todo files require phase tags.
+
 ## Implementation entry requirement
 
 Before any product implementation, reconcile the retained planning/delivery delta onto the intended milestone lineage, refresh main/PR/CI evidence and run the existing exact-main acceptance helper with full local contributor checks, matching canonical push CI, matching no-publish Release and explicit warning dispositions. Preserve unknown work and unique commits. Planning progress does not waive this gate. Package publication remains separate through Release Please and protected exact-ref publishing.
