@@ -147,3 +147,11 @@ Planning sign-off: all four requirements and D-01–D-11 covered; 4 plans / 4 wa
 | Gaps found | 0 |
 | Resolved | 9 |
 | Escalated | 0 |
+
+## Final source review and regression update
+
+The full eight-file source review is clean after valid-receipt substitution repair `a00f0d0a8e4cc276403b5f5dccf37bb63f900458` (Python 16/16; ExUnit bridge 7/7). The affected complete package sweep passed 12/12 at `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`; proper affected prior verifiers are current. Independent ASVS L1 review verifies 17 declared mitigations with focused post-repair applicability review; historical findings remain recorded.
+
+The required current-milestone cross-phase regression gate ran at `3fb357f19252fc760ccc59b6a28c4067439ebf5a`: the nine current test files collected from Phase 171–173 reports, excluding `test_helper.exs` and historical deliberate-RED probes, passed **139 tests, 0 failures**, exit 0. Command: process-local Elixir 1.19.5/OTP 28.5 and owned database `lockspire_171_main_20261024b`, `mix test --include integration` followed by those nine paths. A durable run-owned log and exit marker captured the result; timeout was 1800 seconds. Source/harness/criteria inputs were unchanged during the gate.
+
+Candidate ec6361d predates the repaired test and remains historical evidence. Replacement-candidate local and hosted CI is pending before DELIV-01 can pass; final goal verification and canonical milestone audit also remain pending. The validated coverage map establishes appropriate checks, not premature completion of those gates.
