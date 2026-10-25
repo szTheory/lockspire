@@ -1,5 +1,8 @@
 # `client_secret_jwt` Host Guide
 
+For the dedicated verifier key settings and reader-first rollout limits, see
+the [client secret verifier configuration guide](client-secret-verifier-configuration.md).
+
 Lockspire ships a narrow `client_secret_jwt` slice for confidential clients on the Lockspire-owned direct-client endpoints that reuse the shared verifier. This guide explains that shipped slice only. It does not broaden the public support contract beyond [`docs/supported-surface.md`](supported-surface.md).
 
 ## What this guide covers
