@@ -5,11 +5,11 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 175
 current_phase_name: Accepted Baseline & Verifier Compatibility Contract
 status: planning
-stopped_at: v1.48 milestone initialized; roadmap approved; ready for Phase 175 discussion
-last_updated: "2026-10-25T17:29:36.116Z"
+stopped_at: Phase 175 context gathered (assumptions mode); ready for phase planning
+last_updated: "2026-10-25T17:45:47.825Z"
 last_activity: 2026-10-25
 last_activity_desc: Milestone v1.48 started
-state_head: 4959bc225c0b03d1b3d835759478980c19edae4a
+state_head: 60c51432057a20d7b20ac9384954ddbb462ae8e3
 progress:
   total_phases: 4
   completed_phases: 0
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.48 Client Authentication Key Isolation & Rotation (SEC-01) is selected; research, 18 requirements and roadmap are approved. Phase 175 discussion is next. UI quality is the next substantial candidate and its design interview is complete. [Planning baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records entry identity and the fresh-main gate required before implementation.
+**Current focus:** v1.48 Client Authentication Key Isolation & Rotation (SEC-01) is selected; research, 18 requirements and roadmap are approved. Phase 175 context is captured and ready for planning. UI quality is the next substantial candidate and its design interview is complete. [Planning baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records entry identity and the fresh-main gate required before implementation.
 
 ## Current Position
 
 Phase: 175 of 4 (Accepted Baseline & Verifier Compatibility Contract; not started)
 Plan: —
-Status: Ready for phase discussion
-Last activity: 2026-10-25 — Milestone v1.48 started
+Status: Ready for phase planning
+Last activity: 2026-10-25 — Phase 175 context captured after codebase analysis and primary-source research fan-out
 
 ## Performance Metrics
 
@@ -124,16 +124,18 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T17:29:36.099Z
-Stopped at: v1.48 milestone initialized; roadmap approved; ready for Phase 175 discussion
-Resume file: .planning/ROADMAP.md
-Next: Run $gsd-discuss-phase 175, then $gsd-plan-phase 175. Branch `milestone/v1.48-client-auth-key-isolation` starts at `1917aa61c589d25d3e2668f6ef0672f32ef0a388`; this run owns only planning edits. v1.47 archives, immutable receipts and historical resource custody remain preserved. No product implementation or publication has started.
+Last session: 2026-10-25T17:45:47.811Z
+Stopped at: Phase 175 context gathered (assumptions mode); ready for phase planning
+Resume file: .planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md
+Next: Run $gsd-plan-phase 175. Branch `milestone/v1.48-client-auth-key-isolation` starts at `1917aa61c589d25d3e2668f6ef0672f32ef0a388`; this run owns only planning edits. v1.47 archives, immutable receipts and historical resource custody remain preserved. No product implementation or publication has started.
 
 ### Blockers
 
 None
 
 ## Decisions
+
+- [Phase 175 discussion]: Adopt the user-delegated coherent scoped recommendations in 175-CONTEXT.md. Preserve ciphertext-sensitive authority, explicit reader-first activation, narrow shared-PostgreSQL maintenance authority and existing-path disclosure proof. Fresh exact-main acceptance and actual-caller legacy qualification remain unperformed; native/migrated age policy must receive an explicit qualified disposition before Phase 176 planning.
 
 - [v1.48 roadmap]: Owner explicitly approved Phases 175–178 on 2026-10-25 after approving all 18 requirements. Next action is Phase 175 discussion; no product implementation is complete.
 
