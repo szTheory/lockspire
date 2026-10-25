@@ -12,6 +12,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierDcrWriterTest do
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.Test.Fixtures.DcrFixtures
   alias Lockspire.TestSupport.ClientSecretVerifierFixtures, as: Fixtures
+  alias Lockspire.Web.RegistrationJSON
 
   setup_all do
     Application.put_env(:lockspire, :repo, Lockspire.TestRepo)
@@ -61,11 +62,16 @@ defmodule Lockspire.Integration.ClientSecretVerifierDcrWriterTest do
             |> Map.new()
         )
 
+      before_audits = Lockspire.TestRepo.aggregate(AuditEventRecord, :count)
       assert {:ok, %Registration.Success{} = success} = Registration.register(request)
       assert is_binary(success.client_secret_plaintext)
       assert byte_size(success.client_secret_plaintext) == 43
+      response = RegistrationJSON.success_response(success)
+      assert response.client_secret == success.client_secret_plaintext
 
       assert {:ok, stored} = Repository.fetch_client_by_id(success.client.client_id)
+      read_response = RegistrationJSON.read_response(stored)
+      refute Map.has_key?(read_response, :client_secret)
       assert stored.client_id == success.client.client_id
       assert stored.client_secret_hash == success.client.client_secret_hash
 
@@ -85,6 +91,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierDcrWriterTest do
                )
 
       assert opened == success.client_secret_plaintext
+      assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits + 1
 
       if method == "client_secret_jwt" do
         {params, _jti, _issued_at} = Fixtures.assertion(stored, success.client_secret_plaintext)
