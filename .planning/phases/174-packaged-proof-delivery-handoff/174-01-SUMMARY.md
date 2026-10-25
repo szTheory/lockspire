@@ -6,7 +6,7 @@ tags: [elixir, phoenix, oauth, acceptance, package-proof, receipts]
 
 requires:
   - phase: 173
-    provides: PAR package/source contracts and host-boundary decisions used by the authorization proof.
+    provides: PAR source contracts and host-boundary decisions used by the authorization proof.
 provides:
   - Bounded selected_authorization_par runner for the A171-001–006 slice and strict independent receipt validator.
   - Actual package tracer and six-case authorization proof receipts, both explicitly partial.
@@ -132,7 +132,7 @@ The final six-case receipt is bound to `869f9830`. Intermediate diagnostic commi
 
 - Keep the package proof independent of the source checkout runtime: the host was prepared from the actual archive and its resolved/vendor/compiled candidate markers.
 - Keep host account, session, login, claims, consent, and product policy ownership in the clean-room host.
-- Mark the current receipts as partial and leave A171-007–012 and all final acceptance for the later plans.
+- Mark the current receipts as partial and leave P171-001–006 and all final acceptance for the later plans.
 
 ## Deviations from Plan
 
