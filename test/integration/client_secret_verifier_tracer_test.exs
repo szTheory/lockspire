@@ -34,8 +34,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierTracerTest do
 
     key = :crypto.strong_rand_bytes(32)
     context = context(key)
-    secret = :crypto.strong_rand_bytes(32)
-    {hash, _discarded_secret} = Clients.rotate_secret_hash()
+    {hash, secret} = Clients.rotate_secret_hash()
     client_id = unique_id()
 
     assert {:ok, verifier} = ClientSecretVerifier.seal(context, client_id, secret)
@@ -62,6 +61,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierTracerTest do
     assert {:ok, persisted} = Repository.register_client(client)
     assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
     assert stored.client_secret_jwt_verifier_encrypted == verifier
+    assert Fixtures.secret_hash_matches?(stored.client_secret_hash, secret)
 
     {params, jti, _issued_at} = Fixtures.assertion(stored, secret)
     result = ClientAuth.authenticate(params, nil, auth_options(context))
@@ -87,8 +87,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierTracerTest do
            "dedicated verifier sealing capability is required"
 
     context = context(:crypto.strong_rand_bytes(32))
-    secret = :crypto.strong_rand_bytes(32)
-    {hash, _discarded_secret} = Clients.rotate_secret_hash()
+    {hash, secret} = Clients.rotate_secret_hash()
     client_id = unique_id()
     {:ok, verifier} = ClientSecretVerifier.seal(context, unique_id(), secret)
 
