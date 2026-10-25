@@ -145,7 +145,7 @@ trap 'exit 143' TERM
 trap 'exit 130' INT
 fail_stage() { stage=$1; status=$2; echo "host integration proof failed at $stage (exit $status)" >&2; exit "$status"; }
 emit_lifecycle_diagnostic() {
-  python3 - "$private_logs/tests.log" <<'PY'
+  python3 - "$private_logs/tests.log" <<'PY' || {
 import json, re, sys
 from pathlib import Path
 sys.path.insert(0, str(Path.cwd() / "scripts" / "acceptance" / "clean_room"))
@@ -155,18 +155,30 @@ try:
 except OSError:
     text = ""
 matches = re.findall(r"(?m)^\s*\d+ tests?,\s*(\d+) failures?", text)
-failures = min(int(matches[-1]), 999999) if matches else 0
+token = matches[-1] if matches else ""
+if token and len(token) <= 6:
+    try:
+        failures = int(token)
+    except ValueError:
+        failures = 0
+else:
+    failures = 0
 event = "assertion_failure" if failures else "runner_failure"
-summary = safe_failure_summary(stage="lifecycle", scenario="all", event=event, field="count", count=failures)
+try:
+    summary = safe_failure_summary(stage="lifecycle", scenario="all", event=event, field="count", count=failures)
+except Exception:
+    summary = {"stage": "lifecycle", "scenario": "all", "event": "runner_failure", "field": "count", "count": 0}
 print("host integration lifecycle diagnostic: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
 PY
+  printf '%s\n' 'host integration lifecycle diagnostic: {"count":0,"event":"runner_failure","field":"count","scenario":"all","stage":"lifecycle"}' >&2
+  }
 }
 emit_browser_diagnostic() {
-  python3 - "$private_logs/browser-$1.log" <<'PY'
+  python3 - "$private_logs/browser-$1.log" <<'PY' || {
 import json, sys
 from pathlib import Path
 sys.path.insert(0, str(Path.cwd() / "scripts" / "acceptance"))
-from clean_room_admin_journey import safe_browser_failure_summary
+from clean_room_admin_journey import BROWSER_COUNTS, BROWSER_FAILURES, FULL_OBSERVATIONS, FULL_REQUIRED, safe_browser_failure_summary
 try:
     lines = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace").splitlines()
 except OSError:
@@ -183,8 +195,44 @@ for line in reversed(lines):
     break
 if summary is None:
     summary = safe_browser_failure_summary({})
+else:
+    observed = json.loads(line[len(prefix):])
+    case_ids = set(FULL_REQUIRED)
+    case_failures = set(BROWSER_FAILURES) | {"failure_unrecognized"}
+    outcomes = {"passed", "failed", "unknown"}
+    count_fields = BROWSER_COUNTS | {"params_checks", "http_checks", "staff_checks"}
+    def safe_enum(value, allowed, fallback):
+        return value if isinstance(value, str) and value in allowed else fallback
+    def safe_values(value, allowed):
+        if not isinstance(value, list):
+            return []
+        return sorted({item for item in value if isinstance(item, str) and item in allowed})
+    first = observed.get("first_case")
+    if isinstance(first, dict):
+        summary["first_case"] = {
+            "id": safe_enum(first.get("id"), case_ids, "unknown"),
+            "failure": safe_enum(first.get("failure"), case_failures, "failure_unrecognized"),
+            "outcome": safe_enum(first.get("outcome"), outcomes, "unknown"),
+            "count_fields": safe_values(first.get("count_fields"), count_fields),
+            "observation_fields": safe_values(first.get("observation_fields"), set(FULL_OBSERVATIONS)),
+        }
+    failed_cases = observed.get("failed_cases")
+    if isinstance(failed_cases, list):
+        retained = []
+        for item in failed_cases[:8]:
+            if not isinstance(item, dict):
+                continue
+            retained.append({
+                "id": safe_enum(item.get("id"), case_ids, "unknown"),
+                "failure": safe_enum(item.get("failure"), case_failures, "failure_unrecognized"),
+                "false_evidence": safe_values(item.get("false_evidence"), set(FULL_OBSERVATIONS)),
+            })
+        if retained:
+            summary["failed_cases"] = retained
 print("host integration browser diagnostic: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
 PY
+  printf '%s\n' 'host integration browser diagnostic: {"counts":{},"failure":"failure_missing","observations":{},"outcome":"unknown","stage":"unknown"}' >&2
+  }
 }
 command -v node >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15" >&2; exit 1; }
 node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 15)) process.exit(1)' >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15 with built-in WebSocket" >&2; exit 1; }
@@ -239,7 +287,7 @@ if [[ "$pair" == locked ]]; then
 else
   run_in_test 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/admin_host_runtime_test.exs || status=$?
 fi
-((status == 0)) || { emit_lifecycle_diagnostic; fail_stage lifecycle_tests "$status"; }
+((status == 0)) || { emit_lifecycle_diagnostic || true; fail_stage lifecycle_tests "$status"; }
 test_count=$(python3 - "$private_logs/tests.log" <<'PY'
 import re, sys
 text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -270,7 +318,7 @@ for index in 0 1 2; do
   raw_receipt=$raw_root/$pair-$suffix.json
   status=0
   run_bounded 180 "$private_logs/browser-$index.log" "${journey_command[@]}" --pair "$pair" --mount "$mount" --scenario full --receipt "$raw_receipt" --run-id "$run_id" --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" || status=$?
-  ((status == 0)) || { emit_browser_diagnostic "$index"; fail_stage "browser_$index" "$status"; }
+  ((status == 0)) || { emit_browser_diagnostic "$index" || true; fail_stage "browser_$index" "$status"; }
   status=0
   run_bounded 15 "$private_logs/validate-$index.log" "${validator_command[@]}" --check "$raw_receipt" --expected-run-id "$run_id" --expected-source "$source_revision" --expected-pair "$pair" --expected-mount "$mount" --expected-archive "$candidate_sha" --expected-tree "$candidate_tree" --expected-version "$candidate_version" --expected-scenario-set full || status=$?
   ((status == 0)) || fail_stage "receipt_validation_$index" "$status"
