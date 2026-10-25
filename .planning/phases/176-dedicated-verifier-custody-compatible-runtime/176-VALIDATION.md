@@ -1,15 +1,15 @@
 ---
 phase: "176"
 slug: "dedicated-verifier-custody-compatible-runtime"
-status: draft
+status: validated
 nyquist_compliant: true
-wave_0_complete: false
+wave_0_complete: true
 created: "2026-10-25"
 ---
 
 # Phase 176 — Validation Strategy
 
-> Planning contract only. Seven plans, 14 tasks, five waves. New runtime tests and their results are pending execution; each owning task creates its test before invoking it. `wave_0_complete: false` records that those test files do not exist yet, not a missing creation plan.
+> Audited execution coverage: seven plans, fourteen tasks and five waves completed. All planned test files exist; every owned runtime case has observed evidence in 176-RUNTIME-ACCEPTANCE.json. Full candidate CI passed on b8cd395d. Later maintenance and package proof remain pending.
 
 ## Test Infrastructure
 
@@ -32,7 +32,7 @@ created: "2026-10-25"
 
 ## Exact Task, Threat and Test Map
 
-Every command below MUST be prefixed with `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5`. All new test files are created first within the named task; their current existence/result is **no / pending**. Existing baseline suites remain unchanged. Every command in PLAN XML has an immediately following `fails_when` signal.
+Every command below MUST be prefixed with `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5`. All new test files were created within their named task; task summaries record focused passes, and final candidate CI passed. Current existence/result is **yes / green**. Existing baseline suites remain unchanged. Every command in PLAN XML has an immediately following `fails_when` signal.
 
 | Task | Requirement | Behavior | Threat Ref | Automated command after test creation |
 |---|---|---|---|---|
@@ -57,10 +57,10 @@ Tracer feedback: 176-01-01 must pass and commit, then rerun the literal tracer c
 
 ## Wave 0 Requirements
 
-- [ ] 176-01 creates tracer and parser suites; 176-02 creates config and invalid-state persisted suites.
-- [ ] 176-03 creates helper/direct-writer suites; 176-05 creates DCR/operator suites.
-- [ ] 176-04 creates native/migrated/legacy unit and persisted age suites.
-- [ ] 176-06 creates endpoint and guarded-issuance suites; 176-07 creates real-reader rollout suite.
+- [x] 176-01 creates tracer and parser suites; 176-02 creates config and invalid-state persisted suites.
+- [x] 176-03 creates helper/direct-writer suites; 176-05 creates DCR/operator suites.
+- [x] 176-04 creates native/migrated/legacy unit and persisted age suites.
+- [x] 176-06 creates endpoint and guarded-issuance suites; 176-07 creates real-reader rollout suite.
 - Existing ExUnit/PostgreSQL infrastructure is sufficient; install no framework or dependency.
 
 ## Manual-Only Verifications
@@ -78,6 +78,14 @@ All scoped library behavior has automated acceptance. Fleet reader/key parity, o
 - [x] Sampling continuity and no watch-mode commands.
 - [x] Full frozen case/requirement/decision coverage is mapped.
 - [ ] Feedback latency measured during execution.
-- [ ] Runtime acceptance results remain pending until executed.
+- [x] Runtime acceptance: all22owner176cases recorded against the passing candidate; future-owner cases remain pending.
 
-**Approval:** Planning map complete; all new runtime acceptance, feedback timing and independent phase verification are pending execution.
+**Coverage audit:** 2026-10-25 — 7/7 requirements covered, all14task verification paths exist, 22/22 owned runtime cases have recorded successful execution. Candidate CI: 2 properties, 2,097 fast tests and 231 integration tests, zero failures. Independent security/source/goal verification remains separate. Focused feedback latency was not uniformly retained; this is an evidence limit, not a passing timing claim. The final full CI run took 244 seconds, with ERL_FLAGS=+S4 and a task-owned database.
+
+## Validation Audit 2026-10-25
+
+| Metric | Count |
+|---|---|
+| Gaps found | 0 |
+| Resolved | 0 |
+| Escalated | 0 |
