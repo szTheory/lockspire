@@ -96,14 +96,14 @@ status: complete
 - Canonical hosted run `40161576115`, event `pull_request`, workflow `.github/workflows/ci.yml`, exact candidate head, attempt 1, completed successfully at `2026-10-25T04:45:02Z`. The paginated latest graph contains exactly seven unique successful jobs; separate dependency-review run `40161576111` is not counted.
 - Recorded the hosted exact-floor artifact's actual synthetic merge source `c5402a4f1af908cd3d1a15df47c9490eed471a96`, its two parents, and its tree equality with candidate `9b8cf54d…`. The floor artifact passed 44 lifecycle tests and three mounts with 16 scenarios each. It is not relabeled as candidate-source execution, and its package archive/tree identities remain distinct from the Plan 03 package receipt.
 - Preserved earlier history: candidate `1a34011c…` run `40160485083` attempt 1 had a real lifecycle failure (exit 2), with four canonical jobs successful and Integration/Coverage cancelled after the head update; the inner log had already been removed by cleanup. The earlier `ec6361d9…` successful candidate is historical and predates the final repair.
-- Inspected the existing milestone PR [#140](https://github.com/szTheory/lockspire/pull/140), targeting `main`. It remains open and unmerged with current candidate checks green. No review has been submitted. Main remains `fe38beee987b135e87c99e7aa7f2488b4c8613e8`; the optional new main receipt is absent, and the original Phase 171 receipt remains byte-preserved.
+- At the original Plan 04 handoff, PR [#140](https://github.com/szTheory/lockspire/pull/140) was open and main remained `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. After the user explicitly approved merging the exact reviewed PR head, the normal protected squash merge produced main SHA `173059a166e9ade0f5f57c9980b7b2400a98538c`; the original Phase 171 receipt remains byte-preserved.
 - Recorded dated delivery, custody, ranking, assumptions, flags, and the exact next action. The independent read-only reviewer confirmed both Phase 174 judgments remain scoped `resolved` / `judgment`, with both non-authoritative human-review flags intact.
 
-## Requirements and remaining gates
+## Requirements and delivery outcome
 
-- **Complete in this plan:** DELIV-02, the dated resumable handoff with actual PR/main blocker, retained-resource custody, exact flag/assumption counts, and read-only ranking reassessment.
-- **Candidate checks complete; broader requirement pending:** DELIV-01's exact candidate local and hosted gates passed. The requirement remains pending until the parent completes the source-bound full Phase 174 verification/audit and phasewide security/review gates at their normal lifecycle boundary.
-- No merge, synchronized-main acceptance, release, or publication is claimed. Publication remains unselected and `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED=false`.
+- **Complete in this plan:** DELIV-02, including actual reviewed PR/main identities, retained-resource custody, exact flag/assumption counts, and read-only ranking reassessment.
+- **Complete delivery evidence:** DELIV-01's immutable candidate local and hosted gates passed, followed by the normal protected merge and exact-main acceptance. The parent completed the Phase 174 goal verifier, phasewide source/security reviews, Nyquist checks, and canonical milestone audit before integration. This Plan 04 addendum records the actual main boundary; the parent refreshes final source-bound report applicability and SDK tracking from that receipt.
+- Publication remains unselected and `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED=false`.
 
 The final package source revision is `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`, distinct from the executed candidate SHA. Its receipt was 12/12 passed, 0 failed/skipped, SHA-256 `9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`. Archive SHA-256 is `89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc`; package/vendor tree SHA-256 is `a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1`; compiled candidate SHA-256 is `ecc72ecac0f066e7a9d6b359e680a05cd2024b5f11c83d8b652c46be0dd406e2`.
 
@@ -150,16 +150,17 @@ The measured plan-start range is `20a3286afcd78447e4a1c685b36a0630ecd1528b` thro
 21. `196d588c` — `fix(174): preserve bounded host proof diagnostics` (existing Plan 01 harness owner)
 22. `9b8cf54d` — `fix(174): preserve safe proof diagnostics` (existing Plan 01 harness owner; replacement candidate)
 
-## Deferred finalization
+## Parent-owned final report refresh
 
-The parent owns the phasewide verification, full security threat assessment, final code review, Nyquist closeout, goal verifier and canonical milestone audit. These were not started here to preserve the train's non-circular lifecycle. After those checks, the parent can batch the final completion metadata and report files into a normal PR-head update, then observe the resulting required checks before merge. No branch push or merge of the local report-only closeout commits was performed by this plan.
+The parent completed the phasewide verification, 17/17 security threat assessment, final source review, four-phase Nyquist closeout, goal verifier and canonical milestone audit before integration. The protected merge and exact-main acceptance are recorded in the delivery handoff and disposition addendum. The parent owns the final source-bound report applicability and SDK tracking refresh. No product source, candidate proof input, dependency, support floor or release control changed during this continuation.
 
 ## Self-Check: PASSED
 
 - Candidate gate JSON parses; candidate, local-exit, frozen-input and 7/7 canonical-job assertions pass.
 - The summary, candidate gate record, delivery handoff and scoped dispositions exist; all 22 commits listed above are ancestors of the candidate SHA.
+- Accepted-main receipt is byte-preserved at 1,925 bytes, schema-valid, exit 0, SHA-256 `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd`; its 7/7 push CI, no-publish Release, local 200-test result, and two warning dispositions were validated. All 63 frozen-input Git blobs match accepted main.
 - `git diff --check` passes for the report changes.
 
 ## Parent completion addendum
 
-After the final replacement candidate gates, the proper Phase 174 verifier passed 23/23 must-haves with zero behavior-unverified items. The SDK completed Phase 174 and all four milestone requirements are now complete. DELIV-01 is recorded here only after those actual gates; earlier pending states remain historical. The canonical milestone audit and PR/main delivery remain separate normal train steps, and no accepted-main or publication result is claimed.
+After the final replacement candidate gates, the proper Phase 174 verifier passed 23/23 must-haves with zero behavior-unverified items. The SDK completed Phase 174 and all four milestone requirements are complete. The canonical milestone audit passed 14/14 requirements, 4/4 phases, 6/6 integration links, and 6/6 flows. After explicit user authorization, PR #140 was squash-merged at reviewed head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` as `173059a166e9ade0f5f57c9980b7b2400a98538c`. Main push CI `40198968774` passed 7/7 jobs; Release `40198968751` passed with five publication/verification steps skipped. The exact-main helper's corrected invocation exited 0 and emitted `174-MAIN-ACCEPTANCE.json` at SHA-256 `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd`; all 63 frozen hashes matched. An earlier invocation is retained separately with exit 1 because it included two non-emitted warning labels; its local mix-ci pass is not confused with the final successful receipt. Publication remains unselected; the parent owns final verifier applicability and SDK tracking refresh.

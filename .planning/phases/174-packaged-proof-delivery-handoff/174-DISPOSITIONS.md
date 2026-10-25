@@ -168,5 +168,56 @@ are reusable under this scoped semantic applicability judgment. This neither
 claims package execution at the repair commits nor widens the freeze. The
 repaired code/tests are included in replacement candidate `9b8cf54d…`; full
 local `mix ci` and the new canonical seven-job graph both passed. The first
-review warnings and their fixes remain separately recorded; parent-owned
-phasewide review/security aggregation and milestone audit are pending.
+review warnings and their fixes remain separately recorded. At the time of
+this earlier proof disposition, parent-owned phasewide review/security
+aggregation and milestone audit were pending; they completed before the merge
+recorded below.
+
+## Phase 174 protected integration and accepted-main evidence — 2026-10-25
+
+The user explicitly approved squash-merging PR #140 at reviewed head
+`6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` and continuing synchronized-main
+acceptance. Fresh branch-protection and PR checks found the exact seven strict
+required contexts green, conversation resolution enabled, zero required
+approvals, and no review submissions or threads. The normal GitHub connector
+merged the expected head as `173059a166e9ade0f5f57c9980b7b2400a98538c`, with
+parent `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. No bypass, force update, or
+alternate merge route was used.
+
+The final PR-head CI run was `40167697155` (exact head, 7/7 successful unique
+required jobs); separate Dependency Review run `40167697135` passed. At merged
+main, push CI run `40198968774` passed seven canonical jobs, and push Release
+run `40198968751` passed in no-publish mode with all five publication and
+verification jobs skipped. The exact-main helper emitted receipt
+`174-MAIN-ACCEPTANCE.json` with schema `lockspire-phase-139-acceptance-v1`,
+baseline/main SHA `173059a166e9ade0f5f57c9980b7b2400a98538c`, local mix-ci pass
+and 200 ExUnit tests, hygiene 22 PASS / 2 WARN / 0 BLOCK, CI 7/7, and successful
+no-publish Release. Its exact stdout was copied byte-for-byte (1,925 bytes;
+SHA-256 `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd`).
+All 63 frozen-input hashes were independently recomputed from accepted-main Git
+blobs and matched. The original Phase 171 receipt remains byte-preserved at
+`be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39`.
+
+The first helper invocation returned exit 1 after its local and remote gates
+passed because the invocation included two dispositions (`worktrees` and
+`open PRs`) that exact mode did not emit as WARN labels. The recorded output
+was 22 PASS, 2 WARN, 1 BLOCK; that rejected invocation is preserved separately
+and is not represented as accepted-main evidence. Its private stdout, stderr,
+and actual exit marker remain under `/private/tmp/lockspire-174-delivery-uajmka2c/`
+for parent-owned final sealing. The corrected invocation provided exactly the
+two actual WARN dispositions:
+
+| Exact-mode WARN label | Disposition |
+|---|---|
+| `adoption demo stopped containers` | `retained_existing_demo_containers` |
+| `adoption demo volumes` | `retained_existing_demo_volumes` |
+
+This operational lesson is limited to exact acceptance: only labels emitted
+as WARN by that invocation belong in its disposition arguments. Broad hygiene
+observations such as retained worktrees or unrelated open PRs are preserved in
+the dated handoff and must not be supplied as exact-mode warning labels unless
+the helper actually emits them. The retry changed only invocation arguments;
+there were no source, helper, workflow, dependency, floor, control, or
+acceptance-criterion changes. Existing judgment flags remain unchanged at 3 / 2
+/ 2 / 2 across Phases 171–174. The parent owns the final verifier/audit
+applicability refresh and SDK tracking after this receipt.
