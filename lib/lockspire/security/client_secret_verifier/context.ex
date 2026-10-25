@@ -209,9 +209,9 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   defp decode_padded_key(encoded) do
     trimmed = String.trim_trailing(encoded, "=")
 
-    with :error <- Base.decode64(trimmed, padding: false),
-         :error <- Base.url_decode64(trimmed, padding: false) do
-      :error
+    case Base.decode64(trimmed, padding: false) do
+      :error -> Base.url_decode64(trimmed, padding: false)
+      decoded -> decoded
     end
   end
 

@@ -147,47 +147,48 @@ defmodule Lockspire.Clients do
 
     case errors do
       [] ->
-        client_id =
-          normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
-            generate_client_id()
-
-        case secret_values(normalized.client_type, client_id) do
-          {:ok, secret_material} ->
-            client = %Client{
-              client_id: client_id,
-              client_secret_hash: secret_material.client_secret_hash,
-              client_secret_jwt_verifier_encrypted:
-                secret_material.client_secret_jwt_verifier_encrypted,
-              client_type: normalized.client_type,
-              name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
-              redirect_uris: normalized.redirect_uris,
-              allowed_scopes: normalized.allowed_scopes,
-              allowed_grant_types: normalized.allowed_grant_types,
-              allowed_response_types: normalized.allowed_response_types,
-              token_endpoint_auth_method: normalized.auth_method,
-              token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
-              jwks: normalized.jwks,
-              jwks_uri: normalized.jwks_uri,
-              pkce_required: true,
-              subject_type: :public,
-              created_by:
-                normalize_optional_string(
-                  Map.get(attrs, :created_by) || Map.get(attrs, "created_by")
-                ),
-              created_at: DateTime.utc_now(),
-              lifetime_version: 1,
-              metadata:
-                normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
-            }
-
-            {:ok, %{client: client, plaintext_secret: secret_material.client_secret}}
-
-          {:error, reason} ->
-            {:error, [missing_cryptographic_material_error(reason)]}
-        end
+        normalize_valid_client(attrs, normalized)
 
       _errors ->
         {:error, Enum.reverse(errors)}
+    end
+  end
+
+  defp normalize_valid_client(attrs, normalized) do
+    client_id =
+      normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
+        generate_client_id()
+
+    case secret_values(normalized.client_type, client_id) do
+      {:ok, secret_material} ->
+        client = %Client{
+          client_id: client_id,
+          client_secret_hash: secret_material.client_secret_hash,
+          client_secret_jwt_verifier_encrypted:
+            secret_material.client_secret_jwt_verifier_encrypted,
+          client_type: normalized.client_type,
+          name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
+          redirect_uris: normalized.redirect_uris,
+          allowed_scopes: normalized.allowed_scopes,
+          allowed_grant_types: normalized.allowed_grant_types,
+          allowed_response_types: normalized.allowed_response_types,
+          token_endpoint_auth_method: normalized.auth_method,
+          token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
+          jwks: normalized.jwks,
+          jwks_uri: normalized.jwks_uri,
+          pkce_required: true,
+          subject_type: :public,
+          created_by:
+            normalize_optional_string(Map.get(attrs, :created_by) || Map.get(attrs, "created_by")),
+          created_at: DateTime.utc_now(),
+          lifetime_version: 1,
+          metadata: normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
+        }
+
+        {:ok, %{client: client, plaintext_secret: secret_material.client_secret}}
+
+      {:error, reason} ->
+        {:error, [missing_cryptographic_material_error(reason)]}
     end
   end
 

@@ -191,11 +191,9 @@ defmodule Lockspire.Integration.ClientSecretVerifierDirectWriterTest do
   end
 
   defp register_capturing_errors(attrs) do
-    try do
-      Clients.register_client(attrs)
-    rescue
-      _error -> :raised
-    end
+    Clients.register_client(attrs)
+  rescue
+    _error -> :raised
   end
 
   defp verifier_context(key) do

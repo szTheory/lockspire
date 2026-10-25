@@ -20,17 +20,23 @@ defmodule Lockspire.Clients.SecretMaterial do
     secret = generate_token(@secret_bytes)
     context = Config.client_secret_verifier_context(opts)
 
-    with {:ok, verifier} <- seal(context, client_id, secret, opts) do
-      {:ok,
-       %{
-         client_secret: secret,
-         client_secret_hash: Policy.hash_client_secret(secret),
-         client_secret_jwt_verifier_encrypted: verifier
-       }}
-    else
-      {:error, reason} when reason in @safe_reasons -> {:error, reason}
-      {:error, _reason} -> {:error, :client_secret_verifier_unavailable}
-      _other -> {:error, :client_secret_verifier_unavailable}
+    case seal(context, client_id, secret, opts) do
+      {:ok, verifier} ->
+        {:ok,
+         %{
+           client_secret: secret,
+           client_secret_hash: Policy.hash_client_secret(secret),
+           client_secret_jwt_verifier_encrypted: verifier
+         }}
+
+      {:error, reason} when reason in @safe_reasons ->
+        {:error, reason}
+
+      {:error, _reason} ->
+        {:error, :client_secret_verifier_unavailable}
+
+      _other ->
+        {:error, :client_secret_verifier_unavailable}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
