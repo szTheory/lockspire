@@ -63,3 +63,34 @@ change is recorded in the input-manifest audit. No other manifest input,
 qualification row, prior audit prefix, receipt, probe, observation, profile,
 timestamp, qualification identity, or `phases-172-173-contract` selector is
 refreshed by these judgments.
+
+## Phase 174 final-operations judgment reassessment — 2026-10-25
+
+An independent read-only `gsd-code-reviewer` reassessed both Phase 174
+prohibitions against the Plan 04 candidate and delivery operations. Both remain
+valid only at their existing `resolved` / `judgment` tier. The required
+`unverified-prohibition — human review recommended` flags remain in force; this
+review is not human confirmation, mechanical enforcement, or universal proof.
+
+For the attribution prohibition, the reviewer confirmed the 12/12 package
+receipt remains local package-to-loopback evidence, distinct from the exact
+candidate hosted workflow, accepted main, publication, and certification. The
+local Elixir 1.18.4 / OTP 27 reproduction (44 lifecycle tests and all three
+browser mounts, 16 scenarios each) remains supplemental local evidence and was
+not used as a substitute for hosted CI. The first hosted attempt's exact-floor
+job failed; after the authorized same-run retry, GitHub's latest-attempt graph
+completed all seven canonical jobs successfully at the unchanged candidate
+SHA. Both attempt outcomes and their job identities are recorded separately.
+PR #140 is open at candidate `ec6361d9840f2adfda85116d72fec0efe9065c6c`;
+there is no integration merge or new accepted-main receipt.
+
+For the host-ownership prohibition, the reviewer confirmed the only candidate
+source delta after the scoped source review is formatting in the two clean-room
+host fixture files. Account resolution, login/session behavior, claims,
+consent, and product policy remain host-owned; no production route or
+ownership-transfer change was introduced by this delivery work.
+
+The review preserves the exact counts: Phase 171 has 3 judgment flags, Phase
+172 has 2, Phase 173 has 2, and Phase 174 has 2. The four current and three
+inherited unresolved generic edge assumptions remain separate from those nine
+judgment flags. No flag or assumption was suppressed or upgraded.
