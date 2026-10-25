@@ -2,7 +2,7 @@
 phase: "176"
 slug: "dedicated-verifier-custody-compatible-runtime"
 status: validated
-nyquist_compliant: true
+nyquist_compliant: false
 wave_0_complete: true
 created: "2026-10-25"
 ---
@@ -89,3 +89,7 @@ All scoped library behavior has automated acceptance. Fleet reader/key parity, o
 | Gaps found | 0 |
 | Resolved | 0 |
 | Escalated | 0 |
+
+## Independent Security Coverage Correction
+
+The first coverage audit reconciled execution artifacts, but independent security probes found three planned threats untested across four mechanisms (SF-01 through SF-04 in 176-SECURITY-FINDINGS.md). Current validation is partial until those regressions are implemented and rerun. Earlier candidate CI remains historical observed test evidence, not proof of the missing controls.
