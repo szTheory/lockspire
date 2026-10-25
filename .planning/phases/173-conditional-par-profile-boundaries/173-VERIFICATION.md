@@ -1,19 +1,23 @@
 ---
 phase: 173-conditional-par-profile-boundaries
-verified: 2026-10-25T02:39:59Z
+verified: 2026-10-25T03:53:40Z
 status: passed
 score: 6/6 behavioral truths verified
 covered_files:
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json
   - .planning/phases/173-conditional-par-profile-boundaries/173-01-PLAN.md
   - .planning/phases/173-conditional-par-profile-boundaries/173-01-SUMMARY.md
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md
   - .planning/phases/174-packaged-proof-delivery-handoff/174-SOURCE-PROOF.json
   - lib/lockspire/protocol/authorization_request.ex
+  - test/acceptance/selected_receipt_test.py
   - test/integration/phase15_par_authorization_e2e_test.exs
+  - test/lockspire/clean_room_release_source_contract_test.exs
   - test/lockspire/protocol/authorization_request_test.exs
-covered_digest: "v3:sha256:95e1dd0a7c5da87e0c57ea1c92d2ee53f83be5432d7ef898ba6679c5ec94f1c8"
+covered_digest: "v3:sha256:3a09cf89f004a9d96c1c1bdca62e70b9fb3905e9b6f5a8fa67bc2702d94abd6b"
 behavior_unverified: 0
 overrides_applied: 0
 flagged_prohibitions:
@@ -36,7 +40,7 @@ decision_coverage:
 # Phase 173: Conditional PAR & Profile Boundaries Verification Report
 
 **Phase Goal:** Correct only P171-005's reproduced rejection of a conflicting outer `scope` for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
-**Verified:** 2026-10-25T02:39:59Z
+**Verified:** 2026-10-25T03:53:40Z
 **Status:** passed — 6/6 behavioral truths verified; 2 judgment-tier prohibitions retain non-authoritative review flags.
 **Re-verification:** Refresh of the existing report after covered-input changes. Prior report remains in git history; this refresh does not replace any historical test identity.
 
@@ -66,7 +70,9 @@ Both plan prohibitions are `resolved` / `judgment`. Their scoped dispositions re
 
 ### Adjacent Phase 174 Package Evidence (Local Only)
 
-The refreshed Phase 174 package proof and index record 12/12 selected scenarios at the refreshed frozen input revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`; package proof SHA-256 is `518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5`. It records archive SHA `89baff6a…`, tree SHA `a9d09087…`, compiled candidate SHA `691ae4b9…`, and successful cleanup. The index maps P171-005 to the Phase 173 correction and retains the original P171-005 qualification counterexample separately. The intervening `38a19a29` changes to the clean-room account resolver and session controller were line-wrapping/indentation only; the Phase 173 source-owner files remain byte-identical to the recorded source proof at `a348bf…`. This is local package-clean host evidence only; it does not establish hosted candidate CI, accepted-main, publication, external transport, or certification.
+The refreshed Phase 174 package proof and index record 12/12 selected scenarios at frozen source revision `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`; package proof SHA-256 is `9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`. The index SHA-256 is `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`; it binds input-freeze SHA `3c1e0b62…`, the package receipt, and the test/review evidence. The receipt records archive SHA `89baff6a…`, tree SHA `a9d09087…`, compiled candidate SHA `ecc72eca…`, and successful cleanup/redaction checks. It maps P171-005 to the Phase 173 correction and retains the original qualification counterexample separately.
+
+The package evidence was strengthened by test-only commit `a00f0d0a`: the receipt-substitution test now substitutes a valid alternate `control_status=303`, verifies that the same-bound receipt is otherwise accepted, then asserts rejection specifically for mismatch with the externally supplied digest. The proof index records 16/16 Python validator tests and 7/7 ExUnit bridge tests passing at that test identity; `174-REVIEW.md` is clean at reviewed head `a00f0d0a` with zero findings. These checks establish receipt-validator behavior, not a new Phase 173 protocol behavior. The intervening `38a19a29` clean-room resolver/session fixture edits were formatting-only. Phase 173 source-owner files remain byte-identical to the source-proof GREEN at `a348bf…`, so that source evidence remains applicable. The package run is local package-clean host evidence only; it does not establish hosted candidate CI, accepted-main, publication, external transport, or certification.
 
 ### Required Artifacts
 
@@ -77,7 +83,7 @@ The refreshed Phase 174 package proof and index record 12/12 selected scenarios 
 | `test/lockspire/protocol/authorization_request_test.exs` | Conflicting outer values and distinct collision behavior | ✓ VERIFIED | Artifact query passed; explicit conflicting-value and collision cases are present. |
 | `171-QUALIFICATION.json` | Frozen content and attributed input identity history | ✓ VERIFIED | Artifact query passed; current frozen-input named contract test passed. |
 | `173-01-SUMMARY.md` | Original RED/GREEN identities and evidence limits | ✓ VERIFIED | Artifact query passed; the historical entries were checked against the current ledger and proof index. |
-| Phase 174 source/package proof and index | Current green source evidence and bounded local package evidence | ✓ VERIFIED | Exact files are fingerprinted. Package result is local-only and does not extend Phase 173 into candidate/main/certification proof. |
+| Phase 174 freeze, source/package proof, index and validator evidence | Current source GREEN plus bounded local package evidence and strengthened receipt validation | ✓ VERIFIED | Exact freeze, receipt, index, validator test, bridge test and clean review are fingerprinted. Package result is local-only and does not extend Phase 173 into candidate/main/certification proof. |
 
 ### Key Link Verification
 
@@ -146,5 +152,5 @@ None as a blocking checkpoint. This is an infrastructure/library phase. The two 
 No selected implementation or requirement gap was found. Current source-proof GREEN covers the exact relevant source/test bytes at its recorded revision, and the current frozen-input contract check passes. The original Phase 171 counterexample and Phase 173 RED/GREEN identities remain distinct and preserved. Generic fallback assumptions, external profiles, and certification-level claims remain outside the verified scope. There is no universal concurrency, accepted-main, hosted candidate, publication, reachability, or certification proof.
 
 ---
-_Verified: 2026-10-25T02:39:59Z_
+_Verified: 2026-10-25T03:53:40Z_
 _Verifier: the agent (gsd-verifier)_
