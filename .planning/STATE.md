@@ -4,17 +4,17 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 174
 current_phase_name: Packaged Proof & Delivery Handoff
-status: executing
-stopped_at: Completed 174-03-PLAN.md
-last_updated: "2026-10-25T02:32:30.697Z"
+status: verifying
+stopped_at: Completed 174-04-PLAN.md
+last_updated: "2026-10-25T03:28:59.676Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 173 complete, transitioned to Phase 174
-state_head: 79517a89fc86fc854874782a10f06f133801a7a2
+state_head: aa4c51f7d20c9dc52c56f6cf51bc02ac4c63cad0
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 75
 ---
 
@@ -32,7 +32,7 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 
 Phase: 174 (Packaged Proof & Delivery Handoff) — READY TO EXECUTE
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-10-24 — Phase 173 complete, transitioned to Phase 174
 
 Progress: [████████░░] 75% — 3/4 phases complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews; Phase 174 ready to plan.
@@ -53,6 +53,7 @@ v1.47: 3 completed phases, 6 completed plans. Phase 173 passed six behavioral tr
 | Phase 174 P01 | 84 min | 2 tasks | 7 files |
 | Phase 174 P02 | 28min | 2 tasks | 8 files |
 | Phase 174 P03 | 19min | 3 tasks | 15 files |
+| Phase 174 P04 | 56min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -121,8 +122,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T02:32:30.664Z
-Stopped at: Completed 174-03-PLAN.md
+Last session: 2026-10-25T03:28:59.513Z
+Stopped at: Completed 174-04-PLAN.md
 Resume file: None
 Next: Phase 174 plan 04: run the candidate contributor/CI gates and complete the dated delivery handoff, preserving all remaining blockers and keeping the next milestone unstarted.
 
@@ -159,3 +160,6 @@ None
 - [Phase 174]: Freeze shipped inputs and bind existing source owners to one fresh complete package run.
 - [Phase 174]: Keep DELIV-01 and DELIV-02 pending until candidate gates and delivery work are observed in Plan 04.
 - [Phase 174]: Resolve the five reviewed prior prohibitions at the judgment tier while retaining non-authoritative human-review flags.
+- [Phase 174]: Keep package source f01b6ef77889d38b032944eb37069d6d4b3b3171 distinct from immutable candidate ec6361d9840f2adfda85116d72fec0efe9065c6c.
+- [Phase 174]: Preserve the first failed hosted CI attempt and evaluate exactly seven jobs from the successful latest attempt on the unchanged candidate SHA.
+- [Phase 174]: Leave the new main receipt absent while PR #140 remains open; record the concrete main-acceptance blocker and parent-owned next action.
