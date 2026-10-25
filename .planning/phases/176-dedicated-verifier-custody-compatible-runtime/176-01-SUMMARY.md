@@ -14,12 +14,12 @@ provides:
 affects: [176-02, 176-03, 176-04, client_secret_jwt]
 
 actuals:
-  tokens: 8219
+  tokens: 8211
   tasks: 2
-  commits: 4
-commits: 4
+  commits: 5
+commits: 5
 plan_head_before: c988c4b423abc4a029a4a8de23597a0dcfaa4d2d
-plan_head_after: 600ae2249e32c995fe87dfc43c1f201612572a55
+plan_head_after: 2295b42521c823525bf131ba90983a8cc049780e
 
 tech-stack:
   added: []
@@ -70,7 +70,7 @@ coverage:
         status: pass
     human_judgment: false
 
-duration: 11 min
+duration: 12 min
 completed: 2026-10-25
 status: complete
 ---
@@ -81,9 +81,9 @@ status: complete
 
 ## Performance
 
-- **Duration:** 11 min
+- **Duration:** 12 min
 - **Started:** 2026-10-25T21:39:11Z
-- **Completed:** 2026-10-25T21:50:00Z
+- **Completed:** 2026-10-25T21:51:04Z
 - **Tasks:** 2
 - **Files modified:** 5
 
@@ -100,6 +100,7 @@ status: complete
 2. **Task 1 GREEN:** `55565221` — feat(176-01): add dedicated client verifier path
 3. **Task 2 RED:** `35300eb6` — test(176-01): cover adversarial verifier envelopes
 4. **Task 2 GREEN:** `600ae224` — feat(176-01): enforce verifier envelope bounds
+5. **Task 1 fixture correction:** `2295b425` — fix(176-01): bind tracer hash to sealed secret
 
 ## Files Created/Modified
 
@@ -113,6 +114,7 @@ status: complete
 
 - **Task 1 RED:** `gsd-tools check tdd-red-evidence` returned `RED_EVIDENCE_OK` for the persisted authentication tracer. The target assertion failed because the dedicated context/sealing capability was absent; the test was discovered and the legacy control passed. A temporary ExUnit event formatter emitted the actual test results as TAP for the gate.
 - **Task 1 GREEN:** The tracer passed with 3 tests and 0 failures. After commit `55565221`, the exact planned tracer command passed again with 3 tests and 0 failures before Task 2 began.
+- **Final tracer correction:** The test now hashes the same secret that it seals and asserts the persisted hash matches; the tracer passed again with 3 tests and 0 failures.
 - **Task 2 RED:** The same machine gate returned `RED_EVIDENCE_OK` for the dotted-key-ID round-trip test. Its assertion failed because the parser split at the wrong separator. The report contained 7 discovered tests and no fixture/load failures.
 - **Task 2 GREEN:** The focused unit suite passed with 8 tests and 0 failures after parser implementation. No refactor-only commit was needed.
 
@@ -129,7 +131,17 @@ Dedicated verifier crypto uses only the complete context passed by its caller. L
 
 ## Deviations from Plan
 
-None — plan executed as written.
+### Auto-fixed Issues
+
+**1. [Rule 1 - Bug] Keep the tracer's client hash and verifier secret paired**
+- **Found during:** Final review after Task 2
+- **Issue:** The tracer initially generated its hash from a different secret than the verifier contained.
+- **Fix:** Use the `rotate_secret_hash/0` hash and returned secret together, and assert the persisted hash matches that secret.
+- **Files modified:** `test/integration/client_secret_verifier_tracer_test.exs`
+- **Verification:** Focused tracer passed with 3 tests and 0 failures.
+- **Committed in:** `2295b425`
+
+**Total deviations:** 1 auto-fixed (Rule 1). **Impact:** Corrected the test fixture so the persisted client material is internally coherent; no product scope changed.
 
 ## Issues Encountered
 
@@ -145,7 +157,7 @@ Plan 02 can resolve and cache application-level contexts while reusing the compl
 
 ## Self-Check: PASSED
 
-All five declared files exist, all four task commits are ancestors of the plan head, and the measured plan commit count is four.
+All five declared files exist, all five task commits are ancestors of the plan head, and the measured plan commit count is five.
 
 ---
 *Phase: 176-dedicated-verifier-custody-compatible-runtime*
