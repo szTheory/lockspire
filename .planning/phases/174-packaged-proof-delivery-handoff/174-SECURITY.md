@@ -1,14 +1,64 @@
 ---
 phase: "174"
-plan: "02"
-status: secured
-threats_found: 4
-threats_closed: 4
+slug: "packaged-proof-delivery-handoff"
+status: verified
+threats_found: 17
+threats_closed: 17
 threats_open: 0
 asvs_level: 1
 block_on: high
 created: "2026-10-25"
 ---
+
+# Phase 174 — Security
+
+The independent `gsd-security-auditor` verified the complete authored register: sixteen numbered threats and one deduplicated shared supply-chain entry. All seventeen mitigations are closed; no risk was accepted to close the gate. Full review covered `6c4381920af749807ea7bfa591ef3a49f91f6fb3` through `c26b6effc6ce73dd03caeb85302b1b7e377a96a0`; focused recheck at `80b34a93e2fac61811329b7c5d9be254acb9e96b` closed the final freshness finding. This is ASVS L1 scoped mitigation verification, not certification.
+
+## Trust boundaries
+
+Archive→vendor/resolver/compiled host; HTTP/persisted values→redacted receipt; run-owned cleanup→retained maintainer resources; historical ledger→current proof join; verifier inputs→fingerprint; candidate→canonical hosted CI; reviewed PR→protected main.
+
+## Threat register
+
+| Threat ID | Category | Severity | Disposition | Mitigation evidence | Status |
+|---|---|---|---|---|---|
+| T-174-01 | Tampering | high | mitigate | One PackageIdentity crosses archive, vendor, resolution and compiled checks before HTTP; journey:2037,2062,2074,2079; build_provider:520,584; package_input:308,568. | closed |
+| T-174-02 | Tampering | high | mitigate | External digest/source binding, exact selections, fields and typed positive counts; selected_receipts:108,121,140,156; behavioral mutations plus source-CI bridge. | closed |
+| T-174-03 | Information disclosure | high | mitigate | Secret registration, bounded projections, redaction/sentinel scans and safe failure summary; journey:75,382,485,391,2172,2179; redaction:134. | closed |
+| T-174-04 | Elevation of privilege | high | mitigate | Fixed synthetic identities and owned integer-only host files; session_controller:26,42; fetched host session account_resolver:9; strict signed auth_time at journey:652,795,819. | closed |
+| T-174-05 | Denial of service | high | mitigate | Root markers/false-owner test, random databases/ports and marked cleanup; journey:125,135,340,291,231,2194,2216; mandatory receipt cleanup facts. | closed |
+| T-174-06 | Tampering | high | mitigate | Independent valid controls, exact callback/state, HTML400/no Location/no OAuth fields; journey:644,705,720,738,746. | closed |
+| T-174-07 | Tampering / Elevation of privilege | high | mitigate | Required PAR/S256/replay, independent foreign-client burn, live/expired reference controls and stored authority equality; journey:547,832,896,924,968. | closed |
+| T-174-08 | Information disclosure | high | mitigate | Private child observer emits exactly five equality facts, no raw persisted values or new product route; journey:573,597,1209. | closed |
+| T-174-09 | Repudiation | medium | mitigate | Actual role-owned reviews/input hashes and retained judgment flags; supported-surface:236,247 distinguishes proof, floor advisories and public limits. | closed |
+| T-174-10 | Tampering | high | mitigate | Only guidance and171-03 manifest entries selectively audited; canonical cases/old audit prefix preserved; ledger:1917,1926; original receipt SHA unchanged. | closed |
+| T-174-11 | Repudiation | high | mitigate | All63 frozen hashes and source-owner hashes match; exact receipt/index validated, no result/self hash cycle; separate executed source identities preserved. | closed |
+| T-174-12 | Spoofing / Repudiation | high | mitigate | Proper affected verifier owners reassessed final operations append; SDK171/172/173 passed/current; derivative audit hashes match final reports. See closure below. | closed |
+| T-174-13 | Spoofing / Tampering | high | mitigate | Actual03:13:29Z snapshot; full local mixci exit0 at ec6361d9840f2adfda85116d72fec0efe9065c6c; canonical ci.yml40156252600 attempt2 latest paginated graph exactly7 successful jobs; first failure retained. | closed |
+| T-174-14 | Elevation of privilege / Repudiation | high | mitigate | PR140 remains open with explicit blocked handoff and next action; main receipt absent; existing train and synchronized-main CI/Release-no-publish protections preserved. | closed |
+| T-174-15 | Denial of service / Tampering | high | mitigate | Actual retained worktree identities/unique history/custody/actions recorded; cleanup restricted to newly marked run-owned resources; demo data and unknown databases preserved. | closed |
+| T-174-16 | Repudiation | high | mitigate | Proper scoped five-item lifecycle review precedes resolved/judgment transitions; exact prior plan identities/flags preserved; no mechanical or human confirmation fabricated. | closed |
+| T-174-SC | Tampering | high | mitigate | No new dependency/lockfile/workflow/product API/schema/migration; existing locked package resolution, install legitimacy and publication authority preserved. | closed |
+
+Source abbreviations name `scripts/acceptance/clean_room_saas_journey.py`, `scripts/acceptance/clean_room/{build_provider,package_input,selected_receipts,redaction}.py`, and the two `test/clean_room/provider_host/lib/` host fixture files. Evidence records are the phase INPUT-FREEZE, SOURCE-PROOF, PACKAGE-PROOF, PROOF-INDEX, CANDIDATE-GATES, DELIVERY and DISPOSITIONS artifacts.
+
+## Freshness finding and closure
+
+The initial full audit closed16/17 and left T-174-12 open/high: typed SDK checks found171/172 stale only because the final operations append changed174-DISPOSITIONS. A proper `gsd-verifier` reassessed both reports, preserved source/ledger/lifecycle/original RED/GREEN evidence, and justified excluding only that growing downstream derivative note from earlier covered inputs. Stable evidence remains covered (49inputs for171;17for172). Each report retains the scoped judgment evidence narratively. No source test, package or CI was rerun or relabeled for this metadata delta.
+
+The security auditor independently confirmed all171/172/173 statuses passed/current and audit/report hashes matched. Final fingerprints:171 `v3:sha256:74c2de9f60f02a1816fda253eddfd6e5f6e2afaef2a9473f5ba2b1c01adb157a`;172 `v3:sha256:d3bc5c424e8a4aa8a7df1c80987cbeb7567ddb9e82aec551b72478f9170edf3b`. The audit references reports one-way; prior reports do not fingerprint the derivative audit.
+
+## Accepted risks and limits
+
+No accepted threat dispositions. Nine non-authoritative judgment recommendations remain separately counted171/172/173/174=3/2/2/2, with four current and three inherited generic assumptions unresolved. The final goal verifier still owns post-snapshot STATE/VALIDATION/completion applicability review; this security verdict does not claim a new execution of the earlier strict snapshot.
+
+Nonblocking test-strength observation: the test named another-valid-receipt substitution mutates control_status to204, itself invalid under the schema. It does not positively establish substitution of an otherwise valid alternative. External digest enforcement exists before JSON decoding; the auditor found no missing mitigation. This limitation is preserved for code-review disposition.
+
+The first hosted floor-browser failure remains recorded with its lost inner diagnostic; the authorized failed-job rerun succeeded at the same SHA. Local exact-floor proof is supplemental. PR140 is unmerged, no fresh main receipt exists, publication is unselected, and loopback proof establishes no public TLS/proxy/browser reachability or external profile/certification result. The auditor made no implementation writes or runtime executions.
+
+## Historical Plan 02 scoped audit
+
+The following preserved report covers only its original four dispositions and is not the full-phase verdict above.
 
 # Phase 174 Plan 02 — Security
 
@@ -90,3 +140,11 @@ and non-certifying. No unregistered attack surface was identified within the
 bounded reviewed diff.
 
 **Final focused audit status:** SECURED — 4/4 threats closed, `threats_open: 0`.
+
+## Security Audit 2026-10-25
+
+| Metric | Count |
+|---|---|
+| Threats found | 17 |
+| Closed | 17 |
+| Open | 0 |
