@@ -24,11 +24,17 @@ defmodule CleanRoomProviderWeb.SessionController do
   end
 
   defp host_auth_time("clean-room-selected-stale") do
-    fixture_auth_time("CLEAN_ROOM_SELECTED_STALE_AUTH_TIME_FILE", "selected-stale-auth-time-unix.txt")
+    fixture_auth_time(
+      "CLEAN_ROOM_SELECTED_STALE_AUTH_TIME_FILE",
+      "selected-stale-auth-time-unix.txt"
+    )
   end
 
   defp host_auth_time("clean-room-selected-fresh") do
-    fixture_auth_time("CLEAN_ROOM_SELECTED_FRESH_AUTH_TIME_FILE", "selected-fresh-auth-time-unix.txt")
+    fixture_auth_time(
+      "CLEAN_ROOM_SELECTED_FRESH_AUTH_TIME_FILE",
+      "selected-fresh-auth-time-unix.txt"
+    )
   end
 
   defp host_auth_time(_account_id), do: System.system_time(:second)
