@@ -129,10 +129,10 @@ status: complete
 
 ## Task Commits
 
-1. **Task 176-04-01 RED:** `43ea7e1a` — `test(176-04): add verifier age contract tests`
-2. **Task 176-04-01 GREEN:** `10cf6c2b` — `feat(176-04): preserve authenticated verifier ages`
-3. **Task 176-04-02:** `eb6a5c28` — `test(176-04): prove verifier age lifecycle boundaries`
-4. **Task 176-04-02 snapshot refinement:** `4133761a` — `test(176-04): snapshot persisted age effects`
+1. **Task 1: RED** - `43ea7e1a` — `test(176-04): add verifier age contract tests`
+2. **Task 1: GREEN** - `10cf6c2b` — `feat(176-04): preserve authenticated verifier ages`
+3. **Task 2:** - `eb6a5c28` — `test(176-04): prove verifier age lifecycle boundaries`
+4. **Task 2: snapshot refinement** - `4133761a` — `test(176-04): snapshot persisted age effects`
 
 ## Verification
 

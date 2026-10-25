@@ -93,10 +93,10 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1 RED:** `a2527135` — test(176-03): add failing helper compatibility tests
-2. **Task 1 GREEN:** `333e80d1` — feat(176-03): preserve helper contracts with fallible generation
-3. **Task 2 RED:** `9f8d3421` — test(176-03): add direct writer identity integration tests
-4. **Task 2 GREEN:** `6cba78d1` — feat(176-03): bind direct verifier material to final client ID
+1. **Task 1: RED** - `a2527135` — test(176-03): add failing helper compatibility tests
+2. **Task 1: GREEN** - `333e80d1` — feat(176-03): preserve helper contracts with fallible generation
+3. **Task 2: RED** - `9f8d3421` — test(176-03): add direct writer identity integration tests
+4. **Task 2: GREEN** - `6cba78d1` — feat(176-03): bind direct verifier material to final client ID
 
 ## Files Created/Modified
 

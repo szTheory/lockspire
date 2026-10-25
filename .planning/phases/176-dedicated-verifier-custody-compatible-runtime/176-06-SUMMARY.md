@@ -103,10 +103,10 @@ The issuance regression is a deterministic sequential change between persisted a
 
 ## Task Commits
 
-1. **Task 176-06-01:** `b1ce61a2` — `test(176-06): cover dedicated verifier endpoint compatibility`
-2. **Task 176-06-02:** `fc23bd3f` — `test(176-06): guard token issuance against verifier changes`
-3. **Task 176-06-01 formatting refinement:** `ff85351a` — `test(176-06): format endpoint regression matrix`
-4. **Task 176-06-01 coverage refinement:** `d62fd1a1` — `test(176-06): assert endpoint telemetry redaction`
+1. **Task 1:** - `b1ce61a2` — `test(176-06): cover dedicated verifier endpoint compatibility`
+2. **Task 2:** - `fc23bd3f` — `test(176-06): guard token issuance against verifier changes`
+3. **Task 1: formatting refinement** - `ff85351a` — `test(176-06): format endpoint regression matrix`
+4. **Task 1: coverage refinement** - `d62fd1a1` — `test(176-06): assert endpoint telemetry redaction`
 
 ## Files Created
 

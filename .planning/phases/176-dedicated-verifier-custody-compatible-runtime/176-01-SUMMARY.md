@@ -96,11 +96,11 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1 RED:** `3baafc84` — test(176-01): add native verifier authentication tracer
-2. **Task 1 GREEN:** `55565221` — feat(176-01): add dedicated client verifier path
-3. **Task 2 RED:** `35300eb6` — test(176-01): cover adversarial verifier envelopes
-4. **Task 2 GREEN:** `600ae224` — feat(176-01): enforce verifier envelope bounds
-5. **Task 1 fixture correction:** `2295b425` — fix(176-01): bind tracer hash to sealed secret
+1. **Task 1: RED** - `3baafc84` — test(176-01): add native verifier authentication tracer
+2. **Task 1: GREEN** - `55565221` — feat(176-01): add dedicated client verifier path
+3. **Task 2: RED** - `35300eb6` — test(176-01): cover adversarial verifier envelopes
+4. **Task 2: GREEN** - `600ae224` — feat(176-01): enforce verifier envelope bounds
+5. **Task 1: fixture correction** - `2295b425` — fix(176-01): bind tracer hash to sealed secret
 
 ## Files Created/Modified
 

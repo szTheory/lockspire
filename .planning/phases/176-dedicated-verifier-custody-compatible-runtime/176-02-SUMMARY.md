@@ -112,10 +112,10 @@ status: complete
 
 ## Task Commits
 
-1. **Task 1 RED:** `91f79577` — `test(176-02): add failing verifier snapshot contract`
-2. **Task 1 GREEN:** `1d9ad0d5` — `feat(176-02): cache verifier custody context`
-3. **Task 2 RED:** `cdb57669` — `test(176-02): cover invalid verifier config isolation`
-4. **Task 2 GREEN:** `8a065b60` — `feat(176-02): enforce verifier config isolation`
+1. **Task 1: RED** - `91f79577` — `test(176-02): add failing verifier snapshot contract`
+2. **Task 1: GREEN** - `1d9ad0d5` — `feat(176-02): cache verifier custody context`
+3. **Task 2: RED** - `cdb57669` — `test(176-02): cover invalid verifier config isolation`
+4. **Task 2: GREEN** - `8a065b60` — `feat(176-02): enforce verifier config isolation`
 
 ## Files Created/Modified
 

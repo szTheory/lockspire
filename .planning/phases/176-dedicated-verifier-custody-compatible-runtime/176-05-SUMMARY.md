@@ -108,12 +108,12 @@ status: complete
 
 ## Task Commits
 
-1. **Task 176-05-01 RED:** `9ab988b5` — `test(176-05): add failing DCR verifier writer tests`
-2. **Task 176-05-01 GREEN:** `0042d4c1` — `feat(176-05): bind DCR verifier material to final ID`
-3. **Task 176-05-01 response boundary refinement:** `3d237de5` — `test(176-05): verify DCR plaintext handoff boundary`
-4. **Task 176-05-02 RED:** `4421ee65` — `test(176-05): add failing operator rotation verifier tests`
-5. **Task 176-05-02 test refinement:** `c5cd2579` — `test(176-05): tighten operator rotation assertions`
-6. **Task 176-05-02 GREEN:** `49652f64` — `feat(176-05): rotate operator verifier for persisted ID`
+1. **Task 1: RED** - `9ab988b5` — `test(176-05): add failing DCR verifier writer tests`
+2. **Task 1: GREEN** - `0042d4c1` — `feat(176-05): bind DCR verifier material to final ID`
+3. **Task 1: response boundary refinement** - `3d237de5` — `test(176-05): verify DCR plaintext handoff boundary`
+4. **Task 2: RED** - `4421ee65` — `test(176-05): add failing operator rotation verifier tests`
+5. **Task 2: test refinement** - `c5cd2579` — `test(176-05): tighten operator rotation assertions`
+6. **Task 2: GREEN** - `49652f64` — `feat(176-05): rotate operator verifier for persisted ID`
 
 ## Files Created/Modified
 
