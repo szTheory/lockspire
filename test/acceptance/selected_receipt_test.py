@@ -64,6 +64,12 @@ class SelectedReceiptTest(unittest.TestCase):
             receipt = self.receipt()
             receipt["scenarios"] = cases
             self.rejected(receipt)
+        for expected_ids in (None, (), ("X-1",), ("A171-003", "A171-003")):
+            with self.assertRaises(AssertionError):
+                validate_selected_receipt(
+                    self.path, expected_case_ids=expected_ids,  # type: ignore[arg-type]
+                    expected_source_revision="a" * 40,
+                )
 
     def test_rejects_partial_receipt_as_complete_twelve_case_acceptance(self) -> None:
         receipt = self.receipt()
@@ -132,6 +138,25 @@ class SelectedReceiptTest(unittest.TestCase):
                 expected_receipt_sha256=expected_digest,
             )
 
+    def test_each_authorization_case_requires_its_positive_observation_contract(self) -> None:
+        identifiers = ("A171-001", "A171-002", "A171-003", "A171-004", "A171-005", "A171-006")
+        for identifier in identifiers:
+            receipt = self.receipt_for(identifier)
+            self.write(receipt)
+            validate_selected_receipt(
+                self.path, expected_case_ids=(identifier,), expected_source_revision="a" * 40,
+                expected_binding=self.binding(),
+            )
+
+            missing = self.receipt_for(identifier)
+            missing["scenarios"][0]["observations"].pop(next(iter(missing["scenarios"][0]["observations"])))
+            self.rejected(missing, expected_case_ids=(identifier,))
+
+            false = self.receipt_for(identifier)
+            first_boolean = next(key for key, value in false["scenarios"][0]["observations"].items() if type(value) is bool)
+            false["scenarios"][0]["observations"][first_boolean] = False
+            self.rejected(false, expected_case_ids=(identifier,))
+
     def test_cli_contract_rejects_receipt_check_without_external_binding(self) -> None:
         # The runner must validate caller-supplied source and byte identity before reading a receipt.
         runner = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room_saas_journey.py"
@@ -173,13 +198,17 @@ class SelectedReceiptTest(unittest.TestCase):
 
     @classmethod
     def scenario(cls, identifier: str = "A171-003") -> dict[str, object]:
+        observations = {
+            "A171-001": {"control_status": 302, "control_callback_exact": True, "mismatch_status": 400, "mismatch_no_location": True},
+            "A171-002": {"callback_status": 302, "callback_exact_registered": True, "foo_preserved": True, "trusted_state_only": True, "error_invalid_request": True, "no_duplicate_state": True},
+            "A171-003": {"control_status": 302, "control_reached_host_handoff": True, "unsupported_status": 400, "html_content_type": True, "no_location": True, "no_oauth_error_parameters": True},
+            "A171-004": {"callback_status": 302, "login_required": True, "state_matches": True, "no_host_login_redirect": True},
+            "A171-005": {"callback_status": 302, "login_required": True, "state_matches": True, "no_host_login_redirect": True, "stale_auth_time_used": True},
+            "A171-006": {"max_age_token_status": 200, "max_age_signature_valid": True, "max_age_issuer_audience_nonce_valid": True, "max_age_auth_time_integer": True, "max_age_auth_time_equal": True, "claims_token_status": 200, "claims_signature_valid": True, "claims_issuer_audience_nonce_valid": True, "claims_auth_time_integer": True, "claims_auth_time_equal": True},
+        }.get(identifier, {})
         return {
             "id": identifier, "outcome": "passed",
-            "observations": {
-                "control_status": 302, "unsupported_status": 400, "html_content_type": True,
-                "control_reached_host_handoff": True, "no_location": True,
-                "no_oauth_error_parameters": True,
-            },
+            "observations": observations,
             "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
         }
 
@@ -192,6 +221,13 @@ class SelectedReceiptTest(unittest.TestCase):
             "cleanup": cls.cleanup(),
             "redaction": {"sentinel_check_passed": True, "evidence_scan_passed": True},
         }
+
+    @classmethod
+    def receipt_for(cls, identifier: str) -> dict[str, object]:
+        receipt = cls.receipt()
+        receipt["expected_case_ids"] = [identifier]
+        receipt["scenarios"] = [cls.scenario(identifier)]
+        return receipt
 
 
 if __name__ == "__main__":

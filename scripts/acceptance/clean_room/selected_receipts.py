@@ -26,9 +26,22 @@ SCENARIO_FIELDS = frozenset({"id", "outcome", "observations", "counts"})
 CLEANUP_FIELDS = frozenset({"processes_stopped", "databases_removed", "temporary_roots_removed"})
 REDACTION_FIELDS = frozenset({"sentinel_check_passed", "evidence_scan_passed"})
 SELECTED_OBSERVATION_FIELDS: dict[str, frozenset[str]] = {
+    "A171-001": frozenset({"control_status", "control_callback_exact", "mismatch_status", "mismatch_no_location"}),
+    "A171-002": frozenset({
+        "callback_status", "callback_exact_registered", "foo_preserved", "trusted_state_only",
+        "error_invalid_request", "no_duplicate_state",
+    }),
     "A171-003": frozenset({
         "control_status", "control_reached_host_handoff", "unsupported_status", "html_content_type",
         "no_location", "no_oauth_error_parameters",
+    }),
+    "A171-004": frozenset({"callback_status", "login_required", "state_matches", "no_host_login_redirect"}),
+    "A171-005": frozenset({"callback_status", "login_required", "state_matches", "no_host_login_redirect", "stale_auth_time_used"}),
+    "A171-006": frozenset({
+        "max_age_token_status", "max_age_signature_valid", "max_age_issuer_audience_nonce_valid",
+        "max_age_auth_time_integer", "max_age_auth_time_equal", "claims_token_status",
+        "claims_signature_valid", "claims_issuer_audience_nonce_valid", "claims_auth_time_integer",
+        "claims_auth_time_equal",
     }),
 }
 
@@ -70,7 +83,12 @@ def validate_selected_receipt(
     if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 1:
         raise AssertionError("selected receipt schema version is invalid")
 
-    expected = tuple(expected_case_ids)
+    if expected_case_ids is None or isinstance(expected_case_ids, (str, bytes)):
+        raise AssertionError("selected receipt requested case set is invalid")
+    try:
+        expected = tuple(expected_case_ids)
+    except TypeError:
+        raise AssertionError("selected receipt requested case set is invalid") from None
     if not expected or len(expected) != len(set(expected)) or any(item not in SELECTED_CASE_IDS for item in expected):
         raise AssertionError("selected receipt requested case set is invalid")
     actual_expected = receipt["expected_case_ids"]
@@ -115,6 +133,26 @@ def validate_selected_receipt(
         if observation_fields is None:
             raise AssertionError(f"selected receipt case is not implemented: {identifier}")
         observations = _exact_keys(scenario["observations"], observation_fields, "observations")
+        bool_fields = observation_fields - {
+            key for key in observation_fields if key.endswith("_status")
+        }
+        if any(observations[key] is not True for key in bool_fields):
+            raise AssertionError(f"selected {identifier} boolean observations are incomplete")
+        for key in observation_fields - bool_fields:
+            if type(observations[key]) is not int or observations[key] < 100 or observations[key] > 599:
+                raise AssertionError(f"selected {identifier} HTTP status observation is invalid")
+        if identifier == "A171-001":
+            if observations["control_status"] not in (302, 303) or observations["mismatch_status"] != 400:
+                raise AssertionError("selected A171-001 HTTP observations are invalid")
+        elif identifier == "A171-002":
+            if observations["callback_status"] not in (302, 303):
+                raise AssertionError("selected A171-002 callback status is invalid")
+        elif identifier in {"A171-004", "A171-005"}:
+            if observations["callback_status"] not in (302, 303):
+                raise AssertionError(f"selected {identifier} callback status is invalid")
+        elif identifier == "A171-006":
+            if observations["max_age_token_status"] != 200 or observations["claims_token_status"] != 200:
+                raise AssertionError("selected A171-006 token status is invalid")
         if identifier == "A171-003":
             if type(observations["control_status"]) is not int or observations["control_status"] not in (302, 303):
                 raise AssertionError("selected A171-003 valid query control is invalid")
