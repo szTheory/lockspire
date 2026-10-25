@@ -21,6 +21,23 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     MATERIAL-BOUNDS-AND-API-SCOPE
     WRITERS-FINAL-ID-AND-HANDOFF
     READERS-AND-AUTH-EXCLUSIONS
+    WRITER-DIRECT-REGISTRATION
+    WRITER-DCR
+    WRITER-OPERATOR-ROTATION
+    WRITER-HASH-ONLY-HELPER
+    READER-TOKEN-EXCHANGE
+    READER-INTROSPECTION-REVOCATION
+    READER-PAR-DEVICE-CIBA
+    READER-HS256-AUDIENCE-JTI-EXCLUSIONS
+    MAINTENANCE-CAPABILITY-AUTHORITY
+    MAINTENANCE-INVENTORY-PAGING
+    MAINTENANCE-INVENTORY-READINESS
+    MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION
+    MAINTENANCE-RACE-AND-ROLLBACK
+    MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY
+    ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT
+    DISCLOSURE-SENTINELS
+    PACKAGES-ADAPTER-DELIVERY
   )
 
   @required_fields ~w(
@@ -47,7 +64,24 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     "ENVELOPE-STRICT-REJECTION" => 176,
     "MATERIAL-BOUNDS-AND-API-SCOPE" => 176,
     "WRITERS-FINAL-ID-AND-HANDOFF" => 176,
-    "READERS-AND-AUTH-EXCLUSIONS" => 176
+    "READERS-AND-AUTH-EXCLUSIONS" => 176,
+    "WRITER-DIRECT-REGISTRATION" => 176,
+    "WRITER-DCR" => 176,
+    "WRITER-OPERATOR-ROTATION" => 176,
+    "WRITER-HASH-ONLY-HELPER" => 176,
+    "READER-TOKEN-EXCHANGE" => 176,
+    "READER-INTROSPECTION-REVOCATION" => 176,
+    "READER-PAR-DEVICE-CIBA" => 176,
+    "READER-HS256-AUDIENCE-JTI-EXCLUSIONS" => 176,
+    "MAINTENANCE-CAPABILITY-AUTHORITY" => 177,
+    "MAINTENANCE-INVENTORY-PAGING" => 177,
+    "MAINTENANCE-INVENTORY-READINESS" => 177,
+    "MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION" => 177,
+    "MAINTENANCE-RACE-AND-ROLLBACK" => 177,
+    "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY" => 177,
+    "ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT" => 177,
+    "DISCLOSURE-SENTINELS" => 177,
+    "PACKAGES-ADAPTER-DELIVERY" => 178
   }
 
   def validate(ledger, qualification, summary)
@@ -117,6 +151,9 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
 
       not valid_bounds?(Map.get(ledger, "format_bounds")) ->
         {:error, :invalid_format_bounds}
+
+      not valid_maintenance_contract?(Map.get(ledger, "maintenance_contract")) ->
+        {:error, :invalid_maintenance_contract}
 
       not valid_qualified_inputs?(ledger, qualification) ->
         {:error, :invalid_qualified_inputs}
@@ -206,6 +243,34 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
   end
 
   defp valid_bounds?(_bounds), do: false
+
+  defp valid_maintenance_contract?(contract) when is_map(contract) do
+    contract["capability"] == "Lockspire.Storage.ClientVerifierMaintenance" and
+      contract["authority_callback"] == "verifier_maintenance_contract/0" and
+      contract["inventory_callback"] == "verifier_inventory_page(after_client_id, limit)" and
+      contract["rewrap_callback"] ==
+        "compare_and_rewrap(client_id, expected_client_secret_hash, expected_verifier, replacement_verifier, audit_attrs)" and
+      contract["authority_return"] =~ "participants: %{client_store: module()" and
+      contract["inventory_args"] =~ "limit integer 1..500" and
+      contract["inventory_args"] =~ "default 100" and
+      contract["inventory_return"] =~ ":client_secret_verifier_inventory_invalid_limit" and
+      contract["authority_rule"] =~ "fails before inventory or mutation" and
+      contract["authority_rule"] =~ "corresponding entries" and
+      contract["selection"] =~ "never defaulted to Repository" and
+      contract["inventory_order"] =~ "cursor exclusive" and
+      contract["inventory_order"] =~ "empty inventory is [], nil, true" and
+      contract["inventory_scope"] =~ "every persisted client" and
+      contract["inventory_consistency"] =~ "not a database snapshot" and
+      contract["rewrap_atomicity"] =~ "already-open transaction" and
+      contract["rewrap_atomicity"] =~ "provisional until outer commit" and
+      contract["rewrap_atomicity"] =~ "audit failure rolls back update" and
+      contract["rewrap_atomicity"] =~ "never use direct Repository fallback" and
+      contract["rewrap_preserves"] =~ "updated_at" and
+      contract["status"] ==
+        "contract-only; behavior and adapter composition evidence pending Phase 177/178"
+  end
+
+  defp valid_maintenance_contract?(_contract), do: false
 
   defp valid_qualified_inputs?(ledger, qualification) do
     inputs = ledger["qualified_input"]
@@ -353,6 +418,52 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
     assert sizes["expected"] =~ "43 unpadded Base64URL chars"
     assert sizes["expected"] =~ "no legacy helper cap is added"
     assert sizes["blocking"] =~ "unchanged"
+  end
+
+  test "maintenance capability, paging, authority, and atomic update contract are finite",
+       context do
+    contract = context.ledger["maintenance_contract"]
+    assert contract["capability"] == "Lockspire.Storage.ClientVerifierMaintenance"
+    assert contract["inventory_args"] =~ "limit integer 1..500"
+    assert contract["inventory_args"] =~ "default 100"
+    assert contract["inventory_order"] =~ "cursor exclusive"
+    assert contract["rewrap_callback"] =~ "expected_client_secret_hash"
+    assert contract["rewrap_atomicity"] =~ "audit failure rolls back update"
+
+    invalid = put_in(context.ledger, ["maintenance_contract", "inventory_args"], "unbounded")
+    assert {:error, :invalid_maintenance_contract} =
+             Contract.validate(invalid, context.qualification, context.summary)
+
+    false_ready =
+      update_case(context.ledger, "MAINTENANCE-INVENTORY-READINESS", fn row ->
+        row
+        |> Map.put("status", "qualified")
+        |> put_in(["evidence", "status"], "pass")
+        |> put_in(["evidence", "ids"], ["UNOBSERVED-MAINTENANCE"])
+        |> put_in(["evidence", "source_sha"], "deadbeef")
+      end)
+
+    assert {:error, {:invalid_evidence, "MAINTENANCE-INVENTORY-READINESS"}} =
+             Contract.validate(false_ready, context.qualification, context.summary)
+  end
+
+  test "writer, reader, rollout, disclosure, and package cases retain explicit owners",
+       context do
+    cases = Map.new(context.ledger["cases"], &{&1["case_id"], &1})
+
+    assert cases["WRITER-DIRECT-REGISTRATION"]["expected"] =~ "final persisted client_id"
+    assert cases["WRITER-DCR"]["expected"] =~ "one-time plaintext response"
+    assert cases["WRITER-OPERATOR-ROTATION"]["owner_phase"] == 176
+    assert cases["WRITER-HASH-ONLY-HELPER"]["expected"] =~ "no discarded verifier"
+    assert cases["READER-TOKEN-EXCHANGE"]["expected"] =~ "ciphertext-sensitive"
+    assert cases["READER-INTROSPECTION-REVOCATION"]["owner_phase"] == 176
+    assert cases["READER-PAR-DEVICE-CIBA"]["expected"] =~ "do not add JWT support"
+    assert cases["READER-HS256-AUDIENCE-JTI-EXCLUSIONS"]["expected"] =~ "fresh assertion/JTI"
+    assert cases["ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT"]["expected"] =~ "before first dedicated write"
+    assert cases["DISCLOSURE-SENTINELS"]["owner_phase"] == 177
+    assert cases["PACKAGES-ADAPTER-DELIVERY"]["owner_phase"] == 178
+    assert cases["MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY"]["expected"] =~
+             "restart a fresh full scan from nil"
   end
 
   defp update_case(ledger, id, update) do

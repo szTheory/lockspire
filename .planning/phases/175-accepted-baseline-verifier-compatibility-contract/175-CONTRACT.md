@@ -165,6 +165,136 @@ maintenance between JWT authentication and guarded issuance must preserve the
 ciphertext-sensitive fingerprint, reject changed credentials without token or
 grant success, and require a fresh assertion/JTI on retry.
 
+The writer inventory is explicit. Direct registration is
+`Clients.register_client/1` through `ClientLifecycle.persist_direct/…` and
+`Repository.register_client/…`; DCR is `ClientLifecycle.create_dcr/…`, using
+configured `ClientStore.register_client/1` inside the configured
+`TransactionStore`, with its current audit seam through
+`Repository.append_audit_event/…`; operator rotation starts at
+`Lockspire.Admin.Clients.rotate_secret/…` and uses
+`ClientLifecycle.rotate_operator_secret/…` with configured stores. Each chooses
+or retains the final persisted ID before dedicated sealing. The public
+`Clients.rotate_secret_hash/0` remains hash-only, while
+`Clients.rotate_secret_material/1` retains its existing three-key map and
+one-time plaintext handoff. The reader inventory is token exchange via
+`TokenExchange.Internal.ClientAuthentication`, introspection, revocation,
+pushed authorization requests, device authorization, and backchannel
+authentication/CIBA; all keep their existing `ClientAuth.authenticate/3`
+boundary and endpoint-specific method checks.
+
+## Optional maintenance capability contract
+
+Maintenance is a separate optional behavior,
+`Lockspire.Storage.ClientVerifierMaintenance`, implemented by the selected
+`ClientStore` adapter when supported. It does not extend or alter
+`ClientStore.lifetime_contract/0` or `TransactionStore.transaction_authority/0`.
+The configured adapter is selected explicitly; absence does not fall back to
+`Repository` or another default. The adapter exposes:
+
+```elixir
+verifier_maintenance_contract() ::
+  {:ok, %{
+    version: 1,
+    transaction_authority: %{identity: term(), participants: map()},
+    participants: %{
+      client_store: module(),
+      transaction_store: module(),
+      audit_store: module()
+    }
+  }}
+  | {:error,
+      :client_secret_verifier_maintenance_unsupported
+      | :client_secret_verifier_maintenance_authority_mismatch}
+
+verifier_inventory_page(after_client_id, limit) ::
+  {:ok, %{clients: [Client.t()], next_cursor: String.t() | nil, complete?: boolean}}
+  | {:error,
+      :client_secret_verifier_maintenance_unsupported
+      | :client_secret_verifier_maintenance_authority_mismatch
+      | :client_secret_verifier_inventory_invalid_cursor
+      | :client_secret_verifier_inventory_invalid_limit
+      | :client_secret_verifier_inventory_unreadable}
+
+compare_and_rewrap(
+  client_id,
+  expected_client_secret_hash,
+  expected_verifier,
+  replacement_verifier,
+  audit_attrs
+) ::
+  {:ok, :changed | :already_current | :material_conflict}
+  | {:error,
+      :client_secret_verifier_maintenance_unsupported
+      | :client_secret_verifier_maintenance_authority_mismatch
+      | :client_secret_verifier_client_not_found
+      | :client_secret_verifier_maintenance_failed}
+```
+
+`verifier_maintenance_contract/0` must declare authority exactly equal to both
+the selected `ClientStore.lifetime_contract().transaction_authority` and the
+selected `TransactionStore.transaction_authority()`. Its participants must
+identify the selected client, transaction, and audit modules and match those
+participant entries in the authority exactly. Missing capability or any
+mismatch fails before reading a page or changing a row. The declaration is not
+inferred from callback presence.
+
+`verifier_inventory_page/2` accepts `nil` or a canonical persisted client ID as
+an exclusive cursor and an integer limit from 1 through 500; a caller may use
+100 as its default page size. It returns every persisted row, without filtering
+by authentication method, active/expiry state, verifier presence, or
+verification result. IDs are ordered by unsigned bytewise order of canonical
+UTF-8 client-ID bytes. The cursor on a nonterminal page is exactly its final
+ID; that page is nonempty. A terminal page has `next_cursor: nil` and
+`complete?: true`. An empty inventory is exactly an empty client list, nil
+cursor, and complete true. Duplicate IDs, invalid cursor/limit, malformed or
+unreadable rows, and any uninspected remainder prevent readiness; errors never
+mean partial success. Pages bound each query and memory use, not total client
+count. Cursor traversal is not a database snapshot: concurrent inserts,
+updates, or deletes can make a run uncertain. A later readiness decision needs
+a fresh complete scan after caller-owned quiescence; neither this API nor local
+status proves quiescence, fleet parity, backup, or rollback safety.
+
+`compare_and_rewrap/5` requires a client ID and exact expected hash/verifier
+bytes; `audit_attrs` is allowlisted and contains no secret, hash, verifier, or
+ciphertext. The caller invokes it inside an already-open transaction owned by
+the selected `TransactionStore`. The callback locks and reloads the current
+row, checks expected values, conditionally replaces only verifier ciphertext,
+and appends one audit event inside that outer transaction. Its `:changed`
+result is provisional until the outer transaction commits; only the outer
+maintenance command reports changed after commit. `:already_current` means the
+hash still matches and the replacement is already present, without a second
+update or audit event. `:material_conflict` means expected material no longer
+matches; a missing row and operational failure have the typed errors above.
+For an idempotent repeat, if the current hash matches and current verifier
+already equals the requested replacement, return `:already_current` without a
+second update or audit event. Otherwise stale expected material returns
+`:material_conflict`.
+An audit failure rolls back the ciphertext change. Preserve the hash, client
+ID, active flag, metadata, management fields, app/secret lifetime, rotation
+timestamps, `inserted_at`, `updated_at`, and every other field; the audit event
+carries maintenance time. Results, errors, and audit data never return or
+record expected/replacement material.
+
+An interrupted scan is never complete or ready. Restart a fresh full scan from
+the nil cursor after caller-owned quiescence; a stored cursor is only progress,
+not evidence that the rest of the inventory was inspected. Missing/wrong key
+recovery is host-owned key restoration from backup or authorized secret
+rotation/reprovision. Never derive a key, reset age metadata, or reinterpret
+unsupported verifier bytes through another format.
+
+An interrupted scan is never complete or ready. Restart a fresh full scan from
+the nil cursor after caller-owned quiescence; a stored cursor is only progress,
+not evidence that the rest of the inventory was inspected. Missing/wrong key
+recovery is host-owned key restoration from backup or authorized secret
+rotation/reprovision. Never derive a key, reset age metadata, or reinterpret
+unsupported verifier bytes through another format.
+
+These are contract-only declarations. PostgreSQL locking/rollback, exact
+adapter authority, pagination/readiness, races, and disclosure behavior remain
+pending Phase 177 proof. The only supported delegated composition is the
+existing shared-PostgreSQL client/transaction adapter used by the clean-room
+host; this does not claim support for arbitrary adapters.
+
 ## Finite proof ownership
 
 The JSON ledger names each acceptance case and distinguishes qualified Phase
