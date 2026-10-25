@@ -98,11 +98,11 @@ Plans:
   3. The maintainer can review current source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks, with support/guidance matching delivered behavior and unresolved external limits explicit.
   4. The next run can resume from a dated handoff identifying reviewed integration and fresh main acceptance or explicit remaining delivery blockers, owned resource/worktree cleanup or retained owner/purpose/next action, preserved unknown edits/unique commits, and a refreshed ranked milestone direction with sources and triggers.
 
-**Plans**: 4 plans
+**Plans**: 1/4 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 174-01-PLAN.md — Packaged authorization tracer, host-owned freshness and strict partial receipts.
+- [x] 174-01-PLAN.md — Packaged authorization tracer, host-owned freshness and strict partial receipts.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 174-02-PLAN.md — Packaged PAR/discovery expansion, guidance and independent scoped reviews.
@@ -131,7 +131,7 @@ Plans:
 | 171. Accepted Baseline & Finding Qualification | 4/4 | Complete    | 2026-10-24 |
 | 172. Authorization Responses | 1/1 | Complete    | 2026-10-24 |
 | 173. Conditional PAR & Profile Boundaries | 1/1 | Complete    | 2026-10-24 |
-| 174. Packaged Proof & Delivery Handoff | 0/4 | Ready to execute | - |
+| 174. Packaged Proof & Delivery Handoff | 1/4 | Ready to execute | - |
 
 ## Next Milestone
 

@@ -28,8 +28,8 @@
 
 ### Proof and Delivery
 
-- [ ] **CPROOF-01**: Each selected supported behavior has a deterministic automated owner and each actual correction has a failing-before/passing-after regression plus applicable negative/security proof; already-correct behavior reuses valid evidence.
-- [ ] **CPROOF-02**: A packaged embedded Phoenix host demonstrates the selected client-visible authorization/PAR outcomes at recorded source/package identities; supplemental external results retain their exact classifications and imply neither certification nor a new full-suite release gate.
+- [x] **CPROOF-01**: Each selected supported behavior has a deterministic automated owner and each actual correction has a failing-before/passing-after regression plus applicable negative/security proof; already-correct behavior reuses valid evidence.
+- [x] **CPROOF-02**: A packaged embedded Phoenix host demonstrates the selected client-visible authorization/PAR outcomes at recorded source/package identities; supplemental external results retain their exact classifications and imply neither certification nor a new full-suite release gate.
 - [ ] **DELIV-01**: Maintainer can review a source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks; support/guidance changes match delivered behavior and unresolved external limits remain explicit.
 - [ ] **DELIV-02**: The next run can resume from a dated handoff recording integration/main acceptance, owned worktree/resource cleanup or explicit remaining blockers, preserved unknown work, and a refreshed ranked milestone roadmap with sources and triggers.
 
@@ -80,8 +80,8 @@ All 14 requirements map to exactly one of phases 171–174. Conditional scopes m
 | PARB-01 | Phase 173 | Complete |
 | PARB-02 | Phase 173 | Complete |
 | PARB-03 | Phase 173 | Complete |
-| CPROOF-01 | Phase 174 | Pending |
-| CPROOF-02 | Phase 174 | Pending |
+| CPROOF-01 | Phase 174 | Complete |
+| CPROOF-02 | Phase 174 | Complete |
 | DELIV-01 | Phase 174 | Pending |
 | DELIV-02 | Phase 174 | Pending |
 
