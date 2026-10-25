@@ -9,6 +9,7 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   alias Lockspire.Observability
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
+  alias Lockspire.Security.ClientSecretVerifier
   alias Lockspire.Security.Policy
   alias Lockspire.Storage.Ecto.Repository
 
@@ -33,13 +34,25 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
     end
   end
 
-  defp resolve_verifier_secret(%Client{client_secret_jwt_verifier_encrypted: encrypted}, opts)
+  defp resolve_verifier_secret(
+         %Client{client_id: client_id, client_secret_jwt_verifier_encrypted: encrypted},
+         opts
+       )
        when is_binary(encrypted) and encrypted != "" do
-    case Policy.unseal_client_secret_jwt_verifier(encrypted, opts) do
+    result =
+      case Keyword.fetch(opts, :client_secret_verifier_context) do
+        {:ok, context} ->
+          ClientSecretVerifier.open(context, client_id, encrypted, opts)
+
+        :error ->
+          Policy.unseal_client_secret_jwt_verifier(encrypted, opts)
+      end
+
+    case result do
       {:ok, secret} ->
         {:ok, secret}
 
-      {:error, :invalid_client_secret_jwt_verifier} ->
+      {:error, _reason} ->
         {:error, :client_secret_verifier_unavailable}
     end
   end

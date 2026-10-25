@@ -25,7 +25,8 @@ defmodule Lockspire.Integration.ClientSecretVerifierTracerTest do
 
   test "persists a native dedicated verifier and authenticates it against the final client ID" do
     capability_ready? =
-      Code.ensure_loaded?(Context) and function_exported?(Context, :resolve, 2) and
+      Code.ensure_loaded?(Context) and Code.ensure_loaded?(ClientSecretVerifier) and
+        function_exported?(Context, :resolve, 2) and
         function_exported?(Context, :validate, 1) and
         function_exported?(ClientSecretVerifier, :seal, 3)
 
@@ -81,7 +82,8 @@ defmodule Lockspire.Integration.ClientSecretVerifierTracerTest do
   end
 
   test "a verifier sealed for a different identity fails before replay insertion" do
-    assert Code.ensure_loaded?(Context) and function_exported?(ClientSecretVerifier, :seal, 3),
+    assert Code.ensure_loaded?(Context) and Code.ensure_loaded?(ClientSecretVerifier) and
+             function_exported?(ClientSecretVerifier, :seal, 3),
            "dedicated verifier sealing capability is required"
 
     context = context(:crypto.strong_rand_bytes(32))
