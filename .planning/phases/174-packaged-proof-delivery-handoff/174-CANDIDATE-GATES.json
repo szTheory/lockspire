@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+  "package_source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
+  "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
+  "input_equivalence": {
+    "observed_at": "2026-10-25T03:13:29Z",
+    "command": "python3 -c '<assert candidate is a reachable commit and observed HEAD; inspect parent-aware no-rename commit diffs plus committed/staged/unstaged/nonignored-untracked paths; compare all frozen input hashes and proof-index SHA-256>'",
+    "observed_head": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "candidate_reachable": true,
+    "intervening_commits": [],
+    "committed_delta_paths": [],
+    "staged_paths": [],
+    "unstaged_paths": [],
+    "nonignored_untracked_paths": [],
+    "frozen_input_file_count": 63,
+    "frozen_input_hashes_match": true,
+    "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
+    "status": "passed"
+  },
+  "local_mix_ci": {
+    "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix ci",
+    "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "exit_code": 0,
+    "status": "passed",
+    "completion_marker": {
+      "path": "/private/tmp/lockspire-174-04-mix-ci.exit",
+      "value": "MIX_CI_EXIT_CODE=0"
+    },
+    "summary": {
+      "exunit_tests": 200,
+      "failures": 0,
+      "excluded": 46,
+      "credo_files": 683,
+      "credo_issues": 0
+    },
+    "attempt_history": [
+      {
+        "attempt": 1,
+        "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+        "status": "unobserved_terminal_exit",
+        "exit_code": null,
+        "note": "Output reached the final ExUnit line (200 tests, 0 failures, 46 excluded), but the tool session did not expose a terminal process exit. This output is not counted as a pass."
+      },
+      {
+        "attempt": 2,
+        "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+        "status": "passed",
+        "exit_code": 0,
+        "note": "The unchanged candidate was run with a durable exit marker and command log; all mix ci aliases completed."
+      }
+    ]
+  },
+  "hosted_ci": {
+    "repository": "szTheory/lockspire",
+    "workflow_path": ".github/workflows/ci.yml",
+    "run_id": 40156252600,
+    "url": "https://github.com/szTheory/lockspire/actions/runs/40156252600",
+    "head_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "event": "pull_request",
+    "status": "completed",
+    "conclusion": "success",
+    "run_attempt": 2,
+    "run_created_at": "2026-10-25T02:54:55Z",
+    "attempt_2_started_at": "2026-10-25T03:13:11Z",
+    "completed_at": "2026-10-25T03:21:59Z",
+    "job_graph_source": "gh api --paginate repos/szTheory/lockspire/actions/runs/40156252600/jobs?per_page=100",
+    "job_count": 7,
+    "jobs": [
+      {"id": 121061613993, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
+      {"id": 121061592883, "name": "Release Hygiene Drift", "status": "completed", "conclusion": "success"},
+      {"id": 121061614945, "name": "Fast Checks", "status": "completed", "conclusion": "success"},
+      {"id": 121061592107, "name": "Minimum Supported Elixir/OTP", "status": "completed", "conclusion": "success"},
+      {"id": 121061593230, "name": "Integration Checks", "status": "completed", "conclusion": "success"},
+      {"id": 121061593514, "name": "Complete Coverage Evidence", "status": "completed", "conclusion": "success"},
+      {"id": 121061614162, "name": "Adoption Demo Smoke", "status": "completed", "conclusion": "success"}
+    ],
+    "attempt_history": [
+      {
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "jobs": [
+          {"id": 121058183872, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
+          {"id": 121058184071, "name": "Release Hygiene Drift", "status": "completed", "conclusion": "success"},
+          {"id": 121058184131, "name": "Fast Checks", "status": "completed", "conclusion": "success"},
+          {"id": 121058184029, "name": "Minimum Supported Elixir/OTP", "status": "completed", "conclusion": "failure"},
+          {"id": 121058184093, "name": "Integration Checks", "status": "completed", "conclusion": "success"},
+          {"id": 121061015613, "name": "Complete Coverage Evidence", "status": "completed", "conclusion": "success"},
+          {"id": 121058184056, "name": "Adoption Demo Smoke", "status": "completed", "conclusion": "success"}
+        ],
+        "failure_detail": "The exact-floor host runner reported browser_1 exit 1 for mount /teams/ops/identity. Its private browser log was removed by the runner's EXIT cleanup and no receipt artifact was uploaded, so the inner failure remains unavailable."
+      },
+      {
+        "attempt": 2,
+        "trigger": "authorized failed-job-only rerun through the GitHub API; same workflow run and candidate SHA; no workflow dispatch",
+        "status": "completed",
+        "conclusion": "success",
+        "job_graph_rule": "The gate is evaluated against GitHub's latest-attempt job graph, which contains exactly seven unique canonical jobs. Attempt 1 remains preserved above as historical evidence and is not merged into the latest-attempt count."
+      }
+    ]
+  },
+  "pr": {
+    "number": 140,
+    "url": "https://github.com/szTheory/lockspire/pull/140",
+    "base": "main",
+    "head_branch": "milestone/v1.47-core-hardening",
+    "head_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "state": "OPEN",
+    "merge_state": "CLEAN",
+    "reviews": "none submitted as of 2026-10-25T03:23:46Z",
+    "merge_attempted": false
+  },
+  "blockers": []
+}
