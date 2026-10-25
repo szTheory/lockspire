@@ -34,7 +34,7 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Entry condition satisfied — Phase 171:** Reviewed cumulative delivery in PR #138 and the original exact-main receipt establish accepted base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, with preserved history and delegated resource custody. The implementation branch remains distinct from accepted main. [Phase 171 verification](phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md) passed 10/10; its frozen twelve-case matrix reuses ten proofs and assigns A171-003 to Phase 172 and P171-005 to Phase 173. Optional external profiles remain unlaunched and non-certifying; later milestone delivery/publication remains separate.
 
-**Implementation verified — Phase 174 (2026-10-25):** All four phases, ten plans and fourteen requirements are verified. The two production corrections are unsupported response-mode disposition and stored pushed-request authority. Selected package proof passed 12/12, final candidate local/hosted gates passed, and source/security reviews are closed with nine non-authoritative judgment recommendations retained across the four phases. The canonical milestone audit and reviewed PR #140 integration/fresh main acceptance remain the delivery boundary; no next product milestone or publication is selected.
+**Implementation verified — Phase 174 (2026-10-25):** All four phases, ten plans and fourteen requirements are verified. The two production corrections are unsupported response-mode disposition and stored pushed-request authority. Selected package proof passed 12/12, final candidate local/hosted gates passed, and source/security reviews are closed with nine non-authoritative judgment recommendations retained across the four phases. The canonical milestone audit passes14/14 requirements and6/6 integration links/flows; reviewed PR #140 integration/fresh main acceptance remain the delivery boundary; no next product milestone or publication is selected.
 
 **Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
 
@@ -391,7 +391,7 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No further product implementation is selected. Complete the reviewed PR, milestone audit and fresh main acceptance before starting another milestone.
+No further product implementation is selected. Complete the reviewed PR and fresh main acceptance before starting another milestone; the canonical milestone audit passes14/14 requirements and6/6 integration links/flows.
 
 See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 

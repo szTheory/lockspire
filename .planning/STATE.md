@@ -3,12 +3,12 @@ gsd_state_version: "1.0"
 milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 174
-status: completed
+status: "Verified and audited — PR #140 final protected checks and main acceptance pending"
 stopped_at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
-last_updated: "2026-10-25T05:51:38.332Z"
+last_updated: "2026-10-25T06:01:39.466Z"
 last_activity: 2026-10-25
-last_activity_desc: Phase 174 complete
-state_head: 230ee4082743b1aaff6c9a2a8ca26e6b7fbc2985
+last_activity_desc: v1.47 audit passed; preparing final PR head
+state_head: de5b9c268b87d806c3a85ccac867a20e808b7da2
 progress:
   total_phases: 4
   completed_phases: 4
@@ -25,14 +25,14 @@ See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.47 implementation verified: finish milestone audit, reviewed PR #140 integration and fresh exact-main acceptance; preserve all evidence limits and keep the next milestone unstarted.
+**Current focus:** Ship audited v1.47 through PR #140, required final-head checks and fresh synchronized-main acceptance; do not start the provisional next milestone.
 
 ## Current Position
 
 Phase: 174
 Plan: Not started
-Status: All phases complete
-Last activity: 2026-10-25 — Phase 174 complete
+Status: Verified and audited — PR #140 final protected checks and main acceptance pending
+Last activity: 2026-10-25 — v1.47 audit passed; preparing final PR head
 
 Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all14 requirements verified; delivery/main acceptance pending.
 
@@ -124,7 +124,7 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 Last session: 2026-10-25T05:51:37.675Z
 Stopped at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
 Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md
-Next: Complete the canonical v1.47 milestone audit, update/review PR #140 at the final head, then integrate through the protected train and obtain fresh exact-main acceptance. Do not start SEC-01 yet.
+Next: Observe the final PR #140 head and required checks, review and merge through the existing train, then run fresh exact-main acceptance. Preserve release auto-merge false and publication unselected.
 
 ### Blockers
 
