@@ -1,20 +1,19 @@
 ---
 gsd_state_version: "1.0"
 milestone: v1.47
-milestone_name: OAuth/OIDC Core Interoperability & Hardening
-current_phase: 174
-status: All phases complete; accepted main 173059a1
-stopped_at: "PR #140 merged; fresh exact-main acceptance passed; v1.47 delivery complete"
-last_updated: "2026-10-25T14:24:55.814Z"
+status: Milestone v1.47 complete; awaiting next milestone
+stopped_at: v1.47 verified closeout archived; next action gsd-new-milestone
+last_updated: "2026-10-25T15:04:39.110Z"
 last_activity: 2026-10-25
-last_activity_desc: "PR #140 merged; fresh main acceptance passed and receipt saved"
-state_head: 077326a2f6250c18111b947b9ab7b6059a9f8875
+last_activity_desc: v1.47 archived; 14 requirements verified; accepted main and retained custody recorded
+state_head: 45dc12360979847bf1b14b5045f4a11abf1bc5ae
 progress:
   total_phases: 4
   completed_phases: 4
   total_plans: 10
   completed_plans: 10
-  percent: 100
+milestone_name: OAuth/OIDC Core Interoperability & Hardening
+current_phase: 174
 ---
 
 # Project State
@@ -25,16 +24,14 @@ See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** PR #140 is merged as 173059a166e9ade0f5f57c9980b7b2400a98538c. Exact-main local acceptance, seven push CI jobs and no-publish Release passed; the byte-preserved receipt and custody records are on the retained milestone evidence branch.
+**Current focus:** v1.47 is complete and archived with accepted main173059a166e9ade0f5f57c9980b7b2400a98538c. Planning the next milestone; SEC-01 remains provisional until fresh scope/design.
 
 ## Current Position
 
-Phase: 174
-Plan: Not started
-Status: All phases complete; accepted main 173059a1
-Last activity: 2026-10-25 — PR #140 merged; fresh main acceptance passed and receipt saved
-
-Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all 14 requirements verified; protected delivery and exact-main acceptance complete.
+Phase: Milestone v1.47 complete
+Plan: —
+Status: Milestone v1.47 complete; awaiting next milestone
+Last activity: 2026-10-25 — v1.47 archived; 14 requirements verified; accepted main and retained custody recorded
 
 ## Performance Metrics
 
@@ -121,10 +118,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T14:24:55.698Z
-Stopped at: PR #140 merged; fresh exact-main acceptance passed; v1.47 delivery complete
-Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md
-Next: v1.47 delivery is accepted on main 173059a166e9ade0f5f57c9980b7b2400a98538c. Preserve evidence/custody and use milestone closeout before selecting the provisional SEC-01 direction; publication remains unselected.
+Last session: 2026-10-25T15:04:39.019Z
+Stopped at: v1.47 verified closeout archived; next action gsd-new-milestone
+Resume file: .planning/milestones/v1.47-CLOSEOUT.json
+Next: Run $gsd-new-milestone to select the next scope and create fresh requirements. v1.47 archives, accepted-main receipt and resource custody are preserved; publication remains separate.
 
 ### Blockers
 
@@ -162,3 +159,7 @@ None
 - [Phase 174]: Keep package source f01b6ef77889d38b032944eb37069d6d4b3b3171 distinct from immutable candidate ec6361d9840f2adfda85116d72fec0efe9065c6c.
 - [Phase 174]: Preserve the first failed hosted CI attempt and evaluate exactly seven jobs from the successful latest attempt on the unchanged candidate SHA.
 - [Phase 174]: Leave the new main receipt absent while PR #140 remains open; record the concrete main-acceptance blocker and parent-owned next action.
+
+## Operator Next Steps
+
+- Start the next milestone with $gsd-new-milestone

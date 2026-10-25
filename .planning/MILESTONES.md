@@ -1,5 +1,31 @@
 # Milestones
 
+## v1.47 OAuth/OIDC Core Interoperability & Hardening (Completed: 2026-10-25)
+
+**Delivered:** Two qualified OAuth/OIDC corrections, source-bound packaged proof and a reviewed accepted-main handoff.
+
+**Phases completed:** 171–174: 4 phases, 10 plans, 22 tasks; all 14 requirements satisfied.
+
+**Key accomplishments:**
+- Qualified twelve stable supported cases and reused ten already-correct proofs; preserved actual RED/GREEN for both corrections.
+- Unsupported response mode returns first-party HTTP400 without callback/error parameters.
+- Stored pushed-request parameters remain authoritative over conflicting outer fields, with exact persisted consent/state/nonce proof.
+- Packaged host passed all twelve selected cases with strict source/package/digest/redaction/cleanup binding; receipt mutations16/16 and source bridge7/7.
+- Independent source review and security closed all selected findings; all four phases passed verification and Nyquist validation.
+- PR140 merged as `173059a166e9ade0f5f57c9980b7b2400a98538c`; fresh main local acceptance, seven push CI jobs and no-publish Release passed.
+
+**Stats:** 106 files changed, 15,463 insertions(+), 199 deletions(-), including planning; 147 commits in `5cefc4ea..45dc1236`; 2026-10-24 → 2026-10-25 (two calendar dates). Pre-close library/template Elixir:56,641 lines in337 tracked files, including comments/blanks. No dependency added.
+
+**Closeout:** verified_closeout. Known verification overrides: 0 newly acknowledged, 4 carried forward from a prior close (see STATE.md Deferred Items). Pre-close artifact audit has0 open items; all four proper-owner reports passed immediately before relocation. Historical paths/verdicts and immutable receipts retain their original identities. Nine judgment recommendations and generic assumptions remain explicit limits, without fabricated human confirmation.
+
+**Audit:** passed14/14 requirements, 4/4 phases, 6/6 integration links and6/6 flows; selected package12/12; all four phases Nyquist-compliant. External OIDF/FAPI profiles remain unlaunched and non-certifying.
+
+**Archives:** [roadmap](milestones/v1.47-ROADMAP.md), [requirements](milestones/v1.47-REQUIREMENTS.md), [audit](milestones/v1.47-MILESTONE-AUDIT.md), [phases](milestones/v1.47-phases/), [pre-close state](milestones/v1.47-STATE.md), [projection and file custody](milestones/v1.47-CLOSEOUT.json). The frozen planning-only qualification test moves byte-for-byte alongside Phase171 evidence; production regressions remain active. Older quick tasks stay in place as requested. Tag v1.47 marks local milestone completion; public package remains verified1.6.1 and publication is separate.
+
+**Next:** `$gsd-new-milestone` to choose scope and create fresh requirements. SEC-01 remains provisional; no next product work is selected.
+
+---
+
 ## v1.46 Embedded Host Integration Reliability (Completed: 2026-10-24)
 
 **Delivered:** Native Phoenix admin integration, host-owned authorization, safe install/upgrade convergence and reproducible packaged compatibility proof.
