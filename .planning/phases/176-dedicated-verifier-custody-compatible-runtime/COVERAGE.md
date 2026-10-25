@@ -1,0 +1,1 @@
+No external API integration: Phase 176 changes in-process verifier custody, existing Lockspire protocol readers/writers, PostgreSQL-backed acceptance and host runtime guidance; it adds no remote API, SDK, service or external endpoint dependency. The detector matched “integration boundary” near the existing endpoint secret selection, which refers to an internal host-library seam.
