@@ -152,6 +152,7 @@ class SelectedReceiptTest(unittest.TestCase):
                 self.path,
                 expected_case_ids=expected_case_ids,
                 expected_source_revision="a" * 40,
+                expected_binding=self.binding(),
             )
 
     def write(self, receipt: dict[str, object]) -> None:
@@ -176,7 +177,8 @@ class SelectedReceiptTest(unittest.TestCase):
             "id": identifier, "outcome": "passed",
             "observations": {
                 "control_status": 302, "unsupported_status": 400, "html_content_type": True,
-                "no_location": True, "no_oauth_error_parameters": True,
+                "control_reached_host_handoff": True, "no_location": True,
+                "no_oauth_error_parameters": True,
             },
             "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
         }

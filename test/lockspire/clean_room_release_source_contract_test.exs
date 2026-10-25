@@ -64,6 +64,17 @@ defmodule Lockspire.CleanRoomReleaseSourceContractTest do
     assert wrapper =~ "processes.py"
   end
 
+  test "selected receipt behavior suite runs from source CI without planning inputs" do
+    path = Path.expand("../acceptance/selected_receipt_test.py", __DIR__)
+    assert File.regular?(path)
+
+    assert {output, 0} = System.cmd("python3", [path], stderr_to_stdout: true)
+    assert output =~ "Ran "
+    assert [_, count] = Regex.run(~r/Ran (\d+) tests?/, output)
+    assert String.to_integer(count) > 0
+    assert output =~ "OK"
+  end
+
   test "JOSE compatibility patch is idempotent and rejects unknown source shapes" do
     script = """
     import importlib.util

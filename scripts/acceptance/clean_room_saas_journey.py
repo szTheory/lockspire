@@ -33,6 +33,11 @@ sys.path.insert(0, str(CLEAN_ROOM_DIR))
 from build_client import patch_jose_record_extractors
 from build_provider import prepare_provider, run_child_command, run_child_command_output
 from lifetime_receipts import validate_lifetime_receipt, write_lifetime_receipt
+from selected_receipts import (
+    SELECTED_CASE_IDS,
+    validate_selected_receipt,
+    write_selected_receipt,
+)
 from package_input import (
     PackageInputError,
     clean_room_database_url,
@@ -41,6 +46,9 @@ from package_input import (
     package_source,
     prepare_package,
     probe_environment,
+    verify_candidate_host,
+    verify_candidate_input,
+    candidate_host_provenance,
     verify_child,
 )
 from redaction import Redactor, SentinelSet, safe_failure_summary
@@ -466,6 +474,86 @@ def provider_path(endpoint: str) -> str:
     if f"{parsed.scheme}://{parsed.netloc}" != PROVIDER_ORIGIN:
         raise AssertionError("discovery endpoint left the provider origin")
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+
+
+def selected_authorization_params(client_id: str, redirect_uri: str) -> dict[str, str]:
+    verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    register_secret(verifier)
+    return {
+        "response_type": "code", "client_id": client_id, "redirect_uri": redirect_uri,
+        "scope": "openid email", "state": uuid.uuid4().hex, "nonce": uuid.uuid4().hex,
+        "code_challenge": s256(verifier), "code_challenge_method": "S256",
+    }
+
+
+def _selected_client(child: Path, environment: dict[str, str], redirect_uri: str) -> str:
+    client_id = "clean-room-selected-" + uuid.uuid4().hex[:12]
+    expression = (
+        "{:ok, result} = Lockspire.Clients.register_client(%{"
+        f"client_id: {json.dumps(client_id)}, client_type: :public, name: {json.dumps(client_id)}, "
+        f"redirect_uris: [{json.dumps(redirect_uri)}], allowed_scopes: [\"openid\", \"email\"], "
+        "allowed_grant_types: [\"authorization_code\"], allowed_response_types: [\"code\"], "
+        "token_endpoint_auth_method: :none, pkce_required: true}); "
+        "IO.puts(\"SELECTED_CLIENT_READY=\" <> result.client.client_id)"
+    )
+    output = _run_host_control(child, environment, expression)
+    if f"SELECTED_CLIENT_READY={client_id}" not in output:
+        raise AssertionError("selected authorization client setup did not complete")
+    return client_id
+
+
+def run_selected_authorization_case(
+    identifier: str,
+    provider: Browser,
+    child: Path,
+    environment: dict[str, str],
+) -> dict[str, object]:
+    """Run one implemented selected authorization projection through the packaged host."""
+    if identifier != "A171-003":
+        raise AssertionError(f"selected authorization case is not implemented: {identifier}")
+    redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
+    client_id = _selected_client(child, environment, redirect_uri)
+    params = selected_authorization_params(client_id, redirect_uri)
+    valid = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
+    require_status(valid, 302, "A171-003 query-mode control")
+    login_location = redirect(valid, "A171-003 query-mode control")
+    login = urlparse(login_location)
+    if login.netloc or not login.path.startswith("/login"):
+        raise AssertionError("A171-003 query-mode control missed the host login handoff")
+
+    unsupported_params = {**params, "response_mode": "binary"}
+    unsupported = provider.request("GET", "/lockspire/authorize?" + urlencode(unsupported_params))
+    require_status(unsupported, 400, "A171-003 unsupported response mode")
+    content_type = str(unsupported["headers"].get("content-type", "")).split(";", 1)[0].strip().lower()
+    body = str(unsupported["body"])
+    no_location = "location" not in unsupported["headers"]
+    no_oauth_parameters = not (
+        re.search(r"(?i)(?:[?&]|\b)(?:error|error_description|error_uri|iss|state)=", body)
+        or re.search(r"(?i)<(?:input|param)[^>]+name=[\"'](?:error|error_description|error_uri|iss|state)[\"']", body)
+        or re.search(r"(?i)[\"'](?:error|error_description|error_uri|iss|state)[\"']\s*:", body)
+    )
+    if content_type != "text/html" or not no_location or not no_oauth_parameters:
+        raise AssertionError("A171-003 unsupported response mode violated the first-party HTTP error contract")
+    return {
+        "id": identifier, "outcome": "passed",
+        "observations": {
+            "control_status": int(valid["status"]),
+            "control_reached_host_handoff": True,
+            "unsupported_status": int(unsupported["status"]),
+            "html_content_type": content_type == "text/html",
+            "no_location": no_location,
+            "no_oauth_error_parameters": no_oauth_parameters,
+        },
+        "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+    }
+
+
+def run_selected_authorization_par(
+    case_ids: tuple[str, ...], provider: Browser, child: Path, environment: dict[str, str]
+) -> list[dict[str, object]]:
+    if not case_ids:
+        raise AssertionError("selected authorization case set is empty")
+    return [run_selected_authorization_case(identifier, provider, child, environment) for identifier in case_ids]
 
 
 def run_dcr_lifetime(
@@ -1332,10 +1420,15 @@ def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, 
 def main(argv: list[str]) -> int:
     global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime"))
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime", "selected_authorization_par"))
     parser.add_argument("--lifetime-leg", action="append", choices=("fresh", "custom", "legacy"))
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--check-lifetime-receipt", type=Path)
+    parser.add_argument("--selected-case", action="append", choices=SELECTED_CASE_IDS)
+    parser.add_argument("--selected-receipt", type=Path)
+    parser.add_argument("--check-selected-receipt", type=Path)
+    parser.add_argument("--expected-source-revision")
+    parser.add_argument("--expected-receipt-sha256")
     parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
     parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
@@ -1366,6 +1459,21 @@ def main(argv: list[str]) -> int:
             return 1
         print("lifetime receipt verified")
         return 0
+    if args.check_selected_receipt:
+        if args.expected_source_revision is None or args.expected_receipt_sha256 is None:
+            parser.error("--check-selected-receipt requires --expected-source-revision and --expected-receipt-sha256")
+        expected_cases = tuple(args.selected_case or SELECTED_CASE_IDS)
+        try:
+            validate_selected_receipt(
+                args.check_selected_receipt, expected_case_ids=expected_cases,
+                expected_source_revision=args.expected_source_revision,
+                expected_receipt_sha256=args.expected_receipt_sha256,
+            )
+        except (AssertionError, OSError, json.JSONDecodeError) as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        print("selected receipt verified")
+        return 0
     if args.verify_concurrent_origins:
         return verify_concurrent_real_journeys()
     if args.verify_signal_cleanup:
@@ -1374,6 +1482,17 @@ def main(argv: list[str]) -> int:
         return verify_run_root_ownership()
     if not args.only:
         parser.error("at least one --only journey group is required")
+    if "selected_authorization_par" in args.only and args.only != ["selected_authorization_par"]:
+        parser.error("selected_authorization_par must run as its only journey group")
+    if "selected_authorization_par" in args.only and args.selected_receipt is None:
+        parser.error("selected_authorization_par requires --selected-receipt")
+    if args.selected_receipt is not None and args.only != ["selected_authorization_par"]:
+        parser.error("--selected-receipt is only supported with --only selected_authorization_par")
+    if args.selected_case and args.only != ["selected_authorization_par"]:
+        parser.error("--selected-case requires selected_authorization_par or --check-selected-receipt")
+    selected_cases = tuple(args.selected_case or SELECTED_CASE_IDS)
+    if len(selected_cases) != len(set(selected_cases)):
+        parser.error("--selected-case values must be unique")
     if "dcr_lifetime" in args.only and (args.only != ["dcr_lifetime"] or args.receipt is None):
         parser.error("dcr_lifetime requires --receipt and must run as its only journey group")
     if args.receipt is not None and args.only != ["dcr_lifetime"]:
@@ -1392,9 +1511,12 @@ def main(argv: list[str]) -> int:
     provider_child = client_child = None
     provider_environment = client_environment = None
     dcr_scenario: list[dict[str, object]] | None = None
+    selected_scenarios: list[dict[str, object]] | None = None
     result_code = 0
     cleanup = {"processes_stopped": False, "databases_removed": False, "temporary_roots_removed": False}
+    redaction = {"sentinel_check_passed": False, "evidence_scan_passed": False}
     candidate: dict[str, str] | None = None
+    candidate_binding: dict[str, object] | None = None
     source_revision = ""
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
         run_root = Path(temporary)
@@ -1427,15 +1549,22 @@ def main(argv: list[str]) -> int:
             assert_redaction_guard(redactor)
             selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
-            source_revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
-            generated_archive = run_root / f"lockspire-{package_identity.version}.tar"
-            run_child_command_output(Path(__file__).resolve().parents[2], os.environ.copy(), "hex.build", "--output", str(generated_archive))
+            source_revision = package_identity.source_revision or ""
+            current_head = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
+            if not source_revision or source_revision != current_head:
+                raise PackageInputError("package source revision differs from the current committed source")
+            if "selected_authorization_par" in args.only and subprocess.check_output(
+                ("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], text=True
+            ).strip():
+                raise PackageInputError("selected package proof requires committed source and a clean checkout")
             if package_identity.tree_sha256 is None:
                 raise PackageInputError("packaged candidate tree identity is unavailable")
+            if package_identity.archive_sha256 is None:
+                raise PackageInputError("packaged candidate archive identity is unavailable")
             candidate = {
                 "kind": package_identity.kind,
                 "version": package_identity.version,
-                "archive_sha256": package_identity.archive_sha256 or hashlib.sha256(generated_archive.read_bytes()).hexdigest(),
+                "archive_sha256": package_identity.archive_sha256,
                 "tree_sha256": package_identity.tree_sha256,
             }
             print(
@@ -1448,11 +1577,31 @@ def main(argv: list[str]) -> int:
                 run_root,
                 provider_database,
                 package_root=package_root,
+                candidate_identity=package_identity,
                 port=provider_port,
                 cache_root=dependency_cache_root(run_root),
                 custom_lifetime_adapter=lifetime_leg == "custom",
             )
             print("provider host prepared")
+            if "selected_authorization_par" in args.only:
+                archive = run_root / "package" / f"lockspire-{package_identity.version}.tar"
+                verify_candidate_input(archive, package_root, package_identity)
+                vendor = (provider_child / "vendor" / "lockspire").resolve(strict=True)
+                # prepare_provider has already verified the actual resolver path and
+                # compiled marker using this exact PackageIdentity before returning.
+                # Recheck the marker-bound candidate here before any listener starts.
+                verify_candidate_host(package_root, provider_child, package_identity, vendor, vendor)
+                provenance = candidate_host_provenance(provider_child)
+                candidate_binding = {
+                    "kind": package_identity.kind,
+                    "version": package_identity.version,
+                    "source_revision": source_revision,
+                    "archive_sha256": package_identity.archive_sha256,
+                    "tree_sha256": package_identity.tree_sha256,
+                    "vendor_tree_sha256": provenance["vendor_tree_sha256"],
+                    "compiled_candidate_sha256": provenance["compiled_candidate_sha256"],
+                    "resolved_dependency_verified": provenance["resolved_dependency_verified"],
+                }
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             if lifetime_leg == "custom":
@@ -1489,7 +1638,7 @@ def main(argv: list[str]) -> int:
                 )
                 if "DCR_POLICY_READY authorization_code" not in setup:
                     raise AssertionError("clean-room DCR policy setup did not complete")
-            if "dcr_lifetime" not in args.only:
+            if not any(group in args.only for group in ("dcr_lifetime", "selected_authorization_par")):
                 client_child, client_environment = prepare_client(
                     run_root, client_database, handoff, client_port, package_root
                 )
@@ -1511,6 +1660,11 @@ def main(argv: list[str]) -> int:
                     run_root / "provider.log",
                     custom=lifetime_leg == "custom",
                 )
+            if "selected_authorization_par" in args.only:
+                assert_owned_run_root(run_root, run_root_owner)
+                selected_scenarios = run_selected_authorization_par(
+                    selected_cases, Browser(PROVIDER_ORIGIN), provider_child, provider_environment
+                )
             if "happy_path" in args.only:
                 run_happy()
             if "boundary" in args.only:
@@ -1529,6 +1683,8 @@ def main(argv: list[str]) -> int:
                     track_provider_process,
                 )
             scan_evidence(run_root, redactor)
+            redaction["sentinel_check_passed"] = True
+            redaction["evidence_scan_passed"] = True
         except JourneyInterrupted:
             print("clean-room journey interrupted", file=sys.stderr)
             result_code = 130
@@ -1539,9 +1695,14 @@ def main(argv: list[str]) -> int:
             )), file=sys.stderr)
             result_code = 1
         finally:
-            stop_process(client_process)
-            stop_process(provider_process)
-            cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
+            try:
+                stop_process(client_process)
+                stop_process(provider_process)
+                cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
+            except (OSError, subprocess.SubprocessError):
+                result_code = 1
+                cleanup["processes_stopped"] = False
+                print("clean-room process cleanup failed", file=sys.stderr)
             try:
                 assert_owned_run_root(run_root, run_root_owner)
             except AssertionError as error:
@@ -1550,17 +1711,47 @@ def main(argv: list[str]) -> int:
                     field=type(error).__name__, count=1,
                 )), file=sys.stderr)
             else:
-                if client_child is not None and client_environment is not None:
-                    drop_child_database(client_child, client_environment, "client")
-                if provider_child is not None and provider_environment is not None:
-                    drop_child_database(provider_child, provider_environment, "provider")
-                cleanup["databases_removed"] = True
+                try:
+                    if client_child is not None and client_environment is not None:
+                        drop_child_database(client_child, client_environment, "client")
+                    if provider_child is not None and provider_environment is not None:
+                        drop_child_database(provider_child, provider_environment, "provider")
+                    cleanup["databases_removed"] = True
+                except (AssertionError, OSError, subprocess.SubprocessError):
+                    result_code = 1
+                    cleanup["databases_removed"] = False
+                    print("clean-room database cleanup failed", file=sys.stderr)
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
             print("cleanup complete")
     cleanup["temporary_roots_removed"] = not run_root.exists()
+    if "selected_authorization_par" in args.only and args.selected_receipt is not None and candidate_binding is not None:
+        if selected_scenarios is None:
+            selected_scenarios = [{
+                "id": selected_cases[0], "outcome": "failed", "observations": {},
+                "counts": {"executed": 1, "passed": 0, "failed": 1, "skipped": 0},
+            }]
+        expected_cases = selected_cases
+        selection = "complete" if expected_cases == SELECTED_CASE_IDS else "partial"
+        try:
+            write_selected_receipt(
+                args.selected_receipt, selection=selection, expected_case_ids=expected_cases,
+                source_revision=source_revision, candidate=candidate_binding,
+                scenarios=selected_scenarios, cleanup=cleanup, redaction=redaction,
+            )
+            if result_code == 0:
+                validate_selected_receipt(
+                    args.selected_receipt, expected_case_ids=expected_cases,
+                    expected_source_revision=source_revision, expected_binding=candidate_binding,
+                )
+        except (AssertionError, OSError, ValueError) as error:
+            print(str(safe_failure_summary(
+                stage="selected_receipt", scenario="-".join(expected_cases),
+                event="receipt_rejected", field=type(error).__name__, count=1,
+            )), file=sys.stderr)
+            result_code = 1
     if args.receipt is not None:
         if dcr_scenario is None and result_code != 0:
             dcr_scenario = [{
