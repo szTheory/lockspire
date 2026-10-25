@@ -1,0 +1,59 @@
+{
+  "schema": "lockspire-phase-175-baseline-metadata-v1",
+  "accepted_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "helper_path": "scripts/maintainer/repo_hygiene_check.sh",
+  "helper_source_sha256": "9a9ed1b1e25e9608ccafde7fa0e4c43744cacf449845211d45f33cd3360c59e2",
+  "cwd": "/private/tmp/lockspire-175-01-acceptance",
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 HEX_HOME=/private/tmp/lockspire-175-01-acceptance-hex LOCKSPIRE_TEST_DB_NAME=lockspire_175_01_baseline_20261025 bash scripts/maintainer/repo_hygiene_check.sh --accept-sha 173059a166e9ade0f5f57c9980b7b2400a98538c --warn-disposition 'adoption demo stopped containers=retain-demo-containers' --warn-disposition 'adoption demo volumes=retain-demo-volumes' --format json",
+  "argv": [
+    "bash",
+    "scripts/maintainer/repo_hygiene_check.sh",
+    "--accept-sha",
+    "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "--warn-disposition",
+    "adoption demo stopped containers=retain-demo-containers",
+    "--warn-disposition",
+    "adoption demo volumes=retain-demo-volumes",
+    "--format",
+    "json"
+  ],
+  "environment_overrides": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "HEX_HOME": "/private/tmp/lockspire-175-01-acceptance-hex",
+    "LOCKSPIRE_TEST_DB_NAME": "lockspire_175_01_baseline_20261025"
+  },
+  "started_at": "2026-10-25T18:21:14.712191+00:00",
+  "finished_at": "2026-10-25T18:25:35.812165+00:00",
+  "observed_at": "2026-10-25T18:26:09Z",
+  "exit_code": 0,
+  "stdout_path": "/private/tmp/lockspire-175-01-acceptance-attempt3-logs/main-acceptance.stdout",
+  "stdout_bytes": 1903,
+  "stdout_sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab",
+  "stderr_path": "/private/tmp/lockspire-175-01-acceptance-attempt3-logs/main-acceptance.stderr",
+  "stderr_bytes": 0,
+  "exit_path": "/private/tmp/lockspire-175-01-acceptance-attempt3-logs/main-acceptance.exit",
+  "receipt_path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json",
+  "refs": {
+    "head_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "local_main_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "refreshed_origin_main_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "live_origin_main_observed_at": "2026-10-25T18:26:09Z",
+    "live_origin_main_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c"
+  },
+  "local_runtime_dependency_identity": {
+    "elixir": "1.19.5",
+    "otp": "28.5",
+    "mix": "1.19.5",
+    "plug_crypto": "2.2.1",
+    "mix_lock_git_blob": "23161df4b90e4e64d281b3ca2816f46409652882",
+    "mix_lock_sha256": "5baa6a78be65857defb11fc4fc26b271460c80d259e65a3ae4aebd6ac5962f28"
+  },
+  "final_checkout_status": {
+    "worktree": "/private/tmp/lockspire-175-01-acceptance",
+    "head_detached": true,
+    "porcelain_empty": true,
+    "clean": true,
+    "observed_at": "2026-10-25T18:26:09Z"
+  }
+}
