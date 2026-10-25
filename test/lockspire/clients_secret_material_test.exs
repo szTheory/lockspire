@@ -88,18 +88,81 @@ defmodule Lockspire.ClientsSecretMaterialTest do
     assert opened |> elem(1) |> then(&(&1 == first_secret))
   end
 
+  test "byte-distinct UTF-8 identities stay distinct without normalization" do
+    context = dedicated_context(:crypto.strong_rand_bytes(32))
+    composed = "café-client"
+    decomposed = "cafe\u0301-client"
+
+    assert composed != decomposed
+
+    first =
+      Clients.rotate_secret_material(client_id: composed, client_secret_verifier_context: context)
+
+    second =
+      Clients.rotate_secret_material(
+        client_id: decomposed,
+        client_secret_verifier_context: context
+      )
+
+    opened_for_composed =
+      Lockspire.Security.ClientSecretVerifier.open(
+        context,
+        composed,
+        first.client_secret_jwt_verifier_encrypted,
+        []
+      )
+
+    opened_for_decomposed =
+      Lockspire.Security.ClientSecretVerifier.open(
+        context,
+        decomposed,
+        second.client_secret_jwt_verifier_encrypted,
+        []
+      )
+
+    opened_crosswise =
+      Lockspire.Security.ClientSecretVerifier.open(
+        context,
+        decomposed,
+        first.client_secret_jwt_verifier_encrypted,
+        []
+      )
+
+    assert match?({:ok, _secret}, opened_for_composed)
+    assert match?({:ok, _secret}, opened_for_decomposed)
+    refute match?({:ok, _secret}, opened_crosswise)
+  end
+
   test "dedicated public-helper failures are clear, fixed, and redact supplied options" do
     context = dedicated_context(:crypto.strong_rand_bytes(32))
 
-    error =
-      assert_raise ArgumentError, fn ->
-        Clients.rotate_secret_material(client_secret_verifier_context: context)
-      end
+    for client_id <- [nil, ""] do
+      opts =
+        [client_secret_verifier_context: context]
+        |> then(fn opts ->
+          if is_nil(client_id), do: opts, else: Keyword.put(opts, :client_id, client_id)
+        end)
+
+      error =
+        assert_raise ArgumentError, fn ->
+          Clients.rotate_secret_material(opts)
+        end
+
+      assert Exception.message(error) ==
+               "client secret material generation failed: client_secret_verifier_identity_missing"
+
+      refute Exception.message(error) =~ inspect(context)
+    end
+  end
+
+  test "legacy helper keeps its missing endpoint secret error clear" do
+    :persistent_term.put(Config.client_secret_verifier_cache_key(), %Context{state: :absent})
+    Application.delete_env(:lockspire, Lockspire.Web.Endpoint)
+
+    error = assert_raise ArgumentError, fn -> Clients.rotate_secret_material() end
 
     assert Exception.message(error) ==
-             "client secret material generation failed: client_secret_verifier_identity_missing"
-
-    refute Exception.message(error) =~ inspect(context)
+             "missing Lockspire endpoint secret_key_base required for client_secret_jwt verifier material"
   end
 
   defp dedicated_context(key) do

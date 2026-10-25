@@ -11,7 +11,8 @@ defmodule Lockspire.Clients.SecretMaterial do
     :client_secret_verifier_configuration_invalid,
     :client_secret_verifier_identity_missing,
     :client_secret_verifier_key_missing,
-    :client_secret_verifier_unavailable
+    :client_secret_verifier_unavailable,
+    :legacy_secret_key_base_missing
   ]
 
   @spec generate(term(), keyword()) :: {:ok, map()} | {:error, atom()}
@@ -40,10 +41,14 @@ defmodule Lockspire.Clients.SecretMaterial do
 
   defp seal(%Context{state: :absent}, _client_id, secret, opts) do
     {:ok, Policy.seal_client_secret_jwt_verifier(secret, opts)}
+  rescue
+    ArgumentError -> {:error, :legacy_secret_key_base_missing}
   end
 
   defp seal(%Context{state: :valid, write_mode: :legacy}, _client_id, secret, opts) do
     {:ok, Policy.seal_client_secret_jwt_verifier(secret, opts)}
+  rescue
+    ArgumentError -> {:error, :legacy_secret_key_base_missing}
   end
 
   defp seal(%Context{state: :valid, write_mode: :dedicated} = context, client_id, secret, _opts) do

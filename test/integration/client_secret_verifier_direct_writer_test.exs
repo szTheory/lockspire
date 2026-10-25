@@ -55,7 +55,14 @@ defmodule Lockspire.Integration.ClientSecretVerifierDirectWriterTest do
       {:ok, %RegistrationResult{client: client, client_secret: plaintext}} = result
 
       assert is_binary(plaintext) and byte_size(plaintext) == 43
-      assert client.client_id == (supplied_id || client.client_id)
+
+      if is_nil(supplied_id) do
+        assert String.starts_with?(client.client_id, "ls_")
+        assert byte_size(client.client_id) == 35
+      else
+        assert client.client_id == supplied_id
+      end
+
       assert {:ok, stored} = Repository.fetch_client_by_id(client.client_id)
       assert stored.client_secret_hash == client.client_secret_hash
       assert Policy.verify_client_secret(stored.client_secret_hash, plaintext)

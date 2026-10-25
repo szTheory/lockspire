@@ -100,6 +100,10 @@ defmodule Lockspire.Clients do
       {:ok, material} ->
         material
 
+      {:error, :legacy_secret_key_base_missing} ->
+        raise ArgumentError,
+              "missing Lockspire endpoint secret_key_base required for client_secret_jwt verifier material"
+
       {:error, reason} ->
         raise ArgumentError, "client secret material generation failed: #{safe_reason(reason)}"
     end
@@ -143,32 +147,44 @@ defmodule Lockspire.Clients do
 
     case errors do
       [] ->
-        client = %Client{
-          client_id:
-            normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
-              generate_client_id(),
-          client_secret_hash: normalized.client_secret_hash,
-          client_secret_jwt_verifier_encrypted: normalized.client_secret_jwt_verifier_encrypted,
-          client_type: normalized.client_type,
-          name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
-          redirect_uris: normalized.redirect_uris,
-          allowed_scopes: normalized.allowed_scopes,
-          allowed_grant_types: normalized.allowed_grant_types,
-          allowed_response_types: normalized.allowed_response_types,
-          token_endpoint_auth_method: normalized.auth_method,
-          token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
-          jwks: normalized.jwks,
-          jwks_uri: normalized.jwks_uri,
-          pkce_required: true,
-          subject_type: :public,
-          created_by:
-            normalize_optional_string(Map.get(attrs, :created_by) || Map.get(attrs, "created_by")),
-          created_at: DateTime.utc_now(),
-          lifetime_version: 1,
-          metadata: normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
-        }
+        client_id =
+          normalize_optional_string(Map.get(attrs, :client_id) || Map.get(attrs, "client_id")) ||
+            generate_client_id()
 
-        {:ok, %{client: client, plaintext_secret: normalized.plaintext_secret}}
+        case secret_values(normalized.client_type, client_id) do
+          {:ok, secret_material} ->
+            client = %Client{
+              client_id: client_id,
+              client_secret_hash: secret_material.client_secret_hash,
+              client_secret_jwt_verifier_encrypted:
+                secret_material.client_secret_jwt_verifier_encrypted,
+              client_type: normalized.client_type,
+              name: normalize_optional_string(Map.get(attrs, :name) || Map.get(attrs, "name")),
+              redirect_uris: normalized.redirect_uris,
+              allowed_scopes: normalized.allowed_scopes,
+              allowed_grant_types: normalized.allowed_grant_types,
+              allowed_response_types: normalized.allowed_response_types,
+              token_endpoint_auth_method: normalized.auth_method,
+              token_endpoint_auth_signing_alg: normalized.token_endpoint_auth_signing_alg,
+              jwks: normalized.jwks,
+              jwks_uri: normalized.jwks_uri,
+              pkce_required: true,
+              subject_type: :public,
+              created_by:
+                normalize_optional_string(
+                  Map.get(attrs, :created_by) || Map.get(attrs, "created_by")
+                ),
+              created_at: DateTime.utc_now(),
+              lifetime_version: 1,
+              metadata:
+                normalize_metadata(Map.get(attrs, :metadata) || Map.get(attrs, "metadata"))
+            }
+
+            {:ok, %{client: client, plaintext_secret: secret_material.client_secret}}
+
+          {:error, reason} ->
+            {:error, [missing_cryptographic_material_error(reason)]}
+        end
 
       _errors ->
         {:error, Enum.reverse(errors)}
@@ -193,7 +209,6 @@ defmodule Lockspire.Clients do
       normalize_client_type(Map.get(attrs, :client_type) || Map.get(attrs, "client_type"))
 
     auth_method = normalize_auth_method(fetch_auth_method(attrs))
-    secret_material = secret_values(client_type)
 
     allowed_grant_types =
       attrs |> fetch_required_list(:allowed_grant_types) |> normalize_string_list()
@@ -220,9 +235,9 @@ defmodule Lockspire.Clients do
       jwks_uri:
         normalize_optional_string(Map.get(attrs, :jwks_uri) || Map.get(attrs, "jwks_uri")),
       pkce_required: Map.get(attrs, :pkce_required, Map.get(attrs, "pkce_required", true)),
-      client_secret_hash: secret_material.client_secret_hash,
-      client_secret_jwt_verifier_encrypted: secret_material.client_secret_jwt_verifier_encrypted,
-      plaintext_secret: secret_material.client_secret
+      client_secret_hash: nil,
+      client_secret_jwt_verifier_encrypted: nil,
+      plaintext_secret: nil
     }
   end
 
@@ -242,15 +257,34 @@ defmodule Lockspire.Clients do
     Map.get(attrs, :token_endpoint_auth_method) || Map.get(attrs, "token_endpoint_auth_method")
   end
 
-  defp secret_values(:confidential), do: rotate_secret_material()
+  defp secret_values(:confidential, client_id), do: SecretMaterial.generate(client_id, [])
 
-  defp secret_values(:public) do
-    %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}
+  defp secret_values(:public, _client_id) do
+    {:ok,
+     %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}}
   end
 
-  defp secret_values(_other) do
-    %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}
+  defp secret_values(_other, _client_id) do
+    {:ok,
+     %{client_secret_hash: nil, client_secret_jwt_verifier_encrypted: nil, client_secret: nil}}
   end
+
+  defp missing_cryptographic_material_error(reason)
+       when reason in [
+              :client_secret_verifier_configuration_invalid,
+              :client_secret_verifier_identity_missing,
+              :client_secret_verifier_key_missing,
+              :client_secret_verifier_unavailable,
+              :legacy_secret_key_base_missing
+            ],
+       do: %{
+         field: :client_secret_jwt_verifier_encrypted,
+         reason: :missing_cryptographic_material,
+         detail: reason
+       }
+
+  defp missing_cryptographic_material_error(_reason),
+    do: missing_cryptographic_material_error(:client_secret_verifier_unavailable)
 
   defp validate_auth_signing_alg(errors, %{auth_method: :client_secret_jwt} = normalized) do
     errors
@@ -519,7 +553,8 @@ defmodule Lockspire.Clients do
               :client_secret_verifier_configuration_invalid,
               :client_secret_verifier_identity_missing,
               :client_secret_verifier_key_missing,
-              :client_secret_verifier_unavailable
+              :client_secret_verifier_unavailable,
+              :legacy_secret_key_base_missing
             ],
        do: Atom.to_string(reason)
 
