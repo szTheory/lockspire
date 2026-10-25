@@ -531,12 +531,15 @@ def _selected_code(provider: Browser, params: dict[str, str], redirect_uri: str)
         values = parse_qs(parsed.query)
         code = values.get("code", [None])[0]
     else:
-        if parsed.netloc or not parsed.path.startswith("/lockspire/interactions/"):
+        if parsed.netloc or not parsed.path.startswith(("/lockspire/interactions/", "/lockspire/consent/")):
             raise AssertionError("A171-006 authorization did not enter the consent flow")
         interaction_id = parsed.path.rsplit("/", 1)[-1]
-        interaction = provider.request("GET", next_location)
-        require_status_in(interaction, (302, 303), "A171-006 interaction")
-        consent_location = redirect(interaction, "A171-006 interaction")
+        if parsed.path.startswith("/lockspire/interactions/"):
+            interaction = provider.request("GET", next_location)
+            require_status_in(interaction, (302, 303), "A171-006 interaction")
+            consent_location = redirect(interaction, "A171-006 interaction")
+        else:
+            consent_location = next_location
         consent = provider.request("GET", consent_location)
         require_status(consent, 200, "A171-006 consent")
         approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
