@@ -50,7 +50,7 @@ patterns-established:
   - "Persisted PAR evidence contains allowlisted field-equality booleans and never stores client state, nonce, or request URI values."
   - "A local package receipt is bound to its exact source/archive/tree/vendor/resolution/compiled identities and remains distinct from CI, accepted-main, publication, and external-profile evidence."
 
-requirements-completed: [CPROOF-01, CPROOF-02, DELIV-01]
+requirements-completed: [CPROOF-01, CPROOF-02]
 
 coverage:
   - id: D1
@@ -241,3 +241,7 @@ Plan 174-03 can perform the later frozen-input selective manifest audit, prior-o
 - All ten task commits are ancestors of plan head `9caac49f`.
 - Stub-pattern scan found no TODO, FIXME, placeholder, or coming-soon markers in plan-owned implementation and guidance files.
 - `git diff --check` passed; the only untracked file before the metadata update is this summary.
+
+### Tracking correction before 174-03
+
+The plan completion update prematurely marked DELIV-01 complete. This plan supplied its guidance and scoped review portion only; candidate contributor checks, the seven required hosted CI jobs, final verification and delivery remain pending for 174-04. The requirement checkbox and traceability row are restored to Pending. The SDK only offers a gaps-found revert, which does not describe this unexecuted gate, so this narrow requirement correction preserves Pending directly. No executed proof or report verdict changed.
