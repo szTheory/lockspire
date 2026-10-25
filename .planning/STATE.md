@@ -5,16 +5,16 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 175
 current_phase_name: Accepted Baseline & Verifier Compatibility Contract
 status: executing
-stopped_at: Completed 175-01-PLAN.md
-last_updated: "2026-10-25T18:36:23.131Z"
+stopped_at: Completed 175-02-PLAN.md
+last_updated: "2026-10-25T18:54:32.002Z"
 last_activity: 2026-10-25
-last_activity_desc: Phase 175 Plan 01 executed; fresh baseline accepted; legacy qualification next
-state_head: 6cf9e81c2361d9b3cde8104e7dea8c5c278d18a6
+last_activity_desc: Phase 175 Plans 01–02 executed; approved policy and metadata qualification passed; contract freeze next
+state_head: c6df0a877f8c4975662b14ef26ad7df940eb803a
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -26,18 +26,18 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.48 Client Authentication Key Isolation & Rotation (SEC-01) is selected; research, 18 requirements and roadmap are approved. Phase 175 Plan 01 established fresh accepted main and retained custody; Plan 02 legacy qualification is next. UI quality is the next substantial candidate and its design interview is complete. [Planning baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records entry identity; [fresh receipt](phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json) proves the pre-qualification baseline only.
+**Current focus:** v1.48 Client Authentication Key Isolation & Rotation (SEC-01) is selected; research, 18 requirements and roadmap are approved. Phase 175 Plans 01 and 02 established the fresh accepted baseline, retained custody, persisted-caller qualification, public metadata support, and approved native/migrated age policy. Plan 03 must still freeze the finite contract and reconcile final source before dependent Phase 176 planning. UI quality remains the next substantial candidate and its design interview is complete. [Planning baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records entry identity; [fresh receipt](phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json) proves the pre-qualification baseline only.
 
 ## Current Position
 
 Phase: 175 (Accepted Baseline & Verifier Compatibility Contract) — IN PROGRESS
-Plan: 1 of 3 complete
-Status: Plan 01 executed; persisted-caller qualification and material compatibility contract remain pending
-Last activity: 2026-10-25 — Fresh main acceptance and tracer feedback passed at 173059a166e9ade0f5f57c9980b7b2400a98538c
+Plan: 2 of 3 complete
+Status: Plans 01–02 executed; final finite compatibility contract and source reconciliation remain pending
+Last activity: 2026-10-25 — Plan 02 qualification passed; owner-approved native age policy and public metadata gates are recorded
 
 ## Performance Metrics
 
-v1.48: 18 approved requirements, 4 approved phases (175–178), 3 plans with 1 executed; no phase or product implementation completed. Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
+v1.48: 18 approved requirements, 4 approved phases (175–178), 3 plans with 2 executed; no phase or product implementation completed. Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -53,6 +53,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 3 plans with 1 e
 | Phase 174 P03 | 19min | 3 tasks | 15 files |
 | Phase 174 P04 | 56min | 2 tasks | 11 files |
 | Phase 175 P01 | 22min+ (from first controlled attempt) | 2 tasks | 3 files |
+| Phase 175 P02 | 10min+ | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -125,10 +126,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T18:36:23.116Z
-Stopped at: Completed 175-01-PLAN.md
-Resume file: .planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-PLAN.md
-Next: Continue $gsd-execute-phase 175 --auto --no-transition with Plan 02. Branch `milestone/v1.48-client-auth-key-isolation` retains prior archival/interview history separately from accepted main. Actual persisted-caller age qualification, public metadata support and native/migrated age policy remain execution gates; Phase 176 planning stays blocked until material dispositions are qualified. The fresh initial receipt does not accept later qualification changes. No product implementation or publication has started.
+Last session: 2026-10-25T18:54:31.981Z
+Stopped at: Completed 175-02-PLAN.md
+Resume file: .planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md
+Next: Continue $gsd-execute-phase 175 --auto --no-transition with Plan 03. Branch `milestone/v1.48-client-auth-key-isolation` retains prior archival/interview history separately from accepted main. Plan 02's actual-caller, public metadata, and owner-approved native/migrated age gates are qualified; Phase 176 planning remains blocked until Plan 03 freezes the finite contract and reconciles final source. The fresh initial receipt does not accept later qualification changes. No product implementation or publication has started.
 
 ### Blockers
 
@@ -175,8 +176,9 @@ None
 - [Phase 175]: Use synchronized main at 173059a166e9ade0f5f57c9980b7b2400a98538c as the fresh pre-qualification baseline.
 - [Phase 175]: Preserve historical and unknown-owner worktrees, databases, demo resources, and generated artifacts; do not clean or publish.
 - [Phase 175]: Keep the VBASE-01 unclassified edge visibly flagged for the later compatibility work.
+- [Phase 175]: Owner explicitly approved the recommended D-20 native age policy revision on 2026-10-25; native dedicated material follows configured client-secret lifetime and migrated rows retain their authenticated original finite deadline.
 
 ## Operator Next Steps
 
-- Continue Phase 175 Plan 02 persisted-caller/metadata/helper qualification, then freeze the finite contract in Plan 03 only after material gates pass.
+- Continue Phase 175 Plan 03 to freeze the finite contract and reconcile final source; dependent Phase 176 planning remains gated until that plan passes.
 - Preserve the fresh initial receipt and retained custody; reconcile later qualification source through the existing train as Plan 03 requires before dependent implementation planning.
