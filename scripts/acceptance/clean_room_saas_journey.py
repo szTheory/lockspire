@@ -609,13 +609,16 @@ def run_selected_authorization_case(
 
     if identifier == "A171-001":
         client_id = _selected_client(child, environment, redirect_uri)
+        print("selected A171-001 client ready", flush=True)
         params, _verifier = selected_authorization_params(client_id, redirect_uri)
         valid = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
+        print(f"selected A171-001 control status {valid['status']}", flush=True)
         require_status(valid, 302, "A171-001 exact callback control")
         login = urlparse(redirect(valid, "A171-001 exact callback control"))
         if login.netloc or not login.path.startswith("/login"):
             raise AssertionError("A171-001 exact callback control missed the host login handoff")
         mismatch = provider.request("GET", "/lockspire/authorize?" + urlencode({**params, "redirect_uri": redirect_uri + "/"}))
+        print(f"selected A171-001 mismatch status {mismatch['status']}", flush=True)
         require_status(mismatch, 400, "A171-001 trailing-slash callback")
         if "location" in mismatch["headers"]:
             raise AssertionError("A171-001 mismatched callback received a Location header")
@@ -742,7 +745,11 @@ def run_selected_authorization_par(
 ) -> list[dict[str, object]]:
     if not case_ids:
         raise AssertionError("selected authorization case set is empty")
-    return [run_selected_authorization_case(identifier, provider, child, environment, run_root) for identifier in case_ids]
+    scenarios = []
+    for identifier in case_ids:
+        print(f"selected authorization case {identifier}", flush=True)
+        scenarios.append(run_selected_authorization_case(identifier, provider, child, environment, run_root))
+    return scenarios
 
 
 def run_dcr_lifetime(
