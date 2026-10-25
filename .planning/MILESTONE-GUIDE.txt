@@ -160,6 +160,34 @@ UPSTREAM RESEARCH AND DECISION POSTURE (USER DIRECTION 2026-10-24)
   evidence disproves their premise. No guarantee of a perfect one-shot result
   substitutes for verification.
 
+UI QUALITY CANDIDATE AND STANDING POSTURE (USER DIRECTION 2026-10-25)
+
+At each milestone start/close, include the unversioned candidate in
+.planning/research/ui-quality-engine/MILESTONE-PROPOSAL.md when refreshing the
+rolling ranking. Read its INVENTORY.md and RECOMMENDATIONS.md before repeating
+discovery. This is a recorded proposal, not a selected milestone, reserved
+version/phase sequence or authorization to implement. SEC-01 retains its
+preferred provisional position; UI quality is recommended next after it unless
+fresh security/adopter evidence changes the order. ROADMAP.md and
+MILESTONE-ARC.md retain their current scheduling/ranking authority.
+
+The owner wants real UI compositions reviewable from primitives through groups,
+areas, sections and complete jobs, using plausible synthetic adopter situations
+and the production presentation components. Curate existing operator personas
+and jobs; admit meaningful happy/error/boundary classes and prune impossible or
+redundant stories. Favor intentionally designed typography, hierarchy, restrained
+color, clear user-facing domain language, natural common/expert workflows,
+mobile-first reflow and light/dark parity. Keep actual host ownership and
+read-only queues. Reuse existing tokens, fixtures, scorecards, CDP checks and
+bounded Impeccable review. Tooling remains maintainer-only, outside production
+and Hex; no public theme engine, font downloads or paid/open-ended critic loop.
+
+During unrelated milestones, only refresh relevance and carry useful scenario
+requirements forward; do not turn every boundary into a broad UI audit. When
+UI work is selected, prove a small complete job before expanding stories or
+extracting all LiveViews, measure CI cost, preserve connected behavioral proof
+and record findings/decisions so later sessions do not restart from scratch.
+
 DEPENDENCY POSTURE (USER DIRECTION 2026-10-24)
 
 Prefer a small, auditable local helper or limited attributed code copy over
