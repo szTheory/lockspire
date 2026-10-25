@@ -182,6 +182,47 @@ defmodule Lockspire.Security.ClientSecretVerifierTest do
     assert @max_payload_bytes == 1_048_626
   end
 
+  test "authenticated native and migrated secrets enforce the one MiB decoder cap" do
+    key_id = "decoder-cap"
+    key = random_key()
+    context = context(key_id, key)
+    client_id = "decoder-cap-client"
+    signed_at = System.os_time(:millisecond) - 1_000
+    deadline = signed_at + 10_000
+
+    native_results =
+      for size <- [@max_bytes, @max_bytes + 1, @max_bytes + 16] do
+        secret = :binary.copy(<<0xA5>>, size)
+        envelope = independent_envelope(key_id, key, client_id, secret)
+        assert byte_size(envelope) <= @max_envelope_bytes
+        {size, safe_open_result(context, client_id, envelope)}
+      end
+
+    assert native_results == [
+             {@max_bytes, {:ok, @max_bytes}},
+             {@max_bytes + 1, {:error, :client_secret_verifier_unavailable}},
+             {@max_bytes + 16, {:error, :client_secret_verifier_unavailable}}
+           ]
+
+    migrated_results =
+      for size <- [@max_bytes, @max_bytes + 1] do
+        secret = :binary.copy(<<0x5A>>, size)
+
+        plaintext =
+          <<1, size::unsigned-big-32, secret::binary, 1, signed_at::signed-big-64,
+            deadline::signed-big-64>>
+
+        envelope = independent_envelope(key_id, key, client_id, plaintext: plaintext)
+        assert byte_size(envelope) <= @max_envelope_bytes
+        {size, safe_open_result(context, client_id, envelope)}
+      end
+
+    assert migrated_results == [
+             {@max_bytes, {:ok, @max_bytes}},
+             {@max_bytes + 1, {:error, :client_secret_verifier_unsupported_format}}
+           ]
+  end
+
   test "context validation rejects incomplete, duplicate, and cross-purpose key material" do
     key = random_key()
     encoded = Base.url_encode64(key, padding: false)
@@ -251,6 +292,16 @@ defmodule Lockspire.Security.ClientSecretVerifierTest do
       {:ok, _secret} -> :ok
       {:error, reason} -> reason
       _ -> :unexpected
+    end
+  end
+
+  defp safe_open_result(context, client_id, envelope) do
+    case ClientSecretVerifier.open(context, client_id, envelope,
+           verifier_now_ms: System.os_time(:millisecond)
+         ) do
+      {:ok, secret} -> {:ok, byte_size(secret)}
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :unexpected}
     end
   end
 

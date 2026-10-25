@@ -291,14 +291,15 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   defp decode_plaintext(
          <<1, secret_length::unsigned-big-32, secret::binary-size(secret_length), 0>>
        )
-       when secret_length > 0,
+       when secret_length > 0 and secret_length <= @max_identity_or_secret_bytes,
        do: {:ok, secret, :native}
 
   defp decode_plaintext(
          <<1, secret_length::unsigned-big-32, secret::binary-size(secret_length), 1,
            signed_at_ms::signed-big-64, deadline_ms::signed-big-64>>
        )
-       when secret_length > 0 and deadline_ms >= signed_at_ms,
+       when secret_length > 0 and secret_length <= @max_identity_or_secret_bytes and
+              deadline_ms >= signed_at_ms,
        do: {:ok, secret, {:migrated, signed_at_ms, deadline_ms}}
 
   defp decode_plaintext(_plaintext), do: {:error, :client_secret_verifier_unavailable}
