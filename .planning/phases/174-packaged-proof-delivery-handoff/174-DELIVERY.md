@@ -4,9 +4,9 @@ Delivery status: blocked
 
 Candidate SHA: 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c
 
-Delivery blocker: PR #140 remains open and unmerged. Final Phase 174 verification, security, review, Nyquist closeout, goal verification and the canonical milestone audit remain parent-owned post-plan gates; the synchronized-main acceptance helper has not been run for this candidate.
+Delivery blocker: Automatic approval review rejected squash-merging PR #140 because trusted user instructions did not explicitly authorize the protected-main mutation. All required final-head checks and the milestone audit pass; explicit merge authorization is pending.
 
-Next action: the parent completes the normal final phase gates and milestone audit. If those pass, continue the reviewed PR through the development train, synchronize an owned main checkout after the real merge, and run the exact existing main-acceptance helper. If a gate finds a defect, route it to its source owner and refresh only affected evidence.
+Next action: Obtain explicit user authorization to squash-merge PR #140 at 6f10fcc73e0af0e41d47760e0371d73d9a83b1a4, then continue the existing synchronized-main acceptance procedure without changing release controls or publication scope.
 
 ## Observed delivery state
 
@@ -53,3 +53,9 @@ The evidence-based `MILESTONE-ARC.md` ranking was reviewed and committed before 
 | Plan 04 task-owned local floor diagnostic resources | Existing wrappers report database/process/profile/root cleanup true. The bounded Hex cache and copied diagnostic logs live under task-specific `/private/tmp/lockspire-174-04-*` names until final task cleanup. | Executing maintainer owns these task-specific temporary resources. | Remove these exact task-owned temp paths after final local/hosted evidence checks; no broad prefix cleanup. |
 
 No retained worktree, historical commit, unknown database, original receipt, or adoption-demo resource was removed to make repository status appear clean. The candidate checkout was clean at the execution-point snapshot; this handoff's report files are the permitted evidence delta.
+
+## Final reviewed head and automatic approval boundary
+
+Final reviewed PR head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` passed canonical CI run `40167697155`, attempt1, with exactly seven unique successful completed jobs. Separate dependency-review run `40167697135` passed. All four verifier owners remain passed and the canonical milestone audit passes14/14 requirements,6/6 links and6/6 flows. The actual squash merge call used the expected full head SHA and was denied once by automatic approval review for lack of explicit trusted merge authorization. No alternate route or retry was attempted.
+
+PR140 remains OPEN, mergeStateStatus CLEAN, with no merge commit or merge timestamp. Main remains `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. No main checkout/helper execution or174 success receipt occurred. The allocated private delivery staging root `/private/tmp/lockspire-174-delivery-uajmka2c` contains only its task owner marker; its planned main checkout was never created. The maintainer retains custody pending the explicit authorized continuation. No publication, tag, dispatch or release-control change occurred.
