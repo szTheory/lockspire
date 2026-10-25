@@ -270,7 +270,10 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     if qualified_anchor?(cases, qualification), do: :ok, else: {:error, :missing_qualified_anchor}
   end
 
-  defp valid_fields?(row), do: Enum.all?(@required_fields, &Map.has_key?(row, &1))
+  defp valid_fields?(row) do
+    Enum.all?(@required_fields, &Map.has_key?(row, &1)) and
+      is_binary(row["redaction"]) and String.trim(row["redaction"]) != ""
+  end
 
   defp valid_owner?(%{"case_id" => id, "owner_phase" => owner}), do: Map.get(@owners, id) == owner
   defp valid_owner?(_row), do: false
@@ -515,6 +518,14 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
 
   test "finite ledger is complete, owned, and tied to qualified caller evidence", context do
     assert :ok = Contract.validate(context.ledger, context.qualification, context.summary)
+  end
+
+  test "redaction expectations must be nonempty text", context do
+    invalid =
+      update_case(context.ledger, "WRITER-OPERATOR-ROTATION", &Map.put(&1, "redaction", 176))
+
+    assert {:error, {:missing_fields, "WRITER-OPERATOR-ROTATION"}} =
+             Contract.validate(invalid, context.qualification, context.summary)
   end
 
   test "semantic validator rejects missing families, duplicate IDs, incorrect owners, and false evidence",
