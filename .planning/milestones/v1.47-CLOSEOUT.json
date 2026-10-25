@@ -198,6 +198,16 @@
     "dependency_changes": false,
     "legacy_state_json_unchanged": true,
     "quick_tasks_archived": false,
-    "archive_path_note": "Archived fingerprints keep original covered_files paths. CLOSEOUT records pre-move current passes; archives are not restamped or claimed as newly executed."
+    "archive_path_note": "Archived fingerprints keep original covered_files paths. CLOSEOUT records pre-move current passes; archives are not restamped or claimed as newly executed.",
+    "requirements_removed_after_safety_commit": "b11b8dc5",
+    "post_requirements_removal_regressions": {
+      "tests": 117,
+      "failures": 0,
+      "exit_code": 0
+    },
+    "post_close_artifact_audit": {
+      "open_items": 0,
+      "previously_acknowledged": 4
+    }
   }
 }
