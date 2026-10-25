@@ -1,8 +1,8 @@
 ---
 phase: 174-packaged-proof-delivery-handoff
-reviewed: 2026-10-25T03:48:44Z
+reviewed: 2026-10-25T04:55:25Z
 depth: deep
-files_reviewed: 8
+files_reviewed: 10
 files_reviewed_list:
   - docs/supported-surface.md
   - scripts/acceptance/clean_room/build_provider.py
@@ -12,13 +12,15 @@ files_reviewed_list:
   - test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex
   - test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex
   - test/lockspire/clean_room_release_source_contract_test.exs
+  - scripts/ci/run_host_integration_proof.sh
+  - test/clean_room/test_admin_journey.py
 findings:
   critical: 0
   warning: 0
   info: 0
   total: 0
 status: clean
-reviewed_head: a00f0d0a8e4cc276403b5f5dccf37bb63f900458
+reviewed_head: 9ee03ab63d33793b60dcc942ba79eccaa6a19180
 diff_base: 6c4381920af749807ea7bfa591ef3a49f91f6fb3
 inputs:
   - path: docs/supported-surface.md
@@ -28,7 +30,7 @@ inputs:
   - path: scripts/acceptance/clean_room/selected_receipts.py
     sha256: cf3d5254b39934e2d60c61b8deacbd8f8055b90406693cac8efff7a2a235b52b
   - path: scripts/acceptance/clean_room_saas_journey.py
-    sha256: 1fa47489d1c4d2a7a081e629dd14b47cb831be4b96bdd21f12d22d92e43a2af3
+    sha256: 1fa47489d1c4d2a7a081c26afeea634698e7b0b4a44ee55cf15204705d6f4471
   - path: test/acceptance/selected_receipt_test.py
     sha256: c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff
   - path: test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex
@@ -37,39 +39,46 @@ inputs:
     sha256: 905b1db6c0d269db2b8128bd87e8f5e71b7ec0ad18efb1a0477831dfaaef4284
   - path: test/lockspire/clean_room_release_source_contract_test.exs
     sha256: 5f9e123c464ffde23b9017953af09b05dd9b3980b96b5a2cbadef34d68ab58e6
+  - path: scripts/ci/run_host_integration_proof.sh
+    sha256: b358e7979e16d9cedc5120da38757dc2957b778a4a146f0e4148b8d857aa053b
+  - path: test/clean_room/test_admin_journey.py
+    sha256: 6aa4e2395d2667a2c4313d9176b8992e176c5d20df998af74fc3337ced956535
 ---
 
 # Phase 174: Code Review Report
 
-**Reviewed:** 2026-10-25T03:48:44Z
+**Reviewed:** 2026-10-25T04:55:25Z
 **Depth:** deep
-**Files Reviewed:** 8
+**Files Reviewed:** 10
 **Status:** clean
 
 ## Summary
 
-Reviewed the full Phase 174 source scope from baseline `6c4381920af749807ea7bfa591ef3a49f91f6fb3` through exact HEAD `a00f0d0a8e4cc276403b5f5dccf37bb63f900458`, including the package runner, receipt writer/validator, tests and CI bridge, clean-room host fixtures, and supported-surface guidance. The `174-01` through `174-04` plans and summaries, context, prior review, security audit, dispositions, package proof, and candidate gates were checked as supporting evidence. The SDK scope file was broader than the phase's actual source set; the eight files listed in this report match the Phase 174 source changes and summaries.
+Reviewed the ten-file Phase 174 source scope from baseline `6c4381920af749807ea7bfa591ef3a49f91f6fb3` through current HEAD `9ee03ab63d33793b60dcc942ba79eccaa6a19180`. The first eight files match the clean review at `a00f0d0a8e4cc276403b5f5dccf37bb63f900458`; I rechecked their current hashes. I reviewed the actual delta `196d588c..9b8cf54d` for the two additional files, traced the diagnostic helpers and shell failure flow, and checked the current scoped dispositions, 10 wrapper tests, summaries, candidate gates, security record, and immutable package/index evidence. The current candidate is `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`; only planning and delivery evidence files changed after it, and no Phase 174 source has changed since.
 
-The prior WR-01 identified a weak receipt-substitution test: it changed A171-003 `control_status` to schema-invalid `204`, so schema validation could reject it even without digest enforcement. Commit `a00f0d0a8e4cc276403b5f5dccf37bb63f900458` repairs this by changing the status to valid alternate `303`, validating the substituted receipt with the same selected case and package binding without an expected digest, then asserting that validation with the original digest fails specifically with the byte-mismatch error. This closes the finding. The earlier duplicate-JSON-key warning was fixed in commit `5f3fc9b3`; recursive duplicate-member rejection and root/nested duplicate tests remain present.
+The first independent review of the diagnostic changes found two warnings: recognized `first_case` / `failed_cases` details were dropped during re-sanitization, and a diagnostic helper error under `set -e` could mask the original child exit code. The `9b8cf54d` repair independently revalidates and allowlists diagnostic fields, bounds the fallback failure count before integer conversion, emits fixed safe fallbacks, and preserves the original child status at both failure call sites. Its added wrapper tests cover round-trip safe detail, a malformed 5,000-digit count, sentinel non-disclosure, cleanup, staging, and exit status. The scoped follow-up code review reports 0 findings, and the security recheck reports 0 open threats. I found no remaining defect in these paths.
 
-The phase artifacts record a complete local package receipt with 12/12 selected cases passing, source revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`, and cleanup/redaction checks true. Candidate gates separately record local `mix ci` exit 0 and hosted run `40156252600` attempt 2 with exactly seven successful canonical jobs at candidate `ec6361d9840f2adfda85116d72fec0efe9065c6c`; attempt 1's exact-floor failure remains retained. PR #140 is open and unmerged, and no accepted-main, publication, or certification result is claimed. These are artifact-reported results; this focused review did not rerun tests, package proof, or CI. The task reports 16/16 Python receipt tests and the 7/7 ExUnit bridge passed at the repaired commit.
+The receipt-digest substitution warning was also repaired earlier at `a00f0d0a`: the alternate `303` receipt is first accepted against the same case/source/package binding and then rejected specifically against the original external digest. The full eight-file review at that commit was clean. The earlier duplicate-JSON-key warning remains resolved by recursive duplicate-member rejection and root/nested tests.
+
+Historical evidence identity is preserved. The immutable proof index records the earlier eight-file clean review hash `8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4`; I verified those exact bytes remain retrievable from Git at package source `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`. This report supersedes that review for the expanded ten-file scope; the historical index and frozen inputs were not edited.
+
+The existing package receipt is a distinct 12/12 local package-to-loopback-host result bound to source `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`; it is not reattributed to candidate CI. Candidate gates separately record local `mix ci` exit 0 and hosted run `40161576115` attempt 1 with exactly seven successful canonical jobs at candidate `9b8cf54d`. These records do not establish accepted-main status, publication, external issuer/TLS/proxy/browser reachability, or certification. The phase dispositions report 16/16 Python receipt tests, the 7/7 ExUnit bridge, and 10/10 wrapper tests passed at their repaired source bytes. This read-only review did not rerun tests, package proof, or CI.
 
 All reviewed files meet quality standards. No issues found.
 
 ## Narrative Findings (AI reviewer)
 
-No open findings. WR-01 from the previous review is closed by commit `a00f0d0a8e4cc276403b5f5dccf37bb63f900458` as described above.
+No open findings. Prior warnings and fixes are retained above as review history: duplicate JSON member rejection (`5f3fc9b3`), valid receipt digest substitution (`a00f0d0a`), and safe host-proof diagnostics / original exit preservation (`9b8cf54d`).
 
 ## Review Evidence and Limits
 
-- The current receipt-substitution test positively validates the alternate receipt without a digest, then checks the exact digest-mismatch rejection. `selected_receipts.py` still checks the externally supplied digest before JSON decoding.
-- `git diff --check` passed for the reviewed Phase 174 source range. Source hashes are listed in the frontmatter.
-- The complete local package proof is bound to its recorded source/archive/tree/vendor/resolution/compiled identities. It establishes only the recorded package-to-loopback-host run.
-- The candidate gate record preserves the first hosted failure and reports the successful latest-attempt graph independently. Candidate CI does not establish accepted-main status, publication, external issuer/TLS/proxy/browser reachability, or external profile certification.
-- The security audit records 17/17 dispositions closed at its audited scope and explicitly preserves the former substitution-test strength limitation as nonblocking. The focused re-review confirms that limitation has been repaired.
+- Current SHA-256 values for all ten reviewed files are listed in the frontmatter. `git diff --check` passed across the ten source files for the phase range.
+- The reviewed diagnostic wrapper emits only allowlisted or fixed fallback fields. Its `|| true` guards ensure diagnostic failure does not replace the saved child status passed to `fail_stage`.
+- Current security and code-review dispositions apply to the diagnostic-only changes. The retained package receipt remains bound to its earlier package source, while local and hosted candidate gates are recorded independently.
+- PR #140 remains open and unmerged. No accepted-main receipt, publication, or external profile result is claimed.
 
 ---
 
-_Reviewed: 2026-10-25T03:48:44Z_
+_Reviewed: 2026-10-25T04:55:25Z_
 _Reviewer: the agent (gsd-code-reviewer)_
 _Depth: deep_
