@@ -29,7 +29,7 @@ Confirmed in interview Q1–Q10 on 2026-10-25:
 - Cover empty-provider, busy-partner-program, mixed-script support and experienced token-reuse investigation scenarios, plus relevant valid single-tenant/account-less cases. Merge redundant profiles rather than maximize fictional company count.
 - For a UI PR touching an uncovered section, add stories for the changed area and meaningful page context without migrating the whole section. Shared-component changes also check affected existing stories.
 
-These accepted planning decisions narrow the proposal. The design decision frontier is empty; final shared-understanding confirmation remains pending. Implementation still requires GSD milestone selection and its gates.
+These accepted planning decisions narrow the proposal. The owner confirmed the final shared-understanding summary on 2026-10-25; the design decision frontier is empty and the interview is complete. Implementation still requires GSD milestone selection and its gates.
 
 ## Sequencing recommendation
 
@@ -62,4 +62,4 @@ Success means a maintainer can select a real operator situation, inspect shared 
 
 ## Decisions needing the owner
 
-Q1–Q10 are accepted above; the design decision frontier is empty. The grill-with-docs interview awaits the owner's explicit confirmation of the shared understanding before closeout. Selecting/reordering a milestone remains a later explicit GSD workflow decision. Exact dependency versions, compatibility, reproductions and measured performance are implementation-research facts to establish through GSD, not unanswered owner questions or claims of completed work. Outside this requested interview, escalate only material brand, public API/support, host ownership, adopter-visible removal or dependency/tooling scope decisions. Historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.
+None remain for this design interview. Q1–Q10 and the final shared-understanding summary are confirmed; the interview is complete as of 2026-10-25. Next, use `$gsd-new-milestone` to refresh evidence and select/re-rank scope through the normal gates; do not repeat these settled design questions without new conflicting evidence. Selecting/reordering a milestone remains a separate explicit GSD workflow decision. Exact dependency versions, compatibility, reproductions and measured performance are implementation-research facts to establish through GSD, not unanswered owner questions or claims of completed work. Escalate only material brand, public API/support, host ownership, adopter-visible removal or dependency/tooling scope decisions. Historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.

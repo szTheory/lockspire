@@ -39,7 +39,7 @@ The owner answered “yes to all” to Q5–Q7. These extend the accepted planni
 
 ### Owner-confirmed interview decisions, round 3 (2026-10-25)
 
-The owner answered “yes to all” to Q8–Q10. All ten interview decisions are accepted; the design decision frontier is empty, pending the owner's final shared-understanding confirmation. No milestone is selected or implementation authorized by the interview.
+The owner answered “yes to all” to Q8–Q10 and explicitly confirmed the final shared-understanding summary on 2026-10-25. All ten interview decisions are accepted; the design decision frontier is empty and the interview is complete. No milestone is selected or implementation authorized by the interview. Carry these decisions into the next GSD milestone-selection workflow instead of repeating settled questions.
 
 | Question | Accepted decision | Consequence |
 |---|---|---|
