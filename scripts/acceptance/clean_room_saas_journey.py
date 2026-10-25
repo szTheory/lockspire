@@ -1002,15 +1002,18 @@ def run_selected_authorization_case(
         require_status(response, 200, "P171-006 mounted discovery")
         metadata = json.loads(str(response["body"]))
         suffixes = {
-            "authorization_endpoint": "/lockspire/authorize",
-            "token_endpoint": "/lockspire/token",
-            "userinfo_endpoint": "/lockspire/userinfo",
-            "jwks_uri": "/lockspire/jwks",
-            "pushed_authorization_request_endpoint": "/lockspire/par",
-            "revocation_endpoint": "/lockspire/revoke",
-            "introspection_endpoint": "/lockspire/introspect",
+            "authorization_endpoint": "/authorize",
+            "token_endpoint": "/token",
+            "userinfo_endpoint": "/userinfo",
+            "jwks_uri": "/jwks",
+            "pushed_authorization_request_endpoint": "/par",
+            "revocation_endpoint": "/revoke",
+            "introspection_endpoint": "/introspect",
         }
         facts = {key: metadata.get(key) == configured_issuer + suffix for key, suffix in suffixes.items()}
+        if not all(facts.values()):
+            mismatched = ",".join(key for key, matches in facts.items() if not matches)
+            raise AssertionError(f"P171-006 mounted discovery endpoint mismatches: {mismatched}")
         return passed({
             "discovery_status": int(response["status"]),
             "issuer_matches_configured": metadata.get("issuer") == configured_issuer,
