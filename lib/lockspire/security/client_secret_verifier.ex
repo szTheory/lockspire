@@ -44,7 +44,7 @@ defmodule Lockspire.Security.ClientSecretVerifier do
 
   @spec open(Context.t(), term(), term(), keyword()) :: {:ok, binary()} | {:error, atom()}
   def open(context, client_id, encrypted, opts) do
-    with {:ok, %Context{state: :valid} = context} <- Context.validate(context),
+    with {:ok, %Context{} = context} <- Context.validate(context),
          :ok <- validate_identity(client_id),
          true <- is_binary(encrypted),
          {:ok, secret} <- open_value(context, client_id, encrypted, opts) do
@@ -60,13 +60,21 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     _ -> {:error, :client_secret_verifier_unavailable}
   end
 
-  defp open_value(%Context{legacy_read: legacy_read} = context, client_id, encrypted, opts) do
+  defp open_value(
+         %Context{state: :valid, legacy_read: legacy_read} = context,
+         client_id,
+         encrypted,
+         opts
+       ) do
     if String.starts_with?(encrypted, @family) do
       open_dedicated(context, client_id, encrypted)
     else
       open_legacy(legacy_read, encrypted, opts)
     end
   end
+
+  defp open_value(%Context{state: :absent}, _client_id, encrypted, opts),
+    do: open_legacy(:allow, encrypted, opts)
 
   defp open_dedicated(context, client_id, encrypted) do
     with :ok <- validate_encoded_envelope(encrypted),

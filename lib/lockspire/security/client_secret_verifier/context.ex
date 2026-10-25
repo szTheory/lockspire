@@ -13,6 +13,15 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   @type t :: %__MODULE__{}
 
   @allowed_options [:keys, :current, :write_mode, :legacy_read]
+  @safe_reasons [
+    :client_secret_verifier_configuration_invalid,
+    :invalid_options,
+    :invalid_key,
+    :unknown_current,
+    :invalid_current,
+    :invalid_mode_pair,
+    :invalid_mode
+  ]
   @key_id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
 
   @spec resolve(term(), term()) :: {:ok, t()}
@@ -37,11 +46,32 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
       }),
       do: {:error, :client_secret_verifier_configuration_invalid}
 
-  def validate(%__MODULE__{state: :valid} = context), do: validate_complete(context)
+  def validate(context), do: validate(context, [])
 
-  def validate(_context), do: {:error, :client_secret_verifier_configuration_invalid}
+  @spec validate(term(), term()) :: {:ok, t()} | {:error, atom()}
+  def validate(%__MODULE__{state: :absent} = context, _forbidden_key_bytes),
+    do: {:ok, context}
 
-  defp validate_complete(context) do
+  def validate(
+        %__MODULE__{state: :invalid, reason: :client_secret_verifier_configuration_invalid},
+        _forbidden_key_bytes
+      ),
+      do: {:error, :client_secret_verifier_configuration_invalid}
+
+  def validate(%__MODULE__{state: :invalid, reason: reason}, _forbidden_key_bytes)
+      when reason in @safe_reasons,
+      do: {:error, reason}
+
+  def validate(%__MODULE__{state: :invalid}, _forbidden_key_bytes),
+    do: {:error, :client_secret_verifier_configuration_invalid}
+
+  def validate(%__MODULE__{state: :valid} = context, forbidden_key_bytes),
+    do: validate_complete(context, forbidden_key_bytes)
+
+  def validate(_context, _forbidden_key_bytes),
+    do: {:error, :client_secret_verifier_configuration_invalid}
+
+  defp validate_complete(context, forbidden_key_bytes) do
     config = [
       keys:
         Enum.map(
@@ -53,7 +83,7 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
       legacy_read: context.legacy_read
     ]
 
-    case validate_config(config, []) do
+    case validate_config(config, forbidden_key_bytes) do
       {:ok, _values} -> {:ok, context}
       {:error, reason} -> {:error, reason}
     end
@@ -81,6 +111,7 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
          reason: nil
        }}
     else
+      {:error, reason} -> {:error, reason}
       _ -> {:error, :client_secret_verifier_configuration_invalid}
     end
   end
@@ -173,6 +204,17 @@ defimpl Inspect, for: Lockspire.Security.ClientSecretVerifier.Context do
   import Inspect.Algebra
 
   def inspect(context, _opts) do
+    reason =
+      if context.reason in [
+           :client_secret_verifier_configuration_invalid,
+           :invalid_options,
+           :invalid_key,
+           :unknown_current,
+           :invalid_current,
+           :invalid_mode_pair,
+           :invalid_mode
+         ], do: context.reason, else: :client_secret_verifier_configuration_invalid
+
     concat([
       "#ClientSecretVerifier.Context<",
       inspect(%{
@@ -181,7 +223,7 @@ defimpl Inspect, for: Lockspire.Security.ClientSecretVerifier.Context do
         current_id: context.current_id,
         write_mode: context.write_mode,
         legacy_read: context.legacy_read,
-        reason: context.reason
+        reason: reason
       }),
       ">"
     ])

@@ -10,7 +10,7 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   alias Lockspire.Protocol.Jar
   alias Lockspire.Protocol.SecurityProfile
   alias Lockspire.Security.ClientSecretVerifier
-  alias Lockspire.Security.Policy
+  alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Storage.Ecto.Repository
 
   @max_assertion_age 600
@@ -39,14 +39,21 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
          opts
        )
        when is_binary(encrypted) and encrypted != "" do
-    result =
-      case Keyword.fetch(opts, :client_secret_verifier_context) do
-        {:ok, context} ->
-          ClientSecretVerifier.open(context, client_id, encrypted, opts)
+    context = Config.client_secret_verifier_context(opts)
 
-        :error ->
-          Policy.unseal_client_secret_jwt_verifier(encrypted, opts)
+    legacy_opts =
+      case context do
+        %Context{state: :absent} ->
+          Keyword.put(opts, :legacy_secret_key_base, Config.secret_key_base())
+
+        %Context{state: :valid, legacy_read: :allow} ->
+          Keyword.put(opts, :legacy_secret_key_base, Config.secret_key_base())
+
+        _invalid_or_rejecting ->
+          opts
       end
+
+    result = ClientSecretVerifier.open(context, client_id, encrypted, legacy_opts)
 
     case result do
       {:ok, secret} ->
