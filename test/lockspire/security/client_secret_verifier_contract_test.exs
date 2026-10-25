@@ -397,7 +397,9 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
     assert bounds["max_payload_base64url_unpadded_bytes"] == 1_398_168
     assert bounds["max_envelope_bytes"] == 1_398_207
 
-    material = Enum.find(context.ledger["cases"], &(&1["case_id"] == "MATERIAL-BOUNDS-AND-API-SCOPE"))
+    material =
+      Enum.find(context.ledger["cases"], &(&1["case_id"] == "MATERIAL-BOUNDS-AND-API-SCOPE"))
+
     assert material["expected"] =~ "1,398,207 ASCII bytes"
 
     invalid = put_in(context.ledger, ["format_bounds", "max_envelope_bytes"], 16_384)
@@ -431,6 +433,7 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
     assert contract["rewrap_atomicity"] =~ "audit failure rolls back update"
 
     invalid = put_in(context.ledger, ["maintenance_contract", "inventory_args"], "unbounded")
+
     assert {:error, :invalid_maintenance_contract} =
              Contract.validate(invalid, context.qualification, context.summary)
 
@@ -459,9 +462,13 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
     assert cases["READER-INTROSPECTION-REVOCATION"]["owner_phase"] == 176
     assert cases["READER-PAR-DEVICE-CIBA"]["expected"] =~ "do not add JWT support"
     assert cases["READER-HS256-AUDIENCE-JTI-EXCLUSIONS"]["expected"] =~ "fresh assertion/JTI"
-    assert cases["ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT"]["expected"] =~ "before first dedicated write"
+
+    assert cases["ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT"]["expected"] =~
+             "before first dedicated write"
+
     assert cases["DISCLOSURE-SENTINELS"]["owner_phase"] == 177
     assert cases["PACKAGES-ADAPTER-DELIVERY"]["owner_phase"] == 178
+
     assert cases["MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY"]["expected"] =~
              "restart a fresh full scan from nil"
   end
