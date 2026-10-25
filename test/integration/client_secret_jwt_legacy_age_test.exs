@@ -40,7 +40,13 @@ defmodule Lockspire.Integration.ClientSecretJwtLegacyAgeTest do
       assert {:ok, %Client{client_id: client_id}} = result
       assert client_id == client.client_id
       assert is_binary(jti) and jti != ""
-      assert Fixtures.effects_snapshot(client_id) == %{used_jtis: 1, tokens: 0, grants: 0, audits: 0}
+
+      assert Fixtures.effects_snapshot(client_id) == %{
+               used_jtis: 1,
+               tokens: 0,
+               grants: 0,
+               audits: 0
+             }
     end
   end
 
@@ -178,6 +184,25 @@ defmodule Lockspire.Integration.ClientSecretJwtLegacyAgeTest do
     {result, _jti, _} = Fixtures.authenticate(client, secret)
     assert {:ok, %Client{client_id: id}} = result
     assert Fixtures.effects_snapshot(id).used_jtis == 1
+  end
+
+  test "LEG175-HASH-MISMATCH is persisted and explicitly non-ready for migration" do
+    %{client: divergent, plaintext_secret: secret} =
+      Fixtures.persisted_client(hash: "sha256:synthetic:divergent")
+
+    assert {:ok, stored} = Repository.fetch_client_by_id(divergent.client_id)
+
+    assert stored.client_secret_jwt_verifier_encrypted ==
+             divergent.client_secret_jwt_verifier_encrypted
+
+    refute Fixtures.secret_hash_matches?(stored.client_secret_hash, secret)
+
+    %{client: missing_hash, plaintext_secret: missing_secret} =
+      Fixtures.persisted_client(hash: nil)
+
+    assert {:ok, stored_missing} = Repository.fetch_client_by_id(missing_hash.client_id)
+    assert is_nil(stored_missing.client_secret_hash)
+    refute Fixtures.secret_hash_matches?(stored_missing.client_secret_hash, missing_secret)
   end
 
   defp assert_case_result({:ok, %Client{}}, :success, _case_id), do: :ok
