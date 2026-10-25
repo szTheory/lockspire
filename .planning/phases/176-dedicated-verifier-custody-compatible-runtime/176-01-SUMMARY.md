@@ -101,6 +101,7 @@ status: complete
 3. **Task 2: RED** - `35300eb6` — test(176-01): cover adversarial verifier envelopes
 4. **Task 2: GREEN** - `600ae224` — feat(176-01): enforce verifier envelope bounds
 5. **Task 1: fixture correction** - `2295b425` — fix(176-01): bind tracer hash to sealed secret
+6. **Task 2: Independent security decoded-cap correction** - `71627f27` — SF-04; see 176-SECURITY-FIX.md and its source-bound acceptance receipt.
 
 ## Files Created/Modified
 

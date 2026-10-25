@@ -116,6 +116,7 @@ status: complete
 2. **Task 1: GREEN** - `1d9ad0d5` — `feat(176-02): cache verifier custody context`
 3. **Task 2: RED** - `cdb57669` — `test(176-02): cover invalid verifier config isolation`
 4. **Task 2: GREEN** - `8a065b60` — `feat(176-02): enforce verifier config isolation`
+5. **Task 1: Independent security configuration corrections** - `904427ef` — SF-01 through SF-03; see 176-SECURITY-FIX.md and its source-bound acceptance receipt.
 
 ## Files Created/Modified
 
