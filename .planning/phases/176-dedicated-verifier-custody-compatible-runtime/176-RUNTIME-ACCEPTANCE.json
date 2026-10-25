@@ -447,14 +447,10 @@
   },
   "ci_exit_code": 0,
   "security_review_disposition": {
-    "status": "requires_correction",
-    "findings_ref": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY-FINDINGS.md",
-    "open_planned_threats": [
-      "T-176-02",
-      "T-176-04",
-      "T-176-06"
-    ],
+    "status": "superseded_by_corrected_acceptance",
     "historical_ci_result_preserved": true,
-    "current_acceptance_complete": false
+    "findings_ref": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY-FINDINGS.md",
+    "current_acceptance_record": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY-FIX-ACCEPTANCE.json",
+    "current_security_report": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY.md"
   }
 }

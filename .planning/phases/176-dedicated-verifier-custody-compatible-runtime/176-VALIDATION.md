@@ -2,7 +2,7 @@
 phase: "176"
 slug: "dedicated-verifier-custody-compatible-runtime"
 status: validated
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: true
 created: "2026-10-25"
 ---
@@ -93,3 +93,15 @@ All scoped library behavior has automated acceptance. Fleet reader/key parity, o
 ## Independent Security Coverage Correction
 
 The first coverage audit reconciled execution artifacts, but independent security probes found three planned threats untested across four mechanisms (SF-01 through SF-04 in 176-SECURITY-FINDINGS.md). Current validation is partial until those regressions are implemented and rerun. Earlier candidate CI remains historical observed test evidence, not proof of the missing controls.
+
+## Corrective Coverage Re-Audit
+
+SF-01 through SF-04 now have direct regressions and independent source probes. The corrective focused suite passed26/0 and full mixci passed at71627f27 with2102fast+231integrationtests, zero failures. The independent security auditor closed22/22planned threats. All14task paths and22ownedcase mappings remain present; unresolved generic probes/prohibitions retain their separate flagged status. Current coverage gaps:0. See176-SECURITY-FIX-ACCEPTANCE.json and176-SECURITY.md.
+
+## Validation Audit 2026-10-25
+
+| Metric | Count |
+|---|---|
+| Gaps found | 3 |
+| Resolved | 3 |
+| Escalated | 0 |

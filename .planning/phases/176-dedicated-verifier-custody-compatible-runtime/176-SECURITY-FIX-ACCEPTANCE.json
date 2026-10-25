@@ -38,18 +38,18 @@
   },
   "finding_regressions": {
     "SF01": [
-      "test/lockspire/config_client_secret_verifier_test.exs:125 — only the documented verifier module key activates startup configuration",
-      "test/lockspire/config_client_secret_verifier_test.exs:135 — startup resolves each canonical configuration state including legacy rejection"
+      "test/lockspire/config_client_secret_verifier_test.exs:125 \u2014 only the documented verifier module key activates startup configuration",
+      "test/lockspire/config_client_secret_verifier_test.exs:135 \u2014 startup resolves each canonical configuration state including legacy rejection"
     ],
     "SF02": [
-      "test/lockspire/config_client_secret_verifier_test.exs:154 — complete context overrides reject hidden, missing, malformed, and extra key entries"
+      "test/lockspire/config_client_secret_verifier_test.exs:154 \u2014 complete context overrides reject hidden, missing, malformed, and extra key entries"
     ],
     "SF03": [
-      "test/lockspire/config_client_secret_verifier_test.exs:197 — improper configured key lists are retained as invalid without raising",
-      "test/integration/client_secret_verifier_configuration_test.exs:53 — malformed configuration remains local while persisted hash auth works"
+      "test/lockspire/config_client_secret_verifier_test.exs:197 \u2014 improper configured key lists are retained as invalid without raising",
+      "test/integration/client_secret_verifier_configuration_test.exs:53 \u2014 malformed configuration remains local while persisted hash auth works"
     ],
     "SF04": [
-      "test/lockspire/security/client_secret_verifier_test.exs:185 — authenticated native and migrated secrets enforce the one MiB decoder cap"
+      "test/lockspire/security/client_secret_verifier_test.exs:185 \u2014 authenticated native and migrated secrets enforce the one MiB decoder cap"
     ]
   },
   "phase175_frozen_inputs": {
@@ -91,11 +91,18 @@
       "log": "/tmp/lockspire-176-security-ci-71627f27-s2.log"
     }
   ],
-  "independent_reaudit": "pending",
-  "security_findings_closed": false,
+  "independent_reaudit": {
+    "status": "secured",
+    "source_sha": "71627f27cdd996cba37122af86a033474e6cd1ff",
+    "threats_closed": 22,
+    "threats_open": 0,
+    "report": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-SECURITY.md"
+  },
+  "security_findings_closed": true,
   "phase_complete": false,
   "residuals": [
     "Independent security re-audit remains pending.",
     "The successful full CI run used reduced scheduler concurrency (+S 2) after higher-concurrency attempts exhausted PostgreSQL connections."
-  ]
+  ],
+  "independent_reaudit_at_receipt_creation": "pending"
 }
