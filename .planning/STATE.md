@@ -4,11 +4,11 @@ milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 174
 status: completed
-stopped_at: Phase 174 complete — all phases complete
-last_updated: "2026-10-25T05:48:17.898Z"
+stopped_at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
+last_updated: "2026-10-25T05:51:38.332Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 174 complete
-state_head: 145883b6bda3bd9c2238c16f62c9101d333f1407
+state_head: 230ee4082743b1aaff6c9a2a8ca26e6b7fbc2985
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,11 +21,11 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
+See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 174: packaged proof for the two selected corrections, contributor/required CI gates and exact delivery handoff; preserve profile limits and judgment flags.
+**Current focus:** v1.47 implementation verified: finish milestone audit, reviewed PR #140 integration and fresh exact-main acceptance; preserve all evidence limits and keep the next milestone unstarted.
 
 ## Current Position
 
@@ -34,11 +34,11 @@ Plan: Not started
 Status: All phases complete
 Last activity: 2026-10-25 — Phase 174 complete
 
-Progress: [██████████] 100% — 3/4 phases complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews; Phase 174 ready to plan.
+Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all14 requirements verified; delivery/main acceptance pending.
 
 ## Performance Metrics
 
-v1.47: 3 completed phases, 6 completed plans. Phase 173 passed six behavioral truths with two non-authoritative judgment flags. Phase 174 packaged proof and delivery is next.
+v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phase 174 passed23/23; package12/12; final candidate local CI and seven hosted jobs pass. Milestone audit and reviewed main delivery are next.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -121,10 +121,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T03:28:59.513Z
-Stopped at: Phase 174 complete — all phases complete
-Resume file: None
-Next: Phase 174 plan 04: run the candidate contributor/CI gates and complete the dated delivery handoff, preserving all remaining blockers and keeping the next milestone unstarted.
+Last session: 2026-10-25T05:51:37.675Z
+Stopped at: Phase 174 verified complete; canonical milestone audit and reviewed main delivery next
+Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md
+Next: Complete the canonical v1.47 milestone audit, update/review PR #140 at the final head, then integrate through the protected train and obtain fresh exact-main acceptance. Do not start SEC-01 yet.
 
 ### Blockers
 

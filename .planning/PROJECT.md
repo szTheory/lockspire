@@ -34,6 +34,8 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Entry condition satisfied — Phase 171:** Reviewed cumulative delivery in PR #138 and the original exact-main receipt establish accepted base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, with preserved history and delegated resource custody. The implementation branch remains distinct from accepted main. [Phase 171 verification](phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md) passed 10/10; its frozen twelve-case matrix reuses ten proofs and assigns A171-003 to Phase 172 and P171-005 to Phase 173. Optional external profiles remain unlaunched and non-certifying; later milestone delivery/publication remains separate.
 
+**Implementation verified — Phase 174 (2026-10-25):** All four phases, ten plans and fourteen requirements are verified. The two production corrections are unsupported response-mode disposition and stored pushed-request authority. Selected package proof passed 12/12, final candidate local/hosted gates passed, and source/security reviews are closed with nine non-authoritative judgment recommendations retained across the four phases. The canonical milestone audit and reviewed PR #140 integration/fresh main acceptance remain the delivery boundary; no next product milestone or publication is selected.
+
 **Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
 
 ## Standing Planning and Delivery Posture
@@ -389,11 +391,13 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-- [ ] Bind regressions, packaged proof, security/candidate gates and clean delivery/rolling-roadmap handoff to exact evidence (CPROOF-01..02, DELIV-01..02).
+No further product implementation is selected. Complete the reviewed PR, milestone audit and fresh main acceptance before starting another milestone.
 
 See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
+
+- ✓ Source-bound selected authorization/PAR proof and resumable delivery handoff — v1.47 CPROOF-01..02, DELIV-01..02, Phase 174; 23/23 goal verification, exact twelve-case package receipt, 17 declared mitigations closed, clean ten-file source review, complete local candidate CI and seven hosted jobs at `9b8cf54d`. PR #140 remains open; accepted main and publication are not implied.
 
 - ✓ Selected pushed-request authority, retained lifecycle/required-PAR and configured metadata — v1.47 PARB-01..03, Phase 173; six verified behavioral truths, actual real-PAR RED/GREEN, 132 passing selected regression tests, five verified mitigations and one documented low accepted boundary. Two non-authoritative judgment prohibitions retain prominent human-review recommendations; external profiles remain unlaunched.
 
@@ -647,6 +651,8 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Preserve local/hosted evidence limits and historical verification paths at archival | Avoid converting local success or relocation into unsupported CI or new runtime claims | ✓ Good — v1.46 audit and closeout projection |
 | Select v1.47 core interoperability with a rolling evidence-led milestone sequence | User approved research/fan-out, adversarial synthesis, small dependency trees and clean green-main/worktree boundaries; settle consequential decisions upstream and stop at diminishing returns | Adopted 2026-10-24; MILESTONE-GUIDE.txt and MILESTONE-ARC.md own durable posture/ranking |
 | Keep SEC-01 separate as provisional v1.48 and later scope conditional | Avoid mixing protocol corrections with persistence/key migration; existing token coverage should not be rebuilt without evidence | Adopted 2026-10-24; re-rank at milestone boundaries |
+| Keep source/proof/verifier/audit references directed and preserve actual executed identities | Avoid circular fingerprints, metadata restamping and unsupported proof promotion | Phase 174: reviewed applicability and exact package/candidate/CI identities |
+| Preserve bounded redacted failure diagnostics before owned cleanup and retain original exits | Make opaque floor failures diagnosable without leaking child logs or masking failure | Phase 174: existing helpers, ten focused wrapper tests and final hosted floor proof |
 
 ## Evolution
 
@@ -669,4 +675,4 @@ This document evolves at phase transitions and milestone boundaries.
 6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 after Phase 173 pushed-request authority correction and transition to Phase 174*
+*Last updated: 2026-10-25 after Phase 174 verified completion; reviewed main delivery remains pending*

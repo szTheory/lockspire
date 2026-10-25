@@ -50,7 +50,7 @@ patterns-established:
   - "Record candidate, package-source, CI-run, and accepted-main identities as separate boundaries."
   - "Later SDK bookkeeping receives scoped applicability review; it does not restamp the earlier candidate snapshot or rerun CI solely for metadata."
 
-requirements-completed: [DELIV-02]
+requirements-completed: [DELIV-01, DELIV-02]
 coverage:
   - id: D1
     description: Exact immutable-candidate local contributor checks and canonical seven-job hosted CI graph
@@ -159,3 +159,7 @@ The parent owns the phasewide verification, full security threat assessment, fin
 - Candidate gate JSON parses; candidate, local-exit, frozen-input and 7/7 canonical-job assertions pass.
 - The summary, candidate gate record, delivery handoff and scoped dispositions exist; all 22 commits listed above are ancestors of the candidate SHA.
 - `git diff --check` passes for the report changes.
+
+## Parent completion addendum
+
+After the final replacement candidate gates, the proper Phase 174 verifier passed 23/23 must-haves with zero behavior-unverified items. The SDK completed Phase 174 and all four milestone requirements are now complete. DELIV-01 is recorded here only after those actual gates; earlier pending states remain historical. The canonical milestone audit and PR/main delivery remain separate normal train steps, and no accepted-main or publication result is claimed.
