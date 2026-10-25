@@ -43,7 +43,17 @@
   3. Implementers can inspect a frozen finite ledger covering every writer/reader, stable client-identity sealing, text format/key configuration, missing-key behavior, supported custom-store transaction/capability contract, rollout/rollback states, expected outcomes and automated proof owners.
   4. Unresolved material policy/API/support changes stop dependent planning; evidence that invalidates the recommended no-schema/no-new-dependency scope produces an explicit GSD revision rather than an unreviewed expansion. Historical Phase 142/143 and immutable receipts remain intact.
 
-**Plans**: To be created by `$gsd-plan-phase 175` after phase discussion.
+**Plans**: 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 175-01-PLAN.md — Reconcile retained lineage and custody; establish fresh exact-main baseline.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 175-02-PLAN.md — Qualify persisted legacy age, public metadata and helper compatibility; resolve material policy gates.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 175-03-PLAN.md — Freeze the finite custody/compatibility contract and reconcile final accepted source.
 
 ### Phase 176: Dedicated Verifier Custody & Compatible Runtime
 
