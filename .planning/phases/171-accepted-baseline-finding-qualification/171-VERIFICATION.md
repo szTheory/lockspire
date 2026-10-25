@@ -1,6 +1,6 @@
 ---
 phase: 171-accepted-baseline-finding-qualification
-verified: 2026-10-25T02:43:07Z
+verified: 2026-10-25T03:40:28Z
 status: passed
 score: 10/10 must-haves verified
 covered_files:
@@ -29,7 +29,6 @@ covered_files:
   - .planning/phases/171-accepted-baseline-finding-qualification/171-SECURITY.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-VALIDATION.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-qualification_probe_test.exs
-  - .planning/phases/174-packaged-proof-delivery-handoff/174-DISPOSITIONS.md
   - .planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json
@@ -54,7 +53,7 @@ covered_files:
   - test/support/config_case.ex
   - test/support/test_account_resolver.ex
   - test/test_helper.exs
-covered_digest: "v3:sha256:c326dee05e68b35870b816c3ef28aa7db3b19da6f73765e0395cf620fd797ee8"
+covered_digest: "v3:sha256:74c2de9f60f02a1816fda253eddfd6e5f6e2afaef2a9473f5ba2b1c01adb157a"
 previous_covered_files:
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
@@ -115,9 +114,9 @@ re_verification:
 # Phase 171: Accepted Baseline & Finding Qualification Verification Report
 
 **Phase Goal:** Maintainers can identify an accepted implementation base and a finite set of current, supported cases whose expected outcomes and owners are settled before dependent planning.
-**Verified:** 2026-10-25T02:43:07Z
+**Verified:** 2026-10-25T03:40:28Z
 **Status:** passed
-**Re-verification:** Yes — evidence/fingerprint refresh after Phase 174 source and package proofs
+**Re-verification:** Yes — proper-owner freshness reassessment after the Phase 174 final-operations append
 
 ## Goal Achievement
 
@@ -157,7 +156,7 @@ None. The two qualified protocol corrections remain assigned to Phases 172/173 a
 | Phase 174 `174-SOURCE-PROOF.json`, `174-PROOF-INDEX.json` | Current source-owner proof for the 12 frozen cases | ✓ VERIFIED | All four run records are green (11, 5, 94, and 22 executed; 0 failures/skips); proof-index test hashes match current source-owner test files at source revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`. |
 | Phase 174 `174-PACKAGE-PROOF.json`, `174-PROOF-INDEX.json` | Bounded local package-to-loopback-host receipt and its ledger/source linkage | ✓ VERIFIED as bounded evidence | Current receipt SHA-256 `518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5` and index SHA-256 `288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72` bind 12 selected scenarios at revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`; cleanup fields are true. This records only checkout-package-to-loopback-host observations. |
 | Typed Phase 173 source-owner applicability verdict | Read-only applicability review of the Phase 174 fixture-only revision | ✓ VERIFIED as judgment evidence | Direct inspection of the Phase 173 typed verifier report and commit `38a19a292da7c90352494e4f03ade7c10e25ff82` word diff found only line wrapping/indentation changes in two clean-room fixture files, with no Elixir tokens, branches, or values changed. The Phase 173 source-owner GREEN remains tied to original revision `a348bf…`; the package receipt/index are separately bound to `f01b6ef…`. This derivative audit is excluded from the Phase 171 fingerprint because it hashes this report. |
-| Phase 174 `174-DISPOSITIONS.md`, Phase 171 plans 01/03 | Scoped disposition of three Phase 171 prohibition declarations | ✓ PRESENT — judgment only | Three declarations are `resolved` at judgment tier with explicit `unverified-prohibition — human review recommended` flags. They are not authoritative verdicts, human confirmation, or wired mechanical checks. |
+| Phase 171 plans 01/03 and dated lifecycle rationale | Scoped disposition of three Phase 171 prohibition declarations | ✓ PRESENT — judgment only | Three declarations are `resolved` at judgment tier with explicit `unverified-prohibition — human review recommended` flags. They are not authoritative verdicts, human confirmation, or wired mechanical checks. |
 
 All plan-declared artifacts passed the GSD CLI checks: Plan 01 4/4, Plan 02 2/2, Plan 03 6/6, Plan 04 6/6. No UI or dynamic data-rendering artifact is in scope; Level 4 UI data-flow tracing is not applicable.
 
@@ -233,9 +232,13 @@ No unreferenced debt marker or implementation stub was found in the modified imp
 
 ### Unverified Boundaries and Judgment Flags
 
-Both optional OIDF/FAPI wrappers remain unlaunched; their external profile behavior is unavailable. The Phase 174 source proof remains at source-owner revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`; every covered source/test hash still matches current bytes. The Phase 174 package receipt/index are separately bound to checkout revision `f01b6ef77889d38b032944eb37069d6d4b3b3171` and record only local checkout-package-to-loopback-host behavior. The typed Phase 173 owner assessed intervening commit `38a19a29` as line-wrapping/indentation only, with no Elixir tokens, branches, or values changed. These facts do not change the original exact-main authority or Phase 171 RED observation. Hosted candidate CI, accepted-main proof at the package revision, publication, certification, and public issuer-origin/TLS/proxy/browser reachability remain outside the evidence.
+Both optional OIDF/FAPI wrappers remain unlaunched; their external profile behavior is unavailable. The Phase 174 source proof remains at source-owner revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`; every covered source/test hash still matches current bytes. The Phase 174 package receipt/index are separately bound to checkout revision `f01b6ef77889d38b032944eb37069d6d4b3b3171` and record only local checkout-package-to-loopback-host behavior. The typed Phase 173 owner assessed intervening commit `38a19a29` as line-wrapping/indentation only, with no Elixir tokens, branches, or values changed. These facts do not change the original exact-main authority or Phase 171 RED observation. Phase 174's later hosted candidate CI is recorded separately above; it does not establish accepted-main proof at the package revision, publication, certification, or public issuer-origin/TLS/proxy/browser reachability.
 
-The three Phase 171 prohibition declarations are scoped as judgment-tier `resolved` in `174-DISPOSITIONS.md` and their plans, each retaining `unverified-prohibition — human review recommended`. Those judgments are non-authoritative and are not human confirmation or mechanical enforcement. The generic fallback assumptions A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified and flagged-unverified; the Phase 174 proof does not resolve them.
+The three Phase 171 prohibition declarations remain scoped as `resolved` at judgment tier in the current Phase 171 plan lifecycle entries: (1) do not present the feature checkout or supplemental receipt as accepted main, certification, or selected protocol pass; (2) do not manufacture corrective work or mark invalidated slices passed; and (3) do not widen support or move host account/login/session/product-policy ownership into Lockspire. Each retains `unverified-prohibition — human review recommended`; these are non-authoritative agent judgments, not human confirmation or wired enforcement. The Phase 174 final-operations reviewer append addresses Phase 174 attribution and host-ownership controls, and explicitly reaffirms the Phase 171 count of three; it does not alter these declarations, their scoped evidence, or Phase 171's selected scope. The generic fallback assumptions A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified and flagged-unverified; no Phase 174 proof resolves them.
+
+### Freshness Reassessment — Phase 174 Final Operations
+
+`174-CANDIDATE-GATES.json` records local `mix ci` exit 0 on attempt 2 at candidate `ec6361d9840f2adfda85116d72fec0efe9065c6c`; hosted run `40156252600` completed attempt 2 with all seven canonical jobs successful at that same candidate. The first hosted attempt's minimum-supported Elixir/OTP job failed and remains separately recorded. PR #140 is still open; no merge, new accepted-main receipt, publication, or certification is established. The appended reviewer reaffirms the Phase 171/172 prohibition counts (3/2) without upgrading their judgment tier. These Phase 174 delivery outcomes do not change the accepted-main receipt, the original Phase 171 RED observations, or the frozen qualification ledger. The source proof remains at `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`, and the package proof remains separately bound to `f01b6ef77889d38b032944eb37069d6d4b3b3171`; all indexed source-owner test hashes still match current bytes. There are no source, test, package-proof, or CI-result changes after the candidate SHA. The appendable `174-DISPOSITIONS.md` is excluded from this report's current fingerprint because its operations appendix is derivative completion commentary; the Phase 171 declaration, judgment lifecycle rationale, and original/current proof identities remain captured in the Phase 171 plans, ledger, source proof, package proof, and proof index. This scoped refresh does not assess Phase 174's separate phasewide security gate.
 
 ### Human Verification Required
 
@@ -243,9 +246,9 @@ N/A — this planning/evidence foundation phase has no user-facing behavior. The
 
 ### Gaps Summary
 
-The prior report was `passed` at 10/10, and current evidence supports that verdict. Source-owner test identities match the Phase 174 freeze revision; the bounded local package receipt records its 12 selected scenarios. The original accepted-main receipt, historical qualification RED, unavailable external profiles, and frozen matrix remain unchanged. Three judgment-tier prohibitions retain the prominent `unverified-prohibition — human review recommended` flag without becoming an awaited human gate. A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified and are reported as such. No candidate CI, accepted-main-at-package-revision, publication, certification, external profile pass, or human confirmation is claimed.
+The prior report was `passed` at 10/10, and current evidence supports that verdict. Source-owner test identities match the Phase 174 freeze revision; the bounded local package receipt records its 12 selected scenarios. The original accepted-main receipt, historical qualification RED, unavailable external profiles, and frozen matrix remain unchanged. Three judgment-tier prohibitions retain the prominent `unverified-prohibition — human review recommended` flag without becoming an awaited human gate. A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified and are reported as such. Separate Phase 174 candidate CI is documented above; it does not establish accepted-main-at-package-revision, publication, certification, an external profile pass, or human confirmation.
 
 ---
 
-_Verified: 2026-10-25T02:43:07Z_
+_Verified: 2026-10-25T03:40:28Z_
 _Verifier: the agent (gsd-verifier)_
