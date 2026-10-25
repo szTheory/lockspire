@@ -9,6 +9,7 @@ defmodule Lockspire.Security.ClientSecretVerifierAgeTest do
   @age_ms 86_400_000
 
   test "migration preparation exposes the planned pure reader API" do
+    Code.ensure_loaded!(ClientSecretVerifier)
     assert function_exported?(ClientSecretVerifier, :prepare_migrated, 5)
   end
 

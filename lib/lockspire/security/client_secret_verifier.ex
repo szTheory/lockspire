@@ -2,6 +2,7 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   @moduledoc false
 
   alias Lockspire.Security.ClientSecretVerifier.Context
+  alias Lockspire.Security.ClientSecretVerifier.Legacy
   alias Lockspire.Security.Policy
 
   @header "LSCV1"
@@ -96,6 +97,53 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     _ -> {:error, :client_secret_verifier_unavailable}
   end
 
+  @spec prepare_migrated(Context.t(), term(), term(), term(), keyword()) ::
+          {:ok, binary()} | {:error, atom()}
+  def prepare_migrated(context, client_id, legacy_text, expected_hash, opts) when is_list(opts) do
+    with {:ok, %Context{state: :valid, write_mode: :dedicated} = context} <-
+           Context.validate(context),
+         :ok <- validate_identity(client_id),
+         true <- is_binary(legacy_text) and not String.starts_with?(legacy_text, @family),
+         now_ms when is_integer(now_ms) <-
+           Keyword.get(opts, :now_ms, System.os_time(:millisecond)),
+         legacy_key when is_binary(legacy_key) and legacy_key != "" <-
+           legacy_key(opts),
+         {:ok, %{data: secret, signed_at_ms: signed_at_ms, deadline_ms: deadline_ms}} <-
+           Legacy.authenticated_metadata(legacy_text, legacy_key, now_ms),
+         :ok <- validate_secret(secret),
+         :ok <- verify_expected_hash(expected_hash, secret),
+         {:ok, key} <- fetch_current_key(context, context.current_id) do
+      seal_migrated(context.current_id, key, client_id, secret, signed_at_ms, deadline_ms)
+    else
+      {:ok, %Context{state: :invalid}} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      {:ok, %Context{state: :absent}} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      {:ok, %Context{write_mode: :legacy}} ->
+        {:error, :client_secret_verifier_key_missing}
+
+      {:error, reason}
+      when reason in [
+             :client_secret_verifier_configuration_invalid,
+             :client_secret_verifier_identity_missing,
+             :client_secret_verifier_unsupported_format,
+             :client_secret_verifier_unavailable,
+             :client_secret_verifier_key_missing
+           ] ->
+        {:error, reason}
+
+      false ->
+        {:error, :client_secret_verifier_unsupported_format}
+
+      _ ->
+        {:error, :client_secret_verifier_unsupported_format}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_unsupported_format}
+  end
+
   defp open_value(
          %Context{state: :valid, legacy_read: legacy_read} = context,
          client_id,
@@ -103,7 +151,7 @@ defmodule Lockspire.Security.ClientSecretVerifier do
          opts
        ) do
     if String.starts_with?(encrypted, @family) do
-      open_dedicated(context, client_id, encrypted)
+      open_dedicated(context, client_id, encrypted, opts)
     else
       open_legacy(legacy_read, encrypted, opts)
     end
@@ -112,7 +160,7 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   defp open_value(%Context{state: :absent}, _client_id, encrypted, opts),
     do: open_legacy(:allow, encrypted, opts)
 
-  defp open_dedicated(context, client_id, encrypted) do
+  defp open_dedicated(context, client_id, encrypted, opts) do
     with :ok <- validate_encoded_envelope(encrypted),
          {:ok, key_id, payload} <- parse_envelope(encrypted),
          {:ok, key} <- fetch_envelope_key(context, key_id),
@@ -133,7 +181,12 @@ defmodule Lockspire.Security.ClientSecretVerifier do
              tag,
              false
            ),
-         {:ok, secret} <- decode_native_plaintext(plaintext) do
+         {:ok, secret, age} <- decode_plaintext(plaintext),
+         :ok <-
+           validate_stored_age(
+             age,
+             Keyword.get(opts, :verifier_now_ms, System.os_time(:millisecond))
+           ) do
       {:ok, secret}
     else
       false -> {:error, :client_secret_verifier_unsupported_format}
@@ -157,6 +210,42 @@ defmodule Lockspire.Security.ClientSecretVerifier do
 
   defp open_legacy(_legacy_read, _encrypted, _opts),
     do: {:error, :client_secret_verifier_configuration_invalid}
+
+  defp legacy_key(opts) do
+    Keyword.get(opts, :legacy_secret_key_base) || Keyword.get(opts, :secret_key_base)
+  end
+
+  defp verify_expected_hash(hash, secret)
+       when is_binary(hash) do
+    if Policy.verify_client_secret(hash, secret),
+      do: :ok,
+      else: {:error, :client_secret_verifier_unavailable}
+  end
+
+  defp verify_expected_hash(_hash, _secret),
+    do: {:error, :client_secret_verifier_unavailable}
+
+  defp seal_migrated(key_id, key, client_id, secret, signed_at_ms, deadline_ms) do
+    iv = :crypto.strong_rand_bytes(@iv_bytes)
+
+    plaintext =
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 1, signed_at_ms::signed-big-64,
+        deadline_ms::signed-big-64>>
+
+    {ciphertext, tag} =
+      :crypto.crypto_one_time_aead(
+        :aes_256_gcm,
+        key,
+        iv,
+        plaintext,
+        aad(key_id, client_id),
+        @tag_bytes,
+        true
+      )
+
+    payload = Base.url_encode64(iv <> tag <> ciphertext, padding: false)
+    {:ok, @header <> "." <> key_id <> "." <> payload}
+  end
 
   defp fetch_current_key(context, key_id) do
     case Map.fetch(context.keys, key_id) do
@@ -199,13 +288,28 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     end
   end
 
-  defp decode_native_plaintext(
+  defp decode_plaintext(
          <<1, secret_length::unsigned-big-32, secret::binary-size(secret_length), 0>>
        )
        when secret_length > 0,
-       do: {:ok, secret}
+       do: {:ok, secret, :native}
 
-  defp decode_native_plaintext(_plaintext), do: {:error, :client_secret_verifier_unavailable}
+  defp decode_plaintext(
+         <<1, secret_length::unsigned-big-32, secret::binary-size(secret_length), 1,
+           signed_at_ms::signed-big-64, deadline_ms::signed-big-64>>
+       )
+       when secret_length > 0 and deadline_ms >= signed_at_ms,
+       do: {:ok, secret, {:migrated, signed_at_ms, deadline_ms}}
+
+  defp decode_plaintext(_plaintext), do: {:error, :client_secret_verifier_unavailable}
+
+  defp validate_stored_age(:native, _now_ms), do: :ok
+
+  defp validate_stored_age({:migrated, signed_at_ms, deadline_ms}, now_ms)
+       when is_integer(now_ms) and signed_at_ms <= now_ms and deadline_ms >= now_ms,
+       do: :ok
+
+  defp validate_stored_age(_age, _now_ms), do: {:error, :client_secret_verifier_unavailable}
 
   defp validate_identity(client_id)
        when is_binary(client_id) and byte_size(client_id) > 0 and
