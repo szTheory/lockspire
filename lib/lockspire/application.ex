@@ -49,10 +49,11 @@ defmodule Lockspire.Application do
   @spec resolve_client_secret_verifier() ::
           {:ok, Lockspire.Security.ClientSecretVerifier.Context.t()}
   def resolve_client_secret_verifier do
+    alias Lockspire.Security.ClientSecretVerifier
     alias Lockspire.Security.ClientSecretVerifier.Context
 
     presence =
-      case Application.fetch_env(:lockspire, Context) do
+      case Application.fetch_env(:lockspire, ClientSecretVerifier) do
         {:ok, config} -> {:present, config}
         :error -> :absent
       end

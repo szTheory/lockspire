@@ -3,12 +3,14 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
 
   alias Lockspire.Config
   alias Lockspire.Security.ClientSecretVerifier
+  alias Lockspire.Security.ClientSecretVerifier, as: VerifierConfig
   alias Lockspire.Security.ClientSecretVerifier.Context
 
   setup do
     key = Config.client_secret_verifier_cache_key()
     previous_cache = :persistent_term.get(key, :missing)
-    previous_setting = Application.fetch_env(:lockspire, Context)
+    previous_setting = Application.fetch_env(:lockspire, VerifierConfig)
+    previous_context_setting = Application.fetch_env(:lockspire, Context)
 
     on_exit(fn ->
       case previous_cache do
@@ -17,6 +19,11 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
       end
 
       case previous_setting do
+        {:ok, value} -> Application.put_env(:lockspire, VerifierConfig, value)
+        :error -> Application.delete_env(:lockspire, VerifierConfig)
+      end
+
+      case previous_context_setting do
         {:ok, value} -> Application.put_env(:lockspire, Context, value)
         :error -> Application.delete_env(:lockspire, Context)
       end
@@ -40,15 +47,29 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
   end
 
   defp resolve(config) do
-    Application.put_env(:lockspire, Context, config)
+    Application.put_env(:lockspire, VerifierConfig, config)
     Lockspire.Application.resolve_client_secret_verifier()
+  end
+
+  defp independent_envelope(key_id, key, client_id, secret) do
+    iv = :crypto.strong_rand_bytes(12)
+    plaintext = <<1, byte_size(secret)::unsigned-big-32, secret::binary, 0>>
+
+    aad =
+      "lockspire-client-secret-jwt-verifier" <>
+        <<0>> <> "LSCV1" <> <<0>> <> key_id <> <<0>> <> client_id
+
+    {ciphertext, tag} =
+      :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, plaintext, aad, 16, true)
+
+    "LSCV1." <> key_id <> "." <> Base.url_encode64(iv <> tag <> ciphertext, padding: false)
   end
 
   test "startup retains absent, valid, and invalid-present settings as distinct states" do
     Application.put_env(:lockspire, :non_keyword_host_option, [:keep, :opaque])
     on_exit(fn -> Application.delete_env(:lockspire, :non_keyword_host_option) end)
 
-    Application.delete_env(:lockspire, Context)
+    Application.delete_env(:lockspire, VerifierConfig)
 
     assert {:ok, %Context{state: :absent}} =
              Lockspire.Application.resolve_client_secret_verifier()
@@ -67,7 +88,7 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
 
   test "application environment edits and concurrent reads cannot hot reload the snapshot" do
     assert {:ok, %Context{state: :valid} = snapshot} = resolve(config("first"))
-    Application.put_env(:lockspire, Context, config("second", write_mode: :legacy))
+    Application.put_env(:lockspire, VerifierConfig, config("second", write_mode: :legacy))
 
     reads = for _ <- 1..32, do: Task.async(fn -> Config.client_secret_verifier_context() end)
     assert Enum.all?(Task.await_many(reads), &(&1 == snapshot))
@@ -77,7 +98,7 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
 
   test "a cache miss fails diagnostically without resolving mutable application env" do
     :persistent_term.erase(Config.client_secret_verifier_cache_key())
-    Application.put_env(:lockspire, Context, config("ambient"))
+    Application.put_env(:lockspire, VerifierConfig, config("ambient"))
 
     assert %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid} =
              Config.client_secret_verifier_context()
@@ -102,6 +123,94 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
              Config.client_secret_verifier_context(
                client_secret_verifier_context: {:present, partial}
              )
+  end
+
+  test "only the documented verifier module key activates startup configuration" do
+    Application.delete_env(:lockspire, VerifierConfig)
+    Application.put_env(:lockspire, Context, config("wrong-key"))
+
+    assert {:ok, %Context{state: :absent}} =
+             Lockspire.Application.resolve_client_secret_verifier()
+  end
+
+  test "startup resolves each canonical configuration state including legacy rejection" do
+    Application.delete_env(:lockspire, VerifierConfig)
+
+    assert {:ok, %Context{state: :absent}} =
+             Lockspire.Application.resolve_client_secret_verifier()
+
+    assert {:ok, %Context{state: :invalid}} = resolve(nil)
+
+    assert {:ok, %Context{state: :valid, write_mode: :legacy, current_id: "primary"}} =
+             resolve(config("staged-startup", write_mode: :legacy))
+
+    assert {:ok, %Context{state: :valid, write_mode: :dedicated, legacy_read: :allow}} =
+             resolve(config("allow-startup"))
+
+    assert {:ok, %Context{state: :valid, write_mode: :dedicated, legacy_read: :reject}} =
+             resolve(config("reject-startup", legacy_read: :reject))
+  end
+
+  test "complete context overrides reject hidden, missing, malformed, and extra key entries" do
+    visible_key = :crypto.strong_rand_bytes(32)
+    hidden_key = Config.key_encryption_keyset().keys |> Map.values() |> hd()
+    {:ok, %Context{} = base} = Context.resolve({:present, config(visible_key)}, [hidden_key])
+
+    hidden_context = %Context{base | keys: Map.put(base.keys, "hidden", hidden_key)}
+
+    hidden_envelope =
+      independent_envelope("hidden", hidden_key, "override-client", "ordinary-secret")
+
+    invalid_hidden =
+      Config.client_secret_verifier_context(client_secret_verifier_context: hidden_context)
+
+    assert invalid_hidden.state == :invalid
+
+    assert ClientSecretVerifier.open(invalid_hidden, "override-client", hidden_envelope, []) ==
+             {:error, :client_secret_verifier_configuration_invalid}
+
+    listed_hidden_context = %Context{
+      base
+      | keys: Map.put(base.keys, "hidden", hidden_key),
+        key_ids: ["primary", "hidden"]
+    }
+
+    assert Config.client_secret_verifier_context(
+             client_secret_verifier_context: listed_hidden_context
+           ).state == :invalid
+
+    invalid_contexts = [
+      %Context{base | keys: Map.delete(base.keys, "primary")},
+      %Context{base | key_ids: ["primary", "missing"]},
+      %Context{base | key_ids: ["bad id"]},
+      %Context{base | keys: %{"primary" => :not_binary}},
+      %Context{base | keys: %{"primary" => :crypto.strong_rand_bytes(31)}},
+      %Context{base | keys: %{"primary" => visible_key, "hidden" => hidden_key}}
+    ]
+
+    for candidate <- invalid_contexts do
+      assert Config.client_secret_verifier_context(client_secret_verifier_context: candidate).state ==
+               :invalid
+    end
+  end
+
+  test "improper configured key lists are retained as invalid without raising" do
+    malformed = [
+      keys: [{"primary", encoded("malformed")} | :improper_tail],
+      current: "primary",
+      write_mode: :dedicated,
+      legacy_read: :allow
+    ]
+
+    Application.put_env(:lockspire, VerifierConfig, malformed)
+
+    assert {:ok, %Context{state: :invalid}} =
+             Lockspire.Application.resolve_client_secret_verifier()
+
+    context = Config.client_secret_verifier_context()
+
+    assert ClientSecretVerifier.seal(context, "client", "secret") ==
+             {:error, :client_secret_verifier_configuration_invalid}
   end
 
   test "staged keys including a current ID retain legacy writes" do

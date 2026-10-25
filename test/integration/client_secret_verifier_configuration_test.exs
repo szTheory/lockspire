@@ -17,6 +17,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierConfigurationTest do
   alias Lockspire.Domain.Client
   alias Lockspire.Protocol.ClientAuth
   alias Lockspire.Security.ClientSecretVerifier
+  alias Lockspire.Security.ClientSecretVerifier, as: VerifierConfig
   alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.TestSupport.ClientSecretVerifierFixtures, as: Fixtures
@@ -32,7 +33,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierConfigurationTest do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Lockspire.TestRepo)
     cache_key = Config.client_secret_verifier_cache_key()
     previous_cache = :persistent_term.get(cache_key, :missing)
-    previous_setting = Application.fetch_env(:lockspire, Context)
+    previous_setting = Application.fetch_env(:lockspire, VerifierConfig)
 
     on_exit(fn ->
       case previous_cache do
@@ -41,8 +42,8 @@ defmodule Lockspire.Integration.ClientSecretVerifierConfigurationTest do
       end
 
       case previous_setting do
-        {:ok, value} -> Application.put_env(:lockspire, Context, value)
-        :error -> Application.delete_env(:lockspire, Context)
+        {:ok, value} -> Application.put_env(:lockspire, VerifierConfig, value)
+        :error -> Application.delete_env(:lockspire, VerifierConfig)
       end
     end)
 
@@ -78,11 +79,18 @@ defmodule Lockspire.Integration.ClientSecretVerifierConfigurationTest do
     assert Fixtures.secret_hash_matches?(before.client_secret_hash, jwt.plaintext_secret)
     effects_before = Fixtures.effects_snapshot(jwt.client.client_id)
 
-    Application.put_env(:lockspire, Context, keys: [{@sentinel, @sentinel}])
+    Application.put_env(
+      :lockspire,
+      VerifierConfig,
+      keys: [{"primary", @sentinel} | :improper_tail],
+      current: "primary",
+      write_mode: :dedicated,
+      legacy_read: :allow
+    )
 
     log =
       capture_log(fn ->
-        assert {:ok, %Context{state: :invalid, reason: :invalid_options} = context} =
+        assert {:ok, %Context{state: :invalid, reason: :invalid_key} = context} =
                  Lockspire.Application.resolve_client_secret_verifier()
 
         refute inspect(context) =~ @sentinel

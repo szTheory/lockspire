@@ -35,7 +35,7 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   end
 
   def resolve({:present, config}, forbidden_key_bytes) do
-    case validate_config(config, forbidden_key_bytes) do
+    case safely_validate_config(config, forbidden_key_bytes) do
       {:ok, values} ->
         {:ok,
          struct!(
@@ -96,21 +96,38 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
     do: {:error, :client_secret_verifier_configuration_invalid}
 
   defp validate_complete(context, forbidden_key_bytes) do
-    config = [
-      keys:
-        Enum.map(
-          context.key_ids,
-          &{&1, Base.url_encode64(Map.fetch!(context.keys, &1), padding: false)}
-        ),
-      current: context.current_id,
-      write_mode: context.write_mode,
-      legacy_read: context.legacy_read
-    ]
+    with true <- is_map(context.keys),
+         true <- proper_list?(context.key_ids),
+         true <- length(context.key_ids) == length(Enum.uniq(context.key_ids)),
+         map_ids when is_list(map_ids) <- Map.keys(context.keys),
+         true <- Enum.sort(context.key_ids) == Enum.sort(map_ids),
+         true <- Enum.all?(Map.values(context.keys), &is_binary/1) do
+      config = [
+        keys:
+          Enum.map(Map.to_list(context.keys), fn {id, key} ->
+            {id, Base.url_encode64(key, padding: false)}
+          end),
+        current: context.current_id,
+        write_mode: context.write_mode,
+        legacy_read: context.legacy_read
+      ]
 
-    case validate_config(config, forbidden_key_bytes) do
-      {:ok, _values} -> {:ok, context}
-      {:error, reason} -> {:error, reason}
+      case safely_validate_config(config, forbidden_key_bytes) do
+        {:ok, values} ->
+          {:ok, struct!(__MODULE__, Map.merge(Map.from_struct(context), values))}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      _ -> {:error, :client_secret_verifier_configuration_invalid}
     end
+  rescue
+    _ -> {:error, :client_secret_verifier_configuration_invalid}
+  end
+
+  defp safely_validate_config(config, forbidden_key_bytes) do
+    validate_config(config, forbidden_key_bytes)
   rescue
     _ -> {:error, :client_secret_verifier_configuration_invalid}
   end
@@ -141,7 +158,7 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   end
 
   defp validate_options(config) when is_list(config) do
-    if Keyword.keyword?(config) do
+    if proper_list?(config) and Keyword.keyword?(config) do
       keys = Keyword.keys(config)
 
       expected = Enum.sort(@allowed_options)
@@ -159,35 +176,43 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   defp validate_options(_config), do: {:error, :invalid_options}
 
   defp normalize_forbidden_key_bytes(bytes) when is_list(bytes),
-    do: Enum.filter(bytes, &is_binary/1)
+    do: if(proper_list?(bytes), do: Enum.filter(bytes, &is_binary/1), else: [])
 
   defp normalize_forbidden_key_bytes(%MapSet{} = bytes),
     do: bytes |> MapSet.to_list() |> Enum.filter(&is_binary/1)
 
   defp normalize_forbidden_key_bytes(_bytes), do: []
 
+  defp proper_list?([]), do: true
+  defp proper_list?([_head | tail]), do: proper_list?(tail)
+  defp proper_list?(_), do: false
+
   defp decode_keys([_ | _] = entries, forbidden_key_bytes)
        when is_list(forbidden_key_bytes) or is_struct(forbidden_key_bytes, MapSet) do
-    Enum.reduce_while(entries, {:ok, []}, fn
-      {id, encoded}, {:ok, acc} when is_binary(id) and is_binary(encoded) ->
-        with true <- Regex.match?(@key_id_pattern, id),
-             false <- List.keymember?(acc, id, 0),
-             {:ok, key} <- decode_key(encoded),
-             true <- byte_size(key) == 32,
-             false <- weak_key?(key),
-             false <- Enum.any?(acc, fn {_other_id, other} -> other == key end),
-             false <- Enum.any?(forbidden_key_bytes, &(&1 == key)) do
-          {:cont, {:ok, [{id, key} | acc]}}
-        else
-          _ -> {:halt, {:error, :invalid_key}}
-        end
+    if proper_list?(entries) do
+      Enum.reduce_while(entries, {:ok, []}, fn
+        {id, encoded}, {:ok, acc} when is_binary(id) and is_binary(encoded) ->
+          with true <- Regex.match?(@key_id_pattern, id),
+               false <- List.keymember?(acc, id, 0),
+               {:ok, key} <- decode_key(encoded),
+               true <- byte_size(key) == 32,
+               false <- weak_key?(key),
+               false <- Enum.any?(acc, fn {_other_id, other} -> other == key end),
+               false <- Enum.any?(forbidden_key_bytes, &(&1 == key)) do
+            {:cont, {:ok, [{id, key} | acc]}}
+          else
+            _ -> {:halt, {:error, :invalid_key}}
+          end
 
-      _entry, _acc ->
-        {:halt, {:error, :invalid_key}}
-    end)
-    |> case do
-      {:ok, entries} -> {:ok, Enum.reverse(entries)}
-      error -> error
+        _entry, _acc ->
+          {:halt, {:error, :invalid_key}}
+      end)
+      |> case do
+        {:ok, entries} -> {:ok, Enum.reverse(entries)}
+        error -> error
+      end
+    else
+      {:error, :invalid_key}
     end
   end
 
