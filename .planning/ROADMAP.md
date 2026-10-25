@@ -67,7 +67,25 @@ Plans:
   4. Qualified usable legacy rows read only within the explicit compatibility policy and fail under legacy rejection; aged/unreadable rows follow the frozen disposition, with no silent credential-expiry or authority change.
   5. Maintainer can execute the finite reader-first/writer-activation/rollback cases: old code is never exposed to unsupported writes in the supported sequence, and after activation the documented rollback boundary is truthful.
 
-**Plans**: To be created after Phase 175 qualification; no task count or speculative implementation plan is reserved.
+**Plans**: 7 plans, 14 tasks; independent plan checker passed on 2026-10-25. Runtime execution remains pending.
+
+Plans:
+**Wave 1**
+- [ ] 176-01-PLAN.md — Persisted native-verifier tracer and strict envelope parsing.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 176-02-PLAN.md — Immutable node configuration and operation-local failure isolation.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 176-03-PLAN.md — Compatible helpers and final-ID direct registration.
+- [ ] 176-04-PLAN.md — Legacy/migrated age and configured lifecycle boundaries.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 176-05-PLAN.md — Final-ID DCR and operator secret rotation.
+- [ ] 176-06-PLAN.md — Supported endpoints and ciphertext-sensitive guarded issuance.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 176-07-PLAN.md — Local reader-first rollout, runtime guidance and candidate gate.
 
 ### Phase 177: Safe Verifier Maintenance & Recovery
 

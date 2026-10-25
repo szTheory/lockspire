@@ -2,14 +2,14 @@
 phase: "176"
 slug: "dedicated-verifier-custody-compatible-runtime"
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: "2026-10-25"
 ---
 
 # Phase 176 — Validation Strategy
 
-> Planning validation contract. No new runtime acceptance test has run yet. The planner must replace the provisional task map with exact plan/task IDs before declaring planning complete.
+> Planning contract only. Seven plans, 14 tasks, five waves. New runtime tests and their results are pending execution; each owning task creates its test before invoking it. `wave_0_complete: false` records that those test files do not exist yet, not a missing creation plan.
 
 ## Test Infrastructure
 
@@ -18,8 +18,8 @@ created: "2026-10-25"
 | Framework | ExUnit, existing Mix project and PostgreSQL integration fixtures |
 | Config | `mix.exs`, `test/test_helper.exs` |
 | Runtime prefix | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5` |
-| Quick command, once the new suite exists | `MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_test.exs` |
-| Persistence command, once the new suite exists | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_writers_test.exs` |
+| Quick command, after 176-01-02 creates the suite | `MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_test.exs` |
+| Tracer command, after 176-01-01 creates the suite | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_tracer_test.exs` |
 | Full candidate gate | `mix ci` with the runtime prefix above |
 | Runtime estimate | Unmeasured for new suites; measure during execution and record observed feedback latency |
 
@@ -30,38 +30,54 @@ created: "2026-10-25"
 - The final candidate runs the established `mix ci`; record its real exit and source identity, without claiming accepted main or publication.
 - No three consecutive tasks may lack automated verification. Runnable commands require an immediately following `<fails_when>` signal in plans.
 
-## Provisional Verification Map
+## Exact Task, Threat and Test Map
 
-| Requirement | Behavior | Test type | Planned automated verification | File exists | Status |
-|-------------|----------|-----------|--------------------------------|-------------|--------|
-| SEC-01/02 | Independent keys, all config states, safe diagnostics, unrelated hash authentication survives invalid-present config | unit/application | `MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_test.exs` plus planner-selected application tests | No — create before use | pending |
-| SEC-03 | Exact envelope/AAD, bounded canonical parser, key/version/purpose/client/tag rejection, no legacy retry | unit | Same new verifier suite, adversarial inputs and round-trip checks | No — create before use | pending |
-| SEC-04 | Direct/DCR/operator writers choose final ID, persist coherent material and preserve one-time handoff/lifetimes | integration | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_writers_test.exs` | No — create before use | pending |
-| SEC-05 | Five positive endpoint families; PAR/FAPI exclusions; HS256/audience/JTI/fingerprint invariants | protocol/integration | Existing `test/lockspire/protocol/direct_client_auth_client_secret_jwt_test.exs` plus planner-selected token/fingerprint tests | Existing precedents, new dedicated cases required | pending |
-| VUP-01 | Legacy allow/reject, native configured age, migrated original finite deadline, future/unsupported inputs unchanged | unit/integration | New implementation-level tests plus unchanged Phase 175 compatibility/legacy-caller regressions | New cases required | pending |
-| VUP-02 | Stage read keys without write activation; old-code read boundary; explicit activation and truthful rollback limits | contract/integration | `MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_rollout_test.exs` | No — create before use | pending |
+Every command below MUST be prefixed with `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5`. All new test files are created first within the named task; their current existence/result is **no / pending**. Existing baseline suites remain unchanged. Every command in PLAN XML has an immediately following `fails_when` signal.
 
-Use the runtime prefix for every Mix command. A nonexistent future test path is a prerequisite to create, never evidence of a passing check. Plan tasks must order test creation before invoking the corresponding command.
+| Task | Requirement | Behavior | Threat Ref | Automated command after test creation |
+|---|---|---|---|---|
+| 176-01-01 | SEC-01/02/03/05 | Persisted native tracer, wrong-ID denial, real replay effects | T-176-01,03 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_tracer_test.exs` |
+| 176-01-02 | SEC-03 | Exact independent format/AAD vectors, parser/bounds/no downgrade | T-176-01,02,03 | `MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_test.exs` |
+| 176-02-01 | SEC-01/02, VUP-02 | Startup snapshot, supported states and complete override | T-176-04,05,06 | `MIX_ENV=test mix test test/lockspire/config_client_secret_verifier_test.exs test/lockspire/application_key_encryption_test.exs` |
+| 176-02-02 | SEC-01/02 | Key grammar/reuse, invalid-present failure and usable persisted hash auth | T-176-04,05,06 | `MIX_ENV=test mix test --include integration test/lockspire/config_client_secret_verifier_test.exs test/integration/client_secret_verifier_configuration_test.exs` |
+| 176-03-01 | SEC-01/02/04 | Typed generation, exact helper shapes, hash-only independence | T-176-08,09 | `mix test test/lockspire/clients_secret_material_test.exs test/lockspire/security/client_secret_verifier_compatibility_test.exs` |
+| 176-03-02 | SEC-01/02/04 | Direct final-ID coherent pair, no-write failure and handoff | T-176-07,09 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_direct_writer_test.exs` |
+| 176-04-01 | SEC-03, VUP-01 | Authenticated legacy metadata, migrated finite ages, no timer on native | T-176-10,11,12 | `mix test test/lockspire/security/client_secret_verifier_age_test.exs test/lockspire/security/client_secret_verifier_compatibility_test.exs` |
+| 176-04-02 | SEC-05, VUP-01 | Persisted caller/lifecycle equality and unchanged effects | T-176-10,11,12 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_age_test.exs test/integration/client_secret_jwt_legacy_age_test.exs` |
+| 176-05-01 | SEC-01/02/04 | DCR final ID, configured lifetimes, selected stores/audit | T-176-13,15 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_dcr_writer_test.exs test/integration/client_secret_lifetime_registration_test.exs` |
+| 176-05-02 | SEC-01/02/04 | Operator rotation pair, existing lock/transaction and rollback | T-176-14,15 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_rotation_test.exs test/integration/client_secret_lifetime_rotation_test.exs` |
+| 176-06-01 | SEC-03/05, VUP-01 | Existing positive direct endpoints, PAR/FAPI and assertion/error negatives | T-176-16,18 | `mix test test/lockspire/protocol/client_secret_verifier_endpoints_test.exs test/lockspire/protocol/direct_client_auth_client_secret_jwt_test.exs` |
+| 176-06-02 | SEC-05 | Token positive, ciphertext-only guard denial, consumed/fresh JTI | T-176-17,18 | `MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_guarded_issuance_test.exs` |
+| 176-07-01 | SEC-01/02, VUP-01/02 | Real-reader rollout/activation/rollback and reachable guide | T-176-19,21 | `mix test test/lockspire/security/client_secret_verifier_rollout_test.exs` |
+| 176-07-02 | All seven | Existing full candidate gate, 22 stable runtime cases and frozen preservation | T-176-20,21,SC | `mix ci`; literal Python frozen-input/result assertion in 176-07-PLAN.md |
+
+Security enforcement is ASVS 1, blocking high/critical. IDs T-176-01 through T-176-21 are phase-global unique; reserved T-176-SC repeats per plan. No new package or schema task exists. The existing CI alias’s locked dependency resolution does not add a dependency.
+
+Tracer feedback: 176-01-01 must pass and commit, then rerun the literal tracer check before Task 01-02 or any expansion. Execution must record that ordering. Each later task has focused automated feedback; new failing acceptance is written before implementation where behavior is added. Final `mix ci` is the deliberately longer phase gate (previous candidate roughly five minutes), with bounded tool polling. Focused latency is unmeasured until execution; record actual duration and split feedback selection if it exceeds 60 seconds without dropping acceptance.
 
 ## Wave 0 Requirements
 
-- [ ] New verifier config/envelope suite and explicit-context fixtures.
-- [ ] Persisted writer suite covering direct, DCR and operator paths.
-- [ ] Local rollout/rollback behavior suite with real legacy-format decoding, not label-only assertions.
-- [ ] Dedicated endpoint and native/migrated-age cases; preserve frozen Phase 175 qualification source files unchanged.
+- [ ] 176-01 creates tracer and parser suites; 176-02 creates config and invalid-state persisted suites.
+- [ ] 176-03 creates helper/direct-writer suites; 176-05 creates DCR/operator suites.
+- [ ] 176-04 creates native/migrated/legacy unit and persisted age suites.
+- [ ] 176-06 creates endpoint and guarded-issuance suites; 176-07 creates real-reader rollout suite.
 - Existing ExUnit/PostgreSQL infrastructure is sufficient; install no framework or dependency.
 
 ## Manual-Only Verifications
 
 All scoped library behavior has automated acceptance. Fleet reader/key parity, operator-owned deployment/drain, backups and rollback disposition are host preconditions that local tests cannot certify. Complete packaged deployment journeys remain Phase 178. No manual UI review is selected.
 
+## Coverage and Remaining Flags
+
+`176-PROBE-DISPOSITION.md` maps all 22 owner-176 frozen case IDs, seven requirements, D-01–D-15, source constraints and all 15 probe edges. Twelve classifiable edges have explicit must_haves; SEC-02/VUP-01/VUP-02 unclassified rows remain flagged unresolved. Three descriptor-less values prohibitions remain flagged-unverified, never mechanically passed. Owner-175 qualification is immutable; all eight owner-177 and one owner-178 cases remain pending. Sequential fingerprint regression is not the later maintenance contention proof. Runtime sentinels apply from introduction; comprehensive disclosure proof remains Phase 177.
+
 ## Validation Sign-Off
 
-- [ ] Exact plan/task and threat references replace the provisional map.
-- [ ] Every task has automated verification or an explicit prior test-creation dependency.
-- [ ] Sampling continuity and no watch-mode commands.
-- [ ] Full frozen case/requirement/decision coverage is mapped.
+- [x] Exact plan/task and threat references replace the provisional map.
+- [x] Every task has automated verification and test creation precedes new-path commands.
+- [x] Sampling continuity and no watch-mode commands.
+- [x] Full frozen case/requirement/decision coverage is mapped.
 - [ ] Feedback latency measured during execution.
 - [ ] Runtime acceptance results remain pending until executed.
 
-**Approval:** Draft strategy derived from research; execution acceptance is pending.
+**Approval:** Planning map complete; all new runtime acceptance, feedback timing and independent phase verification are pending execution.
