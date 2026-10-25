@@ -1,6 +1,6 @@
 ---
 phase: 174-packaged-proof-delivery-handoff
-verified: 2026-10-25T06:31:00Z
+verified: 2026-10-25T14:27:32Z
 status: passed
 score: 23/23 must-haves verified
 covered_files:
@@ -23,6 +23,7 @@ covered_files:
   - .planning/phases/174-packaged-proof-delivery-handoff/174-DISPOSITIONS.md
   - .planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-LEARNINGS.md
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-MAIN-ACCEPTANCE.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md
@@ -52,7 +53,7 @@ covered_files:
   - test/lockspire/web/authorize_controller_test.exs
   - test/lockspire/web/discovery_controller_test.exs
   - test/lockspire/web/pushed_authorization_request_controller_test.exs
-covered_digest: "v3:sha256:fbc34961bbe33b42963564561f7ab482f4483915597ce7d94349674b4cc74e8c"
+covered_digest: "v3:sha256:40b3a1dc994373e86a12acb35463552b4c7c582bd30150829811122992d55492"
 behavior_unverified: 0
 overrides_applied: 0
 flagged_prohibitions: 2
@@ -71,7 +72,7 @@ prohibition_flags:
 
 **Phase Goal:** Maintainers and adopters can review source-bound proof of every selected behavior and resume from an honest, reviewed delivery handoff through the existing train.
 
-**Verified:** 2026-10-25T06:31:00Z
+**Verified:** 2026-10-25T14:27:32Z
 **Status:** passed  
 **Re-verification:** No — initial verification
 
@@ -84,7 +85,7 @@ prohibition_flags:
 | 1 | Every selected supported behavior has a deterministic owner and applicable negative/security evidence; corrections retain failing-before/passing-after proof and existing cases reuse valid proof. | ✓ VERIFIED | `174-SOURCE-PROOF.json` binds current source owners and original RED/GREEN identities; `174-PROOF-INDEX.json` joins all twelve IDs to their owner tests and package observations. The two corrections remain A171-003 and P171-005; no duplicate qualification matrix was created. |
 | 2 | A packaged embedded Phoenix host demonstrates selected authorization/PAR outcomes at recorded source/package identities without expanding supplemental profiles into certification or a full-suite gate. | ✓ VERIFIED | `174-PACKAGE-PROOF.json` records exactly A171-001–006 and P171-001–006, 12 executed/passed, 0 failed/skipped, source `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`, receipt SHA `9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`, real archive/tree/vendor/resolver/compiled identities, observed redaction and cleanup. Read-only `--check-selected-receipt` passed against that source and digest. |
 | 3 | Maintainers can review current source-bound verification/audit, focused security and review, required candidate checks, accurate support guidance, and explicit external limits. | ✓ VERIFIED | Current 171/172/173 verifier statuses are `passed`; the canonical v1.47 audit passes 14/14 requirements, 6/6 integrations, 6/6 flows and 12/12 selected-case joins. `174-REVIEW.md` is clean across ten source files and `174-SECURITY.md` closes all 17 threats with 0 open. Local `mix ci` passed at immutable candidate `9b8cf54…`; the final PR head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` also has seven successful canonical CI jobs. Guidance and handoff preserve external reachability/profile and certification limits. |
-| 4 | The next run can resume from an honest dated handoff with exact integration/main status or blockers, custody, unknown work, and refreshed ranked direction. | ✓ VERIFIED | Current handoff records final reviewed PR head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`, seven passing CI jobs, PR OPEN/unmerged, main `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, no main receipt, and the actual automatic approval denial for missing trusted merge authorization. It gives the explicit authorization as next action and retains resource custody, unknown work and ranking. |
+| 4 | The next run can resume from an honest dated handoff with exact integration/main status or blockers, custody, unknown work, and refreshed ranked direction. | ✓ VERIFIED | `174-DELIVERY.md` records the reviewed PR head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`, squash merge `173059a166e9ade0f5f57c9980b7b2400a98538c`, accepted-main receipt and hash, main CI/release runs, exact warning dispositions, preserved first failed helper attempt, resource custody, unknown work and ranking. Main is accepted; publication remains unselected. |
 | 5 | The packaged A171-003 query control reaches the host handoff before unsupported `response_mode=binary` returns first-party 400 HTML without Location or OAuth error parameters. | ✓ VERIFIED | Runner assertions at `scripts/acceptance/clean_room_saas_journey.py` implement the control and negative request; the package receipt records control status 302/handoff and unsupported status 400 with HTML/no-Location/no-OAuth-error facts. |
 | 6 | The packaged host proves A171-001/002/004/005/006 through real HTTP, preserving callback/state boundaries and signed integer `auth_time` from host input. | ✓ VERIFIED | The package receipt records per-case controls and observations. Host fixtures store auth time in session; `AccountResolver` maps the integer to `DateTime`, and the A171-006 path verifies signed token claims, issuer, audience, nonce, integer type, and exact equality for both demand paths. |
 | 7 | Receipt validation rejects absent/empty observations, empty or partial-as-complete cases, and keeps explicit subsets partial. | ✓ VERIFIED | `selected_receipts.py` defines strict schema, observation, count, case-set, and selection validation. The independent mutation suite includes empty/null/unknown/partial cases and valid alternate receipt digest substitution; 16/16 recorded Python tests and the 7/7 source-CI bridge are current at the indexed hashes. |
@@ -98,10 +99,10 @@ prohibition_flags:
 | 15 | The complete package receipt has exactly twelve successful rows with verified source/archive/tree/vendor/resolved/compiled identities. | ✓ VERIFIED | Receipt CLI check passed; JSON and proof-index hashes match; row count is 12/12 with no failures/skips and package/vendor tree equality. All 63 frozen source-input hashes match current bytes. |
 | 16 | Affected prior verifier owners reassessed actual inputs and current GREEN evidence without restamping old execution identities. | ✓ VERIFIED | Current Phase 171, 172, and 173 verifier queries return `passed`; refreshed 171/173 reports retain original owner run/source hashes and explicitly state no rerun. Their fingerprints exclude the growing downstream derivative reports. |
 | 17 | A bounded source-bound evidence audit and focused dispositions are reviewable before final Phase 174 verification without a circular future-report prerequisite. | ✓ VERIFIED | `174-EVIDENCE-AUDIT.json` has current hashes for prior verification reports and current 174 review/security/disposition records; its documented boundary excludes this future verifier and the canonical completed-milestone audit. |
-| 18 | The immutable candidate has full local contributor CI and exactly one successful completed instance of each canonical hosted CI job. | ✓ VERIFIED | Candidate gate records local `mix ci` exit 0 and seven successful hosted jobs at exact immutable `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`. The final PR-head run separately passed all seven canonical jobs at `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`; live PR state confirms that head. Dependency-review runs are separate and not counted. |
-| 19 | The execution-point snapshot proves candidate reachability, only its declared delta, unchanged criteria and frozen proof/source inputs; later SDK and delivery metadata preserve those identities. | ✓ VERIFIED | Snapshot at `2026-10-25T04:21:04Z` recorded exact HEAD `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`, 0 path deltas and 63/63 frozen hashes. The later final-PR and local-handoff deltas contain planning/review/delivery metadata only; no source, roadmap success criterion, requirement identity, plan acceptance clause, input freeze, package proof, or proof-index content changed. Current frozen hashes still match 63/63. The strict-path snapshot is not rerun or relabeled. |
+| 18 | The immutable candidate has full local contributor CI and exactly one successful completed instance of each canonical hosted CI job. | ✓ VERIFIED | Candidate gate records local `mix ci` exit 0 and seven successful hosted jobs at exact immutable `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`. The final PR-head run separately passed all seven canonical jobs at `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`; live PR data confirmed that exact head before merge. Dependency-review runs are separate and not counted. |
+| 19 | The execution-point snapshot proves candidate reachability, only its declared delta, unchanged criteria and frozen proof/source inputs; later SDK and delivery metadata preserve those identities. | ✓ VERIFIED | Snapshot at `2026-10-25T04:21:04Z` recorded exact HEAD `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`, 0 path deltas and 63/63 frozen hashes. After that snapshot, ROADMAP/REQUIREMENTS completion statuses and SDK/phase-completion metadata changed; the actual goal, four success criteria, four requirement identities, plan acceptance clauses, source/package proof and proof index remained unchanged. Later PR, merge, receipt, and report deltas are documented delivery/evidence metadata. An independent blob comparison confirms all 63 frozen inputs match accepted main. The strict-path snapshot is not rerun or relabeled. |
 | 20 | Evidence preserves full lowercase source/digest strings and strict integer counts without truncation/coercion. | ✓ VERIFIED | Source/package/index/candidate digests are full lowercase strings; receipt and CI validation use strict field/count types. The recorded exact twelve counts and seven-job graph were checked directly. |
-| 21 | The dated handoff distinguishes package, candidate/CI, review/integration, fresh main acceptance, and publication, or identifies concrete remaining blockers. | ✓ VERIFIED | Delivery status is `blocked`; PR #140 is OPEN/CLEAN at final head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`, and main remains `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. The exact squash-merge call was denied by automatic approval review because trusted user instructions did not authorize protected-main mutation. No merge/main receipt occurred; explicit merge authorization is the next action. Publication remains unselected. |
+| 21 | The dated handoff distinguishes package, candidate/CI, review/integration, fresh main acceptance, and publication, or identifies concrete remaining blockers. | ✓ VERIFIED | Delivery is `accepted_main`: PR #140 merged the reviewed head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` as `173059a166e9ade0f5f57c9980b7b2400a98538c` with parent `fe38beee987b135e87c99e7aa7f2488b4c8613e8`. Main CI run `40198968774` is push/attempt 1/success with exactly seven completed successful jobs. Release run `40198968751` is push/attempt 1/success/no-publish with five publication/verification jobs skipped. Receipt SHA-256 `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd` binds those identities, local 200-test gate, hygiene 22 PASS/2 WARN/0 BLOCK and both warning dispositions. Publication remains unselected. The prior auto-review denial and failed first helper attempt remain documented history. |
 | 22 | Only run-owned resources were cleaned; retained worktrees, unique commits, old history, unknown edits/databases and demo data have custody, purpose and review actions. | ✓ VERIFIED | `174-DELIVERY.md` lists each retained worktree/resource and its state, custodian, purpose, and next review action; it explicitly states that unknown databases and retained demo data were preserved. |
 | 23 | The ranked next-milestone direction was refreshed from actual proof before candidate freeze and read-only reassessed against later CI/main facts. | ✓ VERIFIED | `MILESTONE-ARC.md` was reviewed before candidate freeze. The delivery handoff records no new product counterexample from candidate/CI observations; SEC-01 stays provisional, with token lifecycle, OPS-03, and KEK-04 gated on their stated evidence. |
 
@@ -121,7 +122,8 @@ prohibition_flags:
 | `174-PACKAGE-PROOF.json` | Actual complete selected-proof receipt | ✓ VERIFIED | 12 passed; source/package facts and cleanup/redaction attestations validate. |
 | `174-EVIDENCE-AUDIT.json` | Bounded current evidence/freshness audit | ✓ VERIFIED | Prior reports and current review/security/dispositions are hash-bound. This derivative audit is not in this report's fingerprint because it is refreshed after owner artifacts settle. |
 | `174-CANDIDATE-GATES.json` | Exact local/hosted candidate checks | ✓ VERIFIED | Exact candidate, local exit, canonical seven-job graph, source delta and frozen identity data. |
-| `174-DELIVERY.md` | Dated resumable delivery handoff | ✓ VERIFIED | Real PR/main blocker, custody, ranking and next action. |
+| `174-DELIVERY.md` | Dated resumable delivery handoff | ✓ VERIFIED | Accepted-main status, previous authorization/attempt history, custody, ranking and next action. |
+| `174-MAIN-ACCEPTANCE.json` | Exact-main acceptance receipt | ✓ VERIFIED | 1,925-byte `lockspire-phase-139-acceptance-v1` receipt, SHA-256 `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd`; binds merge SHA, 200 ExUnit tests, seven successful main CI jobs, no-publish Release, hygiene counts, and two retained-demo warning dispositions. |
 | `.planning/MILESTONE-ARC.md` | Evidence-based ranked direction | ✓ VERIFIED | Current provisional ranking and entry triggers. |
 
 ### Key Link Verification
@@ -134,9 +136,9 @@ prohibition_flags:
 | Proof index | Phase 171 qualification ledger | exact frozen ID/source-owner mapping | ✓ WIRED | Both paths appear in the index with input digest and twelve exact IDs. |
 | Proof index | Package proof | receipt digest/source binding | ✓ WIRED | Receipt bytes SHA-256, source revision and candidate identities match. |
 | Candidate gates | `.github/workflows/ci.yml` | exact canonical run/head/job graph | ✓ WIRED | Workflow path, run ID, head and seven unique successful jobs agree; dependency-review is separate. |
-| Delivery handoff | `repo_hygiene_check.sh` | fresh synchronized-main acceptance after integration | ⚠️ CONDITIONAL — BLOCKED AS DESIGNED | Helper exists, but there is no merge or fresh main acceptance to consume. PR #140 is open and unreviewed; handoff names this as the next authorized action. DELIV-02 explicitly accepts this honest blocked handoff. |
+| Delivery handoff | `repo_hygiene_check.sh` | fresh synchronized-main acceptance after integration | ✓ VERIFIED | The merged main worktree ran the assigned helper successfully; its exact-main receipt is byte-copied at `174-MAIN-ACCEPTANCE.json`, and independently observed main/run identities agree. |
 
-The generic key-link query reported heuristic misses for dynamic helper invocations and file-path-driven tests. Each was manually traced above. The main-acceptance helper remains intentionally uninvoked because its required merge/review precondition has not occurred; no accepted-main success is claimed.
+The generic key-link query reported heuristic misses for dynamic helper invocations and file-path-driven tests. Each was manually traced above. The main-acceptance helper's successful second invocation is recorded in the receipt and dated handoff; the earlier failed invocation is retained as diagnostic history and is not represented as an acceptance receipt.
 
 ### Data-Flow Trace (Level 4)
 
@@ -144,7 +146,7 @@ The generic key-link query reported heuristic misses for dynamic helper invocati
 |---|---|---|---|---|
 | Selected journey and receipt | Per-case observations | Packaged Phoenix host over loopback; persisted interaction read through child repo | Yes — twelve distinct passing cases with actual package/vendor/compiled bindings | ✓ FLOWING |
 | Proof index | Source/package evidence rows | Frozen ledger, current owner tests, source proof and exact receipt bytes | Yes — all twelve IDs and recorded source/package hashes | ✓ FLOWING |
-| Delivery handoff | Candidate/main state | Candidate run records and live PR #140 API state | Yes — current exact candidate head; explicit open/unmerged status | ✓ FLOWING |
+| Delivery handoff | Candidate/main state | Candidate gates, live PR/Actions records, accepted-main receipt and synchronized main Git ref | Yes — exact candidate, reviewed PR head, merge SHA and main run identities remain distinct | ✓ FLOWING |
 
 ### Behavioral Spot-Checks
 
@@ -152,9 +154,9 @@ The generic key-link query reported heuristic misses for dynamic helper invocati
 |---|---|---|---|
 | Full selected receipt validates against external source and byte digest | `python3 scripts/acceptance/clean_room_saas_journey.py --check-selected-receipt .planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json --expected-source-revision 73bb46811f4b76b2372b4af2b4e21aaf42893ac1 --expected-receipt-sha256 9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844` | `selected receipt verified`, exit 0 | ✓ PASS |
 | All selected package cases produce observations | Existing bound package execution in `174-PACKAGE-PROOF.json` | 12 executed, 12 passed, 0 failed/skipped; cleanup and redaction true | ✓ PASS |
-| Candidate CI is attached to current PR head | `gh pr view 140 --repo szTheory/lockspire --json ...` | OPEN, exact head `9b8cf54...`, all seven canonical CI jobs SUCCESS | ✓ PASS |
+| Main acceptance receipt binds observed main and gates | Read-only JSON/SHA check plus `gh run view 40198968774` and `40198968751` | Receipt SHA `f50652c…`; both completed on merge SHA `173059a…`; CI 7/7 success; Release success/no-publish | ✓ PASS |
 
-No package journey, full suite, service, or state-mutating command was rerun during this verification. The receipt checker and live PR read were read-only.
+No package journey, full suite, service, or state-mutating command was rerun during this verification. Receipt parsing/hash, Git ref/blob checks, and GitHub run/PR reads were read-only.
 
 ### Probe Execution
 
@@ -176,8 +178,8 @@ No linked disabled test or circular expected-value generator found. Historical R
 |---|---|---|---|---|
 | CPROOF-01 | 174-01, 174-02, 174-03 | Deterministic owner, correction RED/GREEN and negative/security evidence for selected behavior | ✓ SATISFIED | Source proof and twelve-row proof index preserve original owner/source identities and actual package observations. |
 | CPROOF-02 | 174-01, 174-02, 174-03 | Packaged Phoenix-host behavior at recorded identities, with external result limits | ✓ SATISFIED | Validated package receipt binds source/archive/tree/vendor/resolution/compiled identities; guidance makes no certification/full-suite claim. |
-| DELIV-01 | 174-02, 174-04 | Source-bound verification/audit, focused review/security and passing candidate local/hosted checks | ✓ SATISFIED | Current verifier records, bounded evidence audit, clean ten-file review, 17/17 security dispositions, local exit 0, canonical hosted 7/7. |
-| DELIV-02 | 174-04 | Dated resumable delivery handoff with blockers/custody/unknown work/ranking | ✓ SATISFIED | Handoff is explicitly `blocked` on open PR/review/main acceptance and gives the next authorized action and preserved-resource inventory. |
+| DELIV-01 | 174-02, 174-04 | Source-bound verification/audit, focused review/security and passing candidate local/hosted checks | ✓ SATISFIED | Current verifier records, bounded evidence audit, clean ten-file review, 17/17 security dispositions, local exit 0 and canonical candidate hosted 7/7 remain source-bound; accepted-main receipt adds the actual merged-head result. |
+| DELIV-02 | 174-04 | Dated resumable delivery handoff with blockers/custody/unknown work/ranking | ✓ SATISFIED | Handoff records reviewed integration and fresh accepted-main status, preserved attempt history, resource custody, unknown work and ranked next direction; publication remains explicitly unselected. |
 
 No requirement mapped to Phase 174 in `REQUIREMENTS.md` is orphaned.
 
@@ -191,7 +193,7 @@ No requirement mapped to Phase 174 in `REQUIREMENTS.md` is orphaned.
 
 ### Candidate Snapshot Applicability
 
-The frozen execution-point record at `2026-10-25T04:21:04Z` observed immutable candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` as exact HEAD, reachable, with no committed/staged/unstaged/nonignored-untracked deltas, 63/63 input hashes matching, and proof-index SHA-256 `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`. The current PR targets `main` at final metadata head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4`; live `gh pr view` shows OPEN/CLEAN, no merge commit, and seven successful canonical jobs. Local HEAD `7f500b50169859a7d32e79d41efa9b1c66395a96` carries the latest blocked-handoff metadata; its delta beyond PR head is report/delivery/project/state/learning/audit documentation only. Across the exact post-verification delta, no implementation source, roadmap goal/success criterion, requirement identity, plan acceptance clause, frozen input, package receipt or proof index changed; the 63 frozen hashes still match. The canonical v1.47 audit now passes 14/14 requirements, 6/6 integrations and 6/6 flows; its audited source head predates only documentation/handoff updates, and it is excluded from this report's fingerprint to avoid a dependent-audit cycle. The actual squash-merge request was denied once by automatic approval review for lack of trusted explicit authorization. PR remains open, main remains at the historical accepted base, and no main acceptance helper/receipt exists. This is an external delivery authorization blocker permitted by DELIV-02, not a failed phase behavior. No old snapshot or executed identity was rerun or relabeled.
+The immutable execution-point record at `2026-10-25T04:21:04Z` observed candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` as exact HEAD, reachable, with no committed/staged/unstaged/nonignored-untracked deltas, 63/63 input hashes matching, and proof-index SHA-256 `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`. It was the candidate snapshot, not a claim that the later PR head or accepted main had the same identity. Final reviewed PR head `6f10fcc73e0af0e41d47760e0371d73d9a83b1a4` passed its separate seven-job run and was squash-merged to `173059a166e9ade0f5f57c9980b7b2400a98538c` (parent `fe38beee987b135e87c99e7aa7f2488b4c8613e8`) after explicit user approval. `main` and `origin/main` resolve to that merge SHA; this evidence checkout is `077326a2f6250c18111b947b9ab7b6059a9f8875`, not main. The exact-main receipt SHA `f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd` and live run details agree. A direct comparison of each of the 63 frozen Git blobs against `main` found zero mismatches. The post-snapshot ROADMAP/REQUIREMENTS diff contains completion-status normalization only; current phase goal, four criteria, requirement IDs, and plan acceptance clauses are unchanged. The accepted-main receipt, current delivery handoff and proper-owner planning/status updates are delivery metadata; no implementation source, freeze, package proof or proof-index content changed. Current post-acceptance source audit details remain as previously recorded; the canonical milestone audit is an after-verification derivative and is omitted from this report's fingerprint. The earlier automatic-approval denial and first helper invocation failure remain documented, while the approved merge and successful second helper invocation are now the terminal delivery facts. No previous snapshot or execution identity was rerun or relabeled.
 
 Phase 171 and 173 verifier reports were refreshed by their typed owners: their current statuses remain passed and their historical run/source identities are preserved. Their current report bodies contain a point-in-time note that the then-current expanded Phase 174 review hash was awaiting correction; the current review bytes now match the bounded evidence audit's recorded hash, and the phase fingerprints exclude that derivative review. This stale narrative note does not alter their verified source inputs, but should be reconciled by its report owners during downstream audit refresh.
 
@@ -203,9 +205,9 @@ Both Phase 174 prohibitions remain `resolved` / `judgment` with prominent `unver
 
 ### Human Verification Required
 
-No human verification is needed to establish the phase behaviors. Protected-main merge authorization is still pending: automatic approval review denied the attempted squash merge because no trusted explicit user authorization was present. PR #140 remains open and no merge or fresh main acceptance has occurred. This real delivery blocker is preserved in the handoff and is permitted by DELIV-02; it does not change the phase status.
+No human verification is needed to establish the phase behaviors. The trusted user explicitly approved the exact protected-main squash merge; PR #140 is merged and exact-main acceptance passed. The earlier authorization denial and failed first helper invocation are preserved as history. Release publication remains unselected and is not required by Phase 174's accepted delivery boundary.
 
 ---
 
-_Verified: 2026-10-25T06:31:00Z_
+_Verified: 2026-10-25T14:27:32Z_
 _Verifier: the agent (gsd-verifier)_

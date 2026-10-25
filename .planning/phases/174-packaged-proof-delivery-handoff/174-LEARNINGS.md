@@ -14,3 +14,5 @@ These observations come from the actual selected-proof and delivery work; they a
 - Mark requirements complete only when their actual downstream gates pass. A plan's requirement labels describe contributions, not automatic proof that the whole requirement is complete.
 
 The later lifecycle failure recurred before a cause could be recovered, so the bounded diagnostic repair was completed in this phase: existing summary helpers, allowlisted fields/count caps, original-exit preservation and ten focused wrapper tests. Independent code/security reviews closed both implementation findings, and the hosted minimum-runtime success path passed at candidate9b8cf54d. This improves future diagnosis without claiming the earlier opaque failures were explained.
+
+- Derive warning dispositions from the exact acceptance mode. Broad hygiene observations can be informational in exact mode; extra dispositions are correctly rejected. Preserve the failed invocation and its real exit, correct only the arguments, and obtain the full successful receipt without weakening or bypassing any gate.

@@ -148,7 +148,7 @@
     },
     {
       "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-DISPOSITIONS.md",
-      "sha256": "f26d65f1d21becfcd78a6bc571a205254a6e54f06c16ffcb18c7b62c71c56483",
+      "sha256": "341d7257b0c93c2e2d5c31b02bc038f39ecae839273c8002b6707f1001150e14",
       "role": "typed code-reviewer and security-auditor lifecycle reassessment",
       "status": "scoped-judgments-recorded",
       "judgment_flags": {
@@ -156,14 +156,16 @@
         "phase172": 2,
         "phase173": 2,
         "phase174": 2
-      }
+      },
+      "prior_sha256": "f26d65f1d21becfcd78a6bc571a205254a6e54f06c16ffcb18c7b62c71c56483",
+      "final_delivery_applicability": "Only accepted-main operations and preserved helper invocation history were appended; judgments and source controls remain unchanged. Proper Phase174 verifier assessed final delivery."
     }
   ],
   "requirements": {
     "CPROOF-01": "complete: all twelve frozen IDs joined to actual package observations and current source owners",
     "CPROOF-02": "complete: selected receipt parser suite passed 16/16; source-contract bridge passed 7/7; qualification ledger contract passed 22/22",
-    "DELIV-01": "Candidate local and seven hosted gates passed at9b8cf54d; full source review clean and declared security controls verified; final phase goal verification and canonical milestone audit remain pending.",
-    "DELIV-02": "Dated blocked-delivery handoff is reviewable with actual PR140open, custody, ranking reassessment and exact next action; fresh main acceptance remains unreached."
+    "DELIV-01": "Complete: immutable candidate local/hosted gates passed, full source review/security closed, final Phase174 proper-owner verification passed23/23 and canonical milestone audit passed14/14.",
+    "DELIV-02": "Complete: PR140 merged reviewedhead6f10fcc7 as173059a1; fresh exact-main acceptance passed, receipt preserved, custody/ranking retained."
   },
   "limits": [
     "Package proof is a local packaged checkout exercised against loopback clean-room hosts; it is not candidate CI, accepted-main-at-package-revision, publication, or release evidence.",
@@ -171,8 +173,8 @@
     "CPROOF-01 adjacency/order and CPROOF-02/DELIV-02 unclassified assumptions remain explicit; no concurrency, ordering, or universal certification guarantee is inferred.",
     "The three Phase 173 generic fallback limits remain unresolved and are preserved in its current report.",
     "The fixture-only source revision changed formatting in two clean-room host files; the typed Phase 173 owner assessed prior source GREEN applicability, and the full local package proof was rerun at the new frozen identity.",
-    "The receipt-validator test-only strengthening was reviewed and passed its parser and bridge suites; the original 132 source-owner GREEN results remain applicable under typed owner review. A full 12-case package sweep was rerun at frozen source 73bb4681. The historical security audit remains scoped to its 80b34a93 recheck, with no post-refresh security recheck claimed.",
-    "Candidate ec6361d CI is historical for an earlier validator-test identity and is not credited toward DELIV-01 after this test change; replacement candidate CI remains pending.",
+    "The receipt-validator test-only strengthening was reviewed and passed its parser and bridge suites; the original 132 source-owner GREEN results remain applicable under typed owner review. A full 12-case package sweep was rerun at frozen source 73bb4681. The later full17-threat phase audit atf7f63788 is recorded separately in reviews; no earlier audit execution is restamped.",
+    "Candidate ec6361d CI is historical for an earlier validator-test identity and is not credited toward DELIV-01 after this test change; replacement candidate9b8cf54d subsequently passed its full gates as recorded in candidate_gates.",
     "Judgment-tier prohibitions remain non-authoritative and retain unverified-prohibition \u2014 human review recommended flags."
   ],
   "flag_counts": {
@@ -192,5 +194,35 @@
     "hosted_ci": "passed, exactly7canonicaljobs, attempt1",
     "scope": "Distinct from package execution at73bb4681 and future accepted-main; diagnostic failure-only repair outside63frozeninputs has proper-owner semantic applicability review."
   },
-  "final_review_provenance": "The immutable proof index keeps the historical eight-file clean review snapshot at package source73bb4681. Current ten-file review is a later proper-owner aggregation; no frozen index or executed source is rewritten. Prior owners assessed it as derivative commentary and preserved stable source/ledger/proof and historical review evidence."
+  "final_review_provenance": "The immutable proof index keeps the historical eight-file clean review snapshot at package source73bb4681. Current ten-file review is a later proper-owner aggregation; no frozen index or executed source is rewritten. Prior owners assessed it as derivative commentary and preserved stable source/ledger/proof and historical review evidence.",
+  "delivery_refresh": {
+    "observed_at": "2026-10-25T14:29:10.086139+00:00",
+    "accepted_main": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "reviewed_pr_head": "6f10fcc73e0af0e41d47760e0371d73d9a83b1a4",
+    "main_receipt": {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-MAIN-ACCEPTANCE.json",
+      "sha256": "f50652c307019bbe57ad2f4a2a24bbefbc830bfd6f00010431b68971b4c095dd"
+    },
+    "main_ci_run": 40198968774,
+    "release_no_publish_run": 40198968751,
+    "phase_statuses": {
+      "171-accepted-baseline-finding-qualification": {
+        "status": "passed",
+        "report_sha256": "7bde6875e1105ba3ce7903161a0b112b207d5f7ddb6a283d58daae79ae503601"
+      },
+      "172-authorization-responses": {
+        "status": "passed",
+        "report_sha256": "2853a7f512011e7649d31ce4330250d41283e7ec20777e69a68ae23ca0c73b20"
+      },
+      "173-conditional-par-profile-boundaries": {
+        "status": "passed",
+        "report_sha256": "2c771ae393f24ec573809bf4c337e888375f01f48b6d9675137f4b6ec1841536"
+      },
+      "174-packaged-proof-delivery-handoff": {
+        "status": "passed",
+        "report_sha256": "8c01c7be83d05cf8ec61d949ffe40b9ec85b8d5e0f80d21f47a858900e078921"
+      }
+    },
+    "boundary": "Derivative lifecycle aggregation after proper-owner verification; source/package/candidate execution identities are unchanged. No publication claim."
+  }
 }

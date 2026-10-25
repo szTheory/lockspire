@@ -3,12 +3,12 @@ gsd_state_version: "1.0"
 milestone: v1.47
 milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 174
-status: "All phases complete — awaiting explicit authorization to merge PR #140"
-stopped_at: "Verified and audited; PR #140 final checks green; awaiting explicit merge authorization"
-last_updated: "2026-10-25T06:33:08.609Z"
+status: All phases complete; accepted main 173059a1
+stopped_at: "PR #140 merged; fresh exact-main acceptance passed; v1.47 delivery complete"
+last_updated: "2026-10-25T14:24:55.814Z"
 last_activity: 2026-10-25
-last_activity_desc: final PR checks and milestone audit passed; explicit merge authorization required
-state_head: 7f500b50169859a7d32e79d41efa9b1c66395a96
+last_activity_desc: "PR #140 merged; fresh main acceptance passed and receipt saved"
+state_head: 077326a2f6250c18111b947b9ab7b6059a9f8875
 progress:
   total_phases: 4
   completed_phases: 4
@@ -25,20 +25,20 @@ See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** PR #140 at reviewed head6f10fcc7 is ready with all7 required checks and the milestone audit passed. Automatic approval review denied the merge pending explicit user authorization; main is unchanged.
+**Current focus:** PR #140 is merged as 173059a166e9ade0f5f57c9980b7b2400a98538c. Exact-main local acceptance, seven push CI jobs and no-publish Release passed; the byte-preserved receipt and custody records are on the retained milestone evidence branch.
 
 ## Current Position
 
 Phase: 174
 Plan: Not started
-Status: All phases complete — awaiting explicit authorization to merge PR #140
-Last activity: 2026-10-25 — final PR checks and milestone audit passed; explicit merge authorization required
+Status: All phases complete; accepted main 173059a1
+Last activity: 2026-10-25 — PR #140 merged; fresh main acceptance passed and receipt saved
 
-Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all14 requirements verified; delivery/main acceptance pending.
+Progress: [██████████] 100% — 4/4 phases, 10/10 plans complete; all 14 requirements verified; protected delivery and exact-main acceptance complete.
 
 ## Performance Metrics
 
-v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phase 174 passed23/23; package12/12; final candidate local CI and seven hosted jobs pass. Milestone audit and reviewed main delivery are next.
+v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phase 174 passed 23/23; package 12/12; accepted main 173059a1 passed local CI, seven hosted jobs and no-publish Release. Milestone audit passes; next product milestone remains provisional.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -121,14 +121,14 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T06:33:08.577Z
-Stopped at: Verified and audited; PR #140 final checks green; awaiting explicit merge authorization
+Last session: 2026-10-25T14:24:55.698Z
+Stopped at: PR #140 merged; fresh exact-main acceptance passed; v1.47 delivery complete
 Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md
-Next: After explicit user approval, squash-merge PR #140 at6f10fcc73e0af0e41d47760e0371d73d9a83b1a4 through the normal protected train, then continue fresh exact-main acceptance. Do not retry before approval or start the provisional next milestone.
+Next: v1.47 delivery is accepted on main 173059a166e9ade0f5f57c9980b7b2400a98538c. Preserve evidence/custody and use milestone closeout before selecting the provisional SEC-01 direction; publication remains unselected.
 
 ### Blockers
 
-- Delivery: automatic approval review denied squash-merging PR #140 at6f10fcc73e0af0e41d47760e0371d73d9a83b1a4 because trusted explicit user authorization is required. All7 protected checks and the milestone audit pass; PR remains open and main fe38beee is unchanged.
+None
 
 ## Decisions
 
