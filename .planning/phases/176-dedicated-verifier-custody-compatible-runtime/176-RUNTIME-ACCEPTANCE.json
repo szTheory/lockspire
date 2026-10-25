@@ -1,0 +1,449 @@
+{
+  "schema": "lockspire-phase-176-runtime-acceptance-v1",
+  "tested_sha": "b8cd395dd25ac0918678553aad042e8fd8f05d3c",
+  "source_identity": {
+    "branch": "milestone/v1.48-client-auth-key-isolation",
+    "candidate_commit": "b8cd395dd25ac0918678553aad042e8fd8f05d3c",
+    "accepted_main": false,
+    "publication_authority": false
+  },
+  "candidate_ci": {
+    "status": "passed",
+    "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+    "exit_code": 0,
+    "started_at": "2026-10-25T23:05:17Z",
+    "finished_at": "2026-10-25T23:09:21Z",
+    "duration_seconds": 244,
+    "execution_notes": [
+      "Git metadata access was granted for this run because the repository-owned release checks open .git/FETCH_HEAD.",
+      "ERL_FLAGS limited the local BEAM scheduler count to four; all CI stages and test selections remained enabled.",
+      "PostgreSQL emitted transient too_many_connections warnings; both ExUnit stages completed with zero failures."
+    ],
+    "stages": [
+      {
+        "name": "dependency-resolution-and-boundary",
+        "command": "mix deps.get; mix qa boundary",
+        "exit_code": 0,
+        "result": "locked dependencies unchanged; no dependency added; boundary checks passed"
+      },
+      {
+        "name": "fast-tests",
+        "command": "MIX_ENV=test mix test.fast",
+        "exit_code": 0,
+        "properties": 2,
+        "tests": 2097,
+        "failures": 0,
+        "skipped": 6,
+        "excluded": 530
+      },
+      {
+        "name": "integration-tests",
+        "command": "MIX_ENV=test mix test.integration",
+        "exit_code": 0,
+        "tests": 231,
+        "failures": 0,
+        "excluded": 46
+      },
+      {
+        "name": "credo",
+        "command": "mix credo --strict",
+        "exit_code": 0,
+        "result": "703 source files; no issues"
+      },
+      {
+        "name": "docs-audit-package",
+        "command": "mix docs.verify; mix deps.audit; mix package.build",
+        "exit_code": 0,
+        "result": "documentation warnings-as-errors passed; dependency audit clean; package build passed"
+      }
+    ],
+    "earlier_attempts": [
+      {
+        "tested_sha": "5776d8ddfbb47f58f7b491bacb26a6417a7df440",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix ci",
+        "exit_code": 2,
+        "outcome": "format check identified one formatting-only difference in the new rollout test; fixed before subsequent attempts"
+      },
+      {
+        "tested_sha": "4df6d76d82fa8a41b2eb15af511f1aba95e7429c",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix ci",
+        "exit_code": 1,
+        "outcome": "compatibility baseline guard detected missing declarations for four existing internal Config helper extensions; manifest and its guard expectation were updated, historical baseline retained"
+      },
+      {
+        "tested_sha": "786705639e10123ee8e6b3ec0691cb8cf69a4485",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix ci",
+        "exit_code": 1,
+        "outcome": "Credo reported four findings in Phase 176 code/test paths; behavior-preserving fixes were applied and scoped Credo passed"
+      },
+      {
+        "tested_sha": "3645e728789bf5eafa2239395d1469864bf4bf47",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix ci",
+        "exit_code": 1,
+        "outcome": "ExDoc could not resolve the linked new guide because it was absent from the extras list; guide was added to extras and navigation"
+      },
+      {
+        "tested_sha": "82b7b1ad845c1c07645f583cfe3e2b50f6756de1",
+        "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix ci",
+        "exit_code": 1,
+        "outcome": "Sandbox denied .git/FETCH_HEAD writes and PostgreSQL connection limits caused test failures; subsequent authorized run isolated the stale admin test assertion"
+      },
+      {
+        "tested_sha": "82b7b1ad845c1c07645f583cfe3e2b50f6756de1",
+        "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+        "exit_code": 1,
+        "outcome": "repository checks passed; one existing admin test still asserted exception logging after typed error handling was introduced; assertion was aligned with current form-error behavior"
+      },
+      {
+        "tested_sha": "b8cd395dd25ac0918678553aad042e8fd8f05d3c",
+        "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+        "exit_code": 1,
+        "outcome": "one nondeterministic failure occurred in a full-suite run; the subsequent captured test.fast run passed all 2097 tests and the final full gate passed"
+      }
+    ]
+  },
+  "owner_176_cases": [
+    {
+      "case_id": "LEGACY-AGE-BOUNDARIES",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/security/client_secret_verifier_age_test.exs",
+        "test/integration/client_secret_jwt_legacy_age_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "LEGACY-UNSUPPORTED-INPUTS",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/security/client_secret_verifier_age_test.exs",
+        "test/integration/client_secret_jwt_legacy_age_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-ABSENT-LEGACY",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/config_client_secret_verifier_test.exs",
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-STAGED-READERS",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/config_client_secret_verifier_test.exs",
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-DEDICATED-WRITES-ALLOW",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_configuration_test.exs",
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-DEDICATED-WRITES-REJECT",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs",
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-INVALID-PRESENT",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/config_client_secret_verifier_test.exs",
+        "test/integration/client_secret_verifier_configuration_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "CONFIG-CONTRADICTION-AND-READER-ONLY",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/config_client_secret_verifier_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "KEY-SET-GRAMMAR",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/config_client_secret_verifier_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "ENVELOPE-FORMAT",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/security/client_secret_verifier_test.exs",
+        "test/lockspire/security/client_secret_verifier_age_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "ENVELOPE-STRICT-REJECTION",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/security/client_secret_verifier_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "MATERIAL-BOUNDS-AND-API-SCOPE",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/security/client_secret_verifier_test.exs",
+        "test/lockspire/clients_secret_material_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "WRITERS-FINAL-ID-AND-HANDOFF",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_direct_writer_test.exs",
+        "test/integration/client_secret_verifier_dcr_writer_test.exs",
+        "test/integration/client_secret_verifier_rotation_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "READERS-AND-AUTH-EXCLUSIONS",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_jwt_legacy_age_test.exs",
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "WRITER-DIRECT-REGISTRATION",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_direct_writer_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "WRITER-DCR",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_dcr_writer_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "WRITER-OPERATOR-ROTATION",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_rotation_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "WRITER-HASH-ONLY-HELPER",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/clients_secret_material_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "READER-TOKEN-EXCHANGE",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/integration/client_secret_verifier_guarded_issuance_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "READER-INTROSPECTION-REVOCATION",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "READER-PAR-DEVICE-CIBA",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    },
+    {
+      "case_id": "READER-HS256-AUDIENCE-JTI-EXCLUSIONS",
+      "owner_phase": 176,
+      "outcome": "pass",
+      "evidence": [
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs",
+        "test/lockspire/protocol/direct_client_auth_client_secret_jwt_test.exs"
+      ],
+      "command": "ERL_FLAGS='+S 4' ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_176_07_final_20261025 mix ci",
+      "exit_code": 0
+    }
+  ],
+  "partial_future_case_evidence": [
+    {
+      "case_id": "ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT",
+      "owner_phase": 177,
+      "status": "pending",
+      "phase_176_local_runtime_slice": "pass",
+      "local_evidence": [
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs"
+      ],
+      "pending_scope": "fleet readiness, deployment quiescence, backups, rollback safety, retirement, recovery"
+    }
+  ],
+  "future_owner_cases": [
+    {
+      "case_id": "MAINTENANCE-CAPABILITY-AUTHORITY",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-PAGING",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-READINESS",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "MAINTENANCE-RACE-AND-ROLLBACK",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "DISCLOSURE-SENTINELS",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY",
+      "owner_phase": 177,
+      "status": "pending"
+    },
+    {
+      "case_id": "PACKAGES-ADAPTER-DELIVERY",
+      "owner_phase": 178,
+      "status": "pending"
+    }
+  ],
+  "frozen_input_check": {
+    "source_manifest": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json",
+    "source_manifest_unchanged": true,
+    "expected_input_count": 13,
+    "computed_input_count": 13,
+    "mismatch_count": 0,
+    "all_match": true,
+    "verification_command_exit": 0
+  },
+  "unclassified_edges": [
+    {
+      "id": "E02",
+      "status": "unresolved-flagged",
+      "owner_requirement": "SEC-02",
+      "pass_claimed": false
+    },
+    {
+      "id": "E14",
+      "status": "unresolved-flagged",
+      "owner_requirement": "VUP-01",
+      "pass_claimed": false
+    },
+    {
+      "id": "E15",
+      "status": "unresolved-flagged",
+      "owner_requirement": "VUP-02",
+      "pass_claimed": false
+    }
+  ],
+  "prohibition_flags": [
+    {
+      "status": "flagged-unverified",
+      "claim": "Local node configuration or tests do not establish fleet readiness, backups, quiescence, rollback safety, accepted-main acceptance, or publication authority."
+    },
+    {
+      "status": "flagged-unverified",
+      "claim": "Verifier custody changes do not authorize resetting partner credential age or silently rotating partner credentials."
+    },
+    {
+      "status": "flagged-unverified",
+      "claim": "Host account, key-custody, and deployment control remain host-owned; protocol and store support are not widened."
+    }
+  ],
+  "scope_and_limitations": {
+    "dependency_changes": false,
+    "schema_changes": false,
+    "signing_bytes_changed": false,
+    "protocol_or_store_support_widened": false,
+    "host_fleet_readiness_proven": false,
+    "accepted_main_proven": false,
+    "comprehensive_disclosure_proven": false,
+    "package_delivery_proven": false,
+    "publication_authority": false
+  },
+  "ci_exit_code": 0
+}
