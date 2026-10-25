@@ -30,7 +30,7 @@ inputs:
   - path: scripts/acceptance/clean_room/selected_receipts.py
     sha256: cf3d5254b39934e2d60c61b8deacbd8f8055b90406693cac8efff7a2a235b52b
   - path: scripts/acceptance/clean_room_saas_journey.py
-    sha256: 1fa47489d1c4d2a7a081c26afeea634698e7b0b4a44ee55cf15204705d6f4471
+    sha256: 1fa47489d1c4d2a7a081e629dd14b47cb831be4b96bdd21f12d22d92e43a2af3
   - path: test/acceptance/selected_receipt_test.py
     sha256: c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff
   - path: test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex
@@ -72,6 +72,7 @@ No open findings. Prior warnings and fixes are retained above as review history:
 
 ## Review Evidence and Limits
 
+- 2026-10-25 correction: the previous report transcribed the scripts/acceptance/clean_room_saas_journey.py SHA-256 incorrectly. Its source bytes match the frozen/current digest listed above; all ten paths were reasserted against scope and their hashes recomputed from source bytes. This is a report-only correction; source scope, review verdict, and historical proof-index identity are unchanged.
 - Current SHA-256 values for all ten reviewed files are listed in the frontmatter. `git diff --check` passed across the ten source files for the phase range.
 - The reviewed diagnostic wrapper emits only allowlisted or fixed fallback fields. Its `|| true` guards ensure diagnostic failure does not replace the saved child status passed to `fail_stage`.
 - Current security and code-review dispositions apply to the diagnostic-only changes. The retained package receipt remains bound to its earlier package source, while local and hosted candidate gates are recorded independently.
