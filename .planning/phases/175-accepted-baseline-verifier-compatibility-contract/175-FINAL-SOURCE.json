@@ -1,0 +1,117 @@
+{
+  "schema": "lockspire-phase-175-final-source-v1",
+  "entry_accepted_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "entry_receipt_path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json",
+  "entry_receipt_sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab",
+  "qualified_candidate_sha": "4fa03cefd18894e25d3777187e5f00e773a2b18a",
+  "tested_sha": "4fa03cefd18894e25d3777187e5f00e773a2b18a",
+  "candidate_ci": {
+    "status": "passed",
+    "command": ["mix", "ci"],
+    "cwd": "/Users/jon/projects/lockspire",
+    "exit_code": 0,
+    "started_at": "2026-10-25T20:12:04.161776+00:00",
+    "finished_at": "2026-10-25T20:17:59.432263+00:00",
+    "clean_before": true,
+    "clean_after": true,
+    "mix_env_override": null,
+    "environment_overrides": {
+      "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+      "ASDF_ERLANG_VERSION": "28.5",
+      "HEX_HOME": "/private/tmp/lockspire-175-01-acceptance-hex",
+      "LOCKSPIRE_TEST_DB_NAME": "lockspire_175_02_qualification_20261025"
+    },
+    "stages": [
+      {"name": "boundary", "passed": 15, "failed": 0},
+      {"name": "exunit", "passed": 2054, "failed": 0, "skipped": 6, "excluded": 509},
+      {"name": "integration", "passed": 210, "failed": 0, "excluded": 46}
+    ],
+    "result_path": "/private/tmp/lockspire-175-03-final-ci-root-bgpfma_s/result.json"
+  },
+  "focused_validation": {
+    "command": "mix test --include integration test/integration/client_secret_jwt_legacy_age_test.exs test/lockspire/security/client_secret_verifier_compatibility_test.exs test/lockspire/security/client_secret_verifier_contract_test.exs",
+    "root_and_declared_floor": "passed",
+    "tests": 29,
+    "failures": 0,
+    "contract_validator": "passed"
+  },
+  "source_review": {
+    "status": "closed",
+    "candidate_sha": "4fa03cefd18894e25d3777187e5f00e773a2b18a",
+    "closure_report_path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW.md",
+    "closure_report_sha256": "2db97b6f1826d8b548ebd5a96feb6f9d71745623bbc0a2688985d6523fe4a3be",
+    "disposition_report_path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW-DISPOSITION.md",
+    "disposition_report_sha256": "991ef16aaf6167123f5ab19a60086b9078fd310fa9862d62c8f42994da78bdeb",
+    "initial_report_path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW-INITIAL.md",
+    "initial_report_sha256": "f6e68f8d1bb10831fc69e81396fca537b0ae5110f43cad471ce58b45b6486e9d",
+    "open_findings": 0,
+    "closed_findings": ["CR-01", "WR-01"]
+  },
+  "frozen_inputs": [
+    {"path": "test/integration/client_secret_jwt_legacy_age_test.exs", "sha256": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6"},
+    {"path": "test/lockspire/security/client_secret_verifier_compatibility_test.exs", "sha256": "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d"},
+    {"path": "test/lockspire/security/client_secret_verifier_contract_test.exs", "sha256": "1c75580183fd448e6dc984869dcd31c14e2ccded4181d878b02e231ea91e5b4e"},
+    {"path": "test/support/client_secret_verifier_fixtures.ex", "sha256": "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json", "sha256": "55ef5cc2b33556b87eddc8390ee671ab381f07f1e48d6fc54be88e702ed5f045"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json", "sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json", "sha256": "e4f6f0fcc03a33309e02f4519a6ae1d1a54fd77c633108b4e168bd1f0e163788"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json", "sha256": "bf587190eddc81680de172fb1239d270f71eaa9cd827400a839fa843c3715c66"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md", "sha256": "0a8fc84d6963c9a2019ab8faefbd9f29971f1cff2591d4dcaf7e0c60fbefa860"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-POLICY-REVISION.md", "sha256": "3916510fcf8e9c7d56b3f433785a704eebc9dfca2d5b354b5e11fe55a5bb408f"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md", "sha256": "ec28d54304910291a8e278e49a6582d74e350c8d00f2ced3208474b10623efa2"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md", "sha256": "8e93d17dbd303fcecec20f9de366d966b0b48b7c949ce096b2668c50e8e5095f"},
+    {"path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md", "sha256": "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc"}
+  ],
+  "product_tree_comparison": {
+    "status": "unchanged",
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "candidate_sha": "4fa03cefd18894e25d3777187e5f00e773a2b18a",
+    "command": "git diff --quiet BASE CANDIDATE -- lib/ config/ priv/ scripts/ .github/ mix.exs mix.lock",
+    "exit_code": 0
+  },
+  "remote_main_observation": {
+    "ref": "refs/heads/main",
+    "sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "observed_at": "2026-10-25T20:18:49Z",
+    "command": "git ls-remote origin refs/heads/main"
+  },
+  "prior_ci_history": [
+    {
+      "candidate_sha": "fae04f99b2f85c2fb1a9b301932c8d1c98d5fd5d",
+      "result": "initial canonical CI failed in provider discovery timeout; same-code uninstrumented discovery test later passed and same-code canonical retry passed",
+      "root_cause": "unknown; no timeout or harness change was made",
+      "preserved_result_path": "/private/tmp/lockspire-175-03-final-ci-root-lj1r8kgh/result.json"
+    },
+    {
+      "candidate_sha": "f693f38df6ac5b07e850d2f36cd6cb6b6c9662bf",
+      "result": "Credo complexity findings; corrected before the later full CI candidate",
+      "preserved_result_path": "/private/tmp/lockspire-175-03-final-ci-root-973plhwb/result.json"
+    }
+  ],
+  "dependent_planning": "ready",
+  "final_main_acceptance": {
+    "status": "deferred_to_phase178",
+    "final_accepted_sha": null,
+    "reason": "The development train permits one milestone PR after implementation and independent review/verification; Phase 178 owns final integrated-main acceptance."
+  },
+  "final_accepted_sha": null,
+  "independent_phase_verification": "pending; remains the Phase 176 dispatch gate",
+  "qualification_gates": {
+    "native_age_policy": "qualified",
+    "public_metadata_reader": "qualified"
+  },
+  "post_ci_bookkeeping_allowlist": [
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-SUMMARY.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW-INITIAL.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-REVIEW-DISPOSITION.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-SECURITY.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-VERIFICATION.md",
+    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-VALIDATION.md",
+    ".planning/STATE.md",
+    ".planning/state.json",
+    ".planning/ROADMAP.md",
+    ".planning/REQUIREMENTS.md"
+  ]
+}
