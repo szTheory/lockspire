@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "fd0fdb5e1134220d6621e20413571ea9193c0a9e",
+  "source_revision": "38a19a292da7c90352494e4f03ade7c10e25ff82",
   "files": [
     {
       "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
@@ -180,7 +180,7 @@
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
-      "sha256": "3b7a12bf3f2846fe07984a0d047058ee50517fab3c390df22888b7bd95e591b3"
+      "sha256": "1321e9275317bb63f0fcc738aee1a0dc7312b7769b455694ea30ffc7917a94f8"
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/interaction_handler.ex",
@@ -192,7 +192,7 @@
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex",
-      "sha256": "a0a833085c3e5b4be61010c22817fb89aa858b26e1a590a2c2487bc24919f2ae"
+      "sha256": "905b1db6c0d269db2b8128bd87e8f5e71b7ec0ad18efb1a0477831dfaaef4284"
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex",
