@@ -683,15 +683,20 @@ def run_selected_authorization_case(
         stale_file = run_root / "selected-stale-auth-time-unix.txt"
         stale_time = int(time.time()) - 600
         stale_file.write_text(f"{stale_time}\n", encoding="ascii")
+        print("selected A171-005 stale fixture written", flush=True)
         browser = Browser(PROVIDER_ORIGIN)
         _host_login(browser, "clean-room-selected-stale")
+        print("selected A171-005 host session created", flush=True)
         client_id = _selected_client(child, environment, redirect_uri)
+        print("selected A171-005 client ready", flush=True)
         params, _verifier = selected_authorization_params(client_id, redirect_uri)
         params.update({"max_age": "60", "prompt": "none"})
         response = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
+        print(f"selected A171-005 status {response['status']}", flush=True)
         require_status_in(response, (302, 303), "A171-005 stale host authentication")
         location = urlparse(redirect(response, "A171-005 stale host authentication"))
         values = parse_qs(location.query, keep_blank_values=True)
+        print(f"selected A171-005 login_required={values.get('error') == ['login_required']} state_matches={values.get('state') == [params['state']]}", flush=True)
         return passed({"callback_status": int(response["status"]), "login_required": values.get("error") == ["login_required"],
                        "state_matches": values.get("state") == [params["state"]],
                        "no_host_login_redirect": location.path != "/login" and location.path == urlparse(redirect_uri).path,
