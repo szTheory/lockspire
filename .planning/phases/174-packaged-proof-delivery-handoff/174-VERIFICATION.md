@@ -1,12 +1,14 @@
 ---
 phase: 174-packaged-proof-delivery-handoff
-verified: 2026-10-25T05:46:10Z
+verified: 2026-10-25T05:53:19Z
 status: passed
 score: 23/23 must-haves verified
 covered_files:
   - .planning/MILESTONE-ARC.md
+  - .planning/PROJECT.md
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
+  - .planning/STATE.md
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json
   - .planning/phases/174-packaged-proof-delivery-handoff/174-01-PLAN.md
   - .planning/phases/174-packaged-proof-delivery-handoff/174-01-SUMMARY.md
@@ -49,7 +51,7 @@ covered_files:
   - test/lockspire/web/authorize_controller_test.exs
   - test/lockspire/web/discovery_controller_test.exs
   - test/lockspire/web/pushed_authorization_request_controller_test.exs
-covered_digest: "v3:sha256:721cdfd1d996d3d04444e74fb6bd0c6a82ea04cbe4f361096b949c8cc333887e"
+covered_digest: "v3:sha256:123c8c521cce44ff5ea472925a5eebbef0e7856af49bd8514b7b4f54bd1e46ce"
 behavior_unverified: 0
 overrides_applied: 0
 flagged_prohibitions: 2
@@ -68,7 +70,7 @@ prohibition_flags:
 
 **Phase Goal:** Maintainers and adopters can review source-bound proof of every selected behavior and resume from an honest, reviewed delivery handoff through the existing train.
 
-**Verified:** 2026-10-25T05:46:10Z  
+**Verified:** 2026-10-25T05:53:19Z
 **Status:** passed  
 **Re-verification:** No — initial verification
 
@@ -188,7 +190,7 @@ No requirement mapped to Phase 174 in `REQUIREMENTS.md` is orphaned.
 
 ### Candidate Snapshot Applicability
 
-The frozen execution-point record at `2026-10-25T04:21:04Z` observed candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` as exact HEAD, reachable, with no committed/staged/unstaged/nonignored-untracked deltas, 63/63 input hashes matching, and proof-index SHA-256 `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`. The live PR still targets `main` at the same candidate head. Since the snapshot, five commits changed only the candidate/delivery reports and proper-role review, security, evidence-audit and prior-verifier metadata. No acceptance definition, roadmap goal/success criterion, requirement identity, plan action, frozen source input, source/package receipt or proof index changed. I did not rerun or relabel the old strict-path snapshot.
+The frozen execution-point record at `2026-10-25T04:21:04Z` observed candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` as exact HEAD, reachable, with no committed/staged/unstaged/nonignored-untracked deltas, 63/63 input hashes matching, and proof-index SHA-256 `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`. The live PR still targets `main` at the same candidate head. At the original applicability cut, five commits after the candidate changed only reports and proper-role review/security/audit/verifier metadata. After the 23/23 verification, commit `230ee408` recorded phase/requirement completion and added this report; commit `78597c36` updated project/state/handoff metadata, including `DELIV-01` completion after the recorded gate and verifier evidence. Reviewing the exact delta `145883b6..78597c36` shows no change to acceptance definitions, roadmap goal/success criteria, requirement identity, plan actions, frozen inputs, source/package receipt, candidate gates, or proof index. The refreshed project/state/requirements/roadmap and `174-04-SUMMARY.md` agree that Phase 174 is complete while PR #140, canonical audit, and fresh main acceptance remain pending. I did not rerun or relabel the old strict-path snapshot.
 
 Phase 171 and 173 verifier reports were refreshed by their typed owners: their current statuses remain passed and their historical run/source identities are preserved. Their current report bodies contain a point-in-time note that the then-current expanded Phase 174 review hash was awaiting correction; the current review bytes now match the bounded evidence audit's recorded hash, and the phase fingerprints exclude that derivative review. This stale narrative note does not alter their verified source inputs, but should be reconciled by its report owners during downstream audit refresh.
 
@@ -204,5 +206,5 @@ None for phase goal verification. The PR review, merge and fresh synchronized-ma
 
 ---
 
-_Verified: 2026-10-25T05:46:10Z_  
+_Verified: 2026-10-25T05:53:19Z_
 _Verifier: the agent (gsd-verifier)_
