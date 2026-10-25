@@ -84,11 +84,16 @@ job failed and remains historical. The replacement candidate
 jobs. PR #140 remains open; there is no integration merge or new accepted-main
 receipt.
 
-For the host-ownership prohibition, the reviewer confirmed the only candidate
-source delta after the scoped source review is formatting in the two clean-room
-host fixture files. Account resolution, login/session behavior, claims,
-consent, and product policy remain host-owned; no production route or
-ownership-transfer change was introduced by this delivery work.
+For the host-ownership prohibition, that final-operations review examined the
+then-current `ec6361d9840f2adfda85116d72fec0efe9065c6c` candidate; its source
+delta after the preceding scoped source review was formatting in two clean-room
+host fixture files. That sentence records the scope of the historical review,
+not the later candidate's full source delta. The subsequent receipt-test
+strengthening and host-proof diagnostic changes are recorded below with their
+own scoped code/security review and proof-applicability limits. Those reviews
+found no product ownership transfer; account resolution, login/session
+behavior, claims, consent, and product policy remain host-owned. This does not
+constitute new human confirmation or mechanical enforcement of the prohibition.
 
 The review preserves the exact counts: Phase 171 has 3 judgment flags, Phase
 172 has 2, Phase 173 has 2, and Phase 174 has 2. The four current and three
