@@ -207,7 +207,7 @@ alone is insufficient, and no defect quota is implied. Track other jobs for
 later expansion. After adoption, every UI PR maintains its relevant stories and
 prunes newly impossible scenarios. GLOSSARY.md distinguishes operator persona,
 adopter profile, scenario and story variation; PRODUCT.md still owns UI copy.
-These decisions do not open a milestone; the design interview remains active.
+These decisions do not open a milestone; final interview confirmation is pending.
 
 Interview Q5-Q7: host phoenix_storybook in the adoption demo's dev/test scope;
 DB-free story rendering does not require DB-free demo startup. Complete Apps
@@ -218,6 +218,17 @@ By UI milestone completion, reliable mechanical checks must block new confirmed
 regressions in covered UI. Tune during the pilot, explicitly triage uncertain
 findings and retain connected behavior/security proof. Design judgment remains
 advisory; an unresolved check cannot silently become a pass.
+
+Interview Q8-Q10: experimentally validate incremental PR targets of <=60 seconds
+static and <=5 minutes warm / <=8 minutes cold browser checks, at most two shards.
+Optimize or explicitly revise budget/coverage through GSD if exceeded; do not
+silently drop required cases. Initial scenarios cover an empty provider, busy
+partner program, mixed-script support and experienced token-reuse investigation,
+plus relevant valid single-tenant/account-less cases. Merge redundant profiles.
+A PR touching uncovered UI adds the changed area and meaningful page-context
+stories without migrating the whole section; shared changes check affected
+existing stories. Q1-Q10 are accepted; the decision frontier is empty and the
+interview awaits final shared-understanding confirmation.
 
 During unrelated milestones, only refresh relevance and carry useful scenario
 requirements forward; do not turn every boundary into a broad UI audit. When

@@ -37,6 +37,16 @@ The owner answered “yes to all” to Q5–Q7. These extend the accepted planni
 | Q6. Complete job boundary | Include Apps list, creation, details, per-app settings and credential workflows; Tokens/Consents lists, details, investigation pivots and supported revocation actions. | Cover their real happy/error/boundary states. Provider-wide Security, Keys, registration rules and operational queues remain explicitly tracked for subsequent expansion; do not confuse a per-app security setting with the provider-wide Security section. |
 | Q7. Blocking checks | By the UI milestone's completion, reliable mechanical checks block new confirmed regressions in covered UI. | Tune during the pilot, retain connected behavior/security tests, explicitly triage uncertain findings and keep design judgment advisory. An unresolved check cannot silently become a pass. |
 
+### Owner-confirmed interview decisions, round 3 (2026-10-25)
+
+The owner answered “yes to all” to Q8–Q10. All ten interview decisions are accepted; the design decision frontier is empty, pending the owner's final shared-understanding confirmation. No milestone is selected or implementation authorized by the interview.
+
+| Question | Accepted decision | Consequence |
+|---|---|---|
+| Q8. Cost limits | Experimentally validate incremental PR targets of ≤60 seconds static checks and ≤5 minutes warm / ≤8 minutes cold browser checks, with at most two shards. | These are targets, not measured results. If exceeded, optimize or explicitly revise budget/coverage through GSD; never silently omit required coverage. |
+| Q9. Initial scenario coverage | Cover a new empty provider, busy partner program, mixed-script support investigation and experienced operator investigating token reuse, plus valid single-tenant/account-less cases where relevant. | Each case must represent a distinct actual situation. Merge redundant adopter profiles; fictional company count is not a goal. |
+| Q10. Incremental maintenance boundary | A UI PR touching an uncovered section adds stories for the changed area and meaningful page context; it need not migrate the entire section. | Same-PR maintenance grows coverage incrementally. Shared-component changes also check affected existing stories. |
+
 ### Recommended implementation choices
 
 | Decision | Rationale | Rejected alternative / adversarial test |
@@ -65,6 +75,8 @@ Prune when the app cannot render the combination, the domain forbids it, its out
 
 Port the maintainer stress review surface after parity, then retire duplicate browsing/markup. Retain route scorecards, semantic/unit tests, connected-host proof, brand/token documentation and historical evidence: they serve different purposes. Do not delete illustrative brand examples or an adopter-visible surface just because they contain components.
 
+After adoption, story/scenario updates and pruning accompany the UI change in the same PR (Q3). For an uncovered section, add the changed area and meaningful page context without migrating the whole section; shared-component changes also check affected existing stories (Q10). This obligation does not authorize broad unrelated extraction.
+
 ## Presentation boundaries and the maintainer host
 
 Keep LiveView mount, parameter handling, loading, policy, events and mutation ownership intact. Extract selected render bodies or meaningful areas into ordinary function components accepting explicit data, forms, state and navigation/action inputs. Preserve `phx-*` event names, component IDs, validation retention, error targets, slots, focus and patch behavior. Existing `client_form/1`, `rotation_panel/1` and `lifecycle_actions/1` demonstrate useful seams; their module names do not make them stateful LiveComponents. Current admin source has no streams; future stream-backed pages require a deliberate adapter rather than socket mocks.
@@ -81,7 +93,7 @@ The existing `RouteAssertions.assert_public_package_ceiling!/0` bans “storyboo
 
 ## Realistic scenario profiles and invariants
 
-These are proposed synthetic cases, **not observed adopter research**. Keep five only while each earns its place. Volumes are illustrative totals; render bounded pages. Existing PRODUCT.md operator personas remain canonical.
+These are proposed synthetic profiles, **not observed adopter research**. Q9 confirms the initial scenario classes: empty provider, busy partner program, mixed-script support investigation and experienced operator investigating token reuse, plus relevant valid single-tenant/account-less cases. The profiles below supply plausible contexts; keep five only while each adds a distinct actual situation, and merge or defer duplicates. A self-hosted boundary case does not require a separate fictional company if an existing profile can express it coherently. Volumes are illustrative totals; render bounded pages. Existing PRODUCT.md operator personas remain canonical.
 
 | Profile and adoption context | Operator + job | Distinct situation, volume, script mix and failure |
 |---|---|---|
@@ -113,7 +125,7 @@ Generate or check the existing CSS variables with small local helpers and semant
 
 Dependency recommendation: a development-only pinned **axe-core** is justified for accessibility rules that local geometry helpers cannot replace. Evaluate Playwright only if a bounded comparison shows simpler reliable orchestration than current CDP; no new runner is presumed. Neither is installed by this plan. Keep small contrast/overflow/manifest/target helpers local. Reuse redaction, artifact and cleanup policies; do not build a parallel screenshot service.
 
-Proposed **unmeasured** PR budget: L1 incremental ≤60 seconds; L2 ≤5 minutes warm wall time, at most two shards, ≤8 minutes cold. Measure host startup, case count, p50/p95 case time, CPU-minutes, retries and flake rate first. Begin with observation/triage; enable blocking for confirmed new regressions after the pilot is deterministic. The owner requires these reliable checks to block new confirmed regressions in covered UI by milestone completion (Q7); leaving the entire sweep permanently informational is not completion. Do not meet the budget by silently skipping a required acceptance class.
+Owner-approved **unmeasured experimental targets** (Q8): L1 incremental ≤60 seconds; L2 ≤5 minutes warm wall time, at most two shards, ≤8 minutes cold. Measure host startup, case count, p50/p95 case time, CPU-minutes, retries and flake rate first. If exceeded, optimize or explicitly revise budget/coverage through GSD. Begin with observation/triage; enable blocking for confirmed new regressions after the pilot is deterministic. The owner requires these reliable checks to block new confirmed regressions in covered UI by milestone completion (Q7); leaving the entire sweep permanently informational is not completion. Do not meet the budget by silently skipping a required acceptance class.
 
 Every real variation remains discoverable in the manifest. Each UI PR exercises affected states in light/dark at 320 and desktop; include 375/390 where relevant, representative 768/1280/1440 and actual breakpoint neighborhoods 639/640/641, 799/800/801 and 1119/1120/1121 for affected layouts. New widths such as 375 require an intentional extension of BrowserEvidence's current allowed-width contract; they are proposed coverage, not currently accepted receipt values. Shared CSS/component changes expand affected callers. Whole-page stories use full viewport widths; group stories also use their real narrow containers. Reduced-motion and system-light/system-dark are selected high-value cases, not multipliers on every static badge. A full explicit sweep can run at UI-milestone/pre-merge boundaries if measured cost warrants it; no schedule is created here.
 
