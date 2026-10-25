@@ -1,37 +1,32 @@
 # Project Research Summary
 
-**Project:** Lockspire v1.47 OAuth/OIDC Core Interoperability & Hardening
-**Researched:** 2026-10-24
-**Confidence:** High for current source/support boundaries and chosen direction; historical external failures require fresh attribution.
+**Project:** Lockspire v1.48 Client Authentication Key Isolation & Rotation (SEC-01)
+**Researched:** 2026-10-25
+**Source:** Product tree `1917aa61c589d25d3e2668f6ef0672f32ef0a388`; planning start `eb10874d`.
+**Confidence:** High for inspected seams and the synthetic Plug.Crypto result; production compatibility/concurrency and main acceptance remain unverified.
 
 ## Key Findings
 
-Three focused subagents considered interoperability, security/distributed storage and delivery/CI; the orchestrator synthesized the decisions. v1.47 should first qualify retained OIDC authorization-error and FAPI PAR/TLS/WebRunner findings, then correct only selected supported-surface behavior with deterministic and package-level proof. No current defect or fresh runtime result is claimed by this research.
+Use existing OTP/Plug/Ecto facilities; add no dependency or platform upgrade. Dedicated verifier keys must be independent of endpoint/session keys and signing-key KEKs. Current signing-envelope code is a useful implementation pattern but has a signing-specific label and binary format. Verifier storage is text, so use a distinct versioned text-safe envelope and authenticated canonical client identity. Direct registration and DCR currently generate secret material before client IDs; all writer paths must be adjusted coherently.
 
-No dependency or platform upgrade is selected. Use existing tooling and reviewed primitives. Preserve pinned historical suite inputs for comparable reproduction; explicitly review any required input refresh. Keep protocol and harness fixes distinct.
+Keep explicit reader-first deployment and writer activation. A new node must not produce unreadable rows while old code remains. Maintenance must rewrap only verifier ciphertext under a real shared store/transaction authority, with per-row safety, unchanged hash/lifetime fields, truthful all-row status and typed unsupported-adapter failure. No request-time automatic migration or generic secrets platform is needed.
 
-SEC-01 dedicated client-auth verifier key isolation is the preferred separate provisional v1.48. Existing refresh/replay/rollback coverage is substantial; additional concurrency scope requires evidence. OPS-03 paging and KEK-04 provider work require measured/operator triggers.
+One synthetic probe against installed Plug.Crypto 2.2.1 confirmed a two-day-old authenticated payload fails the default age check. This qualifies a legacy-compatibility risk, not an observed adopter outage. Freeze its disposition before promising migration success; do not silently bypass age or change configured client/secret expiry. Preserve existing recovery by authorized secret rotation/reprovision.
 
 ## Implications for Roadmap
 
-| Phase | Outcome | Decision gate |
-|---|---|---|
-| 171 | Current baseline, reproducible findings and finite case ownership | Accepted-main implementation entry; exact input identities and supported/normative attribution |
-| 172 | Selected authorization responses and silent-auth/freshness cases | Only qualified cases; reuse correct proof and fix reproduced defects |
-| 173 | Selected PAR/profile boundary cases | Transport/issuer/browser issues attributed first; conditional scope may shrink |
-| 174 | Package-level proof, required candidate checks and delivery handoff | All selected acceptance; honest supplemental disposition; no publication claim |
+Four dependent outcomes are recommended, starting after Phase 174; no phase sequence is approved yet:
 
-The roadmap maps all 14 requirements exactly once to these phases; no implementation plans have been created. Phase 171 must settle the downstream case inventory before dependent plans fan out. If no material correction or proof gap survives, explicitly narrow/replan rather than force four implementation phases.
+1. Accepted implementation baseline and finite custody/legacy-age/rollout/storage contract, with acceptance ownership.
+2. Dedicated key custody and canonical production readers/writers, preserving existing crypto and protocol behavior.
+3. Safe rewrap/check/status, concurrent update protection, install/upgrade guidance and key-loss recovery.
+4. Package-installed fresh/upgrade/rotation/mixed-version proof, focused security/review, required contributor/CI gates and accepted-main delivery.
 
-## Decision Resolution
-
-Normative standards plus current support and reproduction outrank suite labels. Full external-suite success/certification is not milestone acceptance. Required selected behavior remains mandatory; a documented blocked external probe does not become a pass. Reuse existing tests for already-correct cases and preserve unqualified findings with owners. Keep entry maintenance separate from protocol expansion.
-
-Remote main was observed green at a1e39a01 with matching CI and Release push no-publish shape. The feature checkout is not yet synchronized/accepted main; [baseline](v1.47-core-hardening/BASELINE.md) records prior delivery, worktrees and preserved machine-state bytes. Do not spend dependent implementation work until that entry gate and case qualification are settled.
+The owner has approved SEC-01-first selection and focused research. Requirements and roadmap confirmation remain ahead. Inline investigation replaces subagent fan-out because no explicit subagent authorization was supplied; no independent agent review is claimed.
 
 ## Sources
 
-- [Interoperability and primary standards](v1.47-core-hardening/INTEROPERABILITY.md): OIDC Core, RFC 9700/9126, FAPI final specifications and OIDF tooling/process.
-- [Security and sequencing](v1.47-core-hardening/SECURITY-AND-SEQUENCING.md): current verifier-key coupling, existing token/storage evidence and bounded migration decisions.
-- [Delivery](v1.47-core-hardening/DELIVERY.md): repository train, exact-main and workspace handoff.
-- [Scope and decisions](v1.47-core-hardening/SCOPE.md), [rolling roadmap](../MILESTONE-ARC.md).
+- [Stack and representation](v1.48-client-auth-key-isolation/STACK.md), [capability scope](v1.48-client-auth-key-isolation/FEATURES.md), [architecture and alternatives](v1.48-client-auth-key-isolation/ARCHITECTURE.md), [failure modes and synthetic probe](v1.48-client-auth-key-isolation/PITFALLS.md), [entry baseline](v1.48-client-auth-key-isolation/BASELINE.md).
+- [OTP 28 AEAD API](https://www.erlang.org/docs/28/apps/crypto/crypto.html#crypto_one_time_aead/7), [tagged Plug.Crypto v2.2.1 source](https://raw.githubusercontent.com/elixir-plug/plug_crypto/v2.2.1/lib/plug/crypto.ex), [PostgreSQL 14 text](https://www.postgresql.org/docs/14/datatype-character.html) and [locking](https://www.postgresql.org/docs/14/explicit-locking.html).
+- [OIDC Core client authentication](https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication), [RFC 7523](https://www.rfc-editor.org/rfc/rfc7523.html), [NIST GCM](https://csrc.nist.gov/pubs/sp/800/38/d/final) and [key-management guidance](https://csrc.nist.gov/pubs/sp/800/57/pt1/r5/final). These inform the design; no compliance/certification claim follows.
+- Local files cited in the dimension reports, current `docs/supported-surface.md`, standing train/ranking/guide and retained v1.47 evidence. No package, browser, full product-test, hosted CI or fresh exact-main gate ran in this research.
