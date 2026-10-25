@@ -16,12 +16,15 @@ This proposal is research input to the normal GSD workflow. Before implementatio
 
 ## Owner-confirmed first milestone contract
 
-Confirmed in interview Q1–Q4 on 2026-10-25:
+Confirmed in interview Q1–Q7 on 2026-10-25:
 
 - Inventory the whole UI and deliver complete layered coverage for **app setup/configuration** and **token/consent investigation**. Keep remaining jobs in an explicit expansion list.
 - Establish a rendered baseline, fix observed usability/design problems at the lowest shared component tier, and provide before/after evidence. Tool installation alone is not completion; do not invent defects or a quota.
 - After adoption, maintain relevant stories/scenarios in the same PR as each UI change, including pruning newly impossible scenarios.
 - Use the distinct [glossary terms](../../../GLOSSARY.md) operator persona, adopter profile, scenario and story variation. PRODUCT.md remains the user-facing vocabulary authority.
+- Host `phoenix_storybook` inside the adoption demo in dev/test. Story rendering stays DB-free; starting the demo may require its database. Reconsider a lightweight host only for measured startup cost.
+- Complete the existing Apps list/create/detail/per-app settings/credential workflows and Tokens/Consents list/detail/investigation pivots/supported revocation actions, with their real happy/error/boundary states. Provider-wide Security, Keys, registration rules and operational queues are later expansion scope.
+- By milestone completion, reliable mechanical checks block new confirmed regressions in covered UI. Tune them during the pilot; explicitly triage uncertain findings, keep design judgment advisory, and retain connected behavior/security tests. Unresolved checks cannot silently become passes.
 
 These accepted planning decisions narrow the proposal. The interview remains open for dependent choices; implementation still requires GSD milestone selection and its gates.
 
@@ -56,4 +59,4 @@ Success means a maintainer can select a real operator situation, inspect shared 
 
 ## Decisions needing the owner
 
-The grill-with-docs interview is in progress. Q1–Q4 are accepted above; dependent questions about the maintainer host, initial automation gates and completion/maintenance boundaries remain to be resolved before declaring shared understanding. Selecting/reordering a milestone remains a later explicit GSD workflow decision. Outside this requested interview, escalate only material brand, public API/support, host ownership, adopter-visible removal or dependency/tooling scope decisions. Historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.
+The grill-with-docs interview is in progress. Q1–Q7 are accepted above; dependent questions about measured cost limits, initial adopter-profile coverage and incremental maintenance boundaries remain to be resolved before declaring shared understanding. Selecting/reordering a milestone remains a later explicit GSD workflow decision. Outside this requested interview, escalate only material brand, public API/support, host ownership, adopter-visible removal or dependency/tooling scope decisions. Historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.

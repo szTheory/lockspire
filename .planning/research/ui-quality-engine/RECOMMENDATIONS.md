@@ -27,6 +27,16 @@ The owner answered “yes to all” to Q1–Q4 of the grill-with-docs interview.
 
 No ADR is added for these decisions: they refine a reversible planning/maintenance contract already captured here, without a new difficult-to-reverse architectural choice.
 
+### Owner-confirmed interview decisions, round 2 (2026-10-25)
+
+The owner answered “yes to all” to Q5–Q7. These extend the accepted planning contract without selecting a milestone.
+
+| Question | Accepted decision | Consequence |
+|---|---|---|
+| Q5. Storybook host | Run `phoenix_storybook` initially inside the adoption demo, restricted to dev/test. | Reuse its endpoint/assets. Story rendering is DB-free; demo startup may require its database. Reconsider a separate lightweight host only if measured startup cost warrants it. |
+| Q6. Complete job boundary | Include Apps list, creation, details, per-app settings and credential workflows; Tokens/Consents lists, details, investigation pivots and supported revocation actions. | Cover their real happy/error/boundary states. Provider-wide Security, Keys, registration rules and operational queues remain explicitly tracked for subsequent expansion; do not confuse a per-app security setting with the provider-wide Security section. |
+| Q7. Blocking checks | By the UI milestone's completion, reliable mechanical checks block new confirmed regressions in covered UI. | Tune during the pilot, retain connected behavior/security tests, explicitly triage uncertain findings and keep design judgment advisory. An unresolved check cannot silently become a pass. |
+
 ### Recommended implementation choices
 
 | Decision | Rationale | Rejected alternative / adversarial test |
@@ -61,7 +71,7 @@ Keep LiveView mount, parameter handling, loading, policy, events and mutation ow
 
 DB-free stories render those same components from scenario adapters. A host adapter may supply inert URLs/actions for isolated inspection; the production caller still supplies actual paths and events. A story with a visible control is not proof its action works. A short connected route set must exercise initial HTTP and LiveView joins, params/navigation, submit → error → correction → success, repeated actions, focus restoration, reconnect and host authorization. Denied host entry belongs to this connected proof unless a real library presentation branch exists. Preserve queue read-only behavior.
 
-Recommend **one Storybook backend in the adoption demo, available only in dev/test**, rather than a second standalone host initially. Put its backend/scenario compilation outside production source paths and gate imports, route expansion and assets at compile time. The demo currently starts Repo/Oban: DB-free **rendering** does not promise DB-free **host boot**. Add a minimal host only if measured startup/iteration cost justifies another application/router/endpoint.
+The owner approved **one Storybook backend in the adoption demo, available only in dev/test** (Q5). Put its backend/scenario compilation outside production source paths and gate imports, route expansion and assets at compile time. The demo currently starts Repo/Oban: DB-free **rendering** does not promise DB-free **host boot**. Add a minimal host only if measured startup/iteration cost justifies another application/router/endpoint.
 
 Today the library compiles `test/support` only in `:test`; a demo path dependency normally compiles the library in `:prod`. Therefore explicitly include a shared maintainer-only scenario source directory in each top-level host's dev/test compilation paths. Do not force the dependency into `env: :test` or leak test modules into library `lib`. Keep scenario definitions outside the library's Hex allowlist; use separate adapters for rendered assigns and disposable demo persistence. Do not run the existing demo seed script for discovery: it truncates tables.
 
@@ -103,7 +113,7 @@ Generate or check the existing CSS variables with small local helpers and semant
 
 Dependency recommendation: a development-only pinned **axe-core** is justified for accessibility rules that local geometry helpers cannot replace. Evaluate Playwright only if a bounded comparison shows simpler reliable orchestration than current CDP; no new runner is presumed. Neither is installed by this plan. Keep small contrast/overflow/manifest/target helpers local. Reuse redaction, artifact and cleanup policies; do not build a parallel screenshot service.
 
-Proposed **unmeasured** PR budget: L1 incremental ≤60 seconds; L2 ≤5 minutes warm wall time, at most two shards, ≤8 minutes cold. Measure host startup, case count, p50/p95 case time, CPU-minutes, retries and flake rate first. Begin with observation/triage; enable blocking for confirmed new regressions after the pilot is deterministic. Do not meet the budget by silently skipping a required acceptance class.
+Proposed **unmeasured** PR budget: L1 incremental ≤60 seconds; L2 ≤5 minutes warm wall time, at most two shards, ≤8 minutes cold. Measure host startup, case count, p50/p95 case time, CPU-minutes, retries and flake rate first. Begin with observation/triage; enable blocking for confirmed new regressions after the pilot is deterministic. The owner requires these reliable checks to block new confirmed regressions in covered UI by milestone completion (Q7); leaving the entire sweep permanently informational is not completion. Do not meet the budget by silently skipping a required acceptance class.
 
 Every real variation remains discoverable in the manifest. Each UI PR exercises affected states in light/dark at 320 and desktop; include 375/390 where relevant, representative 768/1280/1440 and actual breakpoint neighborhoods 639/640/641, 799/800/801 and 1119/1120/1121 for affected layouts. New widths such as 375 require an intentional extension of BrowserEvidence's current allowed-width contract; they are proposed coverage, not currently accepted receipt values. Shared CSS/component changes expand affected callers. Whole-page stories use full viewport widths; group stories also use their real narrow containers. Reduced-motion and system-light/system-dark are selected high-value cases, not multipliers on every static badge. A full explicit sweep can run at UI-milestone/pre-merge boundaries if measured cost warrants it; no schedule is created here.
 

@@ -209,6 +209,16 @@ prunes newly impossible scenarios. GLOSSARY.md distinguishes operator persona,
 adopter profile, scenario and story variation; PRODUCT.md still owns UI copy.
 These decisions do not open a milestone; the design interview remains active.
 
+Interview Q5-Q7: host phoenix_storybook in the adoption demo's dev/test scope;
+DB-free story rendering does not require DB-free demo startup. Complete Apps
+list/create/detail/per-app settings/credentials and Tokens/Consents
+list/detail/investigation pivots/supported revocation. Provider-wide Security,
+Keys, registration rules and operational queues are later expansion scope.
+By UI milestone completion, reliable mechanical checks must block new confirmed
+regressions in covered UI. Tune during the pilot, explicitly triage uncertain
+findings and retain connected behavior/security proof. Design judgment remains
+advisory; an unresolved check cannot silently become a pass.
+
 During unrelated milestones, only refresh relevance and carry useful scenario
 requirements forward; do not turn every boundary into a broad UI audit. When
 UI work is selected, prove a small complete job before expanding stories or
