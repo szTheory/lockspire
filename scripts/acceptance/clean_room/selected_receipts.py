@@ -43,6 +43,31 @@ SELECTED_OBSERVATION_FIELDS: dict[str, frozenset[str]] = {
         "claims_signature_valid", "claims_issuer_audience_nonce_valid", "claims_auth_time_integer",
         "claims_auth_time_equal",
     }),
+    "P171-001": frozenset({
+        "direct_status", "direct_safe_callback", "pushed_status", "pushed_json_media_type",
+        "pushed_positive_expires_in", "token_status", "token_issued", "replay_status", "replay_no_location",
+    }),
+    "P171-002": frozenset({
+        "owner_control_status", "owner_control_reached_consent", "foreign_status", "foreign_no_location",
+        "owner_reuse_status", "owner_reuse_no_location",
+    }),
+    "P171-003": frozenset({
+        "live_control_status", "live_control_reached_consent", "expired_status", "expired_no_location",
+    }),
+    "P171-004": frozenset({
+        "direct_status", "direct_safe_callback", "pushed_status", "pushed_json_media_type",
+        "pushed_positive_expires_in", "token_status", "token_issued", "replay_status", "replay_no_location",
+    }),
+    "P171-005": frozenset({
+        "control_consent_boundary_exact", "candidate_consent_boundary_exact", "candidate_client_id_matches",
+        "candidate_scopes_match", "candidate_state_matches", "candidate_nonce_matches",
+        "candidate_front_channel_scope_not_merged",
+    }),
+    "P171-006": frozenset({
+        "discovery_status", "issuer_matches_configured", "authorization_endpoint_mounted",
+        "token_endpoint_mounted", "userinfo_endpoint_mounted", "jwks_uri_mounted",
+        "pushed_authorization_endpoint_mounted", "revocation_endpoint_mounted", "introspection_endpoint_mounted",
+    }),
 }
 
 
@@ -163,6 +188,19 @@ def validate_selected_receipt(
                 for key in ("html_content_type", "no_location", "no_oauth_error_parameters")
             ):
                 raise AssertionError("selected A171-003 HTTP observations are incomplete")
+        elif identifier in {"P171-001", "P171-004"}:
+            if observations["direct_status"] not in (302, 303) or observations["pushed_status"] != 201:
+                raise AssertionError(f"selected {identifier} direct/PAR HTTP observations are invalid")
+            if observations["token_status"] != 200 or observations["replay_status"] != 400:
+                raise AssertionError(f"selected {identifier} token/replay HTTP observations are invalid")
+        elif identifier == "P171-002":
+            if observations["owner_control_status"] not in (302, 303) or observations["foreign_status"] != 400 or observations["owner_reuse_status"] != 400:
+                raise AssertionError("selected P171-002 client binding HTTP observations are invalid")
+        elif identifier == "P171-003":
+            if observations["live_control_status"] not in (302, 303) or observations["expired_status"] != 400:
+                raise AssertionError("selected P171-003 expiry HTTP observations are invalid")
+        elif identifier == "P171-006" and observations["discovery_status"] != 200:
+            raise AssertionError("selected P171-006 discovery HTTP status is invalid")
         counts = _counts(scenario["counts"], "scenario")
         if scenario["outcome"] != "passed" or counts["executed"] <= 0 or counts["passed"] <= 0 or counts["failed"] or counts["skipped"]:
             raise AssertionError("selected receipt scenario is failed, skipped, or empty")

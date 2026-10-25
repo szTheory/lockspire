@@ -60,6 +60,7 @@ CLIENT_ORIGIN = "http://127.0.0.1:4101"
 MAX_REDIRECTS = 8
 ACTIVE_REDACTOR: Redactor | None = None
 CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
+SELECTED_PAR_SHARED: dict[str, object] = {}
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
 
 
@@ -483,10 +484,13 @@ def provider_path(endpoint: str) -> str:
 
 def selected_authorization_params(client_id: str, redirect_uri: str) -> tuple[dict[str, str], str]:
     verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
     register_secret(verifier)
+    register_secret(state)
+    register_secret(nonce)
     return ({
         "response_type": "code", "client_id": client_id, "redirect_uri": redirect_uri,
-        "scope": "openid email", "state": uuid.uuid4().hex, "nonce": uuid.uuid4().hex,
+        "scope": "openid email", "state": state, "nonce": nonce,
         "code_challenge": s256(verifier), "code_challenge_method": "S256",
     }, verifier)
 
@@ -496,7 +500,7 @@ def _selected_client(child: Path, environment: dict[str, str], redirect_uri: str
     expression = (
         "{:ok, result} = Lockspire.Clients.register_client(%{"
         f"client_id: {json.dumps(client_id)}, client_type: :public, name: {json.dumps(client_id)}, "
-        f"redirect_uris: [{json.dumps(redirect_uri)}], allowed_scopes: [\"openid\", \"email\"], "
+        f"redirect_uris: [{json.dumps(redirect_uri)}], allowed_scopes: [\"openid\", \"email\", \"profile\"], "
         "allowed_grant_types: [\"authorization_code\"], allowed_response_types: [\"code\"], "
         "token_endpoint_auth_method: :none, pkce_required: true}); "
         "IO.puts(\"SELECTED_CLIENT_READY=\" <> result.client.client_id)"
@@ -505,6 +509,94 @@ def _selected_client(child: Path, environment: dict[str, str], redirect_uri: str
     if f"SELECTED_CLIENT_READY={client_id}" not in output:
         raise AssertionError("selected authorization client setup did not complete")
     return client_id
+
+
+def _set_required_par(child: Path, environment: dict[str, str]) -> None:
+    output = _run_host_control(
+        child, environment,
+        '{:ok, policy} = Lockspire.Admin.ServerPolicy.put_par_policy(:required); '
+        'true = policy.par_policy == :required; IO.puts("SELECTED_PAR_REQUIRED=true")',
+    )
+    if "SELECTED_PAR_REQUIRED=true" not in output:
+        raise AssertionError("selected required-PAR policy setup did not complete")
+
+
+def _pushed_params(client_id: str, redirect_uri: str, *, prompt: str = "consent") -> tuple[dict[str, str], str]:
+    params, verifier = selected_authorization_params(client_id, redirect_uri)
+    params["prompt"] = prompt
+    return params, verifier
+
+
+def _push_par(provider: Browser, params: dict[str, str]) -> tuple[str, int, bool]:
+    response = provider.request("POST", "/lockspire/par", params, {"accept": "application/json"})
+    require_status(response, 201, "selected PAR intake")
+    media_type = str(response["headers"].get("content-type", "")).split(";", 1)[0].strip().lower()
+    try:
+        body = json.loads(str(response["body"]))
+    except json.JSONDecodeError:
+        raise AssertionError("selected PAR response was not JSON") from None
+    request_uri, expires_in = body.get("request_uri"), body.get("expires_in")
+    if not isinstance(request_uri, str) or not request_uri.startswith("urn:ietf:params:oauth:request_uri:"):
+        raise AssertionError("selected PAR response omitted a request_uri")
+    register_secret(request_uri)
+    if type(expires_in) is not int:
+        raise AssertionError("selected PAR expires_in was not an integer")
+    return request_uri, expires_in, media_type == "application/json"
+
+
+def _exact_relative_consent_id(location: str) -> str | None:
+    parsed = urlparse(location)
+    if parsed.scheme or parsed.netloc or parsed.query or parsed.fragment:
+        return None
+    match = re.fullmatch(r"/lockspire/consent/([^/]+)", parsed.path)
+    return match.group(1) if match else None
+
+
+def _assert_consent_handoff(browser: Browser, location: str, label: str) -> str:
+    interaction_id = _exact_relative_consent_id(location)
+    if interaction_id is None:
+        raise AssertionError(f"{label} did not reach the exact relative consent route")
+    register_secret(interaction_id)
+    consent = browser.request("GET", location)
+    require_status(consent, 200, f"{label} consent page")
+    return interaction_id
+
+
+def _par_consent_handoff(browser: Browser, client_id: str, request_uri: str, label: str) -> tuple[str, int]:
+    authorization = browser.request("GET", "/lockspire/authorize?" + urlencode({
+        "client_id": client_id, "request_uri": request_uri,
+    }))
+    require_status_in(authorization, (302, 303), f"{label} authorization")
+    return _assert_consent_handoff(browser, redirect(authorization, f"{label} authorization"), label), int(authorization["status"])
+
+
+def _stored_interaction_projection(
+    child: Path, environment: dict[str, str], interaction_id: str, expected: dict[str, object]
+) -> dict[str, bool]:
+    observed_environment = {
+        **environment,
+        "CLEAN_ROOM_SELECTED_INTERACTION_ID": interaction_id,
+        "CLEAN_ROOM_SELECTED_EXPECTED_INTERACTION": json.dumps(expected, separators=(",", ":")),
+    }
+    expression = (
+        'id = System.fetch_env!("CLEAN_ROOM_SELECTED_INTERACTION_ID"); '
+        'expected = Jason.decode!(System.fetch_env!("CLEAN_ROOM_SELECTED_EXPECTED_INTERACTION")); '
+        'interaction = Lockspire.Storage.Ecto.Repository.fetch_interaction(id) || raise("selected interaction missing"); '
+        'facts = %{"client_id_matches" => interaction.client_id == expected["client_id"], '
+        '"scopes_match" => interaction.scopes_requested == expected["scopes"], '
+        '"state_matches" => interaction.state == expected["state"], '
+        '"nonce_matches" => interaction.nonce == expected["nonce"], '
+        '"front_channel_scope_not_merged" => interaction.scopes_requested == ["openid", "email"]}; '
+        'IO.puts("SELECTED_INTERACTION_FACTS=" <> Jason.encode!(facts))'
+    )
+    output = _run_host_control(child, observed_environment, expression)
+    match = re.search(r"SELECTED_INTERACTION_FACTS=(\{[^\n]+\})", output)
+    if not match:
+        raise AssertionError("selected persisted interaction projection was not emitted")
+    facts = json.loads(match.group(1))
+    if set(facts) != {"client_id_matches", "scopes_match", "state_matches", "nonce_matches", "front_channel_scope_not_merged"}:
+        raise AssertionError("selected persisted interaction projection fields were invalid")
+    return {key: value is True for key, value in facts.items()}
 
 
 def _host_login(provider: Browser, account_id: str) -> None:
@@ -737,12 +829,210 @@ def run_selected_authorization_case(
             observations[f"{label}_auth_time_equal"] = True
         return passed(observations)
 
+    if identifier in {"P171-001", "P171-004"}:
+        shared_key = "required_par_code_replay"
+        if identifier == "P171-004" and shared_key in SELECTED_PAR_SHARED:
+            return passed(dict(SELECTED_PAR_SHARED[shared_key]))
+        _set_required_par(child, environment)
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-par")
+        params, verifier = _pushed_params(client_id, redirect_uri)
+        direct = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status_in(direct, (302, 303), f"{identifier} required-PAR direct request")
+        direct_location = urlparse(redirect(direct, f"{identifier} required-PAR direct request"))
+        direct_values = parse_qs(direct_location.query, keep_blank_values=True)
+        direct_safe = (
+            direct_location.scheme + "://" + direct_location.netloc + direct_location.path == redirect_uri
+            and direct_values.get("error") == ["invalid_request"]
+            and direct_values.get("state") == [params["state"]]
+        )
+        if not direct_safe:
+            raise AssertionError(f"{identifier} required-PAR direct request did not return the qualified safe callback")
+
+        request_uri, expires_in, json_media_type = _push_par(browser, params)
+        if expires_in <= 0:
+            raise AssertionError(f"{identifier} PAR response expires_in was not positive")
+        interaction_id = _par_consent_handoff(browser, client_id, request_uri, identifier)
+        approved = browser.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
+            "decision": "approve", "remember": "false",
+        })
+        require_status_in(approved, (302, 303), f"{identifier} consent approval")
+        callback = urlparse(redirect(approved, f"{identifier} consent approval"))
+        values = parse_qs(callback.query, keep_blank_values=True)
+        code = values.get("code", [None])[0]
+        if callback.scheme + "://" + callback.netloc + callback.path != redirect_uri or values.get("state") != [params["state"]] or not isinstance(code, str):
+            raise AssertionError(f"{identifier} approval did not return the exact code callback")
+        register_secret(code)
+        discovery_response = browser.request("GET", "/lockspire/.well-known/openid-configuration")
+        require_status(discovery_response, 200, f"{identifier} discovery")
+        discovery = json.loads(str(discovery_response["body"]))
+        token_response = browser.request("POST", provider_path(str(discovery["token_endpoint"])), {
+            "grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri,
+            "code_verifier": verifier, "client_id": client_id,
+        }, {"content-type": "application/x-www-form-urlencoded", "accept": "application/json"})
+        require_status(token_response, 200, f"{identifier} S256 code exchange")
+        issued = decoded_secret_payload(token_response["body"])
+        token_issued = isinstance(issued.get("access_token"), str) and bool(issued.get("access_token"))
+        if not token_issued:
+            raise AssertionError(f"{identifier} S256 exchange omitted its access token")
+        replay = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": request_uri,
+        }))
+        require_status(replay, 400, f"{identifier} PAR replay")
+        replay_no_location = "location" not in replay["headers"]
+        if not replay_no_location:
+            raise AssertionError(f"{identifier} replay returned a Location header")
+        observations = {
+            "direct_status": int(direct["status"]), "direct_safe_callback": True,
+            "pushed_status": 201, "pushed_json_media_type": json_media_type,
+            "pushed_positive_expires_in": True, "token_status": int(token_response["status"]),
+            "token_issued": token_issued, "replay_status": int(replay["status"]),
+            "replay_no_location": replay_no_location,
+        }
+        SELECTED_PAR_SHARED[shared_key] = observations
+        return passed(observations)
+
+    if identifier == "P171-002":
+        client_id = _selected_client(child, environment, redirect_uri)
+        foreign_client_id = _selected_client(child, environment, redirect_uri)
+        owner_browser = Browser(PROVIDER_ORIGIN)
+        _host_login(owner_browser, "clean-room-selected-binding")
+        params, _verifier = _pushed_params(client_id, redirect_uri)
+        control_uri, _expiry, _media = _push_par(owner_browser, params)
+        _control_interaction, control_status = _par_consent_handoff(owner_browser, client_id, control_uri, "P171-002 owner control")
+        candidate_params, _verifier = _pushed_params(client_id, redirect_uri)
+        candidate_uri, _expiry, _media = _push_par(owner_browser, candidate_params)
+        foreign = owner_browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": foreign_client_id, "request_uri": candidate_uri,
+        }))
+        require_status(foreign, 400, "P171-002 foreign-client request_uri")
+        if "location" in foreign["headers"]:
+            raise AssertionError("P171-002 foreign-client request_uri returned a Location")
+        owner_reuse = owner_browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": candidate_uri,
+        }))
+        require_status(owner_reuse, 400, "P171-002 owner reuse after foreign-client attempt")
+        if "location" in owner_reuse["headers"]:
+            raise AssertionError("P171-002 owner reuse returned a Location")
+        return passed({
+            "owner_control_status": control_status, "owner_control_reached_consent": True,
+            "foreign_status": int(foreign["status"]), "foreign_no_location": True,
+            "owner_reuse_status": int(owner_reuse["status"]), "owner_reuse_no_location": True,
+        })
+
+    if identifier == "P171-003":
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-expiry")
+        register_secret("fixture-nonce")
+        register_secret("fixture-state")
+        base_attrs = (
+            f'client_id: {json.dumps(client_id)}, redirect_uri: {json.dumps(redirect_uri)}, '
+            'scopes: ["openid", "email"], resources_requested: [], authorization_details: [], '
+            'prompt: "consent", nonce: "fixture-nonce", state: "fixture-state", '
+            'code_challenge: "fixture-challenge", code_challenge_method: :S256'
+        )
+        expression = (
+            'alias Lockspire.Domain.PushedAuthorizationRequest; alias Lockspire.Storage.Ecto.Repository; '
+            f'expired = PushedAuthorizationRequest.issue(%{{{base_attrs}}}, now: DateTime.add(DateTime.utc_now(), -600, :second)); '
+            '{:ok, _} = Repository.put_pushed_authorization_request(expired); '
+            f'live = PushedAuthorizationRequest.issue(%{{{base_attrs}}}); '
+            '{:ok, _} = Repository.put_pushed_authorization_request(live); '
+            'IO.puts("SELECTED_EXPIRED_REFERENCE=" <> expired.request_uri); '
+            'IO.puts("SELECTED_LIVE_REFERENCE=" <> live.request_uri)'
+        )
+        fixture = _run_host_control(child, environment, expression)
+        expired_match = re.search(r"SELECTED_EXPIRED_REFERENCE=([^\n]+)", fixture)
+        live_match = re.search(r"SELECTED_LIVE_REFERENCE=([^\n]+)", fixture)
+        if not expired_match or not live_match:
+            raise AssertionError("P171-003 private expiry fixtures were not created")
+        expired_uri, live_uri = expired_match.group(1).strip(), live_match.group(1).strip()
+        register_secret(expired_uri)
+        register_secret(live_uri)
+        live_interaction, live_status = _par_consent_handoff(browser, client_id, live_uri, "P171-003 live neighbor control")
+        expired = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": expired_uri,
+        }))
+        require_status(expired, 400, "P171-003 expired request_uri")
+        if "location" in expired["headers"]:
+            raise AssertionError("P171-003 expired request_uri returned a Location")
+        return passed({
+            "live_control_status": live_status, "live_control_reached_consent": bool(live_interaction),
+            "expired_status": int(expired["status"]), "expired_no_location": True,
+        })
+
+    if identifier == "P171-005":
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-scope-authority")
+        control_params, _control_verifier = _pushed_params(client_id, redirect_uri)
+        control_uri, _control_expiry, _control_media = _push_par(browser, control_params)
+        control_interaction, _control_status = _par_consent_handoff(browser, client_id, control_uri, "P171-005 independent reference-only control")
+        candidate_params, _candidate_verifier = _pushed_params(client_id, redirect_uri)
+        candidate_uri, _candidate_expiry, _candidate_media = _push_par(browser, candidate_params)
+        if candidate_uri == control_uri:
+            raise AssertionError("P171-005 candidate reused its independent control reference")
+        candidate_authorize = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": candidate_uri, "scope": "profile",
+        }))
+        require_status_in(candidate_authorize, (302, 303), "P171-005 pushed-scope candidate")
+        candidate_location = redirect(candidate_authorize, "P171-005 pushed-scope candidate")
+        candidate_interaction = _assert_consent_handoff(browser, candidate_location, "P171-005 pushed-scope candidate")
+        persisted = _stored_interaction_projection(child, environment, candidate_interaction, {
+            "client_id": client_id, "scopes": ["openid", "email"],
+            "state": candidate_params["state"], "nonce": candidate_params["nonce"],
+        })
+        return passed({
+            "control_consent_boundary_exact": bool(control_interaction),
+            "candidate_consent_boundary_exact": True,
+            "candidate_client_id_matches": persisted["client_id_matches"],
+            "candidate_scopes_match": persisted["scopes_match"],
+            "candidate_state_matches": persisted["state_matches"],
+            "candidate_nonce_matches": persisted["nonce_matches"],
+            "candidate_front_channel_scope_not_merged": persisted["front_channel_scope_not_merged"],
+        })
+
+    if identifier == "P171-006":
+        configured_issuer = PROVIDER_ORIGIN + "/lockspire"
+        response = Browser(PROVIDER_ORIGIN).request("GET", "/lockspire/.well-known/openid-configuration")
+        require_status(response, 200, "P171-006 mounted discovery")
+        metadata = json.loads(str(response["body"]))
+        suffixes = {
+            "authorization_endpoint": "/lockspire/authorize",
+            "token_endpoint": "/lockspire/token",
+            "userinfo_endpoint": "/lockspire/userinfo",
+            "jwks_uri": "/lockspire/jwks",
+            "pushed_authorization_endpoint": "/lockspire/par",
+            "revocation_endpoint": "/lockspire/revoke",
+            "introspection_endpoint": "/lockspire/introspect",
+        }
+        facts = {key.replace("_endpoint", "_mounted").replace("jwks_uri", "jwks_uri_mounted"): metadata.get(key) == configured_issuer + suffix for key, suffix in suffixes.items()}
+        expected_keys = {
+            "authorization_mounted", "token_mounted", "userinfo_mounted", "jwks_uri_mounted",
+            "pushed_authorization_mounted", "revocation_mounted", "introspection_mounted",
+        }
+        if set(facts) != expected_keys:
+            raise AssertionError("P171-006 mounted discovery projection keys were invalid")
+        return passed({
+            "discovery_status": int(response["status"]),
+            "issuer_matches_configured": metadata.get("issuer") == configured_issuer,
+            "authorization_endpoint_mounted": facts["authorization_mounted"],
+            "token_endpoint_mounted": facts["token_mounted"],
+            "userinfo_endpoint_mounted": facts["userinfo_mounted"],
+            "jwks_uri_mounted": facts["jwks_uri_mounted"],
+            "pushed_authorization_endpoint_mounted": facts["pushed_authorization_mounted"],
+            "revocation_endpoint_mounted": facts["revocation_mounted"],
+            "introspection_endpoint_mounted": facts["introspection_mounted"],
+        })
+
     raise AssertionError(f"selected authorization case is not implemented: {identifier}")
 
 
 def run_selected_authorization_par(
     case_ids: tuple[str, ...], provider: Browser, child: Path, environment: dict[str, str], run_root: Path
 ) -> list[dict[str, object]]:
+    SELECTED_PAR_SHARED.clear()
     if not case_ids:
         raise AssertionError("selected authorization case set is empty")
     scenarios = []

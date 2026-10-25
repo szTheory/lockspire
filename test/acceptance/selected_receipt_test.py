@@ -11,12 +11,15 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance"))
 
 try:
     from selected_receipts import validate_selected_receipt, write_selected_receipt
+    from clean_room_saas_journey import _exact_relative_consent_id
 except ImportError:  # Lets the initial TDD RED be an assertion, not an import error.
     validate_selected_receipt = None  # type: ignore[assignment]
     write_selected_receipt = None  # type: ignore[assignment]
+    _exact_relative_consent_id = None  # type: ignore[assignment]
 
 
 class SelectedReceiptTest(unittest.TestCase):
@@ -139,7 +142,10 @@ class SelectedReceiptTest(unittest.TestCase):
             )
 
     def test_each_authorization_case_requires_its_positive_observation_contract(self) -> None:
-        identifiers = ("A171-001", "A171-002", "A171-003", "A171-004", "A171-005", "A171-006")
+        identifiers = (
+            "A171-001", "A171-002", "A171-003", "A171-004", "A171-005", "A171-006",
+            "P171-001", "P171-002", "P171-003", "P171-004", "P171-005", "P171-006",
+        )
         for identifier in identifiers:
             receipt = self.receipt_for(identifier)
             self.write(receipt)
@@ -156,6 +162,55 @@ class SelectedReceiptTest(unittest.TestCase):
             first_boolean = next(key for key, value in false["scenarios"][0]["observations"].items() if type(value) is bool)
             false["scenarios"][0]["observations"][first_boolean] = False
             self.rejected(false, expected_case_ids=(identifier,))
+
+    def test_rejects_invalid_par_http_and_discovery_statuses(self) -> None:
+        invalid_statuses = (
+            ("P171-001", "pushed_status", 302),
+            ("P171-002", "foreign_status", 302),
+            ("P171-003", "expired_status", 302),
+            ("P171-004", "token_status", 400),
+            ("P171-006", "discovery_status", 404),
+        )
+        for identifier, field, status in invalid_statuses:
+            receipt = self.receipt_for(identifier)
+            receipt["scenarios"][0]["observations"][field] = status
+            self.rejected(receipt, expected_case_ids=(identifier,))
+
+    def test_rejects_missing_or_skipped_par_rows_from_complete_selection(self) -> None:
+        full_ids = (
+            "A171-001", "A171-002", "A171-003", "A171-004", "A171-005", "A171-006",
+            "P171-001", "P171-002", "P171-003", "P171-004", "P171-005", "P171-006",
+        )
+        receipt = self.receipt()
+        receipt["selection"] = "complete"
+        receipt["expected_case_ids"] = list(full_ids)
+        receipt["scenarios"] = [self.scenario(identifier) for identifier in full_ids[:-1]]
+        receipt["counts"] = {"executed": 11, "passed": 11, "failed": 0, "skipped": 0}
+        self.rejected(receipt, expected_case_ids=full_ids)
+
+        receipt = self.receipt_for("P171-005")
+        receipt["scenarios"][0]["outcome"] = "skipped"
+        receipt["scenarios"][0]["counts"] = {"executed": 1, "passed": 0, "failed": 0, "skipped": 1}
+        receipt["counts"] = receipt["scenarios"][0]["counts"]
+        self.rejected(receipt, expected_case_ids=("P171-005",))
+
+    def test_pushed_consent_projection_rejects_false_authority_facts(self) -> None:
+        receipt = self.receipt_for("P171-005")
+        for field in ("candidate_scopes_match", "candidate_state_matches", "candidate_nonce_matches", "candidate_front_channel_scope_not_merged"):
+            mutation = copy.deepcopy(receipt)
+            mutation["scenarios"][0]["observations"][field] = False
+            self.rejected(mutation, expected_case_ids=("P171-005",))
+
+    def test_consent_boundary_accepts_only_exact_relative_route(self) -> None:
+        self.assertTrue(callable(_exact_relative_consent_id))
+        self.assertEqual(_exact_relative_consent_id("/lockspire/consent/abc123"), "abc123")
+        for location in (
+            "https://attacker.example/lockspire/consent/abc123",
+            "/lockspire/consent/abc123?next=/",
+            "/lockspire/consent/abc123#fragment",
+            "/lockspire/consent/",
+        ):
+            self.assertIsNone(_exact_relative_consent_id(location))
 
     def test_cli_contract_rejects_receipt_check_without_external_binding(self) -> None:
         # The runner must validate caller-supplied source and byte identity before reading a receipt.
@@ -205,6 +260,12 @@ class SelectedReceiptTest(unittest.TestCase):
             "A171-004": {"callback_status": 302, "login_required": True, "state_matches": True, "no_host_login_redirect": True},
             "A171-005": {"callback_status": 302, "login_required": True, "state_matches": True, "no_host_login_redirect": True, "stale_auth_time_used": True},
             "A171-006": {"max_age_token_status": 200, "max_age_signature_valid": True, "max_age_issuer_audience_nonce_valid": True, "max_age_auth_time_integer": True, "max_age_auth_time_equal": True, "claims_token_status": 200, "claims_signature_valid": True, "claims_issuer_audience_nonce_valid": True, "claims_auth_time_integer": True, "claims_auth_time_equal": True},
+            "P171-001": {"direct_status": 302, "direct_safe_callback": True, "pushed_status": 201, "pushed_json_media_type": True, "pushed_positive_expires_in": True, "token_status": 200, "token_issued": True, "replay_status": 400, "replay_no_location": True},
+            "P171-002": {"owner_control_status": 302, "owner_control_reached_consent": True, "foreign_status": 400, "foreign_no_location": True, "owner_reuse_status": 400, "owner_reuse_no_location": True},
+            "P171-003": {"live_control_status": 302, "live_control_reached_consent": True, "expired_status": 400, "expired_no_location": True},
+            "P171-004": {"direct_status": 302, "direct_safe_callback": True, "pushed_status": 201, "pushed_json_media_type": True, "pushed_positive_expires_in": True, "token_status": 200, "token_issued": True, "replay_status": 400, "replay_no_location": True},
+            "P171-005": {"control_consent_boundary_exact": True, "candidate_consent_boundary_exact": True, "candidate_client_id_matches": True, "candidate_scopes_match": True, "candidate_state_matches": True, "candidate_nonce_matches": True, "candidate_front_channel_scope_not_merged": True},
+            "P171-006": {"discovery_status": 200, "issuer_matches_configured": True, "authorization_endpoint_mounted": True, "token_endpoint_mounted": True, "userinfo_endpoint_mounted": True, "jwks_uri_mounted": True, "pushed_authorization_endpoint_mounted": True, "revocation_endpoint_mounted": True, "introspection_endpoint_mounted": True},
         }.get(identifier, {})
         return {
             "id": identifier, "outcome": "passed",
