@@ -514,7 +514,7 @@ def _selected_client(child: Path, environment: dict[str, str], redirect_uri: str
 def _set_required_par(child: Path, environment: dict[str, str]) -> None:
     output = _run_host_control(
         child, environment,
-        '{:ok, policy} = Lockspire.Admin.ServerPolicy.put_par_policy(:required); '
+        '{:ok, policy} = Lockspire.Admin.ServerPolicy.put_server_policy(:required); '
         'true = policy.par_policy == :required; IO.puts("SELECTED_PAR_REQUIRED=true")',
     )
     if "SELECTED_PAR_REQUIRED=true" not in output:
