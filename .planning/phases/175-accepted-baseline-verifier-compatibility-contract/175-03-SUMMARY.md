@@ -44,7 +44,7 @@ key-files:
     - test/support/client_secret_verifier_fixtures.ex
 
 key-decisions:
-  - "The entry receipt proves only the immutable accepted entry SHA; candidate 4fa03cef is a separate full-CI-tested qualification candidate."
+  - "The entry receipt proves only the immutable accepted entry SHA; candidate f3ef32a7 is a separate full-CI-tested qualification candidate."
   - "Phase 178 owns the single final integrated-main acceptance; Phase 175 opens no PR and does not claim final-main acceptance."
   - "The Phase 175 candidate CI, contract and material gates make dependent planning ready; independent Phase 175 verification still gates Phase 176 dispatch."
 
@@ -61,7 +61,7 @@ coverage:
     requirement: VBASE-02
     verification:
       - kind: unit
-        ref: "Combined caller, compatibility and contract suite: 29 tests, 0 failures; contract validator alone: 9 tests, 0 failures"
+        ref: "Combined caller, compatibility and contract suite: 30 tests, 0 failures; contract validator alone: 10 tests, 0 failures"
         status: pass
       - kind: other
         ref: "Full Credo stage in canonical mix ci: 8,286 mods/funs, 0 issues"
@@ -72,7 +72,7 @@ coverage:
     requirement: VBASE-01
     verification:
       - kind: integration
-        ref: "mix ci at 4fa03cefd18894e25d3777187e5f00e773a2b18a: exit 0; boundary 15/0, ExUnit 2054/0, integration 210/0"
+        ref: "mix ci at f3ef32a767412b8a7b50c5510a86f150966de48e: exit 0; boundary 15/0, ExUnit 2055/0, integration 210/0"
         status: pass
       - kind: other
         ref: "Literal Task 03 final-source assertion: entry receipt, candidate identity, frozen inputs, remote main and Phase 178 deferral agree"
@@ -86,7 +86,7 @@ status: complete
 
 # Phase 175 Plan 03: Finite Verifier Compatibility Contract Summary
 
-**A bounded verifier and maintenance contract is tied to candidate `4fa03cef`, whose complete local CI passed while final integrated-main acceptance remains assigned to Phase 178.**
+**A bounded verifier and maintenance contract is tied to candidate `f3ef32a7`, whose complete local CI passed while final integrated-main acceptance remains assigned to Phase 178.**
 
 ## Performance
 
@@ -102,7 +102,7 @@ status: complete
 - Recorded all current writer/reader seams, optional maintenance authority, bounded inventory and atomic compare-and-rewrap semantics, along with explicit Phase 176–178 proof owners.
 - Added a qualification-only migration-readiness case for authenticated future timestamps, exact deadline equality, strict expiry, 23-hour eligibility and unsupported ages. No production runtime or migration path changed.
 - Strengthened the semantic validator to require exact nonempty source manifests and hashes, preserve historical evidence without comparing it to changed live bytes, and reject downgraded pending Phase 175 proof.
-- Bound the frozen contract to exact candidate `4fa03cefd18894e25d3777187e5f00e773a2b18a`. Full CI passed with clean pre/post checkout; the product/config/dependency/gate-input comparison against entry `173059a1` is unchanged; remote `main` was freshly observed at the entry SHA.
+- Bound the frozen contract to exact candidate `f3ef32a767412b8a7b50c5510a86f150966de48e`. Full CI passed with clean pre/post checkout; the product/config/dependency/gate-input comparison against entry `173059a1` is unchanged; remote `main` was freshly observed at the entry SHA.
 - Closed source findings CR-01 and WR-01 with no open findings. The final-source record preserves the earlier provider-discovery timeout and its unknown cause; the same-code focused test and canonical retry passed without timeout or harness changes.
 
 ## Task Commits
@@ -124,7 +124,7 @@ The persisted plan ledger measures 9 commits from `8df8c479e97b25d28910509e0bbb6
 - `client_secret_verifier_contract_test.exs` validates exact fields, owners, source evidence, bounds, paging, transaction authority and future proof status.
 - `client_secret_verifier_fixtures.ex` and `client_secret_verifier_compatibility_test.exs` add only qualification-side migration-readiness semantics.
 - `175-QUALIFICATION.json` preserves historical e8 evidence and records the exact current source manifest at `e60b7c10`.
-- `175-FINAL-SOURCE.json` distinguishes entry `173059a1`, fully tested candidate `4fa03cef`, and Phase 178 final acceptance.
+- `175-FINAL-SOURCE.json` distinguishes entry `173059a1`, fully tested candidate `f3ef32a7`, and Phase 178 final acceptance.
 - The review reports record initial findings, closure, and disposition against the final candidate.
 
 ## Decisions Made
@@ -143,13 +143,13 @@ The persisted plan ledger measures 9 commits from `8df8c479e97b25d28910509e0bbb6
 - **Issue:** The contract lacked an explicit migration-readiness rule for future signed timestamps, and source manifests could permit false-green evidence through missing or downgraded proof.
 - **Fix:** Added the qualification-only readiness predicate and boundary test; required exact source key sets, valid digests and qualified current evidence; retained the old e8 two-file record as historical evidence.
 - **Files modified:** Compatibility test, contract validator test, fixture helper, qualification JSON and compatibility ledger.
-- **Verification:** Focused suite 29/0, full Credo 0 issues, review closure CR-01/WR-01, and exact-candidate full CI.
+- **Verification:** Focused suite 30/0, full Credo 0 issues, review closure CR-01/WR-01, and exact-candidate full CI.
 - **Committed in:** `e60b7c10`, `4fa03cef`.
 
 **2. Amended source acceptance sequencing to match the canonical development train.**
 - **Found during:** Task 03 final-source reconciliation.
 - **Issue:** An early plan version treated the Phase 175 candidate as if it could receive a separate main PR before Phase 176–178 implementation.
-- **Fix:** Preserved entry acceptance at `173059a1`, bound qualification to candidate `4fa03cef`, and deferred integrated-main acceptance to Phase 178. The independent typed plan checker approved this sequencing amendment on 2026-10-25.
+- **Fix:** Preserved entry acceptance at `173059a1`, bound qualification to candidate `f3ef32a7`, and deferred integrated-main acceptance to Phase 178. The independent typed plan checker approved this sequencing amendment on 2026-10-25.
 - **Files modified:** `175-03-PLAN.md`, `175-CONTEXT.md`, and `175-FINAL-SOURCE.json`.
 - **Verification:** Literal amended final-source assertion and final candidate CI passed.
 - **Committed in:** `fae04f99` and the final-source bookkeeping commit.
@@ -180,3 +180,7 @@ The finite contract and candidate evidence are ready for independent Phase 175 v
 - Summary and final-source artifact exist.
 - Task commits `7c3aa209`, `9a1c9d80`, `cfce7352`, `f693f38d`, `fae04f99`, `e60b7c10`, `4fa03cef`, `38d5fdeb`, and `65beb731` are ancestors of HEAD.
 - The final-source assertion, candidate CI, focused validation, review closure and frozen-input checks are recorded in `175-FINAL-SOURCE.json`.
+
+## Final audit reconciliation
+
+The security audit identified a clerical redaction value in the operator-rotation ledger row. Commit `f3ef32a7` corrected that value and the preserved-field description, and added a rejection test for numeric redaction. The typed reviewer confirmed the bounded correction with all prior findings closed. Final canonical CI at this exact source passed: boundary 15/0, main 2,055/0 (6 skipped, 509 excluded), integration 210/0 (46 excluded), clean before/after. The focused combined qualification suite passed 30/0 and the contract suite 10/0. Earlier source identities, reports and the unexplained startup failure remain preserved in FINAL-SOURCE and the review history.
