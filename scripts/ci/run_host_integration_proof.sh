@@ -144,6 +144,48 @@ trap cleanup_owned EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
 fail_stage() { stage=$1; status=$2; echo "host integration proof failed at $stage (exit $status)" >&2; exit "$status"; }
+emit_lifecycle_diagnostic() {
+  python3 - "$private_logs/tests.log" <<'PY'
+import json, re, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "scripts" / "acceptance" / "clean_room"))
+from redaction import safe_failure_summary
+try:
+    text = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace")
+except OSError:
+    text = ""
+matches = re.findall(r"(?m)^\s*\d+ tests?,\s*(\d+) failures?", text)
+failures = min(int(matches[-1]), 999999) if matches else 0
+event = "assertion_failure" if failures else "runner_failure"
+summary = safe_failure_summary(stage="lifecycle", scenario="all", event=event, field="count", count=failures)
+print("host integration lifecycle diagnostic: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
+PY
+}
+emit_browser_diagnostic() {
+  python3 - "$private_logs/browser-$1.log" <<'PY'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.cwd() / "scripts" / "acceptance"))
+from clean_room_admin_journey import safe_browser_failure_summary
+try:
+    lines = Path(sys.argv[1]).read_text(encoding="utf-8", errors="replace").splitlines()
+except OSError:
+    lines = []
+summary = None
+for line in reversed(lines):
+    prefix = "browser proof failed: "
+    if not line.startswith(prefix):
+        continue
+    try:
+        summary = safe_browser_failure_summary(json.loads(line[len(prefix):]))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        continue
+    break
+if summary is None:
+    summary = safe_browser_failure_summary({})
+print("host integration browser diagnostic: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
+PY
+}
 command -v node >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15" >&2; exit 1; }
 node -e 'const [major,minor]=process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 15)) process.exit(1)' >/dev/null 2>&1 || { echo "host integration proof requires installed Node.js >=22.15 with built-in WebSocket" >&2; exit 1; }
 chrome=""
@@ -197,7 +239,7 @@ if [[ "$pair" == locked ]]; then
 else
   run_in_test 0 "$private_logs/tests.log" env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" test test/admin_host_runtime_test.exs || status=$?
 fi
-((status == 0)) || fail_stage lifecycle_tests "$status"
+((status == 0)) || { emit_lifecycle_diagnostic; fail_stage lifecycle_tests "$status"; }
 test_count=$(python3 - "$private_logs/tests.log" <<'PY'
 import re, sys
 text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
@@ -228,7 +270,7 @@ for index in 0 1 2; do
   raw_receipt=$raw_root/$pair-$suffix.json
   status=0
   run_bounded 180 "$private_logs/browser-$index.log" "${journey_command[@]}" --pair "$pair" --mount "$mount" --scenario full --receipt "$raw_receipt" --run-id "$run_id" --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" || status=$?
-  ((status == 0)) || fail_stage "browser_$index" "$status"
+  ((status == 0)) || { emit_browser_diagnostic "$index"; fail_stage "browser_$index" "$status"; }
   status=0
   run_bounded 15 "$private_logs/validate-$index.log" "${validator_command[@]}" --check "$raw_receipt" --expected-run-id "$run_id" --expected-source "$source_revision" --expected-pair "$pair" --expected-mount "$mount" --expected-archive "$candidate_sha" --expected-tree "$candidate_tree" --expected-version "$candidate_version" --expected-scenario-set full || status=$?
   ((status == 0)) || fail_stage "receipt_validation_$index" "$status"
