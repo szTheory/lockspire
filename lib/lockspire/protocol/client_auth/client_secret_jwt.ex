@@ -16,6 +16,7 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   @max_assertion_age 600
   @clock_skew 30
   @allowed_algorithm "HS256"
+  @verifier_family "LSCV"
 
   @spec verify(Client.t(), String.t(), keyword()) :: :ok | {:error, atom()}
   def verify(%Client{} = client, assertion, opts)
@@ -41,17 +42,7 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
        when is_binary(encrypted) and encrypted != "" do
     context = Config.client_secret_verifier_context(opts)
 
-    legacy_opts =
-      case context do
-        %Context{state: :absent} ->
-          Keyword.put(opts, :legacy_secret_key_base, Config.secret_key_base())
-
-        %Context{state: :valid, legacy_read: :allow} ->
-          Keyword.put(opts, :legacy_secret_key_base, Config.secret_key_base())
-
-        _invalid_or_rejecting ->
-          opts
-      end
+    legacy_opts = maybe_add_legacy_secret_key_base(context, encrypted, opts)
 
     result = ClientSecretVerifier.open(context, client_id, encrypted, legacy_opts)
 
@@ -65,6 +56,25 @@ defmodule Lockspire.Protocol.ClientAuth.ClientSecretJwt do
   end
 
   defp resolve_verifier_secret(%Client{}, _opts), do: {:error, :client_secret_verifier_missing}
+
+  defp maybe_add_legacy_secret_key_base(context, encrypted, opts) do
+    legacy_allowed? =
+      match?(%Context{state: :absent}, context) or
+        match?(%Context{state: :valid, legacy_read: :allow}, context)
+
+    if legacy_allowed? and not String.starts_with?(encrypted, @verifier_family) do
+      legacy_key =
+        try do
+          Config.secret_key_base()
+        rescue
+          _ -> nil
+        end
+
+      Keyword.put(opts, :legacy_secret_key_base, legacy_key)
+    else
+      opts
+    end
+  end
 
   defp allowed_signing_algorithms(%Client{} = client, opts) do
     case server_policy_store(opts).get_server_policy() do

@@ -8,7 +8,8 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
             current_id: nil,
             write_mode: :legacy,
             legacy_read: :allow,
-            reason: nil
+            reason: nil,
+            forbidden_key_bytes: []
 
   @type t :: %__MODULE__{}
 
@@ -25,12 +26,32 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   @key_id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
 
   @spec resolve(term(), term()) :: {:ok, t()}
-  def resolve(:absent, _forbidden_key_bytes), do: {:ok, %__MODULE__{state: :absent}}
+  def resolve(:absent, forbidden_key_bytes) do
+    {:ok,
+     %__MODULE__{
+       state: :absent,
+       forbidden_key_bytes: normalize_forbidden_key_bytes(forbidden_key_bytes)
+     }}
+  end
 
   def resolve({:present, config}, forbidden_key_bytes) do
     case validate_config(config, forbidden_key_bytes) do
-      {:ok, values} -> {:ok, struct!(__MODULE__, Map.put(values, :state, :valid))}
-      {:error, reason} -> {:ok, %__MODULE__{state: :invalid, reason: reason}}
+      {:ok, values} ->
+        {:ok,
+         struct!(
+           __MODULE__,
+           values
+           |> Map.put(:state, :valid)
+           |> Map.put(:forbidden_key_bytes, normalize_forbidden_key_bytes(forbidden_key_bytes))
+         )}
+
+      {:error, reason} ->
+        {:ok,
+         %__MODULE__{
+           state: :invalid,
+           reason: reason,
+           forbidden_key_bytes: normalize_forbidden_key_bytes(forbidden_key_bytes)
+         }}
     end
   end
 
@@ -46,7 +67,10 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
       }),
       do: {:error, :client_secret_verifier_configuration_invalid}
 
-  def validate(context), do: validate(context, [])
+  def validate(%__MODULE__{} = context),
+    do: validate(context, context.forbidden_key_bytes)
+
+  def validate(_context), do: {:error, :client_secret_verifier_configuration_invalid}
 
   @spec validate(term(), term()) :: {:ok, t()} | {:error, atom()}
   def validate(%__MODULE__{state: :absent} = context, _forbidden_key_bytes),
@@ -120,8 +144,11 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
     if Keyword.keyword?(config) do
       keys = Keyword.keys(config)
 
+      expected = Enum.sort(@allowed_options)
+      expected_without_current = Enum.sort(List.delete(@allowed_options, :current))
+
       if length(keys) == length(Enum.uniq(keys)) and
-           Enum.sort(keys) == Enum.sort(@allowed_options),
+           Enum.sort(keys) in [expected, expected_without_current],
          do: :ok,
          else: {:error, :invalid_options}
     else
@@ -130,6 +157,14 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
   end
 
   defp validate_options(_config), do: {:error, :invalid_options}
+
+  defp normalize_forbidden_key_bytes(bytes) when is_list(bytes),
+    do: Enum.filter(bytes, &is_binary/1)
+
+  defp normalize_forbidden_key_bytes(%MapSet{} = bytes),
+    do: bytes |> MapSet.to_list() |> Enum.filter(&is_binary/1)
+
+  defp normalize_forbidden_key_bytes(_bytes), do: []
 
   defp decode_keys([_ | _] = entries, forbidden_key_bytes)
        when is_list(forbidden_key_bytes) or is_struct(forbidden_key_bytes, MapSet) do

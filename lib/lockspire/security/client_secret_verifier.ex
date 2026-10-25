@@ -32,11 +32,28 @@ defmodule Lockspire.Security.ClientSecretVerifier do
       payload = Base.url_encode64(iv <> tag <> ciphertext, padding: false)
       {:ok, @header <> "." <> key_id <> "." <> payload}
     else
-      {:ok, %Context{state: :invalid, reason: reason}} -> {:error, reason}
-      {:ok, %Context{state: :absent}} -> {:error, :client_secret_verifier_configuration_invalid}
-      {:ok, %Context{write_mode: :legacy}} -> {:error, :client_secret_verifier_key_missing}
-      {:error, reason} -> {:error, reason}
-      _ -> {:error, :client_secret_verifier_configuration_invalid}
+      {:ok, %Context{state: :invalid}} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      {:ok, %Context{state: :absent}} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      {:ok, %Context{write_mode: :legacy}} ->
+        {:error, :client_secret_verifier_key_missing}
+
+      {:error, reason}
+      when reason in [
+             :client_secret_verifier_identity_missing,
+             :client_secret_verifier_unavailable,
+             :client_secret_verifier_key_missing
+           ] ->
+        {:error, reason}
+
+      {:error, _reason} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      _ ->
+        {:error, :client_secret_verifier_configuration_invalid}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
@@ -50,11 +67,30 @@ defmodule Lockspire.Security.ClientSecretVerifier do
          {:ok, secret} <- open_value(context, client_id, encrypted, opts) do
       {:ok, secret}
     else
-      {:ok, %Context{state: :invalid, reason: reason}} -> {:error, reason}
-      {:ok, _context} -> {:error, :client_secret_verifier_configuration_invalid}
-      false -> {:error, :client_secret_verifier_unsupported_format}
-      {:error, reason} -> {:error, reason}
-      _ -> {:error, :client_secret_verifier_unavailable}
+      {:ok, %Context{state: :invalid}} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      {:ok, _context} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      false ->
+        {:error, :client_secret_verifier_unsupported_format}
+
+      {:error, reason}
+      when reason in [
+             :client_secret_verifier_identity_missing,
+             :client_secret_verifier_unavailable,
+             :client_secret_verifier_unsupported_format,
+             :client_secret_verifier_key_unknown,
+             :client_secret_verifier_legacy_rejected
+           ] ->
+        {:error, reason}
+
+      {:error, _reason} ->
+        {:error, :client_secret_verifier_configuration_invalid}
+
+      _ ->
+        {:error, :client_secret_verifier_unavailable}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}

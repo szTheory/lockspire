@@ -317,9 +317,21 @@ defmodule Lockspire.Config do
   @doc false
   @spec client_secret_verifier_context(keyword()) :: Context.t()
   def client_secret_verifier_context(opts) when is_list(opts) do
-    case Keyword.fetch(opts, :client_secret_verifier_context) do
-      :error -> client_secret_verifier_context()
-      {:ok, override} -> resolve_client_secret_verifier_override(override)
+    case :persistent_term.get(@client_secret_verifier_cache_key, :uninitialized) do
+      %Context{} = startup_context ->
+        case Keyword.fetch(opts, :client_secret_verifier_context) do
+          :error ->
+            startup_context
+
+          {:ok, override} ->
+            resolve_client_secret_verifier_override(
+              override,
+              startup_context.forbidden_key_bytes
+            )
+        end
+
+      _uninitialized ->
+        %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
     end
   rescue
     _ -> %Context{state: :invalid, reason: :client_secret_verifier_configuration_invalid}
@@ -338,8 +350,11 @@ defmodule Lockspire.Config do
     endpoint_and_session_secrets =
       Application.get_all_env(@app)
       |> Enum.flat_map(fn
-        {_key, config} when is_list(config) -> [Keyword.get(config, :secret_key_base)]
-        _other -> []
+        {_key, config} when is_list(config) ->
+          if Keyword.keyword?(config), do: [Keyword.get(config, :secret_key_base)], else: []
+
+        _other ->
+          []
       end)
 
     signing_keys =
@@ -353,19 +368,19 @@ defmodule Lockspire.Config do
     |> Enum.uniq()
   end
 
-  defp resolve_client_secret_verifier_override(%Context{} = context) do
-    case Context.validate(context, client_secret_verifier_forbidden_key_bytes()) do
-      {:ok, context} -> context
+  defp resolve_client_secret_verifier_override(%Context{} = context, forbidden_key_bytes) do
+    case Context.validate(context, forbidden_key_bytes) do
+      {:ok, context} -> %{context | forbidden_key_bytes: forbidden_key_bytes}
       {:error, reason} -> %Context{state: :invalid, reason: reason}
     end
   end
 
-  defp resolve_client_secret_verifier_override({:present, config}),
-    do: resolve_client_secret_verifier_override(config)
+  defp resolve_client_secret_verifier_override({:present, config}, forbidden_key_bytes),
+    do: resolve_client_secret_verifier_override(config, forbidden_key_bytes)
 
-  defp resolve_client_secret_verifier_override(config) do
+  defp resolve_client_secret_verifier_override(config, forbidden_key_bytes) do
     {:ok, context} =
-      Context.resolve({:present, config}, client_secret_verifier_forbidden_key_bytes())
+      Context.resolve({:present, config}, forbidden_key_bytes)
 
     context
   end

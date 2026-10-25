@@ -45,6 +45,9 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
   end
 
   test "startup retains absent, valid, and invalid-present settings as distinct states" do
+    Application.put_env(:lockspire, :non_keyword_host_option, [:keep, :opaque])
+    on_exit(fn -> Application.delete_env(:lockspire, :non_keyword_host_option) end)
+
     Application.delete_env(:lockspire, Context)
 
     assert {:ok, %Context{state: :absent}} =
@@ -55,6 +58,11 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
     assert {:ok, %Context{state: :invalid, reason: reason}} = resolve(nil)
     assert reason == :invalid_options
     assert Config.client_secret_verifier_context().state == :invalid
+
+    assert %Context{state: :valid} =
+             Config.client_secret_verifier_context(
+               client_secret_verifier_context: {:present, config("explicit-recovery")}
+             )
   end
 
   test "application environment edits and concurrent reads cannot hot reload the snapshot" do
@@ -86,8 +94,8 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
 
     partial = [
       keys: [{"primary", encoded("override")}],
-      write_mode: :dedicated,
-      legacy_read: :allow
+      current: nil,
+      write_mode: :dedicated
     ]
 
     assert %Context{state: :invalid} =
@@ -103,6 +111,13 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
     assert {:ok, %Context{state: :valid, current_id: nil}} =
              Context.resolve(
                {:present, config("read-only", current: nil, write_mode: :legacy)},
+               []
+             )
+
+    assert {:ok, %Context{state: :valid, current_id: nil}} =
+             Context.resolve(
+               {:present,
+                Keyword.delete(config("read-only-omitted", write_mode: :legacy), :current)},
                []
              )
   end
@@ -123,8 +138,11 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
       config("unknown", unexpected: true),
       config("unknown-current", current: "absent"),
       config("missing-current", current: nil),
+      config("bad-write-mode", write_mode: :enable),
+      config("bad-read-mode", legacy_read: :strict),
       config("contradiction", write_mode: :legacy, legacy_read: :reject),
       config("bad-id", keys: [{"bad id", key}]),
+      config("bad-encoding", keys: [{"primary", "not base64"}]),
       config("bad-length", keys: [{"primary", Base.encode64(:crypto.strong_rand_bytes(31))}]),
       config("duplicate-id", keys: [{"primary", key}, {"primary", encoded("b")}]),
       config("duplicate-bytes", keys: [{"primary", key}, {"secondary", key}])
@@ -132,6 +150,41 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
 
     for candidate <- invalid do
       assert {:ok, %Context{state: :invalid}} = Context.resolve({:present, candidate}, [])
+    end
+
+    decoded_duplicate =
+      <<251, 255, 190>> <> binary_part(:crypto.hash(:sha256, "decoded duplicate"), 0, 29)
+
+    assert {:ok, %Context{state: :invalid, reason: :invalid_key}} =
+             Context.resolve(
+               {:present,
+                config("duplicate-decoded",
+                  keys: [
+                    {"primary", Base.encode64(decoded_duplicate)},
+                    {"secondary", Base.url_encode64(decoded_duplicate, padding: false)}
+                  ]
+                )},
+               []
+             )
+  end
+
+  test "the four frozen standard and URL-safe base64 variants remain accepted" do
+    key = <<251, 255, 190>> <> binary_part(:crypto.hash(:sha256, "encoding variants"), 0, 29)
+
+    encodings = [
+      Base.encode64(key),
+      Base.encode64(key, padding: false),
+      Base.url_encode64(key),
+      Base.url_encode64(key, padding: false)
+    ]
+
+    for encoded_key <- encodings do
+      assert {:ok, %Context{state: :valid, keys: %{"primary" => ^key}}} =
+               Context.resolve(
+                 {:present,
+                  [keys: [{"primary", encoded_key}], write_mode: :legacy, legacy_read: :allow]},
+                 []
+               )
     end
   end
 
@@ -152,6 +205,16 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
                 config("endpoint", keys: [{"primary", Base.encode64(endpoint_secret)}])},
                [endpoint_secret]
              )
+
+    assert {:ok, %Context{state: :valid}} = resolve(config("override-base"))
+
+    override =
+      config("reused-override", keys: [{"primary", Base.encode64(signing_bytes)}])
+
+    assert %Context{state: :invalid, reason: :invalid_key} =
+             Config.client_secret_verifier_context(
+               client_secret_verifier_context: {:present, override}
+             )
   end
 
   test "invalid contexts and inspection expose only allowlisted state and reason atoms" do
@@ -165,6 +228,31 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
     forged = %Context{invalid | reason: sentinel}
     assert inspect(forged) =~ "reason: :client_secret_verifier_configuration_invalid"
     refute inspect(forged) =~ sentinel
+  end
+
+  test "override comparison uses the startup-known purpose key set" do
+    endpoint_config = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)
+
+    on_exit(fn ->
+      Application.put_env(:lockspire, Lockspire.Web.Endpoint, endpoint_config)
+    end)
+
+    assert {:ok, %Context{state: :valid}} = resolve(config("startup-key"))
+    post_startup_endpoint_key = :crypto.strong_rand_bytes(32)
+
+    Application.put_env(
+      :lockspire,
+      Lockspire.Web.Endpoint,
+      Keyword.put(endpoint_config, :secret_key_base, post_startup_endpoint_key)
+    )
+
+    override =
+      config("override-key", keys: [{"primary", Base.encode64(post_startup_endpoint_key)}])
+
+    assert %Context{state: :valid, keys: %{"primary" => ^post_startup_endpoint_key}} =
+             Config.client_secret_verifier_context(
+               client_secret_verifier_context: {:present, override}
+             )
   end
 
   test "dedicated envelope key lookup distinguishes missing and unknown configured IDs" do
