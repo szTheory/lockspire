@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 approved; 18 approved requirements; ready for Phase 175 discussion; product implementation requires fresh accepted main.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 approved; Phase 175 verified complete with 3 non-authoritative prohibition flags; Phase 176 discussion is next when resumed.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -25,7 +25,7 @@
 
 ## Phases
 
-- [ ] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract.
+- [x] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract. (completed 2026-10-25)
 - [ ] **Phase 176: Dedicated Verifier Custody & Compatible Runtime** - Wire independent keys through every production reader/writer and prove the supported rolling transition.
 - [ ] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials.
 - [ ] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
@@ -43,7 +43,7 @@
   3. Implementers can inspect a frozen finite ledger covering every writer/reader, stable client-identity sealing, text format/key configuration, missing-key behavior, supported custom-store transaction/capability contract, rollout/rollback states, expected outcomes and automated proof owners.
   4. Unresolved material policy/API/support changes stop dependent planning; evidence that invalidates the recommended no-schema/no-new-dependency scope produces an explicit GSD revision rather than an unreviewed expansion. Historical Phase 142/143 and immutable receipts remain intact.
 
-**Plans**: 3/3 plans executed
+**Plans**: 3/3 plans complete
 
 Plans:
 **Wave 1**
@@ -53,7 +53,7 @@ Plans:
 - [x] 175-02-PLAN.md — Qualify persisted legacy age, public metadata and helper compatibility; resolve material policy gates.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [x] 175-03-PLAN.md — Freeze the finite custody/compatibility contract and reconcile final accepted source.
+- [x] 175-03-PLAN.md — Freeze the finite custody/compatibility contract and reconcile the qualified candidate with accepted entry main.
 
 ### Phase 176: Dedicated Verifier Custody & Compatible Runtime
 
@@ -100,12 +100,12 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
-| 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Awaiting verification | — |
+| 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 0/0 | Not started | — |
 | 177. Safe Verifier Maintenance & Recovery | 0/0 | Not started | — |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; 0 implementation plans or completed phases. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phase 175 completed 3/3 plans, 1/4 phases complete; no product runtime implementation performed. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 

@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. VBASE-01 has Plan 01 execution evidence; independent phase verification and the remaining requirements are pending.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phase 175 independently verified VBASE-01 and VBASE-02; the remaining 16 requirements are pending. Three non-authoritative prohibition flags remain visible in the Phase 175 report.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -10,7 +10,7 @@
 ### Qualified baseline and compatibility contract
 
 - [x] **VBASE-01**: Maintainer can begin product implementation only after retained-delivery reconciliation and fresh exact-main acceptance through the existing helper, including local contributor checks, matching required CI/Release evidence and explicit resource custody.
-- [ ] **VBASE-02**: Maintainer can inspect a finite acceptance contract covering format/key configuration, every verifier writer/reader, legacy ciphertext age, mixed-version rollout/rollback and supported storage adapters; unresolved policy changes stop dependent implementation.
+- [x] **VBASE-02**: Maintainer can inspect a finite acceptance contract covering format/key configuration, every verifier writer/reader, legacy ciphertext age, mixed-version rollout/rollback and supported storage adapters; unresolved policy changes stop dependent implementation.
 
 ### Independent verifier key custody
 
@@ -62,12 +62,12 @@
 
 ## Traceability
 
-Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. All implementation statuses are Pending.
+Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phase 175 is verified complete; later implementation statuses remain Pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
 | VBASE-01 | Phase 175 | Complete |
-| VBASE-02 | Phase 175 | Pending |
+| VBASE-02 | Phase 175 | Complete |
 | SEC-01 | Phase 176 | Pending |
 | SEC-02 | Phase 176 | Pending |
 | SEC-03 | Phase 176 | Pending |
@@ -85,7 +85,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped. Roadmap approved 2026-10-25.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 2 verified complete and 16 pending. Roadmap approved 2026-10-25.
 
 ---
-*Last updated: 2026-10-25 after requirements and roadmap approval.*
+*Last updated: 2026-10-25 after independent Phase 175 verification and scoped completion.*
