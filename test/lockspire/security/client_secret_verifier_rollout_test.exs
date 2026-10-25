@@ -31,7 +31,9 @@ defmodule Lockspire.Security.ClientSecretVerifierRolloutTest do
       assert ClientSecretVerifier.open(
                context_override,
                client_id,
-               material.client_secret_jwt_verifier_encrypted, legacy_secret_key_base: @legacy_key)
+               material.client_secret_jwt_verifier_encrypted,
+               legacy_secret_key_base: @legacy_key
+             )
              |> matches_material?(material)
     end
   end
