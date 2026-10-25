@@ -17,11 +17,18 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
   alias Lockspire.Security.ClientSecretVerifier
   alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Security.Policy
+  alias Lockspire.TestSupport.TelemetryCapture
 
   setup do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
     secret = "endpoint-secret-#{Ecto.UUID.generate()}"
     context = verifier_context(:crypto.strong_rand_bytes(32), :allow)
+
+    TelemetryCapture.attach_many([
+      [:lockspire, :client_auth, :failed],
+      [:lockspire, :client_auth, :replay_detected]
+    ])
+
     cache_key = Lockspire.Config.client_secret_verifier_cache_key()
     previous_context = :persistent_term.get(cache_key, :missing)
     :persistent_term.put(cache_key, context)
@@ -186,6 +193,7 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
       assert endpoint_effects() == before
       refute inspect(result) =~ secret
       if is_binary(encrypted) and encrypted != "", do: refute(inspect(result) =~ encrypted)
+      assert_safe_failure_telemetry(reason, secret, encrypted)
     end
   end
 
@@ -220,6 +228,7 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
       assert {:error, %{error: "invalid_client", reason_code: ^reason}} = result, label
       assert endpoint_effects() == before, label
       refute inspect(result) =~ secret
+      assert_safe_failure_telemetry(reason, secret)
     end
 
     replay = signed_assertion(secret, "endpoint-client", now, "same-jti")
@@ -227,6 +236,8 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
 
     assert {:error, %{error: "invalid_client", reason_code: :client_assertion_replayed}} =
              run_introspection(replay, now)
+
+    assert_safe_failure_telemetry(:client_assertion_replayed, secret)
 
     assert endpoint_effects().jtis == 1
   end
@@ -248,7 +259,37 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
 
       assert endpoint_effects() == before
       refute inspect(result) =~ secret
+      assert_safe_failure_telemetry(:client_assertion_auth_method_not_allowed, secret)
     end
+  end
+
+  test "READER-KEY-ROTATION accepts a retained read key while the new key is current", %{
+    secret: secret,
+    now: now
+  } do
+    old_key = :crypto.strong_rand_bytes(32)
+    new_key = :crypto.strong_rand_bytes(32)
+    old_writer = verifier_context_keys([{"old", old_key}], "old", :allow)
+
+    current_reader =
+      verifier_context_keys([{"old", old_key}, {"current", new_key}], "current", :allow)
+
+    {:ok, old_envelope} = ClientSecretVerifier.seal(old_writer, "endpoint-client", secret)
+
+    %Client{} = existing = Process.get(:verifier_endpoint_client)
+
+    Process.put(:verifier_endpoint_client, %Client{
+      existing
+      | client_secret_jwt_verifier_encrypted: old_envelope
+    })
+
+    Process.put(:verifier_endpoint_context, current_reader)
+
+    assert {:ok, %Success{payload: %{active: true}}} =
+             run_introspection(
+               signed_assertion(secret, "endpoint-client", now, "old-read-key"),
+               now
+             )
   end
 
   defmodule ClientStore do
@@ -445,12 +486,16 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
   defp seal(context, id, secret), do: ClientSecretVerifier.seal(context, id, secret)
 
   defp verifier_context(key, legacy_read) do
+    verifier_context_keys([{"endpoint", key}], "endpoint", legacy_read)
+  end
+
+  defp verifier_context_keys(keys, current, legacy_read) do
     {:ok, context} =
       Context.resolve(
         {:present,
          [
-           keys: [{"endpoint", Base.url_encode64(key, padding: false)}],
-           current: "endpoint",
+           keys: Enum.map(keys, fn {id, key} -> {id, Base.url_encode64(key, padding: false)} end),
+           current: current,
            write_mode: :dedicated,
            legacy_read: legacy_read
          ]},
@@ -459,6 +504,15 @@ defmodule Lockspire.Protocol.ClientSecretVerifierEndpointsTest do
 
     {:ok, validated} = Context.validate(context)
     validated
+  end
+
+  defp assert_safe_failure_telemetry(reason, secret, encrypted \\ nil) do
+    assert_receive {:telemetry_event, [:lockspire, :client_auth, event], _measurements, metadata}
+    assert event in [:failed, :replay_detected]
+    assert metadata.reason_code == reason
+    assert Enum.sort(Map.keys(metadata)) == [:auth_method, :client_id, :reason_code]
+    refute inspect(metadata) =~ secret
+    if is_binary(encrypted) and encrypted != "", do: refute(inspect(metadata) =~ encrypted)
   end
 
   defp signed_assertion(key, client_id, now, jti, opts \\ []) do
