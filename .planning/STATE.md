@@ -5,17 +5,17 @@ milestone_name: OAuth/OIDC Core Interoperability & Hardening
 current_phase: 174
 current_phase_name: Packaged Proof & Delivery Handoff
 status: executing
-stopped_at: Phase 174 plan 01 complete; continue plan 02 packaged PAR expansion
-last_updated: "2026-10-25T01:37:40.730Z"
+stopped_at: Completed 174-02-PLAN.md
+last_updated: "2026-10-25T02:07:13.811Z"
 last_activity: 2026-10-24
 last_activity_desc: Phase 173 complete, transitioned to Phase 174
-state_head: 7553e0fc72a365b500920b96bf99823fc6033e3e
+state_head: 9caac49f419b356b8514551a757124fa7cfdd128
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 8
+  percent: 75
 ---
 
 # Project State
@@ -31,11 +31,11 @@ See: .planning/PROJECT.md (updated 2026-10-24 for selected v1.47)
 ## Current Position
 
 Phase: 174 (Packaged Proof & Delivery Handoff) — READY TO EXECUTE
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-10-24 — Phase 173 complete, transitioned to Phase 174
 
-Progress: [███████░░░] 70% — 3/4 phases complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews; Phase 174 ready to plan.
+Progress: [████████░░] 75% — 3/4 phases complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews; Phase 174 ready to plan.
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ v1.47: 3 completed phases, 6 completed plans. Phase 173 passed six behavioral tr
 | Phase 172 P01 | 6min | 2 tasks | 5 files |
 | Phase 173 P01 | 5 min | 2 tasks | 4 files |
 | Phase 174 P01 | 84 min | 2 tasks | 7 files |
+| Phase 174 P02 | 28min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -119,10 +120,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T01:37:40.594Z
-Stopped at: Phase 174 plan 01 complete; continue plan 02 packaged PAR expansion
-Resume file: .planning/phases/174-packaged-proof-delivery-handoff/174-01-SUMMARY.md
-Next: Execute Phase 174 plan 02: expand the proven packaged authorization path to PAR/discovery and guidance; keep receipts partial until final all-case proof.
+Last session: 2026-10-25T02:06:54.583Z
+Stopped at: Completed 174-02-PLAN.md
+Resume file: None
+Next: Phase 174 plan 03: audit and freeze the selected inputs, refresh evidence owners, and run the final all-case/candidate gates; do not advance to plan 04.
 
 ### Blockers
 
@@ -150,3 +151,7 @@ None
 - [Phase 174]: Selected receipts bind exact source, archive, package tree, vendor tree, resolution, and compiled candidate identities.
 - [Phase 174]: Synthetic auth_time is host-supplied in the clean-room host; Lockspire account and policy ownership remain unchanged.
 - [Phase 174]: The six authorization cases remain explicitly partial evidence; PAR expansion and final twelve-case acceptance belong to later plans.
+- [Phase 174]: P171-001 and P171-004 share a required-PAR/S256 lifecycle run while retaining independent executed assertion rows.
+- [Phase 174]: PAR fixtures and persisted projections remain on the private run-owned child-command seam; public behavior is observed over mounted HTTP.
+- [Phase 174]: Lockspire 1.6.1 remains the package version; this plan adds proof and does not bump or publish it.
+- [Phase 174]: Only two Phase 174 prohibitions move to resolved/judgment after scoped review; both retain non-authoritative flags and Phase 173 history remains unchanged.
