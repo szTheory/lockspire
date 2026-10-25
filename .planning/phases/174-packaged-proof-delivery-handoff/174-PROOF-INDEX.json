@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
+  "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
   "ledger": {
     "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
     "input_digest": "3edc2b22eca506c063e1483a6a684ada300a54d56d55d1308c78b4812c144137",
@@ -19,18 +19,32 @@
       "P171-006"
     ]
   },
-  "input_freeze_sha256": "d700fb22ba495dd5ba03385f7c77998632667b5fd734b15e8ced2f59830fb618",
+  "input_freeze_sha256": "3c1e0b62508f80e2f448d600e1452a26beba3ab77ace94265c58f2e5ef6e3a9b",
   "source_proof_sha256": "93db7b6c3a1321df783a617cb1425eea04a2ac18cbaab01abcd78cc571a78c01",
+  "receipt_validator_test": {
+    "path": "test/acceptance/selected_receipt_test.py",
+    "source_commit": "a00f0d0a8e4cc276403b5f5dccf37bb63f900458",
+    "sha256": "c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff",
+    "python_tests": {"executed": 16, "passed": 16, "failed": 0},
+    "bridge_test": {
+      "path": "test/lockspire/clean_room_release_source_contract_test.exs",
+      "sha256": "5f9e123c464ffde23b9017953af09b05dd9b3980b96b5a2cbadef34d68ab58e6",
+      "executed": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "review": {"path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md", "sha256": "8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4", "status": "clean", "reviewed_head": "a00f0d0a8e4cc276403b5f5dccf37bb63f900458"}
+  },
   "package_receipt": {
     "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json",
-    "sha256": "518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5",
-    "source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
+    "sha256": "9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844",
+    "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
     "candidate": {
       "archive_sha256": "89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc",
-      "compiled_candidate_sha256": "691ae4b900a1e9fec4a11cd7485499ff7d4da38cd324cbcda329f310375e0bff",
+      "compiled_candidate_sha256": "ecc72ecac0f066e7a9d6b359e680a05cd2024b5f11c83d8b652c46be0dd406e2",
       "kind": "checkout",
       "resolved_dependency_verified": true,
-      "source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
+      "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
       "tree_sha256": "a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1",
       "vendor_tree_sha256": "a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1",
       "version": "1.6.1"

@@ -94,3 +94,35 @@ The review preserves the exact counts: Phase 171 has 3 judgment flags, Phase
 172 has 2, Phase 173 has 2, and Phase 174 has 2. The four current and three
 inherited unresolved generic edge assumptions remain separate from those nine
 judgment flags. No flag or assumption was suppressed or upgraded.
+
+## Phase 174 receipt-substitution proof refresh — 2026-10-25
+
+Commit `a00f0d0a8e4cc276403b5f5dccf37bb63f900458` strengthens only
+`test/acceptance/selected_receipt_test.py`: the alternate selected receipt uses
+the schema-valid `control_status` value `303`, is accepted when its own exact
+binding is supplied, and is then rejected specifically when checked against
+the original receipt's externally supplied digest. The prior `204` mutation
+was itself schema-invalid and did not establish this positive substitution
+control. The old test SHA-256 `9ff26cbbb50a58abda71e520555a124b775fb8d25370732f3ceec3d4ba665e59`
+is replaced by `c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff`
+in the refreshed 63-file input freeze. No qualification row, original probe,
+ledger identity, requirement or selection changed.
+
+The current 8-file `174-REVIEW.md` is clean at source commit
+`a00f0d0a8e4cc276403b5f5dccf37bb63f900458` (SHA-256
+`8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4`). It
+closes the nonblocking weakness noted in the historical 17-threat security
+review. That review remains bound to its focused recheck at
+`80b34a93e2fac61811329b7c5d9be254acb9e96b`; this proof refresh does not claim a
+new security-auditor recheck. The final security owner may reassess the updated
+artifact after the package/index/audit refresh.
+
+The strengthened Python receipt tests passed 16/16 and the Elixir release
+source-contract bridge passed 7/7 at the current test bytes. The existing 132
+source-owner GREEN tests remain bound to their recorded source revision and
+covered hashes; their owners assessed them as applicable because this change
+is test-only. A new complete package run at frozen source revision
+`73bb46811f4b76b2372b4af2b4e21aaf42893ac1` executed all twelve selected
+authorization/PAR cases with 12 passed, 0 failed and 0 skipped. The receipt
+and proof index bind their exact new hashes; the earlier receipts remain in
+Git history and are not overwritten or reattributed.
