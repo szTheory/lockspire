@@ -141,6 +141,29 @@ defmodule Lockspire.TestSupport.ClientSecretVerifierFixtures do
 
   def metadata_deadline(_), do: {:error, :unsupported_age}
 
+  def migration_readiness(
+        %{data: data, signed_at_ms: signed_at_ms} = metadata,
+        now_ms
+      )
+      when is_binary(data) and byte_size(data) > 0 and is_integer(signed_at_ms) and
+             is_integer(now_ms) do
+    if signed_at_ms > now_ms,
+      do: {:error, :future_timestamp},
+      else: readiness_at_deadline(metadata, now_ms)
+  end
+
+  def migration_readiness(_metadata, _now_ms), do: {:error, :unsupported_age}
+
+  defp readiness_at_deadline(metadata, now_ms) do
+    case metadata_deadline(metadata) do
+      deadline when is_integer(deadline) ->
+        if deadline >= now_ms, do: :ready, else: {:error, :expired}
+
+      _unsupported ->
+        {:error, :unsupported_age}
+    end
+  end
+
   def expired_at?(metadata, now_ms) when is_integer(now_ms) do
     case metadata_deadline(metadata) do
       :infinity -> false

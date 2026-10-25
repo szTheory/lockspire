@@ -199,6 +199,60 @@ defmodule Lockspire.Security.ClientSecretVerifierCompatibilityTest do
     assert {:ok, "payload"} = Plug.Crypto.decrypt(key_base, salt, infinite_future)
   end
 
+  test "LEG175-METADATA-FUTURE-READINESS rejects authenticated future metadata before deadline checks" do
+    now = 1_800_000_000
+
+    future =
+      Fixtures.legacy_verifier("phase175-future-readiness",
+        signed_at: now + 1,
+        max_age: 86_400
+      )
+
+    assert {:ok, future_metadata} = Fixtures.authenticated_metadata(future)
+
+    assert {:error, :future_timestamp} =
+             Fixtures.migration_readiness(future_metadata, now * 1000)
+
+    equal_deadline =
+      Fixtures.legacy_verifier("phase175-equality-readiness",
+        signed_at: now - 86_400,
+        max_age: 86_400
+      )
+
+    assert {:ok, equal_metadata} = Fixtures.authenticated_metadata(equal_deadline)
+    assert :ready = Fixtures.migration_readiness(equal_metadata, now * 1000)
+
+    assert {:error, :expired} = Fixtures.migration_readiness(equal_metadata, now * 1000 + 1)
+
+    aged_23h =
+      Fixtures.legacy_verifier("phase175-23h-readiness",
+        signed_at: now - 23 * 60 * 60,
+        max_age: 86_400
+      )
+
+    assert {:ok, aged_metadata} = Fixtures.authenticated_metadata(aged_23h)
+    assert :ready = Fixtures.migration_readiness(aged_metadata, now * 1000)
+
+    for max_age <- [:infinity, 0, -1] do
+      unsupported =
+        Fixtures.legacy_verifier("phase175-unsupported-readiness",
+          signed_at: now - 1,
+          max_age: max_age
+        )
+
+      assert {:ok, unsupported_metadata} = Fixtures.authenticated_metadata(unsupported)
+
+      assert {:error, :unsupported_age} =
+               Fixtures.migration_readiness(unsupported_metadata, now * 1000)
+    end
+
+    empty = Fixtures.legacy_verifier("", signed_at: now - 1, max_age: 86_400)
+    assert {:ok, empty_metadata} = Fixtures.authenticated_metadata(empty)
+
+    assert {:error, :unsupported_age} =
+             Fixtures.migration_readiness(empty_metadata, now * 1000)
+  end
+
   test "hash/verifier disagreement is detectable as a non-ready migration disposition" do
     assert Fixtures.secret_hash_matches?("sha256:salt:hash", "secret") == false
     assert Fixtures.secret_hash_matches?(nil, "secret") == false
