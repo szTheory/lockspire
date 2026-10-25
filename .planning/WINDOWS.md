@@ -1,10 +1,10 @@
 ---
 schema_version: 1
-open_count: 3
+open_count: 5
 waived_count: 0
 fixed_count: 11
-total_count: 14
-last_updated: 2026-10-24T07:25:44.957Z
+total_count: 16
+last_updated: 2026-10-25T01:32:59.172Z
 ---
 
 # Broken Windows Ledger
@@ -29,6 +29,8 @@ last_updated: 2026-10-24T07:25:44.957Z
 | 12 | 170 | deviation | scripts/acceptance/clean_room_admin_journey.py |  | Runtime asset validation accepts only the isolated provider host or its pair-scoped dependency cache; root checkout sources are rejected. | open |  | 2026-10-24T03:08:29.033Z |  |
 | 13 | 170 | deviation | test/lockspire/web/live/admin/interactions_live_test.exs |  | Allow only safe data-phx-link-state push/replace metadata while preserving OAuth state and token sentinel assertions. | fixed |  | 2026-10-24T07:25:37.986Z | 2026-10-24T07:25:40.649Z |
 | 14 | 170 | deviation | test/lockspire/host_integration_ci_contract_test.exs |  | Formatted the phase-owned Plan 04 CI contract after the whole-project formatter exposed its long assertions; behavior unchanged. | fixed |  | 2026-10-24T07:25:42.812Z | 2026-10-24T07:25:44.957Z |
+| 15 | 174 | deviation | scripts/acceptance/clean_room_saas_journey.py |  | The clean-room authorization helper was corrected to follow the host-owned direct consent redirect for authenticated A171-006. | open |  | 2026-10-25T01:32:57.121Z |  |
+| 16 | 174 | deviation | test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex |  | The clean-room resolver now reads account identity and auth_time from the same fetched host session connection. | open |  | 2026-10-25T01:32:59.172Z |  |
 
 ````json
 [
@@ -205,6 +207,32 @@ last_updated: 2026-10-24T07:25:44.957Z
     "recorded_at": "2026-10-24T07:25:42.812Z",
     "resolved_at": "2026-10-24T07:25:44.957Z",
     "milestone": "v1.46"
+  },
+  {
+    "id": 15,
+    "kind": "deviation",
+    "phase": "174",
+    "file": "scripts/acceptance/clean_room_saas_journey.py",
+    "line": null,
+    "description": "The clean-room authorization helper was corrected to follow the host-owned direct consent redirect for authenticated A171-006.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-25T01:32:57.121Z",
+    "resolved_at": null,
+    "milestone": "v1.47"
+  },
+  {
+    "id": 16,
+    "kind": "deviation",
+    "phase": "174",
+    "file": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
+    "line": null,
+    "description": "The clean-room resolver now reads account identity and auth_time from the same fetched host session connection.",
+    "status": "open",
+    "reason": "",
+    "recorded_at": "2026-10-25T01:32:59.172Z",
+    "resolved_at": null,
+    "milestone": "v1.47"
   }
 ]
 ````

@@ -106,28 +106,70 @@ Before opening a milestone:
    material risk, choose sustainment or stop. There is no quota to create a
    feature milestone.
 
-CURRENT ROADMAP CANDIDATES (PROVISIONAL)
+CURRENT ROADMAP CANDIDATES (PROVISIONAL; REFRESHED 2026-10-24)
 
-Near term: Finish the active v1.38 Repository Baseline & Reconciliation work
-and return to the sustaining GA release train. Preserve the current release
-truth. Triage the retained supplemental OIDF/FAPI findings honestly. A bounded
-conformance-hardening milestone (FUTURE-05) is a candidate only if specific
-retained findings are reproducible, actionable, supported-surface relevant,
-and can be addressed with measurable acceptance; it must not promise
-certification or broaden protocol support by implication.
+Near term: v1.46 is archived. The user selected v1.47 OAuth/OIDC Core
+Interoperability & Hardening, starting at Phase 171. Reconcile accumulated
+prior delivery and establish accepted clean green main before implementation.
+Qualify retained supplemental OIDC/FAPI findings at exact current identities,
+then select supported authorization-response and PAR/profile cases. Historical
+suite failures are investigation inputs, not current bug or certification
+claims. Full external conformance remains supplemental.
 
-Mid term: Consider the smallest adopter or operator friction wedge supported
-by fresh evidence after the baseline closes. Existing planning suggests
-install/upgrade and generated-host clarity, explicit host seams, first-client
-setup, operator support, or narrowly bounded conformance as areas to inspect.
-Do not treat these as pre-approved roadmap commitments; verify the current
-implementation and adopter signal first.
+Mid term: Provisional v1.48 isolates and rotates client_secret_jwt verifier
+encryption keys (SEC-01), with legacy compatibility, mixed-version rollout,
+rewrap/status and loss recovery. Token lifecycle/concurrency work follows only
+from a reproduced gap or material uncovered invariant; much already exists.
+OPS-03 maintenance paging needs scale evidence; KEK-04 KMS/Vault needs a real
+adopter custody requirement. MILESTONE-ARC.md owns ranking, triggers and exit
+evidence. Do not reserve downstream phases or pre-authorize candidates.
 
 Long term: Maintain, secure, and improve the embedded Phoenix provider as
 real use reveals needs. Consider new protocol or operator scope only when
 there is sustained demand, clear ownership, bounded support obligations, and
 proof that the feature fits the library's core value. Otherwise preserve the
 small, dependable product and its sustaining release train.
+
+UPSTREAM RESEARCH AND DECISION POSTURE (USER DIRECTION 2026-10-24)
+
+- Maintain a rolling, chunked milestone direction so a new session can resume
+  from prior reasoning. Refresh stale hypotheses at each start/close; mark
+  shipped, obsolete, rejected and deferred candidates with reasons and source.
+  Plan the selected milestone in detail and later candidates only to the depth
+  needed to preserve direction and decision triggers.
+- Before downstream fan-out, enumerate consequential decisions, dependencies,
+  uncertainty and acceptance. Use relevant lenses: adopter/client/host,
+  product, security/protocol, architecture/storage/distributed systems,
+  operations/CI and maintenance. Use UI/design lenses for actual UI scope;
+  avoid unrelated specialties and generic checklists.
+- Research primary standards and official ecosystem sources where they can
+  settle a real question. Compare alternatives, pros/cons, concrete examples,
+  established patterns, footguns and prior lessons; include an adversarial
+  pass. Label facts, inferences and proposals with date/revision and limits.
+- Synthesize one coherent recommended decision set, not incompatible menus
+  for downstream agents. Within the user's selected scope, resolve routine
+  implementation choices autonomously. Escalate only unresolved decisions
+  that materially change security, public API/support, product boundaries or
+  hard-to-reverse strategy; do not add ceremonial permission loops.
+- Fan out independent questions to focused agents when authorized, with
+  explicit ownership and one integrator. Sequence coupled decisions. Stop
+  additional research/review when it no longer changes scope, risk controls,
+  acceptance or ordering. Prefer a targeted reproducer to another broad survey.
+- Spend planning effort upstream where it avoids rework; do not produce
+  speculative detailed plans for future milestones or force empty phases when
+  evidence disproves their premise. No guarantee of a perfect one-shot result
+  substitutes for verification.
+
+DEPENDENCY POSTURE (USER DIRECTION 2026-10-24)
+
+Prefer a small, auditable local helper or limited attributed code copy over
+another dependency when it reduces total complexity and maintenance. Keep
+dependency trees small and flat. A necessary maintained package is welcome
+when correctness/capability benefits justify its direct/transitive cost,
+security history, license, updates and ownership. Record that comparison for
+nontrivial additions. This is not a directive to vendor crypto, TLS, security
+parsers or other complex primitives; reuse vetted existing dependencies and
+OTP/framework capabilities rather than inventing a security implementation.
 
 QUALITY AND EVIDENCE BAR
 
@@ -174,6 +216,18 @@ MILESTONE DELIVERY AND CLOSEOUT
 - At close, record what shipped, what remains deferred and why, fresh roadmap
   candidates and triggers, and the next default action. Between feature
   milestones, prefer the sustaining GA release train over automatic expansion.
+- Make the boundary concrete: fresh main SHA, complete local contributor gate,
+  canonical required CI and matching Release push no-publish outcome, reviewed
+  PR/delivery disposition, clean owned worktrees, and coherent planning state.
+  Recheck after merge; a clean feature branch or historical green run is not
+  accepted main. Reuse REPO-HYGIENE-CHECKLIST.md and its existing exact-SHA
+  command; do not create a parallel gate or duplicate expensive runs.
+- At every run boundary, leave owned work committed and temporary resources
+  safely retired, or record an explicit incomplete handoff: owner/purpose,
+  branch/base/head, dirty paths or preserved snapshot/hash, unique-commit
+  disposition, checks/results, blocker and next exact action. Preserve unknown
+  work and unmerged commits; do not force-reset, stash blindly or delete by age.
+  Archival, integration into green main and package publication are distinct.
 
 HOW TO USE THIS GUIDE
 

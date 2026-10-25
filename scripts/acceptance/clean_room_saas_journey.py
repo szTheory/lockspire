@@ -33,6 +33,11 @@ sys.path.insert(0, str(CLEAN_ROOM_DIR))
 from build_client import patch_jose_record_extractors
 from build_provider import prepare_provider, run_child_command, run_child_command_output
 from lifetime_receipts import validate_lifetime_receipt, write_lifetime_receipt
+from selected_receipts import (
+    SELECTED_CASE_IDS,
+    validate_selected_receipt,
+    write_selected_receipt,
+)
 from package_input import (
     PackageInputError,
     clean_room_database_url,
@@ -41,6 +46,9 @@ from package_input import (
     package_source,
     prepare_package,
     probe_environment,
+    verify_candidate_host,
+    verify_candidate_input,
+    candidate_host_provenance,
     verify_child,
 )
 from redaction import Redactor, SentinelSet, safe_failure_summary
@@ -52,6 +60,7 @@ CLIENT_ORIGIN = "http://127.0.0.1:4101"
 MAX_REDIRECTS = 8
 ACTIVE_REDACTOR: Redactor | None = None
 CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
+SELECTED_PAR_SHARED: dict[str, object] = {}
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
 
 
@@ -142,6 +151,11 @@ def require_status(response: dict[str, object], status: int, label: str) -> None
             f"{label}: expected HTTP {status}, got {response['status']}"
             f"{safe_oauth_error_code(response)}"
         )
+
+
+def require_status_in(response: dict[str, object], statuses: tuple[int, ...], label: str) -> None:
+    if response["status"] not in statuses:
+        raise AssertionError(f"{label}: expected HTTP {statuses}, got {response['status']}{safe_oauth_error_code(response)}")
 
 
 def safe_oauth_error_code(response: dict[str, object]) -> str:
@@ -466,6 +480,566 @@ def provider_path(endpoint: str) -> str:
     if f"{parsed.scheme}://{parsed.netloc}" != PROVIDER_ORIGIN:
         raise AssertionError("discovery endpoint left the provider origin")
     return parsed.path + (f"?{parsed.query}" if parsed.query else "")
+
+
+def selected_authorization_params(client_id: str, redirect_uri: str) -> tuple[dict[str, str], str]:
+    verifier = uuid.uuid4().hex + uuid.uuid4().hex
+    state, nonce = uuid.uuid4().hex, uuid.uuid4().hex
+    register_secret(verifier)
+    register_secret(state)
+    register_secret(nonce)
+    return ({
+        "response_type": "code", "client_id": client_id, "redirect_uri": redirect_uri,
+        "scope": "openid email", "state": state, "nonce": nonce,
+        "code_challenge": s256(verifier), "code_challenge_method": "S256",
+    }, verifier)
+
+
+def _selected_client(child: Path, environment: dict[str, str], redirect_uri: str) -> str:
+    client_id = "clean-room-selected-" + uuid.uuid4().hex[:12]
+    expression = (
+        "{:ok, result} = Lockspire.Clients.register_client(%{"
+        f"client_id: {json.dumps(client_id)}, client_type: :public, name: {json.dumps(client_id)}, "
+        f"redirect_uris: [{json.dumps(redirect_uri)}], allowed_scopes: [\"openid\", \"email\", \"profile\"], "
+        "allowed_grant_types: [\"authorization_code\"], allowed_response_types: [\"code\"], "
+        "token_endpoint_auth_method: :none, pkce_required: true}); "
+        "IO.puts(\"SELECTED_CLIENT_READY=\" <> result.client.client_id)"
+    )
+    output = _run_host_control(child, environment, expression)
+    if f"SELECTED_CLIENT_READY={client_id}" not in output:
+        raise AssertionError("selected authorization client setup did not complete")
+    return client_id
+
+
+def _set_required_par(child: Path, environment: dict[str, str]) -> None:
+    output = _run_host_control(
+        child, environment,
+        '{:ok, policy} = Lockspire.Admin.ServerPolicy.put_server_policy(:required); '
+        'true = policy.par_policy == :required; IO.puts("SELECTED_PAR_REQUIRED=true")',
+    )
+    if "SELECTED_PAR_REQUIRED=true" not in output:
+        raise AssertionError("selected required-PAR policy setup did not complete")
+
+
+def _pushed_params(client_id: str, redirect_uri: str, *, prompt: str = "consent") -> tuple[dict[str, str], str]:
+    params, verifier = selected_authorization_params(client_id, redirect_uri)
+    params["prompt"] = prompt
+    return params, verifier
+
+
+def _push_par(provider: Browser, params: dict[str, str]) -> tuple[str, int, bool]:
+    response = provider.request("POST", "/lockspire/par", params, {"accept": "application/json"})
+    require_status(response, 201, "selected PAR intake")
+    media_type = str(response["headers"].get("content-type", "")).split(";", 1)[0].strip().lower()
+    try:
+        body = json.loads(str(response["body"]))
+    except json.JSONDecodeError:
+        raise AssertionError("selected PAR response was not JSON") from None
+    request_uri, expires_in = body.get("request_uri"), body.get("expires_in")
+    if not isinstance(request_uri, str) or not request_uri.startswith("urn:ietf:params:oauth:request_uri:"):
+        raise AssertionError("selected PAR response omitted a request_uri")
+    register_secret(request_uri)
+    if type(expires_in) is not int:
+        raise AssertionError("selected PAR expires_in was not an integer")
+    return request_uri, expires_in, media_type == "application/json"
+
+
+def _exact_relative_consent_id(location: str) -> str | None:
+    parsed = urlparse(location)
+    if parsed.scheme or parsed.netloc or parsed.query or parsed.fragment:
+        return None
+    match = re.fullmatch(r"/lockspire/consent/([^/]+)", parsed.path)
+    return match.group(1) if match else None
+
+
+def _assert_consent_handoff(browser: Browser, location: str, label: str) -> str:
+    interaction_id = _exact_relative_consent_id(location)
+    if interaction_id is None:
+        raise AssertionError(f"{label} did not reach the exact relative consent route")
+    register_secret(interaction_id)
+    consent = browser.request("GET", location)
+    require_status(consent, 200, f"{label} consent page")
+    return interaction_id
+
+
+def _par_consent_handoff(browser: Browser, client_id: str, request_uri: str, label: str) -> tuple[str, int]:
+    authorization = browser.request("GET", "/lockspire/authorize?" + urlencode({
+        "client_id": client_id, "request_uri": request_uri,
+    }))
+    require_status_in(authorization, (302, 303), f"{label} authorization")
+    return _assert_consent_handoff(browser, redirect(authorization, f"{label} authorization"), label), int(authorization["status"])
+
+
+def _stored_interaction_projection(
+    child: Path, environment: dict[str, str], interaction_id: str, expected: dict[str, object]
+) -> dict[str, bool]:
+    observed_environment = {
+        **environment,
+        "CLEAN_ROOM_SELECTED_INTERACTION_ID": interaction_id,
+        "CLEAN_ROOM_SELECTED_EXPECTED_INTERACTION": json.dumps(expected, separators=(",", ":")),
+    }
+    expression = (
+        'id = System.fetch_env!("CLEAN_ROOM_SELECTED_INTERACTION_ID"); '
+        'expected = Jason.decode!(System.fetch_env!("CLEAN_ROOM_SELECTED_EXPECTED_INTERACTION")); '
+        '{:ok, interaction} = Lockspire.Storage.Ecto.Repository.fetch_interaction(id); '
+        'facts = %{"client_id_matches" => interaction.client_id == expected["client_id"], '
+        '"scopes_match" => interaction.scopes_requested == expected["scopes"], '
+        '"state_matches" => interaction.state == expected["state"], '
+        '"nonce_matches" => interaction.nonce == expected["nonce"], '
+        '"front_channel_scope_not_merged" => interaction.scopes_requested == ["openid", "email"]}; '
+        'IO.puts("SELECTED_INTERACTION_FACTS=" <> Jason.encode!(facts))'
+    )
+    output = _run_host_control(child, observed_environment, expression)
+    match = re.search(r"SELECTED_INTERACTION_FACTS=(\{[^\n]+\})", output)
+    if not match:
+        raise AssertionError("selected persisted interaction projection was not emitted")
+    facts = json.loads(match.group(1))
+    if set(facts) != {"client_id_matches", "scopes_match", "state_matches", "nonce_matches", "front_channel_scope_not_merged"}:
+        raise AssertionError("selected persisted interaction projection fields were invalid")
+    return {key: value is True for key, value in facts.items()}
+
+
+def _host_login(provider: Browser, account_id: str) -> None:
+    response = provider.request("GET", "/login")
+    require_status(response, 200, "selected host login form")
+    body = str(response["body"])
+    return_to = re.search(r'name="return_to" value="([^"]*)"', body)
+    interaction_id = re.search(r'name="interaction_id" value="([^"]*)"', body)
+    if not return_to or not interaction_id:
+        raise AssertionError("selected host login form omitted its resume fields")
+    logged_in = provider.request("POST", "/login", {
+        "_csrf_token": csrf(body), "return_to": return_to.group(1),
+        "interaction_id": interaction_id.group(1), "account_id": account_id,
+    })
+    require_status_in(logged_in, (302, 303), "selected host login submission")
+
+
+def _selected_code(provider: Browser, params: dict[str, str], redirect_uri: str) -> str:
+    authorization = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
+    require_status_in(authorization, (302, 303), "A171-006 authorization")
+    next_location = redirect(authorization, "A171-006 authorization")
+    parsed = urlparse(next_location)
+    if parsed.scheme + "://" + parsed.netloc + parsed.path == redirect_uri:
+        values = parse_qs(parsed.query)
+        code = values.get("code", [None])[0]
+    else:
+        if parsed.netloc or not parsed.path.startswith(("/lockspire/interactions/", "/lockspire/consent/")):
+            raise AssertionError("A171-006 authorization did not enter the consent flow")
+        interaction_id = parsed.path.rsplit("/", 1)[-1]
+        if parsed.path.startswith("/lockspire/interactions/"):
+            interaction = provider.request("GET", next_location)
+            require_status_in(interaction, (302, 303), "A171-006 interaction")
+            consent_location = redirect(interaction, "A171-006 interaction")
+        else:
+            consent_location = next_location
+        consent = provider.request("GET", consent_location)
+        require_status(consent, 200, "A171-006 consent")
+        approved = provider.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
+            "decision": "approve", "remember": "false",
+        })
+        require_status_in(approved, (302, 303), "A171-006 consent approval")
+        callback = urlparse(redirect(approved, "A171-006 consent approval"))
+        values = parse_qs(callback.query)
+        code = values.get("code", [None])[0]
+        if callback.scheme + "://" + callback.netloc + callback.path != redirect_uri:
+            raise AssertionError("A171-006 approval changed the registered callback")
+    if not isinstance(code, str) or values.get("state") != [params["state"]]:
+        raise AssertionError("A171-006 callback omitted its code or exact state")
+    register_secret(code)
+    return code
+
+
+def _verify_selected_id_token(
+    child: Path,
+    environment: dict[str, str],
+    token: str,
+    jwks: dict[str, object],
+    nonce: str,
+    client_id: str,
+    issuer: str,
+    auth_time: int,
+    algorithms: list[str],
+) -> bool:
+    verification_environment = {
+        **environment,
+        "CLEAN_ROOM_SELECTED_ID_TOKEN": token,
+        "CLEAN_ROOM_SELECTED_JWKS": json.dumps(jwks, separators=(",", ":")),
+        "CLEAN_ROOM_SELECTED_EXPECTATIONS": json.dumps({
+            "nonce": nonce, "client_id": client_id, "issuer": issuer,
+            "auth_time": auth_time, "algorithms": algorithms,
+        }, separators=(",", ":")),
+    }
+    expression = (
+        'token = System.fetch_env!("CLEAN_ROOM_SELECTED_ID_TOKEN"); '
+        '%{"keys" => keys} = Jason.decode!(System.fetch_env!("CLEAN_ROOM_SELECTED_JWKS")); '
+        'expected = Jason.decode!(System.fetch_env!("CLEAN_ROOM_SELECTED_EXPECTATIONS")); '
+        ' {_modules, %{"kid" => kid, "alg" => alg}} = JOSE.JWS.to_map(JOSE.JWT.peek_protected(token)); '
+        'true = alg != "none" and alg in expected["algorithms"]; '
+        'key = Enum.find(keys, fn candidate -> candidate["kid"] == kid end) || raise("selected proof key absent"); '
+        '{true, %JOSE.JWT{fields: claims}, _jws} = JOSE.JWT.verify_strict(JOSE.JWK.from_map(key), expected["algorithms"], token); '
+        'audience = claims["aud"]; audience_ok = audience == expected["client_id"] or (is_list(audience) and expected["client_id"] in audience); '
+        'true = claims["iss"] == expected["issuer"] and audience_ok and claims["nonce"] == expected["nonce"]; '
+        'auth_time = claims["auth_time"]; true = is_integer(auth_time) and auth_time == expected["auth_time"]; '
+        'IO.puts("SELECTED_SIGNED_AUTH_TIME_VALID=true")'
+    )
+    output = _run_host_control(child, verification_environment, expression)
+    return "SELECTED_SIGNED_AUTH_TIME_VALID=true" in output
+
+
+def run_selected_authorization_case(
+    identifier: str,
+    provider: Browser,
+    child: Path,
+    environment: dict[str, str],
+    run_root: Path,
+) -> dict[str, object]:
+    """Run one implemented selected authorization projection through the packaged host."""
+    redirect_uri = CLIENT_ORIGIN + "/oauth/callback"
+
+    def passed(observations: dict[str, object]) -> dict[str, object]:
+        return {
+            "id": identifier, "outcome": "passed", "observations": observations,
+            "counts": {"executed": 1, "passed": 1, "failed": 0, "skipped": 0},
+        }
+
+    if identifier == "A171-001":
+        client_id = _selected_client(child, environment, redirect_uri)
+        params, _verifier = selected_authorization_params(client_id, redirect_uri)
+        valid = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status(valid, 302, "A171-001 exact callback control")
+        login = urlparse(redirect(valid, "A171-001 exact callback control"))
+        if login.netloc or not login.path.startswith("/login"):
+            raise AssertionError("A171-001 exact callback control missed the host login handoff")
+        mismatch = provider.request("GET", "/lockspire/authorize?" + urlencode({**params, "redirect_uri": redirect_uri + "/"}))
+        require_status(mismatch, 400, "A171-001 trailing-slash callback")
+        if "location" in mismatch["headers"]:
+            raise AssertionError("A171-001 mismatched callback received a Location header")
+        return passed({"control_status": int(valid["status"]), "control_callback_exact": True,
+                       "mismatch_status": int(mismatch["status"]), "mismatch_no_location": True})
+
+    if identifier == "A171-002":
+        callback = redirect_uri + "?foo=bar&state=old-state"
+        client_id = _selected_client(child, environment, callback)
+        params, _verifier = selected_authorization_params(client_id, callback)
+        invalid = {key: value for key, value in params.items() if key not in {"code_challenge", "code_challenge_method"}}
+        response = provider.request("GET", "/lockspire/authorize?" + urlencode(invalid))
+        require_status_in(response, (302, 303), "A171-002 safe callback error")
+        location = urlparse(redirect(response, "A171-002 safe callback error"))
+        values = parse_qs(location.query, keep_blank_values=True)
+        return passed({
+            "callback_status": int(response["status"]),
+            "callback_exact_registered": location.scheme + "://" + location.netloc + location.path == redirect_uri,
+            "foo_preserved": values.get("foo") == ["bar"],
+            "trusted_state_only": values.get("state") == [params["state"]] and "old-state" not in values.get("state", []),
+            "error_invalid_request": values.get("error") == ["invalid_request"],
+            "no_duplicate_state": len(values.get("state", [])) == 1,
+        })
+
+    if identifier == "A171-003":
+        client_id = _selected_client(child, environment, redirect_uri)
+        params, _verifier = selected_authorization_params(client_id, redirect_uri)
+        valid = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status(valid, 302, "A171-003 query-mode control")
+        login = urlparse(redirect(valid, "A171-003 query-mode control"))
+        if login.netloc or not login.path.startswith("/login"):
+            raise AssertionError("A171-003 query-mode control missed the host login handoff")
+        unsupported = provider.request("GET", "/lockspire/authorize?" + urlencode({**params, "response_mode": "binary"}))
+        require_status(unsupported, 400, "A171-003 unsupported response mode")
+        content_type = str(unsupported["headers"].get("content-type", "")).split(";", 1)[0].strip().lower()
+        body = str(unsupported["body"])
+        no_location = "location" not in unsupported["headers"]
+        no_oauth_parameters = not (
+            re.search(r"(?i)(?:[?&]|\b)(?:error|error_description|error_uri|iss|state)=", body)
+            or re.search(r"(?i)<(?:input|param)[^>]+name=[\"'](?:error|error_description|error_uri|iss|state)[\"']", body)
+            or re.search(r"(?i)[\"'](?:error|error_description|error_uri|iss|state)[\"']\s*:", body)
+        )
+        if content_type != "text/html" or not no_location or not no_oauth_parameters:
+            raise AssertionError("A171-003 unsupported response mode violated the first-party HTTP error contract")
+        return passed({"control_status": int(valid["status"]), "control_reached_host_handoff": True,
+                       "unsupported_status": int(unsupported["status"]), "html_content_type": content_type == "text/html",
+                       "no_location": no_location, "no_oauth_error_parameters": no_oauth_parameters})
+
+    if identifier == "A171-004":
+        client_id = _selected_client(child, environment, redirect_uri)
+        params, _verifier = selected_authorization_params(client_id, redirect_uri)
+        params["prompt"] = "none"
+        response = Browser(PROVIDER_ORIGIN).request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status_in(response, (302, 303), "A171-004 prompt-none without session")
+        location = urlparse(redirect(response, "A171-004 prompt-none without session"))
+        values = parse_qs(location.query, keep_blank_values=True)
+        return passed({"callback_status": int(response["status"]), "login_required": values.get("error") == ["login_required"],
+                       "state_matches": values.get("state") == [params["state"]],
+                       "no_host_login_redirect": location.path != "/login" and location.path == urlparse(redirect_uri).path})
+
+    if identifier == "A171-005":
+        stale_file = run_root / "selected-stale-auth-time-unix.txt"
+        stale_time = int(time.time()) - 600
+        stale_file.write_text(f"{stale_time}\n", encoding="ascii")
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-stale")
+        client_id = _selected_client(child, environment, redirect_uri)
+        params, _verifier = selected_authorization_params(client_id, redirect_uri)
+        params.update({"max_age": "60", "prompt": "none"})
+        response = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status_in(response, (302, 303), "A171-005 stale host authentication")
+        location = urlparse(redirect(response, "A171-005 stale host authentication"))
+        values = parse_qs(location.query, keep_blank_values=True)
+        return passed({"callback_status": int(response["status"]), "login_required": values.get("error") == ["login_required"],
+                       "state_matches": values.get("state") == [params["state"]],
+                       "no_host_login_redirect": location.path != "/login" and location.path == urlparse(redirect_uri).path,
+                       "stale_auth_time_used": stale_time < int(time.time()) - 60})
+
+    if identifier == "A171-006":
+        client_id = _selected_client(child, environment, redirect_uri)
+        observations: dict[str, object] = {}
+        for label, demand in (("max_age", {"max_age": "60"}), ("claims", {"claims": json.dumps({"id_token": {"auth_time": {"essential": True}}})})):
+            fresh_file = run_root / "selected-fresh-auth-time-unix.txt"
+            fresh_time = int(time.time()) - 30
+            fresh_file.write_text(f"{fresh_time}\n", encoding="ascii")
+            browser = Browser(PROVIDER_ORIGIN)
+            _host_login(browser, "clean-room-selected-fresh")
+            params, verifier = selected_authorization_params(client_id, redirect_uri)
+            params.update(demand)
+            code = _selected_code(browser, params, redirect_uri)
+            discovery_response = browser.request("GET", "/lockspire/.well-known/openid-configuration")
+            require_status(discovery_response, 200, "A171-006 discovery")
+            discovery = json.loads(str(discovery_response["body"]))
+            token_response = browser.request("POST", provider_path(str(discovery["token_endpoint"])), {
+                "grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri,
+                "code_verifier": verifier, "client_id": client_id,
+            }, {"content-type": "application/x-www-form-urlencoded"})
+            require_status(token_response, 200, f"A171-006 {label} code exchange")
+            token = decoded_secret_payload(token_response["body"])
+            id_token = token.get("id_token")
+            if not isinstance(id_token, str):
+                raise AssertionError("A171-006 code exchange omitted an ID Token")
+            jwks_response = browser.request("GET", provider_path(str(discovery["jwks_uri"])))
+            require_status(jwks_response, 200, "A171-006 JWKS")
+            jwks = json.loads(str(jwks_response["body"]))
+            verified = _verify_selected_id_token(
+                child, environment, id_token, jwks, params["nonce"], client_id,
+                str(discovery["issuer"]), fresh_time, discovery.get("id_token_signing_alg_values_supported", []),
+            )
+            if not verified:
+                raise AssertionError(f"A171-006 {label} signed auth_time claim failed verification")
+            observations[f"{label}_token_status"] = int(token_response["status"])
+            observations[f"{label}_signature_valid"] = True
+            observations[f"{label}_issuer_audience_nonce_valid"] = True
+            observations[f"{label}_auth_time_integer"] = True
+            observations[f"{label}_auth_time_equal"] = True
+        return passed(observations)
+
+    if identifier in {"P171-001", "P171-004"}:
+        shared_key = "required_par_code_replay"
+        if identifier == "P171-004" and shared_key in SELECTED_PAR_SHARED:
+            return passed(dict(SELECTED_PAR_SHARED[shared_key]))
+        _set_required_par(child, environment)
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-par")
+        params, verifier = _pushed_params(client_id, redirect_uri)
+        direct = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
+        require_status_in(direct, (302, 303), f"{identifier} required-PAR direct request")
+        direct_location = urlparse(redirect(direct, f"{identifier} required-PAR direct request"))
+        direct_values = parse_qs(direct_location.query, keep_blank_values=True)
+        direct_safe = (
+            direct_location.scheme + "://" + direct_location.netloc + direct_location.path == redirect_uri
+            and direct_values.get("error") == ["invalid_request"]
+            and direct_values.get("state") == [params["state"]]
+        )
+        if not direct_safe:
+            raise AssertionError(f"{identifier} required-PAR direct request did not return the qualified safe callback")
+
+        request_uri, expires_in, json_media_type = _push_par(browser, params)
+        if expires_in <= 0:
+            raise AssertionError(f"{identifier} PAR response expires_in was not positive")
+        interaction_id, _authorize_status = _par_consent_handoff(browser, client_id, request_uri, identifier)
+        approved = browser.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
+            "decision": "approve", "remember": "false",
+        })
+        require_status_in(approved, (302, 303), f"{identifier} consent approval")
+        callback = urlparse(redirect(approved, f"{identifier} consent approval"))
+        values = parse_qs(callback.query, keep_blank_values=True)
+        code = values.get("code", [None])[0]
+        if callback.scheme + "://" + callback.netloc + callback.path != redirect_uri or values.get("state") != [params["state"]] or not isinstance(code, str):
+            raise AssertionError(f"{identifier} approval did not return the exact code callback")
+        register_secret(code)
+        discovery_response = browser.request("GET", "/lockspire/.well-known/openid-configuration")
+        require_status(discovery_response, 200, f"{identifier} discovery")
+        discovery = json.loads(str(discovery_response["body"]))
+        token_response = browser.request("POST", provider_path(str(discovery["token_endpoint"])), {
+            "grant_type": "authorization_code", "code": code, "redirect_uri": redirect_uri,
+            "code_verifier": verifier, "client_id": client_id,
+        }, {"content-type": "application/x-www-form-urlencoded", "accept": "application/json"})
+        require_status(token_response, 200, f"{identifier} S256 code exchange")
+        issued = decoded_secret_payload(token_response["body"])
+        token_issued = isinstance(issued.get("access_token"), str) and bool(issued.get("access_token"))
+        if not token_issued:
+            raise AssertionError(f"{identifier} S256 exchange omitted its access token")
+        replay = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": request_uri,
+        }))
+        require_status(replay, 400, f"{identifier} PAR replay")
+        replay_no_location = "location" not in replay["headers"]
+        if not replay_no_location:
+            raise AssertionError(f"{identifier} replay returned a Location header")
+        observations = {
+            "direct_status": int(direct["status"]), "direct_safe_callback": True,
+            "pushed_status": 201, "pushed_json_media_type": json_media_type,
+            "pushed_positive_expires_in": True, "token_status": int(token_response["status"]),
+            "token_issued": token_issued, "replay_status": int(replay["status"]),
+            "replay_no_location": replay_no_location,
+        }
+        SELECTED_PAR_SHARED[shared_key] = observations
+        return passed(observations)
+
+    if identifier == "P171-002":
+        client_id = _selected_client(child, environment, redirect_uri)
+        foreign_client_id = _selected_client(child, environment, redirect_uri)
+        owner_browser = Browser(PROVIDER_ORIGIN)
+        _host_login(owner_browser, "clean-room-selected-binding")
+        params, _verifier = _pushed_params(client_id, redirect_uri)
+        control_uri, _expiry, _media = _push_par(owner_browser, params)
+        _control_interaction, control_status = _par_consent_handoff(owner_browser, client_id, control_uri, "P171-002 owner control")
+        candidate_params, _verifier = _pushed_params(client_id, redirect_uri)
+        candidate_uri, _expiry, _media = _push_par(owner_browser, candidate_params)
+        foreign = owner_browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": foreign_client_id, "request_uri": candidate_uri,
+        }))
+        require_status(foreign, 400, "P171-002 foreign-client request_uri")
+        if "location" in foreign["headers"]:
+            raise AssertionError("P171-002 foreign-client request_uri returned a Location")
+        owner_reuse = owner_browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": candidate_uri,
+        }))
+        require_status(owner_reuse, 400, "P171-002 owner reuse after foreign-client attempt")
+        if "location" in owner_reuse["headers"]:
+            raise AssertionError("P171-002 owner reuse returned a Location")
+        return passed({
+            "owner_control_status": control_status, "owner_control_reached_consent": True,
+            "foreign_status": int(foreign["status"]), "foreign_no_location": True,
+            "owner_reuse_status": int(owner_reuse["status"]), "owner_reuse_no_location": True,
+        })
+
+    if identifier == "P171-003":
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-expiry")
+        register_secret("fixture-nonce")
+        register_secret("fixture-state")
+        fixture_verifier = uuid.uuid4().hex + uuid.uuid4().hex
+        register_secret(fixture_verifier)
+        fixture_challenge = s256(fixture_verifier)
+        base_attrs = (
+            f'client_id: {json.dumps(client_id)}, redirect_uri: {json.dumps(redirect_uri)}, '
+            'scopes: ["openid", "email"], resources_requested: [], authorization_details: [], '
+            'prompt: "consent", nonce: "fixture-nonce", state: "fixture-state", '
+            f'code_challenge: {json.dumps(fixture_challenge)}, code_challenge_method: :S256'
+        )
+        expression = (
+            'alias Lockspire.Domain.PushedAuthorizationRequest; alias Lockspire.Storage.Ecto.Repository; '
+            f'expired = PushedAuthorizationRequest.issue(%{{{base_attrs}}}, now: DateTime.add(DateTime.utc_now(), -600, :second)); '
+            '{:ok, _} = Repository.put_pushed_authorization_request(expired); '
+            f'live = PushedAuthorizationRequest.issue(%{{{base_attrs}}}); '
+            '{:ok, _} = Repository.put_pushed_authorization_request(live); '
+            'IO.puts("SELECTED_EXPIRED_REFERENCE=" <> expired.request_uri); '
+            'IO.puts("SELECTED_LIVE_REFERENCE=" <> live.request_uri)'
+        )
+        fixture = _run_host_control(child, environment, expression)
+        expired_match = re.search(r"SELECTED_EXPIRED_REFERENCE=([^\n]+)", fixture)
+        live_match = re.search(r"SELECTED_LIVE_REFERENCE=([^\n]+)", fixture)
+        if not expired_match or not live_match:
+            raise AssertionError("P171-003 private expiry fixtures were not created")
+        expired_uri, live_uri = expired_match.group(1).strip(), live_match.group(1).strip()
+        register_secret(expired_uri)
+        register_secret(live_uri)
+        live_interaction, live_status = _par_consent_handoff(browser, client_id, live_uri, "P171-003 live neighbor control")
+        expired = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": expired_uri,
+        }))
+        require_status(expired, 400, "P171-003 expired request_uri")
+        if "location" in expired["headers"]:
+            raise AssertionError("P171-003 expired request_uri returned a Location")
+        return passed({
+            "live_control_status": live_status, "live_control_reached_consent": bool(live_interaction),
+            "expired_status": int(expired["status"]), "expired_no_location": True,
+        })
+
+    if identifier == "P171-005":
+        client_id = _selected_client(child, environment, redirect_uri)
+        browser = Browser(PROVIDER_ORIGIN)
+        _host_login(browser, "clean-room-selected-scope-authority")
+        control_params, _control_verifier = _pushed_params(client_id, redirect_uri)
+        control_uri, _control_expiry, _control_media = _push_par(browser, control_params)
+        control_interaction, _control_status = _par_consent_handoff(browser, client_id, control_uri, "P171-005 independent reference-only control")
+        candidate_params, _candidate_verifier = _pushed_params(client_id, redirect_uri)
+        candidate_uri, _candidate_expiry, _candidate_media = _push_par(browser, candidate_params)
+        if candidate_uri == control_uri:
+            raise AssertionError("P171-005 candidate reused its independent control reference")
+        candidate_authorize = browser.request("GET", "/lockspire/authorize?" + urlencode({
+            "client_id": client_id, "request_uri": candidate_uri, "scope": "profile",
+        }))
+        require_status_in(candidate_authorize, (302, 303), "P171-005 pushed-scope candidate")
+        candidate_location = redirect(candidate_authorize, "P171-005 pushed-scope candidate")
+        candidate_interaction = _assert_consent_handoff(browser, candidate_location, "P171-005 pushed-scope candidate")
+        persisted = _stored_interaction_projection(child, environment, candidate_interaction, {
+            "client_id": client_id, "scopes": ["openid", "email"],
+            "state": candidate_params["state"], "nonce": candidate_params["nonce"],
+        })
+        return passed({
+            "control_consent_boundary_exact": bool(control_interaction),
+            "candidate_consent_boundary_exact": True,
+            "candidate_client_id_matches": persisted["client_id_matches"],
+            "candidate_scopes_match": persisted["scopes_match"],
+            "candidate_state_matches": persisted["state_matches"],
+            "candidate_nonce_matches": persisted["nonce_matches"],
+            "candidate_front_channel_scope_not_merged": persisted["front_channel_scope_not_merged"],
+        })
+
+    if identifier == "P171-006":
+        configured_issuer = PROVIDER_ORIGIN + "/lockspire"
+        response = Browser(PROVIDER_ORIGIN).request("GET", "/lockspire/.well-known/openid-configuration")
+        require_status(response, 200, "P171-006 mounted discovery")
+        metadata = json.loads(str(response["body"]))
+        suffixes = {
+            "authorization_endpoint": "/authorize",
+            "token_endpoint": "/token",
+            "userinfo_endpoint": "/userinfo",
+            "jwks_uri": "/jwks",
+            "pushed_authorization_request_endpoint": "/par",
+            "revocation_endpoint": "/revoke",
+            "introspection_endpoint": "/introspect",
+        }
+        facts = {key: metadata.get(key) == configured_issuer + suffix for key, suffix in suffixes.items()}
+        if not all(facts.values()):
+            mismatched = ",".join(key for key, matches in facts.items() if not matches)
+            raise AssertionError(f"P171-006 mounted discovery endpoint mismatches: {mismatched}")
+        return passed({
+            "discovery_status": int(response["status"]),
+            "issuer_matches_configured": metadata.get("issuer") == configured_issuer,
+            "authorization_endpoint_mounted": facts["authorization_endpoint"],
+            "token_endpoint_mounted": facts["token_endpoint"],
+            "userinfo_endpoint_mounted": facts["userinfo_endpoint"],
+            "jwks_uri_mounted": facts["jwks_uri"],
+            "pushed_authorization_endpoint_mounted": facts["pushed_authorization_request_endpoint"],
+            "revocation_endpoint_mounted": facts["revocation_endpoint"],
+            "introspection_endpoint_mounted": facts["introspection_endpoint"],
+        })
+
+    raise AssertionError(f"selected authorization case is not implemented: {identifier}")
+
+
+def run_selected_authorization_par(
+    case_ids: tuple[str, ...], provider: Browser, child: Path, environment: dict[str, str], run_root: Path
+) -> list[dict[str, object]]:
+    SELECTED_PAR_SHARED.clear()
+    if not case_ids:
+        raise AssertionError("selected authorization case set is empty")
+    scenarios = []
+    for identifier in case_ids:
+        print(f"selected authorization case {identifier}", flush=True)
+        scenarios.append(run_selected_authorization_case(identifier, provider, child, environment, run_root))
+    return scenarios
 
 
 def run_dcr_lifetime(
@@ -1332,10 +1906,15 @@ def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, 
 def main(argv: list[str]) -> int:
     global ACTIVE_REDACTOR
     parser = argparse.ArgumentParser()
-    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime"))
+    parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime", "selected_authorization_par"))
     parser.add_argument("--lifetime-leg", action="append", choices=("fresh", "custom", "legacy"))
     parser.add_argument("--receipt", type=Path)
     parser.add_argument("--check-lifetime-receipt", type=Path)
+    parser.add_argument("--selected-case", action="append", choices=SELECTED_CASE_IDS)
+    parser.add_argument("--selected-receipt", type=Path)
+    parser.add_argument("--check-selected-receipt", type=Path)
+    parser.add_argument("--expected-source-revision")
+    parser.add_argument("--expected-receipt-sha256")
     parser.add_argument("--hold-after-ready", type=float, default=0.0, help=argparse.SUPPRESS)
     parser.add_argument("--verify-concurrent-origins", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--verify-signal-cleanup", action="store_true", help=argparse.SUPPRESS)
@@ -1366,6 +1945,21 @@ def main(argv: list[str]) -> int:
             return 1
         print("lifetime receipt verified")
         return 0
+    if args.check_selected_receipt:
+        if args.expected_source_revision is None or args.expected_receipt_sha256 is None:
+            parser.error("--check-selected-receipt requires --expected-source-revision and --expected-receipt-sha256")
+        expected_cases = tuple(args.selected_case or SELECTED_CASE_IDS)
+        try:
+            validate_selected_receipt(
+                args.check_selected_receipt, expected_case_ids=expected_cases,
+                expected_source_revision=args.expected_source_revision,
+                expected_receipt_sha256=args.expected_receipt_sha256,
+            )
+        except (AssertionError, OSError, json.JSONDecodeError) as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        print("selected receipt verified")
+        return 0
     if args.verify_concurrent_origins:
         return verify_concurrent_real_journeys()
     if args.verify_signal_cleanup:
@@ -1374,6 +1968,17 @@ def main(argv: list[str]) -> int:
         return verify_run_root_ownership()
     if not args.only:
         parser.error("at least one --only journey group is required")
+    if "selected_authorization_par" in args.only and args.only != ["selected_authorization_par"]:
+        parser.error("selected_authorization_par must run as its only journey group")
+    if "selected_authorization_par" in args.only and args.selected_receipt is None:
+        parser.error("selected_authorization_par requires --selected-receipt")
+    if args.selected_receipt is not None and args.only != ["selected_authorization_par"]:
+        parser.error("--selected-receipt is only supported with --only selected_authorization_par")
+    if args.selected_case and args.only != ["selected_authorization_par"]:
+        parser.error("--selected-case requires selected_authorization_par or --check-selected-receipt")
+    selected_cases = tuple(args.selected_case or SELECTED_CASE_IDS)
+    if len(selected_cases) != len(set(selected_cases)):
+        parser.error("--selected-case values must be unique")
     if "dcr_lifetime" in args.only and (args.only != ["dcr_lifetime"] or args.receipt is None):
         parser.error("dcr_lifetime requires --receipt and must run as its only journey group")
     if args.receipt is not None and args.only != ["dcr_lifetime"]:
@@ -1392,9 +1997,12 @@ def main(argv: list[str]) -> int:
     provider_child = client_child = None
     provider_environment = client_environment = None
     dcr_scenario: list[dict[str, object]] | None = None
+    selected_scenarios: list[dict[str, object]] | None = None
     result_code = 0
     cleanup = {"processes_stopped": False, "databases_removed": False, "temporary_roots_removed": False}
+    redaction = {"sentinel_check_passed": False, "evidence_scan_passed": False}
     candidate: dict[str, str] | None = None
+    candidate_binding: dict[str, object] | None = None
     source_revision = ""
     with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
         run_root = Path(temporary)
@@ -1427,15 +2035,22 @@ def main(argv: list[str]) -> int:
             assert_redaction_guard(redactor)
             selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
-            source_revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
-            generated_archive = run_root / f"lockspire-{package_identity.version}.tar"
-            run_child_command_output(Path(__file__).resolve().parents[2], os.environ.copy(), "hex.build", "--output", str(generated_archive))
+            source_revision = package_identity.source_revision or ""
+            current_head = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
+            if not source_revision or source_revision != current_head:
+                raise PackageInputError("package source revision differs from the current committed source")
+            if "selected_authorization_par" in args.only and subprocess.check_output(
+                ("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], text=True
+            ).strip():
+                raise PackageInputError("selected package proof requires committed source and a clean checkout")
             if package_identity.tree_sha256 is None:
                 raise PackageInputError("packaged candidate tree identity is unavailable")
+            if package_identity.archive_sha256 is None:
+                raise PackageInputError("packaged candidate archive identity is unavailable")
             candidate = {
                 "kind": package_identity.kind,
                 "version": package_identity.version,
-                "archive_sha256": package_identity.archive_sha256 or hashlib.sha256(generated_archive.read_bytes()).hexdigest(),
+                "archive_sha256": package_identity.archive_sha256,
                 "tree_sha256": package_identity.tree_sha256,
             }
             print(
@@ -1448,13 +2063,34 @@ def main(argv: list[str]) -> int:
                 run_root,
                 provider_database,
                 package_root=package_root,
+                candidate_identity=package_identity,
                 port=provider_port,
                 cache_root=dependency_cache_root(run_root),
                 custom_lifetime_adapter=lifetime_leg == "custom",
             )
             print("provider host prepared")
+            if "selected_authorization_par" in args.only:
+                archive = run_root / "package" / f"lockspire-{package_identity.version}.tar"
+                verify_candidate_input(archive, package_root, package_identity)
+                vendor = (provider_child / "vendor" / "lockspire").resolve(strict=True)
+                # prepare_provider has already verified the actual resolver path and
+                # compiled marker using this exact PackageIdentity before returning.
+                # Recheck the marker-bound candidate here before any listener starts.
+                verify_candidate_host(package_root, provider_child, package_identity, vendor, vendor)
+                provenance = candidate_host_provenance(provider_child)
+                candidate_binding = {
+                    "kind": package_identity.kind,
+                    "version": package_identity.version,
+                    "source_revision": source_revision,
+                    "archive_sha256": package_identity.archive_sha256,
+                    "tree_sha256": package_identity.tree_sha256,
+                    "vendor_tree_sha256": provenance["vendor_tree_sha256"],
+                    "compiled_candidate_sha256": provenance["compiled_candidate_sha256"],
+                    "resolved_dependency_verified": provenance["resolved_dependency_verified"],
+                }
+            auth_time_root = run_root
             provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
-            provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
+            provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "CLEAN_ROOM_SELECTED_AUTH_TIME_ROOT": str(auth_time_root), "CLEAN_ROOM_SELECTED_STALE_AUTH_TIME_FILE": str(auth_time_root / "selected-stale-auth-time-unix.txt"), "CLEAN_ROOM_SELECTED_FRESH_AUTH_TIME_FILE": str(auth_time_root / "selected-fresh-auth-time-unix.txt"), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             if lifetime_leg == "custom":
                 provider_environment["CLEAN_ROOM_CUSTOM_LIFETIME_ADAPTER"] = "true"
             run_child_command(provider_child, provider_environment, "ecto.create")
@@ -1489,7 +2125,7 @@ def main(argv: list[str]) -> int:
                 )
                 if "DCR_POLICY_READY authorization_code" not in setup:
                     raise AssertionError("clean-room DCR policy setup did not complete")
-            if "dcr_lifetime" not in args.only:
+            if not any(group in args.only for group in ("dcr_lifetime", "selected_authorization_par")):
                 client_child, client_environment = prepare_client(
                     run_root, client_database, handoff, client_port, package_root
                 )
@@ -1511,6 +2147,11 @@ def main(argv: list[str]) -> int:
                     run_root / "provider.log",
                     custom=lifetime_leg == "custom",
                 )
+            if "selected_authorization_par" in args.only:
+                assert_owned_run_root(run_root, run_root_owner)
+                selected_scenarios = run_selected_authorization_par(
+                    selected_cases, Browser(PROVIDER_ORIGIN), provider_child, provider_environment, run_root
+                )
             if "happy_path" in args.only:
                 run_happy()
             if "boundary" in args.only:
@@ -1529,19 +2170,26 @@ def main(argv: list[str]) -> int:
                     track_provider_process,
                 )
             scan_evidence(run_root, redactor)
+            redaction["sentinel_check_passed"] = True
+            redaction["evidence_scan_passed"] = True
         except JourneyInterrupted:
             print("clean-room journey interrupted", file=sys.stderr)
             result_code = 130
-        except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
+        except (AssertionError, PackageInputError, OSError, http.client.HTTPException, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(str(safe_failure_summary(
                 stage="saas_journey", scenario="-".join(args.only or ["all"]),
                 event="runner_failure", field=type(error).__name__, count=1,
             )), file=sys.stderr)
             result_code = 1
         finally:
-            stop_process(client_process)
-            stop_process(provider_process)
-            cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
+            try:
+                stop_process(client_process)
+                stop_process(provider_process)
+                cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
+            except (OSError, subprocess.SubprocessError):
+                result_code = 1
+                cleanup["processes_stopped"] = False
+                print("clean-room process cleanup failed", file=sys.stderr)
             try:
                 assert_owned_run_root(run_root, run_root_owner)
             except AssertionError as error:
@@ -1550,17 +2198,47 @@ def main(argv: list[str]) -> int:
                     field=type(error).__name__, count=1,
                 )), file=sys.stderr)
             else:
-                if client_child is not None and client_environment is not None:
-                    drop_child_database(client_child, client_environment, "client")
-                if provider_child is not None and provider_environment is not None:
-                    drop_child_database(provider_child, provider_environment, "provider")
-                cleanup["databases_removed"] = True
+                try:
+                    if client_child is not None and client_environment is not None:
+                        drop_child_database(client_child, client_environment, "client")
+                    if provider_child is not None and provider_environment is not None:
+                        drop_child_database(provider_child, provider_environment, "provider")
+                    cleanup["databases_removed"] = True
+                except (AssertionError, OSError, subprocess.SubprocessError):
+                    result_code = 1
+                    cleanup["databases_removed"] = False
+                    print("clean-room database cleanup failed", file=sys.stderr)
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
             print("cleanup complete")
     cleanup["temporary_roots_removed"] = not run_root.exists()
+    if "selected_authorization_par" in args.only and args.selected_receipt is not None and candidate_binding is not None:
+        if selected_scenarios is None:
+            selected_scenarios = [{
+                "id": selected_cases[0], "outcome": "failed", "observations": {},
+                "counts": {"executed": 1, "passed": 0, "failed": 1, "skipped": 0},
+            }]
+        expected_cases = selected_cases
+        selection = "complete" if expected_cases == SELECTED_CASE_IDS else "partial"
+        try:
+            write_selected_receipt(
+                args.selected_receipt, selection=selection, expected_case_ids=expected_cases,
+                source_revision=source_revision, candidate=candidate_binding,
+                scenarios=selected_scenarios, cleanup=cleanup, redaction=redaction,
+            )
+            if result_code == 0:
+                validate_selected_receipt(
+                    args.selected_receipt, expected_case_ids=expected_cases,
+                    expected_source_revision=source_revision, expected_binding=candidate_binding,
+                )
+        except (AssertionError, OSError, ValueError) as error:
+            print(str(safe_failure_summary(
+                stage="selected_receipt", scenario="-".join(expected_cases),
+                event="receipt_rejected", field=type(error).__name__, count=1,
+            )), file=sys.stderr)
+            result_code = 1
     if args.receipt is not None:
         if dcr_scenario is None and result_code != 0:
             dcr_scenario = [{

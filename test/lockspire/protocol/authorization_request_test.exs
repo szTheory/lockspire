@@ -679,18 +679,36 @@ defmodule Lockspire.Protocol.AuthorizationRequestTest do
     assert error.reason_code == :invalid_request_uri
   end
 
-  test "rejects mixed request_uri and raw authorization parameters", %{client: client} do
-    pushed_request = put_pushed_request!(client.client_id)
+  test "resolves pushed parameters despite conflicting outer authorization parameters", %{
+    client: client
+  } do
+    stored_params =
+      valid_params(client.client_id)
+      |> Map.put("nonce", "phase173-stored-nonce")
 
-    assert {:browser_error, %Error{} = error} =
-             AuthorizationRequest.validate(%{
-               "client_id" => client.client_id,
-               "request_uri" => pushed_request.request_uri,
-               "redirect_uri" => "https://client.example.com/callback"
-             })
+    pushed_request =
+      put_pushed_request!(client.client_id, authorization_params: stored_params)
 
-    assert error.error == "invalid_request"
-    assert error.reason_code == :request_uri_conflict
+    outer_params = %{
+      "client_id" => client.client_id,
+      "request_uri" => pushed_request.request_uri,
+      "redirect_uri" => "https://attacker.example/callback",
+      "scope" => "profile",
+      "state" => "outer-state",
+      "nonce" => "outer-nonce",
+      "code_challenge" => String.duplicate("b", 43),
+      "code_challenge_method" => "plain"
+    }
+
+    assert {:ok, %Validated{} = validated} = AuthorizationRequest.validate(outer_params)
+
+    assert validated.client_id == client.client_id
+    assert validated.redirect_uri == stored_params["redirect_uri"]
+    assert validated.scopes == ["profile", "email"]
+    assert validated.state == stored_params["state"]
+    assert validated.nonce == "phase173-stored-nonce"
+    assert validated.code_challenge == stored_params["code_challenge"]
+    assert validated.code_challenge_method == :S256
   end
 
   test "accepts a signed request object and projects its claims into the authorization pipeline",

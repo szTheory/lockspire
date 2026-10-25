@@ -1,0 +1,185 @@
+LOCKSPIRE MILESTONE GUIDE
+Reusable intent for choosing and delivering future milestones
+
+PURPOSE
+
+Use this guide alongside the live GSD project state whenever evaluating a new
+Lockspire milestone. It captures the durable intent behind the original
+"raise the bar" prompt and adapts it to Lockspire's product, evidence, and
+release model. It is a decision aid, not authorization to start every listed
+candidate or to expand the product boundary.
+
+CORE INTENT
+
+Build the most trustworthy, useful embedded OAuth/OIDC provider library for
+Phoenix and Elixir teams. Improve it with deliberate, evidence-backed work:
+make adopter paths easier, protocol and security behavior more dependable,
+operator tasks clearer, and maintenance and release work more repeatable.
+Prefer elegant, understandable, self-documenting solutions, high-signal
+automation, and durable findings with provenance. Spend effort where it
+changes a real adopter or maintainer outcome; do not churn for activity,
+checklist breadth, or theoretical completeness.
+
+PRODUCT BOUNDARIES
+
+- Lockspire is a companion library embedded in the host Phoenix application,
+  not a required standalone authorization service.
+- The host owns account resolution, login UX, layouts, branding, and
+  product-specific policy. Keep these seams explicit and narrow.
+- Keep protocol core, storage, generators, Plug/Phoenix integration, and
+  LiveView/admin surfaces strongly bounded.
+- Keep v1 focused on OAuth/OIDC provider needs. Do not expand into SAML,
+  LDAP/AD federation, hosted auth, a generic API gateway, or a full CIAM suite.
+- Preserve the shipped public contract and security posture. In particular:
+  require PKCE S256 by default; exact-match redirect URIs; hash client secrets
+  at rest; make authorization codes short-lived and single-use; rotate refresh
+  tokens and revoke the family on reuse; and disallow implicit flow and
+  alg=none.
+- Treat docs/supported-surface.md, executable repo proof, current GSD state,
+  and current release truth as stronger than stale strategic notes or memory.
+
+WHO WE SERVE
+
+Use these roles as lenses when assessing a candidate. Do not turn them into
+unbounded industry-specific feature lists. Focus on shared needs and on
+meaningful differences in trust, tenancy, traffic, compliance, and operations.
+
+1. Phoenix SaaS adopter: installs Lockspire in an existing app and needs a
+   clear, low-friction path through configuration, migrations, routes, login,
+   consent, claims, and first-client setup.
+2. Host application architect: needs stable boundaries, understandable APIs,
+   predictable Ecto/Phoenix integration, upgrade paths, and no hidden service
+   or infrastructure requirement.
+3. Security and protocol reviewer: needs standards-aligned behavior, secure
+   defaults, explicit trust decisions, negative-path coverage, and honest
+   support/conformance claims.
+4. Operator or support engineer: needs safe, redacted workflows to configure
+   clients and keys, investigate consent/token issues, and understand lifecycle
+   state without requiring source access.
+5. Integrator building a client or resource API: needs interoperable discovery,
+   token validation and lifecycle behavior, precise error handling, and
+   executable examples.
+6. End user or account holder: needs the host's familiar login and consent
+   experience, with Lockspire not taking ownership of their account or UX.
+7. Library maintainer and release owner: needs readable code, trustworthy CI,
+   bounded dependencies, reproducible evidence, clear upgrade/release steps,
+   and a repository left in an intentional state.
+
+Consider B2B and B2C SaaS, multi-tenant products, developer platforms, and
+regulated or high-trust domains as usage contexts. Their common denominator is
+reliable embedded provider behavior with explicit host ownership. Pursue a
+specialized requirement only when adopter evidence and a scoped acceptance
+case justify it; never imply compliance or certification from a test suite.
+
+MILESTONE SELECTION LOOP
+
+Before opening a milestone:
+
+1. Establish the real baseline from the current branch, GSD artifacts,
+   supported-surface contract, tests and workflows, release records, and
+   adopter/support evidence. Record sources and exact revisions where useful.
+2. Separate release-train maintenance from feature work. Patch-eligible fixes,
+   narrow support-truth corrections, and release hygiene stay on the normal
+   train unless they materially widen the public contract. Follow
+   DEVELOPMENT-TRAIN.md and RELEASE-TRAIN.md.
+3. Generate candidate wedges from demonstrated friction, security or
+   interoperability findings, install and upgrade gaps, operator burden, or
+   repeated maintainer toil. Consider engineering quality dimensions broadly:
+   correctness, security, compatibility, usability, accessibility, reliability,
+   performance, operability, testability, maintainability, documentation,
+   dependency health, and release integrity. Select only dimensions tied to
+   evidence and a measurable user outcome.
+4. Rank candidates by user impact, trust/risk reduction, frequency, evidence
+   strength, leverage, and cost. State why the candidate is next, what proof
+   would show success, what is explicitly out of scope, and what should be
+   deferred. Prefer a thin vertical adopter journey over disconnected cleanup
+   or speculative breadth.
+5. Use research, standards, code inspection, and ecosystem evidence before
+   asking the user to choose among technical options. Escalate decisions that
+   materially change product boundaries, public API shape, security posture,
+   support claims, or hard-to-reverse strategy.
+6. Keep a near-, mid-, and long-horizon candidate list, but refresh it at each
+   milestone close. Candidates are hypotheses with provenance and triggers,
+   not promises. Re-rank against current evidence and mark shipped, obsolete,
+   deferred, or rejected items instead of carrying stale lists forward.
+7. If no candidate clearly improves the intended adopter story or reduces a
+   material risk, choose sustainment or stop. There is no quota to create a
+   feature milestone.
+
+CURRENT ROADMAP CANDIDATES (PROVISIONAL)
+
+Near term: Finish the active v1.38 Repository Baseline & Reconciliation work
+and return to the sustaining GA release train. Preserve the current release
+truth. Triage the retained supplemental OIDF/FAPI findings honestly. A bounded
+conformance-hardening milestone (FUTURE-05) is a candidate only if specific
+retained findings are reproducible, actionable, supported-surface relevant,
+and can be addressed with measurable acceptance; it must not promise
+certification or broaden protocol support by implication.
+
+Mid term: Consider the smallest adopter or operator friction wedge supported
+by fresh evidence after the baseline closes. Existing planning suggests
+install/upgrade and generated-host clarity, explicit host seams, first-client
+setup, operator support, or narrowly bounded conformance as areas to inspect.
+Do not treat these as pre-approved roadmap commitments; verify the current
+implementation and adopter signal first.
+
+Long term: Maintain, secure, and improve the embedded Phoenix provider as
+real use reveals needs. Consider new protocol or operator scope only when
+there is sustained demand, clear ownership, bounded support obligations, and
+proof that the feature fits the library's core value. Otherwise preserve the
+small, dependable product and its sustaining release train.
+
+QUALITY AND EVIDENCE BAR
+
+- Define outcomes in terms of what an adopter, operator, integrator, or
+  maintainer can demonstrably do after the milestone.
+- Prefer simple, cohesive, idiomatic Elixir and Phoenix design. Remove
+  duplication and dead complexity when it is part of the chosen outcome; do
+  not launch broad refactors without evidence.
+- Add or change tests only to prove the milestone's actual acceptance criteria.
+  Use adversarial and property-based testing where invariants and input spaces
+  benefit from them. Keep fixtures realistic and safe; do not add a test tool
+  or synthetic "digital twin" system without a concrete decision or failure
+  mode it will improve.
+- Make CI efficient and high-signal. Avoid redundant jobs and gates that do
+  not catch a distinct failure class. Keep required acceptance separate from
+  supplemental or exploratory conformance evidence.
+- Keep examples, install generators, docs, support claims, and runtime behavior
+  aligned. Redact secrets and personal data in logs, fixtures, reports, and
+  durable planning artifacts. Never copy personal details from prompts into
+  the repository.
+- Preserve provenance for important findings: source, date/revision, observed
+  behavior, disposition, and acceptance evidence. Distinguish fact, inference,
+  and proposal. Do not rewrite historical receipts to make current status look
+  cleaner.
+
+MILESTONE DELIVERY AND CLOSEOUT
+
+- Plan a coherent, bounded outcome with explicit exclusions and a verification
+  path. Split work into phases only when that makes dependencies and review
+  clearer.
+- Keep code comments useful to maintainers; do not leave GSD orchestration,
+  temporary plan, or generated workflow chatter in product code or user-facing
+  output.
+- Keep documentation accurate and update maintained records when the shipped
+  behavior or support contract changes.
+- Close the milestone with verification, review/audit, and the gates required
+  by the current repo policy. Resolve or explicitly disposition failures and
+  warnings; do not claim success on partial evidence.
+- Leave the branch, worktrees, generated artifacts, planning state, PR, and
+  release records intentional and tidy. A milestone should be release-ready.
+  Actual publication still follows the milestone PR, Release Please, protected
+  exact-ref publishing, and install-truth process; do not manually bypass that
+  release ownership.
+- At close, record what shipped, what remains deferred and why, fresh roadmap
+  candidates and triggers, and the next default action. Between feature
+  milestones, prefer the sustaining GA release train over automatic expansion.
+
+HOW TO USE THIS GUIDE
+
+At each new-milestone decision, read this guide with PROJECT.md, STATE.md,
+ROADMAP.md, REQUIREMENTS.md, MILESTONE-ARC.md, supported-surface docs, and the
+release/development train records. Reconcile any disagreement against current
+code and evidence. Update this guide's provisional horizons only when the
+milestone close or new evidence warrants it; keep MILESTONE-ARC.md as the
+concise live ranking and rationale for immediate candidates.

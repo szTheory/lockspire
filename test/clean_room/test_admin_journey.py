@@ -608,7 +608,9 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "    if stage == 'drop-timeout': time.sleep(30)\n"
             "elif args[0] == 'test':\n"
             "    if stage in {'shared-failure', 'signal', 'timeout'}: print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr, flush=True)\n"
-            "    if stage in {'shared-failure', 'shared-drop-failure'}: raise SystemExit(37)\n"
+            "    if stage == 'shared-failure': print('1 test, 1 failure', flush=True)\n"
+            "    if stage == 'malformed-count-failure': print('1 test, ' + '9' * 5000 + ' failures', flush=True)\n"
+            "    if stage in {'shared-failure', 'shared-drop-failure', 'malformed-count-failure'}: raise SystemExit(37)\n"
             "    if stage == 'signal': os.kill(os.getpid(), signal.SIGTERM)\n"
             "    if stage in {'timeout', 'wrapper-signal'}:\n"
             "        from pathlib import Path\n"
@@ -628,7 +630,14 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             "from pathlib import Path\n"
             "stage = os.environ.get('LOCKSPIRE_PROOF_FAKE_STAGE', '')\n"
             "print(os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], file=sys.stderr)\n"
-            "if stage == 'browser-failure': raise SystemExit(41)\n"
+            "if stage == 'browser-failure':\n"
+            "    observed = {'failure': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], 'stage': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET'], 'outcome': 'failed', 'counts': {'secret': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}, 'observations': {}}\n"
+            "    print('browser proof failed: ' + json.dumps(observed), file=sys.stderr)\n"
+            "    raise SystemExit(41)\n"
+            "if stage == 'browser-summary-failure':\n"
+            "    observed = {'failure': 'case_failed', 'stage': 'full_matrix', 'outcome': 'failed', 'counts': {}, 'observations': {}, 'first_case': {'id': 'allowed_entry', 'failure': 'live_join_timeout', 'outcome': 'failed', 'count_fields': [], 'observation_fields': []}, 'failed_cases': [{'id': 'allowed_entry', 'failure': 'live_join_timeout', 'false_evidence': ['protected_content']}], 'private': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}\n"
+            "    print('browser proof failed: ' + json.dumps(observed), file=sys.stderr)\n"
+            "    raise SystemExit(42)\n"
             "payload = {'evidence': 'safe'} if stage in {'success', 'drop-failure', 'drop-timeout'} else {'unsafe': os.environ['LOCKSPIRE_PROOF_FAKE_SECRET']}\n"
             "Path(sys.argv[sys.argv.index('--receipt') + 1]).write_text(json.dumps(payload))\n",
             encoding="utf-8",
@@ -721,8 +730,21 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         result, receipt_dir = self.run_wrapper("shared-failure", stale_receipt=True)
 
         self.assertEqual(result.returncode, 37)
+        self.assertIn('host integration lifecycle diagnostic:', result.stdout)
+        self.assertIn('"count": 1', result.stdout)
+        self.assertIn('"stage": "lifecycle"', result.stdout)
         self.assertNotIn(self.SENTINEL, result.stdout)
         self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
+        self.assert_staging_redacted(receipt_dir)
+
+    def test_malformed_failure_count_keeps_original_status_and_uses_safe_fallback(self):
+        result, receipt_dir = self.run_wrapper("malformed-count-failure")
+
+        self.assertEqual(result.returncode, 37)
+        self.assertIn('host integration lifecycle diagnostic:', result.stdout)
+        self.assertIn('"event": "runner_failure"', result.stdout)
+        self.assertIn('"count": 0', result.stdout)
+        self.assertNotIn(self.SENTINEL, result.stdout)
         self.assert_staging_redacted(receipt_dir)
 
     def test_signalled_test_process_remains_a_failure_without_printing_child_secret(self):
@@ -744,6 +766,22 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         result, receipt_dir = self.run_wrapper("browser-failure", stale_receipt=True)
 
         self.assertEqual(result.returncode, 41)
+        self.assertIn('host integration browser diagnostic:', result.stdout)
+        self.assertIn('"failure": "failure_unrecognized"', result.stdout)
+        self.assertIn('"stage": "unknown"', result.stdout)
+        self.assertNotIn(self.SENTINEL, result.stdout)
+        self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
+        self.assert_staging_redacted(receipt_dir)
+
+    def test_browser_failure_summary_roundtrip_preserves_only_recognized_details(self):
+        result, receipt_dir = self.run_wrapper("browser-summary-failure", stale_receipt=True)
+
+        self.assertEqual(result.returncode, 42)
+        line = next(line for line in result.stdout.splitlines() if line.startswith("host integration browser diagnostic: "))
+        summary = json.loads(line.split(": ", 1)[1])
+        self.assertEqual(summary["first_case"]["id"], "allowed_entry")
+        self.assertEqual(summary["first_case"]["failure"], "live_join_timeout")
+        self.assertEqual(summary["failed_cases"], [{"id": "allowed_entry", "failure": "live_join_timeout", "false_evidence": ["protected_content"]}])
         self.assertNotIn(self.SENTINEL, result.stdout)
         self.assertFalse((receipt_dir / "locked-lockspire.json").exists())
         self.assert_staging_redacted(receipt_dir)

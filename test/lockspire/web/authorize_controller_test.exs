@@ -112,6 +112,68 @@ defmodule Lockspire.Web.AuthorizeControllerTest do
     assert conn.resp_body =~ "Unknown client_id"
   end
 
+  @tag :phase172_response_mode
+  test "A171-003 unsupported response_mode returns a first-party HTTP 400 after a valid query control" do
+    previous_known_scopes = Application.get_env(:lockspire, :known_scopes)
+    Application.put_env(:lockspire, :known_scopes, Enum.uniq(previous_known_scopes ++ ["openid"]))
+
+    on_exit(fn ->
+      Application.put_env(:lockspire, :known_scopes, previous_known_scopes)
+    end)
+
+    {:ok, client} =
+      Repository.register_client(%Client{
+        lifetime_version: 0,
+        client_id: "phase172-oidc-client",
+        client_secret_hash: "sha256:salt:hash",
+        client_type: :confidential,
+        name: "Phase 172 OIDC Client",
+        redirect_uris: ["https://client.example.com/callback"],
+        allowed_scopes: ["openid", "email"],
+        allowed_grant_types: ["authorization_code"],
+        allowed_response_types: ["code"],
+        token_endpoint_auth_method: :client_secret_basic,
+        pkce_required: true,
+        subject_type: :public,
+        created_at: DateTime.utc_now(),
+        metadata: %{}
+      })
+
+    params =
+      valid_params(client.client_id)
+      |> Map.put("scope", "openid email")
+      |> Map.put("nonce", "phase172-mode-nonce")
+      |> Map.put("state", "phase172-mode-state")
+      |> Map.put("response_type", "code")
+      |> Map.put("code_challenge", String.duplicate("a", 43))
+      |> Map.put("code_challenge_method", "S256")
+
+    query_conn = call_authorize(Map.put(params, "response_mode", "query"))
+
+    assert query_conn.status in [302, 303]
+    assert location = redirect_location(query_conn)
+    assert String.starts_with?(location, "/sign-in?")
+
+    query = location |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+    assert query["source"] == "authorize"
+    assert is_binary(query["interaction_id"]) and query["interaction_id"] != ""
+    assert query["return_to"] =~ "/lockspire/consent/"
+
+    binary_conn = call_authorize(Map.put(params, "response_mode", "binary"))
+
+    assert binary_conn.status == 400
+    assert Plug.Conn.get_resp_header(binary_conn, "content-type") |> List.first() =~ "text/html"
+    refute redirected?(binary_conn)
+    assert binary_conn.resp_body =~ "Authorization request rejected"
+    assert binary_conn.resp_body =~ "response_mode is invalid or unsupported"
+
+    refute binary_conn.resp_body =~
+             ~r/<input\b[^>]*\bname=[\"'](?:error|error_description|error_uri|state|iss)[\"']/i
+
+    refute binary_conn.resp_body =~
+             ~r/(?:\?|&|%3[fF]|%26)(?:error|error_description|error_uri|state|iss)=/i
+  end
+
   test "mismatched redirect_uri renders a first-party error response" do
     conn =
       "client_123"

@@ -231,6 +231,52 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     assert replay_conn.resp_body =~ "request_uri is invalid, expired, or already used"
   end
 
+  @tag :phase173_par_authority
+  test "P171-005 pushed scope remains authoritative after an independent reference-only consent control",
+       %{client: client} do
+    put_server_policy!(:required)
+
+    pushed_params = %{
+      "client_id" => client.client_id,
+      "response_type" => "code",
+      "redirect_uri" => "https://client.example.com/callback",
+      "scope" => "openid email",
+      "prompt" => "consent",
+      "state" => "phase173-pushed-state",
+      "nonce" => "phase173-pushed-nonce",
+      "code_challenge" => code_challenge("phase173-pkce-verifier"),
+      "code_challenge_method" => "S256"
+    }
+
+    control_reference = push_par_request!(client.client_id, pushed_params)
+
+    control_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => control_reference
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    _control_interaction = assert_pushed_consent!(control_conn, client, pushed_params)
+
+    candidate_reference = push_par_request!(client.client_id, pushed_params)
+    refute candidate_reference == control_reference
+
+    candidate_conn =
+      build_conn(:get, "/authorize", %{
+        "client_id" => client.client_id,
+        "request_uri" => candidate_reference,
+        "scope" => "profile"
+      })
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    _candidate_interaction = assert_pushed_consent!(candidate_conn, client, pushed_params)
+
+    assert host_consent_interaction_id(
+             "https://attacker.example/lockspire/consent/interaction-123"
+           ) == nil
+  end
+
   test "client signs JAR, posts to /par with Basic auth, completes /authorize + /token via the issued request_uri (Phase 22 JAR-via-PAR-via-Lockspire end-to-end)",
        %{
          client: _client
@@ -500,6 +546,58 @@ defmodule Lockspire.Integration.Phase15ParAuthorizationE2ETest do
     |> :crypto.hash(verifier)
     |> Base.url_encode64(padding: false)
   end
+
+  defp push_par_request!(client_id, params) do
+    conn =
+      build_conn(:post, "/par", Map.put(params, "client_id", client_id))
+      |> put_req_header("content-type", "application/x-www-form-urlencoded")
+      |> put_req_header("accept", "application/json")
+      |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+    assert conn.status == 201
+    assert [content_type] = get_resp_header(conn, "content-type")
+    assert content_type |> String.split(";", parts: 2) |> hd() == "application/json"
+
+    response = Jason.decode!(conn.resp_body)
+    request_uri = response["request_uri"]
+
+    assert is_binary(request_uri) and request_uri != ""
+    assert String.starts_with?(request_uri, "urn:ietf:params:oauth:request_uri:")
+
+    request_uri
+  end
+
+  defp assert_pushed_consent!(conn, client, pushed_params) do
+    assert conn.status in [302, 303], "expected consent handoff, got HTTP #{conn.status}"
+    assert [location] = get_resp_header(conn, "location")
+    assert interaction_id = host_consent_interaction_id(location)
+    assert {:ok, interaction} = Repository.fetch_interaction(interaction_id)
+
+    assert interaction.client_id == client.client_id
+    assert Enum.sort(interaction.scopes_requested) == ["email", "openid"]
+    assert interaction.scopes_requested == String.split(pushed_params["scope"], " ")
+    assert interaction.state == pushed_params["state"]
+    assert interaction.nonce == pushed_params["nonce"]
+
+    interaction
+  end
+
+  defp host_consent_interaction_id(location) when is_binary(location) do
+    uri = URI.parse(location)
+    segments = String.split(uri.path || "", "/", trim: false)
+
+    if is_nil(uri.scheme) and is_nil(uri.host) and is_nil(uri.authority) and
+         is_nil(uri.query) and is_nil(uri.fragment) and
+         match?(["", "lockspire", "consent", id] when id != "", segments) and
+         uri.path == "/lockspire/consent/#{List.last(segments)}" do
+      ["", "lockspire", "consent", interaction_id] = segments
+      interaction_id
+    else
+      nil
+    end
+  end
+
+  defp host_consent_interaction_id(_location), do: nil
 
   defp put_server_policy!(mode) do
     assert {:ok, %ServerPolicy{} = _policy} =

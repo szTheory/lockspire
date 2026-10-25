@@ -20,9 +20,29 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Closeout:** Audit tech_debt with no blockers. The duplicate trace-clause fixture warning is accepted for archival and remains deferred; no phase-verification verdict was overridden. See [audit](milestones/v1.46-MILESTONE-AUDIT.md), [roadmap](milestones/v1.46-ROADMAP.md) and [requirements](milestones/v1.46-REQUIREMENTS.md). Package publication is separate.
 
-## Next Milestone Goals
+## Current Milestone: v1.47 OAuth/OIDC Core Interoperability & Hardening
 
-No next scope is selected. Define fresh requirements through `$gsd-new-milestone`, continuing phase numbering at 171. SEC-01, KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt remain separate candidates with their existing owners.
+**Goal:** Clients using the supported embedded Phoenix surface receive secure, standards-grounded authorization and PAR/profile behavior, with reproducible evidence for each selected correction.
+
+**Target features:**
+- Qualify historical OIDC authorization-error and FAPI PAR/TLS/WebRunner findings against exact current inputs; distinguish protocol, harness, infrastructure and unsupported cases.
+- Correct selected authorization-response and PAR/profile boundaries only where fresh evidence warrants it; reuse existing proof for already-correct behavior.
+- Prove selected outcomes through a packaged host, focused security review and required contributor/CI checks while keeping external suites supplemental and non-certifying.
+- Leave a reviewed, green-main and clean-workspace handoff through the existing development/release train; refresh the rolling milestone ranking at every boundary.
+
+**Selected:** User approved the core-hardening direction and delegated upstream research, adversarial synthesis and routine scoped decisions on 2026-10-24. Continue phase numbering at 171. [Scope](research/v1.47-core-hardening/SCOPE.md), [research](research/v1.47-core-hardening/SUMMARY.md), [rolling roadmap](MILESTONE-ARC.md).
+
+**Entry condition satisfied — Phase 171:** Reviewed cumulative delivery in PR #138 and the original exact-main receipt establish accepted base `fe38beee987b135e87c99e7aa7f2488b4c8613e8`, with preserved history and delegated resource custody. The implementation branch remains distinct from accepted main. [Phase 171 verification](phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md) passed 10/10; its frozen twelve-case matrix reuses ten proofs and assigns A171-003 to Phase 172 and P171-005 to Phase 173. Optional external profiles remain unlaunched and non-certifying; later milestone delivery/publication remains separate.
+
+**Implementation verified — Phase 174 (2026-10-25):** All four phases, ten plans and fourteen requirements are verified. The two production corrections are unsupported response-mode disposition and stored pushed-request authority. Selected package proof passed 12/12, final candidate local/hosted gates passed, and source/security reviews are closed with nine non-authoritative judgment recommendations retained across the four phases. The canonical milestone audit passes14/14 requirements and6/6 integration links/flows; reviewed PR #140 integration/fresh main acceptance remain the delivery boundary; no next product milestone or publication is selected.
+
+**Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
+
+## Standing Planning and Delivery Posture
+
+Use [MILESTONE-GUIDE.txt](MILESTONE-GUIDE.txt) for durable user preferences and [MILESTONE-ARC.md](MILESTONE-ARC.md) for the live chunked direction. Research consequential decisions through relevant stakeholder lenses and reputable primary sources, adversarially compare alternatives, then synthesize one coherent scoped recommendation before downstream implementation. Stop at diminishing returns; automate routine decisions within the approved scope and avoid speculative future plans.
+
+Prefer small auditable local glue to another dependency when simpler; keep the tree small and flat, retaining vetted crypto/framework primitives and adding maintained packages when their benefit justifies the cost. At run/milestone boundaries, commit owned work, preserve unknown edits/unique commits, safely clean owned worktrees/resources, record exact evidence and next action, and establish fresh green main through the existing train before starting the next implementation milestone.
 
 <details>
 <summary>Original v1.46 intent and execution handoff</summary>
@@ -187,7 +207,7 @@ The user reaffirmed this default during Phase 167 verification on 2026-10-22 and
 
 ## Current State
 
-Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is complete, audited and archived (2026-10-24): 4 phases, 16 plans, 15/15 requirements. The next milestone is unselected; publication of v1.45/v1.46 work remains separate.
+Latest public package: **1.6.1**, published and independently verified on2026-10-20 from source `d04be40262e975a4eb8d8567eb0d1458a9c23181`. The key re-encryption task now uses the shared repo runner and safe error classifier. Protected run 39496849388 and fresh public install/checksum/docs/tag proof passed. See [release evidence](releases/1.6.1-EVIDENCE.md). v1.46 Embedded Host Integration Reliability is complete, audited and archived (2026-10-24): 4 phases, 16 plans, 15/15 requirements. v1.47 core interoperability is selected for planning; implementation awaits the recorded delivery-baseline gate. Integration/publication of v1.45/v1.46 work remains separate.
 
 v1.44 Adopter Polish & Verified 1.6.0 has delivered its scoped work and public release (2026-10-20). The host-facing repo-start, KEK setup and admin guidance improvements are shipped; the release ledger is on main. All four phases are complete and verified; the milestone is audited and archived. The bounded keys.reencrypt follow-up is merged in PR135 and publicly shipped in verified1.6.1. DCR lifetimes subsequently completed in v1.45; the verified public package remains 1.6.1.
 
@@ -371,9 +391,19 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No implementation requirement remains active. All 15 v1.46 requirements are validated and [archived](milestones/v1.46-REQUIREMENTS.md). Fresh requirements belong to the next milestone.
+No further product implementation is selected. Complete the reviewed PR and fresh main acceptance before starting another milestone; the canonical milestone audit passes14/14 requirements and6/6 integration links/flows.
+
+See [v1.47 requirements](REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
+
+- ✓ Source-bound selected authorization/PAR proof and resumable delivery handoff — v1.47 CPROOF-01..02, DELIV-01..02, Phase 174; 23/23 goal verification, exact twelve-case package receipt, 17 declared mitigations closed, clean ten-file source review, complete local candidate CI and seven hosted jobs at `9b8cf54d`. PR #140 remains open; accepted main and publication are not implied.
+
+- ✓ Selected pushed-request authority, retained lifecycle/required-PAR and configured metadata — v1.47 PARB-01..03, Phase 173; six verified behavioral truths, actual real-PAR RED/GREEN, 132 passing selected regression tests, five verified mitigations and one documented low accepted boundary. Two non-authoritative judgment prohibitions retain prominent human-review recommendations; external profiles remain unlaunched.
+
+- ✓ Selected authorization responses and preserved callback/silent-authentication outcomes — v1.47 AUTHR-01..03, Phase 172; 11/11 goal verification, actual Router RED/GREEN, 131 passing selected regression tests, six planned threats closed and all review findings fixed. Only the unsupported-mode classification changed production behavior; host accounts/sessions remain host-owned.
+
+- ✓ Accepted implementation base and finite supported-case qualification — v1.47 BASE-01..02, FIND-01..02, Phase 171; 10/10 goal verification, 22 passing ledger tests, two controlled counterexamples retained for downstream correction, 15 planned threats closed and clean review. External profiles were not launched.
 
 - ✓ Packaged-host transport, exact-version runtime and required CI wiring — v1.46 HPROOF-01..03, Phase 170; six cells × 16 browser cases, 43/44 lifecycle checks, 202 prior-phase regressions, 19/19 security threats closed and no human UAT. See [verification](milestones/v1.46-phases/170-packaged-host-and-compatibility-proof/170-VERIFICATION.md). Hosted CI remains unobserved.
 
@@ -519,6 +549,11 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
+| Qualify exact supported cases before changing protocol behavior | Coarse suite failures and unavailable infrastructure do not establish product defects | Phase 171 passed; ten existing proofs reused, two source-host counterexamples assigned to 172/173 |
+| Preserve original evidence and distinguish deliberate normative RED from setup failure or protocol pass | Repeated probes and metadata edits must not rewrite observed history | Phase 171 controlled observations, dated archive, focused contract and clean review |
+| Classify unsupported response mode at the existing protocol boundary | Reuse safe first-party HTML delivery and preserve strict/PAR/host seams without another abstraction or dependency | Phase 172 actual Router RED/GREEN and passed 11/11 verification |
+| Preserve stored PAR authority rather than rejecting all outer parameters | Remove the blanket conflict gate while retaining stored-only reconstruction, current policy and client-bound one-use consumption | Phase 173 actual Router RED/GREEN and six verified behavioral truths |
+| Record judgment lifecycles explicitly in autonomous work | Resolved/judgment keeps non-authoritative flags visible without inventing mechanical proof or a human confirmation; real behavior gaps still block | Phase 173 canonical-contract review and independent autonomous verification |
 | Require actual candidate/browser evidence distinct from server lifecycle and compilation | Supported integration claims need real assets, signed sessions, joins, navigation and current-authority denial at each mount | ✓ Good — Phase 170 six-cell matrix and independent goal verification |
 | Validate page mount alignment at HTTP entry and retain current host authority at LiveView boundaries | Connected sockets expose the WebSocket URI rather than the original page path; account/policy ownership stays with the host | ✓ Good — Phase 170 real browser regression and host authorization tests |
 | Retain only independently validated evidence and bound cleanup to owned resources | Hostile diagnostics, failed cleanup and artifact traversal must fail visibly without leaking or deleting external data | ✓ Good — Phase 170 security remediation, containment regressions and independent clean re-review |
@@ -614,6 +649,10 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 | Validate exact compiled first-match routing and state structural proof limits | Detect shadowed/legacy/incomplete wiring without claiming arbitrary policy correctness | ✓ Good — v1.46 verifier contracts |
 | Keep lifecycle and Chrome/CDP receipts separate and bind source/package/pair/mount/run identities | Establish transport/runtime behavior and fail visibly on missing or malformed proof | ✓ Good — v1.46 six-cell matrix and containment review |
 | Preserve local/hosted evidence limits and historical verification paths at archival | Avoid converting local success or relocation into unsupported CI or new runtime claims | ✓ Good — v1.46 audit and closeout projection |
+| Select v1.47 core interoperability with a rolling evidence-led milestone sequence | User approved research/fan-out, adversarial synthesis, small dependency trees and clean green-main/worktree boundaries; settle consequential decisions upstream and stop at diminishing returns | Adopted 2026-10-24; MILESTONE-GUIDE.txt and MILESTONE-ARC.md own durable posture/ranking |
+| Keep SEC-01 separate as provisional v1.48 and later scope conditional | Avoid mixing protocol corrections with persistence/key migration; existing token coverage should not be rebuilt without evidence | Adopted 2026-10-24; re-rank at milestone boundaries |
+| Keep source/proof/verifier/audit references directed and preserve actual executed identities | Avoid circular fingerprints, metadata restamping and unsupported proof promotion | Phase 174: reviewed applicability and exact package/candidate/CI identities |
+| Preserve bounded redacted failure diagnostics before owned cleanup and retain original exits | Make opaque floor failures diagnosable without leaking child logs or masking failure | Phase 174: existing helpers, ten focused wrapper tests and final hosted floor proof |
 
 ## Evolution
 
@@ -632,6 +671,8 @@ This document evolves at phase transitions and milestone boundaries.
 2. Core Value check — still the right priority?
 3. Audit Out of Scope — reasons still valid?
 4. Update Context with current state
+5. Refresh MILESTONE-ARC.md against current evidence; preserve candidate rationale/triggers, mark shipped or stale scope, and record the next default action.
+6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-24 after v1.46 milestone completion*
+*Last updated: 2026-10-25 after Phase 174 verified completion; reviewed main delivery remains pending*
