@@ -332,6 +332,9 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
     assert bounds["max_payload_base64url_unpadded_bytes"] == 1_398_168
     assert bounds["max_envelope_bytes"] == 1_398_207
 
+    material = Enum.find(context.ledger["cases"], &(&1["case_id"] == "MATERIAL-BOUNDS-AND-API-SCOPE"))
+    assert material["expected"] =~ "1,398,207 ASCII bytes"
+
     invalid = put_in(context.ledger, ["format_bounds", "max_envelope_bytes"], 16_384)
 
     assert {:error, :invalid_format_bounds} =
