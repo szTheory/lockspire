@@ -1006,27 +1006,21 @@ def run_selected_authorization_case(
             "token_endpoint": "/lockspire/token",
             "userinfo_endpoint": "/lockspire/userinfo",
             "jwks_uri": "/lockspire/jwks",
-            "pushed_authorization_endpoint": "/lockspire/par",
+            "pushed_authorization_request_endpoint": "/lockspire/par",
             "revocation_endpoint": "/lockspire/revoke",
             "introspection_endpoint": "/lockspire/introspect",
         }
-        facts = {key.replace("_endpoint", "_mounted").replace("jwks_uri", "jwks_uri_mounted"): metadata.get(key) == configured_issuer + suffix for key, suffix in suffixes.items()}
-        expected_keys = {
-            "authorization_mounted", "token_mounted", "userinfo_mounted", "jwks_uri_mounted",
-            "pushed_authorization_mounted", "revocation_mounted", "introspection_mounted",
-        }
-        if set(facts) != expected_keys:
-            raise AssertionError("P171-006 mounted discovery projection keys were invalid")
+        facts = {key: metadata.get(key) == configured_issuer + suffix for key, suffix in suffixes.items()}
         return passed({
             "discovery_status": int(response["status"]),
             "issuer_matches_configured": metadata.get("issuer") == configured_issuer,
-            "authorization_endpoint_mounted": facts["authorization_mounted"],
-            "token_endpoint_mounted": facts["token_mounted"],
-            "userinfo_endpoint_mounted": facts["userinfo_mounted"],
-            "jwks_uri_mounted": facts["jwks_uri_mounted"],
-            "pushed_authorization_endpoint_mounted": facts["pushed_authorization_mounted"],
-            "revocation_endpoint_mounted": facts["revocation_mounted"],
-            "introspection_endpoint_mounted": facts["introspection_mounted"],
+            "authorization_endpoint_mounted": facts["authorization_endpoint"],
+            "token_endpoint_mounted": facts["token_endpoint"],
+            "userinfo_endpoint_mounted": facts["userinfo_endpoint"],
+            "jwks_uri_mounted": facts["jwks_uri"],
+            "pushed_authorization_endpoint_mounted": facts["pushed_authorization_request_endpoint"],
+            "revocation_endpoint_mounted": facts["revocation_endpoint"],
+            "introspection_endpoint_mounted": facts["introspection_endpoint"],
         })
 
     raise AssertionError(f"selected authorization case is not implemented: {identifier}")
