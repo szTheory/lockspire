@@ -193,6 +193,29 @@
       "blocking": "runtime implementation and boundary proof belong to 176; policy premise qualified and owner-approved in 175"
     },
     {
+      "case_id": "LEG175-METADATA-FUTURE-READINESS",
+      "requirement": "VBASE-02",
+      "caller": "qualification-only migration-readiness predicate after Plug-authenticated metadata extraction",
+      "lifecycle": "authenticated metadata with signed_at_ms later than the supplied migration decision time",
+      "stage": "post-authenticated-decode readiness check before any migration decision",
+      "storage": "legacy verifier metadata; no production row mutation",
+      "operation": "assess whether authenticated legacy metadata is eligible for migration",
+      "expected": "authenticated future payload decodes to metadata but readiness rejects signed_at_ms > now_ms before deadline comparison; exact finite deadline equality is eligible, +1ms is expired; 23-hour finite metadata is eligible; infinity, nonpositive age, empty data, or malformed metadata are unsupported",
+      "mutation": "none",
+      "preserves": "authenticated legacy bytes and original timestamp/deadline; no age reset or production migration behavior",
+      "redaction": "test-only synthetic data; no production secret, verifier, or ciphertext output",
+      "owner_phase": 175,
+      "evidence": {
+        "status": "pass",
+        "ids": [
+          "LEG175-METADATA-FUTURE-READINESS"
+        ],
+        "source_sha": "e60b7c1090719fa8ce29fbb35d9da6f90518112d"
+      },
+      "status": "qualified",
+      "blocking": "none; exact-source migration-readiness evidence is recorded at the qualified candidate SHA"
+    },
+    {
       "case_id": "LEGACY-UNSUPPORTED-INPUTS",
       "requirement": "VBASE-02",
       "caller": "migration metadata reader",

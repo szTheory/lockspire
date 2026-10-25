@@ -7,6 +7,17 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     max_payload_base64url_unpadded_bytes max_envelope_bytes
   )
 
+  @historical_metadata_source_files MapSet.new(~w(
+    test/lockspire/security/client_secret_verifier_compatibility_test.exs
+    test/support/client_secret_verifier_fixtures.ex
+  ))
+
+  @current_qualification_source_files MapSet.new(~w(
+    test/integration/client_secret_jwt_legacy_age_test.exs
+    test/lockspire/security/client_secret_verifier_compatibility_test.exs
+    test/support/client_secret_verifier_fixtures.ex
+  ))
+
   @fixed_bounds %{
     "max_secret_bytes" => 1_048_576,
     "max_client_id_bytes" => 1_048_576,
@@ -52,6 +63,7 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     LEG175-FUTURE
     LEG175-METADATA-SHAPES
     LEG175-HASH-MISMATCH
+    LEG175-METADATA-FUTURE-READINESS
     LEGACY-AGE-BOUNDARIES
     LEGACY-UNSUPPORTED-INPUTS
     CONFIG-ABSENT-LEGACY
@@ -96,6 +108,7 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     "LEG175-FUTURE" => 175,
     "LEG175-METADATA-SHAPES" => 175,
     "LEG175-HASH-MISMATCH" => 175,
+    "LEG175-METADATA-FUTURE-READINESS" => 175,
     "LEGACY-AGE-BOUNDARIES" => 176,
     "LEGACY-UNSUPPORTED-INPUTS" => 176,
     "CONFIG-ABSENT-LEGACY" => 176,
@@ -307,7 +320,8 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     source_sha = evidence["source_sha"]
 
     (ids_in_set?(ids, caller_ids) and source_sha == qualification["tested_checkout_head"]) or
-      metadata_source?(ids, metadata_ids, source_sha, commit, source)
+      metadata_source?(ids, metadata_ids, source_sha, commit, source) or
+      current_source?(ids, source_sha, qualification["current_qualification_sources"])
   end
 
   defp ids_in_set?(ids, set) when is_list(ids) and ids != [],
@@ -319,6 +333,16 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     ids_in_set?(ids, metadata_ids) and is_binary(commit) and source_sha == metadata_source and
       String.starts_with?(source_sha, commit)
   end
+
+  defp current_source?(ids, source_sha, %{
+         "status" => "qualified",
+         "tested_source_sha" => tested_source_sha,
+         "case_ids" => case_ids
+       }) do
+    ids_in_set?(ids, MapSet.new(case_ids)) and source_sha == tested_source_sha
+  end
+
+  defp current_source?(_ids, _source_sha, _current_sources), do: false
 
   defp pending_evidence?(evidence) do
     evidence["status"] == "pending" and evidence["ids"] == [] and
@@ -380,11 +404,81 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
         get_in(qualification, ["metadata_reader", "tested_source_sha"]) and
       inputs["metadata_reader_tested_sha"] ==
         get_in(qualification, ["compatibility_tests", "tested_source_sha"]) and
-      Enum.all?(get_in(qualification, ["compatibility_tests", "tested_files_sha256"]), fn {path,
-                                                                                           sha} ->
-        contents = File.read!(Path.expand("../../../" <> path, __DIR__))
-        Base.encode16(:crypto.hash(:sha256, contents), case: :lower) == sha
-      end)
+      valid_historical_metadata_sources?(qualification) and
+      valid_current_qualification_sources?(qualification["current_qualification_sources"])
+  end
+
+  defp valid_historical_metadata_sources?(qualification) do
+    metadata_reader = Map.get(qualification, "metadata_reader")
+    compatibility_tests = Map.get(qualification, "compatibility_tests")
+    history = get_in(qualification, ["qualification_history", "metadata_reader_e8"])
+
+    if is_map(metadata_reader) and is_map(compatibility_tests) and is_map(history) do
+      historical_metadata_sources_match?(metadata_reader, compatibility_tests, history)
+    else
+      false
+    end
+  end
+
+  defp historical_metadata_sources_match?(metadata_reader, compatibility_tests, history) do
+    historical_source_identity?(metadata_reader, compatibility_tests, history) and
+      historical_source_manifests?(metadata_reader, compatibility_tests, history)
+  end
+
+  defp historical_source_identity?(metadata_reader, compatibility_tests, history) do
+    metadata_reader["status"] == "qualified" and
+      metadata_reader["tested_source_sha"] == "e8aa26f587e1f12ea7722acea9de42188a3a7e6c" and
+      compatibility_tests["tested_source_sha"] == metadata_reader["tested_source_sha"] and
+      history["tested_source_sha"] == metadata_reader["tested_source_sha"] and
+      history["status"] == "historical_qualified"
+  end
+
+  defp historical_source_manifests?(metadata_reader, compatibility_tests, history) do
+    reader_files = metadata_reader["tested_files_sha256"]
+    compatibility_files = compatibility_tests["tested_files_sha256"]
+
+    exact_manifest_keys?(reader_files, @historical_metadata_source_files) and
+      exact_manifest_keys?(compatibility_files, @historical_metadata_source_files) and
+      reader_files == compatibility_files and hashes_well_formed?(reader_files) and
+      history["tested_files_sha256"] == reader_files
+  end
+
+  defp valid_current_qualification_sources?(%{
+         "status" => status,
+         "tested_source_sha" => tested_source_sha,
+         "tested_files_sha256" => files,
+         "case_ids" => case_ids
+       })
+       when status == "qualified" do
+    exact_manifest_keys?(files, @current_qualification_source_files) and
+      hashes_well_formed?(files) and live_manifest_matches?(files) and
+      is_list(case_ids) and case_ids != [] and length(case_ids) == length(Enum.uniq(case_ids)) and
+      "LEG175-METADATA-FUTURE-READINESS" in case_ids and
+      is_binary(tested_source_sha) and Regex.match?(~r/^[0-9a-f]{40}$/, tested_source_sha)
+  end
+
+  defp valid_current_qualification_sources?(_current_sources), do: false
+
+  defp exact_manifest_keys?(manifest, expected_keys) when is_map(manifest) do
+    MapSet.new(Map.keys(manifest)) == expected_keys and
+      map_size(manifest) == MapSet.size(expected_keys)
+  end
+
+  defp exact_manifest_keys?(_manifest, _expected_keys), do: false
+
+  defp hashes_well_formed?(manifest) when is_map(manifest) and map_size(manifest) > 0 do
+    Enum.all?(manifest, fn {_path, digest} ->
+      is_binary(digest) and Regex.match?(~r/^[0-9a-f]{64}$/, digest)
+    end)
+  end
+
+  defp hashes_well_formed?(_manifest), do: false
+
+  defp live_manifest_matches?(manifest) do
+    Enum.all?(manifest, fn {path, digest} ->
+      contents = File.read!(Path.expand("../../../" <> path, __DIR__))
+      Base.encode16(:crypto.hash(:sha256, contents), case: :lower) == digest
+    end)
   end
 
   defp qualified_anchor?(cases, qualification) do
@@ -460,6 +554,52 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
              Contract.validate(false_evidence, context.qualification, context.summary)
   end
 
+  test "qualification manifests require exact historical and current source sets", context do
+    historical_files =
+      get_in(context.qualification, ["compatibility_tests", "tested_files_sha256"])
+
+    current_files =
+      get_in(context.qualification, ["current_qualification_sources", "tested_files_sha256"])
+
+    invalid_qualifications = [
+      put_in(context.qualification, ["compatibility_tests", "tested_files_sha256"], %{}),
+      put_in(
+        context.qualification,
+        ["compatibility_tests", "tested_files_sha256"],
+        Map.delete(historical_files, "test/support/client_secret_verifier_fixtures.ex")
+      ),
+      put_in(
+        context.qualification,
+        ["compatibility_tests", "tested_files_sha256"],
+        Map.put(historical_files, "test/extra_test.exs", String.duplicate("a", 64))
+      ),
+      put_in(
+        context.qualification,
+        ["current_qualification_sources", "tested_files_sha256"],
+        Map.delete(current_files, "test/integration/client_secret_jwt_legacy_age_test.exs")
+      ),
+      put_in(
+        context.qualification,
+        ["current_qualification_sources", "tested_files_sha256"],
+        Map.put(current_files, "test/extra_test.exs", String.duplicate("a", 64))
+      ),
+      put_in(
+        context.qualification,
+        [
+          "current_qualification_sources",
+          "tested_files_sha256",
+          "test/support/client_secret_verifier_fixtures.ex"
+        ],
+        "not-a-sha256"
+      )
+    ]
+
+    for qualification <- invalid_qualifications do
+      assert {:error, :invalid_qualified_inputs} =
+               Contract.validate(context.ledger, qualification, context.summary)
+    end
+  end
+
   test "future cases cannot be marked passed without observed evidence", context do
     false_pass =
       update_case(context.ledger, "ENVELOPE-FORMAT", fn row ->
@@ -472,6 +612,24 @@ defmodule Lockspire.Security.ClientSecretVerifierContractTest do
 
     assert {:error, {:invalid_evidence, "ENVELOPE-FORMAT"}} =
              Contract.validate(false_pass, context.qualification, context.summary)
+
+    pending_future_proof =
+      update_case(context.ledger, "LEG175-METADATA-FUTURE-READINESS", fn row ->
+        row
+        |> Map.put("status", "pending")
+        |> put_in(["evidence", "status"], "pending")
+        |> put_in(["evidence", "ids"], [])
+        |> put_in(["evidence", "source_sha"], nil)
+      end)
+
+    assert {:error, {:invalid_evidence, "LEG175-METADATA-FUTURE-READINESS"}} =
+             Contract.validate(pending_future_proof, context.qualification, context.summary)
+
+    downgraded_qualification =
+      put_in(context.qualification, ["current_qualification_sources", "status"], "pending")
+
+    assert {:error, {:invalid_evidence, "LEG175-METADATA-FUTURE-READINESS"}} =
+             Contract.validate(pending_future_proof, downgraded_qualification, context.summary)
   end
 
   test "validator rejects malformed rows and evidence IDs that only share a qualified prefix",
