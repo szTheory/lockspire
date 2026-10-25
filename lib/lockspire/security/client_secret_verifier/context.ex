@@ -100,7 +100,8 @@ defmodule Lockspire.Security.ClientSecretVerifier.Context do
 
   defp validate_options(_config), do: {:error, :invalid_options}
 
-  defp decode_keys([_ | _] = entries, forbidden_key_bytes) when is_list(forbidden_key_bytes) do
+  defp decode_keys([_ | _] = entries, forbidden_key_bytes)
+       when is_list(forbidden_key_bytes) or is_struct(forbidden_key_bytes, MapSet) do
     Enum.reduce_while(entries, {:ok, []}, fn
       {id, encoded}, {:ok, acc} when is_binary(id) and is_binary(encoded) ->
         with true <- Regex.match?(@key_id_pattern, id),

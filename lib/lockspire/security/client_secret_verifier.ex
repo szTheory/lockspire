@@ -9,6 +9,11 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   @aad_label "lockspire-client-secret-jwt-verifier"
   @iv_bytes 12
   @tag_bytes 16
+  @max_identity_or_secret_bytes 1_048_576
+  @max_payload_bytes 1_048_626
+  @max_payload_encoded_bytes 1_398_168
+  @max_envelope_bytes 1_398_207
+  @key_id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
 
   @spec seal(Context.t(), term(), term()) :: {:ok, binary()} | {:error, atom()}
   def seal(context, client_id, secret) do
@@ -64,10 +69,14 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   end
 
   defp open_dedicated(context, client_id, encrypted) do
-    with {:ok, key_id, payload} <- parse_envelope(encrypted),
-         {:ok, key} <- Map.fetch(context.keys, key_id),
+    with :ok <- validate_encoded_envelope(encrypted),
+         {:ok, key_id, payload} <- parse_envelope(encrypted),
+         {:ok, key} <- fetch_envelope_key(context, key_id),
          {:ok, decoded} <- Base.url_decode64(payload, padding: false),
-         true <- byte_size(decoded) >= @iv_bytes + @tag_bytes,
+         true <-
+           byte_size(decoded) >= @iv_bytes + @tag_bytes and
+             byte_size(decoded) <= @max_payload_bytes,
+         true <- Base.url_encode64(decoded, padding: false) == payload,
          <<iv::binary-size(@iv_bytes), tag::binary-size(@tag_bytes), ciphertext::binary>> <-
            decoded,
          plaintext when is_binary(plaintext) <-
@@ -83,7 +92,6 @@ defmodule Lockspire.Security.ClientSecretVerifier do
          {:ok, secret} <- decode_native_plaintext(plaintext) do
       {:ok, secret}
     else
-      :error -> {:error, :client_secret_verifier_key_unknown}
       false -> {:error, :client_secret_verifier_unsupported_format}
       {:error, reason} -> {:error, reason}
       _ -> {:error, :client_secret_verifier_unavailable}
@@ -114,9 +122,36 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   end
 
   defp parse_envelope(encrypted) do
-    case String.split(encrypted, ".", parts: 3) do
-      [@header, key_id, payload] when key_id != "" and payload != "" -> {:ok, key_id, payload}
-      _ -> {:error, :client_secret_verifier_unsupported_format}
+    case String.split(encrypted, ".") do
+      [@header | pieces] when length(pieces) >= 2 ->
+        payload = List.last(pieces)
+        key_id = pieces |> Enum.drop(-1) |> Enum.join(".")
+
+        if Regex.match?(@key_id_pattern, key_id) and payload != "" and
+             byte_size(payload) <= @max_payload_encoded_bytes do
+          {:ok, key_id, payload}
+        else
+          {:error, :client_secret_verifier_unsupported_format}
+        end
+
+      _ ->
+        {:error, :client_secret_verifier_unsupported_format}
+    end
+  end
+
+  defp validate_encoded_envelope(encrypted) do
+    if byte_size(encrypted) <= @max_envelope_bytes and String.valid?(encrypted) and
+         Enum.all?(:binary.bin_to_list(encrypted), &(&1 < 128)) do
+      :ok
+    else
+      {:error, :client_secret_verifier_unsupported_format}
+    end
+  end
+
+  defp fetch_envelope_key(context, key_id) do
+    case Map.fetch(context.keys, key_id) do
+      {:ok, key} -> {:ok, key}
+      :error -> {:error, :client_secret_verifier_key_unknown}
     end
   end
 
@@ -130,14 +165,15 @@ defmodule Lockspire.Security.ClientSecretVerifier do
 
   defp validate_identity(client_id)
        when is_binary(client_id) and byte_size(client_id) > 0 and
-              byte_size(client_id) <= 1_048_576 do
+              byte_size(client_id) <= @max_identity_or_secret_bytes do
     if String.valid?(client_id), do: :ok, else: {:error, :client_secret_verifier_identity_missing}
   end
 
   defp validate_identity(_client_id), do: {:error, :client_secret_verifier_identity_missing}
 
   defp validate_secret(secret)
-       when is_binary(secret) and byte_size(secret) > 0 and byte_size(secret) <= 1_048_576,
+       when is_binary(secret) and byte_size(secret) > 0 and
+              byte_size(secret) <= @max_identity_or_secret_bytes,
        do: :ok
 
   defp validate_secret(_secret), do: {:error, :client_secret_verifier_unavailable}

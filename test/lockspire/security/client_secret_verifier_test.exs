@@ -43,6 +43,34 @@ defmodule Lockspire.Security.ClientSecretVerifierTest do
     assert true == open_matches?(context, client_id, first, secret)
     assert true == open_matches?(context, client_id, second, secret)
     refute payload_iv(first) == payload_iv(second)
+
+    one_byte_id_context = context("a", key)
+
+    assert {:ok, one_byte_id_envelope} =
+             ClientSecretVerifier.seal(one_byte_id_context, client_id, secret)
+
+    assert true == open_matches?(one_byte_id_context, client_id, one_byte_id_envelope, secret)
+  end
+
+  test "missing, empty, wrong-shaped, and canonically distinct identity inputs reject exactly" do
+    context = context("k", random_key())
+    secret = :crypto.strong_rand_bytes(32)
+
+    for invalid_id <- [nil, "", <<255>>] do
+      assert elem(ClientSecretVerifier.seal(context, invalid_id, secret), 0) == :error
+    end
+
+    for invalid_secret <- [nil, "", :not_binary] do
+      assert elem(ClientSecretVerifier.seal(context, "client", invalid_secret), 0) == :error
+    end
+
+    assert ClientSecretVerifier.seal(:not_a_context, "client", secret) ==
+             {:error, :client_secret_verifier_configuration_invalid}
+
+    composed = "é"
+    decomposed = "e\u0301"
+    {:ok, envelope} = ClientSecretVerifier.seal(context, composed, secret)
+    assert false == open_matches?(context, decomposed, envelope, secret)
   end
 
   test "wrong key, wrong identity, and bound-field tampering fail closed" do
