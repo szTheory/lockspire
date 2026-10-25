@@ -853,7 +853,7 @@ def run_selected_authorization_case(
         request_uri, expires_in, json_media_type = _push_par(browser, params)
         if expires_in <= 0:
             raise AssertionError(f"{identifier} PAR response expires_in was not positive")
-        interaction_id = _par_consent_handoff(browser, client_id, request_uri, identifier)
+        interaction_id, _authorize_status = _par_consent_handoff(browser, client_id, request_uri, identifier)
         approved = browser.request("POST", f"/lockspire/interactions/{interaction_id}/complete", {
             "decision": "approve", "remember": "false",
         })
@@ -2175,7 +2175,7 @@ def main(argv: list[str]) -> int:
         except JourneyInterrupted:
             print("clean-room journey interrupted", file=sys.stderr)
             result_code = 130
-        except (AssertionError, PackageInputError, OSError, subprocess.SubprocessError, json.JSONDecodeError) as error:
+        except (AssertionError, PackageInputError, OSError, http.client.HTTPException, subprocess.SubprocessError, json.JSONDecodeError) as error:
             print(str(safe_failure_summary(
                 stage="saas_journey", scenario="-".join(args.only or ["all"]),
                 event="runner_failure", field=type(error).__name__, count=1,
