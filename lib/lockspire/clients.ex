@@ -4,6 +4,7 @@ defmodule Lockspire.Clients do
   """
 
   alias Lockspire.Clients.RegistrationResult
+  alias Lockspire.Clients.SecretMaterial
   alias Lockspire.ClientLifecycle
   alias Lockspire.ClientMetadata
   alias Lockspire.Domain.Client
@@ -85,8 +86,8 @@ defmodule Lockspire.Clients do
 
   @spec rotate_secret_hash() :: {String.t(), String.t()}
   def rotate_secret_hash do
-    material = rotate_secret_material()
-    {material.client_secret_hash, material.client_secret}
+    secret = generate_token(@secret_bytes)
+    {Policy.hash_client_secret(secret), secret}
   end
 
   @spec rotate_secret_material(keyword()) :: %{
@@ -95,13 +96,13 @@ defmodule Lockspire.Clients do
           client_secret_jwt_verifier_encrypted: String.t()
         }
   def rotate_secret_material(opts \\ []) when is_list(opts) do
-    secret = generate_token(@secret_bytes)
+    case SecretMaterial.generate(Keyword.get(opts, :client_id), opts) do
+      {:ok, material} ->
+        material
 
-    %{
-      client_secret: secret,
-      client_secret_hash: Policy.hash_client_secret(secret),
-      client_secret_jwt_verifier_encrypted: Policy.seal_client_secret_jwt_verifier(secret, opts)
-    }
+      {:error, reason} ->
+        raise ArgumentError, "client secret material generation failed: #{safe_reason(reason)}"
+    end
   end
 
   @spec register_client(map() | keyword()) ::
@@ -512,6 +513,17 @@ defmodule Lockspire.Clients do
     |> :crypto.strong_rand_bytes()
     |> Base.url_encode64(padding: false)
   end
+
+  defp safe_reason(reason)
+       when reason in [
+              :client_secret_verifier_configuration_invalid,
+              :client_secret_verifier_identity_missing,
+              :client_secret_verifier_key_missing,
+              :client_secret_verifier_unavailable
+            ],
+       do: Atom.to_string(reason)
+
+  defp safe_reason(_reason), do: "client_secret_verifier_unavailable"
 
   defp changeset_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->

@@ -70,6 +70,7 @@ defmodule Lockspire.ClientsSecretMaterialTest do
 
     assert first.client_secret != second.client_secret
     assert first.client_secret_hash != second.client_secret_hash
+
     assert first.client_secret_jwt_verifier_encrypted !=
              second.client_secret_jwt_verifier_encrypted
 
