@@ -143,9 +143,17 @@ class SelectedReceiptTest(unittest.TestCase):
         self.write(expected)
         expected_digest = hashlib.sha256(self.path.read_bytes()).hexdigest()
         substituted = self.receipt()
-        substituted["scenarios"][0]["observations"]["control_status"] = 204
+        substituted["scenarios"][0]["observations"]["control_status"] = 303
         self.write(substituted)
-        with self.assertRaises(AssertionError):
+        accepted = validate_selected_receipt(
+            self.path,
+            expected_case_ids=("A171-003",),
+            expected_source_revision="a" * 40,
+            expected_binding=self.binding(),
+        )
+        self.assertEqual(accepted["selection"], "partial")
+
+        with self.assertRaisesRegex(AssertionError, "bytes differ from the externally supplied digest"):
             validate_selected_receipt(
                 self.path,
                 expected_case_ids=("A171-003",),
