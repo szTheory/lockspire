@@ -199,6 +199,16 @@ adapters and small manifest/check integration helpers around the package. Keep
 the dependency in the maintainer host's dev/test scope, outside the published
 library runtime. Exact compatible version selection belongs to GSD research.
 
+Owner-confirmed interview decisions (2026-10-25): inventory the whole UI, then
+complete layered coverage for app setup/configuration and token/consent
+investigation in the first UI milestone. Establish a rendered baseline and fix
+observed usability/design defects with before/after evidence; installing tools
+alone is insufficient, and no defect quota is implied. Track other jobs for
+later expansion. After adoption, every UI PR maintains its relevant stories and
+prunes newly impossible scenarios. GLOSSARY.md distinguishes operator persona,
+adopter profile, scenario and story variation; PRODUCT.md still owns UI copy.
+These decisions do not open a milestone; the design interview remains active.
+
 During unrelated milestones, only refresh relevance and carry useful scenario
 requirements forward; do not turn every boundary into a broad UI audit. When
 UI work is selected, prove a small complete job before expanding stories or

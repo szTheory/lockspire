@@ -14,11 +14,26 @@ Use **Operate** mode. Preserve Signal Cyan, the surface-specific accent split, s
 
 ## Decisions and alternatives
 
+### Owner-confirmed interview decisions, round 1 (2026-10-25)
+
+The owner answered “yes to all” to Q1–Q4 of the grill-with-docs interview. These are accepted planning decisions; they do not select a milestone or authorize implementation.
+
+| Question | Accepted decision | Consequence |
+|---|---|---|
+| Q1. First milestone's finish line | Inventory the whole UI, then deliver complete layered coverage for app setup/configuration and token/consent investigation. | Track remaining jobs explicitly for later expansion. Initial delivery cannot stop at isolated primitives or tooling installation. |
+| Q2. Demonstrable UI improvement | Establish a rendered baseline, fix concrete observed usability/design defects at their lowest shared owner, and show before/after evidence. | Installing Storybook/checks alone is insufficient. Do not invent a defect quota or claim a defect before observation; if the baseline disproves the improvement premise, surface that result and re-scope through GSD. |
+| Q3. Permanent maintenance obligation | After adoption, each UI PR updates its relevant stories/scenarios and removes scenarios made impossible by the change. | Story maintenance is part of completing a UI change; additions require a distinct actual situation or regression risk. |
+| Q4. Scenario vocabulary | Separate operator persona, adopter profile, scenario and story variation. | [GLOSSARY.md](../../../GLOSSARY.md) defines these maintainer terms; PRODUCT.md continues to own user-facing language. Fictional industry profiles are not observed user research. |
+
+No ADR is added for these decisions: they refine a reversible planning/maintenance contract already captured here, without a new difficult-to-reverse architectural choice.
+
+### Recommended implementation choices
+
 | Decision | Rationale | Rejected alternative / adversarial test |
 |---|---|---|
 | Extend existing components, lab fixtures, route scorecards, CSS contracts, CDP proof and critique records. | Much of the foundation already exists. Expose coherent real situations and fix drift before adding machinery. | A new “quality framework” parallel to AdminProof would duplicate ownership and evidence. Each addition must catch a distinct failure class. |
 | One maintainer `phoenix_storybook` review tree, organized with UI nouns and linked to existing journey/job records. | Primitive → group → area → section → page reveals composition problems that isolated controls miss. | No hand-rolled Storybook replacement or second gallery. Do not create a story at every conceptual node if it adds no distinct observable state. A filesystem hierarchy alone is not coverage. |
-| Pilot Apps setup/detail and Tokens investigation; follow with Consents and Keys. | Existing preflight and actual complexity identify cross-page jobs, consequential actions and dense evidence as valuable leverage. | Do not extract all 20 LiveViews before proving one real job. If extraction adds indirection without making a distinct situation inspectable, stop. |
+| Complete Apps setup/configuration and Tokens/Consents investigation in the first UI milestone; track Keys and other jobs for later expansion. | The owner confirmed these two complete jobs as the initial finish line. Existing preflight and complexity identify consequential actions and dense evidence as valuable leverage. | Do not extract all 20 LiveViews before proving one real job. If extraction adds indirection without making a distinct situation inspectable, stop. |
 | Separate synthetic adopter profiles from the four established operator personas. | Different products supply plausible data; the operator and job determine the review lens. | Five company names with identical render states are sprawl. Merge profiles that cannot justify a distinct class. |
 | Share scenario truth through small adapters, preserving focused test-local setup. | Stories need assigns, tests need domain/setup inputs, and demo persistence needs IDs/storage. | One giant fixture map/module would couple incompatible shapes; a second protocol implementation would make tests agree with themselves. |
 | Use the existing scoped `--ls-*`/BEM system and reconcile brandbook/runtime drift first. | Product CSS is Elixir-authored, not a Tailwind application. | No Tailwind/daisyUI migration, utility namespace reset or mandatory DTCG rewrite. Do not regenerate accessible shipped CSS from stale JSON. |

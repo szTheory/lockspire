@@ -14,6 +14,17 @@ The intended result is a fast maintainer loop from primitive to group to area to
 
 This proposal is research input to the normal GSD workflow. Before implementation, run `$gsd-new-milestone` with its goal/version confirmation, research decision, scoped requirements, roadmap approval and commit gates. Then follow the configured phase discussion, `$gsd-plan-phase` and plan checking, `$gsd-execute-phase`, verification/review and milestone audit/`$gsd-complete-milestone` closeout. Reuse the evidence here without bypassing those gates. No new milestone is opened by this clarification; the lettered build order below cannot be executed as if it were an approved GSD roadmap.
 
+## Owner-confirmed first milestone contract
+
+Confirmed in interview Q1–Q4 on 2026-10-25:
+
+- Inventory the whole UI and deliver complete layered coverage for **app setup/configuration** and **token/consent investigation**. Keep remaining jobs in an explicit expansion list.
+- Establish a rendered baseline, fix observed usability/design problems at the lowest shared component tier, and provide before/after evidence. Tool installation alone is not completion; do not invent defects or a quota.
+- After adoption, maintain relevant stories/scenarios in the same PR as each UI change, including pruning newly impossible scenarios.
+- Use the distinct [glossary terms](../../../GLOSSARY.md) operator persona, adopter profile, scenario and story variation. PRODUCT.md remains the user-facing vocabulary authority.
+
+These accepted planning decisions narrow the proposal. The interview remains open for dependent choices; implementation still requires GSD milestone selection and its gates.
+
 ## Sequencing recommendation
 
 [STATE.md](../../STATE.md) records v1.47 complete; no next milestone is selected. Therefore this is a **proposal, not an active-milestone seed**. Keep SEC-01 key isolation/rotation as the preferred provisional next implementation scope in the existing rolling ranking. Recommend this UI proposal as the next substantial candidate after SEC-01, ahead of token-concurrency, maintenance-scale or KMS candidates unless their evidence triggers become more urgent. This recommendation does not assign a version or change [ROADMAP.md](../../ROADMAP.md) / [MILESTONE-ARC.md](../../MILESTONE-ARC.md).
@@ -41,8 +52,8 @@ Phases B/C deliberately establish complete jobs before broad catalogue expansion
 
 No new protocol behavior, storage schema, mutation capability, public theming contract, product branding change, font download, adopter Node requirement or supported lab route. No paid/open-ended judge. Keep published library dependency closure small; Storybook belongs to the maintainer host. Playwright is conditional on a comparative benefit; axe-core requires justification. Do not replace integration tests with screenshots.
 
-Success means a maintainer can select a real operator situation, inspect shared production UI at the right level/container/theme and reproduce a finding; invalid fixture graphs are rejected; new confirmed mechanical violations are caught within a measured budget; and two complete high-priority jobs remain coherent and functional. Future pages are added when they supply distinct value. Track coverage by job/state/caller, review latency, actionable defect yield, flake rate and retired scenarios; stories/component is a sprawl signal, not a quota.
+Success means a maintainer can select a real operator situation, inspect shared production UI at the right level/container/theme and reproduce a finding; invalid fixture graphs are rejected; new confirmed mechanical violations are caught within a measured budget; and both selected jobs have complete layered coverage and coherent functional journeys. Show rendered before/after evidence for actual observed UI improvements. If discovery finds no material defect to improve, record that evidence and re-scope through GSD rather than manufacture one or silently relabel tooling as the whole outcome. Future pages are added when they supply distinct value. Track coverage by job/state/caller, review latency, actionable defect yield, flake rate and retired scenarios; stories/component is a sprawl signal, not a quota.
 
 ## Decisions needing the owner
 
-None for this planning-only adaptation. Selecting/reordering a milestone remains a later explicit workflow decision. Escalate only if implementation would change brand identity, public API/support/host ownership, remove an adopter-visible surface or materially expand dependency/tooling obligations beyond the selected scope. Current recommendations avoid those changes; historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.
+The grill-with-docs interview is in progress. Q1–Q4 are accepted above; dependent questions about the maintainer host, initial automation gates and completion/maintenance boundaries remain to be resolved before declaring shared understanding. Selecting/reordering a milestone remains a later explicit GSD workflow decision. Outside this requested interview, escalate only material brand, public API/support, host ownership, adopter-visible removal or dependency/tooling scope decisions. Historical browser restrictions and their scoped resolution are quoted in RECOMMENDATIONS.md.
