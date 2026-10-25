@@ -63,7 +63,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierRotationTest do
       assert rotated.client_id == before.client_id
       assert rotated.token_endpoint_auth_method == method
       assert rotated.client_secret_hash != before.client_secret_hash
-      assert rotated.last_secret_rotated_at == now
+      assert DateTime.compare(rotated.last_secret_rotated_at, now) == :eq
       assert preserved_fields(rotated) == preserved_fields(before)
       assert Policy.verify_client_secret(rotated.client_secret_hash, new_secret)
       assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
@@ -94,7 +94,10 @@ defmodule Lockspire.Integration.ClientSecretVerifierRotationTest do
     before_audits = audit_count(client_id)
     :persistent_term.put(cache_key, %Context{state: :invalid, reason: :invalid_options})
 
-    result = Clients.rotate_client_secret(client_id)
+    result =
+      Clients.rotate_client_secret(client_id,
+        actor: %{type: :operator, id: "invalid-custody-test"}
+      )
 
     assert result == {:error, :client_secret_verifier_configuration_invalid}
     assert {:ok, after_attempt} = Repository.fetch_client_by_id(client_id)
@@ -116,7 +119,11 @@ defmodule Lockspire.Integration.ClientSecretVerifierRotationTest do
     before_audits = audit_count(client_id)
 
     with_audit_failure(fn ->
-      result = Clients.rotate_client_secret(client_id)
+      result =
+        Clients.rotate_client_secret(client_id,
+          actor: %{type: :operator, id: "audit-failure-test"}
+        )
+
       assert {:error, _reason} = result
       refute match?({:ok, %{client_secret: _secret}}, result)
       assert {:ok, after_attempt} = Repository.fetch_client_by_id(client_id)
