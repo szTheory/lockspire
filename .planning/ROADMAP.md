@@ -111,7 +111,7 @@ Plans:
 
 ## Progress
 
-**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. All four Phase 171 plans are complete; independent phase verification is pending. Downstream phases remain unplanned until their explicit prerequisites below are met. 0 of 4 phases are complete.
+**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. Phases 171–173 are complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews. Phase 174 is preparing packaged proof and delivery. Prior verification owners must reassess freshness after the covered source/evidence changes. 3 of 4 phases are complete.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
