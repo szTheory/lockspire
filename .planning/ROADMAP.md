@@ -27,7 +27,7 @@ Clients using the supported embedded Phoenix surface receive secure, standards-g
 - [x] **Phase 171: Accepted Baseline & Finding Qualification** - Establish delivery readiness and freeze the finite, attributable case ledger before dependent plans. (completed 2026-10-24)
 - [x] **Phase 172: Authorization Responses** - Deliver the qualified safe-callback, error/state, response-mode and silent-auth outcomes. (completed 2026-10-24)
 - [x] **Phase 173: Conditional PAR & Profile Boundaries** - Deliver only qualified pushed-request and profile cases after transport and harness attribution. (completed 2026-10-24)
-- [ ] **Phase 174: Packaged Proof & Delivery Handoff** - Prove all selected behavior, pass required gates and leave an exact, resumable delivery record.
+- [x] **Phase 174: Packaged Proof & Delivery Handoff** - Prove all selected behavior, pass required gates and leave an exact, resumable delivery record. (completed 2026-10-25)
 
 ## Phase Details
 
@@ -98,7 +98,7 @@ Plans:
   3. The maintainer can review current source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks, with support/guidance matching delivered behavior and unresolved external limits explicit.
   4. The next run can resume from a dated handoff identifying reviewed integration and fresh main acceptance or explicit remaining delivery blockers, owned resource/worktree cleanup or retained owner/purpose/next action, preserved unknown edits/unique commits, and a refreshed ranked milestone direction with sources and triggers.
 
-**Plans**: 3/4 plans executed
+**Plans**: 4/4 plans complete
 
 Plans:
 **Wave 1**
@@ -111,7 +111,7 @@ Plans:
 - [x] 174-03-PLAN.md — Reviewed lifecycle repair, frozen all-case proof and verifier-owner freshness.
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 174-04-PLAN.md — Exact candidate contributor/CI gates, reviewed delivery or concrete blockers, custody and ranking handoff.
+- [x] 174-04-PLAN.md — Exact candidate contributor/CI gates, reviewed delivery or concrete blockers, custody and ranking handoff.
 
 ## Execution Gates and Limits
 
@@ -131,7 +131,7 @@ Plans:
 | 171. Accepted Baseline & Finding Qualification | 4/4 | Complete    | 2026-10-24 |
 | 172. Authorization Responses | 1/1 | Complete    | 2026-10-24 |
 | 173. Conditional PAR & Profile Boundaries | 1/1 | Complete    | 2026-10-24 |
-| 174. Packaged Proof & Delivery Handoff | 3/4 | Ready to execute | - |
+| 174. Packaged Proof & Delivery Handoff | 4/4 | Complete    | 2026-10-25 |
 
 ## Next Milestone
 
