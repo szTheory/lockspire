@@ -581,7 +581,7 @@ def _stored_interaction_projection(
     expression = (
         'id = System.fetch_env!("CLEAN_ROOM_SELECTED_INTERACTION_ID"); '
         'expected = Jason.decode!(System.fetch_env!("CLEAN_ROOM_SELECTED_EXPECTED_INTERACTION")); '
-        'interaction = Lockspire.Storage.Ecto.Repository.fetch_interaction(id) || raise("selected interaction missing"); '
+        '{:ok, interaction} = Lockspire.Storage.Ecto.Repository.fetch_interaction(id); '
         'facts = %{"client_id_matches" => interaction.client_id == expected["client_id"], '
         '"scopes_match" => interaction.scopes_requested == expected["scopes"], '
         '"state_matches" => interaction.state == expected["state"], '
