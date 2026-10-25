@@ -136,10 +136,10 @@
     },
     {
       "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-SECURITY.md",
-      "sha256": "06762d08ff6a1ec8c7e312bc1cee6c0b19f8ca140d0369226e69d92025fd739c",
+      "sha256": "1d1e3bc9855031cd13feca5a624539d78ce9944408fc0ea942c92d7977acb82d",
       "role": "gsd-security-auditor",
       "status": "verified",
-      "scope": "Full17-threat ASVS L1 audit with focused recheck at52c0123f; replacement candidate CI remains pending",
+      "scope": "Full17-threat ASVS L1 aggregate recheck atf7f63788, including final diagnostics and replacement candidate evidence",
       "threats_found": 17,
       "threats_closed": 17,
       "threats_open": 0,
