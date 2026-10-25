@@ -67,14 +67,14 @@ Plans:
   4. Qualified usable legacy rows read only within the explicit compatibility policy and fail under legacy rejection; aged/unreadable rows follow the frozen disposition, with no silent credential-expiry or authority change.
   5. Maintainer can execute the finite reader-first/writer-activation/rollback cases: old code is never exposed to unsupported writes in the supported sequence, and after activation the documented rollback boundary is truthful.
 
-**Plans**: 1/7 plans executed, 14 tasks; independent plan checker passed on 2026-10-25. Runtime execution remains pending.
+**Plans**: 2/7 plans executed, 14 tasks; independent plan checker passed on 2026-10-25. Runtime execution remains pending.
 
 Plans:
 **Wave 1**
 - [x] 176-01-PLAN.md — Persisted native-verifier tracer and strict envelope parsing.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 176-02-PLAN.md — Immutable node configuration and operation-local failure isolation.
+- [x] 176-02-PLAN.md — Immutable node configuration and operation-local failure isolation.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 176-03-PLAN.md — Compatible helpers and final-ID direct registration.
@@ -119,7 +119,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |---|---|---|---|
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
-| 176. Dedicated Verifier Custody & Compatible Runtime | 1/7 | In Progress | — |
+| 176. Dedicated Verifier Custody & Compatible Runtime | 2/7 | In Progress | — |
 | 177. Safe Verifier Maintenance & Recovery | 0/0 | Not started | — |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
 
