@@ -609,16 +609,13 @@ def run_selected_authorization_case(
 
     if identifier == "A171-001":
         client_id = _selected_client(child, environment, redirect_uri)
-        print("selected A171-001 client ready", flush=True)
         params, _verifier = selected_authorization_params(client_id, redirect_uri)
         valid = provider.request("GET", "/lockspire/authorize?" + urlencode(params))
-        print(f"selected A171-001 control status {valid['status']}", flush=True)
         require_status(valid, 302, "A171-001 exact callback control")
         login = urlparse(redirect(valid, "A171-001 exact callback control"))
         if login.netloc or not login.path.startswith("/login"):
             raise AssertionError("A171-001 exact callback control missed the host login handoff")
         mismatch = provider.request("GET", "/lockspire/authorize?" + urlencode({**params, "redirect_uri": redirect_uri + "/"}))
-        print(f"selected A171-001 mismatch status {mismatch['status']}", flush=True)
         require_status(mismatch, 400, "A171-001 trailing-slash callback")
         if "location" in mismatch["headers"]:
             raise AssertionError("A171-001 mismatched callback received a Location header")
@@ -683,31 +680,15 @@ def run_selected_authorization_case(
         stale_file = run_root / "selected-stale-auth-time-unix.txt"
         stale_time = int(time.time()) - 600
         stale_file.write_text(f"{stale_time}\n", encoding="ascii")
-        print("selected A171-005 stale fixture written", flush=True)
         browser = Browser(PROVIDER_ORIGIN)
         _host_login(browser, "clean-room-selected-stale")
-        print("selected A171-005 host session created", flush=True)
         client_id = _selected_client(child, environment, redirect_uri)
-        print("selected A171-005 client ready", flush=True)
         params, _verifier = selected_authorization_params(client_id, redirect_uri)
         params.update({"max_age": "60", "prompt": "none"})
         response = browser.request("GET", "/lockspire/authorize?" + urlencode(params))
-        print(f"selected A171-005 status {response['status']}", flush=True)
-        if response["status"] == 500:
-            try:
-                log = (run_root / "provider.log").read_text(errors="replace")
-            except OSError:
-                log = ""
-            crash_types = re.findall(r"\*\* \(([A-Za-z][A-Za-z0-9_.]+)\)", log)
-            print("selected A171-005 provider error type " + (crash_types[-1] if crash_types else "unclassified"), flush=True)
-            stack_frames = re.findall(r"\n\s+([A-Z][A-Za-z0-9_.]+)\.([a-z][A-Za-z0-9_!?]*)/(\d+)", log)
-            if stack_frames:
-                module, function, arity = stack_frames[-1]
-                print(f"selected A171-005 provider top frame {module}.{function}/{arity}", flush=True)
         require_status_in(response, (302, 303), "A171-005 stale host authentication")
         location = urlparse(redirect(response, "A171-005 stale host authentication"))
         values = parse_qs(location.query, keep_blank_values=True)
-        print(f"selected A171-005 login_required={values.get('error') == ['login_required']} state_matches={values.get('state') == [params['state']]}", flush=True)
         return passed({"callback_status": int(response["status"]), "login_required": values.get("error") == ["login_required"],
                        "state_matches": values.get("state") == [params["state"]],
                        "no_host_login_redirect": location.path != "/login" and location.path == urlparse(redirect_uri).path,

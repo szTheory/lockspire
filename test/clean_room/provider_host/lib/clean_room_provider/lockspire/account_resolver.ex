@@ -7,13 +7,14 @@ defmodule CleanRoomProvider.Lockspire.AccountResolver do
 
   @impl true
   def resolve_current_account(%Plug.Conn{} = conn, context) do
-    account_id = conn |> Plug.Conn.fetch_session() |> Plug.Conn.get_session("account_id")
+    conn = Plug.Conn.fetch_session(conn)
+    account_id = Plug.Conn.get_session(conn, "account_id")
 
     case account_id do
       id when is_binary(id) and id != "" ->
         case Accounts.fetch(id) do
           {:ok, account} ->
-            auth_time = conn |> Plug.Conn.get_session("current_auth_time_unix")
+            auth_time = Plug.Conn.get_session(conn, "current_auth_time_unix")
 
             case auth_time do
               value when is_integer(value) -> {:ok, Map.put(account, :auth_time, DateTime.from_unix!(value))}
