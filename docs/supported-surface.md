@@ -16,8 +16,10 @@ The current GA line currently supports this repo-proven embedded Phoenix surface
 - `mix lockspire.verify` as the canonical post-install diagnostics step for config, seam presence, compiled native admin routes/actions/session, host pipeline and LiveView hook declarations, route ordering and first-match dispatch, `/verify` routes, and prefix-aware migrations; it reports structural wiring and does not certify the host's authorization policy
 - `mix lockspire.upgrade` for checksum-matching manifest-tracked Lockspire-managed scaffolding, a create-only default-deny operator authorization seam when absent, and refusal with manual reconciliation guidance for unsupported or drifted state
 - Authorization code flow with PKCE S256
+- On `/authorize`, an unsupported `response_mode` is rejected with a first-party HTTP 400 response, without a redirect or OAuth error parameters.
 - The Phase 37 OIDC strictness slice proven in-repo: exact `redirect_uri` matching, `prompt=none` returning redirect-safe `login_required` instead of host login redirects, durable `max_age` / `auth_time` handling, and integer `auth_time` emission in ID tokens when `max_age` or explicit `auth_time` demand requires it
 - Pushed authorization requests only as Lockspire-issued `request_uri` references that extend the existing authorization code + PKCE flow
+- For a valid pushed request, the stored `scope` remains authoritative when the `/authorize` request also supplies `scope`; the outer scope is not merged into the stored request.
 - JAR request objects by value through the `request` parameter on the shipped `/authorize` and `/par` paths, including signed request objects and nested encrypted request objects using registered client keys
 - global and client-specific PAR requirement policies (can be configured as `required` or `optional`)
 - OIDC discovery and JWKS
@@ -212,6 +214,35 @@ server-only lifecycle checks for browser evidence, and local execution does not
 establish a remote CI result. CI uses Elixir 1.19.5 / OTP 28 with PostgreSQL 16
 for the locked pair, and Elixir 1.18.4 / OTP 27 with PostgreSQL 14 for the
 minimum-supported pair.
+
+### Selected authorization and PAR package proof
+
+The selected authorization receipt group runs the committed checkout as a
+Lockspire package in a disposable Phoenix host over loopback HTTP. Its default
+selection covers A171-001–006 and P171-001–006. The maintainer command is:
+
+```sh
+ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 \
+LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b \
+python3 scripts/acceptance/clean_room_saas_journey.py \
+  --only selected_authorization_par \
+  --selected-case A171-001 --selected-case A171-002 --selected-case A171-003 \
+  --selected-case A171-004 --selected-case A171-005 --selected-case A171-006 \
+  --selected-case P171-001 --selected-case P171-002 --selected-case P171-003 \
+  --selected-case P171-004 --selected-case P171-005 --selected-case P171-006 \
+  --selected-receipt .artifacts/phase174/par.json
+```
+
+The receipt binds the source revision, package archive digest, extracted package
+and vendor tree digests, resolved dependency state, and compiled host candidate.
+It records bounded HTTP statuses and boolean observations, then requires the
+run-owned process, database, temporary-root, and redaction checks to pass. A
+partial selection remains explicitly partial. Repository-source tests establish
+source behavior and receipt validation; the local package run establishes only
+the recorded package-to-loopback-host behavior. Neither establishes hosted
+candidate CI, accepted-main status, publication, or external issuer/TLS/proxy/
+browser reachability. OIDF and FAPI profiles remain unavailable, unlaunched,
+supplemental, and non-certifying.
 
 ### Compatibility floor security status
 
