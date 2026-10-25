@@ -73,6 +73,15 @@ case justify it; never imply compliance or certification from a test suite.
 
 MILESTONE SELECTION LOOP
 
+Use the normal GSD ceremony for every new milestone. Start with
+$gsd-new-milestone and preserve its goal/version confirmation, research choice,
+requirements definition, roadmap approval and commit gates. Existing research,
+candidate rankings and proposal phase lists are inputs, not substitutes for
+that workflow. Then use the configured discuss/plan/check/execute/verify/review
+steps and GSD milestone audit/closeout. Do not implement a proposal directly or
+treat its lettered build stages as approved GSD phases. This applies equally to
+security work and UI quality work (owner reaffirmed 2026-10-25).
+
 Before opening a milestone:
 
 1. Establish the real baseline from the current branch, GSD artifacts,
@@ -181,6 +190,14 @@ mobile-first reflow and light/dark parity. Keep actual host ownership and
 read-only queues. Reuse existing tokens, fixtures, scorecards, CDP checks and
 bounded Impeccable review. Tooling remains maintainer-only, outside production
 and Hex; no public theme engine, font downloads or paid/open-ended critic loop.
+
+Use phoenix_storybook for the layered story review surface. The owner explicitly
+reaffirmed this choice on 2026-10-25. Use its existing story discovery,
+variations, navigation and rendering facilities; do not hand-roll a replacement
+storybook/gallery. Local code is limited to Lockspire components, scenario
+adapters and small manifest/check integration helpers around the package. Keep
+the dependency in the maintainer host's dev/test scope, outside the published
+library runtime. Exact compatible version selection belongs to GSD research.
 
 During unrelated milestones, only refresh relevance and carry useful scenario
 requirements forward; do not turn every boundary into a broad UI audit. When
