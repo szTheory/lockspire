@@ -33,6 +33,8 @@ These accepted planning decisions narrow the proposal. The owner confirmed the f
 
 ## Sequencing recommendation
 
+**Selection update, 2026-10-25:** At the subsequent `$gsd-new-milestone` checkpoint the owner accepted the recommendation with “follow ur recs.” SEC-01 is selected as v1.48; this UI proposal remains the next substantial candidate, unversioned and unscheduled. The Q1–Q10 decisions and final confirmation remain intact. The paragraphs below preserve the proposal's original pre-selection reasoning; current scheduling/ranking lives in ROADMAP.md and MILESTONE-ARC.md.
+
 [STATE.md](../../STATE.md) records v1.47 complete; no next milestone is selected. Therefore this is a **proposal, not an active-milestone seed**. Keep SEC-01 key isolation/rotation as the preferred provisional next implementation scope in the existing rolling ranking. Recommend this UI proposal as the next substantial candidate after SEC-01, ahead of token-concurrency, maintenance-scale or KMS candidates unless their evidence triggers become more urgent. This recommendation does not assign a version or change [ROADMAP.md](../../ROADMAP.md) / [MILESTONE-ARC.md](../../MILESTONE-ARC.md).
 
 At the next `$gsd-new-milestone`, re-rank SEC-01, this proposal and sustaining work against current security/adopter evidence and measured pilot cost. Move UI earlier only for an actual material adopter/usability gap or a deliberate owner reprioritization. Do not bolt a broad UI refactor onto key-isolation work. If that work touches a key-status message, retain its focused existing tests and record reusable scenario requirements for this candidate.

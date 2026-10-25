@@ -38,9 +38,21 @@ A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing 
 
 **Next candidates:** Provisional v1.48 addresses dedicated client-auth verifier key isolation/rotation (SEC-01). Token concurrency requires a fresh gap; OPS-03 requires scale evidence; KEK-04 requires an adopter custody need. Re-rank rather than execute automatically. Legacy fixture maintenance and existing debt retain their owners.
 
-## Next Milestone Goals
+## Current Milestone: v1.48 Client Authentication Key Isolation & Rotation
 
-SEC-01 client-authentication verifier key isolation and rotation remains the preferred provisional v1.48 candidate. Its dedicated-purpose keys, legacy reads/rewrap, mixed-version rollout, rotation, loss recovery and package upgrade proof require fresh scope/design. No requirements or phase numbers are reserved. Token lifecycle, OPS-03 and KEK-04 retain their evidence triggers in MILESTONE-ARC.md.
+**Goal:** A Phoenix host can protect and rotate `client_secret_jwt` verifier material independently of endpoint/session secrets while preserving existing clients through an explicit, verifiable upgrade path.
+
+**Target features:**
+- Dedicated-purpose verifier encryption keys with explicit read/write key selection and fail-closed authenticated decryption.
+- Compatible legacy reads, staged mixed-version deployment, safe rewrap/check and eventual legacy rejection.
+- Retry-safe maintenance that preserves concurrent secret rotation, truthful redacted status and documented key-loss recovery.
+- Fresh-install and packaged-upgrade proof across the existing supported direct-client authentication surface, with unchanged secret hashes and protocol/security defaults.
+
+**Selected:** On 2026-10-25 the owner said “follow ur recs” after the milestone-selection checkpoint. This retains the recommended SEC-01-first ordering and selects v1.48. Requirements and roadmap remain subject to their GSD gates; no product implementation is started by this selection. Continue after Phase 174, using the completed milestone records rather than the initializer's stale v1.44 completion field.
+
+**Planning entry:** [Baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records the planning branch and retained prior history. Fresh synchronized-main acceptance and delivery reconciliation are required before product implementation. Preserve historical Phase 142/143 directories; v1.47 phases are already archived.
+
+**Next candidate:** [UI Stories & Continuous Quality](research/ui-quality-engine/MILESTONE-PROPOSAL.md) follows SEC-01 unless fresh evidence changes the ranking. Preserve the completed Q1–Q10 interview and final confirmation, including the adoption-demo dev/test `phoenix_storybook` host, both complete jobs, observed improvements, blocking mechanical checks, experimental budgets and same-PR maintenance. Do not repeat settled design questions. Token lifecycle, OPS-03 and KEK-04 retain their evidence triggers in MILESTONE-ARC.md.
 
 ## Standing Planning and Delivery Posture
 
@@ -395,9 +407,9 @@ The embedded-library shape, host-owned account/login/layout/branding/policy seam
 
 ### Active
 
-No new product milestone is selected. v1.47 delivery and archival are complete; use `$gsd-new-milestone` to refresh the ranking, choose scope and define fresh requirements.
+Selected v1.48 scope: independent verifier-key custody and rotation, compatible legacy/mixed-version upgrades, safe maintenance/recovery and packaged proof. Detailed requirements are being defined through `$gsd-new-milestone`; none is implemented or verified yet.
 
-See [v1.47 requirements](milestones/v1.47-REQUIREMENTS.md). All 15 v1.46 requirements remain validated and [archived](milestones/v1.46-REQUIREMENTS.md).
+Completed scope remains in [v1.47 requirements](milestones/v1.47-REQUIREMENTS.md) and [v1.46 requirements](milestones/v1.46-REQUIREMENTS.md).
 
 ### Validated
 
@@ -662,6 +674,7 @@ The short-to-medium-term project arc is now explicit: finish the most leverage-h
 
 | Return unsupported response_mode through first-party browser error and consume only stored PAR fields | Preserve safe callback/error disposition and pushed integrity using existing seams | ✓ Good — actual Router RED/GREEN, package12/12 and accepted main |
 | Archive milestone-only frozen planning validation with its evidence | Avoid permanent test discovery depending on mutable active planning paths or rewriting historical hashes | ✓ Good — independent lifecycle review; byte-preserved contract and pre-close22/22 result |
+| Select v1.48 SEC-01 before UI quality, preserving the completed UI interview | Owner accepted the recommended order on 2026-10-25; key custody needs its own migration and rotation proof | Selected; requirements/research/roadmap gates remain |
 
 ## Evolution
 
@@ -684,4 +697,4 @@ This document evolves at phase transitions and milestone boundaries.
 6. Record exact main/CI and worktree handoff status through the existing train; unresolved delivery blocks the next product execution even when planning or archival is complete.
 
 ---
-*Last updated: 2026-10-25 after v1.47 verified milestone closeout*
+*Last updated: 2026-10-25 after v1.48 milestone selection*

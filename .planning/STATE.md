@@ -1,41 +1,42 @@
 ---
 gsd_state_version: "1.0"
-milestone: v1.47
-status: Milestone v1.47 complete; awaiting next milestone
-stopped_at: v1.47 verified closeout archived; next action gsd-new-milestone
-last_updated: "2026-10-25T15:04:39.110Z"
+milestone: v1.48
+milestone_name: Client Authentication Key Isolation & Rotation
+current_phase_name: defining requirements
+status: planning
+stopped_at: v1.48 selected; focused SEC-01 research approved and in progress
+last_updated: "2026-10-25T17:16:14.817Z"
 last_activity: 2026-10-25
-last_activity_desc: v1.47 archived; 14 requirements verified; accepted main and retained custody recorded
-state_head: 45dc12360979847bf1b14b5045f4a11abf1bc5ae
+last_activity_desc: Milestone v1.48 started
+state_head: 1917aa61c589d25d3e2668f6ef0672f32ef0a388
 progress:
-  total_phases: 4
-  completed_phases: 4
+  total_phases: 2
+  completed_phases: 0
   total_plans: 10
-  completed_plans: 10
-milestone_name: OAuth/OIDC Core Interoperability & Hardening
-current_phase: 174
+  completed_plans: 7
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-10-25 after Phase 174 verification)
+See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** v1.47 is complete and archived with accepted main173059a166e9ade0f5f57c9980b7b2400a98538c. Planning the next milestone; SEC-01 remains provisional until fresh scope/design.
+**Current focus:** v1.48 Client Authentication Key Isolation & Rotation (SEC-01) is selected; defining scope through new-milestone gates. UI quality is the next substantial candidate and its design interview is complete. [Planning baseline](research/v1.48-client-auth-key-isolation/BASELINE.md) records entry identity and the fresh-main gate required before implementation.
 
 ## Current Position
 
-Phase: Milestone v1.47 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Milestone v1.47 complete; awaiting next milestone
-Last activity: 2026-10-25 — v1.47 archived; 14 requirements verified; accepted main and retained custody recorded
+Status: Researching SEC-01 before defining requirements
+Last activity: 2026-10-25 — Milestone v1.48 started
 
 ## Performance Metrics
 
-v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phase 174 passed 23/23; package 12/12; accepted main 173059a1 passed local CI, seven hosted jobs and no-publish Release. Milestone audit passes; next product milestone remains provisional.
+v1.48: no plans or implementation completed. Planning preflight: 27 PASS, 6 WARN, 0 BLOCK with `mix ci` explicitly skipped. Historical v1.47: 4 completed phases, 10 completed plans and 14 verified requirements; accepted main `173059a1`. Historical checks are not fresh v1.48 acceptance.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -53,9 +54,13 @@ v1.47: 4 completed phases, 10 completed plans and 14 verified requirements. Phas
 
 ## Accumulated Context
 
-**Current decision posture:** The user selected v1.47 and delegated upstream research, adversarial synthesis and routine scoped decisions. Use the [standing guide](MILESTONE-GUIDE.txt), [rolling ranking](MILESTONE-ARC.md), [scope](research/v1.47-core-hardening/SCOPE.md) and [research](research/v1.47-core-hardening/SUMMARY.md); prefer small, flat dependencies and existing vetted primitives, refresh future candidates at each boundary, and preserve honest green-main/clean-workspace handoffs.
+**Current decision posture:** The owner accepted the recommended SEC-01-first milestone selection with “follow ur recs” on 2026-10-25. Use the [standing guide](MILESTONE-GUIDE.txt), [rolling ranking](MILESTONE-ARC.md) and [v1.48 baseline](research/v1.48-client-auth-key-isolation/BASELINE.md). Focused research is approved; requirements and roadmap approval remain ahead. Preserve the UI proposal's Q1–Q10 and confirmed final summary; do not repeat its interview. Prefer existing vetted primitives and small, flat dependency trees.
 
-**Entry limits:** Phase 171 may be planned here; this feature checkout is not accepted main. Before product implementation, reconcile cumulative prior delivery and edit/worktree ownership, then obtain fresh exact-main acceptance through the existing [hygiene checklist](REPO-HYGIENE-CHECKLIST.md). Freeze the finite ledger before dependent plans; replan invalidated slices and reuse already-correct evidence. The [dated baseline](research/v1.47-core-hardening/BASELINE.md) records unqualified historical findings and delivery limits; [original machine-state bytes](research/v1.47-core-hardening/STATE-JSON-BEFORE.json) remain preserved, while the SDK owns the new v1.47 projection. Do not clear historical phase directories 142/143. Selected behavior is mandatory; full external suites remain supplemental/non-certifying.
+**v1.48 entry limits:** This is a local planning branch preserving prior closeout/interview history, not fresh accepted main. Reconcile the retained delivery delta and obtain exact-main acceptance through the existing hygiene helper before product implementation. Preserve historical phases 142/143, old worktrees and demo resources; no blanket phase clearing. GSD's latest-completion parser sees only “Shipped” headings and reports v1.44 incorrectly; authoritative completed history ends at Phase 174. Continue at 175 after roadmap approval.
+
+**Historical v1.47 decision posture:** The following entry and phase records preserve their original execution context. Resolved v1.47 blockers below do not block or describe current v1.48 planning.
+
+**Historical v1.47 entry limits:** Phase 171 could be planned before its fresh exact-main acceptance and finite qualification ledger. The [dated baseline](research/v1.47-core-hardening/BASELINE.md), [original machine-state bytes](research/v1.47-core-hardening/STATE-JSON-BEFORE.json) and [Phase 174 delivery](milestones/v1.47-phases/174-packaged-proof-delivery-handoff/174-DELIVERY.md) preserve the original sequence and eventual resolution. Full external suites remain supplemental/non-certifying.
 
 **Phase 171 entry preflight (2026-10-24, after planning commit 322ae40f):** Independent checker passed all 3 plans; 4/4 requirements covered. Read-only GitHub API still reports main `a1e39a01aca258d0ac5f36414bf47c45686d92c1`; local main is `a1a55de0a931c641fbe176e5c3f9c4737aa62b9d`. The planning branch has 414 commits beyond observed origin/main and is not accepted main. All four registered worktrees are clean, but the three prior-agent worktrees retain the unresolved ownership/disposition recorded in BASELINE.md. Automatic advancement stops before acceptance, qualification or product edits; no plan is complete. Next owner: executing maintainer; next action: complete 171-01's reviewed cumulative-delivery and worktree/edit ownership reconciliation, preserving unknown work, before choosing an integration route and running exact-main acceptance. Runtime availability is not the blocker: process-local `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 mix --version` succeeds (Mix 1.19.5 / OTP 28), without changing toolchain files or installing anything. No acceptance/profile/test execution is claimed by this preflight.
 
@@ -67,7 +72,7 @@ Local package/browser/runtime receipts retain exact source and package identitie
 
 ### Pending Todos
 
-- SEC-01 remains preferred provisional v1.48; KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners and triggers outside selected v1.47.
+- SEC-01 is selected for v1.48. UI quality is the next substantial candidate; its interview is complete. KEK-04, OPS-03, legacy-plaintext fixture maintenance and existing milestone debt retain their owners and triggers outside v1.48.
 - Phase 138 UAT #100 remains pending an authorized live snapshot refresh; inventory dispositions remain proposal-only.
 - Phase 140 WR-01 stays deferred unless the exact sealed Release Please relation rejection recurs.
 - Supplemental OIDF/FAPI evidence remains bounded, redacted and non-certifying.
@@ -118,16 +123,18 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-25T15:04:39.019Z
-Stopped at: v1.47 verified closeout archived; next action gsd-new-milestone
-Resume file: .planning/milestones/v1.47-CLOSEOUT.json
-Next: Run $gsd-new-milestone to select the next scope and create fresh requirements. v1.47 archives, accepted-main receipt and resource custody are preserved; publication remains separate.
+Last session: 2026-10-25T17:16:14.619Z
+Stopped at: v1.48 selected; focused SEC-01 research approved and in progress
+Resume file: .planning/research/v1.48-client-auth-key-isolation/BASELINE.md
+Next: Complete focused SEC-01 research, then scope/confirm requirements and create/approve the roadmap starting at 175. Branch `milestone/v1.48-client-auth-key-isolation` starts at `1917aa61c589d25d3e2668f6ef0672f32ef0a388`; this run owns only planning edits. v1.47 archives, immutable receipts and historical resource custody remain preserved. No product implementation or publication has started.
 
 ### Blockers
 
 None
 
 ## Decisions
+
+- [v1.48 selection]: Follow the recommended SEC-01-first order; retain UI quality next with all ten interview decisions and final confirmation intact. Research, requirements and roadmap gates remain distinct.
 
 - [Phase 171]: Maintainer delegated delivery reconciliation; current run owns preservation decisions. Retain historical worktrees and original local main; deliver completed v1.45/v1.46 separately from unfinished v1.47 planning. — Preserve unique history without inferring old ownership; fresh protected checks and exact-main acceptance remain required.
 - [Phase 171]: Preserve and reuse the original accepted-main receipt; do not rerun the exact-main authority after ledger edits.
@@ -162,4 +169,5 @@ None
 
 ## Operator Next Steps
 
-- Start the next milestone with $gsd-new-milestone
+- Complete the approved focused research, then confirm requirements and review the proposed roadmap.
+- Before product implementation, satisfy the existing exact-main acceptance and retained-delivery reconciliation gate recorded in the v1.48 baseline.

@@ -14,9 +14,13 @@
 - ✅ [v1.38 Repository Baseline & Reconciliation](milestones/v1.38-ROADMAP.md) — completed 2026-10-06; planning closeout, no package publication.
 - ✅ [v1.37 Prime-Time Readiness Ratchet](milestones/v1.37-ROADMAP.md) — shipped 2026-08-28 as Lockspire 1.5.0.
 
-## Next Milestone
+## Current Milestone: v1.48 Client Authentication Key Isolation & Rotation
 
-No new milestone is selected. Run `$gsd-new-milestone` to refresh evidence, choose scope and create fresh requirements. SEC-01 client-authentication key isolation/rotation remains preferred provisional v1.48; continue phase numbering after174. [Ranking and triggers](MILESTONE-ARC.md).
+**Selected 2026-10-25:** The owner accepted the recommended SEC-01-first order. A Phoenix host can protect and rotate `client_secret_jwt` verifier material independently of endpoint/session secrets while preserving existing clients through an explicit upgrade path.
+
+**Planning status:** Focused research is approved and in progress; scoped requirements and roadmap approval remain ahead. Continue numbering at Phase 175 after the completed v1.47 Phase 174; no phase sequence is approved yet. Preserve historical Phase 142/143 directories. [Planning baseline and implementation-entry gate](research/v1.48-client-auth-key-isolation/BASELINE.md).
+
+**Next candidate:** UI Stories & Continuous Quality follows SEC-01, preserving its completed Q1–Q10 interview and confirmed final summary. No UI version/phases are reserved. [Ranking and triggers](MILESTONE-ARC.md), [UI proposal](research/ui-quality-engine/MILESTONE-PROPOSAL.md).
 
 ## Completed Backlog Scope
 

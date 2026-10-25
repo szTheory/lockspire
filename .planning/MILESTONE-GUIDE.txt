@@ -115,23 +115,23 @@ Before opening a milestone:
    material risk, choose sustainment or stop. There is no quota to create a
    feature milestone.
 
-CURRENT ROADMAP CANDIDATES (PROVISIONAL; REFRESHED 2026-10-24)
+CURRENT ROADMAP DIRECTION (REFRESHED 2026-10-25)
 
-Near term: v1.46 is archived. The user selected v1.47 OAuth/OIDC Core
-Interoperability & Hardening, starting at Phase 171. Reconcile accumulated
-prior delivery and establish accepted clean green main before implementation.
-Qualify retained supplemental OIDC/FAPI findings at exact current identities,
-then select supported authorization-response and PAR/profile cases. Historical
-suite failures are investigation inputs, not current bug or certification
-claims. Full external conformance remains supplemental.
+Near term: v1.47 is complete and archived through Phase 174. The owner accepted
+the recommended SEC-01-first order and selected v1.48 Client Authentication Key
+Isolation & Rotation. Define dedicated-purpose verifier-key custody, legacy
+compatibility, mixed-version rollout, safe rewrap/status and key-loss recovery.
+Preserve GSD research, requirements and roadmap gates. Fresh exact-main
+acceptance and retained-delivery reconciliation precede product implementation.
 
-Mid term: Provisional v1.48 isolates and rotates client_secret_jwt verifier
-encryption keys (SEC-01), with legacy compatibility, mixed-version rollout,
-rewrap/status and loss recovery. Token lifecycle/concurrency work follows only
-from a reproduced gap or material uncovered invariant; much already exists.
-OPS-03 maintenance paging needs scale evidence; KEK-04 KMS/Vault needs a real
-adopter custody requirement. MILESTONE-ARC.md owns ranking, triggers and exit
-evidence. Do not reserve downstream phases or pre-authorize candidates.
+Mid term: UI Stories & Continuous Quality is the next substantial candidate
+after SEC-01. Preserve its completed design interview and confirmed scope below;
+select its version/phases through a future new-milestone workflow. Token
+lifecycle/concurrency work follows only from a reproduced gap or material
+uncovered invariant; much already exists. OPS-03 maintenance paging needs scale
+evidence; KEK-04 KMS/Vault needs a real adopter custody requirement.
+MILESTONE-ARC.md owns ranking, triggers and exit evidence. Do not reserve
+downstream phases or pre-authorize candidates.
 
 Long term: Maintain, secure, and improve the embedded Phoenix provider as
 real use reveals needs. Consider new protocol or operator scope only when

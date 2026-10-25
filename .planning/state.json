@@ -1,33 +1,12 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.47 — OAuth/OIDC Core Interoperability & Hardening",
-  "phases": [
-    {
-      "number": "171",
-      "name": "Accepted Baseline & Finding Qualification",
-      "status": "in_progress"
-    },
-    {
-      "number": "172",
-      "name": "Authorization Responses",
-      "status": "pending"
-    },
-    {
-      "number": "173",
-      "name": "Conditional PAR & Profile Boundaries",
-      "status": "pending"
-    },
-    {
-      "number": "174",
-      "name": "Packaged Proof & Delivery Handoff",
-      "status": "pending"
-    }
-  ],
+  "milestone": "v1.48",
+  "phases": [],
   "next": {
-    "command": "$gsd-progress --next",
-    "label": "Advance to the next step",
-    "reason": "Phase 1 of 4 · 0% · executing"
+    "command": "$gsd-discuss-phase",
+    "label": "Discuss the first phase",
+    "reason": "Project initialized — plan your first phase"
   },
-  "updated_at": "2026-10-24T20:23:09.460Z"
+  "updated_at": "2026-10-25T17:13:55.746Z"
 }
