@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+  "runs": [
+    {
+      "id": "source-01",
+      "executed_source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs test/lockspire/web/discovery_controller_test.exs",
+      "exit_code": 0,
+      "executed": 11,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "covered_files": [
+        {
+          "path": "test/integration/phase15_par_authorization_e2e_test.exs",
+          "sha256": "9193f4dbbd075242717293c64dacf8d72c59105e43c196250ed60fb4baee4e30"
+        },
+        {
+          "path": "test/lockspire/web/discovery_controller_test.exs",
+          "sha256": "4c905b449e18b908f998245a6775113a8ad6ef620a58ba206a2c96455d4fd4fc"
+        },
+        {
+          "path": "lib/lockspire/protocol/authorization_request.ex",
+          "sha256": "3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da"
+        },
+        {
+          "path": "lib/lockspire/protocol/pushed_authorization_request.ex",
+          "sha256": "1e804bfbe3f1227f73a9d94a531c89de87d8106cab865ab0023c94ce6c39fd7b"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/authorize_controller.ex",
+          "sha256": "e474fb45a0295d45717333716342ef44d490418f9963f59bf8cb27c6172f96e7"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/pushed_authorization_request_controller.ex",
+          "sha256": "3653faacf683f55173c3f9363d102d07242a4830512d3020c51637a526825676"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/discovery_controller.ex",
+          "sha256": "19bde5306e0f436cadf8c74d6a5c3cefb948b022573a8fff2b366b4cc29f044e"
+        }
+      ]
+    },
+    {
+      "id": "source-02",
+      "executed_source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/integration/phase37_protocol_strictness_e2e_test.exs",
+      "exit_code": 0,
+      "executed": 5,
+      "passed": 5,
+      "failed": 0,
+      "skipped": 0,
+      "covered_files": [
+        {
+          "path": "test/integration/phase37_protocol_strictness_e2e_test.exs",
+          "sha256": "81a678afebeb0c7ec73582c986943c3ee8babb7d13162006eb0b6d5a68e791c4"
+        },
+        {
+          "path": "lib/lockspire/protocol/authorization_request.ex",
+          "sha256": "3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/authorize_controller.ex",
+          "sha256": "e474fb45a0295d45717333716342ef44d490418f9963f59bf8cb27c6172f96e7"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/token_controller.ex",
+          "sha256": "0f4673502f271600ad38de35dadfeab0bce9816e584c8b3fcf8d5c162c11d855"
+        }
+      ]
+    },
+    {
+      "id": "source-03",
+      "executed_source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test --include integration test/lockspire/web/authorize_controller_test.exs test/lockspire/web/pushed_authorization_request_controller_test.exs test/lockspire/protocol/authorization_request_test.exs test/lockspire/protocol/pushed_authorization_request_test.exs",
+      "exit_code": 0,
+      "executed": 94,
+      "passed": 94,
+      "failed": 0,
+      "skipped": 0,
+      "covered_files": [
+        {
+          "path": "test/lockspire/web/authorize_controller_test.exs",
+          "sha256": "92d53caee7c915ffddde13ce1181fb10c19d0d1c778be7c976cd12dc5e19bf05"
+        },
+        {
+          "path": "test/lockspire/web/pushed_authorization_request_controller_test.exs",
+          "sha256": "9f6a6fc3ca09999af04fdb3ff21c427e621e5c30a82121f7b69facd54624e7b8"
+        },
+        {
+          "path": "test/lockspire/protocol/authorization_request_test.exs",
+          "sha256": "0e3a6c753cf260d8a6ae9789fb4423eb2e00c9192f934501ab92283b712e6801"
+        },
+        {
+          "path": "test/lockspire/protocol/pushed_authorization_request_test.exs",
+          "sha256": "c1a1cbd038d3e3cd6a8d75423aa04a3102c8a45954cd997f6a53c7187bbe7a03"
+        },
+        {
+          "path": "lib/lockspire/protocol/authorization_request.ex",
+          "sha256": "3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da"
+        },
+        {
+          "path": "lib/lockspire/protocol/pushed_authorization_request.ex",
+          "sha256": "1e804bfbe3f1227f73a9d94a531c89de87d8106cab865ab0023c94ce6c39fd7b"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/authorize_controller.ex",
+          "sha256": "e474fb45a0295d45717333716342ef44d490418f9963f59bf8cb27c6172f96e7"
+        },
+        {
+          "path": "lib/lockspire/web/controllers/pushed_authorization_request_controller.ex",
+          "sha256": "3653faacf683f55173c3f9363d102d07242a4830512d3020c51637a526825676"
+        }
+      ]
+    },
+    {
+      "id": "source-04",
+      "executed_source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs",
+      "exit_code": 0,
+      "executed": 22,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0,
+      "covered_files": [
+        {
+          "path": "test/lockspire/qualification_ledger_contract_test.exs",
+          "sha256": "7c44014c9471e901c935b6e521dadb5606fe3f7a25ee6ff002f23b99fda1e0c6"
+        },
+        {
+          "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+          "sha256": "d4f790a7057ed967f105068631d44eae46d69fefc7013836b868c74121a403b7"
+        },
+        {
+          "path": "test/test_helper.exs",
+          "sha256": "3be10d296761d2e91637603b62a9004bb274ea8abc920f20a930cbdc054bc5d2"
+        },
+        {
+          "path": "test/support/config_case.ex",
+          "sha256": "69a01e44089d3b5a52a16625d6de144d9ad20e442506a2b2b9b18530c7a5e743"
+        },
+        {
+          "path": "test/support/test_account_resolver.ex",
+          "sha256": "bd8e9f723a67b3bd719084ea9a37cb6df52aebefa38da9bc209737b3bc3fe6f8"
+        }
+      ]
+    }
+  ]
+}

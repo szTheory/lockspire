@@ -1,6 +1,6 @@
 # Lockspire Rolling Milestone Roadmap
 
-**Reviewed:** 2026-10-24, after v1.46 archival and user approval of the core-hardening direction.
+**Reviewed:** 2026-10-25, after Phase 174 Plan 03's complete selected package proof and source-owner rerun.
 **Owner:** The agent starting or closing a milestone refreshes this document.
 **Authority:** This is the live candidate ranking. [ROADMAP.md](ROADMAP.md) owns scheduled phases; [PROJECT.md](PROJECT.md) owns product scope; [MILESTONE-GUIDE.txt](MILESTONE-GUIDE.txt) owns standing decision posture. Current source, supported-surface contracts and fresh evidence outrank dated proposals.
 
@@ -15,7 +15,7 @@ The user approved this rolling-roadmap posture on 2026-10-24: research and adver
 | Order / handle | Outcome and bounded scope | Status / entry trigger | Exit evidence |
 |---|---|---|---|
 | Entry maintenance | Deliver or explicitly reconcile the accumulated v1.45/v1.46 branch delta; establish clean synchronized green main, owned worktrees and coherent GSD state | Satisfied for v1.47 implementation entry by PR #138 and original accepted-main receipt at fe38beee; historical work and current custody are preserved | Exact-main acceptance receipt, required CI, Release push no-publish shape, reviewed prior-delta disposition and safe worktree handoff |
-| **v1.47 OAuth/OIDC Core Interoperability & Hardening** | Reproduce historical OIDC/FAPI findings; correct selected authorization-response and PAR/profile boundaries only where supported-surface evidence warrants it; prove fixes through a packaged host | **Selected; source corrections complete.** Phase 171 qualified twelve cases; Phase 172 corrected A171-003 and Phase 173 corrected P171-005. Phase 173 has six verified behavioral truths and two flagged judgment reviews. Phase 174 packaged/candidate/CI/delivery proof is next | Finding-to-standard-to-regression ledger; selected packaged HTTP cases; focused security review; full contributor/required CI gates; refreshed roadmap and clean delivery handoff |
+| **v1.47 OAuth/OIDC Core Interoperability & Hardening** | Reproduce historical OIDC/FAPI findings; correct selected authorization-response and PAR/profile boundaries only where supported-surface evidence warrants it; prove fixes through a packaged host | **Selected; source corrections complete.** Phase 171 qualified twelve cases; Phase 172 corrected A171-003 and Phase 173 corrected P171-005. Phase 174 Plan 03 now has a fresh complete 12/12 local package receipt and current source-owner GREEN at the frozen checkout. Candidate CI, exact-main acceptance for this branch, final delivery handoff, and publication remain pending. Phase 171–174 judgment flags remain explicitly non-authoritative. | Finding-to-standard-to-regression ledger; selected packaged HTTP cases; focused security review; full contributor/required CI gates; refreshed roadmap and clean delivery handoff |
 | **v1.48 Client Authentication Key Isolation & Rotation** | SEC-01: dedicated-purpose rotatable encryption for client_secret_jwt verifier material, legacy reads/rewrap, mixed-version rollout, status and loss recovery | **Preferred next, provisional.** Re-rank at v1.47 close or sooner if an urgent supported-core issue appears | Existing clients survive documented upgrade/rotation; tampering/missing/retired keys fail closed; concurrent rewrite and secret rotation are safe; package upgrade and redaction proof |
 | Next available version: Token Lifecycle Resilience | A narrow refresh/revocation/replay or selected-store transaction invariant | **Conditional.** Fresh deterministic counterexample or a material uncovered invariant; much of this is already implemented/tested | Reproducer plus actual PostgreSQL concurrency/rollback proof for the selected invariant; preserve family-wide reuse containment |
 | Next available version: Key Maintenance at Scale | OPS-03: paged re-encryption dry-run and measured status-read improvements | **Conditional.** Measured memory/query/latency problem on realistic row counts | Bounded resource use, stable iteration, truthful partial progress/status, retry-safe and concurrent-update behavior |
@@ -23,6 +23,27 @@ The user approved this rolling-roadmap posture on 2026-10-24: research and adver
 | Sustaining train | Focused fixes, dependency/security maintenance and truthful releases | Default between milestones or if no candidate has material value | Green exact main, coherent support/release truth, intentional clean workspaces |
 
 Only v1.47 has scheduled phase numbers. Do not reserve later phase numbers or create detailed downstream plans until their evidence/entry decisions are settled. Provisional version handles may change. An urgent security finding can change this ordering.
+
+## 2026-10-25 Phase 174 Plan 03 checkpoint
+
+The fresh local Lockspire 1.6.1 package run at source revision
+`a348bf71285cb0ffe9eeba0da94a6c2d46faa477` executed A171-001–006 and
+P171-001–006: 12 passed, 0 failed, 0 skipped. Receipt SHA-256 is
+`751ef1398bfe9ca902d60fc03a6ab673c9fee6b23def3356e6ebf52b79803de1`;
+archive SHA-256 is
+`89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc`.
+Cleanup, evidence scanning, and redaction checks passed. This is local
+package-to-loopback-host evidence; it does not establish candidate CI, a new
+accepted-main result, publication, or external profile reachability.
+
+At this checkpoint the implementation branch is
+`milestone/v1.47-core-hardening` at `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`;
+the local `main` and `origin/main` refs both remain at
+`fe38beee987b135e87c99e7aa7f2488b4c8613e8`. GitHub's latest observed `CI` and
+`Release` workflow runs on that main SHA succeeded on 2026-10-24. No workflow
+run was listed for the milestone branch, so its candidate gates remain pending.
+The original exact-main receipt remains the accepted-base evidence; no branch
+merge, release tag, publication, or next-milestone authorization is claimed.
 
 ## v1.47 Scope and Decision Gates
 
