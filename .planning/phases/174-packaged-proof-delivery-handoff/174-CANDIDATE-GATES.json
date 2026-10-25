@@ -5,7 +5,7 @@
   "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
   "input_equivalence": {
     "observed_at": "2026-10-25T03:13:29Z",
-    "command": "python3 -c '<assert candidate is a reachable commit and observed HEAD; inspect parent-aware no-rename commit diffs plus committed/staged/unstaged/nonignored-untracked paths; compare all frozen input hashes and proof-index SHA-256>'",
+    "command": "python3 -c 'import hashlib,json,subprocess; from pathlib import Path; root=Path(\".\").resolve(); p=root/\".planning/phases/174-packaged-proof-delivery-handoff\"; c=\"ec6361d9840f2adfda85116d72fec0efe9065c6c\"; g=lambda *a: subprocess.check_output([\"git\",*a]); head=g(\"rev-parse\",\"HEAD\").decode().strip(); assert head==c,(head,c); assert g(\"cat-file\",\"-t\",c).strip()==b\"commit\"; g(\"merge-base\",\"--is-ancestor\",c,\"HEAD\"); commits=g(\"rev-list\",c+\"..HEAD\").decode().splitlines(); paths=[]; [paths.extend(x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff-tree\",\"--root\",\"--no-commit-id\",\"--name-only\",\"--no-renames\",\"-r\",\"-m\",\"-z\",rev).split(b\"\\0\") if x) for rev in commits]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--name-only\",\"--no-renames\",\"-z\",c,\"HEAD\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--name-only\",\"--no-renames\",\"-z\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--cached\",\"--name-only\",\"--no-renames\",\"-z\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"ls-files\",\"--others\",\"--exclude-standard\",\"-z\").split(b\"\\0\") if x]; assert not paths,paths; f=json.loads((p/\"174-INPUT-FREEZE.json\").read_text()); assert len(f[\"files\"])==63; assert all(hashlib.sha256((root/x[\"path\"]).read_bytes()).hexdigest()==x[\"sha256\"] for x in f[\"files\"]); ih=hashlib.sha256((p/\"174-PROOF-INDEX.json\").read_bytes()).hexdigest(); assert ih==\"288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72\"; print(json.dumps({\"candidate_sha\":c,\"observed_head\":head,\"candidate_ancestor\":True,\"intervening_commits\":commits,\"delta_paths\":paths,\"frozen_file_count\":len(f[\"files\"]),\"frozen_hashes\":\"all_match\",\"proof_index_sha256\":ih},sort_keys=True))'",
     "observed_head": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
     "candidate_reachable": true,
     "intervening_commits": [],
@@ -64,7 +64,7 @@
     "run_created_at": "2026-10-25T02:54:55Z",
     "attempt_2_started_at": "2026-10-25T03:13:11Z",
     "completed_at": "2026-10-25T03:21:59Z",
-    "job_graph_source": "gh api --paginate repos/szTheory/lockspire/actions/runs/40156252600/jobs?per_page=100",
+    "job_graph_source": "gh api --paginate 'repos/szTheory/lockspire/actions/runs/40156252600/jobs?filter=latest&per_page=100'",
     "job_count": 7,
     "jobs": [
       {"id": 121061613993, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
