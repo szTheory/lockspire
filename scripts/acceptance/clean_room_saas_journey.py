@@ -700,6 +700,10 @@ def run_selected_authorization_case(
                 log = ""
             crash_types = re.findall(r"\*\* \(([A-Za-z][A-Za-z0-9_.]+)\)", log)
             print("selected A171-005 provider error type " + (crash_types[-1] if crash_types else "unclassified"), flush=True)
+            stack_frames = re.findall(r"\n\s+([A-Z][A-Za-z0-9_.]+)\.([a-z][A-Za-z0-9_!?]*)/(\d+)", log)
+            if stack_frames:
+                module, function, arity = stack_frames[-1]
+                print(f"selected A171-005 provider top frame {module}.{function}/{arity}", flush=True)
         require_status_in(response, (302, 303), "A171-005 stale host authentication")
         location = urlparse(redirect(response, "A171-005 stale host authentication"))
         values = parse_qs(location.query, keep_blank_values=True)
