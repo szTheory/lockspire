@@ -148,3 +148,11 @@ bounded reviewed diff.
 | Threats found | 17 |
 | Closed | 17 |
 | Open | 0 |
+
+## Focused recheck after valid receipt substitution repair
+
+Independent security recheck at `52c0123fc33c32f86cd94eba1ef4489dba8f2228` retained all17 mitigation dispositions closed, with zero open threats. T-174-02's test-strength note is now closed: commit `a00f0d0a8e4cc276403b5f5dccf37bb63f900458` first accepts a schema-valid303 alternate with the same source/case/binding, then requires the original external digest to reject it specifically. Python16/16 and source-CI bridge7/7 passed; independent full-source re-review is clean. No production/parser/runner/fixture/criteria change occurred.
+
+T-174-11/12 recheck confirmed63/63 current hashes, all recorded132 source-owner hashes, actual12/12 package receipt at source `73bb46811f4b76b2372b4af2b4e21aaf42893ac1` and receipt SHA `9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`, and current passed171/172/173 owner statuses. Proof-index SHA is `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`. Earlier identities/verdicts above are historical, not relabeled.
+
+T-174-13's exact-candidate controls remain present, but the repaired test postdates candidate ec6361d and its green CI. Replacement-candidate local and canonical hosted execution remains pending and is mandatory for DELIV-01. This security check does not satisfy that requirement. The auditor made no writes or runtime executions.

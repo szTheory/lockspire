@@ -7,15 +7,55 @@
     "path": "test/acceptance/selected_receipt_test.py",
     "old_sha256": "9ff26cbbb50a58abda71e520555a124b775fb8d25370732f3ceec3d4ba665e59",
     "new_sha256": "c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff",
-    "review": {"path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md", "sha256": "8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4", "status": "clean", "findings": {"critical": 0, "warning": 0, "info": 0, "total": 0}},
-    "python_tests": {"executed": 16, "passed": 16, "failed": 0},
-    "exunit_bridge": {"path": "test/lockspire/clean_room_release_source_contract_test.exs", "sha256": "5f9e123c464ffde23b9017953af09b05dd9b3980b96b5a2cbadef34d68ab58e6", "executed": 7, "passed": 7, "failed": 0},
-    "unchanged_source_owner_green": {"source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477", "total_tests": 132, "applicability": "typed Phase 171 and Phase 173 owner review; source owner bytes and hashes unchanged; not rerun"}
+    "review": {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md",
+      "sha256": "8a64f3278571d3cb1359003ea690de6c7adaad7976db3cee6a792d3d774f04a4",
+      "status": "clean",
+      "findings": {
+        "critical": 0,
+        "warning": 0,
+        "info": 0,
+        "total": 0
+      }
+    },
+    "python_tests": {
+      "executed": 16,
+      "passed": 16,
+      "failed": 0
+    },
+    "exunit_bridge": {
+      "path": "test/lockspire/clean_room_release_source_contract_test.exs",
+      "sha256": "5f9e123c464ffde23b9017953af09b05dd9b3980b96b5a2cbadef34d68ab58e6",
+      "executed": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "unchanged_source_owner_green": {
+      "source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+      "total_tests": 132,
+      "applicability": "typed Phase 171 and Phase 173 owner review; source owner bytes and hashes unchanged; not rerun"
+    }
   },
   "proof_artifacts": [
-    {"path": ".planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json", "sha256": "3c1e0b62508f80e2f448d600e1452a26beba3ab77ace94265c58f2e5ef6e3a9b", "role": "frozen shipped inputs", "status": "63/63 hashes verified"},
-    {"path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json", "sha256": "9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844", "role": "fresh package execution", "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1", "status": "12/12 passed; 0 failed/skipped"},
-    {"path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json", "sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8", "role": "source/package/test identity join", "status": "12 exact case rows and current validator-test identity"}
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-INPUT-FREEZE.json",
+      "sha256": "3c1e0b62508f80e2f448d600e1452a26beba3ab77ace94265c58f2e5ef6e3a9b",
+      "role": "frozen shipped inputs",
+      "status": "63/63 hashes verified"
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json",
+      "sha256": "9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844",
+      "role": "fresh package execution",
+      "source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
+      "status": "12/12 passed; 0 failed/skipped"
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json",
+      "sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8",
+      "role": "source/package/test identity join",
+      "status": "12 exact case rows and current validator-test identity"
+    }
   ],
   "prior_reports": [
     {
@@ -95,10 +135,10 @@
     },
     {
       "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-SECURITY.md",
-      "sha256": "7da54cb504019d45b11a9ec7cbcf6433841e869e6576f27566371bb6e385107f",
+      "sha256": "06762d08ff6a1ec8c7e312bc1cee6c0b19f8ca140d0369226e69d92025fd739c",
       "role": "gsd-security-auditor",
-      "status": "secured",
-      "scope": "Historical Phase 174 register, sixteen numbered threats plus one deduplicated supply-chain threat; focused recheck at 80b34a93e2fac61811329b7c5d9be254acb9e96b",
+      "status": "verified",
+      "scope": "Full17-threat ASVS L1 audit with focused recheck at52c0123f; replacement candidate CI remains pending",
       "threats_found": 17,
       "threats_closed": 17,
       "threats_open": 0,
