@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. No requirement implemented or verified.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. VBASE-01 has Plan 01 execution evidence; independent phase verification and the remaining requirements are pending.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -9,7 +9,7 @@
 
 ### Qualified baseline and compatibility contract
 
-- [ ] **VBASE-01**: Maintainer can begin product implementation only after retained-delivery reconciliation and fresh exact-main acceptance through the existing helper, including local contributor checks, matching required CI/Release evidence and explicit resource custody.
+- [x] **VBASE-01**: Maintainer can begin product implementation only after retained-delivery reconciliation and fresh exact-main acceptance through the existing helper, including local contributor checks, matching required CI/Release evidence and explicit resource custody.
 - [ ] **VBASE-02**: Maintainer can inspect a finite acceptance contract covering format/key configuration, every verifier writer/reader, legacy ciphertext age, mixed-version rollout/rollback and supported storage adapters; unresolved policy changes stop dependent implementation.
 
 ### Independent verifier key custody
@@ -66,7 +66,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 
 | Requirement | Phase | Status |
 |---|---|---|
-| VBASE-01 | Phase 175 | Pending |
+| VBASE-01 | Phase 175 | Complete |
 | VBASE-02 | Phase 175 | Pending |
 | SEC-01 | Phase 176 | Pending |
 | SEC-02 | Phase 176 | Pending |

@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.48 — Client Authentication Key Isolation & Rotation",
+  "milestone": "v1.48 \u2014 Client Authentication Key Isolation & Rotation",
   "phases": [
     {
       "number": "175",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-progress --next",
-    "label": "Advance to the next step (plan phase 175)",
-    "reason": "Phase 1 of 4 — needs a plan"
+    "command": "$gsd-execute-phase 175 --auto --no-transition",
+    "label": "Continue Phase 175 Plan 02 qualification",
+    "reason": "Plan 01 baseline accepted; persisted-caller age and material compatibility gates remain"
   },
-  "updated_at": "2026-10-25T17:29:36.216Z"
+  "updated_at": "2026-10-25T18:36:22.148Z"
 }
