@@ -1,16 +1,19 @@
 ---
 phase: 173-conditional-par-profile-boundaries
-verified: 2026-10-24T23:57:50Z
+verified: 2026-10-25T02:29:38Z
 status: passed
 score: 6/6 behavioral truths verified
 covered_files:
   - .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json
   - .planning/phases/173-conditional-par-profile-boundaries/173-01-PLAN.md
   - .planning/phases/173-conditional-par-profile-boundaries/173-01-SUMMARY.md
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-PACKAGE-PROOF.json
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-PROOF-INDEX.json
+  - .planning/phases/174-packaged-proof-delivery-handoff/174-SOURCE-PROOF.json
   - lib/lockspire/protocol/authorization_request.ex
   - test/integration/phase15_par_authorization_e2e_test.exs
   - test/lockspire/protocol/authorization_request_test.exs
-covered_digest: "v3:sha256:b53e28ad1fd32aab4697a235ced8d24545cbda56dfa54e2772d869ef4d22527d"
+covered_digest: "v3:sha256:59d4ff454c42b79cfa7e2e4b450263a697ee15453216bc13dca779adbd250bae"
 behavior_unverified: 0
 overrides_applied: 0
 flagged_prohibitions:
@@ -32,10 +35,10 @@ decision_coverage:
 
 # Phase 173: Conditional PAR & Profile Boundaries Verification Report
 
-**Phase Goal:** Correct only P171-005's reproduced rejection of a conflicting outer scope for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
-**Verified:** 2026-10-24T23:57:50Z
-**Status:** passed — 6/6 behavioral truths verified; 2 judgment-tier prohibitions flagged for human review
-**Re-verification:** No — initial verification
+**Phase Goal:** Correct only P171-005's reproduced rejection of a conflicting outer `scope` for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
+**Verified:** 2026-10-25T02:29:38Z
+**Status:** passed — 6/6 behavioral truths verified; 2 judgment-tier prohibitions retain non-authoritative review flags.
+**Re-verification:** Refresh of the existing report after covered-input changes. Prior report remains in git history; this refresh does not replace any historical test identity.
 
 ## Goal Achievement
 
@@ -43,110 +46,105 @@ decision_coverage:
 
 | # | Truth | Status | Evidence |
 |---|---|---|---|
-| 1 | A valid P171-005 pushed request reaches exact relative consent with stored openid/email scopes, state, nonce and client despite outer scope=profile. | ✓ VERIFIED | The tagged Phase 15 Router regression passed (4 tests, 0 failures); it first proves an independent reference-only control, then asserts the distinct candidate's persisted interaction projection. |
-| 2 | The same durable regression records normative RED at the qualified source and GREEN after correction with the same test bytes. | ✓ VERIFIED | Commit contents confirm the original test hash 9a286e37949857ced7bdf5672d01a9d7d89c4f381d579be7aff6e9a5c3c35413 at d23e05f0 and a15e3974; qualified/corrected protocol hashes are 2279206b3c3b27b5f1526b426863089b81b06883d586a97aa3e90fd8cc320e3a and 3dd97834e94398f6f26abae578085e01f70ecb42f8bc4d3235074c62ad7f63da. The recorded RED occurs after both PAR controls pass; GREEN passes the same test bytes. |
-| 3 | P171-001/002/003 lifecycle cases and P171-004 required-PAR continue to enforce binding, expiry, one-use/replay, wrong-client burn and PKCE behavior. | ✓ VERIFIED | Focused protocol tests for expiry, replay and wrong-client burn passed (5 total with conflict/collision checks, 0 failures). The Phase 15 required-PAR authorization-code/PKCE flow passed and exercises replay rejection after use. |
-| 4 | Stored PAR fields are validated under current client/security policy without weakening exact redirect, S256, strict signing, collision or Phase 172 response-mode behavior. | ✓ VERIFIED | validate/2 resolves current client/profile before stored-request validation; the resolver retains the distinct request-object collision check and calls client-bound consumption before rebuilding a stored-only map. Strict consumed-PAR signing passed (1/0); Phase 37 exact-redirect and Phase 172 response-mode owners passed. Conflicting-values and collision protocol tests passed. |
-| 5 | P171-006 configured source-host issuer and mounted discovery endpoints remain consistent; external provider-origin, TLS/proxy and browser reachability stay supplemental and unavailable. | ✓ VERIFIED | Configured discovery passed and asserts https://example.test/lockspire plus mounted authorization, token, userinfo, JWKS, PAR, revocation and introspection endpoints. External profiles remain unlaunched, with no reachability or certification claim. |
-| 6 | Qualification history and owned input identities remain auditable without rewriting frozen cases, observations, receipts, probes or prior audit records. | ✓ VERIFIED | The preservation command passed: “Frozen content/history preserved; owned manifest audit chain verified”. The post-completion ledger contract run passed (22 tests, 0 failures, 10.9s). Completion metadata added an attributed audit for only the roadmap selector; frozen records remain unchanged. Current ordered digest is 8f111348ddee95720218b4461f5f3c5c44f203f7a482bf72c8953557514317f4. |
+| 1 | A valid P171-005 pushed request reaches exact relative consent with stored `openid email`, state, nonce and client despite outer `scope=profile`. | ✓ VERIFIED | Phase 174 `source-01` records 11/11 passing at source revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`; its Phase 15 test SHA (`9193f4db…`) and authorization source SHA (`3dd97834…`) match current bytes. The test asserts independent control and candidate persisted interaction projection. |
+| 2 | The durable regression preserves the normative same-test RED/GREEN record and current code is GREEN at the frozen source-proof revision. | ✓ VERIFIED | Original Phase 173 RED: commit `79048ed2`, source SHA `2279206b…`; original GREEN: commit `a15e3974`, source SHA `3dd97834…`; both use test SHA `9a286e37…`. Those identities remain in the Phase 173 summary and qualification ledger. The later source-proof GREEN at `a348bf…` covers the current source/test bytes. No historical RED was rerun. |
+| 3 | P171-001/002/003 binding, expiry, one-use/replay and wrong-client burn, plus P171-004 required-PAR, remain enforced. | ✓ VERIFIED | Frozen source-proof `source-01` (11/11) and `source-03` (94/94) passed at `a348bf…`; `source-03` hashes match the current authorize/PAR protocol owner tests. These are finite selected cases, not a generic concurrency guarantee. |
+| 4 | Stored PAR fields are checked under current client/security policy without weakening redirect, S256, signing, collision or Phase 172 response-mode behavior. | ✓ VERIFIED | `source-02` strictness (5/5) and `source-03` (94/94) passed on the current authorization source SHA. Source keeps current client resolution, bound consume and stored-only reconstruction; the separate request/request_uri collision assertion remains in the protocol test. |
+| 5 | Configured source-host issuer and discovery endpoints remain consistent; external origin/TLS/proxy/browser reachability remains supplemental and unavailable. | ✓ VERIFIED | `source-01` includes discovery and Phase 15, 11/11 passing; recorded discovery test asserts configured `https://example.test/lockspire` and mounted endpoints. No external profile or public reachability claim is made. |
+| 6 | Frozen qualification history, owned Phase 173 input audits and evidence identities remain auditable without rewriting the counterexample or RED/GREEN records. | ✓ VERIFIED | The ledger’s two Phase 173 owned audit entries are the Phase 15 test identity (`9a286e37…` → current `9193f4db…`) and `phases-172-173-contract` roadmap selector (`a0441aa7…` → `27dab1dd…`). The current manifest contract test passed: `mix test test/lockspire/qualification_ledger_contract_test.exs:304 --trace` — 1 test, 0 failures. The ledger still contains original P171-005 counterexample probe SHA `0f32ab00…` and the original Phase 173 RED/GREEN identities above. |
 
-**Score:** 6/6 behavioral truths verified (0 present, behavior-unverified). Two judgment-tier prohibitions are separately flagged below; they are not counted as mechanically verified truths.
+**Score:** 6/6 truths verified (0 present, behavior-unverified). The two judgment-tier prohibitions are reported separately and are not counted as mechanically verified truths.
 
 ### Prohibition Judgments — Autonomous Soft-Gate
 
-Both plan items are now status resolved, verification judgment. The two scoped verdicts below are non-authoritative and remain flagged exactly as required by the autonomous soft-gate. They are not human confirmation, wired enforcement evidence, or universal claims.
+Both plan prohibitions are `resolved` / `judgment`. Their scoped dispositions remain non-authoritative and retain the required prominent flags. Under the autonomous judgment soft-gate these flags do not create an awaited human checkpoint. They are not mechanical enforcement, human confirmation, or universal proof.
 
-| Prohibition | Non-authoritative scoped judgment | Required flag |
+| Prohibition | Scoped judgment | Required flag |
 |---|---|---|
-| MUST NOT reattribute frozen qualification observations, accepted-main evidence, or unavailable external profiles as Phase 173 current-source, packaged-host, transport, or certification proof. | Frozen-content/history and owned-input audits found no reattribution in this Phase 173 change. | unverified-prohibition — human review recommended |
-| MUST NOT move host-owned account, session, login, consent presentation, claims, or product policy into Lockspire as a consequence of the PAR authority correction. | Source diff and host handoff tests found no ownership movement in this Phase 173 change. | unverified-prohibition — human review recommended |
+| Do not reattribute frozen observations, accepted-main evidence, or unavailable external profiles. | Ledger/history and source-proof review found no reattribution within the Phase 173 change. | `unverified-prohibition — human review recommended` |
+| Do not move host-owned identity, login, consent, claims or policy into Lockspire. | Runtime diff and host handoff owners show no ownership movement from the PAR correction. | `unverified-prohibition — human review recommended` |
+
+### Adjacent Phase 174 Package Evidence (Local Only)
+
+The Phase 174 package proof and index record 12/12 selected scenarios for source revision `a348bf…`, with a local archive/tree identity and cleanup receipts. The index maps P171-005 to the Phase 173 correction and retains the original P171-005 qualification counterexample separately. This is local package-clean host evidence only; it does not establish hosted candidate CI, accepted-main, publication, external transport, or certification.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |---|---|---|---|
-| lib/lockspire/protocol/authorization_request.ex | Stored-only PAR resolution without blanket outer-parameter rejection | ✓ VERIFIED | Artifact query passed. Resolver retains collision guard, reference validation, client-bound consumption and stored-only reconstruction. |
-| test/integration/phase15_par_authorization_e2e_test.exs | Durable real-PAR P171-005 control/candidate regression | ✓ VERIFIED | Artifact query passed. Two PAR requests, reference-only control, then exact relative consent and persisted projection for the distinct candidate. |
-| test/lockspire/protocol/authorization_request_test.exs | Conflicting outer values cannot change stored request; request-object collision remains rejected | ✓ VERIFIED | Artifact query passed. Both focused tests passed. |
-| .planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json | Selective audit preserves frozen qualification content and records owned identities | ✓ VERIFIED | Artifact query passed. Frozen-content/history and ordered audit-chain invariant passed independently. |
-| .planning/phases/173-conditional-par-profile-boundaries/173-01-SUMMARY.md | Source-bound execution evidence and evidence limits | ✓ VERIFIED | Artifact query passed. Recorded identities match commit contents; review fix keeps original RED/GREEN evidence distinct from final reviewed test bytes. |
+| `lib/lockspire/protocol/authorization_request.ex` | Stored-only PAR authority resolution | ✓ VERIFIED | Artifact query passed; resolver validates and consumes the bound reference, then rebuilds parameters from the stored request. |
+| `test/integration/phase15_par_authorization_e2e_test.exs` | Real Router P171-005 control/candidate regression | ✓ VERIFIED | Artifact query passed; current bytes match source-proof `source-01`. |
+| `test/lockspire/protocol/authorization_request_test.exs` | Conflicting outer values and distinct collision behavior | ✓ VERIFIED | Artifact query passed; explicit conflicting-value and collision cases are present. |
+| `171-QUALIFICATION.json` | Frozen content and attributed input identity history | ✓ VERIFIED | Artifact query passed; current frozen-input named contract test passed. |
+| `173-01-SUMMARY.md` | Original RED/GREEN identities and evidence limits | ✓ VERIFIED | Artifact query passed; the historical entries were checked against the current ledger and proof index. |
+| Phase 174 source/package proof and index | Current green source evidence and bounded local package evidence | ✓ VERIFIED | Exact files are fingerprinted. Package result is local-only and does not extend Phase 173 into candidate/main/certification proof. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |---|---|---|---|---|
-| authorization_request.ex | repository.ex | Consume client-bound PAR reference, then project stored request | ✓ WIRED | Manual trace: Repository.consume_pushed_authorization_request/2 is called from the resolver helper; success flows to pushed_request_to_params/1. Generic key-link query returned a lexical false negative because the module is imported by alias. |
-| phase15_par_authorization_e2e_test.exs | interaction.ex | Real Router request, fetch and assert persisted interaction | ✓ WIRED | Test calls Lockspire.Web.Router, then Repository.fetch_interaction/1, asserting client, scopes, state and nonce. The generic query did not resolve the repository return type; the call and assertions are present. |
-| 171-QUALIFICATION.json | qualification_ledger_contract_test.exs | Validate manifest identity and digest contract | ✓ WIRED | Contract test consumes the ledger; its frozen-input drift test passed. The preservation check also verified ordered identities and digest. |
+| `authorization_request.ex` | `repository.ex` | Bound PAR consume then stored-request projection | ✓ WIRED | Manual trace at `resolve_authorization_params/2` → `consume_pushed_authorization_request/2` → `Repository.consume_pushed_authorization_request/2` → `pushed_request_to_params/1`. Generic lexical query missed the imported alias. |
+| Phase 15 integration test | `interaction.ex` | Real Router PAR/authorize flow then persisted interaction assertions | ✓ WIRED | Tagged P171-005 test calls Router, fetches via `Repository.fetch_interaction/1`, and asserts client, scopes, state and nonce. |
+| Qualification ledger | ledger contract test | Frozen path/selector identities and ordered digest | ✓ WIRED | Current named frozen-input contract test passed. |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data variable | Source | Produces real data | Status |
 |---|---|---|---|---|
-| Phase 15 authorization regression | interaction | Persisted interaction returned by Repository.fetch_interaction/1 after real /par and /authorize Router flow | Yes | ✓ FLOWING |
-
-No rendered UI artifacts are in this phase.
+| Phase 15 authorization regression | persisted interaction | `Repository.fetch_interaction/1` after actual `/par` and `/authorize` Router requests | Yes | ✓ FLOWING |
 
 ### Behavioral Spot-Checks
 
-| Behavior | Command | Result | Status |
+| Behavior | Command/evidence | Result | Status |
 |---|---|---|---|
-| P171-005 conflicting-scope authority through Router | mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs --trace --only phase173_par_authority | 4 tests, 0 failures; control and candidate reached the asserted consent path | ✓ PASS |
-| Expiry, replay, wrong-client burn, pushed conflict and request-object collision | mix test --include integration test/lockspire/protocol/authorization_request_test.exs:543 test/lockspire/protocol/authorization_request_test.exs:610 test/lockspire/protocol/authorization_request_test.exs:642 test/lockspire/protocol/authorization_request_test.exs:682 test/lockspire/protocol/authorization_request_test.exs:790 --trace | 5 tests, 0 failures | ✓ PASS |
-| Required-PAR plus PKCE, configured discovery, exact redirects and Phase 172 response mode | mix test --include integration test/integration/phase15_par_authorization_e2e_test.exs:92 test/lockspire/web/discovery_controller_test.exs:96 test/integration/phase37_protocol_strictness_e2e_test.exs:105 test/lockspire/web/authorize_controller_test.exs:116 --trace | 4 tests, 0 failures | ✓ PASS |
-| Strict message signing on consumed PAR | mix test --include integration test/lockspire/protocol/authorization_request_test.exs:326 --trace | 1 test, 0 failures | ✓ PASS |
-| Frozen qualification-input contract | mix test test/lockspire/qualification_ledger_contract_test.exs:304 --trace | 1 test, 0 failures | ✓ PASS |
+| Current P171-005 source GREEN and configured discovery | Phase 174 frozen `source-01` exact hashes at `a348bf…` | 11 passed, 0 failed; current relevant bytes match | ✓ PASS |
+| Current strictness and Phase 172 behavior | Phase 174 frozen `source-02` / `source-03` | 5/5 and 94/94; relevant authorization/PAR owner hashes match | ✓ PASS |
+| Frozen qualification input manifest | `mix test test/lockspire/qualification_ledger_contract_test.exs:304 --trace` | 1 test, 0 failures | ✓ PASS |
 
-All Mix commands used Elixir 1.19.5, OTP 28.5 and the scoped test database lockspire_171_main_20261024b.
+The Phase 173 RED/GREEN run identities remain historical evidence and were not replayed. No exact-main authority was rerun or inferred.
 
 ### Probe Execution
 
-No Phase 173 probe was declared in the plan or summary, and no scripts/*/tests/probe-*.sh exists. Historical Phase 171 probes were preserved and not rerun.
+No Phase 173 probe was declared. Historical Phase 171 probes were preserved and not rerun.
 
-| Probe | Command | Result | Status |
-|---|---|---|---|
-| N/A | None declared for Phase 173 | No Phase 173 probe execution required | N/A |
+| Probe | Result | Status |
+|---|---|---|
+| N/A | No Phase 173 probe declared | N/A |
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |---|---|---|---|---|
-| PARB-01 | 173-01-PLAN.md | Selected pushed-request binding, expiry and one-use semantics; mismatched/reused references fail per contract | ✓ SATISFIED | Focused expiry, wrong-client burn and replay tests passed; Phase 15 flow passed. |
-| PARB-02 | 173-01-PLAN.md | Pushed/front-channel conflict and required-PAR cases preserve PKCE/security-profile boundaries | ✓ SATISFIED | P171-005 candidate and conflicting protocol test passed; required-PAR, S256 and strict-signing owners passed; collision guard remains covered. |
-| PARB-03 | 173-01-PLAN.md | Configured discovery surface supports distinguishing selected protocol cases from unavailable transport/browser profiles | ✓ SATISFIED | Configured issuer and mounted-endpoint discovery test passed. Unavailable external profiles remain supplemental and non-certifying, matching roadmap scope. |
+| PARB-01 | `173-01-PLAN.md` | Selected binding, expiry and one-use semantics | ✓ SATISFIED | Current source proof `source-01` and `source-03`; finite selected lifecycle cases only. |
+| PARB-02 | `173-01-PLAN.md` | Pushed authority, required-PAR/PKCE/security boundaries | ✓ SATISFIED | Current Phase 15, protocol and strictness source proof; current P171-005 GREEN bytes match. |
+| PARB-03 | `173-01-PLAN.md` | Configured issuer/endpoints and honest external attribution | ✓ SATISFIED | Current source-host discovery proof; external profiles remain unavailable and supplemental. |
+
+All three roadmap requirements map to the plan; no orphaned Phase 173 requirement was found.
 
 ### Test Quality Audit
 
-| Test File | Linked Requirement | Active | Skipped | Circular | Assertion Level | Verdict |
-|---|---|---:|---:|---:|---|---|
-| phase15_par_authorization_e2e_test.exs | PARB-01, PARB-02 | Yes | 0 found | 0 found | Behavioral + value | ✓ PASS |
-| authorization_request_test.exs | PARB-01, PARB-02 | Yes | 0 found | 0 found | Behavioral + value | ✓ PASS |
-| authorize_controller_test.exs, pushed_authorization_request_controller_test.exs, pushed_authorization_request_test.exs | PARB-01, PARB-02 | Yes | 0 found | 0 found | Behavioral + value | ✓ PASS |
-| discovery_controller_test.exs, phase37_protocol_strictness_e2e_test.exs | PARB-02, PARB-03 | Yes | 0 found | 0 found | Value + behavioral | ✓ PASS |
-
-Disabled-test and expected-value-writer scans found no matches in requirement-linked owners. No circular expected-value generation was found.
+| Test File | Linked Requirement | Active | Disabled/circular | Assertion level | Verdict |
+|---|---|---:|---|---|---|
+| `phase15_par_authorization_e2e_test.exs` | PARB-01, PARB-02 | Yes | None found | Behavioral + value | ✓ PASS |
+| `authorization_request_test.exs` | PARB-01, PARB-02 | Yes | None found | Behavioral + value | ✓ PASS |
+| `qualification_ledger_contract_test.exs` | PARB-03 | Yes | None found | Contract/value | ✓ PASS |
 
 ### Anti-Patterns Found
 
-None. Changed implementation and test files contain no unresolved TBD, FIXME, XXX, TODO, HACK, placeholder implementation or empty-handler patterns. mix format --check-formatted and git diff --check passed.
+None in the changed runtime/test artifacts. Targeted scans found no unresolved debt markers, placeholder implementations, empty handlers, disabled requirement tests, or test-generated expected values.
 
 ### Decision Coverage
 
 All 9 trackable CONTEXT decisions are honored by shipped artifacts.
 
-### Completion Metadata Refresh
-
-The phase-completion operation ran once. Review of its delta found only the Phase 173 roadmap plan-count/completion-check metadata and the matching attributed audit of selector phases-172-173-contract in the qualification ledger. The selector hash changed from a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266 to 27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7; the ordered ledger digest is now 8f111348ddee95720218b4461f5f3c5c44f203f7a482bf72c8953557514317f4. Current runtime and test sources are byte-identical to the prior green verification. The prior selected 132-test run remains valid; no behavior changed. The Phase 173 code-review disposition remains 1 fixed, 0 open, and the final reviewer recorded no new findings. Security remains 6/6 dispositions closed (five mitigations and one limited low-risk accepted boundary); Nyquist remains compliant. API coverage is pass for no external API integration, and typed UI review remains N/A.
-
 ### Human Verification Required
 
-None as a blocking checkpoint. Autonomous mode is active (mode=yolo, auto_advance=true). The two resolved/judgment prohibitions carry non-authoritative scoped judgments and the explicit “unverified-prohibition — human review recommended” flag; this is a soft recommendation, not human confirmation or a hard halt. Provider-origin, TLS/proxy and browser profiles remain supplemental and unlaunched; no reachability or certification claim is made.
+None as a blocking checkpoint. This is an infrastructure/library phase. The two judgment-tier flags remain visible review recommendations under the autonomous soft-gate. The three generic fallback assumptions remain explicitly unresolved: generic interruption/parallel PAR behavior, the unclassified PARB-02 edge, and generic external-profile interruption/parallel behavior. External provider-origin, TLS/proxy, and browser profiles were not launched.
 
 ### Gaps Summary
 
-No implementation or requirement gaps were found. The selected P171-005 correction is present and connected through the real Router handoff; lifecycle, required-PAR, strictness, discovery and provenance owners remain intact. Six behavioral truths are verified. Two resolved/judgment prohibitions remain prominently flagged for human review and are not counted as mechanically verified truths. The three generic edge assumptions remain unresolved and flagged; unavailable external profiles remain supplemental. None of these limits creates a universal concurrency, reachability or certification claim.
+No selected implementation or requirement gap was found. Current source-proof GREEN covers the exact relevant source/test bytes at its recorded revision, and the current frozen-input contract check passes. The original Phase 171 counterexample and Phase 173 RED/GREEN identities remain distinct and preserved. Generic fallback assumptions, external profiles, and certification-level claims remain outside the verified scope. There is no universal concurrency, accepted-main, hosted candidate, publication, reachability, or certification proof.
 
 ---
-
-_Verified: 2026-10-24T23:57:50Z_
+_Verified: 2026-10-25T02:29:38Z_
 _Verifier: the agent (gsd-verifier)_

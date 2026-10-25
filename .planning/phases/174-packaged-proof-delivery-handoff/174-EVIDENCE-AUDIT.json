@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+  "proof_index_sha256": "434cd7d8b1b7e7ff5b78716e6f6c88cd723f4f0b1b298efc327733ed7dbe9613",
+  "prior_reports": [
+    {
+      "phase": 171,
+      "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md",
+      "sha256": "f4e7caf80fef19bcefb98000892b85caa6ea430c9de79e8e3a93facaa6d102a6",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "10/10 must-haves verified",
+      "covered_fingerprint": "v3:sha256:cfd8d2835db571dd09251c06c0e57acbafa2b6b26b7dfb0e38e029cf1cd3fe3b",
+      "flagged_prohibitions": 3,
+      "unresolved_generic_assumptions": ["A-EDGE-BASE-01", "A-EDGE-FIND-02"]
+    },
+    {
+      "phase": 172,
+      "path": ".planning/phases/172-authorization-responses/172-VERIFICATION.md",
+      "sha256": "597910232f7ca7f8c47a8c4ac31e3de95125cd2cd429f0115491b3566480cb1c",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "11/11 must-haves verified",
+      "covered_fingerprint": "v3:sha256:138173a96a086809009d68b2fefb9c8162ed8c98478e3ae5fcdb363224aa366f",
+      "flagged_prohibitions": 2,
+      "unresolved_generic_assumptions": []
+    },
+    {
+      "phase": 173,
+      "path": ".planning/phases/173-conditional-par-profile-boundaries/173-VERIFICATION.md",
+      "sha256": "398153cee296818d3cde8da6b0ea2feed5870b824233668899a6860fa1531473",
+      "role": "gsd-verifier",
+      "status": "passed",
+      "score": "6/6 behavioral truths verified",
+      "covered_fingerprint": "v3:sha256:59d4ff454c42b79cfa7e2e4b450263a697ee15453216bc13dca779adbd250bae",
+      "flagged_prohibitions": 2,
+      "unresolved_generic_assumptions": ["three inherited generic fallback limits, preserved in report"]
+    }
+  ],
+  "reviews": [
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-REVIEW.md",
+      "sha256": "21e0fcd8a4f9efb7a9cdff2e2b769de1e5eed86349213ba923ff968b383b937e",
+      "role": "gsd-code-reviewer",
+      "status": "clean",
+      "findings": {"critical": 0, "warning": 0, "info": 0, "total": 0}
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-SECURITY.md",
+      "sha256": "ac5982cc3fa8ac1492604640db0f198113f2d285ddfda28d2940d2c5338e64f9",
+      "role": "gsd-security-auditor",
+      "status": "secured",
+      "scope": "Plan 02 only; this is not a phasewide 16-threat audit",
+      "threats_found": 4,
+      "threats_closed": 4,
+      "threats_open": 0
+    },
+    {
+      "path": ".planning/phases/174-packaged-proof-delivery-handoff/174-DISPOSITIONS.md",
+      "sha256": "485c36af30667ee83147891ce28630dfa4d902caef18ab6b11544e13e42c9786",
+      "role": "typed code-reviewer and security-auditor lifecycle reassessment",
+      "status": "scoped-judgments-recorded",
+      "judgment_flags": {"phase171": 3, "phase172": 2, "phase173": 2, "phase174": 2}
+    }
+  ],
+  "requirements": {
+    "CPROOF-01": "complete: all twelve frozen IDs joined to actual package observations and current source owners",
+    "CPROOF-02": "complete: selected receipt parser mutation suite passed (16 tests); qualification ledger contract passed (22 tests)",
+    "DELIV-01": "pending: candidate contributor/CI checks and final delivery audit belong to 174-04",
+    "DELIV-02": "pending: delivery handoff remains unperformed"
+  },
+  "limits": [
+    "Package proof is a local packaged checkout exercised against loopback clean-room hosts; it is not candidate CI, accepted-main-at-package-revision, publication, or release evidence.",
+    "External issuer, TLS, proxy, browser reachability, OIDF and FAPI profiles were not exercised; no certification claim is made.",
+    "CPROOF-01 adjacency/order and CPROOF-02/DELIV-02 unclassified assumptions remain explicit; no concurrency, ordering, or universal certification guarantee is inferred.",
+    "The three Phase 173 generic fallback limits remain unresolved and are preserved in its current report.",
+    "Judgment-tier prohibitions remain non-authoritative and retain unverified-prohibition — human review recommended flags."
+  ],
+  "flag_counts": {"phase171": 3, "phase172": 2, "phase173": 2, "phase174": 2, "total": 9},
+  "blockers": []
+}
