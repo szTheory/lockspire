@@ -90,6 +90,18 @@ class SelectedReceiptTest(unittest.TestCase):
         receipt["scenarios"][0]["raw_body"] = "must-not-be-retained"
         self.rejected(receipt)
 
+    def test_rejects_duplicate_root_and_nested_json_object_keys(self) -> None:
+        receipt = self.receipt()
+        root_json = json.dumps(receipt, separators=(",", ":"))
+        self.path.write_text(root_json.replace('"selection":"partial"', '"selection":"partial","selection":"complete"', 1), encoding="utf-8")
+        with self.assertRaises(AssertionError):
+            validate_selected_receipt(self.path, expected_case_ids=("A171-003",), expected_source_revision="a" * 40)
+
+        nested_json = json.dumps(receipt, separators=(",", ":"))
+        self.path.write_text(nested_json.replace('"control_status":302', '"control_status":302,"control_status":400', 1), encoding="utf-8")
+        with self.assertRaises(AssertionError):
+            validate_selected_receipt(self.path, expected_case_ids=("A171-003",), expected_source_revision="a" * 40)
+
     def test_rejects_bad_counts_and_failed_or_skipped_rows(self) -> None:
         for invalid in (True, 1.0, -1):
             receipt = self.receipt()

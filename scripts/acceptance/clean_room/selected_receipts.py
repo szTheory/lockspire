@@ -77,6 +77,16 @@ def _exact_keys(value: object, expected: frozenset[str], label: str) -> dict[str
     return value
 
 
+def _unique_object_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    """Build a JSON object only when every member name is unique."""
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("selected receipt JSON contains a duplicate object key")
+        result[key] = value
+    return result
+
+
 def _counts(value: object, label: str) -> dict[str, int]:
     counts = _exact_keys(value, COUNT_FIELDS, label)
     if any(type(item) is not int or item < 0 for item in counts.values()):
@@ -102,8 +112,8 @@ def validate_selected_receipt(
         if hashlib.sha256(raw).hexdigest() != expected_receipt_sha256:
             raise AssertionError("selected receipt bytes differ from the externally supplied digest")
     try:
-        receipt = _exact_keys(json.loads(raw), ROOT_FIELDS, "root")
-    except (UnicodeDecodeError, json.JSONDecodeError):
+        receipt = _exact_keys(json.loads(raw, object_pairs_hook=_unique_object_pairs), ROOT_FIELDS, "root")
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
         raise AssertionError("selected receipt JSON is invalid") from None
     if type(receipt["schema_version"]) is not int or receipt["schema_version"] != 1:
         raise AssertionError("selected receipt schema version is invalid")
