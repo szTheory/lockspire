@@ -1597,7 +1597,7 @@
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
-        "sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b"
+        "sha256": "2435e40cd56e3996bea9901fb086c1f1dd75eebee60318282fe58cda22a21536"
       },
       {
         "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-RESEARCH.md",
@@ -1665,7 +1665,7 @@
       },
       {
         "path": "docs/supported-surface.md",
-        "sha256": "078b723ec78a7005bf76633ca5fe47c2a7504b203a5c9a87de366a31f876c6bb"
+        "sha256": "2cd32dee2d0bf1bcc301c26afeea634698e7b0b4a44ee55cf15204705d6f4471"
       },
       {
         "path": "scripts/conformance/runner-requirements.lock",
@@ -1692,7 +1692,7 @@
         "sha256": "86031be7618ae66db1ef8088e10887f0dd237a4404a5f11e65e16a70f20361d1"
       }
     ],
-    "input_digest": "8f111348ddee95720218b4461f5f3c5c44f203f7a482bf72c8953557514317f4",
+    "input_digest": "3edc2b22eca506c063e1483a6a684ada300a54d56d55d1308c78b4812c144137",
     "input_manifest_audits": [
       {
         "date": "2026-10-24",
@@ -1913,6 +1913,24 @@
         "previous_sha256": "a0441aa756a8e22557b1a4f012f0ffef11537f2d109e8c4c55708f944332e266",
         "sha256": "27dab1dd7eecc59bf4dddbae9b5ce61e34e46cddb824d7c98efd6753615d95a7",
         "reason": "Reviewed SDK phase.complete173 plan count and completion checkbox after passed six behavioral truths with two explicit judgment flags; selected contracts unchanged."
+      },
+      {
+        "date": "2026-10-25",
+        "operator": "Codex executing maintainer",
+        "source_sha": "b4c19e8251e7abd886fef68c036a79eb5eadaa30",
+        "path": "docs/supported-surface.md",
+        "previous_sha256": "078b723ec78a7005bf76633ca5fe47c2a7504b203a5c9a87de366a31f876c6bb",
+        "sha256": "2cd32dee2d0bf1bcc301c26afeea634698e7b0b4a44ee55cf15204705d6f4471",
+        "reason": "Phase 174 Plan 02 updated the owned support guide with the two delivered corrections, reproducible local package command, and explicit proof limits; it does not broaden the frozen case selection or claim candidate/main success."
+      },
+      {
+        "date": "2026-10-25",
+        "operator": "Codex executing maintainer",
+        "source_sha": "832c5a41",
+        "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
+        "previous_sha256": "bf02535d6e5f4a8a8065d04765c42c49e4bb52d566f4bc34ea7209375deadc3b",
+        "sha256": "2435e40cd56e3996bea9901fb086c1f1dd75eebee60318282fe58cda22a21536",
+        "reason": "After scoped independent code and security reviews, resolve only the two reviewed Phase 171 Plan 03 prohibition entries as judgment-tier dispositions; preserve the explicit human-review flags and all qualification observations."
       }
     ],
     "metadata_audits": [
