@@ -4,7 +4,7 @@ Lockspire can encrypt the verifier used by `client_secret_jwt` with keys dedicat
 
 ## Configuration
 
-Configure the `Lockspire.Security.ClientSecretVerifier` application setting with exactly four keys:
+Set this application option with exactly four keys:
 
 ```elixir
 config :lockspire, Lockspire.Security.ClientSecretVerifier,
