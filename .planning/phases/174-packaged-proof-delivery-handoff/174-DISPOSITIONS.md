@@ -77,12 +77,12 @@ receipt remains local package-to-loopback evidence, distinct from the exact
 candidate hosted workflow, accepted main, publication, and certification. The
 local Elixir 1.18.4 / OTP 27 reproduction (44 lifecycle tests and all three
 browser mounts, 16 scenarios each) remains supplemental local evidence and was
-not used as a substitute for hosted CI. The first hosted attempt's exact-floor
-job failed; after the authorized same-run retry, GitHub's latest-attempt graph
-completed all seven canonical jobs successfully at the unchanged candidate
-SHA. Both attempt outcomes and their job identities are recorded separately.
-PR #140 is open at candidate `ec6361d9840f2adfda85116d72fec0efe9065c6c`;
-there is no integration merge or new accepted-main receipt.
+not used as a substitute for hosted CI. The earlier candidate's exact-floor
+job failed and remains historical. The replacement candidate
+`9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` passed its separate canonical run
+`40161576115`, whose latest-attempt graph contains seven unique successful
+jobs. PR #140 remains open; there is no integration merge or new accepted-main
+receipt.
 
 For the host-ownership prohibition, the reviewer confirmed the only candidate
 source delta after the scoped source review is formatting in the two clean-room
@@ -126,3 +126,42 @@ is test-only. A new complete package run at frozen source revision
 authorization/PAR cases with 12 passed, 0 failed and 0 skipped. The receipt
 and proof index bind their exact new hashes; the earlier receipts remain in
 Git history and are not overwritten or reattributed.
+
+## Phase 174 host-proof diagnostic repair disposition — 2026-10-25
+
+The failed exact-floor lifecycle attempt on candidate
+`1a34011ce224a26d09cef224b918ed849bccc321` exposed that the existing wrapper
+removed its private child log before preserving a safe summary. This remains a
+failed attempt: run `40160485083`, Minimum Supported Elixir/OTP job
+`121070806221`, lifecycle stage, exit 2. The inner log was unavailable after
+cleanup. The separate local Chrome startup failure is not treated as its
+cause.
+
+The existing harness owner changed only
+`scripts/ci/run_host_integration_proof.sh` and its existing contract tests in
+`test/clean_room/test_admin_journey.py`. Commit `196d588cb365ec9de7d4e96cd8ca675ae9cdbf67`
+added bounded lifecycle and browser diagnostics through existing safe-summary
+helpers before cleanup. Independent code review found two warnings: a second
+sanitization pass discarded recognized `first_case`/`failed_cases` fields, and
+a helper error under `set -e` could mask the original child exit. Commit
+`9b8cf54dc7e457e2264a15901b011d0c70a1ed8c` fixed both with revalidated
+allowlisted fields, a capped count/fixed fallback, and shell-level fallbacks
+preserving the child status. Ten focused wrapper tests passed, including
+sentinel non-disclosure, malformed 5,000-digit count handling, original-exit
+preservation, cleanup, stale receipt rejection, and success staging. `bash
+-n` and `git diff --check` passed. The second independent code review found no
+remaining findings; the focused security recheck returned SECURED with zero
+open threats.
+
+The Plan 03 proof owner verified both files are outside the exact 63 frozen
+paths, the change affects failure diagnostics only, and the successful 12/12
+package receipt did not enter those branches. The existing package source
+`73bb46811f4b76b2372b4af2b4e21aaf42893ac1`, receipt
+`9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`, and
+proof index `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`
+are reusable under this scoped semantic applicability judgment. This neither
+claims package execution at the repair commits nor widens the freeze. The
+repaired code/tests are included in replacement candidate `9b8cf54d…`; full
+local `mix ci` and the new canonical seven-job graph both passed. The first
+review warnings and their fixes remain separately recorded; parent-owned
+phasewide review/security aggregation and milestone audit are pending.

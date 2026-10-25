@@ -1,12 +1,22 @@
 {
   "schema_version": 1,
-  "candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
-  "package_source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
-  "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
+  "candidate_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
+  "package_source_revision": "73bb46811f4b76b2372b4af2b4e21aaf42893ac1",
+  "package_receipt_sha256": "9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844",
+  "proof_index_sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8",
+  "package_proof": {
+    "executed": 12,
+    "passed": 12,
+    "failed": 0,
+    "skipped": 0,
+    "archive_sha256": "89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc",
+    "package_tree_sha256": "a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1",
+    "compiled_candidate_sha256": "ecc72ecac0f066e7a9d6b359e680a05cd2024b5f11c83d8b652c46be0dd406e2"
+  },
   "input_equivalence": {
-    "observed_at": "2026-10-25T03:13:29Z",
-    "command": "python3 -c 'import hashlib,json,subprocess; from pathlib import Path; root=Path(\".\").resolve(); p=root/\".planning/phases/174-packaged-proof-delivery-handoff\"; c=\"ec6361d9840f2adfda85116d72fec0efe9065c6c\"; g=lambda *a: subprocess.check_output([\"git\",*a]); head=g(\"rev-parse\",\"HEAD\").decode().strip(); assert head==c,(head,c); assert g(\"cat-file\",\"-t\",c).strip()==b\"commit\"; g(\"merge-base\",\"--is-ancestor\",c,\"HEAD\"); commits=g(\"rev-list\",c+\"..HEAD\").decode().splitlines(); paths=[]; [paths.extend(x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff-tree\",\"--root\",\"--no-commit-id\",\"--name-only\",\"--no-renames\",\"-r\",\"-m\",\"-z\",rev).split(b\"\\0\") if x) for rev in commits]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--name-only\",\"--no-renames\",\"-z\",c,\"HEAD\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--name-only\",\"--no-renames\",\"-z\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"diff\",\"--cached\",\"--name-only\",\"--no-renames\",\"-z\").split(b\"\\0\") if x]; paths += [x.decode(\"utf-8\",\"surrogateescape\") for x in g(\"ls-files\",\"--others\",\"--exclude-standard\",\"-z\").split(b\"\\0\") if x]; assert not paths,paths; f=json.loads((p/\"174-INPUT-FREEZE.json\").read_text()); assert len(f[\"files\"])==63; assert all(hashlib.sha256((root/x[\"path\"]).read_bytes()).hexdigest()==x[\"sha256\"] for x in f[\"files\"]); ih=hashlib.sha256((p/\"174-PROOF-INDEX.json\").read_bytes()).hexdigest(); assert ih==\"288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72\"; print(json.dumps({\"candidate_sha\":c,\"observed_head\":head,\"candidate_ancestor\":True,\"intervening_commits\":commits,\"delta_paths\":paths,\"frozen_file_count\":len(f[\"files\"]),\"frozen_hashes\":\"all_match\",\"proof_index_sha256\":ih},sort_keys=True))'",
-    "observed_head": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "observed_at": "2026-10-25T04:21:04Z",
+    "command": "Execution-point Python snapshot assertion at candidate freeze: exact HEAD/commit/reachability, zero committed ancestry delta and staged/unstaged/nonignored-untracked paths, all 63 frozen input hashes, and proof-index SHA-256.",
+    "observed_head": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
     "candidate_reachable": true,
     "intervening_commits": [],
     "committed_delta_paths": [],
@@ -15,16 +25,16 @@
     "nonignored_untracked_paths": [],
     "frozen_input_file_count": 63,
     "frozen_input_hashes_match": true,
-    "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
+    "proof_index_sha256": "fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8",
     "status": "passed"
   },
   "local_mix_ci": {
-    "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix ci",
-    "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "command": "HEX_HOME=/private/tmp/lockspire-174-04-hex ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix ci",
+    "source_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
     "exit_code": 0,
     "status": "passed",
     "completion_marker": {
-      "path": "/private/tmp/lockspire-174-04-mix-ci.exit",
+      "path": "/private/tmp/lockspire-174-04-replacement-9b8cf54-mix-ci.exit",
       "value": "MIX_CI_EXIT_CODE=0"
     },
     "summary": {
@@ -32,84 +42,91 @@
       "failures": 0,
       "excluded": 46,
       "credo_files": 683,
-      "credo_issues": 0
+      "credo_issues": 0,
+      "fast_alias": {"properties": 2, "tests": 2057, "failures": 0, "skipped": 6, "excluded": 499},
+      "integration_alias": {"tests": 200, "failures": 0, "excluded": 46},
+      "package_archive_sha256": "89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc"
     },
+    "log_path": "/private/tmp/lockspire-174-04-replacement-9b8cf54-mix-ci.log",
     "attempt_history": [
-      {
-        "attempt": 1,
-        "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
-        "status": "unobserved_terminal_exit",
-        "exit_code": null,
-        "note": "Output reached the final ExUnit line (200 tests, 0 failures, 46 excluded), but the tool session did not expose a terminal process exit. This output is not counted as a pass."
-      },
-      {
-        "attempt": 2,
-        "source_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
-        "status": "passed",
-        "exit_code": 0,
-        "note": "The unchanged candidate was run with a durable exit marker and command log; all mix ci aliases completed."
-      }
+      {"attempt": 1, "source_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c", "status": "passed", "exit_code": 0, "note": "Full mix ci completed with owned HEX_HOME, durable stdout log and an exit marker recorded from process status."}
     ]
   },
   "hosted_ci": {
     "repository": "szTheory/lockspire",
     "workflow_path": ".github/workflows/ci.yml",
-    "run_id": 40156252600,
-    "url": "https://github.com/szTheory/lockspire/actions/runs/40156252600",
-    "head_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "run_id": 40161576115,
+    "url": "https://github.com/szTheory/lockspire/actions/runs/40161576115",
+    "head_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
     "event": "pull_request",
     "status": "completed",
     "conclusion": "success",
-    "run_attempt": 2,
-    "run_created_at": "2026-10-25T02:54:55Z",
-    "attempt_2_started_at": "2026-10-25T03:13:11Z",
-    "completed_at": "2026-10-25T03:21:59Z",
-    "job_graph_source": "gh api --paginate 'repos/szTheory/lockspire/actions/runs/40156252600/jobs?filter=latest&per_page=100'",
+    "run_attempt": 1,
+    "run_number": 409,
+    "run_created_at": "2026-10-25T04:21:19Z",
+    "completed_at": "2026-10-25T04:45:02Z",
+    "job_graph_source": "gh api --paginate 'repos/szTheory/lockspire/actions/runs/40161576115/jobs?filter=latest&per_page=100'",
     "job_count": 7,
     "jobs": [
-      {"id": 121061613993, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
-      {"id": 121061592883, "name": "Release Hygiene Drift", "status": "completed", "conclusion": "success"},
-      {"id": 121061614945, "name": "Fast Checks", "status": "completed", "conclusion": "success"},
-      {"id": 121061592107, "name": "Minimum Supported Elixir/OTP", "status": "completed", "conclusion": "success"},
-      {"id": 121061593230, "name": "Integration Checks", "status": "completed", "conclusion": "success"},
-      {"id": 121061593514, "name": "Complete Coverage Evidence", "status": "completed", "conclusion": "success"},
-      {"id": 121061614162, "name": "Adoption Demo Smoke", "status": "completed", "conclusion": "success"}
+      {"id": 121074125019, "name": "Integration Checks", "status": "completed", "conclusion": "success"},
+      {"id": 121074125083, "name": "Release Hygiene Drift", "status": "completed", "conclusion": "success"},
+      {"id": 121074125133, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
+      {"id": 121074125169, "name": "Fast Checks", "status": "completed", "conclusion": "success"},
+      {"id": 121074125177, "name": "Adoption Demo Smoke", "status": "completed", "conclusion": "success"},
+      {"id": 121074125232, "name": "Minimum Supported Elixir/OTP", "status": "completed", "conclusion": "success"},
+      {"id": 121078025126, "name": "Complete Coverage Evidence", "status": "completed", "conclusion": "success"}
     ],
-    "attempt_history": [
-      {
-        "attempt": 1,
-        "status": "completed",
-        "conclusion": "failure",
-        "jobs": [
-          {"id": 121058183872, "name": "Dialyzer", "status": "completed", "conclusion": "success"},
-          {"id": 121058184071, "name": "Release Hygiene Drift", "status": "completed", "conclusion": "success"},
-          {"id": 121058184131, "name": "Fast Checks", "status": "completed", "conclusion": "success"},
-          {"id": 121058184029, "name": "Minimum Supported Elixir/OTP", "status": "completed", "conclusion": "failure"},
-          {"id": 121058184093, "name": "Integration Checks", "status": "completed", "conclusion": "success"},
-          {"id": 121061015613, "name": "Complete Coverage Evidence", "status": "completed", "conclusion": "success"},
-          {"id": 121058184056, "name": "Adoption Demo Smoke", "status": "completed", "conclusion": "success"}
-        ],
-        "failure_detail": "The exact-floor host runner reported browser_1 exit 1 for mount /teams/ops/identity. Its private browser log was removed by the runner's EXIT cleanup and no receipt artifact was uploaded, so the inner failure remains unavailable."
-      },
-      {
-        "attempt": 2,
-        "trigger": "authorized failed-job-only rerun through the GitHub API; same workflow run and candidate SHA; no workflow dispatch",
-        "status": "completed",
-        "conclusion": "success",
-        "job_graph_rule": "The gate is evaluated against GitHub's latest-attempt job graph, which contains exactly seven unique canonical jobs. Attempt 1 remains preserved above as historical evidence and is not merged into the latest-attempt count."
-      }
-    ]
+    "attempt_history": [],
+    "separate_dependency_review_run": {"run_id": 40161576111, "conclusion": "success", "counted_in_canonical_seven": false}
+  },
+  "hosted_floor_artifact": {
+    "artifact_id": 12586948518,
+    "name": "lockspire-host-integration-c5402a4f1af908cd3d1a15df47c9490eed471a96-floor",
+    "artifact_sha256": "2e918135baac34f0ec9287f7f9806ac147c1760ba51f85f60b250d8e38083d4a",
+    "source_revision": "c5402a4f1af908cd3d1a15df47c9490eed471a96",
+    "source_kind": "GitHub pull-request synthetic merge commit",
+    "source_parents": ["fe38beee987b135e87c99e7aa7f2488b4c8613e8", "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c"],
+    "tree_sha": "40df1cb9e601abbcf5e130cbb11a8b9e86afe0f1",
+    "candidate_tree_sha": "40df1cb9e601abbcf5e130cbb11a8b9e86afe0f1",
+    "tree_identical_to_candidate": true,
+    "frozen_inputs": "63/63 match",
+    "runtime": {"elixir": "1.18.4", "otp": "27", "phoenix": "1.8.5", "live_view": "1.1.28"},
+    "lifecycle_tests": {"passed": 44, "failed": 0},
+    "browser_mounts": {"passed": 3, "scenarios_per_mount": 16},
+    "archive_sha256": "fe9e88780a5c7fdd395b6f03349d3ef71c21a77518833a38055676958744dda5",
+    "package_tree_sha256": "c5d441d1a77b8978c63c3a44f4c09b61420df5a6f6f81f24c5b1354a799b613d",
+    "identity_note": "Workflow checked out refs/pull/140/merge. The artifact source is this synthetic merge SHA; canonical run metadata remains head 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c. Equal Git tree and all 63 frozen file hashes establish tree/input equivalence, not source-revision identity. Artifact package bytes are distinct from the Plan 03 receipt's archive/tree identities."
+  },
+  "harness_diagnostic_repair": {
+    "commits": [
+      {"sha": "196d588cb365ec9de7d4e96cd8ca675ae9cdbf67", "scope": ["scripts/ci/run_host_integration_proof.sh", "test/clean_room/test_admin_journey.py"]},
+      {"sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c", "scope": ["scripts/ci/run_host_integration_proof.sh", "test/clean_room/test_admin_journey.py"]}
+    ],
+    "first_independent_code_review": {"findings": 2, "warnings": ["Re-sanitization discarded the recognized first_case/failed_cases browser fields.", "A diagnostic-helper failure under set -e could mask the original child exit status."], "status": "fixed"},
+    "final_independent_code_review": {"status": "clean", "findings": 0},
+    "focused_security_review": {"verdict": "SECURED", "open_threats": 0},
+    "applicability": {"reviewer": "Plan 03 proof owner", "changed_files_in_frozen_63": 0, "affected_behavior": "failure-diagnostic branches only; successful 12/12 package run did not enter them", "existing_receipt_reuse": "scoped semantic applicability judgment; no execution at repair commits claimed"},
+    "verification": {"focused_wrapper_tests": 10, "bash_syntax_exit_code": 0, "diff_check_exit_code": 0, "secret_sentinel_absent": true, "cleanup_and_success_staging_passed": true}
   },
   "pr": {
     "number": 140,
     "url": "https://github.com/szTheory/lockspire/pull/140",
     "base": "main",
     "head_branch": "milestone/v1.47-core-hardening",
-    "head_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c",
+    "head_sha": "9b8cf54dc7e457e2264a15901b011d0c70a1ed8c",
     "state": "OPEN",
     "merge_state": "CLEAN",
-    "reviews": "none submitted as of 2026-10-25T03:23:46Z",
+    "reviews": "none submitted as of 2026-10-25T04:45:02Z",
     "merge_attempted": false
   },
-  "blockers": []
+  "history": [
+    {"candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c", "gate": "local mix ci", "attempt": 1, "status": "unobserved_terminal_exit", "exit_code": null, "note": "Output showed 200 tests, 0 failures, 46 excluded, but terminal exit was not observed; not counted as pass."},
+    {"candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c", "gate": "local mix ci", "attempt": 2, "status": "passed", "exit_code": 0, "note": "Durable exit marker and command log; all aliases completed."},
+    {"candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c", "run_id": 40156252600, "run_attempt": 1, "conclusion": "failure", "failed_job": "Minimum Supported Elixir/OTP", "failure_stage": "browser_1", "mount": "/teams/ops/identity", "other_canonical_jobs": "six success", "note": "Private browser log was removed by cleanup; cause unavailable."},
+    {"candidate_sha": "ec6361d9840f2adfda85116d72fec0efe9065c6c", "run_id": 40156252600, "run_attempt": 2, "conclusion": "success", "note": "Historical passing candidate; predates the final wrapper diagnostics hardening and is superseded."},
+    {"candidate_sha": "1a34011ce224a26d09cef224b918ed849bccc321", "gate": "local mix ci", "status": "passed", "exit_code": 0, "note": "Full contributor alias at this candidate; superseded by the repaired candidate."},
+    {"candidate_sha": "1a34011ce224a26d09cef224b918ed849bccc321", "run_id": 40160485083, "run_attempt": 1, "conclusion": "cancelled", "failed_job_id": 121070806221, "failed_job": "Minimum Supported Elixir/OTP", "failure_stage": "lifecycle_tests", "exit_code": 2, "other_canonical_jobs": "four success, Integration Checks and Complete Coverage Evidence cancelled after new head push", "note": "Retain this lifecycle failure separately; private child log had been removed by cleanup. Do not infer the cause from the unrelated local Chrome startup failure."},
+    {"candidate_sha": "1a34011ce224a26d09cef224b918ed849bccc321", "gate": "local exact-floor diagnostic", "status": "lifecycle_pass_browser_startup_failure", "lifecycle_tests": 44, "local_browser_failure": "chrome_start_failed under sandbox", "note": "Separate from hosted lifecycle exit 2 and not evidence of its cause; a later hosted artifact passed."}
+  ],
+  "blockers": ["Parent-owned final Phase 174 verification, full phasewide security and code review, Nyquist closeout, goal verification, and canonical milestone audit remain pending.", "PR #140 is open and unmerged; no synchronized-main acceptance receipt exists."]
 }

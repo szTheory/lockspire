@@ -8,16 +8,16 @@ requires:
   - phase: 174-03
     provides: Frozen shipped-input identities, complete packaged proof/index, current affected verifier reports, and reviewed ranking
 provides:
-  - Exact candidate local and canonical hosted CI record for candidate ec6361d9840f2adfda85116d72fec0efe9065c6c
+  - Replacement candidate local and canonical hosted CI record for candidate 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c
   - Dated delivery handoff with current PR/main/publication state, retained-work custody, and next action
 affects: [174-verification, milestone-audit, milestone-delivery]
 
 actuals:
   tokens: 10112
   tasks: 2
-  commits: 7
+  commits: 22
   plan_head_before: 20a3286afcd78447e4a1c685b36a0630ecd1528b
-  plan_head_after: aa4c51f7d20c9dc52c56f6cf51bc02ac4c63cad0
+  plan_head_after: 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c
 
 tech-stack:
   added: []
@@ -37,10 +37,12 @@ key-files:
     - .planning/phases/173-conditional-par-profile-boundaries/173-VERIFICATION.md
     - test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex
     - test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex
+    - scripts/ci/run_host_integration_proof.sh
+    - test/clean_room/test_admin_journey.py
 
 key-decisions:
-  - "Keep package source f01b6ef77889d38b032944eb37069d6d4b3b3171 distinct from immutable candidate ec6361d9840f2adfda85116d72fec0efe9065c6c."
-  - "Count the exact seven canonical jobs from GitHub's latest attempt graph and preserve the failed first attempt in history."
+  - "Keep package source 73bb46811f4b76b2372b4af2b4e21aaf42893ac1 distinct from immutable candidate 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c."
+  - "Count the exact seven canonical jobs from the replacement candidate graph and preserve older candidate failures as separate history."
   - "Leave the new main receipt absent while PR #140 is open; record the real blocker and parent-owned next action."
   - "Retain older worktrees, unique history, unknown provider databases, and adoption-demo data with explicit custody and review triggers."
 
@@ -55,7 +57,7 @@ coverage:
     requirement: DELIV-01
     verification:
       - kind: other
-        ref: "174-CANDIDATE-GATES.json; local exit 0 and canonical run 40156252600 attempt 2, exact head, 7/7 successful"
+        ref: "174-CANDIDATE-GATES.json; local exit 0 and canonical run 40161576115 attempt 1, exact head, 7/7 successful"
         status: pass
     human_judgment: false
   - id: D2
@@ -67,9 +69,9 @@ coverage:
         status: pass
     human_judgment: true
     rationale: "The handoff preserves the non-authoritative judgment flags; accepted-main authority remains unclaimed."
-commits: 7
+commits: 22
 plan_head_before: 20a3286afcd78447e4a1c685b36a0630ecd1528b
-plan_head_after: aa4c51f7d20c9dc52c56f6cf51bc02ac4c63cad0
+plan_head_after: 9b8cf54dc7e457e2264a15901b011d0c70a1ed8c
 metrics:
   duration: 56min
   completed: 2026-10-25
@@ -78,22 +80,23 @@ status: complete
 
 # Phase 174 Plan 04: Packaged Proof Delivery Handoff Summary
 
-**The exact candidate passed local `mix ci` and all seven jobs in canonical CI attempt 2; PR #140 remains open, so this plan hands off the actual main-acceptance blocker without merging or inventing a receipt.**
+**The replacement candidate passed local `mix ci` and all seven canonical hosted jobs; PR #140 remains open while parent-owned phase and milestone gates complete.**
 
 ## Performance
 
 - **Duration:** 56 minutes
 - **Tasks:** 2
-- **Measured commits from plan-start ledger:** 7
-- **Files changed since plan start:** 11
+- **Measured commits from plan-start ledger:** 22
+- **Files changed since plan start:** 23
 
 ## Accomplishments
 
-- Captured the immutable candidate `ec6361d9840f2adfda85116d72fec0efe9065c6c`. Its execution-point snapshot was observed at `2026-10-25T03:13:29Z`: the candidate was reachable and exact HEAD, there were no intervening commits or working-tree deltas, all 63 frozen input hashes matched, and proof-index SHA-256 `288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72` was unchanged.
-- Ran the complete prefixed contributor `mix ci` at that exact SHA. The first local run reached the final 200-test/0-failure output but did not expose terminal exit; it is recorded as unobserved. The unchanged candidate was run again with a durable marker, which recorded exit 0. The completed aliases included format/compile, fast tests, Credo, Sobelow, docs, dependency audit, package build, and 200 ExUnit tests (46 excluded).
-- Observed canonical hosted run `40156252600` at the exact candidate, event `pull_request`, workflow `.github/workflows/ci.yml`. Attempt 1 failed only Minimum Supported Elixir/OTP at `browser_1` for `/teams/ops/identity`; the other six jobs passed. Its private browser log was deleted by the runner's cleanup. After the authorized failed-job-only retry on the unchanged SHA, the latest attempt graph contained exactly seven unique canonical jobs and all completed successfully. Attempt 1 and attempt 2 identities are preserved in `174-CANDIDATE-GATES.json`.
-- Independently reproduced the exact floor locally with Elixir 1.18.4 / OTP 27.3 and Phoenix 1.8.5 / LiveView 1.1.28. The lifecycle suite passed 44/44 and all three mounts passed 16 scenarios each. This is supplemental local proof and did not replace hosted CI.
-- Opened and inspected the single milestone PR, [#140](https://github.com/szTheory/lockspire/pull/140), targeting `main`. It remains open and unmerged with candidate checks green. No review has been submitted. Main remains `fe38beee987b135e87c99e7aa7f2488b4c8613e8`; the optional new main receipt is absent, and the original Phase 171 receipt remains byte-preserved.
+- Captured replacement candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`. The execution-point snapshot at `2026-10-25T04:21:04Z` observed that exact HEAD, no intervening commits or working-tree deltas, 63/63 frozen input hashes, and proof-index SHA-256 `fefc13619dda61b0617cc2fad445f887652edaba42ffaad5d988cb43650e8fb8`.
+- Ran full prefixed `mix ci` at the replacement candidate with the owned Hex cache, durable command log, and exit marker. The captured process exit was 0. The fast alias reported 2 properties, 2,057 tests, 0 failures, 6 skipped, 499 excluded; integration reported 200 tests, 0 failures, 46 excluded; Credo checked 683 files with 0 issues.
+- Canonical hosted run `40161576115`, event `pull_request`, workflow `.github/workflows/ci.yml`, exact candidate head, attempt 1, completed successfully at `2026-10-25T04:45:02Z`. The paginated latest graph contains exactly seven unique successful jobs; separate dependency-review run `40161576111` is not counted.
+- Recorded the hosted exact-floor artifact's actual synthetic merge source `c5402a4f1af908cd3d1a15df47c9490eed471a96`, its two parents, and its tree equality with candidate `9b8cf54d…`. The floor artifact passed 44 lifecycle tests and three mounts with 16 scenarios each. It is not relabeled as candidate-source execution, and its package archive/tree identities remain distinct from the Plan 03 package receipt.
+- Preserved earlier history: candidate `1a34011c…` run `40160485083` attempt 1 had a real lifecycle failure (exit 2), with four canonical jobs successful and Integration/Coverage cancelled after the head update; the inner log had already been removed by cleanup. The earlier `ec6361d9…` successful candidate is historical and predates the final repair.
+- Inspected the existing milestone PR [#140](https://github.com/szTheory/lockspire/pull/140), targeting `main`. It remains open and unmerged with current candidate checks green. No review has been submitted. Main remains `fe38beee987b135e87c99e7aa7f2488b4c8613e8`; the optional new main receipt is absent, and the original Phase 171 receipt remains byte-preserved.
 - Recorded dated delivery, custody, ranking, assumptions, flags, and the exact next action. The independent read-only reviewer confirmed both Phase 174 judgments remain scoped `resolved` / `judgment`, with both non-authoritative human-review flags intact.
 
 ## Requirements and remaining gates
@@ -102,7 +105,7 @@ status: complete
 - **Candidate checks complete; broader requirement pending:** DELIV-01's exact candidate local and hosted gates passed. The requirement remains pending until the parent completes the source-bound full Phase 174 verification/audit and phasewide security/review gates at their normal lifecycle boundary.
 - No merge, synchronized-main acceptance, release, or publication is claimed. Publication remains unselected and `LOCKSPIRE_RELEASE_AUTOMERGE_ENABLED=false`.
 
-The package source revision remains `f01b6ef77889d38b032944eb37069d6d4b3b3171`, distinct from the executed candidate SHA. Its receipt was 12/12 passed, 0 failed/skipped, SHA-256 `518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5`. Archive SHA-256 is `89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc`; package/vendor tree SHA-256 is `a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1`.
+The final package source revision is `73bb46811f4b76b2372b4af2b4e21aaf42893ac1`, distinct from the executed candidate SHA. Its receipt was 12/12 passed, 0 failed/skipped, SHA-256 `9ec9de15ccdb3522a6dd179da1f58e8d700e2502e8885782899152700e900844`. Archive SHA-256 is `89baff6aaf0549cee541ec9b381798fe502c8be33c71ff894440ec85563598cc`; package/vendor tree SHA-256 is `a9d09087d573f309c8dc329706b18b15e8583cad756c9929204b8310b88d7ec1`; compiled candidate SHA-256 is `ecc72ecac0f066e7a9d6b359e680a05cd2024b5f11c83d8b652c46be0dd406e2`.
 
 ## Custody and boundaries
 
@@ -118,11 +121,11 @@ Judgment flag counts remain Phase 171: 3, Phase 172: 2, Phase 173: 2 and Phase 1
 
 The first exact-candidate local CI attempt found formatter drift in two clean-room host fixtures. The parent authorized the existing Plan 01 owner to format and commit only those paths (`38a19a29`). Because those bytes were frozen inputs, the existing Plan 03 owner refreshed the freeze, reran the complete 12-case packaged proof, updated the proof index/audit, and obtained the relevant Phase 171/173 typed verifier applicability refresh. The final package source is `f01b6ef7`; affected verification/audit refreshes are `a598af15` and `ec6361d9`. No acceptance criterion, dependency, support floor, product API, or frozen intent changed. The initial candidate `20a3286...` is not treated as passing evidence.
 
-The hosted first-attempt failure is preserved rather than discarded; only its failed job was authorized for rerun on the exact same candidate and canonical workflow run. The latest-attempt seven-job graph passed. The missing private failure trace is documented as a runner diagnostic limit; no source or gate weakening was made.
+The hosted `1a34011c…` lifecycle failure exposed a fixable runner diagnostic gap. The parent authorized the original harness owner to change only `scripts/ci/run_host_integration_proof.sh` and its existing contract tests in `test/clean_room/test_admin_journey.py`. Commit `196d588c` introduced bounded failure summaries; independent review then found two warnings: re-sanitization discarded recognized browser summary fields, and diagnostic helper failure could mask the original child exit. Commit `9b8cf54d` fixed both with validated allowlisted fields, a capped count/fallback, and shell fallbacks preserving child status. Ten focused wrapper tests, `bash -n`, and diff checks passed; secret-sentinel non-disclosure, cleanup and success staging remained covered. Independent code and security reviews found no remaining issue. Plan 03's owner confirmed both paths are outside the 63 frozen inputs and affect only failure branches not entered by the successful 12/12 package receipt. Scoped proof reuse was recorded without claiming execution at the later commits or widening the freeze. The replacement candidate's full local and hosted gates passed.
 
 ## Task commits
 
-The measured plan-start range is `20a3286afcd78447e4a1c685b36a0630ecd1528b` through `aa4c51f7d20c9dc52c56f6cf51bc02ac4c63cad0` (7 commits):
+The measured plan-start range is `20a3286afcd78447e4a1c685b36a0630ecd1528b` through candidate `9b8cf54dc7e457e2264a15901b011d0c70a1ed8c`: 22 commits. It includes the original Plan 04 work, authorized cross-owner proof refresh, subsequent Phase 174 evidence, and the harness diagnostics repair. The final local report-only closeout commit is separate from that candidate gate history.
 
 1. `38a19a29` — `style(174-01): format clean-room host fixtures` (existing Plan 01 owner)
 2. `f01b6ef7` — `docs(174-03): refresh freeze for fixture formatting` (existing Plan 03 owner)
@@ -131,9 +134,28 @@ The measured plan-start range is `20a3286afcd78447e4a1c685b36a0630ecd1528b` thro
 5. `4bbc956e` — `docs(174-04): record candidate gates`
 6. `75af3fb7` — `docs(174-04): quote paginated CI graph query`
 7. `aa4c51f7` — `docs(174-04): record delivery custody and blockers`
+8. `92e0cd79` — `docs(174-04): complete delivery handoff plan`
+9. `c26b6eff` — `docs(174): validate completed phase coverage`
+10. `80b34a93` — `docs(174): refresh prior owners after final operations review`
+11. `1c8941a4` — `docs(174): verify all declared phase threat mitigations`
+12. `fbf5c656` — `docs(174): record full source review before final disposition`
+13. `a00f0d0a` — `test(174-02): prove digest substitution rejection`
+14. `3a3b942e` — `docs(174): close receipt substitution review finding`
+15. `73bb4681` — `docs(174-03): refresh freeze for receipt test proof`
+16. `1e731e64` — `docs(174-03): bind receipt substitution proof`
+17. `52c0123f` — `docs(174-03): refresh audit after receipt test strengthening`
+18. `59566c33` — `docs(174): record reviewed test repair and focused security closure`
+19. `3fb357f1` — `docs(174): record code review disposition`
+20. `1a34011c` — `docs(174): record final regression evidence and execution lessons`
+21. `196d588c` — `fix(174): preserve bounded host proof diagnostics` (existing Plan 01 harness owner)
+22. `9b8cf54d` — `fix(174): preserve safe proof diagnostics` (existing Plan 01 harness owner; replacement candidate)
 
 ## Deferred finalization
 
 The parent owns the phasewide verification, full security threat assessment, final code review, Nyquist closeout, goal verifier and canonical milestone audit. These were not started here to preserve the train's non-circular lifecycle. After those checks, the parent can batch the final completion metadata and report files into a normal PR-head update, then observe the resulting required checks before merge. No branch push or merge of the local report-only closeout commits was performed by this plan.
 
 ## Self-Check: PASSED
+
+- Candidate gate JSON parses; candidate, local-exit, frozen-input and 7/7 canonical-job assertions pass.
+- The summary, candidate gate record, delivery handoff and scoped dispositions exist; all 22 commits listed above are ancestors of the candidate SHA.
+- `git diff --check` passes for the report changes.
