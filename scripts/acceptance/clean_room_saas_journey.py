@@ -927,11 +927,14 @@ def run_selected_authorization_case(
         _host_login(browser, "clean-room-selected-expiry")
         register_secret("fixture-nonce")
         register_secret("fixture-state")
+        fixture_verifier = uuid.uuid4().hex + uuid.uuid4().hex
+        register_secret(fixture_verifier)
+        fixture_challenge = s256(fixture_verifier)
         base_attrs = (
             f'client_id: {json.dumps(client_id)}, redirect_uri: {json.dumps(redirect_uri)}, '
             'scopes: ["openid", "email"], resources_requested: [], authorization_details: [], '
             'prompt: "consent", nonce: "fixture-nonce", state: "fixture-state", '
-            'code_challenge: "fixture-challenge", code_challenge_method: :S256'
+            f'code_challenge: {json.dumps(fixture_challenge)}, code_challenge_method: :S256'
         )
         expression = (
             'alias Lockspire.Domain.PushedAuthorizationRequest; alias Lockspire.Storage.Ecto.Repository; '
