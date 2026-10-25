@@ -1,6 +1,6 @@
 ---
 phase: 171-accepted-baseline-finding-qualification
-verified: 2026-10-25T02:29:33Z
+verified: 2026-10-25T02:43:07Z
 status: passed
 score: 10/10 must-haves verified
 covered_files:
@@ -54,7 +54,7 @@ covered_files:
   - test/support/config_case.ex
   - test/support/test_account_resolver.ex
   - test/test_helper.exs
-covered_digest: "v3:sha256:cfd8d2835db571dd09251c06c0e57acbafa2b6b26b7dfb0e38e029cf1cd3fe3b"
+covered_digest: "v3:sha256:c326dee05e68b35870b816c3ef28aa7db3b19da6f73765e0395cf620fd797ee8"
 previous_covered_files:
   - .planning/REQUIREMENTS.md
   - .planning/ROADMAP.md
@@ -115,7 +115,7 @@ re_verification:
 # Phase 171: Accepted Baseline & Finding Qualification Verification Report
 
 **Phase Goal:** Maintainers can identify an accepted implementation base and a finite set of current, supported cases whose expected outcomes and owners are settled before dependent planning.
-**Verified:** 2026-10-25T02:29:33Z
+**Verified:** 2026-10-25T02:43:07Z
 **Status:** passed
 **Re-verification:** Yes — evidence/fingerprint refresh after Phase 174 source and package proofs
 
@@ -155,7 +155,8 @@ None. The two qualified protocol corrections remain assigned to Phases 172/173 a
 | `171-QUALIFICATION-DECISIONS.md`, `171-RESEARCH.md`, `171-VALIDATION.md` | Attributed interpretation, preserved uncertainty and current verification record | ✓ VERIFIED | Dated selections preserve original questions, unavailable history and external boundaries. |
 | `171-SECURITY.md`, `171-REVIEW.md`, `171-REVIEW-DISPOSITION.md` | Threat closure and clean review evidence | ✓ VERIFIED | Security reports 15/15 threats closed; current review is clean with 0 findings, and prior five warnings have fixed dispositions. |
 | Phase 174 `174-SOURCE-PROOF.json`, `174-PROOF-INDEX.json` | Current source-owner proof for the 12 frozen cases | ✓ VERIFIED | All four run records are green (11, 5, 94, and 22 executed; 0 failures/skips); proof-index test hashes match current source-owner test files at source revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`. |
-| Phase 174 `174-PACKAGE-PROOF.json` | Bounded local package-to-loopback-host proof for the selected 12 cases | ✓ VERIFIED | Receipt records 12/12 scenario assertions, 0 failed/skipped, checkout candidate `1.6.1`, and successful cleanup. This is local package proof only; it says nothing about candidate CI, accepted main, publication, certification, or public issuer-origin/TLS/proxy/browser reachability. |
+| Phase 174 `174-PACKAGE-PROOF.json`, `174-PROOF-INDEX.json` | Bounded local package-to-loopback-host receipt and its ledger/source linkage | ✓ VERIFIED as bounded evidence | Current receipt SHA-256 `518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5` and index SHA-256 `288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72` bind 12 selected scenarios at revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`; cleanup fields are true. This records only checkout-package-to-loopback-host observations. |
+| Typed Phase 173 source-owner applicability verdict | Read-only applicability review of the Phase 174 fixture-only revision | ✓ VERIFIED as judgment evidence | Direct inspection of the Phase 173 typed verifier report and commit `38a19a292da7c90352494e4f03ade7c10e25ff82` word diff found only line wrapping/indentation changes in two clean-room fixture files, with no Elixir tokens, branches, or values changed. The Phase 173 source-owner GREEN remains tied to original revision `a348bf…`; the package receipt/index are separately bound to `f01b6ef…`. This derivative audit is excluded from the Phase 171 fingerprint because it hashes this report. |
 | Phase 174 `174-DISPOSITIONS.md`, Phase 171 plans 01/03 | Scoped disposition of three Phase 171 prohibition declarations | ✓ PRESENT — judgment only | Three declarations are `resolved` at judgment tier with explicit `unverified-prohibition — human review recommended` flags. They are not authoritative verdicts, human confirmation, or wired mechanical checks. |
 
 All plan-declared artifacts passed the GSD CLI checks: Plan 01 4/4, Plan 02 2/2, Plan 03 6/6, Plan 04 6/6. No UI or dynamic data-rendering artifact is in scope; Level 4 UI data-flow tracing is not applicable.
@@ -190,7 +191,8 @@ Plan-declared key links: 10/10 verified by the CLI (2 + 2 + 3 + 3).
 | Frozen ledger and negative fixtures | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 LOCKSPIRE_TEST_DB_NAME=lockspire_171_main_20261024b mix test test/lockspire/qualification_ledger_contract_test.exs` | 22 tests, 0 failures, 8.4s | ✓ PASS |
 | Current roadmap statuses and prerequisites | Read Phase 172–174 roadmap sections | All three explicitly `0 — Not planned` and gated; no plan placeholders remain | ✓ PASS |
 | Phase 174 exact source-owner runs | Inspect `174-SOURCE-PROOF.json` and compare its proof-index test hashes with current files | Runs source-01..04 recorded 11/11, 5/5, 94/94, and 22/22; 12/12 source owner hashes match | ✓ PASS — recorded evidence reused; no rerun |
-| Phase 174 bounded local package scenarios | Inspect package receipt and proof-index linkage | 12 executed, 12 passed, 0 failed/skipped on checkout candidate 1.6.1; limited to the local package-to-loopback host | ✓ PASS — bounded local evidence |
+| Phase 174 bounded local package receipt | Inspect current receipt and proof-index linkage | Receipt SHA `518276b1…`, index SHA `288bb43e…`, revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`; 12 scenarios recorded, 0 failed/skipped, and cleanup fields true. Scope is local checkout-package/loopback-host only. | Evidence inspected; no package or test rerun |
+| Phase 173 source-owner applicability review | Inspect typed Phase 173 verifier report and commit `38a19a29` word diff | Two clean-room fixture files changed by line wrapping/indentation; no Elixir tokens, branches, or values changed. All source-proof covered-file hashes were compared with current bytes and match. | ✓ PASS — read-only reassessment |
 
 ### Probe Execution
 
@@ -231,7 +233,7 @@ No unreferenced debt marker or implementation stub was found in the modified imp
 
 ### Unverified Boundaries and Judgment Flags
 
-Both optional OIDF/FAPI wrappers remain unlaunched; their external profile behavior is unavailable. The Phase 174 source proof and package receipt do not change the original exact-main authority or the original Phase 171 RED observation. Phase 174's local package receipt covers only recorded checkout package-to-loopback-host behavior. Hosted candidate CI, accepted-main proof at the package revision, publication, certification, and public issuer-origin/TLS/proxy/browser reachability remain outside its evidence.
+Both optional OIDF/FAPI wrappers remain unlaunched; their external profile behavior is unavailable. The Phase 174 source proof remains at source-owner revision `a348bf71285cb0ffe9eeba0da94a6c2d46faa477`; every covered source/test hash still matches current bytes. The Phase 174 package receipt/index are separately bound to checkout revision `f01b6ef77889d38b032944eb37069d6d4b3b3171` and record only local checkout-package-to-loopback-host behavior. The typed Phase 173 owner assessed intervening commit `38a19a29` as line-wrapping/indentation only, with no Elixir tokens, branches, or values changed. These facts do not change the original exact-main authority or Phase 171 RED observation. Hosted candidate CI, accepted-main proof at the package revision, publication, certification, and public issuer-origin/TLS/proxy/browser reachability remain outside the evidence.
 
 The three Phase 171 prohibition declarations are scoped as judgment-tier `resolved` in `174-DISPOSITIONS.md` and their plans, each retaining `unverified-prohibition — human review recommended`. Those judgments are non-authoritative and are not human confirmation or mechanical enforcement. The generic fallback assumptions A-EDGE-BASE-01 and A-EDGE-FIND-02 remain unresolved/unclassified and flagged-unverified; the Phase 174 proof does not resolve them.
 
@@ -245,5 +247,5 @@ The prior report was `passed` at 10/10, and current evidence supports that verdi
 
 ---
 
-_Verified: 2026-10-25T02:29:33Z_
+_Verified: 2026-10-25T02:43:07Z_
 _Verifier: the agent (gsd-verifier)_

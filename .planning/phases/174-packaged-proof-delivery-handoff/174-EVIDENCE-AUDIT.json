@@ -1,18 +1,19 @@
 {
   "schema_version": 1,
-  "source_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
-  "proof_index_sha256": "434cd7d8b1b7e7ff5b78716e6f6c88cd723f4f0b1b298efc327733ed7dbe9613",
+  "source_revision": "f01b6ef77889d38b032944eb37069d6d4b3b3171",
+  "proof_index_sha256": "288bb43e3f47934e987cd389d47c28741c73f024d076c99582190475e6b51d72",
   "prior_reports": [
     {
       "phase": 171,
       "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-VERIFICATION.md",
-      "sha256": "f4e7caf80fef19bcefb98000892b85caa6ea430c9de79e8e3a93facaa6d102a6",
+      "sha256": "0c85204bf066ca7833594abd315edfa1ef0040b6112e6c7cb97cb417415ed33a",
       "role": "gsd-verifier",
       "status": "passed",
       "score": "10/10 must-haves verified",
-      "covered_fingerprint": "v3:sha256:cfd8d2835db571dd09251c06c0e57acbafa2b6b26b7dfb0e38e029cf1cd3fe3b",
+      "covered_fingerprint": "v3:sha256:c326dee05e68b35870b816c3ef28aa7db3b19da6f73765e0395cf620fd797ee8",
       "flagged_prohibitions": 3,
-      "unresolved_generic_assumptions": ["A-EDGE-BASE-01", "A-EDGE-FIND-02"]
+      "unresolved_generic_assumptions": ["A-EDGE-BASE-01", "A-EDGE-FIND-02"],
+      "derivative_audit_cycle_avoided": "The typed Phase171 report excludes this audit from covered_files because this audit records that report's final hash; its source, ledger, freeze, package and proof-index coverage remain current."
     },
     {
       "phase": 172,
@@ -28,13 +29,25 @@
     {
       "phase": 173,
       "path": ".planning/phases/173-conditional-par-profile-boundaries/173-VERIFICATION.md",
-      "sha256": "398153cee296818d3cde8da6b0ea2feed5870b824233668899a6860fa1531473",
+      "sha256": "b3b99982d5caf9b9b568c15c5daf82a86dcee80b09a98a42f420929807544b8b",
       "role": "gsd-verifier",
       "status": "passed",
       "score": "6/6 behavioral truths verified",
-      "covered_fingerprint": "v3:sha256:59d4ff454c42b79cfa7e2e4b450263a697ee15453216bc13dca779adbd250bae",
+      "covered_fingerprint": "v3:sha256:95e1dd0a7c5da87e0c57ea1c92d2ee53f83be5432d7ef898ba6679c5ec94f1c8",
       "flagged_prohibitions": 2,
-      "unresolved_generic_assumptions": ["three inherited generic fallback limits, preserved in report"]
+      "unresolved_generic_assumptions": ["three inherited generic fallback limits, preserved in report"],
+      "fixture_applicability_review": {
+        "role": "gsd-verifier",
+        "status": "passed",
+        "commit": "38a19a292da7c90352494e4f03ade7c10e25ff82",
+        "verdict": "Formatting-only line layout changes; no Elixir tokens, branches, or values changed. Source-owner GREEN remains applicable; the new local package receipt and proof index are separately bound to the refreshed source identity.",
+        "source_owner_green_revision": "a348bf71285cb0ffe9eeba0da94a6c2d46faa477",
+        "test_rerun": false,
+        "changed_files": [
+          {"path": "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex", "old_sha256": "3b7a12bf3f2846fe07984a0d047058ee50517fab3c390df22888b7bd95e591b3", "new_sha256": "1321e9275317bb63f0fcc738aee1a0dc7312b7769b455694ea30ffc7917a94f8"},
+          {"path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex", "old_sha256": "a0a833085c3e5b4be61010c22817fb89aa858b26e1a590a2c2487bc24919f2ae", "new_sha256": "905b1db6c0d269db2b8128bd87e8f5e71b7ec0ad18efb1a0477831dfaaef4284"}
+        ]
+      }
     }
   ],
   "reviews": [
@@ -74,6 +87,7 @@
     "External issuer, TLS, proxy, browser reachability, OIDF and FAPI profiles were not exercised; no certification claim is made.",
     "CPROOF-01 adjacency/order and CPROOF-02/DELIV-02 unclassified assumptions remain explicit; no concurrency, ordering, or universal certification guarantee is inferred.",
     "The three Phase 173 generic fallback limits remain unresolved and are preserved in its current report.",
+    "The fixture-only source revision changed formatting in two clean-room host files; the typed Phase 173 owner assessed prior source GREEN applicability, and the full local package proof was rerun at the new frozen identity.",
     "Judgment-tier prohibitions remain non-authoritative and retain unverified-prohibition — human review recommended flags."
   ],
   "flag_counts": {"phase171": 3, "phase172": 2, "phase173": 2, "phase174": 2, "total": 9},

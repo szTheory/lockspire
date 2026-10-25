@@ -1,6 +1,6 @@
 ---
 phase: 173-conditional-par-profile-boundaries
-verified: 2026-10-25T02:29:38Z
+verified: 2026-10-25T02:39:59Z
 status: passed
 score: 6/6 behavioral truths verified
 covered_files:
@@ -13,7 +13,7 @@ covered_files:
   - lib/lockspire/protocol/authorization_request.ex
   - test/integration/phase15_par_authorization_e2e_test.exs
   - test/lockspire/protocol/authorization_request_test.exs
-covered_digest: "v3:sha256:59d4ff454c42b79cfa7e2e4b450263a697ee15453216bc13dca779adbd250bae"
+covered_digest: "v3:sha256:95e1dd0a7c5da87e0c57ea1c92d2ee53f83be5432d7ef898ba6679c5ec94f1c8"
 behavior_unverified: 0
 overrides_applied: 0
 flagged_prohibitions:
@@ -36,7 +36,7 @@ decision_coverage:
 # Phase 173: Conditional PAR & Profile Boundaries Verification Report
 
 **Phase Goal:** Correct only P171-005's reproduced rejection of a conflicting outer `scope` for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
-**Verified:** 2026-10-25T02:29:38Z
+**Verified:** 2026-10-25T02:39:59Z
 **Status:** passed — 6/6 behavioral truths verified; 2 judgment-tier prohibitions retain non-authoritative review flags.
 **Re-verification:** Refresh of the existing report after covered-input changes. Prior report remains in git history; this refresh does not replace any historical test identity.
 
@@ -66,7 +66,7 @@ Both plan prohibitions are `resolved` / `judgment`. Their scoped dispositions re
 
 ### Adjacent Phase 174 Package Evidence (Local Only)
 
-The Phase 174 package proof and index record 12/12 selected scenarios for source revision `a348bf…`, with a local archive/tree identity and cleanup receipts. The index maps P171-005 to the Phase 173 correction and retains the original P171-005 qualification counterexample separately. This is local package-clean host evidence only; it does not establish hosted candidate CI, accepted-main, publication, external transport, or certification.
+The refreshed Phase 174 package proof and index record 12/12 selected scenarios at the refreshed frozen input revision `f01b6ef77889d38b032944eb37069d6d4b3b3171`; package proof SHA-256 is `518276b174ebd44c3ef6194e029094b04e628f8f0eb5aa5da975a83257f67bd5`. It records archive SHA `89baff6a…`, tree SHA `a9d09087…`, compiled candidate SHA `691ae4b9…`, and successful cleanup. The index maps P171-005 to the Phase 173 correction and retains the original P171-005 qualification counterexample separately. The intervening `38a19a29` changes to the clean-room account resolver and session controller were line-wrapping/indentation only; the Phase 173 source-owner files remain byte-identical to the recorded source proof at `a348bf…`. This is local package-clean host evidence only; it does not establish hosted candidate CI, accepted-main, publication, external transport, or certification.
 
 ### Required Artifacts
 
@@ -146,5 +146,5 @@ None as a blocking checkpoint. This is an infrastructure/library phase. The two 
 No selected implementation or requirement gap was found. Current source-proof GREEN covers the exact relevant source/test bytes at its recorded revision, and the current frozen-input contract check passes. The original Phase 171 counterexample and Phase 173 RED/GREEN identities remain distinct and preserved. Generic fallback assumptions, external profiles, and certification-level claims remain outside the verified scope. There is no universal concurrency, accepted-main, hosted candidate, publication, reachability, or certification proof.
 
 ---
-_Verified: 2026-10-25T02:29:38Z_
+_Verified: 2026-10-25T02:39:59Z_
 _Verifier: the agent (gsd-verifier)_
