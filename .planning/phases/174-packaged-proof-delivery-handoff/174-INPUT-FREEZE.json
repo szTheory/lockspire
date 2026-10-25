@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_revision": "38a19a292da7c90352494e4f03ade7c10e25ff82",
+  "source_revision": "3a3b942efad5838c530c79bfac771a40bd03f4fe",
   "files": [
     {
       "path": ".planning/phases/171-accepted-baseline-finding-qualification/171-03-PLAN.md",
@@ -76,7 +76,7 @@
     },
     {
       "path": "test/acceptance/selected_receipt_test.py",
-      "sha256": "9ff26cbbb50a58abda71e520555a124b775fb8d25370732f3ceec3d4ba665e59"
+      "sha256": "c7459361fbf4baa5866fd3ee868c2960694ec75bff1e99b290c21b508c8076ff"
     },
     {
       "path": "test/clean_room/confidential_client/config/config.exs",
