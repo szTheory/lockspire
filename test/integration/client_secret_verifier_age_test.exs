@@ -36,6 +36,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
         persist_native(context, lifetime_version: lifetime_version, name: Atom.to_string(case_id))
 
       before = credential_snapshot(client)
+      assert_no_auth_effects(client.client_id, 0)
 
       {result, _jti} =
         authenticate(client, secret, context,
@@ -45,7 +46,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
 
       assert result_kind(result) == :ok, Atom.to_string(case_id)
       assert same_credentials?(before, fetch_credentials(client.client_id))
-      assert Fixtures.effects_snapshot(client.client_id).used_jtis == 1
+      assert_no_auth_effects(client.client_id, 1)
     end
   end
 
@@ -69,6 +70,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
 
       {client, secret} = persist_native(context, attrs)
       before = credential_snapshot(client)
+      assert_no_auth_effects(client.client_id, 0)
 
       {result, _jti} =
         authenticate(client, secret, context,
@@ -82,12 +84,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
 
       assert same_credentials?(before, fetch_credentials(client.client_id))
 
-      assert Fixtures.effects_snapshot(client.client_id) == %{
-               used_jtis: 1,
-               tokens: 0,
-               grants: 0,
-               audits: 0
-             }
+      assert_no_auth_effects(client.client_id, 1)
     end
   end
 
@@ -111,6 +108,8 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
                legacy_secret_key_base: Lockspire.Config.secret_key_base()
              )
 
+    assert_no_auth_effects(client.client_id, 0)
+
     update_result =
       Repository.update_client(client, %{client_secret_jwt_verifier_encrypted: migrated})
 
@@ -128,6 +127,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
 
     assert result_kind(at_deadline) == :ok
     assert same_credentials?(before, fetch_credentials(client.client_id))
+    assert_no_auth_effects(client.client_id, 1)
 
     {after_deadline, _jti} =
       authenticate(stored, secret, context,
@@ -138,12 +138,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
     assert result_kind(after_deadline) == {:error, :client_secret_verifier_unavailable}
     assert same_credentials?(before, fetch_credentials(client.client_id))
 
-    assert Fixtures.effects_snapshot(client.client_id) == %{
-             used_jtis: 1,
-             tokens: 0,
-             grants: 0,
-             audits: 0
-           }
+    assert_no_auth_effects(client.client_id, 1)
   end
 
   test "legacy allow matches the qualified caller, reject fails before replay, and invalid ages stay unchanged" do
@@ -154,16 +149,19 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
     %{client: allowed, plaintext_secret: allowed_secret} =
       Fixtures.persisted_client(signed_at: now_seconds)
 
+    assert_no_auth_effects(allowed.client_id, 0)
     {allowed_result, _jti} = authenticate(allowed, allowed_secret, allowed_context)
     assert result_kind(allowed_result) == :ok
+    assert_no_auth_effects(allowed.client_id, 1)
 
     %{client: rejected, plaintext_secret: rejected_secret} =
       Fixtures.persisted_client(signed_at: now_seconds)
 
     rejected_before = credential_snapshot(rejected)
+    assert_no_auth_effects(rejected.client_id, 0)
     {rejected_result, _jti} = authenticate(rejected, rejected_secret, rejected_context)
     assert result_kind(rejected_result) == {:error, :client_secret_verifier_unavailable}
-    assert Fixtures.effects_snapshot(rejected.client_id).used_jtis == 0
+    assert_no_auth_effects(rejected.client_id, 0)
     assert same_credentials?(rejected_before, fetch_credentials(rejected.client_id))
 
     for {signed_at, expected_jtis} <- [{now_seconds - 2 * 86_400, 0}, {now_seconds + 60, 0}] do
@@ -171,9 +169,10 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
         Fixtures.persisted_client(signed_at: signed_at)
 
       before = credential_snapshot(unusable)
+      assert_no_auth_effects(unusable.client_id, 0)
       {unusable_result, _jti} = authenticate(unusable, unusable_secret, allowed_context)
       assert result_kind(unusable_result) == {:error, :client_secret_verifier_unavailable}
-      assert Fixtures.effects_snapshot(unusable.client_id).used_jtis == expected_jtis
+      assert_no_auth_effects(unusable.client_id, expected_jtis)
       assert same_credentials?(before, fetch_credentials(unusable.client_id))
     end
 
@@ -181,9 +180,10 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
       Fixtures.persisted_client(verifier: "not-a-qualified-verifier")
 
     before = credential_snapshot(malformed)
+    assert_no_auth_effects(malformed.client_id, 0)
     {malformed_result, _jti} = authenticate(malformed, malformed_secret, allowed_context)
     assert result_kind(malformed_result) == {:error, :client_secret_verifier_unavailable}
-    assert Fixtures.effects_snapshot(malformed.client_id).used_jtis == 0
+    assert_no_auth_effects(malformed.client_id, 0)
     assert same_credentials?(before, fetch_credentials(malformed.client_id))
   end
 
@@ -191,11 +191,12 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
     context = context()
     {client, secret} = persist_native(context, hash: "sha256:synthetic:divergent")
     before = credential_snapshot(client)
+    assert_no_auth_effects(client.client_id, 0)
     {result, _jti} = authenticate(client, secret, context)
 
     assert result_kind(result) == :ok
     assert same_credentials?(before, fetch_credentials(client.client_id))
-    assert Fixtures.effects_snapshot(client.client_id).used_jtis == 1
+    assert_no_auth_effects(client.client_id, 1)
   end
 
   defp persist_native(context, opts) do
@@ -280,7 +281,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
   end
 
   defp credential_snapshot(%Client{} = client),
-    do: {client.client_secret_hash, client.client_secret_jwt_verifier_encrypted}
+    do: client
 
   defp fetch_credentials(client_id) do
     {:ok, stored} = Repository.fetch_client_by_id(client_id)
@@ -288,6 +289,15 @@ defmodule Lockspire.Integration.ClientSecretVerifierAgeTest do
   end
 
   defp same_credentials?(left, right), do: left == right
+
+  defp assert_no_auth_effects(client_id, used_jtis) do
+    assert Fixtures.effects_snapshot(client_id) == %{
+             used_jtis: used_jtis,
+             tokens: 0,
+             grants: 0,
+             audits: 0
+           }
+  end
 
   defp result_kind({:ok, %Client{}}), do: :ok
   defp result_kind({:error, %{reason_code: reason}}), do: {:error, reason}
