@@ -85,6 +85,11 @@
   },
   "metadata_reader": {
     "status": "qualified",
+    "tested_source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+    "tested_files_sha256": {
+      "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea",
+      "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37"
+    },
     "api_path": "Plug.Crypto.KeyGenerator.generate/3, Plug.Crypto.MessageEncryptor.decrypt/3, then Plug.Crypto.non_executable_binary_to_term/2 with [:safe]",
     "evidence_cases": ["LEG175-METADATA-TAMPER", "LEG175-METADATA-SHAPE", "LEG175-DEADLINE", "LEG175-METADATA-UNITS", "LEG175-METADATA-INFINITY", "LEG175-AGE-CONTROLS"],
     "supported_authenticated_shapes": ["{data, signed_ms, max_age_seconds}", "{data, signed_ms} with 86400 default", "%{data: data, signed: signed_ms} with 86400 default"],
@@ -92,6 +97,22 @@
     "explicit_unsupported_inputs": ["nonbinary payload data", "noninteger signed timestamp", "unknown tuple/map shape", "executable Erlang term", "tampered ciphertext", "wrong endpoint key", "nonpositive finite age", "infinite age for a bounded migration deadline"],
     "recovery": "Keep unsupported rows unchanged and use authorized secret rotation/reprovision; never reset age or decode unauthenticated bytes.",
     "floor_context_tested": true
+  },
+  "compatibility_tests": {
+    "tested_source_sha": "e8aa26f587e1f12ea7722acea9de42188a3a7e6c",
+    "case_ids": [
+      "LEG175-HASH-MISMATCH",
+      "LEG175-METADATA-TAMPER",
+      "LEG175-METADATA-SHAPE",
+      "LEG175-DEADLINE",
+      "LEG175-METADATA-UNITS",
+      "LEG175-METADATA-INFINITY",
+      "LEG175-AGE-CONTROLS"
+    ],
+    "tested_files_sha256": {
+      "test/lockspire/security/client_secret_verifier_compatibility_test.exs": "8e037f91eeebc18766f492d88f3d7e000649556131e2f3103160ea053408f3ea",
+      "test/support/client_secret_verifier_fixtures.ex": "47cf37d4e6cd482ff554511da50f22b09847128a53f41ab66c03ce9c448fcb37"
+    }
   },
   "policy_disposition": {
     "current_legacy_semantics": "Plug.Crypto 2.2.1 finite storage age rejects future timestamps; age expiry occurs only when signed_ms + max_age_ms is strictly less than Plug wall clock",
