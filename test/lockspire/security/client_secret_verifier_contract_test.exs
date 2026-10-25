@@ -1,6 +1,51 @@
 defmodule Lockspire.Security.ClientSecretVerifierContract do
   @moduledoc false
 
+  @bound_integer_fields ~w(
+    max_secret_bytes max_client_id_bytes max_key_id_bytes key_bytes iv_bytes tag_bytes
+    payload_prefix_bytes migrated_age_suffix_bytes max_plaintext_bytes max_payload_bytes
+    max_payload_base64url_unpadded_bytes max_envelope_bytes
+  )
+
+  @fixed_bounds %{
+    "max_secret_bytes" => 1_048_576,
+    "max_client_id_bytes" => 1_048_576,
+    "max_key_id_bytes" => 32,
+    "key_bytes" => 32,
+    "iv_bytes" => 12,
+    "tag_bytes" => 16,
+    "payload_prefix_bytes" => 6,
+    "migrated_age_suffix_bytes" => 16
+  }
+
+  @maintenance_exact_fields %{
+    "capability" => "Lockspire.Storage.ClientVerifierMaintenance",
+    "authority_callback" => "verifier_maintenance_contract/0",
+    "inventory_callback" => "verifier_inventory_page(after_client_id, limit)",
+    "rewrap_callback" =>
+      "compare_and_rewrap(client_id, expected_client_secret_hash, expected_verifier, replacement_verifier, audit_attrs)",
+    "status" => "contract-only; behavior and adapter composition evidence pending Phase 177/178"
+  }
+
+  @maintenance_phrases [
+    {"authority_return", "participants: %{client_store: module()"},
+    {"inventory_args", "limit integer 1..500"},
+    {"inventory_args", "default 100"},
+    {"inventory_return", ":client_secret_verifier_inventory_invalid_limit"},
+    {"authority_rule", "fails before inventory or mutation"},
+    {"authority_rule", "corresponding entries"},
+    {"selection", "never defaulted to Repository"},
+    {"inventory_order", "cursor exclusive"},
+    {"inventory_order", "empty inventory is [], nil, true"},
+    {"inventory_scope", "every persisted client"},
+    {"inventory_consistency", "not a database snapshot"},
+    {"rewrap_atomicity", "already-open transaction"},
+    {"rewrap_atomicity", "provisional until outer commit"},
+    {"rewrap_atomicity", "audit failure rolls back update"},
+    {"rewrap_atomicity", "never use direct Repository fallback"},
+    {"rewrap_preserves", "updated_at"}
+  ]
+
   @required_cases ~w(
     LEG175-AGED-23H
     LEG175-AGED-2D
@@ -119,51 +164,97 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
 
     metadata_source_sha = get_in(qualification, ["compatibility_tests", "tested_source_sha"])
 
+    checks = [
+      fn -> validate_case_ids(ids) end,
+      fn -> validate_required_cases(ids) end,
+      fn -> validate_fields(cases) end,
+      fn -> validate_owners(cases) end,
+      fn ->
+        validate_evidence_rows(
+          cases,
+          caller_ids,
+          metadata_ids,
+          metadata_commit_short,
+          metadata_source_sha,
+          qualification
+        )
+      end,
+      fn -> validate_bounds(Map.get(ledger, "format_bounds")) end,
+      fn -> validate_maintenance_contract(Map.get(ledger, "maintenance_contract")) end,
+      fn -> validate_qualified_inputs(ledger, qualification) end,
+      fn -> validate_anchor(cases, qualification) end
+    ]
+
+    run_checks(checks)
+  end
+
+  defp run_checks(checks) do
+    Enum.reduce_while(checks, :ok, fn check, :ok ->
+      case check.() do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_case_ids(ids) do
     cond do
-      Enum.any?(ids, &(not is_binary(&1))) ->
-        {:error, :missing_case_id}
-
-      length(ids) != length(Enum.uniq(ids)) ->
-        {:error, :duplicate_case_id}
-
-      missing = Enum.find(@required_cases, &(&1 not in ids)) ->
-        {:error, {:missing_case, missing}}
-
-      invalid = Enum.find(cases, &(not valid_fields?(&1))) ->
-        {:error, {:missing_fields, invalid["case_id"]}}
-
-      invalid = Enum.find(cases, &(not valid_owner?(&1))) ->
-        {:error, {:wrong_owner, invalid["case_id"]}}
-
-      invalid =
-          Enum.find(
-            cases,
-            &(not valid_evidence?(
-                &1,
-                caller_ids,
-                metadata_ids,
-                metadata_commit_short,
-                metadata_source_sha,
-                qualification
-              ))
-          ) ->
-        {:error, {:invalid_evidence, invalid["case_id"]}}
-
-      not valid_bounds?(Map.get(ledger, "format_bounds")) ->
-        {:error, :invalid_format_bounds}
-
-      not valid_maintenance_contract?(Map.get(ledger, "maintenance_contract")) ->
-        {:error, :invalid_maintenance_contract}
-
-      not valid_qualified_inputs?(ledger, qualification) ->
-        {:error, :invalid_qualified_inputs}
-
-      not qualified_anchor?(cases, qualification) ->
-        {:error, :missing_qualified_anchor}
-
-      true ->
-        :ok
+      Enum.any?(ids, &(not is_binary(&1))) -> {:error, :missing_case_id}
+      length(ids) != length(Enum.uniq(ids)) -> {:error, :duplicate_case_id}
+      true -> :ok
     end
+  end
+
+  defp validate_required_cases(ids) do
+    case Enum.find(@required_cases, &(&1 not in ids)) do
+      nil -> :ok
+      missing -> {:error, {:missing_case, missing}}
+    end
+  end
+
+  defp validate_fields(cases) do
+    case Enum.find(cases, &(not valid_fields?(&1))) do
+      nil -> :ok
+      invalid -> {:error, {:missing_fields, invalid["case_id"]}}
+    end
+  end
+
+  defp validate_owners(cases) do
+    case Enum.find(cases, &(not valid_owner?(&1))) do
+      nil -> :ok
+      invalid -> {:error, {:wrong_owner, invalid["case_id"]}}
+    end
+  end
+
+  defp validate_evidence_rows(cases, caller_ids, metadata_ids, commit, source, qualification) do
+    predicate = fn row ->
+      valid_evidence?(row, caller_ids, metadata_ids, commit, source, qualification)
+    end
+
+    case Enum.find(cases, &(not predicate.(&1))) do
+      nil -> :ok
+      invalid -> {:error, {:invalid_evidence, invalid["case_id"]}}
+    end
+  end
+
+  defp validate_bounds(bounds) do
+    if valid_bounds?(bounds), do: :ok, else: {:error, :invalid_format_bounds}
+  end
+
+  defp validate_maintenance_contract(contract) do
+    if valid_maintenance_contract?(contract),
+      do: :ok,
+      else: {:error, :invalid_maintenance_contract}
+  end
+
+  defp validate_qualified_inputs(ledger, qualification) do
+    if valid_qualified_inputs?(ledger, qualification),
+      do: :ok,
+      else: {:error, :invalid_qualified_inputs}
+  end
+
+  defp validate_anchor(cases, qualification) do
+    if qualified_anchor?(cases, qualification), do: :ok, else: {:error, :missing_qualified_anchor}
   end
 
   defp valid_fields?(row), do: Enum.all?(@required_fields, &Map.has_key?(row, &1))
@@ -179,36 +270,27 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
          metadata_source_sha,
          qualification
        ) do
-    ids = evidence["ids"]
-    source_sha = evidence["source_sha"]
-
-    ids_are_caller =
-      is_list(ids) and ids != [] and Enum.all?(ids, &MapSet.member?(caller_ids, &1))
-
-    ids_are_metadata =
-      is_list(ids) and ids != [] and Enum.all?(ids, &MapSet.member?(metadata_ids, &1))
-
-    correct_source =
-      (ids_are_caller and source_sha == qualification["tested_checkout_head"]) or
-        (ids_are_metadata and is_binary(metadata_commit_short) and
-           source_sha == metadata_source_sha and
-           String.starts_with?(source_sha, metadata_commit_short))
-
-    evidence["status"] == "pass" and correct_source
+    evidence["status"] == "pass" and
+      qualified_source?(
+        evidence,
+        caller_ids,
+        metadata_ids,
+        metadata_commit_short,
+        metadata_source_sha,
+        qualification
+      )
   end
 
   defp valid_evidence?(
          %{"status" => "pending", "owner_phase" => owner, "evidence" => evidence},
          _caller_ids,
          _metadata_ids,
-         _metadata_commit_short,
-         _metadata_source_sha,
+         _commit,
+         _source,
          _qualification
        )
        when owner in [176, 177, 178],
-       do:
-         evidence["status"] == "pending" and evidence["ids"] == [] and
-           is_nil(evidence["source_sha"])
+       do: pending_evidence?(evidence)
 
   defp valid_evidence?(
          _row,
@@ -220,7 +302,43 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
        ),
        do: false
 
+  defp qualified_source?(evidence, caller_ids, metadata_ids, commit, source, qualification) do
+    ids = evidence["ids"]
+    source_sha = evidence["source_sha"]
+
+    (ids_in_set?(ids, caller_ids) and source_sha == qualification["tested_checkout_head"]) or
+      metadata_source?(ids, metadata_ids, source_sha, commit, source)
+  end
+
+  defp ids_in_set?(ids, set) when is_list(ids) and ids != [],
+    do: Enum.all?(ids, &MapSet.member?(set, &1))
+
+  defp ids_in_set?(_ids, _set), do: false
+
+  defp metadata_source?(ids, metadata_ids, source_sha, commit, metadata_source) do
+    ids_in_set?(ids, metadata_ids) and is_binary(commit) and source_sha == metadata_source and
+      String.starts_with?(source_sha, commit)
+  end
+
+  defp pending_evidence?(evidence) do
+    evidence["status"] == "pending" and evidence["ids"] == [] and
+      is_nil(evidence["source_sha"])
+  end
+
   defp valid_bounds?(bounds) when is_map(bounds) do
+    integer_bounds?(bounds) and fixed_bounds?(bounds) and derived_bounds?(bounds) and
+      bounds["reserved_family_prefix"] == "LSCV"
+  end
+
+  defp valid_bounds?(_bounds), do: false
+
+  defp integer_bounds?(bounds),
+    do: Enum.all?(@bound_integer_fields, &is_integer(Map.get(bounds, &1)))
+
+  defp fixed_bounds?(bounds),
+    do: Enum.all?(@fixed_bounds, fn {key, value} -> Map.get(bounds, key) == value end)
+
+  defp derived_bounds?(bounds) do
     secret = bounds["max_secret_bytes"]
     client_id = bounds["max_client_id_bytes"]
     kid = bounds["max_key_id_bytes"]
@@ -233,44 +351,26 @@ defmodule Lockspire.Security.ClientSecretVerifierContract do
     encoded = bounds["max_payload_base64url_unpadded_bytes"]
     envelope = bounds["max_envelope_bytes"]
 
-    is_integer(secret) and is_integer(client_id) and is_integer(kid) and is_integer(prefix) and
-      is_integer(age) and is_integer(iv) and is_integer(tag) and is_integer(plaintext) and
-      is_integer(payload) and is_integer(encoded) and is_integer(envelope) and
-      secret == 1_048_576 and client_id == 1_048_576 and kid == 32 and prefix == 6 and age == 16 and
-      iv == 12 and tag == 16 and plaintext == secret + prefix + age and
-      payload == plaintext + iv + tag and encoded == div(payload * 8 + 5, 6) and
-      envelope == 6 + kid + 1 + encoded and bounds["reserved_family_prefix"] == "LSCV"
+    plaintext == secret + prefix + age and payload == plaintext + iv + tag and
+      encoded == div(payload * 8 + 5, 6) and envelope == 6 + kid + 1 + encoded and
+      client_id == secret
   end
 
-  defp valid_bounds?(_bounds), do: false
-
   defp valid_maintenance_contract?(contract) when is_map(contract) do
-    contract["capability"] == "Lockspire.Storage.ClientVerifierMaintenance" and
-      contract["authority_callback"] == "verifier_maintenance_contract/0" and
-      contract["inventory_callback"] == "verifier_inventory_page(after_client_id, limit)" and
-      contract["rewrap_callback"] ==
-        "compare_and_rewrap(client_id, expected_client_secret_hash, expected_verifier, replacement_verifier, audit_attrs)" and
-      contract["authority_return"] =~ "participants: %{client_store: module()" and
-      contract["inventory_args"] =~ "limit integer 1..500" and
-      contract["inventory_args"] =~ "default 100" and
-      contract["inventory_return"] =~ ":client_secret_verifier_inventory_invalid_limit" and
-      contract["authority_rule"] =~ "fails before inventory or mutation" and
-      contract["authority_rule"] =~ "corresponding entries" and
-      contract["selection"] =~ "never defaulted to Repository" and
-      contract["inventory_order"] =~ "cursor exclusive" and
-      contract["inventory_order"] =~ "empty inventory is [], nil, true" and
-      contract["inventory_scope"] =~ "every persisted client" and
-      contract["inventory_consistency"] =~ "not a database snapshot" and
-      contract["rewrap_atomicity"] =~ "already-open transaction" and
-      contract["rewrap_atomicity"] =~ "provisional until outer commit" and
-      contract["rewrap_atomicity"] =~ "audit failure rolls back update" and
-      contract["rewrap_atomicity"] =~ "never use direct Repository fallback" and
-      contract["rewrap_preserves"] =~ "updated_at" and
-      contract["status"] ==
-        "contract-only; behavior and adapter composition evidence pending Phase 177/178"
+    exact_maintenance_fields?(contract) and maintenance_phrases_present?(contract)
   end
 
   defp valid_maintenance_contract?(_contract), do: false
+
+  defp exact_maintenance_fields?(contract),
+    do:
+      Enum.all?(@maintenance_exact_fields, fn {key, value} -> Map.get(contract, key) == value end)
+
+  defp maintenance_phrases_present?(contract) do
+    Enum.all?(@maintenance_phrases, fn {key, phrase} ->
+      is_binary(Map.get(contract, key)) and String.contains?(Map.get(contract, key), phrase)
+    end)
+  end
 
   defp valid_qualified_inputs?(ledger, qualification) do
     inputs = ledger["qualified_input"]
