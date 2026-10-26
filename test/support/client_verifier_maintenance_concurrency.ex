@@ -3,6 +3,18 @@ defmodule Lockspire.TestSupport.ClientVerifierMaintenanceConcurrency do
 
   alias Ecto.Adapters.SQL.Sandbox
 
+  def pause_at(repo, parent, ref, stage, client_id)
+      when is_pid(parent) and is_reference(ref) and is_atom(stage) and is_binary(client_id) do
+    backend = backend_pid(repo)
+    send(parent, {:issuance_barrier, ref, stage, self(), backend, client_id})
+
+    receive do
+      {:continue_issuance, ^ref, ^stage} -> :ok
+    after
+      30_000 -> raise "issuance test barrier timed out"
+    end
+  end
+
   def run(repo, parent, name, fun) when is_function(fun, 0) do
     Task.async(fn ->
       Sandbox.unboxed_run(repo, fn ->
