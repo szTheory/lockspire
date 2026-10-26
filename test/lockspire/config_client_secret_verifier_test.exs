@@ -96,6 +96,18 @@ defmodule Lockspire.ConfigClientSecretVerifierTest do
     assert Config.client_secret_verifier_context().write_mode == :dedicated
   end
 
+  test "task-local verifier resolution does not replace the serving-node startup snapshot" do
+    assert {:ok, %Context{state: :valid} = startup} = resolve(config("startup-snapshot"))
+    Application.put_env(:lockspire, VerifierConfig, config("task-local", legacy_read: :reject))
+
+    assert {:ok, %Context{state: :valid} = task_context} =
+             Lockspire.Security.ClientSecretVerifier.OperationContext.resolve()
+
+    refute task_context.keys == startup.keys
+    assert task_context.legacy_read == :reject
+    assert Config.client_secret_verifier_context() == startup
+  end
+
   test "a cache miss fails diagnostically without resolving mutable application env" do
     :persistent_term.erase(Config.client_secret_verifier_cache_key())
     Application.put_env(:lockspire, VerifierConfig, config("ambient"))

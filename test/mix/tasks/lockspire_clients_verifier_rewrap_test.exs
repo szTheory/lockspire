@@ -8,7 +8,11 @@ defmodule Mix.Tasks.Lockspire.Clients.Verifier.RewrapOperationContextTest do
     assert {:module, Lockspire.Security.ClientSecretVerifier.OperationContext} =
              Code.ensure_loaded(Lockspire.Security.ClientSecretVerifier.OperationContext)
 
-    assert function_exported?(Lockspire.Security.ClientSecretVerifier.OperationContext, :resolve, 0)
+    assert function_exported?(
+             Lockspire.Security.ClientSecretVerifier.OperationContext,
+             :resolve,
+             0
+           )
 
     verifier_key = :crypto.hash(:sha256, "task-local-verifier-key")
     signing_key = :crypto.hash(:sha256, "task-local-signing-key")

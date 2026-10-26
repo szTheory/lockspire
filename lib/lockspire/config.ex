@@ -347,25 +347,40 @@ defmodule Lockspire.Config do
   @doc false
   @spec client_secret_verifier_forbidden_key_bytes() :: [binary()]
   def client_secret_verifier_forbidden_key_bytes do
-    endpoint_and_session_secrets =
-      Application.get_all_env(@app)
-      |> Enum.flat_map(fn
-        {_key, config} when is_list(config) ->
-          if Keyword.keyword?(config), do: [Keyword.get(config, :secret_key_base)], else: []
-
-        _other ->
-          []
-      end)
-
     signing_keys =
       case :persistent_term.get(@key_encryption_cache_key, :miss) do
         %KeySet{keys: keys} -> Map.values(keys)
         _not_initialized -> []
       end
 
-    (endpoint_and_session_secrets ++ signing_keys)
+    (client_secret_verifier_endpoint_key_bytes() ++ signing_keys)
     |> Enum.filter(&(is_binary(&1) and &1 != ""))
     |> Enum.uniq()
+  end
+
+  @doc false
+  @spec client_secret_verifier_operation_forbidden_key_bytes(KeySet.t() | nil) :: [binary()]
+  def client_secret_verifier_operation_forbidden_key_bytes(signing_keyset) do
+    signing_keys =
+      case signing_keyset do
+        %KeySet{keys: keys} -> Map.values(keys)
+        nil -> []
+      end
+
+    (client_secret_verifier_endpoint_key_bytes() ++ signing_keys)
+    |> Enum.filter(&(is_binary(&1) and &1 != ""))
+    |> Enum.uniq()
+  end
+
+  defp client_secret_verifier_endpoint_key_bytes do
+    Application.get_all_env(@app)
+    |> Enum.flat_map(fn
+      {_key, config} when is_list(config) ->
+        if Keyword.keyword?(config), do: [Keyword.get(config, :secret_key_base)], else: []
+
+      _other ->
+        []
+    end)
   end
 
   defp resolve_client_secret_verifier_override(%Context{} = context, forbidden_key_bytes) do
