@@ -62,6 +62,34 @@ RELEASE_RPC_OBSERVATION_FIELDS = frozenset({
     "dry_run_scanned", "dry_run_pending", "fresh_check_scanned",
 })
 CORE_CASE_ID = "VPROOF-02-CORE-FRESH-MAINTENANCE"
+CONTENTION_CASE_IDS = [
+    "VPROOF-02-CONTENTION-ROTATION-FIRST",
+    "VPROOF-02-CONTENTION-MAINTENANCE-FIRST",
+]
+ATOMICITY_CASE_IDS = [
+    "VPROOF-02-ATOMICITY-AUDIT-INSERT-ROLLBACK",
+    "VPROOF-02-ATOMICITY-OUTER-ROLLBACK",
+    "VPROOF-02-ATOMICITY-NESTED-REPORT-AND-COMMIT-ORDER",
+]
+CONTENTION_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "holder_backend_pid", "contender_backend_pid",
+    "blocker_observed", "material_conflict", "credential_pair_coherent",
+    "durable_state_verified",
+})
+ATOMICITY_OBSERVATION_FIELDS = {
+    ATOMICITY_CASE_IDS[0]: frozenset({
+        "outcome", "executed", "reached_insert", "unchanged_ciphertext",
+        "absent_committed_audit",
+    }),
+    ATOMICITY_CASE_IDS[1]: frozenset({
+        "outcome", "executed", "provisional_change_observed", "outer_rollback_observed",
+        "unchanged_ciphertext", "absent_committed_audit",
+    }),
+    ATOMICITY_CASE_IDS[2]: frozenset({
+        "outcome", "executed", "nested_report_rejected", "mutation_absent",
+        "success_report_after_commit", "report_absent_before_commit",
+    }),
+}
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
     "fresh_signed_assertion", "dry_run_reported", "dry_run_unchanged", "apply_committed",
@@ -165,12 +193,18 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         else ENDPOINT_OBSERVATION_FIELDS | ENDPOINT_LIFECYCLE_FIELDS | ENDPOINT_FAPI_FIELDS
         if receipt["scope"] == "endpoints"
         else RELEASE_RPC_OBSERVATION_FIELDS if receipt["scope"] == "release-rpc"
+        else CONTENTION_OBSERVATION_FIELDS if receipt["scope"] == "contention"
+        else frozenset().union(*ATOMICITY_OBSERVATION_FIELDS.values()) if receipt["scope"] == "atomicity"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
         raise ReceiptError("endpoint receipt does not contain its finite required case set")
     if receipt["scope"] == "release-rpc" and case_ids != [RELEASE_RPC_CASE_ID]:
         raise ReceiptError("release RPC receipt does not contain its finite required case")
+    if receipt["scope"] == "contention" and case_ids != CONTENTION_CASE_IDS:
+        raise ReceiptError("contention receipt omits a required lock order")
+    if receipt["scope"] == "atomicity" and case_ids != ATOMICITY_CASE_IDS:
+        raise ReceiptError("atomicity receipt omits a required rollback or commit-order case")
     for case_id, result in observations.items():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -185,6 +219,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                   "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
                   "rpc_dry_run_complete", "rpc_fresh_check_ready", "loaded_candidate_verified"}
             if receipt["scope"] == "release-rpc"
+            else CONTENTION_OBSERVATION_FIELDS - {"outcome", "executed", "holder_backend_pid", "contender_backend_pid"}
+            if receipt["scope"] == "contention"
             else allowed_observation_fields - {"outcome", "executed", "http_status"}
         )
         if any(key in result and type(result[key]) is not bool for key in boolean_fields):
@@ -213,6 +249,25 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 raise ReceiptError("built-in core receipt contains delegated adapter claims")
             if result["http_status"] != 200:
                 raise ReceiptError("installed core token flow did not return HTTP 200")
+        if receipt["scope"] == "contention":
+            if (set(result) != CONTENTION_OBSERVATION_FIELDS
+                    or type(result["holder_backend_pid"]) is not int
+                    or type(result["contender_backend_pid"]) is not int
+                    or result["holder_backend_pid"] <= 0
+                    or result["contender_backend_pid"] <= 0
+                    or result["holder_backend_pid"] == result["contender_backend_pid"]
+                    or result["blocker_observed"] is not True
+                    or result["credential_pair_coherent"] is not True
+                    or result["durable_state_verified"] is not True
+                    or result["material_conflict"] is not (case_id == CONTENTION_CASE_IDS[0])):
+                raise ReceiptError("contention witness lacks the exact blocker or durable row outcome")
+        if receipt["scope"] == "atomicity":
+            required_fields = ATOMICITY_OBSERVATION_FIELDS[case_id]
+            if set(result) != required_fields or any(
+                type(result.get(field)) is not bool or result[field] is not True
+                for field in required_fields - {"outcome", "executed"}
+            ):
+                raise ReceiptError("atomicity receipt lacks a reached rollback or commit-order witness")
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS
