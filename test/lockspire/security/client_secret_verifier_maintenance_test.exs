@@ -5,6 +5,9 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
   alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Security.Policy
 
+  @salt "lockspire client_secret_jwt verifier"
+  @legacy_key "maintenance-test-legacy-secret-key-base"
+
   test "authenticated migrated custody inspection retains age metadata after expiry" do
     old_key = :crypto.strong_rand_bytes(32)
     new_key = :crypto.strong_rand_bytes(32)
@@ -177,6 +180,96 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
              )
   end
 
+  test "qualified tuple-three tuple-two and map legacy metadata keep their original deadline" do
+    key = :crypto.strong_rand_bytes(32)
+    context = context([{"current", key}], "current")
+    client_id = "maintenance-qualified-legacy-client"
+    secret = "qualified-legacy-secret"
+    signed_at_ms = 1_700_000_000_123
+
+    cases = [
+      {{secret, signed_at_ms, 1.25}, signed_at_ms + 1_249, signed_at_ms + 1_250},
+      {{secret, signed_at_ms}, signed_at_ms + 86_400_000, signed_at_ms + 86_400_000},
+      {%{data: secret, signed: signed_at_ms}, signed_at_ms + 86_400_000,
+       signed_at_ms + 86_400_000}
+    ]
+
+    for {legacy_term, now_ms, expected_deadline_ms} <- cases do
+      legacy = encrypt_legacy(legacy_term)
+
+      assert {:ok, replacement, "legacy", "current"} =
+               ClientSecretVerifier.prepare_rewrap(
+                 context,
+                 client_id,
+                 legacy,
+                 Policy.hash_client_secret(secret),
+                 now_ms: now_ms,
+                 legacy_secret_key_base: @legacy_key
+               )
+
+      assert {:ok, metadata} =
+               ClientSecretVerifier.inspect_custody(
+                 context,
+                 client_id,
+                 replacement,
+                 Policy.hash_client_secret(secret),
+                 now_ms: now_ms
+               )
+
+      assert metadata.classification == :current_key
+      assert metadata.age_kind == :migrated
+      assert metadata.signed_at_ms == signed_at_ms
+      assert metadata.deadline_ms == expected_deadline_ms
+      assert metadata.authentication_eligible?
+    end
+  end
+
+  test "unqualified legacy material and divergent hashes cannot be prepared" do
+    key = :crypto.strong_rand_bytes(32)
+    context = context([{"current", key}], "current")
+    client_id = "maintenance-rejected-legacy-client"
+    signed_at_ms = 1_700_000_000_000
+    secret = "rejected-legacy-secret"
+
+    rejected = [
+      {encrypt_legacy({secret, signed_at_ms - 60_001, 60}), signed_at_ms},
+      {encrypt_legacy({secret, signed_at_ms + 1, 60}), signed_at_ms},
+      {encrypt_legacy({secret, signed_at_ms, 0}), signed_at_ms},
+      {encrypt_legacy({secret, signed_at_ms, :infinity}), signed_at_ms},
+      {encrypt_legacy({:unsupported, signed_at_ms}), signed_at_ms},
+      {encrypt_legacy({secret, signed_at_ms, 60}), signed_at_ms, "wrong-legacy-key"},
+      {encrypt_legacy({secret, signed_at_ms, 60}), signed_at_ms, @legacy_key,
+       "sha256:divergent-hash"},
+      {encrypt_legacy({String.duplicate("x", 1_048_577), signed_at_ms, 60}), signed_at_ms}
+    ]
+
+    for rejection <- rejected do
+      {encrypted, now_ms, legacy_key, expected_hash} =
+        case rejection do
+          {encrypted, now_ms} -> {encrypted, now_ms, @legacy_key, Policy.hash_client_secret(secret)}
+          {encrypted, now_ms, legacy_key} ->
+            {encrypted, now_ms, legacy_key, Policy.hash_client_secret(secret)}
+
+          {encrypted, now_ms, legacy_key, expected_hash} ->
+            {encrypted, now_ms, legacy_key, expected_hash}
+        end
+
+      result =
+        ClientSecretVerifier.prepare_rewrap(
+          context,
+          client_id,
+          encrypted,
+          expected_hash,
+          now_ms: now_ms,
+          legacy_secret_key_base: legacy_key
+        )
+
+      assert match?({:error, _reason}, result)
+      refute inspect(result) =~ secret
+      refute inspect(result) =~ encrypted
+    end
+  end
+
   defp context(keys, current) do
     {:ok, resolved} =
       Context.resolve(
@@ -215,5 +308,11 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     "LSCV1." <>
       context.current_id <>
       "." <> Base.url_encode64(iv <> tag <> ciphertext, padding: false)
+  end
+
+  defp encrypt_legacy(term) do
+    key = Plug.Crypto.KeyGenerator.generate(@legacy_key, @salt)
+    payload = :erlang.term_to_binary(term)
+    Plug.Crypto.MessageEncryptor.encrypt(payload, key, "")
   end
 end

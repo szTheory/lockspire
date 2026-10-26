@@ -226,6 +226,90 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     assert stored.client_secret_jwt_verifier_encrypted == verifier
   end
 
+  test "qualified legacy verifier promotion preserves age and independent client deadlines" do
+    key = :crypto.strong_rand_bytes(32)
+    current_context = context([{"maintenance-legacy-current", key}], "maintenance-legacy-current")
+    set_startup_context(current_context)
+
+    secret = "maintenance-qualified-legacy-secret"
+    hash = Policy.hash_client_secret(secret)
+    client_id = unique_id()
+    signed_at_seconds = System.os_time(:second) - 60
+    signed_at_ms = signed_at_seconds * 1_000
+    deadline_ms = signed_at_ms + 3_600_000
+    legacy_key_base = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)[:secret_key_base]
+    legacy = Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
+      signed_at: signed_at_seconds,
+      max_age: 3_600
+    )
+
+    expires_at = DateTime.add(DateTime.utc_now(), 7, :day)
+    secret_expires_at = DateTime.add(DateTime.utc_now(), 3, :day)
+
+    assert {:ok, _} =
+             Repository.register_client(
+               client(client_id, hash, legacy)
+               |> Map.put(:client_expires_at, expires_at)
+               |> Map.put(:client_secret_expires_at, secret_expires_at)
+             )
+
+    assert {:ok, before} = Repository.fetch_client_by_id(client_id)
+    assert {:ok, :changed} =
+             ClientVerifierMaintenance.rewrap_client(client_id,
+               legacy_secret_key_base: legacy_key_base
+             )
+
+    assert {:ok, after_rewrap} = Repository.fetch_client_by_id(client_id)
+    assert after_rewrap.client_secret_jwt_verifier_encrypted != legacy
+
+    assert Map.from_struct(after_rewrap)
+           |> Map.delete(:client_secret_jwt_verifier_encrypted) ==
+             Map.from_struct(before)
+             |> Map.delete(:client_secret_jwt_verifier_encrypted)
+
+    assert {:ok, metadata} =
+             ClientSecretVerifier.inspect_custody(
+               current_context,
+               client_id,
+               after_rewrap.client_secret_jwt_verifier_encrypted,
+               hash,
+               now_ms: System.os_time(:millisecond)
+             )
+
+    assert metadata.age_kind == :migrated
+    assert metadata.signed_at_ms == signed_at_ms
+    assert metadata.deadline_ms == deadline_ms
+    assert metadata.authentication_eligible?
+  end
+
+  test "expired legacy verifier remains unchanged and requires recovery" do
+    current_context = context([{"maintenance-expired-legacy", :crypto.strong_rand_bytes(32)}],
+      "maintenance-expired-legacy"
+    )
+    set_startup_context(current_context)
+
+    secret = "maintenance-expired-legacy-secret"
+    hash = Policy.hash_client_secret(secret)
+    client_id = unique_id()
+    signed_at_seconds = System.os_time(:second) - 90_000
+    legacy_key_base = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)[:secret_key_base]
+    legacy = Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
+      signed_at: signed_at_seconds,
+      max_age: 86_400
+    )
+
+    assert {:ok, _} = Repository.register_client(client(client_id, hash, legacy))
+    assert {:ok, before} = Repository.fetch_client_by_id(client_id)
+
+    assert {:error, :client_secret_verifier_maintenance_failed} =
+             ClientVerifierMaintenance.rewrap_client(client_id,
+               legacy_secret_key_base: legacy_key_base
+             )
+
+    assert {:ok, after_attempt} = Repository.fetch_client_by_id(client_id)
+    assert after_attempt == before
+  end
+
   test "missing maintenance capability fails before client access" do
     Application.put_env(:lockspire, :client_store, Lockspire.TestSupport.NoMaintenanceClientStore)
 
