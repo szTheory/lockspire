@@ -117,10 +117,12 @@ defmodule CleanRoomProvider.VerifierTransactions do
       @timeout -> raise "maintenance transaction did not become provisional"
     end
     contender = Task.async(fn ->
-      send(parent, {:contender, backend_pid!()})
-      Clients.rotate_client_secret(client_id, %{
-        actor: %{type: :operator, id: "phase178-transaction-proof"}
-      })
+      Store.transact(fn ->
+        send(parent, {:contender, backend_pid!()})
+        Clients.rotate_client_secret(client_id, %{
+          actor: %{type: :operator, id: "phase178-transaction-proof"}
+        })
+      end)
     end)
     contender_pid = await_contender!(contender)
     require_distinct_pids!(holder_pid, contender_pid)
@@ -218,8 +220,8 @@ defmodule CleanRoomProvider.VerifierTransactions do
   defp start_contender(client_id, before, replacement) do
     parent = self()
     Task.async(fn ->
-      send(parent, {:contender, backend_pid!()})
       Store.transact(fn ->
+        send(parent, {:contender, backend_pid!()})
         Store.compare_and_rewrap(client_id, before.hash, before.verifier, replacement, audit_attrs(client_id))
       end)
     end)
