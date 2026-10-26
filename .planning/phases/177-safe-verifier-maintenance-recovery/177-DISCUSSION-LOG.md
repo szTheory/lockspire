@@ -61,3 +61,7 @@ No user corrections. Research refined the initially Likely assumptions into sele
 Security/cryptography, Elixir library architecture, Ecto/PostgreSQL concurrency, integrator DX, operator JTBD, SRE recovery, observability and adversarial verification all converge on the same scoped bundle. Relevant prompt guidance was considered; PRODUCT.md and brandbook/ remain authoritative for current language/identity. Visual design work is unnecessary for this CLI/API maintenance phase.
 
 Further fan-out has diminishing returns: lock/rollback, mixed-state inspection, failure redaction and bare-Mix behavior need execution evidence. Phase 177 requirements remain pending until implemented and independently verified; Phase 178 package/delivery ownership is unchanged.
+
+## Planning Clarification: Explicit One-Time Secret Handoff
+
+Source inspection found `Admin.Clients.rotate_client_secret/2` returns the required public plain map with `:client` and plaintext `:client_secret`. A struct wrapper would change enumeration/equality and therefore is not fully map compatible. The parent selected preservation of the existing public map and frozen exact helper maps. D-20/D-21 cover Lockspire-owned diagnostics/reports and nested client inspection; deliberate caller-owned inspection of the explicit authorized plaintext handoff is outside the generic Inspect sentinel. This bounded clarification preserves one-time handoff and all library logging/redaction requirements; it authorizes no public return-shape change. CONTEXT and copied research constraints reflect this distinction.

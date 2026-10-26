@@ -9,7 +9,7 @@ created: "2026-10-25"
 
 # Phase 177 — Validation Strategy
 
-> Draft execution validation contract. Runtime results and final task mapping remain pending.
+> Final planning map for 9 plans / 18 tasks / 7 waves. Runtime results remain pending.
 
 ## Test Infrastructure
 
@@ -33,23 +33,49 @@ created: "2026-10-25"
 
 ## Per-Task Verification Map
 
-Planner must replace proposed file/task mapping with final plan task IDs before planning completion. Every row below remains pending; source planning does not establish runtime truth.
+Final task/command/threat mapping follows. All runtime rows remain pending; structural planning validation does not establish acceptance. Each command has an immediate fails_when in its owning task: nonzero exits, zero/excluded required tests and missing specific behavior evidence fail.
 
-| Requirement | Behavior | Test type | Planned test target | Exists | Status |
-|---|---|---|---|---|---|
-| VUP-03 | Reader-first key rotation, rewrap without credential changes, fresh retirement check | Integration | `test/integration/client_secret_verifier_maintenance_test.exs` | No — owning task creates | Pending |
-| VOPS-01 | Modes, partial/conflict outcomes, bare Mix and Repo lifecycle | Unit + task | `test/lockspire/admin/client_verifier_maintenance_test.exs`, `test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` | No — owning tasks create | Pending |
-| VOPS-02 | Authority, exact CAS, verifier-only fields, audit/outer rollback and both lock orders | PostgreSQL integration | `test/integration/client_secret_verifier_maintenance_test.exs` | No — owning task creates | Pending |
-| VOPS-03 | All stored rows, bytewise paging and incomplete status | Unit + integration | `test/lockspire/storage/client_verifier_maintenance_test.exs` | No — owning task creates | Pending |
-| VOPS-04 | Key restoration/authorized replacement, failed JWT and unaffected supported methods | Integration | `test/integration/client_secret_verifier_maintenance_test.exs` | No — owning task creates | Pending |
-| VPROOF-01 | Sentinels across query/error/Inspect/audit/task/protocol channels | Unit + integration | `test/integration/client_secret_verifier_maintenance_disclosure_test.exs` | No — owning task creates | Pending |
+| Task | Requirements | Behavior | Test type | Automated command | Threat Ref | Status |
+|---|---|---|---|---|---|---|
+| 177-01-01 | VUP-03,VOPS-02 | Commit one native verifier-only rewrap through selected authority | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_test.exs` | T-177-01,T-177-02,T-177-03 | Pending |
+| 177-01-02 | VUP-03,VOPS-02 | Enforce adapter declaration and exact repeat semantics | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/storage/client_verifier_maintenance_test.exs test/integration/client_secret_verifier_maintenance_test.exs` | T-177-01,T-177-02,T-177-03 | Pending |
+| 177-02-01 | VUP-03,VOPS-02,VOPS-03 | Preserve authenticated dedicated age through custody rewrap | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/security/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_maintenance_test.exs` | T-177-04,T-177-05,T-177-06 | Pending |
+| 177-02-02 | VUP-03,VOPS-02,VOPS-03 | Promote only qualified legacy material | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/security/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_maintenance_test.exs test/integration/client_secret_jwt_legacy_age_test.exs` | T-177-04,T-177-05,T-177-06 | Pending |
+| 177-03-01 | VOPS-01,VOPS-03 | Prove all-row bytewise cursor traversal | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/storage/client_verifier_maintenance_test.exs` | T-177-07,T-177-08,T-177-09,T-177-10 | Pending |
+| 177-03-02 | VOPS-01,VOPS-03 | Expose exhaustive safe status and separate completion facts | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs` | T-177-07,T-177-08,T-177-09,T-177-10 | Pending |
+| 177-04-01 | VOPS-01,VOPS-03 | Resolve bare-task configuration without mutating serving context | Unit+subprocess | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/lockspire/config_client_secret_verifier_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` | T-177-11,T-177-12,T-177-13,T-177-14 | Pending |
+| 177-04-02 | VOPS-01,VOPS-03 | Wire strict CLI modes and Repo ownership to safe outcome rendering | Unit+subprocess | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs test/lockspire/install/repo_runner_test.exs test/lockspire/install/task_error_test.exs` | T-177-11,T-177-12,T-177-13,T-177-14 | Pending |
+| 177-05-01 | VOPS-01,VOPS-02 | Serialize maintenance with real rotation and unrelated edits | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_concurrency_test.exs` | T-177-15,T-177-16,T-177-17 | Pending |
+| 177-05-02 | VOPS-01,VOPS-02 | Prove rollback, overlapping retries and committed progress | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_concurrency_test.exs test/integration/client_secret_verifier_maintenance_test.exs` | T-177-15,T-177-16,T-177-17 | Pending |
+| 177-06-01 | VUP-03,VOPS-02,VOPS-04 | Race real maintenance against guarded JWT issuance | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_issuance_test.exs test/integration/client_secret_verifier_guarded_issuance_test.exs` | T-177-18,T-177-19,T-177-20 | Pending |
+| 177-06-02 | VUP-03,VOPS-02,VOPS-04 | Exercise key introduction, local retirement check and key-loss recovery | PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_recovery_test.exs test/integration/client_secret_verifier_rotation_test.exs` | T-177-18,T-177-19,T-177-20 | Pending |
+| 177-07-01 | VPROOF-01 | Redact stored credentials in schema and nested domain inspection | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_inspection_test.exs test/lockspire/clients_secret_material_test.exs` | T-177-21,T-177-22,T-177-23 | Pending |
+| 177-07-02 | VPROOF-01 | Suppress both client query channels and map unsafe storage diagnostics | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_disclosure_test.exs` | T-177-21,T-177-22,T-177-23 | Pending |
+| 177-08-01 | VUP-03,VOPS-01,VOPS-03,VOPS-04,VPROOF-01 | Close success and forced-failure disclosure matrix | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs` | T-177-24,T-177-25,T-177-26 | Pending |
+| 177-08-02 | VUP-03,VOPS-01,VOPS-03,VOPS-04,VPROOF-01 | Document verified maintenance, retirement and recovery operations | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` | T-177-24,T-177-25,T-177-26 | Pending |
+| 177-09-01 | All six | Run the source contributor gate and record exact acceptance cases | Full gate+evidence | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix ci` | T-177-27,T-177-28 | Pending |
+| 177-09-02 | All six | Reconcile validation and leave bounded source handoff | Full gate+evidence | `python3 -c 'import hashlib,json; from pathlib import Path; p=Path(".planning/phases/177-safe-verifier-maintenance-recovery"); a=json.loads((p/"177-SOURCE-ACCEPTANCE.json").read_text()); f=json.loads(Path(".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json").read_text()); assert a["tested_sha"] and set(a["requirements"])=={"VUP-03","VOPS-01","VOPS-02","VOPS-03","VOPS-04","VPROOF-01"}; assert a["commands"] and all(c["exit_code"]==0 and c["executed_tests"]>0 for c in a["commands"]); assert len(f["frozen_inputs"])==13 and all(hashlib.sha256(Path(x["path"]).read_bytes()).hexdigest()==x["sha256"] for x in f["frozen_inputs"]); assert (p/"177-HANDOFF.md").is_file(); print("source acceptance and frozen inputs checked")'` | T-177-27,T-177-28 | Pending |
+
+### Produced new test targets
+
+- `test/integration/client_secret_verifier_maintenance_concurrency_test.exs` — NEW, created by the first owning task before its command.
+- `test/integration/client_secret_verifier_maintenance_disclosure_test.exs` — NEW, created by the first owning task before its command.
+- `test/integration/client_secret_verifier_maintenance_issuance_test.exs` — NEW, created by the first owning task before its command.
+- `test/integration/client_secret_verifier_maintenance_recovery_test.exs` — NEW, created by the first owning task before its command.
+- `test/integration/client_secret_verifier_maintenance_test.exs` — NEW, created by the first owning task before its command.
+- `test/lockspire/admin/client_verifier_maintenance_test.exs` — NEW, created by the first owning task before its command.
+- `test/lockspire/security/client_secret_verifier_inspection_test.exs` — NEW, created by the first owning task before its command.
+- `test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs` — NEW, created by the first owning task before its command.
+- `test/lockspire/security/client_secret_verifier_maintenance_test.exs` — NEW, created by the first owning task before its command.
+- `test/lockspire/storage/client_verifier_maintenance_test.exs` — NEW, created by the first owning task before its command.
+- `test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` — NEW, created by the first owning task before its command.
 
 ## Wave 0 Requirements
 
 - Existing ExUnit/PostgreSQL infrastructure is available; no framework install or dependency is selected.
 - Owning implementation tasks must create the proposed new test files and deterministic independent-connection/barrier fixtures before invoking them.
 - Existing `test/lockspire/storage/reencrypt_concurrency_test.exs` and guarded-issuance tests supply patterns, not maintenance acceptance evidence.
-- Planner must reconcile target paths, threat IDs and final task IDs; any renamed test appears in the plan's produced artifacts and validation map.
+- Final task IDs and unique phase-wide T-177-01–T-177-28 threats are mapped above; T-177-SC is the reserved shared supply-chain row. Any renamed target must update its produced-artifact declaration and this map.
 
 ## Manual-Only Verifications
 
@@ -57,8 +83,8 @@ All phase-owned source behavior should have automated proof. Host fleet key pari
 
 ## Validation Sign-Off
 
-- [ ] Final tasks/threats mapped to automated commands
-- [ ] New command targets created by owning tasks/dependencies
+- [x] Final tasks/threats mapped to automated commands
+- [ ] New command targets created by owning tasks/dependencies (declared NEW; execution pending)
 - [ ] No three consecutive tasks without automated feedback
 - [ ] No watch-mode commands
 - [ ] Focused runtime latency measured

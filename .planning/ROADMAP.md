@@ -99,7 +99,33 @@ Plans:
   4. Operator can introduce/read a new key, activate writes, rewrap and safely retire the old key; missing/lost-key cases identify affected clients and demonstrate valid-key restoration or existing authorized secret rotation/reprovision while affected JWT auth fails closed.
   5. Sentinel-based proof across crypto/runtime/task/storage failures shows no verifier plaintext, encryption key or ciphertext in logs/SQL diagnostics, telemetry, audit, operator reports or protocol responses. Endpoint/session secrets, signing custody and unrelated supported methods remain intact.
 
-**Plans**: To be created after the runtime boundary is verified; no broad admin redesign or new UI quality machinery.
+**Plans**: 9 plans in 7 waves; source implementation and validation pending.
+
+Plans:
+**Wave 1**
+- [ ] 177-01-PLAN.md — Native persisted rewrap tracer, selected authority and exact CAS.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 177-02-PLAN.md — Authenticated custody, preserved migrated age and qualified legacy promotion.
+- [ ] 177-07-PLAN.md — Existing-path nested inspection and dual query-channel disclosure controls.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 177-03-PLAN.md — Exhaustive bytewise inventory, safe status and complete-mode outcomes.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 177-04-PLAN.md — Task-local configuration, bare Mix modes and Repo ownership.
+- [ ] 177-05-PLAN.md — Independent PostgreSQL contention, rollback and retry proof.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 177-06-PLAN.md — Real guarded issuance, key rotation and key-loss recovery.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 177-08-PLAN.md — Forced-failure sentinel matrix and executable operator guidance.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 177-09-PLAN.md — Exact source acceptance, coverage audit and Phase 178 handoff.
+
+Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
 
 ### Phase 178: Packaged Upgrade Proof & Delivery Handoff
 

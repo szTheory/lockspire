@@ -1,0 +1,87 @@
+{
+  "phase": 177,
+  "kind": "planning-evidence-only",
+  "plans": [
+    {
+      "file": "177-01-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "692b8fa394ca1c37c8b839de3a732947e8ec149a780a54826f87b413af59a628"
+    },
+    {
+      "file": "177-02-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "529da5185b6d4a33869aae42facd2042cffa8de0fd39db2a69761a48b58ba78e"
+    },
+    {
+      "file": "177-03-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "da42e4e38200746d55d4abf89667c1dd2938bee89ac40e1c142d04f8d1a07f8b"
+    },
+    {
+      "file": "177-04-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "a8e592da59d18a434b119c61c8bfb57cb47dd33c2524269d00f520ffb646ef1b"
+    },
+    {
+      "file": "177-05-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "0b6912d209fbdca3a2c5e9dd8cd2e21d09bf4c4bd27b6bc9d888bc523576c721"
+    },
+    {
+      "file": "177-06-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "d4d9c81604ba14397fb9d27cc50f4ce18edb693625ddc039e03f5cb4fb7be1da"
+    },
+    {
+      "file": "177-07-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "e09de184de2a8181a6bc68c861ac9c0a208f9f41814d7e3e0da1d2f1c1967394"
+    },
+    {
+      "file": "177-08-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "56344132a88bc003fc717c0d47ea3cb2f21dcbeed1933c0cf6cfae2cfebd35b2"
+    },
+    {
+      "file": "177-09-PLAN.md",
+      "valid": true,
+      "tasks": 2,
+      "sha256": "787c03117c5ae363bbe44a3975ebff693ff18225b20c30b7609b2b2698abca4c"
+    }
+  ],
+  "plan_count": 9,
+  "task_count": 18,
+  "waves": 7,
+  "requirement_coverage": {
+    "covered": 6,
+    "total": 6
+  },
+  "decision_coverage": {
+    "passed": true,
+    "skipped": false,
+    "total": 23,
+    "covered": 23,
+    "uncovered": [],
+    "message": "All trackable CONTEXT.md decisions are covered by plans."
+  },
+  "independent_checker": {
+    "initial": "1 research_resolution blocker",
+    "revision": "3 planning dispositions marked resolved; runtime prerequisites remain pending",
+    "final": "VERIFICATION PASSED"
+  },
+  "verify_command_path_probe": "not_applicable for Mix forms; no path-resolution pass claimed",
+  "failure_directions": "ok, all18 automated commands have stated signals",
+  "runtime_tests_executed": false,
+  "retained_flags": {
+    "unclassified_edges": 2,
+    "descriptorless_prohibitions": 3
+  }
+}
