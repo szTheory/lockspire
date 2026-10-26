@@ -84,6 +84,7 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
     release_bin: Path | None = None
     release_root: Path | None = None
     release_started = False
+    release_start_attempted = False
     release_pid: str | None = None
     with tempfile.TemporaryDirectory(prefix="lockspire-verifier-release-rpc-") as temporary:
         root = Path(temporary)
@@ -141,6 +142,7 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
                 redactor.assert_safe(safe_build_output)
                 raise PackageInputError("assembled installed release executable is missing; found " +
                                         json.dumps(actual_releases) + "; build output: " + safe_build_output)
+            release_start_attempted = True
             start = _release_command(release_bin, release_env, "start", redactor=redactor)
             if start.returncode != 0:
                 raise PackageInputError("assembled release did not start (exit " + str(start.returncode) + ")")
@@ -217,9 +219,9 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
             return {"pair": "locked", "store": "builtin", "scope": "release-rpc",
                     "receipt_path": str(receipt_dir / "receipt.json")}
         finally:
-            if release_started and release_bin is not None:
-                stopped = _release_command(release_bin, release_env, "stop", redactor=redactor)
-                if stopped.returncode != 0:
+            if release_start_attempted and release_bin is not None:
+                stopped = _release_command(release_bin, release_env, "stop")
+                if release_started and stopped.returncode != 0:
                     raise PackageInputError("owned release cleanup did not stop the run-scoped node")
             if host is not None and host.exists():
                 try:
@@ -278,9 +280,12 @@ def _release_rpc_expression(mode: str) -> str:
 def _release_command(release_bin: Path, env: dict[str, str], *args: str,
                      redactor: Redactor | None = None) -> subprocess.CompletedProcess[bytes]:
     try:
+        detached_start = bool(args and args[0] == "start")
         result = subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
-                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT, check=False, timeout=90)
+                                stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL if detached_start else subprocess.PIPE,
+                                stderr=subprocess.DEVNULL if detached_start else subprocess.STDOUT,
+                                check=False, timeout=60 if detached_start else 90)
     except subprocess.TimeoutExpired:
         raise PackageInputError("run-owned release command exceeded its bounded time limit") from None
     if redactor is not None:

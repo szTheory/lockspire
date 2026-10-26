@@ -6,6 +6,7 @@ import importlib.util
 import hashlib
 import json
 import io
+import subprocess
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -156,6 +157,15 @@ class VerifierEndpointContracts(unittest.TestCase):
         receipt["observations"][RELEASE_RPC_CASE_ID]["compiled_module_relative_path"] = "/tmp/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam"
         with self.assertRaisesRegex(ReceiptError, "bind the assembled candidate"):
             validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
+
+    def test_detached_release_start_does_not_wait_on_inherited_output_pipes(self) -> None:
+        with mock.patch.object(verifier_endpoints.subprocess, "run",
+                               return_value=subprocess.CompletedProcess([], 0, b"", None)) as command:
+            verifier_endpoints._release_command(Path("/tmp/release/bin/clean_room_provider"), {}, "start")
+        kwargs = command.call_args.kwargs
+        self.assertIs(kwargs["stdout"], subprocess.DEVNULL)
+        self.assertIs(kwargs["stderr"], subprocess.DEVNULL)
+        self.assertEqual(kwargs["timeout"], 60)
 
 
 if __name__ == "__main__":
