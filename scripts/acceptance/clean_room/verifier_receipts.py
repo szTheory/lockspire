@@ -112,7 +112,7 @@ RECOVERY_OBSERVATION_FIELDS = frozenset({
     "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
 })
 ISSUANCE_OBSERVATION_FIELDS = frozenset({
-    "outcome", "executed", "auth_barrier_reached", "jti_consumption_observed",
+    "outcome", "executed", "server_ready", "auth_barrier_reached", "jti_consumption_observed",
     "pre_guard_barrier_reached", "maintenance_committed", "backend_pids_distinct",
     "stale_identity_rejected", "stale_http_status", "no_token_issued", "no_grant_created",
     "no_code_redemption", "same_jti_replay_rejected", "fresh_jti_succeeded",

@@ -83,6 +83,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   def run_issuance(store, issuer) when store == :delegated do
+    mark_stage(:issuance_endpoint_ready)
+    endpoint_ready = mounted_endpoint_ready?(issuer)
     mark_stage(:issuance_seed)
     client = seed_jwt_client!("phase178-issuance")
     code = seed_authorization_code!(client.client_id)
@@ -160,6 +162,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
           %{
             "outcome" => "pass",
             "executed" => true,
+            "server_ready" => endpoint_ready,
             "auth_barrier_reached" => durable_jti,
             "jti_consumption_observed" => durable_jti,
             "pre_guard_barrier_reached" => true,
@@ -855,6 +858,25 @@ defmodule CleanRoomProvider.VerifierRecovery do
     after
       @timeout -> raise "installed maintenance transaction backend was not observed"
     end
+  end
+
+  defp mounted_endpoint_ready?(issuer) do
+    url = String.to_charlist(issuer <> "/.well-known/openid-configuration")
+
+    ready =
+      Enum.any?(1..10, fn _attempt ->
+        case :httpc.request(:get, {url, []}, [{:timeout, 1_000}], []) do
+          {:ok, {{_version, 200, _reason}, _headers, _body}} ->
+            true
+
+          _other ->
+            Process.sleep(250)
+            false
+        end
+      end)
+
+    unless ready, do: raise("SAFE_FAILURE_STAGE=issuance_endpoint_ready")
+    ready
   end
 
   defp start_monitored_worker(fun) do

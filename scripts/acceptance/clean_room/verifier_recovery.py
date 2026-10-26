@@ -109,7 +109,8 @@ SAFE_FAILURE_STAGES = frozenset({
     "expired_request_key", "expired_request_bad_map", "expired_request_bad_arity",
     "expired_request_system_limit",
     "expired_metadata",
-    "issuance_seed", "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
+    "issuance_endpoint_ready", "issuance_seed", "issuance_auth_barrier", "issuance_maintenance",
+    "issuance_replay_fresh",
 })
 
 
