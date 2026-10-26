@@ -5,11 +5,11 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 status: planning
-stopped_at: Phase 177 independently verified complete; --no-transition honored before Phase 178 discussion
-last_updated: "2026-10-26T04:47:35.301Z"
+stopped_at: Phase 178 context gathered (assumptions mode); scoped research recommendations adopted
+last_updated: "2026-10-26T13:23:30.965Z"
 last_activity: 2026-10-26
-last_activity_desc: Phase 177 verified complete; stopped before Phase 178 discussion
-state_head: 37828883a6ede9736dcaaf29dac8db0177a9caa5
+last_activity_desc: Phase 178 context gathered; owner-delegated research recommendations adopted
+state_head: a704bf4a8235d77a7fd3400d3f9a26da7a4a4bd5
 progress:
   total_phases: 4
   completed_phases: 3
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 177 is independently verified complete (9/9 plans, 47/47 truths and 6/6 requirements). Phase 178 — Packaged Upgrade Proof & Delivery Handoff — is next; no Phase 178 work has started. This run stops before its discussion under `--no-transition`.
+**Current focus:** Phase 178 context is captured after three owner-authorized research analyses. The bounded package matrix, artifact attribution, installed transaction witnesses and candidate/main delivery sequence are decided; planning is next. Phase 177 remains independently verified complete. No Phase 178 runtime proof or delivery outcome is claimed.
 
 ## Current Position
 
 Phase: 178 — Packaged Upgrade Proof & Delivery Handoff
 Plan: Not started
-Status: Ready for Phase 178 discussion; --no-transition stop honored
-Last activity: 2026-10-26 — Phase 177 verified complete; stopped before Phase 178 discussion
+Status: Ready for Phase 178 planning
+Last activity: 2026-10-26 — Phase 178 context gathered; delegated research recommendations adopted
 
 ## Performance Metrics
 
@@ -142,16 +142,18 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T04:47:35.167Z
-Stopped at: Phase 177 independently verified complete; --no-transition honored before Phase 178 discussion
-Resume file: .planning/phases/177-safe-verifier-maintenance-recovery/177-COMPLETION.md
-Next: Run independent Phase 177 verification against the exact source receipt. Keep Phase 177 open until that verifier and assigned review gates finish; Phase 178 remains not started. Read `177-HANDOFF.md` and `177-SOURCE-ACCEPTANCE.json`. Preserve the two unresolved unclassified edges and three flagged-unverified prohibitions; source CI is not package, delivery, fleet, publication, or main acceptance.
+Last session: 2026-10-26T13:23:30.619Z
+Stopped at: Phase 178 context gathered (assumptions mode); scoped research recommendations adopted
+Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CONTEXT.md
+Next: Plan Phase 178 from `178-CONTEXT.md`. Preserve exact prior source receipts, the two unresolved unclassified edges and three flagged-unverified prohibitions; source CI is not package, delivery, fleet, publication or main acceptance. Configured auto-advance routes discussion to planning.
 
 ### Blockers
 
 None
 
 ## Decisions
+
+- [Phase 178 discussion]: Owner delegated subagent research and automatic adoption of coherent scoped recommendations. Use bounded installed journeys across both pairs and built-in/delegated PostgreSQL storage, independently attributed predecessor artifacts, actual contention/audit-INSERT witnesses and explicit pre/postmerge acceptance sequencing. See `178-CONTEXT.md`; no runtime or main-acceptance outcome is claimed.
 
 - [Phase 177 discussion]: Owner delegated fan-out research and automatic adoption of coherent scoped recommendations. Preserve authenticated age metadata during dedicated custody rewrap, distinguish legitimate no-material clients, use selected authority with verifier-only atomic audit, require fresh complete local custody check, resolve bare-Mix configuration locally, and include existing disclosure paths. See 177-CONTEXT.md; runtime requirements remain pending.
 
@@ -218,5 +220,5 @@ None
 
 ## Operator Next Steps
 
-- Run $gsd-discuss-phase 178 next. Phase 177 maintenance/recovery/disclosure is independently verified complete; packaged dependency-pair/composed-store proof, final delivery and integrated-main acceptance remain Phase 178. This run honored --no-transition before Phase 178 discussion.
+- Run $gsd-plan-phase 178 next (configured auto-advance). Phase 178 context and research synthesis are captured; packaged dependency-pair/composed-store proof, final delivery and integrated-main acceptance remain unperformed. Phase 177 maintenance/recovery/disclosure remains independently verified complete.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train.
