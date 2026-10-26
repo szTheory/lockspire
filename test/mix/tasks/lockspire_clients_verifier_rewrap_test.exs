@@ -98,3 +98,65 @@ defmodule Mix.Tasks.Lockspire.Clients.Verifier.RewrapOperationContextTest do
     )
   end
 end
+
+defmodule Mix.Tasks.Lockspire.Clients.Verifier.RewrapCLITest do
+  use ExUnit.Case, async: false
+
+  import ExUnit.CaptureIO
+
+  @task "lockspire.clients.verifier.rewrap"
+
+  setup do
+    Mix.Task.reenable(@task)
+    on_exit(fn -> Mix.Task.reenable(@task) end)
+    :ok
+  end
+
+  @tag :cli_api
+  test "verifier maintenance has a dedicated Mix task" do
+    assert {:module, Mix.Tasks.Lockspire.Clients.Verifier.Rewrap} =
+             Code.ensure_loaded(Mix.Tasks.Lockspire.Clients.Verifier.Rewrap)
+  end
+
+  for args <- [
+        ["--unknown"],
+        ["positional"],
+        ["--check", "--dry-run"],
+        ["--check", "--after-client-id", "cursor"],
+        ["--dry-run", "--dry-run"],
+        ["--limit", "0"],
+        ["--limit", "not-a-number"]
+      ] do
+    test "#{inspect(args)} is rejected before database work" do
+      error = assert_raise Mix.Error, fn -> Mix.Task.run(@task, unquote(args)) end
+
+      assert error.message =~ "invalid"
+      refute Process.whereis(Lockspire.TestRepo)
+    end
+  end
+
+  test "invalid argument errors never echo hostile values" do
+    hostile = "SECRET\n--check\n"
+
+    error =
+      assert_raise Mix.Error, fn ->
+        Mix.Task.run(@task, ["--after-client-id", hostile, "--check"])
+      end
+
+    refute error.message =~ hostile
+    refute error.message =~ "SECRET"
+    refute Process.whereis(Lockspire.TestRepo)
+  end
+
+  test "help describes bare Mix, release RPC, modes, and safe progress options" do
+    output = capture_io(fn -> Mix.Task.run(@task, ["--help"]) end)
+
+    assert output =~ "mix lockspire.clients.verifier.rewrap"
+    assert output =~ "--dry-run"
+    assert output =~ "--check"
+    assert output =~ "--after-client-id"
+    assert output =~ "bin/app rpc"
+    assert output =~ "startup"
+    refute Process.whereis(Lockspire.TestRepo)
+  end
+end

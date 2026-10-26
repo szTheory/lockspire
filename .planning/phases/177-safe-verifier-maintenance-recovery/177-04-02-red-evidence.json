@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' LOCKSPIRE_TEST_DB_NAME=lockspire_phase177_20261026_owned MIX_ENV=test elixir -r /private/tmp/lockspire_exunit_tap_formatter.ex -S mix test --only cli_api --formatter Lockspire.ExUnitTapFormatter test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..13\nok 1 - test bare config resolves signing and endpoint exclusions without starting Lockspire # SKIP\nok 2 - test bare config rejects signing key reuse without exposing key bytes # SKIP\nok 3 - test bare config fails closed when a signing system environment entry is invalid # SKIP\nok 4 - test [\"--limit\", \"not-a-number\"] is rejected before database work # SKIP\nok 5 - test [\"--check\", \"--after-client-id\", \"cursor\"] is rejected before database work # SKIP\nok 6 - test [\"--unknown\"] is rejected before database work # SKIP\nok 7 - test help describes bare Mix, release RPC, modes, and safe progress options # SKIP\nok 8 - test [\"--limit\", \"0\"] is rejected before database work # SKIP\nok 9 - test invalid argument errors never echo hostile values # SKIP\nok 10 - test [\"positional\"] is rejected before database work # SKIP\nok 11 - test [\"--dry-run\", \"--dry-run\"] is rejected before database work # SKIP\nok 12 - test [\"--check\", \"--dry-run\"] is rejected before database work # SKIP\nnot ok 13 - test verifier maintenance has a dedicated Mix task\n",
+  "targetTest": "test verifier maintenance has a dedicated Mix task",
+  "targetFile": "test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
+  "expected": "A dedicated verifier maintenance Mix task is loadable under the documented task name.",
+  "actual": "Code.ensure_loaded/1 returned {:error, :nofile} for Mix.Tasks.Lockspire.Clients.Verifier.Rewrap.",
+  "semanticAssessment": "The target test ran and failed on the planned missing CLI task availability assertion. Twelve unrelated tests were excluded by the selector. No compile, setup, discovery, or fixture error occurred."
+}
