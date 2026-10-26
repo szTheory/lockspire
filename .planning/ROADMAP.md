@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete (15/18 requirements); Phase 178 discussion is next. Non-authoritative edge/prohibition flags remain visible; package proof and delivery are pending.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete (15/18 requirements); Phase 178 is planned in 12 plans and 8 waves. Non-authoritative edge/prohibition flags remain visible; package proof and delivery are pending.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -138,7 +138,36 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
   3. Fresh-install, generator, upgrade, diagnostic and support guidance matches verified behavior without changing public protocol scope, signing format, host ownership, schema or runtime dependencies unless explicitly re-scoped through GSD.
   4. A dated handoff records reviewed integration and fresh exact-main acceptance or explicit unresolved delivery blockers, resource owners/purpose/next actions and preserved unknown work; UI quality remains the next substantial candidate with the completed interview intact. No package publication is inferred.
 
-**Plans**: To be created after prior outcomes pass; the normal milestone PR and protected release train remain distinct.
+**Plans**: 12 plans in 8 waves; the normal milestone PR and protected release train remain distinct.
+
+Plans:
+**Wave 1**
+- [ ] 178-01-PLAN.md — Installed tracer, honest package attribution and generic pair selection.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 178-02-PLAN.md — Four fresh core cells, declared delegation and installed preview/apply/check.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 178-03-PLAN.md — Actual predecessor/shared-store rollout and pinned public legacy control.
+- [ ] 178-04-PLAN.md — Five HTTP endpoints per pair and booted release RPC.
+- [ ] 178-05-PLAN.md — Real PostgreSQL lock orders, reached audit INSERT and outer rollback.
+- [ ] 178-06-PLAN.md — Preservation, exact age/retry/recovery and stale-issuance/JTI witnesses.
+- [ ] 178-07-PLAN.md — Installed success/failure disclosure channels and sentinel rejection.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 178-08-PLAN.md — Closed aggregate and existing locked/floor CI integration.
+
+**Wave 5** *(blocked on Wave 4 completion)*
+- [ ] 178-09-PLAN.md — Observed install/generator/upgrade/support/release guidance.
+
+**Wave 6** *(blocked on Wave 5 completion)*
+- [ ] 178-10-PLAN.md — Independent reviews, frozen inputs and final local/package gates.
+
+**Wave 7** *(blocked on Wave 6 completion)*
+- [ ] 178-11-PLAN.md — Single reviewed candidate and actual complete hosted graph.
+
+**Wave 8** *(blocked on Wave 7 completion)*
+- [ ] 178-12-PLAN.md — Canonical audit, dated custody/ranking and pending-or-accepted main handoff.
 
 ## Progress
 
@@ -147,9 +176,9 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
-| 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
+| 178. Packaged Upgrade Proof & Delivery Handoff | 0/12 | Planned | — |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phase 175 completed 3/3 plans and Phase 176 completed 7/7 plans; 2/4 phases complete. Dedicated custody and compatible runtime are verified; maintenance and packaged delivery remain pending. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 12 checked plans for the remaining 3 requirements; 3/4 phases complete. Package proof and delivery remain unperformed. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 
