@@ -131,6 +131,7 @@ def _build_predecessor(run_root: Path) -> tuple[Path, Path, PackageIdentity, dic
 def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, object]:
     run_id = uuid.uuid4().hex
     port_old, port_new = allocate_port(), allocate_port()
+    port_legacy = allocate_port()
     prefix = "vrr" + run_id[:12]
     database_url = clean_room_database_url("verifier_rollout")
     key = runner.base64.b64encode(os.urandom(32)).decode("ascii")
@@ -154,7 +155,7 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
                                     candidate_identity=candidate_identity, custom_lifetime_adapter=store == "delegated",
                                     proof_pair=pair, scenario_groups={"rollout"})
         legacy_host = prepare_provider(root / "legacy-writer", database_url, package_root=candidate,
-                                       port=allocate_port(), storage_prefix=prefix,
+                                       port=port_legacy, storage_prefix=prefix,
                                        candidate_identity=candidate_identity,
                                        custom_lifetime_adapter=store == "delegated", proof_pair=pair,
                                        scenario_groups={"rollout"})
@@ -162,12 +163,8 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
         _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
         old_env = runner._mix_env(old_host, root, database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, pair)
         new_env = runner._mix_env(new_host, root, database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, pair)
-        legacy_env = runner._mix_env(legacy_host, root, database_url, int(legacy_host_env_port := str(allocate_port())),
-                                    f"http://127.0.0.1:{legacy_host_env_port}/lockspire", prefix, key, pair)
-        # Keep all provider build and dependency roots run-owned and disjoint.
-        legacy_env.update({"MIX_BUILD_PATH": str(legacy_host / "_build"), "MIX_DEPS_PATH": str(root / "legacy-deps"),
-                           "HEX_HOME": str(root / "legacy-hex"), "MIX_HOME": str(root / "legacy-mix")})
-        old_env.update({"MIX_BUILD_PATH": str(old_host / "_build"), "MIX_DEPS_PATH": str(root / "old-deps"), "HEX_HOME": str(root / "old-hex"), "MIX_HOME": str(root / "old-mix")})
+        legacy_env = runner._mix_env(legacy_host, root, database_url, port_legacy,
+                                    f"http://127.0.0.1:{port_legacy}/lockspire", prefix, key, pair)
         redactor.register_material(database_url)
         try:
             run_child_command(old_host, old_env, "ecto.create")
@@ -276,7 +273,6 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
         _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
         old_env = runner._mix_env(old_host, root, database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, "locked")
         new_env = runner._mix_env(new_host, root, database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, "locked")
-        old_env.update({"MIX_BUILD_PATH": str(old_host / "_build"), "MIX_DEPS_PATH": str(root / "public-deps"), "HEX_HOME": str(root / "public-hex"), "MIX_HOME": str(root / "public-mix")})
         redactor.register_material(database_url)
         try:
             run_child_command(old_host, old_env, "ecto.create")
