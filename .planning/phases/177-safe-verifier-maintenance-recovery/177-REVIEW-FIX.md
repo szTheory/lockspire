@@ -26,3 +26,23 @@ Runtime environment: Elixir 1.19.5-otp-28, Erlang 28.5, ERL_FLAGS=+S 4, MIX_ENV=
 | mix credo --strict on both changed source files | 0 | 36 mods/funs, no issues | — |
 
 All 13 frozen input digests from 177-SOURCE-ACCEPTANCE.json were rechecked and remain unchanged. Full CI was left for the parent workflow.
+
+## T-177-24 disclosure fixture follow-up
+
+**Status:** Fixed
+**Fixture commit:** `0a3c9ca5` (`test(177): prove failed audit insert trigger executes`).
+
+The failed-audit disclosure case had been rejected by the new audit-attribute validator before its INSERT trigger ran. Its previous safe error, unchanged ciphertext, and absent audit row assertions therefore did not exercise PostgreSQL driver diagnostics.
+
+The fixture now supplies the complete valid maintenance audit shape with the scenario key labels `disclosure-old` and `disclosure-new`. Its test-owned trigger increments a uniquely named PostgreSQL sequence before raising the diagnostic marker. Sequence state is read after the operation; `[1, true]` proves the trigger executed even though the transaction rolled back. The test continues to assert the marker is absent from captured Logger output and the returned result, the stored ciphertext is unchanged, and no audit row exists. Teardown drops only the exact trigger, function, and sequence created by this test.
+
+The new positive witness was first run while the fixture still had incomplete metadata: it failed with the sequence uncalled, demonstrating that the prior generic error assertions did not establish trigger execution.
+
+| Command | Exit | Result | Log |
+|---|---:|---|---|
+| Disclosure suite with witness and incomplete audit metadata, seed 81501 | 2 | 8 tests, 1 failure: audit trigger sequence witness remained uncalled | `/private/tmp/lockspire-177-review-t17724-witness-red.log` |
+| Disclosure suite with complete valid audit metadata, seed 81501 | 0 | 8 tests, 0 failures; sequence witness required `[1, true]` | `/private/tmp/lockspire-177-review-t17724-witness-green.log` |
+| Maintenance, concurrency, disclosure, issuance, recovery, rotation, and legacy-age suites, seed 81501 | 0 | 43 tests, 0 failures | `/private/tmp/lockspire-177-review-t17724-maintenance-family-final.log` |
+| Format check and strict Credo on the changed disclosure test | 0 | Passed; 29 mods/funs, no issues | — |
+
+No production file, schema, frozen input, or unrelated review evidence was changed. Full CI remains with the parent workflow.
