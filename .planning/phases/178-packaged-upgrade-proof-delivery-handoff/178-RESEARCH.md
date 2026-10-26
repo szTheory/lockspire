@@ -1,7 +1,7 @@
 # Phase 178: Packaged Upgrade Proof & Delivery Handoff - Research
 
-**Researched:** 2026-10-26  
-**Domain:** Package-installed Elixir/Phoenix acceptance proof, PostgreSQL storage concurrency, evidence provenance, CI/release handoff  
+**Researched:** 2026-10-26
+**Domain:** Package-installed Elixir/Phoenix acceptance proof, PostgreSQL storage concurrency, evidence provenance, CI/release handoff
 **Confidence:** HIGH
 
 <user_constraints>
@@ -104,7 +104,7 @@ The high-risk evidence seam is installed-host storage authority. Extend only the
 | `:crypto`, Plug, Ecto, Phoenix | Existing locked dependencies / OTP | Existing verifier primitives and host integration | Reuse through installed Lockspire public facades and documented store callbacks; no dependency addition. |
 | GitHub Actions | Existing canonical workflow | Candidate CI evidence and complete required-job graph | Record workflow event/run/attempt, head and actual checkout (including synthetic merge SHA), parents/tree and all jobs. [CITED: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows] |
 
-**Installation:** No new package installation is selected. Build the candidate archive and install it into the isolated clean-room host using the existing helper path. The acceptance run's external environment requires Mix/Elixir/OTP, reachable PostgreSQL, and existing Python/Bash. 
+**Installation:** No new package installation is selected. Build the candidate archive and install it into the isolated clean-room host using the existing helper path. The acceptance run's external environment requires Mix/Elixir/OTP, reachable PostgreSQL, and existing Python/Bash.
 
 ### Alternatives Considered
 
@@ -224,37 +224,37 @@ Within each dependency pair, exercise mounted HTTP endpoint breadth once: token,
 
 ### Pitfall 1: Source provenance conflates harness and artifact
 
-**What goes wrong:** Candidate or predecessor receipts claim the current checkout as the archive's source even when the tar/Hex bytes are from elsewhere.  
-**Why it happens:** `prepare_package` uses `source_revision()` when constructing `PackageIdentity` for tar and Hex inputs.  
-**How to avoid:** Split runner SHA from artifact source proof; use independently observed archive checksum and extracted tree binding, package metadata/source attestation when available, and keep unknown unknown. Verify the public 1.6.1 checksum/artifact before running its control.  
+**What goes wrong:** Candidate or predecessor receipts claim the current checkout as the archive's source even when the tar/Hex bytes are from elsewhere.
+**Why it happens:** `prepare_package` uses `source_revision()` when constructing `PackageIdentity` for tar and Hex inputs.
+**How to avoid:** Split runner SHA from artifact source proof; use independently observed archive checksum and extracted tree binding, package metadata/source attestation when available, and keep unknown unknown. Verify the public 1.6.1 checksum/artifact before running its control.
 **Warning signs:** A caller-provided SHA/source label is the only link between artifact and claimed commit; receipt package path resolves to checkout.
 
 ### Pitfall 2: Floor host selection drags in admin proof
 
-**What goes wrong:** The verifier package journey runs unrelated admin UI/browser instrumentation merely to select floor dependencies.  
-**Why it happens:** Current builder checks floor selection only when `admin_proof=True`.  
-**How to avoid:** Move generic pair/lock selection out of `admin_proof` gating and retain admin-specific overlays behind that flag.  
+**What goes wrong:** The verifier package journey runs unrelated admin UI/browser instrumentation merely to select floor dependencies.
+**Why it happens:** Current builder checks floor selection only when `admin_proof=True`.
+**How to avoid:** Move generic pair/lock selection out of `admin_proof` gating and retain admin-specific overlays behind that flag.
 **Warning signs:** Pair proof requires Chrome/CDP or admin overlay files to prepare the host.
 
 ### Pitfall 3: Package adapter is incomplete or crosses into checkout internals
 
-**What goes wrong:** Installed host has lifetime/client/transaction callbacks but cannot exercise maintenance authority, inventory/CAS or boundary policy; fallback imports test Repo or private production APIs.  
-**Why it happens:** Current clean-room adapter is lifetime-focused and the package boundary allowlist only anticipates its earlier scope.  
-**How to avoid:** Add the narrow public maintenance behavior to host-owned modules and permit only those exact sources. Assert participant agreement and unsupported/mismatch callbacks run before inventory/fetch/write.  
+**What goes wrong:** Installed host has lifetime/client/transaction callbacks but cannot exercise maintenance authority, inventory/CAS or boundary policy; fallback imports test Repo or private production APIs.
+**Why it happens:** Current clean-room adapter is lifetime-focused and the package boundary allowlist only anticipates its earlier scope.
+**How to avoid:** Add the narrow public maintenance behavior to host-owned modules and permit only those exact sources. Assert participant agreement and unsupported/mismatch callbacks run before inventory/fetch/write.
 **Warning signs:** Child source contains `test/support`, `Lockspire.TestRepo`, or direct private repository implementation references.
 
 ### Pitfall 4: “Rollback” does not demonstrate that audit insertion was attempted
 
-**What goes wrong:** Invalid audit metadata is rejected before mutation, yet the test calls it atomic rollback proof.  
-**Why it happens:** Validation fails earlier than the transaction's audit INSERT boundary.  
-**How to avoid:** Use valid metadata with a run-owned trigger/sequence witness that confirms the INSERT statement was reached and failed, then check ciphertext unchanged and no committed audit. Separately force caller-owned outer rollback after provisional change.  
+**What goes wrong:** Invalid audit metadata is rejected before mutation, yet the test calls it atomic rollback proof.
+**Why it happens:** Validation fails earlier than the transaction's audit INSERT boundary.
+**How to avoid:** Use valid metadata with a run-owned trigger/sequence witness that confirms the INSERT statement was reached and failed, then check ciphertext unchanged and no committed audit. Separately force caller-owned outer rollback after provisional change.
 **Warning signs:** The test only asserts an error result or invalid metadata and never proves entry to the audit insert.
 
 ### Pitfall 5: Delivery lifecycle claims are ahead of evidence
 
-**What goes wrong:** Candidate local checks, hosted workflow results, review, main integration and protected acceptance are collapsed into a single green statement.  
-**Why it happens:** Workflow PR checks can execute on a synthetic merge checkout, and exact-main helper runs only after integration.  
-**How to avoid:** Freeze proof inputs, keep candidate and executed checkout IDs distinct, bind all required jobs to same run/attempt and record pre-merge pending status. Append a dated post-integration exact-main audit/acceptance addendum.  
+**What goes wrong:** Candidate local checks, hosted workflow results, review, main integration and protected acceptance are collapsed into a single green statement.
+**Why it happens:** Workflow PR checks can execute on a synthetic merge checkout, and exact-main helper runs only after integration.
+**How to avoid:** Freeze proof inputs, keep candidate and executed checkout IDs distinct, bind all required jobs to same run/attempt and record pre-merge pending status. Append a dated post-integration exact-main audit/acceptance addendum.
 **Warning signs:** Workflow head SHA is used as actual checkout SHA without checking; a manual dispatch is claimed to satisfy branch protection; `HEAD`, local main and refreshed remote main differ.
 
 ## Code Examples
@@ -441,5 +441,5 @@ The current OWASP ASVS stable release is v5.0.0 (published 2025-05-30); its chap
 
 **Context freshness:** `178-CONTEXT.md` SHA-256 at research time: `5f07be46522547418c38977f134feaaa7a712a0819fe37ed31143a88c27d4473`. D-16 requires affected package proof refresh for covered-byte changes and explicit applicability reconciliation for later evidence-only/GSD metadata changes; do not restamp old observations.
 
-**Research date:** 2026-10-26  
+**Research date:** 2026-10-26
 **Valid until:** 2026-11-25 for stable codebase seams; re-check live candidate/CI/main identities at execution.
