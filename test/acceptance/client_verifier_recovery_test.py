@@ -76,6 +76,19 @@ class RecoveryDispatchTest(unittest.TestCase):
             [(verifier_recovery.RECOVERY_CASES[1], ["interruption_not_ready"])],
         )
 
+    def test_builtin_partial_readiness_uses_public_report_separation(self) -> None:
+        host_source = (
+            ROOT
+            / "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1)",
+            host_source,
+        )
+        self.assertIn("scan_complete?: true", host_source)
+        self.assertIn("custody_condition_met?: false", host_source)
+        self.assertNotIn("initial_cursor: ^cursor", host_source)
+
     def test_private_handoff_registers_secrets_and_deletes_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             handoff = Path(temporary) / "handoff.json"
