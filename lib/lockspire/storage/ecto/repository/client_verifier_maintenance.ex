@@ -34,7 +34,8 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
           | {:error, atom()}
   def verifier_inventory_page(repository, after_client_id, limit) do
     with :ok <- validate_cursor(after_client_id),
-         :ok <- validate_limit(limit) do
+         :ok <- validate_limit(limit),
+         :ok <- ensure_utf8_database(repository) do
       query =
         from(client in ClientRecord,
           order_by: fragment("? COLLATE \"C\"", client.client_id),
@@ -43,7 +44,8 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
         |> after_cursor(after_client_id)
 
       rows = Support.all(repository, query, sensitive: true)
-      {page, has_more?} = Enum.split(rows, limit)
+      {page, remainder} = Enum.split(rows, limit)
+      has_more? = remainder != []
       clients = Enum.map(page, &ClientRecord.to_domain/1)
       next_cursor = if has_more?, do: List.last(clients).client_id, else: nil
 
@@ -174,6 +176,24 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
     from(client in query,
       where: fragment("? COLLATE \"C\" > ? COLLATE \"C\"", client.client_id, ^cursor)
     )
+  end
+
+  defp ensure_utf8_database(repository) do
+    case Ecto.Adapters.SQL.query(
+           repository,
+           "SELECT current_setting('server_encoding')",
+           [],
+           log: false,
+           telemetry_event: nil
+         ) do
+      {:ok, %{rows: [["UTF8"]]}} -> :ok
+      {:ok, _result} -> {:error, :client_secret_verifier_inventory_unreadable}
+      {:error, _reason} -> {:error, :client_secret_verifier_inventory_unreadable}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_inventory_unreadable}
+  catch
+    _, _ -> {:error, :client_secret_verifier_inventory_unreadable}
   end
 
   defp validate_cursor(nil), do: :ok
