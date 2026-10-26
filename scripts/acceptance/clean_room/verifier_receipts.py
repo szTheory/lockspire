@@ -90,6 +90,32 @@ ATOMICITY_OBSERVATION_FIELDS = {
         "success_report_after_commit", "report_absent_before_commit",
     }),
 }
+RECOVERY_CASE_IDS = [
+    "VPROOF-02-RECOVERY-PRESERVATION",
+    "VPROOF-02-RECOVERY-RETRY-RECONCILIATION",
+    "VPROOF-02-RECOVERY-RESTORE-ROTATE",
+    "VPROOF-02-RECOVERY-EXPIRED-MIGRATION",
+]
+RECOVERY_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "hash_preserved", "partner_secret_preserved",
+    "client_fields_preserved", "age_metadata_preserved", "ciphertext_changed", "audit_inserted",
+    "repeat_no_change", "partial_not_ready", "interruption_not_ready",
+    "indeterminate_not_claimed_rollback", "fresh_complete_check_ready",
+    "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
+    "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
+    "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
+})
+ISSUANCE_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "auth_barrier_reached", "jti_consumption_observed",
+    "pre_guard_barrier_reached", "maintenance_committed", "backend_pids_distinct",
+    "stale_identity_rejected", "stale_http_status", "no_token_issued", "no_grant_created",
+    "no_code_redemption", "same_jti_replay_rejected", "fresh_jti_succeeded",
+    "fresh_http_status",
+})
+ISSUANCE_CASE_IDS = {
+    "locked": "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
+    "floor": "VPROOF-02-ISSUANCE-FLOOR-STALE-IDENTITY",
+}
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
     "fresh_signed_assertion", "dry_run_reported", "dry_run_unchanged", "apply_committed",
@@ -195,6 +221,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         else RELEASE_RPC_OBSERVATION_FIELDS if receipt["scope"] == "release-rpc"
         else CONTENTION_OBSERVATION_FIELDS if receipt["scope"] == "contention"
         else frozenset().union(*ATOMICITY_OBSERVATION_FIELDS.values()) if receipt["scope"] == "atomicity"
+        else RECOVERY_OBSERVATION_FIELDS if receipt["scope"] == "recovery"
+        else ISSUANCE_OBSERVATION_FIELDS if receipt["scope"] == "issuance"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
@@ -205,6 +233,10 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("contention receipt omits a required lock order")
     if receipt["scope"] == "atomicity" and case_ids != ATOMICITY_CASE_IDS:
         raise ReceiptError("atomicity receipt omits a required rollback or commit-order case")
+    if receipt["scope"] == "recovery" and case_ids != RECOVERY_CASE_IDS:
+        raise ReceiptError("recovery receipt omits a required preservation or recovery case")
+    if receipt["scope"] == "issuance" and case_ids != [ISSUANCE_CASE_IDS[receipt["pair"]]]:
+        raise ReceiptError("issuance receipt does not match its selected dependency pair")
     for case_id, result in observations.items():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -221,6 +253,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             if receipt["scope"] == "release-rpc"
             else CONTENTION_OBSERVATION_FIELDS - {"outcome", "executed", "holder_backend_pid", "contender_backend_pid"}
             if receipt["scope"] == "contention"
+            else ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
+            if receipt["scope"] == "issuance"
             else allowed_observation_fields - {"outcome", "executed", "http_status"}
         )
         if any(key in result and type(result[key]) is not bool for key in boolean_fields):
@@ -268,6 +302,22 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 for field in required_fields - {"outcome", "executed"}
             ):
                 raise ReceiptError("atomicity receipt lacks a reached rollback or commit-order witness")
+        if receipt["scope"] == "recovery":
+            required = {
+                RECOVERY_CASE_IDS[0]: {"hash_preserved", "partner_secret_preserved", "client_fields_preserved", "age_metadata_preserved", "ciphertext_changed", "audit_inserted"},
+                RECOVERY_CASE_IDS[1]: {"repeat_no_change", "partial_not_ready", "interruption_not_ready", "indeterminate_not_claimed_rollback", "fresh_complete_check_ready"},
+                RECOVERY_CASE_IDS[2]: {"missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable", "original_secret_preserved", "rotation_secret_changed", "one_time_handoff"},
+                RECOVERY_CASE_IDS[3]: {"expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved"},
+            }[case_id]
+            if set(result) != required | {"outcome", "executed"} or any(result.get(field) is not True for field in required):
+                raise ReceiptError("recovery receipt omits preservation or independent recovery evidence")
+        if receipt["scope"] == "issuance":
+            required = ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
+            if (set(result) != ISSUANCE_OBSERVATION_FIELDS
+                    or any(type(result.get(field)) is not bool or result[field] is not True for field in required)
+                    or type(result["stale_http_status"]) is not int or result["stale_http_status"] != 400
+                    or type(result["fresh_http_status"]) is not int or result["fresh_http_status"] != 200):
+                raise ReceiptError("issuance receipt lacks a committed stale-identity or fresh-JTI HTTP witness")
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS

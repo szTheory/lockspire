@@ -50,8 +50,8 @@ MODULES = {
     "release-rpc": ("verifier_endpoints", "run_release_rpc_group"),
     "contention": ("verifier_transactions", "run_contention_group"),
     "atomicity": ("verifier_transactions", "run_atomicity_group"),
-    "recovery": ("verifier_recovery", "run_group"),
-    "issuance": ("verifier_issuance", "run_group"),
+    "recovery": ("verifier_recovery", "run_recovery_group"),
+    "issuance": ("verifier_recovery", "run_issuance_group"),
     "disclosure": ("verifier_disclosure", "run_group"),
 }
 SENSITIVE_OUTPUT = re.compile(

@@ -8,6 +8,7 @@ defmodule CleanRoomProvider.LifetimeClientStore do
 
   alias Lockspire.Domain.Client
   alias Lockspire.Domain.UsedJti
+  alias CleanRoomProvider.Repo
   alias Lockspire.Storage.Ecto.Repository
 
   @table __MODULE__
@@ -136,6 +137,7 @@ defmodule CleanRoomProvider.LifetimeClientStore do
   def compare_and_rewrap(client_id, hash, expected, replacement, audit) do
     invoke(:compare_and_rewrap, fn ->
       wait_for_run_control(:current_row_guard)
+      report_maintenance_backend(client_id)
       result = Repository.compare_and_rewrap(client_id, hash, expected, replacement, audit)
       wait_for_run_control(:commit_response)
       result
@@ -144,7 +146,41 @@ defmodule CleanRoomProvider.LifetimeClientStore do
 
   @impl Lockspire.Storage.UsedJtiStore
   def record_used_jti(%UsedJti{} = used_jti),
-    do: invoke(:record_used_jti, fn -> Repository.record_used_jti(used_jti) end)
+    do:
+      invoke(:record_used_jti, fn ->
+        case issuance_control(used_jti.client_id, used_jti.jti) do
+          %{controller: controller, reference: reference} = control ->
+            result =
+              Repository.transact(fn ->
+                outcome = Repository.record_used_jti(used_jti)
+                {outcome, backend_pid!()}
+              end)
+
+            case result do
+              {:ok, {{:ok, :accepted}, backend_pid}} ->
+                wait_for_issuance_control(
+                  control,
+                  controller,
+                  reference,
+                  :authenticated,
+                  used_jti.client_id,
+                  used_jti.jti,
+                  backend_pid
+                )
+
+                {:ok, :accepted}
+
+              {:ok, {outcome, _backend_pid}} ->
+                outcome
+
+              {:error, _reason} = error ->
+                error
+            end
+
+          nil ->
+            Repository.record_used_jti(used_jti)
+        end
+      end)
 
   def set_run_control(name, controller)
       when name in [:authenticated_read, :current_row_guard, :commit_response] and
@@ -154,12 +190,67 @@ defmodule CleanRoomProvider.LifetimeClientStore do
     })
   end
 
+  def set_issuance_control(controller, client_id, jti)
+      when is_pid(controller) and is_binary(client_id) and is_binary(jti) do
+    Application.put_env(:clean_room_provider, {__MODULE__, :issuance_control}, %{
+      controller: controller,
+      client_id: client_id,
+      jti: jti,
+      reference: make_ref()
+    })
+  end
+
+  def clear_issuance_control do
+    Application.delete_env(:clean_room_provider, {__MODULE__, :issuance_control})
+  end
+
+  def set_maintenance_observer(controller, client_id)
+      when is_pid(controller) and is_binary(client_id) do
+    Application.put_env(:clean_room_provider, {__MODULE__, :maintenance_observer}, %{
+      controller: controller,
+      client_id: client_id,
+      reference: make_ref()
+    })
+  end
+
+  def clear_maintenance_observer do
+    Application.delete_env(:clean_room_provider, {__MODULE__, :maintenance_observer})
+  end
+
   def clear_run_controls do
     Application.delete_env(:clean_room_provider, {__MODULE__, :run_controls})
   end
 
   @impl Lockspire.Storage.ClientStore
-  def lock_clients(ids), do: invoke(:lock_clients, fn -> Repository.lock_clients(ids) end)
+  def lock_clients(ids),
+    do:
+      invoke(:lock_clients, fn ->
+        case Application.get_env(:clean_room_provider, {__MODULE__, :issuance_control}) do
+          %{client_id: client_id, jti: jti} = control ->
+            if client_id in ids do
+              backend_pid = backend_pid!()
+              reference = Map.fetch!(control, :reference)
+
+              wait_for_issuance_control(
+                control,
+                Map.fetch!(control, :controller),
+                reference,
+                :current_row_guard,
+                client_id,
+                jti,
+                backend_pid
+              )
+
+              Repository.lock_clients(ids)
+            else
+              Repository.lock_clients(ids)
+            end
+
+          _ ->
+            Repository.lock_clients(ids)
+        end
+      end)
+
   @impl Lockspire.Storage.ClientStore
   def register_client(%Client{} = client),
     do: invoke(:register_client, fn -> Repository.register_client(client) end)
@@ -234,6 +325,55 @@ defmodule CleanRoomProvider.LifetimeClientStore do
         after
           30_000 -> raise "clean-room verifier callback control timed out"
         end
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp issuance_control(client_id, jti) do
+    case Application.get_env(:clean_room_provider, {__MODULE__, :issuance_control}) do
+      %{client_id: ^client_id, jti: ^jti} = control -> control
+      _ -> nil
+    end
+  end
+
+  defp wait_for_issuance_control(
+         _control,
+         controller,
+         reference,
+         stage,
+         client_id,
+         jti,
+         backend_pid
+       ) do
+    send(
+      controller,
+      {:client_verifier_issuance_barrier, reference, stage, client_id, jti, backend_pid, self()}
+    )
+
+    receive do
+      {:release_client_verifier_issuance_barrier, ^reference, ^stage} -> :ok
+    after
+      15_000 ->
+        raise "clean-room verifier issuance barrier timed out"
+    end
+  end
+
+  defp backend_pid! do
+    %{rows: [[pid]]} =
+      Repo.query!("SELECT pg_backend_pid()", [], log: false, telemetry_event: nil)
+
+    pid
+  end
+
+  defp report_maintenance_backend(client_id) do
+    case Application.get_env(:clean_room_provider, {__MODULE__, :maintenance_observer}) do
+      %{controller: controller, client_id: ^client_id, reference: reference} ->
+        send(
+          controller,
+          {:client_verifier_maintenance_backend, reference, client_id, backend_pid!()}
+        )
 
       _ ->
         :ok
