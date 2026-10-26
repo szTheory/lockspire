@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --formatter Lockspire.GsdTapFormatter test/lockspire/security/client_secret_verifier_inspection_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test stored credentials are hidden throughout supported nested inspections\n1..1\n",
+  "targetTest": "test stored credentials are hidden throughout supported nested inspections",
+  "targetFile": "test/lockspire/security/client_secret_verifier_inspection_test.exs",
+  "expected": "The target assertion passes only when no stored credential marker occurs in supported nested inspections.",
+  "actual": "Target assertion failed because a stored credential marker occurred in an inspected value.",
+  "semanticAssessment": "The planned target ran and failed at the generic credential-leak assertion, captured by an ExUnit formatter emitting TAP 13. No compile, setup, discovery, or fixture error occurred. The reporter output contains no marker values."
+}
