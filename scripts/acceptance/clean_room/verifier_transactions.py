@@ -201,5 +201,5 @@ def _increase_owned_pool_for_contention(host: Path) -> None:
     content = config.read_text(encoding="utf-8")
     if content.count("pool_size: 2") != 1:
         raise PackageInputError("generated host pool configuration shape changed")
-    config.write_text(content.replace("pool_size: 2", "pool_size: 5", 1), encoding="utf-8")
+    config.write_text(content.replace("pool_size: 2", "pool_size: 8", 1), encoding="utf-8")
 
