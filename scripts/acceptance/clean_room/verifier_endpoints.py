@@ -29,7 +29,7 @@ from build_provider import (  # noqa: E402
 )
 from package_input import (  # noqa: E402
     PackageSource, clean_room_database_url, prepare_package, sha256,
-    source_revision, verify_candidate_input,
+    source_revision, stop_process_group, verify_candidate_input,
 )
 from redaction import Redactor, SentinelSet  # noqa: E402
 from verifier_receipts import validate_receipt  # noqa: E402
@@ -83,8 +83,7 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
     release_env: dict[str, str] = {}
     release_bin: Path | None = None
     release_root: Path | None = None
-    release_started = False
-    release_start_attempted = False
+    release_process: subprocess.Popen[bytes] | None = None
     release_pid: str | None = None
     with tempfile.TemporaryDirectory(prefix="lockspire-verifier-release-rpc-") as temporary:
         root = Path(temporary)
@@ -142,12 +141,9 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
                 redactor.assert_safe(safe_build_output)
                 raise PackageInputError("assembled installed release executable is missing; found " +
                                         json.dumps(actual_releases) + "; build output: " + safe_build_output)
-            release_start_attempted = True
-            start = _release_command(release_bin, release_env, "start", redactor=redactor)
-            if start.returncode != 0:
-                raise PackageInputError("assembled release did not start (exit " + str(start.returncode) + ")")
-            release_started = True
-            _wait_release_http(issuer)
+            release_process = _start_release_server(
+                release_bin, release_env, issuer, root / "release-server.log"
+            )
 
             dry_expression = _release_rpc_expression("dry_run")
             dry = _release_command(release_bin, release_env, "rpc", dry_expression, redactor=redactor)
@@ -219,10 +215,8 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
             return {"pair": "locked", "store": "builtin", "scope": "release-rpc",
                     "receipt_path": str(receipt_dir / "receipt.json")}
         finally:
-            if release_start_attempted and release_bin is not None:
-                stopped = _release_command(release_bin, release_env, "stop")
-                if release_started and stopped.returncode != 0:
-                    raise PackageInputError("owned release cleanup did not stop the run-scoped node")
+            if release_process is not None and not stop_process_group(release_process):
+                raise PackageInputError("owned release cleanup did not stop the run-scoped process group")
             if host is not None and host.exists():
                 try:
                     run_child_command(host, env, "ecto.drop")
@@ -279,20 +273,6 @@ def _release_rpc_expression(mode: str) -> str:
 
 def _release_command(release_bin: Path, env: dict[str, str], *args: str,
                      redactor: Redactor | None = None) -> subprocess.CompletedProcess[bytes]:
-    detached_start = bool(args and args[0] == "start")
-    if detached_start:
-        log_path = release_bin.parents[1] / "controller-start.log"
-        try:
-            with log_path.open("wb") as log:
-                return subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
-                                      stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                                      check=False, timeout=60)
-        except subprocess.TimeoutExpired:
-            output = log_path.read_text(encoding="utf-8", errors="replace") if log_path.is_file() else ""
-            safe = redactor.text(output) if redactor is not None else output
-            if redactor is not None:
-                redactor.assert_safe(safe)
-            raise PackageInputError("run-owned release start exceeded its bounded time limit: " + safe[-1000:]) from None
     try:
         result = subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
                                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
@@ -309,9 +289,31 @@ def _release_command(release_bin: Path, env: dict[str, str], *args: str,
     return result
 
 
-def _wait_release_http(issuer: str) -> None:
+def _start_release_server(release_bin: Path, env: dict[str, str], issuer: str,
+                          log_path: Path) -> subprocess.Popen[bytes]:
+    log_path.touch(mode=0o600)
+    os.chmod(log_path, 0o600)
+    process = None
+    try:
+        with log_path.open("ab") as log:
+            process = subprocess.Popen(
+                (str(release_bin), "start"), cwd=release_bin.parents[1], env=env,
+                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        _wait_release_http(process, issuer)
+        return process
+    except BaseException:
+        if process is not None:
+            stop_process_group(process)
+        raise
+
+
+def _wait_release_http(process: subprocess.Popen[bytes], issuer: str) -> None:
     deadline = time.monotonic() + 35
     while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise PackageInputError("assembled release process exited before HTTP readiness")
         try:
             with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
                 if response.status == 200:

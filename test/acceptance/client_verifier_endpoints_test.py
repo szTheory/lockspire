@@ -171,7 +171,7 @@ class VerifierEndpointContracts(unittest.TestCase):
             with mock.patch.object(verifier_endpoints.subprocess, "Popen", return_value=process) as launch, \
                  mock.patch.object(verifier_endpoints.urllib.request, "urlopen") as urlopen:
                 urlopen.return_value.__enter__.return_value.status = 200
-                actual, _log = verifier_endpoints._start_release_server(
+                actual = verifier_endpoints._start_release_server(
                     binary_dir / "clean_room_provider", {}, "https://issuer.example/lockspire",
                     release_root / "release-server.log",
                 )
