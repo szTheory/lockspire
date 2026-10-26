@@ -75,15 +75,17 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
 
     sensitive_log =
       capture_log([level: :debug], fn ->
-        register_markers = Map.put(markers, :management_hash, marker("second-registration-hash"))
+        register_markers =
+          Map.put(markers, :management_hash, markers.second_management_hash)
+
         register_client(client(client_id <> "-register", register_markers))
         fetch_client(client_id)
         list_clients(client_id)
         lock_client(persisted)
         find_by_registration_hash(markers.management_hash)
         update_client(persisted)
-        manage_registration(persisted)
-        rotate_secret(persisted)
+        manage_registration(persisted, markers)
+        rotate_secret(persisted, markers)
       end)
 
     sensitive_events = drain_query_events([])
@@ -159,11 +161,16 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
     assert_ok(Repository.update_client(client, %{name: "updated client"}))
   end
 
-  defp manage_registration(%Client{} = client) do
+  defp manage_registration(%Client{} = client, markers) do
     audit = audit_attrs(client.client_id)
-    new_hash = marker("replacement-registration-hash")
 
-    assert {:ok, _rotated} = Repository.rotate_registration_access_token(client, new_hash, audit)
+    assert {:ok, _rotated} =
+             Repository.rotate_registration_access_token(
+               client,
+               markers.replacement_management_hash,
+               audit
+             )
+
     assert {:ok, current} = Repository.fetch_client_by_id(client.client_id)
     replacement = %{current | name: "replaced registration"}
 
@@ -171,21 +178,21 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
              Repository.replace_client_registration(
                current,
                replacement,
-               marker("next-registration-hash"),
+               markers.next_management_hash,
                audit
              )
 
     :ok
   end
 
-  defp rotate_secret(%Client{} = client) do
+  defp rotate_secret(%Client{} = client, markers) do
     assert {:ok, current} = Repository.fetch_client_by_id(client.client_id)
 
     assert {:ok, _rotated} =
              Repository.rotate_client_secret(
                current,
-               marker("rotated-client-hash"),
-               marker("rotated-verifier"),
+               markers.rotated_hash,
+               markers.rotated_verifier,
                DateTime.utc_now()
              )
 
@@ -227,7 +234,12 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
     %{
       hash: marker("client-hash"),
       verifier: marker("jwt-verifier"),
-      management_hash: marker("registration-hash")
+      management_hash: marker("registration-hash"),
+      second_management_hash: marker("second-registration-hash"),
+      replacement_management_hash: marker("replacement-registration-hash"),
+      next_management_hash: marker("next-registration-hash"),
+      rotated_hash: marker("rotated-client-hash"),
+      rotated_verifier: marker("rotated-verifier")
     }
   end
 

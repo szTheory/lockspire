@@ -26,11 +26,11 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
         |> where([client], client.client_id in ^ids)
         |> order_by([client], asc: client.client_id)
         |> lock("FOR UPDATE")
-        |> then(&Support.all(repo, &1))
+        |> then(&Support.all(repo, &1, sensitive: true))
         |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
     end
   rescue
-    error -> {:error, error}
+    error -> {:error, safe_storage_error(error)}
   end
 
   def lock_clients(_repo, _client_ids), do: {:error, :invalid_client_ids}
@@ -39,8 +39,11 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
   def register_client(repo, %Client{} = client) do
     %ClientRecord{}
     |> ClientRecord.changeset(client)
-    |> then(&Support.insert(repo, &1))
+    |> then(&Support.insert(repo, &1, sensitive: true))
+    |> safe_result()
     |> map_one(&ClientRecord.to_domain/1)
+  rescue
+    error -> {:error, safe_storage_error(error)}
   end
 
   @spec list_clients(module(), keyword()) :: {:ok, [Client.t()]} | {:error, term()}
@@ -51,20 +54,20 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     |> maybe_filter_provenance(Keyword.get(opts, :provenance))
     |> order_by([client], asc: client.name, asc: client.client_id)
     |> maybe_limit(Keyword.get(opts, :limit))
-    |> then(&Support.all(repo, &1))
+    |> then(&Support.all(repo, &1, sensitive: true))
     |> then(fn records -> {:ok, Enum.map(records, &ClientRecord.to_domain/1)} end)
   rescue
-    error -> {:error, error}
+    error -> {:error, safe_storage_error(error)}
   end
 
   @spec fetch_client_by_id(module(), String.t()) :: {:ok, Client.t() | nil} | {:error, term()}
   def fetch_client_by_id(repo, client_id) when is_binary(client_id) do
     ClientRecord
     |> where([client], client.client_id == ^client_id)
-    |> then(&Support.one(repo, &1))
+    |> then(&Support.one(repo, &1, sensitive: true))
     |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
-    error -> {:error, error}
+    error -> {:error, safe_storage_error(error)}
   end
 
   @spec get_client_by_registration_access_token_hash(module(), String.t()) ::
@@ -75,7 +78,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     |> then(&Support.one(repo, &1, sensitive: true))
     |> then(fn record -> {:ok, maybe_map(record, &ClientRecord.to_domain/1)} end)
   rescue
-    error -> {:error, error}
+    error -> {:error, safe_storage_error(error)}
   end
 
   @spec replace_client_registration(module(), Client.t(), Client.t(), String.t(), map()) ::
@@ -91,7 +94,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     TransactionStore.transact(repo, fn ->
       id
       |> locked_query()
-      |> then(&Support.one(repo, &1))
+      |> then(&Support.one(repo, &1, sensitive: true))
       |> case do
         nil ->
           TransactionStore.rollback(repo, :not_found)
@@ -119,7 +122,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
 
             record
             |> ClientRecord.dcr_management_changeset(attrs)
-            |> then(&Support.update(repo, &1))
+            |> then(&Support.update(repo, &1, sensitive: true))
             |> map_one(&ClientRecord.to_domain/1)
             |> append_audit_or_rollback(repo, audit_attrs)
           else
@@ -131,6 +134,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           end
       end
     end)
+    |> safe_result()
   end
 
   @spec rotate_registration_access_token(module(), Client.t(), String.t(), map()) ::
@@ -140,7 +144,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     TransactionStore.transact(repo, fn ->
       id
       |> locked_query()
-      |> then(&Support.one(repo, &1))
+      |> then(&Support.one(repo, &1, sensitive: true))
       |> case do
         nil ->
           TransactionStore.rollback(repo, :not_found)
@@ -164,7 +168,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
                 updated_at: client.updated_at
               })
             )
-            |> then(&Support.update(repo, &1))
+            |> then(&Support.update(repo, &1, sensitive: true))
             |> map_one(&ClientRecord.to_domain/1)
             |> append_audit_or_rollback(repo, audit_attrs)
           else
@@ -176,6 +180,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           end
       end
     end)
+    |> safe_result()
   end
 
   @spec update_client(module(), Client.t(), map()) :: {:ok, Client.t()} | {:error, term()}
@@ -224,6 +229,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           end
       end
     end)
+    |> safe_result()
   end
 
   defp secret_lifetime_duration(_repo, %Client{
@@ -267,7 +273,9 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
     update_record(repo, id, lifecycle_attrs, &ClientRecord.update_changeset/2)
   end
 
-  defp update_record(repo, id, attrs, changeset, opts \\ []) do
+  defp update_record(repo, id, attrs, changeset, opts \\ [sensitive: true]) do
+    opts = Keyword.put(opts, :sensitive, true)
+
     TransactionStore.transact(repo, fn ->
       id
       |> locked_query()
@@ -284,6 +292,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
           |> unwrap_or_rollback(repo)
       end
     end)
+    |> safe_result()
   end
 
   defp locked_query(id),
@@ -335,6 +344,18 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientStore do
   defp map_one({:error, error}, _mapper), do: {:error, error}
   defp maybe_map(nil, _mapper), do: nil
   defp maybe_map(record, mapper), do: mapper.(record)
+
+  defp safe_result({:error, %Postgrex.Error{} = error}),
+    do: {:error, safe_storage_error(error)}
+
+  defp safe_result({:error, %DBConnection.ConnectionError{} = error}),
+    do: {:error, safe_storage_error(error)}
+
+  defp safe_result(result), do: result
+
+  defp safe_storage_error(%Postgrex.Error{}), do: :storage_error
+  defp safe_storage_error(%DBConnection.ConnectionError{}), do: :storage_unavailable
+  defp safe_storage_error(_error), do: :storage_error
 
   defp maybe_filter_search(query, nil), do: query
   defp maybe_filter_search(query, ""), do: query
