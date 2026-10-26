@@ -47,7 +47,7 @@ MODULES = {
     "rollout": ("verifier_rollout", "run_rollout_group"),
     "legacy-control": ("verifier_rollout", "run_legacy_control_group"),
     "endpoints": ("verifier_endpoints", "run_group"),
-    "release-rpc": ("verifier_release_rpc", "run_group"),
+    "release-rpc": ("verifier_endpoints", "run_release_rpc_group"),
     "contention": ("verifier_contention", "run_group"),
     "atomicity": ("verifier_atomicity", "run_group"),
     "recovery": ("verifier_recovery", "run_group"),

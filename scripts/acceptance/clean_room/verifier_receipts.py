@@ -33,6 +33,18 @@ TRACER_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued",
     "dedicated_verifier_persisted", "fresh_signed_assertion",
 })
+ENDPOINT_CASE_IDS = [
+    "VPROOF-02-HTTP-TOKEN-JWT",
+    "VPROOF-02-HTTP-INTROSPECTION-JWT",
+    "VPROOF-02-HTTP-REVOCATION-JWT",
+    "VPROOF-02-HTTP-DEVICE-JWT",
+    "VPROOF-02-HTTP-CIBA-JWT",
+    "VPROOF-02-HTTP-PAR-JWT-REJECTED",
+    "VPROOF-02-HTTP-JWT-NEGATIVE-CONTROLS",
+    "VPROOF-02-HTTP-BASIC-CONTROL",
+    "VPROOF-02-HTTP-POST-CONTROL",
+]
+ENDPOINT_OBSERVATION_FIELDS = frozenset({"outcome", "executed", "assertion_passed", "fresh_jti", "http_status"})
 CORE_CASE_ID = "VPROOF-02-CORE-FRESH-MAINTENANCE"
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
@@ -133,8 +145,12 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
     if not isinstance(observations, dict) or set(observations) != set(case_ids):
         raise ReceiptError("receipt outcomes omit or add a case")
     allowed_observation_fields = (
-        CORE_OBSERVATION_FIELDS if receipt["scope"] == "core" else TRACER_OBSERVATION_FIELDS
+        CORE_OBSERVATION_FIELDS if receipt["scope"] == "core"
+        else ENDPOINT_OBSERVATION_FIELDS if receipt["scope"] == "endpoints"
+        else TRACER_OBSERVATION_FIELDS
     )
+    if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
+        raise ReceiptError("endpoint receipt does not contain its finite required case set")
     for result in observations.values():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -168,6 +184,12 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 raise ReceiptError("built-in core receipt contains delegated adapter claims")
             if result["http_status"] != 200:
                 raise ReceiptError("installed core token flow did not return HTTP 200")
+        if receipt["scope"] == "endpoints" and (
+            set(result) != ENDPOINT_OBSERVATION_FIELDS
+            or result["http_status"] < 100 or result["assertion_passed"] is not True
+            or result["fresh_jti"] is not True
+        ):
+            raise ReceiptError("installed endpoint observation is incomplete")
     if type(receipt["executed_count"]) is not int or receipt["executed_count"] <= 0 or receipt["executed_count"] != len(case_ids):
         raise ReceiptError("receipt has no reconciled execution count")
     return receipt
