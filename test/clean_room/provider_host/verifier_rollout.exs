@@ -1,7 +1,8 @@
 # Safe, host-owned projection for mixed-version rollout evidence.
 # Emits verifier format, one-way hash witness, and authenticated age metadata only.
 
-[prefix, client_id] = System.argv()
+args = case System.argv() do ["--" | rest] -> rest; values -> values end
+[prefix, client_id] = args
 unless Regex.match?(~r/\A[a-z][a-z0-9_]{0,39}\z/, prefix) and
          Regex.match?(~r/\A[a-zA-Z0-9_.-]{1,160}\z/, client_id) do
   Mix.raise("invalid rollout projection arguments")
