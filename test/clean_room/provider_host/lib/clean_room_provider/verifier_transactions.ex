@@ -6,6 +6,7 @@ defmodule CleanRoomProvider.VerifierTransactions do
   alias Lockspire.Admin.Clients
   alias Lockspire.Config
   alias Lockspire.Security.ClientSecretVerifier
+  alias Lockspire.Security.ClientSecretVerifier.Context
 
   @timeout 15_000
 
@@ -237,8 +238,18 @@ defmodule CleanRoomProvider.VerifierTransactions do
       token_endpoint_auth_signing_alg: "HS256"
     }
 
-    {:ok, %{client: %{client_secret_hash: hash, client_secret_jwt_verifier_encrypted: verifier}}} =
+    {:ok, %{client: %{client_secret_hash: hash}, client_secret: secret}} =
       Lockspire.Clients.register_client(attrs)
+
+    {:ok, old_context} =
+      Application.fetch_env!(:lockspire, ClientSecretVerifier)
+      |> Keyword.put(:current, "verifier-old")
+      |> then(&Context.resolve({:present, &1}, []))
+
+    {:ok, verifier} = ClientSecretVerifier.seal(old_context, client_id, secret)
+    prefix = Config.storage_prefix()
+    table = if is_binary(prefix), do: "#{prefix}.lockspire_clients", else: "lockspire_clients"
+    _ = Repo.query!("UPDATE #{table} SET client_secret_jwt_verifier_encrypted = $1 WHERE client_id = $2", [verifier, client_id], log: false, telemetry_event: nil)
 
     if is_binary(hash) and is_binary(verifier), do: client_id, else: raise("seed material missing")
   end
