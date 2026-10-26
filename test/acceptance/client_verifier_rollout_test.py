@@ -132,9 +132,18 @@ class VerifierRolloutContracts(unittest.TestCase):
     def test_process_log_redaction_removes_registered_material_before_retention(self) -> None:
         redactor = verifier_rollout.Redactor(verifier_rollout.SentinelSet.for_run())
         redactor.register_material("one-time-secret-value")
-        rendered = verifier_rollout._redacted_log_tail("client_secret=one-time-secret-value\nHTTP 500", redactor)
+        rendered = verifier_rollout._redacted_log_tail(
+            'Parameters: %{"client_assertion" => "signed.jwt.value", "code_verifier" => "one-time-secret-value"}\n'
+            "Failed to sign access token: raw error details", redactor
+        )
         self.assertNotIn("one-time-secret-value", rendered)
-        self.assertIn("HTTP 500", rendered)
+        self.assertNotIn("signed.jwt.value", rendered)
+        self.assertEqual(rendered, "Failed to sign access token: [REDACTED]")
+
+    def test_public_adopter_provisions_signing_key_before_mounted_http(self) -> None:
+        source = (ROOT / "scripts/acceptance/clean_room/verifier_rollout.py").read_text(encoding="utf-8")
+        public = source.split("def _run_public_control", 1)[1].split("def _configure", 1)[0]
+        self.assertIn("runner._provision_signing_key(new_host, new_env)", public)
 
     def test_public_source_link_requires_terminal_identity_and_exact_package_file_match(self) -> None:
         helper = verifier_rollout.verify_public_artifact
