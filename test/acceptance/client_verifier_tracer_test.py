@@ -14,7 +14,7 @@ CLEAN_ROOM = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "c
 sys.path.insert(0, str(CLEAN_ROOM))
 
 from package_input import PackageIdentity, PackageInputError, PackageSource, prepare_package  # noqa: E402
-from build_provider import PROOF_PAIR_MARKER, configure_proof_pair  # noqa: E402
+from build_provider import PROOF_PAIR_LOCKS, PROOF_PAIR_MARKER, configure_proof_pair, proof_pair_lock_hash  # noqa: E402
 from verifier_receipts import ReceiptError, load_receipt, validate_receipt  # noqa: E402
 
 
@@ -80,6 +80,18 @@ class PairSelectionTest(unittest.TestCase):
             self.assertIn('"== 1.1.28"', manifest.read_text())
             self.assertTrue((child / PROOF_PAIR_MARKER).is_file())
             self.assertFalse((child / "lib" / "clean_room_provider_web" / "admin_proof.ex").exists())
+
+    def test_reused_pair_requires_manifest_pins_before_mix(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            child = Path(temporary)
+            (child / PROOF_PAIR_MARKER).write_text(
+                f"pair=locked\nlock_sha256={proof_pair_lock_hash('locked')}\n", encoding="utf-8"
+            )
+            import shutil
+
+            shutil.copy2(PROOF_PAIR_LOCKS["locked"], child / "mix.lock")
+            with self.assertRaises(PackageInputError):
+                configure_proof_pair(child, "locked", admin_proof=False, reused=True)
 
 
 class InstalledReceiptTest(unittest.TestCase):

@@ -102,7 +102,9 @@ def configure_proof_pair(
             raise PackageInputError("reused provider proof pair does not match selected pair")
         if not lock_target.is_file() or sha256(lock_target) != lock_hash:
             raise PackageInputError("reused provider proof lock does not match selected pair")
-        manifest = manifest_path.read_text(encoding="utf-8") if manifest_path.is_file() else ""
+        if not manifest_path.is_file():
+            raise PackageInputError("reused provider manifest is missing")
+        manifest = manifest_path.read_text(encoding="utf-8")
     else:
         if not manifest_path.is_file():
             raise PackageInputError("provider manifest is missing")
@@ -122,10 +124,9 @@ def configure_proof_pair(
         shutil.copy2(lock_path, lock_target)
         marker_path.write_text(marker, encoding="utf-8")
 
-    if manifest:
-        for dependency, version in (("phoenix", phoenix_version), ("phoenix_live_view", live_view_version)):
-            if manifest.count(f'{{:{dependency}, "== {version}"}}') != 1:
-                raise PackageInputError("provider manifest does not match selected proof pair")
+    for dependency, version in (("phoenix", phoenix_version), ("phoenix_live_view", live_view_version)):
+        if manifest.count(f'{{:{dependency}, "== {version}"}}') != 1:
+            raise PackageInputError("provider manifest does not match selected proof pair")
 
     return lock_hash
 
