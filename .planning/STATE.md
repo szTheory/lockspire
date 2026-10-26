@@ -5,11 +5,11 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 177
 current_phase_name: Safe Verifier Maintenance & Recovery
 status: planning
-stopped_at: Phase 176 verified complete; --no-transition honored before Phase 177 discussion
-last_updated: "2026-10-26T00:14:56.162Z"
+stopped_at: Phase 177 context gathered (assumptions mode)
+last_updated: "2026-10-26T00:29:05.887Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 176 verified complete; stopped before Phase 177 discussion
-state_head: 7316cdb2b568b8518dc4f430d135e8843e053999
+state_head: ae830adab59ce433c9a25e6bc5fa7ad2cbc994b7
 progress:
   total_phases: 4
   completed_phases: 2
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 176 is verified complete (7/7 plans, 28/28 truths and 7/7 requirements). Phase 177 — Safe Verifier Maintenance & Recovery — awaits discussion; no Phase 177 work has started. Corrected candidate `71627f27` passed full CI and independent security/source review. UI quality remains the next substantial milestone candidate with its completed interview preserved.
+**Current focus:** Phase 176 is verified complete (7/7 plans, 28/28 truths and 7/7 requirements). Phase 177 — Safe Verifier Maintenance & Recovery — has researched context ready for planning; no Phase 177 product implementation has started. Corrected candidate `71627f27` passed full CI and independent security/source review. UI quality remains the next substantial milestone candidate with its completed interview preserved.
 
 ## Current Position
 
 Phase: 177 — Safe Verifier Maintenance & Recovery
 Plan: Not started
-Status: Ready for Phase 177 discussion; --no-transition stop honored
-Last activity: 2026-10-25 — Phase 176 verified complete; 22/22 planned security threats closed
+Status: Phase 177 context captured; ready for planning
+Last activity: 2026-10-25 — Phase 177 delegated research synthesized into 23 scoped decisions; implementation remains pending
 
 ## Performance Metrics
 
@@ -133,9 +133,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T00:14:56.130Z
-Stopped at: Phase 176 verified complete; --no-transition honored before Phase 177 discussion
-Resume file: .planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md
+Last session: 2026-10-26T00:29:05.847Z
+Stopped at: Phase 177 context gathered (assumptions mode)
+Resume file: .planning/phases/177-safe-verifier-maintenance-recovery/177-CONTEXT.md
 Next: $gsd-discuss-phase 177. Phase 176 is complete; this auto-advance run stopped with --no-transition before Phase 177 discussion. Read 176-HANDOFF.md and the final verification. Entry accepted main, corrected local candidate and eventual Phase 178 integrated-main acceptance remain distinct. Preserve retained history/resources and visible non-authoritative probe/prohibition flags.
 
 ### Blockers
@@ -143,6 +143,8 @@ Next: $gsd-discuss-phase 177. Phase 176 is complete; this auto-advance run stopp
 None
 
 ## Decisions
+
+- [Phase 177 discussion]: Owner delegated fan-out research and automatic adoption of coherent scoped recommendations. Preserve authenticated age metadata during dedicated custody rewrap, distinguish legitimate no-material clients, use selected authority with verifier-only atomic audit, require fresh complete local custody check, resolve bare-Mix configuration locally, and include existing disclosure paths. See 177-CONTEXT.md; runtime requirements remain pending.
 
 - [Phase 176 discussion]: Owner accepted the recommended bundle with “what do u rec? let's do that”. Preserve dedicated custody/configuration, final-ID writer coherence, approved native/migrated lifetime policy, and reader-first activation. Preserve existing token/introspection/revocation/device/CIBA JWT support and PAR/FAPI exclusions; see 176-CONTEXT.md.
 
@@ -189,5 +191,5 @@ None
 
 ## Operator Next Steps
 
-- Run $gsd-discuss-phase 177 next. Phase 176 is verified complete; maintenance/recovery/full disclosure stay Phase 177 and packaged delivery/main acceptance stay Phase 178.
+- Run $gsd-plan-phase 177 next using 177-CONTEXT.md. Phase 176 is verified complete; Phase 177 maintenance/recovery/full disclosure remains unimplemented and packaged delivery/main acceptance stays Phase 178.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train.
