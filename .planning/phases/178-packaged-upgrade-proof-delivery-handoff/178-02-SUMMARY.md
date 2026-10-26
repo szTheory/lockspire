@@ -76,22 +76,22 @@ status: complete
 
 - Added the installed core group with real HTTP token issuance, dedicated verifier persistence, dry-run, committed apply, a separate nil-cursor check, and fail-closed unknown or partial inventory outcomes.
 - Added the host-owned delegated maintenance callbacks and invalid-authority witnesses. Delegated receipts observed callback activity; invalid declarations rejected before maintenance access.
-- Ran all four installed cells against source revision `9013e240e930fae932219bdf888b3cac33c8e4d9`, package `1.6.1`, Elixir `1.19.5`, OTP `28`, and PostgreSQL `14.17` (Homebrew). Locked resolves Phoenix `1.8.13` / LiveView `1.2.10`; floor resolves Phoenix `1.8.5` / LiveView `1.1.28`. Each cell executed one passing core case.
-- Candidate artifact identity was archive SHA-256 `5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be`, vendor tree SHA-256 `0aef9c3d4c8f9be0cf5df6afda15b82999888f9fdfffcd953a2ff7b6f6a91232`, and source proof `bfba57d128e6493cccaf219e3632989f42ca0280d5194d32eb2b1bbb1e33f267`. Locked/floor lockfile SHA-256 values were `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` and `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` respectively.
+- Reran all four installed cells from clean committed HEAD `fa61823c1b01eb4cf377ac4e0d4c5d48f02ecacd` into `.artifacts/phase178/core-final`. Each final receipt records that exact runner and candidate source revision, package `1.6.1`, Elixir `1.19.5`, OTP `28`, and PostgreSQL `14.17` (Homebrew). Locked resolves Phoenix `1.8.13` / LiveView `1.2.10`; floor resolves Phoenix `1.8.5` / LiveView `1.1.28`. Each cell executed one passing core case.
+- Final candidate artifact identity: archive SHA-256 `5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be`, vendor tree SHA-256 `0aef9c3d4c8f9be0cf5df6afda15b82999888f9fdfffcd953a2ff7b6f6a91232`, source proof `2c358959f8c12be4f7b8bd9526411bdca23047f05fc4c1bcce96f350ea77e745`. Locked/floor lockfile SHA-256 values were `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` and `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` respectively.
 
 | Cell | Run ID | HTTP/token | Dry-run unchanged | Apply committed | Fresh check | Unknown/partial rejected |
 |---|---|---|---|---|---|---|
-| locked / builtin | `b332705b49b24d8abc348dbf83632147` | 200 / yes | yes | yes | ready | yes / yes |
-| locked / delegated | `d9ba38de75a3403a9fa02f463a111aee` | 200 / yes | yes | yes | ready | yes / yes |
-| floor / builtin | `1c0c0c0604f741a1b2d7d18830bafe50` | 200 / yes | yes | yes | ready | yes / yes |
-| floor / delegated | `cb6c94e7d1db4199a90fc970203694fc` | 200 / yes | yes | yes | ready | yes / yes |
+| locked / builtin | `30e5f4cd08324566a421ee3cc3766020` | 200 / yes | yes | yes | ready | yes / yes |
+| locked / delegated | `fb33c10e8df64a208f13ef7bc5b63aee` | 200 / yes | yes | yes | ready | yes / yes |
+| floor / builtin | `facdb24a777e43dfacb31e1b42be47e3` | 200 / yes | yes | yes | ready | yes / yes |
+| floor / delegated | `1f0492fd50f7460f84e572332fc938f6` | 200 / yes | yes | yes | ready | yes / yes |
 
-The Task 1 locked/delegated installed run also passed with one executed case: `7a86a5e4b84c4746a68449f7cafd0ef9`, source/runner revision `da3066323ff9c35ff05ed97a518c6c2861591214`.
+The prior receipts under `.artifacts/phase178/core/` are preserved as historical evidence. They record runner/candidate revision `9013e240e930fae932219bdf888b3cac33c8e4d9`, before the all-selector runner change was committed; the runner file was therefore not source-bound to a clean committed checkout. The earlier Task 1 run `7a86a5e4b84c4746a68449f7cafd0ef9` similarly records predecessor runner revision `da3066323ff9c35ff05ed97a518c6c2861591214`. These runs are not counted as the final clean-source matrix; the `core-final/` receipts are.
 
 ## Verification
 
 - `python3 -m unittest discover -s test/acceptance -p 'client_verifier_core_test.py'` — passed, 3 tests.
-- `python3 scripts/acceptance/clean_room_verifier_upgrade.py --pair all --store all --group core --receipt-dir .artifacts/phase178/core` — passed; all four receipts were loaded and validated against their expected pair/store identities.
+- `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 scripts/acceptance/clean_room_verifier_upgrade.py --pair all --store all --group core --receipt-dir .artifacts/phase178/core-final` — passed; all four receipts were loaded and validated against expected pair/store identities and runner `fa61823c1b01eb4cf377ac4e0d4c5d48f02ecacd`.
 - `MIX_ENV=test mix test test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs test/lockspire/install/repo_runner_test.exs test/lockspire/install/task_error_test.exs` with `LOCKSPIRE_TEST_DB_NAME=lockspire_phase178_20261026_owned` after creating and migrating that database — passed, 33 tests, 0 failures. The owned database was dropped afterward.
 - Both TDD RED evidence files passed `gsd-tools check tdd-red-evidence` with `RED_EVIDENCE_OK`; the RED commits precede their corresponding implementation commits.
 - `git diff --check` — passed.
@@ -174,4 +174,4 @@ Plans 03–07 can consume the fixed group-source selection and host adapter cont
 
 ## Self-Check: PASSED
 
-Summary and implementation artifacts exist; all four task commits are ancestors of the current HEAD.
+Summary and implementation artifacts exist; all four task commits are ancestors of the current HEAD. All four `core-final/` receipts validate against their expected cells and the clean runner revision.
