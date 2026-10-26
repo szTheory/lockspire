@@ -160,17 +160,8 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     with {:ok, %Context{state: :valid, write_mode: :dedicated} = context} <-
            Context.validate(context),
          :ok <- validate_identity(client_id),
-         now_ms when is_integer(now_ms) <- custody_now_ms(opts),
-         {:ok, secret, age, key_id} <- authenticated_material(context, client_id, encrypted),
-         :ok <- verify_expected_hash(expected_hash, secret),
-         :ok <- validate_custody_age(age, now_ms) do
-      classification = if key_id == context.current_id, do: :current_key, else: :old_key
-
-      {:ok,
-       Map.merge(
-         %{classification: classification, authenticated?: true, key_id: key_id},
-         age_metadata(age, now_ms)
-       )}
+         now_ms when is_integer(now_ms) <- custody_now_ms(opts) do
+      inspect_custody_value(context, client_id, encrypted, expected_hash, now_ms, opts)
     else
       {:ok, %Context{}} -> {:error, :client_secret_verifier_configuration_invalid}
       {:error, reason} -> {:error, reason}
@@ -192,20 +183,8 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     with {:ok, %Context{state: :valid, write_mode: :dedicated} = context} <-
            Context.validate(context),
          :ok <- validate_identity(client_id),
-         now_ms when is_integer(now_ms) <- custody_now_ms(opts),
-         {:ok, secret, age, old_key_id} <- authenticated_material(context, client_id, encrypted),
-         :ok <- validate_custody_age(age, now_ms),
-         :ok <- verify_expected_hash(expected_hash, secret),
-         {:ok, new_key} <- fetch_current_key(context, context.current_id) do
-      if old_key_id == context.current_id do
-        {:ok, :already_current, old_key_id, context.current_id}
-      else
-        seal_with_age(context.current_id, new_key, client_id, secret, age)
-        |> case do
-          {:ok, replacement} -> {:ok, replacement, old_key_id, context.current_id}
-          {:error, reason} -> {:error, reason}
-        end
-      end
+         now_ms when is_integer(now_ms) <- custody_now_ms(opts) do
+      prepare_rewrap_value(context, client_id, encrypted, expected_hash, now_ms, opts)
     else
       {:ok, %Context{}} -> {:error, :client_secret_verifier_configuration_invalid}
       {:error, reason} -> {:error, reason}
@@ -217,6 +196,91 @@ defmodule Lockspire.Security.ClientSecretVerifier do
 
   def prepare_rewrap(_context, _client_id, _encrypted, _expected_hash, _opts),
     do: {:error, :client_secret_verifier_unavailable}
+
+  defp inspect_custody_value(context, client_id, encrypted, expected_hash, now_ms, opts)
+       when is_binary(encrypted) and byte_size(encrypted) > 0 and
+              not is_nil(expected_hash) do
+    if String.starts_with?(encrypted, @family) do
+      with {:ok, secret, age, key_id} <- authenticated_material(context, client_id, encrypted),
+           :ok <- verify_expected_hash(expected_hash, secret),
+           :ok <- validate_custody_age(age, now_ms) do
+        classification = if key_id == context.current_id, do: :current_key, else: :old_key
+
+        {:ok,
+         Map.merge(
+           %{classification: classification, authenticated?: true, key_id: key_id},
+           age_metadata(age, now_ms)
+         )}
+      end
+    else
+      inspect_legacy_custody(encrypted, expected_hash, now_ms, opts)
+    end
+  end
+
+  defp inspect_custody_value(_context, _client_id, _encrypted, _expected_hash, _now_ms, _opts),
+    do: {:error, :client_secret_verifier_unsupported_format}
+
+  defp inspect_legacy_custody(encrypted, expected_hash, now_ms, opts) do
+    with legacy_key when is_binary(legacy_key) and legacy_key != "" <- legacy_key(opts),
+         {:ok, %{data: secret, signed_at_ms: signed_at_ms, deadline_ms: deadline_ms}} <-
+           Legacy.authenticated_metadata(encrypted, legacy_key, now_ms),
+         :ok <- validate_secret(secret),
+         :ok <- verify_expected_hash(expected_hash, secret) do
+      {:ok,
+       Map.merge(
+         %{classification: :legacy, authenticated?: true, key_id: nil},
+         age_metadata({:migrated, signed_at_ms, deadline_ms}, now_ms)
+       )}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :client_secret_verifier_unsupported_format}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_unsupported_format}
+  end
+
+  defp prepare_rewrap_value(context, client_id, encrypted, expected_hash, now_ms, opts)
+       when is_binary(encrypted) and byte_size(encrypted) > 0 do
+    if String.starts_with?(encrypted, @family) do
+      with {:ok, secret, age, old_key_id} <- authenticated_material(context, client_id, encrypted),
+           :ok <- validate_custody_age(age, now_ms),
+           :ok <- verify_expected_hash(expected_hash, secret),
+           {:ok, new_key} <- fetch_current_key(context, context.current_id) do
+        if old_key_id == context.current_id do
+          {:ok, :already_current, old_key_id, context.current_id}
+        else
+          seal_with_age(context.current_id, new_key, client_id, secret, age)
+          |> case do
+            {:ok, replacement} -> {:ok, replacement, old_key_id, context.current_id}
+            {:error, reason} -> {:error, reason}
+          end
+        end
+      end
+    else
+      prepare_legacy_rewrap(context, client_id, encrypted, expected_hash, now_ms, opts)
+    end
+  end
+
+  defp prepare_rewrap_value(_context, _client_id, _encrypted, _expected_hash, _now_ms, _opts),
+    do: {:error, :client_secret_verifier_unsupported_format}
+
+  defp prepare_legacy_rewrap(context, client_id, encrypted, expected_hash, now_ms, opts) do
+    with legacy_key when is_binary(legacy_key) and legacy_key != "" <- legacy_key(opts),
+         {:ok, %{data: secret, signed_at_ms: signed_at_ms, deadline_ms: deadline_ms}} <-
+           Legacy.authenticated_metadata(encrypted, legacy_key, now_ms),
+         :ok <- validate_secret(secret),
+         :ok <- verify_expected_hash(expected_hash, secret),
+         {:ok, key} <- fetch_current_key(context, context.current_id),
+         {:ok, replacement} <-
+           seal_migrated(context.current_id, key, client_id, secret, signed_at_ms, deadline_ms) do
+      {:ok, replacement, "legacy", context.current_id}
+    else
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :client_secret_verifier_unsupported_format}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_unsupported_format}
+  end
 
   defp open_value(
          %Context{state: :valid, legacy_read: legacy_read} = context,
@@ -237,7 +301,10 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   defp open_dedicated(context, client_id, encrypted, opts) do
     with {:ok, secret, age, _key_id} <- authenticated_material(context, client_id, encrypted),
          :ok <-
-           validate_stored_age(age, Keyword.get(opts, :verifier_now_ms, System.os_time(:millisecond))) do
+           validate_stored_age(
+             age,
+             Keyword.get(opts, :verifier_now_ms, System.os_time(:millisecond))
+           ) do
       {:ok, secret}
     else
       false -> {:error, :client_secret_verifier_unsupported_format}
@@ -435,7 +502,12 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   defp validate_custody_age(_age, _now_ms), do: {:error, :client_secret_verifier_unavailable}
 
   defp custody_now_ms(opts),
-    do: Keyword.get(opts, :now_ms, Keyword.get(opts, :verifier_now_ms, System.os_time(:millisecond)))
+    do:
+      Keyword.get(
+        opts,
+        :now_ms,
+        Keyword.get(opts, :verifier_now_ms, System.os_time(:millisecond))
+      )
 
   defp age_metadata(:native, _now_ms),
     do: %{age_kind: :native, signed_at_ms: nil, deadline_ms: nil, authentication_eligible?: true}

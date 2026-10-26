@@ -238,10 +238,12 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     signed_at_ms = signed_at_seconds * 1_000
     deadline_ms = signed_at_ms + 3_600_000
     legacy_key_base = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)[:secret_key_base]
-    legacy = Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
-      signed_at: signed_at_seconds,
-      max_age: 3_600
-    )
+
+    legacy =
+      Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
+        signed_at: signed_at_seconds,
+        max_age: 3_600
+      )
 
     expires_at = DateTime.add(DateTime.utc_now(), 7, :day)
     secret_expires_at = DateTime.add(DateTime.utc_now(), 3, :day)
@@ -254,6 +256,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
              )
 
     assert {:ok, before} = Repository.fetch_client_by_id(client_id)
+
     assert {:ok, :changed} =
              ClientVerifierMaintenance.rewrap_client(client_id,
                legacy_secret_key_base: legacy_key_base
@@ -283,9 +286,12 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
   end
 
   test "expired legacy verifier remains unchanged and requires recovery" do
-    current_context = context([{"maintenance-expired-legacy", :crypto.strong_rand_bytes(32)}],
-      "maintenance-expired-legacy"
-    )
+    current_context =
+      context(
+        [{"maintenance-expired-legacy", :crypto.strong_rand_bytes(32)}],
+        "maintenance-expired-legacy"
+      )
+
     set_startup_context(current_context)
 
     secret = "maintenance-expired-legacy-secret"
@@ -293,10 +299,12 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     client_id = unique_id()
     signed_at_seconds = System.os_time(:second) - 90_000
     legacy_key_base = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)[:secret_key_base]
-    legacy = Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
-      signed_at: signed_at_seconds,
-      max_age: 86_400
-    )
+
+    legacy =
+      Lockspire.TestSupport.ClientSecretVerifierFixtures.legacy_verifier(secret,
+        signed_at: signed_at_seconds,
+        max_age: 86_400
+      )
 
     assert {:ok, _} = Repository.register_client(client(client_id, hash, legacy))
     assert {:ok, before} = Repository.fetch_client_by_id(client_id)

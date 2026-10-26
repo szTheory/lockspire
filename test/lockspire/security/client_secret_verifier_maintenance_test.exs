@@ -58,6 +58,7 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
 
     assert Map.take(after_rewrap, [:age_kind, :signed_at_ms, :deadline_ms]) ==
              Map.take(before, [:age_kind, :signed_at_ms, :deadline_ms])
+
     assert after_rewrap.classification == :current_key
     refute after_rewrap.authentication_eligible?
 
@@ -171,6 +172,46 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     end
   end
 
+  test "authenticated dedicated payloads with invalid structure cannot establish custody" do
+    key = :crypto.strong_rand_bytes(32)
+    client_id = "maintenance-structure-client"
+    secret = "maintenance-structure-secret"
+    context = context([{"structure-key", key}], "structure-key")
+    hash = Policy.hash_client_secret(secret)
+    oversized_secret = String.duplicate("x", 1_048_577)
+
+    invalid_plaintexts = [
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 0, 0>>,
+      <<1, byte_size(secret) + 1::unsigned-big-32, secret::binary, 0>>,
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 2>>,
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 1,
+        1_700_000_000_124::signed-big-64, 1_700_000_000_123::signed-big-64>>,
+      <<1, byte_size(oversized_secret)::unsigned-big-32, oversized_secret::binary, 0>>
+    ]
+
+    for plaintext <- invalid_plaintexts do
+      encrypted = encrypt_plaintext(context, client_id, plaintext)
+
+      assert {:error, :client_secret_verifier_unavailable} =
+               ClientSecretVerifier.inspect_custody(
+                 context,
+                 client_id,
+                 encrypted,
+                 hash,
+                 now_ms: 1_800_000_000_000
+               )
+
+      assert {:error, :client_secret_verifier_unavailable} =
+               ClientSecretVerifier.prepare_rewrap(
+                 context,
+                 client_id,
+                 encrypted,
+                 hash,
+                 now_ms: 1_800_000_000_000
+               )
+    end
+  end
+
   test "reserved dedicated prefixes never retry through the legacy reader" do
     context = context([{"known", :crypto.strong_rand_bytes(32)}], "known")
 
@@ -246,7 +287,9 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     for rejection <- rejected do
       {encrypted, now_ms, legacy_key, expected_hash} =
         case rejection do
-          {encrypted, now_ms} -> {encrypted, now_ms, @legacy_key, Policy.hash_client_secret(secret)}
+          {encrypted, now_ms} ->
+            {encrypted, now_ms, @legacy_key, Policy.hash_client_secret(secret)}
+
           {encrypted, now_ms, legacy_key} ->
             {encrypted, now_ms, legacy_key, Policy.hash_client_secret(secret)}
 
@@ -291,12 +334,16 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
   end
 
   defp encrypt_migrated(context, client_id, secret, signed_at_ms, deadline_ms) do
-    key = context.keys[context.current_id]
-    iv = :crypto.strong_rand_bytes(12)
-
     plaintext =
       <<1, byte_size(secret)::unsigned-big-32, secret::binary, 1, signed_at_ms::signed-big-64,
         deadline_ms::signed-big-64>>
+
+    encrypt_plaintext(context, client_id, plaintext)
+  end
+
+  defp encrypt_plaintext(context, client_id, plaintext) do
+    key = context.keys[context.current_id]
+    iv = :crypto.strong_rand_bytes(12)
 
     aad =
       "lockspire-client-secret-jwt-verifier" <>
