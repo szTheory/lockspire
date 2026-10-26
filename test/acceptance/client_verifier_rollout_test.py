@@ -37,6 +37,8 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertIn('write_mode: :dedicated', fixture_source,
                       "safe age inspection needs a dedicated reader context even during legacy writes")
         self.assertIn('legacy_read: :allow', fixture_source)
+        self.assertIn('Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)', fixture_source,
+                      "legacy age inspection must use Lockspire's configured key, not Phoenix's endpoint key")
 
     def test_rollout_contract_covers_predecessor_process_drain_and_persisted_formats(self) -> None:
         path = ROOT / "scripts/acceptance/clean_room/verifier_rollout.py"
