@@ -445,8 +445,8 @@ def run_tracer(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pair", choices=("locked", "floor"), default="locked")
-    parser.add_argument("--store", choices=("builtin", "delegated"), default="builtin")
+    parser.add_argument("--pair", choices=("locked", "floor", "all"), default="locked")
+    parser.add_argument("--store", choices=("builtin", "delegated", "all"), default="builtin")
     parser.add_argument("--group", choices=sorted(GROUPS), default="tracer")
     parser.add_argument("--receipt-dir", type=Path, default=Path(".artifacts/phase178/tracer"))
     parser.add_argument("--validate-receipts", type=Path)
