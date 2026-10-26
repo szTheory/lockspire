@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import sys
 import tempfile
 import unittest
@@ -145,6 +146,13 @@ class VerifierRolloutContracts(unittest.TestCase):
         public = source.split("def _run_public_control", 1)[1].split("def _configure", 1)[0]
         self.assertIn("runner._provision_signing_key(new_host, new_env)", public)
         self.assertIn('"old_process_pid": old_pid, "candidate_process_pid": candidate_pid', public)
+
+    def test_rollout_reads_can_skip_persisted_consent_between_independent_hosts(self) -> None:
+        parameters = inspect.signature(clean_room_verifier_upgrade._authorization_code).parameters
+        self.assertIn("remember", parameters)
+        self.assertTrue(parameters["remember"].default)
+        source = (ROOT / "scripts/acceptance/clean_room/verifier_rollout.py").read_text(encoding="utf-8")
+        self.assertIn("remember=False", source)
 
     def test_public_source_link_requires_terminal_identity_and_exact_package_file_match(self) -> None:
         helper = verifier_rollout.verify_public_artifact
