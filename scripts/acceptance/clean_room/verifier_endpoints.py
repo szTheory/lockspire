@@ -279,15 +279,27 @@ def _release_rpc_expression(mode: str) -> str:
 
 def _release_command(release_bin: Path, env: dict[str, str], *args: str,
                      redactor: Redactor | None = None) -> subprocess.CompletedProcess[bytes]:
+    detached_start = bool(args and args[0] == "start")
+    if detached_start:
+        log_path = release_bin.parents[1] / "controller-start.log"
+        try:
+            with log_path.open("wb") as log:
+                return subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
+                                      stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
+                                      check=False, timeout=60)
+        except subprocess.TimeoutExpired:
+            output = log_path.read_text(encoding="utf-8", errors="replace") if log_path.is_file() else ""
+            safe = redactor.text(output) if redactor is not None else output
+            if redactor is not None:
+                redactor.assert_safe(safe)
+            raise PackageInputError("run-owned release start exceeded its bounded time limit: " + safe[-1000:]) from None
     try:
-        detached_start = bool(args and args[0] == "start")
         result = subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
-                                stdin=subprocess.DEVNULL,
-                                stdout=subprocess.DEVNULL if detached_start else subprocess.PIPE,
-                                stderr=subprocess.DEVNULL if detached_start else subprocess.STDOUT,
-                                check=False, timeout=60 if detached_start else 90)
+                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, check=False, timeout=90)
     except subprocess.TimeoutExpired:
-        raise PackageInputError("run-owned release command exceeded its bounded time limit") from None
+        raise PackageInputError("run-owned release " + (args[0] if args else "command") +
+                                " exceeded its bounded time limit") from None
     if redactor is not None:
         text_output = redactor.text(result.stdout.decode(errors="replace"))
         redactor.assert_safe(text_output)
