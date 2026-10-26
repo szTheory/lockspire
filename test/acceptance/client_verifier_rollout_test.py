@@ -31,6 +31,8 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertTrue(fixture.is_file(), "rollout state controls must be host-owned")
         selected = build_provider.selected_host_fixture_sources({"rollout", "legacy-control"})
         self.assertEqual([path.name for path in selected], ["verifier_rollout.exs", "verifier_rollout.exs"])
+        fixture_source = fixture.read_text(encoding="utf-8")
+        self.assertFalse(fixture_source.startswith('"""'), "Elixir fixture must not start with a Python docstring")
 
     def test_rollout_contract_covers_predecessor_process_drain_and_persisted_formats(self) -> None:
         path = ROOT / "scripts/acceptance/clean_room/verifier_rollout.py"
