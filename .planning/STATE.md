@@ -4,19 +4,19 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
-current_plan: 5
+current_plan: 6
 status: executing
-stopped_at: Completed 178-04-PLAN.md
-last_updated: "2026-10-26T21:07:56.356Z"
+stopped_at: Completed 178-05-PLAN.md
+last_updated: "2026-10-26T21:41:20.577Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 178 execution started
-state_head: e05464c4a4588c7aaf758d3b54be7074d589a94f
+state_head: d050519b7ac76c6637f5a46636f0936c1b9b76ff
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 31
-  completed_plans: 23
-  percent: 74
+  completed_plans: 24
+  percent: 75
 ---
 
 # Project State
@@ -32,9 +32,9 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 ## Current Position
 
 Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
-Current Plan: 5
+Current Plan: 6
 Total Plans in Phase: 12
-Plan: 5 of 12; completed, 2/2 tasks
+Plan: 6 of 12; completed, 2/2 tasks
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 178 execution started
 
@@ -77,6 +77,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 178 P02 | 33min | 2 tasks | 8 files |
 | Phase 178 P03 | >=76m20s | 2 tasks | 4 files |
 | Phase 178 P04 | 44m | 2 tasks | 9 files |
+| Phase 178 P05 | 31min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -149,8 +150,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T21:07:56.214Z
-Stopped at: Completed 178-04-PLAN.md
+Last session: 2026-10-26T21:41:20.354Z
+Stopped at: Completed 178-05-PLAN.md
 Resume file: None
 Next: Continue authorized `$gsd-execute-phase 178 --auto --no-transition`, reconciling the partial Plan 01 draft and historical RED evidence in `178-EXECUTION-CHECKPOINT.md`. Preserve exact prior receipts and unresolved flags. Merge and publication remain separately gated.
 
@@ -238,6 +239,9 @@ None
 - [Phase 178]: Use the configured issuer string as client assertion audience on all five installed HTTP endpoints.
 - [Phase 178]: Run the assembled release foreground command as an owned process group and bind the loaded maintenance beam to that release.
 - [Phase 178]: Keep VPROOF-02 pending until the remaining Phase 178 proof groups complete their assigned coverage.
+- [Phase 178]: Capture PostgreSQL backend IDs inside each selected transaction and require the exact observed pg_blocking_pids relation before a contention case passes.
+- [Phase 178]: Provision pool capacity only in the generated transaction-proof host; treat it as headroom because the backend identity mismatch, not pool starvation, was the concrete observed blocker-witness cause.
+- [Phase 178]: Keep VPROOF-02 pending until all remaining Phase 178 evidence owners pass.
 
 ## Operator Next Steps
 
