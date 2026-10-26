@@ -24,12 +24,12 @@
 
 - [x] **VUP-01**: Existing hosts can read usable legacy Plug.Crypto verifier rows during explicit compatibility and deliberately reject them afterward; aged/unreadable rows have a qualified disposition, with no silent age bypass or change to configured credential expiry.
 - [x] **VUP-02**: Host operator can follow and verify a reader-first rolling deployment with explicit writer activation and truthful code/config rollback limits, so old nodes never encounter an unsupported write format in the supported sequence.
-- [ ] **VUP-03**: Host operator can introduce a new verifier key, rewrap existing material and retire an old key without changing partner secrets, endpoint/session secrets or signing-key custody.
+- [x] **VUP-03**: Host operator can introduce a new verifier key, rewrap existing material and retire an old key without changing partner secrets, endpoint/session secrets or signing-key custody.
 
 ### Safe maintenance, status and recovery
 
 - [ ] **VOPS-01**: Maintainer can preview, apply and check verifier rewrap through repo-safe tooling that is idempotent, reports partial failures/conflicts and returns a failing outcome when the requested completion/readiness condition is not met.
-- [ ] **VOPS-02**: Host can rewrap through its supported client/transaction store without overwriting concurrent secret rotation or client updates; ciphertext and audit commit atomically while hashes, expiry, rotation timestamps and other client fields remain unchanged.
+- [x] **VOPS-02**: Host can rewrap through its supported client/transaction store without overwriting concurrent secret rotation or client updates; ciphertext and audit commit atomically while hashes, expiry, rotation timestamps and other client fields remain unchanged.
 - [ ] **VOPS-03**: Operator can inspect redacted status for all stored verifier material, including inactive/expired and non-JWT-method clients; unknown, malformed, unreadable or uninspected rows cannot be presented as ready, and local status does not claim fleet-wide configuration parity.
 - [ ] **VOPS-04**: Operator can identify affected clients after missing/lost-key failure and recover through restoring a valid key or the existing authorized secret-rotation/reprovision path, while affected JWT authentication fails closed and unrelated supported authentication remains intact.
 
@@ -75,9 +75,9 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | SEC-05 | Phase 176 | Complete |
 | VUP-01 | Phase 176 | Complete |
 | VUP-02 | Phase 176 | Complete |
-| VUP-03 | Phase 177 | Pending |
+| VUP-03 | Phase 177 | Complete |
 | VOPS-01 | Phase 177 | Pending |
-| VOPS-02 | Phase 177 | Pending |
+| VOPS-02 | Phase 177 | Complete |
 | VOPS-03 | Phase 177 | Pending |
 | VOPS-04 | Phase 177 | Pending |
 | VPROOF-01 | Phase 177 | Pending |

@@ -1,7 +1,7 @@
 {
   "contract": "1.0.0",
   "flavor": "core",
-  "milestone": "v1.48 \u2014 Client Authentication Key Isolation & Rotation",
+  "milestone": "v1.48 — Client Authentication Key Isolation & Rotation",
   "phases": [
     {
       "number": "175",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-execute-phase 177 --auto --no-transition",
-    "label": "Execute Phase 177",
-    "reason": "Nine independently checked plans in seven waves; implementation and runtime verification pending"
+    "command": "$gsd-progress --next",
+    "label": "Advance to the next step",
+    "reason": "Phase 3 of 4 · 50% · executing"
   },
-  "updated_at": "2026-10-26T00:59:18.875Z"
+  "updated_at": "2026-10-26T01:10:38.312Z"
 }
