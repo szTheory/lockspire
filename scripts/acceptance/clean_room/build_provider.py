@@ -677,6 +677,7 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
         output = completed.stdout.decode(errors="replace")
         safe_stages = {
             "expired_apply", "expired_http", "expired_install_migrated",
+            "expired_http_connect", "expired_http_timeout", "expired_http_transport",
             "expired_metadata", "expired_migrated_ciphertext", "expired_seed",
             "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
             "issuance_seed", "recovery_apply", "recovery_expired_migration",

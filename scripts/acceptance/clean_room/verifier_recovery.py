@@ -38,7 +38,8 @@ SAFE_FAILURE_STAGES = frozenset({
     "recovery_seed", "recovery_apply", "recovery_repeat", "recovery_interrupt",
     "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
     "expired_seed", "expired_migrated_ciphertext", "expired_install_migrated", "expired_apply",
-    "expired_http", "expired_metadata",
+    "expired_http", "expired_http_connect", "expired_http_timeout", "expired_http_transport",
+    "expired_metadata",
     "issuance_seed", "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
 })
 

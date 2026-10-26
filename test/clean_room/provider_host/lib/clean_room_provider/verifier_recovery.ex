@@ -577,7 +577,17 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
     case :httpc.request(:post, request, [{:timeout, @timeout}], []) do
       {:ok, {{_version, status, _reason}, _headers, _response}} -> status
-      {:error, _reason} -> raise "mounted token endpoint request failed"
+      {:error, {:failed_connect, _details}} ->
+        mark_stage(:expired_http_connect)
+        raise "mounted token endpoint request failed"
+
+      {:error, :timeout} ->
+        mark_stage(:expired_http_timeout)
+        raise "mounted token endpoint request failed"
+
+      {:error, _safe_reason} ->
+        mark_stage(:expired_http_transport)
+        raise "mounted token endpoint request failed"
     end
   end
 
