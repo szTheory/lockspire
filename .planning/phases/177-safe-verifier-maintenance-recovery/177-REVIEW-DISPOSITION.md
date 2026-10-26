@@ -5,9 +5,9 @@ titles: json
 findings:
   - id: WR-01
     severity: warning
-    disposition: open
-    title: "Audit allowlist does not constrain sensitive values"
-open: 1
+    disposition: fixed
+    title: "Audit allowlist does not constrain sensitive values — closed"
+open: 0
 total: 1
 recorded: 2026-10-26T04:09:46.991Z
 ---
@@ -16,7 +16,7 @@ recorded: 2026-10-26T04:09:46.991Z
 
 | Finding | Severity | Disposition | Source |
 |---------|----------|-------------|--------|
-| WR-01 | warning | open | - |
+| WR-01 | warning | fixed | 9758550c; fixture 0a3c9ca5; 177-REVIEW-FIX.md; independent current review confirms closure |
 
 Dispositions: `open` (recorded, not yet triaged), `fixed`, `skipped`, `deferred`.
 Set `deferred` by hand and put the reason in the Source cell; both are preserved. A `|` in the reason is kept as prose and escaped on the next run.
