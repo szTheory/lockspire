@@ -39,6 +39,8 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
             ) :: {:ok, :changed | :already_current | :material_conflict} | {:error, atom()}
 
   defmodule MaintenanceConfig do
+    @moduledoc false
+
     @enforce_keys [:client_store, :transaction_store, :audit_store, :authority]
     defstruct [:client_store, :transaction_store, :audit_store, :authority]
 
@@ -207,27 +209,21 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
     do: {:error, :client_secret_verifier_maintenance_failed}
 
   defp rewrap_material(context, client, expected_hash, expected_verifier, opts) do
-    with {:ok, replacement_or_current, old_key_id, new_key_id} <-
-           ClientSecretVerifier.prepare_rewrap(
-             context,
-             client.client_id,
-             expected_verifier,
-             expected_hash,
-             opts
-           ) do
-      replacement =
-        if replacement_or_current == :already_current,
-          do: expected_verifier,
-          else: replacement_or_current
+    case ClientSecretVerifier.prepare_rewrap(
+           context,
+           client.client_id,
+           expected_verifier,
+           expected_hash,
+           opts
+         ) do
+      {:ok, replacement_or_current, old_key_id, new_key_id} ->
+        replacement =
+          if replacement_or_current == :already_current,
+            do: expected_verifier,
+            else: replacement_or_current
 
-      {:ok, replacement,
-       audit_attrs(client.client_id, old_key_id, new_key_id, DateTime.utc_now())}
-    else
-      {:error, :client_secret_verifier_key_unknown} ->
-        {:error, :client_secret_verifier_maintenance_failed}
-
-      {:error, _reason} ->
-        {:error, :client_secret_verifier_maintenance_failed}
+        {:ok, replacement,
+         audit_attrs(client.client_id, old_key_id, new_key_id, DateTime.utc_now())}
 
       _ ->
         {:error, :client_secret_verifier_maintenance_failed}

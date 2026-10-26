@@ -72,28 +72,44 @@ defmodule Mix.Tasks.Lockspire.Clients.Verifier.Rewrap do
   end
 
   defp validate!(opts, argv, invalid, args) do
+    with :ok <- validate_arguments(argv, invalid),
+         :ok <- validate_duplicates(args),
+         :ok <- validate_mode_args(opts),
+         :ok <- validate_limit_arg(Keyword.get(opts, :limit, @default_limit)) do
+      validate_cursor_arg(Keyword.get(opts, :after_client_id))
+    end
+  end
+
+  defp validate_arguments([], []), do: :ok
+  defp validate_arguments(_argv, _invalid), do: Mix.raise("invalid arguments for #{@task_name}")
+
+  defp validate_duplicates(args) do
+    if duplicate_options?(args), do: Mix.raise("duplicate options are not allowed"), else: :ok
+  end
+
+  defp validate_mode_args(opts) do
     cond do
-      invalid != [] or argv != [] ->
-        Mix.raise("invalid arguments for #{@task_name}")
-
-      duplicate_options?(args) ->
-        Mix.raise("duplicate options are not allowed")
-
       Keyword.get(opts, :check, false) and Keyword.get(opts, :dry_run, false) ->
         Mix.raise("--check and --dry-run cannot be combined")
 
       Keyword.get(opts, :check, false) and Keyword.has_key?(opts, :after_client_id) ->
         Mix.raise("--check requires a fresh scan and cannot use --after-client-id")
 
-      not valid_limit?(Keyword.get(opts, :limit, @default_limit)) ->
-        Mix.raise("--limit must be an integer from #{@min_limit} through #{@max_limit}")
-
-      not valid_cursor?(Keyword.get(opts, :after_client_id)) ->
-        Mix.raise("--after-client-id must be a non-empty UTF-8 client ID")
-
       true ->
         :ok
     end
+  end
+
+  defp validate_limit_arg(limit) do
+    if valid_limit?(limit),
+      do: :ok,
+      else: Mix.raise("--limit must be an integer from #{@min_limit} through #{@max_limit}")
+  end
+
+  defp validate_cursor_arg(cursor) do
+    if valid_cursor?(cursor),
+      do: :ok,
+      else: Mix.raise("--after-client-id must be a non-empty UTF-8 client ID")
   end
 
   defp duplicate_options?(args) do

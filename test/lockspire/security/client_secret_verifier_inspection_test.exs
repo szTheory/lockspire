@@ -70,8 +70,7 @@ defmodule Lockspire.Security.ClientSecretVerifierInspectionTest do
   defp marker(kind), do: "inspect-sentinel-" <> kind
 
   defp refute_marker(output, marker) do
-    unless not String.contains?(output, marker) do
-      flunk("stored credential sentinel leaked through inspection")
-    end
+    refute String.contains?(output, marker),
+           "stored credential sentinel leaked through inspection"
   end
 end

@@ -52,40 +52,56 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
   def run(_opts), do: {:error, :client_secret_verifier_maintenance_invalid_options}
 
   defp validate_options(opts) do
-    allowed = [
-      :mode,
-      :limit,
-      :after_client_id,
-      :context_source,
-      :client_secret_verifier_context
-    ]
-
-    if not Keyword.keyword?(opts) or duplicate_keys?(opts) or Keyword.keys(opts) -- allowed != [] do
-      {:error, :client_secret_verifier_maintenance_invalid_options}
-    else
+    with :ok <- validate_options_shape(opts) do
       mode = Keyword.get(opts, :mode, :apply)
       limit = Keyword.get(opts, :limit, @default_limit)
       cursor = Keyword.get(opts, :after_client_id)
 
-      cond do
-        mode not in [:apply, :dry_run, :check] ->
-          {:error, :client_secret_verifier_maintenance_invalid_options}
-
-        not is_integer(limit) or limit < @min_limit or limit > @max_limit ->
-          {:error, :client_secret_verifier_maintenance_invalid_limit}
-
-        not is_nil(cursor) and
-            (not is_binary(cursor) or cursor == "" or not String.valid?(cursor)) ->
-          {:error, :client_secret_verifier_inventory_invalid_cursor}
-
-        mode == :check and not is_nil(cursor) ->
-          {:error, :client_secret_verifier_maintenance_check_requires_fresh_scan}
-
-        true ->
-          {:ok, mode, limit, cursor}
+      with :ok <- validate_mode(mode),
+           :ok <- validate_limit_option(limit),
+           :ok <- validate_cursor_option(cursor),
+           :ok <- validate_fresh_check(mode, cursor) do
+        {:ok, mode, limit, cursor}
       end
     end
   end
+
+  defp validate_options_shape(opts) do
+    allowed = [:mode, :limit, :after_client_id, :context_source, :client_secret_verifier_context]
+
+    if Keyword.keyword?(opts) and not duplicate_keys?(opts) and
+         Keyword.keys(opts) -- allowed == [],
+       do: :ok,
+       else: {:error, :client_secret_verifier_maintenance_invalid_options}
+  end
+
+  defp validate_mode(mode) when mode in [:apply, :dry_run, :check], do: :ok
+
+  defp validate_mode(_mode),
+    do: {:error, :client_secret_verifier_maintenance_invalid_options}
+
+  defp validate_limit_option(limit)
+       when is_integer(limit) and limit >= @min_limit and limit <= @max_limit,
+       do: :ok
+
+  defp validate_limit_option(_limit),
+    do: {:error, :client_secret_verifier_maintenance_invalid_limit}
+
+  defp validate_cursor_option(nil), do: :ok
+
+  defp validate_cursor_option(cursor) when is_binary(cursor) and cursor != "" do
+    if String.valid?(cursor),
+      do: :ok,
+      else: {:error, :client_secret_verifier_inventory_invalid_cursor}
+  end
+
+  defp validate_cursor_option(_cursor),
+    do: {:error, :client_secret_verifier_inventory_invalid_cursor}
+
+  defp validate_fresh_check(:check, cursor) when not is_nil(cursor),
+    do: {:error, :client_secret_verifier_maintenance_check_requires_fresh_scan}
+
+  defp validate_fresh_check(_mode, _cursor), do: :ok
 
   defp duplicate_keys?(opts) do
     keys = Keyword.keys(opts)
@@ -189,18 +205,37 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
        when is_list(clients) and is_boolean(complete?) and map_size(page) == 3 do
     ids = Enum.map(clients, &client_id/1)
 
-    cond do
-      length(clients) > limit -> {:error, :oversized_page}
-      Enum.any?(ids, &is_nil/1) -> {:error, :invalid_client}
-      not strictly_after?(ids, cursor) -> {:error, :unordered_or_duplicate}
-      complete? and not is_nil(next) -> {:error, :terminal_cursor}
-      not complete? and (clients == [] or next != List.last(ids)) -> {:error, :nonterminal_cursor}
-      not complete? and not strictly_after?([next], cursor) -> {:error, :nonprogressing_cursor}
-      true -> :ok
+    with :ok <- validate_page_size(clients, limit),
+         :ok <- validate_page_ids(ids),
+         :ok <- validate_page_order(ids, cursor) do
+      validate_page_cursor(complete?, next, clients, ids, cursor)
     end
   end
 
   defp validate_page(_page, _cursor, _limit), do: {:error, :invalid_page}
+
+  defp validate_page_size(clients, limit) do
+    if length(clients) <= limit, do: :ok, else: {:error, :oversized_page}
+  end
+
+  defp validate_page_ids(ids) do
+    if Enum.any?(ids, &is_nil/1), do: {:error, :invalid_client}, else: :ok
+  end
+
+  defp validate_page_order(ids, cursor) do
+    if strictly_after?(ids, cursor), do: :ok, else: {:error, :unordered_or_duplicate}
+  end
+
+  defp validate_page_cursor(true, nil, _clients, _ids, _cursor), do: :ok
+  defp validate_page_cursor(true, _next, _clients, _ids, _cursor), do: {:error, :terminal_cursor}
+
+  defp validate_page_cursor(false, next, clients, ids, cursor) do
+    cond do
+      clients == [] or next != List.last(ids) -> {:error, :nonterminal_cursor}
+      not strictly_after?([next], cursor) -> {:error, :nonprogressing_cursor}
+      true -> :ok
+    end
+  end
 
   defp client_id(%Client{client_id: id}) when is_binary(id) and id != "" do
     if String.valid?(id), do: id, else: nil
@@ -289,27 +324,39 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
     hash = client.client_secret_hash
     verifier = client.client_secret_jwt_verifier_encrypted
 
-    cond do
-      is_nil(hash) and is_nil(verifier) and client.client_type == :public and
-          client.token_endpoint_auth_method == :none ->
+    case classify_material(client, hash, verifier) do
+      :no_material ->
         {:ok, :no_material, %{authenticated?: true}}
 
-      is_nil(hash) and is_binary(verifier) ->
-        {:attention, :orphan_verifier, :orphan_verifier, :repair_client_record,
-         %{authenticated?: false}}
-
-      is_binary(hash) and is_nil(verifier) ->
-        {:attention, :missing_material, :missing_expected_material, :rotate_client_secret,
-         %{authenticated?: false}}
-
-      not is_binary(hash) or not is_binary(verifier) ->
-        {:attention, :missing_material, :missing_expected_material, :rotate_client_secret,
-         %{authenticated?: false}}
-
-      true ->
+      :inspect ->
         classify_authenticated_inspection(client, context, hash, verifier)
+
+      outcome ->
+        outcome
     end
   end
+
+  defp classify_material(client, nil, nil) do
+    if client.client_type == :public and client.token_endpoint_auth_method == :none do
+      :no_material
+    else
+      missing_material()
+    end
+  end
+
+  defp classify_material(_client, nil, verifier) when is_binary(verifier),
+    do: attention(:orphan_verifier, :orphan_verifier, :repair_client_record)
+
+  defp classify_material(_client, hash, verifier) when is_binary(hash) and is_binary(verifier),
+    do: :inspect
+
+  defp classify_material(_client, _hash, _verifier), do: missing_material()
+
+  defp missing_material,
+    do: attention(:missing_material, :missing_expected_material, :rotate_client_secret)
+
+  defp attention(classification, reason, action),
+    do: {:attention, classification, reason, action, %{authenticated?: false}}
 
   defp classify_authenticated_inspection(client, context, hash, verifier) do
     custody_opts = legacy_key_opts()

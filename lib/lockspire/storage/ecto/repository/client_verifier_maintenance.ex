@@ -174,7 +174,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
 
   defp after_cursor(query, cursor) do
     from(client in query,
-      where: fragment("? COLLATE \"C\" > ? COLLATE \"C\"", client.client_id, ^cursor)
+      where: fragment(~s|? COLLATE "C" > ? COLLATE "C"|, client.client_id, ^cursor)
     )
   end
 
@@ -215,11 +215,25 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
     do: {:error, :client_secret_verifier_inventory_invalid_limit}
 
   defp valid_inputs?(client_id, hash, expected, replacement, attrs) do
-    is_binary(client_id) and is_binary(hash) and is_binary(expected) and is_binary(replacement) and
-      is_map(attrs) and
-      Map.take(attrs, [:action, :outcome, :actor, :resource, :metadata]) == attrs and
-      attrs[:action] == :client_secret_verifier_rewrapped and attrs[:outcome] == :succeeded and
-      is_map(attrs[:metadata]) and
-      Map.keys(attrs[:metadata]) -- [:old_key_id, :new_key_id, :maintenance_at] == []
+    valid_rewrap_values?(client_id, hash, expected, replacement) and valid_audit_attrs?(attrs)
   end
+
+  defp valid_rewrap_values?(client_id, hash, expected, replacement) do
+    Enum.all?([client_id, hash, expected, replacement], &is_binary/1)
+  end
+
+  defp valid_audit_attrs?(attrs) when is_map(attrs) do
+    allowed = [:action, :outcome, :actor, :resource, :metadata]
+
+    Map.take(attrs, allowed) == attrs and attrs[:action] == :client_secret_verifier_rewrapped and
+      attrs[:outcome] == :succeeded and valid_audit_metadata?(attrs[:metadata])
+  end
+
+  defp valid_audit_attrs?(_attrs), do: false
+
+  defp valid_audit_metadata?(metadata) when is_map(metadata) do
+    Map.keys(metadata) -- [:old_key_id, :new_key_id, :maintenance_at] == []
+  end
+
+  defp valid_audit_metadata?(_metadata), do: false
 end
