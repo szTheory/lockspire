@@ -8,9 +8,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 
 import build_provider  # noqa: E402
+import clean_room_verifier_upgrade  # noqa: E402
 
 
 class CoreBuilderBoundaryTest(unittest.TestCase):
@@ -62,6 +64,18 @@ class CoreBuilderBoundaryTest(unittest.TestCase):
             self.assertIn(callback, source)
         self.assertNotIn("Lockspire.TestRepo", source)
         self.assertNotIn("Lockspire.TestSupport", source)
+
+
+class CoreMatrixSelectionTest(unittest.TestCase):
+    def test_runner_accepts_all_pairs_and_stores_for_the_four_cell_core_matrix(self) -> None:
+        try:
+            args = clean_room_verifier_upgrade.parse_args(
+                ["--pair", "all", "--store", "all", "--group", "core"]
+            )
+        except SystemExit:
+            args = None
+        self.assertIsNotNone(args, "installed runner must accept the finite all-pair/all-store core matrix")
+        self.assertEqual((args.pair, args.store, args.group), ("all", "all", "core"))
 
 
 if __name__ == "__main__":
