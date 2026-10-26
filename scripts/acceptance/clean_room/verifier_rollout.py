@@ -49,9 +49,10 @@ from redaction import Redactor, SentinelSet  # noqa: E402
 PREDECESSOR = "173059a166e9ade0f5f57c9980b7b2400a98538c"
 PUBLIC_SOURCE = "d04be40262e975a4eb8d8567eb0d1458a9c23181"
 PUBLIC_SHA256 = "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d"
-PUBLIC_TARBALL = HERE.parents[2] / "lockspire-1.6.1.tar"
-PUBLIC_RELEASE_RECORD = HERE.parents[2] / ".planning" / "RELEASE-TRAIN.md"
-PREDECESSOR_TREE = HERE.parents[2] / ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json"
+PROJECT_ROOT = HERE.parents[1]
+PUBLIC_TARBALL = PROJECT_ROOT / "lockspire-1.6.1.tar"
+PUBLIC_RELEASE_RECORD = PROJECT_ROOT / ".planning" / "RELEASE-TRAIN.md"
+PREDECESSOR_TREE = PROJECT_ROOT / ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json"
 
 
 def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
@@ -77,7 +78,7 @@ def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, obj
 
 
 def _build_predecessor(run_root: Path) -> tuple[Path, Path, PackageIdentity, dict[str, str]]:
-    root = HERE.parents[2]
+    root = PROJECT_ROOT
     if not _git_commit_exists(PREDECESSOR):
         raise PackageInputError("accepted predecessor source commit is unavailable")
     exported = run_root / "predecessor-source"
@@ -432,7 +433,7 @@ def _write_receipt(receipt_dir: Path, receipt: dict[str, object], redactor: Reda
 
 
 def _git_commit_exists(revision: str) -> bool:
-    completed = subprocess.run(("git", "cat-file", "-e", revision + "^{commit}"), cwd=HERE.parents[2],
+    completed = subprocess.run(("git", "cat-file", "-e", revision + "^{commit}"), cwd=PROJECT_ROOT,
                                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                                check=False)
     return completed.returncode == 0
