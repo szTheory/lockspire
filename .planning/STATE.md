@@ -5,16 +5,16 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 177
 current_phase_name: Safe Verifier Maintenance & Recovery
 status: executing
-stopped_at: Completed 177-07-PLAN.md
-last_updated: "2026-10-26T01:31:54.009Z"
+stopped_at: Completed 177-03-PLAN.md
+last_updated: "2026-10-26T01:56:01.711Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 177 execution started
-state_head: 22d9fa84e0274d0993e4e7b80bf86cd6650ce105
+state_head: 116c80231353504b2732624680e6ae52789c2d41
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 13
+  completed_plans: 14
   percent: 50
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 ## Current Position
 
 Phase: 177 (Safe Verifier Maintenance & Recovery) — EXECUTING
-Plan: 4 of 9
+Plan: 5 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 177 execution started
 
@@ -64,6 +64,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 19 plans with 10
 | Phase 177 P01 | 9min | 2 tasks | 6 files |
 | Phase 177 P02 | 9min | 2 tasks | 6 files |
 | Phase 177 P07 | 8min | 2 tasks | 7 files |
+| Phase 177 P03 | 23min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -136,8 +137,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T01:31:53.890Z
-Stopped at: Completed 177-07-PLAN.md
+Last session: 2026-10-26T01:56:01.601Z
+Stopped at: Completed 177-03-PLAN.md
 Resume file: None
 Next: $gsd-discuss-phase 177. Phase 176 is complete; this auto-advance run stopped with --no-transition before Phase 177 discussion. Read 176-HANDOFF.md and the final verification. Entry accepted main, corrected local candidate and eventual Phase 178 integrated-main acceptance remain distinct. Preserve retained history/resources and visible non-authoritative probe/prohibition flags.
 
@@ -198,6 +199,9 @@ None
 - [Phase 177]: Preserve RegistrationResult and rotation handoff shapes; redact stored credentials recursively without adding a wrapper struct.
 - [Phase 177]: Apply the existing sensitive repository option to every full-client query/write so Logger and query telemetry are both suppressed.
 - [Phase 177]: Map raw Postgrex and DBConnection failures to fixed reasons while preserving ordinary validation and lifetime outcomes.
+- [Phase 177]: Use identical PostgreSQL COLLATE C expressions for exclusive cursor comparison and ordering after checking UTF8 server encoding.
+- [Phase 177]: Only a complete nil-cursor check establishes current custody; apply reports committed progress and requires a separate fresh check.
+- [Phase 177]: Return bounded encoded client identities, fixed next actions, and authenticated safe key IDs only.
 
 ## Operator Next Steps
 
