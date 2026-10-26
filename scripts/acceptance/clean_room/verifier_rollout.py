@@ -11,12 +11,10 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import tempfile
 import time
-import urllib.error
 import urllib.request
 import uuid
 
@@ -52,7 +50,6 @@ PUBLIC_SHA256 = "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6
 PROJECT_ROOT = HERE.parents[1]
 PUBLIC_TARBALL = PROJECT_ROOT / "lockspire-1.6.1.tar"
 PUBLIC_RELEASE_RECORD = PROJECT_ROOT / ".planning" / "RELEASE-TRAIN.md"
-PREDECESSOR_TREE = PROJECT_ROOT / ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json"
 
 
 def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
@@ -100,20 +97,32 @@ def _build_predecessor(run_root: Path) -> tuple[Path, Path, PackageIdentity, dic
         raise PackageInputError("accepted predecessor source archive could not be unpacked")
     package_tar = run_root / "predecessor-package.tar"
     env = os.environ.copy()
-    env.update({"HEX_HOME": str(run_root / "predecessor-hex"), "MIX_HOME": str(run_root / "predecessor-mix")})
-    for name in ("HEX_HOME", "MIX_HOME"):
-        Path(env[name]).mkdir(mode=0o700, parents=True, exist_ok=True)
+    # Hex's installed Mix archive is runtime tooling, not package input. Keep
+    # the process-local configured Mix home so `mix hex.build` can load it.
     built = bounded_run(("mix", "hex.build", "--output", str(package_tar)), cwd=exported, env=env,
                         stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     if built.returncode or not package_tar.is_file():
-        raise PackageInputError("accepted predecessor package build failed")
+        raise PackageInputError(f"accepted predecessor package build failed (exit {built.returncode})")
     package = run_root / "predecessor-package"
     unpack_hex_tarball(package_tar, package)
+    for path in package.rglob("*"):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(package)
+        if relative.as_posix() == "hex_metadata.config":
+            # Mix generates this archive manifest from the exported mix.exs.
+            continue
+        source_path = exported / relative
+        if not source_path.is_file() or source_path.read_bytes() != path.read_bytes():
+            raise PackageInputError("accepted predecessor archive does not match its exported source tree")
     version = package_version(package)
     tree = package_tree_digest(package)
-    identity = PackageIdentity("accepted-git-source", version, sha256(package_tar), sha256(package_tar),
+    archive_sha = sha256(package_tar)
+    binding = json.dumps({"archive_sha256": archive_sha, "source_revision": PREDECESSOR,
+                          "tree_sha256": tree}, sort_keys=True, separators=(",", ":"))
+    identity = PackageIdentity("accepted-git-source", version, archive_sha, archive_sha,
                                tree, PREDECESSOR, runner.source_revision(),
-                               hashlib.sha256((PREDECESSOR + sha256(package_tar) + tree).encode()).hexdigest())
+                               hashlib.sha256(binding.encode()).hexdigest())
     verify_candidate_input(package_tar, package, identity)
     commit_tree = subprocess.check_output(("git", "rev-parse", f"{PREDECESSOR}^{{tree}}"), cwd=root, text=True).strip()
     return package, package_tar, identity, {"commit_tree": commit_tree, "source_archive_sha256": sha256(archive_tar)}
