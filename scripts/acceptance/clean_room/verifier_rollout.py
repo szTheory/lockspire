@@ -161,9 +161,9 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
                                        scenario_groups={"rollout"})
         _configure(host=old_host, mode="legacy", legacy_read="allow", key=key)
         _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
-        old_env = runner._mix_env(old_host, root, database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, pair)
-        new_env = runner._mix_env(new_host, root, database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, pair)
-        legacy_env = runner._mix_env(legacy_host, root, database_url, port_legacy,
+        old_env = runner._mix_env(old_host, root / "old", database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, pair)
+        new_env = runner._mix_env(new_host, root / "new", database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, pair)
+        legacy_env = runner._mix_env(legacy_host, root / "legacy-writer", database_url, port_legacy,
                                     f"http://127.0.0.1:{port_legacy}/lockspire", prefix, key, pair)
         redactor.register_material(database_url)
         try:
@@ -271,8 +271,8 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
                                     scenario_groups={"legacy-control"})
         _configure(host=old_host, mode="legacy", legacy_read="allow", key=key)
         _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
-        old_env = runner._mix_env(old_host, root, database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, "locked")
-        new_env = runner._mix_env(new_host, root, database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, "locked")
+        old_env = runner._mix_env(old_host, root / "public", database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, "locked")
+        new_env = runner._mix_env(new_host, root / "adopter", database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, "locked")
         redactor.register_material(database_url)
         try:
             run_child_command(old_host, old_env, "ecto.create")
