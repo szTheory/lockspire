@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plan 01 now proves one source-bound installed locked-pair/builtin token flow with a strict partial receipt. Continue with Plan 02; the remaining pair, storage, scenario groups and VPROOF-02 completion remain pending. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
+**Current focus:** Phase 178 Plans 01–05 now provide installed proof artifacts through verifier transaction contention and atomicity on both dependency pairs. Continue with Plan 06; `VPROOF-02` remains pending until the remaining proof owners pass. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
 
 ## Current Position
 
