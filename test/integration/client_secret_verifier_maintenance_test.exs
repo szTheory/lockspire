@@ -449,7 +449,17 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
   end
 
   defp set_startup_context(context) do
-    :persistent_term.put(Lockspire.Config.client_secret_verifier_cache_key(), context)
+    cache_key = Lockspire.Config.client_secret_verifier_cache_key()
+    previous_context = :persistent_term.get(cache_key, :missing)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      case previous_context do
+        :missing -> :persistent_term.erase(cache_key)
+        previous -> :persistent_term.put(cache_key, previous)
+      end
+    end)
+
+    :persistent_term.put(cache_key, context)
   end
 
   defp unique_id,
