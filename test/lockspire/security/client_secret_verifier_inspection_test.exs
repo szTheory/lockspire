@@ -49,7 +49,10 @@ defmodule Lockspire.Security.ClientSecretVerifierInspectionTest do
     assert handoff.client.client_id == "inspection-client"
     assert handoff.client_secret == secret
 
-    assert Map.keys(%RegistrationResult{client: client, client_secret: secret}) |> Enum.sort() ==
+    assert %RegistrationResult{client: client, client_secret: secret}
+           |> Map.from_struct()
+           |> Map.keys()
+           |> Enum.sort() ==
              [:client, :client_secret]
 
     assert %RegistrationResult{client: ^client, client_secret: ^secret} =
