@@ -10,7 +10,6 @@ defmodule CleanRoomProvider.VerifierRecovery do
   alias Lockspire.Security.Policy
 
   @timeout 15_000
-  @salt "lockspire client_secret_jwt verifier"
   @native_cases [
     "VPROOF-02-RECOVERY-PRESERVATION",
     "VPROOF-02-RECOVERY-RETRY-RECONCILIATION",
@@ -415,16 +414,21 @@ defmodule CleanRoomProvider.VerifierRecovery do
   defp expired_migration!(_store) do
     mark_stage(:expired_seed)
     migrated = seed_jwt_client!("phase178-expired-migrated")
-    mark_stage(:expired_legacy_ciphertext)
-    signed_at = System.os_time(:second) - 120
+    mark_stage(:expired_migrated_ciphertext)
+    now_ms = System.os_time(:millisecond)
+    signed_at_ms = now_ms - 120_000
+    deadline_ms = signed_at_ms + 60_000
 
     expired_ciphertext =
-      Plug.Crypto.encrypt(System.fetch_env!("SECRET_KEY_BASE"), @salt, migrated.secret,
-        signed_at: signed_at,
-        max_age: 60
+      seal_migrated(
+        migrated.old_context,
+        migrated.client_id,
+        migrated.secret,
+        signed_at_ms,
+        deadline_ms
       )
 
-    mark_stage(:expired_install_legacy)
+    mark_stage(:expired_install_migrated)
 
     %{num_rows: 1} =
       Repo.query!(
@@ -478,6 +482,26 @@ defmodule CleanRoomProvider.VerifierRecovery do
       "expired_http_auth_rejected" => http_status == 400,
       "deadline_preserved" => metadata_before == metadata_after
     }
+  end
+
+  defp seal_migrated(context, client_id, secret, signed_at_ms, deadline_ms) do
+    key = context.keys[context.current_id]
+    iv = :crypto.strong_rand_bytes(12)
+
+    plaintext =
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 1, signed_at_ms::signed-big-64,
+        deadline_ms::signed-big-64>>
+
+    aad =
+      "lockspire-client-secret-jwt-verifier" <>
+        <<0>> <> "LSCV1" <> <<0>> <> context.current_id <> <<0>> <> client_id
+
+    {ciphertext, tag} =
+      :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, plaintext, aad, 16, true)
+
+    "LSCV1." <>
+      context.current_id <>
+      "." <> Base.url_encode64(iv <> tag <> ciphertext, padding: false)
   end
 
   defp seed_authorization_code!(client_id) do
