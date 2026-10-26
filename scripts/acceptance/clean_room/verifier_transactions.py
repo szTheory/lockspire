@@ -166,7 +166,7 @@ def _run_witness(host: Path, env: dict[str, str], scope: str, redactor: Redactor
         'IO.puts("TRANSACTION_WITNESS=" <> Jason.encode!(%{"observations" => observations}))'
     )
     completed = subprocess.run(
-        ("mix", "run", "--no-start", "-e", code),
+        ("mix", "run", "-e", code),
         cwd=host,
         env=env,
         stdin=subprocess.DEVNULL,
