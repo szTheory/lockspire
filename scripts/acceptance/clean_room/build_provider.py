@@ -439,20 +439,25 @@ def audit_boundary(child: Path, package_root: Path) -> None:
 
     adapter_source = child / "lib" / "clean_room_provider" / "lifetime_client_store.ex"
     adapter_text = adapter_source.read_text() if adapter_source.is_file() else ""
-    allowed_refs = {
+    required_refs = {
         "Lockspire.Storage.ClientStore",
         "Lockspire.Storage.TransactionStore",
-        "Lockspire.Storage.ClientVerifierMaintenance",
-        "Lockspire.Storage.UsedJtiStore",
         "Lockspire.Storage.Ecto.Repository",
         "Lockspire.Domain.Client",
-        "Lockspire.Domain.UsedJti",
     }
+    optional_ref_groups = (
+        {"Lockspire.Storage.ClientVerifierMaintenance"},
+        {"Lockspire.Storage.UsedJtiStore", "Lockspire.Domain.UsedJti"},
+    )
+    allowed_refs = required_refs.union(*optional_ref_groups)
     adapter_refs = set(re.findall(r"Lockspire\.(?:Storage|Domain)(?:\.[A-Za-z0-9_]+)+", adapter_text))
     if adapter_refs - allowed_refs:
         raise PackageInputError("provider boundary audit found forbidden lifetime-adapter reference")
-    if adapter_text and adapter_refs != allowed_refs:
+    if adapter_text and not required_refs.issubset(adapter_refs):
         raise PackageInputError("provider lifetime adapter is missing a documented public seam")
+    for optional_group in optional_ref_groups:
+        if adapter_refs.intersection(optional_group) and not optional_group.issubset(adapter_refs):
+            raise PackageInputError("provider lifetime adapter is missing a documented public seam")
 
     sources = "\n".join(path.read_text() for path in host_sources if path != adapter_source)
     adapter_sources = adapter_text

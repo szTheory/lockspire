@@ -76,6 +76,20 @@ end
             except PackageInputError as error:
                 self.fail(f"named public adapter was rejected: {type(error).__name__}")
 
+    def test_named_adapter_may_declare_optional_used_jti_seam_as_a_pair(self) -> None:
+        self._append_adapter_refs(
+            "Lockspire.Storage.UsedJtiStore",
+            "Lockspire.Domain.UsedJti",
+        )
+        self.assert_public_adapter_allowed()
+
+    def test_optional_used_jti_seam_requires_its_domain_pair(self) -> None:
+        self._append_adapter_refs("Lockspire.Storage.UsedJtiStore")
+
+        with patch("build_provider.OVERLAY_ROOT", self.overlay):
+            with self.assertRaises(PackageInputError):
+                audit_boundary(self.child, self.package)
+
     def test_protocol_internals_remain_forbidden_in_named_adapter(self) -> None:
         self._reject("Lockspire.Protocol.Internal.ClientStore")
 
@@ -172,6 +186,20 @@ end
         with patch("build_provider.OVERLAY_ROOT", self.overlay):
             with self.assertRaises(PackageInputError):
                 audit_boundary(self.child, self.package)
+
+    def _append_adapter_refs(self, *references: str) -> None:
+        source = self.adapter.read_text().replace(
+            "end\n", "".join(f"  alias {reference}\n" for reference in references) + "end\n"
+        )
+        self.adapter.write_text(source)
+        (self.child / "lib" / "clean_room_provider" / self.adapter.name).write_text(source)
+
+    def assert_public_adapter_allowed(self) -> None:
+        with patch("build_provider.OVERLAY_ROOT", self.overlay):
+            try:
+                audit_boundary(self.child, self.package)
+            except PackageInputError as error:
+                self.fail(f"valid public adapter was rejected: {type(error).__name__}")
 
 
 if __name__ == "__main__":
