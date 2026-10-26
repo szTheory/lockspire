@@ -55,12 +55,19 @@ PUBLIC_RELEASE_EVIDENCE = PROJECT_ROOT / ".planning" / "releases" / "1.6.1-EVIDE
 PUBLIC_TERMINAL_RECEIPT = PROJECT_ROOT / ".planning" / "releases" / "1.6.1-terminal-receipt.json"
 
 
-def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
-    if pair not in {"all", "locked"} and store not in {"all", "builtin", "delegated"}:
-        raise PackageInputError("unsupported rollout selection")
+def run_rollout_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
     if pair not in {"all", "locked", "floor"} or store not in {"all", "builtin", "delegated"}:
         raise PackageInputError("unsupported rollout selection")
-    scope = "rollout" if pair == "all" or store == "all" else "legacy-control"
+    return _run_selected_group(scope="rollout", pair=pair, store=store, receipt_dir=receipt_dir)
+
+
+def run_legacy_control_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
+    if pair != "locked" or store != "builtin":
+        raise PackageInputError("legacy-control supports only locked/builtin selection")
+    return _run_selected_group(scope="legacy-control", pair=pair, store=store, receipt_dir=receipt_dir)
+
+
+def _run_selected_group(*, scope: str, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
     if scope == "rollout":
         pairs = ("locked", "floor") if pair == "all" else (pair,)
         stores = ("builtin", "delegated") if store == "all" else (store,)

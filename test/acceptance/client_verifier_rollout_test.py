@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
+import io
+import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
 
@@ -20,6 +23,47 @@ import verifier_rollout  # noqa: E402
 
 
 class VerifierRolloutContracts(unittest.TestCase):
+    def test_cli_group_selection_dispatches_explicit_scope_independent_of_matrix_width(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt_dir = Path(temporary)
+            rollout_result = {
+                "pair": "locked", "store": "builtin", "scope": "rollout",
+                "receipt_path": str(receipt_dir / "locked-builtin" / "receipt.json"),
+            }
+            rollout_out = io.StringIO()
+            with mock.patch.object(verifier_rollout, "_run_rollout_cell", return_value=rollout_result) as cell:
+                with redirect_stdout(rollout_out):
+                    status = clean_room_verifier_upgrade.main([
+                        "--group", "rollout", "--pair", "locked", "--store", "builtin",
+                        "--receipt-dir", str(receipt_dir),
+                    ])
+            self.assertEqual(status, 0)
+            cell.assert_called_once_with("locked", "builtin", receipt_dir / "locked-builtin")
+            self.assertEqual(json.loads(rollout_out.getvalue().splitlines()[-1])["scope"], "rollout")
+            self.assertEqual(json.loads(rollout_out.getvalue().splitlines()[-1])["executed_count"], 1)
+
+            public_result = {
+                "pair": "locked", "store": "builtin", "scope": "legacy-control",
+                "receipt_path": str(receipt_dir / "locked-builtin" / "receipt.json"),
+            }
+            public_out = io.StringIO()
+            with mock.patch.object(verifier_rollout, "_run_public_control", return_value=public_result) as control:
+                with redirect_stdout(public_out):
+                    status = clean_room_verifier_upgrade.main([
+                        "--group", "legacy-control", "--pair", "locked", "--store", "builtin",
+                        "--receipt-dir", str(receipt_dir),
+                    ])
+                self.assertEqual(status, 0)
+                control.assert_called_once_with(receipt_dir / "locked-builtin")
+                with redirect_stderr(io.StringIO()):
+                    status = clean_room_verifier_upgrade.main([
+                        "--group", "legacy-control", "--pair", "all", "--store", "all",
+                        "--receipt-dir", str(receipt_dir),
+                    ])
+                self.assertEqual(status, 1, "public control must reject rollout matrix selections")
+                control.assert_called_once()
+            self.assertEqual(json.loads(public_out.getvalue().splitlines()[-1])["scope"], "legacy-control")
+
     def test_public_artifact_pin_and_source_evidence_are_verified_by_one_helper(self) -> None:
         helper = getattr(verifier_rollout, "verify_public_artifact", None)
         self.assertTrue(callable(helper), "public artifact verification must fail closed before producer startup")
