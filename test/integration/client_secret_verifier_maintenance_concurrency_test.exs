@@ -265,7 +265,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceConcurrencyTest d
     send(holder.pid, {:release_transaction, :maintenance_with_edit, :commit})
 
     assert_receive {:transaction_done, :maintenance_with_edit, {:ok, :changed}}, 10_000
-    assert_receive {:operation_done, :metadata_edit, {:ok, edited}}, 10_000
+    assert_receive {:operation_done, :metadata_edit, {:ok, _edited}}, 10_000
     assert {:ok, :changed} = Task.await(holder, 10_000)
     assert {:ok, edited} = Task.await(editor, 10_000)
 
@@ -279,9 +279,256 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceConcurrencyTest d
     assert blockers != []
   end
 
-  defp seed_client(old_context) do
+  @tag :outer_rollback
+  test "maintenance does not report success before its selected transaction commits", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    before = persisted_row(client.client_id)
+    parent = self()
+
+    outer_result =
+      Sandbox.unboxed_run(TestRepo, fn ->
+        TestRepo.transaction(fn ->
+          result = Lockspire.Storage.ClientVerifierMaintenance.rewrap_client(client.client_id)
+          send(parent, {:maintenance_result_inside_outer_transaction, result})
+          TestRepo.rollback(:forced_outer_rollback)
+        end)
+      end)
+
+    assert_receive {:maintenance_result_inside_outer_transaction,
+                    {:error, :client_secret_verifier_maintenance_failed}},
+                   1_000
+
+    assert {:error, :forced_outer_rollback} = outer_result
+    after_row = persisted_row(client.client_id)
+
+    assert after_row.client_secret_jwt_verifier_encrypted ==
+             before.client_secret_jwt_verifier_encrypted
+
+    assert audit_count(client.client_id) == 0
+  end
+
+  @tag :audit_rollback
+  test "rejected maintenance audit rolls back the verifier replacement", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    before = persisted_row(client.client_id)
+    replacement = seal_current!(client.client_id, old_context, before.client_secret_hash)
+
+    result =
+      Sandbox.unboxed_run(TestRepo, fn ->
+        Repository.transact(fn ->
+          Repository.compare_and_rewrap(
+            client.client_id,
+            before.client_secret_hash,
+            before.client_secret_jwt_verifier_encrypted,
+            replacement,
+            audit_attrs(client.client_id) |> Map.put(:action, :unexpected_action)
+          )
+        end)
+      end)
+
+    assert {:error, :client_secret_verifier_maintenance_failed} = result
+    after_row = persisted_row(client.client_id)
+
+    assert after_row.client_secret_jwt_verifier_encrypted ==
+             before.client_secret_jwt_verifier_encrypted
+
+    assert audit_count(client.client_id) == 0
+  end
+
+  @tag :exact_repeat
+  test "exact replacement repeat is already current and writes only one audit", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    before = persisted_row(client.client_id)
+    replacement = seal_current!(client.client_id, old_context, before.client_secret_hash)
+    audit = audit_attrs(client.client_id)
+
+    assert {:ok, :changed} = compare(client.client_id, before, replacement, audit)
+    after_first = persisted_row(client.client_id)
+    assert {:ok, :already_current} = compare(client.client_id, before, replacement, audit)
+    after_repeat = persisted_row(client.client_id)
+
+    assert after_repeat.client_secret_jwt_verifier_encrypted == replacement
+    assert after_repeat.updated_at == after_first.updated_at
+    assert audit_count(client.client_id) == 1
+  end
+
+  @tag :overlapping_rewraps
+  test "randomized overlapping replacements serialize and stale contender conflicts", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    before = persisted_row(client.client_id)
+    first_replacement = seal_current!(client.client_id, old_context, before.client_secret_hash)
+    second_replacement = seal_current!(client.client_id, old_context, before.client_secret_hash)
+    refute first_replacement == second_replacement
+    audit = audit_attrs(client.client_id)
+
+    holder =
+      Concurrency.hold_transaction(TestRepo, self(), :first_rewrap, fn ->
+        Repository.compare_and_rewrap(
+          client.client_id,
+          before.client_secret_hash,
+          before.client_secret_jwt_verifier_encrypted,
+          first_replacement,
+          audit
+        )
+      end)
+
+    assert_receive {:transaction_ready, :first_rewrap, holder_process, holder_backend}, 10_000
+    assert holder_process == holder.pid
+    assert_receive {:transaction_provisional, :first_rewrap, {:ok, :changed}}, 10_000
+
+    contender =
+      Concurrency.run(TestRepo, self(), :second_rewrap, fn ->
+        Repository.transact(fn ->
+          Repository.compare_and_rewrap(
+            client.client_id,
+            before.client_secret_hash,
+            before.client_secret_jwt_verifier_encrypted,
+            second_replacement,
+            audit
+          )
+        end)
+      end)
+
+    assert_receive {:operation_ready, :second_rewrap, contender_process, contender_backend},
+                   10_000
+
+    assert contender_process == contender.pid
+    assert contender_backend != holder_backend
+
+    assert {:ok, blockers} =
+             Concurrency.wait_for_blocker(TestRepo, contender_backend, holder_backend)
+
+    send(holder.pid, {:release_transaction, :first_rewrap, :commit})
+    assert_receive {:transaction_done, :first_rewrap, {:ok, {:ok, :changed}}}, 10_000
+    assert_receive {:operation_done, :second_rewrap, {:ok, :material_conflict}}, 10_000
+    assert {:ok, {:ok, :changed}} = Task.await(holder, 10_000)
+    assert {:ok, :material_conflict} = Task.await(contender, 10_000)
+
+    final = persisted_row(client.client_id)
+    assert final.client_secret_jwt_verifier_encrypted == first_replacement
+    assert final.client_secret_hash == before.client_secret_hash
+    assert audit_count(client.client_id) == 1
+    assert blockers != []
+  end
+
+  @tag :partial_retry
+  test "partial maintenance progress persists and a fresh retry converges", %{
+    old_context: old_context
+  } do
+    prefix = unique_id()
+    first_id = prefix <> "-a"
+    second_id = prefix <> "-b"
+    {_first, _} = seed_client(old_context, first_id)
+    {_second, _} = seed_client(old_context, second_id)
+    assert {:ok, persisted_first} = fetch_client(first_id)
+    assert {:ok, persisted_second} = fetch_client(second_id)
+
+    assert {:ok, _} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Repository.update_client(persisted_second, %{
+                 client_secret_jwt_verifier_encrypted: "malformed-maintenance-fixture"
+               })
+             end)
+
+    {:ok, malformed} = fetch_client(second_id)
+
+    previous_client_store = Application.fetch_env(:lockspire, :client_store)
+    previous_transaction_store = Application.fetch_env(:lockspire, :transaction_store)
+    previous_page = Application.fetch_env(:lockspire, :test_verifier_inventory_page)
+
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.TestSupport.DelegatedVerifierMaintenanceStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.TestSupport.DelegatedVerifierMaintenanceStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :test_verifier_inventory_page,
+      {:pages,
+       [
+         %{clients: [persisted_first], next_cursor: first_id, complete?: false},
+         %{clients: [malformed], next_cursor: nil, complete?: true}
+       ]}
+    )
+
+    on_exit(fn ->
+      restore_env(:client_store, previous_client_store)
+      restore_env(:transaction_store, previous_transaction_store)
+      restore_env(:test_verifier_inventory_page, previous_page)
+    end)
+
+    assert {:ok, _config} = Lockspire.Storage.ClientVerifierMaintenance.configured()
+
+    assert {:error, partial} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 1)
+             end)
+
+    assert partial.committed_changed == 1, inspect(partial)
+    assert partial.failed == 1
+    refute partial.custody_condition_met?
+    assert {:ok, after_first} = fetch_client(first_id)
+
+    assert after_first.client_secret_jwt_verifier_encrypted !=
+             persisted_first.client_secret_jwt_verifier_encrypted
+
+    assert audit_count(first_id) == 1
+    assert {:ok, after_second_failure} = fetch_client(second_id)
+
+    assert after_second_failure.client_secret_jwt_verifier_encrypted ==
+             "malformed-maintenance-fixture"
+
+    assert {:ok, _rotation} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Clients.rotate_client_secret(second_id, %{
+                 actor: %{type: :operator, id: "phase177"}
+               })
+             end)
+
+    {:ok, refreshed_first} = fetch_client(first_id)
+    {:ok, refreshed_second} = fetch_client(second_id)
+
+    Application.put_env(
+      :lockspire,
+      :test_verifier_inventory_page,
+      {:fixed, %{clients: [refreshed_first, refreshed_second], next_cursor: nil, complete?: true}}
+    )
+
+    assert {:ok, retried} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 2)
+             end)
+
+    assert retried.scan_complete?
+    assert retried.committed_changed == 0
+
+    assert {:ok, checked} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 2)
+             end)
+
+    assert checked.scan_complete?
+    assert checked.custody_condition_met?
+    assert audit_count(first_id) == 1
+  end
+
+  defp seed_client(old_context, client_id \\ unique_id()) do
     {hash, secret} = ClientCredentials.rotate_secret_hash()
-    client_id = unique_id()
     assert {:ok, verifier} = ClientSecretVerifier.seal(old_context, client_id, secret)
     deadline = DateTime.add(DateTime.utc_now() |> DateTime.truncate(:second), 86_400, :second)
 
@@ -324,6 +571,27 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceConcurrencyTest d
       TestRepo.delete_all(from(client in ClientRecord, where: client.client_id == ^client_id))
     end)
   end
+
+  defp fetch_client(client_id) do
+    Sandbox.unboxed_run(TestRepo, fn -> Repository.fetch_client_by_id(client_id) end)
+  end
+
+  defp compare(client_id, before, replacement, audit) do
+    Sandbox.unboxed_run(TestRepo, fn ->
+      Repository.transact(fn ->
+        Repository.compare_and_rewrap(
+          client_id,
+          before.client_secret_hash,
+          before.client_secret_jwt_verifier_encrypted,
+          replacement,
+          audit
+        )
+      end)
+    end)
+  end
+
+  defp restore_env(key, {:ok, value}), do: Application.put_env(:lockspire, key, value)
+  defp restore_env(key, :error), do: Application.delete_env(:lockspire, key)
 
   defp audit_count(client_id) do
     Sandbox.unboxed_run(TestRepo, fn ->

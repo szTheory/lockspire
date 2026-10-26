@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' MIX_ENV=test LOCKSPIRE_TEST_DB_NAME=lockspire_phase177_20261026_owned elixir -r /private/tmp/lockspire_exunit_tap_formatter.ex -S mix test --only outer_rollback --formatter Lockspire.ExUnitTapFormatter test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\n1..9\nok 1 - test exact replacement repeat is already current and writes only one audit # SKIP\nok 2 - test rotation waits for maintenance then writes coherent credential fields # SKIP\nok 3 - test randomized overlapping replacements serialize and stale contender conflicts # SKIP\nok 4 - test partial maintenance progress persists and a fresh retry converges # SKIP\nok 5 - test metadata edit blocked behind maintenance preserves both committed changes # SKIP\nok 6 - test rejected maintenance audit rolls back the verifier replacement # SKIP\nok 7 - test metadata committed before maintenance reload survives verifier-only update # SKIP\nok 8 - test stale maintenance conflicts after authorized rotation commits # SKIP\nnot ok 9 - test maintenance does not report success before its selected transaction commits\n",
+  "targetTest": "test maintenance does not report success before its selected transaction commits",
+  "targetFile": "test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
+  "expected": "A maintenance command invoked inside an already-open selected transaction returns a safe error instead of reporting provisional changed success before the enclosing commit.",
+  "actual": "The target assertion received {:ok, :changed} from rewrap_client/2 while the enclosing transaction was still open; the test then forced that outer transaction to roll back.",
+  "semanticAssessment": "The named target executed and failed on the planned commit-boundary assertion. Its fixture committed before the target operation; no setup, compilation, discovery, or unrelated test failure occurred. Eight other tests were excluded by the tag selector."
+}
