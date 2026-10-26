@@ -148,11 +148,20 @@ defmodule CleanRoomProvider.VerifierRecovery do
       stale_status = await_monitored_worker!(stale_request, :issuance_replay_fresh)
       after_stale = effects(client.client_id)
 
-      mark_stage(:issuance_replay_fresh)
-      replay_status = token_request(issuer, client, code, first_jti)
+      mark_stage(:issuance_same_jti_replay)
+
+      replay_request =
+        start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
+
+      replay_status = await_monitored_worker!(replay_request, :issuance_same_jti_replay)
       after_replay = effects(client.client_id)
       fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
-      fresh_status = token_request(issuer, client, code, fresh_jti)
+      mark_stage(:issuance_fresh_jti_retry)
+
+      fresh_request =
+        start_monitored_worker(fn -> token_request(issuer, client, code, fresh_jti) end)
+
+      fresh_status = await_monitored_worker!(fresh_request, :issuance_fresh_jti_retry)
       after_fresh = effects(client.client_id)
       Store.clear_issuance_control()
       Store.clear_maintenance_observer()

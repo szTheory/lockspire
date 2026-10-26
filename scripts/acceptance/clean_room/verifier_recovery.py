@@ -110,7 +110,7 @@ SAFE_FAILURE_STAGES = frozenset({
     "expired_request_system_limit",
     "expired_metadata",
     "issuance_endpoint_ready", "issuance_seed", "issuance_auth_barrier", "issuance_maintenance",
-    "issuance_replay_fresh",
+    "issuance_replay_fresh", "issuance_same_jti_replay", "issuance_fresh_jti_retry",
 })
 
 
