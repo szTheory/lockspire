@@ -339,6 +339,42 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceConcurrencyTest d
     assert audit_count(client.client_id) == 0
   end
 
+  @tag :provisional_rollback
+  test "provisional changed callback leaves no row or audit after selected outer rollback", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    before = persisted_row(client.client_id)
+    replacement = seal_current!(client.client_id, old_context, before.client_secret_hash)
+    parent = self()
+
+    result =
+      Sandbox.unboxed_run(TestRepo, fn ->
+        TestRepo.transaction(fn ->
+          callback_result =
+            Repository.compare_and_rewrap(
+              client.client_id,
+              before.client_secret_hash,
+              before.client_secret_jwt_verifier_encrypted,
+              replacement,
+              audit_attrs(client.client_id)
+            )
+
+          send(parent, {:provisional_callback_result, callback_result})
+          TestRepo.rollback(:forced_outer_rollback)
+        end)
+      end)
+
+    assert_receive {:provisional_callback_result, {:ok, :changed}}, 10_000
+    assert {:error, :forced_outer_rollback} = result
+    after_row = persisted_row(client.client_id)
+
+    assert after_row.client_secret_jwt_verifier_encrypted ==
+             before.client_secret_jwt_verifier_encrypted
+
+    assert audit_count(client.client_id) == 0
+  end
+
   @tag :exact_repeat
   test "exact replacement repeat is already current and writes only one audit", %{
     old_context: old_context
@@ -525,6 +561,51 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceConcurrencyTest d
     assert checked.scan_complete?
     assert checked.custody_condition_met?
     assert audit_count(first_id) == 1
+  end
+
+  @tag :indeterminate_commit
+  test "lost commit response remains uncertain until a fresh complete inventory", %{
+    old_context: old_context
+  } do
+    {client, _secret} = seed_client(old_context)
+    previous_client_store = Application.fetch_env(:lockspire, :client_store)
+    previous_transaction_store = Application.fetch_env(:lockspire, :transaction_store)
+    previous_page = Application.fetch_env(:lockspire, :test_verifier_inventory_page)
+    uncertain = Lockspire.TestSupport.UncertainVerifierTransactionStore
+    Application.put_env(:lockspire, :client_store, uncertain)
+    Application.put_env(:lockspire, :transaction_store, uncertain)
+
+    on_exit(fn ->
+      restore_env(:client_store, previous_client_store)
+      restore_env(:transaction_store, previous_transaction_store)
+      restore_env(:test_verifier_inventory_page, previous_page)
+    end)
+
+    assert {:error, :client_secret_verifier_maintenance_failed} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Lockspire.Storage.ClientVerifierMaintenance.rewrap_client(client.client_id)
+             end)
+
+    assert {:ok, after_uncertain_return} = fetch_client(client.client_id)
+
+    assert after_uncertain_return.client_secret_jwt_verifier_encrypted !=
+             client.client_secret_jwt_verifier_encrypted
+
+    assert audit_count(client.client_id) == 1
+
+    Application.put_env(
+      :lockspire,
+      :test_verifier_inventory_page,
+      {:fixed, %{clients: [after_uncertain_return], next_cursor: nil, complete?: true}}
+    )
+
+    assert {:ok, reconciled} =
+             Sandbox.unboxed_run(TestRepo, fn ->
+               Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 1)
+             end)
+
+    assert reconciled.scan_complete?
+    assert reconciled.custody_condition_met?
   end
 
   defp seed_client(old_context, client_id \\ unique_id()) do
