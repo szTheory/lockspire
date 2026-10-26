@@ -77,6 +77,7 @@ status: complete
 - Added the installed core group with real HTTP token issuance, dedicated verifier persistence, dry-run, committed apply, a separate nil-cursor check, and fail-closed unknown or partial inventory outcomes.
 - Added the host-owned delegated maintenance callbacks and invalid-authority witnesses. Delegated receipts observed callback activity; invalid declarations rejected before maintenance access.
 - Ran all four installed cells against source revision `9013e240e930fae932219bdf888b3cac33c8e4d9`, package `1.6.1`, Elixir `1.19.5`, OTP `28`, and PostgreSQL `14.17` (Homebrew). Locked resolves Phoenix `1.8.13` / LiveView `1.2.10`; floor resolves Phoenix `1.8.5` / LiveView `1.1.28`. Each cell executed one passing core case.
+- Candidate artifact identity was archive SHA-256 `5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be`, vendor tree SHA-256 `0aef9c3d4c8f9be0cf5df6afda15b82999888f9fdfffcd953a2ff7b6f6a91232`, and source proof `bfba57d128e6493cccaf219e3632989f42ca0280d5194d32eb2b1bbb1e33f267`. Locked/floor lockfile SHA-256 values were `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` and `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` respectively.
 
 | Cell | Run ID | HTTP/token | Dry-run unchanged | Apply committed | Fresh check | Unknown/partial rejected |
 |---|---|---|---|---|---|---|
