@@ -1,0 +1,337 @@
+{
+  "schema": "lockspire-phase-177-source-acceptance-v1",
+  "plan": "177-09",
+  "tested_sha": "8bae1a306e836c6d512c1d7e34ed39ef3c22e088",
+  "source_branch": "milestone/v1.48-client-auth-key-isolation",
+  "source_commits": [
+    "fdb6ae35",
+    "162e9a7f",
+    "8bae1a30"
+  ],
+  "environment": {
+    "cwd": "/Users/jon/projects/lockspire",
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "MIX_ENV": "test",
+    "LOCKSPIRE_TEST_DB_NAME": "lockspire_phase177_20261026_owned",
+    "database_scope": "plan-owned Phase 177 database only"
+  },
+  "canonical_ci": {
+    "command": "mix ci",
+    "exit_code": 0,
+    "started_at": "2026-10-26T03:28:33Z",
+    "finished_at": "2026-10-26T03:33:34Z",
+    "duration_seconds": 301,
+    "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
+    "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d",
+    "stages": [
+      {
+        "name": "boundary",
+        "executed_tests": 15,
+        "failures": 0,
+        "exit_code": 0
+      },
+      {
+        "name": "credo",
+        "source_files_checked": 721,
+        "issues": 0,
+        "exit_code": 0
+      },
+      {
+        "name": "test.fast",
+        "property_checks": 2,
+        "executed_tests": 2138,
+        "failures": 0,
+        "skipped": 6,
+        "excluded": 567,
+        "exit_code": 0
+      },
+      {
+        "name": "test.integration",
+        "executed_tests": 260,
+        "failures": 0,
+        "excluded": 46,
+        "exit_code": 0
+      }
+    ],
+    "other_stages": [
+      "deps.get",
+      "compile --warnings-as-errors",
+      "sobelow",
+      "docs.check",
+      "package.build"
+    ],
+    "overall_executed_exunit_tests": 2413,
+    "overall_failures": 0,
+    "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed."
+  },
+  "commands": [
+    {
+      "command": "mix ci",
+      "exit_code": 0,
+      "executed_tests": 2413,
+      "failures": 0,
+      "started_at": "2026-10-26T03:28:33Z",
+      "finished_at": "2026-10-26T03:33:34Z",
+      "duration_seconds": 301,
+      "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
+      "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d"
+    },
+    {
+      "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_concurrency_test.exs test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/integration/client_secret_verifier_maintenance_issuance_test.exs test/integration/client_secret_verifier_maintenance_recovery_test.exs test/integration/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_rotation_test.exs test/integration/client_secret_jwt_legacy_age_test.exs test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/lockspire/security/client_secret_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
+      "exit_code": 0,
+      "executed_tests": 85,
+      "failures": 0,
+      "started_at": "2026-10-26T03:34:06Z",
+      "finished_at": "2026-10-26T03:34:10Z",
+      "duration_seconds": 2.6,
+      "output_path": "/private/tmp/lockspire-177-09-focused-8bae1a30.log",
+      "output_sha256": "77d61f39c7ef6dd2404c98ebda5f22cb11f2485dcd9d3b62d8c9f8ec8be7f275"
+    },
+    {
+      "command": "mix test test/lockspire/quality/proof_quality_baseline_test.exs test/lockspire/clients_secret_material_test.exs",
+      "exit_code": 0,
+      "executed_tests": 10,
+      "failures": 0,
+      "started_at": "2026-10-26T03:36:11Z",
+      "finished_at": "2026-10-26T03:36:12Z",
+      "duration_seconds": 0.3,
+      "output_path": "/private/tmp/lockspire-177-09-proof-and-secret-8bae1a30.log",
+      "output_sha256": "dce0f08b3d28b78a6640eca44b059f2b55550685b9b8e14dcb888ff7467a2429"
+    },
+    {
+      "command": "mix test test/lockspire/config_client_secret_verifier_test.exs",
+      "exit_code": 0,
+      "executed_tests": 16,
+      "failures": 0,
+      "started_at": "2026-10-26T03:36:12Z",
+      "finished_at": "2026-10-26T03:36:12Z",
+      "duration_seconds": 0.09,
+      "output_path": "/private/tmp/lockspire-177-09-config-context-8bae1a30.log",
+      "output_sha256": "95c7d494631ef8215d4660ad72d8772269582ffd780abf7e14a64bea1df8c8cd"
+    },
+    {
+      "command": "mix test test/integration/install_generator_test.exs test/integration/install_upgrade_test.exs",
+      "exit_code": 0,
+      "executed_tests": 31,
+      "failures": 0,
+      "started_at": "2026-10-26T03:36:12Z",
+      "finished_at": "2026-10-26T03:36:33Z",
+      "duration_seconds": 19.7,
+      "output_path": "/private/tmp/lockspire-177-09-install-fixtures-8bae1a30.log",
+      "output_sha256": "7156a1771279fa0d24e4496d850d03ec7ad804102a227ac96b645dd5c543069d"
+    }
+  ],
+  "requirements": {
+    "VUP-03": {
+      "source_status": "passed",
+      "evidence": [
+        "MAINTENANCE-RACE-AND-ROLLBACK",
+        "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY",
+        "test/integration/client_secret_verifier_maintenance_issuance_test.exs",
+        "test/integration/client_secret_verifier_maintenance_recovery_test.exs"
+      ]
+    },
+    "VOPS-01": {
+      "source_status": "passed",
+      "evidence": [
+        "MAINTENANCE-INVENTORY-PAGING",
+        "MAINTENANCE-INVENTORY-READINESS",
+        "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY",
+        "test/lockspire/storage/client_verifier_maintenance_test.exs",
+        "test/lockspire/admin/client_verifier_maintenance_test.exs"
+      ]
+    },
+    "VOPS-02": {
+      "source_status": "passed",
+      "evidence": [
+        "MAINTENANCE-CAPABILITY-AUTHORITY",
+        "MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION",
+        "MAINTENANCE-RACE-AND-ROLLBACK",
+        "test/integration/client_secret_verifier_maintenance_test.exs",
+        "test/integration/client_secret_verifier_maintenance_concurrency_test.exs"
+      ]
+    },
+    "VOPS-03": {
+      "source_status": "passed",
+      "evidence": [
+        "MAINTENANCE-INVENTORY-PAGING",
+        "MAINTENANCE-INVENTORY-READINESS",
+        "test/lockspire/storage/client_verifier_maintenance_test.exs",
+        "test/lockspire/admin/client_verifier_maintenance_test.exs",
+        "test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs"
+      ]
+    },
+    "VOPS-04": {
+      "source_status": "source proof passed; generic edge remains unresolved",
+      "evidence": [
+        "ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT",
+        "test/integration/client_secret_verifier_maintenance_recovery_test.exs",
+        "E-09 remains flagged unresolved; no generalized automatic category is claimed."
+      ]
+    },
+    "VPROOF-01": {
+      "source_status": "source proof passed; generic edge and three prohibitions remain unverified",
+      "evidence": [
+        "DISCLOSURE-SENTINELS",
+        "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+        "test/lockspire/security/client_secret_verifier_inspection_test.exs",
+        "E-10 remains flagged unresolved; descriptorless prohibitions remain unverified."
+      ]
+    }
+  },
+  "stable_phase_175_cases": [
+    {
+      "case_id": "MAINTENANCE-CAPABILITY-AUTHORITY",
+      "status": "source-passed",
+      "evidence": "Explicit selected-store/delegation declarations and native persisted path are covered by storage and maintenance unit/integration tests; full gate and focused command passed."
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-PAGING",
+      "status": "source-passed",
+      "evidence": "Persisted cursor pages enforce exclusive bytewise ordering, adjacent IDs, bounds, and terminal behavior in test/lockspire/storage/client_verifier_maintenance_test.exs."
+    },
+    {
+      "case_id": "MAINTENANCE-INVENTORY-READINESS",
+      "status": "source-passed",
+      "evidence": "Admin tests distinguish inspected/no-material rows, malformed and duplicate pages, partial progress, and fresh complete readiness."
+    },
+    {
+      "case_id": "MAINTENANCE-ATOMIC-CAS-AND-PRESERVATION",
+      "status": "source-passed",
+      "evidence": "Persisted native and migrated rewrap preserves partner secret hash, deadlines, and unrelated fields; exact repeat does not write twice."
+    },
+    {
+      "case_id": "MAINTENANCE-RACE-AND-ROLLBACK",
+      "status": "source-passed",
+      "evidence": "Independent PostgreSQL backends exercise rotation-first and maintenance-first ordering, metadata edits, rollback, audit failure, overlap, and retry. The barrier harness captures contender/blocker backend PIDs and observes the exact relation via pg_blocking_pids; see 177-05-SUMMARY.md and test/support/client_verifier_maintenance_concurrency.ex."
+    },
+    {
+      "case_id": "ROLLOUT-READER-FIRST-ROLLBACK-RETIREMENT",
+      "status": "source-passed with local-only scope",
+      "evidence": "Reader-first key activation, persisted old-key rewrite, fresh nil-cursor local custody check, lost-key fail-closed state, restoration, and authorized rotation are tested in test/integration/client_secret_verifier_maintenance_recovery_test.exs."
+    },
+    {
+      "case_id": "DISCLOSURE-SENTINELS",
+      "status": "source-passed with owned-channel limits",
+      "evidence": "Logger, client query telemetry, maintenance telemetry, audit rows, API reports, CLI output, protocol invalid_client output, nested inspection, forced failure, and rollback paths are covered by the disclosure matrix; host custom handlers and PostgreSQL server logs remain outside the claim."
+    },
+    {
+      "case_id": "MAINTENANCE-INTERRUPTED-RESUME-IDEMPOTENCE-RECOVERY",
+      "status": "source-passed",
+      "evidence": "Exact committed repeats are idempotent; partial progress and uncertain commit outcomes require a fresh complete inventory/retry; key loss and restoration remain explicit."
+    }
+  ],
+  "approved_preservation_reference": {
+    "case_id": "LEGACY-AGE-BOUNDARIES",
+    "scope": "approved preservation regression only",
+    "evidence": "The integration legacy-age test is included in the focused source command and canonical mix ci; expiry equality and the original credential deadline remain distinct from verifier custody."
+  },
+  "probe_audit": {
+    "explicit_predicate_count": 8,
+    "explicit_predicates": [
+      "E-01: interrupted or overlapping rewrap retains committed progress; conflicts fail completion and a fresh retry/check reconciles all material.",
+      "E-02: repeating the exact committed replacement with matching hash yields already_current and no second write/audit.",
+      "E-03: parallel randomized replacement may conflict; partial/interrupted run never claims requested completion and a fresh scan reconciles it.",
+      "E-04: exact repeated callback preserves hash/all other fields and returns already_current without audit duplication.",
+      "E-05: independent PostgreSQL rotation-first/maintenance-first and metadata edits serialize with exact blocker PIDs and preserve authoritative current state.",
+      "E-06: page cursor equals an existing ID exclusively; adjacent bytewise IDs remain separate and each appears exactly once.",
+      "E-07: empty inventory returns [],nil,true; singleton terminates; legitimate no-material rows count as inspected without blocking current custody.",
+      "E-08: identical unsigned UTF-8 comparison/order yields stable unique traversal; duplicate/out-of-order adapter rows fail completion."
+    ],
+    "unclassified_edges": [
+      {
+        "edge": "E-09",
+        "requirement": "VOPS-04/unclassified",
+        "status": "unresolved flagged assumption; no deterministic category; do not auto-resolve or dismiss"
+      },
+      {
+        "edge": "E-10",
+        "requirement": "VPROOF-01/unclassified",
+        "status": "unresolved flagged assumption; no deterministic category; do not auto-resolve or dismiss"
+      }
+    ],
+    "descriptorless_prohibitions": [
+      {
+        "statement": "MUST NOT treat custody maintenance as authority to replace partner credentials or extend their authenticated lifetime.",
+        "status": "unverified",
+        "flagged": true
+      },
+      {
+        "statement": "MUST NOT turn a local complete custody check into permission to retire fleet or backup keys.",
+        "status": "unverified",
+        "flagged": true
+      },
+      {
+        "statement": "MUST NOT turn missing-key recovery into automatic partner-secret replacement without the existing authorized one-time handoff.",
+        "status": "unverified",
+        "flagged": true
+      }
+    ]
+  },
+  "frozen_inputs": [
+    { "path": "test/integration/client_secret_jwt_legacy_age_test.exs", "sha256": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6" },
+    { "path": "test/lockspire/security/client_secret_verifier_compatibility_test.exs", "sha256": "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d" },
+    { "path": "test/lockspire/security/client_secret_verifier_contract_test.exs", "sha256": "b04ba0b562983122a835500162238cc66f83077926024ef956828f042e2b32fb" },
+    { "path": "test/support/client_secret_verifier_fixtures.ex", "sha256": "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json", "sha256": "55ef5cc2b33556b87eddc8390ee671ab381f07f1e48d6fc54be88e702ed5f045" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json", "sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json", "sha256": "e4f6f0fcc03a33309e02f4519a6ae1d1a54fd77c633108b4e168bd1f0e163788" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json", "sha256": "7eb178b8cbd41fb5e6f4cb5124e12a58502f414a5e2ef5f646df792546156ec3" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md", "sha256": "0a8fc84d6963c9a2019ab8faefbd9f29971f1cff2591d4dcaf7e0c60fbefa860" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-POLICY-REVISION.md", "sha256": "3916510fcf8e9c7d56b3f433785a704eebc9dfca2d5b354b5e11fe55a5bb408f" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md", "sha256": "ec28d54304910291a8e278e49a6582d74e350c8d00f2ced3208474b10623efa2" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md", "sha256": "8e93d17dbd303fcecec20f9de366d966b0b48b7c949ce096b2668c50e8e5095f" },
+    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md", "sha256": "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc" }
+  ],
+  "preserved_attempts": [
+    {
+      "tested_sha": "bea2a7e1c1c65484272a0e90439616603f3ffff4",
+      "command": "mix ci",
+      "exit_code": 1,
+      "result": "Credo reported six refactorings and three readability findings in current maintenance changes; corrected in fdb6ae35.",
+      "output_path": "/private/tmp/lockspire-177-09-mix-ci-bea2a7e1.log",
+      "output_sha256": "e915a562e23e396f50c062c1bb92ef95e2bc40061ca828e3e66fa618262d4396"
+    },
+    {
+      "tested_sha": "fdb6ae35",
+      "command": "mix ci",
+      "exit_code": 1,
+      "result": "test.fast reported 2 properties, 2138 tests, 3 failures, 6 skipped (567 excluded); two exact stale fixture rows and one missing-endpoint assertion failure were diagnosed.",
+      "output_path": "/private/tmp/lockspire-177-09-mix-ci-fdb6ae35.log",
+      "output_sha256": "e7bbaa05606fb4ac2cbebe40e3cf8f2cabcfa819280b3465b193da8c83edd67e"
+    },
+    {
+      "tested_sha": "162e9a7f",
+      "command": "mix ci",
+      "exit_code": 1,
+      "result": "Initial retry stopped at format because generated fixture files remained after a failed test.fast run; the fixture reset subsequently returned the tree to its .keep-only state.",
+      "output_path": "/private/tmp/lockspire-177-09-mix-ci-162e9a7f.log",
+      "output_sha256": "b2ec4cf33546ca3c6ef3651c5b83a91f90fab1c13b0abaf3e0b8f77a9b9b0ed5"
+    },
+    {
+      "tested_sha": "162e9a7f",
+      "command": "mix ci",
+      "exit_code": 1,
+      "result": "test.fast reported 2 properties, 2138 tests, 2 failures, 6 skipped (567 excluded): the proof scanner raced the generated fixture reset and ClientsSecretMaterialTest observed leaked generated-endpoint application configuration. Both isolation paths were fixed and verified.",
+      "output_path": "/private/tmp/lockspire-177-09-mix-ci-162e9a7f-retry.log",
+      "output_sha256": "d474f0e624e64b93ab34b2267502cf206fde873a7d2987bac11378ec5dc2a778"
+    },
+    {
+      "tested_sha": "8bae1a306e836c6d512c1d7e34ed39ef3c22e088",
+      "command": "mix test --include integration test/integration/client_secret_verifier*.exs test/integration/client_secret_jwt_legacy_age_test.exs test/integration/client_secret_verifier_maintenance*.exs test/integration/client_secret_verifier_rotation_test.exs test/lockspire/*client_secret_verifier*.exs test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
+      "exit_code": 2,
+      "result": "Noncanonical mixed-stage invocation: 107 tests, 1 failure in ConfigClientSecretVerifierTest for a listed hidden key context. The standalone configuration suite passed 16/0 and canonical mix ci passed test.fast and integration in their separate configured stages.",
+      "output_path": "/private/tmp/lockspire-177-09-verifier-family-8bae1a30.log",
+      "output_sha256": "397b57a0fed5e08bfd026c9b15565eceb3a5e8ac5627f7b85f9c3de6d4eafb24"
+    }
+  ],
+  "limits": [
+    "Two unclassified probe edges E-09/VOPS-04 and E-10/VPROOF-01 remain flagged unresolved.",
+    "Three descriptorless prohibitions remain unverified and flagged; they are not converted to tests or passed truths.",
+    "The structural validator is not reported as runtime evidence.",
+    "No fleet or host readiness, backup/quiescence, PostgreSQL server-log suppression, installed dependency-pair or composed-adapter proof, publication, delivery, final review, Phase 178 acceptance, or main acceptance is claimed.",
+    "No schema, dependency, protocol, or public API-shape change was made."
+  ]
+}
