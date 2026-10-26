@@ -55,7 +55,7 @@ PROOF_PAIR_LOCKS = {
     "locked": PROVIDER_TEMPLATE / "mix.lock",
     "floor": FLOOR_TEMPLATE / "mix.lock",
 }
-PROOF_PAIR_MARKER = ".lockspire-admin-proof-pair"
+PROOF_PAIR_MARKER = ".lockspire-dependency-pair"
 FORBIDDEN = (
     "Lockspire.Protocol.",
     "Lockspire.Storage.",
@@ -69,7 +69,7 @@ FORBIDDEN = (
 def proof_pair_lock_hash(proof_pair: str) -> str:
     lock_path = PROOF_PAIR_LOCKS.get(proof_pair)
     if lock_path is None or not lock_path.is_file():
-        raise PackageInputError("admin proof dependency pair is unavailable")
+        raise PackageInputError("dependency pair is unavailable")
     return sha256(lock_path)
 
 
@@ -85,15 +85,11 @@ def configure_proof_pair(
     child: Path, proof_pair: str, *, admin_proof: bool, reused: bool = False
 ) -> str | None:
     if proof_pair not in PROOF_PAIR_VERSIONS:
-        raise PackageInputError("unsupported admin proof dependency pair")
-    if proof_pair != "locked" and not admin_proof:
-        raise PackageInputError("floor dependency selection requires admin proof opt-in")
-    if not admin_proof:
-        return None
+        raise PackageInputError("unsupported dependency pair")
 
     lock_path = PROOF_PAIR_LOCKS[proof_pair]
     if not lock_path.is_file():
-        raise PackageInputError("admin proof dependency lock is missing")
+        raise PackageInputError("dependency pair lock is missing")
     lock_hash = sha256(lock_path)
     manifest_path = child / "mix.exs"
     lock_target = child / "mix.lock"
@@ -459,9 +455,7 @@ def prepare_provider(
     if mount_path not in {"/lockspire", "/teams/ops/identity", "/"}:
         raise PackageInputError("invalid admin proof mount path")
     if proof_pair not in PROOF_PAIR_VERSIONS:
-        raise PackageInputError("unsupported admin proof dependency pair")
-    if proof_pair != "locked" and not admin_proof:
-        raise PackageInputError("floor dependency selection requires admin proof opt-in")
+        raise PackageInputError("unsupported dependency pair")
     if package_root is None:
         package_root, _ = build_package(run_root)
     if candidate_identity is None:
@@ -507,8 +501,7 @@ def prepare_provider(
     # so a standalone caller needs one in the inherited environment before any child runs.
     os.environ.setdefault("LOCKSPIRE_KEY_ENCRYPTION_KEY", base64.b64encode(os.urandom(32)).decode("ascii"))
     dependency_cache = cache_root or run_root / "deps-cache"
-    if admin_proof:
-        dependency_cache = proof_pair_cache_root(dependency_cache, proof_pair)
+    dependency_cache = proof_pair_cache_root(dependency_cache, proof_pair)
     isolated_hex_home = run_root / "hex-home"
     isolated_mix_home = run_root / "mix-home"
     isolated_hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)

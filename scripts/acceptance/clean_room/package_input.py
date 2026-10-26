@@ -34,6 +34,8 @@ class PackageSource:
     kind: str
     value: str | None = None
     expected_sha256: str | None = None
+    source_revision: str | None = None
+    source_proof: str | None = None
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,8 @@ class PackageIdentity:
     archive_sha256: str | None = None
     tree_sha256: str | None = None
     source_revision: str | None = None
+    runner_revision: str | None = None
+    source_proof: str | None = None
 
     def safe_receipt(self) -> dict[str, object]:
         return {
@@ -408,6 +412,7 @@ def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str 
 def prepare_package(run_root: Path, source: PackageSource | None = None) -> tuple[Path, tuple[str, ...], PackageIdentity]:
     source = source or PackageSource("checkout")
     package_root = run_root / "package" / "lockspire"
+    runner = source_revision()
 
     if source.kind == "checkout":
         tarball = run_root / "package" / f"lockspire-{package_version(PROJECT_ROOT)}.tar"
@@ -415,14 +420,20 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
             version = package_version(package_root)
             checksum = sha256(tarball)
             tree = package_tree_digest(package_root)
-            identity = PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
+            if not checkout_package_inputs_are_clean():
+                raise PackageInputError("checkout package inputs must be clean before source attribution")
+            proof = _source_binding_digest(runner, checksum, tree)
+            identity = PackageIdentity("checkout", version, checksum, checksum, tree, runner, runner, proof)
             verify_candidate_input(tarball, package_root, identity)
             return package_root.resolve(strict=True), inventory(package_root), identity
         package_root, entries = build_package(run_root)
         version = package_version(package_root)
         checksum = sha256(tarball)
         tree = package_tree_digest(package_root)
-        return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, source_revision())
+        if not checkout_package_inputs_are_clean():
+            raise PackageInputError("checkout package inputs must be clean before source attribution")
+        proof = _source_binding_digest(runner, checksum, tree)
+        return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, runner, runner, proof)
 
     if source.kind == "hex":
         version = exact_version(source.value or "")
@@ -441,7 +452,8 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
     if package_root.is_dir():
         identity = PackageIdentity(
-            source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+            source.kind, version, checksum, checksum, package_tree_digest(package_root),
+            source.source_revision if source.source_proof else None, runner, source.source_proof,
         )
         verify_candidate_input(tarball, package_root, identity)
         return package_root.resolve(strict=True), inventory(package_root), identity
@@ -452,9 +464,36 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
 
     entries = inventory(package_root)
     package_root = package_root.resolve(strict=True)
+    tree = package_tree_digest(package_root)
+    source_revision_claim = None
+    if source.source_proof:
+        expected_proof = _source_binding_digest(source.source_revision or "", checksum, tree)
+        if source.source_proof != expected_proof:
+            raise PackageInputError("external package source proof does not bind archive and extracted tree")
+        source_revision_claim = source.source_revision
     return package_root, entries, PackageIdentity(
-        source.kind, version, checksum, checksum, package_tree_digest(package_root), source_revision()
+        source.kind, version, checksum, checksum, tree, source_revision_claim, runner, source.source_proof
     )
+
+
+def _source_binding_digest(revision: str, archive_sha256: str, tree_sha256: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{40,64}", revision):
+        raise PackageInputError("candidate source revision is unavailable")
+    binding = json.dumps(
+        {"archive_sha256": archive_sha256, "source_revision": revision, "tree_sha256": tree_sha256},
+        sort_keys=True, separators=(",", ":"),
+    ).encode()
+    return hashlib.sha256(binding).hexdigest()
+
+
+def checkout_package_inputs_are_clean() -> bool:
+    """Require the exact files Hex packages before tying a checkout SHA to output."""
+    completed = subprocess.run(
+        ("git", "status", "--porcelain", "--untracked-files=all", "--", "lib", "priv", "mix.exs", "mix.lock", "README.md", "LICENSE", "LICENSE.md"),
+        cwd=PROJECT_ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL, check=False, timeout=10,
+    )
+    return completed.returncode == 0 and not completed.stdout.strip()
 
 
 def assert_below(path: Path, root: Path, label: str) -> Path:
