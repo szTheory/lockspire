@@ -13,9 +13,14 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 
 import build_provider  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
+import verifier_rollout  # noqa: E402
 
 
 class VerifierRolloutContracts(unittest.TestCase):
+    def test_public_artifact_pin_and_source_evidence_are_verified_by_one_helper(self) -> None:
+        helper = getattr(verifier_rollout, "verify_public_artifact", None)
+        self.assertTrue(callable(helper), "public artifact verification must fail closed before producer startup")
+
     def test_rollout_group_is_an_installed_proof_group_with_owned_host_fixture(self) -> None:
         spec = importlib.util.find_spec("verifier_rollout")
         self.assertTrue(spec is not None, "rollout group must have an installed proof runner")
