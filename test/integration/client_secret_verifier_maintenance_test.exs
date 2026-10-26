@@ -201,6 +201,31 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
              )
   end
 
+  test "current key custody is a no-op and creates no maintenance audit" do
+    key = :crypto.strong_rand_bytes(32)
+    current_context = context([{"maintenance-current", key}], "maintenance-current")
+    set_startup_context(current_context)
+
+    {hash, secret} = Clients.rotate_secret_hash()
+    client_id = unique_id()
+    assert {:ok, verifier} = ClientSecretVerifier.seal(current_context, client_id, secret)
+    assert {:ok, _} = Repository.register_client(client(client_id, hash, verifier))
+
+    assert {:ok, :already_current} = ClientVerifierMaintenance.rewrap_client(client_id)
+
+    audit_count =
+      from(event in AuditEventRecord,
+        where:
+          event.action == "client_secret_verifier_rewrapped" and
+            event.resource_id == ^client_id
+      )
+      |> then(&TestRepo.aggregate(&1, :count))
+
+    assert audit_count == 0
+    assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
+    assert stored.client_secret_jwt_verifier_encrypted == verifier
+  end
+
   test "missing maintenance capability fails before client access" do
     Application.put_env(:lockspire, :client_store, Lockspire.TestSupport.NoMaintenanceClientStore)
 

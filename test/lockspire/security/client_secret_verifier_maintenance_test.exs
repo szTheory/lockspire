@@ -17,9 +17,6 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     new_context = context([{"old", old_key}, {"new", new_key}], "new")
     original = encrypt_migrated(old_context, client_id, secret, signed_at_ms, deadline_ms)
 
-    assert function_exported?(ClientSecretVerifier, :inspect_custody, 5)
-    assert function_exported?(ClientSecretVerifier, :prepare_rewrap, 5)
-
     assert {:ok, before} =
              ClientSecretVerifier.inspect_custody(
                new_context,
@@ -36,7 +33,7 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     assert before.deadline_ms == deadline_ms
     refute before.authentication_eligible?
 
-    assert {:ok, replacement} =
+    assert {:ok, replacement, "old", "new"} =
              ClientSecretVerifier.prepare_rewrap(
                new_context,
                client_id,
@@ -61,9 +58,122 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceTest do
     assert after_rewrap.classification == :current_key
     refute after_rewrap.authentication_eligible?
 
+    assert {:ok, :already_current, "new", "new"} =
+             ClientSecretVerifier.prepare_rewrap(
+               new_context,
+               client_id,
+               replacement,
+               expected_hash,
+               now_ms: deadline_ms + 1
+             )
+
     assert {:error, :client_secret_verifier_unavailable} =
              ClientSecretVerifier.open(new_context, client_id, replacement,
                verifier_now_ms: deadline_ms + 1
+             )
+  end
+
+  test "custody preparation preserves expired metadata and generates fresh IVs" do
+    old_key = :crypto.strong_rand_bytes(32)
+    new_key = :crypto.strong_rand_bytes(32)
+    client_id = "maintenance-repeated-expired-client"
+    secret = "repeatable-expired-custody-secret"
+    signed_at_ms = 1_700_000_000_123
+    deadline_ms = signed_at_ms + 60_000
+    old_context = context([{"old", old_key}], "old")
+    new_context = context([{"old", old_key}, {"new", new_key}], "new")
+    expected_hash = Policy.hash_client_secret(secret)
+    original = encrypt_migrated(old_context, client_id, secret, signed_at_ms, deadline_ms)
+
+    assert {:ok, first, "old", "new"} =
+             ClientSecretVerifier.prepare_rewrap(
+               new_context,
+               client_id,
+               original,
+               expected_hash,
+               now_ms: deadline_ms + 1
+             )
+
+    assert {:ok, second, "old", "new"} =
+             ClientSecretVerifier.prepare_rewrap(
+               new_context,
+               client_id,
+               original,
+               expected_hash,
+               now_ms: deadline_ms + 1
+             )
+
+    assert first != second
+
+    assert {:ok, first_metadata} =
+             ClientSecretVerifier.inspect_custody(
+               new_context,
+               client_id,
+               first,
+               expected_hash,
+               now_ms: deadline_ms + 1
+             )
+
+    assert {:ok, second_metadata} =
+             ClientSecretVerifier.inspect_custody(
+               new_context,
+               client_id,
+               second,
+               expected_hash,
+               now_ms: deadline_ms + 1
+             )
+
+    assert first_metadata.signed_at_ms == signed_at_ms
+    assert first_metadata.deadline_ms == deadline_ms
+    assert second_metadata.signed_at_ms == signed_at_ms
+    assert second_metadata.deadline_ms == deadline_ms
+  end
+
+  test "custody inspection rejects tampering, wrong identity, unknown keys, future age, and hash mismatch" do
+    key = :crypto.strong_rand_bytes(32)
+    client_id = "maintenance-adversarial-client"
+    secret = "maintenance-adversarial-secret"
+    signed_at_ms = 1_700_000_000_123
+    deadline_ms = signed_at_ms + 60_000
+    context = context([{"known", key}], "known")
+    hash = Policy.hash_client_secret(secret)
+    valid = encrypt_migrated(context, client_id, secret, signed_at_ms, deadline_ms)
+    [header, key_id, payload] = String.split(valid, ".", parts: 3)
+    <<first, rest::binary>> = payload
+    replacement = if first == ?A, do: ?B, else: ?A
+    tampered = header <> "." <> key_id <> "." <> <<replacement, rest::binary>>
+    future = encrypt_migrated(context, client_id, secret, 1_700_100_000_000, 1_700_100_060_000)
+
+    for {candidate_client_id, candidate_verifier, candidate_hash, candidate_now} <- [
+          {client_id, tampered, hash, deadline_ms},
+          {client_id <> "-other", valid, hash, deadline_ms},
+          {client_id, valid, "sha256:wrong-hash", deadline_ms},
+          {client_id, future, hash, deadline_ms},
+          {client_id, String.replace_prefix(valid, "LSCV1.known.", "LSCV1.unknown."), hash,
+           deadline_ms}
+        ] do
+      result =
+        ClientSecretVerifier.inspect_custody(
+          context,
+          candidate_client_id,
+          candidate_verifier,
+          candidate_hash,
+          now_ms: candidate_now
+        )
+
+      assert match?({:error, _reason}, result)
+      refute inspect(result) =~ secret
+      refute inspect(result) =~ candidate_verifier
+      refute inspect(result) =~ Base.encode64(key)
+    end
+  end
+
+  test "reserved dedicated prefixes never retry through the legacy reader" do
+    context = context([{"known", :crypto.strong_rand_bytes(32)}], "known")
+
+    assert {:error, :client_secret_verifier_unsupported_format} =
+             ClientSecretVerifier.open(context, "reserved-prefix-client", "LSCV2.legacy-looking",
+               legacy_secret_key_base: "configured-legacy-key"
              )
   end
 

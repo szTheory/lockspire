@@ -102,7 +102,7 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
          {:ok, %Client{} = client} <- fetch_client(config.client_store, client_id),
          hash when is_binary(hash) <- client.client_secret_hash,
          verifier when is_binary(verifier) <- client.client_secret_jwt_verifier_encrypted,
-         {:ok, outcome} <- run_rewrap(config, context, client, hash, verifier) do
+         {:ok, outcome} <- run_rewrap(config, context, client, hash, verifier, opts) do
       {:ok, outcome}
     else
       {:ok, nil} ->
@@ -129,9 +129,9 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
   def rewrap_client(_client_id, _opts),
     do: {:error, :client_secret_verifier_maintenance_failed}
 
-  defp run_rewrap(config, context, client, expected_hash, expected_verifier) do
+  defp run_rewrap(config, context, client, expected_hash, expected_verifier, opts) do
     with {:ok, replacement, audit_attrs} <-
-           rewrap_material(context, client, expected_hash, expected_verifier),
+           rewrap_material(context, client, expected_hash, expected_verifier, opts),
          {:ok, outcome} <-
            config.transaction_store.transact(fn ->
              config.client_store.compare_and_rewrap(
@@ -163,13 +163,14 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
     _, _ -> {:error, :client_secret_verifier_maintenance_failed}
   end
 
-  defp rewrap_material(context, client, expected_hash, expected_verifier) do
+  defp rewrap_material(context, client, expected_hash, expected_verifier, opts) do
     with {:ok, replacement_or_current, old_key_id, new_key_id} <-
-           ClientSecretVerifier.rewrap_native(
+           ClientSecretVerifier.prepare_rewrap(
              context,
              client.client_id,
+             expected_verifier,
              expected_hash,
-             expected_verifier
+             opts
            ) do
       replacement =
         if replacement_or_current == :already_current,
