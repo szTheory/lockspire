@@ -14,21 +14,33 @@ end
 {:ok, _apps} = Application.ensure_all_started(:ecto_sql)
 {:ok, _repo} = CleanRoomProvider.Repo.start_link()
 result = Ecto.Adapters.SQL.query!(CleanRoomProvider.Repo,
-  "SELECT client_secret_hash, client_secret_jwt_verifier_encrypted, " <>
-    "to_char(client_secret_expires_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS.US\"Z\"') " <>
+  "SELECT client_secret_hash, client_secret_jwt_verifier_encrypted " <>
     "FROM #{prefix}.lockspire_clients WHERE client_id = $1",
   [client_id]
 )
 
 case result.rows do
-  [[hash, verifier, deadline]] when is_binary(hash) ->
+  [[hash, verifier]] when is_binary(hash) and is_binary(verifier) ->
     format = if is_binary(verifier) and String.starts_with?(verifier, "LSCV1."), do: "dedicated", else: "legacy"
     digest = Base.encode16(:crypto.hash(:sha256, hash), case: :lower)
-    IO.puts("ROW_FORMAT=#{format};HASH_DIGEST=#{digest};DEADLINE=#{deadline || "nil"}")
+    config = Application.fetch_env!(:lockspire, Lockspire.Security.ClientSecretVerifier)
+    {:ok, context} = Lockspire.Security.ClientSecretVerifier.Context.resolve({:present, config}, [])
+    opts = [legacy_secret_key_base: System.fetch_env!("SECRET_KEY_BASE")]
+    age = Lockspire.Security.ClientSecretVerifier.inspect_custody(context, client_id, verifier, hash, opts)
+
+    case age do
+      {:ok, metadata} ->
+        IO.puts("ROW_FORMAT=#{format};HASH_DIGEST=#{digest};AGE_KIND=#{metadata.age_kind};" <>
+                  "SIGNED_AT_MS=#{metadata.signed_at_ms || "nil"};DEADLINE_MS=#{metadata.deadline_ms || "nil"}")
+
+      {:error, _reason} ->
+        IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;" <>
+                  "SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable")
+    end
 
   [] ->
-    IO.puts("ROW_FORMAT=missing;HASH_DIGEST=missing;DEADLINE=missing")
+    IO.puts("ROW_FORMAT=missing;HASH_DIGEST=missing;AGE_KIND=missing;SIGNED_AT_MS=missing;DEADLINE_MS=missing")
 
   _ ->
-    IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;DEADLINE=unavailable")
+    IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable")
 end

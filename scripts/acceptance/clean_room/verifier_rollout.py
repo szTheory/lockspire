@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -50,6 +51,8 @@ PUBLIC_SHA256 = "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6
 PROJECT_ROOT = HERE.parents[1]
 PUBLIC_TARBALL = PROJECT_ROOT / "lockspire-1.6.1.tar"
 PUBLIC_RELEASE_RECORD = PROJECT_ROOT / ".planning" / "RELEASE-TRAIN.md"
+PUBLIC_RELEASE_EVIDENCE = PROJECT_ROOT / ".planning" / "releases" / "1.6.1-EVIDENCE.md"
+PUBLIC_TERMINAL_RECEIPT = PROJECT_ROOT / ".planning" / "releases" / "1.6.1-terminal-receipt.json"
 
 
 def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
@@ -160,11 +163,13 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
                                        custom_lifetime_adapter=store == "delegated", proof_pair=pair,
                                        scenario_groups={"rollout"})
         _configure(host=old_host, mode="legacy", legacy_read="allow", key=key)
-        _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
+        _configure(host=new_host, mode="legacy", legacy_read="allow", key=key)
         old_env = runner._mix_env(old_host, root / "old", database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, pair)
         new_env = runner._mix_env(new_host, root / "new", database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, pair)
         legacy_env = runner._mix_env(legacy_host, root / "legacy-writer", database_url, port_legacy,
                                     f"http://127.0.0.1:{port_legacy}/lockspire", prefix, key, pair)
+        for environment in (old_env, new_env, legacy_env):
+            environment["CLEAN_ROOM_HTTP_SERVER"] = "false"
         redactor.register_material(database_url)
         try:
             run_child_command(old_host, old_env, "ecto.create")
@@ -173,9 +178,10 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
             runner._provision_signing_key(new_host, new_env)
             old_server, old_pid = _start_server(old_host, old_env, root / "old.log", old_env["LOCKSPIRE_ISSUER"])
             new_server, new_pid = _start_server(new_host, new_env, root / "new.log", new_env["LOCKSPIRE_ISSUER"])
+            overlap_candidate_pid = new_pid
             legacy_id = "rollout-legacy-" + run_id
             legacy_id, legacy_secret = runner._capture_secret(old_host, old_env, redactor, legacy_id)
-            legacy_format, legacy_hash = _safe_row(old_host, old_env, prefix, legacy_id)
+            legacy_format, legacy_hash = _safe_row(new_host, new_env, prefix, legacy_id)
             old_read = _http_auth(old_env["LOCKSPIRE_ISSUER"], port_old, legacy_id, legacy_secret)
             new_read = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, legacy_id, legacy_secret)
             if legacy_format != "legacy" or not old_read or not new_read:
@@ -185,10 +191,23 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
             old_drain = old_server.poll() is not None
             if not old_drain:
                 raise PackageInputError("accepted predecessor process did not exit before activation")
+            _stop_owned_server(new_server)
+            new_server = None
+            _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
+            new_server, new_pid = _start_server(new_host, new_env, root / "new.log", new_env["LOCKSPIRE_ISSUER"])
+            dedicated_candidate_pid = new_pid
             dedicated_id = "rollout-dedicated-" + run_id
             dedicated_id, dedicated_secret = runner._capture_secret(new_host, new_env, redactor, dedicated_id)
             dedicated_format, dedicated_hash = _safe_row(new_host, new_env, prefix, dedicated_id)
             dedicated_read = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, dedicated_id, dedicated_secret)
+            _stop_owned_server(new_server)
+            new_server = None
+            _configure(host=new_host, mode="legacy", legacy_read="allow", key=key)
+            new_server, new_pid = _start_server(new_host, new_env, root / "new-rollback.log", new_env["LOCKSPIRE_ISSUER"])
+            rollback_candidate_pid = new_pid
+            rollback_status = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, dedicated_id, dedicated_secret)
+            if not rollback_status:
+                raise PackageInputError("compatible-reader rollback could not read dedicated verifier")
             # A separate candidate process switches writers back to legacy while preserving the dedicated row.
             run_child_command(legacy_host, legacy_env, "ecto.migrate")
             _configure(host=legacy_host, mode="legacy", legacy_read="allow", key=key)
@@ -202,18 +221,22 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
             legacy_server.terminate()
             legacy_server.wait(timeout=10)
             legacy_server = None
+            _stop_owned_server(new_server)
+            new_server = None
+            _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
+            new_server, new_pid = _start_server(new_host, new_env, root / "new-dedicated-rollback.log", new_env["LOCKSPIRE_ISSUER"])
             if (legacy_write_format != "legacy" or not legacy_write_hash or not legacy_read or
                     not candidate_reads_switchback_legacy or dedicated_hash_before_switchback != dedicated_hash_after_switchback):
                 raise PackageInputError("legacy writer switch-back did not preserve dedicated row material")
             # Old-code rejection is isolated: the predecessor host process was already drained.
             _configure(host=old_host, mode="legacy", legacy_read="allow", key=key)
             old_server, isolated_old_pid = _start_server(old_host, old_env, root / "old-isolated.log", old_env["LOCKSPIRE_ISSUER"])
+            old_legacy_control = _http_auth(old_env["LOCKSPIRE_ISSUER"], port_old, legacy_id, legacy_secret)
             isolated_old_status = _old_code_probe(old_host, old_env, dedicated_id, dedicated_secret)
-            rollback_status = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, dedicated_id, dedicated_secret)
             old_server.terminate()
             old_server.wait(timeout=10)
             old_server = None
-            if dedicated_format != "dedicated" or not dedicated_read or isolated_old_status != 401 or not rollback_status:
+            if dedicated_format != "dedicated" or not dedicated_read or isolated_old_status != 401 or not old_legacy_control or not rollback_status:
                 raise PackageInputError("dedicated activation, isolated old-code rejection, or rollback read failed")
             observation = {
                 "outcome": "pass", "executed": True, "old_process_exit_observed": old_drain,
@@ -222,14 +245,23 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
                 "switch_back_legacy_write_preserves_dedicated": legacy_write_format == "legacy" and legacy_read and candidate_reads_switchback_legacy and dedicated_hash_before_switchback == dedicated_hash_after_switchback,
                 "old_code_rejects_dedicated": isolated_old_status == 401,
                 "rollback_retains_dedicated_reads": rollback_status,
+                "old_code_legacy_control_succeeded": old_legacy_control,
                 "legacy_hash_preserved": bool(legacy_hash), "dedicated_hash_present": bool(dedicated_hash),
                 "old_process_pid": old_pid, "candidate_process_pid": new_pid,
+                "candidate_legacy_overlap_pid": overlap_candidate_pid,
+                "candidate_dedicated_activation_pid": dedicated_candidate_pid,
+                "candidate_compatible_rollback_pid": rollback_candidate_pid,
                 "legacy_writer_pid": legacy_pid, "isolated_old_process_pid": isolated_old_pid,
                 "fleet_parity_proven": False, "quiescence_proven": False, "backup_proven": False,
             }
             receipt = _receipt("rollout", pair, store, run_id, candidate_identity, candidate, new_host,
                                new_env, old_identity, old_package, old_host, old_env, old_proof, observation)
             return _write_receipt(receipt_dir, receipt, redactor)
+        except Exception as error:
+            _write_failure_attempt(receipt_dir, "rollout", pair, store, run_id, error, redactor,
+                                   candidate_identity=locals().get("candidate_identity"),
+                                   predecessor_identity=locals().get("old_identity"))
+            raise
         finally:
             for process in (old_server, new_server, legacy_server):
                 if process is not None and process.poll() is None:
@@ -252,12 +284,19 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
     old_server = new_server = None
     with tempfile.TemporaryDirectory(prefix="lockspire-public-verifier-control-") as temporary:
         root = Path(temporary)
-        if not PUBLIC_TARBALL.is_file() or sha256(PUBLIC_TARBALL) != PUBLIC_SHA256:
+        public_tarball = PUBLIC_TARBALL if PUBLIC_TARBALL.is_file() and sha256(PUBLIC_TARBALL) == PUBLIC_SHA256 else root / "public-1.6.1.tar"
+        if public_tarball != PUBLIC_TARBALL:
+            try:
+                with urllib.request.urlopen("https://repo.hex.pm/tarballs/lockspire-1.6.1.tar", timeout=30) as response:
+                    public_tarball.write_bytes(response.read())
+            except (OSError, urllib.error.URLError):
+                raise PackageInputError("pinned public Lockspire 1.6.1 artifact is unavailable or changed") from None
+        if not public_tarball.is_file() or sha256(public_tarball) != PUBLIC_SHA256:
             raise PackageInputError("pinned public Lockspire 1.6.1 artifact is unavailable or changed")
-        if not _git_commit_exists(PUBLIC_SOURCE) or not PUBLIC_RELEASE_RECORD.is_file():
+        if not verify_public_artifact(public_tarball, PUBLIC_SHA256, PUBLIC_SOURCE):
             raise PackageInputError("retained public release source evidence is unavailable")
         old_package = root / "public-package"
-        unpack_hex_tarball(PUBLIC_TARBALL, old_package)
+        unpack_hex_tarball(public_tarball, old_package)
         if package_version(old_package) != "1.6.1":
             raise PackageInputError("pinned public archive is not Lockspire 1.6.1")
         public_tree = package_tree_digest(old_package)
@@ -276,6 +315,8 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
         _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
         old_env = runner._mix_env(old_host, root / "public", database_url, port_old, f"http://127.0.0.1:{port_old}/lockspire", prefix, key, "locked")
         new_env = runner._mix_env(new_host, root / "adopter", database_url, port_new, f"http://127.0.0.1:{port_new}/lockspire", prefix, key, "locked")
+        old_env["CLEAN_ROOM_HTTP_SERVER"] = "false"
+        new_env["CLEAN_ROOM_HTTP_SERVER"] = "false"
         redactor.register_material(database_url)
         try:
             run_child_command(old_host, old_env, "ecto.create")
@@ -283,35 +324,49 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
             old_server, _old_pid = _start_server(old_host, old_env, root / "public.log", old_env["LOCKSPIRE_ISSUER"])
             client_id = "public-legacy-" + run_id
             client_id, secret = runner._capture_secret(old_host, old_env, redactor, client_id)
-            legacy_format, old_hash = _safe_row(old_host, old_env, prefix, client_id)
-            old_deadline = _safe_deadline(old_host, old_env, prefix, client_id)
+            _stop_owned_server(old_server)
+            old_server = None
             run_child_command(new_host, new_env, "ecto.migrate")
+            legacy_format, old_hash = _safe_row(new_host, new_env, prefix, client_id)
+            old_deadline = _safe_deadline(new_host, new_env, prefix, client_id)
+            old_age_kind = _projection(new_host, new_env, prefix, client_id)["age_kind"]
             _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
             run_child_command(new_host, new_env, "lockspire.clients.verifier.rewrap", "--limit", "100")
             new_server, _new_pid = _start_server(new_host, new_env, root / "adopter.log", new_env["LOCKSPIRE_ISSUER"])
             http_ok = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, client_id, secret)
             promoted_format, new_hash = _safe_row(new_host, new_env, prefix, client_id)
             new_deadline = _safe_deadline(new_host, new_env, prefix, client_id)
+            new_age_kind = _projection(new_host, new_env, prefix, client_id)["age_kind"]
             observation = {
                 "outcome": "pass", "executed": True, "public_pin_verified": True,
                 "release_source_evidence": "documented-public-release-source",
                 "lifetime_prerequisite_migrated": True, "verifier_specific_adoption_executed": True,
                 "http_authentication_succeeded": http_ok,
                 "legacy_format_before": legacy_format, "dedicated_format_after": promoted_format,
+                "authenticated_age_kind_before": old_age_kind, "authenticated_age_kind_after": new_age_kind,
                 "authenticated_deadline_preserved": old_deadline is not None and old_deadline == new_deadline,
                 "client_hash_preserved": bool(old_hash) and old_hash == new_hash,
                 "coverage": "locked-only bounded public legacy producer/adopter control",
             }
             if not (http_ok and legacy_format == "legacy" and promoted_format == "dedicated" and
+                    old_age_kind == "migrated" and new_age_kind == "migrated" and
                     observation["authenticated_deadline_preserved"] and observation["client_hash_preserved"]):
                 raise PackageInputError("public legacy verifier adoption or preservation observation failed")
             proof = {"public_source": PUBLIC_SOURCE, "release_record_sha256": sha256(PUBLIC_RELEASE_RECORD),
-                     "archive_sha256": sha256(PUBLIC_TARBALL), "package_tree_sha256": public_tree,
-                     "source_claim": "retained release evidence; package-source linkage not independently reconstructed"}
+                     "release_evidence_sha256": sha256(PUBLIC_RELEASE_EVIDENCE),
+                     "terminal_receipt_sha256": sha256(PUBLIC_TERMINAL_RECEIPT),
+                     "archive_sha256": sha256(public_tarball), "package_tree_sha256": public_tree,
+                     "source_commit_tree": _git_commit_tree(PUBLIC_SOURCE),
+                     "source_claim": "public package files byte-match independently exported source commit"}
             receipt = _receipt("legacy-control", "locked", "builtin", run_id, candidate_identity,
                                candidate, new_host, new_env, old_identity, old_package, old_host,
                                old_env, proof, observation)
             return _write_receipt(receipt_dir, receipt, redactor)
+        except Exception as error:
+            _write_failure_attempt(receipt_dir, "legacy-control", "locked", "builtin", run_id, error,
+                                   redactor, candidate_identity=locals().get("candidate_identity"),
+                                   predecessor_identity=locals().get("old_identity"))
+            raise
         finally:
             for process in (old_server, new_server):
                 if process is not None and process.poll() is None:
@@ -326,10 +381,17 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
 def _configure(*, host: Path, mode: str, legacy_read: str, key: str) -> None:
     runtime = host / "config" / "runtime.exs"
     original = runtime.read_text(encoding="utf-8")
-    marker = "config :lockspire, Lockspire.Security.ClientSecretVerifier,"
-    if marker in original:
-        original = original[:original.index(marker)].rstrip() + "\n"
-    runtime.write_text(original + f'''\nconfig :lockspire, Lockspire.Security.ClientSecretVerifier,
+    markers = (
+        "config :clean_room_provider, CleanRoomProviderWeb.Endpoint,\n  server: System.get_env(\"CLEAN_ROOM_HTTP_SERVER\", \"false\") == \"true\"",
+        "config :lockspire, Lockspire.Security.ClientSecretVerifier,",
+    )
+    positions = [original.index(marker) for marker in markers if marker in original]
+    if positions:
+        original = original[:min(positions)].rstrip() + "\n"
+    runtime.write_text(original + f'''\nconfig :clean_room_provider, CleanRoomProviderWeb.Endpoint,
+  server: System.get_env("CLEAN_ROOM_HTTP_SERVER", "false") == "true"
+
+config :lockspire, Lockspire.Security.ClientSecretVerifier,
   keys: [{{"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}}],
   current: "verifier-old",
   write_mode: :{mode},
@@ -341,20 +403,46 @@ def _start_server(host: Path, env: dict[str, str], log_path: Path, issuer: str):
     log_path.touch(mode=0o600)
     os.chmod(log_path, 0o600)
     handle = log_path.open("ab")
-    process = subprocess.Popen(("mix", "run", "--no-halt"), cwd=host, env=env,
-                               stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
-                               start_new_session=True)
-    deadline = time.monotonic() + 35
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise PackageInputError("installed process exited before HTTP readiness")
-        try:
-            with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
-                if response.status == 200:
-                    return process, process.pid
-        except OSError:
-            time.sleep(0.15)
-    raise PackageInputError("installed process did not become HTTP ready")
+    server_env = _server_environment(env)
+    process = None
+    try:
+        process = subprocess.Popen(("mix", "run", "--no-halt"), cwd=host, env=server_env,
+                                   stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
+                                   start_new_session=True)
+        deadline = time.monotonic() + 35
+        while time.monotonic() < deadline:
+            if process.poll() is not None:
+                raise PackageInputError("installed process exited before HTTP readiness")
+            try:
+                with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
+                    if response.status == 200:
+                        handle.close()
+                        return process, process.pid
+            except OSError:
+                time.sleep(0.15)
+        raise PackageInputError("installed process did not become HTTP ready")
+    except BaseException:
+        if process is not None and process.poll() is None:
+            _stop_owned_server(process)
+        handle.close()
+        raise
+
+
+def _stop_owned_server(process) -> None:
+    if process is None or process.poll() is not None:
+        return
+    process.terminate()
+    try:
+        process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+
+
+def _server_environment(env: dict[str, str]) -> dict[str, str]:
+    server_env = dict(env)
+    server_env["CLEAN_ROOM_HTTP_SERVER"] = "true"
+    return server_env
 
 
 def _safe_row(host: Path, env: dict[str, str], prefix: str, client_id: str) -> tuple[str, str | None]:
@@ -370,14 +458,24 @@ def _projection(host: Path, env: dict[str, str], prefix: str, client_id: str) ->
     output = run_child_command_output(
         host, env, "run", "--no-start", "test/clean_room/verifier_rollout.exs", "--", prefix, client_id
     )
+    return _parse_projection_output(output)
+
+
+def _parse_projection_output(output: str) -> dict[str, str | None]:
     marker = next((line for line in output.splitlines() if line.startswith("ROW_FORMAT=")), None)
     if marker is None:
         raise PackageInputError("safe persisted row projection unavailable")
     fields = dict(part.split("=", 1) for part in marker.split(";") if "=" in part)
-    if fields.get("format") not in {"legacy", "dedicated"} or not fields.get("hash_digest", "").strip():
+    row_format = fields.get("format", fields.get("ROW_FORMAT"))
+    hash_digest = fields.get("hash_digest", fields.get("HASH_DIGEST"))
+    deadline = fields.get("deadline_ms", fields.get("DEADLINE_MS"))
+    if row_format not in {"legacy", "dedicated"} or not hash_digest or not re.fullmatch(r"[0-9a-f]{64}", hash_digest):
         raise PackageInputError("persisted rollout row is missing a safe hash witness")
-    return {"format": fields["format"], "hash_digest": fields["hash_digest"],
-            "deadline": None if fields.get("deadline") in {None, "nil", "missing", "unavailable"} else fields["deadline"]}
+    age_kind = fields.get("age_kind", fields.get("AGE_KIND"))
+    signed_at = fields.get("signed_at_ms", fields.get("SIGNED_AT_MS"))
+    return {"format": row_format, "hash_digest": hash_digest, "age_kind": age_kind,
+            "signed_at_ms": None if signed_at in {None, "nil", "missing", "unavailable"} else signed_at,
+            "deadline": None if deadline in {None, "nil", "missing", "unavailable"} else deadline}
 
 
 def _http_auth(issuer: str, port: int, client_id: str, secret: str) -> bool:
@@ -396,7 +494,59 @@ def _old_code_probe(host: Path, env: dict[str, str], client_id: str, secret: str
         runner._token_request(env["LOCKSPIRE_ISSUER"], client_id, secret, _uri, verifier, code, Redactor(SentinelSet.for_run()))
         return 200
     except PackageInputError as error:
-        return 401 if "token request" in str(error).lower() or "did not issue" in str(error).lower() else 0
+        return _classify_old_code_rejection(str(error))
+
+
+def _classify_old_code_rejection(error: str) -> int:
+    message = error.lower()
+    return 401 if "installed token http returned status 401" in message and "invalid_client" in message else 0
+
+
+def verify_public_artifact(archive: Path, expected_sha256: str, source_revision: str) -> bool:
+    """Bind the pinned public tarball's packaged files to its independently named source commit."""
+    if not archive.is_file() or sha256(archive) != expected_sha256:
+        return False
+    if not all(path.is_file() for path in (PUBLIC_RELEASE_RECORD, PUBLIC_RELEASE_EVIDENCE, PUBLIC_TERMINAL_RECEIPT)):
+        return False
+    try:
+        evidence = PUBLIC_RELEASE_EVIDENCE.read_text(encoding="utf-8")
+        release = PUBLIC_RELEASE_RECORD.read_text(encoding="utf-8")
+        terminal = json.loads(PUBLIC_TERMINAL_RECEIPT.read_text(encoding="utf-8"))
+        if source_revision not in evidence or source_revision not in release:
+            return False
+        if terminal.get("source_sha") != source_revision or terminal.get("artifact", {}).get("sha256") != expected_sha256:
+            return False
+        with tempfile.TemporaryDirectory(prefix="lockspire-public-source-proof-") as temporary:
+            root = Path(temporary)
+            package = root / "package"
+            source = root / "source"
+            unpack_hex_tarball(archive, package)
+            source.mkdir(mode=0o700)
+            exported = subprocess.run(("git", "archive", "--format=tar", source_revision), cwd=PROJECT_ROOT,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                      check=False, timeout=60)
+            if exported.returncode:
+                return False
+            tar_path = root / "source.tar"
+            tar_path.write_bytes(exported.stdout)
+            unpacked = subprocess.run(("tar", "-xf", str(tar_path), "-C", str(source)), cwd=PROJECT_ROOT,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                      check=False, timeout=60)
+            if unpacked.returncode:
+                return False
+            for path in package.rglob("*"):
+                if not path.is_file() or path.relative_to(package).as_posix() == "hex_metadata.config":
+                    continue
+                source_path = source / path.relative_to(package)
+                if not source_path.is_file() or source_path.read_bytes() != path.read_bytes():
+                    return False
+        return True
+    except (OSError, ValueError, PackageInputError, subprocess.SubprocessError):
+        return False
+
+
+def _git_commit_tree(revision: str) -> str:
+    return subprocess.check_output(("git", "rev-parse", f"{revision}^{{tree}}"), cwd=PROJECT_ROOT, text=True).strip()
 
 
 def _receipt(scope, pair, store, run_id, candidate_identity, candidate, new_host, new_env,
@@ -438,6 +588,32 @@ def _write_receipt(receipt_dir: Path, receipt: dict[str, object], redactor: Reda
     print(json.dumps({"scope": receipt["scope"], "pair": receipt["pair"], "store": receipt["store"],
                       "executed_count": 1, "receipt": str(path)}, sort_keys=True), flush=True)
     return receipt
+
+
+def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str, run_id: str,
+                           error: Exception, redactor: Redactor, *, candidate_identity=None,
+                           predecessor_identity=None) -> None:
+    """Retain each new failed cell with redacted command, exit and artifact identities."""
+    message = redactor.text(str(error))
+    redactor.assert_safe(message)
+    record = {
+        "schema": "lockspire-installed-verifier-rollout-failure-v1",
+        "scope": scope, "pair": pair, "store": store, "run_id": run_id,
+        "runner_revision": runner.source_revision(),
+        "candidate_source_revision": getattr(candidate_identity, "source_revision", None),
+        "candidate_archive_sha256": getattr(candidate_identity, "archive_sha256", None),
+        "predecessor_source_revision": getattr(predecessor_identity, "source_revision", None),
+        "command": ["python3", "scripts/acceptance/clean_room_verifier_upgrade.py", "--pair", pair,
+                    "--store", store, "--group", scope],
+        "exit_code": 1, "error_type": type(error).__name__, "redacted_error": message,
+        "attempted_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+    rendered = json.dumps(record, sort_keys=True, indent=2) + "\n"
+    redactor.assert_safe(rendered)
+    receipt_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path = receipt_dir / f"{scope}-{pair}-{store}-{run_id}.failure.json"
+    path.write_text(rendered, encoding="utf-8")
+    os.chmod(path, 0o600)
 
 
 def _git_commit_exists(revision: str) -> bool:
