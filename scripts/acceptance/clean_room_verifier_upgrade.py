@@ -189,7 +189,9 @@ def _framework_versions(child: Path, env: dict[str, str]) -> tuple[str, str]:
     return values["PHOENIX"], values["LIVE_VIEW"]
 
 
-def _authorization_code(issuer: str, port: int, client_id: str, redactor: Redactor) -> tuple[str, str, str]:
+def _authorization_code(
+    issuer: str, port: int, client_id: str, redactor: Redactor, *, remember: bool = True
+) -> tuple[str, str, str]:
     browser_support.ACTIVE_REDACTOR = redactor
     browser = browser_support.Browser(f"http://127.0.0.1:{port}")
     redirect_uri = "https://client.example/callback"
@@ -229,7 +231,7 @@ def _authorization_code(issuer: str, port: int, client_id: str, redactor: Redact
     if consent["status"] != 200:
         raise PackageInputError("installed consent interaction did not render")
     consent_id = urllib.parse.urlparse(consent_location).path.rsplit("/", 1)[-1]
-    approval = {"decision": "approve", "remember": "true"}
+    approval = {"decision": "approve", "remember": "true" if remember else "false"}
     try:
         approval["_csrf_token"] = browser_support.csrf(consent["body"])
     except AssertionError:

@@ -504,7 +504,9 @@ def _http_auth(issuer: str, port: int, client_id: str, secret: str) -> bool:
 
 def _http_auth_result(issuer: str, port: int, client_id: str, secret: str) -> tuple[bool, str | None]:
     try:
-        _redirect_uri, verifier, code = runner._authorization_code(issuer, port, client_id, Redactor(SentinelSet.for_run()))
+        _redirect_uri, verifier, code = runner._authorization_code(
+            issuer, port, client_id, Redactor(SentinelSet.for_run()), remember=False
+        )
         ok, status, _ = runner._token_request(issuer, client_id, secret, _redirect_uri, verifier, code, Redactor(SentinelSet.for_run()))
         return (True, None) if status == 200 and ok else (False, f"token-http-{status}")
     except PackageInputError as error:
@@ -532,7 +534,10 @@ def _http_auth_result(issuer: str, port: int, client_id: str, secret: str) -> tu
 def _old_code_probe(host: Path, env: dict[str, str], client_id: str, secret: str) -> int:
     # The old compiled host uses its installed package and cannot decode LSCV1.
     try:
-        _uri, verifier, code = runner._authorization_code(env["LOCKSPIRE_ISSUER"], int(env["PORT"]), client_id, Redactor(SentinelSet.for_run()))
+        _uri, verifier, code = runner._authorization_code(
+            env["LOCKSPIRE_ISSUER"], int(env["PORT"]), client_id,
+            Redactor(SentinelSet.for_run()), remember=False
+        )
         runner._token_request(env["LOCKSPIRE_ISSUER"], client_id, secret, _uri, verifier, code, Redactor(SentinelSet.for_run()))
         return 200
     except PackageInputError as error:
