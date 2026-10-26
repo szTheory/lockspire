@@ -1,0 +1,11 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_recovery_test.py",
+  "exitCode": 1,
+  "output": "Ran 6 tests in 0.537s; FAILED (failures=1). test_declared_host_otp_apps_support_http_after_mix_path_pruning: AssertionError: 1 != 0 : declared host OTP applications cannot execute HTTP; safe_failure=startup; child diagnostics withheld",
+  "targetTest": "test_declared_host_otp_apps_support_http_after_mix_path_pruning",
+  "targetFile": "test/acceptance/client_verifier_recovery_test.py",
+  "expected": "The actual maintainer-host OTP application declaration supports real HTTP 200/400/401/500 requests after Mix path pruning.",
+  "actual": "With the original logger-only declaration, the reduced host cannot dynamically start the complete inets application. The assertion fails at the intended child-result seam with a fixed startup reason.",
+  "semanticAssessment": "The named test ran, not a loader or syntax failure. The reduced project carries ssl, already provided by HTTP dependencies in the full host. This qualification removes an unrelated TLS omission in the preliminary reduced fixture. Reverting only the inets declaration reproduces the failure. The full installed host independently reproduced exactly http_util:timestamp/0 undefined for every loopback status and the mounted call; adding only inets restored all statuses and normal mounted rejection. These are distinct manifestations of the same undeclared OTP application, not restamped observations.",
+  "preliminaryEvidence": "178-06-ROOT-HTTP-RED.json remains historical; its first reduced fixture omitted the existing host's TLS context and is not the qualified regression authority."
+}

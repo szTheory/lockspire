@@ -50,7 +50,8 @@ class RecoveryDispatchTest(unittest.TestCase):
                     "defmodule HttpOtpContract.MixProject do\n"
                     "  use Mix.Project\n"
                     '  def project, do: [app: :http_otp_contract, version: "0.0.0"]\n'
-                    f"  def application, do: [extra_applications: {declared.group(1)}]\n"
+                    # The real host already receives ssl through its HTTP deps.
+                    f"  def application, do: [extra_applications: [:ssl] ++ {declared.group(1)}]\n"
                     "end\n"
                 )
                 environment = os.environ.copy()
@@ -62,12 +63,17 @@ class RecoveryDispatchTest(unittest.TestCase):
                 environment.setdefault("ERL_FLAGS", "+S 4")
                 # Dynamic startup alone must not conceal Mix's pruned code path.
                 expression = (
-                    "{:ok, _} = Application.ensure_all_started(:inets); "
+                    "case Application.ensure_all_started(:inets) do "
+                    "{:ok, _} -> :ok; "
+                    '{:error, _} -> IO.puts("SAFE_HTTP_FAILURE=startup"); System.halt(1) end; '
                     "Enum.each([200, 400, 401, 500], fn expected -> "
                     f'url = String.to_charlist("http://127.0.0.1:{server.server_port}/probe/#{{expected}}"); '
-                    "{:ok, {{_, actual, _}, _, _}} = "
-                    ":httpc.request(:get, {url, []}, [timeout: 2000], []); "
-                    'unless actual == expected, do: raise("HTTP status mismatch") end); '
+                    "case :httpc.request(:get, {url, []}, [timeout: 2000], []) do "
+                    "{:ok, {{_, actual, _}, _, _}} -> "
+                    'unless actual == expected, do: raise("HTTP status mismatch"); '
+                    '{:error, {:failed_connect, _}} -> IO.puts("SAFE_HTTP_FAILURE=connect"); System.halt(1); '
+                    '{:error, :service_not_available} -> IO.puts("SAFE_HTTP_FAILURE=service"); System.halt(1); '
+                    '_ -> IO.puts("SAFE_HTTP_FAILURE=other"); System.halt(1) end end); '
                     'IO.puts("SAFE_HOST_HTTP_STATUSES=true")'
                 )
                 result = subprocess.run(
@@ -76,7 +82,9 @@ class RecoveryDispatchTest(unittest.TestCase):
                 )
                 self.assertEqual(
                     result.returncode, 0,
-                    "declared host OTP applications cannot execute HTTP; child diagnostics withheld",
+                    "declared host OTP applications cannot execute HTTP; "
+                    f"safe_failure={next((reason for reason in ('startup', 'connect', 'service', 'other') if 'SAFE_HTTP_FAILURE=' + reason in result.stdout), 'none')}; "
+                    "child diagnostics withheld",
                 )
                 self.assertIn("SAFE_HOST_HTTP_STATUSES=true", result.stdout)
         finally:
