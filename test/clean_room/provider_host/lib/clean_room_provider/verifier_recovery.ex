@@ -268,17 +268,11 @@ defmodule CleanRoomProvider.VerifierRecovery do
   defp partial_is_not_ready?(:builtin) do
     cursor = String.duplicate("z", 160)
 
-    case ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1) do
-      {:error,
-       %{
-         scan_complete?: true,
-         custody_condition_met?: false
-       }} ->
-        true
+    dry_run = ClientVerifierMaintenance.run(mode: :dry_run, after_client_id: cursor, limit: 1)
+    check = ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1)
 
-      _ ->
-        false
-    end
+    match?({:ok, %{scan_complete?: true, custody_condition_met?: false}}, dry_run) and
+      check == {:error, :client_secret_verifier_maintenance_check_requires_fresh_scan}
   end
 
   defp interrupt_before_rewrap!(client, :delegated) do

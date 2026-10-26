@@ -85,6 +85,14 @@ class RecoveryDispatchTest(unittest.TestCase):
             "ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1)",
             host_source,
         )
+        self.assertIn(
+            "ClientVerifierMaintenance.run(mode: :dry_run, after_client_id: cursor, limit: 1)",
+            host_source,
+        )
+        self.assertIn(
+            "check == {:error, :client_secret_verifier_maintenance_check_requires_fresh_scan}",
+            host_source,
+        )
         self.assertIn("scan_complete?: true", host_source)
         self.assertIn("custody_condition_met?: false", host_source)
         self.assertNotIn("initial_cursor: ^cursor", host_source)
