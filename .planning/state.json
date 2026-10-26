@@ -16,7 +16,7 @@
     {
       "number": "177",
       "name": "Safe Verifier Maintenance & Recovery",
-      "status": "pending"
+      "status": "in_progress"
     },
     {
       "number": "178",
@@ -29,5 +29,5 @@
     "label": "Advance to the next step",
     "reason": "Phase 3 of 4 · 50% · executing"
   },
-  "updated_at": "2026-10-26T01:10:38.312Z"
+  "updated_at": "2026-10-26T01:20:35.635Z"
 }

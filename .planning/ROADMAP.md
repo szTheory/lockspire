@@ -99,14 +99,14 @@ Plans:
   4. Operator can introduce/read a new key, activate writes, rewrap and safely retire the old key; missing/lost-key cases identify affected clients and demonstrate valid-key restoration or existing authorized secret rotation/reprovision while affected JWT auth fails closed.
   5. Sentinel-based proof across crypto/runtime/task/storage failures shows no verifier plaintext, encryption key or ciphertext in logs/SQL diagnostics, telemetry, audit, operator reports or protocol responses. Endpoint/session secrets, signing custody and unrelated supported methods remain intact.
 
-**Plans**: 1/9 plans executed in 7 waves; source implementation and validation pending.
+**Plans**: 2/9 plans executed in 7 waves; source implementation and validation pending.
 
 Plans:
 **Wave 1**
 - [x] 177-01-PLAN.md — Native persisted rewrap tracer, selected authority and exact CAS.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 177-02-PLAN.md — Authenticated custody, preserved migrated age and qualified legacy promotion.
+- [x] 177-02-PLAN.md — Authenticated custody, preserved migrated age and qualified legacy promotion.
 - [ ] 177-07-PLAN.md — Existing-path nested inspection and dual query-channel disclosure controls.
 
 **Wave 3** *(blocked on Wave 2 completion)*
@@ -146,7 +146,7 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
 |---|---|---|---|
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
-| 177. Safe Verifier Maintenance & Recovery | 1/9 | In Progress | — |
+| 177. Safe Verifier Maintenance & Recovery | 2/9 | In Progress | — |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
 
 **Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phase 175 completed 3/3 plans and Phase 176 completed 7/7 plans; 2/4 phases complete. Dedicated custody and compatible runtime are verified; maintenance and packaged delivery remain pending. Roadmap approved 2026-10-25.
