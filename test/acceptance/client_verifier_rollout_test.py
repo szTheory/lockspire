@@ -33,6 +33,7 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertEqual([path.name for path in selected], ["verifier_rollout.exs", "verifier_rollout.exs"])
         fixture_source = fixture.read_text(encoding="utf-8")
         self.assertFalse(fixture_source.startswith('"""'), "Elixir fixture must not start with a Python docstring")
+        self.assertIn('args = case System.argv() do ["--" | rest] -> rest; values -> values end', fixture_source)
 
     def test_rollout_contract_covers_predecessor_process_drain_and_persisted_formats(self) -> None:
         path = ROOT / "scripts/acceptance/clean_room/verifier_rollout.py"
