@@ -231,6 +231,11 @@ class RecoveryDispatchTest(unittest.TestCase):
 
     def test_narrow_failure_stages_survive_both_boundaries_without_child_bytes(self) -> None:
         stages = (
+            "recovery_interrupt_lock_start", "recovery_interrupt_lock_held",
+            "recovery_interrupt_apply_start", "recovery_interrupt_blocked",
+            "recovery_interrupt_not_blocked", "recovery_interrupt_kill",
+            "recovery_interrupt_lock_release", "recovery_interrupt_observe",
+            "recovery_interrupt_cleanup",
             "expired_code_interaction", "expired_code_token", "expired_assertion",
             "expired_request", "expired_http_connect", "expired_http_timeout",
             "expired_http_transport",

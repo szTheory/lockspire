@@ -689,6 +689,11 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
             "issuance_seed", "recovery_apply", "recovery_expired_migration",
             "recovery_indeterminate", "recovery_interrupt", "recovery_repeat",
             "recovery_restore_rotation", "recovery_seed",
+            "recovery_interrupt_lock_start", "recovery_interrupt_lock_held",
+            "recovery_interrupt_apply_start", "recovery_interrupt_blocked",
+            "recovery_interrupt_not_blocked", "recovery_interrupt_kill",
+            "recovery_interrupt_lock_release", "recovery_interrupt_observe",
+            "recovery_interrupt_cleanup",
         }
         safe_stage = next((
             stage for stage in re.findall(r"\bSAFE_FAILURE_STAGE=([^\s;]+)", output)

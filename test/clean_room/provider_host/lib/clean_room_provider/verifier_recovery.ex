@@ -310,6 +310,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     before = fetch_row!(client.client_id)
     owner = self()
     Process.put({__MODULE__, :previous_trap_exit}, Process.flag(:trap_exit, true))
+    mark_stage(:recovery_interrupt_lock_start)
 
     lock_task =
       Task.async(fn ->
@@ -342,10 +343,18 @@ defmodule CleanRoomProvider.VerifierRecovery do
         @timeout -> raise "built-in interruption row lock was not acquired"
       end
 
+    mark_stage(:recovery_interrupt_lock_held)
     apply_task = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+    mark_stage(:recovery_interrupt_apply_start)
 
     blocked =
       await_blocked_maintenance(lock_backend, System.monotonic_time(:millisecond) + @timeout)
+
+    mark_stage(
+      if(blocked, do: :recovery_interrupt_blocked, else: :recovery_interrupt_not_blocked)
+    )
+
+    mark_stage(:recovery_interrupt_kill)
 
     if blocked do
       Process.exit(apply_task.pid, :kill)
@@ -356,13 +365,17 @@ defmodule CleanRoomProvider.VerifierRecovery do
     end
 
     send(lock_pid, :release_recovery_lock)
+    mark_stage(:recovery_interrupt_lock_release)
     _ = Task.await(lock_task, @timeout)
 
+    mark_stage(:recovery_interrupt_observe)
     after_row = fetch_row!(client.client_id)
 
     blocked and complete_check_ready?() == false and
       after_row.ciphertext == before.ciphertext and audit_count(client.client_id) == 0
   after
+    mark_stage(:recovery_interrupt_cleanup)
+
     if is_pid(Process.get({__MODULE__, :recovery_lock_task})),
       do: Process.exit(Process.get({__MODULE__, :recovery_lock_task}), :kill)
 

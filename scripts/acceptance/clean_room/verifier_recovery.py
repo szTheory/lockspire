@@ -40,6 +40,11 @@ ISSUANCE_CASES = (
 SAFE_FAILURE_STAGES = frozenset({
     "recovery_seed", "recovery_apply", "recovery_repeat", "recovery_interrupt",
     "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
+    "recovery_interrupt_lock_start", "recovery_interrupt_lock_held",
+    "recovery_interrupt_apply_start", "recovery_interrupt_blocked",
+    "recovery_interrupt_not_blocked", "recovery_interrupt_kill",
+    "recovery_interrupt_lock_release", "recovery_interrupt_observe",
+    "recovery_interrupt_cleanup",
     "expired_seed", "expired_migrated_ciphertext", "expired_install_migrated", "expired_apply",
     "expired_http", "expired_http_connect", "expired_http_timeout", "expired_http_transport",
     "expired_code_interaction", "expired_code_token", "expired_assertion", "expired_request",
