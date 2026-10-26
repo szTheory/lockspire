@@ -205,6 +205,10 @@ class RecoveryDispatchTest(unittest.TestCase):
             thread.join(timeout=2)
 
     def test_recovery_and_issuance_groups_share_the_owned_recovery_runner(self) -> None:
+        runner_source = (ROOT / "scripts/acceptance/clean_room/verifier_recovery.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('env["CLEAN_ROOM_HTTP_SERVER"] = "true"', runner_source)
         host_source = (
             ROOT
             / "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex"

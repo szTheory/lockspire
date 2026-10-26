@@ -213,6 +213,9 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
                     host, env, root, issuer, handoff, redactor
                 )
             else:
+                # Keep the real HTTP request and delegated callback controls in
+                # one owned Mix VM so the barrier is observed by the serving host.
+                env["CLEAN_ROOM_HTTP_SERVER"] = "true"
                 expression = (
                     f"result = CleanRoomProvider.VerifierRecovery.run_issuance(:{store}, {json.dumps(issuer)}); "
                     'IO.puts("VERIFIER_PROOF_JSON=" <> Jason.encode!(result))'
