@@ -113,6 +113,7 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
             custom_lifetime_adapter=store == "delegated", proof_pair=pair,
             scenario_groups={scope}, mount_path="/lockspire",
         )
+        _increase_recovery_pool_for_concurrency(host)
         runner._configure_verifier_custody(host)
         runner._configure_rewrap_verifier_custody(host)
         _configure_http_and_recovery_keys(host, include_new=True)
@@ -224,6 +225,14 @@ def _configure_http_and_recovery_keys(host: Path, *, include_new: bool) -> str:
     content += "  write_mode: :dedicated,\n  legacy_read: :reject\n"
     runtime.write_text(content, encoding="utf-8")
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def _increase_recovery_pool_for_concurrency(host: Path) -> None:
+    config = host / "config" / "config.exs"
+    content = config.read_text(encoding="utf-8")
+    if content.count("pool_size: 2") != 1:
+        raise PackageInputError("generated recovery host pool configuration shape changed")
+    config.write_text(content.replace("pool_size: 2", "pool_size: 6", 1), encoding="utf-8")
 
 
 def _read_private_handoff(path: Path, redactor: Redactor) -> dict[str, dict[str, str]]:

@@ -53,6 +53,18 @@ class RecoveryDispatchTest(unittest.TestCase):
             self.assertIn('"verifier-new", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT")', restored_config)
             self.assertNotEqual(missing_fingerprint, restored_fingerprint)
 
+    def test_concurrent_recovery_witness_has_owned_pool_headroom(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            host = Path(temporary)
+            config = host / "config"
+            config.mkdir()
+            (config / "config.exs").write_text(
+                'config :clean_room_provider, CleanRoomProvider.Repo, url: "postgres://owned", pool_size: 2\n',
+                encoding="utf-8",
+            )
+            verifier_recovery._increase_recovery_pool_for_concurrency(host)
+            self.assertIn("pool_size: 6", (config / "config.exs").read_text(encoding="utf-8"))
+
     def test_private_handoff_registers_secrets_and_deletes_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             handoff = Path(temporary) / "handoff.json"
