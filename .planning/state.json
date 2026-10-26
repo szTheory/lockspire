@@ -21,13 +21,13 @@
     {
       "number": "178",
       "name": "Packaged Upgrade Proof & Delivery Handoff",
-      "status": "pending"
+      "status": "in_progress"
     }
   ],
   "next": {
     "command": "$gsd-progress --next",
-    "label": "Advance to the next step (plan phase 178)",
-    "reason": "Phase 4 of 4 — needs a plan"
+    "label": "Advance to the next step",
+    "reason": "Phase 4 of 4 · 61% · executing"
   },
-  "updated_at": "2026-10-26T14:07:26.332Z"
+  "updated_at": "2026-10-26T17:23:47.923Z"
 }
