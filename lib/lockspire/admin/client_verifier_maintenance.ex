@@ -26,10 +26,11 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
 
   def run(opts) when is_list(opts) do
     with {:ok, mode, limit, cursor} <- validate_options(opts),
+         {:ok, context, context_source} <- resolve_context(opts),
          {:ok, config} <- Maintenance.configured(),
          {:ok, %Context{state: :valid, write_mode: :dedicated} = context} <-
-           validate_context(Config.client_secret_verifier_context()) do
-      report = new_report(mode, cursor)
+           validate_context(context) do
+      report = new_report(mode, cursor, context_source)
 
       report =
         walk_pages(report, context, config, cursor, limit)
@@ -51,7 +52,13 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
   def run(_opts), do: {:error, :client_secret_verifier_maintenance_invalid_options}
 
   defp validate_options(opts) do
-    allowed = [:mode, :limit, :after_client_id]
+    allowed = [
+      :mode,
+      :limit,
+      :after_client_id,
+      :context_source,
+      :client_secret_verifier_context
+    ]
 
     if not Keyword.keyword?(opts) or duplicate_keys?(opts) or Keyword.keys(opts) -- allowed != [] do
       {:error, :client_secret_verifier_maintenance_invalid_options}
@@ -92,10 +99,24 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
     end
   end
 
-  defp new_report(mode, cursor) do
+  defp resolve_context(opts) do
+    case {Keyword.get(opts, :context_source, :startup),
+          Keyword.fetch(opts, :client_secret_verifier_context)} do
+      {:startup, :error} ->
+        {:ok, Config.client_secret_verifier_context(), :startup}
+
+      {:task_local, {:ok, %Context{} = context}} ->
+        {:ok, context, :task_local}
+
+      _ ->
+        {:error, :client_secret_verifier_configuration_invalid}
+    end
+  end
+
+  defp new_report(mode, cursor, context_source) do
     %{
       mode: mode,
-      context_source: :serving_node_startup,
+      context_source: context_source,
       initial_cursor: cursor,
       scan_complete?: false,
       scanned: 0,
@@ -230,11 +251,11 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
             metadata
           )
         else
-          process_pending(client, report, :expired_migrated, metadata)
+          process_pending(client, report, :expired_migrated, metadata, context)
         end
 
       {:ok, classification, metadata} when classification in [:legacy, :old_key] ->
-        process_pending(client, report, classification, metadata)
+        process_pending(client, report, classification, metadata, context)
 
       {:attention, classification, reason, action, metadata} ->
         report
@@ -346,10 +367,13 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
 
   defp inspection_error(_), do: {:unreadable, :custody_unreadable, :repair_storage_or_recover}
 
-  defp process_pending(client, report, classification, metadata) do
+  defp process_pending(client, report, classification, metadata, context) do
     case report.mode do
       :apply ->
-        case Maintenance.rewrap_client(client.client_id, legacy_key_opts()) do
+        maintenance_opts =
+          Keyword.put(legacy_key_opts(), :operation_context, context)
+
+        case Maintenance.rewrap_client(client.client_id, maintenance_opts) do
           {:ok, :changed} ->
             report
             |> Map.update!(:committed_changed, &(&1 + 1))

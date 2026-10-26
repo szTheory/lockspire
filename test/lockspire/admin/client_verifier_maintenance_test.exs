@@ -113,7 +113,7 @@ defmodule Lockspire.Admin.ClientVerifierMaintenanceTest do
     assert report.custody_condition_met?
     assert report.no_material >= 1
     assert report.committed_changed == 0
-    assert report.context_source == :serving_node_startup
+    assert report.context_source == :startup
 
     assert {:ok, after_check} = Repository.fetch_client_by_id(client_id)
     assert after_check == before

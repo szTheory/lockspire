@@ -9,6 +9,7 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
   alias Lockspire.Config, as: HostConfig
   alias Lockspire.Domain.Client
   alias Lockspire.Security.ClientSecretVerifier
+  alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Storage.ClientLifetime
 
   @type declaration :: %{
@@ -95,14 +96,21 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
   def rewrap_client(client_id, opts \\ [])
 
   def rewrap_client(client_id, opts) when is_binary(client_id) and is_list(opts) do
-    context = HostConfig.client_secret_verifier_context(opts)
-
-    with {:ok, config} <- configured(),
+    with {:ok, context} <- operation_context(opts),
+         {:ok, config} <- configured(),
          {:ok, context} <- validate_context(context),
          {:ok, %Client{} = client} <- fetch_client(config.client_store, client_id),
          hash when is_binary(hash) <- client.client_secret_hash,
          verifier when is_binary(verifier) <- client.client_secret_jwt_verifier_encrypted,
-         {:ok, outcome} <- run_rewrap(config, context, client, hash, verifier, opts) do
+         {:ok, outcome} <-
+           run_rewrap(
+             config,
+             context,
+             client,
+             hash,
+             verifier,
+             Keyword.delete(opts, :operation_context)
+           ) do
       {:ok, outcome}
     else
       {:ok, nil} ->
@@ -128,6 +136,22 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
 
   def rewrap_client(_client_id, _opts),
     do: {:error, :client_secret_verifier_maintenance_failed}
+
+  defp operation_context(opts) do
+    case Keyword.fetch(opts, :operation_context) do
+      {:ok, %Context{} = context} ->
+        case Context.validate(context) do
+          {:ok, %Context{state: :valid} = valid} -> {:ok, valid}
+          {:error, reason} -> {:error, reason}
+        end
+
+      :error ->
+        {:ok, HostConfig.client_secret_verifier_context(opts)}
+
+      _ ->
+        {:error, :client_secret_verifier_configuration_invalid}
+    end
+  end
 
   defp run_rewrap(config, context, client, expected_hash, expected_verifier, opts) do
     with {:ok, replacement, audit_attrs} <-
