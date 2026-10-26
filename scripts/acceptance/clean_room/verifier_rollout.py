@@ -333,6 +333,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
             old_age_kind = _projection(new_host, new_env, prefix, client_id)["age_kind"]
             _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
             run_child_command(new_host, new_env, "lockspire.clients.verifier.rewrap", "--limit", "100")
+            runner._provision_signing_key(new_host, new_env)
             new_server, _new_pid = _start_server(new_host, new_env, root / "adopter.log", new_env["LOCKSPIRE_ISSUER"])
             http_ok, http_failure = _http_auth_result(new_env["LOCKSPIRE_ISSUER"], port_new, client_id, secret)
             promoted_format, new_hash = _safe_row(new_host, new_env, prefix, client_id)
@@ -666,11 +667,18 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
 
 
 def _redacted_log_tail(raw: str, redactor: Redactor) -> str:
-    for match in runner.SENSITIVE_OUTPUT.finditer(raw):
-        redactor.register_material(match.group(1))
-    tail = redactor.text("\n".join(raw.splitlines()[-120:]))[-12000:]
-    redactor.assert_safe(tail)
-    return tail
+    # Phoenix debug parameter logs can include signed assertions, authorization
+    # codes, and PKCE verifiers under keys the generic matcher does not know.
+    # Retain only fixed, non-sensitive failure labels; discard all raw lines.
+    safe_lines = []
+    for line in raw.splitlines():
+        if "Failed to sign access token:" in line:
+            safe_lines.append("Failed to sign access token: [REDACTED]")
+        elif "installed process exited before HTTP readiness" in line:
+            safe_lines.append("installed process exited before HTTP readiness")
+        elif "installed process did not become HTTP ready" in line:
+            safe_lines.append("installed process did not become HTTP ready")
+    return "\n".join(dict.fromkeys(safe_lines))
 
 
 def _git_commit_exists(revision: str) -> bool:
