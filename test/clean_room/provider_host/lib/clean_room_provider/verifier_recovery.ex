@@ -46,7 +46,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     repeated = fetch_row!(native.client_id)
     interrupted = seed_jwt_client!("phase178-interrupted")
     mark_stage(:recovery_interrupt)
-    interruption_not_ready = interrupt_before_rewrap!(interrupted)
+    interruption_not_ready = interrupt_before_rewrap!(interrupted, store)
     indeterminate = seed_jwt_client!("phase178-indeterminate")
     mark_stage(:recovery_indeterminate)
     indeterminate_not_claimed_rollback = simulated_unavailable_reconciles?(indeterminate)
@@ -63,7 +63,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     }
 
     mark_stage(:recovery_restore_rotation)
-    recovery = missing_key_restore_and_rotation!(native)
+    recovery = stage_restore_rotation!(native)
     mark_stage(:recovery_expired_migration)
     expired = expired_migration!(store)
 
@@ -94,7 +94,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     try do
       mark_stage(:issuance_auth_barrier)
       stale_request = Task.async(fn -> token_request(issuer, client, code, first_jti) end)
-      {request_pid, auth_backend} = await_barrier!(:authenticated, first_jti)
+      {request_pid, _auth_backend} = await_barrier!(:authenticated, first_jti)
       durable_jti = jti_present?(client.client_id, first_jti)
 
       send(
@@ -124,9 +124,11 @@ defmodule CleanRoomProvider.VerifierRecovery do
       unless changed >= 1,
         do: raise("independent installed maintenance did not commit a verifier change")
 
-      distinct_backends =
-        auth_backend != request_backend and request_backend != maintenance_backend and
-          auth_backend != maintenance_backend
+      # The authentication/JTI transaction has completed before the guard
+      # transaction starts, so PostgreSQL may legitimately reuse that PID.
+      # Only the held current-row guard and the concurrent maintenance
+      # transaction must have distinct backends.
+      distinct_backends = request_backend != maintenance_backend
 
       send(
         request_pid,
@@ -138,6 +140,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
       mark_stage(:issuance_replay_fresh)
       replay_status = token_request(issuer, client, code, first_jti)
+      after_replay = effects(client.client_id)
       fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
       fresh_status = token_request(issuer, client, code, fresh_jti)
       after_fresh = effects(client.client_id)
@@ -158,8 +161,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
           "no_token_issued" => after_stale.tokens == before.tokens,
           "no_grant_created" => after_stale.grants == before.grants,
           "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
-          "same_jti_replay_rejected" =>
-            replay_status == 400 and effects(client.client_id) == after_stale,
+          "same_jti_replay_rejected" => replay_status == 400 and after_replay == after_stale,
           "fresh_jti_succeeded" =>
             fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
           "fresh_http_status" => fresh_status
@@ -264,13 +266,23 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp partial_is_not_ready?(:builtin) do
-    case ClientVerifierMaintenance.run(mode: :dry_run, after_client_id: "phase178-zzzz", limit: 1) do
-      {:ok, %{scan_complete?: false, custody_condition_met?: false}} -> true
-      _ -> false
+    cursor = "phase178-zzzz"
+
+    case ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1) do
+      {:error,
+       %{
+         initial_cursor: ^cursor,
+         scan_complete?: true,
+         custody_condition_met?: false
+       }} ->
+        true
+
+      _ ->
+        false
     end
   end
 
-  defp interrupt_before_rewrap!(client) do
+  defp interrupt_before_rewrap!(client, :delegated) do
     before = fetch_row!(client.client_id)
     Store.set_run_control(:current_row_guard, self())
     task = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
@@ -292,6 +304,100 @@ defmodule CleanRoomProvider.VerifierRecovery do
       audit_count(client.client_id) == 0
   after
     Store.clear_run_controls()
+  end
+
+  defp interrupt_before_rewrap!(client, :builtin) do
+    before = fetch_row!(client.client_id)
+    owner = self()
+    Process.put({__MODULE__, :previous_trap_exit}, Process.flag(:trap_exit, true))
+
+    lock_task =
+      Task.async(fn ->
+        Repo.transaction(fn ->
+          %{rows: [[backend_pid]]} = Repo.query!("SELECT pg_backend_pid()")
+
+          Repo.query!(
+            "SELECT client_id FROM #{table(:lockspire_clients)} WHERE client_id = $1 FOR UPDATE",
+            [client.client_id],
+            log: false,
+            telemetry_event: nil
+          )
+
+          send(owner, {:recovery_lock_held, self(), backend_pid})
+
+          receive do
+            :release_recovery_lock -> :released
+          after
+            @timeout -> :lock_timeout
+          end
+        end)
+      end)
+
+    Process.put({__MODULE__, :recovery_lock_task}, lock_task.pid)
+
+    {lock_pid, lock_backend} =
+      receive do
+        {:recovery_lock_held, task_pid, backend_pid} -> {task_pid, backend_pid}
+      after
+        @timeout -> raise "built-in interruption row lock was not acquired"
+      end
+
+    apply_task = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+
+    blocked =
+      await_blocked_maintenance(lock_backend, System.monotonic_time(:millisecond) + @timeout)
+
+    if blocked do
+      Process.exit(apply_task.pid, :kill)
+      _ = Task.yield(apply_task, @timeout) || Task.shutdown(apply_task, :brutal_kill)
+    else
+      Process.exit(apply_task.pid, :kill)
+      _ = Task.yield(apply_task, @timeout) || Task.shutdown(apply_task, :brutal_kill)
+    end
+
+    send(lock_pid, :release_recovery_lock)
+    _ = Task.await(lock_task, @timeout)
+
+    after_row = fetch_row!(client.client_id)
+
+    blocked and complete_check_ready?() == false and
+      after_row.ciphertext == before.ciphertext and audit_count(client.client_id) == 0
+  after
+    if is_pid(Process.get({__MODULE__, :recovery_lock_task})),
+      do: Process.exit(Process.get({__MODULE__, :recovery_lock_task}), :kill)
+
+    Process.delete({__MODULE__, :recovery_lock_task})
+
+    receive do
+      {:EXIT, _linked_task, _reason} -> :ok
+    after
+      0 -> :ok
+    end
+
+    Process.flag(:trap_exit, Process.delete({__MODULE__, :previous_trap_exit}) || false)
+  end
+
+  defp await_blocked_maintenance(lock_backend, deadline) do
+    %{rows: rows} =
+      Repo.query!(
+        "SELECT pid FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND $1 = ANY(pg_blocking_pids(pid))",
+        [lock_backend],
+        log: false,
+        telemetry_event: nil
+      )
+
+    case rows do
+      [[pid] | _] when is_integer(pid) ->
+        true
+
+      _ ->
+        if System.monotonic_time(:millisecond) < deadline do
+          Process.sleep(25)
+          await_blocked_maintenance(lock_backend, deadline)
+        else
+          false
+        end
+    end
   end
 
   defp simulated_unavailable_reconciles?(client) do
@@ -331,66 +437,29 @@ defmodule CleanRoomProvider.VerifierRecovery do
     end
   end
 
-  defp missing_key_restore_and_rotation!(native) do
-    client = fetch_row!(native.client_id)
-    original_secret = native.secret
-    saved = Application.fetch_env!(:lockspire, ClientSecretVerifier)
-    lost = verifier_context("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT", "verifier-new")
-
-    {missing_key_rejected, affected_status_redacted} =
-      try do
-        Application.put_env(:lockspire, ClientSecretVerifier, lost)
-
-        missing_key_rejected =
-          match?(
-            {:error, _},
-            ClientSecretVerifier.open(
-              lost,
-              native.client_id,
-              client.ciphertext,
-              []
-            )
-          )
-
-        safe_status = inspect(ClientVerifierMaintenance.run(mode: :check, limit: 100))
-
-        affected_status_redacted =
-          not String.contains?(safe_status, original_secret) and
-            not String.contains?(safe_status, client.ciphertext)
-
-        {missing_key_rejected, affected_status_redacted}
-      after
-        Application.put_env(:lockspire, ClientSecretVerifier, saved)
-      end
-
-    restored = fetch_row!(native.client_id)
-
-    original_secret_preserved =
-      Policy.verify_client_secret(restored.hash, original_secret)
-
+  defp stage_restore_rotation!(native) do
     basic = seed_control_client!(:client_secret_basic)
     post = seed_control_client!(:client_secret_post)
-    basic_usable = Policy.verify_client_secret(basic.client.client_secret_hash, basic.secret)
-    post_usable = Policy.verify_client_secret(post.client.client_secret_hash, post.secret)
 
-    {:ok, %{client: rotated, client_secret: replacement}} =
-      Lockspire.Admin.Clients.rotate_client_secret(native.client_id,
-        actor: %{type: :operator, id: "phase178-recovery"}
-      )
+    handoff = %{
+      "jwt" => %{"client_id" => native.client_id, "secret" => native.secret},
+      "basic" => %{
+        "client_id" => basic.client.client_id,
+        "secret" => basic.secret
+      },
+      "post" => %{
+        "client_id" => post.client.client_id,
+        "secret" => post.secret
+      }
+    }
+
+    path = System.fetch_env!("LOCKSPIRE_RECOVERY_HANDOFF_PATH")
+    :ok = File.write(path, Jason.encode!(handoff), [:binary])
+    :ok = File.chmod(path, 0o600)
 
     %{
-      "outcome" => "pass",
-      "executed" => true,
-      "missing_key_rejected" => missing_key_rejected,
-      "affected_status_redacted" => affected_status_redacted,
-      "basic_usable" => basic_usable,
-      "post_usable" => post_usable,
-      "original_secret_preserved" =>
-        original_secret_preserved and rotated.client_secret_hash != restored.hash,
-      "rotation_secret_changed" =>
-        replacement != original_secret and
-          Policy.verify_client_secret(rotated.client_secret_hash, replacement),
-      "one_time_handoff" => is_binary(replacement) and byte_size(replacement) > 0
+      "outcome" => "pending_http_startup_context",
+      "executed" => true
     }
   end
 
@@ -480,9 +549,20 @@ defmodule CleanRoomProvider.VerifierRecovery do
         changed >= 1 and
           after_row.ciphertext != before.ciphertext,
       "expired_http_auth_rejected" => http_status == 400,
-      "deadline_preserved" => metadata_before == metadata_after
+      "deadline_preserved" => same_authenticated_age?(metadata_before, metadata_after)
     }
   end
+
+  defp same_authenticated_age?(
+         {:ok,
+          %{age_kind: before_kind, signed_at_ms: before_signed, deadline_ms: before_deadline}},
+         {:ok, %{age_kind: after_kind, signed_at_ms: after_signed, deadline_ms: after_deadline}}
+       ) do
+    before_kind == after_kind and before_signed == after_signed and
+      before_deadline == after_deadline
+  end
+
+  defp same_authenticated_age?(_before, _after), do: false
 
   defp seal_migrated(context, client_id, secret, signed_at_ms, deadline_ms) do
     key = context.keys[context.current_id]

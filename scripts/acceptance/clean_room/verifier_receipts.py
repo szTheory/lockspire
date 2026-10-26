@@ -103,6 +103,7 @@ RECOVERY_OBSERVATION_FIELDS = frozenset({
     "indeterminate_not_claimed_rollback", "fresh_complete_check_ready",
     "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
     "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
+    "missing_startup_context_bound",
     "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
 })
 ISSUANCE_OBSERVATION_FIELDS = frozenset({
@@ -306,7 +307,7 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             required = {
                 RECOVERY_CASE_IDS[0]: {"hash_preserved", "partner_secret_preserved", "client_fields_preserved", "age_metadata_preserved", "ciphertext_changed", "audit_inserted"},
                 RECOVERY_CASE_IDS[1]: {"repeat_no_change", "partial_not_ready", "interruption_not_ready", "indeterminate_not_claimed_rollback", "fresh_complete_check_ready"},
-                RECOVERY_CASE_IDS[2]: {"missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable", "original_secret_preserved", "rotation_secret_changed", "one_time_handoff"},
+                RECOVERY_CASE_IDS[2]: {"missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable", "original_secret_preserved", "rotation_secret_changed", "one_time_handoff", "missing_startup_context_bound"},
                 RECOVERY_CASE_IDS[3]: {"expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved"},
             }[case_id]
             if set(result) != required | {"outcome", "executed"} or any(result.get(field) is not True for field in required):

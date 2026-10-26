@@ -22,9 +22,53 @@ import clean_room_verifier_upgrade  # noqa: E402
 import verifier_recovery  # noqa: E402
 import build_provider  # noqa: E402
 from package_input import PackageInputError  # noqa: E402
+from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 class RecoveryDispatchTest(unittest.TestCase):
+    def test_recovery_startup_config_switch_is_explicit_and_bound_to_keyset(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            host = Path(temporary)
+            config = host / "config"
+            config.mkdir()
+            runtime = config / "runtime.exs"
+            runtime.write_text(
+                'config :lockspire, Lockspire.Security.ClientSecretVerifier,\n'
+                '  keys: [{"verifier-old", System.fetch_env!("OLD_KEY")}],\n'
+                '  current: "verifier-old",\n  write_mode: :dedicated,\n'
+                '  legacy_read: :reject\n',
+                encoding="utf-8",
+            )
+            missing_fingerprint = verifier_recovery._configure_http_and_recovery_keys(
+                host, include_new=False
+            )
+            missing_config = runtime.read_text(encoding="utf-8")
+            self.assertIn('server: System.get_env("CLEAN_ROOM_HTTP_SERVER", "false") == "true"', missing_config)
+            self.assertIn('keys: [{"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}]', missing_config)
+            self.assertNotIn('"verifier-new"', missing_config)
+            restored_fingerprint = verifier_recovery._configure_http_and_recovery_keys(
+                host, include_new=True
+            )
+            restored_config = runtime.read_text(encoding="utf-8")
+            self.assertIn('"verifier-new", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT")', restored_config)
+            self.assertNotEqual(missing_fingerprint, restored_fingerprint)
+
+    def test_private_handoff_registers_secrets_and_deletes_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            handoff = Path(temporary) / "handoff.json"
+            handoff.write_text(
+                '{"jwt":{"client_id":"owned-client","secret":"private-secret"},'
+                '"basic":{"client_id":"basic-client","secret":"basic-secret"},'
+                '"post":{"client_id":"post-client","secret":"post-secret"}}',
+                encoding="utf-8",
+            )
+            os.chmod(handoff, 0o600)
+            redactor = Redactor(SentinelSet.for_run())
+            values = verifier_recovery._read_private_handoff(handoff, redactor)
+            self.assertFalse(handoff.exists())
+            self.assertEqual(values["jwt"]["secret"], "private-secret")
+            self.assertNotIn("private-secret", redactor.text("private-secret"))
+
     def test_declared_host_otp_apps_support_http_after_mix_path_pruning(self) -> None:
         manifest = (ROOT / "test/clean_room/provider_host/mix.exs").read_text()
         declared = re.search(r"extra_applications:\s*(\[[^\]]+\])", manifest)
