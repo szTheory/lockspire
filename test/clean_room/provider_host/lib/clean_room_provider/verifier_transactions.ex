@@ -309,7 +309,7 @@ defmodule CleanRoomProvider.VerifierTransactions do
 
   defp await_contender!(_task) do
     receive do
-      {:contender, pid} when is_pid(pid) -> pid
+      {:contender, pid} when is_integer(pid) -> pid
     after
       @timeout -> raise "transaction contender did not start"
     end
