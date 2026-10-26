@@ -180,12 +180,15 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
         redactor.register_material(database_url)
         server = None
         try:
-            _safe_host_call(lambda: run_child_command(host, env, "ecto.create"))
-            _safe_host_call(lambda: run_child_command(host, env, "ecto.migrate", "--migrations-path", "priv/repo/migrations"))
-            _safe_host_call(lambda: runner._provision_signing_key(host, env))
+            _safe_host_call("ecto_create", lambda: run_child_command(host, env, "ecto.create"))
+            _safe_host_call(
+                "ecto_migrate",
+                lambda: run_child_command(host, env, "ecto.migrate", "--migrations-path", "priv/repo/migrations"),
+            )
+            _safe_host_call("signing_key", lambda: runner._provision_signing_key(host, env))
             lock_hash = sha256(PROOF_PAIR_LOCKS[pair])
-            phoenix, live_view = _safe_host_call(lambda: runner._framework_versions(host, env))
-            elixir, otp, postgres = _safe_host_call(lambda: runner._actual_runtime(host, env))
+            phoenix, live_view = _safe_host_call("framework_versions", lambda: runner._framework_versions(host, env))
+            elixir, otp, postgres = _safe_host_call("runtime", lambda: runner._actual_runtime(host, env))
             command = "recovery" if scope == "recovery" else "issuance"
             if scope == "recovery":
                 server, _server_pid = verifier_rollout._start_server(
@@ -529,11 +532,15 @@ def _capture_child_output(operation) -> str:
         raise PackageInputError(reason + "; child diagnostics withheld") from None
 
 
-def _safe_host_call(operation):
+def _safe_host_call(stage: str, operation):
     try:
         return operation()
     except Exception:
-        raise PackageInputError("installed verifier host setup failed; child diagnostics withheld") from None
+        if stage not in {"ecto_create", "ecto_migrate", "signing_key", "framework_versions", "runtime"}:
+            stage = "other"
+        raise PackageInputError(
+            f"installed verifier host setup failed at {stage}; child diagnostics withheld"
+        ) from None
 
 
 def _validate_group_receipt(receipt: dict[str, object]) -> None:
