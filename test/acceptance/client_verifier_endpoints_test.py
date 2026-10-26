@@ -158,20 +158,28 @@ class VerifierEndpointContracts(unittest.TestCase):
         with self.assertRaisesRegex(ReceiptError, "bind the assembled candidate"):
             validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
 
-    def test_release_daemon_logs_to_run_owned_file_not_inherited_pipes(self) -> None:
+    def test_release_server_starts_as_owned_foreground_process(self) -> None:
         import tempfile
+        import urllib.request
 
         with tempfile.TemporaryDirectory() as temporary:
             release_root = Path(temporary) / "release"
             binary_dir = release_root / "bin"
             binary_dir.mkdir(parents=True)
-            with mock.patch.object(verifier_endpoints.subprocess, "run",
-                                   return_value=subprocess.CompletedProcess([], 0, b"", None)) as command:
-                verifier_endpoints._release_command(binary_dir / "clean_room_provider", {}, "daemon")
-        kwargs = command.call_args.kwargs
-        self.assertNotIn(kwargs["stdout"], (subprocess.PIPE, subprocess.DEVNULL))
-        self.assertIs(kwargs["stderr"], subprocess.STDOUT)
-        self.assertEqual(kwargs["timeout"], 60)
+            process = mock.Mock()
+            process.poll.return_value = None
+            with mock.patch.object(verifier_endpoints.subprocess, "Popen", return_value=process) as launch, \
+                 mock.patch.object(verifier_endpoints.urllib.request, "urlopen") as urlopen:
+                urlopen.return_value.__enter__.return_value.status = 200
+                actual, _log = verifier_endpoints._start_release_server(
+                    binary_dir / "clean_room_provider", {}, "https://issuer.example/lockspire",
+                    release_root / "release-server.log",
+                )
+            self.assertIs(actual, process)
+            self.assertEqual(launch.call_args.args[0], (str(binary_dir / "clean_room_provider"), "start"))
+            self.assertTrue(launch.call_args.kwargs["start_new_session"])
+            self.assertIsNot(launch.call_args.kwargs["stdout"], subprocess.PIPE)
+            self.assertEqual(launch.call_args.kwargs["stderr"], subprocess.STDOUT)
 
 
 if __name__ == "__main__":
