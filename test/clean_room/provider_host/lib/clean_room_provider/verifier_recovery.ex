@@ -554,6 +554,11 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp token_request(issuer, client, code, jti) do
+    case Application.ensure_all_started(:inets) do
+      {:ok, _started_apps} -> :ok
+      {:error, _safe_reason} -> raise "mounted token HTTP client unavailable"
+    end
+
     assertion = signed_assertion(client.client_id, client.secret, issuer, jti)
 
     body =
