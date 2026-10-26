@@ -82,6 +82,7 @@ class RecoveryDispatchTest(unittest.TestCase):
             "secret='unregistered-'+secrets.token_hex(16); "
             "print('CHILD_OUT='+secret); "
             "print('CHILD_ERR='+secret,file=sys.stderr); "
+            "print('SAFE_FAILURE_STAGE=expired_apply'); "
             "raise RuntimeError(repr({'client': {'secret': secret}}))"
         )
         child = subprocess.run(
@@ -105,7 +106,10 @@ class RecoveryDispatchTest(unittest.TestCase):
             self.assertEqual(list(Path(owned_output).iterdir()), [])
 
         captured = str(caught.exception) + observed.getvalue()
-        self.assertEqual(captured, "provider Mix command failed; child diagnostics withheld")
+        self.assertEqual(
+            captured,
+            "provider Mix command failed; child diagnostics withheld; SAFE_FAILURE_STAGE=expired_apply",
+        )
         self.assertNotIn(secret, captured)
         self.assertIn("CHILD_OUT=", child.stdout)
         self.assertIn("CHILD_ERR=", child.stderr)

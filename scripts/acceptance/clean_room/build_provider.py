@@ -674,7 +674,27 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
     )
 
     if completed.returncode != 0:
-        raise PackageInputError("provider Mix command failed; child diagnostics withheld")
+        output = completed.stdout.decode(errors="replace")
+        safe_stages = {
+            "expired_apply", "expired_http", "expired_install_migrated",
+            "expired_metadata", "expired_migrated_ciphertext", "expired_seed",
+            "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
+            "issuance_seed", "recovery_apply", "recovery_expired_migration",
+            "recovery_indeterminate", "recovery_interrupt", "recovery_repeat",
+            "recovery_restore_rotation", "recovery_seed",
+        }
+        safe_stage = next(
+            (
+                stage
+                for stage in safe_stages
+                if re.search(rf"\bSAFE_FAILURE_STAGE={re.escape(stage)}\b", output)
+            ),
+            None,
+        )
+        diagnostic = "provider Mix command failed; child diagnostics withheld"
+        if safe_stage is not None:
+            diagnostic += f"; SAFE_FAILURE_STAGE={safe_stage}"
+        raise PackageInputError(diagnostic)
     return completed.stdout
 
 
