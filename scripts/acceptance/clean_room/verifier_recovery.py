@@ -37,6 +37,8 @@ ISSUANCE_CASES = (
 SAFE_FAILURE_STAGES = frozenset({
     "recovery_seed", "recovery_apply", "recovery_repeat", "recovery_interrupt",
     "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
+    "expired_seed", "expired_legacy_ciphertext", "expired_install_legacy", "expired_apply",
+    "expired_http", "expired_metadata",
     "issuance_seed", "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
 })
 

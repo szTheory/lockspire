@@ -413,7 +413,9 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp expired_migration!(_store) do
+    mark_stage(:expired_seed)
     migrated = seed_jwt_client!("phase178-expired-migrated")
+    mark_stage(:expired_legacy_ciphertext)
     signed_at = System.os_time(:second) - 120
 
     expired_ciphertext =
@@ -421,6 +423,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
         signed_at: signed_at,
         max_age: 60
       )
+
+    mark_stage(:expired_install_legacy)
 
     %{num_rows: 1} =
       Repo.query!(
@@ -431,8 +435,10 @@ defmodule CleanRoomProvider.VerifierRecovery do
       )
 
     before = fetch_row!(migrated.client_id)
+    mark_stage(:expired_apply)
     {:ok, %{committed_changed: changed}} = ClientVerifierMaintenance.run(mode: :apply, limit: 100)
     after_row = fetch_row!(migrated.client_id)
+    mark_stage(:expired_http)
     code = seed_authorization_code!(migrated.client_id)
 
     http_status =
@@ -442,6 +448,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
         code,
         "expired-migrated-" <> Ecto.UUID.generate()
       )
+
+    mark_stage(:expired_metadata)
 
     metadata_before =
       ClientSecretVerifier.inspect_custody(
