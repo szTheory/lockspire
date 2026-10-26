@@ -27,7 +27,8 @@ case result.rows do
       legacy_read: :allow
     ]
     {:ok, context} = Lockspire.Security.ClientSecretVerifier.Context.resolve({:present, inspection_config}, [])
-    opts = [legacy_secret_key_base: System.fetch_env!("SECRET_KEY_BASE")]
+    endpoint_config = Application.fetch_env!(:lockspire, Lockspire.Web.Endpoint)
+    opts = [legacy_secret_key_base: Keyword.fetch!(endpoint_config, :secret_key_base)]
     age = Lockspire.Security.ClientSecretVerifier.inspect_custody(context, client_id, verifier, hash, opts)
 
     case age do
