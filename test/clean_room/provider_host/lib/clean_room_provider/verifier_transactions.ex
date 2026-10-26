@@ -202,7 +202,8 @@ defmodule CleanRoomProvider.VerifierTransactions do
       {result, after_row == before, Repo.in_transaction?()}
     end)
     {:ok, {report, unchanged_inside, still_in_transaction}} = nested
-    nested_rejected = match?({:error, :client_secret_verifier_maintenance_failed}, report)
+    nested_rejected =
+      match?({:error, %{failed: failures}} when is_integer(failures) and failures > 0, report)
     after_nested = row_map!(client_id)
     committed_report = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :dry_run, limit: 100)
     report_after_commit = not Repo.in_transaction?() and match?({:ok, _}, committed_report)
@@ -213,7 +214,7 @@ defmodule CleanRoomProvider.VerifierTransactions do
       "nested_report_rejected" => nested_rejected and still_in_transaction,
       "mutation_absent" => unchanged_inside and after_nested == before,
       "success_report_after_commit" => report_after_commit,
-      "report_absent_before_commit" => nested_rejected
+      "report_absent_before_commit" => nested_rejected and still_in_transaction
     }
   end
 
