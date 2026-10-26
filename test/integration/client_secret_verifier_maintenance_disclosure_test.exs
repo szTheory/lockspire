@@ -439,12 +439,20 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
     assert {:ok, persisted} = Repository.register_client(client(client_id, expected))
     replacement = marker("replacement-ciphertext")
     suffix = Integer.to_string(System.unique_integer([:positive, :monotonic]))
+    sequence = "lockspire_disclosure_audit_sequence_" <> suffix
     function = "lockspire_disclosure_audit_" <> suffix
     trigger = "lockspire_disclosure_audit_trigger_" <> suffix
 
     Ecto.Adapters.SQL.query!(
       TestRepo,
-      "CREATE FUNCTION #{function}() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN RAISE EXCEPTION USING MESSAGE = '#{marker}'; END; $fn$",
+      "CREATE SEQUENCE #{sequence} AS bigint START WITH 1",
+      [],
+      log: false
+    )
+
+    Ecto.Adapters.SQL.query!(
+      TestRepo,
+      "CREATE FUNCTION #{function}() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN PERFORM nextval('#{sequence}'); RAISE EXCEPTION USING MESSAGE = '#{marker}'; END; $fn$",
       [],
       log: false
     )
@@ -456,35 +464,61 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
       log: false
     )
 
-    {log_output, result} =
+    {log_output, result, sequence_state} =
       try do
-        {capture_log([level: :debug], fn ->
-           send(
-             self(),
-             {:failed_audit_result,
-              Repository.transact(fn ->
-                Repository.compare_and_rewrap(
-                  client_id,
-                  expected.hash,
-                  expected.verifier,
-                  replacement,
-                  audit_attrs(client_id)
-                )
-              end)}
-           )
-         end), receive_result(:failed_audit_result)}
+        log_output =
+          capture_log([level: :debug], fn ->
+            send(
+              self(),
+              {:failed_audit_result,
+               Repository.transact(fn ->
+                 Repository.compare_and_rewrap(
+                   client_id,
+                   expected.hash,
+                   expected.verifier,
+                   replacement,
+                   maintenance_audit_attrs(client_id)
+                 )
+               end)}
+            )
+          end)
+
+        result = receive_result(:failed_audit_result)
+
+        {:ok, %{rows: [sequence_state]}} =
+          Ecto.Adapters.SQL.query(
+            TestRepo,
+            "SELECT last_value, is_called FROM #{sequence}",
+            [],
+            log: false
+          )
+
+        {log_output, result, sequence_state}
       after
         Ecto.Adapters.SQL.query!(
           TestRepo,
-          "DROP TRIGGER #{trigger} ON lockspire_audit_events",
+          "DROP TRIGGER IF EXISTS #{trigger} ON lockspire_audit_events",
           [],
           log: false
         )
 
-        Ecto.Adapters.SQL.query!(TestRepo, "DROP FUNCTION #{function}()", [], log: false)
+        Ecto.Adapters.SQL.query!(
+          TestRepo,
+          "DROP FUNCTION IF EXISTS #{function}()",
+          [],
+          log: false
+        )
+
+        Ecto.Adapters.SQL.query!(
+          TestRepo,
+          "DROP SEQUENCE IF EXISTS #{sequence}",
+          [],
+          log: false
+        )
       end
 
     assert result == {:error, :client_secret_verifier_maintenance_failed}
+    assert sequence_state == [1, true], "audit trigger did not execute its database witness"
     refute_marker(log_output, marker, "failed-audit driver log disclosed its diagnostic marker")
     refute_marker(inspect(result), marker, "failed-audit result disclosed its diagnostic marker")
     assert {:ok, after_failure} = Repository.fetch_client_by_id(client_id)
@@ -680,6 +714,14 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
       resource: %{type: :client, id: client_id},
       metadata: %{maintenance_at: DateTime.utc_now()}
     }
+  end
+
+  defp maintenance_audit_attrs(client_id) do
+    attrs = audit_attrs(client_id)
+
+    Map.update!(attrs, :metadata, fn metadata ->
+      Map.merge(metadata, %{old_key_id: "disclosure-old", new_key_id: "disclosure-new"})
+    end)
   end
 
   defp receive_result(tag) do
