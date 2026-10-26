@@ -93,7 +93,10 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
     try do
       mark_stage(:issuance_auth_barrier)
-      stale_request = Task.async(fn -> token_request(issuer, client, code, first_jti) end)
+
+      stale_request =
+        start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
+
       {request_pid, _auth_backend} = await_barrier!(:authenticated, first_jti)
       durable_jti = jti_present?(client.client_id, first_jti)
 
@@ -117,9 +120,14 @@ defmodule CleanRoomProvider.VerifierRecovery do
       end
 
       mark_stage(:issuance_maintenance)
-      maintenance = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+
+      maintenance =
+        start_monitored_worker(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+
       maintenance_backend = await_maintenance_backend!(client.client_id)
-      {:ok, %{committed_changed: changed}} = Task.await(maintenance, @timeout)
+
+      {:ok, %{committed_changed: changed}} =
+        await_monitored_worker!(maintenance, :issuance_maintenance)
 
       unless changed >= 1,
         do: raise("independent installed maintenance did not commit a verifier change")
@@ -135,7 +143,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
         {:release_client_verifier_issuance_barrier, issuance_reference(), :current_row_guard}
       )
 
-      stale_status = Task.await(stale_request, @timeout)
+      stale_status = await_monitored_worker!(stale_request, :issuance_replay_fresh)
       after_stale = effects(client.client_id)
 
       mark_stage(:issuance_replay_fresh)
@@ -148,24 +156,25 @@ defmodule CleanRoomProvider.VerifierRecovery do
       Store.clear_maintenance_observer()
 
       %{
-        "VPROOF-02-ISSUANCE-#{System.fetch_env!("LOCKSPIRE_PROOF_PAIR")}-STALE-IDENTITY" => %{
-          "outcome" => "pass",
-          "executed" => true,
-          "auth_barrier_reached" => durable_jti,
-          "jti_consumption_observed" => durable_jti,
-          "pre_guard_barrier_reached" => true,
-          "maintenance_committed" => true,
-          "backend_pids_distinct" => distinct_backends,
-          "stale_identity_rejected" => stale_status == 400,
-          "stale_http_status" => stale_status,
-          "no_token_issued" => after_stale.tokens == before.tokens,
-          "no_grant_created" => after_stale.grants == before.grants,
-          "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
-          "same_jti_replay_rejected" => replay_status == 400 and after_replay == after_stale,
-          "fresh_jti_succeeded" =>
-            fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
-          "fresh_http_status" => fresh_status
-        }
+        "VPROOF-02-ISSUANCE-#{String.upcase(System.fetch_env!("LOCKSPIRE_PROOF_PAIR"))}-STALE-IDENTITY" =>
+          %{
+            "outcome" => "pass",
+            "executed" => true,
+            "auth_barrier_reached" => durable_jti,
+            "jti_consumption_observed" => durable_jti,
+            "pre_guard_barrier_reached" => true,
+            "maintenance_committed" => true,
+            "backend_pids_distinct" => distinct_backends,
+            "stale_identity_rejected" => stale_status == 400,
+            "stale_http_status" => stale_status,
+            "no_token_issued" => after_stale.tokens == before.tokens,
+            "no_grant_created" => after_stale.grants == before.grants,
+            "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
+            "same_jti_replay_rejected" => replay_status == 400 and after_replay == after_stale,
+            "fresh_jti_succeeded" =>
+              fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
+            "fresh_http_status" => fresh_status
+          }
       }
     after
       Store.clear_issuance_control()
@@ -845,6 +854,71 @@ defmodule CleanRoomProvider.VerifierRecovery do
         backend_pid
     after
       @timeout -> raise "installed maintenance transaction backend was not observed"
+    end
+  end
+
+  defp start_monitored_worker(fun) do
+    parent = self()
+    result_reference = make_ref()
+
+    {pid, monitor_reference} =
+      spawn_monitor(fn ->
+        result =
+          try do
+            {:ok, fun.()}
+          rescue
+            _error -> {:error, :worker_failed}
+          catch
+            _kind, _reason -> {:error, :worker_failed}
+          end
+
+        send(parent, {:verifier_recovery_worker_result, result_reference, result})
+      end)
+
+    {pid, monitor_reference, result_reference}
+  end
+
+  defp await_monitored_worker!({pid, monitor_reference, result_reference}, stage) do
+    result =
+      receive do
+        {:verifier_recovery_worker_result, ^result_reference, {:ok, value}} ->
+          value
+
+        {:verifier_recovery_worker_result, ^result_reference, {:error, :worker_failed}} ->
+          mark_stage(stage)
+          raise "SAFE_FAILURE_STAGE=#{stage}"
+
+        {:DOWN, ^monitor_reference, :process, ^pid, _reason} ->
+          mark_stage(stage)
+          raise "SAFE_FAILURE_STAGE=#{stage}"
+      after
+        @timeout ->
+          if Process.alive?(pid), do: Process.exit(pid, :kill)
+
+          receive do
+            {:DOWN, ^monitor_reference, :process, ^pid, _reason} -> :ok
+          after
+            @timeout -> :ok
+          end
+
+          mark_stage(stage)
+          raise "SAFE_FAILURE_STAGE=#{stage}"
+      end
+
+    receive do
+      {:DOWN, ^monitor_reference, :process, ^pid, _reason} -> result
+    after
+      @timeout ->
+        if Process.alive?(pid), do: Process.exit(pid, :kill)
+
+        receive do
+          {:DOWN, ^monitor_reference, :process, ^pid, _reason} -> :ok
+        after
+          @timeout -> :ok
+        end
+
+        mark_stage(stage)
+        raise "SAFE_FAILURE_STAGE=#{stage}"
     end
   end
 

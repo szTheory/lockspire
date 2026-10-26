@@ -205,6 +205,19 @@ class RecoveryDispatchTest(unittest.TestCase):
             thread.join(timeout=2)
 
     def test_recovery_and_issuance_groups_share_the_owned_recovery_runner(self) -> None:
+        host_source = (
+            ROOT
+            / "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'String.upcase(System.fetch_env!("LOCKSPIRE_PROOF_PAIR"))',
+            host_source,
+        )
+        issuance_source = host_source.split("def run_issuance(store, issuer)", 1)[1].split(
+            "def run_issuance(_store, _issuer)", 1
+        )[0]
+        self.assertIn("start_monitored_worker(", issuance_source)
+        self.assertNotIn("Task.async(", issuance_source)
         self.assertEqual(
             clean_room_verifier_upgrade.MODULES["issuance"][0],
             clean_room_verifier_upgrade.MODULES["recovery"][0],
