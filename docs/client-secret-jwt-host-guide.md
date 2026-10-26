@@ -92,3 +92,22 @@ Your host app still owns:
 Lockspire owns the protocol verification and operator secret-rotation path
 described here. The host app still owns the human-facing application behavior
 and partner coordination around credential rollout.
+
+
+## Verifier-key changes and client recovery
+
+The dedicated verifier key protects Lockspire's stored copy of the shared
+secret so it can verify `client_secret_jwt` assertions. Changing that key does
+not change the partner's secret. Follow the
+[verifier configuration and recovery guide](client-secret-verifier-configuration.md)
+for reader-first distribution, preview, apply, a separate fresh check, and
+host-owned fleet and rollback checks before retiring a live read key.
+
+If a verifier key is temporarily unavailable, the affected JWT client
+authentication fails closed as `invalid_client`; Lockspire does not fall back
+to Basic or post authentication. Restoring the original key preserves the
+existing partner secret. If it cannot be restored, an authorized client-secret
+rotation or re-provisioning replaces that secret, so coordinate the new
+one-time handoff with the partner. A stored secret hash cannot be reversed.
+The secret's configured expiry and the JWT assertion's own lifetime remain in
+force during either recovery path.
