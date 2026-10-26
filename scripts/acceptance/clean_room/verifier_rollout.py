@@ -260,7 +260,8 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
         except Exception as error:
             _write_failure_attempt(receipt_dir, "rollout", pair, store, run_id, error, redactor,
                                    candidate_identity=locals().get("candidate_identity"),
-                                   predecessor_identity=locals().get("old_identity"))
+                                   predecessor_identity=locals().get("old_identity"),
+                                   log_paths=list(root.glob("*.log")))
             raise
         finally:
             for process in (old_server, new_server, legacy_server):
@@ -373,7 +374,8 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
         except Exception as error:
             _write_failure_attempt(receipt_dir, "legacy-control", "locked", "builtin", run_id, error,
                                    redactor, candidate_identity=locals().get("candidate_identity"),
-                                   predecessor_identity=locals().get("old_identity"))
+                                   predecessor_identity=locals().get("old_identity"),
+                                   log_paths=list(root.glob("*.log")))
             raise
         finally:
             for process in (old_server, new_server):
@@ -506,7 +508,20 @@ def _http_auth_result(issuer: str, port: int, client_id: str, secret: str) -> tu
     except PackageInputError as error:
         match = re.search(r"installed token http returned status ([0-9]{3})(?: \((invalid_client|invalid_grant|invalid_request|server_error|temporarily_unavailable)\))?", str(error), re.IGNORECASE)
         if match:
-            return False, f"token-http-{match.group(1)}" + (f"-{match.group(2).lower()}" if match.group(2) else "")
+            failure = f"token-http-{match.group(1)}" + (f"-{match.group(2).lower()}" if match.group(2) else "")
+            for description, suffix in {
+                "Client authentication failed": "client-authentication-failed",
+                "Client application has expired": "client-application-expired",
+                "Client application is disabled": "client-application-disabled",
+                "Unable to validate client lifetime state": "client-lifetime-state-unavailable",
+                "Unable to validate client secret lifetime state": "client-secret-lifetime-state-unavailable",
+                "Unable to persist request": "request-persistence-failed",
+                "Unable to validate client": "client-validation-failed",
+            }.items():
+                if description in str(error) and description in runner.SAFE_OAUTH_DESCRIPTIONS:
+                    failure += "-" + suffix
+                    break
+            return False, failure
         return False, "authorization-flow-failed"
     except OSError:
         return False, "http-transport-failed"
@@ -617,10 +632,20 @@ def _write_receipt(receipt_dir: Path, receipt: dict[str, object], redactor: Reda
 
 def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str, run_id: str,
                            error: Exception, redactor: Redactor, *, candidate_identity=None,
-                           predecessor_identity=None) -> None:
+                           predecessor_identity=None, log_paths: list[Path] | None = None) -> None:
     """Retain each new failed cell with redacted command, exit and artifact identities."""
     message = redactor.text(str(error))
     redactor.assert_safe(message)
+    safe_logs = []
+    for log_path in log_paths or []:
+        try:
+            raw = log_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        runner._register_output_material(redactor, raw)
+        tail = redactor.text("\n".join(raw.splitlines()[-120:]))[-12000:]
+        redactor.assert_safe(tail)
+        safe_logs.append({"name": log_path.name, "tail": tail})
     record = {
         "schema": "lockspire-installed-verifier-rollout-failure-v1",
         "scope": scope, "pair": pair, "store": store, "run_id": run_id,
@@ -631,6 +656,7 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
         "command": ["python3", "scripts/acceptance/clean_room_verifier_upgrade.py", "--pair", pair,
                     "--store", store, "--group", scope],
         "exit_code": 1, "error_type": type(error).__name__, "redacted_error": message,
+        "redacted_process_logs": safe_logs,
         "attempted_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     rendered = json.dumps(record, sort_keys=True, indent=2) + "\n"
