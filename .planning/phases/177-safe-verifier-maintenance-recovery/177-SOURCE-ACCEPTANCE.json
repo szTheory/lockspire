@@ -1,13 +1,15 @@
 {
   "schema": "lockspire-phase-177-source-acceptance-v1",
   "plan": "177-09",
-  "tested_sha": "6aca1b865d53a809165a6a32a1854724685e1a7b",
+  "tested_sha": "5e8cd65e6a45deee205c79a0f23592be68c0ffb8",
   "source_branch": "milestone/v1.48-client-auth-key-isolation",
   "source_commits": [
     "fdb6ae35",
     "162e9a7f",
     "8bae1a30",
-    "6aca1b86"
+    "6aca1b86",
+    "9758550c",
+    "0a3c9ca5"
   ],
   "environment": {
     "cwd": "/Users/jon/projects/lockspire",
@@ -21,11 +23,11 @@
   "canonical_ci": {
     "command": "mix ci",
     "exit_code": 0,
-    "started_at": "2026-10-26T03:50:34.726741Z",
-    "finished_at": "2026-10-26T03:55:55.335386Z",
-    "duration_seconds": 320.609,
-    "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
-    "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e",
+    "started_at": "2026-10-26T04:25:52.521329+00:00",
+    "finished_at": "2026-10-26T04:30:18.137763+00:00",
+    "duration_seconds": 265.625,
+    "output_path": "/private/tmp/lockspire-177-final-mix-ci-5e8cd65e.log",
+    "output_sha256": "43e0626f3bae147085d0058c1ab5ce0776ae91a2389153bd242bf26d82d25055",
     "stages": [
       {
         "name": "boundary",
@@ -45,12 +47,12 @@
         "executed_tests": 2138,
         "failures": 0,
         "skipped": 6,
-        "excluded": 567,
+        "excluded": 568,
         "exit_code": 0
       },
       {
         "name": "test.integration",
-        "executed_tests": 260,
+        "executed_tests": 261,
         "failures": 0,
         "excluded": 46,
         "exit_code": 0
@@ -63,23 +65,40 @@
       "docs.check",
       "package.build"
     ],
-    "overall_executed_exunit_tests": 2413,
+    "overall_executed_exunit_tests": 2414,
     "overall_failures": 0,
     "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed.",
-    "timing_basis": "log creation to final output write; approximately321 seconds wall time"
+    "dirty_paths": [
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-09-SUMMARY.md",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-HANDOFF.md",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-VALIDATION.md",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-INITIAL.md",
+      ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-OPEN-REVIEW.md"
+    ]
   },
   "commands": [
     {
+      "tested_sha": "5e8cd65e6a45deee205c79a0f23592be68c0ffb8",
+      "dirty_paths": [
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-09-SUMMARY.md",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-HANDOFF.md",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-VALIDATION.md",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-INITIAL.md",
+        ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-OPEN-REVIEW.md"
+      ],
       "command": "mix ci",
       "exit_code": 0,
-      "executed_tests": 2413,
-      "failures": 0,
-      "started_at": "2026-10-26T03:50:34.726741Z",
-      "finished_at": "2026-10-26T03:55:55.335386Z",
-      "duration_seconds": 320.609,
-      "timing_basis": "log creation to final output write; approximately321 seconds wall time",
-      "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
-      "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e"
+      "started_at": "2026-10-26T04:25:52.521329+00:00",
+      "finished_at": "2026-10-26T04:30:18.137763+00:00",
+      "duration_seconds": 265.625,
+      "output_path": "/private/tmp/lockspire-177-final-mix-ci-5e8cd65e.log",
+      "output_sha256": "43e0626f3bae147085d0058c1ab5ce0776ae91a2389153bd242bf26d82d25055",
+      "executed_tests": 2414,
+      "failures": 0
     }
   ],
   "requirements": {
@@ -323,13 +342,31 @@
       "result": "Noncanonical mixed-stage invocation: 107 tests, 1 failure in ConfigClientSecretVerifierTest for a listed hidden key context. The standalone configuration suite passed 16/0 and canonical mix ci passed test.fast and integration in their separate configured stages.",
       "output_path": "/private/tmp/lockspire-177-09-verifier-family-8bae1a30.log",
       "output_sha256": "397b57a0fed5e08bfd026c9b15565eceb3a5e8ac5627f7b85f9c3de6d4eafb24"
+    },
+    {
+      "tested_sha": "1c31695b",
+      "dirty_delta": "new audit validation regression test before production fix",
+      "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_test.exs --seed 82540",
+      "exit_code": 2,
+      "result": "8 tests, 1 failure: audit actor secret sentinel accepted as changed; WR-01 fixed in9758550c; then maintenance8/0 and combined43/0",
+      "output_path": "/private/tmp/lockspire-177-review-wr01-red.log",
+      "output_sha256": "5b23280792df0e7aa6cb8d977310a9add607a30f11bf517538c621153754b675"
+    },
+    {
+      "tested_sha": "75988f427bc244d9c7a86183cbcda8bd75989c12",
+      "dirty_delta": "positive trigger sequence witness added with intentionally incomplete existing metadata",
+      "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_disclosure_test.exs --seed 81501",
+      "exit_code": 2,
+      "result": "8 tests,1 failure: sequence is_called=false proves audit INSERT trigger was bypassed; complete metadata and witness fixed in0a3c9ca5, then disclosure8/0 and combined43/0",
+      "output_path": "/private/tmp/lockspire-177-review-t17724-witness-red.log",
+      "output_sha256": "6aede130c2bce0b2592375f7c00f7b9122c52691a5b0406fb094bcbc2bba2036"
     }
   ],
   "limits": [
     "Two unclassified probe edges E-09/VOPS-04 and E-10/VPROOF-01 remain flagged unresolved.",
     "Three descriptorless prohibitions remain unverified and flagged; they are not converted to tests or passed truths.",
     "The structural validator is not reported as runtime evidence.",
-    "No fleet or host readiness, backup/quiescence, PostgreSQL server-log suppression, installed dependency-pair or composed-adapter proof, publication, delivery, final review, Phase 178 acceptance, or main acceptance is claimed.",
+    "No fleet or host readiness, backup/quiescence, PostgreSQL server-log suppression, installed dependency-pair or composed-adapter proof, publication, delivery, final milestone review, Phase 178 acceptance, or main acceptance is claimed.",
     "No schema, dependency, protocol, or public API-shape change was made."
   ],
   "prior_successful_source_acceptances": [
@@ -441,6 +478,139 @@
           "output_sha256": "7156a1771279fa0d24e4496d850d03ec7ad804102a227ac96b645dd5c543069d"
         }
       ]
+    },
+    {
+      "tested_sha": "6aca1b865d53a809165a6a32a1854724685e1a7b",
+      "canonical_ci": {
+        "command": "mix ci",
+        "exit_code": 0,
+        "started_at": "2026-10-26T03:50:34.726741Z",
+        "finished_at": "2026-10-26T03:55:55.335386Z",
+        "duration_seconds": 320.609,
+        "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
+        "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e",
+        "stages": [
+          {
+            "name": "boundary",
+            "executed_tests": 15,
+            "failures": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "credo",
+            "source_files_checked": 721,
+            "issues": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "test.fast",
+            "property_checks": 2,
+            "executed_tests": 2138,
+            "failures": 0,
+            "skipped": 6,
+            "excluded": 567,
+            "exit_code": 0
+          },
+          {
+            "name": "test.integration",
+            "executed_tests": 260,
+            "failures": 0,
+            "excluded": 46,
+            "exit_code": 0
+          }
+        ],
+        "other_stages": [
+          "deps.get",
+          "compile --warnings-as-errors",
+          "sobelow",
+          "docs.check",
+          "package.build"
+        ],
+        "overall_executed_exunit_tests": 2413,
+        "overall_failures": 0,
+        "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed.",
+        "timing_basis": "log creation to final output write; approximately321 seconds wall time"
+      },
+      "commands": [
+        {
+          "command": "mix ci",
+          "exit_code": 0,
+          "executed_tests": 2413,
+          "failures": 0,
+          "started_at": "2026-10-26T03:50:34.726741Z",
+          "finished_at": "2026-10-26T03:55:55.335386Z",
+          "duration_seconds": 320.609,
+          "timing_basis": "log creation to final output write; approximately321 seconds wall time",
+          "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
+          "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e"
+        }
+      ]
+    },
+    {
+      "tested_sha": "75988f427bc244d9c7a86183cbcda8bd75989c12",
+      "canonical_ci": {
+        "command": "mix ci",
+        "exit_code": 0,
+        "started_at": "2026-10-26T04:13:34.073149+00:00",
+        "finished_at": "2026-10-26T04:17:58.717441+00:00",
+        "duration_seconds": 264.646,
+        "output_path": "/private/tmp/lockspire-177-final-mix-ci-75988f42.log",
+        "output_sha256": "8e9e111d477b8c837a6811035f0b028c4f2e877c00161ec127841bcd62e49914",
+        "stages": [
+          {
+            "name": "boundary",
+            "executed_tests": 15,
+            "failures": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "credo",
+            "source_files_checked": 721,
+            "issues": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "test.fast",
+            "property_checks": 2,
+            "executed_tests": 2138,
+            "failures": 0,
+            "skipped": 6,
+            "excluded": 568,
+            "exit_code": 0
+          },
+          {
+            "name": "test.integration",
+            "executed_tests": 261,
+            "failures": 0,
+            "excluded": 46,
+            "exit_code": 0
+          }
+        ],
+        "other_stages": [
+          "deps.get",
+          "compile --warnings-as-errors",
+          "sobelow",
+          "docs.check",
+          "package.build"
+        ],
+        "overall_executed_exunit_tests": 2414,
+        "overall_failures": 0,
+        "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed."
+      },
+      "commands": [
+        {
+          "tested_sha": "75988f427bc244d9c7a86183cbcda8bd75989c12",
+          "command": "mix ci",
+          "exit_code": 0,
+          "started_at": "2026-10-26T04:13:34.073149+00:00",
+          "finished_at": "2026-10-26T04:17:58.717441+00:00",
+          "duration_seconds": 264.646,
+          "output_path": "/private/tmp/lockspire-177-final-mix-ci-75988f42.log",
+          "output_sha256": "8e9e111d477b8c837a6811035f0b028c4f2e877c00161ec127841bcd62e49914",
+          "executed_tests": 2414,
+          "failures": 0
+        }
+      ]
     }
   ],
   "final_gate_isolation_correction": {
@@ -453,7 +623,7 @@
     "report": ".planning/phases/177-safe-verifier-maintenance-recovery/177-ISOLATION-FIX.md",
     "checks": [
       {
-        "command": "same preserved verifier-family command --seed 82284",
+        "command": "mix test --include integration test/integration/client_secret_verifier*.exs test/integration/client_secret_jwt_legacy_age_test.exs test/integration/client_secret_verifier_maintenance*.exs test/integration/client_secret_verifier_rotation_test.exs test/lockspire/*client_secret_verifier*.exs test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs --seed 82284",
         "executed_tests": 107,
         "failures": 0,
         "exit_code": 0,
@@ -480,5 +650,180 @@
         "identity_note": "scoped tests on corrected file bytes before atomic commit; fresh fullCI on the committed SHA independently covers them"
       }
     ]
+  },
+  "review_fix": {
+    "finding": "WR-01",
+    "source_commit": "9758550c62dc5b5e85bf104fab841a2a52242740",
+    "report": "177-REVIEW-FIX.md",
+    "fix": "exact required audit map shapes, fixed system actor and action/outcome, resource bound to requested client ID, bounded key ID grammar, round-trippable DateTime; validation before lock/update",
+    "checks": [
+      {
+        "scope": "maintenance-final",
+        "exit_code": 0,
+        "executed_tests": 8,
+        "failures": 0,
+        "output_path": "/private/tmp/lockspire-177-review-wr01-maintenance-final.log",
+        "output_sha256": "558fab659584e42b4654a9ac5c73ebf1d7229ce492a9c41f2c4c6ad01cca52de"
+      },
+      {
+        "scope": "maintenance-family-final",
+        "exit_code": 0,
+        "executed_tests": 43,
+        "failures": 0,
+        "output_path": "/private/tmp/lockspire-177-review-wr01-maintenance-family-final.log",
+        "output_sha256": "85186039871ab2914d03bcdfe828bc0d030c6af8280c7a5d3dfc01f41e8be936"
+      }
+    ]
+  },
+  "dirty_paths": [
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-09-SUMMARY.md",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-HANDOFF.md",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-VALIDATION.md",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-INITIAL.md",
+    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY-OPEN-REVIEW.md"
+  ],
+  "tested_source_clean": true,
+  "dirty_delta_scope": "Only parent-owned Phase 177 planning evidence; committed lib/test/docs/mix files match tested HEAD.",
+  "final_gate_audit_trigger_correction": {
+    "threat": "T-177-24",
+    "fixture_commit": "0a3c9ca5",
+    "cause": "strict audit validation rejected incomplete test metadata before intended INSERT trigger",
+    "fix": "complete valid metadata plus a unique PostgreSQL sequence incremented by the failing trigger; is_called proves execution despite rollback",
+    "report": "177-REVIEW-FIX.md",
+    "checks": [
+      {
+        "scope": "witness-green",
+        "exit_code": 0,
+        "executed_tests": 8,
+        "failures": 0,
+        "output_path": "/private/tmp/lockspire-177-review-t17724-witness-green.log",
+        "output_sha256": "a0361634daa9c3f5e0997f2532983c683a34981f700e748fe2c7fb2e8973a373"
+      },
+      {
+        "scope": "maintenance-family-final",
+        "exit_code": 0,
+        "executed_tests": 43,
+        "failures": 0,
+        "output_path": "/private/tmp/lockspire-177-review-t17724-maintenance-family-final.log",
+        "output_sha256": "3d5462fdac8cd23453e5e68d2c5b3149ce3f3b6fb6930329cbc289ebc6d0f60c"
+      }
+    ]
+  },
+  "independent_pre_verifier_gates": {
+    "nyquist": {
+      "status": "validated",
+      "task_rows": 18,
+      "decision_rows": 23,
+      "requirements": 6,
+      "identified_gaps_resolved": 3
+    },
+    "security": {
+      "status": "verified",
+      "audited_sha": "5e8cd65e6a45deee205c79a0f23592be68c0ffb8",
+      "threats_closed": 29,
+      "threats_open": 0,
+      "initial_and_open_verdicts_preserved": true
+    },
+    "code_review": {
+      "status": "clean",
+      "files_reviewed": 32,
+      "critical": 0,
+      "warning": 0,
+      "info": 0,
+      "initial_WR01": "fixed with independent closure"
+    },
+    "ui_review": {
+      "status": "skipped",
+      "reason": "No UI implementation or UI spec in this phase; maintenance services, CLI, storage, tests and guides only."
+    },
+    "execute_post_finalizer": {
+      "block": false,
+      "exit_code": 0,
+      "reason": "Actual manifest predicate is phase139-only and returns exit0 for177."
+    },
+    "regression": {
+      "command": "mix test --include integration test/integration/client_lifetime_selected_store_test.exs test/integration/client_secret_jwt_legacy_age_test.exs test/integration/client_secret_lifetime_registration_test.exs test/integration/client_secret_lifetime_rotation_test.exs test/integration/client_secret_verifier_age_test.exs test/integration/client_secret_verifier_configuration_test.exs test/integration/client_secret_verifier_dcr_writer_test.exs test/integration/client_secret_verifier_direct_writer_test.exs test/integration/client_secret_verifier_guarded_issuance_test.exs test/integration/client_secret_verifier_maintenance_concurrency_test.exs test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/integration/client_secret_verifier_maintenance_issuance_test.exs test/integration/client_secret_verifier_maintenance_recovery_test.exs test/integration/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_rotation_test.exs test/integration/client_secret_verifier_tracer_test.exs test/lockspire/clients_secret_material_test.exs test/lockspire/compatibility_baseline_contract_test.exs test/lockspire/config_client_secret_verifier_test.exs test/lockspire/protocol/client_secret_verifier_endpoints_test.exs test/lockspire/security/client_secret_verifier_age_test.exs test/lockspire/security/client_secret_verifier_compatibility_test.exs test/lockspire/security/client_secret_verifier_contract_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/lockspire/security/client_secret_verifier_maintenance_test.exs test/lockspire/security/client_secret_verifier_rollout_test.exs test/lockspire/security/client_secret_verifier_test.exs test/lockspire/web/live/admin/clients_live_test.exs --seed 40815",
+      "runner_timeout_seconds": 1800,
+      "exit_code": 0,
+      "file_count": 29,
+      "files": [
+        "test/integration/client_lifetime_selected_store_test.exs",
+        "test/integration/client_secret_jwt_legacy_age_test.exs",
+        "test/integration/client_secret_lifetime_registration_test.exs",
+        "test/integration/client_secret_lifetime_rotation_test.exs",
+        "test/integration/client_secret_verifier_age_test.exs",
+        "test/integration/client_secret_verifier_configuration_test.exs",
+        "test/integration/client_secret_verifier_dcr_writer_test.exs",
+        "test/integration/client_secret_verifier_direct_writer_test.exs",
+        "test/integration/client_secret_verifier_guarded_issuance_test.exs",
+        "test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
+        "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+        "test/integration/client_secret_verifier_maintenance_issuance_test.exs",
+        "test/integration/client_secret_verifier_maintenance_recovery_test.exs",
+        "test/integration/client_secret_verifier_maintenance_test.exs",
+        "test/integration/client_secret_verifier_rotation_test.exs",
+        "test/integration/client_secret_verifier_tracer_test.exs",
+        "test/lockspire/clients_secret_material_test.exs",
+        "test/lockspire/compatibility_baseline_contract_test.exs",
+        "test/lockspire/config_client_secret_verifier_test.exs",
+        "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs",
+        "test/lockspire/security/client_secret_verifier_age_test.exs",
+        "test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+        "test/lockspire/security/client_secret_verifier_contract_test.exs",
+        "test/lockspire/security/client_secret_verifier_inspection_test.exs",
+        "test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs",
+        "test/lockspire/security/client_secret_verifier_maintenance_test.exs",
+        "test/lockspire/security/client_secret_verifier_rollout_test.exs",
+        "test/lockspire/security/client_secret_verifier_test.exs",
+        "test/lockspire/web/live/admin/clients_live_test.exs"
+      ],
+      "by_phase": {
+        "175": [
+          "test/integration/client_secret_jwt_legacy_age_test.exs",
+          "test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+          "test/lockspire/security/client_secret_verifier_contract_test.exs"
+        ],
+        "176": [
+          "test/integration/client_lifetime_selected_store_test.exs",
+          "test/integration/client_secret_lifetime_registration_test.exs",
+          "test/integration/client_secret_lifetime_rotation_test.exs",
+          "test/integration/client_secret_verifier_age_test.exs",
+          "test/integration/client_secret_verifier_configuration_test.exs",
+          "test/integration/client_secret_verifier_dcr_writer_test.exs",
+          "test/integration/client_secret_verifier_direct_writer_test.exs",
+          "test/integration/client_secret_verifier_guarded_issuance_test.exs",
+          "test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
+          "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+          "test/integration/client_secret_verifier_maintenance_issuance_test.exs",
+          "test/integration/client_secret_verifier_maintenance_recovery_test.exs",
+          "test/integration/client_secret_verifier_maintenance_test.exs",
+          "test/integration/client_secret_verifier_rotation_test.exs",
+          "test/integration/client_secret_verifier_tracer_test.exs",
+          "test/lockspire/clients_secret_material_test.exs",
+          "test/lockspire/compatibility_baseline_contract_test.exs",
+          "test/lockspire/config_client_secret_verifier_test.exs",
+          "test/lockspire/protocol/client_secret_verifier_endpoints_test.exs",
+          "test/lockspire/security/client_secret_verifier_age_test.exs",
+          "test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+          "test/lockspire/security/client_secret_verifier_contract_test.exs",
+          "test/lockspire/security/client_secret_verifier_inspection_test.exs",
+          "test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs",
+          "test/lockspire/security/client_secret_verifier_maintenance_test.exs",
+          "test/lockspire/security/client_secret_verifier_rollout_test.exs",
+          "test/lockspire/security/client_secret_verifier_test.exs",
+          "test/lockspire/web/live/admin/clients_live_test.exs"
+        ]
+      },
+      "wildcards": "Prior verification wildcard references expand against current source and therefore include relevant Phase177 tests.",
+      "started_at": "2026-10-26T04:37:36.983676+00:00",
+      "finished_at": "2026-10-26T04:37:40.131073+00:00",
+      "duration_seconds": 3.147,
+      "output_path": "/private/tmp/lockspire-177-prior-phase-regression.log",
+      "output_sha256": "6f6d89101ccc538b45a4e6cfeeea45863c6069628747d2d1d2009371906c6f31",
+      "executed_tests": 188,
+      "failures": 0
+    }
   }
 }

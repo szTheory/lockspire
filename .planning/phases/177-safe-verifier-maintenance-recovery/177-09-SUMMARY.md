@@ -7,7 +7,7 @@ requires:
   - phase: 177-safe-verifier-maintenance-recovery
     provides: "Completed source implementation plans 177-01 through 177-08 and the frozen Phase 175 compatibility contract"
 provides:
-  - "Canonical source acceptance bound to exact tested commit 8bae1a306e836c6d512c1d7e34ed39ef3c22e088"
+  - "Current source acceptance bound to exact tested commit 5e8cd65e6a45deee205c79a0f23592be68c0ffb8"
   - "Evidence map for six Phase 177 requirements and eight stable Phase 175 acceptance IDs"
   - "Bounded Phase 178 handoff retaining unresolved probe edges and prohibitions"
 affects: [phase-177-independent-verification, phase-178-packaged-upgrade-proof]
@@ -52,7 +52,7 @@ status: complete
 
 # Phase 177 Plan 09: Source Acceptance and Handoff Summary
 
-**Canonical source CI and maintenance evidence passed on `8bae1a30`, with uncertainty and Phase 178 boundaries preserved.**
+**Source CI and maintenance evidence pass on corrected `5e8cd65e`; prior successful and failed attempts, uncertainty and Phase 178 boundaries remain preserved.**
 
 ## Performance
 
@@ -166,3 +166,19 @@ Plan 09 source acceptance and handoff are complete. Phase 177 remains open for i
 The retained mixed verifier-family failure was reproduced and traced to `set_startup_context/1` in the maintenance integration fixture leaving a fabricated startup verifier cache behind. Commit `6aca1b86` now restores the exact prior `persistent_term` context after each replacement. All assertions and canonical test-stage membership are preserved; no production code changed. The original seed 82284 scope passed 107/0, the paired scope seed 55421 passed 23/0, and configuration alone passed 16/0.
 
 Fresh `mix ci` on committed `6aca1b865d53a809165a6a32a1854724685e1a7b` exited 0: boundary 15/0, fast 2 properties + 2,138 tests / 0 failures (6 skipped, 567 excluded), integration 260/0 (46 excluded), Credo 721 files / 0 issues. Log `/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log`; SHA256 `b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e`; approximately 321seconds from log creation to final output. The source receipt archives the earlier successful acceptance and every failed attempt rather than retrospectively restamping them. All 13 frozen input digests remain unchanged. Independent final gates remain pending.
+
+## Independent review correction and final contributor gate
+
+Independent review of all 32 changed source/test/doc files found WR-01 in low-level audit-value validation. A regression reproduced the invalid audit actor being accepted. Source commit `9758550c` enforces exact required audit shapes, fixed system actor/action/outcome, client-bound resource, bounded key IDs and round-trippable DateTime before lock/update. Native and legacy audit paths, exact-repeat idempotence, rollback and all field preservation remain covered. Maintenance passed 8/0; combined maintenance/concurrency/disclosure/issuance/recovery/rotation/legacy-age tests passed 43/0; format and strict Credo passed.
+
+Fresh `mix ci` on committed `75988f427bc244d9c7a86183cbcda8bd75989c12` exited 0 in 264.646 seconds: boundary 15/0, fast 2 properties and 2,138 tests/0 failures (6 skipped, 568 excluded), integration 261/0 (46 excluded), Credo 721 files/0 issues. Exact log `/private/tmp/lockspire-177-final-mix-ci-75988f42.log`, SHA256 `8e9e111d477b8c837a6811035f0b028c4f2e877c00161ec127841bcd62e49914`. The source receipt archives both earlier successful CI identities and all six failed attempts. All 13 frozen digests remain unchanged. Independent audit refreshes remain the next gates; no completion or Phase 178 acceptance is claimed.
+
+## Positive audit-trigger witness and current acceptance
+
+The security re-audit found the stricter WR-01 validator made an incomplete disclosure fixture return before its intended audit INSERT. T-177-24 was explicitly reopened rather than inferred closed from passing suite totals. Fixture commit `0a3c9ca5` restores complete valid metadata and requires a unique test-owned sequence to show the failing INSERT trigger executed despite rollback. Witness RED: 8/1 with sequence uncalled; GREEN: disclosure 8/0 and combined targeted suites 43/0, with all original redaction/rollback assertions preserved. No production or schema change was required.
+
+Current exact-source contributor gate: `mix ci` on committed `5e8cd65e6a45deee205c79a0f23592be68c0ffb8`, exit 0, 265.625 seconds. Boundary 15/0; fast 2 properties and 2,138 tests/0 failures (6 skipped, 568 excluded); integration 261/0 (46 excluded); Credo 721 files/0 issues. Log `/private/tmp/lockspire-177-final-mix-ci-5e8cd65e.log`, SHA256 `43e0626f3bae147085d0058c1ab5ce0776ae91a2389153bd242bf26d82d25055`. Dirty paths were parent-owned Phase 177 evidence documents only; committed source matched HEAD. All 13 frozen input digests match. Three earlier successful acceptances and seven failed attempts are archived. Independent audit closure remains pending before the goal verifier.
+
+## Independent pre-verifier gates complete
+
+Current Nyquist validation covers 18 tasks, 23 decisions and six requirements; all three concrete gaps are resolved. Security is independently re-audited SECURED 29/29 with zero open threats, preserving the initial missed finding and intermediate OPEN verdict. Source review is clean across 32 files and WR-01 is recorded fixed. The manifest finalizer predicate actually returned exit 0 / block false for Phase 177. UI review is skipped because there is no UI implementation surface. The required prior Phase 175/176 regression gate passed 29 referenced test files, 188 tests and zero failures in 3.147 seconds under the configured 1,800-second wrapper. See `177-FINAL-GATES.md` and the exact source receipt. The independent goal verifier remains the next owner; phase completion and Phase 178 are not claimed here.
