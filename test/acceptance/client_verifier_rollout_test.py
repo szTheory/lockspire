@@ -129,6 +129,13 @@ class VerifierRolloutContracts(unittest.TestCase):
                     verifier_rollout._start_server(Path(temporary), {}, Path(temporary) / "server.log", "http://127.0.0.1:9")
             self.assertTrue(process.stopped)
 
+    def test_process_log_redaction_removes_registered_material_before_retention(self) -> None:
+        redactor = verifier_rollout.Redactor(verifier_rollout.SentinelSet.for_run())
+        redactor.register_material("one-time-secret-value")
+        rendered = verifier_rollout._redacted_log_tail("client_secret=one-time-secret-value\nHTTP 500", redactor)
+        self.assertNotIn("one-time-secret-value", rendered)
+        self.assertIn("HTTP 500", rendered)
+
     def test_public_source_link_requires_terminal_identity_and_exact_package_file_match(self) -> None:
         helper = verifier_rollout.verify_public_artifact
         self.assertFalse(helper(Path("missing.tar"), verifier_rollout.PUBLIC_SHA256, verifier_rollout.PUBLIC_SOURCE))
