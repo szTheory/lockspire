@@ -65,6 +65,17 @@ class RecoveryDispatchTest(unittest.TestCase):
             verifier_recovery._increase_recovery_pool_for_concurrency(host)
             self.assertIn("pool_size: 6", (config / "config.exs").read_text(encoding="utf-8"))
 
+    def test_recovery_failure_summary_names_only_fixed_false_fields(self) -> None:
+        observations = {
+            case_id: {field: True for field in fields}
+            for case_id, fields in verifier_recovery.RECOVERY_REQUIRED_FIELDS.items()
+        }
+        observations[verifier_recovery.RECOVERY_CASES[1]]["interruption_not_ready"] = False
+        self.assertEqual(
+            verifier_recovery._failed_recovery_fields(observations),
+            [(verifier_recovery.RECOVERY_CASES[1], ["interruption_not_ready"])],
+        )
+
     def test_private_handoff_registers_secrets_and_deletes_file(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             handoff = Path(temporary) / "handoff.json"

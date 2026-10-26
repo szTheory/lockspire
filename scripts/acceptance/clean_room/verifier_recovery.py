@@ -33,6 +33,24 @@ RECOVERY_CASES = (
     "VPROOF-02-RECOVERY-RESTORE-ROTATE",
     "VPROOF-02-RECOVERY-EXPIRED-MIGRATION",
 )
+RECOVERY_REQUIRED_FIELDS = {
+    RECOVERY_CASES[0]: (
+        "hash_preserved", "partner_secret_preserved", "client_fields_preserved",
+        "age_metadata_preserved", "ciphertext_changed", "audit_inserted",
+    ),
+    RECOVERY_CASES[1]: (
+        "repeat_no_change", "partial_not_ready", "interruption_not_ready",
+        "indeterminate_not_claimed_rollback", "fresh_complete_check_ready",
+    ),
+    RECOVERY_CASES[2]: (
+        "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
+        "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
+        "missing_startup_context_bound",
+    ),
+    RECOVERY_CASES[3]: (
+        "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
+    ),
+}
 ISSUANCE_CASES = (
     "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
     "VPROOF-02-ISSUANCE-FLOOR-STALE-IDENTITY",
@@ -165,6 +183,14 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
             case_ids = list(RECOVERY_CASES if scope == "recovery" else (f"VPROOF-02-ISSUANCE-{pair.upper()}-STALE-IDENTITY",))
             if set(observations) != set(case_ids):
                 raise PackageInputError("installed verifier group omitted a required scenario")
+            if scope == "recovery":
+                failed = _failed_recovery_fields(observations)
+                if failed:
+                    case_id, fields = failed[0]
+                    raise PackageInputError(
+                        "installed recovery observation incomplete; "
+                        f"case={case_id}; failed_fields={','.join(fields)}"
+                    )
             candidate = {
                 "kind": identity.kind, "version": identity.version,
                 "archive_sha256": identity.archive_sha256, "tree_sha256": identity.tree_sha256,
@@ -355,6 +381,19 @@ def _parse_observations(output: str, redactor: Redactor) -> dict[str, object]:
         return json.loads(matches[0])
     except json.JSONDecodeError:
         raise PackageInputError("installed verifier group outcome object is malformed") from None
+
+
+def _failed_recovery_fields(observations: dict[str, object]) -> list[tuple[str, list[str]]]:
+    failures: list[tuple[str, list[str]]] = []
+    for case_id, fields in RECOVERY_REQUIRED_FIELDS.items():
+        observation = observations.get(case_id)
+        if not isinstance(observation, dict):
+            failures.append((case_id, list(fields)))
+            continue
+        failed = [field for field in fields if observation.get(field) is not True]
+        if failed:
+            failures.append((case_id, failed))
+    return failures
 
 
 def _capture_child_output(operation) -> str:
