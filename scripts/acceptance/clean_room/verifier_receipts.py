@@ -25,6 +25,20 @@ REVISION = re.compile(r"[0-9a-f]{40,64}\Z")
 OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued",
     "dedicated_verifier_persisted", "fresh_signed_assertion",
+    "dry_run_reported", "dry_run_unchanged", "apply_committed", "fresh_check_ready",
+    "authority_rejections_before_access", "unknown_material_rejected",
+    "partial_inventory_rejected", "delegated_callbacks_observed", "client_hash_preserved",
+})
+TRACER_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "http_status", "token_issued",
+    "dedicated_verifier_persisted", "fresh_signed_assertion",
+})
+CORE_CASE_ID = "VPROOF-02-CORE-FRESH-MAINTENANCE"
+CORE_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
+    "fresh_signed_assertion", "dry_run_reported", "dry_run_unchanged", "apply_committed",
+    "fresh_check_ready", "authority_rejections_before_access", "unknown_material_rejected",
+    "partial_inventory_rejected", "delegated_callbacks_observed", "client_hash_preserved",
 })
 
 
@@ -113,26 +127,47 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("stable case identity set is empty or malformed")
     if len(set(case_ids)) != len(case_ids):
         raise ReceiptError("stable case identity is duplicated")
+    if receipt["scope"] == "core" and case_ids != [CORE_CASE_ID]:
+        raise ReceiptError("core receipt does not contain its finite required case")
     observations = receipt["observations"]
     if not isinstance(observations, dict) or set(observations) != set(case_ids):
         raise ReceiptError("receipt outcomes omit or add a case")
+    allowed_observation_fields = (
+        CORE_OBSERVATION_FIELDS if receipt["scope"] == "core" else TRACER_OBSERVATION_FIELDS
+    )
     for result in observations.values():
-        if not isinstance(result, dict) or not set(result).issubset(OBSERVATION_FIELDS):
+        if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
         if result.get("outcome") != "pass" or result.get("executed") is not True:
             raise ReceiptError("required installed scenario did not pass")
         if "http_status" in result and (type(result["http_status"]) is not int or not 100 <= result["http_status"] <= 599):
             raise ReceiptError("observation HTTP status is invalid")
-        if any(key in result and type(result[key]) is not bool for key in OBSERVATION_FIELDS - {"outcome", "executed", "http_status"}):
+        if any(key in result and type(result[key]) is not bool for key in allowed_observation_fields - {"outcome", "executed", "http_status"}):
             raise ReceiptError("observation boolean field is invalid")
         if receipt["scope"] == "tracer" and (
-            set(result) != OBSERVATION_FIELDS
+            set(result) != TRACER_OBSERVATION_FIELDS
             or result["http_status"] != 200
             or result["token_issued"] is not True
             or result["dedicated_verifier_persisted"] is not True
             or result["fresh_signed_assertion"] is not True
         ):
             raise ReceiptError("installed tracer outcome is incomplete")
+        if receipt["scope"] == "core":
+            if set(result) != CORE_OBSERVATION_FIELDS:
+                raise ReceiptError("installed core outcome is incomplete")
+            required_true = CORE_OBSERVATION_FIELDS - {
+                "outcome", "executed", "http_status", "authority_rejections_before_access",
+                "delegated_callbacks_observed",
+            }
+            if any(result.get(field) is not True for field in required_true):
+                raise ReceiptError("installed core maintenance outcome did not pass")
+            if receipt["store"] == "delegated":
+                if result["authority_rejections_before_access"] is not True or result["delegated_callbacks_observed"] is not True:
+                    raise ReceiptError("delegated core authority witness is incomplete")
+            elif result["authority_rejections_before_access"] is not False or result["delegated_callbacks_observed"] is not False:
+                raise ReceiptError("built-in core receipt contains delegated adapter claims")
+            if result["http_status"] != 200:
+                raise ReceiptError("installed core token flow did not return HTTP 200")
     if type(receipt["executed_count"]) is not int or receipt["executed_count"] <= 0 or receipt["executed_count"] != len(case_ids):
         raise ReceiptError("receipt has no reconciled execution count")
     return receipt

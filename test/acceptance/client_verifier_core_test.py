@@ -17,7 +17,22 @@ class CoreBuilderBoundaryTest(unittest.TestCase):
     def test_group_selected_sources_are_explicit_and_missing_sources_fail_closed(self) -> None:
         selector = getattr(build_provider, "selected_host_fixture_sources", None)
         self.assertTrue(callable(selector), "builder must expose selected optional host fixture sources")
-        paths = selector({"rollout", "endpoints", "contention", "recovery", "disclosure"})
+        with tempfile.TemporaryDirectory() as source_temporary:
+            source_root = Path(source_temporary)
+            for relative in (
+                "verifier_rollout.exs",
+                "verifier_endpoints.exs",
+                "lib/clean_room_provider/verifier_transactions.ex",
+                "lib/clean_room_provider/verifier_recovery.ex",
+                "lib/clean_room_provider/verifier_disclosure.ex",
+            ):
+                path = source_root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("fixture", encoding="utf-8")
+            paths = selector(
+                {"rollout", "endpoints", "contention", "recovery", "disclosure"},
+                source_root=source_root,
+            )
         self.assertEqual(
             {path.name for path in paths},
             {
@@ -38,9 +53,11 @@ class CoreBuilderBoundaryTest(unittest.TestCase):
         source = adapter.read_text(encoding="utf-8")
         for callback in (
             "Lockspire.Storage.ClientVerifierMaintenance",
+            "Lockspire.Storage.UsedJtiStore",
             "verifier_maintenance_contract",
             "verifier_inventory_page",
             "compare_and_rewrap",
+            "record_used_jti",
         ):
             self.assertIn(callback, source)
         self.assertNotIn("Lockspire.TestRepo", source)

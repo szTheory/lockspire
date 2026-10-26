@@ -64,6 +64,60 @@ FORBIDDEN = (
     "Router.call(",
     "forward(\"/lockspire\", CleanRoomProvider",
 )
+GROUP_HOST_FIXTURE_INPUTS = {
+    "rollout": ("verifier_rollout.exs",),
+    "legacy-control": ("verifier_rollout.exs",),
+    "endpoints": ("verifier_endpoints.exs",),
+    "contention": ("lib/clean_room_provider/verifier_transactions.ex",),
+    "atomicity": ("lib/clean_room_provider/verifier_transactions.ex",),
+    "recovery": ("lib/clean_room_provider/verifier_recovery.ex",),
+    "issuance": ("lib/clean_room_provider/verifier_recovery.ex",),
+    "disclosure": ("lib/clean_room_provider/verifier_disclosure.ex",),
+}
+
+
+def selected_host_fixture_sources(
+    groups: set[str] | frozenset[str], *, source_root: Path | None = None
+) -> tuple[Path, ...]:
+    """Return only the fixed host-owned inputs selected by installed proof groups."""
+    selected = set(groups)
+    if selected - set(GROUP_HOST_FIXTURE_INPUTS) - {"core", "tracer", "release-rpc"}:
+        raise PackageInputError("unsupported verifier proof group input")
+    root = source_root or PROVIDER_TEMPLATE
+    paths = tuple(
+        root / relative
+        for group in sorted(selected)
+        for relative in GROUP_HOST_FIXTURE_INPUTS.get(group, ())
+    )
+    missing = [path for path in paths if not path.is_file()]
+    if missing:
+        raise PackageInputError("selected provider proof source is missing")
+    return paths
+
+
+def copy_selected_host_fixture_sources(child: Path, groups: set[str] | frozenset[str]) -> tuple[Path, ...]:
+    copied: list[Path] = []
+    for source in selected_host_fixture_sources(groups):
+        if source.suffix == ".exs":
+            relative = Path("test/clean_room") / source.name
+        else:
+            relative = source.relative_to(PROVIDER_TEMPLATE)
+        destination = child / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        copied.append(destination)
+    return tuple(copied)
+
+
+def clear_unselected_host_fixture_sources(child: Path, groups: set[str] | frozenset[str]) -> None:
+    selected = {path.name for path in selected_host_fixture_sources(groups)}
+    for name in {name for values in GROUP_HOST_FIXTURE_INPUTS.values() for name in values}:
+        if name in selected:
+            continue
+        for directory in (child / "test" / "clean_room", child / "lib" / "clean_room_provider"):
+            candidate = directory / Path(name).name
+            if candidate.is_file():
+                candidate.unlink()
 
 
 def proof_pair_lock_hash(proof_pair: str) -> str:
@@ -154,6 +208,7 @@ config :clean_room_provider, CleanRoomProviderWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: String.to_integer(System.get_env(\"PORT\", \"4100\"))],
   secret_key_base: System.get_env(\"SECRET_KEY_BASE\", \"clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789\"),
   live_view: [signing_salt: \"clean-room-provider-test-live-view-salt\"],
+  debug_errors: true,
   server: true
 config :lockspire,
   repo: CleanRoomProvider.Repo,
@@ -370,14 +425,28 @@ def audit_boundary(child: Path, package_root: Path) -> None:
         )
         if path.is_file()
     )
+    host_sources.extend(
+        path
+        for path in (
+            child / "test" / "clean_room" / "verifier_rollout.exs",
+            child / "test" / "clean_room" / "verifier_endpoints.exs",
+            child / "lib" / "clean_room_provider" / "verifier_transactions.ex",
+            child / "lib" / "clean_room_provider" / "verifier_recovery.ex",
+            child / "lib" / "clean_room_provider" / "verifier_disclosure.ex",
+        )
+        if path.is_file()
+    )
 
     adapter_source = child / "lib" / "clean_room_provider" / "lifetime_client_store.ex"
     adapter_text = adapter_source.read_text() if adapter_source.is_file() else ""
     allowed_refs = {
         "Lockspire.Storage.ClientStore",
         "Lockspire.Storage.TransactionStore",
+        "Lockspire.Storage.ClientVerifierMaintenance",
+        "Lockspire.Storage.UsedJtiStore",
         "Lockspire.Storage.Ecto.Repository",
         "Lockspire.Domain.Client",
+        "Lockspire.Domain.UsedJti",
     }
     adapter_refs = set(re.findall(r"Lockspire\.(?:Storage|Domain)(?:\.[A-Za-z0-9_]+)+", adapter_text))
     if adapter_refs - allowed_refs:
@@ -453,6 +522,7 @@ def prepare_provider(
     admin_proof: bool = False,
     proof_pair: str = "locked",
     mount_path: str = "/lockspire",
+    scenario_groups: set[str] | frozenset[str] = frozenset(),
 ) -> Path:
     probe_environment()
     if not re.fullmatch(r"[a-z][a-z0-9_]{0,39}", storage_prefix):
@@ -473,6 +543,7 @@ def prepare_provider(
         )
     child = run_root / "provider_host"
     reuse = child.is_dir()
+    selected_host_fixture_sources(scenario_groups)
     if reuse:
         vendor = child / "vendor" / "lockspire"
         if not vendor.is_dir():
@@ -490,6 +561,7 @@ def prepare_provider(
             custom_lifetime_adapter=custom_lifetime_adapter,
             mount_path=mount_path,
         )
+    clear_unselected_host_fixture_sources(child, scenario_groups)
     proof_lock_hash = configure_proof_pair(
         child, proof_pair, admin_proof=admin_proof, reused=reuse
     )
@@ -501,6 +573,7 @@ def prepare_provider(
         # A reused child bypasses the installer that normally leads to the host
         # overlay audit. Re-audit its current host-owned sources before any Mix
         # resolver or compile command can inspect the child.
+        copy_selected_host_fixture_sources(child, scenario_groups)
         audit_boundary(child, package_root)
     # The host's config/runtime.exs raises without a KEK, and verify_child probes with mix,
     # so a standalone caller needs one in the inherited environment before any child runs.
@@ -558,6 +631,7 @@ def prepare_provider(
     if install_result.returncode != 0:
         raise PackageInputError("provider installer failed")
     apply_host_overlays(child, admin_proof=admin_proof, mount_path=mount_path)
+    copy_selected_host_fixture_sources(child, scenario_groups)
     print("provider host overlays applied", flush=True)
     audit_boundary(child, package_root)
     print("provider boundary audit complete", flush=True)

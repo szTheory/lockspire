@@ -94,6 +94,7 @@ def _mix_env(host: Path, run_root: Path, database_url: str, port: int, issuer: s
         "DATABASE_URL": database_url, "PORT": str(port), "LOCKSPIRE_ISSUER": issuer,
         "LOCKSPIRE_STORAGE_PREFIX": prefix, "LOCKSPIRE_KEY_ENCRYPTION_KEY": key,
         "LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY": verifier_key,
+        "LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT": base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode("ascii"),
         "SECRET_KEY_BASE": "lockspire-installed-verifier-secret-key-base-0123456789abcdefghijklmnopqrstuvwxyz",
     })
     return env
@@ -110,13 +111,36 @@ def _configure_verifier_custody(host: Path) -> None:
         + """
 
 config :lockspire, Lockspire.Security.ClientSecretVerifier,
-  keys: [{"verifier-1", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}],
-  current: "verifier-1",
+  keys: [{"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}],
+  current: "verifier-old",
   write_mode: :dedicated,
   legacy_read: :reject
 """,
         encoding="utf-8",
     )
+
+
+def _configure_rewrap_verifier_custody(host: Path) -> None:
+    runtime_config = host / "config" / "runtime.exs"
+    content = runtime_config.read_text(encoding="utf-8")
+    old = '''config :lockspire, Lockspire.Security.ClientSecretVerifier,
+  keys: [{"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}],
+  current: "verifier-old",
+  write_mode: :dedicated,
+  legacy_read: :reject
+'''
+    new = '''config :lockspire, Lockspire.Security.ClientSecretVerifier,
+  keys: [
+    {"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")},
+    {"verifier-new", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT")}
+  ],
+  current: "verifier-new",
+  write_mode: :dedicated,
+  legacy_read: :reject
+'''
+    if content.count(old) != 1:
+        raise PackageInputError("generated host verifier configuration shape changed")
+    runtime_config.write_text(content.replace(old, new, 1), encoding="utf-8")
 
 
 def _capture_secret(child: Path, env: dict[str, str], redactor: Redactor, client_id: str) -> tuple[str, str]:
@@ -244,13 +268,27 @@ def _token_request(issuer: str, client_id: str, secret: str, redirect_uri: str, 
         response = urllib.request.urlopen(request, timeout=15)
     except urllib.error.HTTPError as error:
         try:
-            error_payload = json.loads(error.read())
+            error_body = error.read()
+            error_payload = json.loads(error_body)
         except (ValueError, UnicodeError):
             error_payload = {}
         oauth_error = error_payload.get("error") if error_payload.get("error") in {"invalid_client", "invalid_grant", "invalid_request", "server_error", "temporarily_unavailable"} else None
         description = error_payload.get("error_description") if error_payload.get("error_description") in SAFE_OAUTH_DESCRIPTIONS else None
         details = ", ".join(value for value in (oauth_error, description) if value)
-        raise PackageInputError(f"installed token HTTP returned status {error.code}" + (f" ({details})" if details else "")) from None
+        diagnostic = ""
+        if error_body and error.code >= 500:
+            rendered = error_body.decode(errors="replace")
+            for match in SENSITIVE_OUTPUT.finditer(rendered):
+                redactor.register_material(match.group(1))
+            safe_text = redactor.text(rendered)
+            safe = safe_text[:2600] + "\n[...redacted diagnostic middle omitted...]\n" + safe_text[-1800:]
+            redactor.assert_safe(safe)
+            diagnostic = "; installed error response: " + safe
+        raise PackageInputError(
+            f"installed token HTTP returned status {error.code}"
+            + (f" ({details})" if details else "")
+            + diagnostic
+        ) from None
     with response:
         payload = json.loads(response.read())
         for name in ("access_token", "refresh_token", "id_token"):
