@@ -45,7 +45,7 @@ MODULES = {
     "tracer": ("verifier_tracer", "run_tracer"),
     "core": ("verifier_core", "run_group"),
     "rollout": ("verifier_rollout", "run_group"),
-    "legacy-control": ("verifier_legacy_control", "run_group"),
+    "legacy-control": ("verifier_rollout", "run_group"),
     "endpoints": ("verifier_endpoints", "run_group"),
     "release-rpc": ("verifier_release_rpc", "run_group"),
     "contention": ("verifier_contention", "run_group"),
