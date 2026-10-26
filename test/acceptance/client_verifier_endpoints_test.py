@@ -79,6 +79,12 @@ class VerifierEndpointContracts(unittest.TestCase):
         with self.assertRaisesRegex(ReceiptError, "omit or add a case"):
             validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
 
+    def test_release_rpc_group_has_a_real_release_owned_executor(self) -> None:
+        self.assertEqual(clean_room_verifier_upgrade.MODULES["release-rpc"],
+                         ("verifier_endpoints", "run_release_rpc_group"))
+        self.assertTrue(callable(getattr(verifier_endpoints, "_run_release_rpc", None)),
+                        "release group must assemble and operate an owned running release")
+
 
 if __name__ == "__main__":
     unittest.main()
