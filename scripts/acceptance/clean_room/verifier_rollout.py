@@ -351,7 +351,13 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
             if not (http_ok and legacy_format == "legacy" and promoted_format == "dedicated" and
                     old_age_kind == "migrated" and new_age_kind == "migrated" and
                     observation["authenticated_deadline_preserved"] and observation["client_hash_preserved"]):
-                raise PackageInputError("public legacy verifier adoption or preservation observation failed")
+                raise PackageInputError(
+                    "public legacy verifier adoption or preservation observation failed "
+                    f"(http_auth={str(http_ok).lower()};before_format={legacy_format};after_format={promoted_format};"
+                    f"before_age={old_age_kind};after_age={new_age_kind};"
+                    f"deadline_preserved={str(observation['authenticated_deadline_preserved']).lower()};"
+                    f"hash_preserved={str(observation['client_hash_preserved']).lower()})"
+                )
             proof = {"public_source": PUBLIC_SOURCE, "release_record_sha256": sha256(PUBLIC_RELEASE_RECORD),
                      "release_evidence_sha256": sha256(PUBLIC_RELEASE_EVIDENCE),
                      "terminal_receipt_sha256": sha256(PUBLIC_TERMINAL_RECEIPT),
