@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175 and 176 independently verified 9/18 requirements; the remaining nine are pending. Generic edge and non-authoritative prohibition flags remain visible in their reports.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements; the remaining three are pending Phase 178. Generic edge and non-authoritative prohibition flags remain visible in their reports.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -62,7 +62,7 @@
 
 ## Traceability
 
-Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phases 175 and 176 are verified complete; Phase 177/178 implementation statuses remain Pending.
+Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phases 175–177 are independently verified complete; Phase 178 remains pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
@@ -85,7 +85,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 9 verified complete and 9 pending. Roadmap approved 2026-10-25.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 15 verified complete and 3 pending. Roadmap approved 2026-10-25.
 
 ---
-*Last updated: 2026-10-25 after independent Phase 176 verification and scoped completion.*
+*Last updated: 2026-10-26 after independent Phase 177 verification and scoped completion.*

@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 approved; Phase 175 verified complete with 3 non-authoritative prohibition flags; Phase 176 discussion is next when resumed.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete (15/18 requirements); Phase 178 discussion is next. Non-authoritative edge/prohibition flags remain visible; package proof and delivery are pending.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -27,7 +27,7 @@
 
 - [x] **Phase 175: Accepted Baseline & Verifier Compatibility Contract** - Establish fresh implementation entry and freeze the finite custody, legacy, rollout and store contract. (completed 2026-10-25)
 - [x] **Phase 176: Dedicated Verifier Custody & Compatible Runtime** - Wire independent keys through every production reader/writer and prove the supported rolling transition. (completed 2026-10-25)
-- [ ] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials.
+- [x] **Phase 177: Safe Verifier Maintenance & Recovery** - Deliver atomic rewrap/check/status and key rotation/loss recovery without changing client credentials. (completed 2026-10-26)
 - [ ] **Phase 178: Packaged Upgrade Proof & Delivery Handoff** - Prove the selected journeys, pass review/gates and leave exact delivery/main-acceptance custody.
 
 ## Phase Details
@@ -99,7 +99,7 @@ Plans:
   4. Operator can introduce/read a new key, activate writes, rewrap and safely retire the old key; missing/lost-key cases identify affected clients and demonstrate valid-key restoration or existing authorized secret rotation/reprovision while affected JWT auth fails closed.
   5. Sentinel-based proof across crypto/runtime/task/storage failures shows no verifier plaintext, encryption key or ciphertext in logs/SQL diagnostics, telemetry, audit, operator reports or protocol responses. Endpoint/session secrets, signing custody and unrelated supported methods remain intact.
 
-**Plans**: 9/9 plans executed in 7 waves; source implementation and validation pending.
+**Plans**: 9/9 plans complete in 7 waves; independently verified 2026-10-26 (47/47 truths, six requirements). Package-installed proof and delivery remain Phase 178.
 
 Plans:
 **Wave 1**
@@ -146,7 +146,7 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
 |---|---|---|---|
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
-| 177. Safe Verifier Maintenance & Recovery | 9/9 | In Progress | — |
+| 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 0/0 | Not started | — |
 
 **Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phase 175 completed 3/3 plans and Phase 176 completed 7/7 plans; 2/4 phases complete. Dedicated custody and compatible runtime are verified; maintenance and packaged delivery remain pending. Roadmap approved 2026-10-25.
