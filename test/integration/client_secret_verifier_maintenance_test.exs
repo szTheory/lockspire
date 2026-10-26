@@ -201,6 +201,64 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
              )
   end
 
+  test "compare and rewrap rejects malformed or sensitive audit values before mutation" do
+    {hash, _secret} = Clients.rotate_secret_hash()
+    client_id = unique_id()
+    verifier = random_verifier()
+    replacement = random_verifier()
+
+    assert {:ok, _} = Repository.register_client(client(client_id, hash, verifier))
+    attrs = audit_attrs(client_id, "old-key", "new-key")
+    metadata = attrs.metadata
+    secret_sentinel = "audit-secret-sentinel-012345678901234567890123456789"
+    hash_sentinel = "audit-hash-sentinel-01234567890123456789012345678901"
+    ciphertext_sentinel = "LSCV1.ciphertext-sentinel." <> String.duplicate("A", 64)
+    malformed_datetime = %DateTime{DateTime.utc_now() | year: secret_sentinel}
+
+    invalid_attrs = [
+      Map.put(attrs, :action, secret_sentinel),
+      Map.put(attrs, :outcome, hash_sentinel),
+      Map.put(attrs, :actor, %{type: secret_sentinel}),
+      Map.put(attrs, :actor, %{type: :system, id: hash_sentinel}),
+      Map.put(attrs, :actor, %{}),
+      Map.put(attrs, :resource, %{type: :client, id: secret_sentinel}),
+      Map.put(attrs, :resource, %{type: :other, id: client_id}),
+      Map.put(attrs, :resource, %{type: :client, id: client_id, extra: ciphertext_sentinel}),
+      Map.put(attrs, :metadata, Map.delete(metadata, :old_key_id)),
+      Map.put(attrs, :metadata, Map.put(metadata, :old_key_id, secret_sentinel)),
+      Map.put(attrs, :metadata, Map.put(metadata, :old_key_id, hash_sentinel)),
+      Map.put(attrs, :metadata, Map.put(metadata, :old_key_id, ciphertext_sentinel)),
+      Map.put(attrs, :metadata, Map.put(metadata, :old_key_id, :malformed)),
+      Map.put(attrs, :metadata, Map.put(metadata, :new_key_id, secret_sentinel)),
+      Map.put(attrs, :metadata, Map.put(metadata, :new_key_id, :malformed)),
+      Map.put(attrs, :metadata, Map.delete(metadata, :new_key_id)),
+      Map.put(attrs, :metadata, Map.put(metadata, :maintenance_at, secret_sentinel)),
+      Map.put(attrs, :metadata, Map.put(metadata, :maintenance_at, NaiveDateTime.utc_now())),
+      Map.put(attrs, :metadata, Map.put(metadata, :maintenance_at, malformed_datetime)),
+      Map.put(attrs, :metadata, Map.delete(metadata, :maintenance_at)),
+      Map.put(attrs, :metadata, Map.put(metadata, :extra, ciphertext_sentinel)),
+      Map.put(attrs, :unexpected, secret_sentinel)
+    ]
+
+    for invalid <- invalid_attrs do
+      assert {:error, :client_secret_verifier_maintenance_failed} =
+               compare_in_transaction(client_id, hash, verifier, replacement, invalid)
+
+      assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
+      assert stored.client_secret_jwt_verifier_encrypted == verifier
+
+      audits =
+        from(event in AuditEventRecord,
+          where:
+            event.action == "client_secret_verifier_rewrapped" and
+              event.resource_id == ^client_id
+        )
+        |> then(&Support.all(TestRepo, &1, sensitive: true))
+
+      assert audits == []
+    end
+  end
+
   test "current key custody is a no-op and creates no maintenance audit" do
     key = :crypto.strong_rand_bytes(32)
     current_context = context([{"maintenance-current", key}], "maintenance-current")
@@ -283,6 +341,18 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     assert metadata.signed_at_ms == signed_at_ms
     assert metadata.deadline_ms == deadline_ms
     assert metadata.authentication_eligible?
+
+    assert [%AuditEventRecord{} = audit] =
+             from(event in AuditEventRecord,
+               where:
+                 event.action == "client_secret_verifier_rewrapped" and
+                   event.resource_id == ^client_id
+             )
+             |> then(&Support.all(TestRepo, &1, sensitive: true))
+
+    assert audit.metadata["old_key_id"] == "legacy"
+    assert audit.metadata["new_key_id"] == "maintenance-legacy-current"
+    assert is_binary(audit.metadata["maintenance_at"])
   end
 
   test "expired legacy verifier remains unchanged and requires recovery" do

@@ -10,6 +10,7 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
   @page_min 1
   @page_max 500
   @safe_error :client_secret_verifier_maintenance_failed
+  @audit_key_id_pattern ~r/\A[A-Za-z0-9._-]{1,32}\z/
 
   @spec verifier_maintenance_contract(module()) :: {:ok, map()}
   def verifier_maintenance_contract(repository) do
@@ -215,25 +216,49 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
     do: {:error, :client_secret_verifier_inventory_invalid_limit}
 
   defp valid_inputs?(client_id, hash, expected, replacement, attrs) do
-    valid_rewrap_values?(client_id, hash, expected, replacement) and valid_audit_attrs?(attrs)
+    valid_rewrap_values?(client_id, hash, expected, replacement) and
+      valid_audit_attrs?(attrs, client_id)
   end
 
   defp valid_rewrap_values?(client_id, hash, expected, replacement) do
     Enum.all?([client_id, hash, expected, replacement], &is_binary/1)
   end
 
-  defp valid_audit_attrs?(attrs) when is_map(attrs) do
-    allowed = [:action, :outcome, :actor, :resource, :metadata]
-
-    Map.take(attrs, allowed) == attrs and attrs[:action] == :client_secret_verifier_rewrapped and
-      attrs[:outcome] == :succeeded and valid_audit_metadata?(attrs[:metadata])
+  defp valid_audit_attrs?(attrs, client_id) when is_map(attrs) do
+    exact_keys?(attrs, [:action, :outcome, :actor, :resource, :metadata]) and
+      attrs.action == :client_secret_verifier_rewrapped and attrs.outcome == :succeeded and
+      attrs.actor == %{type: :system} and
+      attrs.resource == %{type: :client, id: client_id} and
+      valid_audit_metadata?(attrs.metadata)
   end
 
-  defp valid_audit_attrs?(_attrs), do: false
+  defp valid_audit_attrs?(_attrs, _client_id), do: false
 
   defp valid_audit_metadata?(metadata) when is_map(metadata) do
-    Map.keys(metadata) -- [:old_key_id, :new_key_id, :maintenance_at] == []
+    exact_keys?(metadata, [:old_key_id, :new_key_id, :maintenance_at]) and
+      valid_key_id?(metadata.old_key_id) and valid_key_id?(metadata.new_key_id) and
+      valid_datetime?(metadata.maintenance_at)
   end
 
   defp valid_audit_metadata?(_metadata), do: false
+
+  defp exact_keys?(map, expected_keys) do
+    map_size(map) == length(expected_keys) and Enum.all?(expected_keys, &Map.has_key?(map, &1))
+  end
+
+  defp valid_key_id?(key_id) when is_binary(key_id),
+    do: Regex.match?(@audit_key_id_pattern, key_id)
+
+  defp valid_key_id?(_key_id), do: false
+
+  defp valid_datetime?(%DateTime{} = value) do
+    case DateTime.from_iso8601(DateTime.to_iso8601(value)) do
+      {:ok, parsed, _offset} -> DateTime.compare(parsed, value) == :eq
+      _ -> false
+    end
+  rescue
+    _ -> false
+  end
+
+  defp valid_datetime?(_value), do: false
 end
