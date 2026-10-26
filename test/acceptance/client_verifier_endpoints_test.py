@@ -80,6 +80,11 @@ class VerifierEndpointContracts(unittest.TestCase):
             "observations": {case: dict(observation) for case in ENDPOINT_CASE_IDS},
             "executed_count": len(ENDPOINT_CASE_IDS), "partial": True,
         }
+        receipt["observations"][ENDPOINT_CASE_IDS[2]]["revoked_token_inactive"] = True
+        receipt["observations"][ENDPOINT_CASE_IDS[6]].update({
+            "fapi_security_excluded": True,
+            "fapi_message_signing_excluded": True,
+        })
         validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
         del receipt["observations"][ENDPOINT_CASE_IDS[4]]
         with self.assertRaisesRegex(ReceiptError, "omit or add a case"):
