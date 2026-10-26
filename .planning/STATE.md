@@ -236,5 +236,5 @@ None
 
 ## Operator Next Steps
 
-- Continue authorized $gsd-execute-phase 178 --auto --no-transition. Read `178-EXECUTION-CHECKPOINT.md`: the owner authorized implementation/local commits after the earlier rejection; reconcile Plan 01's preserved draft and RED evidence before expansion. No installed proof, delivery or main acceptance is yet claimed.
-- Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train.
+- Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 04. Plan 03's four rollout cells and separately scoped public 1.6.1 control passed on runner/candidate `94e9d6b7`; VPROOF-02 remains pending until the remaining Phase 178 proof groups finish.
+- Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
