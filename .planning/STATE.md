@@ -5,16 +5,16 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 177
 current_phase_name: Safe Verifier Maintenance & Recovery
 status: executing
-stopped_at: Completed 177-05-PLAN.md
-last_updated: "2026-10-26T02:24:35.802Z"
+stopped_at: Completed 177-06-PLAN.md
+last_updated: "2026-10-26T02:44:01.816Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 177 execution started
-state_head: 49b976e638a779808527504d19dee2b3508a1880
+state_head: 49c5c8b281e0de0bff90afb0f7e32a29908becbc
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 16
+  completed_plans: 17
   percent: 50
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 ## Current Position
 
 Phase: 177 (Safe Verifier Maintenance & Recovery) — EXECUTING
-Plan: 7 of 9
+Plan: 8 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 177 execution started
 
@@ -67,6 +67,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 19 plans with 10
 | Phase 177 P03 | 23min | 2 tasks | 7 files |
 | Phase 177 P04 | 14min | 2 tasks | 8 files |
 | Phase 177 P05 | 11 min | 2 tasks | 4 files |
+| Phase 177 P06 | 6min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -139,8 +140,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T02:24:35.571Z
-Stopped at: Completed 177-05-PLAN.md
+Last session: 2026-10-26T02:44:01.678Z
+Stopped at: Completed 177-06-PLAN.md
 Resume file: None
 Next: $gsd-discuss-phase 177. Phase 176 is complete; this auto-advance run stopped with --no-transition before Phase 177 discussion. Read 176-HANDOFF.md and the final verification. Entry accepted main, corrected local candidate and eventual Phase 178 integrated-main acceptance remain distinct. Preserve retained history/resources and visible non-authoritative probe/prohibition flags.
 
@@ -208,6 +209,7 @@ None
 - [Phase 177]: Reject a reporting rewrap when its selected Ecto repository is already in a transaction; retain the provisional low-level callback for caller-owned transactions.
 - [Phase 177]: Treat an uncertain commit response as neither success nor rollback; reconcile with a fresh complete inventory.
 - [Phase 177]: Use committed fixtures and exact pg_blocking_pids relationships to prove concurrency behavior.
+- [Phase 177]: Real PostgreSQL maintenance between JWT authentication and the issuance guard proves obsolete identity rejection; restoration preserves the partner secret while authorized rotation replaces it.
 
 ## Operator Next Steps
 

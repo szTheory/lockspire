@@ -31,7 +31,7 @@
 - [x] **VOPS-01**: Maintainer can preview, apply and check verifier rewrap through repo-safe tooling that is idempotent, reports partial failures/conflicts and returns a failing outcome when the requested completion/readiness condition is not met.
 - [x] **VOPS-02**: Host can rewrap through its supported client/transaction store without overwriting concurrent secret rotation or client updates; ciphertext and audit commit atomically while hashes, expiry, rotation timestamps and other client fields remain unchanged.
 - [x] **VOPS-03**: Operator can inspect redacted status for all stored verifier material, including inactive/expired and non-JWT-method clients; unknown, malformed, unreadable or uninspected rows cannot be presented as ready, and local status does not claim fleet-wide configuration parity.
-- [ ] **VOPS-04**: Operator can identify affected clients after missing/lost-key failure and recover through restoring a valid key or the existing authorized secret-rotation/reprovision path, while affected JWT authentication fails closed and unrelated supported authentication remains intact.
+- [x] **VOPS-04**: Operator can identify affected clients after missing/lost-key failure and recover through restoring a valid key or the existing authorized secret-rotation/reprovision path, while affected JWT authentication fails closed and unrelated supported authentication remains intact.
 
 ### Proof and delivery
 
@@ -79,7 +79,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-01 | Phase 177 | Complete |
 | VOPS-02 | Phase 177 | Complete |
 | VOPS-03 | Phase 177 | Complete |
-| VOPS-04 | Phase 177 | Pending |
+| VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
 | VPROOF-02 | Phase 178 | Pending |
 | VDELIV-01 | Phase 178 | Pending |
