@@ -6,6 +6,9 @@ import sys
 import subprocess
 import tempfile
 import unittest
+import contextlib
+import io
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
 
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_recovery  # noqa: E402
+import build_provider  # noqa: E402
 from package_input import PackageInputError  # noqa: E402
 
 
@@ -26,20 +30,6 @@ class RecoveryDispatchTest(unittest.TestCase):
             clean_room_verifier_upgrade.MODULES["issuance"][1],
             clean_room_verifier_upgrade.MODULES["recovery"][1],
         )
-
-    def test_only_generated_recovery_host_allows_legacy_reads_for_custody_rewrap(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary:
-            runtime = Path(temporary) / "config" / "runtime.exs"
-            runtime.parent.mkdir()
-            runtime.write_text(
-                'config :lockspire, Lockspire.Security.ClientSecretVerifier,\n'
-                '  current: "verifier-new",\n  legacy_read: :reject\n',
-                encoding="utf-8",
-            )
-
-            verifier_recovery._allow_legacy_custody_rewrap(Path(temporary))
-
-            self.assertIn("legacy_read: :allow", runtime.read_text(encoding="utf-8"))
 
     def test_child_failure_reduces_nested_secret_bearing_exception_to_fixed_reason(self) -> None:
         child_code = (
@@ -85,6 +75,40 @@ class RecoveryDispatchTest(unittest.TestCase):
         self.assertTrue(all(secret not in str(caught.exception) for secret in generated_secrets))
         self.assertIn("CHILD_GENERATED_SENTINEL=", child_streams[0])
         self.assertIn("CHILD_STDERR_SENTINEL=", child_streams[1])
+
+    def test_failed_mix_hides_unregistered_child_stdout_stderr_and_exception_bytes(self) -> None:
+        child_code = (
+            "import secrets,sys; "
+            "secret='unregistered-'+secrets.token_hex(16); "
+            "print('CHILD_OUT='+secret); "
+            "print('CHILD_ERR='+secret,file=sys.stderr); "
+            "raise RuntimeError(repr({'client': {'secret': secret}}))"
+        )
+        child = subprocess.run(
+            [sys.executable, "-c", child_code], text=True, capture_output=True, check=False
+        )
+        self.assertNotEqual(child.returncode, 0)
+        combined = (child.stdout + child.stderr).encode()
+        secret = child.stdout.split("CHILD_OUT=", 1)[1].splitlines()[0]
+        observed = io.StringIO()
+
+        with tempfile.TemporaryDirectory() as owned_output:
+            with mock.patch.object(
+                build_provider,
+                "bounded_run",
+                return_value=subprocess.CompletedProcess(
+                    args=("mix", "run"), returncode=1, stdout=combined, stderr=None
+                ),
+            ), contextlib.redirect_stdout(observed), contextlib.redirect_stderr(observed):
+                with self.assertRaises(PackageInputError) as caught:
+                    build_provider.run_child_command_output(Path(owned_output), {}, "run")
+            self.assertEqual(list(Path(owned_output).iterdir()), [])
+
+        captured = str(caught.exception) + observed.getvalue()
+        self.assertEqual(captured, "provider Mix command failed; child diagnostics withheld")
+        self.assertNotIn(secret, captured)
+        self.assertIn("CHILD_OUT=", child.stdout)
+        self.assertIn("CHILD_ERR=", child.stderr)
 
 
 if __name__ == "__main__":

@@ -674,11 +674,7 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
     )
 
     if completed.returncode != 0:
-        # lockspire.client.create prints client_secret=...; never let it reach an exception message
-        # or CI log if the task exits nonzero after printing. Scrub before slicing the tail.
-        lines = completed.stdout.decode(errors="replace").splitlines()
-        details = [re.sub(r"client_secret=\S*", "client_secret=[REDACTED]", line) for line in lines][-16:]
-        raise PackageInputError(f"provider {' '.join(command)} failed: {' '.join(details)}")
+        raise PackageInputError("provider Mix command failed; child diagnostics withheld")
     return completed.stdout
 
 
