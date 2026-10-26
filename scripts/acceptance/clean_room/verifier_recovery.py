@@ -100,6 +100,8 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
         )
         runner._configure_verifier_custody(host)
         runner._configure_rewrap_verifier_custody(host)
+        if scope == "recovery":
+            _allow_legacy_custody_rewrap(host)
         env = runner._mix_env(host, root, database_url, port, issuer, prefix, old_key, pair)
         env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT"] = new_key
         redactor.register_material(database_url)
@@ -161,6 +163,15 @@ def _parse_observations(output: str, redactor: Redactor) -> dict[str, object]:
         return json.loads(matches[0])
     except json.JSONDecodeError:
         raise PackageInputError("installed verifier group outcome object is malformed") from None
+
+
+def _allow_legacy_custody_rewrap(host: Path) -> None:
+    runtime_config = host / "config" / "runtime.exs"
+    content = runtime_config.read_text(encoding="utf-8")
+    marker = 'config :lockspire, Lockspire.Security.ClientSecretVerifier,'
+    if content.count(marker) != 1 or content.count("legacy_read: :reject") != 1:
+        raise PackageInputError("recovery host verifier configuration shape changed")
+    runtime_config.write_text(content.replace("legacy_read: :reject", "legacy_read: :allow", 1), encoding="utf-8")
 
 
 def _capture_child_output(operation) -> str:

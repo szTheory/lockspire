@@ -27,6 +27,20 @@ class RecoveryDispatchTest(unittest.TestCase):
             clean_room_verifier_upgrade.MODULES["recovery"][1],
         )
 
+    def test_only_generated_recovery_host_allows_legacy_reads_for_custody_rewrap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            runtime = Path(temporary) / "config" / "runtime.exs"
+            runtime.parent.mkdir()
+            runtime.write_text(
+                'config :lockspire, Lockspire.Security.ClientSecretVerifier,\n'
+                '  current: "verifier-new",\n  legacy_read: :reject\n',
+                encoding="utf-8",
+            )
+
+            verifier_recovery._allow_legacy_custody_rewrap(Path(temporary))
+
+            self.assertIn("legacy_read: :allow", runtime.read_text(encoding="utf-8"))
+
     def test_child_failure_reduces_nested_secret_bearing_exception_to_fixed_reason(self) -> None:
         child_code = (
             "import secrets,sys; "
