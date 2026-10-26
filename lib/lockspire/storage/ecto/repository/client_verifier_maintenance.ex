@@ -197,7 +197,13 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
   end
 
   defp validate_cursor(nil), do: :ok
-  defp validate_cursor(cursor) when is_binary(cursor) and cursor != "", do: :ok
+
+  defp validate_cursor(cursor)
+       when is_binary(cursor) and cursor != "" do
+    if String.valid?(cursor),
+      do: :ok,
+      else: {:error, :client_secret_verifier_inventory_invalid_cursor}
+  end
 
   defp validate_cursor(_),
     do: {:error, :client_secret_verifier_inventory_invalid_cursor}

@@ -178,7 +178,7 @@ defmodule Lockspire.Storage.ClientVerifierMaintenanceTest do
                Repository.verifier_inventory_page(nil, limit)
     end
 
-    for cursor <- ["", 12, %{}] do
+    for cursor <- ["", <<255>>, 12, %{}] do
       assert {:error, :client_secret_verifier_inventory_invalid_cursor} =
                Repository.verifier_inventory_page(cursor, 1)
     end

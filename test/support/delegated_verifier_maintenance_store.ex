@@ -46,7 +46,22 @@ defmodule Lockspire.TestSupport.DelegatedVerifierMaintenanceStore do
 
   def verifier_inventory_page(after_client_id, limit) do
     send(self(), {:inventory_page, {after_client_id, limit}})
-    Repository.verifier_inventory_page(after_client_id, limit)
+
+    case Application.get_env(:lockspire, :test_verifier_inventory_page) do
+      {:fixed, page} ->
+        {:ok, page}
+
+      {:clients, clients} ->
+        {:ok, %{clients: clients, next_cursor: nil, complete?: true}}
+
+      {:pages, pages} ->
+        index = Process.get({__MODULE__, :inventory_page_index}, 0)
+        Process.put({__MODULE__, :inventory_page_index}, index + 1)
+        {:ok, Enum.at(pages, index, List.last(pages))}
+
+      _ ->
+        Repository.verifier_inventory_page(after_client_id, limit)
+    end
   end
 
   def compare_and_rewrap(client_id, hash, expected, replacement, audit) do
