@@ -142,7 +142,7 @@ defmodule Mix.Tasks.Lockspire.Clients.Verifier.RewrapCLITest do
   end
 
   test "invalid argument errors never echo hostile values" do
-    hostile = "SECRET\n--check\n"
+    hostile = "SECRET\n--check\n\e]52;c;hostile\a"
 
     error =
       assert_raise Mix.Error, fn ->
@@ -151,6 +151,8 @@ defmodule Mix.Tasks.Lockspire.Clients.Verifier.RewrapCLITest do
 
     refute error.message =~ hostile
     refute error.message =~ "SECRET"
+    refute error.message =~ <<27>>
+    refute error.message =~ <<7>>
     refute Process.whereis(Lockspire.TestRepo)
   end
 

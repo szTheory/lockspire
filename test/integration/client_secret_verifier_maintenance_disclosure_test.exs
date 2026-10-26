@@ -2,7 +2,10 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
   use ExUnit.Case, async: false
 
   import ExUnit.CaptureLog
+  import ExUnit.CaptureIO
   import Ecto.Query
+  import Phoenix.ConnTest
+  import Plug.Conn
 
   @moduletag :integration
 
@@ -15,6 +18,13 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
   alias Ecto.Adapters.SQL.Sandbox
   alias Lockspire.Storage.Ecto.Repository
   alias Lockspire.TestRepo
+  alias Lockspire.TestSupport.ClientSecretVerifierFixtures, as: VerifierFixtures
+
+  defmodule UnavailableConnectionRepo do
+    use Ecto.Repo,
+      otp_app: :lockspire,
+      adapter: Ecto.Adapters.Postgres
+  end
 
   setup_all do
     repo_config = Application.fetch_env!(:lockspire, TestRepo)
@@ -153,7 +163,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
 
   test "malformed verifier sentinels stay out of maintenance reports and nested inspections" do
     ciphertext = "LSCV1." <> Base.url_encode64(marker("ciphertext"), padding: false)
-    client_id = unique_id()
+    client_id = unique_id() <> "\n\e]52;c;hostile\a"
     client = client(client_id, Map.put(markers(), :verifier, ciphertext))
     put_context(context([{"disclosure-key", :crypto.strong_rand_bytes(32)}], "disclosure-key"))
     assert {:ok, persisted} = Repository.register_client(client)
@@ -182,6 +192,200 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceDisclosureTest do
 
     for output <- outputs do
       refute_marker(output, ciphertext, "maintenance diagnostic disclosed verifier material")
+      refute_marker(output, client_id, "maintenance diagnostic disclosed raw client identifier")
+      refute output =~ <<27>>
+      refute output =~ <<7>>
+    end
+
+    assert Enum.any?(report.details, fn detail ->
+             detail.client_id.value == Base.url_encode64(client_id, padding: false)
+           end)
+  end
+
+  test "client_secret_jwt verifier failure stays generic in the serialized token response" do
+    markers = markers()
+    plaintext = marker("http-invalid-client-plaintext")
+    key = :crypto.hash(:sha256, marker("http-invalid-client-key"))
+    client_id = unique_id()
+    unavailable_key_context = context([{"unavailable-key", key}], "unavailable-key")
+
+    active_context =
+      context([{"active-key", :crypto.hash(:sha256, marker("other-key"))}], "active-key")
+
+    put_context(active_context)
+
+    assert {:ok, ciphertext} =
+             ClientSecretVerifier.seal(unavailable_key_context, client_id, plaintext)
+
+    client = %{
+      client(client_id, markers)
+      | client_secret_hash: Policy.hash_client_secret(plaintext),
+        client_secret_jwt_verifier_encrypted: ciphertext
+    }
+
+    assert {:ok, persisted} = Repository.register_client(client)
+    on_exit(fn -> cleanup_client(persisted.client_id) end)
+
+    {assertion_params, _jti, _issued_at} = VerifierFixtures.assertion(persisted, plaintext)
+
+    handler_id = {__MODULE__, System.unique_integer([:positive, :monotonic])}
+
+    assert :ok =
+             :telemetry.attach(
+               handler_id,
+               [:lockspire, :test_repo, :query],
+               &__MODULE__.capture_query/4,
+               self()
+             )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    log_output =
+      capture_log([level: :debug], fn ->
+        conn =
+          build_conn(
+            :post,
+            "/token",
+            Map.merge(assertion_params, %{
+              "grant_type" => "authorization_code",
+              "code" => "unused-code",
+              "redirect_uri" => "https://client.example.com/callback",
+              "code_verifier" => "unused-verifier"
+            })
+          )
+          |> put_req_header("accept", "application/json")
+          |> Lockspire.Web.Router.call(Lockspire.Web.Router.init([]))
+
+        send(self(), {:invalid_client_http_conn, conn})
+      end)
+
+    assert_receive {:invalid_client_http_conn, conn}
+    query_events = drain_query_events([])
+    :ok = :telemetry.detach(handler_id)
+
+    assert conn.status == 401
+
+    assert Jason.decode!(conn.resp_body) == %{
+             "error" => "invalid_client",
+             "error_description" => "Client authentication failed"
+           }
+
+    for sensitive <- [plaintext, key, Base.encode64(key), ciphertext, Base.encode64(ciphertext)] do
+      refute_marker(conn.resp_body, sensitive, "token response disclosed verifier material")
+      refute_marker(log_output, sensitive, "token endpoint Logger disclosed verifier material")
+
+      for {_event, measurements, metadata} <- query_events do
+        refute_marker(
+          inspect({measurements, metadata}),
+          sensitive,
+          "token endpoint query telemetry disclosed verifier material"
+        )
+      end
+    end
+
+    refute conn.resp_body =~ client_id
+
+    for sensitive <- [plaintext, key, ciphertext] do
+      refute_marker(
+        inspect(conn),
+        sensitive,
+        "token endpoint connection disclosed verifier material"
+      )
+    end
+  end
+
+  test "maintenance maps a real connection-pool acquisition failure to a fixed report" do
+    plaintext = marker("pool-failure-plaintext")
+    key = :crypto.hash(:sha256, marker("pool-failure-key"))
+    ciphertext = "LSCV1." <> Base.url_encode64(marker("pool-failure-ciphertext"), padding: false)
+    put_context(context([{"pool-failure-key", key}], "pool-failure-key"))
+    original_repo = Application.fetch_env!(:lockspire, :repo)
+    original_repo_config = Application.get_env(:lockspire, UnavailableConnectionRepo)
+
+    Application.put_env(
+      :lockspire,
+      UnavailableConnectionRepo,
+      Application.fetch_env!(:lockspire, TestRepo)
+      |> Keyword.merge(
+        hostname: "127.0.0.1",
+        port: 1,
+        pool: DBConnection.ConnectionPool,
+        pool_size: 1,
+        queue_target: 1,
+        queue_interval: 1,
+        telemetry_prefix: [:lockspire, :unavailable_connection_repo],
+        log: :debug
+      )
+    )
+
+    start_supervised!(UnavailableConnectionRepo)
+    Application.put_env(:lockspire, :repo, UnavailableConnectionRepo)
+
+    on_exit(fn ->
+      Application.put_env(:lockspire, :repo, original_repo)
+
+      if is_nil(original_repo_config),
+        do: Application.delete_env(:lockspire, UnavailableConnectionRepo),
+        else: Application.put_env(:lockspire, UnavailableConnectionRepo, original_repo_config)
+    end)
+
+    handler_id = {__MODULE__, :connection_failure, System.unique_integer([:positive, :monotonic])}
+
+    assert :ok =
+             :telemetry.attach(
+               handler_id,
+               [:lockspire, :unavailable_connection_repo, :query],
+               &__MODULE__.capture_query/4,
+               self()
+             )
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+
+    log_output =
+      capture_log([level: :debug], fn ->
+        send(
+          self(),
+          {:connection_failure_result,
+           Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check)}
+        )
+      end)
+
+    assert_receive {:connection_failure_result, result}
+    assert {:error, report} = result
+    refute report.scan_complete?
+    assert report.uninspected > 0
+    assert report.failed == 0
+    telemetry_events = drain_query_events([])
+
+    cli_output =
+      capture_io(fn ->
+        assert_raise Mix.Error, fn ->
+          Mix.Tasks.Lockspire.Clients.Verifier.Rewrap.run(["--check"])
+        end
+      end)
+
+    for sensitive <- [plaintext, key, Base.encode64(key), ciphertext, Base.encode64(ciphertext)] do
+      refute_marker(
+        inspect(result),
+        sensitive,
+        "connection failure report disclosed verifier material"
+      )
+
+      refute_marker(
+        log_output,
+        sensitive,
+        "connection failure Logger disclosed verifier material"
+      )
+
+      refute_marker(cli_output, sensitive, "connection failure CLI disclosed verifier material")
+
+      for {_event, measurements, metadata} <- telemetry_events do
+        refute_marker(
+          inspect({measurements, metadata}),
+          sensitive,
+          "connection failure telemetry disclosed verifier material"
+        )
+      end
     end
   end
 
