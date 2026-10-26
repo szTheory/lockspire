@@ -36,13 +36,19 @@ case result.rows do
                   "SIGNED_AT_MS=#{metadata.signed_at_ms || "nil"};DEADLINE_MS=#{metadata.deadline_ms || "nil"}")
 
       {:error, _reason} ->
-        IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;" <>
-                  "SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable")
+        IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=#{digest};AGE_KIND=unavailable;" <>
+                  "SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable;AGE_ERROR=#{elem(age, 1)}")
     end
+
+  [[hash, nil]] when is_binary(hash) ->
+    digest = Base.encode16(:crypto.hash(:sha256, hash), case: :lower)
+    IO.puts("ROW_FORMAT=missing-verifier;HASH_DIGEST=#{digest};AGE_KIND=unavailable;" <>
+              "SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable;AGE_ERROR=missing-verifier")
 
   [] ->
     IO.puts("ROW_FORMAT=missing;HASH_DIGEST=missing;AGE_KIND=missing;SIGNED_AT_MS=missing;DEADLINE_MS=missing")
 
   _ ->
-    IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;SIGNED_AT_MS=unavailable;DEADLINE_MS=unavailable")
+    IO.puts("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;SIGNED_AT_MS=unavailable;" <>
+              "DEADLINE_MS=unavailable;AGE_ERROR=invalid-row")
 end

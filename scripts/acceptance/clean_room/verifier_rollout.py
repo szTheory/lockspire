@@ -470,7 +470,14 @@ def _parse_projection_output(output: str) -> dict[str, str | None]:
     hash_digest = fields.get("hash_digest", fields.get("HASH_DIGEST"))
     deadline = fields.get("deadline_ms", fields.get("DEADLINE_MS"))
     if row_format not in {"legacy", "dedicated"} or not hash_digest or not re.fullmatch(r"[0-9a-f]{64}", hash_digest):
-        raise PackageInputError("persisted rollout row is missing a safe hash witness")
+        age_kind = fields.get("age_kind", fields.get("AGE_KIND", "unavailable"))
+        age_error = fields.get("age_error", fields.get("AGE_ERROR", "unavailable"))
+        digest_present = bool(hash_digest and re.fullmatch(r"[0-9a-f]{64}", hash_digest))
+        raise PackageInputError(
+            "persisted rollout row is missing a safe hash witness "
+            f"(format={row_format or 'unavailable'};hash_digest_present={str(digest_present).lower()};"
+            f"age_kind={age_kind};age_error={age_error})"
+        )
     age_kind = fields.get("age_kind", fields.get("AGE_KIND"))
     signed_at = fields.get("signed_at_ms", fields.get("SIGNED_AT_MS"))
     return {"format": row_format, "hash_digest": hash_digest, "age_kind": age_kind,

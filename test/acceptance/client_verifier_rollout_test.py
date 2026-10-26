@@ -86,6 +86,10 @@ class VerifierRolloutContracts(unittest.TestCase):
             verifier_rollout._parse_projection_output("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;DEADLINE_MS=unavailable\n")
         with self.assertRaisesRegex(build_provider.PackageInputError, "safe hash witness"):
             verifier_rollout._parse_projection_output("ROW_FORMAT=legacy;HASH_DIGEST=not-a-digest;AGE_KIND=migrated;DEADLINE_MS=nil\n")
+        with self.assertRaisesRegex(build_provider.PackageInputError, "age_error=unsupported"):
+            verifier_rollout._parse_projection_output(
+                "ROW_FORMAT=invalid;HASH_DIGEST=" + "b" * 64 + ";AGE_KIND=unavailable;AGE_ERROR=unsupported\n"
+            )
 
     def test_old_code_rejection_requires_actual_invalid_client_http_401(self) -> None:
         self.assertEqual(verifier_rollout._classify_old_code_rejection("installed token HTTP returned status 401 (invalid_client)"), 401)
