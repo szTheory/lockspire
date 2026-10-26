@@ -19,11 +19,13 @@ defmodule CleanRoomProvider.VerifierRecovery do
   ]
 
   def run_recovery(store, issuer) when store in [:builtin, :delegated] do
+    mark_stage(:recovery_seed)
     native = seed_jwt_client!("phase178-recovery-native")
     before = fetch_row!(native.client_id)
     old_ciphertext = before.ciphertext
     old_audits = audit_count(native.client_id)
 
+    mark_stage(:recovery_apply)
     {:ok, %{committed_changed: changed}} = ClientVerifierMaintenance.run(mode: :apply, limit: 100)
     maintained = fetch_row!(native.client_id)
 
@@ -40,11 +42,14 @@ defmodule CleanRoomProvider.VerifierRecovery do
         "audit_inserted" => audit_count(native.client_id) == old_audits + 1 and changed >= 1
       }
 
+    mark_stage(:recovery_repeat)
     repeat_report = ClientVerifierMaintenance.run(mode: :apply, limit: 100)
     repeated = fetch_row!(native.client_id)
     interrupted = seed_jwt_client!("phase178-interrupted")
+    mark_stage(:recovery_interrupt)
     interruption_not_ready = interrupt_before_rewrap!(interrupted)
     indeterminate = seed_jwt_client!("phase178-indeterminate")
+    mark_stage(:recovery_indeterminate)
     indeterminate_not_claimed_rollback = simulated_unavailable_reconciles?(indeterminate)
 
     repeat = %{
@@ -58,7 +63,9 @@ defmodule CleanRoomProvider.VerifierRecovery do
       "ciphertext_still_stable" => repeated.ciphertext == maintained.ciphertext
     }
 
+    mark_stage(:recovery_restore_rotation)
     recovery = missing_key_restore_and_rotation!(native)
+    mark_stage(:recovery_expired_migration)
     expired = expired_migration!(store)
 
     result = %{
@@ -73,10 +80,11 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
     result
   rescue
-    _error -> raise "installed verifier recovery scenario did not complete"
+    _error -> raise "SAFE_FAILURE_STAGE=#{Process.get({__MODULE__, :stage}, :recovery_unknown)}"
   end
 
   def run_issuance(store, issuer) when store == :delegated do
+    mark_stage(:issuance_seed)
     client = seed_jwt_client!("phase178-issuance")
     code = seed_authorization_code!(client.client_id)
     before = effects(client.client_id)
@@ -85,6 +93,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     Store.set_maintenance_observer(self(), client.client_id)
 
     try do
+      mark_stage(:issuance_auth_barrier)
       stale_request = Task.async(fn -> token_request(issuer, client, code, first_jti) end)
       {request_pid, auth_backend} = await_barrier!(:authenticated, first_jti)
       durable_jti = jti_present?(client.client_id, first_jti)
@@ -108,6 +117,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
         raise "JWT/JTI authentication barrier was reached before durable JTI observation"
       end
 
+      mark_stage(:issuance_maintenance)
       maintenance = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
       maintenance_backend = await_maintenance_backend!(client.client_id)
       {:ok, %{committed_changed: changed}} = Task.await(maintenance, @timeout)
@@ -127,6 +137,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
       stale_status = Task.await(stale_request, @timeout)
       after_stale = effects(client.client_id)
 
+      mark_stage(:issuance_replay_fresh)
       replay_status = token_request(issuer, client, code, first_jti)
       fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
       fresh_status = token_request(issuer, client, code, fresh_jti)
@@ -160,7 +171,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
       Store.clear_maintenance_observer()
     end
   rescue
-    _error -> raise "installed verifier issuance scenario did not complete"
+    _error -> raise "SAFE_FAILURE_STAGE=#{Process.get({__MODULE__, :stage}, :issuance_unknown)}"
   end
 
   def run_issuance(_store, _issuer),
@@ -639,4 +650,6 @@ defmodule CleanRoomProvider.VerifierRecovery do
   defp issuance_reference, do: Process.get({__MODULE__, :issuance_reference})
 
   defp hash_token(token), do: :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
+
+  defp mark_stage(stage), do: Process.put({__MODULE__, :stage}, stage)
 end

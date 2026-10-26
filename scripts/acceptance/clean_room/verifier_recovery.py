@@ -34,6 +34,11 @@ ISSUANCE_CASES = (
     "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
     "VPROOF-02-ISSUANCE-FLOOR-STALE-IDENTITY",
 )
+SAFE_FAILURE_STAGES = frozenset({
+    "recovery_seed", "recovery_apply", "recovery_repeat", "recovery_interrupt",
+    "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
+    "issuance_seed", "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
+})
 
 
 def run_recovery_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, object]]:
@@ -159,8 +164,15 @@ def _parse_observations(output: str, redactor: Redactor) -> dict[str, object]:
 def _capture_child_output(operation) -> str:
     try:
         return operation()
-    except Exception:
-        raise PackageInputError("installed verifier host scenario failed; child diagnostics withheld") from None
+    except Exception as error:
+        safe_stage = next(
+            (stage for stage in SAFE_FAILURE_STAGES if f"SAFE_FAILURE_STAGE={stage}" in str(error)),
+            None,
+        )
+        reason = "installed verifier host scenario failed"
+        if safe_stage is not None:
+            reason += f" at {safe_stage}"
+        raise PackageInputError(reason + "; child diagnostics withheld") from None
 
 
 def _safe_host_call(operation):
