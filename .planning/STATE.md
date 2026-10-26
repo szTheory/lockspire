@@ -7,10 +7,10 @@ current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 4
 status: executing
 stopped_at: Completed 178-03-PLAN.md
-last_updated: "2026-10-26T20:08:00.359Z"
+last_updated: "2026-10-26T20:16:22.045Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 178 execution started
-state_head: 94e9d6b7b00412d2a251a8e4e5cc005e469a85dd
+state_head: 2544ee2b12598a749240dbc20baecc3a8e317ef9
 progress:
   total_phases: 4
   completed_phases: 3
@@ -75,7 +75,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 177 P09 | 35min | 2 tasks | 11 files |
 | Phase 178 P01 | 36min | 2 tasks | 8 files |
 | Phase 178 P02 | 33min | 2 tasks | 8 files |
-| Phase 178 P03 | 59min | 2 tasks | 4 files |
+| Phase 178 P03 | >=76m20s | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -233,6 +233,7 @@ None
 - [Phase 178]: Keep these core receipts partial; VPROOF-02 remains pending until the remaining Phase 178 proof groups complete.
 - [Phase 178]: One-off Mix commands keep runtime listeners disabled; only owned listener processes enable the endpoint server.
 - [Phase 178]: Both old and candidate writers remain legacy through overlap; dedicated activation follows observed predecessor exit.
+- [Phase 178]: Select rollout and legacy-control through separate explicit CLI entrypoints; legacy-control accepts locked/builtin only.
 
 ## Operator Next Steps
 
