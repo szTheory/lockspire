@@ -1,12 +1,13 @@
 {
   "schema": "lockspire-phase-177-source-acceptance-v1",
   "plan": "177-09",
-  "tested_sha": "8bae1a306e836c6d512c1d7e34ed39ef3c22e088",
+  "tested_sha": "6aca1b865d53a809165a6a32a1854724685e1a7b",
   "source_branch": "milestone/v1.48-client-auth-key-isolation",
   "source_commits": [
     "fdb6ae35",
     "162e9a7f",
-    "8bae1a30"
+    "8bae1a30",
+    "6aca1b86"
   ],
   "environment": {
     "cwd": "/Users/jon/projects/lockspire",
@@ -20,11 +21,11 @@
   "canonical_ci": {
     "command": "mix ci",
     "exit_code": 0,
-    "started_at": "2026-10-26T03:28:33Z",
-    "finished_at": "2026-10-26T03:33:34Z",
-    "duration_seconds": 301,
-    "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
-    "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d",
+    "started_at": "2026-10-26T03:50:34.726741Z",
+    "finished_at": "2026-10-26T03:55:55.335386Z",
+    "duration_seconds": 320.609,
+    "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
+    "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e",
     "stages": [
       {
         "name": "boundary",
@@ -64,7 +65,8 @@
     ],
     "overall_executed_exunit_tests": 2413,
     "overall_failures": 0,
-    "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed."
+    "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed.",
+    "timing_basis": "log creation to final output write; approximately321 seconds wall time"
   },
   "commands": [
     {
@@ -72,55 +74,12 @@
       "exit_code": 0,
       "executed_tests": 2413,
       "failures": 0,
-      "started_at": "2026-10-26T03:28:33Z",
-      "finished_at": "2026-10-26T03:33:34Z",
-      "duration_seconds": 301,
-      "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
-      "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d"
-    },
-    {
-      "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_concurrency_test.exs test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/integration/client_secret_verifier_maintenance_issuance_test.exs test/integration/client_secret_verifier_maintenance_recovery_test.exs test/integration/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_rotation_test.exs test/integration/client_secret_jwt_legacy_age_test.exs test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/lockspire/security/client_secret_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
-      "exit_code": 0,
-      "executed_tests": 85,
-      "failures": 0,
-      "started_at": "2026-10-26T03:34:06Z",
-      "finished_at": "2026-10-26T03:34:10Z",
-      "duration_seconds": 2.6,
-      "output_path": "/private/tmp/lockspire-177-09-focused-8bae1a30.log",
-      "output_sha256": "77d61f39c7ef6dd2404c98ebda5f22cb11f2485dcd9d3b62d8c9f8ec8be7f275"
-    },
-    {
-      "command": "mix test test/lockspire/quality/proof_quality_baseline_test.exs test/lockspire/clients_secret_material_test.exs",
-      "exit_code": 0,
-      "executed_tests": 10,
-      "failures": 0,
-      "started_at": "2026-10-26T03:36:11Z",
-      "finished_at": "2026-10-26T03:36:12Z",
-      "duration_seconds": 0.3,
-      "output_path": "/private/tmp/lockspire-177-09-proof-and-secret-8bae1a30.log",
-      "output_sha256": "dce0f08b3d28b78a6640eca44b059f2b55550685b9b8e14dcb888ff7467a2429"
-    },
-    {
-      "command": "mix test test/lockspire/config_client_secret_verifier_test.exs",
-      "exit_code": 0,
-      "executed_tests": 16,
-      "failures": 0,
-      "started_at": "2026-10-26T03:36:12Z",
-      "finished_at": "2026-10-26T03:36:12Z",
-      "duration_seconds": 0.09,
-      "output_path": "/private/tmp/lockspire-177-09-config-context-8bae1a30.log",
-      "output_sha256": "95c7d494631ef8215d4660ad72d8772269582ffd780abf7e14a64bea1df8c8cd"
-    },
-    {
-      "command": "mix test test/integration/install_generator_test.exs test/integration/install_upgrade_test.exs",
-      "exit_code": 0,
-      "executed_tests": 31,
-      "failures": 0,
-      "started_at": "2026-10-26T03:36:12Z",
-      "finished_at": "2026-10-26T03:36:33Z",
-      "duration_seconds": 19.7,
-      "output_path": "/private/tmp/lockspire-177-09-install-fixtures-8bae1a30.log",
-      "output_sha256": "7156a1771279fa0d24e4496d850d03ec7ad804102a227ac96b645dd5c543069d"
+      "started_at": "2026-10-26T03:50:34.726741Z",
+      "finished_at": "2026-10-26T03:55:55.335386Z",
+      "duration_seconds": 320.609,
+      "timing_basis": "log creation to final output write; approximately321 seconds wall time",
+      "output_path": "/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log",
+      "output_sha256": "b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e"
     }
   ],
   "requirements": {
@@ -271,19 +230,58 @@
     ]
   },
   "frozen_inputs": [
-    { "path": "test/integration/client_secret_jwt_legacy_age_test.exs", "sha256": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6" },
-    { "path": "test/lockspire/security/client_secret_verifier_compatibility_test.exs", "sha256": "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d" },
-    { "path": "test/lockspire/security/client_secret_verifier_contract_test.exs", "sha256": "b04ba0b562983122a835500162238cc66f83077926024ef956828f042e2b32fb" },
-    { "path": "test/support/client_secret_verifier_fixtures.ex", "sha256": "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json", "sha256": "55ef5cc2b33556b87eddc8390ee671ab381f07f1e48d6fc54be88e702ed5f045" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json", "sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json", "sha256": "e4f6f0fcc03a33309e02f4519a6ae1d1a54fd77c633108b4e168bd1f0e163788" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json", "sha256": "7eb178b8cbd41fb5e6f4cb5124e12a58502f414a5e2ef5f646df792546156ec3" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md", "sha256": "0a8fc84d6963c9a2019ab8faefbd9f29971f1cff2591d4dcaf7e0c60fbefa860" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-POLICY-REVISION.md", "sha256": "3916510fcf8e9c7d56b3f433785a704eebc9dfca2d5b354b5e11fe55a5bb408f" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md", "sha256": "ec28d54304910291a8e278e49a6582d74e350c8d00f2ced3208474b10623efa2" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md", "sha256": "8e93d17dbd303fcecec20f9de366d966b0b48b7c949ce096b2668c50e8e5095f" },
-    { "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md", "sha256": "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc" }
+    {
+      "path": "test/integration/client_secret_jwt_legacy_age_test.exs",
+      "sha256": "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6"
+    },
+    {
+      "path": "test/lockspire/security/client_secret_verifier_compatibility_test.exs",
+      "sha256": "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d"
+    },
+    {
+      "path": "test/lockspire/security/client_secret_verifier_contract_test.exs",
+      "sha256": "b04ba0b562983122a835500162238cc66f83077926024ef956828f042e2b32fb"
+    },
+    {
+      "path": "test/support/client_secret_verifier_fixtures.ex",
+      "sha256": "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json",
+      "sha256": "55ef5cc2b33556b87eddc8390ee671ab381f07f1e48d6fc54be88e702ed5f045"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json",
+      "sha256": "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json",
+      "sha256": "e4f6f0fcc03a33309e02f4519a6ae1d1a54fd77c633108b4e168bd1f0e163788"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json",
+      "sha256": "7eb178b8cbd41fb5e6f4cb5124e12a58502f414a5e2ef5f646df792546156ec3"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md",
+      "sha256": "0a8fc84d6963c9a2019ab8faefbd9f29971f1cff2591d4dcaf7e0c60fbefa860"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-POLICY-REVISION.md",
+      "sha256": "3916510fcf8e9c7d56b3f433785a704eebc9dfca2d5b354b5e11fe55a5bb408f"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md",
+      "sha256": "ec28d54304910291a8e278e49a6582d74e350c8d00f2ced3208474b10623efa2"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md",
+      "sha256": "8e93d17dbd303fcecec20f9de366d966b0b48b7c949ce096b2668c50e8e5095f"
+    },
+    {
+      "path": ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md",
+      "sha256": "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc"
+    }
   ],
   "preserved_attempts": [
     {
@@ -333,5 +331,154 @@
     "The structural validator is not reported as runtime evidence.",
     "No fleet or host readiness, backup/quiescence, PostgreSQL server-log suppression, installed dependency-pair or composed-adapter proof, publication, delivery, final review, Phase 178 acceptance, or main acceptance is claimed.",
     "No schema, dependency, protocol, or public API-shape change was made."
-  ]
+  ],
+  "prior_successful_source_acceptances": [
+    {
+      "tested_sha": "8bae1a306e836c6d512c1d7e34ed39ef3c22e088",
+      "canonical_ci": {
+        "command": "mix ci",
+        "exit_code": 0,
+        "started_at": "2026-10-26T03:28:33Z",
+        "finished_at": "2026-10-26T03:33:34Z",
+        "duration_seconds": 301,
+        "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
+        "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d",
+        "stages": [
+          {
+            "name": "boundary",
+            "executed_tests": 15,
+            "failures": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "credo",
+            "source_files_checked": 721,
+            "issues": 0,
+            "exit_code": 0
+          },
+          {
+            "name": "test.fast",
+            "property_checks": 2,
+            "executed_tests": 2138,
+            "failures": 0,
+            "skipped": 6,
+            "excluded": 567,
+            "exit_code": 0
+          },
+          {
+            "name": "test.integration",
+            "executed_tests": 260,
+            "failures": 0,
+            "excluded": 46,
+            "exit_code": 0
+          }
+        ],
+        "other_stages": [
+          "deps.get",
+          "compile --warnings-as-errors",
+          "sobelow",
+          "docs.check",
+          "package.build"
+        ],
+        "overall_executed_exunit_tests": 2413,
+        "overall_failures": 0,
+        "package_boundary": "Package build completed; no packaged dependency-pair/composed-adapter, publication, delivery, or main acceptance is claimed."
+      },
+      "commands": [
+        {
+          "command": "mix ci",
+          "exit_code": 0,
+          "executed_tests": 2413,
+          "failures": 0,
+          "started_at": "2026-10-26T03:28:33Z",
+          "finished_at": "2026-10-26T03:33:34Z",
+          "duration_seconds": 301,
+          "output_path": "/private/tmp/lockspire-177-09-mix-ci-8bae1a30.log",
+          "output_sha256": "f8438c2d7605bdf302efe8b66045e2768ea1ab06c1c71373595c1ff4c03ae98d"
+        },
+        {
+          "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_concurrency_test.exs test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/integration/client_secret_verifier_maintenance_issuance_test.exs test/integration/client_secret_verifier_maintenance_recovery_test.exs test/integration/client_secret_verifier_maintenance_test.exs test/integration/client_secret_verifier_rotation_test.exs test/integration/client_secret_jwt_legacy_age_test.exs test/lockspire/admin/client_verifier_maintenance_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/lockspire/security/client_secret_verifier_maintenance_test.exs test/lockspire/storage/client_verifier_maintenance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs",
+          "exit_code": 0,
+          "executed_tests": 85,
+          "failures": 0,
+          "started_at": "2026-10-26T03:34:06Z",
+          "finished_at": "2026-10-26T03:34:10Z",
+          "duration_seconds": 2.6,
+          "output_path": "/private/tmp/lockspire-177-09-focused-8bae1a30.log",
+          "output_sha256": "77d61f39c7ef6dd2404c98ebda5f22cb11f2485dcd9d3b62d8c9f8ec8be7f275"
+        },
+        {
+          "command": "mix test test/lockspire/quality/proof_quality_baseline_test.exs test/lockspire/clients_secret_material_test.exs",
+          "exit_code": 0,
+          "executed_tests": 10,
+          "failures": 0,
+          "started_at": "2026-10-26T03:36:11Z",
+          "finished_at": "2026-10-26T03:36:12Z",
+          "duration_seconds": 0.3,
+          "output_path": "/private/tmp/lockspire-177-09-proof-and-secret-8bae1a30.log",
+          "output_sha256": "dce0f08b3d28b78a6640eca44b059f2b55550685b9b8e14dcb888ff7467a2429"
+        },
+        {
+          "command": "mix test test/lockspire/config_client_secret_verifier_test.exs",
+          "exit_code": 0,
+          "executed_tests": 16,
+          "failures": 0,
+          "started_at": "2026-10-26T03:36:12Z",
+          "finished_at": "2026-10-26T03:36:12Z",
+          "duration_seconds": 0.09,
+          "output_path": "/private/tmp/lockspire-177-09-config-context-8bae1a30.log",
+          "output_sha256": "95c7d494631ef8215d4660ad72d8772269582ffd780abf7e14a64bea1df8c8cd"
+        },
+        {
+          "command": "mix test test/integration/install_generator_test.exs test/integration/install_upgrade_test.exs",
+          "exit_code": 0,
+          "executed_tests": 31,
+          "failures": 0,
+          "started_at": "2026-10-26T03:36:12Z",
+          "finished_at": "2026-10-26T03:36:33Z",
+          "duration_seconds": 19.7,
+          "output_path": "/private/tmp/lockspire-177-09-install-fixtures-8bae1a30.log",
+          "output_sha256": "7156a1771279fa0d24e4496d850d03ec7ad804102a227ac96b645dd5c543069d"
+        }
+      ]
+    }
+  ],
+  "final_gate_isolation_correction": {
+    "finding": "WR-177-ISOLATION",
+    "commit": "6aca1b865d53a809165a6a32a1854724685e1a7b",
+    "cause": "maintenance integration fixture left a fabricated persistent_term startup verifier context without startup signing-key exclusions",
+    "fix": "capture and restore exact prior verifier context via on_exit for each fixture replacement",
+    "production_code_changed": false,
+    "original_failure_preserved": true,
+    "report": ".planning/phases/177-safe-verifier-maintenance-recovery/177-ISOLATION-FIX.md",
+    "checks": [
+      {
+        "command": "same preserved verifier-family command --seed 82284",
+        "executed_tests": 107,
+        "failures": 0,
+        "exit_code": 0,
+        "output_path": "/private/tmp/lockspire-177-09-verifier-family-isolation-fix-seed-82284.log",
+        "output_sha256": "8ae562d14056dbb729addc970d5a6b752beaff757546dd9a67b99320b0b77420",
+        "identity_note": "scoped tests on corrected file bytes before atomic commit; fresh fullCI on the committed SHA independently covers them"
+      },
+      {
+        "command": "mix test --include integration test/integration/client_secret_verifier_maintenance_test.exs test/lockspire/config_client_secret_verifier_test.exs --seed 55421",
+        "executed_tests": 23,
+        "failures": 0,
+        "exit_code": 0,
+        "output_path": "/private/tmp/lockspire-177-09-verifier-isolation-pair-seed-55421.log",
+        "output_sha256": "cf79ee39295386d4a9ae4ce8f70775300433432fb592f0fd877821cc494038df",
+        "identity_note": "scoped tests on corrected file bytes before atomic commit; fresh fullCI on the committed SHA independently covers them"
+      },
+      {
+        "command": "mix test test/lockspire/config_client_secret_verifier_test.exs",
+        "executed_tests": 16,
+        "failures": 0,
+        "exit_code": 0,
+        "output_path": "/private/tmp/lockspire-177-09-verifier-config-alone-isolation-fix.log",
+        "output_sha256": "3b5306ee1bd881bb503c2506272376259c92d06d59003bff483f61da168f7268",
+        "identity_note": "scoped tests on corrected file bytes before atomic commit; fresh fullCI on the committed SHA independently covers them"
+      }
+    ]
+  }
 }

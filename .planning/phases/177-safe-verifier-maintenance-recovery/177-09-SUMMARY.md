@@ -160,3 +160,9 @@ Plan 09 source acceptance and handoff are complete. Phase 177 remains open for i
 ---
 *Plan: 177-09*
 *Completed: 2026-10-26*
+
+## Final-gate isolation correction and refreshed source acceptance
+
+The retained mixed verifier-family failure was reproduced and traced to `set_startup_context/1` in the maintenance integration fixture leaving a fabricated startup verifier cache behind. Commit `6aca1b86` now restores the exact prior `persistent_term` context after each replacement. All assertions and canonical test-stage membership are preserved; no production code changed. The original seed 82284 scope passed 107/0, the paired scope seed 55421 passed 23/0, and configuration alone passed 16/0.
+
+Fresh `mix ci` on committed `6aca1b865d53a809165a6a32a1854724685e1a7b` exited 0: boundary 15/0, fast 2 properties + 2,138 tests / 0 failures (6 skipped, 567 excluded), integration 260/0 (46 excluded), Credo 721 files / 0 issues. Log `/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log`; SHA256 `b1cc88e38f7690c216855836ff4ddb475ec0dfc5e535d9451477bbaf2a454a4e`; approximately 321seconds from log creation to final output. The source receipt archives the earlier successful acceptance and every failed attempt rather than retrospectively restamping them. All 13 frozen input digests remain unchanged. Independent final gates remain pending.

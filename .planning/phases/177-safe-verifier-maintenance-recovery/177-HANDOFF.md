@@ -2,7 +2,7 @@
 
 ## Tested source identity
 
-Source acceptance is bound to commit `8bae1a306e836c6d512c1d7e34ed39ef3c22e088` on `milestone/v1.48-client-auth-key-isolation`. The canonical `mix ci` command ran from `/Users/jon/projects/lockspire` with Elixir 1.19.5, OTP 28.5, `ERL_FLAGS='+S 4'`, `MIX_ENV=test`, and the owned database `lockspire_phase177_20261026_owned`. It exited 0 from `2026-10-26T03:28:33Z` through `03:33:34Z` (301 seconds). Its exact stages and output digest are in [177-SOURCE-ACCEPTANCE.json](177-SOURCE-ACCEPTANCE.json).
+Current source acceptance is bound to corrected commit `6aca1b865d53a809165a6a32a1854724685e1a7b` on `milestone/v1.48-client-auth-key-isolation`. The canonical `mix ci` command ran from `/Users/jon/projects/lockspire` with Elixir 1.19.5, OTP 28.5, `ERL_FLAGS='+S 4'`, `MIX_ENV=test`, and the owned database `lockspire_phase177_20261026_owned`. It exited 0 on 2026-10-26 from `03:50:34.727Z` through `03:55:55.335Z` (approximately 321 seconds, measured from log creation to final output). The earlier successful `8bae1a30` acceptance remains archived in the receipt. Its exact stages and output digest are in [177-SOURCE-ACCEPTANCE.json](177-SOURCE-ACCEPTANCE.json).
 
 The gate reported 15 boundary tests, 2 properties and 2,138 `test.fast` tests with 0 failures (6 skipped, 567 excluded), then 260 integration tests with 0 failures (46 excluded). Credo checked 721 source files with no issues. Compile with warnings as errors, Sobelow, docs checks, and package build also exited successfully. These are source contributor checks; package installation/composition, publication, delivery, independent review, and main acceptance remain outside this receipt.
 
@@ -58,7 +58,7 @@ The structural validator establishes document shape only; it is not runtime evid
 - The generated installer test restores the exact Lockspire application-env entries it changes, and the quality scanner runs synchronously with the existing shared generated-fixture mutators, in `8bae1a30`.
 - The previously accepted configuration export extension from `be6faa47` was already in place and was preserved.
 
-Earlier failing CI logs remain in `/private/tmp` and are listed in the source receipt. The final canonical gate passed after the scoped fixes. A broader, noncanonical command that combined unit and integration verifier files in a single Mix invocation reported one configuration override failure; the standalone 16-test configuration suite and canonical separately staged `mix ci` both passed on the exact tested SHA. The combined-attempt limitation is retained in the receipt rather than hidden or represented as canonical CI failure.
+Earlier failing CI logs remain in `/private/tmp` and are listed in the source receipt. The final canonical gate passed after the scoped fixes. A broader, noncanonical command that combined unit and integration verifier files in a single Mix invocation reported one configuration override failure; the standalone 16-test configuration suite and canonical separately staged `mix ci` both passed on the exact tested SHA. That failure was investigated during the final gate: the maintenance fixture leaked a fabricated startup context without signing-key exclusions. Commit `6aca1b86` restores its exact prior context. The original seed 82284 command now passes 107/0, the paired scope seed 55421 passes 23/0, and configuration alone passes 16/0. Fresh canonical CI on the corrected committed SHA passed 2413/0. The failed attempt remains retained; see `177-ISOLATION-FIX.md`.
 
 ## Phase 178 boundary
 

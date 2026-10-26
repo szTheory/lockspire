@@ -1,7 +1,7 @@
 ---
 phase: "177"
 slug: "safe-verifier-maintenance-recovery"
-status: source-validated
+status: validated
 nyquist_compliant: true
 wave_0_complete: true
 created: "2026-10-25"
@@ -21,7 +21,7 @@ created: "2026-10-25"
 | Quick run | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_test.exs` |
 | Full contributor gate | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix ci` |
 | Integration | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test.integration` |
-| Runtime estimate | Focused 85-test verifier command: 2.6s ExUnit runtime; canonical `mix ci`: 301s wall time |
+| Runtime estimate | Focused 85-test verifier command: 2.6s ExUnit runtime; refreshed canonical `mix ci`: 321s wall time |
 
 ## Sampling Rate
 
@@ -33,7 +33,7 @@ created: "2026-10-25"
 
 ## Per-Task Verification Map
 
-Final task/command/threat mapping follows. All runtime rows remain pending; structural planning validation does not establish acceptance. Each command has an immediate fails_when in its owning task: nonzero exits, zero/excluded required tests and missing specific behavior evidence fail.
+Final task/command/threat mapping follows. All 18 tasks have executed behavioral commands and the six source requirements have runtime evidence. Structural planning validation is not counted as runtime proof. Each command has an immediate fails_when in its owning task: nonzero exits, zero/excluded required tests and missing specific behavior evidence fail.
 
 | Task | Requirements | Behavior | Test type | Automated command | Threat Ref | Executed result |
 |---|---|---|---|---|---|---|
@@ -53,8 +53,8 @@ Final task/command/threat mapping follows. All runtime rows remain pending; stru
 | 177-07-02 | VPROOF-01 | Suppress both client query channels and map unsafe storage diagnostics | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_disclosure_test.exs` | T-177-21,T-177-22,T-177-23 | Passed; 2 tests, 0 failures; canonical integration stage passed. |
 | 177-08-01 | VUP-03,VOPS-01,VOPS-03,VOPS-04,VPROOF-01 | Close success and forced-failure disclosure matrix | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration test/integration/client_secret_verifier_maintenance_disclosure_test.exs test/lockspire/security/client_secret_verifier_inspection_test.exs` | T-177-24,T-177-25,T-177-26 | Passed; 27 tests, 0 failures in final owning-plan run; final focused source run 85/0 and canonical CI pass. |
 | 177-08-02 | VUP-03,VOPS-01,VOPS-03,VOPS-04,VPROOF-01 | Document verified maintenance, retirement and recovery operations | Unit+PostgreSQL | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test test/lockspire/security/client_secret_verifier_maintenance_guidance_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` | T-177-24,T-177-25,T-177-26 | Passed; included in final owning-plan 27-test run and final CI. |
-| 177-09-01 | All six | Run the source contributor gate and record exact acceptance cases | Full gate+evidence | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix ci` | T-177-27,T-177-28 | Passed on `8bae1a306e836c6d512c1d7e34ed39ef3c22e088`, exit 0; 15 boundary, 2 properties, 2,138 fast tests (0 failures; 6 skipped, 567 excluded), 260 integration (0 failures; 46 excluded), 301s. |
-| 177-09-02 | All six | Reconcile validation and leave bounded source handoff | Full gate+evidence | `python3 -c 'import hashlib,json; from pathlib import Path; p=Path(".planning/phases/177-safe-verifier-maintenance-recovery"); a=json.loads((p/"177-SOURCE-ACCEPTANCE.json").read_text()); f=json.loads(Path(".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json").read_text()); assert a["tested_sha"] and set(a["requirements"])=={"VUP-03","VOPS-01","VOPS-02","VOPS-03","VOPS-04","VPROOF-01"}; assert a["commands"] and all(c["exit_code"]==0 and c["executed_tests"]>0 for c in a["commands"]); assert len(f["frozen_inputs"])==13 and all(hashlib.sha256(Path(x["path"]).read_bytes()).hexdigest()==x["sha256"] for x in f["frozen_inputs"]); assert (p/"177-HANDOFF.md").is_file(); print("source acceptance and frozen inputs checked")'` | T-177-27,T-177-28 | Passed; source receipt/handoff shape and 13 frozen hashes checked. Structural check is not runtime proof. |
+| 177-09-01 | All six | Run the source contributor gate and record exact acceptance cases | Full gate+evidence | `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix ci` | T-177-27,T-177-28 | Passed on `6aca1b865d53a809165a6a32a1854724685e1a7b`, exit 0; 15 boundary tests, 2 properties and 2,138 fast tests (0 failures; 6 skipped, 567 excluded), 260 integration tests (0 failures; 46 excluded), Credo 721 files/0 issues; 321s. Output: `/private/tmp/lockspire-177-final-mix-ci-6aca1b86.log`. |
+| 177-09-02 | All six | Reconcile validation and leave bounded source handoff | Full gate+evidence | `python3 -c 'import hashlib,json; from pathlib import Path; p=Path(".planning/phases/177-safe-verifier-maintenance-recovery"); a=json.loads((p/"177-SOURCE-ACCEPTANCE.json").read_text()); f=json.loads(Path(".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json").read_text()); assert a["tested_sha"] and set(a["requirements"])=={"VUP-03","VOPS-01","VOPS-02","VOPS-03","VOPS-04","VPROOF-01"}; assert a["commands"] and all(c["exit_code"]==0 and c["executed_tests"]>0 for c in a["commands"]); assert len(f["frozen_inputs"])==13 and all(hashlib.sha256(Path(x["path"]).read_bytes()).hexdigest()==x["sha256"] for x in f["frozen_inputs"]); assert (p/"177-HANDOFF.md").is_file(); print("source acceptance and frozen inputs checked")'` | T-177-27,T-177-28 | Passed; refreshed source receipt records 2,413 executed tests, six requirement outcomes, eight stable cases and all limits; 13 frozen input hashes remain unchanged. Structural check is not runtime proof. |
 
 ### Produced new test targets
 
@@ -85,11 +85,27 @@ All phase-owned source behavior should have automated proof. Host fleet key pari
 
 - [x] Final tasks/threats mapped to automated commands
 - [x] New command targets created by owning tasks/dependencies (declared NEW; executed in their owning plans and final gates)
-- [ ] No three consecutive tasks without automated feedback
-- [ ] No watch-mode commands
+- [x] No three consecutive tasks without automated feedback
+- [x] No watch-mode commands
 - [x] Focused runtime latency measured: 2.6s for the 85-test verifier-focused source run (full command duration 4s including startup)
-- [x] Runtime source validation completed; all six requirements have automated evidence. Unclassified edges and prohibitions remain separately flagged; package and milestone gates remain pending.
+- [x] Runtime source validation completed; all six requirements have automated evidence. The mixed verifier-family regression initially failed because its fixture leaked process-global cache state; the test helper now restores the exact prior value and the same seeded command passes 107/0. The canonical gate was rerun on the corrected source identity and passes. Unclassified edges and prohibitions remain separately flagged; package and milestone gates remain pending.
 
 **Approval:** Source validation recorded; independent Phase 177 verification remains the next gate.
 
-The final mixed verifier-family attempt that combined unit and integration tests in one invocation is retained as a failed noncanonical attempt in `177-SOURCE-ACCEPTANCE.json`; its configuration module passes alone and the canonical `mix ci` stages pass separately. The acceptance receipt records exact log digests and does not hide this result.
+The earlier mixed verifier-family attempt that combined unit and integration tests in one invocation is retained as a failed noncanonical attempt in `177-SOURCE-ACCEPTANCE.json`. The isolated fixture fix is documented in `177-ISOLATION-FIX.md`; afterward, the same command and seed passed 107/0, and the refreshed canonical gate passed on `6aca1b865d53a809165a6a32a1854724685e1a7b`. The failure remains part of the audit history and is not represented as a product defect.
+
+## Independent Nyquist Audit
+
+- All 18 task rows map to behavior-focused ExUnit commands; the six source requirements have runtime outcomes in `177-SOURCE-ACCEPTANCE.json`.
+- All 23 decisions D-01–D-23 have explicit coverage rows in `177-09-PLAN.md`; all eight Phase 175 stable cases and eight explicit probe predicates retain evidence references.
+- The corrected verifier-family command was rerun with seed 82284 after the fixture isolation fix: 107 tests, 0 failures. It includes the listed-hidden-key rejection assertion that previously failed.
+- E-09 and E-10 remain flagged unresolved. The three descriptorless prohibitions remain flagged unverified. They are not treated as automated passes or as missing concrete behavioral tests.
+- The refreshed canonical `mix ci` passed on the corrected source identity. Package-installed composition, fleet readiness, publication, delivery and main acceptance remain outside Phase 177 source validation.
+
+## Validation Audit 2026-10-26
+
+| Metric | Count |
+|---|---|
+| Gaps found | 1 |
+| Resolved | 1 |
+| Escalated | 0 |
