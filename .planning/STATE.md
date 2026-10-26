@@ -5,16 +5,16 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 177
 current_phase_name: Safe Verifier Maintenance & Recovery
 status: executing
-stopped_at: Completed 177-06-PLAN.md
-last_updated: "2026-10-26T02:44:01.816Z"
+stopped_at: Completed 177-08-PLAN.md
+last_updated: "2026-10-26T02:54:45.907Z"
 last_activity: 2026-10-25
 last_activity_desc: Phase 177 execution started
-state_head: 49c5c8b281e0de0bff90afb0f7e32a29908becbc
+state_head: a42684fc7af1e2b4c5bb1cf27f477df4785d6d37
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 18
   percent: 50
 ---
 
@@ -31,7 +31,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 ## Current Position
 
 Phase: 177 (Safe Verifier Maintenance & Recovery) — EXECUTING
-Plan: 8 of 9
+Plan: 9 of 9
 Status: Ready to execute
 Last activity: 2026-10-25 — Phase 177 execution started
 
@@ -68,6 +68,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 19 plans with 10
 | Phase 177 P04 | 14min | 2 tasks | 8 files |
 | Phase 177 P05 | 11 min | 2 tasks | 4 files |
 | Phase 177 P06 | 6min | 2 tasks | 3 files |
+| Phase 177 P08 | 10min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -140,8 +141,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T02:44:01.678Z
-Stopped at: Completed 177-06-PLAN.md
+Last session: 2026-10-26T02:54:45.782Z
+Stopped at: Completed 177-08-PLAN.md
 Resume file: None
 Next: $gsd-discuss-phase 177. Phase 176 is complete; this auto-advance run stopped with --no-transition before Phase 177 discussion. Read 176-HANDOFF.md and the final verification. Entry accepted main, corrected local candidate and eventual Phase 178 integrated-main acceptance remain distinct. Preserve retained history/resources and visible non-authoritative probe/prohibition flags.
 
@@ -210,6 +211,9 @@ None
 - [Phase 177]: Treat an uncertain commit response as neither success nor rollback; reconcile with a fresh complete inventory.
 - [Phase 177]: Use committed fixtures and exact pg_blocking_pids relationships to prove concurrency behavior.
 - [Phase 177]: Real PostgreSQL maintenance between JWT authentication and the issuance guard proves obsolete identity rejection; restoration preserves the partner secret while authorized rotation replaces it.
+- [Phase 177]: Preserve the existing one-time plaintext handoff and client/report shapes; no production change was needed after forced disclosure cases passed.
+- [Phase 177]: Treat a successful fresh check as local store evidence; fleet parity, quiescence, backups, and rollback remain host-owned.
+- [Phase 177]: Keep original-key restoration distinct from authorized partner-secret replacement and its one-time handoff.
 
 ## Operator Next Steps
 
