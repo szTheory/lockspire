@@ -117,6 +117,7 @@ The prior receipts under `.artifacts/phase178/core/` are preserved as historical
 - `scripts/acceptance/clean_room_verifier_upgrade.py` — fixed pair/store matrix selectors and core dispatch.
 - `test/clean_room/provider_host/lib/clean_room_provider/lifetime_client_store.ex` — delegated maintenance behavior and callback witnesses.
 - `test/acceptance/client_verifier_core_test.py` — selected-input, public callback, and matrix selector contracts.
+- `test/acceptance/client_lifetime_boundary_test.py` — optional verifier/JTI public seam regression contracts added after the inherited wave gate.
 - `.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-02-01-red-evidence.json` and `178-02-02-red-evidence.json` — TDD RED evidence.
 
 ## Decisions Made
@@ -160,6 +161,16 @@ The prior receipts under `.artifacts/phase178/core/` are preserved as historical
 - An initial source regression attempt against the shared default database encountered stale rows in an unrelated lifetime-client case. The shared database was preserved. A new owned database was used instead.
 - The first owned-database run had not yet applied migrations and failed during test-client registration with `:storage_error`. After creating and migrating the owned database, the exact source regression command passed all 33 tests; the database was then dropped.
 
+## Post-wave Compatibility Correction
+
+An inherited acceptance gate found that the builder's boundary audit made verifier-specific maintenance and JTI seams mandatory for every lifetime adapter, including supported non-verifier lifetime-only hosts. This was a false mandatory contract introduced by the Plan 02 allowlist expansion.
+
+- **Correction commit:** `e94dc48c940d8ffaf80ffa59eac572f102a5cdb8` (`fix(178-02): keep verifier adapter seams optional`).
+- The audit still requires the established four public lifetime seams: `ClientStore`, `TransactionStore`, `Repository`, and `Domain.Client`. `ClientVerifierMaintenance` is optional. `UsedJtiStore` and `Domain.UsedJti` are optional as a pair; a partial pair fails closed. Nested storage and protocol references remain rejected.
+- Focused boundary contracts passed 10/10; focused verifier-core contracts passed 3/3.
+- The full acceptance suite at the correction commit passed 77/77 with zero failures or errors. The original 75-test failure remains preserved in `178-WAVE-02-GATES.md`; the two additional tests cover optional JTI pairing.
+- No installed rerun was needed because the core verifier host declares the complete optional maintenance/JTI capability set. The correction changes optionality for lifetime-only adapters while leaving the installed core adapter's audit result unchanged.
+
 ## Proof Scope
 
 The receipts intentionally cover only the Phase 178 core scope and mark it partial. Later plans own rollout, endpoint, recovery, disclosure, contention, and delivery proof; those limits do not prevent this plan's four core cells from passing.
@@ -174,4 +185,4 @@ Plans 03–07 can consume the fixed group-source selection and host adapter cont
 
 ## Self-Check: PASSED
 
-Summary and implementation artifacts exist; all four task commits are ancestors of the current HEAD. All four `core-final/` receipts validate against their expected cells and the clean runner revision.
+Summary and implementation artifacts exist; all four task commits and correction commit `e94dc48c` are ancestors of the current HEAD. All four `core-final/` receipts validate against their expected cells and the clean runner revision. Full acceptance passes 77/77 at the correction commit.
