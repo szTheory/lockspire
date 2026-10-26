@@ -34,8 +34,9 @@ class VerifierRolloutContracts(unittest.TestCase):
         fixture_source = fixture.read_text(encoding="utf-8")
         self.assertFalse(fixture_source.startswith('"""'), "Elixir fixture must not start with a Python docstring")
         self.assertIn('args = case System.argv() do ["--" | rest] -> rest; values -> values end', fixture_source)
-        self.assertIn('write_mode: :dedicated, legacy_read: :allow', fixture_source,
+        self.assertIn('write_mode: :dedicated', fixture_source,
                       "safe age inspection needs a dedicated reader context even during legacy writes")
+        self.assertIn('legacy_read: :allow', fixture_source)
 
     def test_rollout_contract_covers_predecessor_process_drain_and_persisted_formats(self) -> None:
         path = ROOT / "scripts/acceptance/clean_room/verifier_rollout.py"

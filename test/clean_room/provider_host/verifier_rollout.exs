@@ -20,8 +20,13 @@ case result.rows do
   [[hash, verifier]] when is_binary(hash) and is_binary(verifier) ->
     format = if is_binary(verifier) and String.starts_with?(verifier, "LSCV1."), do: "dedicated", else: "legacy"
     digest = Base.encode16(:crypto.hash(:sha256, hash), case: :lower)
-    config = Application.fetch_env!(:lockspire, Lockspire.Security.ClientSecretVerifier)
-    {:ok, context} = Lockspire.Security.ClientSecretVerifier.Context.resolve({:present, config}, [])
+    inspection_config = [
+      keys: [{"verifier-old", System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}],
+      current: "verifier-old",
+      write_mode: :dedicated,
+      legacy_read: :allow
+    ]
+    {:ok, context} = Lockspire.Security.ClientSecretVerifier.Context.resolve({:present, inspection_config}, [])
     opts = [legacy_secret_key_base: System.fetch_env!("SECRET_KEY_BASE")]
     age = Lockspire.Security.ClientSecretVerifier.inspect_custody(context, client_id, verifier, hash, opts)
 
