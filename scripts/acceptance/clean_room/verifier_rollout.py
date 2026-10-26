@@ -193,14 +193,17 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
             run_child_command(legacy_host, legacy_env, "ecto.migrate")
             _configure(host=legacy_host, mode="legacy", legacy_read="allow", key=key)
             dedicated_hash_before_switchback = _safe_row(new_host, new_env, prefix, dedicated_id)[1]
-            legacy_server, legacy_pid = _start_server(legacy_host, legacy_env, root / "legacy.log", legacy_env["LOCKSPIRE_ISSUER"])
             legacy_write_id, _legacy_write_secret = runner._capture_secret(legacy_host, legacy_env, redactor, "rollout-switchback-" + run_id)
             legacy_write_format, legacy_write_hash = _safe_row(legacy_host, legacy_env, prefix, legacy_write_id)
+            legacy_server, legacy_pid = _start_server(legacy_host, legacy_env, root / "legacy.log", legacy_env["LOCKSPIRE_ISSUER"])
+            legacy_read = _http_auth(legacy_env["LOCKSPIRE_ISSUER"], port_legacy, legacy_write_id, _legacy_write_secret)
+            candidate_reads_switchback_legacy = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, legacy_write_id, _legacy_write_secret)
             dedicated_hash_after_switchback = _safe_row(new_host, new_env, prefix, dedicated_id)[1]
             legacy_server.terminate()
             legacy_server.wait(timeout=10)
             legacy_server = None
-            if legacy_write_format != "legacy" or not legacy_write_hash or dedicated_hash_before_switchback != dedicated_hash_after_switchback:
+            if (legacy_write_format != "legacy" or not legacy_write_hash or not legacy_read or
+                    not candidate_reads_switchback_legacy or dedicated_hash_before_switchback != dedicated_hash_after_switchback):
                 raise PackageInputError("legacy writer switch-back did not preserve dedicated row material")
             # Old-code rejection is isolated: the predecessor host process was already drained.
             _configure(host=old_host, mode="legacy", legacy_read="allow", key=key)
@@ -216,7 +219,7 @@ def _run_rollout_cell(pair: str, store: str, receipt_dir: Path) -> dict[str, obj
                 "outcome": "pass", "executed": True, "old_process_exit_observed": old_drain,
                 "legacy_write_read_shared_store": legacy_format == "legacy" and old_read and new_read,
                 "dedicated_write_after_drain": dedicated_format == "dedicated" and dedicated_read,
-                "switch_back_legacy_write_preserves_dedicated": legacy_write_format == "legacy" and dedicated_hash_before_switchback == dedicated_hash_after_switchback,
+                "switch_back_legacy_write_preserves_dedicated": legacy_write_format == "legacy" and legacy_read and candidate_reads_switchback_legacy and dedicated_hash_before_switchback == dedicated_hash_after_switchback,
                 "old_code_rejects_dedicated": isolated_old_status == 401,
                 "rollback_retains_dedicated_reads": rollback_status,
                 "legacy_hash_preserved": bool(legacy_hash), "dedicated_hash_present": bool(dedicated_hash),

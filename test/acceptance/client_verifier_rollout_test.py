@@ -33,6 +33,7 @@ class VerifierRolloutContracts(unittest.TestCase):
             "old_process_exit_observed",
             "legacy_write_read_shared_store",
             "dedicated_write_after_drain",
+            "switch_back_legacy_write_preserves_dedicated",
             "old_code_rejects_dedicated",
             "rollback_retains_dedicated_reads",
         ):
