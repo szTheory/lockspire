@@ -36,8 +36,27 @@ class PackageAttributionTest(unittest.TestCase):
             (package / "lib.ex").write_text("package tree\n")
             with patch("package_input.validate_local_tarball", return_value=(archive, "1.6.1", "a" * 64)), \
                  patch("package_input.verify_candidate_input"):
-                _path, _entries, identity = prepare_package(root, PackageSource("tar", str(archive)))
+                _path, _entries, identity = prepare_package(
+                    root, PackageSource("tar", str(archive), source_revision="d" * 40)
+                )
             self.assertIsNone(identity.source_revision)
+
+    def test_external_source_claim_with_unbound_proof_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "lockspire-1.6.1.tar"
+            archive.write_bytes(b"external bytes")
+            package = root / "package" / "lockspire"
+            package.mkdir(parents=True)
+            (package / "mix.exs").write_text('version: "1.6.1"\n')
+            (package / "lib.ex").write_text("package tree\n")
+            with patch("package_input.validate_local_tarball", return_value=(archive, "1.6.1", "a" * 64)), \
+                 patch("package_input.verify_candidate_input"):
+                with self.assertRaises(PackageInputError):
+                    prepare_package(
+                        root,
+                        PackageSource("tar", str(archive), source_revision="d" * 40, source_proof="e" * 64),
+                    )
 
     def test_legacy_safe_receipt_shape_is_preserved(self) -> None:
         identity = PackageIdentity("tar", "1.6.1", "a" * 64, "a" * 64, "b" * 64, None)
@@ -88,6 +107,50 @@ class InstalledReceiptTest(unittest.TestCase):
     def test_source_binding_rejects_tampered_tree_identity(self) -> None:
         receipt = self.receipt()
         receipt["candidate"]["tree_sha256"] = "f" * 64
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+    def test_receipt_rejects_wrong_pair_store_and_runner_binding(self) -> None:
+        for mutation, options in (
+            (lambda receipt: receipt.update(pair="floor"), {}),
+            (lambda receipt: receipt.update(store="delegated"), {"expected_store": "builtin"}),
+            (lambda receipt: receipt.update(runner="1" * 40), {}),
+        ):
+            receipt = self.receipt()
+            mutation(receipt)
+            with self.assertRaises(ReceiptError):
+                validate_receipt(receipt, **options)
+
+    def test_receipt_rejects_skipped_omitted_unknown_and_zero_count_cases(self) -> None:
+        receipt = self.receipt()
+        receipt["observations"]["VPROOF-02-INSTALLED-TOKEN"]["outcome"] = "skipped"
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+        receipt = self.receipt()
+        receipt["observations"].clear()
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+        receipt = self.receipt()
+        receipt["stable_case_ids"].append("UNKNOWN-CASE")
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+        receipt = self.receipt()
+        receipt["executed_count"] = 0
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+    def test_unfinished_all_scope_cannot_be_accepted_as_a_group_receipt(self) -> None:
+        receipt = self.receipt()
+        receipt["scope"] = "all"
+        with self.assertRaises(ReceiptError):
+            validate_receipt(receipt)
+
+    def test_receipt_rejects_missing_runtime_identity(self) -> None:
+        receipt = self.receipt()
+        receipt["runtime"]["otp"] = ""
         with self.assertRaises(ReceiptError):
             validate_receipt(receipt)
 

@@ -54,8 +54,10 @@ def load_receipt(path: Path) -> dict[str, Any]:
 def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = None, expected_store: str | None = None) -> dict[str, Any]:
     if set(receipt) != ROOT_FIELDS:
         raise ReceiptError("receipt fields do not match the finite contract")
-    if receipt["schema"] != SCHEMA or receipt["scope"] not in GROUPS - {"all"}:
+    if receipt["schema"] != SCHEMA or not isinstance(receipt["scope"], str) or receipt["scope"] not in GROUPS - {"all"}:
         raise ReceiptError("receipt schema or scope is unsupported")
+    if receipt["partial"] is not True:
+        raise ReceiptError("scenario group receipt must remain explicitly partial")
     if not isinstance(receipt["run_id"], str) or not re.fullmatch(r"[0-9a-f]{32}", receipt["run_id"]):
         raise ReceiptError("receipt run identity is invalid")
     if receipt["pair"] not in {"locked", "floor"} or (expected_pair and receipt["pair"] != expected_pair):
@@ -97,6 +99,12 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("installed vendor binding does not match candidate")
     if not isinstance(host["phoenix"], str) or not isinstance(host["live_view"], str):
         raise ReceiptError("resolved framework versions are missing")
+    framework_versions = {
+        "locked": ("1.8.13", "1.2.10"),
+        "floor": ("1.8.5", "1.1.28"),
+    }
+    if (host["phoenix"], host["live_view"]) != framework_versions[receipt["pair"]]:
+        raise ReceiptError("resolved framework versions do not match the selected pair")
     runtime = receipt["runtime"]
     if not isinstance(runtime, dict) or set(runtime) != {"elixir", "otp", "postgresql"} or any(not isinstance(runtime[k], str) or not runtime[k] for k in runtime):
         raise ReceiptError("runtime identity is incomplete")
@@ -117,10 +125,16 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             raise ReceiptError("observation HTTP status is invalid")
         if any(key in result and type(result[key]) is not bool for key in OBSERVATION_FIELDS - {"outcome", "executed", "http_status"}):
             raise ReceiptError("observation boolean field is invalid")
+        if receipt["scope"] == "tracer" and (
+            set(result) != OBSERVATION_FIELDS
+            or result["http_status"] != 200
+            or result["token_issued"] is not True
+            or result["dedicated_verifier_persisted"] is not True
+            or result["fresh_signed_assertion"] is not True
+        ):
+            raise ReceiptError("installed tracer outcome is incomplete")
     if type(receipt["executed_count"]) is not int or receipt["executed_count"] <= 0 or receipt["executed_count"] != len(case_ids):
         raise ReceiptError("receipt has no reconciled execution count")
-    if receipt["scope"] == "tracer" and receipt["partial"] is not True:
-        raise ReceiptError("group receipt must remain explicitly partial")
     return receipt
 
 

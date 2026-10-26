@@ -13,7 +13,10 @@ CLEAN_ROOM = Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "c
 sys.path.insert(0, str(CLEAN_ROOM))
 
 from package_input import PackageIdentity, PackageInputError  # noqa: E402
-from build_provider import audit_boundary, prepare_provider  # noqa: E402
+from build_provider import (  # noqa: E402
+    PROOF_PAIR_LOCKS, PROOF_PAIR_MARKER, PROOF_PAIR_VERSIONS,
+    audit_boundary, prepare_provider, proof_pair_lock_hash,
+)
 
 
 class LifetimeBoundaryTest(unittest.TestCase):
@@ -53,6 +56,15 @@ end
         child_adapter.write_text(self.adapter.read_text())
         (self.package / "mix.exs").write_text("candidate package\n")
         shutil.copytree(self.package, self.child / "vendor" / "lockspire", dirs_exist_ok=True)
+        phoenix, live_view = PROOF_PAIR_VERSIONS["locked"]
+        (self.child / "mix.exs").write_text(
+            f'{{:phoenix, "== {phoenix}"}}\n{{:phoenix_live_view, "== {live_view}"}}\n',
+            encoding="utf-8",
+        )
+        shutil.copy2(PROOF_PAIR_LOCKS["locked"], self.child / "mix.lock")
+        (self.child / PROOF_PAIR_MARKER).write_text(
+            f"pair=locked\nlock_sha256={proof_pair_lock_hash('locked')}\n", encoding="utf-8"
+        )
 
     def tearDown(self) -> None:
         self.temporary.cleanup()

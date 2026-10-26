@@ -451,9 +451,11 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
 
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
     if package_root.is_dir():
+        tree = package_tree_digest(package_root)
+        source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
         identity = PackageIdentity(
-            source.kind, version, checksum, checksum, package_tree_digest(package_root),
-            source.source_revision if source.source_proof else None, runner, source.source_proof,
+            source.kind, version, checksum, checksum, tree,
+            source_revision_claim, runner, source_proof,
         )
         verify_candidate_input(tarball, package_root, identity)
         return package_root.resolve(strict=True), inventory(package_root), identity
@@ -465,15 +467,19 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     entries = inventory(package_root)
     package_root = package_root.resolve(strict=True)
     tree = package_tree_digest(package_root)
-    source_revision_claim = None
-    if source.source_proof:
-        expected_proof = _source_binding_digest(source.source_revision or "", checksum, tree)
-        if source.source_proof != expected_proof:
-            raise PackageInputError("external package source proof does not bind archive and extracted tree")
-        source_revision_claim = source.source_revision
+    source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
     return package_root, entries, PackageIdentity(
-        source.kind, version, checksum, checksum, tree, source_revision_claim, runner, source.source_proof
+        source.kind, version, checksum, checksum, tree, source_revision_claim, runner, source_proof
     )
+
+
+def _external_source_claim(source: PackageSource, archive_sha256: str, tree_sha256: str) -> tuple[str | None, str | None]:
+    if source.source_proof is None:
+        return None, None
+    expected_proof = _source_binding_digest(source.source_revision or "", archive_sha256, tree_sha256)
+    if source.source_proof != expected_proof:
+        raise PackageInputError("external package source proof does not bind archive and extracted tree")
+    return source.source_revision, source.source_proof
 
 
 def _source_binding_digest(revision: str, archive_sha256: str, tree_sha256: str) -> str:

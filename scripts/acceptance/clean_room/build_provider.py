@@ -94,7 +94,6 @@ def configure_proof_pair(
     manifest_path = child / "mix.exs"
     lock_target = child / "mix.lock"
     marker_path = child / PROOF_PAIR_MARKER
-    manifest = manifest_path.read_text(encoding="utf-8")
     marker = f"pair={proof_pair}\nlock_sha256={lock_hash}\n"
     phoenix_version, live_view_version = PROOF_PAIR_VERSIONS[proof_pair]
 
@@ -103,7 +102,11 @@ def configure_proof_pair(
             raise PackageInputError("reused provider proof pair does not match selected pair")
         if not lock_target.is_file() or sha256(lock_target) != lock_hash:
             raise PackageInputError("reused provider proof lock does not match selected pair")
+        manifest = manifest_path.read_text(encoding="utf-8") if manifest_path.is_file() else ""
     else:
+        if not manifest_path.is_file():
+            raise PackageInputError("provider manifest is missing")
+        manifest = manifest_path.read_text(encoding="utf-8")
         for dependency, expected in (("phoenix", "1.8.13"), ("phoenix_live_view", "1.2.10")):
             locked_pin = f'{{:{dependency}, "== {expected}"}}'
             if manifest.count(locked_pin) != 1:
@@ -119,9 +122,10 @@ def configure_proof_pair(
         shutil.copy2(lock_path, lock_target)
         marker_path.write_text(marker, encoding="utf-8")
 
-    for dependency, version in (("phoenix", phoenix_version), ("phoenix_live_view", live_view_version)):
-        if manifest.count(f'{{:{dependency}, "== {version}"}}') != 1:
-            raise PackageInputError("provider manifest does not match selected proof pair")
+    if manifest:
+        for dependency, version in (("phoenix", phoenix_version), ("phoenix_live_view", live_view_version)):
+            if manifest.count(f'{{:{dependency}, "== {version}"}}') != 1:
+                raise PackageInputError("provider manifest does not match selected proof pair")
 
     return lock_hash
 
