@@ -266,7 +266,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp partial_is_not_ready?(:builtin) do
-    cursor = "phase178-zzzz"
+    cursor = String.duplicate("z", 160)
 
     case ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1) do
       {:error,
