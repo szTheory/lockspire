@@ -1,9 +1,5 @@
-"""Safe, host-owned projection for mixed-version rollout evidence.
-
-This script deliberately emits only verifier format, a one-way hash witness,
-and authenticated lifetime metadata. It never prints credentials or verifier
-bytes. Run it against the run-owned provider database after each process step.
-"""
+# Safe, host-owned projection for mixed-version rollout evidence.
+# Emits verifier format, one-way hash witness, and authenticated age metadata only.
 
 [prefix, client_id] = System.argv()
 unless Regex.match?(~r/\A[a-z][a-z0-9_]{0,39}\z/, prefix) and
