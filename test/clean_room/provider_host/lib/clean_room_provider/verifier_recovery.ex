@@ -513,6 +513,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
     expires_at = DateTime.add(now, 300, :second)
 
+    mark_stage(:expired_code_interaction)
+
     %{num_rows: 1} =
       Repo.query!(
         "INSERT INTO #{table(:lockspire_interactions)} (interaction_id, client_id, account_id, scopes_requested, redirect_uri, return_to, state, code_challenge, code_challenge_method, expires_at, status, completed_at, inserted_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'S256',$9,'completed',$10,$10,$10)",
@@ -531,6 +533,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
         log: false,
         telemetry_event: nil
       )
+
+    mark_stage(:expired_code_token)
 
     %{num_rows: 1} =
       Repo.query!(
@@ -554,6 +558,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp token_request(issuer, client, code, jti) do
+    mark_stage(:expired_assertion)
+
     case Application.ensure_all_started(:inets) do
       {:ok, _started_apps} -> :ok
       {:error, _safe_reason} -> raise "mounted token HTTP client unavailable"
@@ -575,8 +581,12 @@ defmodule CleanRoomProvider.VerifierRecovery do
       {String.to_charlist(issuer <> "/token"), [], ~c"application/x-www-form-urlencoded",
        String.to_charlist(body)}
 
+    mark_stage(:expired_request)
+
     case :httpc.request(:post, request, [{:timeout, @timeout}], []) do
-      {:ok, {{_version, status, _reason}, _headers, _response}} -> status
+      {:ok, {{_version, status, _reason}, _headers, _response}} ->
+        status
+
       {:error, {:failed_connect, _details}} ->
         mark_stage(:expired_http_connect)
         raise "mounted token endpoint request failed"
@@ -589,6 +599,54 @@ defmodule CleanRoomProvider.VerifierRecovery do
         mark_stage(:expired_http_transport)
         raise "mounted token endpoint request failed"
     end
+  rescue
+    error ->
+      if Process.get({__MODULE__, :stage}) == :expired_request do
+        mark_stage(
+          case error do
+            %ArgumentError{} ->
+              :expired_request_argument
+
+            %CaseClauseError{} ->
+              :expired_request_case
+
+            %FunctionClauseError{} ->
+              :expired_request_function_clause
+
+            %MatchError{} ->
+              :expired_request_match
+
+            %ErlangError{} ->
+              :expired_request_erlang
+
+            %UndefinedFunctionError{module: :httpc, function: :request, arity: 4} ->
+              :expired_request_undefined_httpc
+
+            %UndefinedFunctionError{} ->
+              :expired_request_undefined
+
+            %RuntimeError{} ->
+              :expired_request_runtime
+
+            %KeyError{} ->
+              :expired_request_key
+
+            %BadMapError{} ->
+              :expired_request_bad_map
+
+            %BadArityError{} ->
+              :expired_request_bad_arity
+
+            %SystemLimitError{} ->
+              :expired_request_system_limit
+
+            _ ->
+              :expired_request_error
+          end
+        )
+      end
+
+      raise "mounted token endpoint request failed"
   end
 
   defp signed_assertion(client_id, secret, issuer, jti) do

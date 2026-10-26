@@ -114,6 +114,55 @@ class RecoveryDispatchTest(unittest.TestCase):
         self.assertIn("CHILD_OUT=", child.stdout)
         self.assertIn("CHILD_ERR=", child.stderr)
 
+    def test_narrow_failure_stages_survive_both_boundaries_without_child_bytes(self) -> None:
+        stages = (
+            "expired_code_interaction", "expired_code_token", "expired_assertion",
+            "expired_request", "expired_http_connect", "expired_http_timeout",
+            "expired_http_transport",
+            "expired_request_argument", "expired_request_case", "expired_request_function_clause",
+            "expired_request_match", "expired_request_erlang", "expired_request_error",
+            "expired_request_undefined_httpc", "expired_request_undefined", "expired_request_runtime",
+            "expired_request_key", "expired_request_bad_map", "expired_request_bad_arity",
+            "expired_request_system_limit",
+        )
+        for stage in stages:
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as owned_output:
+                output = ("unknown-child-material\nSAFE_FAILURE_STAGE=" + stage + "\n").encode()
+                with mock.patch.object(
+                    build_provider, "bounded_run",
+                    return_value=subprocess.CompletedProcess(
+                        args=("mix", "run"), returncode=1, stdout=output, stderr=None
+                    ),
+                ):
+                    with self.assertRaises(PackageInputError) as caught:
+                        verifier_recovery._capture_child_output(
+                            lambda: build_provider.run_child_command_output(Path(owned_output), {}, "run")
+                        )
+                self.assertEqual(
+                    str(caught.exception),
+                    f"installed verifier host scenario failed at {stage}; child diagnostics withheld",
+                )
+                self.assertEqual(list(Path(owned_output).iterdir()), [])
+
+    def test_unknown_stage_suffix_never_becomes_a_known_stage(self) -> None:
+        for suffix in ("_unknown-child-material", "-unknown-child-material", ".unknown-child-material"):
+            with self.subTest(suffix=suffix), tempfile.TemporaryDirectory() as owned_output:
+                output = ("SAFE_FAILURE_STAGE=expired_http" + suffix + "\n").encode()
+                with mock.patch.object(
+                    build_provider, "bounded_run",
+                    return_value=subprocess.CompletedProcess(
+                        args=("mix", "run"), returncode=1, stdout=output, stderr=None
+                    ),
+                ):
+                    with self.assertRaises(PackageInputError) as caught:
+                        verifier_recovery._capture_child_output(
+                            lambda: build_provider.run_child_command_output(Path(owned_output), {}, "run")
+                        )
+                self.assertEqual(
+                    str(caught.exception),
+                    "installed verifier host scenario failed; child diagnostics withheld",
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

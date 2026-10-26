@@ -678,20 +678,22 @@ def _run_mix(child: Path, environment: dict[str, str], command: tuple[str, ...])
         safe_stages = {
             "expired_apply", "expired_http", "expired_install_migrated",
             "expired_http_connect", "expired_http_timeout", "expired_http_transport",
+            "expired_code_interaction", "expired_code_token", "expired_assertion", "expired_request",
+            "expired_request_argument", "expired_request_case", "expired_request_function_clause",
+            "expired_request_match", "expired_request_erlang", "expired_request_error",
+            "expired_request_undefined_httpc", "expired_request_undefined", "expired_request_runtime",
+            "expired_request_key", "expired_request_bad_map", "expired_request_bad_arity",
+            "expired_request_system_limit",
             "expired_metadata", "expired_migrated_ciphertext", "expired_seed",
             "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
             "issuance_seed", "recovery_apply", "recovery_expired_migration",
             "recovery_indeterminate", "recovery_interrupt", "recovery_repeat",
             "recovery_restore_rotation", "recovery_seed",
         }
-        safe_stage = next(
-            (
-                stage
-                for stage in safe_stages
-                if re.search(rf"\bSAFE_FAILURE_STAGE={re.escape(stage)}\b", output)
-            ),
-            None,
-        )
+        safe_stage = next((
+            stage for stage in re.findall(r"\bSAFE_FAILURE_STAGE=([^\s;]+)", output)
+            if stage in safe_stages
+        ), None)
         diagnostic = "provider Mix command failed; child diagnostics withheld"
         if safe_stage is not None:
             diagnostic += f"; SAFE_FAILURE_STAGE={safe_stage}"

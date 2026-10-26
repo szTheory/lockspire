@@ -39,6 +39,12 @@ SAFE_FAILURE_STAGES = frozenset({
     "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
     "expired_seed", "expired_migrated_ciphertext", "expired_install_migrated", "expired_apply",
     "expired_http", "expired_http_connect", "expired_http_timeout", "expired_http_transport",
+    "expired_code_interaction", "expired_code_token", "expired_assertion", "expired_request",
+    "expired_request_argument", "expired_request_case", "expired_request_function_clause",
+    "expired_request_match", "expired_request_erlang", "expired_request_error",
+    "expired_request_undefined_httpc", "expired_request_undefined", "expired_request_runtime",
+    "expired_request_key", "expired_request_bad_map", "expired_request_bad_arity",
+    "expired_request_system_limit",
     "expired_metadata",
     "issuance_seed", "issuance_auth_barrier", "issuance_maintenance", "issuance_replay_fresh",
 })
@@ -168,10 +174,10 @@ def _capture_child_output(operation) -> str:
     try:
         return operation()
     except Exception as error:
-        safe_stage = next(
-            (stage for stage in SAFE_FAILURE_STAGES if f"SAFE_FAILURE_STAGE={stage}" in str(error)),
-            None,
-        )
+        safe_stage = next((
+            stage for stage in re.findall(r"\bSAFE_FAILURE_STAGE=([^\s;]+)", str(error))
+            if stage in SAFE_FAILURE_STAGES
+        ), None)
         reason = "installed verifier host scenario failed"
         if safe_stage is not None:
             reason += f" at {safe_stage}"
