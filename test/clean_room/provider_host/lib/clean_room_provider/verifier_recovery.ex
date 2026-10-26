@@ -271,7 +271,6 @@ defmodule CleanRoomProvider.VerifierRecovery do
     case ClientVerifierMaintenance.run(mode: :check, after_client_id: cursor, limit: 1) do
       {:error,
        %{
-         initial_cursor: ^cursor,
          scan_complete?: true,
          custody_condition_met?: false
        }} ->
