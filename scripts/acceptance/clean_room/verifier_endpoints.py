@@ -66,6 +66,258 @@ def run_release_rpc_group(*, pair: str, store: str, receipt_dir: Path) -> list[d
     return [receipt]
 
 
+def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
+    run_id = uuid.uuid4().hex
+    port = allocate_port()
+    prefix = "vrp" + run_id[:12]
+    issuer = f"http://127.0.0.1:{port}/lockspire"
+    database_url = clean_room_database_url("verifier_release_rpc")
+    key_encryption = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode("ascii")
+    task_key = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode("ascii")
+    release_key = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode("ascii")
+    redactor = Redactor(SentinelSet.for_run())
+    for material in (database_url, key_encryption, task_key, release_key):
+        redactor.register_material(material)
+    host: Path | None = None
+    env: dict[str, str] = {}
+    release_env: dict[str, str] = {}
+    release_bin: Path | None = None
+    release_root: Path | None = None
+    release_started = False
+    release_pid: str | None = None
+    with tempfile.TemporaryDirectory(prefix="lockspire-verifier-release-rpc-") as temporary:
+        root = Path(temporary)
+        package, _entries, identity = prepare_package(root, PackageSource("checkout"))
+        archive = package.parent / f"lockspire-{identity.version}.tar"
+        verify_candidate_input(archive, package, identity)
+        host = prepare_provider(
+            root, database_url, package_root=package, port=port,
+            storage_prefix=prefix, candidate_identity=identity, proof_pair="locked",
+            scenario_groups={"release-rpc"},
+        )
+        env = runner._mix_env(host, root, database_url, port, issuer, prefix, key_encryption, "locked")
+        env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY"] = task_key
+        env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_ID"] = "task-local"
+        env["CLEAN_ROOM_HTTP_SERVER"] = "false"
+        _configure_release_host(host)
+        try:
+            run_child_command(host, env, "ecto.create")
+            run_child_command(host, env, "ecto.migrate", "--migrations-path", "priv/repo/migrations")
+
+            task_result = _run_bare_mix_check(host, env, redactor)
+            if not task_result["ready"]:
+                raise PackageInputError("task-local Mix custody check did not complete successfully")
+
+            release_env = dict(env)
+            release_env.update({
+                "MIX_ENV": "prod",
+                "MIX_BUILD_PATH": str((host / "_build" / "prod").resolve()),
+                "LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY": release_key,
+                "LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_ID": "release-startup",
+                "CLEAN_ROOM_HTTP_SERVER": "true",
+                "RELEASE_DISTRIBUTION": "name",
+                "RELEASE_NODE": "lockspire-verifier-" + run_id[:12] + "@127.0.0.1",
+                "RELEASE_COOKIE": base64.urlsafe_b64encode(os.urandom(32)).decode("ascii"),
+                "RELEASE_TMP": str(root / "release-tmp"),
+            })
+            redactor.register_material(release_env["RELEASE_COOKIE"])
+            Path(release_env["RELEASE_TMP"]).mkdir(mode=0o700, parents=True)
+            assembled = subprocess.run(
+                ("mix", "release"), cwd=host, env=release_env, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=240,
+            )
+            if assembled.returncode != 0:
+                safe = redactor.text(assembled.stdout.decode(errors="replace"))[-1200:]
+                redactor.assert_safe(safe)
+                raise PackageInputError("installed locked host release assembly failed (exit " +
+                                        str(assembled.returncode) + "): " + safe)
+            release_root = host / "_build" / "prod" / "rel" / "clean_room_provider"
+            release_bin = release_root / "bin" / "clean_room_provider"
+            if not release_bin.is_file():
+                actual_releases = sorted(path.relative_to(host).as_posix()
+                                         for path in (host / "_build" / "prod" / "rel").glob("*/bin/*")
+                                         if path.is_file())
+                safe_build_output = redactor.text(assembled.stdout.decode(errors="replace"))[-900:]
+                redactor.assert_safe(safe_build_output)
+                raise PackageInputError("assembled installed release executable is missing; found " +
+                                        json.dumps(actual_releases) + "; build output: " + safe_build_output)
+            start = _release_command(release_bin, release_env, "start", redactor=redactor)
+            if start.returncode != 0:
+                raise PackageInputError("assembled release did not start (exit " + str(start.returncode) + ")")
+            release_started = True
+            _wait_release_http(issuer)
+
+            dry_expression = _release_rpc_expression("dry_run")
+            dry = _release_command(release_bin, release_env, "rpc", dry_expression, redactor=redactor)
+            dry_markers = _parse_rpc_markers(dry.stdout.decode(errors="replace"), redactor)
+            if dry.returncode != 0 or not dry_markers.get("RPC_STATUS") == "ok":
+                raise PackageInputError("running release dry-run RPC failed (exit " + str(dry.returncode) + ")")
+            release_pid = dry_markers.get("PROCESS_PID")
+
+            check_expression = _release_rpc_expression("check")
+            checked = _release_command(release_bin, release_env, "rpc", check_expression, redactor=redactor)
+            check_markers = _parse_rpc_markers(checked.stdout.decode(errors="replace"), redactor)
+            if checked.returncode != 0 or check_markers.get("RPC_STATUS") != "ok":
+                raise PackageInputError("running release fresh-check RPC failed (exit " + str(checked.returncode) + ")")
+
+            module_path_text = dry_markers.get("MODULE_PATH", "")
+            if not module_path_text:
+                raise PackageInputError("release RPC did not report the loaded maintenance module")
+            module_path = Path(module_path_text).resolve()
+            release_root_real = release_root.resolve()
+            if module_path != release_root_real and release_root_real not in module_path.parents:
+                raise PackageInputError("release RPC loaded the maintenance module outside the assembled release")
+            module_relative = module_path.relative_to(release_root_real).as_posix()
+            module_digest = sha256(module_path)
+            provenance = runner.candidate_host_provenance(host)
+            phoenix, live_view = runner._framework_versions(host, env)
+            elixir, otp, pg = runner._actual_runtime(host, env)
+            obs = {
+                "outcome": "pass", "executed": True, "assembly_succeeded": True,
+                "running_process_observed": True, "rpc_executed": True,
+                "startup_mode_dedicated": dry_markers.get("STARTUP_WRITE_MODE") == "dedicated",
+                "task_local_mode_dedicated": task_result["mode_dedicated"],
+                "task_local_check_ready": task_result["ready"],
+                "rpc_dry_run_complete": dry_markers.get("RPC_SCAN_COMPLETE") == "true",
+                "rpc_fresh_check_ready": check_markers.get("RPC_CUSTODY_READY") == "true",
+                "loaded_candidate_verified": True,
+                "rpc_exit_code": dry.returncode, "check_exit_code": checked.returncode,
+                "task_local_exit_code": task_result["exit_code"], "process_pid": release_pid or "",
+                "release_node": release_env["RELEASE_NODE"],
+                "rpc_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :dry_run, limit: 100)",
+                "check_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 100)",
+                "task_local_invocation": "mix lockspire.clients.verifier.rewrap --check --limit 100",
+                "compiled_module_relative_path": module_relative,
+                "compiled_module_sha256": module_digest,
+                "startup_context_source": dry_markers.get("RPC_CONTEXT_SOURCE", ""),
+                "task_local_context_source": task_result["context_source"],
+                "startup_current_key_id": dry_markers.get("STARTUP_CURRENT_KEY_ID", ""),
+                "task_local_current_key_id": "task-local",
+                "dry_run_scanned": _safe_int(dry_markers.get("RPC_SCANNED")),
+                "dry_run_pending": _safe_int(dry_markers.get("RPC_PENDING")),
+                "fresh_check_scanned": _safe_int(check_markers.get("RPC_SCANNED")),
+            }
+            if not all(value for key, value in obs.items() if key.endswith(("_ready", "_complete", "_succeeded", "_observed", "_verified", "_dedicated", "_executed"))):
+                raise PackageInputError("release RPC startup snapshot or safe report assertion failed")
+            candidate = _candidate(identity)
+            receipt = {
+                "schema": "lockspire-installed-verifier-v1", "scope": "release-rpc",
+                "run_id": run_id, "runner": source_revision(), "pair": "locked",
+                "store": "builtin", "candidate": candidate,
+                "host": {**provenance, "lock_sha256": sha256(runner.PROOF_PAIR_LOCKS["locked"]),
+                         "phoenix": phoenix, "live_view": live_view},
+                "runtime": {"elixir": elixir, "otp": otp, "postgresql": pg},
+                "stable_case_ids": ["VPROOF-02-RELEASE-RPC-DRY-RUN"],
+                "observations": {"VPROOF-02-RELEASE-RPC-DRY-RUN": obs},
+                "executed_count": 1, "partial": True,
+            }
+            validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
+            redactor.assert_safe(json.dumps(receipt, sort_keys=True))
+            _write_receipt(receipt_dir, receipt)
+            return {"pair": "locked", "store": "builtin", "scope": "release-rpc",
+                    "receipt_path": str(receipt_dir / "receipt.json")}
+        finally:
+            if release_started and release_bin is not None:
+                stopped = _release_command(release_bin, release_env, "stop", redactor=redactor)
+                if stopped.returncode != 0:
+                    raise PackageInputError("owned release cleanup did not stop the run-scoped node")
+            if host is not None and host.exists():
+                try:
+                    run_child_command(host, env, "ecto.drop")
+                except PackageInputError:
+                    pass
+
+
+def _configure_release_host(host: Path) -> None:
+    runtime = host / "config" / "runtime.exs"
+    runtime.write_text(runtime.read_text(encoding="utf-8") + '''
+config :clean_room_provider, CleanRoomProviderWeb.Endpoint,
+  server: System.get_env("CLEAN_ROOM_HTTP_SERVER", "false") == "true"
+
+config :lockspire, Lockspire.Security.ClientSecretVerifier,
+  keys: [{System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_ID"), System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY")}],
+  current: System.fetch_env!("LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_ID"),
+  write_mode: :dedicated,
+  legacy_read: :allow
+''', encoding="utf-8")
+
+
+def _run_bare_mix_check(host: Path, env: dict[str, str], redactor: Redactor) -> dict[str, object]:
+    completed = subprocess.run(
+        ("mix", "lockspire.clients.verifier.rewrap", "--check", "--limit", "100"),
+        cwd=host, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, check=False, timeout=90,
+    )
+    output = redactor.text(completed.stdout.decode(errors="replace"))
+    match = re.search(r"mode=check context_source=(task_local|startup) scan_complete=(true|false)", output)
+    return {"exit_code": completed.returncode, "context_source": match.group(1) if match else "",
+            "ready": completed.returncode == 0 and "Current-key custody check passed." in output,
+            "mode_dedicated": "mode=check" in output and "context_source=task_local" in output}
+
+
+def _release_rpc_expression(mode: str) -> str:
+    return (
+        "result = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :" + mode + ", limit: 100); "
+        "report = case result do {:ok, value} -> IO.puts(\"RPC_STATUS=ok\"); value; "
+        "{:error, value} when is_map(value) -> IO.puts(\"RPC_STATUS=error\"); value; "
+        "_ -> IO.puts(\"RPC_STATUS=error\"); %{} end; "
+        "IO.puts(\"RPC_MODE=\" <> to_string(Map.get(report, :mode))); "
+        "IO.puts(\"RPC_CONTEXT_SOURCE=\" <> to_string(Map.get(report, :context_source))); "
+        "IO.puts(\"RPC_SCAN_COMPLETE=\" <> to_string(Map.get(report, :scan_complete?))); "
+        "IO.puts(\"RPC_CUSTODY_READY=\" <> to_string(Map.get(report, :custody_condition_met?))); "
+        "IO.puts(\"RPC_SCANNED=\" <> Integer.to_string(Map.get(report, :scanned, 0))); "
+        "IO.puts(\"RPC_PENDING=\" <> Integer.to_string(Map.get(report, :pending, 0))); "
+        "IO.puts(\"PROCESS_PID=\" <> System.pid()); "
+        "IO.puts(\"MODULE_PATH=\" <> List.to_string(:code.which(Lockspire.Admin.ClientVerifierMaintenance))); "
+        "config = Application.get_env(:lockspire, Lockspire.Security.ClientSecretVerifier, []); "
+        "IO.puts(\"STARTUP_WRITE_MODE=\" <> to_string(Keyword.get(config, :write_mode))); "
+        "IO.puts(\"STARTUP_CURRENT_KEY_ID=\" <> to_string(Keyword.get(config, :current)))"
+    )
+
+
+def _release_command(release_bin: Path, env: dict[str, str], *args: str,
+                     redactor: Redactor | None = None) -> subprocess.CompletedProcess[bytes]:
+    try:
+        result = subprocess.run((str(release_bin), *args), cwd=release_bin.parents[1], env=env,
+                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, check=False, timeout=90)
+    except subprocess.TimeoutExpired:
+        raise PackageInputError("run-owned release command exceeded its bounded time limit") from None
+    if redactor is not None:
+        text_output = redactor.text(result.stdout.decode(errors="replace"))
+        redactor.assert_safe(text_output)
+        if result.returncode != 0:
+            safe_tail = text_output[-1000:]
+            raise PackageInputError("run-owned release command failed (exit " + str(result.returncode) +"): " + safe_tail)
+    return result
+
+
+def _wait_release_http(issuer: str) -> None:
+    deadline = time.monotonic() + 35
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
+                if response.status == 200:
+                    return
+        except OSError:
+            time.sleep(0.15)
+    raise PackageInputError("assembled release did not become HTTP ready")
+
+
+def _parse_rpc_markers(output: str, redactor: Redactor) -> dict[str, str]:
+    safe = redactor.text(output)
+    markers = {}
+    for line in safe.splitlines():
+        match = re.fullmatch(r"(RPC_STATUS|RPC_MODE|RPC_CONTEXT_SOURCE|RPC_SCAN_COMPLETE|RPC_CUSTODY_READY|RPC_SCANNED|RPC_PENDING|PROCESS_PID|MODULE_PATH|STARTUP_WRITE_MODE|STARTUP_CURRENT_KEY_ID)=(.*)", line.strip())
+        if match:
+            markers[match.group(1)] = match.group(2)
+    return markers
+
+
+def _safe_int(value: str | None) -> int:
+    return int(value) if isinstance(value, str) and re.fullmatch(r"[0-9]+", value) else -1
+
+
 def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
     run_id = uuid.uuid4().hex
     port = allocate_port()
@@ -100,6 +352,7 @@ def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
             server, process = verifier_rollout._start_server(host, env, root / "provider.log", issuer)
 
             jwt = clients["jwt"]
+            discovered_issuer = _discover_issuer(issuer)
             token = _issue_token(issuer, jwt, redactor)
             introspection = _endpoint_post(
                 issuer, issuer + "/introspect", jwt, {"token": token["access_token"]}, redactor
@@ -122,15 +375,15 @@ def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
             post = _issue_token(issuer, clients["post"], redactor, method="post")
 
             results = {
-                ENDPOINT_CASES[0]: _positive(token["status"] == 200 and token["token_issued"], token["status"]),
-                ENDPOINT_CASES[1]: _positive(introspection["status"] == 200 and introspection["active"] is True, introspection["status"]),
-                ENDPOINT_CASES[2]: _positive(revocation["status"] == 200, revocation["status"]),
-                ENDPOINT_CASES[3]: _positive(device["status"] == 200 and device["result"], device["status"], device.get("safe_error"), device.get("safe_description")),
-                ENDPOINT_CASES[4]: _positive(ciba["status"] == 200 and ciba["result"], ciba["status"], ciba.get("safe_error"), ciba.get("safe_description")),
-                ENDPOINT_CASES[5]: _positive(par["status"] in (400, 401) and not par["success"], par["status"], par.get("safe_error"), par.get("safe_description")),
-                ENDPOINT_CASES[6]: _positive(all(negatives.values()), 400 if all(negatives.values()) else 200),
-                ENDPOINT_CASES[7]: _positive(basic["status"] == 200 and basic["token_issued"], basic["status"]),
-                ENDPOINT_CASES[8]: _positive(post["status"] == 200 and post["token_issued"], post["status"]),
+                ENDPOINT_CASES[0]: _positive(token["status"] == 200 and token["token_issued"], token["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[1]: _positive(introspection["status"] == 200 and introspection["active"] is True, introspection["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[2]: _positive(revocation["status"] == 200, revocation["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[3]: _positive(device["status"] == 200 and device["result"], device["status"], device.get("safe_error"), device.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[4]: _positive(ciba["status"] == 200 and ciba["result"], ciba["status"], ciba.get("safe_error"), ciba.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[5]: _positive(par["status"] in (400, 401) and not par["success"], par["status"], par.get("safe_error"), par.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[6]: _positive(all(negatives.values()), 400 if all(negatives.values()) else 200, configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[7]: _positive(basic["status"] == 200 and basic["token_issued"], basic["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[8]: _positive(post["status"] == 200 and post["token_issued"], post["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
             }
             if not all(item["outcome"] == "pass" for item in results.values()):
                 safe_results = {case: {"http_status": item["http_status"],
@@ -306,10 +559,23 @@ def _json_body(data: bytes) -> dict[str, object]:
 
 
 def _positive(passed: bool, status: int, safe_error: str | None = None,
-              safe_description: str | None = None) -> dict[str, object]:
+              safe_description: str | None = None, *, configured_issuer: str,
+              discovered_issuer: str) -> dict[str, object]:
     return {"outcome": "pass" if passed else "fail", "executed": True,
             "assertion_passed": bool(passed), "fresh_jti": True, "http_status": status,
-            "safe_error": safe_error, "safe_description": safe_description}
+            "safe_error": safe_error, "safe_description": safe_description,
+            "configured_issuer": configured_issuer, "discovered_issuer": discovered_issuer,
+            "assertion_audience": configured_issuer,
+            "rejected_audience_uri": configured_issuer.rstrip("/") + "/wrong"}
+
+
+def _discover_issuer(issuer: str) -> str:
+    with urllib.request.urlopen(issuer.rstrip("/") + "/.well-known/openid-configuration", timeout=10) as response:
+        metadata = _json_body(response.read())
+    discovered = metadata.get("issuer")
+    if not isinstance(discovered, str) or discovered != issuer:
+        raise PackageInputError("installed discovery issuer does not match the configured issuer")
+    return discovered
 
 
 def _candidate(identity: object) -> dict[str, str]:

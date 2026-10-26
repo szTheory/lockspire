@@ -44,7 +44,21 @@ ENDPOINT_CASE_IDS = [
     "VPROOF-02-HTTP-BASIC-CONTROL",
     "VPROOF-02-HTTP-POST-CONTROL",
 ]
-ENDPOINT_OBSERVATION_FIELDS = frozenset({"outcome", "executed", "assertion_passed", "fresh_jti", "http_status"})
+ENDPOINT_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "assertion_passed", "fresh_jti", "http_status",
+    "configured_issuer", "discovered_issuer", "assertion_audience", "rejected_audience_uri",
+})
+RELEASE_RPC_CASE_ID = "VPROOF-02-RELEASE-RPC-DRY-RUN"
+RELEASE_RPC_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
+    "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
+    "rpc_dry_run_complete", "rpc_fresh_check_ready", "loaded_candidate_verified",
+    "rpc_exit_code", "check_exit_code", "task_local_exit_code", "process_pid",
+    "release_node", "rpc_invocation", "check_invocation", "task_local_invocation",
+    "compiled_module_relative_path", "compiled_module_sha256", "startup_context_source",
+    "task_local_context_source", "startup_current_key_id", "task_local_current_key_id",
+    "dry_run_scanned", "dry_run_pending", "fresh_check_scanned",
+})
 CORE_CASE_ID = "VPROOF-02-CORE-FRESH-MAINTENANCE"
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
@@ -147,10 +161,13 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
     allowed_observation_fields = (
         CORE_OBSERVATION_FIELDS if receipt["scope"] == "core"
         else ENDPOINT_OBSERVATION_FIELDS if receipt["scope"] == "endpoints"
+        else RELEASE_RPC_OBSERVATION_FIELDS if receipt["scope"] == "release-rpc"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
         raise ReceiptError("endpoint receipt does not contain its finite required case set")
+    if receipt["scope"] == "release-rpc" and case_ids != [RELEASE_RPC_CASE_ID]:
+        raise ReceiptError("release RPC receipt does not contain its finite required case")
     for result in observations.values():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -158,7 +175,15 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             raise ReceiptError("required installed scenario did not pass")
         if "http_status" in result and (type(result["http_status"]) is not int or not 100 <= result["http_status"] <= 599):
             raise ReceiptError("observation HTTP status is invalid")
-        if any(key in result and type(result[key]) is not bool for key in allowed_observation_fields - {"outcome", "executed", "http_status"}):
+        boolean_fields = (
+            {"assertion_passed", "fresh_jti"} if receipt["scope"] == "endpoints"
+            else {"executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
+                  "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
+                  "rpc_dry_run_complete", "rpc_fresh_check_ready", "loaded_candidate_verified"}
+            if receipt["scope"] == "release-rpc"
+            else allowed_observation_fields - {"outcome", "executed", "http_status"}
+        )
+        if any(key in result and type(result[key]) is not bool for key in boolean_fields):
             raise ReceiptError("observation boolean field is invalid")
         if receipt["scope"] == "tracer" and (
             set(result) != TRACER_OBSERVATION_FIELDS
@@ -188,8 +213,43 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             set(result) != ENDPOINT_OBSERVATION_FIELDS
             or result["http_status"] < 100 or result["assertion_passed"] is not True
             or result["fresh_jti"] is not True
+            or result["configured_issuer"] != result["discovered_issuer"]
+            or result["assertion_audience"] != result["configured_issuer"]
+            or result["rejected_audience_uri"] == result["configured_issuer"]
+            or not isinstance(result["configured_issuer"], str)
+            or not result["configured_issuer"].startswith(("http://", "https://"))
         ):
             raise ReceiptError("installed endpoint observation is incomplete")
+        if receipt["scope"] == "release-rpc":
+            bool_fields = {
+                "executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
+                "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
+                "rpc_dry_run_complete", "rpc_fresh_check_ready", "loaded_candidate_verified",
+            }
+            int_fields = {"rpc_exit_code", "check_exit_code", "task_local_exit_code", "dry_run_scanned",
+                          "dry_run_pending", "fresh_check_scanned"}
+            string_fields = {"process_pid", "release_node", "rpc_invocation", "check_invocation",
+                             "task_local_invocation", "compiled_module_relative_path",
+                             "compiled_module_sha256", "startup_context_source", "task_local_context_source",
+                             "startup_current_key_id", "task_local_current_key_id"}
+            if (set(result) != RELEASE_RPC_OBSERVATION_FIELDS
+                    or any(type(result.get(key)) is not bool for key in bool_fields)
+                    or any(type(result.get(key)) is not int for key in int_fields)
+                    or any(not isinstance(result.get(key), str) or not result[key] for key in string_fields)):
+                raise ReceiptError("running-release RPC observation is incomplete")
+            if (result["rpc_exit_code"] != 0 or result["check_exit_code"] != 0
+                    or result["task_local_exit_code"] != 0 or result["compiled_module_sha256"] is None
+                    or not SHA.fullmatch(result["compiled_module_sha256"])
+                    or result["compiled_module_relative_path"].startswith("/")
+                    or "../" in result["compiled_module_relative_path"]
+                    or not result["compiled_module_relative_path"].startswith("lib/lockspire-")
+                    or result["release_node"].startswith("-")
+                    or result["startup_context_source"] != "startup"
+                    or result["task_local_context_source"] != "task_local"
+                    or result["startup_current_key_id"] != "release-startup"
+                    or result["task_local_current_key_id"] != "task-local"
+                    or not all(result[key] for key in bool_fields)):
+                raise ReceiptError("running-release RPC proof did not bind the assembled candidate")
     if type(receipt["executed_count"]) is not int or receipt["executed_count"] <= 0 or receipt["executed_count"] != len(case_ids):
         raise ReceiptError("receipt has no reconciled execution count")
     return receipt

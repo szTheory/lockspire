@@ -44,12 +44,10 @@ defmodule Lockspire.Oban do
     end
   end
 
-  defp maybe_put_testing_mode(config) do
-    if Mix.env() == :test do
-      Keyword.put_new(config, :testing, :manual)
-    else
-      config
-    end
+  if Mix.env() == :test do
+    defp maybe_put_testing_mode(config), do: Keyword.put_new(config, :testing, :manual)
+  else
+    defp maybe_put_testing_mode(config), do: config
   end
 
   defp maybe_put_prefix(config) do

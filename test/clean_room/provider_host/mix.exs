@@ -14,7 +14,7 @@ defmodule CleanRoomProvider.MixProject do
 
   defp deps do
     [
-      {:lockspire, path: "vendor/lockspire", runtime: false},
+      {:lockspire, path: "vendor/lockspire"},
       {:phoenix, "== 1.8.13"},
       {:phoenix_live_view, "== 1.2.10"},
       {:ecto_sql, "== 3.13.5"},
