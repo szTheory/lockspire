@@ -144,6 +144,7 @@ class VerifierRolloutContracts(unittest.TestCase):
         source = (ROOT / "scripts/acceptance/clean_room/verifier_rollout.py").read_text(encoding="utf-8")
         public = source.split("def _run_public_control", 1)[1].split("def _configure", 1)[0]
         self.assertIn("runner._provision_signing_key(new_host, new_env)", public)
+        self.assertIn('"old_process_pid": old_pid, "candidate_process_pid": candidate_pid', public)
 
     def test_public_source_link_requires_terminal_identity_and_exact_package_file_match(self) -> None:
         helper = verifier_rollout.verify_public_artifact

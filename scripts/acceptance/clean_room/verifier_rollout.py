@@ -322,7 +322,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
         try:
             run_child_command(old_host, old_env, "ecto.create")
             run_child_command(old_host, old_env, "ecto.migrate")
-            old_server, _old_pid = _start_server(old_host, old_env, root / "public.log", old_env["LOCKSPIRE_ISSUER"])
+            old_server, old_pid = _start_server(old_host, old_env, root / "public.log", old_env["LOCKSPIRE_ISSUER"])
             client_id = "public-legacy-" + run_id
             client_id, secret = runner._capture_secret(old_host, old_env, redactor, client_id)
             _stop_owned_server(old_server)
@@ -334,7 +334,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
             _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
             run_child_command(new_host, new_env, "lockspire.clients.verifier.rewrap", "--limit", "100")
             runner._provision_signing_key(new_host, new_env)
-            new_server, _new_pid = _start_server(new_host, new_env, root / "adopter.log", new_env["LOCKSPIRE_ISSUER"])
+            new_server, candidate_pid = _start_server(new_host, new_env, root / "adopter.log", new_env["LOCKSPIRE_ISSUER"])
             http_ok, http_failure = _http_auth_result(new_env["LOCKSPIRE_ISSUER"], port_new, client_id, secret)
             promoted_format, new_hash = _safe_row(new_host, new_env, prefix, client_id)
             new_deadline = _safe_deadline(new_host, new_env, prefix, client_id)
@@ -349,6 +349,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
                 "authenticated_age_kind_before": old_age_kind, "authenticated_age_kind_after": new_age_kind,
                 "authenticated_deadline_preserved": old_deadline is not None and old_deadline == new_deadline,
                 "client_hash_preserved": bool(old_hash) and old_hash == new_hash,
+                "old_process_pid": old_pid, "candidate_process_pid": candidate_pid,
                 "coverage": "locked-only bounded public legacy producer/adopter control",
             }
             if not (http_ok and legacy_format == "legacy" and promoted_format == "dedicated" and
