@@ -99,6 +99,12 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertEqual(verifier_rollout._classify_old_code_rejection("installed token request did not issue an access token"), 0)
         self.assertEqual(verifier_rollout._classify_old_code_rejection("invalid_client"), 0)
 
+    def test_http_auth_failure_is_reduced_to_safe_status_code(self) -> None:
+        with mock.patch.object(verifier_rollout.runner, "_authorization_code", side_effect=build_provider.PackageInputError("installed token HTTP returned status 401 (invalid_client)")):
+            passed, failure = verifier_rollout._http_auth_result("http://127.0.0.1/lockspire", 80, "id", "secret")
+        self.assertFalse(passed)
+        self.assertEqual(failure, "token-http-401-invalid_client")
+
     def test_readiness_failure_cleans_owned_server_and_log_handle(self) -> None:
         class Process:
             pid = 1234

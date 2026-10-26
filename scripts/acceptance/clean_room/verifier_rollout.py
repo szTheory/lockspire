@@ -333,7 +333,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
             _configure(host=new_host, mode="dedicated", legacy_read="allow", key=key)
             run_child_command(new_host, new_env, "lockspire.clients.verifier.rewrap", "--limit", "100")
             new_server, _new_pid = _start_server(new_host, new_env, root / "adopter.log", new_env["LOCKSPIRE_ISSUER"])
-            http_ok = _http_auth(new_env["LOCKSPIRE_ISSUER"], port_new, client_id, secret)
+            http_ok, http_failure = _http_auth_result(new_env["LOCKSPIRE_ISSUER"], port_new, client_id, secret)
             promoted_format, new_hash = _safe_row(new_host, new_env, prefix, client_id)
             new_deadline = _safe_deadline(new_host, new_env, prefix, client_id)
             new_age_kind = _projection(new_host, new_env, prefix, client_id)["age_kind"]
@@ -342,6 +342,7 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
                 "release_source_evidence": "documented-public-release-source",
                 "lifetime_prerequisite_migrated": True, "verifier_specific_adoption_executed": True,
                 "http_authentication_succeeded": http_ok,
+                "http_auth_failure": http_failure,
                 "legacy_format_before": legacy_format, "dedicated_format_after": promoted_format,
                 "authenticated_age_kind_before": old_age_kind, "authenticated_age_kind_after": new_age_kind,
                 "authenticated_deadline_preserved": old_deadline is not None and old_deadline == new_deadline,
@@ -353,7 +354,8 @@ def _run_public_control(receipt_dir: Path) -> dict[str, object]:
                     observation["authenticated_deadline_preserved"] and observation["client_hash_preserved"]):
                 raise PackageInputError(
                     "public legacy verifier adoption or preservation observation failed "
-                    f"(http_auth={str(http_ok).lower()};before_format={legacy_format};after_format={promoted_format};"
+                    f"(http_auth={str(http_ok).lower()};http_failure={http_failure or 'none'};"
+                    f"before_format={legacy_format};after_format={promoted_format};"
                     f"before_age={old_age_kind};after_age={new_age_kind};"
                     f"deadline_preserved={str(observation['authenticated_deadline_preserved']).lower()};"
                     f"hash_preserved={str(observation['client_hash_preserved']).lower()})"
@@ -492,12 +494,22 @@ def _parse_projection_output(output: str) -> dict[str, str | None]:
 
 
 def _http_auth(issuer: str, port: int, client_id: str, secret: str) -> bool:
+    passed, _failure = _http_auth_result(issuer, port, client_id, secret)
+    return passed
+
+
+def _http_auth_result(issuer: str, port: int, client_id: str, secret: str) -> tuple[bool, str | None]:
     try:
         _redirect_uri, verifier, code = runner._authorization_code(issuer, port, client_id, Redactor(SentinelSet.for_run()))
         ok, status, _ = runner._token_request(issuer, client_id, secret, _redirect_uri, verifier, code, Redactor(SentinelSet.for_run()))
-        return status == 200 and ok
-    except (PackageInputError, OSError):
-        return False
+        return (True, None) if status == 200 and ok else (False, f"token-http-{status}")
+    except PackageInputError as error:
+        match = re.search(r"installed token http returned status ([0-9]{3})(?: \((invalid_client|invalid_grant|invalid_request|server_error|temporarily_unavailable)\))?", str(error), re.IGNORECASE)
+        if match:
+            return False, f"token-http-{match.group(1)}" + (f"-{match.group(2).lower()}" if match.group(2) else "")
+        return False, "authorization-flow-failed"
+    except OSError:
+        return False, "http-transport-failed"
 
 
 def _old_code_probe(host: Path, env: dict[str, str], client_id: str, secret: str) -> int:
