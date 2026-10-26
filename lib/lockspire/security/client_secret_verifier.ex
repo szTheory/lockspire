@@ -144,6 +144,37 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     _ -> {:error, :client_secret_verifier_unsupported_format}
   end
 
+  @doc false
+  @spec rewrap_native(Context.t(), term(), term(), term()) ::
+          {:ok, :already_current, String.t(), String.t()}
+          | {:ok, String.t(), String.t(), String.t()}
+          | {:error, atom()}
+  def rewrap_native(context, client_id, expected_hash, encrypted) do
+    with {:ok, %Context{state: :valid, write_mode: :dedicated} = context} <-
+           Context.validate(context),
+         :ok <- validate_identity(client_id),
+         {:ok, secret, :native, old_key_id} <-
+           authenticated_material(context, client_id, encrypted),
+         :ok <- verify_expected_hash(expected_hash, secret),
+         {:ok, new_key} <- fetch_current_key(context, context.current_id) do
+      if old_key_id == context.current_id do
+        {:ok, :already_current, old_key_id, context.current_id}
+      else
+        seal_with_key(context.current_id, new_key, client_id, secret)
+        |> case do
+          {:ok, replacement} -> {:ok, replacement, old_key_id, context.current_id}
+          {:error, reason} -> {:error, reason}
+        end
+      end
+    else
+      {:ok, %Context{}} -> {:error, :client_secret_verifier_configuration_invalid}
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :client_secret_verifier_unavailable}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_unavailable}
+  end
+
   defp open_value(
          %Context{state: :valid, legacy_read: legacy_read} = context,
          client_id,
@@ -246,6 +277,63 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     payload = Base.url_encode64(iv <> tag <> ciphertext, padding: false)
     {:ok, @header <> "." <> key_id <> "." <> payload}
   end
+
+  defp seal_with_key(key_id, key, client_id, secret) do
+    iv = :crypto.strong_rand_bytes(@iv_bytes)
+    plaintext = <<1, byte_size(secret)::unsigned-big-32, secret::binary, 0>>
+
+    {ciphertext, tag} =
+      :crypto.crypto_one_time_aead(
+        :aes_256_gcm,
+        key,
+        iv,
+        plaintext,
+        aad(key_id, client_id),
+        @tag_bytes,
+        true
+      )
+
+    payload = Base.url_encode64(iv <> tag <> ciphertext, padding: false)
+    {:ok, @header <> "." <> key_id <> "." <> payload}
+  rescue
+    _ -> {:error, :client_secret_verifier_unavailable}
+  end
+
+  defp authenticated_material(context, client_id, encrypted)
+       when is_binary(encrypted) do
+    with :ok <- validate_encoded_envelope(encrypted),
+         {:ok, key_id, payload} <- parse_envelope(encrypted),
+         {:ok, key} <- fetch_envelope_key(context, key_id),
+         {:ok, decoded} <- Base.url_decode64(payload, padding: false),
+         true <-
+           byte_size(decoded) >= @iv_bytes + @tag_bytes and
+             byte_size(decoded) <= @max_payload_bytes,
+         true <- Base.url_encode64(decoded, padding: false) == payload,
+         <<iv::binary-size(@iv_bytes), tag::binary-size(@tag_bytes), ciphertext::binary>> <-
+           decoded,
+         plaintext when is_binary(plaintext) <-
+           :crypto.crypto_one_time_aead(
+             :aes_256_gcm,
+             key,
+             iv,
+             ciphertext,
+             aad(key_id, client_id),
+             tag,
+             false
+           ),
+         {:ok, secret, age} <- decode_plaintext(plaintext) do
+      {:ok, secret, age, key_id}
+    else
+      false -> {:error, :client_secret_verifier_unsupported_format}
+      {:error, reason} -> {:error, reason}
+      _ -> {:error, :client_secret_verifier_unavailable}
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_unavailable}
+  end
+
+  defp authenticated_material(_context, _client_id, _encrypted),
+    do: {:error, :client_secret_verifier_unsupported_format}
 
   defp fetch_current_key(context, key_id) do
     case Map.fetch(context.keys, key_id) do
