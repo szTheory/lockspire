@@ -379,6 +379,9 @@ def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
             revocation = _endpoint_post(
                 issuer, issuer + "/revoke", jwt, {"token": token["access_token"]}, redactor
             )
+            revoked_introspection = _endpoint_post(
+                issuer, issuer + "/introspect", jwt, {"token": token["access_token"]}, redactor
+            )
             device = _endpoint_post(issuer, issuer + "/device/code", jwt, {"scope": "openid"}, redactor)
             ciba = _endpoint_post(
                 issuer, issuer + "/bc-authorize", jwt,
@@ -390,17 +393,27 @@ def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
                  "redirect_uri": "https://client.example/callback", "scope": "openid"}, redactor,
             )
             negatives = _negative_assertions(issuer, jwt, redactor)
+            negatives.update(_fapi_exclusions(host, env, issuer, jwt, redactor))
             basic = _issue_token(issuer, clients["basic"], redactor, method="basic")
             post = _issue_token(issuer, clients["post"], redactor, method="post")
 
             results = {
                 ENDPOINT_CASES[0]: _positive(token["status"] == 200 and token["token_issued"], token["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
                 ENDPOINT_CASES[1]: _positive(introspection["status"] == 200 and introspection["active"] is True, introspection["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
-                ENDPOINT_CASES[2]: _positive(revocation["status"] == 200, revocation["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[2]: _positive(
+                    revocation["status"] == 200 and revoked_introspection["active"] is False,
+                    revocation["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer,
+                    revoked_token_inactive=revoked_introspection["active"] is False,
+                ),
                 ENDPOINT_CASES[3]: _positive(device["status"] == 200 and device["result"], device["status"], device.get("safe_error"), device.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
                 ENDPOINT_CASES[4]: _positive(ciba["status"] == 200 and ciba["result"], ciba["status"], ciba.get("safe_error"), ciba.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
                 ENDPOINT_CASES[5]: _positive(par["status"] in (400, 401) and not par["success"], par["status"], par.get("safe_error"), par.get("safe_description"), configured_issuer=issuer, discovered_issuer=discovered_issuer),
-                ENDPOINT_CASES[6]: _positive(all(negatives.values()), 400 if all(negatives.values()) else 200, configured_issuer=issuer, discovered_issuer=discovered_issuer),
+                ENDPOINT_CASES[6]: _positive(
+                    all(negatives.values()), 400 if all(negatives.values()) else 200,
+                    configured_issuer=issuer, discovered_issuer=discovered_issuer,
+                    fapi_security_excluded=negatives["fapi_security"],
+                    fapi_message_signing_excluded=negatives["fapi_message_signing"],
+                ),
                 ENDPOINT_CASES[7]: _positive(basic["status"] == 200 and basic["token_issued"], basic["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
                 ENDPOINT_CASES[8]: _positive(post["status"] == 200 and post["token_issued"], post["status"], configured_issuer=issuer, discovered_issuer=discovered_issuer),
             }
@@ -558,6 +571,41 @@ def _negative_assertions(issuer: str, client: dict[str, str], redactor: Redactor
     return checks
 
 
+def _fapi_exclusions(host: Path, env: dict[str, str], issuer: str,
+                     client: dict[str, str], redactor: Redactor) -> dict[str, bool]:
+    checks = {}
+    for profile, label in (
+        ("fapi_2_0_security", "fapi_security"),
+        ("fapi_2_0_message_signing", "fapi_message_signing"),
+    ):
+        _set_security_profile(host, env, profile, redactor)
+        try:
+            fields = {"token": "fapi-exclusion-probe", **_assertion_fields(issuer, client, redactor)}
+            status, payload = _post(
+                issuer + "/introspect", fields,
+                {"Content-Type": "application/x-www-form-urlencoded"},
+            )
+            checks[label] = status in (400, 401) and payload.get("error") == "invalid_client"
+        finally:
+            _set_security_profile(host, env, "none", redactor)
+    return checks
+
+
+def _set_security_profile(host: Path, env: dict[str, str], profile: str,
+                          redactor: Redactor) -> None:
+    if profile not in {"none", "fapi_2_0_security", "fapi_2_0_message_signing"}:
+        raise PackageInputError("unsupported owned host security profile selector")
+    code = (
+        "{:ok, _policy} = Lockspire.Admin.put_security_profile(\"" + profile + "\"); "
+        "IO.puts(\"HOST_SECURITY_PROFILE=" + profile + "\")"
+    )
+    output = run_child_command_output(host, env, "run", "-e", code)
+    safe = redactor.text(output)
+    redactor.assert_safe(safe)
+    if "HOST_SECURITY_PROFILE=" + profile not in safe.splitlines():
+        raise PackageInputError("host-owned public policy setup did not select the requested profile")
+
+
 def _post(url: str, fields: dict[str, str], headers: dict[str, str]) -> tuple[int, dict[str, object]]:
     request = urllib.request.Request(url, data=urllib.parse.urlencode(fields).encode(), headers=headers, method="POST")
     try:
@@ -579,13 +627,14 @@ def _json_body(data: bytes) -> dict[str, object]:
 
 def _positive(passed: bool, status: int, safe_error: str | None = None,
               safe_description: str | None = None, *, configured_issuer: str,
-              discovered_issuer: str) -> dict[str, object]:
+              discovered_issuer: str, **evidence: bool) -> dict[str, object]:
     return {"outcome": "pass" if passed else "fail", "executed": True,
             "assertion_passed": bool(passed), "fresh_jti": True, "http_status": status,
             "safe_error": safe_error, "safe_description": safe_description,
             "configured_issuer": configured_issuer, "discovered_issuer": discovered_issuer,
             "assertion_audience": configured_issuer,
-            "rejected_audience_uri": configured_issuer.rstrip("/") + "/wrong"}
+            "rejected_audience_uri": configured_issuer.rstrip("/") + "/wrong",
+            **evidence}
 
 
 def _discover_issuer(issuer: str) -> str:

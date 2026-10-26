@@ -48,6 +48,8 @@ ENDPOINT_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "assertion_passed", "fresh_jti", "http_status",
     "configured_issuer", "discovered_issuer", "assertion_audience", "rejected_audience_uri",
 })
+ENDPOINT_LIFECYCLE_FIELDS = frozenset({"revoked_token_inactive"})
+ENDPOINT_FAPI_FIELDS = frozenset({"fapi_security_excluded", "fapi_message_signing_excluded"})
 RELEASE_RPC_CASE_ID = "VPROOF-02-RELEASE-RPC-DRY-RUN"
 RELEASE_RPC_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
@@ -160,7 +162,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("receipt outcomes omit or add a case")
     allowed_observation_fields = (
         CORE_OBSERVATION_FIELDS if receipt["scope"] == "core"
-        else ENDPOINT_OBSERVATION_FIELDS if receipt["scope"] == "endpoints"
+        else ENDPOINT_OBSERVATION_FIELDS | ENDPOINT_LIFECYCLE_FIELDS | ENDPOINT_FAPI_FIELDS
+        if receipt["scope"] == "endpoints"
         else RELEASE_RPC_OBSERVATION_FIELDS if receipt["scope"] == "release-rpc"
         else TRACER_OBSERVATION_FIELDS
     )
@@ -168,7 +171,7 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("endpoint receipt does not contain its finite required case set")
     if receipt["scope"] == "release-rpc" and case_ids != [RELEASE_RPC_CASE_ID]:
         raise ReceiptError("release RPC receipt does not contain its finite required case")
-    for result in observations.values():
+    for case_id, result in observations.items():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
         if result.get("outcome") != "pass" or result.get("executed") is not True:
@@ -176,7 +179,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         if "http_status" in result and (type(result["http_status"]) is not int or not 100 <= result["http_status"] <= 599):
             raise ReceiptError("observation HTTP status is invalid")
         boolean_fields = (
-            {"assertion_passed", "fresh_jti"} if receipt["scope"] == "endpoints"
+            {"assertion_passed", "fresh_jti", *ENDPOINT_LIFECYCLE_FIELDS, *ENDPOINT_FAPI_FIELDS}
+            if receipt["scope"] == "endpoints"
             else {"executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
                   "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
                   "rpc_dry_run_complete", "rpc_fresh_check_ready", "loaded_candidate_verified"}
@@ -209,8 +213,13 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 raise ReceiptError("built-in core receipt contains delegated adapter claims")
             if result["http_status"] != 200:
                 raise ReceiptError("installed core token flow did not return HTTP 200")
+        endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
+        if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
+            endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS
+        elif receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-JWT-NEGATIVE-CONTROLS":
+            endpoint_expected_fields |= ENDPOINT_FAPI_FIELDS
         if receipt["scope"] == "endpoints" and (
-            set(result) != ENDPOINT_OBSERVATION_FIELDS
+            set(result) != endpoint_expected_fields
             or result["http_status"] < 100 or result["assertion_passed"] is not True
             or result["fresh_jti"] is not True
             or result["configured_issuer"] != result["discovered_issuer"]
@@ -220,6 +229,11 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             or not result["configured_issuer"].startswith(("http://", "https://"))
         ):
             raise ReceiptError("installed endpoint observation is incomplete")
+        if receipt["scope"] == "endpoints" and (
+            (ENDPOINT_LIFECYCLE_FIELDS & set(result) and result["revoked_token_inactive"] is not True)
+            or (ENDPOINT_FAPI_FIELDS & set(result) and any(result[field] is not True for field in ENDPOINT_FAPI_FIELDS))
+        ):
+            raise ReceiptError("installed endpoint lifecycle or FAPI exclusion evidence is incomplete")
         if receipt["scope"] == "release-rpc":
             bool_fields = {
                 "executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
