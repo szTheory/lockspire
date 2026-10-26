@@ -7,10 +7,10 @@ updated: 2026-10-26T22:45:07Z
 
 ## Current Focus
 
-hypothesis: Installed request processing raises UndefinedFunctionError with a target different from exact httpc.request/4; a runtime/application-startup difference remains possible.
-test: The three diagnostic recovery attempts and one differently bounded minimal installed-host run are exhausted; original root cause remains unconfirmed. Diagnostic parser correction has independent regression/revert evidence.
-expecting: Parent performs a fresh source audit before deciding any further authorized experiment; no further installed retries by this owner.
-next_action: Parent resumes a fresh source audit from this durable checkpoint. This diagnostic owner performs no further installed execution or source edits after the handoff commit.
+hypothesis: Root follow-up confirmed the host omitted inets from extra_applications, allowing Mix path pruning to break http_util.timestamp/0. This HTTP blocker is resolved; recovery assertions still need actual proof.
+test: Exact extracted helper in an owned installed host failed at the source-backed http_util.timestamp/0 target; changing only its inets declaration restored all four loopback statuses and normal mounted rejection. Qualified reduced regression and full acceptance pass.
+expecting: Resume Plan 06 from host fix 55f3f134; five remaining false recovery observations must be corrected/proved, not relaxed.
+next_action: Read .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-ROOT-DIAGNOSIS.md. Original bounded diagnostic history below remains unchanged; it did not establish the root cause at its handoff.
 bug_class: bohrbug
 candidate_causes:
   - code: Undefined call deeper in HTTP request processing or generated-host helper execution.
