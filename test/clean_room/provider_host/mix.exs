@@ -10,7 +10,9 @@ defmodule CleanRoomProvider.MixProject do
     ]
   end
 
-  def application, do: [mod: {CleanRoomProvider.Application, []}, extra_applications: [:logger]]
+  # Host-only HTTP probes need inets declared so Mix retains its complete code path.
+  def application,
+    do: [mod: {CleanRoomProvider.Application, []}, extra_applications: [:logger, :inets]]
 
   defp deps do
     [
