@@ -228,7 +228,10 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceIssuanceTest do
       %{raw_code: raw_code, code_verifier: code_verifier}
     end)
     |> then(fn code ->
-      on_exit(fn -> cleanup(client_id, "maintenance-race-kid-#{suffix}") end)
+      on_exit(fn ->
+        cleanup(client_id, "maintenance-race-kid-#{suffix}", code.raw_code)
+      end)
+
       Map.merge(%{client: client, secret: secret, encrypted: encrypted}, code)
     end)
   end
@@ -294,7 +297,7 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceIssuanceTest do
   defp fetch_client(client_id),
     do: Sandbox.unboxed_run(TestRepo, fn -> Repository.fetch_client_by_id(client_id) end)
 
-  defp cleanup(client_id, kid) do
+  defp cleanup(client_id, kid, interaction_id) do
     Sandbox.unboxed_run(TestRepo, fn ->
       interaction_ids =
         TestRepo.all(
@@ -312,6 +315,13 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceIssuanceTest do
       TestRepo.delete_all(
         from(interaction in InteractionRecord,
           where: interaction.interaction_id in ^interaction_ids
+        )
+      )
+
+      TestRepo.delete_all(
+        from(interaction in InteractionRecord,
+          where:
+            interaction.interaction_id == ^interaction_id and interaction.client_id == ^client_id
         )
       )
 
