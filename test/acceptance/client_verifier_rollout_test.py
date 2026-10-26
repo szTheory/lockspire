@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
@@ -58,6 +60,60 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertIn("authenticated_deadline_preserved", source)
         self.assertIn("client_hash_preserved", source)
         self.assertIn("locked-only", source)
+
+    def test_server_role_copies_environment_and_enables_only_owned_http_process(self) -> None:
+        incoming = {"PORT": "4123", "CLEAN_ROOM_HTTP_SERVER": "false"}
+        server_env = verifier_rollout._server_environment(incoming)
+        self.assertEqual(server_env["PORT"], "4123")
+        self.assertEqual(server_env["CLEAN_ROOM_HTTP_SERVER"], "true")
+        self.assertEqual(incoming["CLEAN_ROOM_HTTP_SERVER"], "false")
+
+    def test_projection_protocol_accepts_fixture_markers_and_rejects_missing_or_invalid_rows(self) -> None:
+        projected = verifier_rollout._parse_projection_output(
+            "ROW_FORMAT=legacy;HASH_DIGEST=" + "a" * 64 + ";AGE_KIND=migrated;SIGNED_AT_MS=123;DEADLINE_MS=456\n"
+        )
+        self.assertEqual(projected, {"format": "legacy", "hash_digest": "a" * 64, "age_kind": "migrated",
+                                     "signed_at_ms": "123", "deadline": "456"})
+        with self.assertRaisesRegex(build_provider.PackageInputError, "unavailable"):
+            verifier_rollout._parse_projection_output("command completed without projection\n")
+        with self.assertRaisesRegex(build_provider.PackageInputError, "safe hash witness"):
+            verifier_rollout._parse_projection_output("ROW_FORMAT=invalid;HASH_DIGEST=unavailable;AGE_KIND=unavailable;DEADLINE_MS=unavailable\n")
+        with self.assertRaisesRegex(build_provider.PackageInputError, "safe hash witness"):
+            verifier_rollout._parse_projection_output("ROW_FORMAT=legacy;HASH_DIGEST=not-a-digest;AGE_KIND=migrated;DEADLINE_MS=nil\n")
+
+    def test_old_code_rejection_requires_actual_invalid_client_http_401(self) -> None:
+        self.assertEqual(verifier_rollout._classify_old_code_rejection("installed token HTTP returned status 401 (invalid_client)"), 401)
+        self.assertEqual(verifier_rollout._classify_old_code_rejection("installed token HTTP returned status 403 (invalid_client)"), 0)
+        self.assertEqual(verifier_rollout._classify_old_code_rejection("installed token request did not issue an access token"), 0)
+        self.assertEqual(verifier_rollout._classify_old_code_rejection("invalid_client"), 0)
+
+    def test_readiness_failure_cleans_owned_server_and_log_handle(self) -> None:
+        class Process:
+            pid = 1234
+
+            def __init__(self, *_args, **_kwargs):
+                self.stopped = False
+
+            def poll(self):
+                return None
+
+            def terminate(self):
+                self.stopped = True
+
+            def wait(self, timeout=None):
+                return 0
+
+        with tempfile.TemporaryDirectory() as temporary:
+            process = Process()
+            with mock.patch.object(verifier_rollout.subprocess, "Popen", return_value=process), \
+                 mock.patch.object(verifier_rollout.time, "monotonic", side_effect=(0, 36)):
+                with self.assertRaisesRegex(build_provider.PackageInputError, "did not become HTTP ready"):
+                    verifier_rollout._start_server(Path(temporary), {}, Path(temporary) / "server.log", "http://127.0.0.1:9")
+            self.assertTrue(process.stopped)
+
+    def test_public_source_link_requires_terminal_identity_and_exact_package_file_match(self) -> None:
+        helper = verifier_rollout.verify_public_artifact
+        self.assertFalse(helper(Path("missing.tar"), verifier_rollout.PUBLIC_SHA256, verifier_rollout.PUBLIC_SOURCE))
 
 
 if __name__ == "__main__":
