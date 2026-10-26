@@ -148,6 +148,59 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
              |> then(&Support.all(TestRepo, &1, sensitive: true))
   end
 
+  test "persisted expired migrated verifier rewrap preserves authentication expiry" do
+    old_key = :crypto.strong_rand_bytes(32)
+    new_key = :crypto.strong_rand_bytes(32)
+    client_id = unique_id()
+    secret = "maintenance-expired-migrated-secret"
+    signed_at_ms = 1_700_000_000_123
+    deadline_ms = signed_at_ms + 1_250
+    old_context = context([{"maintenance-migrated-old", old_key}], "maintenance-migrated-old")
+
+    new_context =
+      context(
+        [
+          {"maintenance-migrated-old", old_key},
+          {"maintenance-migrated-new", new_key}
+        ],
+        "maintenance-migrated-new"
+      )
+
+    set_startup_context(new_context)
+    hash = Policy.hash_client_secret(secret)
+
+    verifier =
+      seal_migrated(
+        old_context,
+        client_id,
+        secret,
+        signed_at_ms,
+        deadline_ms
+      )
+
+    assert {:ok, _persisted} = Repository.register_client(client(client_id, hash, verifier))
+    assert {:ok, :changed} = ClientVerifierMaintenance.rewrap_client(client_id)
+    assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
+
+    assert stored.client_secret_jwt_verifier_encrypted != verifier
+
+    assert {:error, :client_secret_verifier_unavailable} =
+             ClientSecretVerifier.open(
+               new_context,
+               client_id,
+               stored.client_secret_jwt_verifier_encrypted,
+               verifier_now_ms: deadline_ms + 1
+             )
+
+    assert {:ok, _secret} =
+             ClientSecretVerifier.open(
+               new_context,
+               client_id,
+               stored.client_secret_jwt_verifier_encrypted,
+               verifier_now_ms: deadline_ms
+             )
+  end
+
   test "missing maintenance capability fails before client access" do
     Application.put_env(:lockspire, :client_store, Lockspire.TestSupport.NoMaintenanceClientStore)
 
@@ -213,6 +266,26 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
 
     {:ok, validated} = Context.validate(context)
     validated
+  end
+
+  defp seal_migrated(context, client_id, secret, signed_at_ms, deadline_ms) do
+    key = context.keys[context.current_id]
+    iv = :crypto.strong_rand_bytes(12)
+
+    plaintext =
+      <<1, byte_size(secret)::unsigned-big-32, secret::binary, 1, signed_at_ms::signed-big-64,
+        deadline_ms::signed-big-64>>
+
+    aad =
+      "lockspire-client-secret-jwt-verifier" <>
+        <<0>> <> "LSCV1" <> <<0>> <> context.current_id <> <<0>> <> client_id
+
+    {ciphertext, tag} =
+      :crypto.crypto_one_time_aead(:aes_256_gcm, key, iv, plaintext, aad, 16, true)
+
+    "LSCV1." <>
+      context.current_id <>
+      "." <> Base.url_encode64(iv <> tag <> ciphertext, padding: false)
   end
 
   defp compare_in_transaction(client_id, hash, expected, replacement, attrs) do
