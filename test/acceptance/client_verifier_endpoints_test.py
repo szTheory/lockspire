@@ -158,7 +158,7 @@ class VerifierEndpointContracts(unittest.TestCase):
         with self.assertRaisesRegex(ReceiptError, "bind the assembled candidate"):
             validate_receipt(receipt, expected_pair="locked", expected_store="builtin")
 
-    def test_detached_release_start_logs_to_run_owned_file_not_inherited_pipes(self) -> None:
+    def test_release_daemon_logs_to_run_owned_file_not_inherited_pipes(self) -> None:
         import tempfile
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -167,7 +167,7 @@ class VerifierEndpointContracts(unittest.TestCase):
             binary_dir.mkdir(parents=True)
             with mock.patch.object(verifier_endpoints.subprocess, "run",
                                    return_value=subprocess.CompletedProcess([], 0, b"", None)) as command:
-                verifier_endpoints._release_command(binary_dir / "clean_room_provider", {}, "start")
+                verifier_endpoints._release_command(binary_dir / "clean_room_provider", {}, "daemon")
         kwargs = command.call_args.kwargs
         self.assertNotIn(kwargs["stdout"], (subprocess.PIPE, subprocess.DEVNULL))
         self.assertIs(kwargs["stderr"], subprocess.STDOUT)
