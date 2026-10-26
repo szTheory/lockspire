@@ -162,11 +162,12 @@ def _run_witness(host: Path, env: dict[str, str], scope: str, redactor: Redactor
     code = (
         "{:ok, _} = Application.ensure_all_started(:ecto_sql); "
         "{:ok, _repo} = CleanRoomProvider.Repo.start_link(); "
+        "{:ok, _} = Application.ensure_all_started(:lockspire); "
         f"observations = CleanRoomProvider.VerifierTransactions.{function}(); "
         'IO.puts("TRANSACTION_WITNESS=" <> Jason.encode!(%{"observations" => observations}))'
     )
     completed = subprocess.run(
-        ("mix", "run", "-e", code),
+        ("mix", "run", "--no-start", "-e", code),
         cwd=host,
         env=env,
         stdin=subprocess.DEVNULL,
