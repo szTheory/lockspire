@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' LOCKSPIRE_TEST_DB_NAME=lockspire_phase177_20261026_owned MIX_ENV=test mix test --no-compile --only inventory_paging --formatter Lockspire.TestSupport.GsdTapFormatter test/lockspire/storage/client_verifier_maintenance_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test inventory pages traverse all persisted IDs in exclusive UTF-8 byte order\n1..1\n",
+  "targetTest": "test inventory pages traverse all persisted IDs in exclusive UTF-8 byte order",
+  "targetFile": "test/lockspire/storage/client_verifier_maintenance_test.exs",
+  "expected": "The persisted row is returned in the expected exclusive UTF-8 byte order.",
+  "actual": "The inventory call fails instead of returning the page because Enum.split's nonempty remainder list was passed to the boolean operator.",
+  "semanticAssessment": "The target test executed and failed at the planned page assertion. The captured TAP report has one target assertion failure and no setup, compilation, discovery, fixture, or unrelated test failures."
+}
