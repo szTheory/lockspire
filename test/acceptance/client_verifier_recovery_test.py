@@ -8,6 +8,10 @@ import tempfile
 import unittest
 import contextlib
 import io
+import os
+import re
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from unittest import mock
 from pathlib import Path
 
@@ -21,6 +25,65 @@ from package_input import PackageInputError  # noqa: E402
 
 
 class RecoveryDispatchTest(unittest.TestCase):
+    def test_declared_host_otp_apps_support_http_after_mix_path_pruning(self) -> None:
+        manifest = (ROOT / "test/clean_room/provider_host/mix.exs").read_text()
+        declared = re.search(r"extra_applications:\s*(\[[^\]]+\])", manifest)
+        self.assertIsNotNone(declared)
+
+        class HarmlessResponder(BaseHTTPRequestHandler):
+            def do_GET(self) -> None:
+                status = int(self.path.removeprefix("/probe/"))
+                self.send_response(status if status in {200, 400, 401, 500} else 404)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+
+            def log_message(self, *_args) -> None:
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), HarmlessResponder)
+        thread = threading.Thread(target=server.serve_forever, kwargs={"poll_interval": 0.05})
+        thread.start()
+        try:
+            with tempfile.TemporaryDirectory(prefix="lockspire-http-otp-contract-") as temporary:
+                child = Path(temporary)
+                (child / "mix.exs").write_text(
+                    "defmodule HttpOtpContract.MixProject do\n"
+                    "  use Mix.Project\n"
+                    '  def project, do: [app: :http_otp_contract, version: "0.0.0"]\n'
+                    f"  def application, do: [extra_applications: {declared.group(1)}]\n"
+                    "end\n"
+                )
+                environment = os.environ.copy()
+                environment.update({
+                    "MIX_ENV": "dev", "MIX_BUILD_PATH": str(child / "_build"),
+                    "MIX_DEPS_PATH": str(child / "deps"), "MIX_HOME": str(child / "mix-home"),
+                    "HEX_HOME": str(child / "hex-home"),
+                })
+                environment.setdefault("ERL_FLAGS", "+S 4")
+                # Dynamic startup alone must not conceal Mix's pruned code path.
+                expression = (
+                    "{:ok, _} = Application.ensure_all_started(:inets); "
+                    "Enum.each([200, 400, 401, 500], fn expected -> "
+                    f'url = String.to_charlist("http://127.0.0.1:{server.server_port}/probe/#{{expected}}"); '
+                    "{:ok, {{_, actual, _}, _, _}} = "
+                    ":httpc.request(:get, {url, []}, [timeout: 2000], []); "
+                    'unless actual == expected, do: raise("HTTP status mismatch") end); '
+                    'IO.puts("SAFE_HOST_HTTP_STATUSES=true")'
+                )
+                result = subprocess.run(
+                    ["mix", "run", "-e", expression], cwd=child, env=environment,
+                    capture_output=True, text=True, timeout=30, check=False,
+                )
+                self.assertEqual(
+                    result.returncode, 0,
+                    "declared host OTP applications cannot execute HTTP; child diagnostics withheld",
+                )
+                self.assertIn("SAFE_HOST_HTTP_STATUSES=true", result.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
     def test_recovery_and_issuance_groups_share_the_owned_recovery_runner(self) -> None:
         self.assertEqual(
             clean_room_verifier_upgrade.MODULES["issuance"][0],
