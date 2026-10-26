@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 MIX_ENV=test mix test --include integration --only red_disclosure --formatter Lockspire.GsdTapFormatter test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+  "exitCode": 2,
+  "output": "TAP version 13\nnot ok 1 - test existing client SQL operations hide credentials from Logger and query telemetry\nnot ok 2 - test database exceptions are mapped before returning from client-store updates\n1..2\n",
+  "targetTest": "test existing client SQL operations hide credentials from Logger and query telemetry",
+  "targetFile": "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+  "expected": "Existing client persistence calls produce no sensitive SQL Logger output or raw query telemetry material, with live positive controls.",
+  "actual": "The non-sensitive positive controls passed; a sensitive client operation emitted a stored credential sentinel through Logger.",
+  "semanticAssessment": "The planned query-disclosure target ran and failed on the generic sensitive-Logger sentinel assertion after the non-sensitive SQL Logger and query telemetry controls captured the sentinels. The second test also executed and failed because a database exception was returned unsanitized. TAP output contains only test names/outcomes; logs with marker values were redirected to a local file and not exposed in command output."
+}
