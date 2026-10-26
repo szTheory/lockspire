@@ -128,6 +128,7 @@ defmodule Lockspire.Architecture.PublicCompatibilityManifest do
       client_secret_verifier_context: 0,
       client_secret_verifier_context: 1,
       client_secret_verifier_forbidden_key_bytes: 0,
+      client_secret_verifier_operation_forbidden_key_bytes: 1,
       client_store: 0,
       normalize_mount_path!: 1,
       transaction_store: 0

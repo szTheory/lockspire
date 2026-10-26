@@ -38,6 +38,8 @@ key-files:
     - lib/lockspire/storage/client_verifier_maintenance.ex
     - test/lockspire/config_client_secret_verifier_test.exs
     - test/lockspire/admin/client_verifier_maintenance_test.exs
+    - test/support/architecture/public_compatibility_manifest.ex
+    - test/lockspire/compatibility_baseline_contract_test.exs
 
 key-decisions:
   - "Resolve fresh signing configuration for task-local exclusions, including system environment entries; never populate or replace startup persistent_term caches."
@@ -121,6 +123,7 @@ Measured production/task commit count: 4, from `028906704dbe95556f3c6666fc785b26
 - `lib/lockspire/storage/client_verifier_maintenance.ex` — consumes the same validated operation context during selected-store rewrap.
 - `test/lockspire/config_client_secret_verifier_test.exs` — startup immutability and task-local isolation coverage.
 - `test/lockspire/admin/client_verifier_maintenance_test.exs` — expects the explicit `:startup` source label.
+- `test/support/architecture/public_compatibility_manifest.ex` and `test/lockspire/compatibility_baseline_contract_test.exs` — declare the internal Config helper as one explicit additive extension while preserving the literal 76cf872 baseline.
 - `test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` — bare subprocess, signing exclusion, argument safety, CLI mode, and Repo ownership coverage.
 - `177-04-01-red-evidence.json`, `177-04-02-red-evidence.json` — machine-validated RED records.
 
@@ -137,6 +140,7 @@ All runtime tests used the plan-owned `lockspire_phase177_20261026_owned` databa
 | `git diff --check` | Passed. |
 | `gsd_run check tdd-red-evidence` for both RED records | Both returned `RED_EVIDENCE_OK`. |
 | `gsd_run check evaluation-scope --plan 177-04 --commits-only --raw` | Resolved exactly four task commits; no out-of-scope commits. |
+| Post-wave compatibility, Config, and CLI focused rerun | Exit 0; 36 tests, 0 failures. |
 
 ## TDD Gate Compliance
 
@@ -180,6 +184,12 @@ All runtime tests used the plan-owned `lockspire_phase177_20261026_owned` databa
 - The first apply integration run exposed the cached-context dependency described above; the operation context is now shared across inspection and mutation.
 - The first duplicate-option assertion exposed `OptionParser`'s repeated-switch behavior; validation now checks original argv before proceeding.
 
+## Post-Wave Compatibility Gate Correction
+
+- The Phase 177 Wave 4 fast gate reported 2,134 tests with one failure in `CompatibilityBaselineContractTest`: the literal export contract rejected the new `@doc false` Config helper.
+- Added only `client_secret_verifier_operation_forbidden_key_bytes/1` to the established additive-extension manifest and the test's literal expected extension map. The original 76cf872 function baseline and all prior declarations remain unchanged.
+- Fresh focused command `MIX_ENV=test mix test test/lockspire/compatibility_baseline_contract_test.exs test/lockspire/config_client_secret_verifier_test.exs test/mix/tasks/lockspire_clients_verifier_rewrap_test.exs` passed with 36 tests and 0 failures. The full Wave 4 fast gate was left to the orchestrator.
+
 ## User Setup Required
 
 None.
@@ -197,3 +207,4 @@ The CLI and task-local configuration seam are ready for the remaining Phase 177 
 - All created implementation files, RED evidence, and this SUMMARY exist.
 - All four task commits are ancestors of the current plan head.
 - `evaluation-scope` resolves exactly the four task commits and reports no missing, outside-union, or unreachable commits.
+- The post-wave compatibility extension is explicitly listed, and its focused compatibility, Config, and CLI tests pass (36 tests, 0 failures).
