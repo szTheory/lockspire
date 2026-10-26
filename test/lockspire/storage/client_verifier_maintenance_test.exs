@@ -5,8 +5,17 @@ defmodule Lockspire.Storage.ClientVerifierMaintenanceTest do
   alias Lockspire.Storage.Ecto.Repository
 
   setup do
-    Application.put_env(:lockspire, :client_store, Lockspire.TestSupport.DelegatedVerifierMaintenanceStore)
-    Application.put_env(:lockspire, :transaction_store, Lockspire.TestSupport.DelegatedVerifierMaintenanceStore)
+    Application.put_env(
+      :lockspire,
+      :client_store,
+      Lockspire.TestSupport.DelegatedVerifierMaintenanceStore
+    )
+
+    Application.put_env(
+      :lockspire,
+      :transaction_store,
+      Lockspire.TestSupport.DelegatedVerifierMaintenanceStore
+    )
 
     on_exit(fn ->
       Application.delete_env(:lockspire, :client_store)
@@ -130,11 +139,14 @@ defmodule Lockspire.TestSupport.DelegatedVerifierMaintenanceStore do
   defdelegate transact(fun), to: Repository
   defdelegate rollback(reason), to: Repository
 
-  defp declaration(authority, participants \\ %{
-         client_store: __MODULE__,
-         transaction_store: __MODULE__,
-         audit_store: Repository
-       }) do
+  defp declaration(
+         authority,
+         participants \\ %{
+           client_store: __MODULE__,
+           transaction_store: __MODULE__,
+           audit_store: Repository
+         }
+       ) do
     %{
       version: 1,
       transaction_authority: authority,

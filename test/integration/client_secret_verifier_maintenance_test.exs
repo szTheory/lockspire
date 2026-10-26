@@ -100,6 +100,52 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     refute inspect(audit) =~ Base.encode64(new_key)
     refute inspect(audit) =~ old_verifier
     refute inspect(audit) =~ after_rewrap.client_secret_jwt_verifier_encrypted
+
+    audit_attrs = audit_attrs(client_id, "maintenance-old", "maintenance-new")
+
+    assert {:ok, :already_current} =
+             Repository.transact(fn ->
+               Repository.compare_and_rewrap(
+                 client_id,
+                 hash,
+                 old_verifier,
+                 after_rewrap.client_secret_jwt_verifier_encrypted,
+                 audit_attrs
+               )
+             end)
+
+    assert {:ok, :material_conflict} =
+             compare_in_transaction(
+               client_id,
+               "different-hash",
+               old_verifier,
+               random_verifier(),
+               audit_attrs
+             )
+
+    first_conflict = random_verifier()
+    second_conflict = random_verifier()
+
+    assert first_conflict != second_conflict
+
+    for attempted_replacement <- [first_conflict, second_conflict] do
+      assert {:ok, :material_conflict} =
+               compare_in_transaction(
+                 client_id,
+                 hash,
+                 "stale-expected-material",
+                 attempted_replacement,
+                 audit_attrs
+               )
+    end
+
+    assert [^audit] =
+             from(event in AuditEventRecord,
+               where:
+                 event.action == "client_secret_verifier_rewrapped" and
+                   event.resource_id == ^client_id
+             )
+             |> then(&Support.all(TestRepo, &1, sensitive: true))
   end
 
   test "missing maintenance capability fails before client access" do
@@ -111,6 +157,42 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
     refute_received {:client_fetch, _client_id}
   after
     Application.delete_env(:lockspire, :client_store)
+  end
+
+  test "declared shared PostgreSQL delegation rewraps through its selected callbacks" do
+    old_key = :crypto.strong_rand_bytes(32)
+    new_key = :crypto.strong_rand_bytes(32)
+    old_context = context([{"delegated-old", old_key}], "delegated-old")
+
+    new_context =
+      context([{"delegated-old", old_key}, {"delegated-new", new_key}], "delegated-new")
+
+    set_startup_context(new_context)
+    delegated = Lockspire.TestSupport.DelegatedVerifierMaintenanceStore
+    Application.put_env(:lockspire, :client_store, delegated)
+    Application.put_env(:lockspire, :transaction_store, delegated)
+
+    on_exit(fn ->
+      Application.delete_env(:lockspire, :client_store)
+      Application.delete_env(:lockspire, :transaction_store)
+    end)
+
+    {hash, secret} = Clients.rotate_secret_hash()
+    client_id = unique_id()
+    assert {:ok, verifier} = ClientSecretVerifier.seal(old_context, client_id, secret)
+    assert {:ok, _} = Repository.register_client(client(client_id, hash, verifier))
+
+    assert {:ok, :changed} = ClientVerifierMaintenance.rewrap_client(client_id)
+    assert_received {:client_fetch, ^client_id}
+    assert {:ok, stored} = Repository.fetch_client_by_id(client_id)
+
+    assert {:ok, ^secret} =
+             ClientSecretVerifier.open(
+               new_context,
+               client_id,
+               stored.client_secret_jwt_verifier_encrypted,
+               []
+             )
   end
 
   defp context(keys, current) do
@@ -131,6 +213,49 @@ defmodule Lockspire.Integration.ClientSecretVerifierMaintenanceTest do
 
     {:ok, validated} = Context.validate(context)
     validated
+  end
+
+  defp compare_in_transaction(client_id, hash, expected, replacement, attrs) do
+    Repository.transact(fn ->
+      Repository.compare_and_rewrap(client_id, hash, expected, replacement, attrs)
+    end)
+  end
+
+  defp audit_attrs(client_id, old_key_id, new_key_id) do
+    %{
+      action: :client_secret_verifier_rewrapped,
+      outcome: :succeeded,
+      actor: %{type: :system},
+      resource: %{type: :client, id: client_id},
+      metadata: %{
+        old_key_id: old_key_id,
+        new_key_id: new_key_id,
+        maintenance_at: DateTime.utc_now()
+      }
+    }
+  end
+
+  defp random_verifier,
+    do: "LSCV1.random." <> Base.url_encode64(:crypto.strong_rand_bytes(48), padding: false)
+
+  defp client(client_id, hash, verifier) do
+    %Client{
+      client_id: client_id,
+      client_secret_hash: hash,
+      client_secret_jwt_verifier_encrypted: verifier,
+      client_type: :confidential,
+      name: "Verifier maintenance delegation",
+      redirect_uris: [],
+      allowed_scopes: [],
+      allowed_grant_types: [],
+      allowed_response_types: [],
+      token_endpoint_auth_method: :client_secret_jwt,
+      pkce_required: true,
+      subject_type: :public,
+      active: true,
+      provenance: :operator,
+      lifetime_version: 0
+    }
   end
 
   defp set_startup_context(context) do

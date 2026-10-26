@@ -266,11 +266,19 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
        when is_map(participants) do
     audit_store = Map.get(participants, :audit_store)
 
+    selected_participants = %{
+      client_store: client_store,
+      transaction_store: transaction_store,
+      audit_store: audit_store
+    }
+
     with true <- authority == selected_authority,
+         true <- participants == selected_participants,
          true <- Map.get(authority, :participants, %{})[:client_store] == client_store,
          true <- Map.get(authority, :participants, %{})[:transaction_store] == transaction_store,
          true <- is_atom(audit_store),
          true <- Map.get(authority, :participants, %{})[:audit_store] == audit_store,
+         true <- Code.ensure_loaded?(audit_store),
          true <- function_exported?(audit_store, :append_audit_event, 1) do
       :ok
     else
