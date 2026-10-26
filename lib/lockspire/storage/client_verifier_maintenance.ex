@@ -98,6 +98,7 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
   def rewrap_client(client_id, opts) when is_binary(client_id) and is_list(opts) do
     with {:ok, context} <- operation_context(opts),
          {:ok, config} <- configured(),
+         :ok <- ensure_commit_boundary(config),
          {:ok, context} <- validate_context(context),
          {:ok, %Client{} = client} <- fetch_client(config.client_store, client_id),
          hash when is_binary(hash) <- client.client_secret_hash,
@@ -186,6 +187,24 @@ defmodule Lockspire.Storage.ClientVerifierMaintenance do
   catch
     _, _ -> {:error, :client_secret_verifier_maintenance_failed}
   end
+
+  defp ensure_commit_boundary(%MaintenanceConfig{
+         authority: %{identity: {:ecto_repo, repository}}
+       })
+       when is_atom(repository) do
+    if function_exported?(repository, :in_transaction?, 0) and repository.in_transaction?() do
+      {:error, :client_secret_verifier_maintenance_failed}
+    else
+      :ok
+    end
+  rescue
+    _ -> {:error, :client_secret_verifier_maintenance_failed}
+  catch
+    _, _ -> {:error, :client_secret_verifier_maintenance_failed}
+  end
+
+  defp ensure_commit_boundary(_config),
+    do: {:error, :client_secret_verifier_maintenance_failed}
 
   defp rewrap_material(context, client, expected_hash, expected_verifier, opts) do
     with {:ok, replacement_or_current, old_key_id, new_key_id} <-
