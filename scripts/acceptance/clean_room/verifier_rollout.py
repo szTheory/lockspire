@@ -642,9 +642,7 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
             raw = log_path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
-        runner._register_output_material(redactor, raw)
-        tail = redactor.text("\n".join(raw.splitlines()[-120:]))[-12000:]
-        redactor.assert_safe(tail)
+        tail = _redacted_log_tail(raw, redactor)
         safe_logs.append({"name": log_path.name, "tail": tail})
     record = {
         "schema": "lockspire-installed-verifier-rollout-failure-v1",
@@ -665,6 +663,14 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
     path = receipt_dir / f"{scope}-{pair}-{store}-{run_id}.failure.json"
     path.write_text(rendered, encoding="utf-8")
     os.chmod(path, 0o600)
+
+
+def _redacted_log_tail(raw: str, redactor: Redactor) -> str:
+    for match in runner.SENSITIVE_OUTPUT.finditer(raw):
+        redactor.register_material(match.group(1))
+    tail = redactor.text("\n".join(raw.splitlines()[-120:]))[-12000:]
+    redactor.assert_safe(tail)
+    return tail
 
 
 def _git_commit_exists(revision: str) -> bool:
