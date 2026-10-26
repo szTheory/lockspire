@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phase 175 independently verified VBASE-01 and VBASE-02; the remaining 16 requirements are pending. Three non-authoritative prohibition flags remain visible in the Phase 175 report.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175 and 176 independently verified 9/18 requirements; the remaining nine are pending. Generic edge and non-authoritative prohibition flags remain visible in their reports.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -14,16 +14,16 @@
 
 ### Independent verifier key custody
 
-- [ ] **SEC-01**: Host can encrypt newly persisted client-secret-JWT verifier material with dedicated rotatable keys independent of endpoint/session secrets and signing-key KEKs.
-- [ ] **SEC-02**: Host can explicitly select current/read keys and compatibility/write mode; malformed or missing required key configuration fails clearly without silently falling back or unexpectedly breaking unrelated host authentication at boot.
-- [ ] **SEC-03**: Host can reject tampered, malformed, unknown-key/version and cross-client/purpose verifier envelopes through authenticated, text-safe storage and redacted fail-closed errors.
-- [ ] **SEC-04**: Operator and registration callers can create or rotate credentials through every existing shared-secret writer with a coherent persisted hash/verifier pair, preserving one-time secret handoff and configured client/secret lifetimes.
-- [ ] **SEC-05**: Integrator can authenticate with dedicated-key verifiers across all existing supported direct-client endpoints while retaining HS256, issuer audience, required JTI/replay protection and the current PAR/FAPI exclusions.
+- [x] **SEC-01**: Host can encrypt newly persisted client-secret-JWT verifier material with dedicated rotatable keys independent of endpoint/session secrets and signing-key KEKs.
+- [x] **SEC-02**: Host can explicitly select current/read keys and compatibility/write mode; malformed or missing required key configuration fails clearly without silently falling back or unexpectedly breaking unrelated host authentication at boot.
+- [x] **SEC-03**: Host can reject tampered, malformed, unknown-key/version and cross-client/purpose verifier envelopes through authenticated, text-safe storage and redacted fail-closed errors.
+- [x] **SEC-04**: Operator and registration callers can create or rotate credentials through every existing shared-secret writer with a coherent persisted hash/verifier pair, preserving one-time secret handoff and configured client/secret lifetimes.
+- [x] **SEC-05**: Integrator can authenticate with dedicated-key verifiers across all existing supported direct-client endpoints while retaining HS256, issuer audience, required JTI/replay protection and the current PAR/FAPI exclusions.
 
 ### Upgrade and rotation compatibility
 
-- [ ] **VUP-01**: Existing hosts can read usable legacy Plug.Crypto verifier rows during explicit compatibility and deliberately reject them afterward; aged/unreadable rows have a qualified disposition, with no silent age bypass or change to configured credential expiry.
-- [ ] **VUP-02**: Host operator can follow and verify a reader-first rolling deployment with explicit writer activation and truthful code/config rollback limits, so old nodes never encounter an unsupported write format in the supported sequence.
+- [x] **VUP-01**: Existing hosts can read usable legacy Plug.Crypto verifier rows during explicit compatibility and deliberately reject them afterward; aged/unreadable rows have a qualified disposition, with no silent age bypass or change to configured credential expiry.
+- [x] **VUP-02**: Host operator can follow and verify a reader-first rolling deployment with explicit writer activation and truthful code/config rollback limits, so old nodes never encounter an unsupported write format in the supported sequence.
 - [ ] **VUP-03**: Host operator can introduce a new verifier key, rewrap existing material and retire an old key without changing partner secrets, endpoint/session secrets or signing-key custody.
 
 ### Safe maintenance, status and recovery
@@ -62,19 +62,19 @@
 
 ## Traceability
 
-Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phase 175 is verified complete; later implementation statuses remain Pending.
+Each approved requirement maps exactly once to the approved roadmap, continuing after Phase 174. Phases 175 and 176 are verified complete; Phase 177/178 implementation statuses remain Pending.
 
 | Requirement | Phase | Status |
 |---|---|---|
 | VBASE-01 | Phase 175 | Complete |
 | VBASE-02 | Phase 175 | Complete |
-| SEC-01 | Phase 176 | Pending |
-| SEC-02 | Phase 176 | Pending |
-| SEC-03 | Phase 176 | Pending |
-| SEC-04 | Phase 176 | Pending |
-| SEC-05 | Phase 176 | Pending |
-| VUP-01 | Phase 176 | Pending |
-| VUP-02 | Phase 176 | Pending |
+| SEC-01 | Phase 176 | Complete |
+| SEC-02 | Phase 176 | Complete |
+| SEC-03 | Phase 176 | Complete |
+| SEC-04 | Phase 176 | Complete |
+| SEC-05 | Phase 176 | Complete |
+| VUP-01 | Phase 176 | Complete |
+| VUP-02 | Phase 176 | Complete |
 | VUP-03 | Phase 177 | Pending |
 | VOPS-01 | Phase 177 | Pending |
 | VOPS-02 | Phase 177 | Pending |
@@ -85,7 +85,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 2 verified complete and 16 pending. Roadmap approved 2026-10-25.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 9 verified complete and 9 pending. Roadmap approved 2026-10-25.
 
 ---
-*Last updated: 2026-10-25 after independent Phase 175 verification and scoped completion.*
+*Last updated: 2026-10-25 after independent Phase 176 verification and scoped completion.*

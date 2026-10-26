@@ -11,7 +11,7 @@
     {
       "number": "176",
       "name": "Dedicated Verifier Custody & Compatible Runtime",
-      "status": "pending"
+      "status": "complete"
     },
     {
       "number": "177",
@@ -25,9 +25,9 @@
     }
   ],
   "next": {
-    "command": "$gsd-discuss-phase 176",
-    "label": "Discuss Phase 176 when resumed",
-    "reason": "Phase 175 verified complete; --no-transition stopped this run before Phase 176 discussion"
+    "command": "$gsd-discuss-phase 177",
+    "label": "Discuss Phase 177 when resumed",
+    "reason": "Phase 176 verified complete; --no-transition stopped before maintenance/recovery discussion"
   },
-  "updated_at": "2026-10-25T20:52:18.841328+00:00"
+  "updated_at": "2026-10-26T00:12:56.280Z"
 }
