@@ -504,7 +504,12 @@ def _issue_token(issuer: str, client: dict[str, str], redactor: Redactor, *, met
     token = payload.get("access_token")
     if isinstance(token, str):
         redactor.register_material(token)
+    safe_errors = {
+        "invalid_client", "invalid_grant", "invalid_request", "invalid_scope",
+        "unauthorized_client", "server_error", "temporarily_unavailable",
+    }
     return {"status": status, "token_issued": isinstance(token, str) and bool(token),
+            "safe_error_code": payload.get("error") if payload.get("error") in safe_errors else "other",
             "access_token": token if isinstance(token, str) else ""}
 
 

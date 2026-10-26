@@ -554,7 +554,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
       "expired_rewrap_committed" =>
         changed >= 1 and
           after_row.ciphertext != before.ciphertext,
-      "expired_http_auth_rejected" => http_status == 400,
+      "expired_http_auth_rejected" => http_status == 401,
+      "expired_http_status" => http_status,
       "deadline_preserved" => same_authenticated_age?(metadata_before, metadata_after)
     }
   end

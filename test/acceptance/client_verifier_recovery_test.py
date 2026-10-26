@@ -70,11 +70,35 @@ class RecoveryDispatchTest(unittest.TestCase):
             case_id: {field: True for field in fields}
             for case_id, fields in verifier_recovery.RECOVERY_REQUIRED_FIELDS.items()
         }
+        observations[verifier_recovery.RECOVERY_CASES[2]].update({
+            "missing_startup_context_has_protecting_key": False,
+            "missing_key_http_status": 401,
+            "basic_http_status": 200,
+            "post_http_status": 200,
+            "restored_http_status": 200,
+            "old_secret_after_rotation_http_status": 401,
+            "new_secret_after_rotation_http_status": 200,
+            "missing_key_error_code": "invalid_client",
+            "old_secret_after_rotation_error_code": "invalid_client",
+            "new_secret_after_rotation_error_code": "other",
+        })
+        observations[verifier_recovery.RECOVERY_CASES[3]]["expired_http_status"] = 401
         observations[verifier_recovery.RECOVERY_CASES[1]]["interruption_not_ready"] = False
         self.assertEqual(
             verifier_recovery._failed_recovery_fields(observations),
             [(verifier_recovery.RECOVERY_CASES[1], ["interruption_not_ready"])],
         )
+
+    def test_startup_context_witness_reads_only_fixed_boolean_markers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            logfile = Path(temporary) / "server.log"
+            logfile.write_text(
+                "SAFE_RECOVERY_CONTEXT_VALID=true\n"
+                "SAFE_RECOVERY_PROTECTING_KEY=false\n"
+                "unregistered-child-content-must-not-be-returned\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(verifier_recovery._read_startup_context(logfile), (True, False))
 
     def test_builtin_partial_readiness_uses_public_report_separation(self) -> None:
         host_source = (

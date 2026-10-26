@@ -265,6 +265,13 @@ config :lockspire, :key_encryption,
     children = [CleanRoomProvider.Repo, {Phoenix.PubSub, name: CleanRoomProvider.PubSub}, CleanRoomProviderWeb.Endpoint]
     with {:ok, supervisor} <- Supervisor.start_link(children, strategy: :one_for_one, name: CleanRoomProvider.Supervisor),
          {:ok, _started} <- Application.ensure_all_started(:lockspire) do
+      if System.get_env("LOCKSPIRE_RECOVERY_CONTEXT_WITNESS") == "true" do
+        context = Lockspire.Config.client_secret_verifier_context()
+        valid = context.state == :valid
+        has_protecting_key = is_map(context.keys) and Map.has_key?(context.keys, "verifier-new")
+        IO.puts("SAFE_RECOVERY_CONTEXT_VALID=" <> to_string(valid))
+        IO.puts("SAFE_RECOVERY_PROTECTING_KEY=" <> to_string(has_protecting_key))
+      end
       {:ok, supervisor}
     end
   end

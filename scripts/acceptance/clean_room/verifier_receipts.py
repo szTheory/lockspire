@@ -103,7 +103,12 @@ RECOVERY_OBSERVATION_FIELDS = frozenset({
     "indeterminate_not_claimed_rollback", "fresh_complete_check_ready",
     "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
     "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
-    "missing_startup_context_bound",
+    "missing_startup_context_bound", "missing_startup_context_has_protecting_key",
+    "restored_startup_context_has_protecting_key", "missing_key_http_status",
+    "missing_key_error_code", "basic_http_status", "post_http_status",
+    "restored_http_status", "old_secret_after_rotation_http_status",
+    "old_secret_after_rotation_error_code", "new_secret_after_rotation_http_status",
+    "new_secret_after_rotation_error_code", "expired_http_status",
     "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
 })
 ISSUANCE_OBSERVATION_FIELDS = frozenset({
@@ -256,6 +261,14 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             if receipt["scope"] == "contention"
             else ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
             if receipt["scope"] == "issuance"
+            else RECOVERY_OBSERVATION_FIELDS - {
+                "outcome", "executed", "missing_key_http_status", "missing_key_error_code",
+                "basic_http_status", "post_http_status", "restored_http_status",
+                "old_secret_after_rotation_http_status", "old_secret_after_rotation_error_code",
+                "new_secret_after_rotation_http_status", "new_secret_after_rotation_error_code",
+                "expired_http_status",
+            }
+            if receipt["scope"] == "recovery"
             else allowed_observation_fields - {"outcome", "executed", "http_status"}
         )
         if any(key in result and type(result[key]) is not bool for key in boolean_fields):
@@ -307,11 +320,53 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             required = {
                 RECOVERY_CASE_IDS[0]: {"hash_preserved", "partner_secret_preserved", "client_fields_preserved", "age_metadata_preserved", "ciphertext_changed", "audit_inserted"},
                 RECOVERY_CASE_IDS[1]: {"repeat_no_change", "partial_not_ready", "interruption_not_ready", "indeterminate_not_claimed_rollback", "fresh_complete_check_ready"},
-                RECOVERY_CASE_IDS[2]: {"missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable", "original_secret_preserved", "rotation_secret_changed", "one_time_handoff", "missing_startup_context_bound"},
-                RECOVERY_CASE_IDS[3]: {"expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved"},
+                RECOVERY_CASE_IDS[2]: {
+                    "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
+                    "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
+                    "missing_startup_context_bound", "missing_startup_context_has_protecting_key",
+                    "restored_startup_context_has_protecting_key", "missing_key_http_status",
+                    "missing_key_error_code", "basic_http_status", "post_http_status",
+                    "restored_http_status", "old_secret_after_rotation_http_status",
+                    "old_secret_after_rotation_error_code", "new_secret_after_rotation_http_status",
+                    "new_secret_after_rotation_error_code",
+                },
+                RECOVERY_CASE_IDS[3]: {"expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved", "expired_http_status"},
             }[case_id]
-            if set(result) != required | {"outcome", "executed"} or any(result.get(field) is not True for field in required):
+            if set(result) != required | {"outcome", "executed"}:
                 raise ReceiptError("recovery receipt omits preservation or independent recovery evidence")
+            boolean_requirements = {
+                "missing_startup_context_has_protecting_key": False,
+                "restored_startup_context_has_protecting_key": True,
+            }
+            if any(
+                (result.get(field) is not expected)
+                for field, expected in boolean_requirements.items()
+                if field in required
+            ) or any(
+                result.get(field) is not True
+                for field in required
+                if field not in boolean_requirements
+                and not field.endswith(("_http_status", "_error_code"))
+            ):
+                raise ReceiptError("recovery receipt omits preservation or independent recovery evidence")
+            expected_statuses = {
+                RECOVERY_CASE_IDS[2]: {
+                    "missing_key_http_status": 401, "basic_http_status": 200,
+                    "post_http_status": 200, "restored_http_status": 200,
+                    "old_secret_after_rotation_http_status": 401,
+                    "new_secret_after_rotation_http_status": 200,
+                },
+                RECOVERY_CASE_IDS[3]: {"expired_http_status": 401},
+            }.get(case_id, {})
+            if any(type(result.get(field)) is not int or result[field] != status for field, status in expected_statuses.items()):
+                raise ReceiptError("recovery receipt HTTP status does not match its source-owned outcome")
+            expected_errors = {
+                "missing_key_error_code": "invalid_client",
+                "old_secret_after_rotation_error_code": "invalid_client",
+                "new_secret_after_rotation_error_code": "other",
+            } if case_id == RECOVERY_CASE_IDS[2] else {}
+            if any(result.get(field) != value for field, value in expected_errors.items()):
+                raise ReceiptError("recovery receipt OAuth error category is invalid")
         if receipt["scope"] == "issuance":
             required = ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
             if (set(result) != ISSUANCE_OBSERVATION_FIELDS

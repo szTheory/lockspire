@@ -46,10 +46,47 @@ RECOVERY_REQUIRED_FIELDS = {
         "missing_key_rejected", "affected_status_redacted", "basic_usable", "post_usable",
         "original_secret_preserved", "rotation_secret_changed", "one_time_handoff",
         "missing_startup_context_bound",
+        "restored_startup_context_has_protecting_key",
     ),
     RECOVERY_CASES[3]: (
         "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
     ),
+}
+RECOVERY_EXPECTED_STATUSES = {
+    RECOVERY_CASES[2]: {
+        "missing_key_http_status": 401,
+        "basic_http_status": 200,
+        "post_http_status": 200,
+        "restored_http_status": 200,
+        "old_secret_after_rotation_http_status": 401,
+        "new_secret_after_rotation_http_status": 200,
+    },
+    RECOVERY_CASES[3]: {"expired_http_status": 401},
+}
+RECOVERY_EXPECTED_ERRORS = {
+    RECOVERY_CASES[2]: {
+        "missing_key_error_code": "invalid_client",
+        "old_secret_after_rotation_error_code": "invalid_client",
+        "new_secret_after_rotation_error_code": "other",
+    }
+}
+RECOVERY_EXPECTED_STATUSES = {
+    RECOVERY_CASES[2]: {
+        "missing_key_http_status": 401,
+        "basic_http_status": 200,
+        "post_http_status": 200,
+        "restored_http_status": 200,
+        "old_secret_after_rotation_http_status": 401,
+        "new_secret_after_rotation_http_status": 200,
+    },
+    RECOVERY_CASES[3]: {"expired_http_status": 401},
+}
+RECOVERY_EXPECTED_ERRORS = {
+    RECOVERY_CASES[2]: {
+        "missing_key_error_code": "invalid_client",
+        "old_secret_after_rotation_error_code": "invalid_client",
+        "new_secret_after_rotation_error_code": "other",
+    }
 }
 ISSUANCE_CASES = (
     "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
@@ -139,6 +176,7 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
         env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT"] = new_key
         env["CLEAN_ROOM_HTTP_SERVER"] = "false"
         env["LOCKSPIRE_PROOF_PAIR"] = pair
+        env["LOCKSPIRE_RECOVERY_CONTEXT_WITNESS"] = "true" if scope == "recovery" else "false"
         redactor.register_material(database_url)
         server = None
         try:
@@ -186,10 +224,11 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
             if scope == "recovery":
                 failed = _failed_recovery_fields(observations)
                 if failed:
-                    case_id, fields = failed[0]
+                    summary = ";".join(
+                        f"{case_id}={','.join(fields)}" for case_id, fields in failed
+                    )
                     raise PackageInputError(
-                        "installed recovery observation incomplete; "
-                        f"case={case_id}; failed_fields={','.join(fields)}"
+                        "installed recovery observations incomplete; failed=" + summary
                     )
             candidate = {
                 "kind": identity.kind, "version": identity.version,
@@ -301,10 +340,13 @@ def _verify_restore_and_rotation(
         host, missing_env, root / "provider-missing-key.log", issuer
     )
     try:
+        missing_context_valid, missing_has_key = _read_startup_context(
+            root / "provider-missing-key.log"
+        )
         missing = verifier_endpoints._issue_token(issuer, clients["jwt"], redactor)
         basic = verifier_endpoints._issue_token(issuer, clients["basic"], redactor, method="basic")
         post = verifier_endpoints._issue_token(issuer, clients["post"], redactor, method="post")
-        missing_rejected = missing["status"] == 400 and not missing["token_issued"]
+        missing_rejected = missing["status"] == 401 and not missing["token_issued"]
         controls_usable = basic["status"] == 200 and basic["token_issued"] and post["status"] == 200 and post["token_issued"]
     finally:
         verifier_rollout._stop_owned_server(missing_server)
@@ -316,6 +358,9 @@ def _verify_restore_and_rotation(
         host, restored_env, root / "provider-restored-key.log", issuer
     )
     try:
+        restored_context_valid, restored_has_key = _read_startup_context(
+            root / "provider-restored-key.log"
+        )
         restored = verifier_endpoints._issue_token(issuer, clients["jwt"], redactor)
         original_preserved = restored["status"] == 200 and restored["token_issued"]
 
@@ -344,14 +389,52 @@ def _verify_restore_and_rotation(
         "outcome": "pass",
         "executed": True,
         "missing_key_rejected": missing_rejected,
-        "affected_status_redacted": missing["status"] == 400 and not missing["token_issued"],
+        "missing_key_http_status": missing["status"],
+        "missing_key_error_code": missing["safe_error_code"],
+        "affected_status_redacted": (
+            missing["status"] == 401
+            and missing["safe_error_code"] == "invalid_client"
+            and not missing["token_issued"]
+        ),
         "basic_usable": basic["status"] == 200 and basic["token_issued"],
+        "basic_http_status": basic["status"],
         "post_usable": post["status"] == 200 and post["token_issued"],
+        "post_http_status": post["status"],
         "original_secret_preserved": original_preserved,
-        "rotation_secret_changed": replacement != clients["jwt"]["secret"] and old_after_rotation["status"] == 400 and new_after_rotation["status"] == 200,
+        "restored_http_status": restored["status"],
+        "rotation_secret_changed": replacement != clients["jwt"]["secret"] and old_after_rotation["status"] == 401 and old_after_rotation["safe_error_code"] == "invalid_client" and new_after_rotation["status"] == 200 and new_after_rotation["token_issued"],
+        "old_secret_after_rotation_http_status": old_after_rotation["status"],
+        "old_secret_after_rotation_error_code": old_after_rotation["safe_error_code"],
+        "new_secret_after_rotation_http_status": new_after_rotation["status"],
+        "new_secret_after_rotation_error_code": new_after_rotation["safe_error_code"],
         "one_time_handoff": bool(replacement),
-        "missing_startup_context_bound": old_only_fingerprint != full_fingerprint and missing_pid != restored_pid,
+        "missing_startup_context_bound": (
+            old_only_fingerprint != full_fingerprint
+            and missing_pid != restored_pid
+            and missing_context_valid
+            and restored_context_valid
+        ),
+        "missing_startup_context_has_protecting_key": missing_has_key,
+        "restored_startup_context_has_protecting_key": restored_has_key,
     }
+
+
+def _read_startup_context(log_path: Path) -> tuple[bool, bool]:
+    found: dict[str, bool] = {}
+    try:
+        with log_path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                for field in ("SAFE_RECOVERY_CONTEXT_VALID", "SAFE_RECOVERY_PROTECTING_KEY"):
+                    marker = field + "="
+                    if line.startswith(marker):
+                        value = line[len(marker):].strip()
+                        if value in {"true", "false"}:
+                            found[field] = value == "true"
+    except OSError:
+        raise PackageInputError("owned recovery startup context witness is unavailable") from None
+    if set(found) != {"SAFE_RECOVERY_CONTEXT_VALID", "SAFE_RECOVERY_PROTECTING_KEY"}:
+        raise PackageInputError("owned recovery startup context witness is incomplete")
+    return found["SAFE_RECOVERY_CONTEXT_VALID"], found["SAFE_RECOVERY_PROTECTING_KEY"]
 
 
 def _read_rotation_handoff(path: Path, redactor: Redactor) -> str:
@@ -391,6 +474,42 @@ def _failed_recovery_fields(observations: dict[str, object]) -> list[tuple[str, 
             failures.append((case_id, list(fields)))
             continue
         failed = [field for field in fields if observation.get(field) is not True]
+        if case_id == RECOVERY_CASES[2]:
+            if observation.get("missing_startup_context_has_protecting_key") is not False:
+                failed.append("missing_startup_context_has_protecting_key_expected_false")
+            if observation.get("restored_startup_context_has_protecting_key") is not True:
+                failed.append("restored_startup_context_has_protecting_key_expected_true")
+        for field, expected in RECOVERY_EXPECTED_STATUSES.get(case_id, {}).items():
+            actual = observation.get(field)
+            if actual != expected:
+                label = actual if type(actual) is int and actual in {200, 400, 401, 500} else "other"
+                failed.append(f"{field}_{label}")
+        for field, expected in RECOVERY_EXPECTED_ERRORS.get(case_id, {}).items():
+            actual = observation.get(field)
+            if actual != expected:
+                label = actual if actual in {
+                    "invalid_client", "invalid_grant", "invalid_request", "invalid_scope",
+                    "unauthorized_client", "server_error", "temporarily_unavailable", "other",
+                } else "other"
+                failed.append(f"{field}_{label}")
+        if case_id == RECOVERY_CASES[2]:
+            if observation.get("missing_startup_context_has_protecting_key") is not False:
+                failed.append("missing_startup_context_has_protecting_key_expected_false")
+            if observation.get("restored_startup_context_has_protecting_key") is not True:
+                failed.append("restored_startup_context_has_protecting_key_expected_true")
+        for field, expected in RECOVERY_EXPECTED_STATUSES.get(case_id, {}).items():
+            actual = observation.get(field)
+            if actual != expected:
+                label = actual if type(actual) is int and actual in {200, 400, 401, 500} else "other"
+                failed.append(f"{field}_{label}")
+        for field, expected in RECOVERY_EXPECTED_ERRORS.get(case_id, {}).items():
+            if observation.get(field) != expected:
+                actual = observation.get(field)
+                label = actual if actual in {
+                    "invalid_client", "invalid_grant", "invalid_request", "invalid_scope",
+                    "unauthorized_client", "server_error", "temporarily_unavailable", "other",
+                } else "other"
+                failed.append(f"{field}_{label}")
         if failed:
             failures.append((case_id, failed))
     return failures
