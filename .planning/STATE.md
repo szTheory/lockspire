@@ -4,18 +4,19 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
+current_plan: 2
 status: executing
-stopped_at: Phase 178 execution resumed with explicit implementation/local-commit authorization; Plan 01 draft reconciliation
-last_updated: "2026-10-26T17:23:48.212Z"
+stopped_at: Completed 178-01-PLAN.md
+last_updated: "2026-10-26T18:01:56.147Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 178 execution started
-state_head: 4bd35961944d3f70be0db2aadff9664b165264bb
+state_head: 6334c8b6d51ff7b1d09f486d6170b37506029eda
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 31
-  completed_plans: 19
-  percent: 61
+  completed_plans: 20
+  percent: 65
 ---
 
 # Project State
@@ -26,13 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 execution resumed after the owner's explicit “yes i authorize” for implementation and local commits. Reconcile the preserved Plan 01 draft/RED evidence, then continue the 12 checked plans. No task, installed proof, integration or publication result is inferred by resuming; earlier approval rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
+**Current focus:** Phase 178 Plan 01 now proves one source-bound installed locked-pair/builtin token flow with a strict partial receipt. Continue with Plan 02; the remaining pair, storage, scenario groups and VPROOF-02 completion remain pending. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
 
 ## Current Position
 
 Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
-Plan: 1 of 12; preserved partial draft, 0/2 tasks complete
-Status: Executing Phase 178
+Current Plan: 2
+Total Plans in Phase: 12
+Plan: 2 of 12; completed, 2/2 tasks
+Status: Ready to execute
 Last activity: 2026-10-26 — Phase 178 execution started
 
 ## Performance Metrics
@@ -70,6 +73,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 177 P06 | 6min | 2 tasks | 3 files |
 | Phase 177 P08 | 10min | 2 tasks | 5 files |
 | Phase 177 P09 | 35min | 2 tasks | 11 files |
+| Phase 178 P01 | 36min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -142,9 +146,9 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T17:23:48.051Z
-Stopped at: Phase 178 execution resumed with explicit implementation/local-commit authorization; Plan 01 draft reconciliation
-Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-01-PLAN.md
+Last session: 2026-10-26T18:01:14.198Z
+Stopped at: Completed 178-01-PLAN.md
+Resume file: None
 Next: Continue authorized `$gsd-execute-phase 178 --auto --no-transition`, reconciling the partial Plan 01 draft and historical RED evidence in `178-EXECUTION-CHECKPOINT.md`. Preserve exact prior receipts and unresolved flags. Merge and publication remain separately gated.
 
 ### Blockers
@@ -219,6 +223,9 @@ None
 - [Phase 177]: Preserve the existing one-time plaintext handoff and client/report shapes; no production change was needed after forced disclosure cases passed.
 - [Phase 177]: Treat a successful fresh check as local store evidence; fleet parity, quiescence, backups, and rollback remain host-owned.
 - [Phase 177]: Keep original-key restoration distinct from authorized partner-secret replacement and its one-time handoff.
+- [Phase 178]: Keep installed candidate source revision separate from runner revision; source-bind clean checkout package inputs and leave unproven external source unavailable.
+- [Phase 178]: Use dedicated verifier custody independently from endpoint and signing keys; keep group receipts partial and require exact positive tracer outcomes.
+- [Phase 178]: Keep VPROOF-02 pending until remaining Phase 178 plans complete their assigned coverage.
 
 ## Operator Next Steps
 
