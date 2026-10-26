@@ -4,19 +4,19 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
-current_plan: 4
+current_plan: 5
 status: executing
-stopped_at: Completed 178-03-PLAN.md
-last_updated: "2026-10-26T20:16:22.045Z"
+stopped_at: Completed 178-04-PLAN.md
+last_updated: "2026-10-26T21:07:56.356Z"
 last_activity: 2026-10-26
 last_activity_desc: Phase 178 execution started
-state_head: 2544ee2b12598a749240dbc20baecc3a8e317ef9
+state_head: e05464c4a4588c7aaf758d3b54be7074d589a94f
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 31
-  completed_plans: 22
-  percent: 71
+  completed_plans: 23
+  percent: 74
 ---
 
 # Project State
@@ -32,9 +32,9 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 ## Current Position
 
 Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
-Current Plan: 4
+Current Plan: 5
 Total Plans in Phase: 12
-Plan: 4 of 12; completed, 2/2 tasks
+Plan: 5 of 12; completed, 2/2 tasks
 Status: Ready to execute
 Last activity: 2026-10-26 — Phase 178 execution started
 
@@ -76,6 +76,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 178 P01 | 36min | 2 tasks | 8 files |
 | Phase 178 P02 | 33min | 2 tasks | 8 files |
 | Phase 178 P03 | >=76m20s | 2 tasks | 4 files |
+| Phase 178 P04 | 44m | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -148,8 +149,8 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T20:08:00.190Z
-Stopped at: Completed 178-03-PLAN.md
+Last session: 2026-10-26T21:07:56.214Z
+Stopped at: Completed 178-04-PLAN.md
 Resume file: None
 Next: Continue authorized `$gsd-execute-phase 178 --auto --no-transition`, reconciling the partial Plan 01 draft and historical RED evidence in `178-EXECUTION-CHECKPOINT.md`. Preserve exact prior receipts and unresolved flags. Merge and publication remain separately gated.
 
@@ -234,6 +235,9 @@ None
 - [Phase 178]: One-off Mix commands keep runtime listeners disabled; only owned listener processes enable the endpoint server.
 - [Phase 178]: Both old and candidate writers remain legacy through overlap; dedicated activation follows observed predecessor exit.
 - [Phase 178]: Select rollout and legacy-control through separate explicit CLI entrypoints; legacy-control accepts locked/builtin only.
+- [Phase 178]: Use the configured issuer string as client assertion audience on all five installed HTTP endpoints.
+- [Phase 178]: Run the assembled release foreground command as an owned process group and bind the loaded maintenance beam to that release.
+- [Phase 178]: Keep VPROOF-02 pending until the remaining Phase 178 proof groups complete their assigned coverage.
 
 ## Operator Next Steps
 

@@ -138,7 +138,7 @@ Execution waves: 1: 01; 2: 02 + 07; 3: 03; 4: 04 + 05; 5: 06; 6: 08; 7: 09.
   3. Fresh-install, generator, upgrade, diagnostic and support guidance matches verified behavior without changing public protocol scope, signing format, host ownership, schema or runtime dependencies unless explicitly re-scoped through GSD.
   4. A dated handoff records reviewed integration and fresh exact-main acceptance or explicit unresolved delivery blockers, resource owners/purpose/next actions and preserved unknown work; UI quality remains the next substantial candidate with the completed interview intact. No package publication is inferred.
 
-**Plans**: 3/12 plans executed in 8 waves; the normal milestone PR and protected release train remain distinct.
+**Plans**: 4/12 plans executed in 8 waves; the normal milestone PR and protected release train remain distinct.
 
 Plans:
 **Wave 1**
@@ -149,7 +149,7 @@ Plans:
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [x] 178-03-PLAN.md — Actual predecessor/shared-store rollout and pinned public legacy control.
-- [ ] 178-04-PLAN.md — Five HTTP endpoints per pair and booted release RPC.
+- [x] 178-04-PLAN.md — Five HTTP endpoints per pair and booted release RPC.
 - [ ] 178-05-PLAN.md — Real PostgreSQL lock orders, reached audit INSERT and outer rollback.
 - [ ] 178-06-PLAN.md — Preservation, exact age/retry/recovery and stale-issuance/JTI witnesses.
 - [ ] 178-07-PLAN.md — Installed success/failure disclosure channels and sentinel rejection.
@@ -176,7 +176,7 @@ Plans:
 | 175. Accepted Baseline & Verifier Compatibility Contract | 3/3 | Complete    | 2026-10-25 |
 | 176. Dedicated Verifier Custody & Compatible Runtime | 7/7 | Complete    | 2026-10-25 |
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
-| 178. Packaged Upgrade Proof & Delivery Handoff | 3/12 | In Progress | — |
+| 178. Packaged Upgrade Proof & Delivery Handoff | 4/12 | In Progress | — |
 
 **Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 12 checked plans for the remaining 3 requirements; 3/4 phases complete. Package proof and delivery remain unperformed. Roadmap approved 2026-10-25.
 
