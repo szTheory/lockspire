@@ -278,17 +278,26 @@ defmodule CleanRoomProvider.VerifierRecovery do
   defp interrupt_before_rewrap!(client, :delegated) do
     before = fetch_row!(client.client_id)
     Store.set_run_control(:current_row_guard, self())
-    task = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+
+    {task_pid, task_ref} =
+      spawn_monitor(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
 
     interrupted =
       receive do
         {:lifetime_client_store_barrier, :current_row_guard, callback_pid, _reference} ->
-          callback_pid == task.pid and Process.exit(callback_pid, :kill)
+          callback_pid == task_pid and Process.exit(callback_pid, :kill)
       after
         @timeout -> false
       end
 
-    _ = Task.yield(task, @timeout) || Task.shutdown(task, :brutal_kill)
+    if Process.alive?(task_pid), do: Process.exit(task_pid, :kill)
+
+    receive do
+      {:DOWN, ^task_ref, :process, ^task_pid, _reason} -> :ok
+    after
+      @timeout -> raise "delegated recovery apply task did not terminate"
+    end
+
     Store.clear_run_controls()
     after_row = fetch_row!(client.client_id)
 
