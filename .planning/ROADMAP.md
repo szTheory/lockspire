@@ -63,6 +63,70 @@ Plans:
 - [x] 173-01-PLAN.md — Pushed-parameter authority correction, real PAR RED/GREEN and retained lifecycle/profile proof.
 
 
+### Phase 174: Packaged Proof & Delivery Handoff
+
+**Goal**: Maintainers and adopters can review source-bound proof of every selected behavior and resume from an honest, reviewed delivery handoff through the existing train.
+**Depends on**: Phases 172 and 173, or an explicit qualification-driven revision that narrows their scope before dependent plans.
+**Requirements**: CPROOF-01, CPROOF-02, DELIV-01, DELIV-02
+**Success Criteria** (what must be TRUE):
+  1. Every selected supported behavior has a deterministic automated owner and applicable negative/security evidence; each actual correction has a failing-before/passing-after regression, and already-correct behavior cites valid existing proof without duplicate matrices.
+  2. A packaged embedded Phoenix host demonstrates the selected authorization/PAR outcomes at recorded source/package identities; supplemental external results keep their exact classifications, with no certification claim or implied full-suite gate.
+  3. The maintainer can review current source-bound milestone verification/audit, focused security review and passing required candidate contributor/CI checks, with support/guidance matching delivered behavior and unresolved external limits explicit.
+  4. The next run can resume from a dated handoff identifying reviewed integration and fresh main acceptance or explicit remaining delivery blockers, owned resource/worktree cleanup or retained owner/purpose/next action, preserved unknown edits/unique commits, and a refreshed ranked milestone direction with sources and triggers.
+
+**Plans**: 4/4 plans complete
+
+Plans:
+**Wave 1**
+- [x] 174-01-PLAN.md — Packaged authorization tracer, host-owned freshness and strict partial receipts.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 174-02-PLAN.md — Packaged PAR/discovery expansion, guidance and independent scoped reviews.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 174-03-PLAN.md — Reviewed lifecycle repair, frozen all-case proof and verifier-owner freshness.
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [x] 174-04-PLAN.md — Exact candidate contributor/CI gates, reviewed delivery or concrete blockers, custody and ranking handoff.
+
+## Execution Gates and Limits
+
+- Phase 171 planning may proceed in this feature checkout. Its first execution boundary is reviewed cumulative prior-delivery reconciliation followed by the existing fresh synchronized exact-main acceptance gate in [REPO-HYGIENE-CHECKLIST.md](REPO-HYGIENE-CHECKLIST.md); the [dated baseline](research/v1.47-core-hardening/BASELINE.md) is not that receipt. Follow the [development train](DEVELOPMENT-TRAIN.md) for the implementation branch.
+- Phase 171 must freeze finite case IDs, exact inputs, expected outcomes, standards/support boundaries, repro commands and regression owners before phases 172–174 are planned. Historical suite_failure summaries alone authorize neither dependent plans nor behavior changes. If qualification removes a slice's premise, explicitly amend requirements/roadmap and replan before continuing; do not force empty implementation phases or silently mark their requirements passed.
+- Before a product fix, reproduce a supported-surface defect and obtain a deterministic failing regression. Reuse current evidence for already-correct cases; add only meaningful missing proof. Keep protocol corrections separate from reviewed suite/harness input changes. Resolve a newly discovered security policy, API, migration or support expansion before dependent work proceeds.
+- Every selected supported behavior is mandatory acceptance. Full external conformance success remains optional, supplemental and non-certifying; unavailable infrastructure or an overall suite result cannot stand in for a selected protocol pass. Reuse existing harnesses and jobs, iterate with focused checks, then run complete required candidate gates. Prefer small auditable glue and existing vetted primitives; no dependency/platform upgrade is selected.
+- Preserve S256 PKCE, exact redirects, hashed client secrets, short-lived single-use codes, refresh rotation/family-wide reuse revocation, no implicit flow, no alg=none, redaction and narrow host ownership. No UI redesign, new flow family, broad protocol audit, token retry-grace policy, verifier-key migration, KMS/Vault or manual publication is scheduled. Historical phase directories 142/143 and archived receipts retain their owners and meaning.
+- Phase 174 records actual delivery status. A blocked integration/main/cleanup handoff is explicit incomplete delivery, not a clean-main claim; it does not authorize the next milestone's product execution. Public publication remains separate under the [release train](RELEASE-TRAIN.md).
+
+## Progress
+
+**Execution order:** 171 → 172 → 173 → 174, subject to the qualification/replan gates above. Phases 171–173 are complete; Phase 173 has six verified behavioral truths and two flagged judgment reviews. Phase 174 is preparing packaged proof and delivery. Prior verification owners must reassess freshness after the covered source/evidence changes. 3 of 4 phases are complete.
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 171. Accepted Baseline & Finding Qualification | 4/4 | Complete    | 2026-10-24 |
+| 172. Authorization Responses | 1/1 | Complete    | 2026-10-24 |
+| 173. Conditional PAR & Profile Boundaries | 1/1 | Complete    | 2026-10-24 |
+| 174. Packaged Proof & Delivery Handoff | 4/4 | Complete    | 2026-10-25 |
+
+## Next Milestone
+
+No later phase numbers are reserved. [MILESTONE-ARC.md](MILESTONE-ARC.md) ranks SEC-01 verifier-key isolation/rotation as preferred provisional v1.48; it remains outside v1.47. Refresh the ranking at each start/close against fresh evidence. Token lifecycle work requires a current gap, OPS-03 requires scale evidence and KEK-04 requires a concrete adopter custody need; existing deferred work keeps its owners.
+
+## Completed Backlog Scope
+
+### Completed scope: Repository Readability & Docs Polish
+
+**Goal:** Make Lockspire's repository a joy to navigate: clarify what each major directory is for, remove only verified stale clutter, and give adopters and maintainers a clear, accurate route through the README and canonical documentation.
+**Requirements:** LANG-01, LANG-02, LANG-03, DOC-01, DOC-02, DOC-03, REPO-01, REPO-02 (scheduled in Phases 148–150).
+**Status:** Delivered in v1.41 through Phases 148–150. Retain this entry as history; do not schedule the scope again.
+
+**Captured direction:**
+
+- Audit the top-level and nested directory tree by ownership and lifecycle. Review agent-managed worktree folders such as `.claude/worktrees/agent-ace643b0f744cfe0b`, scratch/output directories, and the long compatibility-fixture path before deciding whether anything should move, be renamed, ignored, or removed. Check active worktree/agent ownership and all CI/test references before changing paths.
+- Reshape the README around adopter and maintainer jobs: evaluate Lockspire's fit and boundaries, install it into an existing Phoenix app, follow the supported-surface contract, and operate or maintain a deployment. Use LatticeStripe's reader-first docs ladder and JTBD route map as inspiration while keeping Lockspire's product scope and voice.
+- Audit guide navigation, links, setup steps, and claims against the current code and `docs/supported-surface.md`; keep generated outputs, fixtures, brand assets, planning records, and maintained documentation clearly distinguished.
+
 ### Phase 175: Accepted Baseline & Verifier Compatibility Contract
 
 **Goal**: Maintainer can identify a fresh accepted implementation base and a finite, reviewable verifier-custody/compatibility contract before dependent implementation is planned.
