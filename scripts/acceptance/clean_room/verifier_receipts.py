@@ -127,6 +127,18 @@ DISCLOSURE_CASE_IDS = {
     "locked": ["VPROOF-02-DISCLOSURE-LOCKED-SUCCESS"],
     "floor": ["VPROOF-02-DISCLOSURE-FLOOR-SUCCESS"],
 }
+DISCLOSURE_FAILURE_CASE_IDS = {
+    "locked": [
+        "VPROOF-02-DISCLOSURE-LOCKED-MALFORMED-CRYPTO",
+        "VPROOF-02-DISCLOSURE-LOCKED-UNKNOWN-KEY-CRYPTO",
+        "VPROOF-02-DISCLOSURE-LOCKED-STORAGE-FAILURE",
+    ],
+    "floor": [
+        "VPROOF-02-DISCLOSURE-FLOOR-MALFORMED-CRYPTO",
+        "VPROOF-02-DISCLOSURE-FLOOR-UNKNOWN-KEY-CRYPTO",
+        "VPROOF-02-DISCLOSURE-FLOOR-STORAGE-FAILURE",
+    ],
+}
 DISCLOSURE_SUCCESS_FIELDS = frozenset({
     "outcome", "executed", "logger_event_count", "query_event_count",
     "logger_control_event_count", "logger_operation_event_count",
@@ -134,6 +146,15 @@ DISCLOSURE_SUCCESS_FIELDS = frozenset({
     "logger_leak_count", "query_leak_count", "output_leak_count",
     "cli_output_checked", "audit_projection_safe", "nested_inspection_redacted",
     "one_time_handoff_usable", "maintenance_changed", "http_status",
+})
+DISCLOSURE_FAILURE_FIELDS = frozenset({
+    "outcome", "executed", "scenario", "reason", "forced_failure_observed",
+    "operation_result", "failure_detail_count", "storage_failure_witness",
+    "logger_event_count", "logger_control_event_count", "logger_operation_event_count",
+    "logger_leak_count", "query_event_count", "query_control_event_count",
+    "query_operation_event_count", "query_leak_count", "cli_output_checked",
+    "report_redacted", "audit_projection_safe", "audit_unchanged", "ciphertext_unchanged",
+    "http_status", "http_error_code", "http_outcome_safe", "output_leak_count",
 })
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
@@ -145,6 +166,65 @@ CORE_OBSERVATION_FIELDS = frozenset({
 
 class ReceiptError(ValueError):
     pass
+
+
+DISCLOSURE_FAILURE_CAPTURE_FIELDS = frozenset({
+    "scenario", "reason", "forced_failure_observed", "operation_result",
+    "failure_detail_count", "storage_failure_witness", "logger_event_count",
+    "logger_control_event_count", "logger_operation_event_count", "logger_leak_count",
+    "query_event_count", "query_control_event_count", "query_operation_event_count",
+    "query_leak_count", "cli_output_checked", "report_redacted", "audit_projection_safe",
+    "audit_unchanged", "ciphertext_unchanged", "http_status", "http_error_code",
+    "http_outcome_safe", "output_leak_count",
+})
+
+
+def validate_failure_capture(payload: object) -> dict[str, Any]:
+    if not isinstance(payload, dict) or set(payload) != DISCLOSURE_FAILURE_CAPTURE_FIELDS:
+        raise ReceiptError("disclosure failure fields do not match the finite contract")
+    expected = {
+        "malformed_crypto": ("malformed_verifier", 401, "invalid_client", False),
+        "unknown_key_crypto": ("unknown_key", 401, "invalid_client", False),
+        "storage_failure": ("maintenance_failed", 200, "other", True),
+    }
+    scenario = payload["scenario"]
+    if type(scenario) is not str or scenario not in expected:
+        raise ReceiptError("disclosure failure scenario is outside the finite contract")
+    reason, http_status, http_error_code, requires_storage_witness = expected[scenario]
+    count_fields = (
+        "failure_detail_count", "logger_event_count", "logger_control_event_count",
+        "logger_operation_event_count", "logger_leak_count", "query_event_count",
+        "query_control_event_count", "query_operation_event_count", "query_leak_count",
+        "output_leak_count",
+    )
+    if any(type(payload[field]) is not int or payload[field] < 0 for field in count_fields):
+        raise ReceiptError("disclosure failure count is invalid")
+    if (
+        payload["reason"] != reason
+        or payload["operation_result"] != "failed"
+        or payload["forced_failure_observed"] is not True
+        or payload["failure_detail_count"] <= 0
+        or payload["logger_event_count"] <= 0
+        or payload["logger_control_event_count"] <= 0
+        or payload["logger_event_count"] < payload["logger_control_event_count"]
+        or payload["query_event_count"] <= 0
+        or payload["query_control_event_count"] <= 0
+        or payload["query_operation_event_count"] <= 0
+        or payload["query_event_count"] < payload["query_control_event_count"]
+        or payload["logger_leak_count"] != 0
+        or payload["query_leak_count"] != 0
+        or payload["output_leak_count"] != 0
+        or payload["storage_failure_witness"] is not requires_storage_witness
+        or type(payload["http_status"]) is not int
+        or payload["http_status"] != http_status
+        or payload["http_error_code"] != http_error_code
+        or any(payload[field] is not True for field in (
+            "cli_output_checked", "report_redacted", "audit_projection_safe",
+            "audit_unchanged", "ciphertext_unchanged", "http_outcome_safe",
+        ))
+    ):
+        raise ReceiptError("disclosure forced-failure evidence is incomplete or unsafe")
+    return payload
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -243,6 +323,7 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         else RECOVERY_OBSERVATION_FIELDS if receipt["scope"] == "recovery"
         else ISSUANCE_OBSERVATION_FIELDS if receipt["scope"] == "issuance"
         else DISCLOSURE_SUCCESS_FIELDS if receipt["scope"] == "disclosure"
+        else DISCLOSURE_FAILURE_FIELDS if receipt["scope"] == "disclosure-failure"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
@@ -259,6 +340,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("issuance receipt does not match its selected dependency pair")
     if receipt["scope"] == "disclosure" and case_ids != DISCLOSURE_CASE_IDS[receipt["pair"]]:
         raise ReceiptError("disclosure receipt does not contain its success scenario")
+    if receipt["scope"] == "disclosure-failure" and case_ids != DISCLOSURE_FAILURE_CASE_IDS[receipt["pair"]]:
+        raise ReceiptError("disclosure failure receipt does not contain its finite scenario set")
     for case_id, result in observations.items():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -287,6 +370,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 "logger_leak_count", "query_leak_count", "output_leak_count",
             }
             if receipt["scope"] == "disclosure"
+            else frozenset()
+            if receipt["scope"] == "disclosure-failure"
             else RECOVERY_OBSERVATION_FIELDS - {
                 "outcome", "executed", "missing_key_http_status", "missing_key_error_code",
                 "basic_http_status", "post_http_status", "restored_http_status",
@@ -433,6 +518,15 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 or result["http_status"] != 200
             ):
                 raise ReceiptError("disclosure success channel evidence is incomplete or unsafe")
+        if receipt["scope"] == "disclosure-failure":
+            if set(result) != DISCLOSURE_FAILURE_FIELDS:
+                raise ReceiptError("disclosure failure observation fields are incomplete")
+            scenario_by_case = dict(zip(DISCLOSURE_FAILURE_CASE_IDS[receipt["pair"]], (
+                "malformed_crypto", "unknown_key_crypto", "storage_failure"
+            )))
+            if result.get("scenario") != scenario_by_case[case_id]:
+                raise ReceiptError("disclosure failure case ID does not match its scenario")
+            validate_failure_capture({key: value for key, value in result.items() if key not in {"outcome", "executed"}})
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS

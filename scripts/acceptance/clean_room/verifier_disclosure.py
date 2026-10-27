@@ -31,6 +31,7 @@ CAPTURE_FIELDS = frozenset({
     "logger_leak_count", "query_leak_count", "nested_inspection_redacted",
     "audit_after_count", "ciphertext_changed",
 })
+FAILURE_CAPTURE_FIELDS = verifier_receipts.DISCLOSURE_FAILURE_CAPTURE_FIELDS
 RESOURCE_CLEANUP: list[dict[str, object]] = []
 
 
@@ -41,13 +42,19 @@ def run_group(*, pair: str, store: str, receipt_dir: Path) -> list[dict[str, obj
     if any(item not in {"locked", "floor"} for item in pairs):
         raise PackageInputError("unsupported disclosure dependency pair")
     receipts = [_run_cell(item, receipt_dir / f"{item}-delegated") for item in pairs]
+    failure_receipts = [
+        json.loads((receipt_dir / f"{item}-delegated" / "failure-receipt.json").read_text())
+        for item in pairs
+    ]
     print(json.dumps({
         "scope": "disclosure",
         "executed_count": len(receipts),
+        "failure_executed_count": sum(row["executed_count"] for row in failure_receipts),
         "resources": RESOURCE_CLEANUP,
         "cells": [{
             "pair": row["pair"], "store": row["store"], "executed_count": row["executed_count"],
             "receipt": str(receipt_dir / f"{row['pair']}-delegated" / "receipt.json"),
+            "failure_receipt": str(receipt_dir / f"{row['pair']}-delegated" / "failure-receipt.json"),
         } for row in receipts],
     }, sort_keys=True))
     return receipts
@@ -62,6 +69,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
     database_name = urllib.parse.urlparse(database_url).path.removeprefix("/")
     old_key = base64.b64encode(secrets.token_bytes(32)).decode("ascii")
     new_key = base64.b64encode(secrets.token_bytes(32)).decode("ascii")
+    unknown_key = base64.b64encode(secrets.token_bytes(32)).decode("ascii")
     redactor = Redactor(SentinelSet.for_run())
     for value in (old_key, new_key, database_url):
         redactor.register_material(value)
@@ -107,9 +115,11 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             stage = "host_environment"
             env = runner._mix_env(host, root, database_url, port, issuer, prefix, old_key, pair)
             env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT"] = new_key
+            env["LOCKSPIRE_DISCLOSURE_UNKNOWN_KEY"] = unknown_key
             env["CLEAN_ROOM_HTTP_SERVER"] = "false"
             _register_key_material(redactor, env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY"])
             _register_key_material(redactor, env["LOCKSPIRE_CLIENT_SECRET_VERIFIER_KEY_NEXT"])
+            _register_key_material(redactor, unknown_key)
 
             stage = "database"
             run_child_command(host, env, "ecto.create")
@@ -272,6 +282,12 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             path = destination / "receipt.json"
             path.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
             os.chmod(path, 0o600)
+            _run_failure_proof(
+                pair=pair, host=host, env=env, issuer=issuer, identity=identity,
+                phoenix=phoenix, live_view=live_view, runtime=runtime, otp=otp,
+                postgres=postgres, run_id=run_id, root=root, destination=destination,
+                resource=resource, redactor=redactor,
+            )
             resource.update(_stop_owned_server(server, port))
             resource["server_state"] = (
                 "stopped" if resource["process_group_stop_confirmed"] else "cleanup_unconfirmed"
@@ -359,6 +375,121 @@ def validate_capture_payload(payload: object) -> dict[str, object]:
     if type(payload["ciphertext_changed"]) is not bool or payload["operation_result"] != "ok":
         raise ReceiptError("disclosure maintenance operation did not complete safely")
     return payload
+
+
+def _run_failure_proof(
+    *, pair: str, host: Path, env: dict[str, str], issuer: str, identity: object,
+    phoenix: str, live_view: str, runtime: str, otp: str, postgres: str,
+    run_id: str, root: Path, destination: Path, resource: dict[str, object],
+    redactor: Redactor,
+) -> dict[str, object]:
+    scenarios = ("malformed_crypto", "unknown_key_crypto", "storage_failure")
+    case_ids = verifier_receipts.DISCLOSURE_FAILURE_CASE_IDS[pair]
+    observations: dict[str, dict[str, object]] = {}
+    for scenario, case_id in zip(scenarios, case_ids):
+        client_id = f"vfy-disclosure-failure-{scenario}-{run_id[:8]}"
+        handoff = root / f"{scenario}-handoff.json"
+        seed_input = root / f"{scenario}-seed-input.json"
+        _private_path(handoff)
+        _write_private_json(seed_input, {
+            "scenario": scenario, "client_id": client_id, "handoff_path": str(handoff),
+        })
+        seed_expression = (
+            "try do\n"
+            "  {:ok, _started} = Application.ensure_all_started(:clean_room_provider)\n"
+            "  CleanRoomProvider.VerifierDisclosure.seed_failure_from_file("
+            + json.dumps(str(seed_input)) + ")\n"
+            "rescue\n"
+            "  _error -> IO.puts(\"VERIFIER_DISCLOSURE_FAILURE_SEED_FAILED=true\")\n"
+            "end"
+        )
+        output, error = _private_mix(
+            host, env, "run", "--no-start", "-e", seed_expression,
+            resource=resource, destination=destination, label=f"failure_seed_{scenario}",
+        )
+        private_handoff = _read_private_json(handoff, redactor)
+        output, error = _decode_channels(output, error, redactor)
+        _assert_safe_channels(output, error, redactor)
+        if "VERIFIER_DISCLOSURE_FAILURE_SEEDED=true" not in output or private_handoff.get("scenario") != scenario:
+            raise PackageInputError("installed disclosure failure seed was incomplete")
+        env["LOCKSPIRE_DISCLOSURE_SENTINELS"] = json.dumps(list(redactor._values))
+
+        capture_path = root / f"{scenario}-capture-input.json"
+        _private_path(capture_path)
+        _write_private_json(capture_path, {"scenario": scenario, "handoff_path": str(handoff)})
+        # The seeding helper consumed its own input handoff; write the sensitive
+        # capture handoff again from the already-registered private values.
+        _write_private_json(handoff, private_handoff)
+        capture_expression = (
+            "CleanRoomProvider.VerifierDisclosure.capture_failure_from_file("
+            + json.dumps(str(handoff))
+            + ", System.fetch_env!(\"LOCKSPIRE_DISCLOSURE_SENTINELS\") |> Jason.decode!())"
+        )
+        output, error = _private_mix(
+            host, env, "run", "-e", capture_expression,
+            resource=resource, destination=destination, label=f"failure_capture_{scenario}",
+        )
+        output, error = _decode_channels(output, error, redactor)
+        _assert_safe_channels(output, error, redactor)
+        capture = _one_json(output, "VERIFIER_DISCLOSURE_FAILURE_CAPTURE_JSON=")
+        client = {"client_id": client_id, "secret": private_handoff["secret"]}
+        http = verifier_endpoints._issue_token(issuer, client, redactor)
+        capture.update({
+            "http_status": http["status"],
+            "http_error_code": http["safe_error_code"],
+            "http_outcome_safe": http["status"] in (200, 401)
+                and (http["status"] != 401 or http["safe_error_code"] == "invalid_client"),
+        })
+        capture["output_leak_count"] = 0
+        capture = validate_failure_capture(capture)
+        safe_case = {"capture": capture}
+        persist_safe_failure_artifact(destination / f"failure-{scenario}.json", safe_case, redactor)
+        observations[case_id] = {"outcome": "pass", "executed": True, **capture}
+
+    receipt = {
+        "schema": verifier_receipts.SCHEMA, "scope": "disclosure-failure", "run_id": run_id,
+        "runner": source_revision(), "pair": pair, "store": "delegated",
+        "candidate": {
+            "kind": identity.kind, "version": identity.version,
+            "archive_sha256": identity.archive_sha256, "tree_sha256": identity.tree_sha256,
+            "source_revision": identity.source_revision, "runner_revision": identity.runner_revision,
+            "source_proof": identity.source_proof,
+        },
+        "host": {
+            **runner.candidate_host_provenance(host),
+            "lock_sha256": sha256(PROOF_PAIR_LOCKS[pair]),
+            "phoenix": phoenix, "live_view": live_view,
+        },
+        "runtime": {"elixir": runtime, "otp": otp, "postgresql": postgres},
+        "stable_case_ids": case_ids, "observations": observations,
+        "executed_count": len(observations), "partial": True,
+    }
+    validate_receipt(receipt, expected_pair=pair, expected_store="delegated")
+    redactor.assert_safe(json.dumps(receipt, sort_keys=True))
+    path = destination / "failure-receipt.json"
+    path.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    os.chmod(path, 0o600)
+    return receipt
+
+
+def validate_failure_capture(payload: object) -> dict[str, object]:
+    return verifier_receipts.validate_failure_capture(payload)
+
+
+def persist_safe_failure_artifact(path: Path, payload: object, redactor: Redactor) -> None:
+    if not isinstance(payload, dict) or not isinstance(payload.get("capture"), dict):
+        raise ReceiptError("disclosure failure artifact has no capture")
+    validate_failure_capture(payload["capture"])
+    rendered = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    try:
+        redactor.assert_safe(rendered)
+    except RuntimeError:
+        raise ReceiptError("disclosure failure artifact contains registered material") from None
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(payload, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, path)
 
 
 def _one_json(output: str, marker: str) -> dict[str, object]:

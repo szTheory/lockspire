@@ -137,6 +137,9 @@ class VerifierDisclosureContracts(unittest.TestCase):
                 "scenario": "unknown_key_crypto",
                 "reason": "unknown_key",
                 "forced_failure_observed": False,
+                "operation_result": "failed",
+                "failure_detail_count": 1,
+                "storage_failure_witness": False,
                 "logger_event_count": 0,
                 "logger_control_event_count": 0,
                 "logger_operation_event_count": 0,
@@ -148,8 +151,12 @@ class VerifierDisclosureContracts(unittest.TestCase):
                 "cli_output_checked": False,
                 "report_redacted": False,
                 "audit_projection_safe": False,
+                "audit_unchanged": False,
                 "ciphertext_unchanged": False,
                 "http_status": 401,
+                "http_error_code": "invalid_client",
+                "http_outcome_safe": False,
+                "output_leak_count": 0,
             })
 
     def test_unsafe_nested_or_encoded_failure_output_is_rejected_before_artifact_write(self) -> None:
@@ -164,8 +171,33 @@ class VerifierDisclosureContracts(unittest.TestCase):
         encoded = __import__("base64").urlsafe_b64encode(sentinel.encode()).decode()
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "failure-receipt.json"
+            safe = {
+                "scenario": "unknown_key_crypto",
+                "reason": "unknown_key",
+                "forced_failure_observed": True,
+                "operation_result": "failed",
+                "failure_detail_count": 1,
+                "storage_failure_witness": False,
+                "logger_event_count": 2,
+                "logger_control_event_count": 2,
+                "logger_operation_event_count": 0,
+                "logger_leak_count": 0,
+                "query_event_count": 3,
+                "query_control_event_count": 1,
+                "query_operation_event_count": 2,
+                "query_leak_count": 0,
+                "cli_output_checked": True,
+                "report_redacted": True,
+                "audit_projection_safe": True,
+                "audit_unchanged": True,
+                "ciphertext_unchanged": True,
+                "http_status": 401,
+                "http_error_code": "invalid_client",
+                "http_outcome_safe": True,
+                "output_leak_count": 0,
+            }
             with self.assertRaises(verifier_receipts.ReceiptError):
-                persist(path, {"nested": {"diagnostic": [encoded]}}, redactor)
+                persist(path, {"capture": safe, "nested": {"diagnostic": [encoded]}}, redactor)
             self.assertFalse(path.exists())
 
 
