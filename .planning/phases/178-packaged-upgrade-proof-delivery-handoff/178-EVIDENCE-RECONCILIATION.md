@@ -24,7 +24,7 @@ The other preexisting root `lockspire-*.tar` files were inventoried with their m
 
 ## Limits
 
-This freeze establishes source/archive/tree and bounded-input identity only. It does not establish installed HTTP/PostgreSQL outcomes, canonical source CI, hosted CI, candidate delivery, integration authorization, main acceptance, or Linux process-identity behavior. The recorded Phase 177 database incidents and Phase 175 unresolved findings remain unchanged and non-waived.
+This freeze establishes source/archive/tree and bounded-input identity only. It does not establish installed HTTP/PostgreSQL outcomes, canonical source CI, hosted CI, candidate delivery, integration authorization, main acceptance, or Linux process-identity behavior. The recorded Phase 178 source database incidents and unresolved Phase 177 findings E-09/E-10 remain unchanged and non-waived.
 
 ## First fresh locked-wrapper attempt
 
