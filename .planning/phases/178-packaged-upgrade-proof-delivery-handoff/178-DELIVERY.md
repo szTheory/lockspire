@@ -28,7 +28,7 @@ The clean checkout matched all 1,076 frozen covered-input hashes when this propo
 
 ## Preliminary Requirement Dispositions
 
-Sixteen of the 18 approved requirements have local evidence recorded complete: VBASE-01/02, SEC-01–05, VUP-01–03, VOPS-01–04, and VPROOF-01/02. VDELIV-01 remains pending a real candidate PR and a complete passing hosted contributor/CI gate graph plus the milestone audit. VDELIV-02 remains pending the dated main/delivery acceptance handoff and rolling-rank refresh. Phase 177 E-09/E-10 and prior flagged findings remain open and unwaived. These are preliminary dispositions, not the Plan 11 final requirement-evidence artifact.
+Fifteen of the 18 approved requirements have local evidence recorded complete: VBASE-01/02, SEC-01–05, VUP-01–03, VOPS-01–04, and VPROOF-01. VPROOF-02 is pending requalification because the main-base sync expanded the selected source closure from 1,076 to 1,077 inputs. Its Plan 10 package and source-gate evidence remains valid for the original exact frozen closure only. VDELIV-01 remains pending a real candidate PR and a complete passing hosted contributor/CI gate graph plus the milestone audit. VDELIV-02 remains pending the dated main/delivery acceptance handoff and rolling-rank refresh. Phase 177 E-09/E-10 and prior flagged findings remain open and unwaived. These are preliminary dispositions, not the Plan 11 final requirement-evidence artifact.
 
 ## Hosted and Main Snapshot
 
