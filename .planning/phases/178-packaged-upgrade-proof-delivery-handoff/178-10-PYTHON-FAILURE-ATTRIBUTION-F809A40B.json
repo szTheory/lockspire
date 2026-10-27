@@ -1,0 +1,19 @@
+{
+  "schema": "lockspire-owned-python-failure-attribution-v1",
+  "source_revision": "f809a40b823379e177b8beba1dad964cfcd8eacb",
+  "wrapper_pid": 46772,
+  "raw_retention": "memory-only",
+  "timeout_seconds": 1800,
+  "tests": 226,
+  "failures": [],
+  "errors": [
+    "owned_source_tests_test.OwnedSourceGuardTests.test_real_child_generated_unknown_output_stays_private"
+  ],
+  "successful": false,
+  "exit": 1,
+  "owned_group_stop": "confirmed",
+  "stdout_sha256": "4e9f44260901b15e8635caf8aee49e54635b08aa6990da9ff839b4bf3063e15f",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "elapsed_seconds": 84.159
+}

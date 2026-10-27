@@ -1,0 +1,41 @@
+{
+  "schema": "lockspire-owned-python-gate-v2",
+  "source_revision": "843636c72e825c7ad847e01e5f866ce4919f34c3",
+  "wrapper_pid": 53026,
+  "raw_retention": "memory-only",
+  "timeout_seconds": 1800,
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "test/acceptance",
+    "-p",
+    "*_test.py"
+  ],
+  "capture": "actual in-memory unittest runner with parent-only result collector",
+  "runtime": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "tests": 227,
+  "failure_count": 0,
+  "error_count": 0,
+  "unexpected_success_count": 0,
+  "skip_count": 0,
+  "expected_failure_count": 0,
+  "failure_parent_ids": [],
+  "error_parent_ids": [],
+  "unknown_parent_count": 0,
+  "successful": true,
+  "exit": 0,
+  "owned_group_stop": "confirmed",
+  "stdout_bytes": 227,
+  "stdout_sha256": "49d1921a27976ff66db57c29107d971695865e06aea5c5dc1736ebdab55063e8",
+  "stderr_bytes": 0,
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "elapsed_seconds": 82.812
+}
