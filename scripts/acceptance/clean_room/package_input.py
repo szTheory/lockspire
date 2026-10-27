@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 from dataclasses import dataclass
 import hashlib
 import json
@@ -27,6 +28,54 @@ ROLES = ("provider_host", "confidential_client")
 
 class PackageInputError(RuntimeError):
     pass
+
+
+_OWNED_SESSIONS: dict[int, subprocess.Popen] = {}
+_SESSION_SIGNAL_HANDLERS_INSTALLED = False
+
+
+def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
+    """Register an isolated child session for process-tree cleanup."""
+    global _SESSION_SIGNAL_HANDLERS_INSTALLED
+    if kwargs.get("start_new_session", True) is not True:
+        raise PackageInputError("owned child must start in an isolated session")
+    kwargs["start_new_session"] = True
+    process = subprocess.Popen(command, **kwargs)
+    if not isinstance(process.pid, int):
+        return process
+    _OWNED_SESSIONS[process.pid] = process
+    if not _SESSION_SIGNAL_HANDLERS_INSTALLED:
+        _SESSION_SIGNAL_HANDLERS_INSTALLED = True
+        for signum in (signal.SIGTERM, signal.SIGINT):
+            previous = signal.getsignal(signum)
+            signal.signal(signum, _owned_session_signal(previous))
+        atexit.register(_exit_cleanup_owned_sessions)
+    return process
+
+
+def _owned_session_signal(previous):
+    def handle(signum, frame):
+        stopped = stop_all_owned_sessions()
+        if not stopped:
+            raise SystemExit(125)
+        if callable(previous):
+            previous(signum, frame)
+            return
+        raise SystemExit(128 + signum)
+    return handle
+
+
+def _exit_cleanup_owned_sessions() -> None:
+    if not stop_all_owned_sessions():
+        os._exit(125)
+
+
+def stop_all_owned_sessions() -> bool:
+    stopped = True
+    for process in tuple(_OWNED_SESSIONS.values()):
+        if not stop_process_group(process):
+            stopped = False
+    return stopped
 
 
 @dataclass(frozen=True)
@@ -112,25 +161,34 @@ def clean_room_database_url(role: str) -> str:
 
 def stop_process_group(process: subprocess.Popen, grace: float = 3) -> bool:
     """Stop only this child's session, including descendants after its leader exits."""
-    for sig in (signal.SIGTERM, signal.SIGKILL):
-        try:
-            os.killpg(process.pid, sig)
-        except ProcessLookupError:
-            pass
-        except OSError:
-            return False
-        try:
-            process.wait(timeout=grace if sig == signal.SIGTERM else 1)
-        except subprocess.TimeoutExpired:
-            continue
-        # A terminated leader can leave descendants in the owned group.
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        except OSError:
-            return False
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        _OWNED_SESSIONS.pop(process.pid, None)
         return True
+    except OSError:
+        return False
+    try:
+        process.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        pass
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        _OWNED_SESSIONS.pop(process.pid, None)
+        return True
+    except OSError:
+        return False
+    deadline = time.monotonic() + 2
+    while time.monotonic() < deadline:
+        try:
+            os.killpg(process.pid, 0)
+        except ProcessLookupError:
+            _OWNED_SESSIONS.pop(process.pid, None)
+            return True
+        except OSError:
+            return False
+        time.sleep(0.05)
     return False
 
 
@@ -138,7 +196,7 @@ def bounded_run(command: Sequence[str], *, timeout: float = 120, stop_grace: flo
     """Run a finite, owned child session; timeout/interruption cannot orphan it."""
     kwargs.pop("check", None)
     input_value = kwargs.pop("input", None)
-    with subprocess.Popen(command, start_new_session=True, **kwargs) as process:
+    with start_owned_session(command, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input_value, timeout=timeout)
         except BaseException:
@@ -240,6 +298,18 @@ def authenticated_frozen_source(project_root: Path = PROJECT_ROOT) -> PackageSou
     if not manifest.is_absolute():
         manifest = project_root / manifest
     try:
+        expected_manifest_sha = os.environ["LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256"]
+        expected_runner = os.environ["LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION"]
+        expected_revision = os.environ["LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION"]
+        expected_archive_sha = os.environ["LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256"]
+        expected_tree_sha = os.environ["LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256"]
+        if (not re.fullmatch(r"[0-9a-f]{64}", expected_manifest_sha)
+                or not re.fullmatch(r"[0-9a-f]{40,64}", expected_runner)
+                or not re.fullmatch(r"[0-9a-f]{40,64}", expected_revision)
+                or not re.fullmatch(r"[0-9a-f]{64}", expected_archive_sha)
+                or not re.fullmatch(r"[0-9a-f]{64}", expected_tree_sha)
+                or sha256(manifest) != expected_manifest_sha):
+            raise ValueError
         document = json.loads(manifest.read_text(encoding="utf-8"))
         owner = document["candidate_owner"]
         archive_relative = owner["archive_path"]
@@ -252,7 +322,10 @@ def authenticated_frozen_source(project_root: Path = PROJECT_ROOT) -> PackageSou
             or ".." in Path(archive_relative).parts
             or not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40,64}", revision)
             or not isinstance(archive_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", archive_sha)
-            or not isinstance(owner_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", owner_digest)):
+            or not isinstance(owner_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", owner_digest)
+            or document.get("runner_revision") != expected_runner
+            or revision != expected_revision or archive_sha != expected_archive_sha
+            or owner.get("tree_sha256") != expected_tree_sha):
         raise PackageInputError("frozen candidate owner manifest is malformed")
     return PackageSource("frozen", str(project_root / archive_relative), archive_sha,
                          revision, owner_digest, str(manifest))
@@ -405,7 +478,7 @@ def bind_compiled_candidate(child_root: Path, identity: PackageIdentity, vendor_
     try:
         compiled = _compiled_candidate_digest(child_root, vendor_root)
     except PackageInputError as error:
-        print("compiled candidate provenance rejected: " + str(error))
+        print("compiled candidate provenance rejected: " + type(error).__name__)
         raise
     if compiled is None:
         raise PackageInputError("compiled candidate is missing after host preparation")
@@ -817,7 +890,7 @@ def main(argv: Sequence[str]) -> int:
 
         raise PackageInputError("choose --self-test or --update-locks")
     except PackageInputError as error:
-        print(f"clean-room package input failed: {error}", file=sys.stderr)
+        print(f"clean-room package input failed: {type(error).__name__}", file=sys.stderr)
         return 1
 
 

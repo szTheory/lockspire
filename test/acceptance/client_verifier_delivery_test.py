@@ -25,6 +25,21 @@ import verifier_receipts  # noqa: E402
 
 
 class FrozenSourceOwnerContracts(unittest.TestCase):
+    def test_all_immutable_phase175_inputs_are_rehashed_and_pinned(self) -> None:
+        self.assertEqual(len(verifier_delivery.PHASE175_FROZEN_INPUTS), 13)
+        for relative, _digest in verifier_delivery.PHASE175_FROZEN_INPUTS:
+            self.assertIn(relative, verifier_delivery.COVERED_INPUTS)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for relative, _digest in verifier_delivery.PHASE175_FROZEN_INPUTS:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"pinned fixture")
+            with patch.object(verifier_delivery, "ROOT", root), \
+                 patch.object(verifier_delivery, "sha256", side_effect=lambda _path: "0" * 64):
+                with self.assertRaisesRegex(verifier_delivery.DeliveryError, "immutable Phase 175"):
+                    verifier_delivery.verify_phase175_frozen_inputs()
+
     def test_self_reported_source_hash_does_not_authenticate_external_archive(self) -> None:
         """A public digest over caller claims cannot prove source-to-archive ownership."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -159,6 +174,90 @@ class ComposedMatrixContracts(unittest.TestCase):
                     locked, floor, expected_runner=runner, expected_candidate=candidate,
                 )
 
+    def test_composition_rejects_raw_scope_substitution_even_when_index_is_updated(self) -> None:
+        artifacts = ROOT / ".artifacts" / "phase178"
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            locked, floor, runner, candidate = self._pair_roots(Path(temporary))
+            receipt_path = locked / "core/locked-builtin/receipt.json"
+            receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt["scope"] = "tracer"
+            receipt["run_id"] = "d" * 32
+            receipt["stable_case_ids"] = ["VPROOF-02-INSTALLED-TOKEN"]
+            receipt["executed_count"] = 1
+            receipt["observations"] = {"VPROOF-02-INSTALLED-TOKEN": {
+                "outcome": "pass", "executed": True, "http_status": 200,
+                "token_issued": True, "dedicated_verifier_persisted": True,
+                "fresh_signed_assertion": True,
+            }}
+            raw = json.dumps(receipt, sort_keys=True, indent=2).encode() + b"\n"
+            receipt_path.write_bytes(raw)
+            index_path = locked / "validated/index.json"
+            index = json.loads(index_path.read_text(encoding="utf-8"))
+            cell = next(row for row in index["cells"] if row["scope"] == "core" and row["store"] == "builtin")
+            cell["receipt_sha256"] = hashlib.sha256(raw).hexdigest()
+            cell["run_id"] = receipt["run_id"]
+            cell["executed_count"] = receipt["executed_count"]
+            index_path.write_text(json.dumps(index), encoding="utf-8")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.compose_pair_indexes(
+                    locked, floor, expected_runner=runner, expected_candidate=candidate,
+                )
+
+
+class SemanticDeliveryRejections(unittest.TestCase):
+    def test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            phase = Path(temporary)
+            for name, lane in (
+                ("178-REVIEW.md", "source"),
+                ("178-SECURITY.md", "security"),
+                ("178-INTEGRATION.md", "integration"),
+            ):
+                (phase / name).write_text(
+                    f"""# {lane} review
+Reviewer: independent {lane} reviewer
+Reviewed commit: {'f' * 40}
+Scope: scripts/acceptance/clean_room/verifier_delivery.py
+Date: 2026-10-27
+
+## Findings
+OPEN HIGH BLOCKER: acceptance is unsafe.
+Disposition: open, do not approve.
+
+## Evidence
+The claimed commit is unrelated to the selected candidate.
+""",
+                    encoding="utf-8",
+                )
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.validate_reviews(phase)
+
+    def test_source_gate_rejects_caller_claimed_stage_without_owned_capture(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            phase = Path(temporary)
+            runner = "a" * 40
+            manifest = {"runner_revision": runner, "covered_inputs": [{"path": "x", "sha256": "b" * 64}]}
+            record = {
+                "schema": "lockspire-phase178-source-acceptance-v1",
+                "tested_source_revision": runner,
+                "covered_inputs": manifest["covered_inputs"],
+                "canonical_ci": {
+                    "exit_code": 0,
+                    "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 scripts/ci/run_owned_source_tests.py --ci",
+                    "stages": [{"name": name, "exit_code": 0, "tests": 1,
+                                "failures": 0, "properties": 0, "stdout_bytes": 1,
+                                "stdout_sha256": "c" * 64}
+                               for name in ("qa.architecture", "test.fast", "test.integration")],
+                },
+            }
+            with patch.object(verifier_delivery, "validate_frozen_manifest", return_value=manifest), \
+                 patch.object(verifier_delivery, "_read_json", return_value=record):
+                with self.assertRaises(verifier_delivery.DeliveryError):
+                    verifier_delivery._check_source(phase, phase / "locked", phase / "floor", {
+                        "expected_runner": runner, "expected_candidate_source": runner,
+                        "expected_archive_sha256": "d" * 64, "expected_tree_sha256": "e" * 64,
+                        "expected_manifest_sha256": "f" * 64,
+                    })
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ import json
 import sys
 import tempfile
 import unittest
+import urllib.error
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest import mock
@@ -20,9 +21,64 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 import build_provider  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_rollout  # noqa: E402
+import verifier_receipts  # noqa: E402
+from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 class VerifierRolloutContracts(unittest.TestCase):
+    def test_token_error_body_withholds_unregistered_child_text(self) -> None:
+        marker = "UNREGISTERED_TOKEN_ERROR_MARKER"
+        response = io.BytesIO(b'{"token_endpoint":"https://issuer.example/token"}')
+        error = urllib.error.HTTPError("https://issuer.example/token", 500, "failure", {}, io.BytesIO(marker.encode()))
+        with mock.patch.object(clean_room_verifier_upgrade.urllib.request, "urlopen", side_effect=[response, error]):
+            with self.assertRaises(build_provider.PackageInputError) as raised:
+                clean_room_verifier_upgrade._token_request(
+                    "https://issuer.example", "client", "secret", "https://client.example/cb",
+                    "verifier", "code", Redactor(SentinelSet.for_run()),
+                )
+        self.assertFalse(marker in str(raised.exception), "unregistered HTTP body reached a retained error")
+        self.assertIn("response diagnostics withheld", str(raised.exception))
+
+    def test_failed_rollout_attempt_persists_only_child_output_digest(self) -> None:
+        marker = "UNREGISTERED_CHILD_DIAGNOSTIC_MARKER"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            log = root / "provider.log"
+            log.write_text(marker, encoding="utf-8")
+            verifier_rollout._write_failure_attempt(
+                root / "receipts", "rollout", "locked", "builtin", "run-1",
+                RuntimeError(marker), Redactor(SentinelSet.for_run()),
+                log_paths=[log],
+            )
+            persisted = next((root / "receipts").glob("*.failure.json")).read_text(encoding="utf-8")
+        self.assertFalse(marker in persisted, "unregistered child diagnostics reached durable rollout evidence")
+        self.assertNotIn("redacted_error", persisted)
+        self.assertNotIn('"tail"', persisted)
+        record = json.loads(persisted)
+        self.assertEqual(record["process_logs"][0]["bytes"], len(marker))
+        self.assertEqual(len(record["process_logs"][0]["sha256"]), 64)
+
+    def _rollout_fixture(self) -> dict[str, object]:
+        path = ROOT / "test/fixtures/verifier-matrix-26/rollout/locked-builtin/receipt.json"
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_rollout_receipt_rejects_unproven_predecessor_and_unknown_sensitive_fields(self) -> None:
+        receipt = self._rollout_fixture()
+        expected = {
+            "expected_pair": "locked", "expected_store": "builtin",
+            "expected_runner": receipt["runner_revision"],
+            "expected_candidate_source": receipt["candidate"]["source_revision"],
+            "expected_scope": "rollout",
+        }
+        receipt["predecessor"] = {"kind": "candidate-substitution", "source_revision": receipt["candidate"]["source_revision"]}
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_rollout_receipt(receipt, **expected)
+
+        receipt = self._rollout_fixture()
+        receipt["observations"]["client_secret"] = "unknown-sensitive-field"
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_rollout_receipt(receipt, **expected)
+
     def test_cli_group_selection_dispatches_explicit_scope_independent_of_matrix_width(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             receipt_dir = Path(temporary)
@@ -150,7 +206,7 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertFalse(passed)
         self.assertEqual(failure, "token-http-401-invalid_client")
 
-    def test_readiness_failure_cleans_owned_server_and_log_handle(self) -> None:
+    def test_readiness_failure_confirms_owned_server_session_cleanup(self) -> None:
         class Process:
             pid = 1234
 
@@ -160,31 +216,14 @@ class VerifierRolloutContracts(unittest.TestCase):
             def poll(self):
                 return None
 
-            def terminate(self):
-                self.stopped = True
-
-            def wait(self, timeout=None):
-                return 0
-
         with tempfile.TemporaryDirectory() as temporary:
             process = Process()
-            with mock.patch.object(verifier_rollout.subprocess, "Popen", return_value=process), \
+            with mock.patch.object(verifier_rollout, "start_owned_session", return_value=process), \
+                 mock.patch.object(verifier_rollout, "stop_process_group", return_value=True) as stop_group, \
                  mock.patch.object(verifier_rollout.time, "monotonic", side_effect=(0, 36)):
                 with self.assertRaisesRegex(build_provider.PackageInputError, "did not become HTTP ready"):
                     verifier_rollout._start_server(Path(temporary), {}, Path(temporary) / "server.log", "http://127.0.0.1:9")
-            self.assertTrue(process.stopped)
-
-    def test_process_log_redaction_removes_registered_material_before_retention(self) -> None:
-        redactor = verifier_rollout.Redactor(verifier_rollout.SentinelSet.for_run())
-        redactor.register_material("one-time-secret-value")
-        rendered = verifier_rollout._redacted_log_tail(
-            'Parameters: %{"client_assertion" => "signed.jwt.value", "code_verifier" => "one-time-secret-value"}\n'
-            "Failed to sign access token: raw error details", redactor
-        )
-        self.assertNotIn("one-time-secret-value", rendered)
-        self.assertNotIn("signed.jwt.value", rendered)
-        self.assertEqual(rendered, "Failed to sign access token: [REDACTED]")
-
+            stop_group.assert_called_once_with(process, grace=10)
     def test_public_adopter_provisions_signing_key_before_mounted_http(self) -> None:
         source = (ROOT / "scripts/acceptance/clean_room/verifier_rollout.py").read_text(encoding="utf-8")
         public = source.split("def _run_public_control", 1)[1].split("def _configure", 1)[0]

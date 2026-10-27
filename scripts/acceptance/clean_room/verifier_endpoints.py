@@ -29,7 +29,7 @@ from build_provider import (  # noqa: E402
 )
 from package_input import (  # noqa: E402
     PackageSource, clean_room_database_url, prepare_package, sha256,
-    source_revision, stop_process_group, verify_candidate_input,
+    source_revision, start_owned_session, stop_process_group, verify_candidate_input,
 )
 from redaction import Redactor, SentinelSet  # noqa: E402
 from verifier_receipts import validate_receipt  # noqa: E402
@@ -127,23 +127,17 @@ def _run_release_rpc(receipt_dir: Path) -> dict[str, object]:
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False, timeout=240,
             )
             if assembled.returncode != 0:
-                safe = redactor.text(assembled.stdout.decode(errors="replace"))[-1200:]
-                redactor.assert_safe(safe)
                 raise PackageInputError("installed locked host release assembly failed (exit " +
-                                        str(assembled.returncode) + "): " + safe)
+                                        str(assembled.returncode) + "); build diagnostics withheld")
             release_root = host / "_build" / "prod" / "rel" / "clean_room_provider"
             release_bin = release_root / "bin" / "clean_room_provider"
             if not release_bin.is_file():
                 actual_releases = sorted(path.relative_to(host).as_posix()
                                          for path in (host / "_build" / "prod" / "rel").glob("*/bin/*")
                                          if path.is_file())
-                safe_build_output = redactor.text(assembled.stdout.decode(errors="replace"))[-900:]
-                redactor.assert_safe(safe_build_output)
                 raise PackageInputError("assembled installed release executable is missing; found " +
-                                        json.dumps(actual_releases) + "; build output: " + safe_build_output)
-            release_process = _start_release_server(
-                release_bin, release_env, issuer, root / "release-server.log"
-            )
+                                        json.dumps(actual_releases) + "; build diagnostics withheld")
+            release_process = _start_release_server(release_bin, release_env, issuer)
 
             dry_expression = _release_rpc_expression("dry_run")
             dry = _release_command(release_bin, release_env, "rpc", dry_expression, redactor=redactor)
@@ -284,23 +278,17 @@ def _release_command(release_bin: Path, env: dict[str, str], *args: str,
         text_output = redactor.text(result.stdout.decode(errors="replace"))
         redactor.assert_safe(text_output)
         if result.returncode != 0:
-            safe_tail = text_output[-1000:]
-            raise PackageInputError("run-owned release command failed (exit " + str(result.returncode) +"): " + safe_tail)
+            raise PackageInputError("run-owned release command failed (exit " + str(result.returncode) +"); diagnostics withheld")
     return result
 
 
-def _start_release_server(release_bin: Path, env: dict[str, str], issuer: str,
-                          log_path: Path) -> subprocess.Popen[bytes]:
-    log_path.touch(mode=0o600)
-    os.chmod(log_path, 0o600)
+def _start_release_server(release_bin: Path, env: dict[str, str], issuer: str) -> subprocess.Popen[bytes]:
     process = None
     try:
-        with log_path.open("ab") as log:
-            process = subprocess.Popen(
-                (str(release_bin), "start"), cwd=release_bin.parents[1], env=env,
-                stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
-                start_new_session=True,
-            )
+        process = start_owned_session(
+            (str(release_bin), "start"), cwd=release_bin.parents[1], env=env,
+            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
         _wait_release_http(process, issuer)
         return process
     except BaseException:
@@ -368,7 +356,7 @@ def _run_endpoint_cell(pair: str, receipt_dir: Path) -> dict[str, object]:
             run_child_command(host, env, "ecto.migrate", "--migrations-path", "priv/repo/migrations")
             runner._provision_signing_key(host, env)
             clients = _register_clients(host, env, redactor, run_id)
-            server, process = verifier_rollout._start_server(host, env, root / "provider.log", issuer)
+            server, process = verifier_rollout._start_server(host, env, None, issuer)
 
             jwt = clients["jwt"]
             discovered_issuer = _discover_issuer(issuer)
@@ -475,10 +463,7 @@ def _register_clients(host: Path, env: dict[str, str], redactor: Redactor, run_i
         label = "jwt" if client_id.endswith("jwt-" + run_id) else "basic" if "-basic-" in client_id else "post"
         clients[label] = {"client_id": client_id, "secret": secret}
     if completed.returncode != 0 or set(clients) != {"jwt", "basic", "post"}:
-        redactor.register_material(output)
-        safe = redactor.text(output)[-1000:]
-        redactor.assert_safe(safe)
-        raise PackageInputError("host-owned endpoint client fixture failed: " + safe)
+        raise PackageInputError("host-owned endpoint client fixture failed; child diagnostics withheld")
     return clients
 
 

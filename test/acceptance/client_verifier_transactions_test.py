@@ -6,6 +6,9 @@ import sys
 from pathlib import Path
 import hashlib
 import json
+import hashlib
+import subprocess
+import tempfile
 import types
 import unittest
 from unittest import mock
@@ -16,6 +19,8 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 
 import clean_room_verifier_upgrade as runner  # noqa: E402
 import verifier_receipts  # noqa: E402
+import verifier_transactions  # noqa: E402
+from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 def receipt(scope: str, case_ids: list[str]) -> dict[str, object]:
@@ -82,6 +87,23 @@ def receipt(scope: str, case_ids: list[str]) -> dict[str, object]:
 
 
 class VerifierTransactionContracts(unittest.TestCase):
+    def test_witness_capture_never_persists_unknown_child_output(self) -> None:
+        marker = b"UNREGISTERED_CHILD_DIAGNOSTIC_MARKER"
+        completed = subprocess.CompletedProcess(("mix", "run"), 1, marker + b"\n", b"")
+        with tempfile.TemporaryDirectory() as temporary:
+            attempt = Path(temporary) / "attempt"
+            attempt.mkdir()
+            with mock.patch.object(verifier_transactions.subprocess, "run", return_value=completed):
+                with self.assertRaises(verifier_transactions.PackageInputError):
+                    verifier_transactions._run_witness(
+                        Path(temporary), {}, "atomicity", Redactor(SentinelSet.for_run()), attempt,
+                    )
+            persisted = b"".join(path.read_bytes() for path in attempt.iterdir())
+            self.assertFalse(marker in persisted)
+            capture = json.loads((attempt / "witness-capture.json").read_text())
+            self.assertEqual(capture["stdout_bytes"], len(marker) + 1)
+            self.assertEqual(capture["stdout_sha256"], hashlib.sha256(marker + b"\n").hexdigest())
+
     def test_both_transaction_groups_dispatch_to_one_host_witness_module(self) -> None:
         self.assertEqual(runner.MODULES["contention"], ("verifier_transactions", "run_contention_group"))
         self.assertEqual(runner.MODULES["atomicity"], ("verifier_transactions", "run_atomicity_group"))
@@ -137,6 +159,14 @@ class VerifierTransactionContracts(unittest.TestCase):
         candidate["observations"][atomicity_case_ids[0]]["reached_insert"] = False
         with self.assertRaises(ValueError):
             verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+
+    def test_commit_order_source_control_requires_real_apply_and_persisted_mutation(self) -> None:
+        source = (ROOT / "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex").read_text()
+        witness = source.split("defp nested_report_and_commit_order do", 1)[1].split("defp start_contender", 1)[0]
+        self.assertIn("run(mode: :apply, limit: 500)", witness)
+        self.assertIn("after_commit.verifier != before.verifier", witness)
+        self.assertIn("committed_audit_count > 0", witness)
+        self.assertIn("not Repo.in_transaction?()", witness)
 
     def test_issuance_discovery_status_is_an_integer_not_a_boolean(self) -> None:
         case_ids = [verifier_receipts.ISSUANCE_CASE_IDS["locked"]]

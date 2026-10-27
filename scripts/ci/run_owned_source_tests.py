@@ -226,13 +226,20 @@ class OwnedSourceTests:
             entry.update(state=reason, finished_at=utc_now(), process_group_stopped=stopped)
             self._save()
             raise GuardFailure(stage, reason) from None
-        counts = [
-            {"tests": int(tests), "failures": int(failures), "properties": int(properties or 0)}
-            for properties, tests, failures in re.findall(
-                rb"(?m)^\s*(?:(\d+) properties?,\s*)?(\d+) tests?, (\d+) failures?\b", result.stdout,
-            )
-            if int(tests) > 0
-        ]
+        counts = []
+        prior_end = 0
+        for match in re.finditer(
+                rb"(?m)^\s*(?:(\d+) properties?,\s*)?(\d+) tests?, (\d+) failures?\b[^\r\n]*",
+                result.stdout):
+            properties, tests, failures = match.groups()
+            if int(tests) <= 0:
+                continue
+            stage_output = result.stdout[prior_end:match.end()]
+            prior_end = match.end()
+            counts.append({
+                "tests": int(tests), "failures": int(failures), "properties": int(properties or 0),
+                "stdout_bytes": len(stage_output), "stdout_sha256": hashlib.sha256(stage_output).hexdigest(),
+            })
         entry.update(
             state="finished", finished_at=utc_now(), exit_code=result.returncode,
             stdout_bytes=len(result.stdout), stdout_sha256=hashlib.sha256(result.stdout).hexdigest(),
@@ -377,6 +384,17 @@ SELECT json_build_object('database', current_database(), 'oid',
             # Canonical ci owns qa.architecture, test.fast and test.integration.
             if not counts or (self.ci and len(counts) < 3) or any(row["failures"] for row in counts):
                 raise GuardFailure(stage, "nonzero_test_evidence_missing")
+            source_after = self._invoke("source", ["git", "rev-parse", "HEAD"])
+            checkout_after = self._invoke("source", ["git", "status", "--porcelain=v1", "--untracked-files=all"])
+            source_sha_after = source_after.stdout.decode("ascii", errors="strict").strip()
+            self.manifest.update(
+                source_sha_after=source_sha_after,
+                checkout_clean_after=not checkout_after.stdout,
+                checkout_status_sha256_after=hashlib.sha256(checkout_after.stdout).hexdigest(),
+            )
+            self._save()
+            if source_sha_after != self.manifest["source_sha"] or checkout_after.stdout:
+                raise GuardFailure("source", "checkout_changed_during_test_run")
         except GuardFailure as error:
             failure = error
         except BaseException as error:

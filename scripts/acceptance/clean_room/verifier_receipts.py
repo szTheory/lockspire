@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import subprocess
 from typing import Any
 
 
@@ -23,6 +24,30 @@ IDENTITY_FIELDS = frozenset({"kind", "version", "archive_sha256", "tree_sha256",
 CASE_ID = re.compile(r"[A-Z0-9][A-Z0-9._-]{2,95}\Z")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 REVISION = re.compile(r"[0-9a-f]{40,64}\Z")
+PREDECESSOR_SOURCE = "173059a166e9ade0f5f57c9980b7b2400a98538c"
+PREDECESSOR_ARCHIVE_SHA256 = "792967609e41d216fc0178ef069570c39350c9bb5ee481da4e2852993267e758"
+PREDECESSOR_TREE_SHA256 = "2dcf7705bd5651e853a02a931a1e0c595639438b3bd0a36a9c330017eab98315"
+PREDECESSOR_SOURCE_ARCHIVE_SHA256 = "67a9daf5a54cb104e5647e3de3a7372b0eeee896189c2c043409e2497784f5a6"
+PREDECESSOR_COMMIT_TREE = "127c8d480223cd4474447a73c7a80066be6fc2be"
+PUBLIC_SOURCE = "d04be40262e975a4eb8d8567eb0d1458a9c23181"
+PUBLIC_ARCHIVE_SHA256 = "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d"
+PUBLIC_TREE_SHA256 = "64211d4d9d7e4d20520a0f68141e01c5493b57e3bbf014a8cc8cb22ec328ed46"
+ROLLOUT_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "old_process_exit_observed", "legacy_write_read_shared_store",
+    "dedicated_write_after_drain", "switch_back_legacy_write_preserves_dedicated",
+    "old_code_rejects_dedicated", "rollback_retains_dedicated_reads",
+    "old_code_legacy_control_succeeded", "legacy_hash_preserved", "dedicated_hash_present",
+    "fleet_parity_proven", "quiescence_proven", "backup_proven",
+    "candidate_legacy_overlap_pid", "candidate_dedicated_activation_pid",
+    "candidate_compatible_rollback_pid", "isolated_old_process_pid", "legacy_writer_pid",
+})
+PUBLIC_OBSERVATION_FIELDS = frozenset({
+    "outcome", "executed", "public_pin_verified", "verifier_specific_adoption_executed",
+    "http_authentication_succeeded", "http_auth_failure", "authenticated_deadline_preserved",
+    "client_hash_preserved", "lifetime_prerequisite_migrated", "legacy_format_before",
+    "dedicated_format_after", "authenticated_age_kind_before", "authenticated_age_kind_after",
+    "release_source_evidence", "coverage",
+})
 OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued",
     "dedicated_verifier_persisted", "fresh_signed_assertion",
@@ -321,11 +346,20 @@ def validate_rollout_receipt(
     candidate = receipt.get("candidate")
     if not isinstance(candidate, dict):
         raise ReceiptError("rollout candidate identity is missing")
+    candidate_fields = {
+        "kind", "version", "archive_sha256", "tree_sha256", "source_revision", "runner_revision",
+        "source_proof", "vendor_tree_sha256", "compiled_candidate_sha256", "resolved_dependency_verified",
+    }
+    if set(candidate) != candidate_fields:
+        raise ReceiptError("rollout candidate fields are outside the finite provenance contract")
     if (candidate.get("kind") not in {"checkout", "frozen"} or candidate.get("source_revision") != expected_candidate_source
             or candidate.get("runner_revision") != expected_runner
             or not isinstance(candidate.get("version"), str)
             or any(not isinstance(candidate.get(field), str) or not SHA.fullmatch(candidate[field])
-                   for field in ("archive_sha256", "tree_sha256", "source_proof"))):
+                   for field in ("archive_sha256", "tree_sha256", "source_proof", "vendor_tree_sha256",
+                                 "compiled_candidate_sha256"))
+            or candidate.get("vendor_tree_sha256") != candidate.get("tree_sha256")
+            or candidate.get("resolved_dependency_verified") is not True):
         raise ReceiptError("rollout candidate source binding is invalid")
     if candidate["kind"] == "checkout":
         proof = json.dumps({"archive_sha256": candidate["archive_sha256"],
@@ -333,8 +367,34 @@ def validate_rollout_receipt(
                             "tree_sha256": candidate["tree_sha256"]}, sort_keys=True, separators=(",", ":")).encode()
         if hashlib.sha256(proof).hexdigest() != candidate["source_proof"]:
             raise ReceiptError("rollout candidate digest does not bind source and package tree")
+    predecessor = receipt.get("predecessor")
+    source_proof = receipt.get("source_proof")
+    if expected_scope == "rollout":
+        if not isinstance(predecessor, dict) or set(predecessor) != {
+                "kind", "version", "archive_sha256", "tree_sha256", "source_revision", "compiled_candidate_sha256"}:
+            raise ReceiptError("rollout predecessor fields are outside the finite provenance contract")
+        if (predecessor.get("kind") != "accepted-git-source" or predecessor.get("version") != "1.6.1"
+                or predecessor.get("source_revision") != PREDECESSOR_SOURCE
+                or predecessor.get("archive_sha256") != PREDECESSOR_ARCHIVE_SHA256
+                or predecessor.get("tree_sha256") != PREDECESSOR_TREE_SHA256
+                or not isinstance(predecessor.get("compiled_candidate_sha256"), str)
+                or not SHA.fullmatch(predecessor["compiled_candidate_sha256"])):
+            raise ReceiptError("rollout predecessor identity is not the independently pinned source owner")
+        if not isinstance(source_proof, dict) or set(source_proof) != {"commit_tree", "source_archive_sha256"}:
+            raise ReceiptError("rollout predecessor source proof fields are incomplete")
+        if (source_proof.get("commit_tree") != PREDECESSOR_COMMIT_TREE
+                or source_proof.get("source_archive_sha256") != PREDECESSOR_SOURCE_ARCHIVE_SHA256):
+            raise ReceiptError("rollout predecessor source proof differs from the pinned Git export")
+        observed_tree = subprocess.run(
+            ("git", "rev-parse", f"{PREDECESSOR_SOURCE}^{{tree}}"),
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
+        )
+        if (observed_tree.returncode != 0
+                or observed_tree.stdout.decode("ascii", errors="strict").strip() != PREDECESSOR_COMMIT_TREE):
+            raise ReceiptError("rollout predecessor Git source tree is unavailable or changed")
     host, runtime = receipt.get("host"), receipt.get("runtime")
-    if not isinstance(host, dict) or not isinstance(runtime, dict):
+    if (not isinstance(host, dict) or set(host) != {"lock_sha256", "phoenix", "live_view"}
+            or not isinstance(runtime, dict)):
         raise ReceiptError("rollout host identity is missing")
     if (not isinstance(host.get("lock_sha256"), str) or not SHA.fullmatch(host["lock_sha256"])
             or (host.get("phoenix"), host.get("live_view")) != {
@@ -347,6 +407,8 @@ def validate_rollout_receipt(
         if (expected_pair, expected_store) not in {(p, s) for p in ("locked", "floor") for s in ("builtin", "delegated")}:
             raise ReceiptError("rollout pair/store is outside the supported matrix")
         observations = receipt.get("observations")
+        if not isinstance(observations, dict) or set(observations) != ROLLOUT_OBSERVATION_FIELDS:
+            raise ReceiptError("rollout observation fields are outside the finite contract")
         truth_fields = {
             "old_process_exit_observed", "legacy_write_read_shared_store", "dedicated_write_after_drain",
             "switch_back_legacy_write_preserves_dedicated", "old_code_rejects_dedicated",
@@ -360,26 +422,78 @@ def validate_rollout_receipt(
                        ("fleet_parity_proven", "quiescence_proven", "backup_proven"))):
             raise ReceiptError("rollout observations are incomplete")
         processes = receipt.get("processes")
+        if not isinstance(processes, dict) or set(processes) != {"predecessor", "candidate"}:
+            raise ReceiptError("rollout process role set is invalid")
         for role in ("predecessor", "candidate"):
             process = processes.get(role) if isinstance(processes, dict) else None
-            if not isinstance(process, dict) or type(process.get("pid")) is not int or process["pid"] <= 0:
+            if (not isinstance(process, dict) or set(process) != {"pid", "compiled_candidate_sha256"}
+                    or type(process.get("pid")) is not int or process["pid"] <= 0):
                 raise ReceiptError("rollout process identity is missing")
             if not isinstance(process.get("compiled_candidate_sha256"), str) or not SHA.fullmatch(process["compiled_candidate_sha256"]):
                 raise ReceiptError("rollout compiled package identity is missing")
+            expected_compiled = candidate["compiled_candidate_sha256"] if role == "candidate" else predecessor["compiled_candidate_sha256"]
+            if process["compiled_candidate_sha256"] != expected_compiled:
+                raise ReceiptError("rollout process compiled identity differs from its source owner")
     else:
         if expected_pair != "locked" or expected_store != "builtin":
             raise ReceiptError("public legacy control is restricted to locked/builtin")
         observations = receipt.get("observations")
         proof = receipt.get("source_proof")
+        predecessor = receipt["predecessor"]
+        if (predecessor.get("kind") != "public-hex" or predecessor.get("version") != "1.6.1"
+                or predecessor.get("source_revision") != PUBLIC_SOURCE
+                or predecessor.get("archive_sha256") != PUBLIC_ARCHIVE_SHA256
+                or predecessor.get("tree_sha256") != PUBLIC_TREE_SHA256
+                or set(predecessor) != {"kind", "version", "archive_sha256", "tree_sha256",
+                                        "source_revision", "compiled_candidate_sha256"}):
+            raise ReceiptError("public predecessor identity is not the independently pinned artifact")
+        if not isinstance(observations, dict) or set(observations) != PUBLIC_OBSERVATION_FIELDS:
+            raise ReceiptError("public control observation fields are outside the finite contract")
         required_public = {"public_pin_verified", "verifier_specific_adoption_executed", "http_authentication_succeeded",
                            "authenticated_deadline_preserved", "client_hash_preserved"}
         if (not isinstance(observations, dict) or observations.get("outcome") != "pass"
                 or observations.get("executed") is not True
                 or any(observations.get(field) is not True for field in required_public)
                 or not isinstance(proof, dict)
-                or proof.get("public_source") != "d04be40262e975a4eb8d8567eb0d1458a9c23181"
-                or proof.get("archive_sha256") != "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d"):
+                or set(proof) != {"public_source", "release_record_sha256", "release_evidence_sha256",
+                                  "terminal_receipt_sha256", "archive_sha256", "package_tree_sha256",
+                                  "source_commit_tree", "source_claim"}
+                or proof.get("public_source") != PUBLIC_SOURCE
+                or proof.get("archive_sha256") != PUBLIC_ARCHIVE_SHA256
+                or proof.get("package_tree_sha256") != PUBLIC_TREE_SHA256
+                or proof.get("source_claim") != "public package files byte-match independently exported source commit"
+                or any(not isinstance(proof.get(field), str) or not SHA.fullmatch(proof[field])
+                       for field in ("release_record_sha256", "release_evidence_sha256", "terminal_receipt_sha256"))):
             raise ReceiptError("public legacy control attribution or witness is incomplete")
+        root = Path(__file__).resolve().parents[3]
+        artifacts = (
+            root / ".planning/RELEASE-TRAIN.md",
+            root / ".planning/releases/1.6.1-EVIDENCE.md",
+            root / ".planning/releases/1.6.1-terminal-receipt.json",
+        )
+        if any(not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != proof[field]
+               for path, field in zip(artifacts, ("release_record_sha256", "release_evidence_sha256", "terminal_receipt_sha256"), strict=True)):
+            raise ReceiptError("public control release evidence bytes are unavailable or changed")
+        public_tree = subprocess.run(
+            ("git", "rev-parse", f"{PUBLIC_SOURCE}^{{tree}}"),
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
+        )
+        if (public_tree.returncode != 0
+                or public_tree.stdout.decode("ascii", errors="strict").strip() != proof.get("source_commit_tree")):
+            raise ReceiptError("public predecessor source tree is unavailable or mismatched")
+        processes = receipt.get("processes")
+        if not isinstance(processes, dict) or set(processes) != {"predecessor", "candidate"}:
+            raise ReceiptError("public control process roles are invalid")
+        for role in ("predecessor", "candidate"):
+            process = processes[role]
+            if (not isinstance(process, dict) or set(process) != {"pid", "compiled_candidate_sha256"}
+                    or type(process.get("pid")) is not int or process["pid"] <= 0
+                    or not isinstance(process.get("compiled_candidate_sha256"), str)
+                    or not SHA.fullmatch(process["compiled_candidate_sha256"])):
+                raise ReceiptError("public control process identity is incomplete")
+            owner = receipt["candidate"] if role == "candidate" else predecessor
+            if process["compiled_candidate_sha256"] != owner.get("compiled_candidate_sha256"):
+                raise ReceiptError("public control process does not match its independently pinned owner")
     return receipt
 
 

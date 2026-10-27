@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 import sys
 import tempfile
@@ -21,7 +22,7 @@ sys.path.insert(0, str(HERE.parent))
 from package_input import PackageInputError, package_tree_digest, sha256, unpack_hex_tarball  # noqa: E402
 from build_provider import PROOF_PAIR_LOCKS  # noqa: E402
 from verifier_receipts import (  # noqa: E402
-    REQUIRED_MATRIX, ReceiptError, expected_case_ids, validate_complete_matrix,
+    REQUIRED_MATRIX, ReceiptError, _unique_object, expected_case_ids, validate_complete_matrix,
 )
 
 ROOT = HERE.parents[2]
@@ -30,20 +31,127 @@ PHASE_DEFAULT = ROOT / ".planning" / "phases" / PHASE_NAME
 ARTIFACT_DEFAULT = ROOT / ".artifacts" / "phase178"
 REVISION = re.compile(r"[0-9a-f]{40,64}\Z")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
+LATER_OWNER_FINDINGS = frozenset({"T-178-31", "T-178-32", "T-178-35", "T-178-36"})
+PHASE175_FROZEN_INPUTS = (
+    ("test/integration/client_secret_jwt_legacy_age_test.exs", "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6"),
+    ("test/lockspire/security/client_secret_verifier_compatibility_test.exs", "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d"),
+    ("test/lockspire/security/client_secret_verifier_contract_test.exs", "b04ba0b562983122a835500162238cc66f83077926024ef956828f042e2b32fb"),
+    ("test/support/client_secret_verifier_fixtures.ex", "4015e36c1a8ca87c066c5b4ddbbcb5193e29edaa5726d35409c80a5d7d36d524"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-BASELINE.json", "55ef5cc2b33556b87eddc8390ee671ab381f07f1e48d6fc54be88e702ed5f045"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json", "fa9f0914eced166115a2fb300a3f406e68739393e9f0e1970ca44aa1ddb394ab"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-QUALIFICATION.json", "e4f6f0fcc03a33309e02f4519a6ae1d1a54fd77c633108b4e168bd1f0e163788"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json", "7eb178b8cbd41fb5e6f4cb5124e12a58502f414a5e2ef5f646df792546156ec3"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md", "0a8fc84d6963c9a2019ab8faefbd9f29971f1cff2591d4dcaf7e0c60fbefa860"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-POLICY-REVISION.md", "3916510fcf8e9c7d56b3f433785a704eebc9dfca2d5b354b5e11fe55a5bb408f"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md", "ec28d54304910291a8e278e49a6582d74e350c8d00f2ced3208474b10623efa2"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-03-PLAN.md", "8e93d17dbd303fcecec20f9de366d966b0b48b7c949ce096b2668c50e8e5095f"),
+    (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md", "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc"),
+)
 
 # Explicitly bounded. Do not replace this with a whole-repository history scan.
 COVERED_INPUTS = (
+    "mix.exs",
+    "mix.lock",
+    "config/config.exs",
+    "config/test.exs",
+    "lib/lockspire/admin/client_verifier_maintenance.ex",
+    "lib/lockspire/security/client_secret_verifier.ex",
+    "lib/lockspire/security/client_secret_verifier/context.ex",
+    "lib/lockspire/security/client_secret_verifier/legacy.ex",
+    "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+    "lib/lockspire/storage/client_lifetime.ex",
+    "lib/lockspire/storage/client_store.ex",
+    "lib/lockspire/storage/client_verifier_maintenance.ex",
+    "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
+    "scripts/acceptance/clean_room/admin_receipts.py",
+    "scripts/acceptance/clean_room/build_client.py",
+    "scripts/acceptance/clean_room/build_provider.py",
+    "scripts/acceptance/clean_room/client_lifetime_upgrade.py",
+    "scripts/acceptance/clean_room/lifetime_receipts.py",
+    "scripts/acceptance/clean_room/processes.py",
+    "scripts/acceptance/clean_room/redaction.py",
+    "scripts/acceptance/clean_room/selected_receipts.py",
+    "scripts/acceptance/clean_room/verifier_recovery.py",
     "scripts/acceptance/clean_room/verifier_delivery.py",
+    "scripts/acceptance/clean_room_admin_journey.py",
+    "scripts/acceptance/clean_room_saas_journey.py",
     "scripts/acceptance/clean_room/verifier_receipts.py",
+    "scripts/acceptance/clean_room/verifier_transactions.py",
+    "scripts/acceptance/clean_room/verifier_core.py",
+    "scripts/acceptance/clean_room/verifier_disclosure.py",
+    "scripts/acceptance/clean_room/verifier_endpoints.py",
+    "scripts/acceptance/clean_room/verifier_rollout.py",
     "scripts/acceptance/clean_room/package_input.py",
     "scripts/acceptance/clean_room_verifier_upgrade.py",
     "scripts/ci/run_verifier_upgrade_proof.sh",
     "scripts/ci/run_owned_source_tests.py",
     "scripts/ci/lint_workflows.sh",
     "test/acceptance/client_verifier_delivery_test.py",
+    "test/acceptance/client_verifier_disclosure_test.py",
     "test/acceptance/client_verifier_receipts_test.py",
+    "test/acceptance/client_verifier_core_test.py",
+    "test/acceptance/client_verifier_endpoints_test.py",
+    "test/acceptance/client_verifier_rollout_test.py",
+    "test/acceptance/client_verifier_process_supervision_test.py",
+    "test/acceptance/client_verifier_transactions_test.py",
+    "test/acceptance/owned_source_tests_test.py",
+    "test/integration/client_secret_verifier_configuration_test.exs",
+    "test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
+    "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
+    "test/integration/client_secret_verifier_maintenance_issuance_test.exs",
+    "test/integration/client_secret_verifier_maintenance_recovery_test.exs",
+    "test/integration/client_secret_verifier_maintenance_test.exs",
+    "test/integration/client_secret_verifier_rotation_test.exs",
+    "test/integration/client_secret_verifier_tracer_test.exs",
+    "test/lockspire/admin/client_verifier_maintenance_test.exs",
+    "test/lockspire/config_client_secret_verifier_test.exs",
+    "test/lockspire/security/client_secret_verifier_age_test.exs",
+    "test/lockspire/security/client_secret_verifier_inspection_test.exs",
+    "test/lockspire/security/client_secret_verifier_maintenance_test.exs",
+    "test/lockspire/security/client_secret_verifier_rollout_test.exs",
+    "test/lockspire/security/client_secret_verifier_test.exs",
+    "test/lockspire/storage/client_verifier_maintenance_test.exs",
+    "test/support/client_verifier_maintenance_concurrency.ex",
     "test/clean_room/provider_host/mix.exs",
     "test/clean_room/provider_host/mix.lock",
+    "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex",
+    "test/clean_room/provider_host/admin_proof.exs",
+    "test/clean_room/provider_host/admin_proof_live_view.js",
+    "test/clean_room/provider_host/lib/clean_room_provider/accounts.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider/bootstrap.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider/lockspire/interaction_handler.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/billing_controller.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex",
+    "test/clean_room/provider_host/lib/clean_room_provider_web/router_patch.exs",
+    "test/clean_room/confidential_client/config/config.exs",
+    "test/clean_room/confidential_client/lib/clean_room_client/application.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/dpop.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/dpop_session.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/oauth_http.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/oauth_transaction.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/oidc_verifier.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/repo.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client/transactions.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/journey_controller.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/oauth_controller.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client_web/endpoint.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client_web/error_html.ex",
+    "test/clean_room/confidential_client/lib/clean_room_client_web/router.ex",
+    "test/clean_room/confidential_client/mix.exs",
+    "test/clean_room/confidential_client/mix.lock",
+    "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
+    "test/clean_room/confidential_client/test/dpop_client_test.exs",
+    "test/clean_room/confidential_client/test/oauth_transaction_test.exs",
+    "test/clean_room/confidential_client/test/test_helper.exs",
+    "compatibility/phoenix_1_8_live_view_1_1/lib/lockspire_compatibility_fixture.ex",
+    "compatibility/phoenix_1_8_live_view_1_1/mix.exs",
+    "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
+    "compatibility/phoenix_1_8_live_view_1_1/test/admin_host_runtime_test.exs",
+    "compatibility/phoenix_1_8_live_view_1_1/test/test_helper.exs",
     "test/clean_room/provider_host/lib/clean_room_provider/lifetime_client_store.ex",
     "docs/client-secret-verifier-configuration.md",
     "docs/client-secret-jwt-host-guide.md",
@@ -61,6 +169,7 @@ COVERED_INPUTS = (
     ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md",
     ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json",
     ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json",
+    *(path for path, _digest in PHASE175_FROZEN_INPUTS),
 )
 
 
@@ -72,7 +181,7 @@ def _read_json(path: Path, label: str) -> dict[str, Any]:
     if path.is_symlink() or not path.is_file():
         raise DeliveryError(f"{label} is unavailable or unsafe")
     try:
-        result = json.loads(path.read_text(encoding="utf-8"))
+        result = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
     except (OSError, UnicodeError, ValueError):
         raise DeliveryError(f"{label} is malformed") from None
     if not isinstance(result, dict):
@@ -101,6 +210,14 @@ def _safe_repo_file(value: str) -> Path:
     if not full.is_file():
         raise DeliveryError("covered input is missing or unsafe")
     return full
+
+
+def verify_phase175_frozen_inputs() -> None:
+    """Rehash every immutable Phase 175 input against the retained owner pins."""
+    for relative, expected in PHASE175_FROZEN_INPUTS:
+        path = _safe_repo_file(relative)
+        if sha256(path) != expected:
+            raise DeliveryError("an immutable Phase 175 source input changed")
 
 
 def _file_manifest(package_root: Path) -> list[dict[str, str]]:
@@ -182,7 +299,10 @@ def _rebuild_source_package(revision: str) -> tuple[str, dict[str, Any]]:
         }
 
 
-def frozen_owner_document(archive: Path, package_root: Path) -> dict[str, Any]:
+def frozen_owner_document(
+    archive: Path, package_root: Path, *, expected_runner: str,
+    expected_candidate_source: str, expected_archive_sha256: str, expected_tree_sha256: str,
+) -> dict[str, Any]:
     """Build a source-bound owner from an already produced local Hex archive."""
     artifact_root = (ROOT / ".artifacts" / "phase178").resolve(strict=True)
     if archive.is_symlink() or not archive.is_file():
@@ -196,9 +316,14 @@ def frozen_owner_document(archive: Path, package_root: Path) -> dict[str, Any]:
     if package_root == artifact_root or artifact_root not in package_root.parents:
         raise DeliveryError("candidate extracted tree must be inside the owned Phase 178 artifact root")
     revision = _git("rev-parse", "HEAD")
+    if revision != expected_runner:
+        raise DeliveryError("freeze runner differs from its independent caller pin")
     source_tree_digest, source_build = _rebuild_source_package(revision)
     candidate_tree_digest = package_tree_digest(package_root)
-    if source_tree_digest != candidate_tree_digest:
+    if (revision != expected_candidate_source or sha256(archive) != expected_archive_sha256
+            or candidate_tree_digest != expected_tree_sha256
+            or source_tree_digest != expected_tree_sha256
+            or source_tree_digest != candidate_tree_digest):
         raise DeliveryError("frozen candidate tree differs from package built from its source commit")
     owner: dict[str, Any] = {
         "schema": "lockspire-frozen-candidate-owner-v1",
@@ -218,8 +343,17 @@ def frozen_owner_document(archive: Path, package_root: Path) -> dict[str, Any]:
     return owner
 
 
-def create_frozen_manifest(phase_dir: Path, archive: Path, package_root: Path) -> Path:
-    owner = frozen_owner_document(archive, package_root)
+def create_frozen_manifest(
+    phase_dir: Path, archive: Path, package_root: Path, *, expected_runner: str,
+    expected_candidate_source: str, expected_archive_sha256: str, expected_tree_sha256: str,
+) -> Path:
+    verify_phase175_frozen_inputs()
+    owner = frozen_owner_document(
+        archive, package_root, expected_runner=expected_runner,
+        expected_candidate_source=expected_candidate_source,
+        expected_archive_sha256=expected_archive_sha256,
+        expected_tree_sha256=expected_tree_sha256,
+    )
     rows = []
     for relative in COVERED_INPUTS:
         source = _safe_repo_file(relative)
@@ -244,13 +378,21 @@ def create_frozen_manifest(phase_dir: Path, archive: Path, package_root: Path) -
     return target
 
 
-def validate_frozen_manifest(phase_dir: Path) -> dict[str, Any]:
-    manifest = _read_json(phase_dir / "178-FROZEN-INPUTS.json", "frozen input manifest")
+def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
+                             expected_candidate_source: str, expected_archive_sha256: str,
+                             expected_tree_sha256: str, expected_manifest_sha256: str) -> dict[str, Any]:
+    verify_phase175_frozen_inputs()
+    manifest_path = phase_dir / "178-FROZEN-INPUTS.json"
+    if sha256(manifest_path) != expected_manifest_sha256:
+        raise DeliveryError("frozen manifest bytes differ from their independent caller pin")
+    manifest = _read_json(manifest_path, "frozen input manifest")
     if manifest.get("schema") != "lockspire-phase178-frozen-inputs-v1":
         raise DeliveryError("frozen input manifest schema is invalid")
     runner = manifest.get("runner_revision")
     if not isinstance(runner, str) or not REVISION.fullmatch(runner):
         raise DeliveryError("frozen runner identity is invalid")
+    if runner != expected_runner:
+        raise DeliveryError("frozen runner differs from its independent caller pin")
     if _git("rev-parse", f"{runner}^{{tree}}") != manifest.get("runner_tree"):
         raise DeliveryError("frozen runner tree does not match its commit")
     rows = manifest.get("covered_inputs")
@@ -269,6 +411,10 @@ def validate_frozen_manifest(phase_dir: Path) -> dict[str, Any]:
     owner = manifest.get("candidate_owner")
     if not isinstance(owner, dict):
         raise DeliveryError("candidate source owner is missing")
+    if (owner.get("source_revision") != expected_candidate_source
+            or owner.get("archive_sha256") != expected_archive_sha256
+            or owner.get("tree_sha256") != expected_tree_sha256):
+        raise DeliveryError("frozen candidate differs from its independent caller pins")
     owner_digest = owner.get("owner_sha256")
     if not isinstance(owner_digest, str) or not SHA.fullmatch(owner_digest):
         raise DeliveryError("candidate source owner digest is invalid")
@@ -378,10 +524,19 @@ def compose_pair_indexes(
             if row.get("receipt_sha256") != digest:
                 raise DeliveryError("package raw receipt digest does not match its origin bytes")
             try:
-                receipt = json.loads(raw)
+                receipt = json.loads(raw, object_pairs_hook=_unique_object)
             except (UnicodeError, ValueError):
                 raise DeliveryError("package raw receipt is malformed") from None
-            if (not isinstance(receipt, dict) or receipt.get("run_id") != row.get("run_id")
+            rollout_schema = isinstance(receipt, dict) and receipt.get("schema") == "lockspire-installed-verifier-rollout-v1"
+            raw_cases_match = (
+                receipt.get("executed_count") == 1 if rollout_schema else
+                receipt.get("stable_case_ids") == expected_case_ids(key)
+                and receipt.get("executed_count") == len(expected_case_ids(key))
+            ) if isinstance(receipt, dict) else False
+            if (not isinstance(receipt, dict) or receipt.get("scope") != key[0]
+                    or receipt.get("pair") != pair or receipt.get("store") != key[2]
+                    or not raw_cases_match
+                    or receipt.get("run_id") != row.get("run_id")
                     or receipt.get("executed_count") != row.get("executed_count")
                     or row.get("outcome") != "pass"
                     or row.get("stable_case_ids") != expected_case_ids(key)
@@ -435,35 +590,129 @@ def compose_pair_indexes(
     }
 
 
-def validate_reviews(phase_dir: Path) -> None:
-    for filename, expected_lane in (
-        ("178-REVIEW.md", "source"), ("178-SECURITY.md", "security"),
-        ("178-INTEGRATION.md", "integration"),
-    ):
-        path = phase_dir / filename
-        if path.is_symlink() or not path.is_file():
-            raise DeliveryError("independent review output is missing")
-        content = path.read_text(encoding="utf-8")
-        lower = content.lower()
-        for heading in ("reviewer:", "reviewed commit:", "scope:", "date:", "findings", "evidence"):
-            if heading not in lower:
-                raise DeliveryError("review output omits reviewer scope or evidence")
-        if expected_lane not in lower or any(marker in lower for marker in ("todo", "tbd", "the agent", "self-review")):
-            raise DeliveryError("review output does not identify its independent review lane")
-        if "finding" not in lower or "disposition" not in lower:
-            raise DeliveryError("review findings lack an explicit disposition")
-        date_match = re.search(r"(?im)^date:\s*(\d{4}-\d{2}-\d{2})\s*$", content)
-        if not date_match:
-            raise DeliveryError("review observation date is invalid")
-        datetime.strptime(date_match.group(1), "%Y-%m-%d")
+def _reviewed_revision_is_ancestor(reviewed: str, expected: str) -> bool:
+    result = subprocess.run(("git", "merge-base", "--is-ancestor", reviewed, expected), cwd=ROOT,
+                            stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL, check=False, timeout=20)
+    return result.returncode == 0
 
 
-def _check_frozen(phase_dir: Path) -> dict[str, Any]:
-    return validate_frozen_manifest(phase_dir)
+def _metadata_only_difference(older: str, newer: str) -> bool:
+    result = subprocess.run(("git", "diff", "--name-only", "-z", older, newer), cwd=ROOT,
+                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, check=False, timeout=20)
+    if result.returncode:
+        return False
+    allowed = (
+        ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md",
+        f".planning/phases/{PHASE_NAME}/178-REVIEW.md",
+        f".planning/phases/{PHASE_NAME}/178-SECURITY.md",
+        f".planning/phases/{PHASE_NAME}/178-INTEGRATION.md",
+        f".planning/phases/{PHASE_NAME}/178-INDEPENDENT-REVIEWS.json",
+    )
+    paths = [item.decode("utf-8", errors="strict") for item in result.stdout.split(b"\0") if item]
+    return all(path in allowed for path in paths)
 
 
-def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path) -> dict[str, Any]:
-    frozen = validate_frozen_manifest(phase_dir)
+def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -> dict[str, Any]:
+    """Accept independent reviews only from a structured, commit-bound decision record."""
+    expected_revision = expected_revision or _git("rev-parse", "HEAD")
+    if not REVISION.fullmatch(expected_revision):
+        raise DeliveryError("review target revision is invalid")
+    record = _read_json(phase_dir / "178-INDEPENDENT-REVIEWS.json", "independent review decision record")
+    implementation_revision = record.get("implementation_revision")
+    if (record.get("schema") != "lockspire-phase178-independent-reviews-v1"
+            or implementation_revision != expected_revision):
+        raise DeliveryError("independent reviews do not bind the selected implementation revision")
+    lanes = record.get("lanes")
+    expected_lanes = {"source", "security", "integration"}
+    if not isinstance(lanes, dict) or set(lanes) != expected_lanes:
+        raise DeliveryError("independent review lane set is incomplete")
+    identities: set[str] = set()
+    for lane_name in sorted(expected_lanes):
+        lane = lanes[lane_name]
+        if (not isinstance(lane, dict)
+                or set(lane) != {"reviewer_identity", "reviewed_revision", "reviewed_at", "verdict",
+                                 "report_path", "report_sha256", "reviewed_files", "findings"}):
+            raise DeliveryError("review lane record is malformed")
+        reviewed_revision = lane.get("reviewed_revision") if isinstance(lane, dict) else None
+        if (not isinstance(reviewed_revision, str) or not REVISION.fullmatch(reviewed_revision)
+                or not _reviewed_revision_is_ancestor(reviewed_revision, expected_revision)
+                or not _metadata_only_difference(reviewed_revision, expected_revision)):
+            raise DeliveryError("review lane does not bind the selected implementation revision")
+        identity = lane.get("reviewer_identity")
+        if not isinstance(identity, str) or len(identity) < 8 or identity in identities:
+            raise DeliveryError("independent reviewer identities are missing or duplicated")
+        identities.add(identity)
+        if lane.get("verdict") != "accepted":
+            raise DeliveryError("independent review did not accept the selected implementation")
+        date = lane.get("reviewed_at")
+        try:
+            datetime.strptime(date, "%Y-%m-%d")
+        except (TypeError, ValueError):
+            raise DeliveryError("review observation date is invalid") from None
+        report_path = lane.get("report_path")
+        if not isinstance(report_path, str) or Path(report_path).name != report_path:
+            raise DeliveryError("independent review report path is malformed")
+        report = phase_dir / report_path
+        if (report.is_symlink() or not report.is_file()
+                or not isinstance(lane.get("report_sha256"), str)
+                or not SHA.fullmatch(lane["report_sha256"])
+                or sha256(report) != lane["report_sha256"]):
+            raise DeliveryError("independent review report bytes changed")
+        report_text = report.read_text(encoding="utf-8")
+        reviewed_match = re.search(r"(?im)^reviewed commit:\s*([0-9a-f]{40,64})\s*$", report_text)
+        reviewer_match = re.search(r"(?im)^reviewer:\s*(.+?)\s*$", report_text)
+        if (not reviewed_match or reviewed_match.group(1) != reviewed_revision
+                or not reviewer_match or reviewer_match.group(1) != identity):
+            raise DeliveryError("review judgment identity does not match its preserved report")
+        files = lane.get("reviewed_files")
+        if not isinstance(files, list) or not files:
+            raise DeliveryError("reviewed source file scope is missing")
+        for item in files:
+            if (not isinstance(item, dict) or set(item) != {"path", "sha256"}
+                    or not isinstance(item["path"], str) or not SHA.fullmatch(str(item["sha256"]))):
+                raise DeliveryError("reviewed source file binding is malformed")
+            path = _safe_repo_file(item["path"])
+            if sha256(path) != item["sha256"]:
+                raise DeliveryError("reviewed source bytes changed after independent review")
+            committed = subprocess.run(("git", "show", f"{reviewed_revision}:{item['path']}"), cwd=ROOT,
+                                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                       stderr=subprocess.DEVNULL, check=False, timeout=10)
+            if committed.returncode or hashlib.sha256(committed.stdout).hexdigest() != item["sha256"]:
+                raise DeliveryError("reviewed source bytes are not present at the reviewed revision")
+        findings = lane.get("findings")
+        if not isinstance(findings, list):
+            raise DeliveryError("review findings lack classified dispositions")
+        for finding in findings:
+            if (not isinstance(finding, dict)
+                    or set(finding) != {"id", "severity", "status", "disposition", "evidence", "files"}
+                    or not isinstance(finding.get("id"), str) or not finding["id"]
+                    or finding.get("severity") not in {"critical", "high", "medium", "low", "info"}
+                    or finding.get("status") not in {"open", "resolved", "deferred"}
+                    or finding.get("disposition") not in {"fix-before-freeze", "rechecked-fixed", "later-owner"}
+                    or not isinstance(finding.get("evidence"), str) or not finding["evidence"]
+                    or not isinstance(finding.get("files"), list) or not finding["files"]):
+                raise DeliveryError("review finding classification is malformed")
+            if finding["status"] == "open":
+                raise DeliveryError("independent review has an unresolved finding")
+            if finding["severity"] in {"critical", "high"} and finding["disposition"] != "rechecked-fixed":
+                if not (finding["id"] in LATER_OWNER_FINDINGS
+                        and finding["status"] == "deferred"
+                        and finding["disposition"] == "later-owner"):
+                    raise DeliveryError("independent review has an unresolved high-impact finding")
+            if finding["disposition"] == "later-owner" and finding["status"] != "deferred":
+                raise DeliveryError("later-owner finding disposition is inconsistent")
+    return record
+
+
+def _check_frozen(phase_dir: Path, pins: dict[str, str]) -> dict[str, Any]:
+    return validate_frozen_manifest(phase_dir, **pins)
+
+
+def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path,
+                   pins: dict[str, str]) -> dict[str, Any]:
+    frozen = validate_frozen_manifest(phase_dir, **pins)
     owner = frozen["candidate_owner"]
     matrix = compose_pair_indexes(
         locked_root, floor_root, expected_runner=frozen["runner_revision"],
@@ -506,9 +755,118 @@ def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path) -> dict
     return matrix
 
 
-def _check_source(phase_dir: Path) -> dict[str, Any]:
-    frozen = validate_frozen_manifest(phase_dir)
+def _owned_source_manifest(
+    path: Path, expected_revision: str, *, require_temp_custody: bool = True,
+) -> dict[str, Any]:
+    try:
+        resolved = path.resolve(strict=True)
+        if (path.is_symlink() or not resolved.is_file()
+                or (require_temp_custody and (
+                    not resolved.parent.name.startswith("lockspire-owned-source-tests-")
+                    or stat.S_IMODE(resolved.parent.stat().st_mode) != 0o700))
+                or stat.S_IMODE(resolved.stat().st_mode) != 0o600):
+            raise DeliveryError("owned source guard manifest custody is unsafe")
+        manifest = _read_json(resolved, "owned source guard manifest")
+    except OSError:
+        raise DeliveryError("owned source guard manifest is unavailable") from None
+    if (manifest.get("schema") != "lockspire-owned-source-tests-v1"
+            or manifest.get("mode") != "ci" or manifest.get("repo") != "Lockspire.TestRepo"
+            or manifest.get("mix_env") != "test" or manifest.get("state") != "passed"
+            or manifest.get("source_sha") != expected_revision
+            or manifest.get("source_sha_after") != expected_revision
+            or manifest.get("checkout_clean_before") is not True
+            or manifest.get("checkout_clean_after") is not True
+            or not isinstance(manifest.get("checkout_status_sha256_before"), str)
+            or not SHA.fullmatch(manifest["checkout_status_sha256_before"])
+            or not isinstance(manifest.get("checkout_status_sha256_after"), str)
+            or not SHA.fullmatch(manifest["checkout_status_sha256_after"])
+            or manifest.get("create_witness") is not True
+            or type(manifest.get("owned_oid")) is not int or manifest["owned_oid"] <= 0
+            or manifest.get("cleanup") != "independently_absent"):
+        raise DeliveryError("owned source guard did not prove exact checkout, owned target and cleanup")
+    commands = manifest.get("commands")
+    if not isinstance(commands, list) or not commands:
+        raise DeliveryError("owned source guard command capture is missing")
+    if any(not isinstance(item, dict) or item.get("state") != "finished"
+           or item.get("process_group_stopped") is not True or item.get("exit_code") != 0
+           for item in commands):
+        raise DeliveryError("owned source guard has an incomplete command or process outcome")
+    ci = [item for item in commands if item.get("stage") == "ci"]
+    if len(ci) != 1:
+        raise DeliveryError("owned source guard did not capture exactly one canonical CI command")
+    counts = ci[0].get("exunit_counts")
+    if not isinstance(counts, list) or len(counts) != 3:
+        raise DeliveryError("owned source guard did not capture all three canonical CI suites")
+    if any(not isinstance(row, dict) or type(row.get("tests")) is not int or row["tests"] <= 0
+           or row.get("failures") != 0 or type(row.get("failures")) is not int
+           or type(row.get("stdout_bytes")) is not int or row["stdout_bytes"] <= 0
+           or not isinstance(row.get("stdout_sha256"), str) or not SHA.fullmatch(row["stdout_sha256"])
+           for row in counts):
+        raise DeliveryError("owned source guard suite observations are incomplete")
+    for stage in ("create", "migrate", "ci", "drop"):
+        if len([item for item in commands if item.get("stage") == stage]) != 1:
+            raise DeliveryError("owned source guard omitted a required canonical stage")
+    if commands[-1].get("stage") != "drop":
+        raise DeliveryError("owned source guard cleanup was not the final captured command")
+    return manifest
+
+
+def record_source_acceptance(
+    phase_dir: Path, guard_manifest_path: Path, locked_root: Path, floor_root: Path,
+    pins: dict[str, str],
+) -> dict[str, Any]:
+    frozen = validate_frozen_manifest(phase_dir, **pins)
+    manifest = _owned_source_manifest(guard_manifest_path, frozen["runner_revision"])
+    package = _check_package(phase_dir, locked_root, floor_root, pins)
+    source_manifest = phase_dir / "178-OWNED-SOURCE-MANIFEST.json"
+    source_record = phase_dir / "178-SOURCE-ACCEPTANCE.json"
+    if source_manifest.exists() or source_manifest.is_symlink() or source_record.exists() or source_record.is_symlink():
+        raise DeliveryError("source acceptance evidence already exists; preserve the prior attempt")
+    raw_manifest = guard_manifest_path.read_bytes()
+    fd = os.open(source_manifest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as output:
+        output.write(raw_manifest)
+        output.flush()
+        os.fsync(output.fileno())
+    ci = next(item for item in manifest["commands"] if item["stage"] == "ci")
+    rows = ci["exunit_counts"]
+    canonical = {
+        "command": ("ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' "
+                    "python3 scripts/ci/run_owned_source_tests.py --ci"),
+        "exit_code": ci["exit_code"], "manifest_sha256": sha256(source_manifest),
+        "stages": [
+            {"name": name, "exit_code": ci["exit_code"], "tests": row["tests"],
+             "failures": row["failures"], "properties": row["properties"],
+             "stdout_bytes": row["stdout_bytes"], "stdout_sha256": row["stdout_sha256"]}
+            for name, row in zip(("qa.architecture", "test.fast", "test.integration"), rows, strict=True)
+        ],
+    }
+    record = {
+        "schema": "lockspire-phase178-source-acceptance-v1",
+        "tested_source_revision": frozen["runner_revision"],
+        "covered_inputs": frozen["covered_inputs"],
+        "owned_source_manifest": source_manifest.name,
+        "owned_source_manifest_sha256": sha256(source_manifest),
+        "canonical_ci": canonical,
+        "package_acceptance_sha256": sha256(phase_dir / "178-PACKAGE-ACCEPTANCE.md"),
+        "package_receipt_count": package["executed_receipt_count"],
+        "package_case_count": package["passed_case_count"],
+    }
+    fd = os.open(source_record, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as output:
+        json.dump(record, output, sort_keys=True, indent=2)
+        output.write("\n")
+        output.flush()
+        os.fsync(output.fileno())
+    return record
+
+
+def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
+                  pins: dict[str, str]) -> dict[str, Any]:
+    frozen = validate_frozen_manifest(phase_dir, **pins)
     record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
+    if record.get("schema") != "lockspire-phase178-source-acceptance-v1":
+        raise DeliveryError("source acceptance record schema is invalid")
     if record.get("tested_source_revision") != frozen["runner_revision"]:
         raise DeliveryError("source acceptance tested revision differs from frozen runner")
     if record.get("covered_inputs") != frozen["covered_inputs"]:
@@ -519,28 +877,60 @@ def _check_source(phase_dir: Path) -> dict[str, Any]:
             "python3 scripts/ci/run_owned_source_tests.py --ci"):
         raise DeliveryError("canonical guarded source gate is missing or failed")
     stages = ci.get("stages")
-    if not isinstance(stages, list) or not stages:
-        raise DeliveryError("canonical source gate has no stage observations")
+    if not isinstance(stages, list) or [row.get("name") for row in stages if isinstance(row, dict)] != [
+        "qa.architecture", "test.fast", "test.integration"
+    ]:
+        raise DeliveryError("canonical source gate does not contain the exact required stage set")
     for stage in stages:
         if (not isinstance(stage, dict) or stage.get("exit_code") != 0
                 or type(stage.get("tests")) is not int or stage["tests"] <= 0
                 or type(stage.get("failures")) is not int or stage["failures"] != 0
+                or type(stage.get("stdout_bytes")) is not int or stage["stdout_bytes"] <= 0
                 or not isinstance(stage.get("stdout_sha256"), str)
                 or not SHA.fullmatch(stage["stdout_sha256"])):
             raise DeliveryError("canonical source stage is missing actual nonzero test evidence")
+    manifest_name = record.get("owned_source_manifest")
+    if manifest_name != "178-OWNED-SOURCE-MANIFEST.json":
+        raise DeliveryError("source acceptance does not reference the owned guard manifest")
+    manifest_path = phase_dir / manifest_name
+    if (manifest_path.is_symlink() or not manifest_path.is_file()
+            or sha256(manifest_path) != record.get("owned_source_manifest_sha256")
+            or sha256(manifest_path) != ci.get("manifest_sha256")
+            or stat.S_IMODE(manifest_path.stat().st_mode) != 0o600):
+        raise DeliveryError("source acceptance guard manifest digest or custody is invalid")
+    manifest = _owned_source_manifest(manifest_path, frozen["runner_revision"], require_temp_custody=False)
+    guard_ci = next(item for item in manifest["commands"] if item["stage"] == "ci")
+    if ci["exit_code"] != guard_ci["exit_code"] or [
+            {field: stage[field] for field in ("tests", "failures", "properties", "stdout_bytes", "stdout_sha256")}
+            for stage in stages] != guard_ci["exunit_counts"]:
+        raise DeliveryError("source acceptance CI stage results differ from the live owned guard capture")
+    if _check_package(phase_dir, locked_root, floor_root, pins)["executed_receipt_count"] != record.get("package_receipt_count"):
+        raise DeliveryError("source acceptance package proof is absent or changed")
+    if sha256(phase_dir / "178-PACKAGE-ACCEPTANCE.md") != record.get("package_acceptance_sha256"):
+        raise DeliveryError("source acceptance package report bytes changed")
     return record
 
 
-def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path) -> dict[str, Any]:
+def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path,
+          expected_runner: str | None = None,
+          frozen_pins: dict[str, str] | None = None) -> dict[str, Any]:
     if stage == "reviews":
-        validate_reviews(phase_dir)
+        if expected_runner is None:
+            raise DeliveryError("review check requires an independent implementation revision pin")
+        validate_reviews(phase_dir, expected_revision=expected_runner)
         return {"reviews": 3, "runtime_acceptance_inferred": False}
     if stage == "frozen":
-        return _check_frozen(phase_dir)
+        if frozen_pins is None:
+            raise DeliveryError("frozen validation requires independent caller pins")
+        return _check_frozen(phase_dir, frozen_pins)
     if stage == "package":
-        return _check_package(phase_dir, locked_root, floor_root)
+        if frozen_pins is None:
+            raise DeliveryError("package validation requires independent frozen owner pins")
+        return _check_package(phase_dir, locked_root, floor_root, frozen_pins)
     if stage == "source":
-        return _check_source(phase_dir)
+        if frozen_pins is None:
+            raise DeliveryError("source validation requires independent frozen owner pins")
+        return _check_source(phase_dir, locked_root, floor_root, frozen_pins)
     if stage in {"candidate-identity", "candidate", "handoff"}:
         record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
         observed = record.get(stage.replace("-", "_") + "_observation")
@@ -557,13 +947,38 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--check", choices=("reviews", "frozen", "source", "package",
                                              "candidate-identity", "candidate", "handoff"))
     parser.add_argument("--freeze", action="store_true")
+    parser.add_argument("--record-source", action="store_true")
+    parser.add_argument("--guard-manifest", type=Path)
     parser.add_argument("--phase-dir", type=Path, default=PHASE_DEFAULT)
     parser.add_argument("--archive", type=Path)
     parser.add_argument("--extracted-tree", type=Path)
     parser.add_argument("--locked-root", type=Path, default=ARTIFACT_DEFAULT / "final-locked")
     parser.add_argument("--floor-root", type=Path, default=ARTIFACT_DEFAULT / "final-floor")
     parser.add_argument("--expected-runner")
+    parser.add_argument("--expected-candidate-source")
+    parser.add_argument("--expected-archive-sha256")
+    parser.add_argument("--expected-tree-sha256")
+    parser.add_argument("--expected-manifest-sha256")
     return parser.parse_args(argv)
+
+
+def _frozen_pins(args: argparse.Namespace, *, require_manifest: bool) -> dict[str, str]:
+    keys = {
+        "expected_runner": args.expected_runner,
+        "expected_candidate_source": args.expected_candidate_source,
+        "expected_archive_sha256": args.expected_archive_sha256,
+        "expected_tree_sha256": args.expected_tree_sha256,
+        "expected_manifest_sha256": args.expected_manifest_sha256,
+    }
+    required = tuple(keys) if require_manifest else tuple(key for key in keys if key != "expected_manifest_sha256")
+    if any(not isinstance(keys[key], str) or not keys[key] for key in required):
+        raise DeliveryError("frozen validation requires explicit caller pins for runner, candidate, archive, tree and manifest")
+    if (not REVISION.fullmatch(keys["expected_runner"])
+            or not REVISION.fullmatch(keys["expected_candidate_source"])
+            or any(not SHA.fullmatch(keys[key]) for key in ("expected_archive_sha256", "expected_tree_sha256"))
+            or (require_manifest and not SHA.fullmatch(keys["expected_manifest_sha256"]))):
+        raise DeliveryError("independent frozen caller pins are malformed")
+    return {key: value for key, value in keys.items() if key in required}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -572,13 +987,33 @@ def main(argv: list[str] | None = None) -> int:
         if args.freeze:
             if args.archive is None or args.extracted_tree is None:
                 raise DeliveryError("freeze requires an archive and extracted tree")
-            target = create_frozen_manifest(args.phase_dir.resolve(), args.archive.resolve(), args.extracted_tree.resolve())
+            pins = _frozen_pins(args, require_manifest=False)
+            target = create_frozen_manifest(
+                args.phase_dir.resolve(), args.archive.resolve(), args.extracted_tree.resolve(),
+                **pins,
+            )
             print(json.dumps({"frozen": True, "manifest": str(target.relative_to(ROOT)),
                               "manifest_sha256": sha256(target)}, sort_keys=True))
             return 0
+        if args.record_source:
+            if args.guard_manifest is None:
+                raise DeliveryError("record-source requires a guarded source manifest")
+            pins = _frozen_pins(args, require_manifest=True)
+            result = record_source_acceptance(
+                args.phase_dir.resolve(), args.guard_manifest,
+                args.locked_root, args.floor_root, pins,
+            )
+            print(json.dumps({"source_acceptance_recorded": True,
+                              "source_revision": result["tested_source_revision"],
+                              "package_receipts": result["package_receipt_count"],
+                              "package_cases": result["package_case_count"]}, sort_keys=True))
+            return 0
         if not args.check:
             raise DeliveryError("a delivery check stage is required")
-        result = check(args.check, args.phase_dir.resolve(), args.locked_root, args.floor_root)
+        result = check(args.check, args.phase_dir.resolve(), args.locked_root, args.floor_root,
+                       expected_runner=args.expected_runner,
+                       frozen_pins=(_frozen_pins(args, require_manifest=True)
+                                    if args.check in {"frozen", "package", "source"} else None))
         print(json.dumps({"validated": args.check, "result": result}, sort_keys=True))
         return 0
     except (DeliveryError, PackageInputError, ReceiptError, OSError, ValueError, KeyError, TypeError):

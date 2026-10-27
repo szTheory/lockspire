@@ -50,6 +50,7 @@ from package_input import (
     verify_candidate_input,
     candidate_host_provenance,
     verify_child,
+    start_owned_session,
 )
 from redaction import Redactor, SentinelSet, safe_failure_summary
 from processes import allocate_loopback_port
@@ -219,12 +220,10 @@ def wait_ready(origin: str) -> None:
 
 
 def start_process(child: Path, environment: dict[str, str], log_path: Path) -> subprocess.Popen[bytes]:
-    handle = log_path.open("wb")
-    process = subprocess.Popen(
+    process = start_owned_session(
         ("mix", "run", "--no-halt"), cwd=child, env=environment, stdin=subprocess.DEVNULL,
-        stdout=handle, stderr=subprocess.STDOUT, close_fds=True, start_new_session=True,
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True,
     )
-    process._clean_room_log_handle = handle  # type: ignore[attr-defined]
     return process
 
 
@@ -238,7 +237,8 @@ def stop_process(process: subprocess.Popen[bytes] | None) -> None:
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait(timeout=5)
-    process._clean_room_log_handle.close()  # type: ignore[attr-defined]
+    if hasattr(process, "_clean_room_log_handle"):
+        process._clean_room_log_handle.close()  # type: ignore[attr-defined]
 
 
 def drop_child_database(child: Path, environment: dict[str, str], label: str) -> None:
@@ -389,13 +389,9 @@ def decoded_secret_payload(body: object) -> dict[str, object]:
 
 
 def scan_evidence(run_root: Path, redactor: Redactor) -> None:
-    for path in sorted(run_root.glob("*.log")):
-        evidence = redactor.text(path.read_text(errors="replace"))
-        path.write_text(evidence, encoding="utf-8")
-        redactor.assert_safe(evidence)
-        if re.search(r"(?i)(authorization|cookie|set-cookie)\s*[:=]\s*(?!\[REDACTED\])\S", evidence):
-            raise AssertionError(f"unsafe raw header value in {path.name}")
-    print("evidence scan complete")
+    if any(run_root.glob("*.log")):
+        raise AssertionError("raw child log files are not an allowed retained evidence format")
+    print("child output was not persisted")
 
 
 def browser_authorize(client: Browser, provider: Browser, *, account_id: str = "clean-room-user", before_callback=None, callback_transform=None) -> tuple[dict[str, object], str]:

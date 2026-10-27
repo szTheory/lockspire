@@ -205,8 +205,12 @@ defmodule CleanRoomProvider.VerifierTransactions do
     nested_rejected =
       match?({:error, %{failed: failures}} when is_integer(failures) and failures > 0, report)
     after_nested = row_map!(client_id)
-    committed_report = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :dry_run, limit: 100)
-    report_after_commit = not Repo.in_transaction?() and match?({:ok, _}, committed_report)
+    committed_report = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 500)
+    after_commit = row_map!(client_id)
+    committed_audit_count = audit_count(client_id)
+    report_after_commit =
+      not Repo.in_transaction?() and match?({:ok, _}, committed_report) and
+        after_commit.verifier != before.verifier and committed_audit_count > 0
 
     %{
       "outcome" => "pass",

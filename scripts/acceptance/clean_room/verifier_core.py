@@ -30,6 +30,7 @@ from package_input import (  # noqa: E402
     prepare_package,
     sha256,
     source_revision,
+    start_owned_session,
     verify_candidate_input,
 )
 from redaction import Redactor, SentinelSet  # noqa: E402
@@ -131,19 +132,11 @@ def _run_cell(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]:
 
             client_id = "verifier-core-" + uuid.uuid4().hex
             client_id, client_secret = runner._capture_secret(host, env, redactor, client_id)
-            server_log_path = run_root / "provider.log"
             listener_env = runner.owned_listener_environment(env)
-            with server_log_path.open("wb") as server_log:
-                os.chmod(server_log_path, 0o600)
-                server = subprocess.Popen(
-                    ("mix", "run", "--no-halt"),
-                    cwd=host,
-                    env=listener_env,
-                    stdin=subprocess.DEVNULL,
-                    stdout=server_log,
-                    stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
+            server = start_owned_session(
+                ("mix", "run", "--no-halt"), cwd=host, env=listener_env,
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
             _wait_ready(server, issuer)
             redirect_uri, verifier, code = runner._authorization_code(issuer, port, client_id, redactor)
             try:
@@ -151,12 +144,7 @@ def _run_cell(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]:
                     issuer, client_id, client_secret, redirect_uri, verifier, code, redactor
                 )
             except PackageInputError as error:
-                server_log = server_log_path.read_text(encoding="utf-8", errors="replace")
-                for match in runner.SENSITIVE_OUTPUT.finditer(server_log):
-                    redactor.register_material(match.group(1))
-                safe_log = redactor.text(server_log)[-5000:]
-                redactor.assert_safe(safe_log)
-                raise PackageInputError(f"{error}; installed core server log: {safe_log}") from None
+                raise PackageInputError("installed core token flow failed; provider diagnostics withheld") from None
             persisted, _persisted_projection = runner._persisted_verifier(host, env, prefix, client_id)
             if not issued or not persisted:
                 raise PackageInputError("installed core token or dedicated-verifier proof failed")

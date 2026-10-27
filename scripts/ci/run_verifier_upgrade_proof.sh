@@ -2,16 +2,26 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: run_verifier_upgrade_proof.sh --pair locked|floor --receipt-dir .artifacts/phase178/ci-locked|ci-floor [--test-mode]" >&2
+  echo "usage: run_verifier_upgrade_proof.sh --pair locked|floor --receipt-dir .artifacts/phase178/ci-locked|ci-floor [--expected-runner REV --expected-candidate-source REV --expected-archive-sha256 SHA --expected-tree-sha256 SHA --expected-manifest-sha256 SHA] [--test-mode]" >&2
 }
 
 pair=''
 receipt_dir=''
 test_mode=false
+expected_runner=''
+expected_candidate_source=''
+expected_archive_sha256=''
+expected_tree_sha256=''
+expected_manifest_sha256=''
 while (($#)); do
   case "$1" in
     --pair) (($# >= 2)) || { usage; exit 2; }; pair=$2; shift 2 ;;
     --receipt-dir) (($# >= 2)) || { usage; exit 2; }; receipt_dir=$2; shift 2 ;;
+    --expected-runner) (($# >= 2)) || { usage; exit 2; }; expected_runner=$2; shift 2 ;;
+    --expected-candidate-source) (($# >= 2)) || { usage; exit 2; }; expected_candidate_source=$2; shift 2 ;;
+    --expected-archive-sha256) (($# >= 2)) || { usage; exit 2; }; expected_archive_sha256=$2; shift 2 ;;
+    --expected-tree-sha256) (($# >= 2)) || { usage; exit 2; }; expected_tree_sha256=$2; shift 2 ;;
+    --expected-manifest-sha256) (($# >= 2)) || { usage; exit 2; }; expected_manifest_sha256=$2; shift 2 ;;
     --test-mode) test_mode=true; shift ;;
     *) usage; exit 2 ;;
   esac
@@ -56,8 +66,20 @@ else
   timeout_seconds=3600
   overall_timeout_seconds=1500
   [[ -f "$frozen_inputs" && ! -L "$frozen_inputs" ]] || { echo "authenticated frozen candidate inputs are unavailable" >&2; exit 2; }
+  [[ "$expected_runner" =~ ^[0-9a-f]{40,64}$ && "$expected_candidate_source" =~ ^[0-9a-f]{40,64}$ \
+     && "$expected_archive_sha256" =~ ^[0-9a-f]{64}$ && "$expected_tree_sha256" =~ ^[0-9a-f]{64}$ \
+     && "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ ]] || { echo "independent frozen owner pins are unavailable" >&2; exit 2; }
+  [[ "$runner_revision" == "$expected_runner" ]] || { echo "current verifier runner differs from its explicit pin" >&2; exit 2; }
+  export LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION="$expected_runner"
+  export LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION="$expected_candidate_source"
+  export LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256="$expected_archive_sha256"
+  export LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256="$expected_tree_sha256"
+  export LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256="$expected_manifest_sha256"
   python3 "$repo_root/scripts/acceptance/clean_room/verifier_delivery.py" \
     --check frozen --phase-dir "$repo_root/.planning/phases/178-packaged-upgrade-proof-delivery-handoff" \
+    --expected-runner "$expected_runner" --expected-candidate-source "$expected_candidate_source" \
+    --expected-archive-sha256 "$expected_archive_sha256" --expected-tree-sha256 "$expected_tree_sha256" \
+    --expected-manifest-sha256 "$expected_manifest_sha256" \
     >/dev/null || { echo "authenticated frozen candidate inputs failed validation" >&2; exit 2; }
   export LOCKSPIRE_FROZEN_INPUTS="$frozen_inputs"
   frozen_pins=$(python3 - "$frozen_inputs" <<'PY'
@@ -79,7 +101,7 @@ print(runner + " " + revision)
 PY
   ) || { echo "authenticated candidate source pin is unavailable" >&2; exit 2; }
   read -r frozen_runner_revision candidate_source_revision <<< "$frozen_pins"
-  [[ "$frozen_runner_revision" == "$runner_revision" ]] || { echo "frozen verifier runner differs from current HEAD" >&2; exit 2; }
+  [[ "$frozen_runner_revision" == "$expected_runner" && "$candidate_source_revision" == "$expected_candidate_source" ]] || { echo "frozen owner differs from independent caller pins" >&2; exit 2; }
 fi
 
 # Validate every path and freshness condition above before the first mutation.
@@ -270,8 +292,8 @@ fi
 validation_status=0
 run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
   --validate-receipts "$repo_root/$receipt_dir" \
-  --expected-runner-revision "$runner_revision" \
-  --expected-candidate-source-revision "${candidate_source_revision:-$runner_revision}" || validation_status=$?
+  --expected-runner-revision "${expected_runner:-$runner_revision}" \
+  --expected-candidate-source-revision "${expected_candidate_source:-$runner_revision}" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'

@@ -33,7 +33,7 @@ from build_provider import (
     run_child_command,
     run_child_command_output,
 )
-from package_input import bounded_run, stop_process_group, PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
+from package_input import bounded_run, start_owned_session, stop_process_group, PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
 from redaction import Redactor, SentinelSet
 
 
@@ -303,10 +303,10 @@ def main(argv: Sequence[str]) -> int:
         stage = "host_start"
         port = int(environment["PORT"])
         origin = f"http://127.0.0.1:{port}"
-        log = base / "provider.log"
-        with log.open("wb") as handle:
-            process = subprocess.Popen(("mix", "run", "--no-halt"), cwd=child, env=environment, stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT, start_new_session=True, close_fds=True)
-            wait_ready(origin, process)
+        process = start_owned_session(("mix", "run", "--no-halt"), cwd=child, env=environment,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL, close_fds=True)
+        wait_ready(origin, process)
         stage = "browser"
         browser_script = Path(__file__).resolve().parents[2] / "test" / "browser" / "packaged_admin_proof.mjs"
         request = json.dumps({"capability": capability, "origin": origin, "mount": args.mount, "scenario": args.scenario, "runRoot": str(base)})

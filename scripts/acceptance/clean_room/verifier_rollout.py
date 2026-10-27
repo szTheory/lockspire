@@ -39,6 +39,8 @@ from package_input import (  # noqa: E402
     package_tree_digest,
     package_version,
     sha256,
+    start_owned_session,
+    stop_process_group,
     unpack_hex_tarball,
     verify_candidate_input,
 )
@@ -418,16 +420,13 @@ config :lockspire, Lockspire.Security.ClientSecretVerifier,
 ''', encoding="utf-8")
 
 
-def _start_server(host: Path, env: dict[str, str], log_path: Path, issuer: str):
-    log_path.touch(mode=0o600)
-    os.chmod(log_path, 0o600)
-    handle = log_path.open("ab")
+def _start_server(host: Path, env: dict[str, str], log_path: Path | None, issuer: str):
     server_env = _server_environment(env)
     process = None
     try:
-        process = subprocess.Popen(("mix", "run", "--no-halt"), cwd=host, env=server_env,
-                                   stdin=subprocess.DEVNULL, stdout=handle, stderr=subprocess.STDOUT,
-                                   start_new_session=True)
+        process = start_owned_session(("mix", "run", "--no-halt"), cwd=host, env=server_env,
+                                      stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
         deadline = time.monotonic() + 35
         while time.monotonic() < deadline:
             if process.poll() is not None:
@@ -435,7 +434,6 @@ def _start_server(host: Path, env: dict[str, str], log_path: Path, issuer: str):
             try:
                 with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
                     if response.status == 200:
-                        handle.close()
                         return process, process.pid
             except OSError:
                 time.sleep(0.15)
@@ -443,19 +441,14 @@ def _start_server(host: Path, env: dict[str, str], log_path: Path, issuer: str):
     except BaseException:
         if process is not None and process.poll() is None:
             _stop_owned_server(process)
-        handle.close()
         raise
 
 
 def _stop_owned_server(process) -> None:
-    if process is None or process.poll() is not None:
+    if process is None:
         return
-    process.terminate()
-    try:
-        process.wait(timeout=10)
-    except subprocess.TimeoutExpired:
-        process.kill()
-        process.wait()
+    if not stop_process_group(process, grace=10):
+        raise PackageInputError("installed process group cleanup could not be confirmed")
 
 
 def _server_environment(env: dict[str, str]) -> dict[str, str]:
@@ -648,16 +641,17 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
                            error: Exception, redactor: Redactor, *, candidate_identity=None,
                            predecessor_identity=None, log_paths: list[Path] | None = None) -> None:
     """Retain each new failed cell with redacted command, exit and artifact identities."""
-    message = redactor.text(str(error))
-    redactor.assert_safe(message)
-    safe_logs = []
+    # Keep child diagnostics private. A redactor cannot recognize every
+    # generated credential or application-specific secret, so durable
+    # failures contain only byte counts and hashes.
+    log_summaries = []
     for log_path in log_paths or []:
         try:
-            raw = log_path.read_text(encoding="utf-8", errors="replace")
+            raw = log_path.read_bytes()
         except OSError:
             continue
-        tail = _redacted_log_tail(raw, redactor)
-        safe_logs.append({"name": log_path.name, "tail": tail})
+        log_summaries.append({"name": log_path.name, "bytes": len(raw),
+                              "sha256": hashlib.sha256(raw).hexdigest()})
     record = {
         "schema": "lockspire-installed-verifier-rollout-failure-v1",
         "scope": scope, "pair": pair, "store": store, "run_id": run_id,
@@ -667,31 +661,15 @@ def _write_failure_attempt(receipt_dir: Path, scope: str, pair: str, store: str,
         "predecessor_source_revision": getattr(predecessor_identity, "source_revision", None),
         "command": ["python3", "scripts/acceptance/clean_room_verifier_upgrade.py", "--pair", pair,
                     "--store", store, "--group", scope],
-        "exit_code": 1, "error_type": type(error).__name__, "redacted_error": message,
-        "redacted_process_logs": safe_logs,
+        "exit_code": 1, "error_type": type(error).__name__,
+        "process_logs": log_summaries,
         "attempted_at_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     rendered = json.dumps(record, sort_keys=True, indent=2) + "\n"
-    redactor.assert_safe(rendered)
     receipt_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     path = receipt_dir / f"{scope}-{pair}-{store}-{run_id}.failure.json"
     path.write_text(rendered, encoding="utf-8")
     os.chmod(path, 0o600)
-
-
-def _redacted_log_tail(raw: str, redactor: Redactor) -> str:
-    # Phoenix debug parameter logs can include signed assertions, authorization
-    # codes, and PKCE verifiers under keys the generic matcher does not know.
-    # Retain only fixed, non-sensitive failure labels; discard all raw lines.
-    safe_lines = []
-    for line in raw.splitlines():
-        if "Failed to sign access token:" in line:
-            safe_lines.append("Failed to sign access token: [REDACTED]")
-        elif "installed process exited before HTTP readiness" in line:
-            safe_lines.append("installed process exited before HTTP readiness")
-        elif "installed process did not become HTTP ready" in line:
-            safe_lines.append("installed process did not become HTTP ready")
-    return "\n".join(dict.fromkeys(safe_lines))
 
 
 def _git_commit_exists(revision: str) -> bool:

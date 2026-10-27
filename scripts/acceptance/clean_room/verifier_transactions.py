@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -144,12 +145,11 @@ def _run_cell(*, scope: str, pair: str, receipt_dir: Path) -> dict[str, object]:
             receipt["receipt_path"] = str(receipt_path)
             return receipt
         except Exception as error:
-            safe = redactor.text(str(error))
-            redactor.assert_safe(safe)
-            log_path = attempt_dir / "failure.log"
-            log_path.write_text(safe[:8000] + "\n", encoding="utf-8")
-            os.chmod(log_path, 0o600)
-            raise PackageInputError(f"{scope} installed cell failed; redacted details at {log_path}") from None
+            category = _fixed_failure_category(error)
+            summary = {"schema": "lockspire-transaction-attempt-failure-v1", "scope": scope,
+                       "pair": pair, "stage": "cell", "category": category}
+            _write_private_json(attempt_dir / "failure.json", summary)
+            raise PackageInputError(f"{scope} installed cell failed ({category}); child diagnostics withheld") from None
         finally:
             try:
                 run_child_command(host, env, "ecto.drop")
@@ -176,15 +176,16 @@ def _run_witness(host: Path, env: dict[str, str], scope: str, redactor: Redactor
         check=False,
         timeout=150,
     )
-    output = completed.stdout.decode(errors="replace")
-    safe_output = redactor.text(output)
-    redactor.assert_safe(safe_output)
-    log_path = attempt_dir / "host-output.log"
-    log_path.write_text(safe_output[-12000:], encoding="utf-8")
-    os.chmod(log_path, 0o600)
+    raw_output = completed.stdout
+    _write_private_json(attempt_dir / "witness-capture.json", {
+        "schema": "lockspire-transaction-witness-capture-v1",
+        "stage": "postgres-witness", "exit_code": completed.returncode,
+        "stdout_bytes": len(raw_output), "stdout_sha256": hashlib.sha256(raw_output).hexdigest(),
+    })
     if completed.returncode != 0:
         raise PackageInputError("installed PostgreSQL witness command failed")
-    lines = [line.removeprefix("TRANSACTION_WITNESS=") for line in safe_output.splitlines() if line.startswith("TRANSACTION_WITNESS=")]
+    output = raw_output.decode(errors="replace")
+    lines = [line.removeprefix("TRANSACTION_WITNESS=") for line in output.splitlines() if line.startswith("TRANSACTION_WITNESS=")]
     if len(lines) != 1:
         raise PackageInputError("installed PostgreSQL witness result is unavailable")
     try:
@@ -193,7 +194,28 @@ def _run_witness(host: Path, env: dict[str, str], scope: str, redactor: Redactor
         raise PackageInputError("installed PostgreSQL witness result is malformed") from None
     if not isinstance(value, dict) or set(value) != {"observations"} or not isinstance(value["observations"], dict):
         raise PackageInputError("installed PostgreSQL witness result shape is invalid")
+    redactor.assert_safe(json.dumps(value, sort_keys=True))
     return value
+
+
+def _fixed_failure_category(error: Exception) -> str:
+    if isinstance(error, subprocess.TimeoutExpired):
+        return "timeout"
+    if isinstance(error, PackageInputError):
+        return "package-input"
+    if isinstance(error, OSError):
+        return "io"
+    return "witness-failed"
+
+
+def _write_private_json(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    rendered = json.dumps(payload, sort_keys=True, separators=(",", ":")) + "\n"
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as output:
+        output.write(rendered)
+        output.flush()
+        os.fsync(output.fileno())
 
 
 def _increase_owned_pool_for_contention(host: Path) -> None:

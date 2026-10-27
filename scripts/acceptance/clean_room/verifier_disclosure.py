@@ -16,7 +16,7 @@ import urllib.request
 import uuid
 
 from build_provider import PROOF_PAIR_LOCKS, PackageInputError, allocate_port, prepare_provider, run_child_command
-from package_input import PackageSource, bounded_run, clean_room_database_url, prepare_package, sha256, source_revision, stop_process_group, verify_candidate_input
+from package_input import PackageSource, bounded_run, clean_room_database_url, prepare_package, sha256, source_revision, start_owned_session, stop_process_group, verify_candidate_input
 from redaction import Redactor, SentinelSet
 import clean_room_verifier_upgrade as runner
 import verifier_endpoints
@@ -673,10 +673,9 @@ def _start_server(
     server_env = dict(env)
     server_env["CLEAN_ROOM_HTTP_SERVER"] = "true"
     # Caller persists the server PID immediately after Popen returns; startup output is discarded.
-    process = subprocess.Popen(
+    process = start_owned_session(
         ("mix", "run", "--no-halt"), cwd=host, env=server_env,
         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        start_new_session=True,
     )
     process.lockspire_process_group = process.pid  # type: ignore[attr-defined]
     process.lockspire_started_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())  # type: ignore[attr-defined]

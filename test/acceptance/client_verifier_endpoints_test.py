@@ -23,9 +23,21 @@ import clean_room_verifier_upgrade  # noqa: E402
 import verifier_endpoints  # noqa: E402
 from verifier_receipts import ENDPOINT_CASE_IDS, ReceiptError, validate_receipt  # noqa: E402
 from verifier_receipts import RELEASE_RPC_CASE_ID, RELEASE_RPC_OBSERVATION_FIELDS  # noqa: E402
+from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 class VerifierEndpointContracts(unittest.TestCase):
+    def test_release_failure_withholds_unregistered_child_output(self) -> None:
+        marker = "UNREGISTERED_RELEASE_DIAGNOSTIC_MARKER"
+        with mock.patch.object(verifier_endpoints.subprocess, "run", return_value=subprocess.CompletedProcess(
+            args=("release", "rpc"), returncode=17, stdout=marker.encode("utf-8")
+        )):
+            with self.assertRaises(build_provider.PackageInputError) as raised:
+                verifier_endpoints._release_command(Path("/private/release/bin/app"), {}, "rpc",
+                                                    redactor=Redactor(SentinelSet.for_run()))
+        self.assertFalse(marker in str(raised.exception), "unregistered child diagnostics reached a retained error")
+        self.assertIn("exit 17", str(raised.exception))
+
     def test_endpoint_and_release_groups_route_to_explicit_entrypoints(self) -> None:
         self.assertEqual(clean_room_verifier_upgrade.MODULES["endpoints"], ("verifier_endpoints", "run_group"))
         self.assertIsNotNone(importlib.util.find_spec("verifier_endpoints"))
@@ -173,18 +185,16 @@ class VerifierEndpointContracts(unittest.TestCase):
             binary_dir.mkdir(parents=True)
             process = mock.Mock()
             process.poll.return_value = None
-            with mock.patch.object(verifier_endpoints.subprocess, "Popen", return_value=process) as launch, \
+            with mock.patch.object(verifier_endpoints, "start_owned_session", return_value=process) as launch, \
                  mock.patch.object(verifier_endpoints.urllib.request, "urlopen") as urlopen:
                 urlopen.return_value.__enter__.return_value.status = 200
                 actual = verifier_endpoints._start_release_server(
                     binary_dir / "clean_room_provider", {}, "https://issuer.example/lockspire",
-                    release_root / "release-server.log",
                 )
             self.assertIs(actual, process)
             self.assertEqual(launch.call_args.args[0], (str(binary_dir / "clean_room_provider"), "start"))
-            self.assertTrue(launch.call_args.kwargs["start_new_session"])
-            self.assertIsNot(launch.call_args.kwargs["stdout"], subprocess.PIPE)
-            self.assertEqual(launch.call_args.kwargs["stderr"], subprocess.STDOUT)
+            self.assertEqual(launch.call_args.kwargs["stdout"], subprocess.DEVNULL)
+            self.assertEqual(launch.call_args.kwargs["stderr"], subprocess.DEVNULL)
 
 
 if __name__ == "__main__":

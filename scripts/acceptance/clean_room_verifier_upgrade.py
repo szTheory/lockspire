@@ -33,7 +33,7 @@ from package_input import (  # noqa: E402
     PackageIdentity, PackageInputError, PackageSource, bind_compiled_candidate,
     candidate_host_provenance, clean_room_database_url, locked_environment,
     package_tree_digest, prepare_package, run, sha256, source_revision,
-    verify_candidate_input, verify_candidate_host,
+    start_owned_session, verify_candidate_input, verify_candidate_host,
 )
 from redaction import Redactor, SentinelSet  # noqa: E402
 import clean_room_saas_journey as browser_support  # noqa: E402
@@ -193,7 +193,7 @@ def _capture_secret(child: Path, env: dict[str, str], redactor: Redactor, client
         redactor.register_material(match.group(1))
     if completed.returncode != 0:
         safe = redactor.text(output)
-        raise PackageInputError("installed client registration failed: " + safe[-1200:])
+        raise PackageInputError("installed client registration failed; child diagnostics withheld")
     values = dict(line.split("=", 1) for line in output.splitlines() if "=" in line)
     client_id, client_secret = values.get("client_id"), values.get("client_secret")
     if not client_id or not client_secret:
@@ -310,19 +310,10 @@ def _token_request(issuer: str, client_id: str, secret: str, redirect_uri: str, 
         oauth_error = error_payload.get("error") if error_payload.get("error") in {"invalid_client", "invalid_grant", "invalid_request", "server_error", "temporarily_unavailable"} else None
         description = error_payload.get("error_description") if error_payload.get("error_description") in SAFE_OAUTH_DESCRIPTIONS else None
         details = ", ".join(value for value in (oauth_error, description) if value)
-        diagnostic = ""
-        if error_body and error.code >= 500:
-            rendered = error_body.decode(errors="replace")
-            for match in SENSITIVE_OUTPUT.finditer(rendered):
-                redactor.register_material(match.group(1))
-            safe_text = redactor.text(rendered)
-            safe = safe_text[:2600] + "\n[...redacted diagnostic middle omitted...]\n" + safe_text[-1800:]
-            redactor.assert_safe(safe)
-            diagnostic = "; installed error response: " + safe
         raise PackageInputError(
             f"installed token HTTP returned status {error.code}"
             + (f" ({details})" if details else "")
-            + diagnostic
+            + ("; response diagnostics withheld" if error_body else "")
         ) from None
     with response:
         payload = json.loads(response.read())
@@ -395,10 +386,9 @@ def run_tracer(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]
             elixir, otp, pg = _actual_runtime(host, env)
             client_id = "verifier-" + uuid.uuid4().hex
             client_id, client_secret = _capture_secret(host, env, redactor, client_id)
-            server_log_path = run_root / "provider.log"
-            with server_log_path.open("wb") as server_log:
-                os.chmod(server_log_path, 0o600)
-                server = subprocess.Popen(("mix", "run", "--no-halt"), cwd=host, env=env, stdin=subprocess.DEVNULL, stdout=server_log, stderr=subprocess.STDOUT, start_new_session=True)
+            server = start_owned_session(("mix", "run", "--no-halt"), cwd=host, env=env,
+                                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                         stderr=subprocess.DEVNULL)
             deadline = time.monotonic() + 20
             while time.monotonic() < deadline:
                 if server.poll() is not None:
@@ -417,12 +407,7 @@ def run_tracer(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]
                     issuer, client_id, client_secret, redirect_uri, verifier, code, redactor
                 )
             except PackageInputError as error:
-                server_log = server_log_path.read_text(encoding="utf-8", errors="replace")
-                for match in SENSITIVE_OUTPUT.finditer(server_log):
-                    redactor.register_material(match.group(1))
-                safe_log = redactor.text(server_log)[-1600:]
-                redactor.assert_safe(safe_log)
-                raise PackageInputError(f"{error}; installed server log: {safe_log}") from None
+                raise PackageInputError("installed tracer token flow failed; provider diagnostics withheld") from None
             persisted, persisted_projection = _persisted_verifier(host, env, prefix, client_id)
             if not issued or not persisted:
                 raise PackageInputError(
@@ -628,6 +613,10 @@ def _validate_pair_directory(
             compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
         else:
             validate_receipt(receipt, expected_pair=pair, expected_store=selected_store)
+            if (receipt.get("scope") != scope
+                    or receipt.get("stable_case_ids") != expected_case_ids((scope, pair, selected_store))
+                    or receipt.get("executed_count") != len(expected_case_ids((scope, pair, selected_store)))):
+                raise ReceiptError("pair raw receipt scope or executed cases differ from the selected cell")
             runner_revision = receipt["runner"]
             if runner_revision != expected_runner:
                 raise ReceiptError("pair receipt does not match its expected tested runner")
