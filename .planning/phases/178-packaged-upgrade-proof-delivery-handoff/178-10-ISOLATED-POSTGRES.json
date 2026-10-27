@@ -1,0 +1,50 @@
+{
+  "schema": "phase178-isolated-postgres-custody-v1",
+  "source_at_creation": "4103648cbc37da28f77d0914448762a3ea31c965",
+  "status": "ready",
+  "reason": "shared_5432_capacity; foreign_project_socket_cwds_observed_without_signal_or_query",
+  "controller_tool_session": 81473,
+  "manifest_path": "/private/tmp/lockspire178-pg-zbf29kp9/custody.json",
+  "manifest_sha256_at_ready": "2d5788ccbbe17151601690692abfcc7e31f8eceb479a55873ead3757a579d039",
+  "server_identity": {
+    "parent_pid": 3905,
+    "pgid": 3917,
+    "pid": 3917,
+    "sid": 3917,
+    "start": [
+      1793098533,
+      97261
+    ]
+  },
+  "host": "127.0.0.1",
+  "port": 64853,
+  "version_num": 140017,
+  "private_environment_transport": "/private/tmp/lockspire178-pg-zbf29kp9/environment.json",
+  "transport_contains_credentials": "private_0600_do_not_render_or_copy_to_public_evidence",
+  "data_dir": "/private/tmp/lockspire178-pg-zbf29kp9/data",
+  "original_server_changed": false,
+  "first_init_attempt": {
+    "manifest": "/private/tmp/lockspire178-pg-xysjjkyd/custody.json",
+    "stage": "initdb",
+    "exit_code": 1,
+    "server_started": false,
+    "cause_not_observed": true
+  },
+  "cleanup_required": true,
+  "created_at": 1793099043.326048,
+  "fresh_readonly_check": {
+    "source": "422fa6e9699c34cf1306582566b31421132e4940",
+    "exit_code": 0,
+    "version_num": 140017,
+    "core_prefix_database_count": 0,
+    "stdout_sha256": "1be8053c6116544d9e21b6069e39d902cfb82ba8b1aded29ac39f966de0d08e5",
+    "stderr_bytes": 0,
+    "shared_server_not_queried": true
+  },
+  "original_archive_rechecked": {
+    "sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be",
+    "mode": "0644",
+    "regular_single_link": true,
+    "backup_matches": true
+  }
+}
