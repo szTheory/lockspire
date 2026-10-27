@@ -62,7 +62,6 @@ Plans:
 Plans:
 - [x] 173-01-PLAN.md — Pushed-parameter authority correction, real PAR RED/GREEN and retained lifecycle/profile proof.
 
-
 ### Phase 174: Packaged Proof & Delivery Handoff
 
 **Goal**: Maintainers and adopters can review source-bound proof of every selected behavior and resume from an honest, reviewed delivery handoff through the existing train.

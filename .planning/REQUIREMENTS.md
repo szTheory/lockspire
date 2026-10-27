@@ -46,7 +46,6 @@ All six authorization/PAR requirements remain pending. Phase 171 qualifies the f
 
 The A171-003 correction is limited to unsupported `response_mode` returning HTTP 400 without OAuth Error Response parameters. The P171-005 correction is limited to a valid pushed reference using pushed `openid email` despite outer `scope=profile`; the linked-clause interpretation is documented in `171-QUALIFICATION-DECISIONS.md`. Existing proofs carry forward without duplicate corrections. Neither unavailable optional profile wrapper is treated as product evidence or as a selected-case blocker. CPROOF-01/02 and DELIV-01/02 remain for Phase 174, including each actual correction's RED/GREEN proof, applicable negative/security coverage and packaged-host proof.
 
-
 ## Future Requirements
 
 - **UI quality candidate:** Whole-UI inventory and complete layered coverage for Apps setup/configuration and Tokens/Consents investigation, adoption-demo dev/test `phoenix_storybook`, observed before/after improvements, reliable blocking checks, measured budgets and same-PR maintenance. [Q1–Q10 and final confirmation](research/ui-quality-engine/MILESTONE-PROPOSAL.md) remain accepted; no UI version or phase IDs are scheduled here.
