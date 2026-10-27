@@ -4,6 +4,11 @@ Lockspire can encrypt the verifier used by `client_secret_jwt` with keys dedicat
 
 ## Configuration
 
+`mix lockspire.install` generates the host integration file `config/lockspire.exs`,
+but it does not generate or provision verifier keys. Add this separate
+host-owned application configuration only when the host enables
+`client_secret_jwt`:
+
 Set this application option with exactly four keys:
 
 ```elixir
@@ -65,21 +70,25 @@ bin/app rpc "Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 
 
 The release call runs inside the node and uses its immutable startup snapshot. Restart or redeploy a node to change that snapshot. A bare Mix task loads its local application configuration and starts only the selected Repo for its operation; it does not start Lockspire supervision or inspect a running release. `mix run --no-start -e ...` also does not start the host supervision tree, so it cannot infer the serving node's startup context.
 
-Each run reports scan completion, committed progress, conflicts, failures, and clients that could not be inspected. A non-zero result means the requested operation did not complete cleanly; committed apply work is retained. Resolve the listed safe next actions and rerun apply. Conflicts mean the stored hash or verifier changed while that client was being processed; inspect current client state before retrying. A resumed cursor never establishes readiness. Only a successful `--check` that starts at the beginning, reaches the end, and reports no pending, failed, conflicting, or uninspected clients establishes current custody for that local store.
+Each run reports scan completion, committed progress, conflicts, failures, and clients that could not be inspected. A non-zero result means the requested operation did not complete cleanly; committed apply work is retained. If an apply result is partial or indeterminate, do not assume all work rolled back: inspect the report, rerun apply as needed (it is safe to repeat), then run a separate fresh `--check`. Conflicts mean the stored hash or verifier changed while that client was being processed; inspect current client state before retrying. `--after-client-id` resumes preview or apply traversal after an exclusive client ID and is progress only. It cannot be combined with `--check` and never establishes readiness. Only a successful `--check` that starts at the beginning, reaches the end, and reports no pending, failed, conflicting, or uninspected clients establishes current custody for that local store.
 
 The report distinguishes a legitimate `no_material` client (for example, a public client that does not use a secret) from `missing_expected_material`, which needs authorized secret recovery. `expired_migrated` describes authenticated custody whose original migration deadline has passed; it is not proof that the client remains eligible to authenticate. Client expiry and authentication checks still apply independently.
 
-## Reader-first activation and key retirement
+## Reader-first rollout, activation, and recovery
 
 Use this order across the host deployment:
 
-1. Distribute compatible code and every key required to read existing verifier rows to all nodes. Keep `write_mode: :legacy` and `legacy_read: :allow` while readers are being staged.
-2. Use host-owned rollout evidence to confirm every serving node has the required code and read keys. A local preview, apply, or check cannot prove fleet parity, quiescence, backups, or rollback readiness.
-3. After that host check, set `write_mode: :dedicated` and the intended `current` key. Keep old read keys while stored rows may still use them.
-4. Run preview, apply, then a separate fresh `--check`. If the check is partial or fails, resolve each reported condition and repeat it from the beginning.
-5. Before removing a live read key, have the host verify fleet state, a usable backup, and the rollback plan. Removing a live key stops that node from opening rows protected by it. Destroying a backup is a separate retention decision; do not infer that it is safe from a live-store check.
+1. Deploy compatible reader code and every key required by existing verifier rows to all serving nodes. Keep `write_mode: :legacy` and `legacy_read: :allow` while readers are being staged. A configured `current` key does not activate dedicated writes.
+2. Use host-owned rollout evidence to confirm every serving node has the compatible code and complete read-key ring. A local check proves custody only for its selected store; it cannot prove fleet parity, deployment drain/quiescence, backups, or rollback readiness.
+3. After the host has established reader readiness, explicitly set `write_mode: :dedicated` and the intended `current` key. Keep `legacy_read: :allow` while any legacy verifier rows remain. Retain old read keys while stored rows may still use them.
+4. Run `--dry-run`, then apply (no mode flag is the apply mode), then a separate fresh `--check`. If apply is partial or its result is uncertain, committed work is retained; inspect current state and repeat apply as needed. If the check is partial or fails, resolve each reported condition and repeat the check from the beginning. A cursor-resumed traversal is not a readiness check.
+5. Before removing a live read key, have the host verify fleet state, a usable backup, and its rollback plan. Removing a live key stops that node from opening rows protected by it. Destroying a backup is a separate retention decision; do not infer that it is safe from a live-store check.
 
-If a required key is missing, affected `client_secret_jwt` authentication fails closed with `invalid_client`. Restoring the original key restores access to the existing verifier and preserves the partner's client secret. If the original key cannot be restored, use the existing authorized client-secret rotation or partner re-provisioning process. That action replaces the partner secret and returns it through the existing one-time handoff; it is not a verifier-key restoration. Do not try to recover a partner secret from its stored hash.
+The installed rollout proof observes compatible readers while writers remain in legacy mode, then drains the old writer before dedicated activation. Returning writes to legacy does not convert dedicated rows; old code still cannot read a dedicated verifier that was already stored. Preserve compatible readers and their required keys, or follow a separately planned recovery path.
+
+Native dedicated verifier material follows the configured client-secret lifetime. Migrated material keeps its authenticated original finite deadline and does not receive a fresh age window during re-wrap. An expired migrated verifier may be re-wrapped for custody, but remains ineligible to authenticate. Re-wrap does not rotate the partner credential or change its stored lifetime.
+
+If a required key is missing, affected `client_secret_jwt` authentication fails closed with `invalid_client`; Basic and post authentication continue to use their existing credential checks. Restoring the original key restores access to the existing verifier and preserves the partner's client secret. If the original key cannot be restored, use the existing authorized client-secret rotation or partner re-provisioning process. That action replaces the partner secret and returns the replacement once through the existing one-time handoff; it is not a verifier-key restoration. The replacement still follows its configured lifetime. An expired migrated verifier cannot be made usable by re-wrapping it, and an original key restoration does not extend its deadline. Do not try to recover a partner secret from its stored hash.
 
 ## Diagnostic boundaries
 
@@ -89,4 +98,4 @@ Lockspire suppresses its sensitive Ecto query Logger output and raw query teleme
 
 `client_secret_jwt` remains limited to HS256 on the five existing direct-client endpoints that share the verifier: `/token`, `/revoke`, `/introspect`, `/device/code`, and `/backchannel/authentication`. `/par` remains unsupported for this method. The configuration does not add HS384/HS512, FAPI support, or generic JWT client authentication.
 
-The selected shared-PostgreSQL repository supports this source-level maintenance path. A custom store must declare the same selected client, transaction, and audit authority and implement the maintenance capability; unsupported or inconsistent declarations fail closed. Package-installed composition, supported store pairs, and package delivery are tracked separately in Phase 178.
+The selected shared-PostgreSQL repository and its declared delegating client/transaction composition are covered by installed proof on the locked Phoenix 1.8.13 / LiveView 1.2.10 and floor Phoenix 1.8.5 / LiveView 1.1.28 pairs. This does not imply support for arbitrary stores. A custom store must declare the same selected client, transaction, and audit authority and implement the maintenance capability; unsupported or inconsistent declarations fail closed.
