@@ -272,7 +272,7 @@ Plans:
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 10/12 | In Progress | — |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; VPROOF-02 is complete, while VDELIV-01/02 remain for hosted candidate, audit, and main/delivery evidence. The phase remains in progress. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; VPROOF-02 is complete from current 1,077-input source-bound evidence, while VDELIV-01/02 remain for hosted candidate, audit, and main/delivery evidence. The phase remains in progress. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 
