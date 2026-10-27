@@ -313,13 +313,15 @@ class RecoveryDispatchTest(unittest.TestCase):
             "secret='unregistered-'+secrets.token_hex(16); "
             "print('CHILD_OUT='+secret); "
             "print('CHILD_ERR='+secret,file=sys.stderr); "
+            "print('command_stage='+secret); "
+            "print('SAFE_FAILURE_STAGE=expired_apply_'+secret); "
             "print('SAFE_FAILURE_STAGE=expired_apply'); "
             "raise RuntimeError(repr({'client': {'secret': secret}}))"
         )
         child = subprocess.run(
             [sys.executable, "-c", child_code], text=True, capture_output=True, check=False
         )
-        self.assertNotEqual(child.returncode, 0)
+        self.assertTrue(child.returncode != 0, "opaque child fixture must fail")
         combined = (child.stdout + child.stderr).encode()
         secret = child.stdout.split("CHILD_OUT=", 1)[1].splitlines()[0]
         observed = io.StringIO()
@@ -334,16 +336,25 @@ class RecoveryDispatchTest(unittest.TestCase):
             ), contextlib.redirect_stdout(observed), contextlib.redirect_stderr(observed):
                 with self.assertRaises(PackageInputError) as caught:
                     build_provider.run_child_command_output(Path(owned_output), {}, "run")
-            self.assertEqual(list(Path(owned_output).iterdir()), [])
+                with self.assertRaises(PackageInputError) as outer_caught:
+                    verifier_recovery._capture_child_output(
+                        lambda: build_provider.run_child_command_output(Path(owned_output), {}, "run")
+                    )
+            self.assertTrue(not any(Path(owned_output).iterdir()), "child diagnostics must remain memory only")
 
         captured = str(caught.exception) + observed.getvalue()
-        self.assertEqual(
-            captured,
-            "provider Mix command failed; child diagnostics withheld; SAFE_FAILURE_STAGE=expired_apply",
+        self.assertTrue(
+            captured == "provider Mix command failed; child diagnostics withheld; command_stage=other; SAFE_FAILURE_STAGE=expired_apply",
+            "provider failure must contain only the complete fixed diagnostic contract",
         )
-        self.assertNotIn(secret, captured)
-        self.assertIn("CHILD_OUT=", child.stdout)
-        self.assertIn("CHILD_ERR=", child.stderr)
+        outer_captured = str(outer_caught.exception)
+        self.assertTrue(
+            outer_captured == "installed verifier host scenario failed at expired_apply; child diagnostics withheld",
+            "recovery boundary must retain only the selected finite failure stage",
+        )
+        self.assertTrue(secret not in captured + outer_captured, "opaque child material must remain withheld at both boundaries")
+        self.assertTrue("CHILD_OUT=" in child.stdout, "opaque stdout fixture must be exercised")
+        self.assertTrue("CHILD_ERR=" in child.stderr, "opaque stderr fixture must be exercised")
 
     def test_narrow_failure_stages_survive_both_boundaries_without_child_bytes(self) -> None:
         stages = (
