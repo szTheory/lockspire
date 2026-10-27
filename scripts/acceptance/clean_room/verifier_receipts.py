@@ -123,6 +123,18 @@ ISSUANCE_CASE_IDS = {
     "locked": "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
     "floor": "VPROOF-02-ISSUANCE-FLOOR-STALE-IDENTITY",
 }
+DISCLOSURE_CASE_IDS = {
+    "locked": ["VPROOF-02-DISCLOSURE-LOCKED-SUCCESS"],
+    "floor": ["VPROOF-02-DISCLOSURE-FLOOR-SUCCESS"],
+}
+DISCLOSURE_SUCCESS_FIELDS = frozenset({
+    "outcome", "executed", "logger_event_count", "query_event_count",
+    "logger_control_event_count", "logger_operation_event_count",
+    "query_control_event_count", "query_operation_event_count",
+    "logger_leak_count", "query_leak_count", "output_leak_count",
+    "cli_output_checked", "audit_projection_safe", "nested_inspection_redacted",
+    "one_time_handoff_usable", "maintenance_changed", "http_status",
+})
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
     "fresh_signed_assertion", "dry_run_reported", "dry_run_unchanged", "apply_committed",
@@ -230,6 +242,7 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         else frozenset().union(*ATOMICITY_OBSERVATION_FIELDS.values()) if receipt["scope"] == "atomicity"
         else RECOVERY_OBSERVATION_FIELDS if receipt["scope"] == "recovery"
         else ISSUANCE_OBSERVATION_FIELDS if receipt["scope"] == "issuance"
+        else DISCLOSURE_SUCCESS_FIELDS if receipt["scope"] == "disclosure"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
@@ -244,6 +257,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
         raise ReceiptError("recovery receipt omits a required preservation or recovery case")
     if receipt["scope"] == "issuance" and case_ids != [ISSUANCE_CASE_IDS[receipt["pair"]]]:
         raise ReceiptError("issuance receipt does not match its selected dependency pair")
+    if receipt["scope"] == "disclosure" and case_ids != DISCLOSURE_CASE_IDS[receipt["pair"]]:
+        raise ReceiptError("disclosure receipt does not contain its success scenario")
     for case_id, result in observations.items():
         if not isinstance(result, dict) or not set(result).issubset(allowed_observation_fields):
             raise ReceiptError("observation fields are outside the allowlist")
@@ -265,6 +280,13 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 "replay_error_code", "fresh_http_status", "fresh_error_code", "discovery_http_status"
             }
             if receipt["scope"] == "issuance"
+            else DISCLOSURE_SUCCESS_FIELDS - {
+                "outcome", "executed", "http_status", "logger_event_count", "query_event_count",
+                "logger_control_event_count", "logger_operation_event_count",
+                "query_control_event_count", "query_operation_event_count",
+                "logger_leak_count", "query_leak_count", "output_leak_count",
+            }
+            if receipt["scope"] == "disclosure"
             else RECOVERY_OBSERVATION_FIELDS - {
                 "outcome", "executed", "missing_key_http_status", "missing_key_error_code",
                 "basic_http_status", "post_http_status", "restored_http_status",
@@ -389,6 +411,28 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 "fresh_error_code": "other",
             }.items()):
                 raise ReceiptError("issuance receipt OAuth error category does not match its source-owned outcome")
+        if receipt["scope"] == "disclosure":
+            count_fields = {
+                "logger_event_count", "query_event_count", "logger_leak_count",
+                "query_leak_count", "output_leak_count", "logger_control_event_count",
+                "logger_operation_event_count", "query_control_event_count", "query_operation_event_count",
+            }
+            if (
+                set(result) != DISCLOSURE_SUCCESS_FIELDS
+                or any(type(result[field]) is not int or result[field] < 0 for field in count_fields)
+                or result["logger_event_count"] == 0
+                or result["query_event_count"] == 0
+                or result["logger_control_event_count"] == 0
+                or result["query_control_event_count"] == 0
+                or result["query_operation_event_count"] == 0
+                or any(result[field] != 0 for field in ("logger_leak_count", "query_leak_count", "output_leak_count"))
+                or any(result[field] is not True for field in (
+                    "cli_output_checked", "audit_projection_safe", "nested_inspection_redacted",
+                    "one_time_handoff_usable", "maintenance_changed",
+                ))
+                or result["http_status"] != 200
+            ):
+                raise ReceiptError("disclosure success channel evidence is incomplete or unsafe")
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS

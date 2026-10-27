@@ -209,7 +209,7 @@ config :clean_room_provider, CleanRoomProviderWeb.Endpoint,
   secret_key_base: System.get_env(\"SECRET_KEY_BASE\", \"clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789\"),
   live_view: [signing_salt: \"clean-room-provider-test-live-view-salt\"],
   debug_errors: true,
-  server: true
+  server: System.get_env("CLEAN_ROOM_HTTP_SERVER", "false") == "true"
 config :lockspire,
   repo: CleanRoomProvider.Repo,
   account_resolver: CleanRoomProvider.Lockspire.AccountResolver,
