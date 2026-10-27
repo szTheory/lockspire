@@ -24,6 +24,7 @@ repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "verifier proof
 runner_revision=$(git rev-parse HEAD 2>/dev/null) || { echo "verifier proof requires a committed runner revision" >&2; exit 2; }
 [[ "$runner_revision" =~ ^[0-9a-f]{40,64}$ ]] || { echo "verifier runner revision is invalid" >&2; exit 2; }
 runner="$repo_root/scripts/acceptance/clean_room_verifier_upgrade.py"
+frozen_inputs="$repo_root/.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-FROZEN-INPUTS.json"
 
 if [[ "$test_mode" == true ]]; then
   [[ "${LOCKSPIRE_VERIFIER_TEST_MODE:-}" == "1" ]] || { echo "test mode is disabled" >&2; exit 2; }
@@ -54,6 +55,31 @@ else
   command=(python3 "$runner")
   timeout_seconds=3600
   overall_timeout_seconds=1500
+  [[ -f "$frozen_inputs" && ! -L "$frozen_inputs" ]] || { echo "authenticated frozen candidate inputs are unavailable" >&2; exit 2; }
+  python3 "$repo_root/scripts/acceptance/clean_room/verifier_delivery.py" \
+    --check frozen --phase-dir "$repo_root/.planning/phases/178-packaged-upgrade-proof-delivery-handoff" \
+    >/dev/null || { echo "authenticated frozen candidate inputs failed validation" >&2; exit 2; }
+  export LOCKSPIRE_FROZEN_INPUTS="$frozen_inputs"
+  frozen_pins=$(python3 - "$frozen_inputs" <<'PY'
+import json
+import re
+import sys
+from pathlib import Path
+try:
+    manifest = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+    owner = manifest["candidate_owner"]
+    runner = manifest["runner_revision"]
+    revision = owner["source_revision"]
+except (OSError, ValueError, KeyError, TypeError):
+    raise SystemExit(2)
+if (not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40,64}", revision)
+        or not isinstance(runner, str) or not re.fullmatch(r"[0-9a-f]{40,64}", runner)):
+    raise SystemExit(2)
+print(runner + " " + revision)
+PY
+  ) || { echo "authenticated candidate source pin is unavailable" >&2; exit 2; }
+  read -r frozen_runner_revision candidate_source_revision <<< "$frozen_pins"
+  [[ "$frozen_runner_revision" == "$runner_revision" ]] || { echo "frozen verifier runner differs from current HEAD" >&2; exit 2; }
 fi
 
 # Validate every path and freshness condition above before the first mutation.
@@ -245,7 +271,7 @@ validation_status=0
 run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
   --validate-receipts "$repo_root/$receipt_dir" \
   --expected-runner-revision "$runner_revision" \
-  --expected-candidate-source-revision "$runner_revision" || validation_status=$?
+  --expected-candidate-source-revision "${candidate_source_revision:-$runner_revision}" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'

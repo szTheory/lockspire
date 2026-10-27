@@ -321,17 +321,18 @@ def validate_rollout_receipt(
     candidate = receipt.get("candidate")
     if not isinstance(candidate, dict):
         raise ReceiptError("rollout candidate identity is missing")
-    if (candidate.get("kind") != "checkout" or candidate.get("source_revision") != expected_candidate_source
+    if (candidate.get("kind") not in {"checkout", "frozen"} or candidate.get("source_revision") != expected_candidate_source
             or candidate.get("runner_revision") != expected_runner
             or not isinstance(candidate.get("version"), str)
             or any(not isinstance(candidate.get(field), str) or not SHA.fullmatch(candidate[field])
                    for field in ("archive_sha256", "tree_sha256", "source_proof"))):
         raise ReceiptError("rollout candidate source binding is invalid")
-    proof = json.dumps({"archive_sha256": candidate["archive_sha256"],
-                        "source_revision": candidate["source_revision"],
-                        "tree_sha256": candidate["tree_sha256"]}, sort_keys=True, separators=(",", ":")).encode()
-    if hashlib.sha256(proof).hexdigest() != candidate["source_proof"]:
-        raise ReceiptError("rollout candidate digest does not bind source and package tree")
+    if candidate["kind"] == "checkout":
+        proof = json.dumps({"archive_sha256": candidate["archive_sha256"],
+                            "source_revision": candidate["source_revision"],
+                            "tree_sha256": candidate["tree_sha256"]}, sort_keys=True, separators=(",", ":")).encode()
+        if hashlib.sha256(proof).hexdigest() != candidate["source_proof"]:
+            raise ReceiptError("rollout candidate digest does not bind source and package tree")
     host, runtime = receipt.get("host"), receipt.get("runtime")
     if not isinstance(host, dict) or not isinstance(runtime, dict):
         raise ReceiptError("rollout host identity is missing")
@@ -467,7 +468,7 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
     candidate = receipt["candidate"]
     if not isinstance(candidate, dict) or set(candidate) != IDENTITY_FIELDS:
         raise ReceiptError("candidate identity fields are incomplete")
-    if candidate["kind"] != "checkout" or not isinstance(candidate["version"], str):
+    if candidate["kind"] not in {"checkout", "frozen"} or not isinstance(candidate["version"], str):
         raise ReceiptError("candidate source identity is untrusted")
     for key in ("archive_sha256", "tree_sha256", "source_proof"):
         if not isinstance(candidate[key], str) or not SHA.fullmatch(candidate[key]):
@@ -479,11 +480,9 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             "archive_sha256": candidate["archive_sha256"],
             "source_revision": candidate["source_revision"],
             "tree_sha256": candidate["tree_sha256"],
-        },
-        sort_keys=True,
-        separators=(",", ":"),
+        }, sort_keys=True, separators=(",", ":"),
     ).encode()
-    if candidate["source_proof"] != hashlib.sha256(binding).hexdigest():
+    if candidate["kind"] == "checkout" and candidate["source_proof"] != hashlib.sha256(binding).hexdigest():
         raise ReceiptError("candidate source proof does not bind the artifact and extracted tree")
     if candidate["runner_revision"] != receipt["runner"]:
         raise ReceiptError("runner identity does not match package preparation")

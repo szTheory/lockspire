@@ -36,6 +36,7 @@ class PackageSource:
     expected_sha256: str | None = None
     source_revision: str | None = None
     source_proof: str | None = None
+    owner_manifest: str | None = None
 
 
 @dataclass(frozen=True)
@@ -230,6 +231,118 @@ def source_revision() -> str:
     return value
 
 
+def authenticated_frozen_source(project_root: Path = PROJECT_ROOT) -> PackageSource | None:
+    """Resolve the explicitly selected Phase 178 frozen candidate owner."""
+    selected = os.environ.get("LOCKSPIRE_FROZEN_INPUTS")
+    if not selected:
+        return None
+    manifest = Path(selected)
+    if not manifest.is_absolute():
+        manifest = project_root / manifest
+    try:
+        document = json.loads(manifest.read_text(encoding="utf-8"))
+        owner = document["candidate_owner"]
+        archive_relative = owner["archive_path"]
+        revision = owner["source_revision"]
+        archive_sha = owner["archive_sha256"]
+        owner_digest = owner["owner_sha256"]
+    except (OSError, ValueError, KeyError, TypeError):
+        raise PackageInputError("frozen candidate owner manifest is unavailable") from None
+    if (not isinstance(archive_relative, str) or Path(archive_relative).is_absolute()
+            or ".." in Path(archive_relative).parts
+            or not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40,64}", revision)
+            or not isinstance(archive_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", archive_sha)
+            or not isinstance(owner_digest, str) or not re.fullmatch(r"[0-9a-f]{64}", owner_digest)):
+        raise PackageInputError("frozen candidate owner manifest is malformed")
+    return PackageSource("frozen", str(project_root / archive_relative), archive_sha,
+                         revision, owner_digest, str(manifest))
+
+
+def verify_frozen_source_owner(
+    source: PackageSource, archive: Path, package_root: Path, *, project_root: Path = PROJECT_ROOT,
+) -> tuple[str, str]:
+    """Bind the selected archive/tree to tracked bytes in its claimed Git commit."""
+    if source.owner_manifest is None:
+        raise PackageInputError("external candidate source owner is unavailable")
+    try:
+        manifest_path = Path(source.owner_manifest).resolve(strict=True)
+        document = json.loads(manifest_path.read_text(encoding="utf-8"))
+        owner = document["candidate_owner"]
+        expected_keys = {
+            "schema", "source_revision", "source_tree", "archive_path", "archive_sha256",
+            "extracted_tree_path", "tree_sha256", "package_files", "source_build", "owner_sha256",
+        }
+        if set(owner) != expected_keys or owner["schema"] != "lockspire-frozen-candidate-owner-v1":
+            raise ValueError
+        claim = {key: value for key, value in owner.items() if key != "owner_sha256"}
+        expected_owner = hashlib.sha256(
+            json.dumps(claim, sort_keys=True, separators=(",", ":")).encode()
+        ).hexdigest()
+        revision = owner["source_revision"]
+        if (owner["owner_sha256"] != expected_owner or revision != source.source_revision
+                or source.source_proof != owner["owner_sha256"]
+                or not re.fullmatch(r"[0-9a-f]{40,64}", revision)):
+            raise ValueError
+        archive_relative = Path(owner["archive_path"])
+        artifact_root = (project_root / ".artifacts" / "phase178").resolve(strict=True)
+        resolved_archive = archive.resolve(strict=True)
+        if (archive_relative.is_absolute() or ".." in archive_relative.parts
+                or resolved_archive != (project_root / archive_relative).resolve(strict=True)
+                or resolved_archive == artifact_root or artifact_root not in resolved_archive.parents
+                or archive.is_symlink() or sha256(resolved_archive) != owner["archive_sha256"]
+                or source.expected_sha256 != owner["archive_sha256"]):
+            raise ValueError
+        tree = package_tree_digest(package_root)
+        if tree != owner["tree_sha256"]:
+            raise ValueError
+        listed = owner["package_files"]
+        if (not isinstance(listed, list) or not listed
+                or any(not isinstance(row, dict) or set(row) != {"path", "sha256"}
+                       or not isinstance(row["path"], str)
+                       or not re.fullmatch(r"[0-9a-f]{64}", row["sha256"])
+                       for row in listed)):
+            raise ValueError
+        actual_files = sorted(
+            ({"path": path.relative_to(package_root).as_posix(), "sha256": sha256(path)}
+             for path in package_root.rglob("*") if path.is_file() and not path.is_symlink()),
+            key=lambda row: row["path"],
+        )
+        if sorted(listed, key=lambda row: row["path"]) != actual_files:
+            raise ValueError
+        source_build = owner["source_build"]
+        if (not isinstance(source_build, dict)
+                or source_build.get("git_archive_exit_code") != 0
+                or source_build.get("package_build_exit_code") != 0
+                or source_build.get("rebuilt_tree_sha256") != owner["tree_sha256"]
+                or any(not isinstance(source_build.get(field), int) or source_build[field] < 0
+                       for field in ("package_stdout_bytes", "package_stderr_bytes"))
+                or any(not isinstance(source_build.get(field), str)
+                       or not re.fullmatch(r"[0-9a-f]{64}", source_build[field])
+                       for field in ("package_stdout_sha256", "package_stderr_sha256", "rebuilt_archive_sha256"))):
+            raise ValueError
+        result = subprocess.run(
+            ("git", "rev-parse", f"{revision}^{{tree}}"), cwd=project_root,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            check=False, timeout=10,
+        )
+        source_tree = result.stdout.decode("ascii", errors="strict").strip()
+        if result.returncode != 0 or source_tree != owner["source_tree"]:
+            raise ValueError
+        for row in actual_files:
+            if row["path"] == "hex_metadata.config":
+                continue
+            blob = subprocess.run(
+                ("git", "show", f"{revision}:{row['path']}"), cwd=project_root,
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                check=False, timeout=10,
+            )
+            if blob.returncode != 0 or hashlib.sha256(blob.stdout).hexdigest() != row["sha256"]:
+                raise ValueError
+    except (OSError, ValueError, KeyError, TypeError, subprocess.TimeoutExpired):
+        raise PackageInputError("frozen candidate source-to-archive binding is unproven") from None
+    return revision, owner["owner_sha256"]
+
+
 def verify_candidate_input(archive: Path, package_root: Path, identity: PackageIdentity) -> None:
     """Verify the source artifact and extracted tree before any child can reuse them."""
     if not archive.is_file() or sha256(archive) != (identity.archive_sha256 or identity.sha256):
@@ -410,7 +523,9 @@ def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str 
 
 
 def prepare_package(run_root: Path, source: PackageSource | None = None) -> tuple[Path, tuple[str, ...], PackageIdentity]:
-    source = source or PackageSource("checkout")
+    frozen_source = authenticated_frozen_source()
+    if source is None or (source.kind == "checkout" and frozen_source is not None):
+        source = frozen_source or source or PackageSource("checkout")
     package_root = run_root / "package" / "lockspire"
     runner = source_revision()
 
@@ -435,7 +550,12 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         proof = _source_binding_digest(runner, checksum, tree)
         return package_root, entries, PackageIdentity("checkout", version, checksum, checksum, tree, runner, runner, proof)
 
-    if source.kind == "hex":
+    if source.kind == "frozen":
+        if source.owner_manifest is None:
+            raise PackageInputError("frozen candidate owner is unavailable")
+        tarball = Path(source.value or "")
+        allowed_root = (PROJECT_ROOT / ".artifacts" / "phase178").resolve(strict=True)
+    elif source.kind == "hex":
         version = exact_version(source.value or "")
         downloads = run_root / "package" / "downloads"
         downloads.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -452,7 +572,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
     if package_root.is_dir():
         tree = package_tree_digest(package_root)
-        source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
+        if source.kind == "frozen":
+            source_revision_claim, source_proof = verify_frozen_source_owner(source, tarball, package_root)
+        else:
+            source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
         identity = PackageIdentity(
             source.kind, version, checksum, checksum, tree,
             source_revision_claim, runner, source_proof,
@@ -467,7 +590,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     entries = inventory(package_root)
     package_root = package_root.resolve(strict=True)
     tree = package_tree_digest(package_root)
-    source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
+    if source.kind == "frozen":
+        source_revision_claim, source_proof = verify_frozen_source_owner(source, tarball, package_root)
+    else:
+        source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
     return package_root, entries, PackageIdentity(
         source.kind, version, checksum, checksum, tree, source_revision_claim, runner, source_proof
     )
@@ -476,10 +602,7 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
 def _external_source_claim(source: PackageSource, archive_sha256: str, tree_sha256: str) -> tuple[str | None, str | None]:
     if source.source_proof is None:
         return None, None
-    expected_proof = _source_binding_digest(source.source_revision or "", archive_sha256, tree_sha256)
-    if source.source_proof != expected_proof:
-        raise PackageInputError("external package source proof does not bind archive and extracted tree")
-    return source.source_revision, source.source_proof
+    raise PackageInputError("external package source owner requires a frozen owner manifest")
 
 
 def _source_binding_digest(revision: str, archive_sha256: str, tree_sha256: str) -> str:
