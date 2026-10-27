@@ -10,15 +10,18 @@ PROJECT_EXPLICIT=0
 ACCEPT_SHA=""
 WAIT_SECONDS=300
 OUTPUT_FORMAT="text"
+INTEGRATION_AUTHORIZATION_RECORD=""
 
 declare -a WARN_DISPOSITION_INPUTS=()
 WARN_DISPOSITION_INPUT_COUNT=0
+INTEGRATION_AUTHORIZATION_JSON='{"status":"pending","path":null,"sha256":null,"authorized_by":null,"authorized_at":null}'
 
 usage() {
   cat <<'EOF'
 Usage: repo_hygiene_check.sh [--ci] [--project NAME] [--skip-mix-ci]
        repo_hygiene_check.sh --accept-sha SHA [--wait-seconds SECONDS]
-                             [--warn-disposition LABEL=DISPOSITION] [--format json]
+                             [--warn-disposition LABEL=DISPOSITION]
+                             [--integration-authorization-record PATH] [--format json]
 
 Checks whether the repo is in a disciplined release-prep state.
 
@@ -86,6 +89,15 @@ while [[ "$#" -gt 0 ]]; do
       fi
       WARN_DISPOSITION_INPUTS+=("$2")
       WARN_DISPOSITION_INPUT_COUNT=$((WARN_DISPOSITION_INPUT_COUNT + 1))
+      shift 2
+      ;;
+    --integration-authorization-record)
+      if [[ "$#" -lt 2 ]]; then
+        echo "Missing value for --integration-authorization-record" >&2
+        usage >&2
+        exit 1
+      fi
+      INTEGRATION_AUTHORIZATION_RECORD="$2"
       shift 2
       ;;
     --format)
@@ -369,7 +381,10 @@ collect_run_jobs() {
        ! jq -e '
          (.total_count | type) == "number" and .total_count >= 0 and
          (.jobs | type) == "array" and
-         all(.jobs[]; (.name | type) == "string" and (.status | type) == "string" and (.conclusion | type) == "string")
+         all(.jobs[]; (.name | type) == "string" and (.id | type) == "number" and .id > 0 and
+           (.run_id | type) == "number" and .run_id > 0 and
+           (.run_attempt | type) == "number" and .run_attempt > 0 and
+           (.head_sha | type) == "string" and (.status | type) == "string" and (.conclusion | type) == "string")
        ' >/dev/null 2>&1 <<<"$response"; then
       acceptance_block "workflow jobs" "workflow job page was unavailable, malformed, or incomplete"
       return
@@ -443,7 +458,14 @@ validate_required_ci_jobs() {
     return
   fi
 
-  REQUIRED_CI_JOBS="$(jq -c 'map({name, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+    REQUIRED_CI_JOBS="$(jq -c 'map({name, id, run_id, run_attempt, head_sha, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+  if ! jq -e --argjson id "$(jq -r '.id' <<<"$REQUIRED_CI_RUN")" \
+       --argjson attempt "$(jq -r '.run_attempt' <<<"$REQUIRED_CI_RUN")" \
+       --arg sha "$ACCEPT_SHA" 'all(.[]; .run_id == $id and .run_attempt == $attempt and .head_sha == $sha)' \
+       >/dev/null 2>&1 <<<"$REQUIRED_CI_JOBS"; then
+    acceptance_block "required CI jobs" "required CI job ownership differs from the selected run"
+    return
+  fi
   record_result "PASS" "required CI" "canonical CI and every required job passed at the acceptance SHA"
 }
 
@@ -465,7 +487,14 @@ validate_no_publish_release_run() {
   if ! collect_run_jobs "$run_id"; then
     return 1
   fi
-  RELEASE_JOBS="$(jq -c 'map({name, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+  RELEASE_JOBS="$(jq -c 'map({name, id, run_id, run_attempt, head_sha, status, conclusion}) | sort_by(.name)' <<<"$COLLECTED_JOBS")"
+  if ! jq -e --argjson id "$(jq -r '.id' <<<"$RELEASE_RUN")" \
+       --argjson attempt "$(jq -r '.run_attempt' <<<"$RELEASE_RUN")" \
+       --arg sha "$ACCEPT_SHA" 'all(.[]; .run_id == $id and .run_attempt == $attempt and .head_sha == $sha)' \
+       >/dev/null 2>&1 <<<"$RELEASE_JOBS"; then
+    acceptance_block "release no-publish" "Release job ownership differs from the selected run"
+    return
+  fi
 
   while IFS='|' read -r name expected; do
     count="$(jq -r --arg name "$name" --arg conclusion "$expected" '[.[] | select(.name == $name and .status == "completed" and .conclusion == $conclusion)] | length' <<<"$RELEASE_JOBS")"
@@ -560,12 +589,50 @@ require_warn_dispositions() {
   WARN_DISPOSITIONS_JSON="$dispositions"
 }
 
+validate_integration_authorization() {
+  local path="$INTEGRATION_AUTHORIZATION_RECORD" body digest authorized_by authorized_at
+  if [[ -z "$path" ]]; then
+    INTEGRATION_AUTHORIZATION_JSON='{"status":"pending","path":null,"sha256":null,"authorized_by":null,"authorized_at":null}'
+    return 0
+  fi
+  if [[ "$path" != ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-AUTHORIZATION.json" ||
+        -L "$path" || ! -f "$path" ]]; then
+    acceptance_block "integration authorization" "authorization record path is not the exact safe Phase 178 record"
+    return 1
+  fi
+  body="$(cat -- "$path")"
+  if ! jq -e --arg sha "$ACCEPT_SHA" '
+      type == "object" and
+      (keys | sort) == ["authorized_at", "authorized_by", "candidate_sha", "schema", "status"] and
+      .schema == "lockspire-phase178-integration-authorization-v1" and
+      .status == "authorized" and .candidate_sha == $sha and
+      (.authorized_by | type == "string" and length >= 3 and length <= 120) and
+      (.authorized_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
+    ' >/dev/null 2>&1 <<<"$body"; then
+    acceptance_block "integration authorization" "authorization record is malformed or belongs to a different candidate"
+    return 1
+  fi
+  digest="$(shasum -a 256 "$path" | awk '{print $1}')"
+  authorized_by="$(jq -r '.authorized_by' <<<"$body")"
+  authorized_at="$(jq -r '.authorized_at' <<<"$body")"
+  INTEGRATION_AUTHORIZATION_JSON="$(jq -cn --arg path "$path" --arg sha "$digest" \
+      --arg who "$authorized_by" --arg at "$authorized_at" \
+      '{status:"authorized",path:$path,sha256:$sha,authorized_by:$who,authorized_at:$at}')"
+}
+
 emit_acceptance_receipt() {
-  local ci_id ci_url release_id release_url
+  local ci_id ci_attempt ci_url release_id release_attempt release_url head main remote_main helper_sha observed_at
   ci_id="$(jq -r '.id' <<<"$REQUIRED_CI_RUN")"
+  ci_attempt="$(jq -r '.run_attempt' <<<"$REQUIRED_CI_RUN")"
   ci_url="$(jq -r '.html_url' <<<"$REQUIRED_CI_RUN")"
   release_id="$(jq -r '.id' <<<"$RELEASE_RUN")"
+  release_attempt="$(jq -r '.run_attempt' <<<"$RELEASE_RUN")"
   release_url="$(jq -r '.html_url' <<<"$RELEASE_RUN")"
+  head="$(git rev-parse HEAD)"
+  main="$(git rev-parse main)"
+  remote_main="$(git rev-parse "$REMOTE/main")"
+  helper_sha="$(shasum -a 256 scripts/maintainer/repo_hygiene_check.sh | awk '{print $1}')"
+  observed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
   jq -cn \
     --arg schema "lockspire-phase-139-acceptance-v1" \
@@ -575,19 +642,32 @@ emit_acceptance_receipt() {
     --argjson warn "$WARN_COUNT" \
     --argjson block "$BLOCK_COUNT" \
     --argjson ci_id "$ci_id" \
+    --argjson ci_attempt "$ci_attempt" \
     --arg ci_url "$ci_url" \
     --argjson ci_jobs "$REQUIRED_CI_JOBS" \
     --argjson release_id "$release_id" \
+    --argjson release_attempt "$release_attempt" \
     --arg release_url "$release_url" \
     --argjson release_jobs "$RELEASE_JOBS" \
+    --arg repository "$REPOSITORY" \
+    --arg observed_at "$observed_at" \
+    --arg helper_sha "$helper_sha" \
+    --arg head "$head" --arg main "$main" --arg remote_main "$remote_main" \
+    --argjson authorization "$INTEGRATION_AUTHORIZATION_JSON" \
     --argjson dispositions "$WARN_DISPOSITIONS_JSON" '
       {
         schema: $schema,
         baseline_sha: $baseline_sha,
+        repository: $repository,
+        observed_at: $observed_at,
+        helper: {path: "scripts/maintainer/repo_hygiene_check.sh", sha256: $helper_sha,
+          mode: "local_exact_acceptance", mix_ci: true, format: "json"},
+        synchronized_refs: {head: $head, local_main: $main, refreshed_origin_main: $remote_main},
+        integration_authorization: $authorization,
         local_gate: {status: "pass", exunit_tests: $tests},
         hygiene: {status: "pass", pass: $pass, warn: $warn, block: $block},
-        required_ci: {status: "pass", run_id: $ci_id, event: "push", conclusion: "success", url: $ci_url, jobs: $ci_jobs},
-        release_no_publish: {status: "pass", outcome: "no_publish", run_id: $release_id, event: "push", conclusion: "success", url: $release_url, jobs: $release_jobs},
+        required_ci: {status: "pass", run_id: $ci_id, run_attempt: $ci_attempt, workflow_path: ".github/workflows/ci.yml", head_sha: $baseline_sha, event: "push", conclusion: "success", url: $ci_url, jobs: $ci_jobs},
+        release_no_publish: {status: "pass", outcome: "no_publish", run_id: $release_id, run_attempt: $release_attempt, workflow_path: ".github/workflows/release.yml", head_sha: $baseline_sha, event: "push", conclusion: "success", url: $release_url, jobs: $release_jobs},
         warn_dispositions: $dispositions,
         supplemental_oidf: {classification: "supplemental_non_certifying", required_gate: false}
       }
@@ -625,6 +705,7 @@ run_exact_acceptance() {
     return 1
   fi
 
+  validate_integration_authorization || return 1
   validate_acceptance_identity || return 1
   emit_acceptance_receipt
 }

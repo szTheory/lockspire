@@ -257,6 +257,7 @@ jobs:
           python3 scripts/ci/provision_verifier_candidate.py
           --expected-runner "$EXPECTED_RUNNER_REVISION"
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE_REVISION"
+          --manifest-path .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
           --github-output "$GITHUB_OUTPUT"
 
       - name: Wait for PostgreSQL
@@ -412,6 +413,7 @@ jobs:
           python3 scripts/ci/provision_verifier_candidate.py
           --expected-runner "$EXPECTED_RUNNER_REVISION"
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE_REVISION"
+          --manifest-path .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
           --github-output "$GITHUB_OUTPUT"
 
       - name: Wait for PostgreSQL

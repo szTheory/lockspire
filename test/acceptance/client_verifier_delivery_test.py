@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import shutil
 import tempfile
 import unittest
+import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from unittest.mock import patch
@@ -24,6 +26,7 @@ import clean_room_verifier_upgrade  # noqa: E402
 import verifier_delivery  # noqa: E402
 import verifier_receipts  # noqa: E402
 import provision_verifier_candidate  # noqa: E402
+import run_owned_source_tests as owned_source_guard  # noqa: E402
 
 
 class CandidateProvisioningContracts(unittest.TestCase):
@@ -119,6 +122,205 @@ class FrozenSourceOwnerContracts(unittest.TestCase):
                         ),
                     )
 
+
+class OwnedSourceProducerConsumerContracts(unittest.TestCase):
+    def test_actual_owned_source_runner_manifest_is_consumed_with_cleanup_order(self) -> None:
+        """Only Git reads and a stateful DB/OS boundary fake are used; no DB is started."""
+        import subprocess
+
+        class Boundary:
+            def __init__(self):
+                self.owner = None
+                self.exists = False
+                self.oid = 412
+
+            def __call__(self, command, *, env, cwd, timeout, started):
+                owner = self.owner
+                stage = owner.manifest["commands"][-1]["stage"]
+                started(5500 + len(owner.manifest["commands"]))
+                if stage == "source":
+                    observed = subprocess.run(command, cwd=cwd, check=False,
+                                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    return owned_source_guard.Result(observed.returncode, observed.stdout, observed.stderr)
+                if stage == "preflight":
+                    payload = {"env": "test", "repo": owned_source_guard.REPO,
+                               "ecto_repos": [owned_source_guard.REPO],
+                               "database": owner.target.database, "hostname": owner.target.hostname,
+                               "port": owner.target.port, "credentials_match": True}
+                    return owned_source_guard.Result(0, (owned_source_guard.MARKER
+                        + json.dumps(payload) + "\n").encode())
+                if stage == "catalog":
+                    return owned_source_guard.Result(0, str(self.oid).encode() + b"\n"
+                                                     if self.exists else b"")
+                if stage == "identity":
+                    return owned_source_guard.Result(0, json.dumps({
+                        "database": owner.target.database, "oid": self.oid,
+                        "server_address": "127.0.0.1", "server_port": owner.target.port,
+                    }).encode())
+                if stage == "create":
+                    self.exists = True
+                    return owned_source_guard.Result(0, owned_source_guard.CREATED + b"\n")
+                if stage == "drop":
+                    self.exists = False
+                if stage == "ci":
+                    return owned_source_guard.Result(0, b"15 tests, 0 failures\n2 properties, 2138 tests, 0 failures\n270 tests, 0 failures\n")
+                return owned_source_guard.Result(0)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            subprocess.run(("git", "init", "-q"), cwd=repo, check=True)
+            subprocess.run(("git", "config", "user.email", "fixture@example.invalid"), cwd=repo, check=True)
+            subprocess.run(("git", "config", "user.name", "Fixture"), cwd=repo, check=True)
+            (repo / "tracked.txt").write_text("owned fixture\n", encoding="utf-8")
+            subprocess.run(("git", "add", "tracked.txt"), cwd=repo, check=True)
+            subprocess.run(("git", "commit", "-qm", "fixture"), cwd=repo, check=True)
+            source_revision = subprocess.run(("git", "rev-parse", "HEAD"), cwd=repo,
+                                             check=True, capture_output=True, text=True).stdout.strip()
+            boundary = Boundary()
+            runner = owned_source_guard.OwnedSourceTests(
+                [], ci=True, root=repo, inherited={}, process_runner=boundary,
+            )
+            boundary.owner = runner
+            self.assertEqual(runner.run(), 0)
+            consumed = verifier_delivery._owned_source_manifest(
+                runner.manifest_path, source_revision,
+            )
+            stages = [row["stage"] for row in consumed["commands"]]
+            intents = [row["command_intent"] for row in consumed["commands"]]
+            drop = stages.index("drop")
+            self.assertEqual(stages[drop + 1:], ["preflight", "catalog"])
+            self.assertEqual(intents[drop - 3:drop], [
+                "effective_repo_preflight", "database_catalog_identity", "connected_database_identity"])
+            self.assertEqual(intents[drop:drop + 3], [
+                "drop_owned_database", "effective_repo_preflight", "database_catalog_identity"])
+            self.assertLess(stages.index("ci"), drop)
+            self.assertEqual(consumed["cleanup"], "independently_absent")
+            shutil.rmtree(runner.directory)
+
+
+class HelperReceiptProducerContracts(unittest.TestCase):
+    def test_actual_helper_emitter_preserves_refs_graphs_and_pending_authorization(self) -> None:
+        helper = ROOT / "scripts/maintainer/repo_hygiene_check.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            helper_copy = repo / "scripts/maintainer/repo_hygiene_check.sh"
+            helper_copy.parent.mkdir(parents=True)
+            shutil.copy2(helper, helper_copy)
+            subprocess = __import__("subprocess")
+            subprocess.run(("git", "init", "--quiet", "--initial-branch=main"), cwd=repo, check=True)
+            subprocess.run(("git", "config", "user.email", "fixture@example.invalid"), cwd=repo, check=True)
+            subprocess.run(("git", "config", "user.name", "Fixture"), cwd=repo, check=True)
+            subprocess.run(("git", "add", "scripts/maintainer/repo_hygiene_check.sh"), cwd=repo, check=True)
+            subprocess.run(("git", "commit", "-qm", "helper emitter fixture"), cwd=repo, check=True)
+            head = subprocess.run(("git", "rev-parse", "HEAD"), cwd=repo, check=True,
+                                  capture_output=True, text=True).stdout.strip()
+            subprocess.run(("git", "update-ref", "refs/remotes/origin/main", head), cwd=repo, check=True)
+            jobs = [
+                {"name": name, "id": index + 1, "run_id": 100, "run_attempt": 1,
+                 "head_sha": head, "status": "completed", "conclusion": "success"}
+                for index, name in enumerate(verifier_delivery.CANONICAL_CI_JOBS)
+            ]
+            release_jobs = [
+                {"name": name, "id": index + 1, "run_id": 200, "run_attempt": 1,
+                 "head_sha": head, "status": "completed",
+                 "conclusion": "success" if index == 0 else "skipped"}
+                for index, name in enumerate((
+                    "Maintain Release Please PR", "Validate exact main head and CI evidence",
+                    "Prove exact package before publication", "Publish verified release to Hex",
+                    "Verify public install truth", "Record terminal release outcome",
+                ))
+            ]
+            environment = dict(os.environ)
+            environment.update({
+                "HELPER": str(helper_copy), "REQUIRED_CI_RUN": json.dumps(
+                    {"id": 100, "run_attempt": 1, "html_url": "https://github.com/szTheory/lockspire/actions/runs/100"}),
+                "RELEASE_RUN": json.dumps(
+                    {"id": 200, "run_attempt": 1, "html_url": "https://github.com/szTheory/lockspire/actions/runs/200"}),
+                "LOCAL_TEST_COUNT": "240", "PASS_COUNT": "9", "WARN_COUNT": "0", "BLOCK_COUNT": "0",
+                "REQUIRED_CI_JOBS": json.dumps(jobs), "RELEASE_JOBS": json.dumps(release_jobs),
+                "REPOSITORY": "szTheory/lockspire", "REMOTE": "origin",
+                "INTEGRATION_AUTHORIZATION_JSON":
+                    '{"status":"pending","path":null,"sha256":null,"authorized_by":null,"authorized_at":null}',
+                "WARN_DISPOSITIONS_JSON": "[]",
+            })
+            command = '''source <(sed -n '/^emit_acceptance_receipt() {/,/^}/p' "$HELPER"); emit_acceptance_receipt'''
+            output = subprocess.run(("bash", "-c", command), cwd=repo, env=environment,
+                                    check=True, capture_output=True, text=True).stdout
+            receipt = json.loads(output)
+            self.assertEqual(receipt["synchronized_refs"],
+                             {"head": head, "local_main": head, "refreshed_origin_main": head})
+            self.assertEqual(receipt["required_ci"]["jobs"], jobs)
+            self.assertEqual(receipt["release_no_publish"]["jobs"], release_jobs)
+            self.assertEqual(receipt["integration_authorization"]["status"], "pending")
+            self.assertEqual(receipt["helper"]["sha256"], verifier_delivery.sha256(helper_copy))
+
+
+class BoundedInputAndNestedFieldContracts(unittest.TestCase):
+    def test_selected_evidence_producers_and_sources_are_covered(self) -> None:
+        required = {
+            "scripts/ci/provision_verifier_candidate.py",
+            "scripts/maintainer/repo_hygiene_check.sh",
+            "scripts/acceptance/clean_room/verifier_delivery.py",
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "scripts/acceptance/clean_room/package_input.py",
+            "scripts/ci/run_owned_source_tests.py",
+            "test/clean_room/provider_host/verifier_endpoints.exs",
+            "lib/lockspire/oban.ex",
+            "lib/lockspire/protocol/client_auth/client_secret_jwt.ex",
+        }
+        self.assertTrue(required.issubset(verifier_delivery.COVERED_INPUTS),
+                        "bounded frozen inputs omit a selected evidence producer or source")
+
+    def test_unknown_fields_at_every_closed_json_object_path_fail_for_all_26_cells(self) -> None:
+        fixture_root = ROOT / "test/fixtures/verifier-matrix-26"
+        files = sorted((*fixture_root.rglob("receipt.json"), *fixture_root.rglob("failure-receipt.json")))
+        self.assertEqual(len(files), 26, "expected full representative package matrix fixtures")
+
+        def object_paths(value, path=()):
+            if isinstance(value, dict):
+                yield path
+                for key, child in value.items():
+                    yield from object_paths(child, path + (key,))
+            elif isinstance(value, list):
+                for index, child in enumerate(value):
+                    yield from object_paths(child, path + (index,))
+
+        def inject(value, path):
+            node = value
+            for part in path:
+                node = node[part]
+            node["unknown_sensitive_contract_marker"] = "must-not-enter-receipts"
+
+        for fixture in files:
+            raw = json.loads(fixture.read_text(encoding="utf-8"))
+            if fixture.name == "failure-receipt.json":
+                for case_id, observation in raw["observations"].items():
+                    for path in object_paths(observation):
+                        mutated = json.loads(json.dumps(observation))
+                        inject(mutated, path)
+                        with self.subTest(file=fixture.relative_to(fixture_root).as_posix(), case=case_id, path=path):
+                            with self.assertRaises(verifier_receipts.ReceiptError):
+                                verifier_receipts.validate_failure_capture(mutated)
+                continue
+            if raw.get("schema") == "lockspire-installed-verifier-rollout-v1":
+                expected = {
+                    "expected_pair": raw["pair"], "expected_store": raw["store"],
+                    "expected_runner": raw["runner_revision"],
+                    "expected_candidate_source": raw["candidate"]["source_revision"],
+                    "expected_scope": raw["scope"],
+                }
+                validator = lambda value, expected=expected: verifier_receipts.validate_rollout_receipt(
+                    value, **expected,
+                )
+            else:
+                validator = verifier_receipts.validate_receipt
+            for path in object_paths(raw):
+                mutated = json.loads(json.dumps(raw))
+                inject(mutated, path)
+                with self.subTest(file=fixture.relative_to(fixture_root).as_posix(), path=path):
+                    with self.assertRaises(verifier_receipts.ReceiptError):
+                        validator(mutated)
+
     def test_frozen_owner_overrides_group_checkout_request(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -187,6 +389,20 @@ class ComposedMatrixContracts(unittest.TestCase):
             )
             self.assertEqual((result["executed_receipt_count"], result["passed_case_count"]), (26, 64))
             self.assertEqual(len(result["origins"]), 26)
+
+    def test_downloaded_candidate_archives_validate_actual_index_and_raw_receipt_bytes(self) -> None:
+        artifacts = ROOT / ".artifacts" / "phase178"
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            locked, floor, runner, candidate = self._pair_roots(Path(temporary))
+            for pair, root, expected in (("locked", locked, (14, 33)), ("floor", floor, (12, 31))):
+                archive_path = Path(temporary) / f"{pair}.zip"
+                with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_STORED) as archive:
+                    for path in sorted((root / "validated").iterdir()):
+                        archive.write(path, f"validated/{path.name}")
+                result = verifier_delivery._artifact_zip_pair(
+                    archive_path, pair=pair, runner=runner, candidate=candidate,
+                )
+                self.assertEqual((result["receipts"], result["cases"]), expected)
 
     def test_composition_rejects_changed_raw_receipt_bytes(self) -> None:
         artifacts = ROOT / ".artifacts" / "phase178"
@@ -351,8 +567,8 @@ class SemanticDeliveryRejections(unittest.TestCase):
             }
             (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
             with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"):
-                result = verifier_delivery.check("candidate", phase, phase, phase)
-            self.assertEqual(result["jobs"], 7)
+                with self.assertRaises(verifier_delivery.DeliveryError):
+                    verifier_delivery.check("candidate", phase, phase, phase)
             gates["jobs"][-1]["run_attempt"] = 1
             (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
             with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"), \
@@ -381,7 +597,8 @@ class SemanticDeliveryRejections(unittest.TestCase):
                         "next_action": "retain receipt", "main_acceptance_path": "178-MAIN-ACCEPTANCE.json",
                         "main_acceptance_sha256": hashlib.sha256(helper_bytes).hexdigest(), "main_sha": head}
             (phase / "178-HANDOFF.json").write_text(json.dumps(accepted), encoding="utf-8")
-            self.assertTrue(verifier_delivery.check("handoff", phase, phase, phase)["accepted_main"])
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("handoff", phase, phase, phase)
             helper["baseline_sha"] = "f" * 40
             changed_bytes = json.dumps(helper, sort_keys=True, separators=(",", ":")).encode() + b"\n"
             (phase / "178-MAIN-ACCEPTANCE.json").write_bytes(changed_bytes)

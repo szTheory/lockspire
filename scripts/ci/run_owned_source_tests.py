@@ -202,7 +202,9 @@ class OwnedSourceTests:
     def _invoke(self, stage: str, command: Sequence[str], timeout: int = 120) -> Result:
         if stage not in STAGES:
             raise GuardFailure("runner", "invalid_stage")
-        entry = {"stage": stage, "started_at": utc_now(), "state": "starting"}
+        command_intent = self._command_intent(stage, command)
+        entry = {"stage": stage, "command_intent": command_intent,
+                 "started_at": utc_now(), "state": "starting"}
         self.manifest["commands"].append(entry)
         self._save()  # Persist intent before launching any possible mutation.
 
@@ -251,6 +253,30 @@ class OwnedSourceTests:
             self.process_cleanup_confirmed = False
             raise GuardFailure(stage, "process_group_cleanup_unconfirmed")
         return result
+
+    @staticmethod
+    def _command_intent(stage: str, command: Sequence[str]) -> str:
+        """Persist a finite command identity without serializing argv or diagnostics."""
+        argv = tuple(command)
+        expected = {
+            ("source", ("git", "rev-parse", "HEAD")): "git_head",
+            ("source", ("git", "status", "--porcelain=v1", "--untracked-files=all")): "git_status",
+            ("preflight", ("mix", "run", "--no-start", "-e", PREFLIGHT)): "effective_repo_preflight",
+            ("catalog", ("psql",)): "database_catalog_identity",
+            ("identity", ("psql",)): "connected_database_identity",
+            ("create", ("mix", "ecto.create", "-r", REPO)): "create_owned_database",
+            ("migrate", ("mix", "ecto.migrate", "-r", REPO)): "migrate_owned_database",
+            ("ci", ("mix", "ci")): "canonical_ci_suite",
+            ("drop", ("mix", "ecto.drop", "-r", REPO)): "drop_owned_database",
+        }
+        for (expected_stage, prefix), intent in expected.items():
+            if stage == expected_stage and (argv == prefix if prefix[0] != "psql" else argv[:1] == prefix):
+                return intent
+        if stage == "test" and argv[:2] == ("mix", "test"):
+            return "selected_test_suite"
+        if stage == "test" and argv[:2] == (sys.executable, "-c"):
+            return "isolated_child_test_probe"
+        raise GuardFailure("runner", "unrecognized_command_intent")
 
     def _preflight(self) -> None:
         result = self._invoke("preflight", ["mix", "run", "--no-start", "-e", PREFLIGHT])

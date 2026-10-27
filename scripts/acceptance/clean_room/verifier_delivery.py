@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 from typing import Any
+import zipfile
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -64,6 +65,8 @@ COVERED_INPUTS = (
     "lib/lockspire/security/client_secret_verifier/context.ex",
     "lib/lockspire/security/client_secret_verifier/legacy.ex",
     "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+    "lib/lockspire/protocol/client_auth/client_secret_jwt.ex",
+    "lib/lockspire/oban.ex",
     "lib/lockspire/storage/client_lifetime.ex",
     "lib/lockspire/storage/client_store.ex",
     "lib/lockspire/storage/client_verifier_maintenance.ex",
@@ -90,8 +93,12 @@ COVERED_INPUTS = (
     "scripts/acceptance/clean_room_verifier_upgrade.py",
     "scripts/ci/run_verifier_upgrade_proof.sh",
     "scripts/ci/run_owned_source_tests.py",
+    "scripts/ci/provision_verifier_candidate.py",
+    "scripts/maintainer/repo_hygiene_check.sh",
     "scripts/ci/lint_workflows.sh",
     "test/acceptance/client_verifier_delivery_test.py",
+    "test/acceptance/client_verifier_wrapper_lifecycle_test.py",
+    "test/acceptance/client_verifier_wrapper_paths_test.py",
     "test/acceptance/client_verifier_disclosure_test.py",
     "test/acceptance/client_verifier_receipts_test.py",
     "test/acceptance/client_verifier_core_test.py",
@@ -120,6 +127,7 @@ COVERED_INPUTS = (
     "test/clean_room/provider_host/mix.exs",
     "test/clean_room/provider_host/mix.lock",
     "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex",
+    "test/clean_room/provider_host/verifier_endpoints.exs",
     "test/clean_room/provider_host/admin_proof.exs",
     "test/clean_room/provider_host/admin_proof_live_view.js",
     "test/clean_room/provider_host/lib/clean_room_provider/accounts.ex",
@@ -177,6 +185,15 @@ COVERED_INPUTS = (
     *(path for path, _digest in PHASE175_FROZEN_INPUTS),
 )
 
+# The receipt schemas and the verifier matrix fixtures are review/freeze inputs,
+# not merely test data. Keep this bounded to the named fixture directory.
+MATRIX_FIXTURE_INPUTS = tuple(
+    path.relative_to(ROOT).as_posix()
+    for path in sorted((ROOT / "test/fixtures/verifier-matrix-26").rglob("*.json"))
+)
+COVERED_INPUTS = (*COVERED_INPUTS, *MATRIX_FIXTURE_INPUTS)
+REVIEW_REQUIRED_FILES = frozenset(COVERED_INPUTS)
+
 
 class DeliveryError(ValueError):
     """A finite delivery evidence contract failed."""
@@ -215,6 +232,25 @@ def _safe_repo_file(value: str) -> Path:
     if not full.is_file():
         raise DeliveryError("covered input is missing or unsafe")
     return full
+
+
+def _safe_manifest_path(path: Path, phase_dir: Path) -> Path:
+    candidate = path if path.is_absolute() else ROOT / path
+    candidate = Path(os.path.abspath(candidate))
+    canonical = Path(os.path.abspath(phase_dir / "178-FROZEN-INPUTS.json"))
+    job_owned = Path(os.path.abspath(ARTIFACT_DEFAULT / "ci-candidate" / "178-FROZEN-INPUTS.json"))
+    if candidate not in {canonical, job_owned}:
+        raise DeliveryError("frozen input manifest path is outside its two owned locations")
+    current = ROOT
+    try:
+        relative = candidate.relative_to(ROOT)
+    except ValueError:
+        raise DeliveryError("frozen input manifest path is outside the repository") from None
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise DeliveryError("frozen input manifest path contains a symbolic link")
+    return candidate
 
 
 def verify_phase175_frozen_inputs() -> None:
@@ -351,6 +387,7 @@ def frozen_owner_document(
 def create_frozen_manifest(
     phase_dir: Path, archive: Path, package_root: Path, *, expected_runner: str,
     expected_candidate_source: str, expected_archive_sha256: str, expected_tree_sha256: str,
+    manifest_path: Path | None = None,
 ) -> Path:
     verify_phase175_frozen_inputs()
     owner = frozen_owner_document(
@@ -362,10 +399,11 @@ def create_frozen_manifest(
     rows = []
     for relative in COVERED_INPUTS:
         source = _safe_repo_file(relative)
-        if hashlib.sha256(subprocess.run(
+        committed = subprocess.run(
                 ("git", "show", f"HEAD:{relative}"), cwd=ROOT, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
-        ).stdout).hexdigest() != sha256(source):
+        )
+        if committed.returncode or hashlib.sha256(committed.stdout).hexdigest() != sha256(source):
             raise DeliveryError("covered inputs must be committed before freezing")
         rows.append({"path": relative, "sha256": sha256(source)})
     manifest = {
@@ -376,7 +414,8 @@ def create_frozen_manifest(
         "candidate_owner": owner,
         "covered_inputs": rows,
     }
-    target = phase_dir / "178-FROZEN-INPUTS.json"
+    target = _safe_manifest_path(manifest_path or (phase_dir / "178-FROZEN-INPUTS.json"), phase_dir)
+    target.parent.mkdir(parents=True, exist_ok=True)
     if target.exists() or target.is_symlink():
         raise DeliveryError("frozen input manifest already exists")
     target.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n", encoding="utf-8")
@@ -385,9 +424,16 @@ def create_frozen_manifest(
 
 def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
                              expected_candidate_source: str, expected_archive_sha256: str,
-                             expected_tree_sha256: str, expected_manifest_sha256: str) -> dict[str, Any]:
+                             expected_tree_sha256: str, expected_manifest_sha256: str,
+                             manifest_path: Path | None = None) -> dict[str, Any]:
     verify_phase175_frozen_inputs()
-    manifest_path = phase_dir / "178-FROZEN-INPUTS.json"
+    selected_manifest = os.environ.get("LOCKSPIRE_FROZEN_INPUTS")
+    manifest_path = _safe_manifest_path(
+        manifest_path or (Path(selected_manifest) if selected_manifest else phase_dir / "178-FROZEN-INPUTS.json"),
+        phase_dir,
+    )
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise DeliveryError("frozen input manifest is unavailable or unsafe")
     if sha256(manifest_path) != expected_manifest_sha256:
         raise DeliveryError("frozen manifest bytes differ from their independent caller pin")
     manifest = _read_json(manifest_path, "frozen input manifest")
@@ -400,6 +446,9 @@ def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
         raise DeliveryError("frozen runner differs from its independent caller pin")
     if _git("rev-parse", f"{runner}^{{tree}}") != manifest.get("runner_tree"):
         raise DeliveryError("frozen runner tree does not match its commit")
+    actual_head = _git("rev-parse", "HEAD")
+    if actual_head != runner and not _reviewed_revision_is_ancestor(runner, actual_head):
+        raise DeliveryError("executed checkout is unrelated to the independently pinned runner")
     rows = manifest.get("covered_inputs")
     expected_paths = list(COVERED_INPUTS)
     if not isinstance(rows, list) or [row.get("path") for row in rows if isinstance(row, dict)] != expected_paths:
@@ -408,10 +457,17 @@ def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
         path = _safe_repo_file(row["path"])
         if not isinstance(row.get("sha256"), str) or sha256(path) != row["sha256"]:
             raise DeliveryError("covered input bytes changed after freeze")
-        if hashlib.sha256(subprocess.run(
+        runner_blob = subprocess.run(
                 ("git", "show", f"{runner}:{row['path']}"), cwd=ROOT, stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
-        ).stdout).hexdigest() != row["sha256"]:
+        )
+        head_blob = subprocess.run(
+                ("git", "show", f"{actual_head}:{row['path']}"), cwd=ROOT, stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
+        )
+        if (runner_blob.returncode or head_blob.returncode
+                or hashlib.sha256(runner_blob.stdout).hexdigest() != row["sha256"]
+                or hashlib.sha256(head_blob.stdout).hexdigest() != row["sha256"]):
             raise DeliveryError("frozen input bytes are not owned by the tested runner commit")
     owner = manifest.get("candidate_owner")
     if not isinstance(owner, dict):
@@ -671,14 +727,36 @@ def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -
         if (not reviewed_match or reviewed_match.group(1) != reviewed_revision
                 or not reviewer_match or reviewer_match.group(1) != identity):
             raise DeliveryError("review judgment identity does not match its preserved report")
+        report_records = []
+        for block in re.findall(r"```json\s*(\{.*?\})\s*```", report_text, re.DOTALL):
+            try:
+                value = json.loads(block)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(value, dict) and {"reviewer_identity", "reviewed_revision", "verdict", "findings"} <= set(value):
+                report_records.append(value)
+        if len(report_records) != 1:
+            raise DeliveryError("review report lacks one structured judgment record")
+        report_record = report_records[0]
+        if (report_record.get("reviewer_identity") != identity
+                or report_record.get("reviewed_revision") != reviewed_revision
+                or report_record.get("reviewed_at") != lane.get("reviewed_at")
+                or report_record.get("verdict") != lane.get("verdict")
+                or report_record.get("findings") != lane.get("findings")
+                or report_record.get("reviewed_files") != lane.get("reviewed_files")):
+            raise DeliveryError("review record contradicts its preserved report judgment")
         files = lane.get("reviewed_files")
         if not isinstance(files, list) or not files:
             raise DeliveryError("reviewed source file scope is missing")
+        paths: set[str] = set()
         for item in files:
             if (not isinstance(item, dict) or set(item) != {"path", "sha256"}
                     or not isinstance(item["path"], str) or not SHA.fullmatch(str(item["sha256"]))):
                 raise DeliveryError("reviewed source file binding is malformed")
             path = _safe_repo_file(item["path"])
+            if item["path"] in paths:
+                raise DeliveryError("reviewed source scope contains a duplicate path")
+            paths.add(item["path"])
             if sha256(path) != item["sha256"]:
                 raise DeliveryError("reviewed source bytes changed after independent review")
             committed = subprocess.run(("git", "show", f"{reviewed_revision}:{item['path']}"), cwd=ROOT,
@@ -686,6 +764,9 @@ def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -
                                        stderr=subprocess.DEVNULL, check=False, timeout=10)
             if committed.returncode or hashlib.sha256(committed.stdout).hexdigest() != item["sha256"]:
                 raise DeliveryError("reviewed source bytes are not present at the reviewed revision")
+        required_review_files = set(COVERED_INPUTS) | set(MATRIX_FIXTURE_INPUTS)
+        if not required_review_files.issubset(paths):
+            raise DeliveryError("independent review omits required delivery source scope")
         findings = lane.get("findings")
         if not isinstance(findings, list):
             raise DeliveryError("review findings lack classified dispositions")
@@ -699,6 +780,8 @@ def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -
                     or not isinstance(finding.get("evidence"), str) or not finding["evidence"]
                     or not isinstance(finding.get("files"), list) or not finding["files"]):
                 raise DeliveryError("review finding classification is malformed")
+            if any(path not in paths for path in finding["files"]):
+                raise DeliveryError("review finding references a file outside its reviewed scope")
             if finding["status"] == "open":
                 raise DeliveryError("independent review has an unresolved finding")
             if finding["severity"] in {"critical", "high"} and finding["disposition"] != "rechecked-fixed":
@@ -796,6 +879,13 @@ def _owned_source_manifest(
            or item.get("process_group_stopped") is not True or item.get("exit_code") != 0
            for item in commands):
         raise DeliveryError("owned source guard has an incomplete command or process outcome")
+    allowed_intents = {
+        "git_head", "git_status", "effective_repo_preflight", "database_catalog_identity",
+        "connected_database_identity", "create_owned_database", "migrate_owned_database",
+        "canonical_ci_suite", "selected_test_suite", "isolated_child_test_probe", "drop_owned_database",
+    }
+    if any(item.get("command_intent") not in allowed_intents for item in commands):
+        raise DeliveryError("owned source guard command intent is missing or unrecognized")
     ci = [item for item in commands if item.get("stage") == "ci"]
     if len(ci) != 1:
         raise DeliveryError("owned source guard did not capture exactly one canonical CI command")
@@ -811,8 +901,24 @@ def _owned_source_manifest(
     for stage in ("create", "migrate", "ci", "drop"):
         if len([item for item in commands if item.get("stage") == stage]) != 1:
             raise DeliveryError("owned source guard omitted a required canonical stage")
-    if commands[-1].get("stage") != "drop":
-        raise DeliveryError("owned source guard cleanup was not the final captured command")
+    stages = [item.get("stage") for item in commands]
+    intents = [item.get("command_intent") for item in commands]
+    ci_index = stages.index("ci")
+    cleanup_indexes = [index for index, stage in enumerate(stages) if stage == "drop"]
+    if (len(cleanup_indexes) != 1 or cleanup_indexes[0] <= ci_index
+            or stages[cleanup_indexes[0] + 1:] != ["preflight", "catalog"]
+            or cleanup_indexes[0] < 3
+            or stages[cleanup_indexes[0] - 3:cleanup_indexes[0]] != ["preflight", "catalog", "identity"]):
+        raise DeliveryError("owned source guard cleanup sequence is incomplete")
+    drop_index = cleanup_indexes[0]
+    if (intents[ci_index] != "canonical_ci_suite"
+            or intents[drop_index] != "drop_owned_database"
+            or intents[drop_index - 3:drop_index] != [
+                "effective_repo_preflight", "database_catalog_identity", "connected_database_identity"]
+            or intents[drop_index + 1:] != ["effective_repo_preflight", "database_catalog_identity"]
+            or intents[-4:] != ["connected_database_identity", "drop_owned_database",
+                                "effective_repo_preflight", "database_catalog_identity"]):
+        raise DeliveryError("owned source guard command intent order is invalid")
     return manifest
 
 
@@ -1034,8 +1140,119 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
     return candidate
 
 
+def _github_json(endpoint: str) -> dict[str, Any]:
+    result = subprocess.run(("gh", "api", endpoint), cwd=ROOT, stdin=subprocess.DEVNULL,
+                            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                            check=False, timeout=30)
+    if result.returncode:
+        raise DeliveryError("authoritative hosted observation is unavailable")
+    try:
+        value = json.loads(result.stdout, object_pairs_hook=_unique_object)
+    except (UnicodeError, ValueError):
+        raise DeliveryError("authoritative hosted observation is malformed") from None
+    if not isinstance(value, dict):
+        raise DeliveryError("authoritative hosted observation is malformed")
+    return value
+
+
+def _github_repository() -> str:
+    remote = _git("remote", "get-url", "origin")
+    match = re.fullmatch(r"(?:https://github\.com/|git@github\.com:)([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+?)(?:\.git)?", remote)
+    if not match:
+        raise DeliveryError("authoritative repository identity is unavailable")
+    return match.group(1)
+
+
+def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
+                       candidate: tuple[str, str, str]) -> dict[str, int]:
+    from verifier_receipts import validate_receipt, validate_rollout_receipt
+
+    expected_receipts, expected_cases = (14, 33) if pair == "locked" else (12, 31)
+    expected_keys = {key for key in REQUIRED_MATRIX if key[1] == pair}
+    try:
+        with zipfile.ZipFile(path) as archive:
+            infos = archive.infolist()
+            names = [info.filename for info in infos]
+            if len(names) != len(set(names)) or any(
+                    Path(name).is_absolute() or ".." in Path(name).parts
+                    or stat.S_IFMT(info.external_attr >> 16) == stat.S_IFLNK
+                    for name, info in zip(names, infos, strict=True)):
+                raise DeliveryError("downloaded candidate artifact archive contains unsafe paths")
+            index_names = [name for name in names if Path(name).name == "index.json"]
+            if len(index_names) != 1:
+                raise DeliveryError("downloaded candidate artifact index is missing or duplicated")
+            index = json.loads(archive.read(index_names[0]), object_pairs_hook=_unique_object)
+            if (not isinstance(index, dict) or index.get("schema") != "lockspire-installed-verifier-pair-v1"
+                    or index.get("pair") != pair or index.get("runner_revision") != runner
+                    or index.get("candidate_source_archive_tree") != list(candidate)
+                    or index.get("required_receipts") != expected_receipts
+                    or index.get("executed_receipts") != expected_receipts
+                    or index.get("required_cases") != expected_cases
+                    or index.get("passed_cases") != expected_cases or index.get("failed_cases") != 0):
+                raise DeliveryError("downloaded candidate artifact index has a substituted identity")
+            cells = index.get("cells")
+            if not isinstance(cells, list) or len(cells) != expected_receipts:
+                raise DeliveryError("downloaded candidate artifact cell set is incomplete")
+            seen: set[tuple[str, str, str]] = set()
+            expected_members = {index_names[0]}
+            for row in cells:
+                if not isinstance(row, dict):
+                    raise DeliveryError("downloaded candidate artifact cell is malformed")
+                key = (row.get("scope"), row.get("pair"), row.get("store"))
+                if key not in expected_keys or key in seen:
+                    raise DeliveryError("downloaded candidate artifact has an extra or duplicate cell")
+                seen.add(key)
+                raw_name = "failure-receipt.json" if key[0] == "disclosure-failure" else "receipt.json"
+                safe_name = f"{key[0]}-{pair}-{key[2]}-{raw_name}"
+                members = [name for name in names if Path(name).name == safe_name]
+                if len(members) != 1:
+                    raise DeliveryError("downloaded candidate artifact raw receipt is missing or duplicated")
+                member = members[0]
+                expected_members.add(member)
+                raw = archive.read(member)
+                if row.get("receipt_sha256") != hashlib.sha256(raw).hexdigest():
+                    raise DeliveryError("downloaded candidate artifact receipt digest differs from its bytes")
+                receipt = json.loads(raw, object_pairs_hook=_unique_object)
+                rollout = isinstance(receipt, dict) and receipt.get("schema") == "lockspire-installed-verifier-rollout-v1"
+                case_ids = expected_case_ids(key)
+                if (not isinstance(receipt, dict) or receipt.get("scope") != key[0]
+                        or receipt.get("pair") != pair or receipt.get("store") != key[2]
+                        or receipt.get("run_id") != row.get("run_id")
+                        or receipt.get("executed_count") != row.get("executed_count")
+                        or row.get("outcome") != "pass" or row.get("stable_case_ids") != case_ids
+                        or row.get("runner_revision") != runner
+                        or row.get("candidate_source_archive_tree") != list(candidate)):
+                    raise DeliveryError("downloaded candidate artifact cell summary differs from raw evidence")
+                if rollout:
+                    validate_rollout_receipt(receipt, expected_pair=pair, expected_store=key[2],
+                                              expected_runner=runner,
+                                              expected_candidate_source=candidate[0],
+                                              expected_scope=key[0])
+                else:
+                    validate_receipt(receipt, expected_pair=pair, expected_store=key[2])
+            if seen != expected_keys or set(names) != expected_members:
+                raise DeliveryError("downloaded candidate artifact file set is not the exact validated package partition")
+            return {"receipts": len(seen), "cases": expected_cases}
+    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, ReceiptError, KeyError, TypeError):
+        raise DeliveryError("downloaded candidate artifact bytes are invalid") from None
+
+
 def _check_candidate(phase_dir: Path) -> dict[str, Any]:
     identity = _check_candidate_identity(phase_dir)
+    source_record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
+    source_pins = {
+        "expected_runner": source_record.get("tested_source_revision"),
+        "expected_candidate_source": source_record.get("candidate_source_revision"),
+        "expected_archive_sha256": source_record.get("candidate_archive_sha256"),
+        "expected_tree_sha256": source_record.get("candidate_tree_sha256"),
+        "expected_manifest_sha256": source_record.get("frozen_manifest_sha256"),
+    }
+    if (not isinstance(source_pins["expected_runner"], str)
+            or not isinstance(source_pins["expected_candidate_source"], str)
+            or any(not isinstance(source_pins[key], str) for key in (
+                "expected_archive_sha256", "expected_tree_sha256", "expected_manifest_sha256"))):
+        raise DeliveryError("candidate source acceptance lacks independently frozen source pins")
+    _check_source(phase_dir, ARTIFACT_DEFAULT / "final-locked", ARTIFACT_DEFAULT / "final-floor", source_pins)
     gates = _read_json(phase_dir / "178-CANDIDATE-GATES.json", "candidate hosted gates")
     gate_fields = {"schema", "workflow_path", "event", "run_id", "run_attempt",
                    "executed_checkout_sha", "runner_sha", "package_source_sha",
@@ -1074,18 +1291,71 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
     if (not isinstance(artifacts, list) or len(artifacts) != 2
             or {row.get("pair") for row in artifacts if isinstance(row, dict)} != {"locked", "floor"}
             or any(not isinstance(row, dict) or set(row) != {
-                "pair", "name", "artifact_id", "sha256", "raw_index_sha256", "receipt_count", "case_count",
+                "pair", "name", "artifact_id", "archive_path",
             } or row.get("name") != f"lockspire-verifier-upgrade-{identity['executed_checkout_sha']}-{row.get('pair')}"
                 or not isinstance(row.get("artifact_id"), int) or row["artifact_id"] <= 0
-                or not isinstance(row.get("sha256"), str) or not SHA.fullmatch(row["sha256"])
-                or not isinstance(row.get("raw_index_sha256"), str) or not SHA.fullmatch(row["raw_index_sha256"])
-                or row.get("receipt_count") != (14 if row.get("pair") == "locked" else 12)
-                or row.get("case_count") != (33 if row.get("pair") == "locked" else 31)
+                or row.get("archive_path") != (
+                    f".artifacts/phase178/candidate-downloads/{identity['run_id']}-{identity['run_attempt']}/"
+                    f"{row.get('pair')}.zip")
                 for row in artifacts)):
-        raise DeliveryError("candidate hosted package artifacts are incomplete or unauthenticated")
+        raise DeliveryError("candidate hosted package artifact selection is malformed")
     if not isinstance(gates.get("failed_attempts"), list):
         raise DeliveryError("candidate hosted failed-attempt history is malformed")
-    return {"jobs": len(jobs), "run_id": identity["run_id"], "run_attempt": identity["run_attempt"]}
+    repository = _github_repository()
+    run_endpoint = f"repos/{repository}/actions/runs/{identity['run_id']}/attempts/{identity['run_attempt']}"
+    observed_run = _github_json(run_endpoint)
+    if (observed_run.get("id") != int(identity["run_id"])
+            or observed_run.get("run_attempt") != identity["run_attempt"]
+            or observed_run.get("head_sha") != identity["executed_checkout_sha"]
+            or observed_run.get("event") != identity["event"]
+            or observed_run.get("path") != identity["workflow_path"]
+            or observed_run.get("status") != "completed" or observed_run.get("conclusion") != "success"
+            or not isinstance(observed_run.get("repository"), dict)
+            or observed_run["repository"].get("full_name") != repository):
+        raise DeliveryError("candidate run does not match authoritative hosted observation")
+    observed_jobs = _github_json(
+        f"{run_endpoint}/jobs?per_page=100"
+    ).get("jobs")
+    if not isinstance(observed_jobs, list) or len(observed_jobs) != len(CANONICAL_CI_JOBS):
+        raise DeliveryError("candidate run job graph is not authoritatively complete")
+    for name, claimed, observed in zip(CANONICAL_CI_JOBS, jobs, observed_jobs, strict=True):
+        if (not isinstance(observed, dict) or observed.get("name") != name
+                or observed.get("id") != claimed["job_id"]
+                or observed.get("run_id") != int(identity["run_id"])
+                or observed.get("run_attempt") != identity["run_attempt"]
+                or observed.get("head_sha") != identity["executed_checkout_sha"]
+                or observed.get("status") != "completed" or observed.get("conclusion") != "success"):
+            raise DeliveryError("candidate job claim differs from authoritative hosted observation")
+    observed_artifacts = _github_json(
+        f"repos/{repository}/actions/runs/{identity['run_id']}/artifacts?per_page=100"
+    ).get("artifacts")
+    if not isinstance(observed_artifacts, list):
+        raise DeliveryError("candidate artifact ownership observation is unavailable")
+    candidate_owner = (identity["package_source_sha"], identity["package_archive_sha256"],
+                       identity["package_tree_sha256"])
+    artifact_results = {}
+    for row in artifacts:
+        observed = [item for item in observed_artifacts if isinstance(item, dict)
+                    and item.get("id") == row["artifact_id"]]
+        if (len(observed) != 1 or observed[0].get("name") != row["name"]
+                or observed[0].get("expired") is not False
+                or not isinstance(observed[0].get("digest"), str)
+                or not re.fullmatch(r"sha256:[0-9a-f]{64}", observed[0]["digest"])):
+            raise DeliveryError("candidate artifact ID is not owned by the observed hosted run")
+        owner_job = "Integration Checks" if row["pair"] == "locked" else "Minimum Supported Elixir/OTP"
+        if owner_job not in {job.get("name") for job in observed_jobs if isinstance(job, dict)}:
+            raise DeliveryError("candidate artifact owner job is missing from the observed run")
+        archive_path = _safe_repo_file(row["archive_path"])
+        if sha256(archive_path) != observed[0]["digest"].split(":", 1)[1]:
+            raise DeliveryError("downloaded candidate artifact archive digest differs from hosted owner metadata")
+        artifact_results[row["pair"]] = _artifact_zip_pair(
+            archive_path, pair=row["pair"], runner=identity["runner_sha"], candidate=candidate_owner,
+        )
+    if (artifact_results.get("locked") != {"receipts": 14, "cases": 33}
+            or artifact_results.get("floor") != {"receipts": 12, "cases": 31}):
+        raise DeliveryError("candidate uploaded package artifacts do not contain the exact raw matrix partitions")
+    return {"jobs": len(jobs), "run_id": identity["run_id"],
+            "run_attempt": identity["run_attempt"], "artifacts": artifact_results}
 
 
 def _check_handoff(phase_dir: Path) -> dict[str, Any]:
@@ -1117,24 +1387,130 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
     main_sha = handoff.get("main_sha")
     if not isinstance(main_sha, str) or not REVISION.fullmatch(main_sha):
         raise DeliveryError("accepted-main revision is malformed")
+    root_fields = {
+        "schema", "baseline_sha", "repository", "observed_at", "helper", "synchronized_refs",
+        "integration_authorization", "local_gate", "hygiene", "required_ci",
+        "release_no_publish", "warn_dispositions", "supplemental_oidf",
+    }
+    if set(receipt) != root_fields or receipt.get("schema") != "lockspire-phase-139-acceptance-v1":
+        raise DeliveryError("accepted-main helper receipt is not the complete current helper schema")
+    if receipt.get("baseline_sha") != main_sha:
+        raise DeliveryError("accepted-main helper receipt does not match its declared main")
+    repo = receipt.get("repository")
+    if not isinstance(repo, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
+        raise DeliveryError("accepted-main helper repository identity is invalid")
+    refs = receipt.get("synchronized_refs")
+    if (not isinstance(refs, dict) or set(refs) != {"head", "local_main", "refreshed_origin_main"}
+            or any(refs.get(key) != main_sha for key in refs)):
+        raise DeliveryError("accepted-main helper did not preserve synchronized main refs")
+    live_refs = (_git("rev-parse", "HEAD"), _git("rev-parse", "main"), _git("rev-parse", "origin/main"))
+    if live_refs != (main_sha, main_sha, main_sha):
+        raise DeliveryError("live HEAD, local main, and refreshed origin/main are not synchronized")
+    helper = receipt.get("helper")
+    helper_path = "scripts/maintainer/repo_hygiene_check.sh"
+    if (not isinstance(helper, dict) or set(helper) != {"path", "sha256", "mode", "mix_ci", "format"}
+            or helper.get("path") != helper_path or helper.get("mode") != "local_exact_acceptance"
+            or helper.get("mix_ci") is not True or helper.get("format") != "json"
+            or not isinstance(helper.get("sha256"), str) or not SHA.fullmatch(helper["sha256"])
+            or _blob_sha(main_sha, helper_path) != helper["sha256"]):
+        raise DeliveryError("accepted-main helper execution identity is not bound to main source")
+    try:
+        datetime.fromisoformat(receipt["observed_at"].replace("Z", "+00:00"))
+    except (TypeError, ValueError, AttributeError):
+        raise DeliveryError("accepted-main helper observation time is invalid") from None
     local_gate = receipt.get("local_gate")
+    hygiene = receipt.get("hygiene")
+    if (not isinstance(local_gate, dict) or set(local_gate) != {"status", "exunit_tests"}
+            or local_gate.get("status") != "pass" or type(local_gate.get("exunit_tests")) is not int
+            or local_gate["exunit_tests"] <= 0
+            or not isinstance(hygiene, dict) or set(hygiene) != {"status", "pass", "warn", "block"}
+            or hygiene.get("status") != "pass" or type(hygiene.get("pass")) is not int
+            or type(hygiene.get("warn")) is not int or type(hygiene.get("block")) is not int
+            or min(hygiene["pass"], hygiene["warn"], hygiene["block"]) < 0 or hygiene["block"] != 0):
+        raise DeliveryError("accepted-main helper local gate or hygiene summary is incomplete")
+    dispositions = receipt.get("warn_dispositions")
+    if (not isinstance(dispositions, list) or len(dispositions) != hygiene["warn"]
+            or any(not isinstance(row, dict) or set(row) != {"label", "disposition"}
+                   or not isinstance(row.get("label"), str) or not row["label"]
+                   or not isinstance(row.get("disposition"), str)
+                   or not re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", row["disposition"])
+                   for row in dispositions)
+            or len({row["label"] for row in dispositions}) != len(dispositions)):
+        raise DeliveryError("accepted-main helper warning dispositions are incomplete")
+    authorization = receipt.get("integration_authorization")
+    auth_fields = {"status", "path", "sha256", "authorized_by", "authorized_at"}
+    if (not isinstance(authorization, dict) or set(authorization) != auth_fields
+            or authorization.get("status") != "authorized"
+            or authorization.get("path") != f".planning/phases/{PHASE_NAME}/178-INTEGRATION-AUTHORIZATION.json"
+            or not isinstance(authorization.get("sha256"), str) or not SHA.fullmatch(authorization["sha256"])
+            or not isinstance(authorization.get("authorized_by"), str) or len(authorization["authorized_by"]) < 3
+            or not isinstance(authorization.get("authorized_at"), str)):
+        raise DeliveryError("accepted-main helper lacks explicit integration authorization custody")
+    auth_path = ROOT / authorization["path"]
+    auth_record = _read_json(auth_path, "integration authorization record")
+    if (sha256(auth_path) != authorization["sha256"]
+            or set(auth_record) != {"schema", "status", "candidate_sha", "authorized_by", "authorized_at"}
+            or auth_record.get("schema") != "lockspire-phase178-integration-authorization-v1"
+            or auth_record.get("status") != "authorized" or auth_record.get("candidate_sha") != main_sha
+            or auth_record.get("authorized_by") != authorization["authorized_by"]
+            or auth_record.get("authorized_at") != authorization["authorized_at"]):
+        raise DeliveryError("integration authorization custody bytes do not match helper output")
     required_ci = receipt.get("required_ci")
     release = receipt.get("release_no_publish")
-    if (receipt.get("schema") != "lockspire-phase-139-acceptance-v1"
-            or receipt.get("baseline_sha") != main_sha
-            or not isinstance(local_gate, dict) or local_gate.get("status") != "pass"
-            or not isinstance(required_ci, dict) or required_ci.get("status") != "pass"
-            or required_ci.get("event") != "push" or required_ci.get("conclusion") != "success"
-            or not isinstance(release, dict) or release.get("status") != "pass"
-            or release.get("outcome") != "no_publish"):
-        raise DeliveryError("accepted-main helper receipt does not prove the required main gate")
+    _validate_helper_graph(required_ci, repo=repo, sha=main_sha, release=False)
+    _validate_helper_graph(release, repo=repo, sha=main_sha, release=True)
+    supplemental = receipt.get("supplemental_oidf")
+    if supplemental != {"classification": "supplemental_non_certifying", "required_gate": False}:
+        raise DeliveryError("supplemental non-certifying evidence classification changed")
     candidate = _check_candidate_identity(phase_dir)
+    _check_candidate(phase_dir)
     ancestor = subprocess.run(("git", "merge-base", "--is-ancestor", candidate["reviewed_head_sha"], main_sha),
                               cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                               stderr=subprocess.DEVNULL, check=False, timeout=20)
     if ancestor.returncode:
         raise DeliveryError("accepted main does not contain the reviewed candidate")
     return {"accepted_main": True, "main_sha": main_sha, "helper_sha256": handoff["main_acceptance_sha256"]}
+
+
+def _validate_helper_graph(graph: Any, *, repo: str, sha: str, release: bool) -> None:
+    names = (
+        ("Maintain Release Please PR", "Validate exact main head and CI evidence",
+         "Prove exact package before publication", "Publish verified release to Hex",
+         "Verify public install truth", "Record terminal release outcome")
+        if release else CANONICAL_CI_JOBS
+    )
+    expected_status = {
+        "Maintain Release Please PR": "success",
+        "Validate exact main head and CI evidence": "skipped",
+        "Prove exact package before publication": "skipped",
+        "Publish verified release to Hex": "skipped",
+        "Verify public install truth": "skipped",
+        "Record terminal release outcome": "skipped",
+    } if release else {name: "success" for name in names}
+    fields = {"status", "run_id", "run_attempt", "workflow_path", "head_sha",
+              "event", "conclusion", "url", "jobs"}
+    expected_workflow = ".github/workflows/release.yml" if release else ".github/workflows/ci.yml"
+    if (not isinstance(graph, dict) or set(graph) != fields
+            or graph.get("status") != "pass" or graph.get("head_sha") != sha
+            or graph.get("workflow_path") != expected_workflow or graph.get("event") != "push"
+            or graph.get("conclusion") != "success" or type(graph.get("run_id")) is not int
+            or graph["run_id"] <= 0 or type(graph.get("run_attempt")) is not int
+            or graph["run_attempt"] <= 0
+            or graph.get("url") != f"https://github.com/{repo}/actions/runs/{graph.get('run_id')}"):
+        raise DeliveryError("accepted-main helper workflow graph identity is incomplete")
+    jobs = graph.get("jobs")
+    job_fields = {"name", "id", "run_id", "run_attempt", "head_sha", "status", "conclusion"}
+    if not isinstance(jobs, list) or len(jobs) != len(names):
+        raise DeliveryError("accepted-main helper workflow job graph is incomplete")
+    job_ids: set[int] = set()
+    for expected_name, job in zip(names, jobs, strict=True):
+        if (not isinstance(job, dict) or set(job) != job_fields or job.get("name") != expected_name
+                or type(job.get("id")) is not int or job["id"] <= 0 or job["id"] in job_ids
+                or job.get("run_id") != graph["run_id"] or job.get("run_attempt") != graph["run_attempt"]
+                or job.get("head_sha") != sha or job.get("status") != "completed"
+                or job.get("conclusion") != expected_status[expected_name]):
+            raise DeliveryError("accepted-main helper workflow job is mixed, missing, or failed")
+        job_ids.add(job["id"])
 
 
 def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path,
@@ -1183,6 +1559,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--expected-archive-sha256")
     parser.add_argument("--expected-tree-sha256")
     parser.add_argument("--expected-manifest-sha256")
+    parser.add_argument("--manifest-path", type=Path)
     return parser.parse_args(argv)
 
 
@@ -1214,7 +1591,7 @@ def main(argv: list[str] | None = None) -> int:
             pins = _frozen_pins(args, require_manifest=False)
             target = create_frozen_manifest(
                 args.phase_dir.resolve(), args.archive.resolve(), args.extracted_tree.resolve(),
-                **pins,
+                **pins, manifest_path=args.manifest_path,
             )
             print(json.dumps({"frozen": True, "manifest": str(target.relative_to(ROOT)),
                               "manifest_sha256": sha256(target)}, sort_keys=True))

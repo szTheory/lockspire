@@ -89,7 +89,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             result = self.invoke("--pair", "mystery", "--receipt-dir", str(destination))
             self.assertNotEqual(result.returncode, 0)
             self.assertFalse(destination.exists())
-            self.assertNotIn("client_secret", result.stdout + result.stderr)
+            self.assertTrue("client_secret" not in result.stdout + result.stderr,
+                            "captured child output must remain private")
 
     def test_unsafe_and_stale_production_paths_fail_before_mutation(self) -> None:
         temporary, root = self.temporary_repo()
@@ -137,7 +138,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         try:
             stdout, stderr = process.communicate(timeout=8)
             self.assertNotEqual(process.returncode, 0)
-            self.assertNotIn("SECRET_SENTINEL", stdout + stderr)
+            self.assertTrue("SECRET_SENTINEL" not in stdout + stderr,
+                            "captured child output must remain private")
             self.assertFalse(receipt_dir.exists())
         finally:
             temporary.cleanup()
@@ -185,7 +187,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         try:
             stdout, stderr = process.communicate(timeout=8)
             self.assertEqual(process.returncode, 78)
-            self.assertNotIn("fake success", stdout + stderr)
+            self.assertTrue("fake success" not in stdout + stderr,
+                            "captured child output must remain private")
             self.assertIn("cannot create or validate", stderr)
             self.assertFalse(receipt_dir.exists())
         finally:
@@ -214,6 +217,7 @@ class VerifierCiWrapperContracts(unittest.TestCase):
     def test_unconfirmed_process_group_cleanup_fails_even_after_direct_child_exit(self) -> None:
         with tempfile.TemporaryDirectory(prefix="lockspire-verifier-grandchild-") as temporary_root:
             grandchild_pid_file = Path(temporary_root) / "grandchild.pid"
+            root_pid_file = Path(temporary_root) / "wrapper-root.pid"
             body = (
                 "import os, subprocess, sys, time\n"
                 "grandchild = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(15)'])\n"
@@ -222,28 +226,41 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             )
             temporary, process, receipt_dir = self.fake_invocation(
                 body, timeout=1, overall_timeout=10, grandchild_pid_file=grandchild_pid_file,
-                force_group_denial=True,
+                pid_file=root_pid_file, force_group_denial=True,
             )
             try:
                 _stdout, stderr = process.communicate(timeout=8)
                 self.assertEqual(process.returncode, 125, stderr)
                 self.assertIn("cleanup unconfirmed", stderr)
                 self.assertFalse(receipt_dir.exists())
+                wrapper_root_pid = int(root_pid_file.read_text(encoding="ascii"))
                 grandchild_pid = int(grandchild_pid_file.read_text(encoding="ascii"))
-                os.kill(grandchild_pid, signal.SIGKILL)
-                deadline = time.monotonic() + 2
-                while time.monotonic() < deadline:
-                    try:
-                        os.kill(grandchild_pid, 0)
-                    except ProcessLookupError:
-                        break
-                    time.sleep(0.05)
-                else:
-                    self.fail("test-owned grandchild did not stop after exact-PID cleanup")
             finally:
                 if process.poll() is None:
                     process.kill()
                     process.wait(timeout=2)
+                for owned_pid in (locals().get("grandchild_pid"), locals().get("wrapper_root_pid")):
+                    if owned_pid is not None:
+                        try:
+                            os.kill(owned_pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    live = []
+                    for owned_pid in (locals().get("grandchild_pid"), locals().get("wrapper_root_pid")):
+                        if owned_pid is None:
+                            continue
+                        try:
+                            os.kill(owned_pid, 0)
+                            live.append(owned_pid)
+                        except ProcessLookupError:
+                            pass
+                    if not live:
+                        break
+                    time.sleep(0.05)
+                else:
+                    self.fail("test-owned wrapper and descendant did not stop after exact-PID cleanup")
                 temporary.cleanup()
 
 

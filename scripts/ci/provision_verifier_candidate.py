@@ -15,7 +15,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 import verifier_delivery  # noqa: E402
-from package_input import package_tree_digest, sha256, unpack_hex_tarball  # noqa: E402
+from package_input import package_tree_digest, package_version, sha256, unpack_hex_tarball  # noqa: E402
 
 REVISION = re.compile(r"[0-9a-f]{40,64}\Z")
 
@@ -73,7 +73,8 @@ def validate_checkout_pins(repo_root: Path, expected_runner: str,
         raise ValueError("workflow pins do not identify this clean job checkout")
 
 
-def provision(expected_runner: str, expected_candidate_source: str) -> dict[str, str]:
+def provision(expected_runner: str, expected_candidate_source: str,
+              manifest_path: Path | None = None) -> dict[str, str]:
     validate_checkout_pins(ROOT, expected_runner, expected_candidate_source)
     covered_input_relation(ROOT, expected_runner, expected_candidate_source,
                            list(verifier_delivery.COVERED_INPUTS))
@@ -82,7 +83,7 @@ def provision(expected_runner: str, expected_candidate_source: str) -> dict[str,
     if artifact_root.is_symlink() or artifact_root.exists():
         raise ValueError("job candidate artifact path is stale or unsafe")
     artifact_root.mkdir(parents=True, mode=0o700)
-    archive = artifact_root / "lockspire.tar"
+    archive = artifact_root / f"lockspire-{package_version(ROOT)}.tar"
     extracted = artifact_root / "lockspire"
     with tempfile.TemporaryDirectory(prefix="lockspire-ci-candidate-") as temporary:
         temp_root = Path(temporary)
@@ -109,6 +110,7 @@ def provision(expected_runner: str, expected_candidate_source: str) -> dict[str,
     unpack_hex_tarball(archive, extracted)
     archive_digest = sha256(archive)
     tree_digest = package_tree_digest(extracted)
+    selected_manifest = manifest_path or (artifact_root / "178-FROZEN-INPUTS.json")
     manifest = verifier_delivery.create_frozen_manifest(
         ROOT / ".planning" / "phases" / verifier_delivery.PHASE_NAME,
         archive, extracted,
@@ -116,6 +118,7 @@ def provision(expected_runner: str, expected_candidate_source: str) -> dict[str,
         expected_candidate_source=expected_candidate_source,
         expected_archive_sha256=archive_digest,
         expected_tree_sha256=tree_digest,
+        manifest_path=selected_manifest,
     )
     pins = {
         "expected_runner": expected_runner,
@@ -125,7 +128,8 @@ def provision(expected_runner: str, expected_candidate_source: str) -> dict[str,
         "expected_manifest_sha256": sha256(manifest),
     }
     verifier_delivery.validate_frozen_manifest(
-        ROOT / ".planning" / "phases" / verifier_delivery.PHASE_NAME, **pins,
+        ROOT / ".planning" / "phases" / verifier_delivery.PHASE_NAME,
+        manifest_path=manifest, **pins,
     )
     return pins
 
@@ -135,9 +139,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-runner", required=True)
     parser.add_argument("--expected-candidate-source", required=True)
     parser.add_argument("--github-output", type=Path)
+    parser.add_argument("--manifest-path", type=Path,
+                        default=Path(".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json"))
     args = parser.parse_args(argv)
     try:
-        pins = provision(args.expected_runner, args.expected_candidate_source)
+        pins = provision(args.expected_runner, args.expected_candidate_source,
+                         args.manifest_path if args.manifest_path.is_absolute()
+                         else ROOT / args.manifest_path)
         rows = {key: pins[key] for key in (
             "expected_runner", "expected_candidate_source", "expected_archive_sha256",
             "expected_tree_sha256", "expected_manifest_sha256",

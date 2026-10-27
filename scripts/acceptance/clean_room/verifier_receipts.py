@@ -409,6 +409,9 @@ def validate_rollout_receipt(
         observations = receipt.get("observations")
         if not isinstance(observations, dict) or set(observations) != ROLLOUT_OBSERVATION_FIELDS:
             raise ReceiptError("rollout observation fields are outside the finite contract")
+        if receipt.get("fleet_limits") != [
+                "fleet parity", "fleet quiescence", "backup availability", "rollback safety"]:
+            raise ReceiptError("rollout fleet limitation declarations are outside the fixed contract")
         truth_fields = {
             "old_process_exit_observed", "legacy_write_read_shared_store", "dedicated_write_after_drain",
             "switch_back_legacy_write_preserves_dedicated", "old_code_rejects_dedicated",
