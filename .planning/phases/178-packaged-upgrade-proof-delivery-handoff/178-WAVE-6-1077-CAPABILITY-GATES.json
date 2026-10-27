@@ -1,0 +1,54 @@
+{
+  "phase": 178,
+  "wave": 6,
+  "point": "execute:wave:post",
+  "runtime": "@opengsd/gsd-core 1.18.0",
+  "observed_metadata_head": "a5862766329bdb1a1fbc55128dcfc79d8f341087",
+  "tested_execution_head": "90d17f1741970287f6299eca6e6dc6865a64ae9c",
+  "selected_rows": 1077,
+  "canonical_scope_sha256": "f0b319d52ed30e640029ce983283d2fee4809aad9a3addacb1e7dac05aad5900",
+  "reason": "Current 1077-input qualification after controlled main sync and the equivalent-case correction.",
+  "dispatch": "Active hooks were rendered and inspected. The three fixed literal checks ran sequentially in manifest order; no arbitrary hook shell text was interpolated.",
+  "checks": [
+    {
+      "query": "verify.schema-drift",
+      "exit_code": 0,
+      "result": {
+        "block": false,
+        "drift_detected": false,
+        "blocking": false,
+        "schema_files": [],
+        "orms": [],
+        "unpushed_orms": [],
+        "message": "",
+        "skipped": false
+      }
+    },
+    {
+      "query": "verify.codebase-drift",
+      "exit_code": 0,
+      "result": {
+        "block": false,
+        "skipped": true,
+        "reason": "no-structure-md",
+        "action_required": false,
+        "directive": "none",
+        "elements": []
+      }
+    },
+    {
+      "query": "ui.safety-gate",
+      "exit_code": 0,
+      "result": {
+        "frontend": true,
+        "hasUiFiles": false,
+        "hasUiSpec": false,
+        "block": false
+      }
+    }
+  ],
+  "wave_blocked": false,
+  "phase_complete": false,
+  "remote_mutations_authorized": false,
+  "prior_wave_record": "178-WAVE-6-CAPABILITY-GATES.json"
+}
