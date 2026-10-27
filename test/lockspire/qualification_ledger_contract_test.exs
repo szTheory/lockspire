@@ -611,6 +611,64 @@ defmodule Lockspire.QualificationLedgerContractTest do
            "a different execution source must not replace the retained ledger snapshot"
   end
 
+  test "malformed frozen input paths return fixed rejections without raising" do
+    ledger = load_ledger()
+    source = load_frozen_input_source()
+    known_path = "test/test_helper.exs"
+
+    invalid_paths =
+      Enum.map(0..31, &(known_path <> <<&1>>)) ++
+        [
+          known_path <> <<127>>,
+          known_path <> <<255>>,
+          "",
+          " ",
+          "/" <> known_path,
+          "../" <> known_path,
+          "./" <> known_path,
+          "test/../test_helper.exs",
+          "test//test_helper.exs",
+          "test\\test_helper.exs"
+        ]
+
+    for path <- invalid_paths do
+      rejected? =
+        try do
+          frozen_source_file(source["source_revision"], path) == :error
+        rescue
+          _ -> false
+        end
+
+      assert rejected?, "malformed frozen input paths must reject without raising"
+    end
+
+    entry_index = Enum.find_index(ledger["matrix"]["input_manifest"], &(&1["path"] == known_path))
+
+    for path <- [
+          known_path <> <<0>>,
+          known_path <> <<10>>,
+          known_path <> <<255>>,
+          "../" <> known_path
+        ] do
+      malformed =
+        put_in(ledger, ["matrix", "input_manifest", Access.at(entry_index), "path"], path)
+
+      rejected? =
+        try do
+          "frozen input paths must be valid repository-relative paths without control bytes" in validate(
+            malformed
+          )
+        rescue
+          _ -> false
+        end
+
+      assert rejected?, "malformed manifest paths must return the fixed validation reason"
+    end
+
+    assert match?({:ok, _}, frozen_source_file(source["source_revision"], known_path)),
+           "a valid neighboring repository input must remain readable"
+  end
+
   defp load_ledger, do: @ledger_path |> File.read!() |> Jason.decode!()
 
   defp load_frozen_input_source, do: @frozen_input_source
@@ -685,6 +743,24 @@ defmodule Lockspire.QualificationLedgerContractTest do
     do: assert(validate(ledger, receipt_override) != [])
 
   defp validate(ledger, receipt_override \\ nil) do
+    if valid_manifest_paths?(ledger) do
+      validate_ledger(ledger, receipt_override)
+    else
+      ["frozen input paths must be valid repository-relative paths without control bytes"]
+    end
+  end
+
+  defp valid_manifest_paths?(ledger) do
+    matrix = Map.get(ledger, "matrix")
+    manifest = if is_map(matrix), do: Map.get(matrix, "input_manifest"), else: nil
+
+    not is_list(manifest) or
+      Enum.all?(manifest, fn entry ->
+        is_map(entry) and valid_frozen_input_path?(entry["path"])
+      end)
+  end
+
+  defp validate_ledger(ledger, receipt_override) do
     baseline = Map.get(ledger, "baseline", %{})
     cases = Map.get(ledger, "cases")
     rows = get_in(ledger, ["matrix", "rows"])
@@ -1456,7 +1532,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
 
   defp frozen_source_file(source_revision, path)
        when is_binary(source_revision) and is_binary(path) do
-    if full_sha?(source_revision) do
+    if full_sha?(source_revision) and valid_frozen_input_path?(path) do
       case System.cmd("git", ["cat-file", "blob", "#{source_revision}:#{path}"],
              cd: @repo_root,
              stderr_to_stdout: true
@@ -1467,9 +1543,20 @@ defmodule Lockspire.QualificationLedgerContractTest do
     else
       :error
     end
+  rescue
+    _ in [ArgumentError, ErlangError] -> :error
   end
 
   defp frozen_source_file(_, _), do: :error
+
+  defp valid_frozen_input_path?(path) when is_binary(path) do
+    String.valid?(path) and nonempty?(path) and Path.type(path) == :relative and
+      not String.contains?(path, "\\") and
+      not Regex.match?(~r/[\x00-\x1f\x7f]/, path) and
+      Enum.all?(String.split(path, "/"), &(&1 not in ["", ".", ".."]))
+  end
+
+  defp valid_frozen_input_path?(_), do: false
 
   defp extract_section(content, start_marker, end_marker) do
     with {start, _} <- :binary.match(content, start_marker),

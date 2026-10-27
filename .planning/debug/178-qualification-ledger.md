@@ -1,31 +1,30 @@
 ---
-status: awaiting_human_verify
+status: verifying
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
-updated: 2026-10-27T19:22:28Z
+updated: 2026-10-27T19:42:23Z
 ---
 
 ## Current Focus
 
 bug_class: bohrbug
-hypothesis: Frozen Phase 171 input identities are compared with mutable workspace files, so a later supported-surface documentation change invalidates historical evidence.
-test: Completed final clean-source owned native run and private source-causal counterfactual; inspect exact proofs before broader qualification.
-expecting: Caller preserves the 25/0 focused result at its actual tested source, then independently reviews/freezes/qualifies the final current closure.
-next_action: Commit this metadata-only record and hand the caller the terminal 25/0 guard, source proof, and remaining full-current-qualification boundary; archive only after human confirmation.
+hypothesis: SRC-10 occurs because the generic frozen-input reader passes malformed binary paths through to System.cmd without validating the argument boundary.
+test: Completed pure RED/green/counterfactual and 42-path command-boundary controls; native focused source qualification is next.
+expecting: All 26 native tests pass on a clean committed source while prior 25/0 proof remains bound to its earlier source.
+next_action: Commit only the selected test and this journal, then execute one actual owned-source guard selecting the 26-test file.
 reasoning_checkpoint:
-  hypothesis: The historical frozen manifest fails because input_entry_hash reads today's supported-surface bytes rather than the retained frozen input snapshot.
+  hypothesis: SRC-10 occurs because malformed binary manifest paths reach System.cmd without a validated repository-relative argument boundary, so NUL raises instead of returning a fixed rejection.
   confirming_evidence:
-    - The unchanged test-owned pure validator returned exactly one known error, at original test line 1141; zero unknown errors.
-    - Exhaustive 33-entry comparison found only docs/supported-surface.md differed; the manifest digest and both planning selectors matched.
-    - All 28 external file/selector inputs match at retained Main 173059a166e9ade0f5f57c9980b7b2400a98538c, whose ledger bytes and frozen digest are unchanged.
-  falsification_test: If source-based reads still produce the same frozen-manifest error, or workspace-only hashing no longer produces it, this proposed cause is insufficient.
-  fix_rationale: Resolve retained historical file identities at an explicitly authenticated historical source, preserving the original ledger, observations, receipts, frozen hashes, and fixture mutation checks.
-  blind_spots: Broader current-source qualification remains with the caller. Original qualification_sha predates the final frozen input bytes and cannot be used as the snapshot anchor. Human end-to-end confirmation and archival remain pending.
+    - Independent immutable source/security review identifies the unguarded generic path-to-System.cmd boundary at the reviewed source.
+    - The agent-authored adversarial regression is RED before the fix; its first NUL reader case is caught and rendered as a fixed Boolean assertion failure without diagnostic values.
+  falsification_test: If any malformed path still invokes the Git boundary, raises, or lacks the fixed validation rejection, the correction is insufficient; the valid neighboring input must continue to resolve.
+  fix_rationale: Reject malformed manifest paths before validation can perform Git operations, validate again at the reader boundary, and convert expected process-launch argument/system failures to :error without exposing diagnostics.
+  blind_spots: Final-source focused native guard and boundary counterfactual remain pending; prior 25/0 proof and Python qualification remain bound to the old source.
   candidate_causes:
-    - code: The frozen consumer uses workspace file reads without a separate retained-input source identity.
-    - data: Frozen ledger input hashes or ordered digest were corrupted during synchronization.
-    - environment: Missing historical Git objects prevent resolution of qualification or case identities.
-  and_gate: yes; the consumer's missing epoch boundary and a legitimate later supported-surface change co-occur. Fix the epoch boundary while retaining the later document and all original evidence.
+    - code: Missing manifest path validation allows forbidden argv bytes into System.cmd.
+    - data: Adversarial control/non-relative/invalid-UTF-8 manifest path values violate the reader's input boundary.
+    - environment: A missing Git executable could separately raise at process launch and must also fail closed.
+  and_gate: yes; a malformed path and the missing validation boundary combine to produce SRC-10. Reject that input while preserving valid historical reads and all prior evidence.
 
 ## Symptoms
 
@@ -112,3 +111,17 @@ verification:
 files_changed:
   - test/lockspire/qualification_ledger_contract_test.exs
   - .planning/debug/178-qualification-ledger.md
+
+## SRC-10 Follow-up
+
+review: Immutable /private/tmp/lockspire178-source8-6a-ledger-4g0yig7r/REVIEW.md at reviewed clean source 6a5a7689babd697d20c63c7f1dd16ce08e07e9fb identifies generic malformed paths reaching System.cmd.
+root_cause: Binary/nonempty path checks did not enforce a valid repository-relative argv boundary; NUL could raise during process argument construction.
+fix: Check manifest paths before entering validation that can invoke Git, guard the frozen reader with the same path contract, and return :error for expected ArgumentError/ErlangError process-launch failures. Reject C0/DEL, invalid UTF-8, empty/absolute/traversal/doubled-separator/backslash paths. Preserve all historical evidence and 25 existing test scenarios; add one adversarial test.
+oracle_type: specified
+pure_red: Agent-authored new test directly invoked with ExUnit compilation only, no application or database startup. Command shape was elixir -pa _build/test/lib/jason/ebin -e (compile private stdin source at the original test path; directly invoke the named new test; emit a fixed outcome). Actual pre-fix test source SHA-256 b63c7610c6b926e49436defa4d2416d7067919bc6fce303d3364a01e234271f2 returned fixed_assertion_red with process exit 0.
+pure_green: Same pure scope/runtime and actual new-test invocation passes at selected source SHA-256 870e3b00a85c1035c8e631c2accaed7ada0bd0fb020d74dcda5ddd08ad5f23d4. Runtime observed Elixir 1.19.5, OTP release 28, four online schedulers. This does not substitute for the pending guarded native 26-test run.
+counterfactual: Fixed/shared-path-guard-bypassed/fixed new-test outcomes pass/fixed_assertion_red/pass. Only private in-memory source was modified; repository source was not reverted. Proof /private/tmp/lockspire178-src10-aa94aera/pure-regression.json SHA-256 b1860227f161945e52ed7de0fa77d87c27109be692dcee60f651b2e005cf3d55.
+command_boundary: Private evaluation replaced only the external System.cmd boundary with a fixed observer. All 42 invalid inputs returned :error before any command at the reader and returned the exact fixed reason before any command at the full validator. Both expected argument/system launch failures returned :error for valid input. Observer arguments/output were not surfaced.
+digest_reconciliation: The earlier f96b825552342101dfe28edeceba3d8e1fed850306da8840debf4fd06c479759 used newline path-space-hash records and is a nonauthoritative preparation artifact. The authority recipe is sorted objects with path and sha256, encoded by json.dumps(rows, sort_keys=True, separators=(',', ':')). It independently reproduces the reviewers' 1077-row digest 82fcb59ab87e3ffdbe608f932e8969865cb3d97ff58e0a79e839d2cc878828fc at 6a5a7689babd697d20c63c7f1dd16ce08e07e9fb. The recipes differ; no canonical match is claimed for f96. Original proof/report files are preserved.
+native_verification: pending
+guardrail_verdict: pending
