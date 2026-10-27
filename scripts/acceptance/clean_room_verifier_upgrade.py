@@ -476,6 +476,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--group", choices=sorted(GROUPS), default="tracer")
     parser.add_argument("--receipt-dir", type=Path, default=Path(".artifacts/phase178/tracer"))
     parser.add_argument("--validate-receipts", type=Path)
+    parser.add_argument("--aggregate-output", type=Path)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -560,6 +561,7 @@ def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, o
     aggregate = {
         "schema": "lockspire-installed-verifier-matrix-v1",
         "runner_revision": source_revision(),
+        "aggregate_validator_revision": source_revision(),
         "candidate_source_archive_tree": list(next(iter(anchors))),
         "required_receipt_count": len(REQUIRED_MATRIX),
         "executed_receipt_count": len(validated),
@@ -651,6 +653,82 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
     return index
 
 
+def validate_matrix_directory(receipt_dir: Path) -> tuple[str, list[dict[str, object]], tuple[str, str, str]]:
+    """Read and validate an immutable full matrix without launching package code."""
+    if not receipt_dir.is_dir() or receipt_dir.is_symlink():
+        raise ReceiptError("complete matrix receipt directory is unavailable")
+    root = receipt_dir.resolve()
+    records: list[dict[str, object]] = []
+    anchors: set[tuple[str, str, str]] = set()
+    runners: set[str] = set()
+    for scope, pair, store in REQUIRED_MATRIX:
+        path = matrix_receipt_path(root, scope, pair, store)
+        if path.is_symlink() or not path.is_file():
+            raise ReceiptError("complete matrix omits a required raw receipt")
+        raw = path.read_bytes()
+        receipt = load_receipt(path)
+        if scope in {"rollout", "legacy-control"}:
+            runner_revision = receipt.get("runner_revision")
+            if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
+                raise ReceiptError("rollout runner identity is invalid")
+            validate_rollout_receipt(receipt, expected_pair=pair, expected_store=store,
+                                     expected_runner=runner_revision, expected_scope=scope)
+            candidate = receipt["candidate"]
+            compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
+        else:
+            runner_revision = receipt.get("runner")
+            if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
+                raise ReceiptError("group runner identity is invalid")
+            validate_receipt(receipt, expected_pair=pair, expected_store=store)
+            candidate = receipt["candidate"]
+            compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
+        runners.add(runner_revision)
+        binding = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
+        if binding[0] != runner_revision:
+            raise ReceiptError("candidate source does not match its tested runner revision")
+        host_lock = receipt["host"]["lock_sha256"]
+        if host_lock != sha256(PROOF_PAIR_LOCKS[pair]) or not re.fullmatch(r"[0-9a-f]{64}", compiled_candidate or ""):
+            raise ReceiptError("host lock or compiled candidate does not match its dependency pair")
+        anchors.add(binding)
+        records.append({
+            "scope": scope, "pair": pair, "store": store,
+            "run_id": receipt["run_id"], "runner_revision": runner_revision,
+            "receipt_path": path.relative_to(root).as_posix(),
+            "receipt_sha256": hashlib.sha256(raw).hexdigest(),
+            "stable_case_ids": expected_case_ids((scope, pair, store)),
+            "executed_count": receipt["executed_count"], "outcome": "pass",
+            "candidate_source_archive_tree": list(binding),
+            "host_lock_sha256": host_lock, "compiled_candidate_sha256": compiled_candidate,
+        })
+    if len(runners) != 1:
+        raise ReceiptError("raw receipts do not share one tested runner revision")
+    if len(anchors) != 1:
+        raise ReceiptError("raw receipts do not share one candidate source/archive/tree")
+    tested_runner = next(iter(runners))
+    validated = validate_complete_matrix(records, expected_runner=tested_runner)
+    return tested_runner, validated, next(iter(anchors))
+
+
+def _aggregate_document(
+    *, tested_runner: str, records: list[dict[str, object]],
+    candidate_identity: tuple[str, str, str], validator_revision: str,
+) -> dict[str, object]:
+    case_count = sum(len(row["stable_case_ids"]) for row in records)
+    return {
+        "schema": "lockspire-installed-verifier-matrix-v1",
+        "runner_revision": tested_runner,
+        "aggregate_validator_revision": validator_revision,
+        "candidate_source_archive_tree": list(candidate_identity),
+        "required_receipt_count": len(REQUIRED_MATRIX),
+        "executed_receipt_count": len(records),
+        "required_case_count": case_count,
+        "executed_case_count": case_count,
+        "passed_case_count": case_count,
+        "failed_case_count": 0,
+        "cells": records,
+    }
+
+
 def self_test() -> int:
     command = [sys.executable, "-m", "unittest", "discover", "-s", "test/acceptance", "-p", "client_verifier_tracer_test.py"]
     result = subprocess.run(command, cwd=Path(__file__).resolve().parents[2], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
@@ -671,8 +749,33 @@ def main(argv: list[str] | None = None) -> int:
         if args.validate_receipts:
             if args.validate_receipts.is_dir():
                 if args.pair == "all":
-                    raise ReceiptError("pair validation requires one exact dependency pair")
-                _validate_pair_directory(args.validate_receipts, args.pair)
+                    tested_runner, rows, candidate = validate_matrix_directory(args.validate_receipts)
+                    aggregate = _aggregate_document(
+                        tested_runner=tested_runner, records=rows, candidate_identity=candidate,
+                        validator_revision=source_revision(),
+                    )
+                    output_path = args.aggregate_output
+                    if output_path is not None:
+                        artifact_root = Path(__file__).resolve().parents[2] / ".artifacts"
+                        output = output_path.resolve()
+                        if (not output.is_relative_to(artifact_root) or output == artifact_root
+                                or output.is_relative_to(args.validate_receipts.resolve())
+                                or output_path.exists() or output_path.is_symlink()):
+                            raise ReceiptError("aggregate output must be fresh and outside raw receipt inputs")
+                        output.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+                        output.write_text(json.dumps(aggregate, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+                        os.chmod(output, 0o600)
+                    print(json.dumps({
+                        "validated": True, "scope": "all", "runner_revision": tested_runner,
+                        "aggregate_validator_revision": source_revision(),
+                        "receipts": aggregate["executed_receipt_count"],
+                        "cases": aggregate["passed_case_count"], "failed_cases": 0,
+                        "aggregate_output": str(output_path) if output_path else None,
+                    }, sort_keys=True))
+                else:
+                    if args.aggregate_output is not None:
+                        raise ReceiptError("aggregate output is only valid for a full matrix")
+                    _validate_pair_directory(args.validate_receipts, args.pair)
             else:
                 receipt = load_receipt(args.validate_receipts)
                 if receipt.get("schema") == "lockspire-installed-verifier-rollout-v1":
