@@ -47,7 +47,7 @@ Migration command (exit 0; captured output records successful migrations `202605
 umask 077; export LOCKSPIRE_TEST_DB_NAME=lockspire_test_17807_20261027_012450; export ASDF_ELIXIR_VERSION=1.19.5-otp-28; export ASDF_ERLANG_VERSION=28.5; export ERL_FLAGS='+S 4'; mix ecto.migrate > /private/tmp/lockspire-17807-owned-migrate.log 2>&1
 ```
 
-Both commands omitted `MIX_ENV=test`. Project source `config/dev.exs` selects `LOCKSPIRE_DB_NAME || "lockspire_dev"`; it does not read `LOCKSPIRE_TEST_DB_NAME`. The invocation did not set `LOCKSPIRE_DB_NAME`, `DATABASE_URL`, or `PGDATABASE`; those are also unset in the current inherited shell. The best-supported create/migrate target is therefore `lockspire_dev`, while the test-name variable did not select the intended target. Create output indicates storage was already present; two migrations nevertheless ran. There is no pre-run snapshot of that database's schema/version state, so the prior state and exact durable delta are unknown. Do not query, drop, roll back, repair, or claim it unchanged.
+Both commands omitted `MIX_ENV=test`. Project source `config/dev.exs` selects `LOCKSPIRE_DB_NAME || "lockspire_dev"`; it does not read `LOCKSPIRE_TEST_DB_NAME`. The invocation did not set `LOCKSPIRE_DB_NAME`, `DATABASE_URL`, or `PGDATABASE`; those are also unset in the current inherited shell. The best-supported create/migrate target is therefore `lockspire_dev`, while the test-name variable did not select the intended target. Create output indicates storage was already present; two migrations nevertheless ran. There is no pre-run snapshot of that database's schema/version state, so the prior state and exact durable delta are unknown. Do not drop, roll back, repair, or claim it unchanged. The root’s subsequent read-only metadata assessment is recorded below.
 
 The source test command did set the dedicated test name and `MIX_ENV=test`:
 
@@ -62,3 +62,16 @@ The command-log completion mtimes were `2026-10-27T01:23:02.397Z` (create), `01:
 ### Disposition
 
 This is not a source pass. It is a distinct database-targeting incident and remains visible beside the earlier shared-test-database incident. No database cleanup is performed. The inferred `lockspire_dev` target received two migrations and its exact durable delta is unknown. The dedicated test-name target's state is also unknown: it was absent at the pre-command catalog check, then selected by the failed test command, and no post-run catalog or row snapshot exists. Future database actions require a fresh source audit with a guard that resolves and verifies the exact target before every create, migrate, test, or drop command.
+
+
+### Root read-only assessment — 2026-10-27 01:34 UTC
+
+At source `b4db16517864b071d3cca39071102e14c6009cdf`, the root used `psql -X -w -h localhost` with `PGOPTIONS='-c default_transaction_read_only=on'`. No Mix application was started and no database mutation or cleanup was issued. The development connection queried only `current_database()`, the two exact migration versions and their `inserted_at` metadata, and the corresponding `information_schema.columns` metadata. A separate read-only `postgres` catalog connection checked the two exact database names. Both commands exited 0.
+
+- `current_database()` confirmed `lockspire_dev`. Its `schema_migrations` rows for `20260528150000` and `20261021000000` both have `inserted_at = 2026-10-27 01:23:04`.
+- The exact-name catalog check found `lockspire_dev` and did not find `lockspire_test_17807_20261027_012450` at assessment time. This establishes current absence only; it does not explain the earlier missing-relation errors or establish a complete lifecycle history.
+- In schema `public`, `lockspire_clients.access_token_format` is nullable text with no default; `lifetime_version` is non-null integer default `0`; `client_expires_at` and `registration_access_token_expires_at` are nullable timestamps without time zone and no default. `lockspire_server_policies.access_token_format` is non-null text default `'jwt'::text`.
+- The migration sources describe those five column additions. The server-policy default can affect existing policy rows and behavior; the client lifetime default describes existing clients as legacy/unlimited. No account/client/token/policy contents were queried, so this assessment does not claim the current business data or behavior is unaffected.
+- No before-state exists. Migration timestamps, source and present metadata corroborate the wrong-target migration, but do not establish every prior value or permit a lossless automatic rollback. Development rollback/repair remains outside the authorized local proof work and is not attempted.
+
+The next source verification must use an enforced owned-target runner, rather than manually assembled Mix environment assignments. Its tests and actual run will be recorded separately. This assessment is not Plan 07 acceptance and does not clear either incident.
