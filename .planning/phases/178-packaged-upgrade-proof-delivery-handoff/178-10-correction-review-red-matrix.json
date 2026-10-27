@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_delivery_test.py' -k test_composition_rejects_raw_scope_substitution_even_when_index_is_updated",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_composition_rejects_raw_scope_substitution_even_when_index_is_updated (client_verifier_delivery_test.ComposedMatrixContracts.test_composition_rejects_raw_scope_substitution_even_when_index_is_updated)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"test/acceptance/client_verifier_delivery_test.py\", line 187, in test_composition_rejects_raw_scope_substitution_even_when_index_is_updated\n    with self.assertRaises(verifier_delivery.DeliveryError):\n         ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: DeliveryError not raised\n\n----------------------------------------------------------------------\nRan 1 test in 0.043s\n\nFAILED (failures=1)",
+  "targetTest": "test_composition_rejects_raw_scope_substitution_even_when_index_is_updated",
+  "targetFile": "test/acceptance/client_verifier_delivery_test.py",
+  "expected": "Composition rejects a fully valid tracer receipt installed at the core path when the index labels it as core",
+  "actual": "The target assertion failed because composition accepted the tracer receipt as a core cell and counted it in the complete matrix",
+  "semanticAssessment": "Behavioral RED: all outer identity, digest and index pins were updated to the substituted raw bytes; the current composition trusted index scope labels without comparing them to raw receipt scope/case IDs."
+}
