@@ -7,12 +7,20 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 
 import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def test_owned_listener_gets_server_flag_without_mutating_one_off_environment(self) -> None:
+        import clean_room_verifier_upgrade as source
+        one_off = {"MIX_ENV": "dev", "CLEAN_ROOM_HTTP_SERVER": "false"}
+        listener = source.owned_listener_environment(one_off)
+        self.assertEqual(listener["CLEAN_ROOM_HTTP_SERVER"], "true")
+        self.assertEqual(one_off["CLEAN_ROOM_HTTP_SERVER"], "false")
+
     def test_required_scope_is_explicit_and_keeps_both_disclosure_receipts(self) -> None:
         required = verifier_receipts.required_receipt_keys()
         self.assertEqual(len(required), 26)
