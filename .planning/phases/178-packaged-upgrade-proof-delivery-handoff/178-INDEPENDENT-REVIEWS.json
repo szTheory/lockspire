@@ -1,10 +1,10 @@
 {
   "schema": "lockspire-phase178-independent-reviews-v1",
-  "implementation_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
+  "implementation_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
   "lanes": {
     "source": {
       "reviewer_identity": "Independent source reviewer \u2014 GPT-6-Luna/high \u2014 /root/phase178_execution_workflow/review178_source",
-      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
+      "reviewed_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -2062,7 +2062,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
+          "sha256": "ef0779510c1a36e356b1b919a68f6aebd2bc718e5cfd848a6b7945a3f00f157e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -2359,6 +2359,10 @@
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
           "sha256": "dd5ccb6761d8394a4e20c85b945fbd7d63690752b82be922cd687f9467e742d3"
+        },
+        {
+          "path": "test/acceptance/client_verifier_launch_registration_test.py",
+          "sha256": "d5e3a45a6433d04d4f2d783ea80a2cc6a313c8184acda94baf075ef19febcd6d"
         },
         {
           "path": "test/acceptance/client_verifier_process_supervision_test.py",
@@ -4299,25 +4303,23 @@
       ],
       "findings": [
         {
-          "id": "SRC-08",
+          "id": "SRC-09",
           "severity": "high",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "The established installed caller expects package.parent/lockspire-{version}.tar. Frozen prepare_package now preserves that return/caller contract centrally: after retained archive, source owner and extracted tree checks, it materializes the authenticated archive at the private adjacent path for both fresh and cached package trees. Exclusive creation, no-follow open, mode 0600, streaming plus post-write digest/inode checks, no-overwrite reuse, and fail-closed path/tamper checks preserve the retained artifact. The focused six-test contract suite passed, including real caller verification, cache reuse/restoration, conflict/symlink/tamper cases, and both-pair core dispatch reaching the original provider signature boundary.",
+          "evidence": "The former launch ordering allowed short-lived executables to exit before local identity capture or authenticated supervisor registration. The reviewed correction gates target execution until registration ACK, then execs in the same PID/session. The actual frozen constructor and build_provider._run_mix version caller retain the boundary; the focused 11-test suite passed, including fast executable, missing target/bootstrap, pre-ACK side-effect, creator-death, signal, and stdio/cwd/env/FD/session controls.",
           "files": [
             "scripts/acceptance/clean_room/package_input.py",
-            "test/acceptance/client_frozen_package_layout_test.py",
-            "scripts/acceptance/clean_room/verifier_core.py",
-            "test/acceptance/client_verifier_delivery_test.py"
+            "test/acceptance/client_verifier_launch_registration_test.py"
           ]
         }
       ],
-      "report_path": "NEW178-REVIEW-REREVIEW-6.md",
-      "report_sha256": "be474c5f6d5124f8da3158abd50ec684348c36b559704fc53a1186fec0c55ab5"
+      "report_path": "178-REVIEW-REREVIEW-7.md",
+      "report_sha256": "fb17cf5a023e1f7b255b127455985a7e8c00522a2451d7e8e994cbdd00bb9a54"
     },
     "security": {
       "reviewer_identity": "gsd-security-auditor / gpt-6.1-sol:xhigh / /root/phase178_execution_workflow/review178_security",
-      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
+      "reviewed_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -6375,7 +6377,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
+          "sha256": "ef0779510c1a36e356b1b919a68f6aebd2bc718e5cfd848a6b7945a3f00f157e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -6672,6 +6674,10 @@
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
           "sha256": "dd5ccb6761d8394a4e20c85b945fbd7d63690752b82be922cd687f9467e742d3"
+        },
+        {
+          "path": "test/acceptance/client_verifier_launch_registration_test.py",
+          "sha256": "d5e3a45a6433d04d4f2d783ea80a2cc6a313c8184acda94baf075ef19febcd6d"
         },
         {
           "path": "test/acceptance/client_verifier_process_supervision_test.py",
@@ -8612,15 +8618,14 @@
       ],
       "findings": [
         {
-          "id": "SEC-178-LAYOUT-01",
+          "id": "SEC-178-LAUNCH-01",
           "severity": "high",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "Independent six-test frozen layout suite passed. Additional changed-stream and inode-replacement controls rejected unsafe copies, removed only the created file and preserved replacement/source bytes. Actual core dispatch reached the original signature-bound pre-provider stop for both pairs. Existing process-authority functions/classes are byte-identical to the prior accepted revision.",
+          "evidence": "Independent eleven-test actual launch suite passed. Target execution waits for the unchanged ownership-registration ACK; fast commands, exec errors, creator death, pre-ACK side effects, stdio/cwd/env/descriptors/PID/session and SIGPIPE semantics were verified. Existing supervisor, IPC, identity, signal, cleanup and archive-layout implementations are byte-identical to b21ca75f.",
           "files": [
             "scripts/acceptance/clean_room/package_input.py",
-            "test/acceptance/client_frozen_package_layout_test.py",
-            "test/acceptance/client_verifier_delivery_test.py"
+            "test/acceptance/client_verifier_launch_registration_test.py"
           ]
         },
         {
@@ -8667,12 +8672,12 @@
           ]
         }
       ],
-      "report_path": "178-SECURITY-REREVIEW-6.md",
-      "report_sha256": "0c876e27d85c8e8ab8efd31886046786261788bdb36378607046278eed6e7230"
+      "report_path": "178-SECURITY-REREVIEW-7.md",
+      "report_sha256": "14573882aec71ebcc291e6ba82c65724a6299da286afac4b4ebe7f99ba60564e"
     },
     "integration": {
       "reviewer_identity": "Codex integration reviewer \u2014 gpt-6-luna/low \u2014 /root/phase178_execution_workflow/review178_integration",
-      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
+      "reviewed_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -10730,7 +10735,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
+          "sha256": "ef0779510c1a36e356b1b919a68f6aebd2bc718e5cfd848a6b7945a3f00f157e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -11027,6 +11032,10 @@
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
           "sha256": "dd5ccb6761d8394a4e20c85b945fbd7d63690752b82be922cd687f9467e742d3"
+        },
+        {
+          "path": "test/acceptance/client_verifier_launch_registration_test.py",
+          "sha256": "d5e3a45a6433d04d4f2d783ea80a2cc6a313c8184acda94baf075ef19febcd6d"
         },
         {
           "path": "test/acceptance/client_verifier_process_supervision_test.py",
@@ -12968,7 +12977,7 @@
       "findings": [
         {
           "disposition": "later-owner",
-          "evidence": "The floor proof selects the hosted-minimum toolchain independently from the frozen package source export. The candidate archive is built from the reviewed source export; no explicit copy of the compatibility fixture lock into that source export is established. Preserve this attribution limit; the pair runtime profile remains independently captured and validated.",
+          "evidence": "The floor proof selects the hosted-minimum runtime independently from the frozen package source export. No explicit copy of the compatibility fixture lock into the source export before package archive creation is established. Preserve this bounded provenance limit; no floor-lock build claim is made.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/provision_verifier_candidate.py"
@@ -12978,8 +12987,8 @@
           "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REREVIEW-3.md",
-      "report_sha256": "0fedad1646f96ae85ce78a112646cd84870271ebf274195026c8916db1317656"
+      "report_path": "178-INTEGRATION-REREVIEW-4.md",
+      "report_sha256": "7fa9e975cb74e4b795991d8e522e6b26fbcd312c7f465f61b211c7048a158367"
     }
   }
 }
