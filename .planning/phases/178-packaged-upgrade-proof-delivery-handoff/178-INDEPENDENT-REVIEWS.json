@@ -1,10 +1,10 @@
 {
   "schema": "lockspire-phase178-independent-reviews-v1",
-  "implementation_revision": "24bb9c9f49d228d15c7cbe6ebafd5169fbe78651",
+  "implementation_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
   "lanes": {
     "source": {
       "reviewer_identity": "Independent source reviewer \u2014 GPT-6-Luna/high \u2014 /root/phase178_execution_workflow/review178_source",
-      "reviewed_revision": "24bb9c9f49d228d15c7cbe6ebafd5169fbe78651",
+      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -2062,7 +2062,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "9025d50be9046e354d87fcd0d7b611123c1868d316f31a672ad0685715647879"
+          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -2309,6 +2309,10 @@
           "sha256": "1974adb614b129a90796686a850a7eeb1432c21fce485716f9d56af5a76428fc"
         },
         {
+          "path": "test/acceptance/client_frozen_package_layout_test.py",
+          "sha256": "41ce459d505279e5c90a61cd477ad8a85b8ee90b6f574bfac5f97cd8114b8f44"
+        },
+        {
           "path": "test/acceptance/client_lifetime_boundary_test.py",
           "sha256": "4f57813d3cf6e0ed0463dbc597216734f0f1c7499264324c00cc21d1881d5c20"
         },
@@ -2346,7 +2350,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "4225c3b07f705d972ec52f61c5795c67b499cc48de536a537b76d8fd192e56ed"
+          "sha256": "d4dac4b5fe3986188744da443cc8259450e91a79ed22eecf8a7351ea03368f06"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
@@ -4295,28 +4299,25 @@
       ],
       "findings": [
         {
-          "id": "SEC-178-05",
+          "id": "SRC-08",
           "severity": "high",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "The acceptance owner now derives package version from the frozen extracted package and independently binds candidate version/source/archive/tree/proof plus runtime values to a digest-pinned capture. Capture selects profile from the source-owned CI workflow, checks actual BEAM version, performs a read-only PostgreSQL numeric-version query, and is required before receipts are written. Pair composition, raw copying, and ZIP consumption validate against owner context; hosted artifact consumption supplies pair-specific current/minimum profiles. Grammar-preserving candidate-version and runtime substitutions are rejected by the actual pair CLI and uploaded-artifact consumer.",
+          "evidence": "The established installed caller expects package.parent/lockspire-{version}.tar. Frozen prepare_package now preserves that return/caller contract centrally: after retained archive, source owner and extracted tree checks, it materializes the authenticated archive at the private adjacent path for both fresh and cached package trees. Exclusive creation, no-follow open, mode 0600, streaming plus post-write digest/inode checks, no-overwrite reuse, and fail-closed path/tamper checks preserve the retained artifact. The focused six-test contract suite passed, including real caller verification, cache reuse/restoration, conflict/symlink/tamper cases, and both-pair core dispatch reaching the original provider signature boundary.",
           "files": [
-            "scripts/acceptance/clean_room/verifier_receipt_owner.py",
-            "scripts/acceptance/clean_room/verifier_receipts.py",
-            "scripts/acceptance/clean_room/verifier_delivery.py",
-            "scripts/acceptance/clean_room_verifier_upgrade.py",
-            "scripts/ci/run_verifier_upgrade_proof.sh",
-            "test/acceptance/client_verifier_delivery_chain_test.py",
-            "test/acceptance/client_verifier_receipts_test.py"
+            "scripts/acceptance/clean_room/package_input.py",
+            "test/acceptance/client_frozen_package_layout_test.py",
+            "scripts/acceptance/clean_room/verifier_core.py",
+            "test/acceptance/client_verifier_delivery_test.py"
           ]
         }
       ],
-      "report_path": "178-REVIEW-REREVIEW-5.md",
-      "report_sha256": "3df9832b254ddbe8e302bd4bf700a74a2d9542d8130f10358b2cef332f2f367d"
+      "report_path": "NEW178-REVIEW-REREVIEW-6.md",
+      "report_sha256": "be474c5f6d5124f8da3158abd50ec684348c36b559704fc53a1186fec0c55ab5"
     },
     "security": {
       "reviewer_identity": "gsd-security-auditor / gpt-6.1-sol:xhigh / /root/phase178_execution_workflow/review178_security",
-      "reviewed_revision": "24bb9c9f49d228d15c7cbe6ebafd5169fbe78651",
+      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -6374,7 +6375,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "9025d50be9046e354d87fcd0d7b611123c1868d316f31a672ad0685715647879"
+          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -6621,6 +6622,10 @@
           "sha256": "1974adb614b129a90796686a850a7eeb1432c21fce485716f9d56af5a76428fc"
         },
         {
+          "path": "test/acceptance/client_frozen_package_layout_test.py",
+          "sha256": "41ce459d505279e5c90a61cd477ad8a85b8ee90b6f574bfac5f97cd8114b8f44"
+        },
+        {
           "path": "test/acceptance/client_lifetime_boundary_test.py",
           "sha256": "4f57813d3cf6e0ed0463dbc597216734f0f1c7499264324c00cc21d1881d5c20"
         },
@@ -6658,7 +6663,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "4225c3b07f705d972ec52f61c5795c67b499cc48de536a537b76d8fd192e56ed"
+          "sha256": "d4dac4b5fe3986188744da443cc8259450e91a79ed22eecf8a7351ea03368f06"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
@@ -8607,18 +8612,15 @@
       ],
       "findings": [
         {
-          "id": "SEC-178-05",
+          "id": "SEC-178-LAYOUT-01",
           "severity": "high",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "Independent scoped controls passed, including actual owner capture and pair CLI, four pre-copy mutations and four coordinated ZIP mutations with recomputed peer digests. Package version derives from authenticated archive metadata; runtime authority is captured before groups and correlated with source-owned selected profiles.",
+          "evidence": "Independent six-test frozen layout suite passed. Additional changed-stream and inode-replacement controls rejected unsafe copies, removed only the created file and preserved replacement/source bytes. Actual core dispatch reached the original signature-bound pre-provider stop for both pairs. Existing process-authority functions/classes are byte-identical to the prior accepted revision.",
           "files": [
-            "scripts/acceptance/clean_room/verifier_receipt_owner.py",
-            "scripts/acceptance/clean_room/verifier_receipts.py",
-            "scripts/acceptance/clean_room/verifier_delivery.py",
-            "scripts/acceptance/clean_room_verifier_upgrade.py",
-            "scripts/ci/run_verifier_upgrade_proof.sh",
-            "test/acceptance/client_verifier_delivery_chain_test.py"
+            "scripts/acceptance/clean_room/package_input.py",
+            "test/acceptance/client_frozen_package_layout_test.py",
+            "test/acceptance/client_verifier_delivery_test.py"
           ]
         },
         {
@@ -8626,7 +8628,7 @@
           "severity": "high",
           "status": "deferred",
           "disposition": "later-owner",
-          "evidence": "Identity-validation mechanism verified; genuine hosted candidate checkout and run observations remain later-owner work.",
+          "evidence": "Identity-validation mechanism remains accepted; genuine hosted candidate checkout and run observations remain later-owner work.",
           "files": [
             "scripts/acceptance/clean_room/verifier_delivery.py"
           ]
@@ -8636,7 +8638,7 @@
           "severity": "high",
           "status": "deferred",
           "disposition": "later-owner",
-          "evidence": "Hosted job and archive-consumption mechanisms verified with controlled authority fixtures; genuine complete hosted run and attempt observations remain pending.",
+          "evidence": "Hosted job and archive-consumption mechanisms remain accepted; genuine complete hosted run and attempt observations remain pending.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/acceptance/clean_room/verifier_delivery.py"
@@ -8647,7 +8649,7 @@
           "severity": "high",
           "status": "deferred",
           "disposition": "later-owner",
-          "evidence": "Authorization, pending-state and full helper-consumption mechanisms verified; genuine integration and accepted-main execution remain pending.",
+          "evidence": "Authorization, pending-state and full helper-consumption mechanisms remain accepted; genuine integration and accepted-main execution remain pending.",
           "files": [
             "scripts/acceptance/clean_room/verifier_delivery.py",
             "scripts/maintainer/repo_hygiene_check.sh"
@@ -8658,19 +8660,19 @@
           "severity": "high",
           "status": "deferred",
           "disposition": "later-owner",
-          "evidence": "Independent judgment and historical evidence-preservation mechanisms verified; final runtime audit and flag-lifecycle observations remain later-owner work.",
+          "evidence": "Independent judgment and historical evidence-preservation mechanisms remain accepted; the old freeze is stale and final runtime audit and flag-lifecycle observations remain later-owner work.",
           "files": [
             ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-PLAN.md",
             "scripts/acceptance/clean_room/verifier_delivery.py"
           ]
         }
       ],
-      "report_path": "178-SECURITY-REREVIEW-5.md",
-      "report_sha256": "9258d147ea729e6c0b55c8e66aeccadb3012aacbb8381147c15c509f9de9d808"
+      "report_path": "178-SECURITY-REREVIEW-6.md",
+      "report_sha256": "0c876e27d85c8e8ab8efd31886046786261788bdb36378607046278eed6e7230"
     },
     "integration": {
       "reviewer_identity": "Codex integration reviewer \u2014 gpt-6-luna/low \u2014 /root/phase178_execution_workflow/review178_integration",
-      "reviewed_revision": "24bb9c9f49d228d15c7cbe6ebafd5169fbe78651",
+      "reviewed_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
       "reviewed_at": "2026-10-27",
       "verdict": "accepted",
       "reviewed_files": [
@@ -10728,7 +10730,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/package_input.py",
-          "sha256": "9025d50be9046e354d87fcd0d7b611123c1868d316f31a672ad0685715647879"
+          "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
         },
         {
           "path": "scripts/acceptance/clean_room/processes.py",
@@ -10975,6 +10977,10 @@
           "sha256": "1974adb614b129a90796686a850a7eeb1432c21fce485716f9d56af5a76428fc"
         },
         {
+          "path": "test/acceptance/client_frozen_package_layout_test.py",
+          "sha256": "41ce459d505279e5c90a61cd477ad8a85b8ee90b6f574bfac5f97cd8114b8f44"
+        },
+        {
           "path": "test/acceptance/client_lifetime_boundary_test.py",
           "sha256": "4f57813d3cf6e0ed0463dbc597216734f0f1c7499264324c00cc21d1881d5c20"
         },
@@ -11012,7 +11018,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "4225c3b07f705d972ec52f61c5795c67b499cc48de536a537b76d8fd192e56ed"
+          "sha256": "d4dac4b5fe3986188744da443cc8259450e91a79ed22eecf8a7351ea03368f06"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
@@ -12962,7 +12968,7 @@
       "findings": [
         {
           "disposition": "later-owner",
-          "evidence": "CI selects hosted-minimum or hosted-current toolchain profiles independently of the candidate archive build. The floor job runs root dependency installation before candidate provisioning; the package archive is built from an authenticated source export, but no explicit floor-specific root lock copy is established. This review preserves that bounded attribution limit and makes no claim that the package archive was built under the compatibility fixture lock.",
+          "evidence": "The floor proof selects the hosted-minimum toolchain independently from the frozen package source export. The candidate archive is built from the reviewed source export; no explicit copy of the compatibility fixture lock into that source export is established. Preserve this attribution limit; the pair runtime profile remains independently captured and validated.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/provision_verifier_candidate.py"
@@ -12972,8 +12978,8 @@
           "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REREVIEW-2.md",
-      "report_sha256": "739a6822625bbac757132d7deb21ff87a9ac0077bd029f619b3cc894ea780f68"
+      "report_path": "178-INTEGRATION-REREVIEW-3.md",
+      "report_sha256": "0fedad1646f96ae85ce78a112646cd84870271ebf274195026c8916db1317656"
     }
   }
 }
