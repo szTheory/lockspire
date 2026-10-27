@@ -112,7 +112,7 @@ RECOVERY_OBSERVATION_FIELDS = frozenset({
     "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
 })
 ISSUANCE_OBSERVATION_FIELDS = frozenset({
-    "outcome", "executed", "server_ready", "auth_barrier_reached", "jti_consumption_observed",
+    "outcome", "executed", "server_ready", "discovery_http_status", "auth_barrier_reached", "jti_consumption_observed",
     "pre_guard_barrier_reached", "maintenance_committed", "backend_pids_distinct",
     "stale_identity_rejected", "stale_http_status", "no_token_issued", "no_grant_created",
     "no_code_redemption", "same_jti_replay_rejected", "fresh_jti_succeeded",
@@ -368,9 +368,12 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             if any(result.get(field) != value for field, value in expected_errors.items()):
                 raise ReceiptError("recovery receipt OAuth error category is invalid")
         if receipt["scope"] == "issuance":
-            required = ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
+            required = ISSUANCE_OBSERVATION_FIELDS - {
+                "outcome", "executed", "stale_http_status", "fresh_http_status", "discovery_http_status"
+            }
             if (set(result) != ISSUANCE_OBSERVATION_FIELDS
                     or any(type(result.get(field)) is not bool or result[field] is not True for field in required)
+                    or type(result["discovery_http_status"]) is not int or result["discovery_http_status"] != 200
                     or type(result["stale_http_status"]) is not int or result["stale_http_status"] != 400
                     or type(result["fresh_http_status"]) is not int or result["fresh_http_status"] != 200):
                 raise ReceiptError("issuance receipt lacks a committed stale-identity or fresh-JTI HTTP witness")

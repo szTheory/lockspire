@@ -84,7 +84,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
   def run_issuance(store, issuer) when store == :delegated do
     mark_stage(:issuance_endpoint_ready)
-    endpoint_ready = mounted_endpoint_ready?(issuer)
+    discovery_http_status = mounted_endpoint_status!(issuer)
+    endpoint_ready = discovery_http_status == 200
     mark_stage(:issuance_seed)
     client = seed_jwt_client!("phase178-issuance")
     code = seed_authorization_code!(client.client_id)
@@ -146,6 +147,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
       )
 
       stale_status = await_monitored_worker!(stale_request, :issuance_replay_fresh)
+      Store.clear_issuance_control()
+      Store.clear_maintenance_observer()
       after_stale = effects(client.client_id)
 
       mark_stage(:issuance_same_jti_replay)
@@ -172,6 +175,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
             "outcome" => "pass",
             "executed" => true,
             "server_ready" => endpoint_ready,
+            "discovery_http_status" => discovery_http_status,
             "auth_barrier_reached" => durable_jti,
             "jti_consumption_observed" => durable_jti,
             "pre_guard_barrier_reached" => true,
@@ -869,23 +873,29 @@ defmodule CleanRoomProvider.VerifierRecovery do
     end
   end
 
-  defp mounted_endpoint_ready?(issuer) do
+  defp mounted_endpoint_status!(issuer) do
     url = String.to_charlist(issuer <> "/.well-known/openid-configuration")
 
-    ready =
-      Enum.any?(1..10, fn _attempt ->
+    status =
+      Enum.reduce_while(1..10, 0, fn _attempt, last_status ->
         case :httpc.request(:get, {url, []}, [{:timeout, 1_000}], []) do
-          {:ok, {{_version, 200, _reason}, _headers, _body}} ->
-            true
+          {:ok, {{_version, response_status, _reason}, _headers, _body}}
+          when is_integer(response_status) and response_status in 100..599 ->
+            if response_status == 200 do
+              {:halt, response_status}
+            else
+              Process.sleep(250)
+              {:cont, response_status}
+            end
 
           _other ->
             Process.sleep(250)
-            false
+            {:cont, last_status}
         end
       end)
 
-    unless ready, do: raise("SAFE_FAILURE_STAGE=issuance_endpoint_ready")
-    ready
+    unless status == 200, do: raise("SAFE_FAILURE_STAGE=issuance_endpoint_ready")
+    status
   end
 
   defp start_monitored_worker(fun) do

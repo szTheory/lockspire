@@ -222,6 +222,10 @@ class RecoveryDispatchTest(unittest.TestCase):
         )[0]
         self.assertIn("start_monitored_worker(", issuance_source)
         self.assertNotIn("Task.async(", issuance_source)
+        self.assertLess(
+            issuance_source.index("Store.clear_issuance_control()", issuance_source.index("stale_status =")),
+            issuance_source.index("mark_stage(:issuance_same_jti_replay)"),
+        )
         self.assertEqual(
             clean_room_verifier_upgrade.MODULES["issuance"][0],
             clean_room_verifier_upgrade.MODULES["recovery"][0],
