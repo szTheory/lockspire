@@ -1523,9 +1523,8 @@ defmodule Lockspire.QualificationLedgerContractTest do
   defp input_entry_hash(_, _, _), do: nil
 
   defp frozen_section_hash(source_revision, path, start_marker, end_marker) do
-    with {:ok, bytes} <- frozen_source_file(source_revision, path) do
-      bytes |> extract_section(start_marker, end_marker) |> sha256()
-    else
+    case frozen_source_file(source_revision, path) do
+      {:ok, bytes} -> bytes |> extract_section(start_marker, end_marker) |> sha256()
       _ -> nil
     end
   end

@@ -1,30 +1,31 @@
 ---
-status: awaiting_human_verify
+status: verifying
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
-updated: 2026-10-27T19:42:23Z
+updated: 2026-10-27T20:05:30Z
 ---
 
 ## Current Focus
 
 bug_class: bohrbug
-hypothesis: SRC-10 occurs because the generic frozen-input reader passes malformed binary paths through to System.cmd without validating the argument boundary.
-test: Completed pure RED/green/counterfactual and 42-path command-boundary controls; native focused source qualification is next.
-expecting: All 26 native tests pass on a clean committed source while prior 25/0 proof remains bound to its earlier source.
-next_action: Commit this metadata-only native/source proof record, then hand the caller the clean tested closure for fresh independent review and subsequent qualification.
+hypothesis: Canonical CI stops after architecture because Credo EX3033 rejects frozen_section_hash's single-clause with/else at source line 1526.
+test: Replace only that expression with the equivalent case, then run the exact Credo wrapper, formatter, and existing pure historical/SRC-10 controls before committing and executing one clean focused native guard.
+expecting: Credo changes from exit 4 to exit 0 while successful section hashing and failure nil remain identical and all 26 native tests pass.
+next_action: Commit only the equivalent case and this journal, then execute one actual clean owned-source guard for the unchanged 26-test scenarios.
 reasoning_checkpoint:
-  hypothesis: SRC-10 occurs because malformed binary manifest paths reach System.cmd without a validated repository-relative argument boundary, so NUL raises instead of returning a fixed rejection.
+  hypothesis: The single-clause with plus else in frozen_section_hash triggers the configured Credo WithSingleClause rule, blocking canonical CI before later tests can run.
   confirming_evidence:
-    - Independent immutable source/security review identifies the unguarded generic path-to-System.cmd boundary at the reviewed source.
-    - The agent-authored adversarial regression is RED before the fix; its first NUL reader case is caught and rendered as a fixed Boolean assertion failure without diagnostic values.
-  falsification_test: If any malformed path still invokes the Git boundary, raises, or lacks the fixed validation rejection, the correction is insufficient; the valid neighboring input must continue to resolve.
-  fix_rationale: Reject malformed manifest paths before validation can perform Git operations, validate again at the reader boundary, and convert expected process-launch argument/system failures to :error without exposing diagnostics.
-  blind_spots: Final-source focused native guard and boundary counterfactual remain pending; prior 25/0 proof and Python qualification remain bound to the old source.
+    - At clean 16c the exact canonical scripts/ci/run_credo.sh exited 4 and identified only the selected test at line 1526.
+    - Source line 1526 has one pattern clause and an else branch; the installed Credo EX3033 implementation explicitly flags exactly this construct.
+    - mix.exs places Credo immediately after the completed architecture section, matching the failed canonical CI's 15/0-only completed counts.
+  falsification_test: If the same exact Credo wrapper still rejects the equivalent case, this attribution is incomplete; if behavior controls change, the rewrite is not equivalent.
+  fix_rationale: A case expresses exactly the same successful byte hashing and wildcard nil result while satisfying the existing static gate without suppression or relaxed validation.
+  blind_spots: Final full canonical CI requires a later reviewed/frozen source epoch and remains with the caller; its discarded logs are neither reconstructed nor tailed.
   candidate_causes:
-    - code: Missing manifest path validation allows forbidden argv bytes into System.cmd.
-    - data: Adversarial control/non-relative/invalid-UTF-8 manifest path values violate the reader's input boundary.
-    - environment: A missing Git executable could separately raise at process launch and must also fail closed.
-  and_gate: yes; a malformed path and the missing validation boundary combine to produce SRC-10. Reject that input while preserving valid historical reads and all prior evidence.
+    - code: The helper's single-clause with/else violates Credo EX3033.
+    - config: The intended strict Credo configuration enforces the readability rule and must remain unchanged.
+    - environment: Parse timeout or unavailable tooling could separately fail Credo, but the actual diagnostic identifies the concrete source line instead.
+  and_gate: no; the identified construct is sufficient to trigger the established configured rule, independently of runtime data.
 
 ## Symptoms
 
@@ -128,3 +129,13 @@ preserved_tests: AST comparison of all 25 prior test bodies at 6a5a7689babd697d2
 canonical_source_proof: At 19f804061f5964e179e66a41f354339e2e4b6992 the 1077 sorted native path/sha256 row objects have authoritative canonical JSON digest 2d0a647239c63758ac13892aa125fc3e3821f8fd517df3108a60359711f038d6. Exactly the selected consumer changed relative to 6a; other 1076 hashes unchanged, zero added/deleted paths. Consumer SHA-256 870e3b00a85c1035c8e631c2accaed7ada0bd0fb020d74dcda5ddd08ad5f23d4. All 13 Phase 175 frozen inputs unchanged. Proof /private/tmp/lockspire178-src10-_wmywl_4/source-proof.json SHA-256 57254128e0b44a9ea25c37ca5d4e6470f1d7171852cd808e71f4bf27d58f071b.
 guardrail_verdict: accepted; actual target/adjacent 26/0, original 25 tests preserved, no behavior deleted for valid paths, pure path-guard bypass killed by the new regression and fixed reapplication passes. Stryker remains unavailable for Elixir; the private source-causal mutation is separately recorded rather than presented as Stryker.
 limits: Prior native 25/0 and full Python 263/0 remain historical at their actual sources. This SRC-10 lane ran no full Python, canonical CI, package proof, network fetch, or full matrix. Caller must freshly review all 1077 canonical rows before freezing and broader qualification; final human confirmation and archival remain pending.
+
+## Canonical CI Credo Follow-up
+
+failed_canonical_source: 16c66c8ae6064846d918d9642f78ac0857424b41, clean; actual completed architecture counts 15/0 only. Failed session 86972/PID 8244 was terminal with independent owned database absence and all 22 groups absent, per caller custody. Original manifest /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-3p4o979l/manifest.json SHA-256 2103fdcf7bc0b44054be4a29cfa437774940db7fa0b27ad663234da214e63a21 and custody /private/tmp/lockspire178-ci16c-9qq9uzmu/terminal-custody.json SHA-256 3a1f844980047a52ecb3c45c6f86f95559252f91dde9b0df8ed7bda7b282ba9a remain untouched. Discarded canonical raw logs were not reconstructed or tailed.
+actual_red: The one source-indicated read-only diagnostic used the exact canonical command [bash, scripts/ci/run_credo.sh] under the selected private environment and MIX_ENV=test, without application/database/test/CI startup. It exited 4; selected file line 1526; stdout 665 bytes SHA-256 19818b30e76818e2fa7bee6a0af1efb5d6769c25b7f1da723c514d3b6bb60f3d, stderr 0 bytes. Raw diagnostics stayed in memory and were discarded. Session 11134/PID 13863 terminal; owned process group stopped.
+root_cause: Credo.Check.Readability.WithSingleClause (EX3033) flags the one <- plus else in frozen_section_hash. Canonical alias order is formatter, warnings-as-errors compile, architecture, Credo, then Sobelow; this blocker precedes later CI sections.
+authorized_fix: Coordinator explicitly authorized only an equivalent case over frozen_source_file, retaining {:ok, bytes} hashing and wildcard nil. No suppression, dependency, configuration, validation, or unrelated refactor is selected.
+actual_static_green: Exact canonical [bash, scripts/ci/run_credo.sh] exit 0, PID 17114, process group stopped; stdout 317 bytes SHA-256 243ecd4bb41dd311bf9fa3423356ee93f7e72c5b29b4ce7e60bbc458dd925688, stderr 0 bytes. Full canonical [mix, format, --check-formatted] exit 0, PID 17115, process group stopped, stdout/stderr 0 bytes. All output remained in memory.
+behavior_controls: Five actual existing historical/SRC-10 test functions passed in pure ExUnit compilation/direct invocation with no application/database startup. Previous with and current case return equal successful section hashes and nil for unavailable/malformed input controls. Selected consumer SHA-256 ae27e1ba29ad9c8b3cece357c89fd06d8ea6ed853d60202af2196ffe303dd2d4.
+verification: Static gate RED exit 4 to GREEN exit 0 confirmed; formatter and behavior controls pass. Exact final-source clean native 26-test guard pending.
