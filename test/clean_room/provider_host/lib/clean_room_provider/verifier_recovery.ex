@@ -27,6 +27,10 @@ defmodule CleanRoomProvider.VerifierRecovery do
   ]
 
   def run_recovery(store, issuer) when store in [:builtin, :delegated] do
+    run_with_safe_failure(fn -> do_run_recovery(store, issuer) end, :recovery_unknown)
+  end
+
+  defp do_run_recovery(store, issuer) do
     mark_stage(:recovery_seed)
     native = seed_jwt_client!("phase178-recovery-native")
     before = fetch_row!(native.client_id)
@@ -87,136 +91,201 @@ defmodule CleanRoomProvider.VerifierRecovery do
       do: raise("installed issuer does not match configured issuer")
 
     result
-  rescue
-    _error -> raise "SAFE_FAILURE_STAGE=#{Process.get({__MODULE__, :stage}, :recovery_unknown)}"
   end
 
   def run_issuance(store, issuer) when store == :delegated do
-    mark_stage(:issuance_endpoint_ready)
-    discovery_http_status = mounted_endpoint_status!(issuer)
-    endpoint_ready = discovery_http_status == 200
-    mark_stage(:issuance_seed)
-    client = seed_jwt_client!("phase178-issuance")
-    code = seed_authorization_code!(client.client_id)
-    before = effects(client.client_id)
-    first_jti = "issuance-stale-" <> Ecto.UUID.generate()
-    Store.set_issuance_control(self(), client.client_id, first_jti)
-    Store.set_maintenance_observer(self(), client.client_id)
+    run_with_safe_failure(
+      fn ->
+        mark_stage(:issuance_endpoint_ready)
+        discovery_http_status = mounted_endpoint_status!(issuer)
+        mark_stage(:issuance_seed)
+        client = seed_jwt_client!("phase178-issuance")
+        code = seed_authorization_code!(client.client_id)
+        before = effects(client.client_id)
+        first_jti = "issuance-stale-" <> Ecto.UUID.generate()
+        Store.set_issuance_control(self(), client.client_id, first_jti)
+        Store.set_maintenance_observer(self(), client.client_id)
 
-    try do
-      mark_stage(:issuance_auth_barrier)
+        try do
+          mark_stage(:issuance_auth_barrier)
 
-      stale_request =
-        start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
+          stale_request =
+            start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
 
-      {request_pid, _auth_backend} = await_barrier!(:authenticated, first_jti)
-      durable_jti = jti_present?(client.client_id, first_jti)
+          barrier = await_issuance_guard(first_jti, client.client_id, before)
 
-      send(
-        request_pid,
-        {:release_client_verifier_issuance_barrier, issuance_reference(), :authenticated}
-      )
+          maintenance =
+            commit_issuance_maintenance(
+              client,
+              barrier.request_pid,
+              barrier.request_backend
+            )
 
-      {guard_pid, request_backend} = await_barrier!(:current_row_guard, first_jti)
+          {stale_status, stale_error_code} =
+            await_monitored_worker!(stale_request, :issuance_replay_fresh)
 
-      unless request_pid == guard_pid,
-        do: raise("installed token request changed process between barriers")
+          Store.clear_issuance_control()
+          Store.clear_maintenance_observer()
+          mark_stage(:issuance_same_jti_replay)
+          after_stale = effects(client.client_id)
 
-      before_maintenance = effects(client.client_id)
+          finish_issuance_proof(%{
+            issuer: issuer,
+            client: client,
+            code: code,
+            first_jti: first_jti,
+            before: before,
+            barrier: barrier,
+            maintenance:
+              Map.merge(maintenance, %{
+                stale_status: stale_status,
+                stale_error_code: stale_error_code,
+                after_stale: after_stale
+              }),
+            discovery_http_status: discovery_http_status
+          })
+        after
+          Store.clear_issuance_control()
+          Store.clear_maintenance_observer()
+        end
+      end,
+      :issuance_unknown
+    )
+  end
 
-      unless durable_jti and before_maintenance.jtis == before.jtis + 1 and
-               before_maintenance.tokens == before.tokens and
-               before_maintenance.grants == before.grants and
-               before_maintenance.code_redeemed_at == before.code_redeemed_at do
-        raise "JWT/JTI authentication barrier was reached before durable JTI observation"
-      end
+  defp await_issuance_guard(first_jti, client_id, before) do
+    request_pid = elem(await_barrier!(:authenticated, first_jti), 0)
+    durable_jti = jti_present?(client_id, first_jti)
 
-      mark_stage(:issuance_maintenance)
+    send(
+      request_pid,
+      {:release_client_verifier_issuance_barrier, issuance_reference(), :authenticated}
+    )
 
-      maintenance =
-        start_monitored_worker(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+    {guard_pid, request_backend} = await_barrier!(:current_row_guard, first_jti)
+    validate_issuance_guard!(request_pid, guard_pid, durable_jti, client_id, before)
 
-      maintenance_backend = await_maintenance_backend!(client.client_id)
+    %{
+      request_pid: request_pid,
+      request_backend: request_backend,
+      durable_jti: durable_jti
+    }
+  end
 
-      {:ok, %{committed_changed: changed}} =
-        await_monitored_worker!(maintenance, :issuance_maintenance)
+  defp validate_issuance_guard!(request_pid, guard_pid, durable_jti, client_id, before) do
+    unless request_pid == guard_pid,
+      do: raise("installed token request changed process between barriers")
 
-      unless changed >= 1,
-        do: raise("independent installed maintenance did not commit a verifier change")
+    before_maintenance = effects(client_id)
 
-      # The authentication/JTI transaction has completed before the guard
-      # transaction starts, so PostgreSQL may legitimately reuse that PID.
-      # Only the held current-row guard and the concurrent maintenance
-      # transaction must have distinct backends.
-      distinct_backends = request_backend != maintenance_backend
-
-      send(
-        request_pid,
-        {:release_client_verifier_issuance_barrier, issuance_reference(), :current_row_guard}
-      )
-
-      {stale_status, stale_error_code} =
-        await_monitored_worker!(stale_request, :issuance_replay_fresh)
-
-      Store.clear_issuance_control()
-      Store.clear_maintenance_observer()
-      after_stale = effects(client.client_id)
-
-      mark_stage(:issuance_same_jti_replay)
-
-      replay_request =
-        start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
-
-      {replay_status, replay_error_code} =
-        await_monitored_worker!(replay_request, :issuance_same_jti_replay)
-
-      after_replay = effects(client.client_id)
-      fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
-      mark_stage(:issuance_fresh_jti_retry)
-
-      fresh_request =
-        start_monitored_worker(fn -> token_request(issuer, client, code, fresh_jti) end)
-
-      {fresh_status, fresh_error_code} =
-        await_monitored_worker!(fresh_request, :issuance_fresh_jti_retry)
-
-      after_fresh = effects(client.client_id)
-      Store.clear_issuance_control()
-      Store.clear_maintenance_observer()
-
-      %{
-        "VPROOF-02-ISSUANCE-#{String.upcase(System.fetch_env!("LOCKSPIRE_PROOF_PAIR"))}-STALE-IDENTITY" =>
-          %{
-            "outcome" => "pass",
-            "executed" => true,
-            "server_ready" => endpoint_ready,
-            "discovery_http_status" => discovery_http_status,
-            "auth_barrier_reached" => durable_jti,
-            "jti_consumption_observed" => durable_jti,
-            "pre_guard_barrier_reached" => true,
-            "maintenance_committed" => true,
-            "backend_pids_distinct" => distinct_backends,
-            "stale_identity_rejected" => stale_status == 401,
-            "stale_http_status" => stale_status,
-            "stale_error_code" => stale_error_code,
-            "no_token_issued" => after_stale.tokens == before.tokens,
-            "no_grant_created" => after_stale.grants == before.grants,
-            "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
-            "same_jti_replay_rejected" => replay_status == 401 and after_replay == after_stale,
-            "replay_http_status" => replay_status,
-            "replay_error_code" => replay_error_code,
-            "fresh_jti_succeeded" =>
-              fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
-            "fresh_http_status" => fresh_status,
-            "fresh_error_code" => fresh_error_code
-          }
-      }
-    after
-      Store.clear_issuance_control()
-      Store.clear_maintenance_observer()
+    unless durable_jti and before_maintenance.jtis == before.jtis + 1 and
+             before_maintenance.tokens == before.tokens and
+             before_maintenance.grants == before.grants and
+             before_maintenance.code_redeemed_at == before.code_redeemed_at do
+      raise "JWT/JTI authentication barrier was reached before durable JTI observation"
     end
-  rescue
-    _error -> raise "SAFE_FAILURE_STAGE=#{Process.get({__MODULE__, :stage}, :issuance_unknown)}"
+  end
+
+  defp commit_issuance_maintenance(client, request_pid, request_backend) do
+    mark_stage(:issuance_maintenance)
+
+    maintenance =
+      start_monitored_worker(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
+
+    maintenance_backend = await_maintenance_backend!(client.client_id)
+
+    {:ok, %{committed_changed: changed}} =
+      await_monitored_worker!(maintenance, :issuance_maintenance)
+
+    unless changed >= 1,
+      do: raise("independent installed maintenance did not commit a verifier change")
+
+    # Authentication may release its backend before the maintenance transaction
+    # starts. Only the held guard and maintenance transaction require distinct PIDs.
+    distinct_backends = request_backend != maintenance_backend
+
+    send(
+      request_pid,
+      {:release_client_verifier_issuance_barrier, issuance_reference(), :current_row_guard}
+    )
+
+    %{distinct_backends: distinct_backends}
+  end
+
+  defp finish_issuance_proof(issuance) do
+    %{issuer: issuer, client: client, code: code, first_jti: first_jti} = issuance
+
+    {replay_status, replay_error_code} =
+      token_request_result(issuer, client, code, first_jti)
+
+    after_replay = effects(client.client_id)
+    fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
+
+    mark_stage(:issuance_fresh_jti_retry)
+    {fresh_status, fresh_error_code} = token_request_result(issuer, client, code, fresh_jti)
+
+    after_fresh = effects(client.client_id)
+
+    %{
+      "VPROOF-02-ISSUANCE-#{String.upcase(System.fetch_env!("LOCKSPIRE_PROOF_PAIR"))}-STALE-IDENTITY" =>
+        issuance_result(
+          Map.merge(issuance, %{
+            replay_status: replay_status,
+            replay_error_code: replay_error_code,
+            after_replay: after_replay,
+            fresh_status: fresh_status,
+            fresh_error_code: fresh_error_code,
+            after_fresh: after_fresh
+          })
+        )
+    }
+  end
+
+  defp token_request_result(issuer, client, code, jti) do
+    request = start_monitored_worker(fn -> token_request(issuer, client, code, jti) end)
+    await_monitored_worker!(request, Process.get({__MODULE__, :stage}))
+  end
+
+  defp issuance_result(issuance) do
+    %{after_replay: after_replay, after_fresh: after_fresh} = issuance
+
+    %{
+      barrier: barrier,
+      before: before,
+      discovery_http_status: discovery_http_status,
+      fresh_error_code: fresh_error_code,
+      fresh_status: fresh_status,
+      maintenance: maintenance,
+      replay_error_code: replay_error_code,
+      replay_status: replay_status
+    } = issuance
+
+    after_stale = maintenance.after_stale
+
+    %{
+      "outcome" => "pass",
+      "executed" => true,
+      "server_ready" => discovery_http_status == 200,
+      "discovery_http_status" => discovery_http_status,
+      "auth_barrier_reached" => barrier.durable_jti,
+      "jti_consumption_observed" => barrier.durable_jti,
+      "pre_guard_barrier_reached" => true,
+      "maintenance_committed" => true,
+      "backend_pids_distinct" => maintenance.distinct_backends,
+      "stale_identity_rejected" => maintenance.stale_status == 401,
+      "stale_http_status" => maintenance.stale_status,
+      "stale_error_code" => maintenance.stale_error_code,
+      "no_token_issued" => after_stale.tokens == before.tokens,
+      "no_grant_created" => after_stale.grants == before.grants,
+      "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
+      "same_jti_replay_rejected" => replay_status == 401 and after_replay == after_stale,
+      "replay_http_status" => replay_status,
+      "replay_error_code" => replay_error_code,
+      "fresh_jti_succeeded" =>
+        fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
+      "fresh_http_status" => fresh_status,
+      "fresh_error_code" => fresh_error_code
+    }
   end
 
   def run_issuance(_store, _issuer),
@@ -356,8 +425,20 @@ defmodule CleanRoomProvider.VerifierRecovery do
     before = fetch_row!(client.client_id)
     owner = self()
     Process.put({__MODULE__, :previous_trap_exit}, Process.flag(:trap_exit, true))
-    mark_stage(:recovery_interrupt_lock_start)
 
+    try do
+      mark_stage(:recovery_interrupt_lock_start)
+      {lock_task, lock_pid, lock_backend} = start_recovery_lock(client, owner)
+      mark_stage(:recovery_interrupt_lock_held)
+      blocked = interrupt_maintenance(lock_backend)
+      release_recovery_lock(lock_task, lock_pid)
+      observe_interrupted_recovery(client, before, blocked)
+    after
+      cleanup_builtin_recovery_interrupt()
+    end
+  end
+
+  defp start_recovery_lock(client, owner) do
     lock_task =
       Task.async(fn ->
         Repo.transaction(fn ->
@@ -382,14 +463,14 @@ defmodule CleanRoomProvider.VerifierRecovery do
 
     Process.put({__MODULE__, :recovery_lock_task}, lock_task.pid)
 
-    {lock_pid, lock_backend} =
-      receive do
-        {:recovery_lock_held, task_pid, backend_pid} -> {task_pid, backend_pid}
-      after
-        @timeout -> raise "built-in interruption row lock was not acquired"
-      end
+    receive do
+      {:recovery_lock_held, task_pid, backend_pid} -> {lock_task, task_pid, backend_pid}
+    after
+      @timeout -> raise "built-in interruption row lock was not acquired"
+    end
+  end
 
-    mark_stage(:recovery_interrupt_lock_held)
+  defp interrupt_maintenance(lock_backend) do
     apply_task = Task.async(fn -> ClientVerifierMaintenance.run(mode: :apply, limit: 100) end)
     mark_stage(:recovery_interrupt_apply_start)
 
@@ -401,25 +482,26 @@ defmodule CleanRoomProvider.VerifierRecovery do
     )
 
     mark_stage(:recovery_interrupt_kill)
+    Process.exit(apply_task.pid, :kill)
+    _ = Task.yield(apply_task, @timeout) || Task.shutdown(apply_task, :brutal_kill)
+    blocked
+  end
 
-    if blocked do
-      Process.exit(apply_task.pid, :kill)
-      _ = Task.yield(apply_task, @timeout) || Task.shutdown(apply_task, :brutal_kill)
-    else
-      Process.exit(apply_task.pid, :kill)
-      _ = Task.yield(apply_task, @timeout) || Task.shutdown(apply_task, :brutal_kill)
-    end
-
+  defp release_recovery_lock(lock_task, lock_pid) do
     send(lock_pid, :release_recovery_lock)
     mark_stage(:recovery_interrupt_lock_release)
     _ = Task.await(lock_task, @timeout)
+  end
 
+  defp observe_interrupted_recovery(client, before, blocked) do
     mark_stage(:recovery_interrupt_observe)
     after_row = fetch_row!(client.client_id)
 
     blocked and complete_check_ready?() == false and
       after_row.ciphertext == before.ciphertext and audit_count(client.client_id) == 0
-  after
+  end
+
+  defp cleanup_builtin_recovery_interrupt do
     mark_stage(:recovery_interrupt_cleanup)
 
     if is_pid(Process.get({__MODULE__, :recovery_lock_task})),
@@ -698,6 +780,20 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp token_request(issuer, client, code, jti) do
+    case capture_call(fn -> do_token_request(issuer, client, code, jti) end) do
+      {:ok, result} ->
+        result
+
+      {:error, error} ->
+        if Process.get({__MODULE__, :stage}) == :expired_request do
+          mark_stage(token_request_failure_stage(error))
+        end
+
+        raise "mounted token endpoint request failed"
+    end
+  end
+
+  defp do_token_request(issuer, client, code, jti) do
     mark_stage(:expired_assertion)
 
     case Application.ensure_all_started(:inets) do
@@ -739,55 +835,28 @@ defmodule CleanRoomProvider.VerifierRecovery do
         mark_stage(:expired_http_transport)
         raise "mounted token endpoint request failed"
     end
-  rescue
-    error ->
-      if Process.get({__MODULE__, :stage}) == :expired_request do
-        mark_stage(
-          case error do
-            %ArgumentError{} ->
-              :expired_request_argument
-
-            %CaseClauseError{} ->
-              :expired_request_case
-
-            %FunctionClauseError{} ->
-              :expired_request_function_clause
-
-            %MatchError{} ->
-              :expired_request_match
-
-            %ErlangError{} ->
-              :expired_request_erlang
-
-            %UndefinedFunctionError{module: :httpc, function: :request, arity: 4} ->
-              :expired_request_undefined_httpc
-
-            %UndefinedFunctionError{} ->
-              :expired_request_undefined
-
-            %RuntimeError{} ->
-              :expired_request_runtime
-
-            %KeyError{} ->
-              :expired_request_key
-
-            %BadMapError{} ->
-              :expired_request_bad_map
-
-            %BadArityError{} ->
-              :expired_request_bad_arity
-
-            %SystemLimitError{} ->
-              :expired_request_system_limit
-
-            _ ->
-              :expired_request_error
-          end
-        )
-      end
-
-      raise "mounted token endpoint request failed"
   end
+
+  defp token_request_failure_stage(%ArgumentError{}), do: :expired_request_argument
+  defp token_request_failure_stage(%CaseClauseError{}), do: :expired_request_case
+  defp token_request_failure_stage(%FunctionClauseError{}), do: :expired_request_function_clause
+  defp token_request_failure_stage(%MatchError{}), do: :expired_request_match
+  defp token_request_failure_stage(%ErlangError{}), do: :expired_request_erlang
+
+  defp token_request_failure_stage(%UndefinedFunctionError{
+         module: :httpc,
+         function: :request,
+         arity: 4
+       }),
+       do: :expired_request_undefined_httpc
+
+  defp token_request_failure_stage(%UndefinedFunctionError{}), do: :expired_request_undefined
+  defp token_request_failure_stage(%RuntimeError{}), do: :expired_request_runtime
+  defp token_request_failure_stage(%KeyError{}), do: :expired_request_key
+  defp token_request_failure_stage(%BadMapError{}), do: :expired_request_bad_map
+  defp token_request_failure_stage(%BadArityError{}), do: :expired_request_bad_arity
+  defp token_request_failure_stage(%SystemLimitError{}), do: :expired_request_system_limit
+  defp token_request_failure_stage(_error), do: :expired_request_error
 
   defp safe_oauth_error_code(response) do
     case Jason.decode(IO.iodata_to_binary(response)) do
@@ -994,4 +1063,20 @@ defmodule CleanRoomProvider.VerifierRecovery do
   defp hash_token(token), do: :crypto.hash(:sha256, token) |> Base.encode16(case: :lower)
 
   defp mark_stage(stage), do: Process.put({__MODULE__, :stage}, stage)
+
+  defp run_with_safe_failure(fun, default_stage) do
+    case capture_call(fun) do
+      {:ok, result} ->
+        result
+
+      {:error, _error} ->
+        raise "SAFE_FAILURE_STAGE=#{Process.get({__MODULE__, :stage}, default_stage)}"
+    end
+  end
+
+  defp capture_call(fun) do
+    {:ok, fun.()}
+  rescue
+    error -> {:error, error}
+  end
 end

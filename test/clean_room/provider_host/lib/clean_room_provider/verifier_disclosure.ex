@@ -15,51 +15,49 @@ defmodule CleanRoomProvider.VerifierDisclosure do
   @query_event [:clean_room_provider, :repo, :query]
 
   def seed(client_ids, handoff_path) do
-    try do
-      clients =
-        Map.new(client_ids, fn client_id ->
-          Process.put(:verifier_disclosure_stage, :registration)
+    clients =
+      Map.new(client_ids, fn client_id ->
+        Process.put(:verifier_disclosure_stage, :registration)
 
-          {:ok, %RegistrationResult{client: client, client_secret: secret}} =
-            Lockspire.Clients.register_client(%{
-              client_id: client_id,
-              client_type: "confidential",
-              name: "Installed disclosure proof",
-              redirect_uris: ["https://client.example/callback"],
-              allowed_scopes: ["openid"],
-              allowed_grant_types: ["authorization_code"],
-              token_endpoint_auth_method: "client_secret_jwt",
-              token_endpoint_auth_signing_alg: "HS256"
-            })
+        {:ok, %RegistrationResult{client: client, client_secret: secret}} =
+          Lockspire.Clients.register_client(%{
+            client_id: client_id,
+            client_type: "confidential",
+            name: "Installed disclosure proof",
+            redirect_uris: ["https://client.example/callback"],
+            allowed_scopes: ["openid"],
+            allowed_grant_types: ["authorization_code"],
+            token_endpoint_auth_method: "client_secret_jwt",
+            token_endpoint_auth_signing_alg: "HS256"
+          })
 
-          Process.put(:verifier_disclosure_stage, :nested_inspection)
-          inspection = inspect(%{registration: %{client: client}})
-          Process.put(:verifier_disclosure_stage, :audit_projection)
+        Process.put(:verifier_disclosure_stage, :nested_inspection)
+        inspection = inspect(%{registration: %{client: client}})
+        Process.put(:verifier_disclosure_stage, :audit_projection)
 
-          {client_id,
-           %{
-             "client_id" => client_id,
-             "secret" => secret,
-             "ciphertext" => client.client_secret_jwt_verifier_encrypted,
-             "nested_inspection_redacted" => not String.contains?(inspection, secret),
-             "audit_before" => audit_count(client_id)
-           }}
-        end)
+        {client_id,
+         %{
+           "client_id" => client_id,
+           "secret" => secret,
+           "ciphertext" => client.client_secret_jwt_verifier_encrypted,
+           "nested_inspection_redacted" => not String.contains?(inspection, secret),
+           "audit_before" => audit_count(client_id)
+         }}
+      end)
 
-      write_private(handoff_path, %{clients: clients})
-      IO.puts("VERIFIER_DISCLOSURE_SEEDED=true")
-    rescue
-      _error ->
-        stage = Process.get(:verifier_disclosure_stage, :host_setup)
+    write_private(handoff_path, %{clients: clients})
+    IO.puts("VERIFIER_DISCLOSURE_SEEDED=true")
+  rescue
+    _error ->
+      stage = Process.get(:verifier_disclosure_stage, :host_setup)
 
-        safe_stage =
-          if stage in [:registration, :nested_inspection, :audit_projection],
-            do: stage,
-            else: :host_setup
+      safe_stage =
+        if stage in [:registration, :nested_inspection, :audit_projection],
+          do: stage,
+          else: :host_setup
 
-        write_private(handoff_path, %{failure_stage: safe_stage})
-        IO.puts("VERIFIER_DISCLOSURE_SEED_FAILURE=" <> Atom.to_string(safe_stage))
-    end
+      write_private(handoff_path, %{failure_stage: safe_stage})
+      IO.puts("VERIFIER_DISCLOSURE_SEED_FAILURE=" <> Atom.to_string(safe_stage))
   end
 
   def rotate(client_id, handoff_path) do
@@ -492,16 +490,14 @@ defmodule CleanRoomProvider.VerifierDisclosure do
   end
 
   defp safe_operation(operation) do
-    try do
-      case operation.() do
-        :ok -> "ok"
-        _ -> "operation_failed"
-      end
-    rescue
-      _error -> "operation_failed"
-    catch
-      _kind, _reason -> "operation_failed"
+    case operation.() do
+      :ok -> "ok"
+      _ -> "operation_failed"
     end
+  rescue
+    _error -> "operation_failed"
+  catch
+    _kind, _reason -> "operation_failed"
   end
 
   defp audit_count(client_id) do
