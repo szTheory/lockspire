@@ -1,5 +1,5 @@
 ---
-status: verifying
+status: awaiting_human_verify
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
 updated: 2026-10-27T19:42:23Z
@@ -11,7 +11,7 @@ bug_class: bohrbug
 hypothesis: SRC-10 occurs because the generic frozen-input reader passes malformed binary paths through to System.cmd without validating the argument boundary.
 test: Completed pure RED/green/counterfactual and 42-path command-boundary controls; native focused source qualification is next.
 expecting: All 26 native tests pass on a clean committed source while prior 25/0 proof remains bound to its earlier source.
-next_action: Commit only the selected test and this journal, then execute one actual owned-source guard selecting the 26-test file.
+next_action: Commit this metadata-only native/source proof record, then hand the caller the clean tested closure for fresh independent review and subsequent qualification.
 reasoning_checkpoint:
   hypothesis: SRC-10 occurs because malformed binary manifest paths reach System.cmd without a validated repository-relative argument boundary, so NUL raises instead of returning a fixed rejection.
   confirming_evidence:
@@ -123,5 +123,8 @@ pure_green: Same pure scope/runtime and actual new-test invocation passes at sel
 counterfactual: Fixed/shared-path-guard-bypassed/fixed new-test outcomes pass/fixed_assertion_red/pass. Only private in-memory source was modified; repository source was not reverted. Proof /private/tmp/lockspire178-src10-aa94aera/pure-regression.json SHA-256 b1860227f161945e52ed7de0fa77d87c27109be692dcee60f651b2e005cf3d55.
 command_boundary: Private evaluation replaced only the external System.cmd boundary with a fixed observer. All 42 invalid inputs returned :error before any command at the reader and returned the exact fixed reason before any command at the full validator. Both expected argument/system launch failures returned :error for valid input. Observer arguments/output were not surfaced.
 digest_reconciliation: The earlier f96b825552342101dfe28edeceba3d8e1fed850306da8840debf4fd06c479759 used newline path-space-hash records and is a nonauthoritative preparation artifact. The authority recipe is sorted objects with path and sha256, encoded by json.dumps(rows, sort_keys=True, separators=(',', ':')). It independently reproduces the reviewers' 1077-row digest 82fcb59ab87e3ffdbe608f932e8969865cb3d97ff58e0a79e839d2cc878828fc at 6a5a7689babd697d20c63c7f1dd16ce08e07e9fb. The recipes differ; no canonical match is claimed for f96. Original proof/report files are preserved.
-native_verification: pending
-guardrail_verdict: pending
+native_verification: Actual owned-source guard at 19f804061f5964e179e66a41f354339e2e4b6992 passed 26 tests with zero failures, test exit 0 and guard exit 0. Source and clean checkout matched before/after. Owned database OID 39298 was created, independently identified, migrated, dropped, and independently confirmed absent. All 24 child process groups stopped. Test PID 73765 and session 45411 terminal. Manifest /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-5h2sh3nx/manifest.json SHA-256 a796edeb3d54135814c2e50fe888ac05f52855df088d6c6959a61fbde3bd27ae. No manually assembled Mix test command, foreign database, remote write, or global toolchain change was used.
+preserved_tests: AST comparison of all 25 prior test bodies at 6a5a7689babd697d20c63c7f1dd16ce08e07e9fb with the 26-test corrected file found all 25 unchanged; only the adversarial regression was added.
+canonical_source_proof: At 19f804061f5964e179e66a41f354339e2e4b6992 the 1077 sorted native path/sha256 row objects have authoritative canonical JSON digest 2d0a647239c63758ac13892aa125fc3e3821f8fd517df3108a60359711f038d6. Exactly the selected consumer changed relative to 6a; other 1076 hashes unchanged, zero added/deleted paths. Consumer SHA-256 870e3b00a85c1035c8e631c2accaed7ada0bd0fb020d74dcda5ddd08ad5f23d4. All 13 Phase 175 frozen inputs unchanged. Proof /private/tmp/lockspire178-src10-_wmywl_4/source-proof.json SHA-256 57254128e0b44a9ea25c37ca5d4e6470f1d7171852cd808e71f4bf27d58f071b.
+guardrail_verdict: accepted; actual target/adjacent 26/0, original 25 tests preserved, no behavior deleted for valid paths, pure path-guard bypass killed by the new regression and fixed reapplication passes. Stryker remains unavailable for Elixir; the private source-causal mutation is separately recorded rather than presented as Stryker.
+limits: Prior native 25/0 and full Python 263/0 remain historical at their actual sources. This SRC-10 lane ran no full Python, canonical CI, package proof, network fetch, or full matrix. Caller must freshly review all 1077 canonical rows before freezing and broader qualification; final human confirmation and archival remain pending.
