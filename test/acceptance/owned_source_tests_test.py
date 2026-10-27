@@ -294,6 +294,25 @@ class OwnedSourceGuardTests(unittest.TestCase):
         self.assertTrue(b"PRIVATE_CHILD_" not in runner.manifest_path.read_bytes())
         self.assertTrue(result.process_group_stopped)
 
+    def test_real_source_child_has_owned_authority_before_started_callback(self):
+        observed = {}
+        owner_module = sys.modules[guard.stop_process_group.__module__]
+
+        def started(pid):
+            observed["pid"] = pid
+            observed["registered"] = pid in owner_module._OWNED_IDENTITIES
+
+        result = guard.PrivateProcessRunner()(
+            [sys.executable, "-c", "pass"], env=os.environ, cwd=self.root,
+            timeout=10, started=started,
+        )
+        self.assertTrue(observed.get("registered") is True,
+                        "source child launch bypassed owned session authority")
+        self.assertTrue(result.returncode == 0 and result.process_group_stopped,
+                        "source child cleanup was not independently confirmed")
+        self.assertTrue(observed["pid"] not in owner_module._OWNED_IDENTITIES,
+                        "source child authority remained after confirmed cleanup")
+
     def test_unconfirmed_worker_cleanup_prevents_database_drop(self):
         runner, fake = self.runner()
         original = fake.__call__

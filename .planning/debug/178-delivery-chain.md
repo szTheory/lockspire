@@ -11,7 +11,7 @@ bug_class: Bohrbug
 hypothesis: Separately tested producer and consumer schemas do not describe the same authenticated chain.
 test: Exercise actual local producers and consumers with external OS/build/database/GitHub boundaries replaced.
 expecting: Existing implementation rejects actual upload/helper output and accepts covered-input and typed-value substitutions.
-next_action: Commit exact delivery scope and obtain independent source/security/integration re-review before any fresh runtime or final freeze.
+next_action: Commit the narrow registered source-runner correction; parent reruns the complete Python gate, then independent reviews remain required.
 reasoning_checkpoint:
   hypothesis: The acceptance boundary trusts divergent hand-selected paths and unchecked values while requiring a serialized layout different from its actual producers.
   confirming_evidence:
@@ -99,3 +99,30 @@ files_changed:
 ## Remaining boundaries
 
 Runtime remains OFF. No actual final freeze, canonical CI, installed package producer, hosted observation, integration authorization, main acceptance, merge or publication is established here. Linux process-authority implementation is independently source reviewed and unit exercised elsewhere; its actual OS branch was not run on this macOS host. Independent source/security/integration review must assess the combined committed corrections before runtime owners may proceed. Historical secret/database incidents, EPERM custody, old wrapper failures, original 13 Phase 175 pins and prior RED/diagnostic deviations remain unchanged.
+
+## Postcommit narrow source-runner seam — 2026-10-27
+
+Parent full gate at f809a40b: 226 executed tests, one error in the unchanged source-guard child-output privacy test, no ordinary assertion failures. Both failed full-gate records remain parent-owned and unchanged.
+
+Narrow reproduction: one test, zero failures, one GuardFailure; no skips or unexpected successes. Actual instrumented cleanup observed identity_registered=false, direct_child_reaped=true, cleanup_result=false. Fixed exception facts: stage=test, reason=process_group_cleanup_unconfirmed. No child data or exception arguments were rendered.
+
+reasoning_checkpoint:
+  hypothesis: Source CI's PrivateProcessRunner uses direct Popen, bypassing the owned identity capture now required by the unchanged strict stop_process_group consumer.
+  confirming_evidence:
+    - Actual cleanup call observed absent registered identity and returned false after reaping the direct child.
+    - Source guard creates Popen directly while package_input.stop_process_group requires the identity cached only by start_owned_session.
+  falsification_test: A registered launch still yields the same missing-identity failure, or the direct launch already populates the ownership cache.
+  fix_rationale: Use the existing owned-session factory at this producer boundary; preserve independent session identity and all cleanup rejection behavior.
+  blind_spots: Actual database-backed source CI remains prohibited; only its actual subprocess ownership seam is exercised locally.
+  candidate_causes:
+    - code: caller bypasses the changed shared ownership API
+    - environment: platform process inspection could independently fail despite registered authority
+  and_gate: no for the observed failure; absent identity alone deterministically prevents cleanup acceptance, regardless of the already-exited child
+
+Correction: PrivateProcessRunner imports and calls the existing start_owned_session factory. The bounded communicate/stop logic and strict authority consumer are unchanged. Factory owner confirmed that a missing supervisor endpoint disables IPC only; authoritative local identity capture remains mandatory.
+
+Verification: native new real-child authority target failed its fixed assertion before the production edit; RED_EVIDENCE_OK was obtained before that edit. The unchanged child-output privacy target and all guard tests then passed: 16 tests, zero failures/errors/skips/unexpected successes (session 50071, PID 51484, start 2026-10-27T09:00:14.906246Z, deadline 60 seconds). Direct-child callback sees registered authority and cleanup forgets that exact authority. Test-owned fixtures and child sessions completed their normal cleanup.
+
+Caller audit: every other production stop_process_group scenario caller (admin, rollout, endpoints, disclosure, bounded package commands) is factory-backed. Remaining direct Popen sites in build_provider, processes, client_lifetime_upgrade and clean_room_saas_journey use separate lifecycle consumers and are not callers of the changed strict authority API. No package_input or process-registry code was changed. Actual source DB execution remains prohibited; no such command ran.
+
+Counterfactual: loading the actual f809a40b guard source into an isolated in-memory module causes the new real-child authority target to fail one assertion with zero errors/skips/unexpected successes. Restoring the current guard module passes that identical target. No shared file was reverted and no ownership check was weakened.

@@ -26,7 +26,7 @@ import uuid
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
-from clean_room.package_input import stop_process_group  # noqa: E402
+from clean_room.package_input import start_owned_session, stop_process_group  # noqa: E402
 
 REPO = "Lockspire.TestRepo"
 DB_PATTERN = re.compile(r"lockspire_owned_[0-9a-f]{32}\Z")
@@ -88,7 +88,7 @@ class PrivateProcessRunner:
 
     def __call__(self, command: Sequence[str], *, env: Mapping[str, str], cwd: Path,
                  timeout: int, started: Callable[[int], None]) -> Result:
-        process = subprocess.Popen(
+        process = start_owned_session(
             command, cwd=cwd, env=dict(env), stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
         )
