@@ -99,7 +99,16 @@ All receipts are partial evidence objects and pass the shared CLI validator.
 | Issuance | locked | delegated | `.artifacts/phase178/issuance-final-matrix-539cb802/locked-delegated/receipt.json` |
 | Issuance | floor | delegated | `.artifacts/phase178/issuance-final-matrix-539cb802/floor-delegated/receipt.json` |
 
-Candidate/runtime identity on the matrix: package version `1.6.1`; archive SHA-256 `8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91`; source tree and vendor tree SHA-256 `2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243`; compiled candidate SHA-256 `fc49656a59e963eb514663bf59159735c83cb0398e7602b0ac5e66f7904c8e01`; resolved dependencies verified; lock SHA-256 `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404`; Phoenix `1.8.13`, LiveView `1.2.10`, Elixir `1.19.5`, OTP `28`, PostgreSQL `14.17`.
+Common matrix identity: package version `1.6.1`; archive SHA-256 `8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91`; source and vendor tree SHA-256 `2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243`; source and runner revision `539cb802a1b44222af72ee7d53b2347eb32dde06`; Elixir `1.19.5`, OTP `28`, PostgreSQL `14.17`. Resolved dependencies were verified for every receipt. Compiled candidate, lockfile, and Phoenix/LiveView versions are specific to each host cell:
+
+| Group | Pair | Store | Phoenix | LiveView | Lock SHA-256 | Compiled candidate SHA-256 |
+|---|---|---|---|---|---|---|
+| Recovery | locked | builtin | 1.8.13 | 1.2.10 | `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` | `fc49656a59e963eb514663bf59159735c83cb0398e7602b0ac5e66f7904c8e01` |
+| Recovery | locked | delegated | 1.8.13 | 1.2.10 | `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` | `e2beccd358be47caaad569eed7a04c028222cb471fd5b7cf5139437ba9f6690f` |
+| Recovery | floor | builtin | 1.8.5 | 1.1.28 | `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` | `bb4dae001598cff73b103140b9068b3504a0538862b658f352d0b51a77708186` |
+| Recovery | floor | delegated | 1.8.5 | 1.1.28 | `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` | `0e5f3f8b45d984bed8f73cd37d42c78829f534bbd2bd1fbe17e9b1f75a0b9d3c` |
+| Issuance | locked | delegated | 1.8.13 | 1.2.10 | `f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404` | `aa697916e8cc005247c6bb9de11dcd960910b77f6b30113a3ca486beeff9c167` |
+| Issuance | floor | delegated | 1.8.5 | 1.1.28 | `74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954` | `96e09fa1897effcea03ef790d575c5c6ef7c5fc7bd65f079d9f22edf639c7163` |
 
 ## Verification
 
@@ -107,6 +116,8 @@ Candidate/runtime identity on the matrix: package version `1.6.1`; archive SHA-2
 - `ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p '*_test.py'` — 118 tests, 0 failures.
 - Focused Python recovery acceptance — 13 tests, 0 failures; focused transaction/receipt acceptance — 5 tests, 0 failures.
 - All six receipts independently revalidated through `clean_room_verifier_upgrade.py --validate-receipts` with their expected pair/store; each returned `validated: true`.
+- An independent post-plan check revalidated the six accepted receipts through the common CLI (four recovery and two issuance) and reran full Python acceptance with the documented process-local ASDF/ERL environment: 118 tests, 0 failures. Its first test invocation omitted those environment settings and exited 126 at startup; the corrected invocation passed. No source or receipt was changed by these post-checks.
+- The runner code's cleanup path stops owned servers, drops the run's isolated database, and removes its temporary directory. This summary has no independent final-matrix inventory confirming those resources were absent after each accepted run; no resource IDs were reconstructed from raw logs. Final-matrix cleanup absence therefore remains unverified for a later custody reconciliation.
 - The host recovery fixture compiles with `mix run --no-start -e 'Code.compile_file("test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex")'`. It reports expected root-context warnings for generated host modules that exist only in the installed fixture.
 - Python syntax checks and `git diff --check` passed.
 
