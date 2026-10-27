@@ -4,18 +4,18 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
-current_plan: 6
+current_plan: 7
 status: executing
-stopped_at: Phase 178 Plan 06 HTTP blocker resolved at root; five recovery observations and issuance remain pending
-last_updated: "2026-10-26T23:11:03.713Z"
+stopped_at: Completed 178-06-PLAN.md
+last_updated: "2026-10-27T00:14:32.840Z"
 last_activity: 2026-10-26
-last_activity_desc: Phase 178 execution started
-state_head: 55f3f134288f9a463f32832a1e240faff5f2f594
+last_activity_desc: Phase 178 Plan 06 completed; VPROOF-02 remains pending
+state_head: 539cb802a1b44222af72ee7d53b2347eb32dde06
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 31
-  completed_plans: 24
+  completed_plans: 25
   percent: 75
 ---
 
@@ -27,16 +27,16 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plans 01–05 now provide installed proof artifacts through verifier transaction contention and atomicity on both dependency pairs. Continue with Plan 06; `VPROOF-02` remains pending until the remaining proof owners pass. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
+**Current focus:** Phase 178 Plans 01–06 now provide installed proof artifacts through recovery, stale-issuance/JTI, transaction contention, and atomicity on both dependency pairs. Continue with Plan 07; `VPROOF-02` remains pending until all remaining proof owners pass. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
 
 ## Current Position
 
 Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
-Current Plan: 6
+Current Plan: 7
 Total Plans in Phase: 12
-Plan: 6 of 12; completed, 2/2 tasks
+Plan: 7 of 12; next plan not started; 6/12 plans complete
 Status: Ready to execute
-Last activity: 2026-10-26 — Phase 178 execution started
+Last activity: 2026-10-26 — Phase 178 Plan 06 completed; VPROOF-02 remains pending
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 178 P03 | >=76m20s | 2 tasks | 4 files |
 | Phase 178 P04 | 44m | 2 tasks | 9 files |
 | Phase 178 P05 | 31min | 2 tasks | 7 files |
+| Phase 178 P06 | 2h 26m | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -150,10 +151,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-26T23:11:03.195Z
-Stopped at: Phase 178 Plan 06 HTTP blocker resolved at root; five recovery observations and issuance remain pending
-Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-ROOT-DIAGNOSIS.md
-Next: Continue authorized `$gsd-execute-phase 178 --auto --no-transition`, reconciling the partial Plan 01 draft and historical RED evidence in `178-EXECUTION-CHECKPOINT.md`. Preserve exact prior receipts and unresolved flags. Merge and publication remain separately gated.
+Last session: 2026-10-27T00:14:32.408Z
+Stopped at: Completed 178-06-PLAN.md
+Resume file: None
+Next: Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 07. Preserve the six partial Plan 06 receipts and historical RED/failure evidence; VPROOF-02 remains pending until the remaining proof owners pass. Merge and publication remain separately gated.
 
 ### Blockers
 
@@ -242,8 +243,11 @@ None
 - [Phase 178]: Capture PostgreSQL backend IDs inside each selected transaction and require the exact observed pg_blocking_pids relation before a contention case passes.
 - [Phase 178]: Provision pool capacity only in the generated transaction-proof host; treat it as headroom because the backend identity mismatch, not pool starvation, was the concrete observed blocker-witness cause.
 - [Phase 178]: Keep VPROOF-02 pending until all remaining Phase 178 evidence owners pass.
+- [Phase 178]: Keep all six group receipts partial; VPROOF-02 remains pending until the remaining Phase 178 evidence owners pass.
+- [Phase 178]: Run issuance probes inside the owned host VM so mounted HTTP callbacks share the serving process and barrier state.
+- [Phase 178]: Use fixed HTTP status and OAuth error enums and field-name-only failure summaries; never retain child diagnostics.
 
 ## Operator Next Steps
 
-- Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 05. Plan 04's locked/floor installed endpoint receipts and locked live-release RPC passed on runner/candidate `e05464c4`; VPROOF-02 remains pending until the remaining Phase 178 proof groups finish.
+- Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 07. Plans 01–06 are complete; Plan 06's four recovery and two issuance receipts remain partial evidence, and VPROOF-02 stays pending until the remaining Phase 178 proof groups finish.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
