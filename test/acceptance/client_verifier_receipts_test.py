@@ -19,6 +19,10 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def _fixture_runner_revision(self) -> str:
+        path = ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json"
+        return json.loads(path.read_text(encoding="utf-8"))["runner"]
+
     def _matrix_copy(self, parent: Path) -> Path:
         source = ROOT / "test" / "fixtures" / "verifier-matrix-26"
         destination = parent / "inputs"
@@ -36,7 +40,9 @@ class CompleteMatrixContracts(unittest.TestCase):
             stdout, stderr = StringIO(), StringIO()
             with redirect_stdout(stdout), redirect_stderr(stderr):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
+                                      "--validate-receipts", str(inputs),
+                                      "--expected-runner-revision", self._fixture_runner_revision(),
+                                      "--aggregate-output", str(output)])
             self.assertEqual(result, 0, "read-only matrix fixture should validate")
             self.assertEqual(stderr.getvalue(), "")
             aggregate = json.loads(output.read_text(encoding="utf-8"))
@@ -46,9 +52,23 @@ class CompleteMatrixContracts(unittest.TestCase):
             self.assertNotEqual(aggregate["runner_revision"], aggregate["aggregate_validator_revision"])
             self.assertEqual(len(aggregate["cells"]), 26)
 
+    def test_read_only_cli_rejects_retained_matrix_without_explicit_runner_pin(self) -> None:
+        import clean_room_verifier_upgrade as source
+        artifacts = ROOT / ".artifacts"
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            parent = Path(temporary)
+            inputs = self._matrix_copy(parent)
+            output = parent / "aggregate.json"
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                      "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
+            self.assertEqual(result, 1)
+            self.assertFalse(output.exists())
+
     def test_pair_cli_projects_exact_required_cells_for_each_dependency_pair(self) -> None:
         import clean_room_verifier_upgrade as source
         artifacts = ROOT / ".artifacts"
+        expected_runner = self._fixture_runner_revision()
         expected = {"locked": (14, 33), "floor": (12, 31)}
         for pair, (receipt_count, case_count) in expected.items():
             with self.subTest(pair=pair), tempfile.TemporaryDirectory(dir=artifacts) as temporary:
@@ -56,7 +76,8 @@ class CompleteMatrixContracts(unittest.TestCase):
                 inputs = self._matrix_copy(parent)
                 with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                     result = source.main(["--pair", pair, "--store", "all", "--group", "all",
-                                          "--validate-receipts", str(inputs)])
+                                          "--validate-receipts", str(inputs),
+                                          "--expected-runner-revision", expected_runner])
                 self.assertEqual(result, 0)
                 index = json.loads((inputs / "validated" / "index.json").read_text(encoding="utf-8"))
                 self.assertEqual(index["executed_receipts"], receipt_count)
@@ -67,6 +88,7 @@ class CompleteMatrixContracts(unittest.TestCase):
     def test_pair_cli_rejects_inputs_missing_the_selected_pair(self) -> None:
         import clean_room_verifier_upgrade as source
         artifacts = ROOT / ".artifacts"
+        expected_runner = self._fixture_runner_revision()
         with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
             inputs = self._matrix_copy(Path(temporary))
             for scope, pair, store in verifier_receipts.required_receipt_keys():
@@ -74,7 +96,8 @@ class CompleteMatrixContracts(unittest.TestCase):
                     source.matrix_receipt_path(inputs, scope, pair, store).unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "locked", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs)])
+                                      "--validate-receipts", str(inputs),
+                                      "--expected-runner-revision", expected_runner])
             self.assertEqual(result, 1)
 
     def test_read_only_cli_rejects_missing_and_substituted_receipts(self) -> None:
@@ -87,12 +110,15 @@ class CompleteMatrixContracts(unittest.TestCase):
             missing.unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs)])
+                                      "--validate-receipts", str(inputs),
+                                      "--expected-runner-revision", self._fixture_runner_revision()])
             self.assertEqual(result, 1)
 
     def test_read_only_cli_rejects_every_missing_cell_and_identity_substitution(self) -> None:
         import clean_room_verifier_upgrade as source
         artifacts = ROOT / ".artifacts"
+
+        expected_runner = self._fixture_runner_revision()
 
         def rejected(mutate) -> None:
             with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
@@ -101,7 +127,8 @@ class CompleteMatrixContracts(unittest.TestCase):
                 mutate(inputs)
                 with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                     result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                          "--validate-receipts", str(inputs)])
+                                          "--validate-receipts", str(inputs),
+                                          "--expected-runner-revision", expected_runner])
                 self.assertEqual(result, 1)
 
         for key in verifier_receipts.required_receipt_keys():
@@ -146,12 +173,19 @@ class CompleteMatrixContracts(unittest.TestCase):
         for field, value in (("source_revision", "c" * 40), ("archive_sha256", "c" * 64), ("tree_sha256", "c" * 64)):
             with self.subTest(candidate=field):
                 rejected(mutate_candidate(key, field, value))
-        for field, value in (("lock_sha256", "c" * 64), ("compiled_candidate_sha256", "c" * 64)):
-            with self.subTest(host=field):
-                rejected(mutate_cell(key, "host", {"vendor_tree_sha256": "d" * 64,
-                    "compiled_candidate_sha256": value, "resolved_dependency_verified": True,
-                    "lock_sha256": "1" * 64 if field == "compiled_candidate_sha256" else value,
-                    "phoenix": "1.8.13", "live_view": "1.2.10"}))
+        def mutate_host(key, field, value):
+            def apply(inputs):
+                path = source.matrix_receipt_path(inputs, *key)
+                receipt = json.loads(path.read_text(encoding="utf-8"))
+                receipt["host"][field] = value
+                path.write_text(json.dumps(receipt), encoding="utf-8")
+            return apply
+
+        with self.subTest(host="lock_sha256"):
+            rejected(mutate_host(key, "lock_sha256", "c" * 64))
+        with self.subTest(host="compiled_candidate_sha256"):
+            disclosure_failure = ("disclosure-failure", "locked", "delegated")
+            rejected(mutate_host(disclosure_failure, "compiled_candidate_sha256", "c" * 64))
 
         def duplicate_run_id(inputs):
             first = source.matrix_receipt_path(inputs, "core", "locked", "builtin")
@@ -177,7 +211,8 @@ class CompleteMatrixContracts(unittest.TestCase):
             path.write_text(json.dumps(receipt), encoding="utf-8")
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs)])
+                                      "--validate-receipts", str(inputs),
+                                      "--expected-runner-revision", expected_runner])
             self.assertEqual(result, 1)
 
     def test_disclosure_failure_case_maps_to_the_existing_disclosure_directory(self) -> None:
@@ -217,7 +252,7 @@ class CompleteMatrixContracts(unittest.TestCase):
         import clean_room_verifier_upgrade as source
         with __import__("tempfile").TemporaryDirectory() as temporary:
             with self.assertRaises(source.ReceiptError):
-                source.validate_matrix_directory(Path(temporary))
+                source.validate_matrix_directory(Path(temporary), expected_runner="a" * 40)
 
     def test_owned_listener_gets_server_flag_without_mutating_one_off_environment(self) -> None:
         import clean_room_verifier_upgrade as source

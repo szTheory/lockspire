@@ -21,6 +21,8 @@ case "$pair" in locked|floor) ;; *) echo "invalid verifier dependency pair" >&2;
 [[ -n "$receipt_dir" ]] || { usage; exit 2; }
 
 repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "verifier proof requires the repository root" >&2; exit 2; }
+runner_revision=$(git rev-parse HEAD 2>/dev/null) || { echo "verifier proof requires a committed runner revision" >&2; exit 2; }
+[[ "$runner_revision" =~ ^[0-9a-f]{40,64}$ ]] || { echo "verifier runner revision is invalid" >&2; exit 2; }
 runner="$repo_root/scripts/acceptance/clean_room_verifier_upgrade.py"
 
 if [[ "$test_mode" == true ]]; then
@@ -241,7 +243,8 @@ fi
 
 validation_status=0
 run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
-  --validate-receipts "$repo_root/$receipt_dir" || validation_status=$?
+  --validate-receipts "$repo_root/$receipt_dir" \
+  --expected-runner-revision "$runner_revision" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'

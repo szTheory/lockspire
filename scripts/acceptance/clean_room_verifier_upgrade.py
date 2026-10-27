@@ -485,6 +485,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--group", choices=sorted(GROUPS), default="tracer")
     parser.add_argument("--receipt-dir", type=Path, default=Path(".artifacts/phase178/tracer"))
     parser.add_argument("--validate-receipts", type=Path)
+    parser.add_argument("--expected-runner-revision")
     parser.add_argument("--aggregate-output", type=Path)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
@@ -590,9 +591,11 @@ def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, o
     return aggregate
 
 
-def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
+def _validate_pair_directory(receipt_dir: Path, pair: str, expected_runner: str) -> dict[str, object]:
     if pair not in {"locked", "floor"} or not receipt_dir.is_dir() or receipt_dir.is_symlink():
         raise ReceiptError("pair receipt directory is unavailable")
+    if not isinstance(expected_runner, str) or not REVISION.fullmatch(expected_runner):
+        raise ReceiptError("pair validation requires an explicit expected runner revision")
     root = receipt_dir.resolve()
     required = tuple(key for key in REQUIRED_MATRIX if key[1] == pair)
     records: list[dict[str, object]] = []
@@ -608,6 +611,8 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
             runner_revision = receipt.get("runner_revision")
             if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
                 raise ReceiptError("pair rollout runner identity is invalid")
+            if runner_revision != expected_runner:
+                raise ReceiptError("pair receipt does not match its expected tested runner")
             validate_rollout_receipt(receipt, expected_pair=pair, expected_store=selected_store,
                                      expected_runner=runner_revision, expected_scope=scope)
             candidate = receipt["candidate"]
@@ -615,6 +620,8 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
         else:
             validate_receipt(receipt, expected_pair=pair, expected_store=selected_store)
             runner_revision = receipt["runner"]
+            if runner_revision != expected_runner:
+                raise ReceiptError("pair receipt does not match its expected tested runner")
             candidate = receipt["candidate"]
             compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
         binding = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
@@ -638,8 +645,10 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
     if len(candidates) != 1:
         raise ReceiptError("pair receipts do not share one candidate source/archive/tree")
     tested_runner = _single_tested_runner_revision(runners)
+    if tested_runner != expected_runner:
+        raise ReceiptError("pair receipts do not match their expected tested runner")
     validator_revision = source_revision()
-    validated = validate_matrix_links(records, expected_runner=tested_runner, required_keys=required)
+    validated = validate_matrix_links(records, expected_runner=expected_runner, required_keys=required)
     validated_dir = root / "validated"
     if validated_dir.exists() or validated_dir.is_symlink():
         raise ReceiptError("validated receipt output must be absent before validation")
@@ -669,8 +678,12 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
     return index
 
 
-def validate_matrix_directory(receipt_dir: Path) -> tuple[str, list[dict[str, object]], tuple[str, str, str]]:
+def validate_matrix_directory(
+    receipt_dir: Path, *, expected_runner: str,
+) -> tuple[str, list[dict[str, object]], tuple[str, str, str]]:
     """Read and validate an immutable full matrix without launching package code."""
+    if not isinstance(expected_runner, str) or not REVISION.fullmatch(expected_runner):
+        raise ReceiptError("complete matrix validation requires an explicit expected runner revision")
     if not receipt_dir.is_dir() or receipt_dir.is_symlink():
         raise ReceiptError("complete matrix receipt directory is unavailable")
     root = receipt_dir.resolve()
@@ -685,23 +698,23 @@ def validate_matrix_directory(receipt_dir: Path) -> tuple[str, list[dict[str, ob
         receipt = load_receipt(path)
         if scope in {"rollout", "legacy-control"}:
             runner_revision = receipt.get("runner_revision")
-            if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
-                raise ReceiptError("rollout runner identity is invalid")
+            if runner_revision != expected_runner:
+                raise ReceiptError("rollout receipt does not match its expected tested runner")
             validate_rollout_receipt(receipt, expected_pair=pair, expected_store=store,
-                                     expected_runner=runner_revision, expected_scope=scope)
+                                     expected_runner=expected_runner, expected_scope=scope)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
         else:
             runner_revision = receipt.get("runner")
-            if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
-                raise ReceiptError("group runner identity is invalid")
+            if runner_revision != expected_runner:
+                raise ReceiptError("group receipt does not match its expected tested runner")
             validate_receipt(receipt, expected_pair=pair, expected_store=store)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
         runners.add(runner_revision)
         binding = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
-        if binding[0] != runner_revision:
-            raise ReceiptError("candidate source does not match its tested runner revision")
+        if binding[0] != expected_runner:
+            raise ReceiptError("candidate source does not match the expected tested runner revision")
         host_lock = receipt["host"]["lock_sha256"]
         if host_lock != sha256(PROOF_PAIR_LOCKS[pair]) or not re.fullmatch(r"[0-9a-f]{64}", compiled_candidate or ""):
             raise ReceiptError("host lock or compiled candidate does not match its dependency pair")
@@ -717,6 +730,8 @@ def validate_matrix_directory(receipt_dir: Path) -> tuple[str, list[dict[str, ob
             "host_lock_sha256": host_lock, "compiled_candidate_sha256": compiled_candidate,
         })
     tested_runner = _single_tested_runner_revision(runners)
+    if tested_runner != expected_runner:
+        raise ReceiptError("raw receipts do not match their expected tested runner")
     if len(anchors) != 1:
         raise ReceiptError("raw receipts do not share one candidate source/archive/tree")
     validated = validate_complete_matrix(records, expected_runner=tested_runner)
@@ -762,8 +777,12 @@ def main(argv: list[str] | None = None) -> int:
             return self_test()
         if args.validate_receipts:
             if args.validate_receipts.is_dir():
+                if not args.expected_runner_revision:
+                    raise ReceiptError("retained receipt directory requires an explicit expected runner revision")
                 if args.pair == "all":
-                    tested_runner, rows, candidate = validate_matrix_directory(args.validate_receipts)
+                    tested_runner, rows, candidate = validate_matrix_directory(
+                        args.validate_receipts, expected_runner=args.expected_runner_revision,
+                    )
                     aggregate = _aggregate_document(
                         tested_runner=tested_runner, records=rows, candidate_identity=candidate,
                         validator_revision=source_revision(),
@@ -789,15 +808,20 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     if args.aggregate_output is not None:
                         raise ReceiptError("aggregate output is only valid for a full matrix")
-                    _validate_pair_directory(args.validate_receipts, args.pair)
+                    _validate_pair_directory(args.validate_receipts, args.pair,
+                                              args.expected_runner_revision)
             else:
                 receipt = load_receipt(args.validate_receipts)
                 if receipt.get("schema") == "lockspire-installed-verifier-rollout-v1":
                     validate_rollout_receipt(receipt, expected_pair=args.pair,
-                        expected_store=args.store, expected_runner=source_revision(),
+                        expected_store=args.store,
+                        expected_runner=args.expected_runner_revision or source_revision(),
                         expected_scope=receipt.get("scope"))
                 else:
                     validate_receipt(receipt, expected_pair=args.pair, expected_store=args.store)
+                    if (args.expected_runner_revision is not None
+                            and receipt.get("runner") != args.expected_runner_revision):
+                        raise ReceiptError("receipt does not match its expected tested runner")
                 print(json.dumps({"validated": True, "scope": receipt["scope"], "executed_count": receipt["executed_count"]}, sort_keys=True))
             return 0
         if args.group == "tracer":
