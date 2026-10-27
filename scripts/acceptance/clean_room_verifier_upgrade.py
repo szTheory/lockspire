@@ -38,7 +38,7 @@ from package_input import (  # noqa: E402
 from redaction import Redactor, SentinelSet  # noqa: E402
 import clean_room_saas_journey as browser_support  # noqa: E402
 from verifier_receipts import (  # noqa: E402
-    GROUPS, REQUIRED_MATRIX, ReceiptError, expected_case_ids, load_receipt,
+    GROUPS, REQUIRED_MATRIX, REVISION, ReceiptError, expected_case_ids, load_receipt,
     validate_complete_matrix, validate_receipt, validate_rollout_receipt,
 )
 
