@@ -16,7 +16,7 @@ The review validator passed at the packet's exact independent implementation pin
 
 All 13 Phase 175 immutable input hashes were rechecked by the freeze owner. The reviewed Plan 10 implementation bytes remain the accepted `24bb9c9f` review subject; `ec2bb155` is the frozen execution runner after evidence and planning metadata commits, with the closure validator proving reviewed-to-frozen selected-byte equality.
 
-An earlier worktree-built archive at `.artifacts/phase178/final-candidate/lockspire-1.6.1.tar` has a different extracted tree and is not the candidate owner. The frozen source-export rebuild is authoritative; the earlier artifact is retained as a failed provenance attempt. The first unpack attempt also lacked the pinned asdf runtime and is not package evidence.
+An earlier worktree-built archive at `.artifacts/phase178/final-candidate/lockspire-1.6.1.tar` (SHA-256 `79a8ea83dda1badd79e3d7f95f1c376cdeedfbbf5bbadb99b3d193ce33d0df9d`, 561,664 bytes; extracted tree SHA-256 `bbe041e544ca4e58099fb20c780be9e7e8bb5de3ac19581094133904047ff194`) differs from the authenticated source-export package tree and is not the candidate owner. The frozen source-export rebuild is authoritative; the earlier artifact is retained as a failed provenance attempt. Its first unpack attempt lacked the pinned asdf runtime and exited 126; it is not package evidence.
 
 Before the canonical guarded contributor gate, the preexisting root `lockspire-1.6.1.tar` was preserved outside the repository in `/private/tmp/lockspire-17810-root-archive.UCH7VG/lockspire-1.6.1.tar.original`. Original SHA-256: `5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be`; original mode: `0644`; size: `560128` bytes. Its private backup is mode `0600`, byte-identical, inside a mode `0700` directory. The root package alias may replace the original during canonical CI; only a byte-verified replacement from this run may be restored afterward.
 
@@ -25,3 +25,9 @@ The other preexisting root `lockspire-*.tar` files were inventoried with their m
 ## Limits
 
 This freeze establishes source/archive/tree and bounded-input identity only. It does not establish installed HTTP/PostgreSQL outcomes, canonical source CI, hosted CI, candidate delivery, integration authorization, main acceptance, or Linux process-identity behavior. The recorded Phase 177 database incidents and Phase 175 unresolved findings remain unchanged and non-waived.
+
+## First fresh locked-wrapper attempt
+
+The fixed wrapper was launched once at executed checkout `39607629047ac32882cb608b20ec320d73181314` with the `local-current` profile and all five frozen owner pins above. It started at `2026-10-27T10:31:26Z` (wrapper PID `76810`, execution session `10139`) with a fresh root `.artifacts/phase178/final-locked` and the wrapper's 1,500-second overall deadline. It exited `1` at the fixed stage label `overall/core/locked/all`; no raw child output or exception was retained or emitted.
+
+The retained root is mode `0700` and contains only `receipt-owner.json` (mode `0600`, SHA-256 `a598b891078d18f97c896c3e3703a75802a5ef25180e0e24cfa9d7448e371e47`). Owner capture independently observed the expected candidate package identity, actual runner `39607629047ac32882cb608b20ec320d73181314`, local-current Elixir `1.19.5` / OTP `28`, and PostgreSQL `14.17` (`server_version_num=140017`). No group receipt or validated index exists, so no core case assertion is inferred. Failure within the core group and any resource cleanup state remain unknown; this attempt is preserved and is not acceptance evidence.
