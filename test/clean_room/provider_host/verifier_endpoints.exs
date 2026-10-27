@@ -1,4 +1,8 @@
-args = case System.argv() do ["--" | rest] -> rest; values -> values end
+args =
+  case System.argv() do
+    ["--" | rest] -> rest
+    values -> values
+  end
 
 case args do
   [suffix] ->
@@ -25,7 +29,10 @@ case args do
           IO.puts("CLIENT=" <> suffix <> ":" <> client.client_id <> ":" <> secret)
 
         {:error, errors} ->
-          Mix.raise("client registration rejected: " <> Enum.map_join(errors, ",", &Atom.to_string(&1.reason)))
+          Mix.raise(
+            "client registration rejected: " <>
+              Enum.map_join(errors, ",", &Atom.to_string(&1.reason))
+          )
       end
     end
 

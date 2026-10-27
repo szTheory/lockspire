@@ -28,8 +28,7 @@ defmodule CleanRoomProvider.VerifierTransactions do
     %{
       "VPROOF-02-ATOMICITY-AUDIT-INSERT-ROLLBACK" => audit_insert_rollback,
       "VPROOF-02-ATOMICITY-OUTER-ROLLBACK" => outer_rollback,
-      "VPROOF-02-ATOMICITY-NESTED-REPORT-AND-COMMIT-ORDER" =>
-        nested_report_and_commit_order
+      "VPROOF-02-ATOMICITY-NESTED-REPORT-AND-COMMIT-ORDER" => nested_report_and_commit_order
     }
   end
 
@@ -54,12 +53,15 @@ defmodule CleanRoomProvider.VerifierTransactions do
             {:ok, %{client: client}} ->
               expected = {client.client_secret_hash, client.client_secret_jwt_verifier_encrypted}
               send(parent, {:holder_result, :rotation, expected})
+
               receive do
                 {:release_holder, :commit} -> expected
               after
                 @timeout -> Repo.rollback(:holder_release_timeout)
               end
-            _ -> Repo.rollback(:rotation_failed)
+
+            _ ->
+              Repo.rollback(:rotation_failed)
           end
         end)
       end)
@@ -81,7 +83,9 @@ defmodule CleanRoomProvider.VerifierTransactions do
       "holder_backend_pid" => holder_pid,
       "contender_backend_pid" => contender_pid,
       "blocker_observed" => true,
-      "material_conflict" => {after_row.hash, after_row.verifier} == expected_rotation and expected_rotation != {before.hash, before.verifier},
+      "material_conflict" =>
+        {after_row.hash, after_row.verifier} == expected_rotation and
+          expected_rotation != {before.hash, before.verifier},
       "credential_pair_coherent" => coherent?(after_row),
       "durable_state_verified" => {after_row.hash, after_row.verifier} == expected_rotation
     }
@@ -98,10 +102,25 @@ defmodule CleanRoomProvider.VerifierTransactions do
         Repo.transaction(fn ->
           pid = backend_pid!()
           send(parent, {:holder, :maintenance, pid})
-          result = Store.compare_and_rewrap(client_id, before.hash, before.verifier, replacement, audit_attrs(client_id))
+
+          result =
+            Store.compare_and_rewrap(
+              client_id,
+              before.hash,
+              before.verifier,
+              replacement,
+              audit_attrs(client_id)
+            )
+
           {:ok, :changed} = result
           provisional = row_map!(client_id)
-          send(parent, {:provisional, provisional.verifier == replacement and provisional.hash == before.hash})
+
+          send(
+            parent,
+            {:provisional,
+             provisional.verifier == replacement and provisional.hash == before.hash}
+          )
+
           receive do
             {:release_holder, :commit} -> result
           after
@@ -111,19 +130,24 @@ defmodule CleanRoomProvider.VerifierTransactions do
       end)
 
     holder_pid = await_holder!(:maintenance)
+
     receive do
       {:provisional, true} -> :ok
     after
       @timeout -> raise "maintenance transaction did not become provisional"
     end
-    contender = Task.async(fn ->
-      Store.transact(fn ->
-        send(parent, {:contender, backend_pid!()})
-        Clients.rotate_client_secret(client_id, %{
-          actor: %{type: :operator, id: "phase178-transaction-proof"}
-        })
+
+    contender =
+      Task.async(fn ->
+        Store.transact(fn ->
+          send(parent, {:contender, backend_pid!()})
+
+          Clients.rotate_client_secret(client_id, %{
+            actor: %{type: :operator, id: "phase178-transaction-proof"}
+          })
+        end)
       end)
-    end)
+
     contender_pid = await_contender!(contender)
     require_distinct_pids!(holder_pid, contender_pid)
     await_blocker!(contender_pid, holder_pid)
@@ -140,7 +164,9 @@ defmodule CleanRoomProvider.VerifierTransactions do
       "blocker_observed" => true,
       "material_conflict" => false,
       "credential_pair_coherent" => coherent?(after_row),
-      "durable_state_verified" => {after_row.hash, after_row.verifier} == {rotated.client_secret_hash, rotated.client_secret_jwt_verifier_encrypted}
+      "durable_state_verified" =>
+        {after_row.hash, after_row.verifier} ==
+          {rotated.client_secret_hash, rotated.client_secret_jwt_verifier_encrypted}
     }
   end
 
@@ -151,9 +177,17 @@ defmodule CleanRoomProvider.VerifierTransactions do
     names = install_audit_insert_failure!()
 
     try do
-      result = Store.transact(fn ->
-        Store.compare_and_rewrap(client_id, before.hash, before.verifier, replacement, audit_attrs(client_id))
-      end)
+      result =
+        Store.transact(fn ->
+          Store.compare_and_rewrap(
+            client_id,
+            before.hash,
+            before.verifier,
+            replacement,
+            audit_attrs(client_id)
+          )
+        end)
+
       reached_insert = sequence_value!(names.sequence) > 0
       after_row = row_map!(client_id)
       absent_audit = audit_count(client_id) == 0
@@ -161,7 +195,8 @@ defmodule CleanRoomProvider.VerifierTransactions do
       %{
         "outcome" => "pass",
         "executed" => true,
-        "reached_insert" => reached_insert and match?({:error, :client_secret_verifier_maintenance_failed}, result),
+        "reached_insert" =>
+          reached_insert and match?({:error, :client_secret_verifier_maintenance_failed}, result),
         "unchanged_ciphertext" => after_row.verifier == before.verifier,
         "absent_committed_audit" => absent_audit
       }
@@ -175,14 +210,27 @@ defmodule CleanRoomProvider.VerifierTransactions do
     before = row_map!(client_id)
     replacement = replacement!(client_id, before)
 
-    result = Store.transact(fn ->
-      {:ok, :changed} = Store.compare_and_rewrap(client_id, before.hash, before.verifier, replacement, audit_attrs(client_id))
-      provisional = row_map!(client_id)
-      if provisional.verifier != replacement or provisional.hash != before.hash, do: Store.rollback(:provisional_state_missing)
-      {:error, :phase178_forced_outer_rollback}
-    end)
+    result =
+      Store.transact(fn ->
+        {:ok, :changed} =
+          Store.compare_and_rewrap(
+            client_id,
+            before.hash,
+            before.verifier,
+            replacement,
+            audit_attrs(client_id)
+          )
+
+        provisional = row_map!(client_id)
+
+        if provisional.verifier != replacement or provisional.hash != before.hash,
+          do: Store.rollback(:provisional_state_missing)
+
+        {:error, :phase178_forced_outer_rollback}
+      end)
 
     after_row = row_map!(client_id)
+
     %{
       "outcome" => "pass",
       "executed" => true,
@@ -196,18 +244,24 @@ defmodule CleanRoomProvider.VerifierTransactions do
   defp nested_report_and_commit_order do
     client_id = seed_client()
     before = row_map!(client_id)
-    nested = Repo.transaction(fn ->
-      result = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 100)
-      after_row = row_map!(client_id)
-      {result, after_row == before, Repo.in_transaction?()}
-    end)
+
+    nested =
+      Repo.transaction(fn ->
+        result = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 100)
+        after_row = row_map!(client_id)
+        {result, after_row == before, Repo.in_transaction?()}
+      end)
+
     {:ok, {report, unchanged_inside, still_in_transaction}} = nested
+
     nested_rejected =
       match?({:error, %{failed: failures}} when is_integer(failures) and failures > 0, report)
+
     after_nested = row_map!(client_id)
     committed_report = Lockspire.Admin.ClientVerifierMaintenance.run(mode: :apply, limit: 500)
     after_commit = row_map!(client_id)
     committed_audit_count = audit_count(client_id)
+
     report_after_commit =
       not Repo.in_transaction?() and match?({:ok, _}, committed_report) and
         after_commit.verifier != before.verifier and committed_audit_count > 0
@@ -224,16 +278,25 @@ defmodule CleanRoomProvider.VerifierTransactions do
 
   defp start_contender(client_id, before, replacement) do
     parent = self()
+
     Task.async(fn ->
       Store.transact(fn ->
         send(parent, {:contender, backend_pid!()})
-        Store.compare_and_rewrap(client_id, before.hash, before.verifier, replacement, audit_attrs(client_id))
+
+        Store.compare_and_rewrap(
+          client_id,
+          before.hash,
+          before.verifier,
+          replacement,
+          audit_attrs(client_id)
+        )
       end)
     end)
   end
 
   defp seed_client do
     client_id = "phase178-transaction-" <> random_suffix()
+
     attrs = %{
       client_id: client_id,
       client_type: "confidential",
@@ -256,13 +319,23 @@ defmodule CleanRoomProvider.VerifierTransactions do
     {:ok, verifier} = ClientSecretVerifier.seal(old_context, client_id, secret)
     prefix = Config.storage_prefix()
     table = if is_binary(prefix), do: "#{prefix}.lockspire_clients", else: "lockspire_clients"
-    _ = Repo.query!("UPDATE #{table} SET client_secret_jwt_verifier_encrypted = $1 WHERE client_id = $2", [verifier, client_id], log: false, telemetry_event: nil)
 
-    if is_binary(hash) and is_binary(verifier), do: client_id, else: raise("seed material missing")
+    _ =
+      Repo.query!(
+        "UPDATE #{table} SET client_secret_jwt_verifier_encrypted = $1 WHERE client_id = $2",
+        [verifier, client_id],
+        log: false,
+        telemetry_event: nil
+      )
+
+    if is_binary(hash) and is_binary(verifier),
+      do: client_id,
+      else: raise("seed material missing")
   end
 
   defp replacement!(client_id, %{hash: hash, verifier: verifier}) do
     context = Config.client_secret_verifier_context([])
+
     case ClientSecretVerifier.prepare_rewrap(context, client_id, verifier, hash, []) do
       {:ok, replacement, _old_key_id, _new_key_id} when is_binary(replacement) -> replacement
       other -> raise "replacement unavailable: #{inspect(safe_tag(other))}"
@@ -272,18 +345,32 @@ defmodule CleanRoomProvider.VerifierTransactions do
   defp row_map!(client_id) do
     prefix = Config.storage_prefix()
     table = if is_binary(prefix), do: "#{prefix}.lockspire_clients", else: "lockspire_clients"
-    result = Repo.query!("SELECT client_secret_hash, client_secret_jwt_verifier_encrypted FROM #{table} WHERE client_id = $1", [client_id], log: false, telemetry_event: nil)
+
+    result =
+      Repo.query!(
+        "SELECT client_secret_hash, client_secret_jwt_verifier_encrypted FROM #{table} WHERE client_id = $1",
+        [client_id],
+        log: false,
+        telemetry_event: nil
+      )
+
     case result.rows do
-      [[hash, verifier]] when is_binary(hash) and is_binary(verifier) -> %{hash: hash, verifier: verifier}
-      _ -> raise "client state unavailable"
+      [[hash, verifier]] when is_binary(hash) and is_binary(verifier) ->
+        %{hash: hash, verifier: verifier}
+
+      _ ->
+        raise "client state unavailable"
     end
   end
 
-  defp coherent?({hash, verifier}), do: is_binary(hash) and hash != "" and is_binary(verifier) and verifier != ""
+  defp coherent?({hash, verifier}),
+    do: is_binary(hash) and hash != "" and is_binary(verifier) and verifier != ""
+
   defp coherent?(%{hash: hash, verifier: verifier}), do: coherent?({hash, verifier})
 
   defp audit_attrs(client_id) do
     now = DateTime.utc_now() |> DateTime.truncate(:microsecond)
+
     %{
       action: :client_secret_verifier_rewrapped,
       outcome: :succeeded,
@@ -294,7 +381,9 @@ defmodule CleanRoomProvider.VerifierTransactions do
   end
 
   defp backend_pid! do
-    %{rows: [[pid]]} = Repo.query!("SELECT pg_backend_pid()", [], log: false, telemetry_event: nil)
+    %{rows: [[pid]]} =
+      Repo.query!("SELECT pg_backend_pid()", [], log: false, telemetry_event: nil)
+
     pid
   end
 
@@ -322,13 +411,24 @@ defmodule CleanRoomProvider.VerifierTransactions do
     end
   end
 
-  defp require_distinct_pids!(holder, contender) when is_integer(holder) and is_integer(contender) and holder != contender, do: :ok
-  defp require_distinct_pids!(_holder, _contender), do: raise("transaction backends were not independent")
+  defp require_distinct_pids!(holder, contender)
+       when is_integer(holder) and is_integer(contender) and holder != contender, do: :ok
+
+  defp require_distinct_pids!(_holder, _contender),
+    do: raise("transaction backends were not independent")
 
   defp await_blocker!(contender_pid, holder_pid, remaining \\ 100)
-  defp await_blocker!(_contender, _holder, 0), do: raise("expected PostgreSQL blocker relation was unavailable")
+
+  defp await_blocker!(_contender, _holder, 0),
+    do: raise("expected PostgreSQL blocker relation was unavailable")
+
   defp await_blocker!(contender_pid, holder_pid, remaining) do
-    %{rows: [[blockers]]} = Repo.query!("SELECT pg_blocking_pids($1)", [contender_pid], log: false, telemetry_event: nil)
+    %{rows: [[blockers]]} =
+      Repo.query!("SELECT pg_blocking_pids($1)", [contender_pid],
+        log: false,
+        telemetry_event: nil
+      )
+
     if holder_pid in blockers do
       :ok
     else
@@ -345,28 +445,73 @@ defmodule CleanRoomProvider.VerifierTransactions do
     function = "phase178_reject_audit_" <> suffix
     trigger = "phase178_reject_audit_" <> suffix
     Repo.query!("CREATE SEQUENCE #{schema}.#{sequence}", [], log: false, telemetry_event: nil)
-    Repo.query!("CREATE FUNCTION #{schema}.#{function}() RETURNS trigger AS $$ BEGIN PERFORM nextval('#{schema}.#{sequence}'); RAISE EXCEPTION 'phase178 audit insert witness'; END; $$ LANGUAGE plpgsql", [], log: false, telemetry_event: nil)
-    Repo.query!("CREATE TRIGGER #{trigger} BEFORE INSERT ON #{schema}.lockspire_audit_events FOR EACH ROW EXECUTE FUNCTION #{schema}.#{function}()", [], log: false, telemetry_event: nil)
+
+    Repo.query!(
+      "CREATE FUNCTION #{schema}.#{function}() RETURNS trigger AS $$ BEGIN PERFORM nextval('#{schema}.#{sequence}'); RAISE EXCEPTION 'phase178 audit insert witness'; END; $$ LANGUAGE plpgsql",
+      [],
+      log: false,
+      telemetry_event: nil
+    )
+
+    Repo.query!(
+      "CREATE TRIGGER #{trigger} BEFORE INSERT ON #{schema}.lockspire_audit_events FOR EACH ROW EXECUTE FUNCTION #{schema}.#{function}()",
+      [],
+      log: false,
+      telemetry_event: nil
+    )
+
     %{schema: schema, sequence: sequence, function: function, trigger: trigger}
   end
 
   defp sequence_value!(sequence) do
     prefix = Config.storage_prefix()
     schema = if is_binary(prefix), do: prefix, else: "public"
-    %{rows: [[value]]} = Repo.query!("SELECT last_value FROM #{schema}.#{sequence}", [], log: false, telemetry_event: nil)
+
+    %{rows: [[value]]} =
+      Repo.query!("SELECT last_value FROM #{schema}.#{sequence}", [],
+        log: false,
+        telemetry_event: nil
+      )
+
     value
   end
 
-  defp drop_audit_insert_failure!(%{schema: schema, sequence: sequence, function: function, trigger: trigger}) do
-    Repo.query!("DROP TRIGGER IF EXISTS #{trigger} ON #{schema}.lockspire_audit_events", [], log: false, telemetry_event: nil)
-    Repo.query!("DROP FUNCTION IF EXISTS #{schema}.#{function}()", [], log: false, telemetry_event: nil)
-    Repo.query!("DROP SEQUENCE IF EXISTS #{schema}.#{sequence}", [], log: false, telemetry_event: nil)
+  defp drop_audit_insert_failure!(%{
+         schema: schema,
+         sequence: sequence,
+         function: function,
+         trigger: trigger
+       }) do
+    Repo.query!("DROP TRIGGER IF EXISTS #{trigger} ON #{schema}.lockspire_audit_events", [],
+      log: false,
+      telemetry_event: nil
+    )
+
+    Repo.query!("DROP FUNCTION IF EXISTS #{schema}.#{function}()", [],
+      log: false,
+      telemetry_event: nil
+    )
+
+    Repo.query!("DROP SEQUENCE IF EXISTS #{schema}.#{sequence}", [],
+      log: false,
+      telemetry_event: nil
+    )
   end
 
   defp audit_count(client_id) do
     prefix = Config.storage_prefix()
-    table = if is_binary(prefix), do: "#{prefix}.lockspire_audit_events", else: "lockspire_audit_events"
-    %{rows: [[count]]} = Repo.query!("SELECT count(*) FROM #{table} WHERE resource_type = 'client' AND resource_id = $1 AND action = 'client_secret_verifier_rewrapped'", [client_id], log: false, telemetry_event: nil)
+
+    table =
+      if is_binary(prefix), do: "#{prefix}.lockspire_audit_events", else: "lockspire_audit_events"
+
+    %{rows: [[count]]} =
+      Repo.query!(
+        "SELECT count(*) FROM #{table} WHERE resource_type = 'client' AND resource_id = $1 AND action = 'client_secret_verifier_rewrapped'",
+        [client_id],
+        log: false,
+        telemetry_event: nil
+      )
+
     count
   end
 
