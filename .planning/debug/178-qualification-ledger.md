@@ -1,17 +1,17 @@
 ---
-status: verifying
+status: awaiting_human_verify
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
-updated: 2026-10-27T19:21:07Z
+updated: 2026-10-27T19:22:28Z
 ---
 
 ## Current Focus
 
 bug_class: bohrbug
 hypothesis: Frozen Phase 171 input identities are compared with mutable workspace files, so a later supported-surface documentation change invalidates historical evidence.
-test: Bind the unchanged ledger and digest to the verified retained Git snapshot; compare source-based versus workspace-based hashing without database startup.
-expecting: The source-based consumer accepts the unchanged historical inputs and still rejects invalid provenance and mutated hashes; restoring workspace hashing recreates the original error family.
-next_action: Commit the final actionable-history diagnostic and debug evidence, then rerun the same 25-test owned-source guard on the final clean source.
+test: Completed final clean-source owned native run and private source-causal counterfactual; inspect exact proofs before broader qualification.
+expecting: Caller preserves the 25/0 focused result at its actual tested source, then independently reviews/freezes/qualifies the final current closure.
+next_action: Commit this metadata-only record and hand the caller the terminal 25/0 guard, source proof, and remaining full-current-qualification boundary; archive only after human confirmation.
 reasoning_checkpoint:
   hypothesis: The historical frozen manifest fails because input_entry_hash reads today's supported-surface bytes rather than the retained frozen input snapshot.
   confirming_evidence:
@@ -20,7 +20,7 @@ reasoning_checkpoint:
     - All 28 external file/selector inputs match at retained Main 173059a166e9ade0f5f57c9980b7b2400a98538c, whose ledger bytes and frozen digest are unchanged.
   falsification_test: If source-based reads still produce the same frozen-manifest error, or workspace-only hashing no longer produces it, this proposed cause is insufficient.
   fix_rationale: Resolve retained historical file identities at an explicitly authenticated historical source, preserving the original ledger, observations, receipts, frozen hashes, and fixture mutation checks.
-  blind_spots: Native focused execution remains pending; no broader current-source qualification is claimed. Original qualification_sha predates the final frozen input bytes and cannot be used as the snapshot anchor.
+  blind_spots: Broader current-source qualification remains with the caller. Original qualification_sha predates the final frozen input bytes and cannot be used as the snapshot anchor. Human end-to-end confirmation and archival remain pending.
   candidate_causes:
     - code: The frozen consumer uses workspace file reads without a separate retained-input source identity.
     - data: Frozen ledger input hashes or ordered digest were corrupted during synchronization.
@@ -46,6 +46,9 @@ started: Following the local Main synchronization which imported this selected t
 - hypothesis: Ledger hashes or ordered digest were corrupted during synchronization.
   evidence: The synchronized Main snapshot contains identical ledger bytes and input digest; every external input matches at that snapshot and all five in-ledger projections match now.
   timestamp: 2026-10-27T19:13:19Z
+- hypothesis: Missing historical Git objects caused the observed four positive failures.
+  evidence: The original pure validator resolved all source identities and returned only the manifest error; the retained source resolves every external input, and both actual focused runs passed on full-history source checkouts.
+  timestamp: 2026-10-27T19:22:28Z
 
 ## Evidence
 
@@ -85,6 +88,14 @@ started: Following the local Main synchronization which imported this selected t
   checked: Final actionable missing-history diagnostic and private source-causal recheck after that source edit.
   found: The consumer now returns a fixed message instructing use of a full-history checkout (fetch-depth 0) when the retained object is missing, without raw Git stderr or workspace fallback. The existing missing-source test asserts that message; total test definitions remain 25. Local qualification requires full Git history; fast/minimum CI already provide it. Final consumer SHA-256 a827ea95bf0a5c7b5e2fb06675c3f5711a4dd81764849c1bde7e1d8bf4b43e60; private original/fixed/workspace-counterfactual/fixed counts remain 1/0/1/0, zero unknowns. Proof /private/tmp/lockspire178-qualification-ledger-gg05ovc6/diagnostic.json SHA-256 ed9d77a61f22f134f3823163c915cf7d430b5db09b984608dea93b605f422e28. Format check exit 0; closure 1077; Phase 175 frozen inputs 13/13 unchanged.
   implication: Earlier diagnostic and native proofs remain bound to their prior source epochs. Final-source native qualification is next.
+- timestamp: 2026-10-27T19:22:28Z
+  checked: Final actual focused guard at 9d526f145577e9bfaab93dfc6a4032174344443c.
+  found: 25 tests, zero failures; test exit 0 and guard exit 0; exact source and clean checkout confirmed before/after. Owned database OID 38966 was created, independently identified, migrated, dropped, and independently confirmed absent. All 24 owned child process groups stopped. Manifest SHA-256 66f1868d1b3d232aeb0031bbc909b21fb33eaaadb10b3470a42a416303010950 at /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-cps_5nnf/manifest.json; test PID 82360 and session 24350 terminal. No raw child output retained or surfaced.
+  implication: Original 22 assertions and the three new provenance/history tests all pass on the final consumer implementation. This focused run does not replace the caller's full qualification sequence.
+- timestamp: 2026-10-27T19:22:28Z
+  checked: Exact committed selected-source delta and retained immutable evidence.
+  found: The baseline and tested selected closures both contain 1077 files, with no added/deleted inputs and exactly one changed file (the imported qualification consumer); the other 1076 hashes remain unchanged. Tested closure SHA-256 f96b825552342101dfe28edeceba3d8e1fed850306da8840debf4fd06c479759. Original ledger SHA-256 d4f790a7057ed967f105068631d44eae46d69fefc7013836b868c74121a403b7; original receipt SHA-256 be2cdf5fe60df6788d304e451d736b4ac7746a111c9ff71b422ef27b5b777e39, matching its retained pin. Phase 175 frozen inputs 13/13 unchanged. Source proof /private/tmp/lockspire178-qualification-ledger-oddypgnm/source-proof.json SHA-256 7934ce0e7516398844149a3523cad7ea7c9fcf3665028bc6adf0a2a2914825d0.
+  implication: The historical ledger, matrix identities, receipts, source-bound observations, current docs, and old selected inputs were preserved. No full Python suite, matrix, fresh freeze, or canonical CI was run in this bounded session.
 
 ## Resolution
 
@@ -92,12 +103,12 @@ root_cause: The frozen historical consumer reads mutable workspace input bytes, 
 fix: Pin the retained final-input source, original ledger SHA-256, and ordered frozen digest inside the selected consumer; validate that provenance and resolve file/section inputs at the retained Git source while continuing to hash fixture projections from their supplied ledger. Add three tests for missing/wrong provenance, execution versus snapshot separation, and fail-closed missing objects. Original ledger, current documentation, receipts, and Phase 175 frozen inputs remain unchanged.
 oracle_type: specified
 verification:
-  target_test: {result: pending, original_native: "22 tests, four failures"}
+  target_test: {result: pass, original_native: "22 tests, four failures", final_native: "25 tests, zero failures", tested_revision: "9d526f145577e9bfaab93dfc6a4032174344443c", guard_exit: 0}
   mutation_check: {result: skipped, reason: "No Stryker configured for Elixir; private source-boundary mutation separately reproduced the original error family."}
   no_op_deletion: {result: pass, deletion_justified_by_rca: true, detail: "Workspace reads replaced with authenticated historical reads; original manifest, digest, case, receipt, and selector assertions retained."}
-  adjacent_tests: {result: pending, suites_run: []}
+  adjacent_tests: {result: pass, suites_run: ["All original 22 contract tests plus three new provenance/history tests in the same 25/0 focused native run"], static_immutable_checks: "1076 other selected files unchanged; Phase 175 frozen inputs 13/13 unchanged"}
   revert_and_reconfirm: {result: pass, bug_returned_on_revert: true, fixed_on_reapply: true, mode: "private in-memory source-causal counterfactual; no filesystem reversion or DB startup"}
-  guardrail_verdict: pending
+  guardrail_verdict: accepted
 files_changed:
   - test/lockspire/qualification_ledger_contract_test.exs
   - .planning/debug/178-qualification-ledger.md
