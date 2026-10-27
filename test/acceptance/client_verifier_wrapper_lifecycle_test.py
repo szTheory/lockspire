@@ -33,7 +33,8 @@ def absent(pgid: int) -> bool:
 
 class ActualWrapperNestedSessions(unittest.TestCase):
     def exercise(self, external_term: bool, *, root_ignores_term: bool = False,
-                 children: int = 1, force_group_denial: bool = False) -> None:
+                 children: int = 1, force_group_denial: bool = False, parent_exits: bool = False,
+                 abandon_prepared_launch: bool = False) -> None:
         with ExitStack() as stack:
             root = Path(tempfile.mkdtemp(prefix="lockspire-owned-wrapper-")).resolve()
             cleanup_confirmed = False
@@ -67,8 +68,10 @@ class ActualWrapperNestedSessions(unittest.TestCase):
                 "    owned.write_text(json.dumps(pids), encoding='ascii')\n"
                 "    while not marker.exists(): time.sleep(0.01)\n"
                 + ("signal.signal(signal.SIGTERM, signal.SIG_IGN)\n" if root_ignores_term else "")
+                + ("from package_input import _session_request\n_session_request('prepare',os.getpid())\n"
+                   if abandon_prepared_launch else "")
                 + f"pathlib.Path({str(ready)!r}).touch()\n"
-                "time.sleep(60)\n", encoding="utf-8",
+                + ("os._exit(0)\n" if parent_exits or abandon_prepared_launch else "time.sleep(60)\n"), encoding="utf-8",
             )
             environment = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
             environment.update({
@@ -100,13 +103,13 @@ class ActualWrapperNestedSessions(unittest.TestCase):
                 if external_term:
                     wrapper.send_signal(signal.SIGTERM)
                 stdout, stderr = wrapper.communicate(timeout=24)
-                expected = 125 if force_group_denial else (143 if external_term else 124)
+                expected = 125 if force_group_denial or abandon_prepared_launch else (78 if parent_exits else (143 if external_term else 124))
                 self.assertTrue(wrapper.returncode == expected, "actual wrapper did not confirm bounded cleanup")
                 self.assertTrue(time.monotonic() - started < 23, "wrapper exceeded cleanup bound")
                 pids = json.loads(identities.read_text(encoding="ascii"))
                 self.assertTrue(len(pids) == children, "nested custody record incomplete")
                 root_pid = int(wrapper_pid.read_text(encoding="ascii"))
-                if force_group_denial:
+                if force_group_denial or abandon_prepared_launch:
                     lines = stderr.decode("ascii").splitlines()
                     prefix = "verifier owned session custody retained: "
                     selected = [line[len(prefix):] for line in lines if line.startswith(prefix)]
@@ -115,9 +118,15 @@ class ActualWrapperNestedSessions(unittest.TestCase):
                     self.assertTrue(custody.parent == Path(tempfile.gettempdir()).resolve(), "custody escaped private temporary root")
                     self.assertTrue(not custody.is_symlink() and custody.is_dir(), "custody is unavailable")
                     self.assertTrue(custody.stat().st_mode & 0o077 == 0, "custody directory is not private")
-                    rows = [json.loads(path.read_text(encoding="ascii")) for path in custody.iterdir()]
-                    self.assertTrue(all(set(row) == {"pid", "parent_pid"} for row in rows), "custody retained unknown fields")
+                    rows = [json.loads(path.read_text(encoding="ascii")) for path in custody.iterdir()
+                            if path.name != "pending-launches.json"]
+                    self.assertTrue(all(set(row) == {"pid", "parent_pid", "pgid", "sid", "start"} for row in rows), "custody retained unknown fields")
                     self.assertTrue({row["pid"] for row in rows} == set(pids + [root_pid]), "custody omitted owned nested groups")
+                    if abandon_prepared_launch:
+                        pending = json.loads((custody / "pending-launches.json").read_text(encoding="ascii"))
+                        self.assertTrue(pending["schema"] == "lockspire-pending-owned-launch-v1"
+                                        and [row["pid"] for row in pending["owners"]] == [root_pid],
+                                        "unresolved launch reservation lost owner custody")
                 else:
                     self.assertTrue(all(absent(pid) for pid in pids), "registered nested group survived wrapper exit")
                     self.assertTrue(absent(root_pid), "root group survived wrapper exit")
@@ -154,6 +163,12 @@ class ActualWrapperNestedSessions(unittest.TestCase):
     def test_permission_uncertainty_returns_125_with_safe_nested_custody(self) -> None:
         self.exercise(False, force_group_denial=True)
 
+    def test_registered_child_is_drained_after_its_parent_exits_without_cleanup(self) -> None:
+        self.exercise(False, parent_exits=True)
+
+    def test_parent_exit_with_unfinished_launch_retains_125_custody(self) -> None:
+        self.exercise(False, abandon_prepared_launch=True)
+
 
 class ProcessEscalationBranch(unittest.TestCase):
     def load_input(self):
@@ -167,8 +182,11 @@ class ProcessEscalationBranch(unittest.TestCase):
     def test_post_kill_wait_and_group_absence_are_required(self) -> None:
         module = self.load_input()
         process = mock.Mock(pid=43210)
+        identity = module.OwnedSessionIdentity(43210, os.getpid(), 43210, 43210, (1, 2))
+        module._OWNED_IDENTITIES[process.pid] = identity
         process.wait.side_effect = [subprocess.TimeoutExpired("owned", 0), -9]
-        with mock.patch.object(module.os, "killpg", side_effect=[None, None, None, ProcessLookupError]):
+        with mock.patch.object(module, "owned_session_state", side_effect=["owned", "owned", "owned", "absent"]), \
+             mock.patch.object(module.os, "killpg"):
             try:
                 stopped = module.stop_process_group(process, grace=0)
             except Exception:
@@ -179,8 +197,10 @@ class ProcessEscalationBranch(unittest.TestCase):
     def test_group_permission_denial_keeps_custody_without_direct_child_fallback(self) -> None:
         module = self.load_input()
         process = mock.Mock(pid=43210)
+        module._OWNED_IDENTITIES[process.pid] = module.OwnedSessionIdentity(43210, os.getpid(), 43210, 43210, (1, 2))
         module._OWNED_SESSIONS[process.pid] = process
-        with mock.patch.object(module.os, "killpg", side_effect=PermissionError):
+        with mock.patch.object(module, "owned_session_state", return_value="owned"), \
+             mock.patch.object(module.os, "killpg", side_effect=PermissionError):
             self.assertFalse(module.stop_process_group(process), "permission uncertainty was accepted")
         self.assertTrue(process.pid in module._OWNED_SESSIONS, "unconfirmed owned group lost custody")
         self.assertTrue(not process.terminate.called and not process.kill.called,
@@ -199,6 +219,48 @@ class ProcessEscalationBranch(unittest.TestCase):
                 with self.assertRaises(module.PackageInputError):
                     module.start_owned_session([sys.executable, "-c", "pass"])
             self.assertFalse(launch.called, "invalid custody launched a child")
+
+    def test_reused_process_id_never_receives_a_group_signal(self) -> None:
+        module = self.load_input()
+        original = module.OwnedSessionIdentity(43210, 40, 43210, 43210, (1, 2))
+        replacement = module.OwnedSessionIdentity(43210, 70, 43210, 43210, (3, 4))
+        with mock.patch.object(module, "owned_process_identity", return_value=replacement), \
+             mock.patch.object(module.os, "killpg") as send:
+            self.assertFalse(module.signal_owned_session(original, signal.SIGTERM), "reused PID retained kill authority")
+        self.assertFalse(send.called, "foreign replacement received a signal")
+
+    def test_missing_leader_with_existing_group_retains_uncertainty(self) -> None:
+        module = self.load_input()
+        identity = module.OwnedSessionIdentity(43210, 40, 43210, 43210, (1, 2))
+        with mock.patch.object(module, "owned_process_identity", side_effect=ProcessLookupError), \
+             mock.patch.object(module.os, "killpg") as send:
+            self.assertFalse(module.signal_owned_session(identity, signal.SIGKILL), "missing leader silently retained numeric kill authority")
+        self.assertTrue(send.call_args_list == [mock.call(43210, 0)], "missing leader used a destructive signal")
+
+    def test_identity_lookup_denial_never_signals_group(self) -> None:
+        module = self.load_input()
+        identity = module.OwnedSessionIdentity(43210, 40, 43210, 43210, (1, 2))
+        with mock.patch.object(module, "owned_process_identity", side_effect=PermissionError), \
+             mock.patch.object(module.os, "killpg", side_effect=PermissionError) as send:
+            self.assertFalse(module.signal_owned_session(identity, signal.SIGTERM), "denied identity lookup accepted authority")
+        self.assertTrue(send.call_args_list == [mock.call(43210, 0)], "unverified identity received a destructive signal")
+
+    def test_root_identity_denial_preserves_unconfirmed_custody_without_authority(self) -> None:
+        module = self.load_input()
+        with tempfile.TemporaryDirectory(prefix="lockspire-root-denial-") as temporary:
+            supervisor = module.OwnedSessionSupervisor(Path(temporary))
+            try:
+                with mock.patch.object(module, "owned_process_identity", side_effect=PermissionError), \
+                     mock.patch.object(module.os, "killpg") as send:
+                    with self.assertRaises(PermissionError):
+                        supervisor.admit_root(mock.Mock(pid=43210))
+                    self.assertFalse(supervisor.sessions, "identity denial granted signalling authority")
+                    self.assertFalse(send.called, "unverified root received a signal")
+            finally:
+                supervisor.close()
+            record = json.loads((Path(temporary) / "unconfirmed-root.json").read_text(encoding="ascii"))
+            self.assertTrue(record["roots"] == [{"pid": 43210, "parent_pid": os.getpid()}],
+                            "identity denial discarded exact unconfirmed root custody")
 
 
 if __name__ == "__main__":

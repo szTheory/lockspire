@@ -13,6 +13,8 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -32,41 +34,284 @@ class PackageInputError(RuntimeError):
 
 
 _OWNED_SESSIONS: dict[int, subprocess.Popen] = {}
+_OWNED_IDENTITIES: dict[int, OwnedSessionIdentity] = {}
 _SESSION_SIGNAL_HANDLERS_INSTALLED = False
 _SESSION_REGISTRY_ENV = "LOCKSPIRE_OWNED_SESSION_REGISTRY"
+_SESSION_SOCKET_ENV = "LOCKSPIRE_OWNED_SESSION_SOCKET"
 _SESSION_LAUNCHING = False
 _SESSION_PENDING_SIGNAL: tuple[int, object] | None = None
 _SESSION_STOPPING = False
 
 
-def _session_registry() -> Path | None:
-    selected = os.environ.get(_SESSION_REGISTRY_ENV)
-    if not selected:
-        return None
-    root = Path(selected)
-    if (not root.is_absolute() or root.is_symlink() or not root.is_dir()
-            or root.stat().st_uid != os.getuid() or root.stat().st_mode & 0o077):
-        raise PackageInputError("owned session custody is unavailable")
-    return root
+@dataclass(frozen=True)
+class OwnedSessionIdentity:
+    pid: int
+    parent_pid: int
+    pgid: int
+    sid: int
+    start: tuple[int, ...]
+
+    def same_process(self, other: OwnedSessionIdentity) -> bool:
+        # Reparenting does not revoke an already authenticated child's custody.
+        return (self.pid, self.pgid, self.sid, self.start) == (other.pid, other.pgid, other.sid, other.start)
+
+    def safe_record(self) -> dict:
+        return {"pid": self.pid, "parent_pid": self.parent_pid, "pgid": self.pgid,
+                "sid": self.sid, "start": list(self.start)}
+
+
+def owned_process_identity(pid: int) -> OwnedSessionIdentity:
+    """Read one exact PID's kernel parent/session/creation identity, never argv."""
+    if type(pid) is not int or pid <= 1:
+        raise PackageInputError("owned process identity is invalid")
+    if sys.platform == "linux":
+        try:
+            raw = (Path("/proc") / str(pid) / "stat").read_bytes()
+        except FileNotFoundError:
+            raise ProcessLookupError from None
+        fields = raw.rsplit(b")", 1)[1].split()
+        return OwnedSessionIdentity(pid, int(fields[1]), int(fields[2]), int(fields[3]), (int(fields[19]),))
+    if sys.platform == "darwin":
+        import ctypes
+        import errno
+
+        class BSDInfo(ctypes.Structure):
+            _fields_ = [(name, ctypes.c_uint32) for name in (
+                "flags", "status", "xstatus", "pid", "ppid", "uid", "gid", "ruid", "rgid", "svuid", "svgid", "reserved"
+            )] + [("comm", ctypes.c_char * 16), ("name", ctypes.c_char * 32)] + [
+                (name, ctypes.c_uint32) for name in ("nfiles", "pgid", "jobc", "tdev", "tpgid", "nice")
+            ] + [("start_sec", ctypes.c_uint64), ("start_usec", ctypes.c_uint64)]
+
+        library = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
+        library.proc_pidinfo.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p, ctypes.c_int]
+        library.proc_pidinfo.restype = ctypes.c_int
+        info = BSDInfo()
+        size = library.proc_pidinfo(pid, 3, 0, ctypes.byref(info), ctypes.sizeof(info))
+        if size != ctypes.sizeof(info):
+            error = ctypes.get_errno()
+            if error in (errno.ESRCH, errno.ENOENT):
+                raise ProcessLookupError from None
+            raise PermissionError from None
+        if info.pid != pid:
+            raise PackageInputError("owned process identity is unavailable")
+        return OwnedSessionIdentity(pid, info.ppid, info.pgid, os.getsid(pid), (info.start_sec, info.start_usec))
+    raise PackageInputError("authoritative process identity is unavailable")
+
+
+def owned_session_state(identity: OwnedSessionIdentity) -> str:
+    try:
+        actual = owned_process_identity(identity.pid)
+    except (OSError, PackageInputError, ValueError, IndexError):
+        try:
+            os.killpg(identity.pgid, 0)
+        except ProcessLookupError:
+            return "absent"
+        except OSError:
+            return "unconfirmed"
+        # An absent leader with a surviving group cannot prove that a reused
+        # numeric PGID still denotes our original group. Preserve custody.
+        return "unconfirmed"
+    return "owned" if identity.same_process(actual) else "unconfirmed"
+
+
+def signal_owned_session(identity: OwnedSessionIdentity, signum: int) -> bool:
+    state = owned_session_state(identity)
+    if state == "absent":
+        return True
+    if state != "owned":
+        return False
+    try:
+        os.killpg(identity.pgid, signum)
+        return True
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return False
+
+
+def _signal_before_deadline(process: subprocess.Popen, identity: OwnedSessionIdentity,
+                            signum: int, deadline: float) -> bool:
+    while True:
+        process.poll()
+        if signal_owned_session(identity, signum):
+            return True
+        if owned_session_state(identity) != "unconfirmed" or time.monotonic() >= deadline:
+            return False
+        # A direct child can become a zombie between poll and the identity read.
+        # Reap/recheck within the same deadline; uncertainty never grants signal
+        # authority and a changed creation identity never matches the old pin.
+        time.sleep(min(0.02, max(0, deadline - time.monotonic())))
+
+
+def _session_request(action: str, pid: int) -> None:
+    endpoint = os.environ.get(_SESSION_SOCKET_ENV)
+    if endpoint is None:
+        return
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as connection:
+            connection.settimeout(2)
+            connection.connect(endpoint)
+            connection.sendall(json.dumps({"action": action, "pid": pid}).encode("ascii") + b"\n")
+            response = b""
+            while b"\n" not in response and len(response) < 32:
+                part = connection.recv(32 - len(response))
+                if not part:
+                    break
+                response += part
+            if response != b"OK\n":
+                raise PackageInputError("owned session registration was refused")
+    except OSError:
+        raise PackageInputError("owned session supervisor is unavailable") from None
+
+
+class OwnedSessionSupervisor:
+    """Helper-private kill authority; diagnostic files are output only."""
+
+    def __init__(self, custody: Path):
+        self.custody = custody
+        self.endpoint = custody / "s"
+        self.sessions: dict[int, OwnedSessionIdentity] = {}
+        self.creators: dict[int, OwnedSessionIdentity] = {}
+        self.pending: dict[int, OwnedSessionIdentity] = {}
+        self.unconfirmed_roots: dict[int, int] = {}
+        self.refused = False
+        self.listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.listener.bind(str(self.endpoint))
+        self.listener.listen(16)
+        self.listener.setblocking(False)
+
+    def admit_root(self, process: subprocess.Popen) -> None:
+        self.unconfirmed_roots[process.pid] = os.getpid()
+        identity = owned_process_identity(process.pid)
+        if identity.parent_pid != os.getpid() or identity.pid != identity.pgid or identity.pid != identity.sid:
+            raise PackageInputError("owned root session identity is unavailable")
+        self.sessions[identity.pid] = identity
+        self._record(identity)
+        self.unconfirmed_roots.pop(identity.pid)
+
+    def _record(self, identity: OwnedSessionIdentity) -> None:
+        path = self.custody / f"{identity.pid}.json"
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(descriptor, "w", encoding="ascii") as output:
+            json.dump(identity.safe_record(), output, sort_keys=True)
+            output.flush()
+            os.fsync(output.fileno())
+
+    def _descendant(self, peer: OwnedSessionIdentity) -> bool:
+        for _ in range(64):
+            cached = self.sessions.get(peer.pid)
+            if cached is not None and cached.same_process(peer):
+                return True
+            if peer.parent_pid <= 1:
+                return False
+            peer = owned_process_identity(peer.parent_pid)
+        return False
+
+    def _peer_pid(self, connection: socket.socket) -> int:
+        if sys.platform == "linux":
+            pid, uid, _gid = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+            if uid != os.getuid():
+                raise PackageInputError("owned session peer is unavailable")
+            return pid
+        if sys.platform == "darwin":
+            # Darwin SDK sys/un.h: SOL_LOCAL=0, LOCAL_PEERPID=2.
+            return struct.unpack("i", connection.getsockopt(0, 2, 4))[0]
+        raise PackageInputError("authoritative session peer is unavailable")
+
+    def service(self) -> None:
+        try:
+            connection, _address = self.listener.accept()
+        except BlockingIOError:
+            return
+        accepted = False
+        with connection:
+            connection.settimeout(0.2)
+            try:
+                peer = owned_process_identity(self._peer_pid(connection))
+                packet = b""
+                while b"\n" not in packet and len(packet) <= 512:
+                    part = connection.recv(513 - len(packet))
+                    if not part:
+                        break
+                    packet += part
+                row = json.loads(packet)
+                if (set(row) != {"action", "pid"} or type(row["pid"]) is not int
+                        or row["pid"] <= 1 or not self._descendant(peer)):
+                    raise PackageInputError("owned registration identity is unavailable")
+                if row["action"] == "prepare" and row["pid"] == peer.pid:
+                    self.pending[peer.pid] = peer
+                    accepted = True
+                elif row["action"] == "cancel" and row["pid"] == peer.pid:
+                    pending = self.pending.get(peer.pid)
+                    if pending is not None and pending.same_process(peer):
+                        self.pending.pop(peer.pid)
+                        accepted = True
+                elif row["action"] == "register":
+                    target = owned_process_identity(row["pid"])
+                    pending = self.pending.get(peer.pid)
+                    if (pending is None or not pending.same_process(peer)
+                            or target.parent_pid != peer.pid or target.pid != target.pgid or target.pid != target.sid
+                            or not target.same_process(owned_process_identity(target.pid))):
+                        raise PackageInputError("owned registration ancestry is unproven")
+                    self.sessions[target.pid] = target
+                    self.creators[target.pid] = peer
+                    self._record(target)
+                    self.pending.pop(peer.pid)
+                    accepted = True
+                elif row["action"] == "release":
+                    target = self.sessions.get(row["pid"])
+                    creator = self.creators.get(row["pid"])
+                    if (target is not None and creator is not None and creator.same_process(peer)
+                            and owned_session_state(target) == "absent"):
+                        self.sessions.pop(target.pid)
+                        self.creators.pop(target.pid)
+                        (self.custody / f"{target.pid}.json").unlink(missing_ok=True)
+                        accepted = True
+            except (OSError, PackageInputError, ValueError, TypeError, KeyError, IndexError):
+                pass
+            if not accepted:
+                self.refused = True
+            try:
+                connection.sendall(b"OK\n" if accepted else b"NO\n")
+            except OSError:
+                self.refused = True
+
+    def close(self) -> None:
+        self.listener.close()
+        self.endpoint.unlink(missing_ok=True)
+        # Retained custody is reconstructed from trusted RAM. Never retain an
+        # injected row as if it represented an owned process, or decode its bytes.
+        expected = {f"{pid}.json" for pid in self.sessions}
+        for path in self.custody.iterdir():
+            if path.name not in expected:
+                if path.is_dir() and not path.is_symlink():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+        for identity in self.sessions.values():
+            self._record(identity)
+        if self.pending:
+            path = self.custody / "pending-launches.json"
+            with path.open("x", encoding="ascii") as output:
+                json.dump({"schema": "lockspire-pending-owned-launch-v1",
+                           "owners": [identity.safe_record() for identity in self.pending.values()]}, output)
+        if self.unconfirmed_roots:
+            with (self.custody / "unconfirmed-root.json").open("x", encoding="ascii") as output:
+                json.dump({"schema": "lockspire-unconfirmed-root-v1", "roots": [
+                    {"pid": pid, "parent_pid": parent} for pid, parent in self.unconfirmed_roots.items()
+                ]}, output)
 
 
 def _register_session(process: subprocess.Popen) -> None:
-    root = _session_registry()
-    if root is not None:
-        path = root / f"{process.pid}.json"
-        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
-        with os.fdopen(descriptor, "w", encoding="ascii") as output:
-            json.dump({"pid": process.pid, "parent_pid": os.getpid()}, output)
-            output.flush()
-            os.fsync(output.fileno())
+    _OWNED_IDENTITIES[process.pid] = owned_process_identity(process.pid)
+    _session_request("register", process.pid)
 
 
 def _forget_session(process: subprocess.Popen) -> None:
     process.poll()  # Reap our direct child before accepting group absence.
+    _session_request("release", process.pid)
     _OWNED_SESSIONS.pop(process.pid, None)
-    root = _session_registry()
-    if root is not None:
-        (root / f"{process.pid}.json").unlink(missing_ok=True)
+    _OWNED_IDENTITIES.pop(process.pid, None)
 
 
 def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
@@ -75,9 +320,11 @@ def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
     if kwargs.get("start_new_session", True) is not True:
         raise PackageInputError("owned child must start in an isolated session")
     kwargs["start_new_session"] = True
-    root = _session_registry()  # Fail before launch if custody is invalid.
-    if root is not None and kwargs.get("env") is not None:
-        kwargs["env"] = dict(kwargs["env"], **{_SESSION_REGISTRY_ENV: str(root)})
+    if os.environ.get(_SESSION_REGISTRY_ENV):
+        raise PackageInputError("caller-writable session registry is unsupported")
+    endpoint = os.environ.get(_SESSION_SOCKET_ENV)
+    if endpoint is not None and kwargs.get("env") is not None:
+        kwargs["env"] = dict(kwargs["env"], **{_SESSION_SOCKET_ENV: endpoint})
     if not _SESSION_SIGNAL_HANDLERS_INSTALLED:
         _SESSION_SIGNAL_HANDLERS_INSTALLED = True
         for signum in (signal.SIGTERM, signal.SIGINT):
@@ -88,13 +335,18 @@ def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
     # blocking the OS signal mask, this does not pass blocked TERM to children.
     _SESSION_LAUNCHING = True
     try:
-        process = subprocess.Popen(command, **kwargs)
+        _session_request("prepare", os.getpid())
+        try:
+            process = subprocess.Popen(command, **kwargs)
+        except BaseException:
+            _session_request("cancel", os.getpid())
+            raise
         if not isinstance(process.pid, int):
             return process
         _OWNED_SESSIONS[process.pid] = process
         try:
             _register_session(process)
-        except OSError:
+        except (OSError, PackageInputError):
             if not stop_process_group(process):
                 raise PackageInputError("owned session custody and cleanup are unconfirmed") from None
             raise PackageInputError("owned session custody could not be recorded") from None
@@ -137,10 +389,9 @@ def stop_all_owned_sessions() -> bool:
     processes = tuple(_OWNED_SESSIONS.values())
     started = time.monotonic()
     for process in processes:
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-        except OSError:
-            pass  # stop_process_group verifies or preserves each custody row.
+        identity = _OWNED_IDENTITIES.get(process.pid)
+        if identity is not None:
+            signal_owned_session(identity, signal.SIGTERM)
     stopped = True
     for process in processes:
         if not stop_process_group(process, grace=max(0, started + 3 - time.monotonic()),
@@ -232,37 +483,25 @@ def clean_room_database_url(role: str) -> str:
 
 def stop_process_group(process: subprocess.Popen, grace: float = 3, *, _deadline: float | None = None) -> bool:
     """Stop only this child's session, including descendants after its leader exits."""
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        _forget_session(process)
-        return True
-    except OSError:
+    process.poll()  # Reap an already exited direct child before identity checks.
+    deadline = time.monotonic() + grace + 4 if _deadline is None else _deadline
+    identity = _OWNED_IDENTITIES.get(process.pid)
+    if identity is None or not _signal_before_deadline(process, identity, signal.SIGTERM, deadline):
         return False
     try:
-        process.wait(timeout=grace)
+        process.wait(timeout=min(grace, max(0, deadline - time.monotonic())))
     except subprocess.TimeoutExpired:
         pass
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        _forget_session(process)
-        return True
-    except OSError:
+    if not _signal_before_deadline(process, identity, signal.SIGKILL, deadline):
         return False
     try:
-        process.wait(timeout=2 if _deadline is None else max(0, _deadline - time.monotonic()))
+        process.wait(timeout=min(2, max(0, deadline - time.monotonic())))
     except subprocess.TimeoutExpired:
         return False
-    deadline = time.monotonic() + 2 if _deadline is None else _deadline
     while time.monotonic() < deadline:
-        try:
-            os.killpg(process.pid, 0)
-        except ProcessLookupError:
+        if owned_session_state(identity) == "absent":
             _forget_session(process)
             return True
-        except OSError:
-            return False
         time.sleep(0.05)
     return False
 

@@ -152,7 +152,7 @@ run_owned() {
   }
   trap 'handle_signal TERM 143' TERM
   trap 'handle_signal INT 130' INT
-  python3 - "$selected_timeout" "$selected_label" "$test_mode" "$@" <<'PY' &
+  python3 - "$selected_timeout" "$selected_label" "$test_mode" "$repo_root/scripts/acceptance/clean_room" "$@" <<'PY' &
 import os
 import errno
 import json
@@ -164,59 +164,52 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, sys.argv[4])
+from package_input import OwnedSessionSupervisor, PackageInputError, owned_session_state, signal_owned_session
+
 timeout = int(sys.argv[1])
 label = sys.argv[2]
 test_mode = sys.argv[3] == "true"
-command = sys.argv[4:]
+command = sys.argv[5:]
 child = None
 force_group_denial = test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_FORCE_GROUP_DENIAL") == "1"
 cleanup_failure = "unconfirmed"
 registry = Path(tempfile.mkdtemp(prefix="lockspire-verifier-owned-"))
+supervisor = OwnedSessionSupervisor(registry)
 starting = False
 pending_signal = None
 stopping = False
 
 def registered_groups():
-    groups = set()
-    try:
-        for path in registry.iterdir():
-            if path.is_symlink() or not path.is_file():
-                return None
-            row = json.loads(path.read_text(encoding="ascii"))
-            if (set(row) != {"pid", "parent_pid"} or type(row["pid"]) is not int
-                    or type(row["parent_pid"]) is not int or row["pid"] <= 1
-                    or row["parent_pid"] <= 1 or path.name != str(row["pid"]) + ".json"):
-                return None
-            groups.add(row["pid"])
-    except (OSError, ValueError, TypeError, KeyError):
-        return None
-    return groups
+    # Only the helper's OS-authenticated cache grants authority. Never parse
+    # diagnostic files, even if a same-user child discovers or changes them.
+    return set(supervisor.sessions)
 
 def group_absent(pgid):
     global cleanup_failure
-    try:
-        os.killpg(pgid, 0)
+    identity = supervisor.sessions.get(pgid)
+    if identity is None:
+        cleanup_failure = "ownership-unconfirmed"
         return False
-    except ProcessLookupError:
-        return True
-    except OSError:
-        cleanup_failure = "group-probe-permission-denied"
-        return False
+    state = owned_session_state(identity)
+    if state == "unconfirmed":
+        cleanup_failure = "ownership-unconfirmed"
+    return state == "absent"
 
 def signal_group(pgid, signum):
     global cleanup_failure
-    try:
-        os.killpg(pgid, signum)
-        return True
-    except ProcessLookupError:
-        return True
-    except OSError:
-        cleanup_failure = "group-signal-permission-denied"
+    identity = supervisor.sessions.get(pgid)
+    if identity is None or not signal_owned_session(identity, signum):
+        cleanup_failure = "ownership-unconfirmed"
         return False
+    return True
 
 def all_absent(process):
     global cleanup_failure
     process.poll()  # Reap the root before probing its process group.
+    if supervisor.pending:
+        cleanup_failure = "pending-owned-launch"
+        return False
     groups = registered_groups()
     if groups is None:
         cleanup_failure = "invalid-owned-custody"
@@ -236,6 +229,7 @@ def stop_group(process):
     # after the old two seconds while it is still draining isolated sessions.
     deadline = time.monotonic() + 15
     while time.monotonic() < deadline:
+        supervisor.service()  # Accept release/late registration during drain.
         if all_absent(process):
             return True
         if process.poll() is not None:
@@ -270,6 +264,7 @@ def stop_group(process):
     return False
 
 def cleanup_unconfirmed():
+    supervisor.close()
     print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
     # Generated private path + numeric identities only; never command/output.
     print(f"verifier owned session custody retained: {registry}", file=sys.stderr)
@@ -282,9 +277,10 @@ def interrupted(signum, _frame):
     if stopping:
         return
     stopping = True
-    if child is not None and not stop_group(child):
+    if child is not None and (not stop_group(child) or supervisor.refused):
         cleanup_unconfirmed()
         sys.exit(125)
+    supervisor.close()
     shutil.rmtree(registry)
     sys.exit(128 + signum)
 
@@ -293,13 +289,11 @@ signal.signal(signal.SIGINT, interrupted)
 try:
     stage = "child-start"
     starting = True
-    environment = dict(os.environ, LOCKSPIRE_OWNED_SESSION_REGISTRY=str(registry))
+    environment = dict(os.environ, LOCKSPIRE_OWNED_SESSION_SOCKET=str(supervisor.endpoint))
+    environment.pop("LOCKSPIRE_OWNED_SESSION_REGISTRY", None)
     child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, start_new_session=True, env=environment)
-    with (registry / f"{child.pid}.json").open("x", encoding="ascii") as output:
-        json.dump({"pid": child.pid, "parent_pid": os.getpid()}, output)
-        output.flush()
-        os.fsync(output.fileno())
+    supervisor.admit_root(child)
     starting = False
     if pending_signal is not None:
         interrupted(pending_signal, None)
@@ -307,34 +301,47 @@ try:
     test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_PID_FILE") and open(
         os.environ["LOCKSPIRE_VERIFIER_TEST_PID_FILE"], "w", encoding="ascii").write(str(child.pid))
     try:
-        child.communicate(timeout=timeout)
+        execution_deadline = time.monotonic() + timeout
+        while True:
+            supervisor.service()
+            remaining = execution_deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired("owned verifier stage", timeout)
+            try:
+                child.communicate(timeout=min(0.05, remaining))
+                break
+            except subprocess.TimeoutExpired:
+                pass
     except subprocess.TimeoutExpired:
         stopping = True
         stopped = stop_group(child)
-        if not stopped:
+        if not stopped or supervisor.refused:
             cleanup_unconfirmed()
             sys.exit(125)
+        supervisor.close()
         shutil.rmtree(registry)
         print(f"verifier child timeout at {label}; diagnostics withheld", file=sys.stderr)
         sys.exit(124)
     stopping = True
     stopped = stop_group(child)
-    if not stopped:
+    if not stopped or supervisor.refused:
         cleanup_unconfirmed()
         sys.exit(125)
+    supervisor.close()
     shutil.rmtree(registry)
     if child.returncode:
         print(f"verifier child failed at {label}; diagnostics withheld", file=sys.stderr)
         sys.exit(1)
-except OSError as error:
+except (OSError, PackageInputError) as error:
     reason = {errno.ENOENT: "not_found", errno.EACCES: "permission_denied", errno.E2BIG: "argument_limit",
               errno.ENOEXEC: "not_executable", errno.EINVAL: "invalid_argument", errno.EAGAIN: "resource_limit",
-              errno.EPERM: "permission_denied", errno.ENOMEM: "resource_limit"}.get(error.errno, "other")
+              errno.EPERM: "permission_denied", errno.ENOMEM: "resource_limit"}.get(getattr(error, "errno", None), "other")
     print(f"verifier child failed at {label}/{stage} ({reason}); diagnostics withheld", file=sys.stderr)
     if child is not None:
         if not stop_group(child):
             cleanup_unconfirmed()
             sys.exit(125)
+    supervisor.close()
     shutil.rmtree(registry)
     sys.exit(127)
 PY
@@ -378,7 +385,7 @@ fi
 validation_status=0
 run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
   --validate-receipts "$repo_root/$receipt_dir" \
-  --expected-runner-revision "${expected_runner:-$runner_revision}" \
+  --expected-runner-revision "$runner_revision" \
   --expected-candidate-source-revision "${expected_candidate_source:-$runner_revision}" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
@@ -435,6 +442,13 @@ try:
 except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
     raise SystemExit(1)
 PY
+
+python3 "$repo_root/scripts/acceptance/clean_room/verifier_delivery.py" \
+  --copy-upload-owner --upload-root "$repo_root/$receipt_dir/validated" \
+  --expected-runner "$expected_runner" --expected-candidate-source "$expected_candidate_source" \
+  --expected-archive-sha256 "$expected_archive_sha256" --expected-tree-sha256 "$expected_tree_sha256" \
+  --expected-manifest-sha256 "$expected_manifest_sha256" \
+  >/dev/null || { echo "validated candidate owner copies are unavailable" >&2; exit 2; }
 
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'
 import json

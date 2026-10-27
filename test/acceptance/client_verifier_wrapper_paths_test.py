@@ -79,7 +79,7 @@ class ActualWrapperFrozenPaths(unittest.TestCase):
             "'manifest':os.environ['LOCKSPIRE_FROZEN_INPUTS']}))\n"
             "raise SystemExit(7)\n", encoding="utf-8",
         )
-        self.git("add", "--", *delivery.COVERED_INPUTS)
+        self.git("add", "-f", "--", *delivery.COVERED_INPUTS)
         self.git("commit", "-qm", "bounded runner fixture")
         self.runner = self.git("rev-parse", "HEAD")
         self.owner = {
@@ -96,6 +96,7 @@ class ActualWrapperFrozenPaths(unittest.TestCase):
             self.owner, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         self.manifest = {
             "schema": "lockspire-phase178-frozen-inputs-v1", "frozen_at": "fixture",
+            "closure_rule": delivery.CLOSURE_RULE,
             "runner_revision": self.runner, "runner_tree": self.git("rev-parse", "HEAD^{tree}"),
             "candidate_owner": self.owner,
             "covered_inputs": [{"path": path, "sha256": digest(self.root / path)}
@@ -160,21 +161,21 @@ class ActualWrapperFrozenPaths(unittest.TestCase):
         self.assertTrue(canonical.read_bytes() == original, "retained canonical owner was overwritten")
 
     def test_later_metadata_commit_keeps_archived_runner_pin(self) -> None:
-        (self.root / "metadata.txt").write_text("later observation\n", encoding="ascii")
-        self.git("add", "metadata.txt")
+        (self.root / ".planning/fixture-metadata.txt").write_text("later observation\n", encoding="ascii")
+        self.git("add", ".planning/fixture-metadata.txt")
         self.git("commit", "-qm", "later metadata")
         self.assertTrue(self.git("rev-parse", "HEAD") != self.runner, "fixture checkout did not advance")
         self.assert_reached("locked", ".artifacts/phase178/final-locked")
 
     def test_synthetic_merge_checkout_preserves_pinned_covered_bytes(self) -> None:
         self.git("checkout", "-qb", "fixture-side", self.runner)
-        (self.root / "side-metadata.txt").write_text("side metadata\n", encoding="ascii")
-        self.git("add", "side-metadata.txt")
+        (self.root / ".planning/fixture-side-metadata.txt").write_text("side metadata\n", encoding="ascii")
+        self.git("add", ".planning/fixture-side-metadata.txt")
         self.git("commit", "-qm", "side metadata")
         side = self.git("rev-parse", "HEAD")
         self.git("checkout", "--detach", self.runner)
-        (self.root / "main-metadata.txt").write_text("main metadata\n", encoding="ascii")
-        self.git("add", "main-metadata.txt")
+        (self.root / ".planning/fixture-main-metadata.txt").write_text("main metadata\n", encoding="ascii")
+        self.git("add", ".planning/fixture-main-metadata.txt")
         self.git("commit", "-qm", "main metadata")
         self.git("merge", "--no-ff", "-m", "synthetic checkout", side)
         self.assert_reached("floor", ".artifacts/phase178/final-floor")
