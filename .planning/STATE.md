@@ -4,18 +4,18 @@ milestone: v1.48
 milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
-current_plan: 8
+current_plan: 9
 status: executing
-stopped_at: Completed 178-07-PLAN.md
-last_updated: "2026-10-27T01:54:56.676Z"
+stopped_at: Completed 178-08-PLAN.md
+last_updated: "2026-10-27T03:31:35Z"
 last_activity: 2026-10-27
-last_activity_desc: Phase 178 Plan 07 completed; VPROOF-02 remains pending
-state_head: 98e17ad976a9d1b6fa17e845b12c47bc390d68a2
+last_activity_desc: Phase 178 Plan 08 completed under approved retained-evidence sequence; Plan 09 is next and requirements remain pending
+state_head: 3d8f99cc8cca9df15d4e0338b660391cea49f30d
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 31
-  completed_plans: 26
+  completed_plans: 27
   percent: 75
 ---
 
@@ -27,20 +27,20 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plans 01–07 now provide installed proof artifacts through disclosure on both dependency pairs. Plan 07 preserves the source-database incidents and the guarded 9/0 source check; `VPROOF-02` remains pending until all remaining proof owners and independent review complete. Continue with Plan 08. Merge and publication stay separately gated; the original authorization rejection remains recorded in `178-EXECUTION-CHECKPOINT.md`.
+**Current focus:** Phase 178 Plans 01–08 are complete under the approved local evidence sequence. Plan 08 preserves both real wrapper exit-1 attempts, validates their immutable pair receipts and the retained full matrix with explicit runner/candidate pins, and assigns the first fixed-wrapper green plus composed matrix to Plan 10. Plan 09 is next. `VPROOF-02` and `VDELIV-01` remain pending; merge and publication stay separately gated.
 
 ## Current Position
 
 Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
-Current Plan: 8
+Current Plan: 9
 Total Plans in Phase: 12
-Plan: 8 of 12; next plan not started; 7/12 plans complete
-Status: Plan 07 installed disclosure proof and guarded source check passed; independent review remains; VPROOF-02 is pending
-Last activity: 2026-10-27 — Phase 178 Plan 07 completed; VPROOF-02 remains pending
+Plan: 9 of 12; next plan not started; 8/12 plans complete
+Status: Plan 08 matrix, wrapper implementation and retained receipt validations passed under its approved sequencing amendment; the historical wrapper runs exited 1 before the validator import fix, so no fixed-wrapper green is claimed. Plan 10 owns fresh fixed-wrapper runs and strict pair composition. Requirements remain pending.
+Last activity: 2026-10-27 — Phase 178 Plan 08 completed; Plan 09 is next; VPROOF-02 and VDELIV-01 remain pending
 
 ## Performance Metrics
 
-v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19 executed; 3/4 phases complete. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
+v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 20 executed; 3/4 phases complete. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
@@ -80,6 +80,7 @@ v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 19
 | Phase 178 P05 | 31min | 2 tasks | 7 files |
 | Phase 178 P06 | 2h 26m | 2 tasks | 7 files |
 | Phase 178 P07 | 95 min+ (elapsed from first Plan 07 commit; active time unavailable) | 2 tasks | 20 files |
+| Phase 178 P08 | 96min | 2 tasks | 48 files |
 
 ## Accumulated Context
 
@@ -152,10 +153,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-27T01:54:56.369Z
-Stopped at: Completed 178-07-PLAN.md
+Last session: 2026-10-27T03:30:54.353Z
+Stopped at: Completed 178-08-PLAN.md
 Resume file: None
-Next: Start Plan 08 through the normal phase workflow. Plan 07's owned-source-test runner passed the focused disclosure source check 9/0 at clean dfe87c9f and selected-runtime Python acceptance 144/0; the installed success and six forced-failure cases passed strict receipt validation on both pairs. The root confirmed two wrong-target migrations in `lockspire_dev` with read-only metadata checks; no development rollback or repair was authorized or attempted. The intended incident test database was absent at the later catalog check. Preserve both database incidents, the unresolved post-capture failure, the three historical secret incidents, and the six partial Plan 06 receipts for independent review. VPROOF-02 remains pending until the remaining proof owners pass. Local implementation and commits are authorized; stop before remote writes for a concrete exact-SHA checkpoint. Merge and publication remain separately gated.
+Next: Start Plan 09. Plan 08 validated `.artifacts/phase178/complete-2da528fb` at runner/candidate source `2da528f...` (26/64) and byte-preserved locked/floor inputs at runner/candidate source `90858f...` (14/33 and 12/31), with validator `3d8f99cc` separately identified. Both real wrappers completed their cases but exited 1 before the pair-validator import fix; do not report those attempts as green. Root approved transferring fresh fixed-wrapper runs and strict composition to Plan 10, avoiding a third package producer. Plan 07's owned-source-test runner passed the focused disclosure source check 9/0 at clean dfe87c9f and selected-runtime Python acceptance 144/0; preserve its source database incidents, unexplained post-capture failure, the three separate historical secret exposures, and six partial Plan 06 receipts for independent review. VPROOF-02 and VDELIV-01 remain pending. Local implementation is authorized; stop before remote writes. Merge and publication remain separately gated.
 
 ### Blockers
 
@@ -249,8 +250,11 @@ None
 - [Phase 178]: Use fixed HTTP status and OAuth error enums and field-name-only failure summaries; never retain child diagnostics.
 - [Phase 178]: Keep Plan 07 disclosure receipts partial and VPROOF-02 pending until all Phase 178 proof owners complete and independent review accepts the evidence.
 - [Phase 178]: Run remaining database-backed source checks only through scripts/ci/run_owned_source_tests.py; preserve both wrong-target incidents without repair or cleanup.
+- [Phase 178]: Retained receipt proof pins runner revision, candidate source owner, package archive/tree and current validator revision separately.
+- [Phase 178]: Plan 10 owns fresh fixed-wrapper pair execution and strict composition of the exact 14 locked plus 12 floor receipts; no third all-scope producer is needed.
+- [Phase 178]: Authenticated frozen archive/input ownership remains Plan 10 scope; Plan 08 accepts explicitly pinned checkout receipts.
 
 ## Operator Next Steps
 
-- Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 07. Plans 01–06 are complete; Plan 06's four recovery and two issuance receipts remain partial evidence, and VPROOF-02 stays pending until the remaining Phase 178 proof groups finish.
+- Continue authorized `$gsd-execute-phase 178 --auto --no-transition` with Plan 09. Plan 08 is complete under the approved sequencing amendment; Plan 10 owns the fixed-wrapper green runs and composed package matrix. Requirements remain pending until their final owners and review gates pass.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
