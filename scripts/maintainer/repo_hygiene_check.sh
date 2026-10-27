@@ -585,7 +585,7 @@ require_warn_dispositions() {
 }
 
 validate_integration_authorization() {
-  local path="$INTEGRATION_AUTHORIZATION_RECORD" body digest authorized_by authorized_at
+  local path="$INTEGRATION_AUTHORIZATION_RECORD" body
   if [[ -z "$path" ]]; then
     INTEGRATION_AUTHORIZATION_JSON='{"status":"pending","path":null,"sha256":null,"authorized_by":null,"authorized_at":null}'
     return 0

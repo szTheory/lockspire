@@ -1,7 +1,8 @@
 defmodule Lockspire.Release.RepositoryHygieneContractTest do
-  # These contract tests run the repo hygiene gate against throwaway Git
-  # fixtures. Keep them isolated from the rest of the suite so shared OS
-  # resources cannot distort the receipts.
+  # These fixtures run the actual hygiene helper, source collector and owned
+  # guard. Only external Git/GitHub/Mix/PostgreSQL/Docker commands are faked in
+  # throwaway repositories; no accepted receipt is supplied by a fixture.
+  # Keep them isolated so shared OS resources cannot distort the receipts.
   use ExUnit.Case, async: false
 
   alias Lockspire.TestSupport.ReleaseProof.PackageAssertions
