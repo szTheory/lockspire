@@ -56,3 +56,5 @@ No sensitive values are reproduced here. Future containment fixes do not erase t
 ## Resume guidance
 
 Resume only with a bounded diagnostic that identifies the generated host startup/registration substage using fixed allowlisted enums. Do not expose raw child diagnostics or repeat the full matrix blindly. After task 01's actual installed success proof commits, add and observe task 02 RED before implementing crypto/storage failure proofs. Preserve the three historical incidents in the eventual Plan 07 security summary.
+
+Unproved diagnostic lead from prior plans: public `Lockspire.Clients` credential creation may require a valid immutable verifier startup context. `mix run --no-start` with only Repo startup may therefore be insufficient (Plan 05 mechanism); normal application startup can collide with an HTTP listener when that listener is already owned (Plan 03 mechanism). This lead is not established as the cause of the Plan 07 failure. If a separately routed owner tests it, keep one-off server startup disabled and start only the explicitly owned listener at its assigned port. Do not apply a fix or launch another installed attempt from this checkpoint.
