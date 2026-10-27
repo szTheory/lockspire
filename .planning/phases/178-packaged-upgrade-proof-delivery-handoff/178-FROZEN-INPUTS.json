@@ -3,7 +3,7 @@
     "archive_path": ".artifacts/phase178/ci-candidate/lockspire-1.6.1.tar",
     "archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
     "extracted_tree_path": ".artifacts/phase178/ci-candidate/lockspire",
-    "owner_sha256": "d218ae526198287ed187e1a568de4e73b39d114c1dd51f66d34cd02f888300b9",
+    "owner_sha256": "78b3465818dcc56963ba6fd4996005ec9777954a076c51efb6877fd80e99bdab",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21255,
-      "package_stdout_sha256": "457adc6b78eecf1523334969bcb14340b5e73d92622aa98e61972c2df756dcb2",
+      "package_stdout_sha256": "d9076c0c5f077fda654572e77fe7e324d31e6408f43050d5bcb66a62ca3ad141",
       "rebuilt_archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
       "rebuilt_tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
     },
-    "source_revision": "ec2bb1556499091a305fb7c9458e42a7776fed56",
-    "source_tree": "38e22132831fc597ae293b8b311e08f93b0fea7c",
+    "source_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
+    "source_tree": "364e15cba2eeb0fd0e607db18b6ead61108c1af9",
     "tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -3631,7 +3631,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room/package_input.py",
-      "sha256": "9025d50be9046e354d87fcd0d7b611123c1868d316f31a672ad0685715647879"
+      "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
     },
     {
       "path": "scripts/acceptance/clean_room/processes.py",
@@ -3878,6 +3878,10 @@
       "sha256": "1974adb614b129a90796686a850a7eeb1432c21fce485716f9d56af5a76428fc"
     },
     {
+      "path": "test/acceptance/client_frozen_package_layout_test.py",
+      "sha256": "41ce459d505279e5c90a61cd477ad8a85b8ee90b6f574bfac5f97cd8114b8f44"
+    },
+    {
       "path": "test/acceptance/client_lifetime_boundary_test.py",
       "sha256": "4f57813d3cf6e0ed0463dbc597216734f0f1c7499264324c00cc21d1881d5c20"
     },
@@ -3915,7 +3919,7 @@
     },
     {
       "path": "test/acceptance/client_verifier_delivery_test.py",
-      "sha256": "4225c3b07f705d972ec52f61c5795c67b499cc48de536a537b76d8fd192e56ed"
+      "sha256": "d4dac4b5fe3986188744da443cc8259450e91a79ed22eecf8a7351ea03368f06"
     },
     {
       "path": "test/acceptance/client_verifier_disclosure_test.py",
@@ -5862,8 +5866,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-27T10:29:22.529355+00:00",
-  "runner_revision": "ec2bb1556499091a305fb7c9458e42a7776fed56",
-  "runner_tree": "38e22132831fc597ae293b8b311e08f93b0fea7c",
+  "frozen_at": "2026-10-27T11:25:27.088693+00:00",
+  "runner_revision": "df8f9c510173959a86c6088ba3893d6fb79c62ec",
+  "runner_tree": "c1d57842baa6dea06ee1965f699af8dc1a7428cf",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
