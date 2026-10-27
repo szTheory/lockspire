@@ -30,3 +30,24 @@ All concrete findings below are **OPEN — BLOCKER**. Correction owner: the exis
 ## Next owner
 
 The existing Plan 10 executor corrects these boundaries with full supported behavioral RED records before fixes, focused checks, and atomic scoped commits. It then returns another review-ready checkpoint with per-finding evidence. The same independent reviewers recheck affected implementations/probes. Only afterward may the executor freeze settled inputs, preserve the root archive, run guarded canonical CI, and execute the two fresh fixed-wrapper partitions and strict 26-cell composition.
+
+## Re-review at 5adf46c1 — rejected for freeze
+
+Corrections `011bd239` and `5adf46c1` passed 190 selected-runtime Python tests, but the independent re-review demonstrated remaining producer/consumer and authenticity gaps. Preserve the initial reports and the new `178-REVIEW-REREVIEW.md`, `178-SECURITY-REREVIEW.md`, and `178-INTEGRATION-REREVIEW.md` as observations at their actual source identities. Security lane JSON is retained separately with its report digest intentionally null, as supplied; this rejected record is not an acceptance packet. Security report Markdown trailing whitespace was normalized without changing wording.
+
+Security re-review closed the original tracer substitution and mutating apply mechanism at implementation depth, with fresh installed proof still pending. It reports 25/37 threats closed and 12 high open. Source judged SRC-05 fixed at code level; security's actual guard-producer manifest counterexample disproves consumer compatibility. Preserve both judgments and correct the demonstrated actual path; do not override either report.
+
+| Remaining boundary | Exact finding IDs | Next correction owner |
+|---|---|---|
+| Complete package/build/proof/source-test closure, including provisioner, selected fixtures and direct library files; checked Git blob return codes | SRC-02/SRC-06; INT-01 and warning; SEC-178-01 | Fresh typed delivery executor |
+| Review scope, finding-file coverage, authoritative report/packet verdict consistency; immutable re-review metadata applicability | SRC-04; INT-03; SEC-178-02 | Fresh typed delivery executor |
+| Source consumer accepts actual OwnedSourceTests.run manifest with canonical CI before real drop/preflight/catalog cleanup | SEC-178-03 | Fresh typed delivery executor; mock only OS/DB boundary in contract test |
+| Rollout fleet_limits and every root/nested observation channel is finite and typed | SEC-178-05 | Fresh typed delivery executor |
+| Privacy test/RED formatting cannot render captured unknown output | SEC-178-07 | Fresh typed delivery executor |
+| Actual wrapper delayed-TERM/timeout cleanup of registered separate sessions; missing-time branch | SEC-178-06 | Dedicated typed debugger; package_input/process registry/wrapper/process tests |
+| Narrow final-* allowlist and explicit later-checkout/runner covered-byte relation | SEC-178-09 | Dedicated typed debugger, wrapper boundary; communicate delivery helper interface |
+| Provisioning through real package input validation: versioned archive, separate job-owned manifest, retained canonical manifest preserved | SEC-178-10 | Fresh typed delivery executor, provisioner/workflow/delivery tests |
+| Actual on-disk downloaded raw artifact bytes and authoritative hosted observation/source ownership, not digest-shaped job claims | SRC-03; INT-02; SEC-178-11 | Fresh typed delivery executor |
+| Actual helper execution/custody, full synchronized source/graphs/warnings/authorization, explicit pending supported | SEC-178-12 | Fresh typed delivery executor |
+
+The root floor-lock overwrite lead was not confirmed by source/security re-review and is not classified as an incident. Integration's lock-provenance warning remains its bounded judgment. Actual wrapper probes exited 125 with exact owned separate sessions surviving; the auditor then killed those exact sessions and removed probe roots. Actual producer manifest and on-disk candidate/helper false accepts were demonstrated without any DB, package producer, freeze, canonical CI or remote mutation. No such runtime may begin until independent closure. Delivery and debugger ownership must remain non-overlapping, with shared interfaces communicated explicitly.
