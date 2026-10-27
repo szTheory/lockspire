@@ -138,6 +138,32 @@ class VerifierTransactionContracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
 
+    def test_issuance_discovery_status_is_an_integer_not_a_boolean(self) -> None:
+        case_ids = [verifier_receipts.ISSUANCE_CASE_IDS["locked"]]
+        candidate = receipt("issuance", case_ids)
+        result = {
+            field: True
+            for field in verifier_receipts.ISSUANCE_OBSERVATION_FIELDS
+            if field not in {
+                "outcome", "stale_http_status", "fresh_http_status", "discovery_http_status"
+            }
+        }
+        result.update({
+            "outcome": "pass",
+            "stale_http_status": 400,
+            "fresh_http_status": 200,
+            "discovery_http_status": 200,
+        })
+        candidate["observations"][case_ids[0]] = result
+        verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+        for invalid_status in (True, "200", 500):
+            with self.subTest(status_type=type(invalid_status).__name__, status=invalid_status):
+                result["discovery_http_status"] = invalid_status
+                with self.assertRaises(ValueError):
+                    verifier_receipts.validate_receipt(
+                        candidate, expected_pair="locked", expected_store="delegated"
+                    )
+
 
 if __name__ == "__main__":
     unittest.main()

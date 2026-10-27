@@ -259,7 +259,9 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             if receipt["scope"] == "release-rpc"
             else CONTENTION_OBSERVATION_FIELDS - {"outcome", "executed", "holder_backend_pid", "contender_backend_pid"}
             if receipt["scope"] == "contention"
-            else ISSUANCE_OBSERVATION_FIELDS - {"outcome", "executed", "stale_http_status", "fresh_http_status"}
+            else ISSUANCE_OBSERVATION_FIELDS - {
+                "outcome", "executed", "stale_http_status", "fresh_http_status", "discovery_http_status"
+            }
             if receipt["scope"] == "issuance"
             else RECOVERY_OBSERVATION_FIELDS - {
                 "outcome", "executed", "missing_key_http_status", "missing_key_error_code",
