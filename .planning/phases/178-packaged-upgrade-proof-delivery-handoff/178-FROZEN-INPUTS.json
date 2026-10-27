@@ -1,9 +1,9 @@
 {
   "candidate_owner": {
-    "archive_path": ".artifacts/phase178/refreeze1077-eb6503d9d5fa/lockspire-1.6.1.tar",
+    "archive_path": ".artifacts/phase178/refreeze-equivalent-8a90-vfz7yy_8/lockspire-1.6.1.tar",
     "archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
-    "extracted_tree_path": ".artifacts/phase178/refreeze1077-eb6503d9d5fa/lockspire",
-    "owner_sha256": "e54cc86728293201df0c909fb0e02b6944eb6b5c9a176da4b56a0b3f7c4c5873",
+    "extracted_tree_path": ".artifacts/phase178/refreeze-equivalent-8a90-vfz7yy_8/lockspire",
+    "owner_sha256": "b5dc88de4fa124c8b42f198bfa7a92dab43ba66f660b09945acd06c4588a8f39",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21255,
-      "package_stdout_sha256": "3973ed48ca1aeb02fde1d9c19b2cb563a3925851c4e7abcf01730450bde9f51d",
+      "package_stdout_sha256": "15a6321d42207b5d5772e2d30617676d8c81a24ea339cdea0d6e17db0802f7ab",
       "rebuilt_archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
       "rebuilt_tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
     },
-    "source_revision": "19f804061f5964e179e66a41f354339e2e4b6992",
-    "source_tree": "86a053ec739f7e9c8e6483e6ad7bf49b46d9dfe9",
+    "source_revision": "8a90a0a833a25d5a6b5f6af6525ba818e577df61",
+    "source_tree": "70338617919209f05458b1e52ccfd0319ab1a9e4",
     "tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -5131,7 +5131,7 @@
     },
     {
       "path": "test/lockspire/qualification_ledger_contract_test.exs",
-      "sha256": "870e3b00a85c1035c8e631c2accaed7ada0bd0fb020d74dcda5ddd08ad5f23d4"
+      "sha256": "ae27e1ba29ad9c8b3cece357c89fd06d8ea6ed853d60202af2196ffe303dd2d4"
     },
     {
       "path": "test/lockspire/quality/proof_quality_baseline_test.exs",
@@ -5886,8 +5886,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-27T19:56:12.249559+00:00",
-  "runner_revision": "a5c3714cf01a49b96d2a6223ff94e8f6d09fe53f",
-  "runner_tree": "c8b1c59dcebf7cee99addf1ec1806adfa6e293ee",
+  "frozen_at": "2026-10-27T20:15:32.095126+00:00",
+  "runner_revision": "6b1fc33cec26560601628c6e44f8c41ac3aa064b",
+  "runner_tree": "bd754914039fb79cdf539bddb2820191a10c1885",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
