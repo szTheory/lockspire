@@ -40,6 +40,13 @@
 - [ ] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
 - [ ] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
 
+## Qualification-driven scope reconciliation (2026-10-24)
+
+All six authorization/PAR requirements remain pending. Phase 171 qualifies the following cases without marking downstream behavior accepted: AUTHR-01 reuses A171-001; AUTHR-02 reuses A171-002 and retains A171-003 as a correction; AUTHR-03 reuses A171-004, A171-005 and A171-006; PARB-01 reuses P171-001, P171-002 and P171-003; PARB-02 reuses P171-004 and retains P171-005 as a correction; PARB-03 reuses P171-006 source-host metadata proof. See the frozen Phase 171 matrix for exact requests, expected projections, evidence identities and owners.
+
+The A171-003 correction is limited to unsupported `response_mode` returning HTTP 400 without OAuth Error Response parameters. The P171-005 correction is limited to a valid pushed reference using pushed `openid email` despite outer `scope=profile`; the linked-clause interpretation is documented in `171-QUALIFICATION-DECISIONS.md`. Existing proofs carry forward without duplicate corrections. Neither unavailable optional profile wrapper is treated as product evidence or as a selected-case blocker. CPROOF-01/02 and DELIV-01/02 remain for Phase 174, including each actual correction's RED/GREEN proof, applicable negative/security coverage and packaged-host proof.
+
+
 ## Future Requirements
 
 - **UI quality candidate:** Whole-UI inventory and complete layered coverage for Apps setup/configuration and Tokens/Consents investigation, adoption-demo dev/test `phoenix_storybook`, observed before/after improvements, reliable blocking checks, measured budgets and same-PR maintenance. [Q1–Q10 and final confirmation](research/ui-quality-engine/MILESTONE-PROPOSAL.md) remain accepted; no UI version or phase IDs are scheduled here.

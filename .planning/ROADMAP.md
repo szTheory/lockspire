@@ -32,6 +32,37 @@
 
 ## Phase Details
 
+### Phase 172: Authorization Responses
+
+**Goal**: Correct only the reproduced unsupported `response_mode` disposition in A171-003 while carrying forward existing callback and silent-auth proof; preserve host account/session authority.
+**Depends on**: Phase 171; its accepted-main gate and frozen authorization case matrix must be satisfied before implementation planning.
+**Requirements**: AUTHR-01, AUTHR-02, AUTHR-03
+**Success Criteria** (what must be TRUE):
+  1. A171-003 receives HTTP 400 without OAuth Error Response parameters for unsupported `response_mode`; move this required assertion to its existing regression owner and show RED at the qualified source followed by GREEN after correction.
+  2. Reuse A171-001 and A171-002 proof for exact redirect safety and registered-callback error/state encoding; do not schedule duplicate correction work for those already-proven cases.
+  3. Reuse A171-004, A171-005 and A171-006 proof for `prompt=none`, `max_age` and host-provided `auth_time`; preserve host ownership of accounts and sessions.
+
+**Plans**: 1/1 plans complete
+
+Plans:
+- [x] 172-01-PLAN.md — Unsupported-mode HTTP 400 correction, Router RED/GREEN and existing authorization proof preservation.
+
+### Phase 173: Conditional PAR & Profile Boundaries
+
+**Goal**: Correct only P171-005's reproduced rejection of a conflicting outer `scope` for a valid pushed request; carry existing PAR lifecycle, required-PAR and issuer-metadata proof forward.
+**Depends on**: Phase 172 and Phase 171's frozen PAR/profile case matrix; retained scope must survive qualification before implementation planning.
+**Requirements**: PARB-01, PARB-02, PARB-03
+**Success Criteria** (what must be TRUE):
+  1. For P171-005, a valid PAR reference reaches consent with pushed `openid email`; a conflicting outer `scope=profile` is ignored without union or override, with state and nonce preserved. Move this assertion to its existing regression owner and show RED at the qualified source followed by GREEN after correction.
+  2. Reuse P171-001, P171-002 and P171-003 proof for client binding, expiry and one-use; reuse P171-004 proof for required-PAR, preserving existing PKCE and security-profile boundaries.
+  3. Reuse P171-006 source-host issuer/discovery metadata proof. External provider-origin, TLS/proxy and browser reachability remain supplemental and unavailable; that limitation does not create another selected code or infrastructure project.
+
+**Plans**: 1/1 plans complete
+
+Plans:
+- [x] 173-01-PLAN.md — Pushed-parameter authority correction, real PAR RED/GREEN and retained lifecycle/profile proof.
+
+
 ### Phase 175: Accepted Baseline & Verifier Compatibility Contract
 
 **Goal**: Maintainer can identify a fresh accepted implementation base and a finite, reviewable verifier-custody/compatibility contract before dependent implementation is planned.
