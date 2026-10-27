@@ -1,47 +1,44 @@
 # Plan 178-11 Local Preparation Checkpoint
 
-**Observed:** 2026-10-27 18:29 UTC
+**Observed:** 2026-10-27 21:05 UTC
 **Plan:** 178-11, wave 7 of 8
-**State:** Local proposal/checkpoint prepared; stop before the first remote write.
+**State:** Updated local proposal and delivery snapshot committed; stop before any remote write.
 
-## Local and Remote Observations
+## Current Local and Remote Observations
 
-- Root pin: `/Users/jon/projects/lockspire`, verified before local writes.
-- Local branch: `milestone/v1.48-client-auth-key-isolation`; clean at preparation baseline `04272be23a03defec49704aeae2ec1488b165a4d`; no upstream configured.
-- Remote origin: `github.com/szTheory/lockspire` (credentials excluded from output).
-- Remote `main` and local `origin/main`: `173059a166e9ade0f5f57c9980b7b2400a98538c`; branch graph showed 531 branch-only commits and one main-only commit.
-- Remote milestone branch: absent in read-only branch lookup.
-- Authenticated read-only GitHub access: available. No PR for the milestone branch was found by branch or title search. Unrelated Release Please PR #139 remains open.
-- At the observation time, main CI run #40198968774 and Release run #40198968751 succeeded on the exact main SHA; Release publication jobs were skipped. Supplemental scheduled OIDF run #40455602937 failed on that SHA. Repository hygiene was not run and needs a fresh open-time check.
+- Root pin: `/Users/jon/projects/lockspire`.
+- Proposal-preparation HEAD: `26269bb9068a48c5354df79371d1ed7a0941d420`; branch `milestone/v1.48-client-auth-key-isolation`; worktree was clean before these documentation updates.
+- Read-only GitHub and Git observations: protected live remote `main` and `origin/main` both `173059a166e9ade0f5f57c9980b7b2400a98538c`; remote milestone branch absent; no PR matching the milestone branch/title found. The local branch contains main as an ancestor (0 main-only, 550 branch-only commits at observation).
+- Latest observed main CI #40198968774 and Release workflow #40198968751 completed successfully on the exact main SHA on 2026-10-25; Release publication jobs were skipped. Supplemental scheduled OIDF run #40455602937 failed on that SHA and remains separately recorded.
+- Bounded static hygiene invocation `bash scripts/maintainer/repo_hygiene_check.sh --ci --skip-mix-ci` exited 0: 18 PASS, 0 WARN, 0 BLOCK. It skipped `mix ci`, did not perform exact-main acceptance, and does not replace the fresh open-time full hygiene check.
 
-## Drafts Prepared
+## Current Proposal
 
-- [178-11-PR-PROPOSAL.md](178-11-PR-PROPOSAL.md) has the proposed title and full cumulative milestone PR body using the recent repository milestone structure (`Summary`, `Evidence`, `Merge Danger`).
-- [178-DELIVERY.md](178-DELIVERY.md) records preliminary source, package, main and resource evidence with blockers and next actions.
-- No `178-CANDIDATE.json`, `178-CANDIDATE-GATES.json`, `178-REQUIREMENT-DISPOSITIONS.json`, or Plan 11 summary was created; there is no real PR head, synthetic checkout, or candidate hosted job graph to support those records.
+- Title: `feat: isolate and rotate client authentication verifiers (v1.48)`.
+- Target: `szTheory/lockspire:main`; source: `milestone/v1.48-client-auth-key-isolation`; proposed normal (non-draft) PR.
+- [Current proposal](178-11-PR-PROPOSAL.md) includes the full updated body. Private body path: `/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire178-plan11-pr-53bxxmy1/pr-body.md`; SHA-256 `b3bc7e601afea5fca177942f4933bac3ba214df7f1efc4ae06cff2aa6c8a4757`.
+- Proposed commands are listed in the proposal and were not run. No PR, push, comment, review request, CI dispatch, merge, or publication occurred.
+- The final metadata publication HEAD is recorded in the private publication plan after the final local commit. The proposal does not self-reference that commit.
 
-## Preserved Evidence Identities
+## Evidence and Limits
 
-- Reviewed candidate source: `5270f450655ea5335f15b1724e546ba907128349`.
-- Frozen runner: `6910662b5b06cdb7ba27f3096c1193b42abf30a1`.
-- Actual post-freeze source CI and package execution checkout: `ccd8fe1e9668796a259857270b8ea34e4b42bb65`.
-- Frozen candidate archive/tree owner: `98b306c464f7204b4a6974dfb5f27e1673ab566fbe1bf2b88d76bface7325b14`; archive `f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d`; tree `edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475`.
-- Source CI passed at ccd with suites 15/0, 2,140/0 plus 2 properties, and 261/0. Package matrix passed 14/33 locked and 12/31 floor; composed result 26/64, zero failures.
-- Current proposal head remains a separate metadata revision. All 1,076 frozen covered input hashes matched at preparation time; review/test identities were not restamped.
+- Reviewed implementation `8a90a0a833a25d5a6b5f6af6525ba818e577df61`; review packet implementation revision `cd1630ccd1872436d13c0a029f0cb5fa07416a82`; selected source digest `f0b319d52ed30e640029ce983283d2fee4809aad9a3addacb1e7dac05aad5900` across 1,077 rows.
+- Frozen runner `6b1fc33cec26560601628c6e44f8c41ac3aa064b`; frozen manifest SHA-256 `0ca0a43d1d2bb6bc8b73cdcb0076b446e0e04c431c8d61c3d5330c3d08d973a4`.
+- Actual guarded source CI and package execution checkout `90d17f1741970287f6299eca6e6dc6865a64ae9c`; suites 15/0, 2,166/0 plus 2 properties, and 261/0.
+- Fresh package profiles: locked 14 receipts/33 cases/0 failures; floor 12/31/0; strict composition 26/64/0. Current metadata and execution checkout each match all 1,077 frozen selected hashes.
+- `VPROOF-02` is complete for the current closure. `VDELIV-01`/`VDELIV-02` remain pending. No PR head, synthetic checkout, candidate hosted graph, actual integration approval, or all-18 final candidate dispositions exist. Phase 177 E-09/E-10 remain unwaived.
+- The original 1,076-input proof epoch and earlier proposal are preserved in the current Plan 10 summary and `*-INITIAL-2026-10-27.md` records; neither was retargeted.
+- Root custody closure SHA-256 `78f832ffe3e1459955684c323a5d420b39c4fc162704da3267e1cdd928ef8599` confirms the root-owned PostgreSQL and private cache were closed and removed. No further runtime work is pending.
 
 ## Boundary and Required Next Action
 
-The user authorization in this session covers local implementation, validation, and commits only. Creating or updating a PR, pushing a branch, commenting, requesting review, dispatching CI, merging, and publishing are remote writes and are not authorized. Do not perform them from this checkpoint.
+This is a reviewable local proposal only. A future executor needs separate explicit authorization before pushing or creating/updating a PR. At that time it must refresh main, branch ancestry, repository hygiene and any open-time base condition immediately before the action; after an actual PR exists, record the real synthetic checkout and all seven jobs from one compatible attempt. Keep VDELIV-01/02 pending until evidence owners complete their work. Do not merge or publish without separate gates.
 
-The local proposal is reviewable, but cannot complete Plan 11's actual PR and hosted-graph acceptance criteria. A future authorized executor must first recheck main/branch/hygiene open-time conditions, then prepare the branch for one reviewed milestone PR. If a PR is opened, it must observe the real PR head and synthetic checkout parents/tree before recording candidate identity, then capture all seven passing required jobs and package artifacts from one compatible run/attempt. Keep integration/main acceptance pending until actual owners complete it.
-
-Proposed remote actions after a separate explicit authorization and successful open-time recheck, in order:
+Proposed remote actions, not executed:
 
 ```sh
 git push --set-upstream origin milestone/v1.48-client-auth-key-isolation
-gh pr create --repo szTheory/lockspire --base main --head milestone/v1.48-client-auth-key-isolation --title "feat: isolate and rotate client authentication verifiers (v1.48)" --body-file /private/tmp/lockspire178-11-pr-draft-s6ge_c3l/pr-body.md
+gh pr create --repo szTheory/lockspire --base main --head milestone/v1.48-client-auth-key-isolation --title "feat: isolate and rotate client authentication verifiers (v1.48)" --body-file /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire178-plan11-pr-53bxxmy1/pr-body.md
 ```
 
-The private body file is mode `0600` in a mode `0700` directory and has SHA-256 `5cb6e41a6427a548379c810d3b0a3c64e25c39c2a6d0c5b5d953b47627da408b`. These commands are a proposal only; neither command was run.
-
-VPROOF-02 remains complete. VDELIV-01 and VDELIV-02 remain pending. Plan 11 remains incomplete; Plan 12 is not ready.
+The previous 2026-10-27 18:29 UTC checkpoint remains byte-exact in [the initial checkpoint](178-11-EXECUTION-CHECKPOINT-INITIAL-2026-10-27.md).
