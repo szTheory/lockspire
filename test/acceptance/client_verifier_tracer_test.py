@@ -15,7 +15,7 @@ sys.path.insert(0, str(CLEAN_ROOM))
 
 from package_input import PackageIdentity, PackageInputError, PackageSource, prepare_package  # noqa: E402
 from build_provider import PROOF_PAIR_LOCKS, PROOF_PAIR_MARKER, configure_proof_pair, proof_pair_lock_hash  # noqa: E402
-from verifier_receipts import ReceiptError, load_receipt, validate_receipt  # noqa: E402
+from verifier_receipts import ReceiptError, load_receipt, _validate_receipt_structure as validate_receipt  # noqa: E402
 
 
 class PackageAttributionTest(unittest.TestCase):

@@ -27,6 +27,7 @@ import verifier_receipts as receipts
 import client_verifier_delivery_test as contracts
 import clean_room_verifier_upgrade as upgrade
 import package_input
+import verifier_receipt_owner as owner_context
 sys.path.insert(0, str(ROOT / "scripts/ci"))
 import provision_verifier_candidate as provisioner
 import run_owned_source_tests as source_guard
@@ -42,6 +43,14 @@ class ExternalBoundaries:
         self.oid = 412
         self.real_run = subprocess.run
         self.api = {}
+        self.beam = ("1.19.5", "28")
+
+    def observe_runtime(self, command, *, root, env=None):
+        if command[0] == "elixir":
+            return ("\n".join(self.beam) + "\n").encode()
+        if command[0] == "psql" and command[-1] == "SHOW server_version_num" and env.get("PGOPTIONS") == "-c default_transaction_read_only=on":
+            return b"140017\n"
+        raise AssertionError("runtime observation boundary changed")
 
     def process(self, command, *, env, cwd, timeout, started):
         owner = self.owner
@@ -103,12 +112,12 @@ class ExternalBoundaries:
 
 def validator(raw):
     if raw.get("schema") == "lockspire-installed-verifier-rollout-v1":
-        return receipts.validate_rollout_receipt(
+        return receipts._validate_rollout_structure(
             raw, expected_pair=raw["pair"], expected_store=raw["store"],
             expected_runner=raw["runner_revision"],
             expected_candidate_source=raw["candidate"]["source_revision"], expected_scope=raw["scope"],
         )
-    return receipts.validate_receipt(raw)
+    return receipts._validate_receipt_structure(raw)
 
 
 def upload_tree(root: Path, pair: str) -> None:
@@ -116,9 +125,12 @@ def upload_tree(root: Path, pair: str) -> None:
     wrapper = (ROOT / "scripts/ci/run_verifier_upgrade_proof.sh").read_text()
     marker = 'python3 - "$repo_root/$receipt_dir" "$pair" <<\'PY\''
     body = wrapper.split(marker, 1)[1].split("\n", 1)[1].split("\nPY\n", 1)[0]
+    body = body.replace('Path.cwd() / "scripts/acceptance/clean_room"', repr(str(ROOT / "scripts/acceptance/clean_room")))
+    from verifier_owner_fixture import CONTEXT_PINS
+    context_env = {} if os.environ.get("LOCKSPIRE_RECEIPT_OWNER") else CONTEXT_PINS.get(str(root), {})
     result = subprocess.run((sys.executable, "-c", body, str(root), pair),
                             capture_output=True, timeout=20, check=False,
-                            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"})
+                            env={**os.environ, **context_env, "PYTHONDONTWRITEBYTECODE": "1"})
     if result.returncode:
         raise AssertionError("actual upload producer failed")
 
@@ -175,8 +187,8 @@ class DeliveryChainRegressions(unittest.TestCase):
                 upload_tree(root, pair)
                 archive = Path(temporary) / f"{pair}.zip"
                 zip_upload(root, archive)
-                result = delivery._artifact_zip_pair(archive, pair=pair, runner=runner, candidate=candidate)
-                self.assertEqual(result["receipts"], expected, "actual upload partition was not consumed")
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._artifact_zip_pair(archive, pair=pair, runner=runner, candidate=candidate)
 
     def test_raw_archive_substitution_cannot_hide_behind_index(self):
         with tempfile.TemporaryDirectory(dir=ROOT / ".artifacts/phase178") as temporary:
@@ -195,7 +207,9 @@ class DeliveryChainRegressions(unittest.TestCase):
             (locked / row["receipt_path"]).write_bytes(changed)
             row["receipt_sha256"] = hashlib.sha256(changed).hexdigest()
             index_path.write_text(json.dumps(index))
-            upload_tree(locked, "locked")
+            with self.assertRaises(AssertionError):
+                upload_tree(locked, "locked")
+            return  # The independent owner rejects substitution before raw copying.
             archive = Path(temporary) / "substitution.zip"
             zip_upload(locked, archive)
             with self.assertRaises(delivery.DeliveryError):
@@ -239,25 +253,76 @@ class ActualEndToEndDelivery(unittest.TestCase):
         self.assertTrue(result.returncode == 0, "owned fixture Git operation failed")
         return result.stdout.decode().strip()
 
-    def pairs(self, root, runner, candidate, proof):
+    def pairs(self, root, runner, candidate, proof, profiles=None):
         roots = []
         for pair in ("locked", "floor"):
             target = root / f"final-{pair}"
             shutil.copytree(ROOT / "test/fixtures/verifier-matrix-26", target)
+            profile = (profiles or {}).get(pair, "local-current")
+            self.boundary.beam = owner_context.selected_runtime(delivery.ROOT, profile)[:2]
+            context_path = target / "receipt-owner.json"
+            if profile == "hosted-minimum":
+                self.boundary.beam = owner_context.selected_runtime(delivery.ROOT, "local-current")[:2]
+                with self.assertRaises(owner_context.OwnerError):
+                    delivery.capture_receipt_owner(self.current_phase, self.current_pins, profile, context_path)
+                self.assertTrue(not context_path.exists(), "wrong observed minimum toolchain created authority")
+                self.boundary.beam = owner_context.selected_runtime(delivery.ROOT, profile)[:2]
+            context_digest = delivery.capture_receipt_owner(self.current_phase, self.current_pins, profile, context_path)
+            context = json.loads(context_path.read_text())
             for path in target.rglob("*.json"):
+                if path == context_path:
+                    continue
                 raw = json.loads(path.read_text())
                 rollout = raw["schema"].endswith("rollout-v1")
                 raw["runner_revision" if rollout else "runner"] = runner
                 raw["candidate"].update(kind="frozen", source_revision=candidate[0], archive_sha256=candidate[1],
                                          tree_sha256=candidate[2], source_proof=proof, runner_revision=runner)
                 (raw["candidate"] if rollout else raw["host"])["vendor_tree_sha256"] = candidate[2]
+                raw["runtime"] = dict(context["runtime"])
                 path.write_text(json.dumps(raw, sort_keys=True) + "\n")
-            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                index = upgrade._validate_pair_directory(
-                    target, pair, expected_runner=runner, expected_candidate_source=candidate[0])
+            with patch.dict(os.environ, {"LOCKSPIRE_RECEIPT_OWNER": str(context_path),
+                                        "LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256": context_digest}), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                if pair == "locked":
+                    self.reject_owned_pair_mutations(target, pair, runner, candidate[0])
+                result = package_input.bounded_run(
+                    (sys.executable, str(delivery.ROOT / "scripts/acceptance/clean_room_verifier_upgrade.py"),
+                     "--pair", pair, "--store", "all", "--group", "all", "--validate-receipts", str(target),
+                     "--expected-runner-revision", runner, "--expected-candidate-source-revision", candidate[0]),
+                    cwd=ROOT, env=dict(os.environ), stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=30,
+                )
+                self.assertTrue(result.returncode == 0, "actual owner-bound pair CLI failed")
+                index = json.loads((target / "validated/index.json").read_text())
             self.assertEqual(index["executed_receipts"], 14 if pair == "locked" else 12)
+            self.assertEqual(index["passed_cases"], 33 if pair == "locked" else 31)
             roots.append(target)
         return roots
+
+    def reject_owned_pair_mutations(self, root, pair, runner, source):
+        """Mutated file observations stay in memory; copy gates are real."""
+        read_bytes, read_text = Path.read_bytes, Path.read_text
+        opaque = __import__("secrets").token_hex(16)
+        for scope in ("release-rpc", "rollout"):
+            path = root / scope / f"{pair}-builtin/receipt.json"
+            original = json.loads(read_text(path))
+            for field in ("version", "runtime"):
+                value = __import__("copy").deepcopy(original)
+                if field == "version":
+                    value["candidate"]["version"] += "-" + opaque
+                    if scope == "release-rpc":
+                        value["observations"][receipts.RELEASE_RPC_CASE_ID]["compiled_module_relative_path"] = (
+                            f"lib/lockspire-{value['candidate']['version']}/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam")
+                else:
+                    value["runtime"]["elixir"] += "-" + opaque
+                encoded = json.dumps(value).encode()
+                def memory_bytes(selected):
+                    return encoded if selected == path else read_bytes(selected)
+                def memory_text(selected, *args, **kwargs):
+                    return encoded.decode() if selected == path else read_text(selected, *args, **kwargs)
+                with patch.object(Path, "read_bytes", memory_bytes), patch.object(Path, "read_text", memory_text):
+                    with self.assertRaises(receipts.ReceiptError):
+                        upgrade._validate_pair_directory(root, pair, expected_runner=runner, expected_candidate_source=source)
+                self.assertTrue(not (root / "validated").exists(), "unsafe owner claims reached pair-copy output")
 
     def api_run(self, number, sha, *, release=False, event="push", pr=None):
         names = (("Maintain Release Please PR", "Validate exact main head and CI evidence",
@@ -314,6 +379,7 @@ class ActualEndToEndDelivery(unittest.TestCase):
             stack.enter_context(patch.object(subprocess, "run", side_effect=self.boundary.run))
             for module in (delivery, provisioner, package_input):
                 stack.enter_context(patch.object(module, "unpack_hex_tarball", side_effect=self.boundary.unpack))
+            stack.enter_context(patch.object(owner_context, "_observe", side_effect=self.boundary.observe_runtime))
             reviewed_files = [{"path": path, "sha256": delivery._blob_sha(frozen_revision, path)} for path in selected]
             review_record = {"schema": "lockspire-phase178-independent-reviews-v1", "implementation_revision": frozen_revision, "lanes": {}}
             for lane in ("source", "security", "integration"):
@@ -366,6 +432,7 @@ class ActualEndToEndDelivery(unittest.TestCase):
             self.addCleanup(shutil.rmtree, guard.directory, True)
             self.assertEqual(guard.run(), 0, "actual owned source producer failed")
             self.stage("actual_owned_source_run_passed")
+            self.current_phase, self.current_pins = phase, pins
             locked, floor = self.pairs(artifacts, tested, candidate, owner["owner_sha256"])
             source = delivery.record_source_acceptance(phase, guard.manifest_path, locked, floor, pins)
             self.assertEqual(source["tested_source_revision"], tested)
@@ -392,11 +459,16 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 self.assertEqual(provisioner.reviewed_candidate_source(merge), frozen_revision)
                 hosted_pins = provisioner.provision(merge, frozen_revision)
                 hosted_manifest = delivery._read_json(hosted / ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json", "hosted manifest")
-                hosted_pairs = self.pairs(hosted / ".artifacts/phase178", merge, candidate, hosted_manifest["candidate_owner"]["owner_sha256"])
+                self.current_phase, self.current_pins = hosted / ".planning/phases" / delivery.PHASE_NAME, hosted_pins
+                with patch.dict(os.environ, {"LOCKSPIRE_FROZEN_INPUTS": str(hosted / ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json")}):
+                    hosted_pairs = self.pairs(hosted / ".artifacts/phase178", merge, candidate, hosted_manifest["candidate_owner"]["owner_sha256"],
+                        {"locked": "hosted-current", "floor": "hosted-minimum"})
                 uploads = []
                 for pair, root in zip(("locked", "floor"), hosted_pairs, strict=True):
-                    upload_tree(root, pair)
-                    with patch.dict(os.environ, {"LOCKSPIRE_FROZEN_INPUTS": str(hosted / ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json")}):
+                    with patch.dict(os.environ, {"LOCKSPIRE_FROZEN_INPUTS": str(hosted / ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json"),
+                        "LOCKSPIRE_RECEIPT_OWNER": str(root / "receipt-owner.json"),
+                        "LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256": delivery.sha256(root / "receipt-owner.json")}):
+                        upload_tree(root, pair)
                         delivery.copy_upload_owner(root / "validated", hosted / ".planning/phases" / delivery.PHASE_NAME, hosted_pins)
                     output = artifacts / "candidate-downloads/300-1" / f"{pair}.zip"
                     output.parent.mkdir(parents=True, exist_ok=True)
@@ -435,6 +507,8 @@ class ActualEndToEndDelivery(unittest.TestCase):
                     "run_id": "300", "run_attempt": 1, "checkout_sha": merge, "status": "completed", "conclusion": "success"} for job in jobs], "package_artifacts": artifact_rows}))
             self.assertEqual(delivery._check_candidate(phase)["jobs"], 7)
             self.stage("candidate_identity_and_authoritative_graph_consumed")
+            self.reject_uploaded_owner_mutations(uploads[0], merge, candidate)
+            self.stage("grammar_preserving_package_runtime_zip_mutations_rejected")
             pr["base"]["sha"] = head
             with self.assertRaises(delivery.DeliveryError):
                 delivery._check_candidate_identity(phase)
@@ -451,7 +525,7 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 for name, value in members.items():
                     archive.writestr(name, value)
             with self.assertRaises(delivery.DeliveryError):
-                delivery._artifact_zip_pair(substituted, pair="locked", runner=merge, candidate=candidate, require_owner=True)
+                delivery._artifact_zip_pair(substituted, pair="locked", runner=merge, candidate=candidate, require_owner=True, profile="hosted-current")
             self.stage("authoritative_base_attempt_and_archive_mutations_rejected")
             self.git(repo, "add", "-f", "--", str(phase.relative_to(repo)))
             self.git(repo, "commit", "-qm", "preserve candidate evidence metadata")
@@ -489,6 +563,47 @@ class ActualEndToEndDelivery(unittest.TestCase):
             with self.assertRaises(delivery.DeliveryError):
                 delivery._check_handoff(phase)
             self.assertFalse(self.boundary.exists, "fake owned database was not cleaned")
+
+    def reject_uploaded_owner_mutations(self, path, runner, candidate):
+        """Coordinate raw/flat/index/copy digests in an in-memory actual ZIP."""
+        read = __import__("io").BytesIO
+        opaque = __import__("secrets").token_hex(16)
+        with zipfile.ZipFile(path) as archive:
+            original = {name: archive.read(name) for name in archive.namelist()}
+        for scope in ("release-rpc", "rollout"):
+            for field in ("version", "runtime"):
+                members = dict(original)
+                flat = f"{scope}-locked-builtin-receipt.json"
+                value = json.loads(members[flat])
+                if field == "version":
+                    value["candidate"]["version"] += "-" + opaque
+                    if scope == "release-rpc":
+                        value["observations"][receipts.RELEASE_RPC_CASE_ID]["compiled_module_relative_path"] = (
+                            f"lib/lockspire-{value['candidate']['version']}/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam")
+                else:
+                    value["runtime"]["elixir"] += "-" + opaque
+                changed = json.dumps(value).encode()
+                digest = hashlib.sha256(changed).hexdigest()
+                members[flat] = changed
+                members[f"raw/{scope}-locked-builtin.json"] = changed
+                index = json.loads(members["index.json"])
+                for row in index["cells"]:
+                    if row["scope"] == scope and row["store"] == "builtin":
+                        row["receipt_sha256"] = digest
+                members["index.json"] = json.dumps(index).encode()
+                copies = json.loads(members["raw-copies.json"])
+                for row in copies["copies"]:
+                    if row["scope"] == scope and row["store"] == "builtin":
+                        row["sha256"] = digest
+                members["raw-copies.json"] = json.dumps(copies).encode()
+                output = read()
+                with zipfile.ZipFile(output, "w") as archive:
+                    for name, content in members.items():
+                        archive.writestr(name, content)
+                output.seek(0)
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._artifact_zip_pair(output, pair="locked", runner=runner, candidate=candidate,
+                                                require_owner=True, profile="hosted-current")
 
 
 if __name__ == "__main__":

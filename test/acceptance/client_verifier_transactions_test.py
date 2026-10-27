@@ -138,10 +138,10 @@ class VerifierTransactionContracts(unittest.TestCase):
             ],
         )
         candidate = receipt("contention", contention_case_ids)
-        verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+        verifier_receipts._validate_receipt_structure(candidate, expected_pair="locked", expected_store="delegated")
         candidate["observations"][contention_case_ids[1]]["contender_backend_pid"] = 101
         with self.assertRaises(ValueError):
-            verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+            verifier_receipts._validate_receipt_structure(candidate, expected_pair="locked", expected_store="delegated")
 
     def test_atomicity_requires_insert_rollback_and_outer_commit_order_witnesses(self) -> None:
         atomicity_case_ids = getattr(verifier_receipts, "ATOMICITY_CASE_IDS", None)
@@ -155,10 +155,10 @@ class VerifierTransactionContracts(unittest.TestCase):
         )
         atomicity_case_ids = atomicity_case_ids or ["VPROOF-02-ATOMICITY-AUDIT-INSERT-ROLLBACK"]
         candidate = receipt("atomicity", atomicity_case_ids)
-        verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+        verifier_receipts._validate_receipt_structure(candidate, expected_pair="locked", expected_store="delegated")
         candidate["observations"][atomicity_case_ids[0]]["reached_insert"] = False
         with self.assertRaises(ValueError):
-            verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+            verifier_receipts._validate_receipt_structure(candidate, expected_pair="locked", expected_store="delegated")
 
     def test_commit_order_source_control_requires_real_apply_and_persisted_mutation(self) -> None:
         source = (ROOT / "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex").read_text()
@@ -190,12 +190,12 @@ class VerifierTransactionContracts(unittest.TestCase):
             "discovery_http_status": 200,
         })
         candidate["observations"][case_ids[0]] = result
-        verifier_receipts.validate_receipt(candidate, expected_pair="locked", expected_store="delegated")
+        verifier_receipts._validate_receipt_structure(candidate, expected_pair="locked", expected_store="delegated")
         for invalid_status in (True, "200", 500):
             with self.subTest(status_type=type(invalid_status).__name__, status=invalid_status):
                 result["discovery_http_status"] = invalid_status
                 with self.assertRaises(ValueError):
-                    verifier_receipts.validate_receipt(
+                    verifier_receipts._validate_receipt_structure(
                         candidate, expected_pair="locked", expected_store="delegated"
                     )
 

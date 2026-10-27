@@ -41,6 +41,7 @@ from verifier_receipts import (  # noqa: E402
     GROUPS, REQUIRED_MATRIX, REVISION, ReceiptError, expected_case_ids, load_receipt,
     validate_complete_matrix, validate_matrix_links, validate_receipt, validate_rollout_receipt,
 )
+from verifier_receipt_owner import OwnerError  # noqa: E402
 
 
 MODULES = {
@@ -205,12 +206,13 @@ def _capture_secret(child: Path, env: dict[str, str], redactor: Redactor, client
 
 
 def _actual_runtime(child: Path, env: dict[str, str]) -> tuple[str, str, str]:
-    code = 'IO.puts("RUNTIME=" <> System.version()); IO.puts("OTP=" <> System.otp_release()); {:ok, result} = Ecto.Adapters.SQL.query(CleanRoomProvider.Repo, "SHOW server_version", []); IO.puts("PG=" <> hd(hd(result.rows)))'
+    code = 'IO.puts("RUNTIME=" <> System.version()); IO.puts("OTP=" <> System.otp_release()); {:ok, result} = Ecto.Adapters.SQL.query(CleanRoomProvider.Repo, "SHOW server_version_num", []); IO.puts("PG=" <> hd(hd(result.rows)))'
     output = run_child_command_output(child, env, "run", "-e", code)
     values = dict(line.split("=", 1) for line in output.splitlines() if line.startswith(("RUNTIME=", "OTP=", "PG=")) and "=" in line)
     if not all(key in values for key in ("RUNTIME", "OTP", "PG")):
         raise PackageInputError("installed host runtime identity is incomplete")
-    return values["RUNTIME"], values["OTP"], values["PG"]
+    from verifier_receipt_owner import observed_host_runtime
+    return observed_host_runtime(values["RUNTIME"], values["OTP"], values["PG"])
 
 
 def _framework_versions(child: Path, env: dict[str, str]) -> tuple[str, str]:
@@ -473,6 +475,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--expected-runner-revision")
     parser.add_argument("--expected-candidate-source-revision")
     parser.add_argument("--aggregate-output", type=Path)
+    parser.add_argument("--historical-structure-only", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--self-test", action="store_true")
     return parser.parse_args(argv)
 
@@ -590,6 +593,8 @@ def _validate_pair_directory(
     if not isinstance(expected_candidate_source, str) or not REVISION.fullmatch(expected_candidate_source):
         raise ReceiptError("pair validation requires an explicit expected candidate source revision")
     root = receipt_dir.resolve()
+    from verifier_receipt_owner import selected_owner
+    receipt_owner = selected_owner()
     required = tuple(key for key in REQUIRED_MATRIX if key[1] == pair)
     records: list[dict[str, object]] = []
     candidates: set[tuple[str, str, str]] = set()
@@ -608,11 +613,11 @@ def _validate_pair_directory(
                 raise ReceiptError("pair receipt does not match its expected tested runner")
             validate_rollout_receipt(receipt, expected_pair=pair, expected_store=selected_store,
                                      expected_runner=runner_revision,
-                                     expected_candidate_source=expected_candidate_source, expected_scope=scope)
+                                     expected_candidate_source=expected_candidate_source, expected_scope=scope, owner=receipt_owner)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
         else:
-            validate_receipt(receipt, expected_pair=pair, expected_store=selected_store)
+            validate_receipt(receipt, expected_pair=pair, expected_store=selected_store, owner=receipt_owner)
             if (receipt.get("scope") != scope
                     or receipt.get("stable_case_ids") != expected_case_ids((scope, pair, selected_store))
                     or receipt.get("executed_count") != len(expected_case_ids((scope, pair, selected_store)))):
@@ -661,6 +666,7 @@ def _validate_pair_directory(
         "pair": pair, "runner_revision": tested_runner,
         "aggregate_validator_revision": validator_revision,
         "candidate_source_archive_tree": list(next(iter(candidates))),
+        "receipt_owner_sha256": os.environ["LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256"],
         "required_receipts": len(required), "executed_receipts": len(validated),
         "required_cases": sum(len(row["stable_case_ids"]) for row in validated),
         "passed_cases": sum(len(row["stable_case_ids"]) for row in validated),
@@ -678,6 +684,7 @@ def _validate_pair_directory(
 
 def validate_matrix_directory(
     receipt_dir: Path, *, expected_runner: str, expected_candidate_source: str,
+    _structure_only: bool = False,
 ) -> tuple[str, list[dict[str, object]], tuple[str, str, str]]:
     """Read and validate an immutable full matrix without launching package code."""
     if not isinstance(expected_runner, str) or not REVISION.fullmatch(expected_runner):
@@ -700,7 +707,8 @@ def validate_matrix_directory(
             runner_revision = receipt.get("runner_revision")
             if runner_revision != expected_runner:
                 raise ReceiptError("rollout receipt does not match its expected tested runner")
-            validate_rollout_receipt(receipt, expected_pair=pair, expected_store=store,
+            validator = __import__("verifier_receipts")._validate_rollout_structure if _structure_only else validate_rollout_receipt
+            validator(receipt, expected_pair=pair, expected_store=store,
                                      expected_runner=expected_runner,
                                      expected_candidate_source=expected_candidate_source, expected_scope=scope)
             candidate = receipt["candidate"]
@@ -709,7 +717,8 @@ def validate_matrix_directory(
             runner_revision = receipt.get("runner")
             if runner_revision != expected_runner:
                 raise ReceiptError("group receipt does not match its expected tested runner")
-            validate_receipt(receipt, expected_pair=pair, expected_store=store)
+            validator = __import__("verifier_receipts")._validate_receipt_structure if _structure_only else validate_receipt
+            validator(receipt, expected_pair=pair, expected_store=store)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
         runners.add(runner_revision)
@@ -774,6 +783,8 @@ def self_test() -> int:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
+        if args.historical_structure_only and (not args.validate_receipts or not args.validate_receipts.is_dir() or args.pair != "all"):
+            raise ReceiptError("historical structure mode is read-only full-matrix corroboration")
         if args.self_test:
             return self_test()
         if args.validate_receipts:
@@ -786,11 +797,14 @@ def main(argv: list[str] | None = None) -> int:
                     tested_runner, rows, candidate = validate_matrix_directory(
                         args.validate_receipts, expected_runner=args.expected_runner_revision,
                         expected_candidate_source=args.expected_candidate_source_revision,
+                        _structure_only=args.historical_structure_only,
                     )
                     aggregate = _aggregate_document(
                         tested_runner=tested_runner, records=rows, candidate_identity=candidate,
                         validator_revision=source_revision(),
                     )
+                    if args.historical_structure_only:
+                        aggregate.update(schema="lockspire-historical-structure-only-v1", authoritative=False, runtime_acceptance=False)
                     output_path = args.aggregate_output
                     if output_path is not None:
                         artifact_root = Path(__file__).resolve().parents[2] / ".artifacts"
@@ -803,13 +817,16 @@ def main(argv: list[str] | None = None) -> int:
                         output.write_text(json.dumps(aggregate, sort_keys=True, indent=2) + "\n", encoding="utf-8")
                         os.chmod(output, 0o600)
                     print(json.dumps({
-                        "validated": True, "scope": "all", "runner_revision": tested_runner,
+                        "validated": not args.historical_structure_only, "structural_only": args.historical_structure_only,
+                        "scope": "all", "runner_revision": tested_runner,
                         "aggregate_validator_revision": source_revision(),
                         "receipts": aggregate["executed_receipt_count"],
                         "cases": aggregate["passed_case_count"], "failed_cases": 0,
                         "aggregate_output": str(output_path) if output_path else None,
                     }, sort_keys=True))
                 else:
+                    if args.historical_structure_only:
+                        raise ReceiptError("historical structure mode cannot copy a pair or validate a new receipt")
                     if args.aggregate_output is not None:
                         raise ReceiptError("aggregate output is only valid for a full matrix")
                     _validate_pair_directory(args.validate_receipts, args.pair,
@@ -852,7 +869,7 @@ def main(argv: list[str] | None = None) -> int:
     except MatrixExecutionFailure as error:
         print(f"installed verifier proof failed during {error.scope}/{error.pair}/{error.store}; child diagnostics withheld", file=sys.stderr)
         return 1
-    except (PackageInputError, ReceiptError, OSError, subprocess.SubprocessError):
+    except (PackageInputError, ReceiptError, OwnerError, OSError, subprocess.SubprocessError):
         # Child exceptions and diagnostic text can contain generated verifier
         # keys that are unknown to this process. Report only a fixed stage.
         group = args.group if args.group in GROUPS else "unknown"

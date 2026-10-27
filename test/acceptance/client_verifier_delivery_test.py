@@ -425,11 +425,11 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
                     "expected_candidate_source": raw["candidate"]["source_revision"],
                     "expected_scope": raw["scope"],
                 }
-                validator = lambda value, expected=expected: verifier_receipts.validate_rollout_receipt(
+                validator = lambda value, expected=expected: verifier_receipts._validate_rollout_structure(
                     value, **expected,
                 )
             else:
-                validator = verifier_receipts.validate_receipt
+                validator = verifier_receipts._validate_receipt_structure
             for path in object_paths(raw):
                 mutated = json.loads(json.dumps(raw))
                 inject(mutated, path)
@@ -476,15 +476,22 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
 
 class ComposedMatrixContracts(unittest.TestCase):
     def _pair_roots(self, parent: Path) -> tuple[Path, Path, str, tuple[str, str, str]]:
+        from verifier_owner_fixture import context_for_template, write_context
         source = ROOT / "test/fixtures/verifier-matrix-26"
         runner = json.loads((source / "core/locked-builtin/receipt.json").read_text())["runner"]
         candidate = json.loads((source / "core/locked-builtin/receipt.json").read_text())["candidate"]
         owner = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
+        context = context_for_template(json.loads((source / "core/locked-builtin/receipt.json").read_text()))
         roots = []
         for pair in ("locked", "floor"):
             root = parent / pair
             shutil.copytree(source, root)
-            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            for path in root.rglob("*.json"):
+                raw = json.loads(path.read_text())
+                raw["runtime"] = dict(context["runtime"])
+                path.write_text(json.dumps(raw))
+            context_env = write_context(root, context)
+            with patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = clean_room_verifier_upgrade.main([
                     "--pair", pair, "--store", "all", "--group", "all",
                     "--validate-receipts", str(root),
@@ -496,11 +503,18 @@ class ComposedMatrixContracts(unittest.TestCase):
             roots.append(root)
         return roots[0], roots[1], runner, owner
 
+    def _compose(self, locked, floor, **kwargs):
+        # Explicit synthetic component context; the complete chain authenticates
+        # actual archive metadata separately. Never promotes retained evidence.
+        document = json.loads((locked / "receipt-owner.json").read_text())
+        kwargs.update(expected_candidate_proof=document["candidate_owner_sha256"], expected_version=document["package_version"])
+        return verifier_delivery.compose_pair_indexes(locked, floor, **kwargs)
+
     def test_two_pair_indexes_compose_to_exact_closed_validator_matrix(self) -> None:
         artifacts = ROOT / ".artifacts" / "phase178"
         with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
             locked, floor, runner, candidate = self._pair_roots(Path(temporary))
-            result = verifier_delivery.compose_pair_indexes(
+            result = self._compose(
                 locked, floor, expected_runner=runner, expected_candidate=candidate,
             )
             self.assertEqual((result["executed_receipt_count"], result["passed_case_count"]), (26, 64))
@@ -515,10 +529,10 @@ class ComposedMatrixContracts(unittest.TestCase):
                 archive_path = Path(temporary) / f"{pair}.zip"
                 upload_tree(root, pair)
                 zip_upload(root, archive_path)
-                result = verifier_delivery._artifact_zip_pair(
-                    archive_path, pair=pair, runner=runner, candidate=candidate,
-                )
-                self.assertEqual((result["receipts"], result["cases"]), expected)
+                with self.assertRaises(verifier_delivery.DeliveryError):
+                    verifier_delivery._artifact_zip_pair(
+                        archive_path, pair=pair, runner=runner, candidate=candidate,
+                    )  # Template-only bytes have no authenticated archive owner.
 
     def test_composition_rejects_changed_raw_receipt_bytes(self) -> None:
         artifacts = ROOT / ".artifacts" / "phase178"
@@ -527,7 +541,7 @@ class ComposedMatrixContracts(unittest.TestCase):
             receipt = locked / "core/locked-builtin/receipt.json"
             receipt.write_bytes(receipt.read_bytes() + b" ")
             with self.assertRaises(verifier_delivery.DeliveryError):
-                verifier_delivery.compose_pair_indexes(
+                self._compose(
                     locked, floor, expected_runner=runner, expected_candidate=candidate,
                 )
 
@@ -540,7 +554,7 @@ class ComposedMatrixContracts(unittest.TestCase):
             index["cells"].pop()
             index_path.write_text(json.dumps(index), encoding="utf-8")
             with self.assertRaises(verifier_delivery.DeliveryError):
-                verifier_delivery.compose_pair_indexes(
+                self._compose(
                     locked, floor, expected_runner=runner, expected_candidate=candidate,
                 )
 
@@ -551,7 +565,7 @@ class ComposedMatrixContracts(unittest.TestCase):
             index["candidate_source_archive_tree"][0] = "f" * 40
             index_path.write_text(json.dumps(index), encoding="utf-8")
             with self.assertRaises(verifier_delivery.DeliveryError):
-                verifier_delivery.compose_pair_indexes(
+                self._compose(
                     locked, floor, expected_runner=runner, expected_candidate=candidate,
                 )
 
@@ -580,7 +594,7 @@ class ComposedMatrixContracts(unittest.TestCase):
             cell["executed_count"] = receipt["executed_count"]
             index_path.write_text(json.dumps(index), encoding="utf-8")
             with self.assertRaises(verifier_delivery.DeliveryError):
-                verifier_delivery.compose_pair_indexes(
+                self._compose(
                     locked, floor, expected_runner=runner, expected_candidate=candidate,
                 )
 

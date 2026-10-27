@@ -304,6 +304,7 @@ jobs:
           bash scripts/ci/run_verifier_upgrade_proof.sh --pair floor
           --receipt-dir .artifacts/phase178/ci-floor
           --expected-runner "$EXPECTED_RUNNER"
+          --toolchain-profile hosted-minimum
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
           --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
           --expected-tree-sha256 "$EXPECTED_TREE_SHA256"
@@ -442,6 +443,7 @@ jobs:
           bash scripts/ci/run_verifier_upgrade_proof.sh --pair locked
           --receipt-dir .artifacts/phase178/ci-locked
           --expected-runner "$EXPECTED_RUNNER"
+          --toolchain-profile hosted-current
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
           --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
           --expected-tree-sha256 "$EXPECTED_TREE_SHA256"

@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance" / "clean_room"))
 import build_provider  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_endpoints  # noqa: E402
-from verifier_receipts import ENDPOINT_CASE_IDS, ReceiptError, validate_receipt  # noqa: E402
+from verifier_receipts import ENDPOINT_CASE_IDS, ReceiptError, _validate_receipt_structure as validate_receipt  # noqa: E402
 from verifier_receipts import RELEASE_RPC_CASE_ID, RELEASE_RPC_INVOCATIONS, RELEASE_RPC_OBSERVATION_FIELDS  # noqa: E402
 from redaction import Redactor, SentinelSet  # noqa: E402
 

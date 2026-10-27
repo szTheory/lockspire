@@ -23,6 +23,31 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def test_grammar_preserving_package_and_runtime_substitutions_require_owner(self):
+        accepted = 0
+        opaque = secrets.token_hex(16)
+        for scope in ("release-rpc", "rollout"):
+            original = json.loads((ROOT / f"test/fixtures/verifier-matrix-26/{scope}/locked-builtin/receipt.json").read_text())
+            for field in ("version", "runtime"):
+                mutated = copy.deepcopy(original)
+                if field == "version":
+                    mutated["candidate"]["version"] += "-" + opaque
+                    if scope == "release-rpc":
+                        mutated["observations"][verifier_receipts.RELEASE_RPC_CASE_ID]["compiled_module_relative_path"] = (
+                            f"lib/lockspire-{mutated['candidate']['version']}/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam")
+                else:
+                    mutated["runtime"]["elixir"] += "-" + opaque
+                try:
+                    if scope == "rollout":
+                        verifier_receipts.validate_rollout_receipt(mutated, expected_pair="locked", expected_store="builtin",
+                            expected_runner=original["runner_revision"], expected_candidate_source=original["candidate"]["source_revision"], expected_scope="rollout")
+                    else:
+                        verifier_receipts.validate_receipt(mutated)
+                except verifier_receipts.ReceiptError:
+                    continue
+                accepted += 1
+        self.assertTrue(accepted == 0, "grammar-preserving receipt claims bypassed independent ownership")
+
     def _producer_release_invocations(self):
         names = {"rpc_invocation", "check_invocation", "task_local_invocation"}
         source = ROOT / "scripts/acceptance/clean_room/verifier_endpoints.py"
@@ -42,7 +67,7 @@ class CompleteMatrixContracts(unittest.TestCase):
         receipt = json.loads((ROOT / "test/fixtures/verifier-matrix-26/release-rpc/locked-builtin/receipt.json").read_text())
         observation = receipt["observations"][verifier_receipts.RELEASE_RPC_CASE_ID]
         observation.update(self._producer_release_invocations())
-        self.assertTrue(verifier_receipts.validate_receipt(receipt) is receipt,
+        self.assertTrue(verifier_receipts._validate_receipt_structure(receipt) is receipt,
                         "actual release producer invocations failed their consumer")
 
     def test_release_invocations_reject_generated_same_type_private_strings(self):
@@ -56,7 +81,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 mutated = copy.deepcopy(receipt)
                 mutated["observations"][verifier_receipts.RELEASE_RPC_CASE_ID][field] = value
                 try:
-                    verifier_receipts.validate_receipt(mutated)
+                    verifier_receipts._validate_receipt_structure(mutated)
                 except verifier_receipts.ReceiptError:
                     continue
                 accepted += 1
@@ -83,10 +108,10 @@ class CompleteMatrixContracts(unittest.TestCase):
             rollout = raw["schema"] == "lockspire-installed-verifier-rollout-v1"
             def validate(value):
                 if rollout:
-                    return verifier_receipts.validate_rollout_receipt(value, expected_pair=raw["pair"],
+                    return verifier_receipts._validate_rollout_structure(value, expected_pair=raw["pair"],
                         expected_store=raw["store"], expected_runner=raw["runner_revision"],
                         expected_candidate_source=raw["candidate"]["source_revision"], expected_scope=raw["scope"])
-                return verifier_receipts.validate_receipt(value)
+                return verifier_receipts._validate_receipt_structure(value)
             validate(raw)
             for leaf in strings(raw):
                 for replacement in variants:
@@ -115,7 +140,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             mutated = copy.deepcopy(raw)
             mutated["observations"][case][field] = value
             with self.assertRaises(verifier_receipts.ReceiptError):
-                verifier_receipts.validate_receipt(mutated)
+                verifier_receipts._validate_receipt_structure(mutated)
         for pair in ("locked", "floor"):
             raw = json.loads((ROOT / f"test/fixtures/verifier-matrix-26/endpoints/{pair}-builtin/receipt.json").read_text())
             for value in (opaque, "http://127.0.0.1:1/lockspire/" + opaque):
@@ -123,7 +148,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 for observation in mutated["observations"].values():
                     observation["rejected_audience_uri"] = value
                 with self.assertRaises(verifier_receipts.ReceiptError):
-                    verifier_receipts.validate_receipt(mutated)
+                    verifier_receipts._validate_receipt_structure(mutated)
 
     def _fixture_runner_revision(self) -> str:
         path = ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json"
@@ -146,13 +171,15 @@ class CompleteMatrixContracts(unittest.TestCase):
             stdout, stderr = StringIO(), StringIO()
             with redirect_stdout(stdout), redirect_stderr(stderr):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs),
+                                      "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", self._fixture_runner_revision(),
                                       "--expected-candidate-source-revision", self._fixture_runner_revision(),
                                       "--aggregate-output", str(output)])
             self.assertEqual(result, 0, "read-only matrix fixture should validate")
             self.assertEqual(stderr.getvalue(), "")
             aggregate = json.loads(output.read_text(encoding="utf-8"))
+            self.assertTrue(aggregate["authoritative"] is False and aggregate["runtime_acceptance"] is False,
+                            "historical structure corroboration claimed current acceptance")
             self.assertEqual(aggregate["executed_receipt_count"], 26)
             self.assertEqual(aggregate["executed_case_count"], 64)
             self.assertEqual(aggregate["failed_case_count"], 0)
@@ -168,7 +195,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             output = parent / "aggregate.json"
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
+                                      "--historical-structure-only", "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
             self.assertEqual(result, 1)
             self.assertFalse(output.exists())
 
@@ -196,7 +223,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main([
                     "--pair", "all", "--store", "all", "--group", "all",
-                    "--validate-receipts", str(inputs),
+                    "--historical-structure-only", "--validate-receipts", str(inputs),
                     "--expected-runner-revision", expected_runner,
                     "--expected-candidate-source-revision", expected_candidate_source,
                 ])
@@ -204,18 +231,21 @@ class CompleteMatrixContracts(unittest.TestCase):
 
     def test_pair_cli_projects_exact_required_cells_for_each_dependency_pair(self) -> None:
         import clean_room_verifier_upgrade as source
+        from client_verifier_delivery_test import ComposedMatrixContracts
+        from verifier_owner_fixture import CONTEXT_PINS
+        from unittest.mock import patch
         artifacts = ROOT / ".artifacts"
-        expected_runner = self._fixture_runner_revision()
         expected = {"locked": (14, 33), "floor": (12, 31)}
-        for pair, (receipt_count, case_count) in expected.items():
-            with self.subTest(pair=pair), tempfile.TemporaryDirectory(dir=artifacts) as temporary:
-                parent = Path(temporary)
-                inputs = self._matrix_copy(parent)
-                with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            locked, floor, expected_runner, candidate = ComposedMatrixContracts()._pair_roots(Path(temporary))
+            for pair, inputs in (("locked", locked), ("floor", floor)):
+                receipt_count, case_count = expected[pair]
+                shutil.rmtree(inputs / "validated")
+                with self.subTest(pair=pair), patch.dict(__import__("os").environ, CONTEXT_PINS[str(inputs)]), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                     result = source.main(["--pair", pair, "--store", "all", "--group", "all",
                                           "--validate-receipts", str(inputs),
                                           "--expected-runner-revision", expected_runner,
-                                          "--expected-candidate-source-revision", expected_runner])
+                                          "--expected-candidate-source-revision", candidate[0]])
                 self.assertEqual(result, 0)
                 index = json.loads((inputs / "validated" / "index.json").read_text(encoding="utf-8"))
                 self.assertEqual(index["executed_receipts"], receipt_count)
@@ -234,7 +264,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                     source.matrix_receipt_path(inputs, scope, pair, store).unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "locked", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs),
+                                      "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", expected_runner,
                                       "--expected-candidate-source-revision", expected_runner])
             self.assertEqual(result, 1)
@@ -249,7 +279,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             missing.unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs),
+                                      "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", self._fixture_runner_revision(),
                                       "--expected-candidate-source-revision", self._fixture_runner_revision()])
             self.assertEqual(result, 1)
@@ -267,7 +297,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 mutate(inputs)
                 with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                     result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                          "--validate-receipts", str(inputs),
+                                          "--historical-structure-only", "--validate-receipts", str(inputs),
                                           "--expected-runner-revision", expected_runner,
                                           "--expected-candidate-source-revision", expected_runner])
                 self.assertEqual(result, 1)
@@ -352,7 +382,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             path.write_text(json.dumps(receipt), encoding="utf-8")
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(inputs),
+                                      "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", expected_runner])
             self.assertEqual(result, 1)
 
@@ -385,7 +415,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             output = Path(temporary) / "aggregate.json"
             with patch.object(source, "_complete_matrix", side_effect=AssertionError("package execution forbidden")):
                 result = source.main(["--pair", "all", "--store", "all", "--group", "all",
-                                      "--validate-receipts", str(empty), "--aggregate-output", str(output)])
+                                      "--historical-structure-only", "--validate-receipts", str(empty), "--aggregate-output", str(output)])
             self.assertEqual(result, 1)
             self.assertFalse(output.exists())
 

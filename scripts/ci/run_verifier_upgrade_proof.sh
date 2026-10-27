@@ -14,6 +14,7 @@ expected_archive_sha256=''
 expected_tree_sha256=''
 expected_manifest_sha256=''
 selected_manifest=''
+toolchain_profile='local-current'
 while (($#)); do
   case "$1" in
     --pair) (($# >= 2)) || { usage; exit 2; }; pair=$2; shift 2 ;;
@@ -24,6 +25,7 @@ while (($#)); do
     --expected-tree-sha256) (($# >= 2)) || { usage; exit 2; }; expected_tree_sha256=$2; shift 2 ;;
     --expected-manifest-sha256) (($# >= 2)) || { usage; exit 2; }; expected_manifest_sha256=$2; shift 2 ;;
     --frozen-manifest) (($# >= 2)) || { usage; exit 2; }; selected_manifest=$2; shift 2 ;;
+    --toolchain-profile) (($# >= 2)) || { usage; exit 2; }; toolchain_profile=$2; shift 2 ;;
     --test-mode) test_mode=true; shift ;;
     *) usage; exit 2 ;;
   esac
@@ -361,6 +363,15 @@ if [[ "$test_mode" == true ]]; then
   fi
 fi
 
+export LOCKSPIRE_RECEIPT_OWNER="$repo_root/$receipt_dir/receipt-owner.json"
+LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256=$(python3 "$repo_root/scripts/acceptance/clean_room/verifier_delivery.py" \
+  --phase-dir "$repo_root/.planning/phases/178-packaged-upgrade-proof-delivery-handoff" \
+  --capture-receipt-owner --receipt-owner-output "$LOCKSPIRE_RECEIPT_OWNER" --toolchain-profile "$toolchain_profile" \
+  --expected-runner "$expected_runner" --expected-candidate-source "$expected_candidate_source" \
+  --expected-archive-sha256 "$expected_archive_sha256" --expected-tree-sha256 "$expected_tree_sha256" \
+  --expected-manifest-sha256 "$expected_manifest_sha256") || { echo "independent receipt owner capture failed" >&2; exit 2; }
+export LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256
+
 run_group() {
   local scope=$1 store=$2
   local status=0
@@ -392,6 +403,7 @@ run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
 python3 - "$repo_root/$receipt_dir" "$pair" <<'PY' || { echo "validated raw receipt copies are unavailable" >&2; exit 2; }
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -399,9 +411,15 @@ import sys
 
 root = Path(sys.argv[1])
 pair = sys.argv[2]
+sys.path.insert(0, str(Path.cwd() / "scripts/acceptance/clean_room"))
+from verifier_receipt_owner import selected_owner
+from verifier_receipts import validate_receipt, validate_rollout_receipt
 index_path = root / "validated" / "index.json"
 try:
+    owner = selected_owner()
     index = json.loads(index_path.read_text(encoding="utf-8"))
+    if index.get("receipt_owner_sha256") != os.environ.get("LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256"):
+        raise ValueError
     cells = index["cells"]
     if index.get("pair") != pair or not isinstance(cells, list):
         raise ValueError
@@ -426,6 +444,13 @@ try:
         digest = hashlib.sha256(source.read_bytes()).hexdigest()
         if digest != cell["receipt_sha256"]:
             raise ValueError
+        receipt = json.loads(source.read_text(encoding="utf-8"))
+        if scope in {"rollout", "legacy-control"}:
+            validate_rollout_receipt(receipt, expected_pair=pair, expected_store=store,
+                expected_runner=owner.document["runner_revision"],
+                expected_candidate_source=owner.document["candidate_source_archive_tree"][0], expected_scope=scope, owner=owner)
+        else:
+            validate_receipt(receipt, expected_pair=pair, expected_store=store, owner=owner)
         name = f"{scope}-{pair}-{store}.json"
         destination = target / name
         if destination.exists() or destination.is_symlink():

@@ -25,6 +25,7 @@ sys.path.insert(0, str(HERE.parent))
 from package_input import PackageInputError, package_tree_digest, sha256, unpack_hex_tarball  # noqa: E402
 from build_provider import PROOF_PAIR_LOCKS  # noqa: E402
 from verifier_input_closure import RULE as CLOSURE_RULE, tracked_inputs, assert_worktree_selection, committed_hashes  # noqa: E402
+from verifier_receipt_owner import capture as capture_owner, validate_document as validate_owner_document, selected_owner, OwnerError  # noqa: E402
 from verifier_receipts import (  # noqa: E402
     REQUIRED_MATRIX, ReceiptError, _unique_object, expected_case_ids, validate_complete_matrix,
 )
@@ -432,6 +433,7 @@ def _receipt_path(root: Path, relative: Any) -> Path:
 def compose_pair_indexes(
     locked_root: Path, floor_root: Path, *, expected_runner: str,
     expected_candidate: tuple[str, str, str], expected_candidate_proof: str | None = None,
+    expected_version: str | None = None,
 ) -> dict[str, Any]:
     """Compose only the two fresh fixed-wrapper pair partitions into the closed matrix."""
     from verifier_receipts import validate_receipt, validate_rollout_receipt
@@ -449,6 +451,14 @@ def compose_pair_indexes(
             raise DeliveryError("package pair root is outside its owned artifact boundary")
         index_path = root / "validated" / "index.json"
         index = _read_json(index_path, f"{pair} pair index")
+        if expected_version is None or expected_candidate_proof is None:
+            raise DeliveryError("package composition requires authenticated package version and owner")
+        context_path = _receipt_path(root, "receipt-owner.json")
+        if sha256(context_path) != index.get("receipt_owner_sha256"):
+            raise DeliveryError("package receipt owner context differs from its pre-copy pin")
+        receipt_owner = validate_owner_document(_read_json(context_path, "receipt owner context"), root=ROOT,
+            package_version=expected_version, runner=expected_runner, candidate=expected_candidate,
+            proof=expected_candidate_proof, profile="local-current")
         if (index.get("schema") != "lockspire-installed-verifier-pair-v1"
                 or index.get("pair") != pair or index.get("runner_revision") != expected_runner
                 or index.get("required_receipts") != expected_receipts
@@ -498,10 +508,10 @@ def compose_pair_indexes(
                 validate_rollout_receipt(receipt, expected_pair=pair, expected_store=key[2],
                                           expected_runner=expected_runner,
                                           expected_candidate_source=expected_candidate[0],
-                                          expected_scope=key[0])
+                                          expected_scope=key[0], owner=receipt_owner)
                 candidate = receipt["candidate"]
             else:
-                validate_receipt(receipt, expected_pair=pair, expected_store=key[2])
+                validate_receipt(receipt, expected_pair=pair, expected_store=key[2], owner=receipt_owner)
                 if receipt.get("runner") != expected_runner:
                     raise DeliveryError("package receipt runner does not match frozen runner pin")
                 candidate = receipt["candidate"]
@@ -706,6 +716,7 @@ def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path,
         locked_root, floor_root, expected_runner=runner,
         expected_candidate=(owner["source_revision"], owner["archive_sha256"], owner["tree_sha256"]),
         expected_candidate_proof=owner["owner_sha256"],
+        expected_version=__import__("package_input").package_version(ROOT / owner["extracted_tree_path"]),
     )
     lines = [
         "# Phase 178 Package Acceptance",
@@ -1127,6 +1138,20 @@ def _github_repository() -> str:
     return match.group(1)
 
 
+def capture_receipt_owner(phase_dir: Path, pins: dict[str, str], profile: str, output_path: Path) -> str:
+    frozen = validate_frozen_manifest(phase_dir, **pins)
+    target = Path(os.path.abspath(output_path))
+    if (not target.is_relative_to(ARTIFACT_DEFAULT.resolve(strict=True)) or target.name != "receipt-owner.json"
+            or any(path.is_symlink() for path in (target, *target.parents))):
+        raise DeliveryError("receipt owner output path is unsafe")
+    authority = capture_owner(ROOT, frozen, profile, runner=_git("rev-parse", "HEAD"))
+    raw = json.dumps(authority.document, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with os.fdopen(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as output:
+        output.write(raw)
+    return hashlib.sha256(raw).hexdigest()
+
+
 def copy_upload_owner(upload_root: Path, phase_dir: Path, pins: dict[str, str]) -> None:
     manifest = validate_frozen_manifest(phase_dir, **pins)
     upload_root = upload_root.resolve(strict=True)
@@ -1138,10 +1163,14 @@ def copy_upload_owner(upload_root: Path, phase_dir: Path, pins: dict[str, str]) 
     source = _safe_manifest_path(Path(selected) if selected else phase_dir / "178-FROZEN-INPUTS.json", phase_dir)
     shutil.copyfile(source, destination / "manifest.json")
     shutil.copyfile(_safe_repo_file(manifest["candidate_owner"]["archive_path"]), destination / "package.tar")
+    authority = selected_owner()
+    if authority.document["package_version"] != __import__("package_input").package_version(ROOT / manifest["candidate_owner"]["extracted_tree_path"]):
+        raise DeliveryError("upload owner version differs from authenticated package")
+    shutil.copyfile(Path(os.environ["LOCKSPIRE_RECEIPT_OWNER"]), destination / "receipt-owner.json")
 
 
 def _uploaded_owner(archive: zipfile.ZipFile, prefix: str, *, runner: str,
-                    candidate: tuple[str, str, str]) -> str:
+                    candidate: tuple[str, str, str], profile: str | None = None):
     owner_manifest = json.loads(archive.read(prefix + "candidate/manifest.json"), object_pairs_hook=_unique_object)
     if (not isinstance(owner_manifest, dict) or owner_manifest.get("closure_rule") != CLOSURE_RULE
             or owner_manifest.get("runner_revision") != runner
@@ -1171,12 +1200,19 @@ def _uploaded_owner(archive: zipfile.ZipFile, prefix: str, *, runner: str,
         if package_tree_digest(extracted) != candidate[2]:
             raise DeliveryError("uploaded candidate archive tree differs from selected owner")
         _verify_owner_source(owner, extracted)
-    return proof
+        version = __import__("package_input").package_version(extracted)
+    authority = json.loads(archive.read(prefix + "candidate/receipt-owner.json"), object_pairs_hook=_unique_object)
+    return validate_owner_document(authority, root=ROOT, package_version=version,
+                                   runner=runner, candidate=candidate, proof=proof, profile=profile)
 
 
 def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
-                       candidate: tuple[str, str, str], require_owner: bool = False) -> dict[str, int]:
+                       candidate: tuple[str, str, str], require_owner: bool = True,
+                       profile: str | None = None) -> dict[str, int]:
     from verifier_receipts import validate_receipt, validate_rollout_receipt
+
+    if profile is None:
+        raise DeliveryError("artifact acceptance requires an independently selected execution profile")
 
     expected_receipts, expected_cases = (14, 33) if pair == "locked" else (12, 31)
     expected_keys = {key for key in REQUIRED_MATRIX if key[1] == pair}
@@ -1194,10 +1230,13 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                 raise DeliveryError("downloaded candidate artifact index is missing or duplicated")
             index = json.loads(archive.read(index_names[0]), object_pairs_hook=_unique_object)
             prefix = index_names[0][:-len("index.json")]
-            owner_proof = _uploaded_owner(archive, prefix, runner=runner, candidate=candidate) if require_owner else None
+            if not require_owner:
+                raise DeliveryError("artifact acceptance requires independent package/runtime authority")
+            receipt_owner = _uploaded_owner(archive, prefix, runner=runner, candidate=candidate, profile=profile)
+            owner_proof = receipt_owner.document["candidate_owner_sha256"]
             if (not isinstance(index, dict) or set(index) != {
                     "schema", "pair", "runner_revision", "aggregate_validator_revision", "candidate_source_archive_tree",
-                    "required_receipts", "executed_receipts", "required_cases", "passed_cases", "failed_cases", "cells"}
+                    "required_receipts", "executed_receipts", "required_cases", "passed_cases", "failed_cases", "cells", "receipt_owner_sha256"}
                     or not isinstance(index.get("aggregate_validator_revision"), str)
                     or not REVISION.fullmatch(index["aggregate_validator_revision"])
                     or (require_owner and index["aggregate_validator_revision"] != runner)
@@ -1209,6 +1248,8 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                     or index.get("required_cases") != expected_cases
                     or index.get("passed_cases") != expected_cases or index.get("failed_cases") != 0):
                 raise DeliveryError("downloaded candidate artifact index has a substituted identity")
+            if hashlib.sha256(archive.read(prefix + "candidate/receipt-owner.json")).hexdigest() != index.get("receipt_owner_sha256"):
+                raise DeliveryError("downloaded receipt context differs from its pre-copy pin")
             cells = index.get("cells")
             if not isinstance(cells, list) or len(cells) != expected_receipts:
                 raise DeliveryError("downloaded candidate artifact cell set is incomplete")
@@ -1225,7 +1266,7 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                     or len(copies["copies"]) != expected_receipts):
                 raise DeliveryError("downloaded artifact raw-copy manifest is invalid")
             if require_owner:
-                expected_members.update({prefix + "candidate/manifest.json", prefix + "candidate/package.tar"})
+                expected_members.update({prefix + "candidate/manifest.json", prefix + "candidate/package.tar", prefix + "candidate/receipt-owner.json"})
             for row in cells:
                 if not isinstance(row, dict) or set(row) != {
                         "scope", "pair", "store", "run_id", "runner_revision", "receipt_sha256",
@@ -1270,9 +1311,9 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                     validate_rollout_receipt(receipt, expected_pair=pair, expected_store=key[2],
                                               expected_runner=runner,
                                               expected_candidate_source=candidate[0],
-                                              expected_scope=key[0])
+                                              expected_scope=key[0], owner=receipt_owner)
                 else:
-                    validate_receipt(receipt, expected_pair=pair, expected_store=key[2])
+                    validate_receipt(receipt, expected_pair=pair, expected_store=key[2], owner=receipt_owner)
                 raw_candidate = receipt["candidate"]
                 raw_runner = receipt.get("runner_revision") if rollout else receipt.get("runner")
                 compiled = receipt["processes"]["candidate"]["compiled_candidate_sha256"] if rollout else receipt["host"]["compiled_candidate_sha256"]
@@ -1286,7 +1327,7 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
             if seen != expected_keys or set(names) != expected_members:
                 raise DeliveryError("downloaded candidate artifact file set is not the exact validated package partition")
             return {"receipts": len(seen), "cases": expected_cases}
-    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, ReceiptError, PackageInputError, KeyError, TypeError):
+    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, ReceiptError, PackageInputError, OwnerError, KeyError, TypeError):
         raise DeliveryError("downloaded candidate artifact bytes are invalid") from None
 
 
@@ -1409,6 +1450,7 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
         artifact_results[row["pair"]] = _artifact_zip_pair(
             archive_path, pair=row["pair"], runner=identity["runner_sha"], candidate=candidate_owner,
             require_owner=True,
+            profile="hosted-minimum" if row["pair"] == "floor" else "hosted-current",
         )
     if (artifact_results.get("locked") != {"receipts": 14, "cases": 33}
             or artifact_results.get("floor") != {"receipts": 12, "cases": 31}):
@@ -1697,6 +1739,9 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
                                              "candidate-identity", "candidate", "handoff"))
     parser.add_argument("--freeze", action="store_true")
     parser.add_argument("--copy-upload-owner", action="store_true")
+    parser.add_argument("--capture-receipt-owner", action="store_true")
+    parser.add_argument("--receipt-owner-output", type=Path)
+    parser.add_argument("--toolchain-profile", choices=("local-current", "hosted-current", "hosted-minimum"), default="local-current")
     parser.add_argument("--upload-root", type=Path)
     parser.add_argument("--record-source", action="store_true")
     parser.add_argument("--run-main-source-gate", action="store_true")
@@ -1738,6 +1783,12 @@ def _frozen_pins(args: argparse.Namespace, *, require_manifest: bool) -> dict[st
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
+        if args.capture_receipt_owner:
+            if args.receipt_owner_output is None:
+                raise DeliveryError("receipt owner output is required")
+            print(capture_receipt_owner(args.phase_dir, _frozen_pins(args, require_manifest=True),
+                                        args.toolchain_profile, args.receipt_owner_output))
+            return 0
         if args.check_integration_authorization:
             if not isinstance(args.expected_runner, str) or not REVISION.fullmatch(args.expected_runner):
                 raise DeliveryError("integration authorization requires a caller revision")

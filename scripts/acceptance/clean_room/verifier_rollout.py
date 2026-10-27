@@ -627,6 +627,13 @@ def _compiled_identity(host: Path) -> str | None:
 
 
 def _write_receipt(receipt_dir: Path, receipt: dict[str, object], redactor: Redactor):
+    from verifier_receipt_owner import selected_owner
+    from verifier_receipts import validate_rollout_receipt
+    owner = selected_owner()
+    validate_rollout_receipt(receipt, expected_pair=receipt["pair"], expected_store=receipt["store"],
+        expected_runner=owner.document["runner_revision"],
+        expected_candidate_source=owner.document["candidate_source_archive_tree"][0],
+        expected_scope=receipt["scope"], owner=owner)
     redactor.assert_safe(json.dumps(receipt, sort_keys=True))
     receipt_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
     path = receipt_dir / "receipt.json"

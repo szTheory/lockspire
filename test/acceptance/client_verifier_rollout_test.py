@@ -72,12 +72,12 @@ class VerifierRolloutContracts(unittest.TestCase):
         }
         receipt["predecessor"] = {"kind": "candidate-substitution", "source_revision": receipt["candidate"]["source_revision"]}
         with self.assertRaises(verifier_receipts.ReceiptError):
-            verifier_receipts.validate_rollout_receipt(receipt, **expected)
+            verifier_receipts._validate_rollout_structure(receipt, **expected)
 
         receipt = self._rollout_fixture()
         receipt["observations"]["client_secret"] = "unknown-sensitive-field"
         with self.assertRaises(verifier_receipts.ReceiptError):
-            verifier_receipts.validate_rollout_receipt(receipt, **expected)
+            verifier_receipts._validate_rollout_structure(receipt, **expected)
 
     def test_cli_group_selection_dispatches_explicit_scope_independent_of_matrix_width(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

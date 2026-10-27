@@ -417,7 +417,7 @@ def _validate_value_types(receipt: Any, *, rollout: bool) -> None:
                 raise ReceiptError("receipt observation boolean type is invalid")
 
 
-def validate_rollout_receipt(
+def _validate_rollout_structure(
     receipt: dict[str, Any], *, expected_pair: str, expected_store: str,
     expected_runner: str, expected_candidate_source: str, expected_scope: str,
 ) -> dict[str, Any]:
@@ -676,7 +676,7 @@ def load_receipt(path: Path) -> dict[str, Any]:
     return value
 
 
-def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = None, expected_store: str | None = None) -> dict[str, Any]:
+def _validate_receipt_structure(receipt: dict[str, Any], *, expected_pair: str | None = None, expected_store: str | None = None) -> dict[str, Any]:
     _validate_value_types(receipt, rollout=False)
     if set(receipt) != ROOT_FIELDS:
         raise ReceiptError("receipt fields do not match the finite contract")
@@ -1017,4 +1017,26 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
 
 def receipt_digest(receipt: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(receipt, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def _verify_receipt_owner(receipt, owner):
+    from verifier_receipt_owner import selected_owner, OwnerError
+    try:
+        (owner or selected_owner()).validate(receipt)
+    except (OwnerError, OSError, ValueError, TypeError, KeyError):
+        raise ReceiptError("receipt lacks matching independent package/runtime authority") from None
+
+
+def validate_receipt(receipt, *, expected_pair=None, expected_store=None, owner=None):
+    _validate_receipt_structure(receipt, expected_pair=expected_pair, expected_store=expected_store)
+    _verify_receipt_owner(receipt, owner)
+    return receipt
+
+
+def validate_rollout_receipt(receipt, *, expected_pair, expected_store, expected_runner,
+                             expected_candidate_source, expected_scope, owner=None):
+    _validate_rollout_structure(receipt, expected_pair=expected_pair, expected_store=expected_store,
+        expected_runner=expected_runner, expected_candidate_source=expected_candidate_source, expected_scope=expected_scope)
+    _verify_receipt_owner(receipt, owner)
+    return receipt
 

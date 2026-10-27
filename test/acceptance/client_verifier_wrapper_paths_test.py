@@ -67,6 +67,14 @@ class ActualWrapperFrozenPaths(unittest.TestCase):
             "real.ARTIFACT_DEFAULT=real.ROOT / '.artifacts/phase178'\n"
             f"real._rebuild_source_package=lambda revision: ({self.build['rebuilt_tree_sha256']!r}, {self.build!r})\n"
             f"real.unpack_hex_tarball=lambda archive,target: shutil.copytree(pathlib.Path({str(self.tree)!r}), target)\n"
+            "import verifier_receipt_owner as authority\n"
+            "def observe(command,*,root,env=None):\n"
+            " if command[0]=='elixir':\n"
+            "  elixir,otp,_=authority.selected_runtime(root,'local-current')\n"
+            "  return (elixir+'\\n'+otp+'\\n').encode()\n"
+            " if command[0]=='psql' and command[-1]=='SHOW server_version_num' and env.get('PGOPTIONS')=='-c default_transaction_read_only=on': return b'140017\\n'\n"
+            " raise AssertionError('runtime observation boundary changed')\n"
+            "authority._observe=observe\n"
             "raise SystemExit(real.main())\n", encoding="utf-8",
         )
         producer = self.root / "scripts/acceptance/clean_room_verifier_upgrade.py"
