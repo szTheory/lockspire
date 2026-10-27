@@ -36,7 +36,7 @@
 ### Proof and delivery
 
 - [x] **VPROOF-01**: Security reviewer can verify that verifier plaintext, encryption keys and ciphertext stay out of logs, SQL diagnostics, telemetry, audit, operator reports and protocol responses across success and failure paths.
-- [ ] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers.
+- [x] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers.
 - [ ] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
 - [ ] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
 
@@ -81,11 +81,11 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-03 | Phase 177 | Complete |
 | VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
-| VPROOF-02 | Phase 178 | Pending |
+| VPROOF-02 | Phase 178 | Complete |
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 15 verified complete and 3 pending. Roadmap approved 2026-10-25.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 16 verified complete and 2 pending. Roadmap approved 2026-10-25.
 
 ---
-*Last updated: 2026-10-26 after independent Phase 177 verification and scoped completion.*
+*Last updated: 2026-10-27 after Phase 178 Plan 10 local package and source-gate acceptance.*
