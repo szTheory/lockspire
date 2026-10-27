@@ -112,11 +112,12 @@ RECOVERY_OBSERVATION_FIELDS = frozenset({
     "expired_rewrap_committed", "expired_http_auth_rejected", "deadline_preserved",
 })
 ISSUANCE_OBSERVATION_FIELDS = frozenset({
-    "outcome", "executed", "server_ready", "discovery_http_status", "auth_barrier_reached", "jti_consumption_observed",
-    "pre_guard_barrier_reached", "maintenance_committed", "backend_pids_distinct",
-    "stale_identity_rejected", "stale_http_status", "no_token_issued", "no_grant_created",
-    "no_code_redemption", "same_jti_replay_rejected", "fresh_jti_succeeded",
-    "fresh_http_status",
+    "outcome", "executed", "server_ready", "discovery_http_status", "auth_barrier_reached",
+    "jti_consumption_observed", "pre_guard_barrier_reached", "maintenance_committed",
+    "backend_pids_distinct", "stale_identity_rejected", "stale_http_status", "stale_error_code",
+    "no_token_issued", "no_grant_created", "no_code_redemption", "same_jti_replay_rejected",
+    "replay_http_status", "replay_error_code", "fresh_jti_succeeded", "fresh_http_status",
+    "fresh_error_code",
 })
 ISSUANCE_CASE_IDS = {
     "locked": "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
@@ -260,7 +261,8 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             else CONTENTION_OBSERVATION_FIELDS - {"outcome", "executed", "holder_backend_pid", "contender_backend_pid"}
             if receipt["scope"] == "contention"
             else ISSUANCE_OBSERVATION_FIELDS - {
-                "outcome", "executed", "stale_http_status", "fresh_http_status", "discovery_http_status"
+                "outcome", "executed", "stale_http_status", "stale_error_code", "replay_http_status",
+                "replay_error_code", "fresh_http_status", "fresh_error_code", "discovery_http_status"
             }
             if receipt["scope"] == "issuance"
             else RECOVERY_OBSERVATION_FIELDS - {
@@ -371,14 +373,22 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                 raise ReceiptError("recovery receipt OAuth error category is invalid")
         if receipt["scope"] == "issuance":
             required = ISSUANCE_OBSERVATION_FIELDS - {
-                "outcome", "executed", "stale_http_status", "fresh_http_status", "discovery_http_status"
+                "outcome", "executed", "stale_http_status", "stale_error_code", "replay_http_status",
+                "replay_error_code", "fresh_http_status", "fresh_error_code", "discovery_http_status"
             }
             if (set(result) != ISSUANCE_OBSERVATION_FIELDS
                     or any(type(result.get(field)) is not bool or result[field] is not True for field in required)
                     or type(result["discovery_http_status"]) is not int or result["discovery_http_status"] != 200
-                    or type(result["stale_http_status"]) is not int or result["stale_http_status"] != 400
+                    or type(result["stale_http_status"]) is not int or result["stale_http_status"] != 401
+                    or type(result["replay_http_status"]) is not int or result["replay_http_status"] != 401
                     or type(result["fresh_http_status"]) is not int or result["fresh_http_status"] != 200):
                 raise ReceiptError("issuance receipt lacks a committed stale-identity or fresh-JTI HTTP witness")
+            if any(result.get(field) != expected for field, expected in {
+                "stale_error_code": "invalid_client",
+                "replay_error_code": "invalid_client",
+                "fresh_error_code": "other",
+            }.items()):
+                raise ReceiptError("issuance receipt OAuth error category does not match its source-owned outcome")
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS

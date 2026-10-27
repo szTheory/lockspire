@@ -24,6 +24,7 @@ from build_provider import (
 import clean_room_verifier_upgrade as runner
 import verifier_endpoints
 import verifier_rollout
+import verifier_receipts
 from verifier_receipts import validate_receipt
 
 
@@ -92,6 +93,17 @@ ISSUANCE_CASES = (
     "VPROOF-02-ISSUANCE-LOCKED-STALE-IDENTITY",
     "VPROOF-02-ISSUANCE-FLOOR-STALE-IDENTITY",
 )
+ISSUANCE_REQUIRED_STATUSES = {
+    "discovery_http_status": 200,
+    "stale_http_status": 401,
+    "replay_http_status": 401,
+    "fresh_http_status": 200,
+}
+ISSUANCE_REQUIRED_ERRORS = {
+    "stale_error_code": "invalid_client",
+    "replay_error_code": "invalid_client",
+    "fresh_error_code": "other",
+}
 SAFE_FAILURE_STAGES = frozenset({
     "recovery_seed", "recovery_apply", "recovery_repeat", "recovery_interrupt",
     "recovery_indeterminate", "recovery_restore_rotation", "recovery_expired_migration",
@@ -236,6 +248,16 @@ def _run_cell(scope: str, pair: str, store: str, destination: Path) -> dict[str,
                     )
                     raise PackageInputError(
                         "installed recovery observations incomplete; failed=" + summary
+                    )
+            else:
+                case_id = f"VPROOF-02-ISSUANCE-{pair.upper()}-STALE-IDENTITY"
+                failed = _failed_issuance_fields(observations[case_id])
+                if failed:
+                    raise PackageInputError(
+                        "installed issuance observations incomplete; failed="
+                        + case_id
+                        + "="
+                        + ",".join(failed)
                     )
             candidate = {
                 "kind": identity.kind, "version": identity.version,
@@ -520,6 +542,39 @@ def _failed_recovery_fields(observations: dict[str, object]) -> list[tuple[str, 
         if failed:
             failures.append((case_id, failed))
     return failures
+
+
+def _failed_issuance_fields(observation: object) -> list[str]:
+    if not isinstance(observation, dict):
+        return [*sorted(verifier_receipts.ISSUANCE_OBSERVATION_FIELDS)]
+
+    status_fields = set(ISSUANCE_REQUIRED_STATUSES)
+    error_fields = set(ISSUANCE_REQUIRED_ERRORS)
+    boolean_fields = verifier_receipts.ISSUANCE_OBSERVATION_FIELDS - {
+        "outcome", "executed", *status_fields, *error_fields
+    }
+    failed = [
+        field for field in sorted(boolean_fields)
+        if type(observation.get(field)) is not bool or observation.get(field) is not True
+    ]
+    for field, expected in ISSUANCE_REQUIRED_STATUSES.items():
+        actual = observation.get(field)
+        if type(actual) is not int or actual != expected:
+            label = actual if type(actual) is int and actual in {200, 400, 401, 500} else "other"
+            failed.append(f"{field}_{label}")
+    for field, expected in ISSUANCE_REQUIRED_ERRORS.items():
+        actual = observation.get(field)
+        if actual != expected:
+            label = actual if actual in {
+                "invalid_client", "invalid_grant", "invalid_request", "invalid_scope",
+                "unauthorized_client", "server_error", "temporarily_unavailable", "other",
+            } else "other"
+            failed.append(f"{field}_{label}")
+    if observation.get("outcome") != "pass":
+        failed.append("outcome_invalid")
+    if observation.get("executed") is not True:
+        failed.append("executed_invalid")
+    return failed
 
 
 def _capture_child_output(operation) -> str:

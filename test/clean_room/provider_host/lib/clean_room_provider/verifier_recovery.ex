@@ -146,7 +146,9 @@ defmodule CleanRoomProvider.VerifierRecovery do
         {:release_client_verifier_issuance_barrier, issuance_reference(), :current_row_guard}
       )
 
-      stale_status = await_monitored_worker!(stale_request, :issuance_replay_fresh)
+      {stale_status, stale_error_code} =
+        await_monitored_worker!(stale_request, :issuance_replay_fresh)
+
       Store.clear_issuance_control()
       Store.clear_maintenance_observer()
       after_stale = effects(client.client_id)
@@ -156,7 +158,9 @@ defmodule CleanRoomProvider.VerifierRecovery do
       replay_request =
         start_monitored_worker(fn -> token_request(issuer, client, code, first_jti) end)
 
-      replay_status = await_monitored_worker!(replay_request, :issuance_same_jti_replay)
+      {replay_status, replay_error_code} =
+        await_monitored_worker!(replay_request, :issuance_same_jti_replay)
+
       after_replay = effects(client.client_id)
       fresh_jti = "issuance-fresh-" <> Ecto.UUID.generate()
       mark_stage(:issuance_fresh_jti_retry)
@@ -164,7 +168,9 @@ defmodule CleanRoomProvider.VerifierRecovery do
       fresh_request =
         start_monitored_worker(fn -> token_request(issuer, client, code, fresh_jti) end)
 
-      fresh_status = await_monitored_worker!(fresh_request, :issuance_fresh_jti_retry)
+      {fresh_status, fresh_error_code} =
+        await_monitored_worker!(fresh_request, :issuance_fresh_jti_retry)
+
       after_fresh = effects(client.client_id)
       Store.clear_issuance_control()
       Store.clear_maintenance_observer()
@@ -181,15 +187,19 @@ defmodule CleanRoomProvider.VerifierRecovery do
             "pre_guard_barrier_reached" => true,
             "maintenance_committed" => true,
             "backend_pids_distinct" => distinct_backends,
-            "stale_identity_rejected" => stale_status == 400,
+            "stale_identity_rejected" => stale_status == 401,
             "stale_http_status" => stale_status,
+            "stale_error_code" => stale_error_code,
             "no_token_issued" => after_stale.tokens == before.tokens,
             "no_grant_created" => after_stale.grants == before.grants,
             "no_code_redemption" => after_stale.code_redeemed_at == before.code_redeemed_at,
-            "same_jti_replay_rejected" => replay_status == 400 and after_replay == after_stale,
+            "same_jti_replay_rejected" => replay_status == 401 and after_replay == after_stale,
+            "replay_http_status" => replay_status,
+            "replay_error_code" => replay_error_code,
             "fresh_jti_succeeded" =>
               fresh_status == 200 and after_fresh.tokens == after_stale.tokens + 1,
-            "fresh_http_status" => fresh_status
+            "fresh_http_status" => fresh_status,
+            "fresh_error_code" => fresh_error_code
           }
       }
     after
@@ -705,8 +715,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
     mark_stage(:expired_request)
 
     case :httpc.request(:post, request, [{:timeout, @timeout}], []) do
-      {:ok, {{_version, status, _reason}, _headers, _response}} ->
-        status
+      {:ok, {{_version, status, _reason}, _headers, response}} ->
+        {status, safe_oauth_error_code(response)}
 
       {:error, {:failed_connect, _details}} ->
         mark_stage(:expired_http_connect)
@@ -768,6 +778,23 @@ defmodule CleanRoomProvider.VerifierRecovery do
       end
 
       raise "mounted token endpoint request failed"
+  end
+
+  defp safe_oauth_error_code(response) do
+    safe_errors = [
+      "invalid_client",
+      "invalid_grant",
+      "invalid_request",
+      "invalid_scope",
+      "unauthorized_client",
+      "server_error",
+      "temporarily_unavailable"
+    ]
+
+    case Jason.decode(IO.iodata_to_binary(response)) do
+      {:ok, %{"error" => code}} when code in safe_errors -> code
+      _other -> "other"
+    end
   end
 
   defp signed_assertion(client_id, secret, issuer, jti) do

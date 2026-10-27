@@ -145,13 +145,18 @@ class VerifierTransactionContracts(unittest.TestCase):
             field: True
             for field in verifier_receipts.ISSUANCE_OBSERVATION_FIELDS
             if field not in {
-                "outcome", "stale_http_status", "fresh_http_status", "discovery_http_status"
+                "outcome", "stale_http_status", "stale_error_code", "replay_http_status",
+                "replay_error_code", "fresh_http_status", "fresh_error_code", "discovery_http_status"
             }
         }
         result.update({
             "outcome": "pass",
-            "stale_http_status": 400,
+            "stale_http_status": 401,
+            "stale_error_code": "invalid_client",
+            "replay_http_status": 401,
+            "replay_error_code": "invalid_client",
             "fresh_http_status": 200,
+            "fresh_error_code": "other",
             "discovery_http_status": 200,
         })
         candidate["observations"][case_ids[0]] = result

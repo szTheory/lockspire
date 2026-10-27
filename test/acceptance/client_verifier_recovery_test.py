@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
 
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_recovery  # noqa: E402
+import verifier_receipts  # noqa: E402
 import build_provider  # noqa: E402
 from package_input import PackageInputError  # noqa: E402
 from redaction import Redactor, SentinelSet  # noqa: E402
@@ -87,6 +88,28 @@ class RecoveryDispatchTest(unittest.TestCase):
         self.assertEqual(
             verifier_recovery._failed_recovery_fields(observations),
             [(verifier_recovery.RECOVERY_CASES[1], ["interruption_not_ready"])],
+        )
+
+    def test_issuance_failure_summary_classifies_all_false_fields_safely(self) -> None:
+        observation = {
+            field: True
+            for field in verifier_receipts.ISSUANCE_OBSERVATION_FIELDS
+            if field not in {
+                "outcome", "discovery_http_status", "stale_http_status", "stale_error_code",
+                "replay_http_status", "replay_error_code", "fresh_http_status", "fresh_error_code",
+            }
+        }
+        observation.update({
+            "outcome": "pass",
+            **verifier_recovery.ISSUANCE_REQUIRED_STATUSES,
+            **verifier_recovery.ISSUANCE_REQUIRED_ERRORS,
+        })
+        observation["fresh_jti_succeeded"] = False
+        observation["stale_http_status"] = 500
+        observation["unknown"] = "must-not-be-disclosed"
+        self.assertEqual(
+            verifier_recovery._failed_issuance_fields(observation),
+            ["fresh_jti_succeeded", "stale_http_status_500"],
         )
 
     def test_startup_context_witness_reads_only_fixed_boolean_markers(self) -> None:
@@ -223,7 +246,10 @@ class RecoveryDispatchTest(unittest.TestCase):
         self.assertIn("start_monitored_worker(", issuance_source)
         self.assertNotIn("Task.async(", issuance_source)
         self.assertLess(
-            issuance_source.index("Store.clear_issuance_control()", issuance_source.index("stale_status =")),
+            issuance_source.index(
+                "Store.clear_issuance_control()",
+                issuance_source.index("await_monitored_worker!(stale_request"),
+            ),
             issuance_source.index("mark_stage(:issuance_same_jti_replay)"),
         )
         self.assertEqual(
