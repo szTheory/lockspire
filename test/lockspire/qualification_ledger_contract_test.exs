@@ -4,6 +4,18 @@ defmodule Lockspire.QualificationLedgerContractTest do
   @repo_root Path.expand("../..", __DIR__)
   @phase_dir Path.join(@repo_root, ".planning/phases/171-accepted-baseline-finding-qualification")
   @ledger_path Path.join(@phase_dir, "171-QUALIFICATION.json")
+  @ledger_relative_path ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json"
+  # This retained snapshot binds the final frozen inputs separately from the
+  # earlier qualification execution. These pins authenticate historical evidence;
+  # they do not qualify today's workspace. Keep the provenance in this selected
+  # source file so the current delivery input closure authenticates it as well.
+  @frozen_input_source %{
+    "schema" => "lockspire-phase171-frozen-input-source-v1",
+    "source_revision" => "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "ledger_path" => @ledger_relative_path,
+    "ledger_sha256" => "d4f790a7057ed967f105068631d44eae46d69fefc7013836b868c74121a403b7",
+    "matrix_input_digest" => "3edc2b22eca506c063e1483a6a684ada300a54d56d55d1308c78b4812c144137"
+  }
   @downstream_requirement_ids [
     "AUTHR-01",
     "AUTHR-02",
@@ -537,15 +549,88 @@ defmodule Lockspire.QualificationLedgerContractTest do
     assert "an unlaunched profile cannot claim wrapper or receipt outcomes" in errors
   end
 
+  test "retained frozen input provenance binds the unchanged ledger and ordered digest" do
+    source = load_frozen_input_source()
+
+    assert valid_frozen_input_source?(source), "retained source must bind the original ledger"
+
+    for field <- [
+          "schema",
+          "source_revision",
+          "ledger_path",
+          "ledger_sha256",
+          "matrix_input_digest"
+        ] do
+      refute valid_frozen_input_source?(Map.delete(source, field)),
+             "incomplete retained source identity must be rejected"
+    end
+
+    for field <- ["ledger_sha256", "matrix_input_digest"] do
+      refute valid_frozen_input_source?(Map.put(source, field, String.duplicate("0", 64))),
+             "mismatched retained source identity must be rejected"
+    end
+  end
+
+  test "frozen file hashes use the retained snapshot separately from the qualification execution" do
+    ledger = load_ledger()
+
+    entry =
+      Enum.find(ledger["matrix"]["input_manifest"], &(&1["path"] == "docs/supported-surface.md"))
+
+    assert input_entry_hash(ledger, entry) == entry["sha256"],
+           "retained document must match its original frozen hash"
+
+    refute input_entry_hash(ledger, entry, ledger["matrix"]["qualification_sha"]) ==
+             entry["sha256"],
+           "earlier qualification execution must not impersonate the final input snapshot"
+  end
+
+  test "unavailable or mismatched retained sources cannot fall back to workspace bytes" do
+    ledger = load_ledger()
+    source = load_frozen_input_source()
+    entry = Enum.find(ledger["matrix"]["input_manifest"], &(&1["path"] == "test/test_helper.exs"))
+    missing_revision = String.duplicate("0", 40)
+
+    assert is_nil(input_entry_hash(ledger, entry, missing_revision)),
+           "missing source must fail closed even when a workspace file exists"
+
+    refute valid_frozen_input_source?(Map.put(source, "source_revision", missing_revision)),
+           "missing retained source must be rejected"
+
+    refute valid_frozen_input_source?(
+             Map.put(source, "source_revision", ledger["matrix"]["qualification_sha"])
+           ),
+           "a different execution source must not replace the retained ledger snapshot"
+  end
+
   defp load_ledger, do: @ledger_path |> File.read!() |> Jason.decode!()
+
+  defp load_frozen_input_source, do: @frozen_input_source
+
+  defp valid_frozen_input_source?(source) when is_map(source) do
+    with true <- source["schema"] == "lockspire-phase171-frozen-input-source-v1",
+         true <- source["ledger_path"] == @ledger_relative_path,
+         true <- full_sha256?(source["ledger_sha256"]),
+         {:ok, retained_ledger} <-
+           frozen_source_file(source["source_revision"], @ledger_relative_path),
+         {:ok, workspace_ledger} <- File.read(@ledger_path),
+         true <- sha256(retained_ledger) == source["ledger_sha256"],
+         true <- sha256(workspace_ledger) == source["ledger_sha256"],
+         {:ok, ledger} <- Jason.decode(retained_ledger) do
+      full_sha256?(source["matrix_input_digest"]) and
+        source["matrix_input_digest"] == get_in(ledger, ["matrix", "input_digest"])
+    else
+      _ -> false
+    end
+  end
+
+  defp valid_frozen_input_source?(_), do: false
 
   defp draft_matrix(ledger, selection_status) do
     ledger
     |> put_in(["selection_status"], selection_status)
     |> put_in(["matrix", "status"], "draft")
   end
-
-  @ledger_relative_path ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json"
 
   defp frozen_empty_manifest(ledger) do
     [
@@ -1213,7 +1298,8 @@ defmodule Lockspire.QualificationLedgerContractTest do
   defp valid_nonempty_scope_rows?(_, _), do: false
 
   defp valid_input_manifest?(ledger, manifest, digest) when is_list(manifest) do
-    valid_manifest_entries?(ledger, manifest) and valid_manifest_digest?(manifest, digest)
+    valid_frozen_input_source?(load_frozen_input_source()) and
+      valid_manifest_entries?(ledger, manifest) and valid_manifest_digest?(manifest, digest)
   end
 
   defp valid_input_manifest?(_, _, _), do: false
@@ -1240,11 +1326,20 @@ defmodule Lockspire.QualificationLedgerContractTest do
       entry["path"] <>
         if(nonempty?(entry["selector"]), do: "#" <> entry["selector"], else: "")
 
-  defp input_entry_hash(ledger, %{
-         "path" =>
-           ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
-         "selector" => selector
-       }) do
+  # Fixture projections remain live; retained file bytes belong to the frozen
+  # snapshot, independently of later workspace edits or the earlier repro SHA.
+  defp input_entry_hash(ledger, entry),
+    do: input_entry_hash(ledger, entry, load_frozen_input_source()["source_revision"])
+
+  defp input_entry_hash(
+         ledger,
+         %{
+           "path" =>
+             ".planning/phases/171-accepted-baseline-finding-qualification/171-QUALIFICATION.json",
+           "selector" => selector
+         },
+         _source_revision
+       ) do
     value =
       case selector do
         "matrix-selection" ->
@@ -1282,39 +1377,74 @@ defmodule Lockspire.QualificationLedgerContractTest do
     if is_nil(value), do: nil, else: sha256(canonical_json(value))
   end
 
-  defp input_entry_hash(_ledger, %{
-         "path" => ".planning/REQUIREMENTS.md",
-         "selector" => "qualification-scope-map"
-       }) do
-    @repo_root
-    |> Path.join(".planning/REQUIREMENTS.md")
-    |> File.read!()
-    |> extract_section("## Qualification-driven scope reconciliation (2026-10-24)", "\n## ")
-    |> sha256()
+  defp input_entry_hash(
+         _ledger,
+         %{
+           "path" => ".planning/REQUIREMENTS.md",
+           "selector" => "qualification-scope-map"
+         },
+         source_revision
+       ) do
+    frozen_section_hash(
+      source_revision,
+      ".planning/REQUIREMENTS.md",
+      "## Qualification-driven scope reconciliation (2026-10-24)",
+      "\n## "
+    )
   end
 
-  defp input_entry_hash(_ledger, %{
-         "path" => ".planning/ROADMAP.md",
-         "selector" => "phases-172-173-contract"
-       }) do
-    @repo_root
-    |> Path.join(".planning/ROADMAP.md")
-    |> File.read!()
-    |> extract_section("### Phase 172: Authorization Responses", "\n### Phase 174:")
-    |> sha256()
+  defp input_entry_hash(
+         _ledger,
+         %{
+           "path" => ".planning/ROADMAP.md",
+           "selector" => "phases-172-173-contract"
+         },
+         source_revision
+       ) do
+    frozen_section_hash(
+      source_revision,
+      ".planning/ROADMAP.md",
+      "### Phase 172: Authorization Responses",
+      "\n### Phase 174:"
+    )
   end
 
-  defp input_entry_hash(_ledger, %{"path" => path} = entry) when is_binary(path) do
-    full_path = Path.join(@repo_root, path)
-
-    if is_nil(entry["selector"]) and File.regular?(full_path) do
-      full_path |> File.read!() |> sha256()
+  defp input_entry_hash(_ledger, %{"path" => path} = entry, source_revision)
+       when is_binary(path) do
+    with true <- is_nil(entry["selector"]),
+         {:ok, bytes} <- frozen_source_file(source_revision, path) do
+      sha256(bytes)
     else
-      nil
+      _ -> nil
     end
   end
 
-  defp input_entry_hash(_, _), do: nil
+  defp input_entry_hash(_, _, _), do: nil
+
+  defp frozen_section_hash(source_revision, path, start_marker, end_marker) do
+    with {:ok, bytes} <- frozen_source_file(source_revision, path) do
+      bytes |> extract_section(start_marker, end_marker) |> sha256()
+    else
+      _ -> nil
+    end
+  end
+
+  defp frozen_source_file(source_revision, path)
+       when is_binary(source_revision) and is_binary(path) do
+    if full_sha?(source_revision) do
+      case System.cmd("git", ["cat-file", "blob", "#{source_revision}:#{path}"],
+             cd: @repo_root,
+             stderr_to_stdout: true
+           ) do
+        {bytes, 0} -> {:ok, bytes}
+        _ -> :error
+      end
+    else
+      :error
+    end
+  end
+
+  defp frozen_source_file(_, _), do: :error
 
   defp extract_section(content, start_marker, end_marker) do
     with {start, _} <- :binary.match(content, start_marker),
