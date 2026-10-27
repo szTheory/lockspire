@@ -67,6 +67,14 @@ SAFE_OAUTH_DESCRIPTIONS = frozenset({
 })
 
 
+class MatrixExecutionFailure(Exception):
+    """A finite cell label; the originating exception and child output stay private."""
+
+    def __init__(self, scope: str, pair: str, store: str):
+        self.scope, self.pair, self.store = scope, pair, store
+        super().__init__("installed verifier matrix cell failed")
+
+
 def _b64(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
 
@@ -99,6 +107,13 @@ def _mix_env(host: Path, run_root: Path, database_url: str, port: int, issuer: s
         "SECRET_KEY_BASE": "lockspire-installed-verifier-secret-key-base-0123456789abcdefghijklmnopqrstuvwxyz",
     })
     return env
+
+
+def owned_listener_environment(one_off_environment: dict[str, str]) -> dict[str, str]:
+    """Enable HTTP only for the copied environment of an owned listener."""
+    listener_environment = dict(one_off_environment)
+    listener_environment["CLEAN_ROOM_HTTP_SERVER"] = "true"
+    return listener_environment
 
 
 def _configure_verifier_custody(host: Path) -> None:
@@ -474,18 +489,21 @@ def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, o
     # Run each established group at the single committed harness revision.
     # The narrow selection is fixed here; caller-supplied group names cannot
     # reduce the required matrix.
-    selections = (
-        ("core", "all", "all"), ("rollout", "all", "all"),
-        ("recovery", "all", "all"), ("endpoints", "all", "builtin"),
-        ("contention", "all", "delegated"), ("atomicity", "all", "delegated"),
-        ("issuance", "all", "delegated"), ("disclosure", "all", "delegated"),
-        ("legacy-control", "locked", "builtin"), ("release-rpc", "locked", "builtin"),
-    )
-    for scope, selected_pair, selected_store in selections:
+    calls = []
+    for scope, selected_pair, selected_store in REQUIRED_MATRIX:
+        if scope == "disclosure-failure":
+            continue  # generated alongside success by the same owned disclosure run
+        call = (scope, selected_pair, selected_store)
+        if call not in calls:
+            calls.append(call)
+    for scope, selected_pair, selected_store in calls:
         module_name, function_name = MODULES[scope]
         module = __import__(module_name)
         function = getattr(module, function_name)
-        function(pair=selected_pair, store=selected_store, receipt_dir=root / scope)
+        try:
+            function(pair=selected_pair, store=selected_store, receipt_dir=root / scope)
+        except Exception:
+            raise MatrixExecutionFailure(scope, selected_pair, selected_store) from None
 
     records: list[dict[str, object]] = []
     anchors: set[tuple[str, str, str]] = set()
@@ -594,6 +612,9 @@ def main(argv: list[str] | None = None) -> int:
             raise PackageInputError(f"scenario group is not implemented: {args.group}")
         function(pair=args.pair, store=args.store, receipt_dir=args.receipt_dir)
         return 0
+    except MatrixExecutionFailure as error:
+        print(f"installed verifier proof failed during {error.scope}/{error.pair}/{error.store}; child diagnostics withheld", file=sys.stderr)
+        return 1
     except (PackageInputError, ReceiptError, OSError, subprocess.SubprocessError):
         # Child exceptions and diagnostic text can contain generated verifier
         # keys that are unknown to this process. Report only a fixed stage.

@@ -20,6 +20,9 @@ class CompleteMatrixContracts(unittest.TestCase):
         listener = source.owned_listener_environment(one_off)
         self.assertEqual(listener["CLEAN_ROOM_HTTP_SERVER"], "true")
         self.assertEqual(one_off["CLEAN_ROOM_HTTP_SERVER"], "false")
+        core_source = (ROOT / "scripts" / "acceptance" / "clean_room" / "verifier_core.py").read_text(encoding="utf-8")
+        self.assertIn("listener_env = runner.owned_listener_environment(env)", core_source)
+        self.assertIn("env=listener_env", core_source)
 
     def test_required_scope_is_explicit_and_keeps_both_disclosure_receipts(self) -> None:
         required = verifier_receipts.required_receipt_keys()

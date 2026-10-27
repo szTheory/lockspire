@@ -132,12 +132,13 @@ def _run_cell(*, pair: str, store: str, receipt_dir: Path) -> dict[str, object]:
             client_id = "verifier-core-" + uuid.uuid4().hex
             client_id, client_secret = runner._capture_secret(host, env, redactor, client_id)
             server_log_path = run_root / "provider.log"
+            listener_env = runner.owned_listener_environment(env)
             with server_log_path.open("wb") as server_log:
                 os.chmod(server_log_path, 0o600)
                 server = subprocess.Popen(
                     ("mix", "run", "--no-halt"),
                     cwd=host,
-                    env=env,
+                    env=listener_env,
                     stdin=subprocess.DEVNULL,
                     stdout=server_log,
                     stderr=subprocess.STDOUT,
