@@ -159,6 +159,17 @@ class VerifierDisclosureContracts(unittest.TestCase):
                 "output_leak_count": 0,
             })
 
+    def test_failure_receipt_scope_is_pair_bound_and_enabled(self) -> None:
+        self.assertIn("disclosure-failure", verifier_receipts.GROUPS)
+        self.assertEqual(
+            verifier_receipts.DISCLOSURE_FAILURE_CASE_IDS["locked"],
+            [
+                "VPROOF-02-DISCLOSURE-LOCKED-MALFORMED-CRYPTO",
+                "VPROOF-02-DISCLOSURE-LOCKED-UNKNOWN-KEY-CRYPTO",
+                "VPROOF-02-DISCLOSURE-LOCKED-STORAGE-FAILURE",
+            ],
+        )
+
     def test_unsafe_nested_or_encoded_failure_output_is_rejected_before_artifact_write(self) -> None:
         persist = getattr(verifier_disclosure, "persist_safe_failure_artifact", None)
         self.assertTrue(

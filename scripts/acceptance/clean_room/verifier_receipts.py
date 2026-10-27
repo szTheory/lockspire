@@ -12,7 +12,8 @@ from typing import Any
 SCHEMA = "lockspire-installed-verifier-v1"
 GROUPS = frozenset({
     "tracer", "core", "rollout", "legacy-control", "endpoints", "release-rpc",
-    "contention", "atomicity", "recovery", "issuance", "disclosure", "all",
+    "contention", "atomicity", "recovery", "issuance", "disclosure",
+    "disclosure-failure", "all",
 })
 ROOT_FIELDS = frozenset({
     "schema", "scope", "run_id", "runner", "pair", "store", "candidate", "host",
