@@ -238,7 +238,7 @@ def validate_matrix_links(
         raise ReceiptError("matrix runner identity is invalid")
     expected = set(REQUIRED_MATRIX if required_keys is None else required_keys)
     seen: set[tuple[str, str, str]] = set()
-    run_ids: dict[str, tuple[str, str, str]] = {}
+    run_ids: dict[str, dict[str, Any]] = {}
     candidate_bindings: set[tuple[str, str, str]] = set()
     normalized = []
     for row in rows:
@@ -255,14 +255,20 @@ def validate_matrix_links(
         prior_run = run_ids.get(row["run_id"])
         if prior_run is not None:
             same_disclosure_run = (
-                prior_run[1:] == key[1:]
-                and prior_run[2] == key[2] == "delegated"
-                and {prior_run[0], key[0]} == {"disclosure", "disclosure-failure"}
+                (prior_run["scope"], key[0]) in {
+                    ("disclosure", "disclosure-failure"),
+                    ("disclosure-failure", "disclosure"),
+                }
+                and (prior_run["pair"], prior_run["store"]) == key[1:]
+                and key[2] == "delegated"
+                and prior_run["candidate_source_archive_tree"] == row.get("candidate_source_archive_tree")
+                and prior_run["host_lock_sha256"] == row.get("host_lock_sha256")
+                and prior_run["compiled_candidate_sha256"] == row.get("compiled_candidate_sha256")
             )
             if not same_disclosure_run:
                 raise ReceiptError("matrix run identity is duplicated outside one disclosure capture")
         else:
-            run_ids[row["run_id"]] = key
+            run_ids[row["run_id"]] = row
         if not isinstance(row.get("receipt_sha256"), str) or not SHA.fullmatch(row["receipt_sha256"]):
             raise ReceiptError("matrix raw receipt digest is invalid")
         if row.get("outcome") != "pass" or type(row.get("executed_count")) is not int or row["executed_count"] <= 0:

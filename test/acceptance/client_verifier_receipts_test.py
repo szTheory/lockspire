@@ -22,6 +22,31 @@ class CompleteMatrixContracts(unittest.TestCase):
             root / "disclosure" / "locked-delegated" / "failure-receipt.json",
         )
 
+    def test_all_matrix_paths_match_the_existing_producer_layout(self) -> None:
+        import clean_room_verifier_upgrade as source
+        root = Path("/matrix")
+        for scope, pair, store in verifier_receipts.required_receipt_keys():
+            if scope == "disclosure-failure":
+                expected = root / "disclosure" / f"{pair}-{store}" / "failure-receipt.json"
+            elif scope == "rollout":
+                expected = root / "rollout" / f"{pair}-{store}" / "receipt.json"
+            else:
+                expected = root / scope / f"{pair}-{store}" / "receipt.json"
+            self.assertEqual(source.matrix_receipt_path(root, scope, pair, store), expected)
+
+    def test_read_only_cli_entrypoint_rejects_missing_cell_without_starting_package(self) -> None:
+        import clean_room_verifier_upgrade as source
+        from unittest.mock import patch
+        with __import__("tempfile").TemporaryDirectory() as temporary:
+            empty = Path(temporary) / "inputs"
+            empty.mkdir()
+            output = Path(temporary) / "aggregate.json"
+            with patch.object(source, "_complete_matrix", side_effect=AssertionError("package execution forbidden")):
+                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                      "--validate-receipts", str(empty), "--aggregate-output", str(output)])
+            self.assertEqual(result, 1)
+            self.assertFalse(output.exists())
+
     def test_directory_validation_is_read_only_and_rejects_missing_matrix_inputs(self) -> None:
         import clean_room_verifier_upgrade as source
         with __import__("tempfile").TemporaryDirectory() as temporary:
@@ -89,6 +114,33 @@ class CompleteMatrixContracts(unittest.TestCase):
         failure = next(row for row in rows if (row["scope"], row["pair"]) == ("disclosure-failure", "locked"))
         failure["run_id"] = success["run_id"]
         self.assertEqual(len(verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)), 26)
+        # A shared run is valid only when both receipt siblings bind the same
+        # pair, store, candidate package, dependency lock, and compiled code.
+        failure["compiled_candidate_sha256"] = "3" * 64
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)
+        failure["compiled_candidate_sha256"] = "2" * 64
+        failure["host_lock_sha256"] = "4" * 64
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)
+        failure["host_lock_sha256"] = "1" * 64
+        failure["candidate_source_archive_tree"] = ["c" * 40, "e" * 64, "f" * 64]
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)
+        failure["candidate_source_archive_tree"] = ["d" * 40, "e" * 64, "f" * 64]
+        failure["pair"] = "floor"
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)
+        failure["pair"] = "locked"
+        # Runner source identity stays bound to retained receipts; aggregate
+        # generation records the validator revision separately.
+        import clean_room_verifier_upgrade as source
+        aggregate = source._aggregate_document(
+            tested_runner="a" * 40, records=rows,
+            candidate_identity=("d" * 40, "e" * 64, "f" * 64), validator_revision="b" * 40,
+        )
+        self.assertEqual(aggregate["runner_revision"], "a" * 40)
+        self.assertEqual(aggregate["aggregate_validator_revision"], "b" * 40)
         changed = [*rows[:-1], {**rows[-1], "stable_case_ids": []}]
         with self.assertRaises(verifier_receipts.ReceiptError):
             verifier_receipts.validate_matrix_links(changed, expected_runner="a" * 40)
