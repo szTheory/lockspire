@@ -10,6 +10,15 @@ defmodule CleanRoomProvider.VerifierRecovery do
   alias Lockspire.Security.Policy
 
   @timeout 15_000
+  @safe_oauth_errors [
+    "invalid_client",
+    "invalid_grant",
+    "invalid_request",
+    "invalid_scope",
+    "unauthorized_client",
+    "server_error",
+    "temporarily_unavailable"
+  ]
   @native_cases [
     "VPROOF-02-RECOVERY-PRESERVATION",
     "VPROOF-02-RECOVERY-RETRY-RECONCILIATION",
@@ -564,7 +573,7 @@ defmodule CleanRoomProvider.VerifierRecovery do
     mark_stage(:expired_http)
     code = seed_authorization_code!(migrated.client_id)
 
-    http_status =
+    {http_status, _error_code} =
       token_request(
         System.fetch_env!("LOCKSPIRE_ISSUER"),
         migrated,
@@ -781,18 +790,8 @@ defmodule CleanRoomProvider.VerifierRecovery do
   end
 
   defp safe_oauth_error_code(response) do
-    safe_errors = [
-      "invalid_client",
-      "invalid_grant",
-      "invalid_request",
-      "invalid_scope",
-      "unauthorized_client",
-      "server_error",
-      "temporarily_unavailable"
-    ]
-
     case Jason.decode(IO.iodata_to_binary(response)) do
-      {:ok, %{"error" => code}} when code in safe_errors -> code
+      {:ok, %{"error" => code}} when code in @safe_oauth_errors -> code
       _other -> "other"
     end
   end
