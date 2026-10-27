@@ -126,6 +126,48 @@ class VerifierDisclosureContracts(unittest.TestCase):
         self.assertFalse(verifier_disclosure._listener_accepting(port))
         self.assertTrue(verifier_disclosure._listener_bindable(port))
 
+    def test_failure_capture_rejects_zero_channel_and_missing_forced_failure_witnesses(self) -> None:
+        validator = getattr(verifier_disclosure, "validate_failure_capture", None)
+        self.assertTrue(
+            callable(validator),
+            "failure captures must reject missing forced-failure and nonempty owned-channel witnesses",
+        )
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            validator({
+                "scenario": "unknown_key_crypto",
+                "reason": "unknown_key",
+                "forced_failure_observed": False,
+                "logger_event_count": 0,
+                "logger_control_event_count": 0,
+                "logger_operation_event_count": 0,
+                "logger_leak_count": 0,
+                "query_event_count": 0,
+                "query_control_event_count": 0,
+                "query_operation_event_count": 0,
+                "query_leak_count": 0,
+                "cli_output_checked": False,
+                "report_redacted": False,
+                "audit_projection_safe": False,
+                "ciphertext_unchanged": False,
+                "http_status": 401,
+            })
+
+    def test_unsafe_nested_or_encoded_failure_output_is_rejected_before_artifact_write(self) -> None:
+        persist = getattr(verifier_disclosure, "persist_safe_failure_artifact", None)
+        self.assertTrue(
+            callable(persist),
+            "failure artifacts must be rejected before durable write when nested or encoded sentinels leak",
+        )
+        sentinel = secrets.token_urlsafe(32)
+        redactor = Redactor(SentinelSet.for_run())
+        redactor.register_material(sentinel)
+        encoded = __import__("base64").urlsafe_b64encode(sentinel.encode()).decode()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "failure-receipt.json"
+            with self.assertRaises(verifier_receipts.ReceiptError):
+                persist(path, {"nested": {"diagnostic": [encoded]}}, redactor)
+            self.assertFalse(path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
