@@ -287,7 +287,7 @@ class OwnedSourceTests:
     def _connected_oid(self) -> int:
         result = self._psql("identity", self.target.database, """
 SELECT json_build_object('database', current_database(), 'oid',
-  (SELECT oid FROM pg_catalog.pg_database WHERE datname = current_database()),
+  (SELECT oid::bigint FROM pg_catalog.pg_database WHERE datname = current_database()),
   'server_address', host(inet_server_addr()), 'server_port', inet_server_port())::text;
 """)
         try:
