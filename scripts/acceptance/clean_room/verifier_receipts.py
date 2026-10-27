@@ -179,6 +179,191 @@ DISCLOSURE_FAILURE_CAPTURE_FIELDS = frozenset({
     "http_outcome_safe", "output_leak_count",
 })
 
+# This map is the package acceptance boundary.  The two disclosure files are
+# separate receipt inputs because their producers deliberately preserve that
+# historical success/failure schema split.
+REQUIRED_MATRIX = (
+    *(("core", pair, store) for pair in ("locked", "floor") for store in ("builtin", "delegated")),
+    *(("rollout", pair, store) for pair in ("locked", "floor") for store in ("builtin", "delegated")),
+    *(("recovery", pair, store) for pair in ("locked", "floor") for store in ("builtin", "delegated")),
+    *(("endpoints", pair, "builtin") for pair in ("locked", "floor")),
+    *((group, pair, "delegated") for group in ("contention", "atomicity", "issuance", "disclosure", "disclosure-failure") for pair in ("locked", "floor")),
+    ("legacy-control", "locked", "builtin"),
+    ("release-rpc", "locked", "builtin"),
+)
+ROLLOUT_CASE_IDS = {
+    ("rollout", pair, store): [f"VPROOF-02-ROLLOUT-READER-FIRST-{pair.upper()}-{store.upper()}"]
+    for pair in ("locked", "floor") for store in ("builtin", "delegated")
+}
+ROLLOUT_CASE_IDS[("legacy-control", "locked", "builtin")] = ["VPROOF-02-PUBLIC-LEGACY-CONTROL"]
+
+
+def required_receipt_keys() -> tuple[tuple[str, str, str], ...]:
+    return REQUIRED_MATRIX
+
+
+def expected_case_ids(key: tuple[str, str, str]) -> list[str]:
+    scope, pair, _store = key
+    if key in ROLLOUT_CASE_IDS:
+        return ROLLOUT_CASE_IDS[key]
+    if scope == "core":
+        return [CORE_CASE_ID]
+    if scope == "rollout":
+        return ROLLOUT_CASE_IDS[key]
+    if scope == "endpoints":
+        return ENDPOINT_CASE_IDS
+    if scope == "release-rpc":
+        return [RELEASE_RPC_CASE_ID]
+    if scope == "contention":
+        return CONTENTION_CASE_IDS
+    if scope == "atomicity":
+        return ATOMICITY_CASE_IDS
+    if scope == "recovery":
+        return RECOVERY_CASE_IDS
+    if scope == "issuance":
+        return [ISSUANCE_CASE_IDS[pair]]
+    if scope == "disclosure":
+        return DISCLOSURE_CASE_IDS[pair]
+    if scope == "disclosure-failure":
+        return DISCLOSURE_FAILURE_CASE_IDS[pair]
+    raise ReceiptError("matrix scope is outside the finite contract")
+
+
+def validate_matrix_links(rows: list[dict[str, Any]], *, expected_runner: str) -> list[dict[str, Any]]:
+    """Validate the closed matrix index independently of its raw receipt bytes."""
+    if not REVISION.fullmatch(expected_runner):
+        raise ReceiptError("matrix runner identity is invalid")
+    expected = set(REQUIRED_MATRIX)
+    seen: set[tuple[str, str, str]] = set()
+    run_ids: set[str] = set()
+    candidate_bindings: set[tuple[str, str, str]] = set()
+    normalized = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ReceiptError("matrix link is malformed")
+        key = (row.get("scope"), row.get("pair"), row.get("store"))
+        if key not in expected or key in seen:
+            raise ReceiptError("matrix link is unknown or duplicated")
+        seen.add(key)
+        if row.get("runner_revision") != expected_runner:
+            raise ReceiptError("matrix runner identity does not match the current execution")
+        if not isinstance(row.get("run_id"), str) or not re.fullmatch(r"[0-9a-f]{32}", row["run_id"]):
+            raise ReceiptError("matrix run identity is invalid")
+        if row["run_id"] in run_ids:
+            raise ReceiptError("matrix run identity is duplicated")
+        run_ids.add(row["run_id"])
+        if not isinstance(row.get("receipt_sha256"), str) or not SHA.fullmatch(row["receipt_sha256"]):
+            raise ReceiptError("matrix raw receipt digest is invalid")
+        if row.get("outcome") != "pass" or type(row.get("executed_count")) is not int or row["executed_count"] <= 0:
+            raise ReceiptError("matrix contains a failed or zero-execution receipt")
+        candidate = row.get("candidate_source_archive_tree")
+        if (not isinstance(candidate, list) or len(candidate) != 3
+                or not REVISION.fullmatch(candidate[0])
+                or any(not isinstance(value, str) or not SHA.fullmatch(value) for value in candidate[1:])):
+            raise ReceiptError("matrix candidate source/archive/tree binding is incomplete")
+        candidate_bindings.add(tuple(candidate))
+        for field in ("host_lock_sha256", "compiled_candidate_sha256"):
+            if not isinstance(row.get(field), str) or not SHA.fullmatch(row[field]):
+                raise ReceiptError("matrix host lock or compiled identity is invalid")
+        cases = row.get("stable_case_ids")
+        if cases != expected_case_ids(key):
+            raise ReceiptError("matrix case mapping is omitted, duplicated, or unexpected")
+        normalized.append(row)
+    if seen != expected:
+        raise ReceiptError("complete installed verifier matrix is missing required receipts")
+    if len(candidate_bindings) != 1:
+        raise ReceiptError("matrix candidate source/archive/tree identities differ")
+    return normalized
+
+
+def validate_complete_matrix(rows: list[dict[str, Any]], *, expected_runner: str) -> list[dict[str, Any]]:
+    """Named entrypoint used by the aggregate producer and offline contracts."""
+    if not rows:
+        raise ReceiptError("complete installed verifier matrix has no executed receipts")
+    return validate_matrix_links(rows, expected_runner=expected_runner)
+
+
+def validate_rollout_receipt(
+    receipt: dict[str, Any], *, expected_pair: str, expected_store: str,
+    expected_runner: str, expected_scope: str,
+) -> dict[str, Any]:
+    """Validate the established rollout/public schema without restamping it."""
+    required = {
+        "schema", "scope", "run_id", "runner_revision", "pair", "store", "candidate",
+        "predecessor", "source_proof", "host", "runtime", "processes", "observations",
+        "executed_count", "partial", "fleet_limits",
+    }
+    if set(receipt) != required or receipt.get("schema") != "lockspire-installed-verifier-rollout-v1":
+        raise ReceiptError("rollout receipt does not match its established schema")
+    if (receipt.get("scope") != expected_scope or receipt.get("pair") != expected_pair
+            or receipt.get("store") != expected_store or receipt.get("runner_revision") != expected_runner
+            or receipt.get("partial") is not True or receipt.get("executed_count") != 1
+            or not isinstance(receipt.get("run_id"), str)
+            or not re.fullmatch(r"[0-9a-f]{32}", receipt["run_id"])):
+        raise ReceiptError("rollout receipt scope or runner identity is invalid")
+    candidate = receipt.get("candidate")
+    if not isinstance(candidate, dict):
+        raise ReceiptError("rollout candidate identity is missing")
+    if (candidate.get("kind") != "checkout" or candidate.get("source_revision") != expected_runner
+            or candidate.get("runner_revision") != expected_runner
+            or not isinstance(candidate.get("version"), str)
+            or any(not isinstance(candidate.get(field), str) or not SHA.fullmatch(candidate[field])
+                   for field in ("archive_sha256", "tree_sha256", "source_proof"))):
+        raise ReceiptError("rollout candidate source binding is invalid")
+    proof = json.dumps({"archive_sha256": candidate["archive_sha256"],
+                        "source_revision": candidate["source_revision"],
+                        "tree_sha256": candidate["tree_sha256"]}, sort_keys=True, separators=(",", ":")).encode()
+    if hashlib.sha256(proof).hexdigest() != candidate["source_proof"]:
+        raise ReceiptError("rollout candidate digest does not bind source and package tree")
+    host, runtime = receipt.get("host"), receipt.get("runtime")
+    if not isinstance(host, dict) or not isinstance(runtime, dict):
+        raise ReceiptError("rollout host identity is missing")
+    if (not isinstance(host.get("lock_sha256"), str) or not SHA.fullmatch(host["lock_sha256"])
+            or (host.get("phoenix"), host.get("live_view")) != {
+                "locked": ("1.8.13", "1.2.10"), "floor": ("1.8.5", "1.1.28")
+            }[expected_pair]
+            or set(runtime) != {"elixir", "otp", "postgresql"}
+            or any(not isinstance(runtime[k], str) or not runtime[k] for k in runtime)):
+        raise ReceiptError("rollout host lock or runtime identity is invalid")
+    if expected_scope == "rollout":
+        if (expected_pair, expected_store) not in {(p, s) for p in ("locked", "floor") for s in ("builtin", "delegated")}:
+            raise ReceiptError("rollout pair/store is outside the supported matrix")
+        observations = receipt.get("observations")
+        truth_fields = {
+            "old_process_exit_observed", "legacy_write_read_shared_store", "dedicated_write_after_drain",
+            "switch_back_legacy_write_preserves_dedicated", "old_code_rejects_dedicated",
+            "rollback_retains_dedicated_reads", "old_code_legacy_control_succeeded",
+            "legacy_hash_preserved", "dedicated_hash_present",
+        }
+        if (not isinstance(observations, dict) or observations.get("outcome") != "pass"
+                or observations.get("executed") is not True
+                or any(observations.get(field) is not True for field in truth_fields)
+                or any(observations.get(field) is not False for field in
+                       ("fleet_parity_proven", "quiescence_proven", "backup_proven"))):
+            raise ReceiptError("rollout observations are incomplete")
+        processes = receipt.get("processes")
+        for role in ("predecessor", "candidate"):
+            process = processes.get(role) if isinstance(processes, dict) else None
+            if not isinstance(process, dict) or type(process.get("pid")) is not int or process["pid"] <= 0:
+                raise ReceiptError("rollout process identity is missing")
+            if not isinstance(process.get("compiled_candidate_sha256"), str) or not SHA.fullmatch(process["compiled_candidate_sha256"]):
+                raise ReceiptError("rollout compiled package identity is missing")
+    else:
+        if expected_pair != "locked" or expected_store != "builtin":
+            raise ReceiptError("public legacy control is restricted to locked/builtin")
+        observations = receipt.get("observations")
+        proof = receipt.get("source_proof")
+        required_public = {"public_pin_verified", "verifier_specific_adoption_executed", "http_authentication_succeeded",
+                           "authenticated_deadline_preserved", "client_hash_preserved"}
+        if (not isinstance(observations, dict) or observations.get("outcome") != "pass"
+                or observations.get("executed") is not True
+                or any(observations.get(field) is not True for field in required_public)
+                or not isinstance(proof, dict)
+                or proof.get("public_source") != "d04be40262e975a4eb8d8567eb0d1458a9c23181"
+                or proof.get("archive_sha256") != "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d"):
+            raise ReceiptError("public legacy control attribution or witness is incomplete")
+    return receipt
+
 
 def validate_failure_capture(payload: object) -> dict[str, Any]:
     if not isinstance(payload, dict) or set(payload) != DISCLOSURE_FAILURE_CAPTURE_FIELDS:

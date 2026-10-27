@@ -15,7 +15,7 @@ import verifier_receipts  # noqa: E402
 class CompleteMatrixContracts(unittest.TestCase):
     def test_required_scope_is_explicit_and_keeps_both_disclosure_receipts(self) -> None:
         required = verifier_receipts.required_receipt_keys()
-        self.assertEqual(len(required), 27)
+        self.assertEqual(len(required), 26)
         self.assertIn(("core", "locked", "builtin"), required)
         self.assertIn(("rollout", "floor", "delegated"), required)
         self.assertIn(("legacy-control", "locked", "builtin"), required)
@@ -30,9 +30,14 @@ class CompleteMatrixContracts(unittest.TestCase):
             verifier_receipts.validate_complete_matrix([], expected_runner="a" * 40)
         rows = [
             {"scope": scope, "pair": pair, "store": store,
-             "run_id": "b" * 32, "receipt_sha256": "c" * 64,
-             "stable_case_ids": ["VPROOF-02-TEST"]}
-            for scope, pair, store in required
+             "run_id": f"{index:032x}", "receipt_sha256": f"{index + 1:064x}",
+             "runner_revision": "a" * 40,
+             "candidate_source_archive_tree": ["d" * 40, "e" * 64, "f" * 64],
+             "host_lock_sha256": "1" * 64, "compiled_candidate_sha256": "2" * 64,
+             "executed_count": len(verifier_receipts.expected_case_ids((scope, pair, store))),
+             "outcome": "pass",
+             "stable_case_ids": verifier_receipts.expected_case_ids((scope, pair, store))}
+            for index, (scope, pair, store) in enumerate(required)
         ]
         with self.assertRaises(verifier_receipts.ReceiptError):
             verifier_receipts.validate_matrix_links(rows[:-1], expected_runner="a" * 40)

@@ -37,7 +37,8 @@ from package_input import (  # noqa: E402
 from redaction import Redactor, SentinelSet  # noqa: E402
 import clean_room_saas_journey as browser_support  # noqa: E402
 from verifier_receipts import (  # noqa: E402
-    GROUPS, ReceiptError, load_receipt, validate_receipt,
+    GROUPS, REQUIRED_MATRIX, ReceiptError, expected_case_ids, load_receipt,
+    validate_complete_matrix, validate_receipt, validate_rollout_receipt,
 )
 
 
@@ -456,6 +457,103 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, object]:
+    if (pair, store) != ("all", "all"):
+        raise PackageInputError("all-scope acceptance requires --pair all --store all")
+    root = receipt_dir.resolve()
+    project = Path(__file__).resolve().parents[2]
+    artifact_root = (project / ".artifacts").resolve()
+    if not root.is_relative_to(artifact_root) or root == artifact_root:
+        raise PackageInputError("all-scope receipt path must be a dedicated child of .artifacts")
+    if root.exists():
+        if root.is_symlink() or any(root.iterdir()):
+            raise PackageInputError("all-scope receipt path must be fresh and empty")
+    else:
+        root.mkdir(mode=0o700, parents=True)
+
+    # Run each established group at the single committed harness revision.
+    # The narrow selection is fixed here; caller-supplied group names cannot
+    # reduce the required matrix.
+    selections = (
+        ("core", "all", "all"), ("rollout", "all", "all"),
+        ("recovery", "all", "all"), ("endpoints", "all", "builtin"),
+        ("contention", "all", "delegated"), ("atomicity", "all", "delegated"),
+        ("issuance", "all", "delegated"), ("disclosure", "all", "delegated"),
+        ("legacy-control", "locked", "builtin"), ("release-rpc", "locked", "builtin"),
+    )
+    for scope, selected_pair, selected_store in selections:
+        module_name, function_name = MODULES[scope]
+        module = __import__(module_name)
+        function = getattr(module, function_name)
+        function(pair=selected_pair, store=selected_store, receipt_dir=root / scope)
+
+    records: list[dict[str, object]] = []
+    anchors: set[tuple[str, str, str]] = set()
+    for scope, selected_pair, selected_store in REQUIRED_MATRIX:
+        filename = "failure-receipt.json" if scope == "disclosure-failure" else "receipt.json"
+        path = root / scope / f"{selected_pair}-{selected_store}" / filename
+        raw = path.read_bytes()
+        receipt = load_receipt(path)
+        if scope in {"rollout", "legacy-control"}:
+            validate_rollout_receipt(
+                receipt, expected_pair=selected_pair, expected_store=selected_store,
+                expected_runner=source_revision(), expected_scope=scope,
+            )
+            runner_revision = receipt["runner_revision"]
+            candidate = receipt["candidate"]
+            candidate_identity = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
+            compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
+        else:
+            validate_receipt(receipt, expected_pair=selected_pair, expected_store=selected_store)
+            runner_revision = receipt["runner"]
+            candidate = receipt["candidate"]
+            candidate_identity = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
+            compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
+        if runner_revision != source_revision():
+            raise ReceiptError("group receipt belongs to a different committed harness revision")
+        if candidate_identity[0] != source_revision():
+            raise ReceiptError("candidate package is not bound to the committed harness source")
+        expected_lock = sha256(PROOF_PAIR_LOCKS[selected_pair])
+        host_lock = receipt["host"]["lock_sha256"]
+        if host_lock != expected_lock or not re.fullmatch(r"[0-9a-f]{64}", compiled_candidate or ""):
+            raise ReceiptError("host lock or compiled candidate identity does not match its dependency pair")
+        anchors.add(candidate_identity)
+        cases = expected_case_ids((scope, selected_pair, selected_store))
+        records.append({
+            "scope": scope, "pair": selected_pair, "store": selected_store,
+            "run_id": receipt["run_id"], "runner_revision": runner_revision,
+            "receipt_path": path.relative_to(root).as_posix(),
+            "receipt_sha256": hashlib.sha256(raw).hexdigest(),
+            "stable_case_ids": cases, "executed_count": receipt["executed_count"],
+            "outcome": "pass", "candidate_source_archive_tree": list(candidate_identity),
+            "host_lock_sha256": host_lock, "compiled_candidate_sha256": compiled_candidate,
+        })
+    if len(anchors) != 1:
+        raise ReceiptError("candidate source/archive/tree identities differ across required groups")
+    validated = validate_complete_matrix(records, expected_runner=source_revision())
+    total_cases = sum(len(row["stable_case_ids"]) for row in validated)
+    aggregate = {
+        "schema": "lockspire-installed-verifier-matrix-v1",
+        "runner_revision": source_revision(),
+        "candidate_source_archive_tree": list(next(iter(anchors))),
+        "required_receipt_count": len(REQUIRED_MATRIX),
+        "executed_receipt_count": len(validated),
+        "required_case_count": total_cases,
+        "executed_case_count": total_cases,
+        "passed_case_count": total_cases,
+        "failed_case_count": 0,
+        "cells": validated,
+    }
+    target = root / "aggregate.json"
+    target.write_text(json.dumps(aggregate, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    os.chmod(target, 0o600)
+    print(json.dumps({"scope": "all", "required_receipts": len(REQUIRED_MATRIX),
+                      "executed_receipts": len(validated), "required_cases": total_cases,
+                      "passed_cases": total_cases, "failed_cases": 0,
+                      "runner_revision": source_revision(), "aggregate_sha256": hashlib.sha256(target.read_bytes()).hexdigest()}, sort_keys=True))
+    return aggregate
+
+
 def self_test() -> int:
     command = [sys.executable, "-m", "unittest", "discover", "-s", "test/acceptance", "-p", "client_verifier_tracer_test.py"]
     result = subprocess.run(command, cwd=Path(__file__).resolve().parents[2], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
@@ -480,6 +578,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.group == "tracer":
             run_tracer(pair=args.pair, store=args.store, receipt_dir=args.receipt_dir)
             return 0
+        if args.group == "all":
+            _complete_matrix(receipt_dir=args.receipt_dir, pair=args.pair, store=args.store)
+            return 0
         selected = MODULES.get(args.group)
         if selected is None:
             raise PackageInputError(f"scenario group is not implemented: {args.group}")
@@ -493,8 +594,11 @@ def main(argv: list[str] | None = None) -> int:
             raise PackageInputError(f"scenario group is not implemented: {args.group}")
         function(pair=args.pair, store=args.store, receipt_dir=args.receipt_dir)
         return 0
-    except (PackageInputError, ReceiptError, OSError, subprocess.SubprocessError) as error:
-        print(str(error), file=sys.stderr)
+    except (PackageInputError, ReceiptError, OSError, subprocess.SubprocessError):
+        # Child exceptions and diagnostic text can contain generated verifier
+        # keys that are unknown to this process. Report only a fixed stage.
+        group = args.group if args.group in GROUPS else "unknown"
+        print(f"installed verifier proof failed during {group}; child diagnostics withheld", file=sys.stderr)
         return 1
 
 
