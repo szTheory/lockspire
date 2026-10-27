@@ -314,11 +314,96 @@ def _forget_session(process: subprocess.Popen) -> None:
     _OWNED_IDENTITIES.pop(process.pid, None)
 
 
+_OWNED_EXEC_GATE = """import errno,os,signal,sys
+gate,status=int(sys.argv[1]),int(sys.argv[2])
+os.set_inheritable(status,False)
+token=os.read(gate,1)
+os.close(gate)
+if token!=b'1':
+    os.close(status)
+    os._exit(125)
+try:
+    for value in sys.argv[3].split(','):
+        number,ignored=value.split(':')
+        signal.signal(int(number),signal.SIG_IGN if ignored=='1' else signal.SIG_DFL)
+    os.execvpe(sys.argv[4],sys.argv[5:],os.environ)
+except OSError as error:
+    os.write(status,str(error.errno or errno.EIO).encode('ascii'))
+    os._exit(127)
+"""
+
+
+def _spawn_gated_session(command: Sequence[str], **kwargs) -> tuple[subprocess.Popen, int, int]:
+    """Hold exec until admission; no preexec callback or untrusted startup code."""
+    arguments = [command] if isinstance(command, (str, bytes, os.PathLike)) else list(command)
+    if not arguments:
+        raise ValueError("owned command is empty")
+    executable = kwargs.pop("executable", None)
+    if kwargs.pop("shell", False):
+        executable = executable or "/bin/sh"
+        arguments = [executable, "-c", *arguments]
+    else:
+        executable = executable or arguments[0]
+    gate_read, gate_write = os.pipe()
+    try:
+        status_read, status_write = os.pipe()
+    except BaseException:
+        os.close(gate_read)
+        os.close(gate_write)
+        raise
+    try:
+        kwargs["pass_fds"] = (*kwargs.get("pass_fds", ()), gate_read, status_write)
+        restored = []
+        for name in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
+            number = getattr(signal, name, None)
+            if number is not None:
+                ignored = not kwargs.get("restore_signals", True) and signal.getsignal(number) == signal.SIG_IGN
+                restored.append(f"{number}:{int(ignored)}")
+        process = subprocess.Popen(
+            [sys.executable, "-I", "-S", "-B", "-c", _OWNED_EXEC_GATE,
+             str(gate_read), str(status_write), ",".join(restored), executable, *arguments], **kwargs,
+        )
+    except BaseException:
+        os.close(gate_write)
+        os.close(status_read)
+        raise
+    finally:
+        os.close(gate_read)
+        os.close(status_write)
+    process.args = command
+    return process, gate_write, status_read
+
+
+def _activate_registered_session(gate: int, status: int) -> int | None:
+    """Return only the trusted launcher's errno; successful exec closes status."""
+    import select
+
+    os.write(gate, b"1")
+    deadline = time.monotonic() + 2
+    payload = b""
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0 or not select.select([status], [], [], remaining)[0]:
+            raise PackageInputError("owned command activation could not be confirmed")
+        chunk = os.read(status, 32 - len(payload))
+        if not chunk:
+            if not payload:
+                return None
+            if payload.isdigit() and 0 < int(payload) < 65536:
+                return int(payload)
+            raise PackageInputError("owned command activation status is invalid")
+        payload += chunk
+        if len(payload) >= 32:
+            raise PackageInputError("owned command activation status is invalid")
+
+
 def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
     """Register an isolated child session for process-tree cleanup."""
     global _SESSION_SIGNAL_HANDLERS_INSTALLED, _SESSION_LAUNCHING, _SESSION_PENDING_SIGNAL
     if kwargs.get("start_new_session", True) is not True:
         raise PackageInputError("owned child must start in an isolated session")
+    if kwargs.get("preexec_fn") is not None:
+        raise PackageInputError("owned session preexec callbacks are unsupported")
     kwargs["start_new_session"] = True
     if os.environ.get(_SESSION_REGISTRY_ENV):
         raise PackageInputError("caller-writable session registry is unsupported")
@@ -334,11 +419,14 @@ def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
     # Defer a stop during launch until durable registration is complete. Unlike
     # blocking the OS signal mask, this does not pass blocked TERM to children.
     _SESSION_LAUNCHING = True
+    gate = status = None
     try:
         _session_request("prepare", os.getpid())
         try:
-            process = subprocess.Popen(command, **kwargs)
-        except BaseException:
+            process, gate, status = _spawn_gated_session(command, **kwargs)
+        except OSError:
+            # Popen failed before yielding a child; this reservation had no
+            # activated target. Other interruptions remain fail-closed pending.
             _session_request("cancel", os.getpid())
             raise
         if not isinstance(process.pid, int):
@@ -346,11 +434,22 @@ def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
         _OWNED_SESSIONS[process.pid] = process
         try:
             _register_session(process)
+            execution_error = _activate_registered_session(gate, status)
         except (OSError, PackageInputError):
             if not stop_process_group(process):
                 raise PackageInputError("owned session custody and cleanup are unconfirmed") from None
             raise PackageInputError("owned session custody could not be recorded") from None
+        if execution_error is not None:
+            if not stop_process_group(process):
+                raise PackageInputError("owned command exec and cleanup are unconfirmed") from None
+            executable = kwargs.get("executable") or (
+                command if isinstance(command, (str, bytes, os.PathLike)) else command[0]
+            )
+            raise OSError(execution_error, os.strerror(execution_error), executable)
     finally:
+        for descriptor in (gate, status):
+            if descriptor is not None:
+                os.close(descriptor)
         _SESSION_LAUNCHING = False
         pending, _SESSION_PENDING_SIGNAL = _SESSION_PENDING_SIGNAL, None
         if pending is not None:

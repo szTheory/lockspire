@@ -1,0 +1,31 @@
+{
+  "command": "python3 -m unittest discover -s test/acceptance -p client_verifier_launch_registration_test.py -k test_actual_fast_true_completes_cold_supervised_launch",
+  "exitCode": 1,
+  "executedTests": 1,
+  "output": "F\n======================================================================\nFAIL: test_actual_fast_true_completes_cold_supervised_launch (client_verifier_launch_registration_test.FastLaunchRegistration.test_actual_fast_true_completes_cold_supervised_launch)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_launch_registration_test.py\", line 99, in test_actual_fast_true_completes_cold_supervised_launch\n    self.exercise((\"/usr/bin/true\",))\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_launch_registration_test.py\", line 74, in exercise\n    self.assertTrue(wrapper.returncode == 78, \"actual fast command did not complete registered supervision\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : actual fast command did not complete registered supervision\n\n----------------------------------------------------------------------\nRan 1 test in 2.163s\n\nFAILED (failures=1)\n",
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 1153,
+  "stderrSha256": "026d19edf6829b9df60e12110f81e3a83c865cef98d7cfa096cd5d7a9abaee4d",
+  "semanticAssessment": "Agent-authored native pre-edit RED: actual wrapper + actual cold /usr/bin/true through unchanged bounded_run/start_owned_session; strict exit78/no pending oracle. Fixed failure messages only. Exact wrapper/root/child groups independently absent before exact probe custody cleanup; no DB or provider action.",
+  "targetTest": "client_verifier_launch_registration_test.FastLaunchRegistration.test_actual_fast_true_completes_cold_supervised_launch",
+  "targetFile": "test/acceptance/client_verifier_launch_registration_test.py",
+  "expected": "Actual short-lived command completes at wrapper test exit78 with no pending launch and every owned group absent",
+  "actual": "Target assertion failed because actual wrapper exited125 with incomplete registration for the already exited fast child",
+  "environmentSelection": {
+    "ASDF_ELIXIR_VERSION": "1.19.5-otp-28",
+    "ASDF_ERLANG_VERSION": "28.5",
+    "ERL_FLAGS": "+S 4",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "private_environment_transport": "loaded and merged only in memory"
+  },
+  "classifier": {
+    "exitCode": 0,
+    "verdict": "RED_EVIDENCE_OK",
+    "reason": "target_test_failed",
+    "format": "unittest",
+    "tests": 1,
+    "failures": 1,
+    "report_errors": []
+  }
+}
