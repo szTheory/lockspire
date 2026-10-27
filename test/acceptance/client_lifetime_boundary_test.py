@@ -117,9 +117,9 @@ end
             events.append("mix_probe")
             return str(self.child / "vendor" / "lockspire")
 
-        def observe_audit(child: Path, package: Path) -> None:
+        def observe_audit(child: Path, package: Path, **options: object) -> None:
             events.append("audit")
-            audit_boundary(child, package)
+            audit_boundary(child, package, **options)
 
         with (
             patch("build_provider.probe_environment"),

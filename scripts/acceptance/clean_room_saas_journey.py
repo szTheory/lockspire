@@ -31,7 +31,10 @@ CLEAN_ROOM_DIR = Path(__file__).resolve().parent / "clean_room"
 sys.path.insert(0, str(CLEAN_ROOM_DIR))
 
 from build_client import patch_jose_record_extractors
-from build_provider import prepare_provider, run_child_command, run_child_command_output
+from build_provider import (
+    prepare_provider, provider_environment as prepared_provider_environment,
+    run_child_command, run_child_command_output,
+)
 from lifetime_receipts import validate_lifetime_receipt, write_lifetime_receipt
 from selected_receipts import (
     SELECTED_CASE_IDS,
@@ -221,7 +224,8 @@ def wait_ready(origin: str) -> None:
 
 def start_process(child: Path, environment: dict[str, str], log_path: Path) -> subprocess.Popen[bytes]:
     process = start_owned_session(
-        ("mix", "run", "--no-halt"), cwd=child, env=environment, stdin=subprocess.DEVNULL,
+        ("mix", "run", "--no-halt"), cwd=child,
+        env=dict(environment, CLEAN_ROOM_HTTP_SERVER="true"), stdin=subprocess.DEVNULL,
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True,
     )
     return process
@@ -2085,7 +2089,9 @@ def main(argv: list[str]) -> int:
                     "resolved_dependency_verified": provenance["resolved_dependency_verified"],
                 }
             auth_time_root = run_root
-            provider_environment = locked_environment(provider_child, "provider_host", dependency_cache_root(run_root))
+            provider_environment = prepared_provider_environment(
+                run_root, provider_child, cache_root=dependency_cache_root(run_root)
+            )
             provider_environment.update({"DATABASE_URL": provider_database, "PORT": str(provider_port), "LOCKSPIRE_ISSUER": PROVIDER_ORIGIN + "/lockspire", "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN, "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN, "CLEAN_ROOM_HANDOFF_DIR": str(handoff), "CLEAN_ROOM_SELECTED_AUTH_TIME_ROOT": str(auth_time_root), "CLEAN_ROOM_SELECTED_STALE_AUTH_TIME_FILE": str(auth_time_root / "selected-stale-auth-time-unix.txt"), "CLEAN_ROOM_SELECTED_FRESH_AUTH_TIME_FILE": str(auth_time_root / "selected-fresh-auth-time-unix.txt"), "SECRET_KEY_BASE": "clean-room-provider-secret-key-base-0123456789-abcdefghijklmnopqrstuvwxyz-0123456789"})
             if lifetime_leg == "custom":
                 provider_environment["CLEAN_ROOM_CUSTOM_LIFETIME_ADAPTER"] = "true"
