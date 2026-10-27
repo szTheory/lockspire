@@ -11,7 +11,7 @@ bug_class: Bohrbug
 hypothesis: Separately tested producer and consumer schemas do not describe the same authenticated chain.
 test: Exercise actual local producers and consumers with external OS/build/database/GitHub boundaries replaced.
 expecting: Existing implementation rejects actual upload/helper output and accepts covered-input and typed-value substitutions.
-next_action: Commit the independent receipt-owner boundary, run the full Python gate at that settled source, and obtain source/security delta review before runtime.
+next_action: Obtain independent source/security delta review of 5650e596 and its safe full-gate record; do not freeze or start runtime before closure.
 reasoning_checkpoint:
   hypothesis: The acceptance boundary trusts divergent hand-selected paths and unchecked values while requiring a serialized layout different from its actual producers.
   confirming_evidence:
@@ -167,3 +167,5 @@ Real CLI verification: session 87511, PID 24103, start 2026-10-27T10:03:04.54344
 Component reconciliation: first two 46-test runs each had two subtest failures in the old unowned pair-positive contract. The first collector omitted subtest parent attribution; the second mapped only the pre-discovered parent ID, with no parameters. The pair positive was retained with explicit expected component authority and actual CLI-derived projections. Session 78879 then passed 46 tests with zero failures/errors/skips/unexpected successes. Historical structural checks did not become acceptance.
 
 Wrapper context-path verification: initial 11 tests had four fixed failures because the new capture call omitted explicit phase-dir under the existing external-source test shim; the job-owned manifest case passed. The capture CLI now receives the same explicit repository phase directory as frozen validation. Fixture OS/runtime observations are faked narrowly so no actual DB query runs. Session 57551 passed all 11 tests with zero failures/errors/skips/unexpected successes. No process deadline, signal, registration, ancestry or cleanup logic changed. Scoped whitespace and shell syntax checks passed. Full Python gate follows at committed source; review closure remains independent.
+
+Full gate: committed implementation 5650e596c71259f83020aed941d4a9ce2a2f13b8, session 46929, PID 28432, start 2026-10-27T10:09:24.861388Z, deadline 900 seconds. Native discovery selected and executed 232 parent tests. Failures, errors, unexpected successes, skips, expected failures and loader errors were all zero. Import and test output remained memory-only; safe lengths/digests and counts are retained in 178-10-PYTHON-OWNER-CONTEXT-5650E596.json. No source edit occurred during the run and HEAD remained 5650e596. Context-managed fixture roots and exact owned processes completed cleanup. No full-gate outcome was restamped at the later evidence commit. Runtime remains OFF; independent reviews alone own finding closure.
