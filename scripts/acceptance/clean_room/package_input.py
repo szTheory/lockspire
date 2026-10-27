@@ -16,6 +16,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Iterable, Sequence
 from urllib.parse import quote
 import uuid
@@ -32,36 +33,97 @@ class PackageInputError(RuntimeError):
 
 _OWNED_SESSIONS: dict[int, subprocess.Popen] = {}
 _SESSION_SIGNAL_HANDLERS_INSTALLED = False
+_SESSION_REGISTRY_ENV = "LOCKSPIRE_OWNED_SESSION_REGISTRY"
+_SESSION_LAUNCHING = False
+_SESSION_PENDING_SIGNAL: tuple[int, object] | None = None
+_SESSION_STOPPING = False
+
+
+def _session_registry() -> Path | None:
+    selected = os.environ.get(_SESSION_REGISTRY_ENV)
+    if not selected:
+        return None
+    root = Path(selected)
+    if (not root.is_absolute() or root.is_symlink() or not root.is_dir()
+            or root.stat().st_uid != os.getuid() or root.stat().st_mode & 0o077):
+        raise PackageInputError("owned session custody is unavailable")
+    return root
+
+
+def _register_session(process: subprocess.Popen) -> None:
+    root = _session_registry()
+    if root is not None:
+        path = root / f"{process.pid}.json"
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(descriptor, "w", encoding="ascii") as output:
+            json.dump({"pid": process.pid, "parent_pid": os.getpid()}, output)
+            output.flush()
+            os.fsync(output.fileno())
+
+
+def _forget_session(process: subprocess.Popen) -> None:
+    process.poll()  # Reap our direct child before accepting group absence.
+    _OWNED_SESSIONS.pop(process.pid, None)
+    root = _session_registry()
+    if root is not None:
+        (root / f"{process.pid}.json").unlink(missing_ok=True)
 
 
 def start_owned_session(command: Sequence[str], **kwargs) -> subprocess.Popen:
     """Register an isolated child session for process-tree cleanup."""
-    global _SESSION_SIGNAL_HANDLERS_INSTALLED
+    global _SESSION_SIGNAL_HANDLERS_INSTALLED, _SESSION_LAUNCHING, _SESSION_PENDING_SIGNAL
     if kwargs.get("start_new_session", True) is not True:
         raise PackageInputError("owned child must start in an isolated session")
     kwargs["start_new_session"] = True
-    process = subprocess.Popen(command, **kwargs)
-    if not isinstance(process.pid, int):
-        return process
-    _OWNED_SESSIONS[process.pid] = process
+    root = _session_registry()  # Fail before launch if custody is invalid.
+    if root is not None and kwargs.get("env") is not None:
+        kwargs["env"] = dict(kwargs["env"], **{_SESSION_REGISTRY_ENV: str(root)})
     if not _SESSION_SIGNAL_HANDLERS_INSTALLED:
         _SESSION_SIGNAL_HANDLERS_INSTALLED = True
         for signum in (signal.SIGTERM, signal.SIGINT):
             previous = signal.getsignal(signum)
             signal.signal(signum, _owned_session_signal(previous))
         atexit.register(_exit_cleanup_owned_sessions)
+    # Defer a stop during launch until durable registration is complete. Unlike
+    # blocking the OS signal mask, this does not pass blocked TERM to children.
+    _SESSION_LAUNCHING = True
+    try:
+        process = subprocess.Popen(command, **kwargs)
+        if not isinstance(process.pid, int):
+            return process
+        _OWNED_SESSIONS[process.pid] = process
+        try:
+            _register_session(process)
+        except OSError:
+            if not stop_process_group(process):
+                raise PackageInputError("owned session custody and cleanup are unconfirmed") from None
+            raise PackageInputError("owned session custody could not be recorded") from None
+    finally:
+        _SESSION_LAUNCHING = False
+        pending, _SESSION_PENDING_SIGNAL = _SESSION_PENDING_SIGNAL, None
+        if pending is not None:
+            signal.getsignal(pending[0])(*pending)
     return process
 
 
 def _owned_session_signal(previous):
     def handle(signum, frame):
-        stopped = stop_all_owned_sessions()
-        if not stopped:
-            raise SystemExit(125)
-        if callable(previous):
-            previous(signum, frame)
+        global _SESSION_PENDING_SIGNAL, _SESSION_STOPPING
+        if _SESSION_LAUNCHING:
+            _SESSION_PENDING_SIGNAL = (signum, frame)
             return
-        raise SystemExit(128 + signum)
+        if _SESSION_STOPPING:
+            return
+        _SESSION_STOPPING = True
+        try:
+            if not stop_all_owned_sessions():
+                raise SystemExit(125)
+            if callable(previous):
+                previous(signum, frame)
+                return
+            raise SystemExit(128 + signum)
+        finally:
+            _SESSION_STOPPING = False
     return handle
 
 
@@ -71,9 +133,18 @@ def _exit_cleanup_owned_sessions() -> None:
 
 
 def stop_all_owned_sessions() -> bool:
+    # One shared bound, rather than a separate three-second grace per child.
+    processes = tuple(_OWNED_SESSIONS.values())
+    started = time.monotonic()
+    for process in processes:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except OSError:
+            pass  # stop_process_group verifies or preserves each custody row.
     stopped = True
-    for process in tuple(_OWNED_SESSIONS.values()):
-        if not stop_process_group(process):
+    for process in processes:
+        if not stop_process_group(process, grace=max(0, started + 3 - time.monotonic()),
+                                  _deadline=started + 5):
             stopped = False
     return stopped
 
@@ -159,12 +230,12 @@ def clean_room_database_url(role: str) -> str:
     return f"postgres://{user}:{password}@{host}:{port}/{database}"
 
 
-def stop_process_group(process: subprocess.Popen, grace: float = 3) -> bool:
+def stop_process_group(process: subprocess.Popen, grace: float = 3, *, _deadline: float | None = None) -> bool:
     """Stop only this child's session, including descendants after its leader exits."""
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
-        _OWNED_SESSIONS.pop(process.pid, None)
+        _forget_session(process)
         return True
     except OSError:
         return False
@@ -175,16 +246,20 @@ def stop_process_group(process: subprocess.Popen, grace: float = 3) -> bool:
     try:
         os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
-        _OWNED_SESSIONS.pop(process.pid, None)
+        _forget_session(process)
         return True
     except OSError:
         return False
-    deadline = time.monotonic() + 2
+    try:
+        process.wait(timeout=2 if _deadline is None else max(0, _deadline - time.monotonic()))
+    except subprocess.TimeoutExpired:
+        return False
+    deadline = time.monotonic() + 2 if _deadline is None else _deadline
     while time.monotonic() < deadline:
         try:
             os.killpg(process.pid, 0)
         except ProcessLookupError:
-            _OWNED_SESSIONS.pop(process.pid, None)
+            _forget_session(process)
             return True
         except OSError:
             return False
@@ -196,13 +271,16 @@ def bounded_run(command: Sequence[str], *, timeout: float = 120, stop_grace: flo
     """Run a finite, owned child session; timeout/interruption cannot orphan it."""
     kwargs.pop("check", None)
     input_value = kwargs.pop("input", None)
-    with start_owned_session(command, **kwargs) as process:
-        try:
-            stdout, stderr = process.communicate(input_value, timeout=timeout)
-        except BaseException:
-            stop_process_group(process, grace=stop_grace)
-            raise
-        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+    process = start_owned_session(command, **kwargs)
+    try:
+        stdout, stderr = process.communicate(input_value, timeout=timeout)
+    except BaseException:
+        if not stop_process_group(process, grace=stop_grace):
+            raise PackageInputError("owned child cleanup could not be confirmed") from None
+        raise
+    if not stop_process_group(process, grace=stop_grace):
+        raise PackageInputError("owned child cleanup could not be confirmed")
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
 
 def run(command: Sequence[str], *, cwd: Path, env: dict[str, str] | None = None) -> None:

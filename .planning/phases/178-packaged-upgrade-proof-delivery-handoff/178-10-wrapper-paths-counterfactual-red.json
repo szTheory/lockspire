@@ -1,0 +1,31 @@
+{
+  "records": [
+    {
+      "counterfactual": "original-final-path",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_wrapper_paths_test.py -k test_final_locked_reaches_safe_producer_through_real_validator",
+      "exitCode": 1,
+      "executedTests": 1,
+      "output": "F\n======================================================================\nFAIL: test_final_locked_reaches_safe_producer_through_real_validator (client_verifier_wrapper_paths_test.ActualWrapperFrozenPaths.test_final_locked_reaches_safe_producer_through_real_validator)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_wrapper_paths_test.py\", line 148, in test_final_locked_reaches_safe_producer_through_real_validator\n    self.assert_reached(\"locked\", \".artifacts/phase178/final-locked\")\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_wrapper_paths_test.py\", line 138, in assert_reached\n    self.assertTrue(marker.is_file(), \"authorized path never reached safe fake producer\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : authorized path never reached safe fake producer\n\n----------------------------------------------------------------------\nRan 1 test in 0.849s\n\nFAILED (failures=1)\n",
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 1184,
+      "stderrSha256": "0cc0300680b402a5331bf4b8b5e77717c8a15472d7146a4a6b8a8a8d51de21b6",
+      "sourceSha256": "c07a28b74d30c7e142a91795fbb8605f316950879acd9eb7bc71be8b7bedcc37",
+      "semanticAssessment": "Behavioral counterfactual RED: valid complete real frozen consumer fixture with actual wrapper/Git; only package rebuild/unpack OS boundary mocked; safe fakeproducer cannot be reached due restored rejected boundary."
+    },
+    {
+      "counterfactual": "restored-head-equality",
+      "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_wrapper_paths_test.py -k test_later_metadata_commit_keeps_archived_runner_pin",
+      "exitCode": 1,
+      "executedTests": 1,
+      "output": "F\n======================================================================\nFAIL: test_later_metadata_commit_keeps_archived_runner_pin (client_verifier_wrapper_paths_test.ActualWrapperFrozenPaths.test_later_metadata_commit_keeps_archived_runner_pin)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_wrapper_paths_test.py\", line 167, in test_later_metadata_commit_keeps_archived_runner_pin\n    self.assert_reached(\"locked\", \".artifacts/phase178/final-locked\")\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_wrapper_paths_test.py\", line 138, in assert_reached\n    self.assertTrue(marker.is_file(), \"authorized path never reached safe fake producer\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : authorized path never reached safe fake producer\n\n----------------------------------------------------------------------\nRan 1 test in 0.924s\n\nFAILED (failures=1)\n",
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 1154,
+      "stderrSha256": "bf2f41955c789f2e6e2921feb17211e1de3963334da7f22933d1f45b9c965060",
+      "sourceSha256": "219f220d39e5381d1b91eb2a438821f4c8d4b88fe31cee74ceddb39eafcb4984",
+      "semanticAssessment": "Behavioral counterfactual RED: valid complete real frozen consumer fixture with actual wrapper/Git; only package rebuild/unpack OS boundary mocked; safe fakeproducer cannot be reached due restored rejected boundary."
+    }
+  ],
+  "fixedWrapperRestored": true
+}

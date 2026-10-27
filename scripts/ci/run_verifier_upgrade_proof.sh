@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: run_verifier_upgrade_proof.sh --pair locked|floor --receipt-dir .artifacts/phase178/ci-locked|ci-floor [--expected-runner REV --expected-candidate-source REV --expected-archive-sha256 SHA --expected-tree-sha256 SHA --expected-manifest-sha256 SHA] [--test-mode]" >&2
+  echo "usage: run_verifier_upgrade_proof.sh --pair locked|floor --receipt-dir .artifacts/phase178/{ci,final}-PAIR [--frozen-manifest .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json] [--expected-runner REV --expected-candidate-source REV --expected-archive-sha256 SHA --expected-tree-sha256 SHA --expected-manifest-sha256 SHA] [--test-mode]" >&2
 }
 
 pair=''
@@ -13,6 +13,7 @@ expected_candidate_source=''
 expected_archive_sha256=''
 expected_tree_sha256=''
 expected_manifest_sha256=''
+selected_manifest=''
 while (($#)); do
   case "$1" in
     --pair) (($# >= 2)) || { usage; exit 2; }; pair=$2; shift 2 ;;
@@ -22,6 +23,7 @@ while (($#)); do
     --expected-archive-sha256) (($# >= 2)) || { usage; exit 2; }; expected_archive_sha256=$2; shift 2 ;;
     --expected-tree-sha256) (($# >= 2)) || { usage; exit 2; }; expected_tree_sha256=$2; shift 2 ;;
     --expected-manifest-sha256) (($# >= 2)) || { usage; exit 2; }; expected_manifest_sha256=$2; shift 2 ;;
+    --frozen-manifest) (($# >= 2)) || { usage; exit 2; }; selected_manifest=$2; shift 2 ;;
     --test-mode) test_mode=true; shift ;;
     *) usage; exit 2 ;;
   esac
@@ -53,7 +55,7 @@ if [[ "$test_mode" == true ]]; then
   [[ "$overall_timeout_seconds" =~ ^[1-9][0-9]?$ ]] || { echo "invalid test overall timeout" >&2; exit 2; }
 else
   [[ "$receipt_dir" != *".."* && "$receipt_dir" != /* ]] || { echo "unsafe verifier receipt path" >&2; exit 2; }
-  [[ "$receipt_dir" == ".artifacts/phase178/ci-$pair" ]] || { echo "verifier receipt path does not match its dependency pair" >&2; exit 2; }
+  [[ "$receipt_dir" == ".artifacts/phase178/ci-$pair" || "$receipt_dir" == ".artifacts/phase178/final-$pair" ]] || { echo "verifier receipt path does not match its dependency pair" >&2; exit 2; }
   current="$repo_root"
   IFS='/' read -r -a path_parts <<< "$receipt_dir"
   for part in "${path_parts[@]}"; do
@@ -65,23 +67,34 @@ else
   command=(python3 "$runner")
   timeout_seconds=3600
   overall_timeout_seconds=1500
+  if [[ -n "$selected_manifest" ]]; then
+    [[ "$selected_manifest" == ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json" ]] || { echo "unsafe frozen manifest selection" >&2; exit 2; }
+    frozen_inputs="$repo_root/$selected_manifest"
+  fi
+  current="$repo_root"
+  IFS='/' read -r -a manifest_parts <<< "${frozen_inputs#"$repo_root/"}"
+  for part in "${manifest_parts[@]}"; do
+    current="$current/$part"
+    [[ ! -L "$current" ]] || { echo "frozen manifest path contains a symlink" >&2; exit 2; }
+  done
   [[ -f "$frozen_inputs" && ! -L "$frozen_inputs" ]] || { echo "authenticated frozen candidate inputs are unavailable" >&2; exit 2; }
   [[ "$expected_runner" =~ ^[0-9a-f]{40,64}$ && "$expected_candidate_source" =~ ^[0-9a-f]{40,64}$ \
      && "$expected_archive_sha256" =~ ^[0-9a-f]{64}$ && "$expected_tree_sha256" =~ ^[0-9a-f]{64}$ \
      && "$expected_manifest_sha256" =~ ^[0-9a-f]{64}$ ]] || { echo "independent frozen owner pins are unavailable" >&2; exit 2; }
-  [[ "$runner_revision" == "$expected_runner" ]] || { echo "current verifier runner differs from its explicit pin" >&2; exit 2; }
   export LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION="$expected_runner"
   export LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION="$expected_candidate_source"
   export LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256="$expected_archive_sha256"
   export LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256="$expected_tree_sha256"
   export LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256="$expected_manifest_sha256"
+  export LOCKSPIRE_FROZEN_INPUTS="$frozen_inputs"
+  # The pinned consumer checks actual checkout source/covered bytes against the
+  # preserved runner. Later metadata commits need not restamp that runner.
   python3 "$repo_root/scripts/acceptance/clean_room/verifier_delivery.py" \
     --check frozen --phase-dir "$repo_root/.planning/phases/178-packaged-upgrade-proof-delivery-handoff" \
     --expected-runner "$expected_runner" --expected-candidate-source "$expected_candidate_source" \
     --expected-archive-sha256 "$expected_archive_sha256" --expected-tree-sha256 "$expected_tree_sha256" \
     --expected-manifest-sha256 "$expected_manifest_sha256" \
     >/dev/null || { echo "authenticated frozen candidate inputs failed validation" >&2; exit 2; }
-  export LOCKSPIRE_FROZEN_INPUTS="$frozen_inputs"
   frozen_pins=$(python3 - "$frozen_inputs" <<'PY'
 import json
 import re
@@ -142,9 +155,13 @@ run_owned() {
   python3 - "$selected_timeout" "$selected_label" "$test_mode" "$@" <<'PY' &
 import os
 import errno
+import json
+from pathlib import Path
+import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 timeout = int(sys.argv[1])
@@ -154,94 +171,158 @@ command = sys.argv[4:]
 child = None
 force_group_denial = test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_FORCE_GROUP_DENIAL") == "1"
 cleanup_failure = "unconfirmed"
+registry = Path(tempfile.mkdtemp(prefix="lockspire-verifier-owned-"))
+starting = False
+pending_signal = None
+stopping = False
+
+def registered_groups():
+    groups = set()
+    try:
+        for path in registry.iterdir():
+            if path.is_symlink() or not path.is_file():
+                return None
+            row = json.loads(path.read_text(encoding="ascii"))
+            if (set(row) != {"pid", "parent_pid"} or type(row["pid"]) is not int
+                    or type(row["parent_pid"]) is not int or row["pid"] <= 1
+                    or row["parent_pid"] <= 1 or path.name != str(row["pid"]) + ".json"):
+                return None
+            groups.add(row["pid"])
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    return groups
+
+def group_absent(pgid):
+    global cleanup_failure
+    try:
+        os.killpg(pgid, 0)
+        return False
+    except ProcessLookupError:
+        return True
+    except OSError:
+        cleanup_failure = "group-probe-permission-denied"
+        return False
+
+def signal_group(pgid, signum):
+    global cleanup_failure
+    try:
+        os.killpg(pgid, signum)
+        return True
+    except ProcessLookupError:
+        return True
+    except OSError:
+        cleanup_failure = "group-signal-permission-denied"
+        return False
+
+def all_absent(process):
+    global cleanup_failure
+    process.poll()  # Reap the root before probing its process group.
+    groups = registered_groups()
+    if groups is None:
+        cleanup_failure = "invalid-owned-custody"
+        return False
+    return all(group_absent(pgid) for pgid in groups | {process.pid})
 
 def stop_group(process):
     global cleanup_failure
     if force_group_denial:
         cleanup_failure = "test-group-denial"
-        try:
-            process.terminate()
-            process.wait(timeout=2)
-        except (ProcessLookupError, subprocess.TimeoutExpired):
-            pass
+        return False
+    if not signal_group(process.pid, signal.SIGTERM):
+        return False
+    # Runtime deadline excludes bounded cleanup. Existing rollout cleanup gets
+    # ten seconds plus reap/probe time; shared registered-session cleanup gets
+    # five seconds independent of the number of children. Do not KILL its owner
+    # after the old two seconds while it is still draining isolated sessions.
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        if all_absent(process):
+            return True
+        if process.poll() is not None:
+            # An exited supervisor no longer owns cleanup. Retained session
+            # records, rather than its vanished root group, identify custody.
+            groups = registered_groups()
+            if groups is None:
+                return False
+            for pgid in groups:
+                if not signal_group(pgid, signal.SIGTERM):
+                    return False
+            break
+        time.sleep(0.05)
+    groups = registered_groups()
+    if groups is None:
+        cleanup_failure = "invalid-owned-custody"
+        return False
+    for pgid in groups - {process.pid}:
+        if not signal_group(pgid, signal.SIGKILL):
+            return False
+    if not signal_group(process.pid, signal.SIGKILL):
         return False
     try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    except PermissionError:
-        cleanup_failure = "group-signal-permission-denied"
-        try:
-            process.terminate()
-        except ProcessLookupError:
-            pass
-        try:
-            process.wait(timeout=2)
-            return False
-        except subprocess.TimeoutExpired:
-            try:
-                process.kill()
-                process.wait(timeout=2)
-                return False
-            except (ProcessLookupError, subprocess.TimeoutExpired):
-                return False
+        process.wait(timeout=2)
+    except subprocess.TimeoutExpired:
+        return False
     deadline = time.monotonic() + 2
     while time.monotonic() < deadline:
-        try:
-            os.killpg(process.pid, 0)
-        except ProcessLookupError:
+        if all_absent(process):
             return True
-        except PermissionError:
-            cleanup_failure = "group-probe-permission-denied"
-            try:
-                process.terminate()
-                process.wait(timeout=2)
-                return False
-            except (ProcessLookupError, subprocess.TimeoutExpired):
-                return False
         time.sleep(0.05)
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except ProcessLookupError:
-        pass
-    except PermissionError:
-        cleanup_failure = "group-kill-permission-denied"
-        return False
-    try:
-        os.killpg(process.pid, 0)
-        return False
-    except ProcessLookupError:
-        return True
+    return False
+
+def cleanup_unconfirmed():
+    print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+    # Generated private path + numeric identities only; never command/output.
+    print(f"verifier owned session custody retained: {registry}", file=sys.stderr)
 
 def interrupted(signum, _frame):
+    global pending_signal, stopping
+    if starting:
+        pending_signal = signum
+        return
+    if stopping:
+        return
+    stopping = True
     if child is not None and not stop_group(child):
-        print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+        cleanup_unconfirmed()
         sys.exit(125)
+    shutil.rmtree(registry)
     sys.exit(128 + signum)
 
 signal.signal(signal.SIGTERM, interrupted)
 signal.signal(signal.SIGINT, interrupted)
 try:
     stage = "child-start"
+    starting = True
+    environment = dict(os.environ, LOCKSPIRE_OWNED_SESSION_REGISTRY=str(registry))
     child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, start_new_session=True)
+                              stderr=subprocess.PIPE, start_new_session=True, env=environment)
+    with (registry / f"{child.pid}.json").open("x", encoding="ascii") as output:
+        json.dump({"pid": child.pid, "parent_pid": os.getpid()}, output)
+        output.flush()
+        os.fsync(output.fileno())
+    starting = False
+    if pending_signal is not None:
+        interrupted(pending_signal, None)
     stage = "child-capture"
     test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_PID_FILE") and open(
         os.environ["LOCKSPIRE_VERIFIER_TEST_PID_FILE"], "w", encoding="ascii").write(str(child.pid))
     try:
         child.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
+        stopping = True
         stopped = stop_group(child)
-        child.wait()
         if not stopped:
-            print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+            cleanup_unconfirmed()
             sys.exit(125)
+        shutil.rmtree(registry)
         print(f"verifier child timeout at {label}; diagnostics withheld", file=sys.stderr)
         sys.exit(124)
+    stopping = True
     stopped = stop_group(child)
     if not stopped:
-        print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+        cleanup_unconfirmed()
         sys.exit(125)
+    shutil.rmtree(registry)
     if child.returncode:
         print(f"verifier child failed at {label}; diagnostics withheld", file=sys.stderr)
         sys.exit(1)
@@ -250,6 +331,11 @@ except OSError as error:
               errno.ENOEXEC: "not_executable", errno.EINVAL: "invalid_argument", errno.EAGAIN: "resource_limit",
               errno.EPERM: "permission_denied", errno.ENOMEM: "resource_limit"}.get(error.errno, "other")
     print(f"verifier child failed at {label}/{stage} ({reason}); diagnostics withheld", file=sys.stderr)
+    if child is not None:
+        if not stop_group(child):
+            cleanup_unconfirmed()
+            sys.exit(125)
+    shutil.rmtree(registry)
     sys.exit(127)
 PY
   helper_pid=$!

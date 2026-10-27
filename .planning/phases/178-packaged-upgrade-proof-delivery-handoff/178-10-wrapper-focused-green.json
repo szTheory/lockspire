@@ -1,0 +1,20 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_wrapper_*_test.py",
+  "exitCode": 0,
+  "executedTests": 17,
+  "elapsedSeconds": 65.962,
+  "stdoutBytes": 0,
+  "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderrBytes": 117,
+  "stderrSha256": "dfbee6368f36c866a8a7e425639909fd593f4ef6a59a5f69eac63976f55cfd5d",
+  "checkerOutput": ".................\n----------------------------------------------------------------------\nRan 17 tests in 65.659s\n\nOK\n",
+  "runtimeScope": "Dedicated actual-wrapper lifecycle/path controls; real Git/frozen consumer and exact process groups; package rebuild/unpack OS boundary mocked, safe fake producer only; no DB/canonical CI/freeze/package runtime.",
+  "tested_owned_source_sha256": {
+    "scripts/acceptance/clean_room/package_input.py": "46e37e16c6b948096d4b9156b88c8fe81cf9ec8f5e5074640b1243583fdfb57a",
+    "scripts/ci/run_verifier_upgrade_proof.sh": "48736201647e54cfc5d321bb78e2619509360de90411ac9aa32c0154736a5e59",
+    "test/acceptance/client_verifier_wrapper_lifecycle_test.py": "f7f7cd60cc10fc063ad2ba06998db390a235d27f6d2ecded2dde749c8f96c43b",
+    "test/acceptance/client_verifier_wrapper_paths_test.py": "8e21c3f05fd0bae592f1cd3e29143f13f6034ace98d5bd5cae45a133656149b7"
+  },
+  "observed_checkout_head_after_checker": "8226fb2b3412d593fb43f374a36c21a43d9bae93",
+  "checkout_note": "Focused checker ran against recorded owned file bytes with independently owned delivery changes also present; this is not HEAD-only or final runtime acceptance."
+}
