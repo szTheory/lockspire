@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: awaiting_human_verify
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
-updated: 2026-10-27T20:05:30Z
+updated: 2026-10-27T20:06:56Z
 ---
 
 ## Current Focus
@@ -11,7 +11,7 @@ bug_class: bohrbug
 hypothesis: Canonical CI stops after architecture because Credo EX3033 rejects frozen_section_hash's single-clause with/else at source line 1526.
 test: Replace only that expression with the equivalent case, then run the exact Credo wrapper, formatter, and existing pure historical/SRC-10 controls before committing and executing one clean focused native guard.
 expecting: Credo changes from exit 4 to exit 0 while successful section hashing and failure nil remain identical and all 26 native tests pass.
-next_action: Commit only the equivalent case and this journal, then execute one actual clean owned-source guard for the unchanged 26-test scenarios.
+next_action: Commit this metadata-only final record and return the caller the clean current source and terminal witnesses for independent review, refreeze, and later canonical CI.
 reasoning_checkpoint:
   hypothesis: The single-clause with plus else in frozen_section_hash triggers the configured Credo WithSingleClause rule, blocking canonical CI before later tests can run.
   confirming_evidence:
@@ -138,4 +138,6 @@ root_cause: Credo.Check.Readability.WithSingleClause (EX3033) flags the one <- p
 authorized_fix: Coordinator explicitly authorized only an equivalent case over frozen_source_file, retaining {:ok, bytes} hashing and wildcard nil. No suppression, dependency, configuration, validation, or unrelated refactor is selected.
 actual_static_green: Exact canonical [bash, scripts/ci/run_credo.sh] exit 0, PID 17114, process group stopped; stdout 317 bytes SHA-256 243ecd4bb41dd311bf9fa3423356ee93f7e72c5b29b4ce7e60bbc458dd925688, stderr 0 bytes. Full canonical [mix, format, --check-formatted] exit 0, PID 17115, process group stopped, stdout/stderr 0 bytes. All output remained in memory.
 behavior_controls: Five actual existing historical/SRC-10 test functions passed in pure ExUnit compilation/direct invocation with no application/database startup. Previous with and current case return equal successful section hashes and nil for unavailable/malformed input controls. Selected consumer SHA-256 ae27e1ba29ad9c8b3cece357c89fd06d8ea6ed853d60202af2196ffe303dd2d4.
-verification: Static gate RED exit 4 to GREEN exit 0 confirmed; formatter and behavior controls pass. Exact final-source clean native 26-test guard pending.
+verification: Static gate RED exit 4 to GREEN exit 0 confirmed; formatter and five existing behavior controls pass. One actual clean owned-source guard passed 26 tests, zero failures, test exit 0 and guard exit 0 at 8a90a0a833a25d5a6b5f6af6525ba818e577df61. Exact source and clean checkout were confirmed before/after. Owned database OID 39962 was created, independently identified, migrated, dropped, and independently confirmed absent. All 24 child groups stopped. Test PID 18332 and session 44571 terminal. Manifest /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-z0me6vyk/manifest.json SHA-256 43de64d532b136633d7e4041a17ba26c6e7b799b6fa8847336c929571ee81f3c.
+source_identity: Current canonical sorted path/sha256 JSON row digest f0b319d52ed30e640029ce983283d2fee4809aad9a3addacb1e7dac05aad5900 across 1077 selected files. Only the selected test changed from failed 16c; 1076 hashes unchanged, no added/deleted selected paths. Consumer SHA-256 ae27e1ba29ad9c8b3cece357c89fd06d8ea6ed853d60202af2196ffe303dd2d4. All 13 Phase 175 frozen inputs unchanged. All 26 test scenarios were preserved; selected diff was exactly two insertions/three deletions in frozen_section_hash.
+scope_boundary: No failed canonical log was reconstructed or tailed; original failed CI/custody and historical freeze records remain untouched. No full CI retry, package run, matrix, dependency, suppression, architecture change, or validation relaxation occurred. Fresh current-source review/refreeze and canonical CI remain with the caller; focused success is not restamped as canonical CI success.
