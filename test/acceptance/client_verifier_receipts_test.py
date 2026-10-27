@@ -22,6 +22,12 @@ class CompleteMatrixContracts(unittest.TestCase):
             root / "disclosure" / "locked-delegated" / "failure-receipt.json",
         )
 
+    def test_directory_validation_is_read_only_and_rejects_missing_matrix_inputs(self) -> None:
+        import clean_room_verifier_upgrade as source
+        with __import__("tempfile").TemporaryDirectory() as temporary:
+            with self.assertRaises(source.ReceiptError):
+                source.validate_matrix_directory(Path(temporary))
+
     def test_owned_listener_gets_server_flag_without_mutating_one_off_environment(self) -> None:
         import clean_room_verifier_upgrade as source
         one_off = {"MIX_ENV": "dev", "CLEAN_ROOM_HTTP_SERVER": "false"}
