@@ -21,3 +21,19 @@ The prior accepted 1,076-input review packet and frozen manifest are retained un
 ## Current disposition
 
 VPROOF-02 remains pending until the refreshed 1,077-input authenticated freeze, post-freeze source gate, and locked/floor package evidence are complete. VDELIV-01 and VDELIV-02 remain pending their separate delivery owners. The phase is not complete.
+
+## Rebuild and post-commit validation
+
+The authenticated refreeze operation completed with source export, unpack, and Hex build child exits of zero; each owned process group was independently stopped. The validated manifest was committed before the post-commit validation. The post-commit native validator passed at a clean descendant checkout with the original frozen runner and 1,077 selected input hashes unchanged.
+
+- Freeze commit: `8adf4b3706a3e8776594611b0058d119fdd30011`.
+- Post-commit execution head: `8adf4b3706a3e8776594611b0058d119fdd30011`.
+- Package version: `1.6.1`.
+- Frozen runner: `a5c3714cf01a49b96d2a6223ff94e8f6d09fe53f`.
+- Candidate source: `19f804061f5964e179e66a41f354339e2e4b6992`.
+- Archive: `.artifacts/phase178/refreeze1077-eb6503d9d5fa/lockspire-1.6.1.tar` (SHA-256 `f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d`).
+- Extracted tree: `.artifacts/phase178/refreeze1077-eb6503d9d5fa/lockspire` (SHA-256 `edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475`).
+- Candidate owner SHA-256: `e54cc86728293201df0c909fb0e02b6944eb6b5c9a176da4b56a0b3f7c4c5873`.
+- Frozen manifest SHA-256: `3910155ec76817b44c2e1a6bb185c25c98bdf35595d6442ad1430479e40ec153`.
+- Canonical frozen validation: passed for `1077` inputs; post-commit validator session `58681`, parent PID `6391`, elapsed `2.9s`.
+- Source export work directory: `/private/tmp/lockspire178-source-export-jswm_etf`; source tar length `46,940,160` bytes.
