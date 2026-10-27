@@ -325,11 +325,97 @@ def validate_complete_matrix(rows: list[dict[str, Any]], *, expected_runner: str
     return validate_matrix_links(rows, expected_runner=expected_runner)
 
 
+_OBSERVATION_STRINGS = frozenset({
+    "outcome", "configured_issuer", "discovered_issuer", "assertion_audience", "rejected_audience_uri",
+    "stale_error_code", "replay_error_code", "fresh_error_code", "missing_key_error_code",
+    "old_secret_after_rotation_error_code", "new_secret_after_rotation_error_code",
+    "scenario", "reason", "operation_result", "http_error_code", "process_pid", "release_node",
+    "rpc_invocation", "check_invocation", "task_local_invocation", "compiled_module_relative_path",
+    "compiled_module_sha256", "startup_context_source", "task_local_context_source",
+    "startup_current_key_id", "task_local_current_key_id",
+    "authenticated_age_kind_before", "authenticated_age_kind_after", "coverage",
+    "dedicated_format_after", "legacy_format_before", "release_source_evidence", "http_auth_failure",
+})
+_OBSERVATION_COUNTS = frozenset({
+    "rpc_exit_code", "check_exit_code", "task_local_exit_code", "dry_run_scanned", "dry_run_pending",
+    "fresh_check_scanned", "failure_detail_count",
+})
+
+
+def _validate_value_types(receipt: Any, *, rollout: bool) -> None:
+    """Close known value channels before any equality, hashing or copying.
+
+    Structural key sets and semantic outcomes remain checked below. This layer
+    makes every selected scalar's type explicit, including fields whose values
+    are nullable. No exception includes an input value or representation.
+    """
+    if not isinstance(receipt, dict):
+        raise ReceiptError("receipt root type is invalid")
+    for field, value in receipt.items():
+        if field in {"candidate", "host", "runtime", "predecessor", "source_proof", "processes", "observations"}:
+            if not isinstance(value, dict):
+                raise ReceiptError("receipt object type is invalid")
+        elif field in {"fleet_limits", "stable_case_ids"}:
+            if not isinstance(value, list) or any(type(item) is not str for item in value):
+                raise ReceiptError("receipt string-list type is invalid")
+        elif field == "partial":
+            if type(value) is not bool:
+                raise ReceiptError("receipt boolean type is invalid")
+        elif field == "executed_count":
+            if type(value) is not int or value <= 0:
+                raise ReceiptError("receipt execution count is invalid")
+        elif type(value) is not str:
+            raise ReceiptError("receipt scalar type is invalid")
+    for field in ("candidate", "host", "runtime", "predecessor", "source_proof"):
+        if field not in receipt:
+            continue
+        for key, value in receipt[field].items():
+            expected = bool if key == "resolved_dependency_verified" else str
+            if type(value) is not expected:
+                raise ReceiptError("receipt identity scalar type is invalid")
+            if key == "version" and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", value):
+                raise ReceiptError("receipt package version is invalid")
+            if field == "runtime" and not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*(?:[-+ .(][A-Za-z0-9.+() _-]{0,100})?", value):
+                raise ReceiptError("receipt runtime version is invalid")
+    for process in receipt.get("processes", {}).values():
+        if not isinstance(process, dict):
+            raise ReceiptError("receipt process object type is invalid")
+        for key, value in process.items():
+            if key == "pid":
+                if type(value) is not int or value <= 0:
+                    raise ReceiptError("receipt process PID type is invalid")
+            elif type(value) is not str:
+                raise ReceiptError("receipt process digest type is invalid")
+    observations = receipt.get("observations", {})
+    selected = [observations] if rollout else list(observations.values())
+    for observation in selected:
+        if not isinstance(observation, dict):
+            raise ReceiptError("receipt observation object type is invalid")
+        for key, value in observation.items():
+            if key in _OBSERVATION_STRINGS:
+                # The failure capture schema deliberately emits null when no
+                # HTTP request or operation result exists.
+                if value is None and key in {"http_error_code", "operation_result", "http_auth_failure"}:
+                    continue
+                if type(value) is not str:
+                    raise ReceiptError("receipt observation string type is invalid")
+                if key == "process_pid" and (not value.isdecimal() or int(value) <= 0):
+                    raise ReceiptError("release process PID is invalid")
+            elif key.endswith(("_count", "_pid", "_http_status")) or key in _OBSERVATION_COUNTS | {"http_status"}:
+                if value is None and key == "http_status" and receipt.get("scope") == "disclosure-failure":
+                    continue
+                if type(value) is not int or value < 0 or (key.endswith("_pid") and value == 0):
+                    raise ReceiptError("receipt observation integer type is invalid")
+            elif type(value) is not bool:
+                raise ReceiptError("receipt observation boolean type is invalid")
+
+
 def validate_rollout_receipt(
     receipt: dict[str, Any], *, expected_pair: str, expected_store: str,
     expected_runner: str, expected_candidate_source: str, expected_scope: str,
 ) -> dict[str, Any]:
     """Validate the established rollout/public schema without restamping it."""
+    _validate_value_types(receipt, rollout=True)
     required = {
         "schema", "scope", "run_id", "runner_revision", "pair", "store", "candidate",
         "predecessor", "source_proof", "host", "runtime", "processes", "observations",
@@ -369,6 +455,9 @@ def validate_rollout_receipt(
             raise ReceiptError("rollout candidate digest does not bind source and package tree")
     predecessor = receipt.get("predecessor")
     source_proof = receipt.get("source_proof")
+    if receipt.get("fleet_limits") != [
+            "fleet parity", "fleet quiescence", "backup availability", "rollback safety"]:
+        raise ReceiptError("fleet limitation declarations are outside the fixed contract")
     if expected_scope == "rollout":
         if not isinstance(predecessor, dict) or set(predecessor) != {
                 "kind", "version", "archive_sha256", "tree_sha256", "source_revision", "compiled_candidate_sha256"}:
@@ -412,6 +501,12 @@ def validate_rollout_receipt(
         if receipt.get("fleet_limits") != [
                 "fleet parity", "fleet quiescence", "backup availability", "rollback safety"]:
             raise ReceiptError("rollout fleet limitation declarations are outside the fixed contract")
+        pid_fields = {field for field in ROLLOUT_OBSERVATION_FIELDS if field.endswith("_pid")}
+        pids = [observations[field] for field in sorted(pid_fields)]
+        if (any(type(pid) is not int or pid <= 0 for pid in pids)
+                or len(set(pids)) != len(pids)
+                or receipt["processes"].get("predecessor", {}).get("pid") == receipt["processes"].get("candidate", {}).get("pid")):
+            raise ReceiptError("rollout process observations do not bind distinct owned roles")
         truth_fields = {
             "old_process_exit_observed", "legacy_write_read_shared_store", "dedicated_write_after_drain",
             "switch_back_legacy_write_preserves_dedicated", "old_code_rejects_dedicated",
@@ -453,7 +548,14 @@ def validate_rollout_receipt(
         if not isinstance(observations, dict) or set(observations) != PUBLIC_OBSERVATION_FIELDS:
             raise ReceiptError("public control observation fields are outside the finite contract")
         required_public = {"public_pin_verified", "verifier_specific_adoption_executed", "http_authentication_succeeded",
-                           "authenticated_deadline_preserved", "client_hash_preserved"}
+                           "authenticated_deadline_preserved", "client_hash_preserved", "lifetime_prerequisite_migrated"}
+        if any(observations.get(key) != value for key, value in {
+            "release_source_evidence": "documented-public-release-source",
+            "legacy_format_before": "legacy", "dedicated_format_after": "dedicated",
+            "authenticated_age_kind_before": "migrated", "authenticated_age_kind_after": "migrated",
+            "http_auth_failure": None, "coverage": "locked-only bounded public legacy producer/adopter control",
+        }.items()):
+            raise ReceiptError("public control fixed scalar observations are invalid")
         if (not isinstance(observations, dict) or observations.get("outcome") != "pass"
                 or observations.get("executed") is not True
                 or any(observations.get(field) is not True for field in required_public)
@@ -568,6 +670,7 @@ def load_receipt(path: Path) -> dict[str, Any]:
 
 
 def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = None, expected_store: str | None = None) -> dict[str, Any]:
+    _validate_value_types(receipt, rollout=False)
     if set(receipt) != ROOT_FIELDS:
         raise ReceiptError("receipt fields do not match the finite contract")
     if receipt["schema"] != SCHEMA or not isinstance(receipt["scope"], str) or receipt["scope"] not in GROUPS - {"all"}:

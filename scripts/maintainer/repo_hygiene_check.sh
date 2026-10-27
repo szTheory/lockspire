@@ -221,18 +221,13 @@ run_exact_local_gate() {
   fi
 
   before_sha="$(git rev-parse HEAD 2>/dev/null || true)"
-  if ! test_count="$(
-    output_file="$(mktemp "${TMPDIR:-/tmp}/lockspire-mix-ci.XXXXXX")" || exit 1
-    trap 'rm -f -- "$output_file"' EXIT
-    trap 'exit 129' HUP
-    trap 'exit 130' INT
-    trap 'exit 143' TERM
-    mix ci >"$output_file" 2>&1 || exit 1
-    sed -nE 's/.*(^|[^0-9])([0-9]+) tests?, [0-9]+ failures?.*/\2/p' "$output_file" | tail -n 1
-  )"; then
+  if ! LOCAL_GATE_JSON="$(python3 scripts/acceptance/clean_room/verifier_delivery.py \
+    --run-main-source-gate --expected-runner "$ACCEPT_SHA")"; then
     acceptance_block "local gate" "mix ci returned nonzero"
     return
   fi
+
+  test_count="$(jq -er '.exunit_tests | select(type == "number" and . > 0)' <<<"$LOCAL_GATE_JSON")" || return 1
 
   if [[ -z "$test_count" || "$test_count" == "0" ]]; then
     acceptance_block "local gate" "mix ci did not prove that ExUnit executed tests"
@@ -605,19 +600,15 @@ validate_integration_authorization() {
       type == "object" and
       (keys | sort) == ["authorized_at", "authorized_by", "candidate_sha", "schema", "status"] and
       .schema == "lockspire-phase178-integration-authorization-v1" and
-      .status == "authorized" and .candidate_sha == $sha and
+      .status == "authorized" and (.candidate_sha | type == "string" and test("^[0-9a-f]{40,64}$")) and
       (.authorized_by | type == "string" and length >= 3 and length <= 120) and
       (.authorized_at | type == "string" and test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
     ' >/dev/null 2>&1 <<<"$body"; then
     acceptance_block "integration authorization" "authorization record is malformed or belongs to a different candidate"
     return 1
   fi
-  digest="$(shasum -a 256 "$path" | awk '{print $1}')"
-  authorized_by="$(jq -r '.authorized_by' <<<"$body")"
-  authorized_at="$(jq -r '.authorized_at' <<<"$body")"
-  INTEGRATION_AUTHORIZATION_JSON="$(jq -cn --arg path "$path" --arg sha "$digest" \
-      --arg who "$authorized_by" --arg at "$authorized_at" \
-      '{status:"authorized",path:$path,sha256:$sha,authorized_by:$who,authorized_at:$at}')"
+  INTEGRATION_AUTHORIZATION_JSON="$(python3 scripts/acceptance/clean_room/verifier_delivery.py \
+    --check-integration-authorization --expected-runner "$ACCEPT_SHA")" || return 1
 }
 
 emit_acceptance_receipt() {
@@ -638,6 +629,7 @@ emit_acceptance_receipt() {
     --arg schema "lockspire-phase-139-acceptance-v1" \
     --arg baseline_sha "$ACCEPT_SHA" \
     --argjson tests "$LOCAL_TEST_COUNT" \
+    --argjson local_gate "$LOCAL_GATE_JSON" \
     --argjson pass "$PASS_COUNT" \
     --argjson warn "$WARN_COUNT" \
     --argjson block "$BLOCK_COUNT" \
@@ -664,7 +656,7 @@ emit_acceptance_receipt() {
           mode: "local_exact_acceptance", mix_ci: true, format: "json"},
         synchronized_refs: {head: $head, local_main: $main, refreshed_origin_main: $remote_main},
         integration_authorization: $authorization,
-        local_gate: {status: "pass", exunit_tests: $tests},
+        local_gate: $local_gate,
         hygiene: {status: "pass", pass: $pass, warn: $warn, block: $block},
         required_ci: {status: "pass", run_id: $ci_id, run_attempt: $ci_attempt, workflow_path: ".github/workflows/ci.yml", head_sha: $baseline_sha, event: "push", conclusion: "success", url: $ci_url, jobs: $ci_jobs},
         release_no_publish: {status: "pass", outcome: "no_publish", run_id: $release_id, run_attempt: $release_attempt, workflow_path: ".github/workflows/release.yml", head_sha: $baseline_sha, event: "push", conclusion: "success", url: $release_url, jobs: $release_jobs},

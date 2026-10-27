@@ -36,18 +36,15 @@ def covered_input_relation(repo_root: Path, runner_revision: str,
             or not paths or len(paths) != len(set(paths))):
         raise ValueError("covered source identity is malformed")
     rows = []
+    runner_hashes = verifier_delivery.committed_hashes(repo_root, runner_revision, verifier_delivery.PLANNING_INPUTS)
+    package_hashes = verifier_delivery.committed_hashes(repo_root, package_source_revision, verifier_delivery.PLANNING_INPUTS)
     for relative in paths:
         path = Path(relative)
         if path.is_absolute() or ".." in path.parts or not relative:
             raise ValueError("covered input path is unsafe")
-        values = []
-        for revision in (runner_revision, package_source_revision):
-            result = subprocess.run(("git", "show", f"{revision}:{relative}"), cwd=repo_root,
-                                    stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL, check=False, timeout=10)
-            if result.returncode:
-                raise ValueError("covered input is absent from a selected source")
-            values.append(__import__("hashlib").sha256(result.stdout).hexdigest())
+        values = [runner_hashes.get(relative), package_hashes.get(relative)]
+        if any(value is None for value in values):
+            raise ValueError("covered input is absent from a selected source")
         if values[0] != values[1]:
             raise ValueError("runner and package source bytes differ")
         rows.append({"path": relative, "runner_sha256": values[0], "package_sha256": values[1]})
@@ -77,7 +74,9 @@ def provision(expected_runner: str, expected_candidate_source: str,
               manifest_path: Path | None = None) -> dict[str, str]:
     validate_checkout_pins(ROOT, expected_runner, expected_candidate_source)
     covered_input_relation(ROOT, expected_runner, expected_candidate_source,
-                           list(verifier_delivery.COVERED_INPUTS))
+                           list(verifier_delivery.covered_inputs(expected_candidate_source)))
+    if verifier_delivery.covered_inputs(expected_runner) != verifier_delivery.covered_inputs(expected_candidate_source):
+        raise ValueError("runner and package selected input path sets differ")
 
     artifact_root = ROOT / ".artifacts" / "phase178" / "ci-candidate"
     if artifact_root.is_symlink() or artifact_root.exists():
@@ -134,16 +133,42 @@ def provision(expected_runner: str, expected_candidate_source: str,
     return pins
 
 
+def reviewed_candidate_source(expected_runner: str) -> str:
+    """Select preserved frozen C while the workflow executes merge checkout H."""
+    path = ROOT / ".planning/phases" / verifier_delivery.PHASE_NAME / "178-FROZEN-INPUTS.json"
+    frozen = verifier_delivery._read_json(path, "reviewed candidate input")
+    tested = frozen.get("runner_revision")
+    owner = frozen.get("candidate_owner")
+    if (frozen.get("schema") != "lockspire-phase178-frozen-inputs-v1"
+            or frozen.get("closure_rule") != verifier_delivery.CLOSURE_RULE
+            or not isinstance(owner, dict) or not isinstance(tested, str)
+            or not REVISION.fullmatch(tested)
+            or not verifier_delivery._metadata_only_difference(tested, expected_runner)):
+        raise ValueError("reviewed frozen source does not apply to this workflow checkout")
+    source = owner.get("source_revision")
+    if not isinstance(source, str) or not REVISION.fullmatch(source):
+        raise ValueError("reviewed package source is unavailable")
+    expected = [{"path": path, "sha256": verifier_delivery._blob_sha(tested, path)}
+                for path in verifier_delivery.covered_inputs(tested)]
+    if frozen.get("covered_inputs") != expected:
+        raise ValueError("reviewed frozen closure is incomplete")
+    covered_input_relation(ROOT, expected_runner, source, [row["path"] for row in expected])
+    return source
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--expected-runner", required=True)
-    parser.add_argument("--expected-candidate-source", required=True)
+    selection = parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument("--expected-candidate-source")
+    selection.add_argument("--reviewed-candidate-source", action="store_true")
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--manifest-path", type=Path,
                         default=Path(".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json"))
     args = parser.parse_args(argv)
     try:
-        pins = provision(args.expected_runner, args.expected_candidate_source,
+        candidate_source = reviewed_candidate_source(args.expected_runner) if args.reviewed_candidate_source else args.expected_candidate_source
+        pins = provision(args.expected_runner, candidate_source,
                          args.manifest_path if args.manifest_path.is_absolute()
                          else ROOT / args.manifest_path)
         rows = {key: pins[key] for key in (

@@ -352,6 +352,7 @@ class HelperReceiptProducerContracts(unittest.TestCase):
                 "RELEASE_RUN": json.dumps(
                     {"id": 200, "run_attempt": 1, "html_url": "https://github.com/szTheory/lockspire/actions/runs/200"}),
                 "LOCAL_TEST_COUNT": "240", "PASS_COUNT": "9", "WARN_COUNT": "0", "BLOCK_COUNT": "0",
+                "LOCAL_GATE_JSON": '{"status":"pass","exunit_tests":240,"manifest_path":"synthetic-emitter-only","manifest_sha256":"' + "a" * 64 + '"}',
                 "REQUIRED_CI_JOBS": json.dumps(jobs), "RELEASE_JOBS": json.dumps(release_jobs),
                 "REPOSITORY": "szTheory/lockspire", "REMOTE": "origin",
                 "INTEGRATION_AUTHORIZATION_JSON":
@@ -506,14 +507,14 @@ class ComposedMatrixContracts(unittest.TestCase):
             self.assertEqual(len(result["origins"]), 26)
 
     def test_downloaded_candidate_archives_validate_actual_index_and_raw_receipt_bytes(self) -> None:
+        from client_verifier_delivery_chain_test import upload_tree, zip_upload
         artifacts = ROOT / ".artifacts" / "phase178"
         with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
             locked, floor, runner, candidate = self._pair_roots(Path(temporary))
             for pair, root, expected in (("locked", locked, (14, 33)), ("floor", floor, (12, 31))):
                 archive_path = Path(temporary) / f"{pair}.zip"
-                with zipfile.ZipFile(archive_path, "w", compression=zipfile.ZIP_STORED) as archive:
-                    for path in sorted((root / "validated").iterdir()):
-                        archive.write(path, f"validated/{path.name}")
+                upload_tree(root, pair)
+                zip_upload(root, archive_path)
                 result = verifier_delivery._artifact_zip_pair(
                     archive_path, pair=pair, runner=runner, candidate=candidate,
                 )
@@ -605,7 +606,7 @@ class SemanticDeliveryRejections(unittest.TestCase):
             with self.assertRaises(verifier_delivery.DeliveryError):
                 verifier_delivery.check("candidate-identity", phase, phase, phase)
 
-    def test_candidate_identity_accepts_observed_head_and_synthetic_checkout_relation(self) -> None:
+    def test_candidate_identity_rejects_sparse_unowned_claims_and_preserves_pending(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             phase = Path(temporary)
             head = verifier_delivery._git("rev-parse", "HEAD")
@@ -650,8 +651,8 @@ class SemanticDeliveryRejections(unittest.TestCase):
             }
             (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
             with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"):
-                result = verifier_delivery.check("candidate-identity", phase, phase, phase)
-            self.assertEqual(result["executed_checkout_sha"], head)
+                with self.assertRaises(verifier_delivery.DeliveryError):
+                    verifier_delivery.check("candidate-identity", phase, phase, phase)
             candidate["checkout_tree"] = "f" * 40
             (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
             with self.assertRaises(verifier_delivery.DeliveryError):

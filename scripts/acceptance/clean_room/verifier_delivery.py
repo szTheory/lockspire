@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from datetime import datetime, timezone
 import hashlib
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -22,6 +24,7 @@ sys.path.insert(0, str(HERE.parent))
 
 from package_input import PackageInputError, package_tree_digest, sha256, unpack_hex_tarball  # noqa: E402
 from build_provider import PROOF_PAIR_LOCKS  # noqa: E402
+from verifier_input_closure import RULE as CLOSURE_RULE, tracked_inputs, assert_worktree_selection, committed_hashes  # noqa: E402
 from verifier_receipts import (  # noqa: E402
     REQUIRED_MATRIX, ReceiptError, _unique_object, expected_case_ids, validate_complete_matrix,
 )
@@ -54,149 +57,44 @@ PHASE175_FROZEN_INPUTS = (
     (".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-02-SUMMARY.md", "94187b75b50bf5661f2422645f93ffc400d3e12bce8c55b43d28e3b9416988cc"),
 )
 
-# Explicitly bounded. Do not replace this with a whole-repository history scan.
-COVERED_INPUTS = (
-    "mix.exs",
-    "mix.lock",
-    "config/config.exs",
-    "config/test.exs",
-    "lib/lockspire/admin/client_verifier_maintenance.ex",
-    "lib/lockspire/security/client_secret_verifier.ex",
-    "lib/lockspire/security/client_secret_verifier/context.ex",
-    "lib/lockspire/security/client_secret_verifier/legacy.ex",
-    "lib/lockspire/security/client_secret_verifier/operation_context.ex",
-    "lib/lockspire/protocol/client_auth/client_secret_jwt.ex",
-    "lib/lockspire/oban.ex",
-    "lib/lockspire/storage/client_lifetime.ex",
-    "lib/lockspire/storage/client_store.ex",
-    "lib/lockspire/storage/client_verifier_maintenance.ex",
-    "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
-    "scripts/acceptance/clean_room/admin_receipts.py",
-    "scripts/acceptance/clean_room/build_client.py",
-    "scripts/acceptance/clean_room/build_provider.py",
-    "scripts/acceptance/clean_room/client_lifetime_upgrade.py",
-    "scripts/acceptance/clean_room/lifetime_receipts.py",
-    "scripts/acceptance/clean_room/processes.py",
-    "scripts/acceptance/clean_room/redaction.py",
-    "scripts/acceptance/clean_room/selected_receipts.py",
-    "scripts/acceptance/clean_room/verifier_recovery.py",
-    "scripts/acceptance/clean_room/verifier_delivery.py",
-    "scripts/acceptance/clean_room_admin_journey.py",
-    "scripts/acceptance/clean_room_saas_journey.py",
-    "scripts/acceptance/clean_room/verifier_receipts.py",
-    "scripts/acceptance/clean_room/verifier_transactions.py",
-    "scripts/acceptance/clean_room/verifier_core.py",
-    "scripts/acceptance/clean_room/verifier_disclosure.py",
-    "scripts/acceptance/clean_room/verifier_endpoints.py",
-    "scripts/acceptance/clean_room/verifier_rollout.py",
-    "scripts/acceptance/clean_room/package_input.py",
-    "scripts/acceptance/clean_room_verifier_upgrade.py",
-    "scripts/ci/run_verifier_upgrade_proof.sh",
-    "scripts/ci/run_owned_source_tests.py",
-    "scripts/ci/provision_verifier_candidate.py",
-    "scripts/maintainer/repo_hygiene_check.sh",
-    "scripts/ci/lint_workflows.sh",
-    "test/acceptance/client_verifier_delivery_test.py",
-    "test/acceptance/client_verifier_wrapper_lifecycle_test.py",
-    "test/acceptance/client_verifier_wrapper_paths_test.py",
-    "test/acceptance/client_verifier_disclosure_test.py",
-    "test/acceptance/client_verifier_receipts_test.py",
-    "test/acceptance/client_verifier_core_test.py",
-    "test/acceptance/client_verifier_endpoints_test.py",
-    "test/acceptance/client_verifier_rollout_test.py",
-    "test/acceptance/client_verifier_process_supervision_test.py",
-    "test/acceptance/client_verifier_transactions_test.py",
-    "test/acceptance/owned_source_tests_test.py",
-    "test/integration/client_secret_verifier_configuration_test.exs",
-    "test/integration/client_secret_verifier_maintenance_concurrency_test.exs",
-    "test/integration/client_secret_verifier_maintenance_disclosure_test.exs",
-    "test/integration/client_secret_verifier_maintenance_issuance_test.exs",
-    "test/integration/client_secret_verifier_maintenance_recovery_test.exs",
-    "test/integration/client_secret_verifier_maintenance_test.exs",
-    "test/integration/client_secret_verifier_rotation_test.exs",
-    "test/integration/client_secret_verifier_tracer_test.exs",
-    "test/lockspire/admin/client_verifier_maintenance_test.exs",
-    "test/lockspire/config_client_secret_verifier_test.exs",
-    "test/lockspire/security/client_secret_verifier_age_test.exs",
-    "test/lockspire/security/client_secret_verifier_inspection_test.exs",
-    "test/lockspire/security/client_secret_verifier_maintenance_test.exs",
-    "test/lockspire/security/client_secret_verifier_rollout_test.exs",
-    "test/lockspire/security/client_secret_verifier_test.exs",
-    "test/lockspire/storage/client_verifier_maintenance_test.exs",
-    "test/support/client_verifier_maintenance_concurrency.ex",
-    "test/clean_room/provider_host/mix.exs",
-    "test/clean_room/provider_host/mix.lock",
-    "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex",
-    "test/clean_room/provider_host/verifier_endpoints.exs",
-    "test/clean_room/provider_host/admin_proof.exs",
-    "test/clean_room/provider_host/admin_proof_live_view.js",
-    "test/clean_room/provider_host/lib/clean_room_provider/accounts.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider/bootstrap.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider/lockspire/account_resolver.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider/lockspire/interaction_handler.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/billing_controller.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/session_controller.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider_web/operator_authorization.ex",
-    "test/clean_room/provider_host/lib/clean_room_provider_web/router_patch.exs",
-    "test/clean_room/confidential_client/config/config.exs",
-    "test/clean_room/confidential_client/lib/clean_room_client/application.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/dpop.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/dpop_session.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/oauth_http.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/oauth_transaction.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/oidc_verifier.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/repo.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client/transactions.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/journey_controller.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client_web/controllers/oauth_controller.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client_web/endpoint.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client_web/error_html.ex",
-    "test/clean_room/confidential_client/lib/clean_room_client_web/router.ex",
-    "test/clean_room/confidential_client/mix.exs",
-    "test/clean_room/confidential_client/mix.lock",
-    "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
-    "test/clean_room/confidential_client/test/dpop_client_test.exs",
-    "test/clean_room/confidential_client/test/oauth_transaction_test.exs",
-    "test/clean_room/confidential_client/test/test_helper.exs",
-    "compatibility/phoenix_1_8_live_view_1_1/lib/lockspire_compatibility_fixture.ex",
-    "compatibility/phoenix_1_8_live_view_1_1/mix.exs",
-    "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
-    "compatibility/phoenix_1_8_live_view_1_1/test/admin_host_runtime_test.exs",
-    "compatibility/phoenix_1_8_live_view_1_1/test/test_helper.exs",
-    "test/clean_room/provider_host/lib/clean_room_provider/lifetime_client_store.ex",
-    "docs/client-secret-verifier-configuration.md",
-    "docs/client-secret-jwt-host-guide.md",
-    "docs/install-and-onboard.md",
-    "docs/getting-started.md",
-    "docs/supported-surface.md",
-    "docs/maintainer-release.md",
-    ".github/workflows/ci.yml",
-    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-PLAN.md",
-    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CONTEXT.md",
-    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-RESEARCH.md",
-    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-PATTERNS.md",
-    ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VALIDATION.md",
-    ".planning/phases/177-safe-verifier-maintenance-recovery/177-VERIFICATION.md",
-    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md",
-    ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json",
-    ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json",
+# Explicit planning inputs complement the finite tracked directory/root rules.
+# Generated review and execution records are evidence, never selector authority.
+PLANNING_INPUTS = (
+    '.planning/RELEASE-TRAIN.md',
+    '.planning/releases/1.6.1-EVIDENCE.md',
+    '.planning/releases/1.6.1-terminal-receipt.json',
+    '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-PLAN.md',
+    '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-CONTEXT.md',
+    '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-RESEARCH.md',
+    '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-PATTERNS.md',
+    '.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VALIDATION.md',
+    '.planning/phases/177-safe-verifier-maintenance-recovery/177-VERIFICATION.md',
+    '.planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md',
+    '.planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json',
+    '.planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-FINAL-SOURCE.json',
     *(path for path, _digest in PHASE175_FROZEN_INPUTS),
 )
-
-# The receipt schemas and the verifier matrix fixtures are review/freeze inputs,
-# not merely test data. Keep this bounded to the named fixture directory.
-MATRIX_FIXTURE_INPUTS = tuple(
-    path.relative_to(ROOT).as_posix()
-    for path in sorted((ROOT / "test/fixtures/verifier-matrix-26").rglob("*.json"))
-)
-COVERED_INPUTS = (*COVERED_INPUTS, *MATRIX_FIXTURE_INPUTS)
+COVERED_INPUTS = tracked_inputs(ROOT, "HEAD", PLANNING_INPUTS)
+MATRIX_FIXTURE_INPUTS = tuple(path for path in COVERED_INPUTS if path.startswith("test/fixtures/verifier-matrix-26/"))
 REVIEW_REQUIRED_FILES = frozenset(COVERED_INPUTS)
 
 
 class DeliveryError(ValueError):
     """A finite delivery evidence contract failed."""
+
+
+def covered_inputs(revision: str) -> tuple[str, ...]:
+    try:
+        return tracked_inputs(ROOT, revision, PLANNING_INPUTS)
+    except (ValueError, UnicodeError):
+        raise DeliveryError("selected tracked input closure is unavailable") from None
+
+
+def _selected_worktree(paths: tuple[str, ...]) -> None:
+    try:
+        assert_worktree_selection(ROOT, paths, PLANNING_INPUTS)
+    except (ValueError, UnicodeError):
+        raise DeliveryError("selected working input closure differs from reviewed commit") from None
 
 
 def _read_json(path: Path, label: str) -> dict[str, Any]:
@@ -211,8 +109,8 @@ def _read_json(path: Path, label: str) -> dict[str, Any]:
     return result
 
 
-def _git(*args: str, cwd: Path = ROOT) -> str:
-    result = subprocess.run(("git", *args), cwd=cwd, stdin=subprocess.DEVNULL,
+def _git(*args: str, cwd: Path | None = None) -> str:
+    result = subprocess.run(("git", *args), cwd=cwd or ROOT, stdin=subprocess.DEVNULL,
                             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                             check=False, timeout=20)
     if result.returncode:
@@ -288,10 +186,7 @@ def _verify_owner_source(owner: dict[str, Any], package_root: Path) -> None:
             # Mix generates this archive metadata from the checked source; it
             # is independently reproduced by _rebuild_source_package below.
             continue
-        result = subprocess.run(("git", "show", f"{revision}:{row['path']}"), cwd=ROOT,
-                                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                stderr=subprocess.DEVNULL, check=False, timeout=10)
-        if result.returncode or hashlib.sha256(result.stdout).hexdigest() != row["sha256"]:
+        if _blob_sha(revision, row["path"]) != row["sha256"]:
             raise DeliveryError("candidate archive file is not owned by the selected source commit")
 
 
@@ -397,13 +292,12 @@ def create_frozen_manifest(
         expected_tree_sha256=expected_tree_sha256,
     )
     rows = []
-    for relative in COVERED_INPUTS:
+    selected_paths = covered_inputs(expected_runner)
+    selected_hashes = committed_hashes(ROOT, expected_runner, PLANNING_INPUTS)
+    _selected_worktree(selected_paths)
+    for relative in selected_paths:
         source = _safe_repo_file(relative)
-        committed = subprocess.run(
-                ("git", "show", f"HEAD:{relative}"), cwd=ROOT, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
-        )
-        if committed.returncode or hashlib.sha256(committed.stdout).hexdigest() != sha256(source):
+        if selected_hashes.get(relative) != sha256(source):
             raise DeliveryError("covered inputs must be committed before freezing")
         rows.append({"path": relative, "sha256": sha256(source)})
     manifest = {
@@ -411,6 +305,7 @@ def create_frozen_manifest(
         "frozen_at": datetime.now(timezone.utc).isoformat(),
         "runner_revision": _git("rev-parse", "HEAD"),
         "runner_tree": _git("rev-parse", "HEAD^{tree}"),
+        "closure_rule": CLOSURE_RULE,
         "candidate_owner": owner,
         "covered_inputs": rows,
     }
@@ -450,24 +345,19 @@ def validate_frozen_manifest(phase_dir: Path, *, expected_runner: str,
     if actual_head != runner and not _reviewed_revision_is_ancestor(runner, actual_head):
         raise DeliveryError("executed checkout is unrelated to the independently pinned runner")
     rows = manifest.get("covered_inputs")
-    expected_paths = list(COVERED_INPUTS)
+    expected_paths = list(covered_inputs(runner))
+    if manifest.get("closure_rule") != CLOSURE_RULE or covered_inputs(actual_head) != tuple(expected_paths):
+        raise DeliveryError("frozen input closure rule or tracked path set changed")
+    _selected_worktree(tuple(expected_paths))
+    runner_hashes = committed_hashes(ROOT, runner, PLANNING_INPUTS)
+    head_hashes = committed_hashes(ROOT, actual_head, PLANNING_INPUTS)
     if not isinstance(rows, list) or [row.get("path") for row in rows if isinstance(row, dict)] != expected_paths:
         raise DeliveryError("frozen input path set differs from the bounded contract")
     for row in rows:
         path = _safe_repo_file(row["path"])
         if not isinstance(row.get("sha256"), str) or sha256(path) != row["sha256"]:
             raise DeliveryError("covered input bytes changed after freeze")
-        runner_blob = subprocess.run(
-                ("git", "show", f"{runner}:{row['path']}"), cwd=ROOT, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
-        )
-        head_blob = subprocess.run(
-                ("git", "show", f"{actual_head}:{row['path']}"), cwd=ROOT, stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False, timeout=10,
-        )
-        if (runner_blob.returncode or head_blob.returncode
-                or hashlib.sha256(runner_blob.stdout).hexdigest() != row["sha256"]
-                or hashlib.sha256(head_blob.stdout).hexdigest() != row["sha256"]):
+        if (runner_hashes.get(row["path"]) != row["sha256"] or head_hashes.get(row["path"]) != row["sha256"]):
             raise DeliveryError("frozen input bytes are not owned by the tested runner commit")
     owner = manifest.get("candidate_owner")
     if not isinstance(owner, dict):
@@ -659,20 +549,13 @@ def _reviewed_revision_is_ancestor(reviewed: str, expected: str) -> bool:
 
 
 def _metadata_only_difference(older: str, newer: str) -> bool:
-    result = subprocess.run(("git", "diff", "--name-only", "-z", older, newer), cwd=ROOT,
-                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL, check=False, timeout=20)
-    if result.returncode:
+    # Evidence and review records may advance HEAD. Applicability depends on
+    # every selected byte, including newly tracked dependencies, not filenames
+    # granted a metadata exception or a restamped tested revision.
+    paths = covered_inputs(older)
+    if paths != covered_inputs(newer):
         return False
-    allowed = (
-        ".planning/STATE.md", ".planning/ROADMAP.md", ".planning/REQUIREMENTS.md",
-        f".planning/phases/{PHASE_NAME}/178-REVIEW.md",
-        f".planning/phases/{PHASE_NAME}/178-SECURITY.md",
-        f".planning/phases/{PHASE_NAME}/178-INTEGRATION.md",
-        f".planning/phases/{PHASE_NAME}/178-INDEPENDENT-REVIEWS.json",
-    )
-    paths = [item.decode("utf-8", errors="strict") for item in result.stdout.split(b"\0") if item]
-    return all(path in allowed for path in paths)
+    return committed_hashes(ROOT, older, PLANNING_INPUTS) == committed_hashes(ROOT, newer, PLANNING_INPUTS)
 
 
 def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -> dict[str, Any]:
@@ -722,13 +605,29 @@ def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -
                 or sha256(report) != lane["report_sha256"]):
             raise DeliveryError("independent review report bytes changed")
         report_text = report.read_text(encoding="utf-8")
+        # Review authors own this judgment, not the executor's packet. A report
+        # must explicitly distinguish quoted historical evidence from its one
+        # active disposition. Historical reports remain immutable inputs.
+        active_text = re.sub(r"<!-- lockspire-review-history:start -->.*?<!-- lockspire-review-history:end -->",
+                             "", report_text, flags=re.DOTALL)
+        active_text = "\n".join(line for line in active_text.splitlines() if not line.lstrip().startswith(">"))
+        narrative = re.sub(r"```.*?```", "", active_text, flags=re.DOTALL)
+        disposition = re.findall(r"(?im)^Disposition:\s*(accepted|rejected)\s*$", narrative)
+        blockers = re.findall(r"(?im)^Active blocking findings:\s*([0-9]+)\s*$", narrative)
+        if disposition != ["accepted"] or blockers != ["0"]:
+            raise DeliveryError("review report lacks one accepting active disposition")
+        if re.search(r"(?im)(?:^\s*(?:#{1,6}\s*)?(?:\*\*)?(?:BLOCKER|OPEN_THREATS|UNRESOLVED|REJECTED)\b|"
+                     r"\bOPEN\b[^\n]{0,100}\b(?:BLOCKER|BLOCKING|HIGH|CRITICAL)\b|"
+                     r"\b(?:BLOCKER|HIGH|CRITICAL)\b[^\n]{0,100}\bOPEN\b|"
+                     r"\bunresolved\s+(?:blocker|blocking|high|critical)|\brejected for freeze\b|\bdo not approve\b)", narrative):
+            raise DeliveryError("review active narrative contradicts acceptance")
         reviewed_match = re.search(r"(?im)^reviewed commit:\s*([0-9a-f]{40,64})\s*$", report_text)
         reviewer_match = re.search(r"(?im)^reviewer:\s*(.+?)\s*$", report_text)
         if (not reviewed_match or reviewed_match.group(1) != reviewed_revision
                 or not reviewer_match or reviewer_match.group(1) != identity):
             raise DeliveryError("review judgment identity does not match its preserved report")
         report_records = []
-        for block in re.findall(r"```json\s*(\{.*?\})\s*```", report_text, re.DOTALL):
+        for block in re.findall(r"```json\s*(\{.*?\})\s*```", active_text, re.DOTALL):
             try:
                 value = json.loads(block)
             except (ValueError, TypeError):
@@ -759,13 +658,10 @@ def validate_reviews(phase_dir: Path, *, expected_revision: str | None = None) -
             paths.add(item["path"])
             if sha256(path) != item["sha256"]:
                 raise DeliveryError("reviewed source bytes changed after independent review")
-            committed = subprocess.run(("git", "show", f"{reviewed_revision}:{item['path']}"), cwd=ROOT,
-                                       stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                       stderr=subprocess.DEVNULL, check=False, timeout=10)
-            if committed.returncode or hashlib.sha256(committed.stdout).hexdigest() != item["sha256"]:
+            if _blob_sha(reviewed_revision, item["path"]) != item["sha256"]:
                 raise DeliveryError("reviewed source bytes are not present at the reviewed revision")
-        required_review_files = set(COVERED_INPUTS) | set(MATRIX_FIXTURE_INPUTS)
-        if not required_review_files.issubset(paths):
+        required_review_files = set(covered_inputs(reviewed_revision))
+        if paths != required_review_files:
             raise DeliveryError("independent review omits required delivery source scope")
         findings = lane.get("findings")
         if not isinstance(findings, list):
@@ -799,11 +695,15 @@ def _check_frozen(phase_dir: Path, pins: dict[str, str]) -> dict[str, Any]:
 
 
 def _check_package(phase_dir: Path, locked_root: Path, floor_root: Path,
-                   pins: dict[str, str]) -> dict[str, Any]:
+                   pins: dict[str, str], *, executed_runner: str | None = None) -> dict[str, Any]:
     frozen = validate_frozen_manifest(phase_dir, **pins)
     owner = frozen["candidate_owner"]
+    runner = executed_runner or _git("rev-parse", "HEAD")
+    if (not _reviewed_revision_is_ancestor(frozen["runner_revision"], runner)
+            or not _metadata_only_difference(frozen["runner_revision"], runner)):
+        raise DeliveryError("package executed runner changed frozen covered bytes")
     matrix = compose_pair_indexes(
-        locked_root, floor_root, expected_runner=frozen["runner_revision"],
+        locked_root, floor_root, expected_runner=runner,
         expected_candidate=(owner["source_revision"], owner["archive_sha256"], owner["tree_sha256"]),
         expected_candidate_proof=owner["owner_sha256"],
     )
@@ -927,8 +827,12 @@ def record_source_acceptance(
     pins: dict[str, str],
 ) -> dict[str, Any]:
     frozen = validate_frozen_manifest(phase_dir, **pins)
-    manifest = _owned_source_manifest(guard_manifest_path, frozen["runner_revision"])
-    package = _check_package(phase_dir, locked_root, floor_root, pins)
+    actual_runner = _git("rev-parse", "HEAD")
+    if (not _reviewed_revision_is_ancestor(frozen["runner_revision"], actual_runner)
+            or not _metadata_only_difference(frozen["runner_revision"], actual_runner)):
+        raise DeliveryError("actual source checkout changed frozen covered bytes")
+    manifest = _owned_source_manifest(guard_manifest_path, actual_runner)
+    package = _check_package(phase_dir, locked_root, floor_root, pins, executed_runner=actual_runner)
     source_manifest = phase_dir / "178-OWNED-SOURCE-MANIFEST.json"
     source_record = phase_dir / "178-SOURCE-ACCEPTANCE.json"
     if source_manifest.exists() or source_manifest.is_symlink() or source_record.exists() or source_record.is_symlink():
@@ -954,7 +858,8 @@ def record_source_acceptance(
     }
     record = {
         "schema": "lockspire-phase178-source-acceptance-v1",
-        "tested_source_revision": frozen["runner_revision"],
+        "tested_source_revision": actual_runner,
+        "frozen_runner_revision": frozen["runner_revision"],
         "candidate_source_revision": frozen["candidate_owner"]["source_revision"],
         "candidate_archive_sha256": frozen["candidate_owner"]["archive_sha256"],
         "candidate_tree_sha256": frozen["candidate_owner"]["tree_sha256"],
@@ -982,8 +887,12 @@ def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
     record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
     if record.get("schema") != "lockspire-phase178-source-acceptance-v1":
         raise DeliveryError("source acceptance record schema is invalid")
-    if record.get("tested_source_revision") != frozen["runner_revision"]:
-        raise DeliveryError("source acceptance tested revision differs from frozen runner")
+    tested_runner = record.get("tested_source_revision")
+    if (record.get("frozen_runner_revision") != frozen["runner_revision"]
+            or not isinstance(tested_runner, str) or not REVISION.fullmatch(tested_runner)
+            or not _reviewed_revision_is_ancestor(frozen["runner_revision"], tested_runner)
+            or not _metadata_only_difference(frozen["runner_revision"], tested_runner)):
+        raise DeliveryError("source acceptance actual checkout changed frozen covered bytes")
     if record.get("covered_inputs") != frozen["covered_inputs"]:
         raise DeliveryError("source acceptance does not bind the frozen input bytes")
     ci = record.get("canonical_ci")
@@ -1013,13 +922,13 @@ def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
             or sha256(manifest_path) != ci.get("manifest_sha256")
             or stat.S_IMODE(manifest_path.stat().st_mode) != 0o600):
         raise DeliveryError("source acceptance guard manifest digest or custody is invalid")
-    manifest = _owned_source_manifest(manifest_path, frozen["runner_revision"], require_temp_custody=False)
+    manifest = _owned_source_manifest(manifest_path, tested_runner, require_temp_custody=False)
     guard_ci = next(item for item in manifest["commands"] if item["stage"] == "ci")
     if ci["exit_code"] != guard_ci["exit_code"] or [
             {field: stage[field] for field in ("tests", "failures", "properties", "stdout_bytes", "stdout_sha256")}
             for stage in stages] != guard_ci["exunit_counts"]:
         raise DeliveryError("source acceptance CI stage results differ from the live owned guard capture")
-    if _check_package(phase_dir, locked_root, floor_root, pins)["executed_receipt_count"] != record.get("package_receipt_count"):
+    if _check_package(phase_dir, locked_root, floor_root, pins, executed_runner=tested_runner)["executed_receipt_count"] != record.get("package_receipt_count"):
         raise DeliveryError("source acceptance package proof is absent or changed")
     if sha256(phase_dir / "178-PACKAGE-ACCEPTANCE.md") != record.get("package_acceptance_sha256"):
         raise DeliveryError("source acceptance package report bytes changed")
@@ -1029,6 +938,9 @@ def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
 def _blob_sha(revision: str, relative: str) -> str:
     if not REVISION.fullmatch(revision):
         raise DeliveryError("candidate source revision is malformed")
+    selected = committed_hashes(ROOT, revision, PLANNING_INPUTS)
+    if relative in selected:
+        return selected[relative]
     result = subprocess.run(("git", "show", f"{revision}:{relative}"), cwd=ROOT,
                             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                             stderr=subprocess.DEVNULL, check=False, timeout=10)
@@ -1068,7 +980,8 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
     if observation.get("schema") != "lockspire-phase178-candidate-observation-v1":
         raise DeliveryError("candidate raw observation schema is invalid")
     if set(observation) != {"schema", "event", "run_id", "run_attempt", "pull_request_head_sha",
-                           "executed_checkout_sha", "checkout_tree", "checkout_parents"}:
+                           "executed_checkout_sha", "checkout_tree", "checkout_parents",
+                           "workflow_head_sha", "pull_request_number", "pull_request_base_sha", "checkout_ref"}:
         raise DeliveryError("candidate raw observation contains unsupported fields")
     fields = ("event", "run_id", "run_attempt", "executed_checkout_sha", "checkout_tree", "checkout_parents")
     if (any(candidate.get(field) != observation.get(field) for field in fields)
@@ -1092,8 +1005,14 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
         raise DeliveryError("candidate observation time is malformed") from None
     if not isinstance(candidate["failed_attempts"], list):
         raise DeliveryError("candidate failed-attempt history is malformed")
-    if candidate["runner_sha"] != source.get("tested_source_revision"):
-        raise DeliveryError("candidate runner differs from source acceptance")
+    if candidate["runner_sha"] != candidate["executed_checkout_sha"]:
+        raise DeliveryError("candidate runner does not identify the executed hosted checkout")
+    tested = source.get("tested_source_revision")
+    if (not isinstance(tested, str) or not REVISION.fullmatch(tested)
+            or not _reviewed_revision_is_ancestor(tested, candidate["reviewed_head_sha"])
+            or not _metadata_only_difference(tested, candidate["reviewed_head_sha"])
+            or not _metadata_only_difference(tested, candidate["executed_checkout_sha"])):
+        raise DeliveryError("hosted checkout or PR head changed selected tested bytes")
     if candidate["package_source_sha"] != source.get("candidate_source_revision"):
         raise DeliveryError("candidate package source differs from frozen source acceptance")
     if (candidate.get("package_archive_sha256") != source.get("candidate_archive_sha256")
@@ -1118,7 +1037,9 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
         raise DeliveryError("candidate checkout tree or parent relation differs from Git")
     if candidate["event"] == "pull_request":
         if (observation.get("pull_request_head_sha") != candidate["reviewed_head_sha"]
-                or not actual_parents or actual_parents[-1] != candidate["reviewed_head_sha"]):
+                or actual_parents != [observation.get("pull_request_base_sha"), candidate["reviewed_head_sha"]]
+                or type(observation.get("pull_request_number")) is not int or observation["pull_request_number"] <= 0
+                or observation.get("checkout_ref") != f"refs/pull/{observation['pull_request_number']}/merge"):
             raise DeliveryError("candidate PR head is not the observed synthetic checkout parent")
     elif candidate["reviewed_head_sha"] != candidate["executed_checkout_sha"]:
         raise DeliveryError("candidate push head differs from the executed checkout")
@@ -1127,7 +1048,9 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
         source_rows = {row["path"]: row["sha256"] for row in source["covered_inputs"]}
     except (KeyError, TypeError):
         raise DeliveryError("candidate covered-input relation is unavailable") from None
-    if not isinstance(relation, list) or {row.get("path") for row in relation if isinstance(row, dict)} != set(source_rows):
+    if (set(source_rows) != set(covered_inputs(tested)) or not isinstance(relation, list)
+            or len(relation) != len(source_rows)
+            or {row.get("path") for row in relation if isinstance(row, dict)} != set(source_rows)):
         raise DeliveryError("candidate covered-input relation is incomplete")
     for row in relation:
         if not isinstance(row, dict) or set(row) != {"path", "runner_sha256", "package_sha256"}:
@@ -1135,9 +1058,50 @@ def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
         path = row["path"]
         if (row["runner_sha256"] != source_rows.get(path)
                 or row["package_sha256"] != _blob_sha(candidate["package_source_sha"], path)
-                or row["runner_sha256"] != row["package_sha256"]):
+                or row["runner_sha256"] != row["package_sha256"]
+                or row["runner_sha256"] != _blob_sha(candidate["executed_checkout_sha"], path)
+                or row["runner_sha256"] != _blob_sha(candidate["reviewed_head_sha"], path)):
             raise DeliveryError("candidate package/source relationship differs across covered bytes")
+    _observe_candidate_identity(candidate, observation)
     return candidate
+
+
+def _observe_candidate_identity(candidate: dict[str, Any], observation: dict[str, Any]) -> None:
+    """Authenticate PR identity before claiming even identity-only acceptance.
+
+    GitHub documents PR GITHUB_SHA as the merge-ref commit, while REST exposes
+    head_sha and pull_requests separately. Keep their actual observations
+    separate instead of inferring that REST head_sha equals GITHUB_SHA:
+    https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request
+    https://docs.github.com/en/rest/actions/workflow-runs#get-a-workflow-run-attempt
+    """
+    repository = _github_repository()
+    endpoint = f"repos/{repository}/actions/runs/{candidate['run_id']}/attempts/{candidate['run_attempt']}"
+    run = _github_json(endpoint)
+    if (run.get("id") != int(candidate["run_id"]) or run.get("run_attempt") != candidate["run_attempt"]
+            or run.get("path") != candidate["workflow_path"] or run.get("event") != candidate["event"]
+            or run.get("repository", {}).get("full_name") != repository
+            or run.get("head_sha") != observation.get("workflow_head_sha")):
+        raise DeliveryError("candidate identity differs from authoritative run observation")
+    if candidate["event"] == "pull_request":
+        number = observation["pull_request_number"]
+        matches = [row for row in run.get("pull_requests", []) if isinstance(row, dict) and row.get("number") == number]
+        if (len(matches) != 1 or matches[0].get("head", {}).get("sha") != candidate["reviewed_head_sha"]
+                or matches[0].get("base", {}).get("sha") != observation["pull_request_base_sha"]
+                or run.get("head_sha") not in {candidate["reviewed_head_sha"], candidate["executed_checkout_sha"]}):
+            raise DeliveryError("candidate PR head or base differs from authoritative run association")
+        ref = _github_json(f"repos/{repository}/git/ref/pull/{number}/merge")
+        if ref.get("ref") != observation["checkout_ref"] or ref.get("object", {}).get("sha") != candidate["executed_checkout_sha"]:
+            raise DeliveryError("candidate merge checkout differs from authoritative PR ref")
+    elif (run.get("head_sha") != candidate["executed_checkout_sha"]
+          or observation.get("pull_request_number") is not None or observation.get("pull_request_base_sha") is not None
+          or observation.get("checkout_ref") != f"refs/heads/{run.get('head_branch')}"):
+        raise DeliveryError("candidate push checkout differs from authoritative branch")
+    commit = _github_json(f"repos/{repository}/git/commits/{candidate['executed_checkout_sha']}")
+    if (commit.get("sha") != candidate["executed_checkout_sha"]
+            or commit.get("tree", {}).get("sha") != candidate["checkout_tree"]
+            or [row.get("sha") for row in commit.get("parents", [])] != candidate["checkout_parents"]):
+        raise DeliveryError("candidate checkout differs from authoritative Git commit relation")
 
 
 def _github_json(endpoint: str) -> dict[str, Any]:
@@ -1163,8 +1127,55 @@ def _github_repository() -> str:
     return match.group(1)
 
 
+def copy_upload_owner(upload_root: Path, phase_dir: Path, pins: dict[str, str]) -> None:
+    manifest = validate_frozen_manifest(phase_dir, **pins)
+    upload_root = upload_root.resolve(strict=True)
+    if upload_root.name != "validated" or not upload_root.is_relative_to(ARTIFACT_DEFAULT.resolve(strict=True)):
+        raise DeliveryError("upload owner destination is outside the owned validated tree")
+    destination = upload_root / "candidate"
+    destination.mkdir(mode=0o700)
+    selected = os.environ.get("LOCKSPIRE_FROZEN_INPUTS")
+    source = _safe_manifest_path(Path(selected) if selected else phase_dir / "178-FROZEN-INPUTS.json", phase_dir)
+    shutil.copyfile(source, destination / "manifest.json")
+    shutil.copyfile(_safe_repo_file(manifest["candidate_owner"]["archive_path"]), destination / "package.tar")
+
+
+def _uploaded_owner(archive: zipfile.ZipFile, prefix: str, *, runner: str,
+                    candidate: tuple[str, str, str]) -> str:
+    owner_manifest = json.loads(archive.read(prefix + "candidate/manifest.json"), object_pairs_hook=_unique_object)
+    if (not isinstance(owner_manifest, dict) or owner_manifest.get("closure_rule") != CLOSURE_RULE
+            or owner_manifest.get("runner_revision") != runner
+            or owner_manifest.get("runner_tree") != _git("rev-parse", f"{runner}^{{tree}}")):
+        raise DeliveryError("uploaded candidate manifest runner or closure is invalid")
+    rows = owner_manifest.get("covered_inputs")
+    expected = [{"path": path, "sha256": _blob_sha(runner, path)} for path in covered_inputs(runner)]
+    if rows != expected or not _metadata_only_difference(candidate[0], runner):
+        raise DeliveryError("uploaded candidate covered bytes differ from selected source")
+    owner = owner_manifest.get("candidate_owner")
+    if not isinstance(owner, dict):
+        raise DeliveryError("uploaded candidate owner is unavailable")
+    if (owner.get("source_revision"), owner.get("archive_sha256"), owner.get("tree_sha256")) != candidate:
+        raise DeliveryError("uploaded candidate owner differs from authenticated package")
+    proof = owner.get("owner_sha256")
+    claim = {key: value for key, value in owner.items() if key != "owner_sha256"}
+    if proof != hashlib.sha256(json.dumps(claim, sort_keys=True, separators=(",", ":")).encode()).hexdigest():
+        raise DeliveryError("uploaded candidate owner proof is invalid")
+    raw = archive.read(prefix + "candidate/package.tar")
+    if hashlib.sha256(raw).hexdigest() != candidate[1]:
+        raise DeliveryError("uploaded candidate archive differs from authenticated bytes")
+    with tempfile.TemporaryDirectory(prefix="lockspire-upload-owner-") as temporary:
+        package = Path(temporary) / "package.tar"
+        package.write_bytes(raw)
+        extracted = Path(temporary) / "package"
+        unpack_hex_tarball(package, extracted)
+        if package_tree_digest(extracted) != candidate[2]:
+            raise DeliveryError("uploaded candidate archive tree differs from selected owner")
+        _verify_owner_source(owner, extracted)
+    return proof
+
+
 def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
-                       candidate: tuple[str, str, str]) -> dict[str, int]:
+                       candidate: tuple[str, str, str], require_owner: bool = False) -> dict[str, int]:
     from verifier_receipts import validate_receipt, validate_rollout_receipt
 
     expected_receipts, expected_cases = (14, 33) if pair == "locked" else (12, 31)
@@ -1182,7 +1193,15 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
             if len(index_names) != 1:
                 raise DeliveryError("downloaded candidate artifact index is missing or duplicated")
             index = json.loads(archive.read(index_names[0]), object_pairs_hook=_unique_object)
-            if (not isinstance(index, dict) or index.get("schema") != "lockspire-installed-verifier-pair-v1"
+            prefix = index_names[0][:-len("index.json")]
+            owner_proof = _uploaded_owner(archive, prefix, runner=runner, candidate=candidate) if require_owner else None
+            if (not isinstance(index, dict) or set(index) != {
+                    "schema", "pair", "runner_revision", "aggregate_validator_revision", "candidate_source_archive_tree",
+                    "required_receipts", "executed_receipts", "required_cases", "passed_cases", "failed_cases", "cells"}
+                    or not isinstance(index.get("aggregate_validator_revision"), str)
+                    or not REVISION.fullmatch(index["aggregate_validator_revision"])
+                    or (require_owner and index["aggregate_validator_revision"] != runner)
+                    or index.get("schema") != "lockspire-installed-verifier-pair-v1"
                     or index.get("pair") != pair or index.get("runner_revision") != runner
                     or index.get("candidate_source_archive_tree") != list(candidate)
                     or index.get("required_receipts") != expected_receipts
@@ -1195,8 +1214,23 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                 raise DeliveryError("downloaded candidate artifact cell set is incomplete")
             seen: set[tuple[str, str, str]] = set()
             expected_members = {index_names[0]}
+            raw_copies_name = prefix + "raw-copies.json"
+            if raw_copies_name not in names:
+                raise DeliveryError("downloaded artifact omits actual wrapper raw copies")
+            copies = json.loads(archive.read(raw_copies_name), object_pairs_hook=_unique_object)
+            expected_members.add(raw_copies_name)
+            if (not isinstance(copies, dict) or set(copies) != {"schema", "pair", "copies"}
+                    or copies.get("schema") != "lockspire-validated-raw-copies-v1"
+                    or copies.get("pair") != pair or not isinstance(copies.get("copies"), list)
+                    or len(copies["copies"]) != expected_receipts):
+                raise DeliveryError("downloaded artifact raw-copy manifest is invalid")
+            if require_owner:
+                expected_members.update({prefix + "candidate/manifest.json", prefix + "candidate/package.tar"})
             for row in cells:
-                if not isinstance(row, dict):
+                if not isinstance(row, dict) or set(row) != {
+                        "scope", "pair", "store", "run_id", "runner_revision", "receipt_sha256",
+                        "candidate_source_archive_tree", "host_lock_sha256", "compiled_candidate_sha256",
+                        "stable_case_ids", "executed_count", "outcome", "receipt_path"}:
                     raise DeliveryError("downloaded candidate artifact cell is malformed")
                 key = (row.get("scope"), row.get("pair"), row.get("store"))
                 if key not in expected_keys or key in seen:
@@ -1213,6 +1247,15 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                 if row.get("receipt_sha256") != hashlib.sha256(raw).hexdigest():
                     raise DeliveryError("downloaded candidate artifact receipt digest differs from its bytes")
                 receipt = json.loads(raw, object_pairs_hook=_unique_object)
+                raw_member = prefix + f"raw/{key[0]}-{pair}-{key[2]}.json"
+                matching = [item for item in copies["copies"] if isinstance(item, dict)
+                            and (item.get("scope"), item.get("pair"), item.get("store")) == key]
+                if (len(matching) != 1 or set(matching[0]) != {"scope", "pair", "store", "path", "sha256"}
+                        or matching[0].get("path") != raw_member[len(prefix):]
+                        or matching[0].get("sha256") != hashlib.sha256(raw).hexdigest()
+                        or raw_member not in names or archive.read(raw_member) != raw):
+                    raise DeliveryError("downloaded artifact raw copies differ from validated receipt bytes")
+                expected_members.add(raw_member)
                 rollout = isinstance(receipt, dict) and receipt.get("schema") == "lockspire-installed-verifier-rollout-v1"
                 case_ids = expected_case_ids(key)
                 if (not isinstance(receipt, dict) or receipt.get("scope") != key[0]
@@ -1230,10 +1273,20 @@ def _artifact_zip_pair(path: Path, *, pair: str, runner: str,
                                               expected_scope=key[0])
                 else:
                     validate_receipt(receipt, expected_pair=pair, expected_store=key[2])
+                raw_candidate = receipt["candidate"]
+                raw_runner = receipt.get("runner_revision") if rollout else receipt.get("runner")
+                compiled = receipt["processes"]["candidate"]["compiled_candidate_sha256"] if rollout else receipt["host"]["compiled_candidate_sha256"]
+                if (raw_runner != runner
+                        or (raw_candidate.get("source_revision"), raw_candidate.get("archive_sha256"), raw_candidate.get("tree_sha256")) != candidate
+                        or (owner_proof is not None and raw_candidate.get("source_proof") != owner_proof)
+                        or row.get("host_lock_sha256") != receipt["host"].get("lock_sha256")
+                        or row.get("host_lock_sha256") != sha256(PROOF_PAIR_LOCKS[pair])
+                        or row.get("compiled_candidate_sha256") != compiled):
+                    raise DeliveryError("downloaded artifact raw ownership differs from indexed authenticated identity")
             if seen != expected_keys or set(names) != expected_members:
                 raise DeliveryError("downloaded candidate artifact file set is not the exact validated package partition")
             return {"receipts": len(seen), "cases": expected_cases}
-    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, ReceiptError, KeyError, TypeError):
+    except (OSError, zipfile.BadZipFile, UnicodeError, ValueError, ReceiptError, PackageInputError, KeyError, TypeError):
         raise DeliveryError("downloaded candidate artifact bytes are invalid") from None
 
 
@@ -1241,7 +1294,7 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
     identity = _check_candidate_identity(phase_dir)
     source_record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
     source_pins = {
-        "expected_runner": source_record.get("tested_source_revision"),
+        "expected_runner": source_record.get("frozen_runner_revision"),
         "expected_candidate_source": source_record.get("candidate_source_revision"),
         "expected_archive_sha256": source_record.get("candidate_archive_sha256"),
         "expected_tree_sha256": source_record.get("candidate_tree_sha256"),
@@ -1304,9 +1357,10 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
     repository = _github_repository()
     run_endpoint = f"repos/{repository}/actions/runs/{identity['run_id']}/attempts/{identity['run_attempt']}"
     observed_run = _github_json(run_endpoint)
+    observation = _read_json(phase_dir / "178-CANDIDATE-OBSERVATION.json", "candidate raw observation")
     if (observed_run.get("id") != int(identity["run_id"])
             or observed_run.get("run_attempt") != identity["run_attempt"]
-            or observed_run.get("head_sha") != identity["executed_checkout_sha"]
+            or observed_run.get("head_sha") != observation["workflow_head_sha"]
             or observed_run.get("event") != identity["event"]
             or observed_run.get("path") != identity["workflow_path"]
             or observed_run.get("status") != "completed" or observed_run.get("conclusion") != "success"
@@ -1318,12 +1372,16 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
     ).get("jobs")
     if not isinstance(observed_jobs, list) or len(observed_jobs) != len(CANONICAL_CI_JOBS):
         raise DeliveryError("candidate run job graph is not authoritatively complete")
-    for name, claimed, observed in zip(CANONICAL_CI_JOBS, jobs, observed_jobs, strict=True):
+    observed_by_name = {row.get("name"): row for row in observed_jobs if isinstance(row, dict)}
+    if set(observed_by_name) != set(CANONICAL_CI_JOBS):
+        raise DeliveryError("candidate run job names are not authoritatively complete")
+    for name, claimed in zip(CANONICAL_CI_JOBS, jobs, strict=True):
+        observed = observed_by_name[name]
         if (not isinstance(observed, dict) or observed.get("name") != name
                 or observed.get("id") != claimed["job_id"]
                 or observed.get("run_id") != int(identity["run_id"])
                 or observed.get("run_attempt") != identity["run_attempt"]
-                or observed.get("head_sha") != identity["executed_checkout_sha"]
+                or observed.get("head_sha") != observation["workflow_head_sha"]
                 or observed.get("status") != "completed" or observed.get("conclusion") != "success"):
             raise DeliveryError("candidate job claim differs from authoritative hosted observation")
     observed_artifacts = _github_json(
@@ -1350,6 +1408,7 @@ def _check_candidate(phase_dir: Path) -> dict[str, Any]:
             raise DeliveryError("downloaded candidate artifact archive digest differs from hosted owner metadata")
         artifact_results[row["pair"]] = _artifact_zip_pair(
             archive_path, pair=row["pair"], runner=identity["runner_sha"], candidate=candidate_owner,
+            require_owner=True,
         )
     if (artifact_results.get("locked") != {"receipts": 14, "cases": 33}
             or artifact_results.get("floor") != {"receipts": 12, "cases": 31}):
@@ -1420,7 +1479,7 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
         raise DeliveryError("accepted-main helper observation time is invalid") from None
     local_gate = receipt.get("local_gate")
     hygiene = receipt.get("hygiene")
-    if (not isinstance(local_gate, dict) or set(local_gate) != {"status", "exunit_tests"}
+    if (not isinstance(local_gate, dict) or set(local_gate) != {"status", "exunit_tests", "manifest_path", "manifest_sha256"}
             or local_gate.get("status") != "pass" or type(local_gate.get("exunit_tests")) is not int
             or local_gate["exunit_tests"] <= 0
             or not isinstance(hygiene, dict) or set(hygiene) != {"status", "pass", "warn", "block"}
@@ -1428,6 +1487,16 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
             or type(hygiene.get("warn")) is not int or type(hygiene.get("block")) is not int
             or min(hygiene["pass"], hygiene["warn"], hygiene["block"]) < 0 or hygiene["block"] != 0):
         raise DeliveryError("accepted-main helper local gate or hygiene summary is incomplete")
+    gate_path = f".planning/phases/{PHASE_NAME}/178-MAIN-OWNED-SOURCE-MANIFEST.json"
+    if local_gate.get("manifest_path") != gate_path:
+        raise DeliveryError("accepted-main helper source capture path is invalid")
+    captured = _safe_repo_file(gate_path)
+    if sha256(captured) != local_gate.get("manifest_sha256"):
+        raise DeliveryError("accepted-main helper source capture bytes changed")
+    guard = _owned_source_manifest(captured, main_sha, require_temp_custody=False)
+    observed_ci = next(row for row in guard["commands"] if row["stage"] == "ci")
+    if local_gate["exunit_tests"] != sum(row["tests"] for row in observed_ci["exunit_counts"]):
+        raise DeliveryError("accepted-main helper source counts differ from owned execution capture")
     dispositions = receipt.get("warn_dispositions")
     if (not isinstance(dispositions, list) or len(dispositions) != hygiene["warn"]
             or any(not isinstance(row, dict) or set(row) != {"label", "disposition"}
@@ -1451,10 +1520,26 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
     if (sha256(auth_path) != authorization["sha256"]
             or set(auth_record) != {"schema", "status", "candidate_sha", "authorized_by", "authorized_at"}
             or auth_record.get("schema") != "lockspire-phase178-integration-authorization-v1"
-            or auth_record.get("status") != "authorized" or auth_record.get("candidate_sha") != main_sha
+            or auth_record.get("status") != "authorized"
+            or not isinstance(auth_record.get("candidate_sha"), str) or not REVISION.fullmatch(auth_record["candidate_sha"])
+            or not _reviewed_revision_is_ancestor(auth_record["candidate_sha"], main_sha)
+            or not _metadata_only_difference(auth_record["candidate_sha"], main_sha)
             or auth_record.get("authorized_by") != authorization["authorized_by"]
             or auth_record.get("authorized_at") != authorization["authorized_at"]):
         raise DeliveryError("integration authorization custody bytes do not match helper output")
+    if repo != _github_repository():
+        raise DeliveryError("accepted-main helper repository differs from authoritative origin")
+    main_ref = _github_json(f"repos/{repo}/git/ref/heads/main")
+    if main_ref.get("ref") != "refs/heads/main" or main_ref.get("object", {}).get("sha") != main_sha:
+        raise DeliveryError("accepted-main helper main differs from authoritative remote ref")
+    for relative, digest in ((helper_path, helper["sha256"]), (authorization["path"], authorization["sha256"])):
+        content = _github_json(f"repos/{repo}/contents/{relative}?ref={main_sha}")
+        try:
+            observed_digest = hashlib.sha256(base64.b64decode(content["content"], validate=False)).hexdigest()
+        except (ValueError, KeyError, TypeError):
+            raise DeliveryError("accepted-main helper source custody is unavailable") from None
+        if content.get("encoding") != "base64" or observed_digest != digest:
+            raise DeliveryError("accepted-main helper or authorization differs from authoritative main bytes")
     required_ci = receipt.get("required_ci")
     release = receipt.get("release_no_publish")
     _validate_helper_graph(required_ci, repo=repo, sha=main_sha, release=False)
@@ -1470,6 +1555,45 @@ def _check_handoff(phase_dir: Path) -> dict[str, Any]:
     if ancestor.returncode:
         raise DeliveryError("accepted main does not contain the reviewed candidate")
     return {"accepted_main": True, "main_sha": main_sha, "helper_sha256": handoff["main_acceptance_sha256"]}
+
+
+def run_main_source_gate(expected_runner: str, *, process_runner: Any = None) -> dict[str, Any]:
+    """Run the helper's local gate only through the owned source command path."""
+    sys.path.insert(0, str(ROOT / "scripts/ci"))
+    from run_owned_source_tests import OwnedSourceTests
+    runner = OwnedSourceTests([], ci=True, root=ROOT, inherited=os.environ,
+                              **({"process_runner": process_runner} if process_runner is not None else {}))
+    if process_runner is not None:
+        process_runner.owner = runner
+    if runner.run() != 0:
+        raise DeliveryError("accepted-main owned source gate failed; diagnostics withheld")
+    manifest = _owned_source_manifest(runner.manifest_path, expected_runner)
+    target = ROOT / ".planning/phases" / PHASE_NAME / "178-MAIN-OWNED-SOURCE-MANIFEST.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with os.fdopen(os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as output:
+        output.write(runner.manifest_path.read_bytes())
+    counts = next(row for row in manifest["commands"] if row["stage"] == "ci")["exunit_counts"]
+    shutil.rmtree(runner.directory)
+    return {"status": "pass", "exunit_tests": sum(row["tests"] for row in counts),
+            "manifest_path": target.relative_to(ROOT).as_posix(), "manifest_sha256": sha256(target)}
+
+
+def integration_authorization(expected_runner: str) -> dict[str, Any]:
+    relative = f".planning/phases/{PHASE_NAME}/178-INTEGRATION-AUTHORIZATION.json"
+    path = _safe_repo_file(relative)
+    record = _read_json(path, "integration authorization record")
+    source = record.get("candidate_sha")
+    if (set(record) != {"schema", "status", "candidate_sha", "authorized_by", "authorized_at"}
+            or record.get("schema") != "lockspire-phase178-integration-authorization-v1"
+            or record.get("status") != "authorized" or not isinstance(source, str) or not REVISION.fullmatch(source)
+            or not _reviewed_revision_is_ancestor(source, expected_runner)
+            or not _metadata_only_difference(source, expected_runner)
+            or not isinstance(record.get("authorized_by"), str) or not 3 <= len(record["authorized_by"]) <= 120
+            or not isinstance(record.get("authorized_at"), str)
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", record["authorized_at"])):
+        raise DeliveryError("integration authorization does not apply to selected covered bytes")
+    return {"status": "authorized", "path": relative, "sha256": sha256(path),
+            "authorized_by": record["authorized_by"], "authorized_at": record["authorized_at"]}
 
 
 def _validate_helper_graph(graph: Any, *, repo: str, sha: str, release: bool) -> None:
@@ -1489,9 +1613,12 @@ def _validate_helper_graph(graph: Any, *, repo: str, sha: str, release: bool) ->
     } if release else {name: "success" for name in names}
     fields = {"status", "run_id", "run_attempt", "workflow_path", "head_sha",
               "event", "conclusion", "url", "jobs"}
+    if release:
+        fields.add("outcome")
     expected_workflow = ".github/workflows/release.yml" if release else ".github/workflows/ci.yml"
     if (not isinstance(graph, dict) or set(graph) != fields
             or graph.get("status") != "pass" or graph.get("head_sha") != sha
+            or (release and graph.get("outcome") != "no_publish")
             or graph.get("workflow_path") != expected_workflow or graph.get("event") != "push"
             or graph.get("conclusion") != "success" or type(graph.get("run_id")) is not int
             or graph["run_id"] <= 0 or type(graph.get("run_attempt")) is not int
@@ -1503,14 +1630,36 @@ def _validate_helper_graph(graph: Any, *, repo: str, sha: str, release: bool) ->
     if not isinstance(jobs, list) or len(jobs) != len(names):
         raise DeliveryError("accepted-main helper workflow job graph is incomplete")
     job_ids: set[int] = set()
-    for expected_name, job in zip(names, jobs, strict=True):
-        if (not isinstance(job, dict) or set(job) != job_fields or job.get("name") != expected_name
+    if {job.get("name") for job in jobs if isinstance(job, dict)} != set(names):
+        raise DeliveryError("accepted-main helper workflow job names differ")
+    for job in jobs:
+        expected_name = job.get("name") if isinstance(job, dict) else None
+        if (not isinstance(job, dict) or set(job) != job_fields or expected_name not in expected_status
                 or type(job.get("id")) is not int or job["id"] <= 0 or job["id"] in job_ids
                 or job.get("run_id") != graph["run_id"] or job.get("run_attempt") != graph["run_attempt"]
                 or job.get("head_sha") != sha or job.get("status") != "completed"
                 or job.get("conclusion") != expected_status[expected_name]):
             raise DeliveryError("accepted-main helper workflow job is mixed, missing, or failed")
         job_ids.add(job["id"])
+    endpoint = f"repos/{repo}/actions/runs/{graph['run_id']}/attempts/{graph['run_attempt']}"
+    run = _github_json(endpoint)
+    workflow = _github_json(f"repos/{repo}/actions/workflows/{'release.yml' if release else 'ci.yml'}")
+    if (run.get("id") != graph["run_id"] or run.get("run_attempt") != graph["run_attempt"]
+            or run.get("repository", {}).get("full_name") != repo or run.get("head_sha") != sha
+            or run.get("head_branch") != "main" or run.get("event") != "push"
+            or run.get("path") != expected_workflow or run.get("workflow_id") != workflow.get("id")
+            or type(workflow.get("id")) is not int or workflow["id"] <= 0
+            or run.get("status") != "completed" or run.get("conclusion") != "success"
+            or run.get("html_url") != graph["url"]):
+        raise DeliveryError("accepted-main helper run differs from authoritative observations")
+    response = _github_json(endpoint + "/jobs?per_page=100")
+    observed = response.get("jobs")
+    if (not isinstance(observed, list) or response.get("total_count") != len(names)
+            or len(observed) != len(names)):
+        raise DeliveryError("accepted-main helper job observation is incomplete")
+    normalized = [{field: job.get(field) for field in job_fields} for job in observed if isinstance(job, dict)]
+    if sorted(normalized, key=lambda job: job["id"]) != sorted(jobs, key=lambda job: job["id"]):
+        raise DeliveryError("accepted-main helper jobs differ from authoritative observations")
 
 
 def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path,
@@ -1547,7 +1696,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--check", choices=("reviews", "frozen", "source", "package",
                                              "candidate-identity", "candidate", "handoff"))
     parser.add_argument("--freeze", action="store_true")
+    parser.add_argument("--copy-upload-owner", action="store_true")
+    parser.add_argument("--upload-root", type=Path)
     parser.add_argument("--record-source", action="store_true")
+    parser.add_argument("--run-main-source-gate", action="store_true")
+    parser.add_argument("--check-integration-authorization", action="store_true")
     parser.add_argument("--guard-manifest", type=Path)
     parser.add_argument("--phase-dir", type=Path, default=PHASE_DEFAULT)
     parser.add_argument("--archive", type=Path)
@@ -1585,6 +1738,22 @@ def _frozen_pins(args: argparse.Namespace, *, require_manifest: bool) -> dict[st
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     try:
+        if args.check_integration_authorization:
+            if not isinstance(args.expected_runner, str) or not REVISION.fullmatch(args.expected_runner):
+                raise DeliveryError("integration authorization requires a caller revision")
+            print(json.dumps(integration_authorization(args.expected_runner), sort_keys=True))
+            return 0
+        if args.run_main_source_gate:
+            if not isinstance(args.expected_runner, str) or not REVISION.fullmatch(args.expected_runner):
+                raise DeliveryError("accepted-main source gate requires an exact caller revision")
+            print(json.dumps(run_main_source_gate(args.expected_runner), sort_keys=True))
+            return 0
+        if args.copy_upload_owner:
+            if args.upload_root is None:
+                raise DeliveryError("upload owner requires a destination")
+            copy_upload_owner(args.upload_root, args.phase_dir, _frozen_pins(args, require_manifest=True))
+            print(json.dumps({"upload_owner_copied": True}, sort_keys=True))
+            return 0
         if args.freeze:
             if args.archive is None or args.extracted_tree is None:
                 raise DeliveryError("freeze requires an archive and extracted tree")
