@@ -80,6 +80,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
     resource: dict[str, object] = {
         "run_id": run_id, "pair": pair, "database": database_name,
         "listener_port": port, "child_state": "not_started", "database_created": False,
+        "failure_capture_stage": "not_started",
     }
     RESOURCE_CLEANUP.append(resource)
     temp_cleanup = None
@@ -313,6 +314,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             "database": database_name,
             "stage": stage if stage in {"package", "provider", "custody_config", "host_environment", "database", "registration", "rotation", "server", "http", "maintenance"} else "unknown",
             "reason": safe_reason, "runner": source_revision(),
+            "failure_capture_stage": resource.get("failure_capture_stage", "not_started"),
         }
         failure_path = destination / "failed-attempt.json"
         failure_path.write_text(json.dumps(failure, sort_keys=True, indent=2) + "\n", encoding="utf-8")
@@ -387,6 +389,8 @@ def _run_failure_proof(
     case_ids = verifier_receipts.DISCLOSURE_FAILURE_CASE_IDS[pair]
     observations: dict[str, dict[str, object]] = {}
     for scenario, case_id in zip(scenarios, case_ids):
+        resource["failure_capture_stage"] = "seed"
+        _persist_resource(destination, resource)
         client_id = f"vfy-disclosure-failure-{scenario}-{run_id[:8]}"
         handoff = root / f"{scenario}-handoff.json"
         seed_input = root / f"{scenario}-seed-input.json"
@@ -408,6 +412,8 @@ def _run_failure_proof(
             resource=resource, destination=destination, label=f"failure_seed_{scenario}",
         )
         private_handoff = _read_private_json(handoff, redactor)
+        resource["failure_capture_stage"] = "seed_handoff_registered"
+        _persist_resource(destination, resource)
         output, error = _decode_channels(output, error, redactor)
         _assert_safe_channels(output, error, redactor)
         if "VERIFIER_DISCLOSURE_FAILURE_SEEDED=true" not in output or private_handoff.get("scenario") != scenario:
@@ -420,6 +426,8 @@ def _run_failure_proof(
         # The seeding helper consumed its own input handoff; write the sensitive
         # capture handoff again from the already-registered private values.
         _write_private_json(handoff, private_handoff)
+        resource["failure_capture_stage"] = "capture_child"
+        _persist_resource(destination, resource)
         capture_expression = (
             "CleanRoomProvider.VerifierDisclosure.capture_failure_from_file("
             + json.dumps(str(handoff))
@@ -431,8 +439,12 @@ def _run_failure_proof(
         )
         output, error = _decode_channels(output, error, redactor)
         _assert_safe_channels(output, error, redactor)
+        resource["failure_capture_stage"] = "capture_output_scanned"
+        _persist_resource(destination, resource)
         capture = _one_json(output, "VERIFIER_DISCLOSURE_FAILURE_CAPTURE_JSON=")
         client = {"client_id": client_id, "secret": private_handoff["secret"]}
+        resource["failure_capture_stage"] = "http_probe"
+        _persist_resource(destination, resource)
         http = verifier_endpoints._issue_token(issuer, client, redactor)
         capture.update({
             "http_status": http["status"],
@@ -441,10 +453,16 @@ def _run_failure_proof(
                 and (http["status"] != 401 or http["safe_error_code"] == "invalid_client"),
         })
         capture["output_leak_count"] = 0
+        resource["failure_capture_stage"] = "capture_validation"
+        _persist_resource(destination, resource)
         capture = validate_failure_capture(capture)
         safe_case = {"capture": capture}
+        resource["failure_capture_stage"] = "artifact_write"
+        _persist_resource(destination, resource)
         persist_safe_failure_artifact(destination / f"failure-{scenario}.json", safe_case, redactor)
         observations[case_id] = {"outcome": "pass", "executed": True, **capture}
+        resource["failure_capture_stage"] = "scenario_complete"
+        _persist_resource(destination, resource)
 
     receipt = {
         "schema": verifier_receipts.SCHEMA, "scope": "disclosure-failure", "run_id": run_id,
@@ -469,6 +487,8 @@ def _run_failure_proof(
     path = destination / "failure-receipt.json"
     path.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
     os.chmod(path, 0o600)
+    resource["failure_capture_stage"] = "complete"
+    _persist_resource(destination, resource)
     return receipt
 
 
