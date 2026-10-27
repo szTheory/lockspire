@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_ci_test.py' -k overall_deadline",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_overall_deadline_bounds_child_below_its_individual_limit (client_verifier_ci_test.VerifierCiWrapperContracts.test_overall_deadline_bounds_child_below_its_individual_limit)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/Users/jon/projects/lockspire/test/acceptance/client_verifier_ci_test.py\", line 157, in test_overall_deadline_bounds_child_below_its_individual_limit\n    self.assertIn(\"overall\", stderr)\n    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^\nAssertionError: 'overall' not found in 'verifier child timeout at fake-child; diagnostics withheld\\n'\n\n----------------------------------------------------------------------\nRan 1 test in 2.089s\n\nFAILED (failures=1)\n",
+  "targetTest": "client_verifier_ci_test.VerifierCiWrapperContracts.test_overall_deadline_bounds_child_below_its_individual_limit",
+  "targetFile": "test/acceptance/client_verifier_ci_test.py",
+  "expected": "The wrapper's overall deadline must bound an active child even when the per-child timeout is longer, and report the overall stage without accepting a receipt.",
+  "actual": "The child was stopped only at its individual two-second timeout; the expected one-second overall timeout label was absent and the elapsed bound failed.",
+  "semanticAssessment": "Valid behavioral RED: fake-mode child completed no package acceptance, its per-child timeout was set to two seconds, overall deadline to one second, and the wrapper ignored the overall deadline."
+}

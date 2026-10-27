@@ -189,7 +189,9 @@ jobs:
   compatibility:
     name: Minimum Supported Elixir/OTP
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The floor verifier partition took 1,020s for its raw scenario receipts;
+    # allow the existing compile/test/proof graph plus the bounded 25m wrapper.
+    timeout-minutes: 45
 
     services:
       postgres:
@@ -279,6 +281,19 @@ jobs:
         id: host-proof-floor
         run: bash scripts/ci/run_host_integration_proof.sh --pair floor --receipt-dir .artifacts/ci/host-integration/floor
 
+      - name: Run exact-floor installed verifier upgrade proof
+        id: verifier-proof-floor
+        run: bash scripts/ci/run_verifier_upgrade_proof.sh --pair floor --receipt-dir .artifacts/phase178/ci-floor
+
+      - name: Upload validated exact-floor verifier upgrade receipts
+        if: always() && steps.verifier-proof-floor.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-verifier-upgrade-${{ github.sha }}-floor
+          path: .artifacts/phase178/ci-floor/validated/index.json
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Upload validated exact-floor host proof receipts
         if: always() && steps.host-proof-floor.outcome == 'success'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -294,10 +309,10 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
-    # The canonical local matrix measured 649s; the new locked host proof measured
-    # 143s. Those known partitions total 792s, leaving 1,008s in the existing
-    # 30-minute cap for setup and variance. Keep the cap; remote headroom is unobserved.
-    timeout-minutes: 30
+    # The integration suite + host proof measured 792s; the locked verifier
+    # scenario window measured 1,112s. Their 31.7m combined time exceeds 30m,
+    # so reserve 45m for setup, validation, and observed runtime variance.
+    timeout-minutes: 45
 
     services:
       postgres:
@@ -379,6 +394,19 @@ jobs:
       - name: Run locked packaged host proof
         id: host-proof-locked
         run: bash scripts/ci/run_host_integration_proof.sh --pair locked --receipt-dir .artifacts/ci/host-integration/locked
+
+      - name: Run locked installed verifier upgrade proof
+        id: verifier-proof-locked
+        run: bash scripts/ci/run_verifier_upgrade_proof.sh --pair locked --receipt-dir .artifacts/phase178/ci-locked
+
+      - name: Upload validated locked verifier upgrade receipts
+        if: always() && steps.verifier-proof-locked.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: lockspire-verifier-upgrade-${{ github.sha }}-locked
+          path: .artifacts/phase178/ci-locked/validated/index.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Upload validated locked host proof receipts
         if: always() && steps.host-proof-locked.outcome == 'success'

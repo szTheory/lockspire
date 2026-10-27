@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,7 +27,20 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
         )
 
-    def fake_invocation(self, body: str, *, timeout: int = 2, pid_file: Path | None = None):
+    def temporary_repo(self):
+        temporary = tempfile.TemporaryDirectory(prefix="lockspire-verifier-wrapper-repo-")
+        root = Path(temporary.name)
+        subprocess.run(("git", "init", "--quiet"), cwd=root, check=True)
+        wrapper = root / "scripts" / "ci" / WRAPPER.name
+        wrapper.parent.mkdir(parents=True)
+        shutil.copy2(WRAPPER, wrapper)
+        (root / "scripts" / "acceptance").mkdir(parents=True)
+        (root / "scripts" / "acceptance" / "clean_room_verifier_upgrade.py").write_text("# test sentinel\n", encoding="utf-8")
+        return temporary, root
+
+    def fake_invocation(self, body: str, *, timeout: int = 2, overall_timeout: int = 10,
+                        pid_file: Path | None = None, grandchild_pid_file: Path | None = None,
+                        force_group_denial: bool = False):
         temporary = tempfile.TemporaryDirectory(prefix="lockspire-verifier-fake-")
         root = Path(temporary.name).resolve()
         fake = root / "fake-runner.py"
@@ -38,10 +52,15 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             "LOCKSPIRE_VERIFIER_TEST_MODE": "1",
             "LOCKSPIRE_VERIFIER_TEST_RUNNER": str(fake),
             "LOCKSPIRE_VERIFIER_TEST_TIMEOUT": str(timeout),
+            "LOCKSPIRE_VERIFIER_TEST_OVERALL_TIMEOUT": str(overall_timeout),
             "LOCKSPIRE_VERIFIER_TEST_PYTHON": sys.executable,
         })
         if pid_file is not None:
             environment["LOCKSPIRE_VERIFIER_TEST_PID_FILE"] = str(pid_file)
+        if grandchild_pid_file is not None:
+            environment["LOCKSPIRE_VERIFIER_TEST_GRANDCHILD_PID_FILE"] = str(grandchild_pid_file)
+        if force_group_denial:
+            environment["LOCKSPIRE_VERIFIER_TEST_FORCE_GROUP_DENIAL"] = "1"
         process = subprocess.Popen(
             ("bash", str(WRAPPER), "--pair", "locked", "--receipt-dir", str(receipt_dir), "--test-mode"),
             cwd=ROOT, env=environment, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -57,36 +76,45 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             self.assertNotIn("client_secret", result.stdout + result.stderr)
 
     def test_unsafe_and_stale_production_paths_fail_before_mutation(self) -> None:
-        traversal = self.invoke("--pair", "locked", "--receipt-dir", ".artifacts/phase178/../escape")
-        self.assertNotEqual(traversal.returncode, 0)
-        destination = ROOT / ".artifacts/phase178/ci-locked"
-        if destination.exists() or destination.is_symlink():
-            self.skipTest("the canonical local locked proof destination is already owned")
-        destination.mkdir(mode=0o700)
-        marker = destination / "preserve-me"
-        marker.write_text("existing", encoding="utf-8")
+        temporary, root = self.temporary_repo()
         try:
-            stale = self.invoke("--pair", "locked", "--receipt-dir", ".artifacts/phase178/ci-locked")
+            traversal = subprocess.run(
+                ("bash", str(root / "scripts/ci" / WRAPPER.name), "--pair", "locked",
+                 "--receipt-dir", ".artifacts/phase178/../escape"), cwd=root, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
+            self.assertNotEqual(traversal.returncode, 0)
+            destination = root / ".artifacts/phase178/ci-locked"
+            destination.mkdir(mode=0o700, parents=True)
+            marker = destination / "preserve-me"
+            marker.write_text("existing", encoding="utf-8")
+            stale = subprocess.run(
+                ("bash", str(root / "scripts/ci" / WRAPPER.name), "--pair", "locked",
+                 "--receipt-dir", ".artifacts/phase178/ci-locked"), cwd=root, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
             self.assertNotEqual(stale.returncode, 0)
             self.assertEqual(marker.read_text(encoding="utf-8"), "existing")
         finally:
-            marker.unlink()
-            destination.rmdir()
+            temporary.cleanup()
 
     def test_symlink_destination_is_rejected_and_left_untouched(self) -> None:
-        destination = ROOT / ".artifacts/phase178/ci-locked"
-        if destination.exists() or destination.is_symlink():
-            self.skipTest("the canonical local locked proof destination is already owned")
-        target = Path(tempfile.mkdtemp(prefix="lockspire-verifier-link-target-"))
+        temporary, root = self.temporary_repo()
         try:
+            destination = root / ".artifacts/phase178/ci-locked"
+            destination.parent.mkdir(parents=True)
+            target = root / "owned-target"
+            target.mkdir()
             destination.symlink_to(target, target_is_directory=True)
-            result = self.invoke("--pair", "locked", "--receipt-dir", ".artifacts/phase178/ci-locked")
+            result = subprocess.run(
+                ("bash", str(root / "scripts/ci" / WRAPPER.name), "--pair", "locked",
+                 "--receipt-dir", ".artifacts/phase178/ci-locked"), cwd=root, text=True,
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False,
+            )
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(list(target.iterdir()), [])
         finally:
-            if destination.is_symlink():
-                destination.unlink()
-            target.rmdir()
+            temporary.cleanup()
 
     def test_fake_child_failure_is_redacted_and_never_creates_receipts(self) -> None:
         temporary, process, receipt_dir = self.fake_invocation("import sys\nprint('SECRET_SENTINEL', file=sys.stderr)\nsys.exit(7)\n")
@@ -98,12 +126,15 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         finally:
             temporary.cleanup()
 
-    def test_fake_child_timeout_and_signal_stop_its_process_group(self) -> None:
+    def test_fake_child_timeout_and_signal_report_group_cleanup_status(self) -> None:
         temporary, process, receipt_dir = self.fake_invocation("import time\ntime.sleep(15)\n", timeout=1)
         try:
             _stdout, stderr = process.communicate(timeout=8)
-            self.assertEqual(process.returncode, 124, stderr)
-            self.assertIn("timeout", stderr)
+            self.assertIn(process.returncode, {124, 125}, stderr)
+            if process.returncode == 124:
+                self.assertIn("timeout", stderr)
+            else:
+                self.assertIn("cleanup unconfirmed", stderr)
             self.assertFalse(receipt_dir.exists())
         finally:
             temporary.cleanup()
@@ -120,8 +151,10 @@ class VerifierCiWrapperContracts(unittest.TestCase):
                 self.assertTrue(pid_file.is_file(), "test child should start")
                 child_pid = int(pid_file.read_text(encoding="ascii"))
                 process.send_signal(signal.SIGTERM)
-                process.communicate(timeout=8)
-                self.assertEqual(process.returncode, 143)
+                _stdout, signal_stderr = process.communicate(timeout=8)
+                self.assertIn(process.returncode, {125, 143})
+                if process.returncode == 125:
+                    self.assertIn("cleanup unconfirmed", signal_stderr)
                 with self.assertRaises(ProcessLookupError):
                     os.kill(child_pid, 0)
                 self.assertFalse(receipt_dir.exists())
@@ -141,6 +174,61 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             self.assertFalse(receipt_dir.exists())
         finally:
             temporary.cleanup()
+
+    def test_overall_deadline_bounds_child_below_its_individual_limit(self) -> None:
+        temporary, process, receipt_dir = self.fake_invocation(
+            "import time\ntime.sleep(15)\n", timeout=2, overall_timeout=1,
+        )
+        started = time.monotonic()
+        try:
+            _stdout, stderr = process.communicate(timeout=6)
+            elapsed = time.monotonic() - started
+            self.assertIn(process.returncode, {124, 125}, stderr)
+            self.assertIn("overall", stderr)
+            if process.returncode == 125:
+                self.assertIn("cleanup unconfirmed", stderr)
+            self.assertLess(elapsed, 1.8)
+            self.assertFalse(receipt_dir.exists())
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=2)
+            temporary.cleanup()
+
+    def test_unconfirmed_process_group_cleanup_fails_even_after_direct_child_exit(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="lockspire-verifier-grandchild-") as temporary_root:
+            grandchild_pid_file = Path(temporary_root) / "grandchild.pid"
+            body = (
+                "import os, subprocess, sys, time\n"
+                "grandchild = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(15)'])\n"
+                "open(os.environ['LOCKSPIRE_VERIFIER_TEST_GRANDCHILD_PID_FILE'], 'w').write(str(grandchild.pid))\n"
+                "time.sleep(15)\n"
+            )
+            temporary, process, receipt_dir = self.fake_invocation(
+                body, timeout=1, overall_timeout=10, grandchild_pid_file=grandchild_pid_file,
+                force_group_denial=True,
+            )
+            try:
+                _stdout, stderr = process.communicate(timeout=8)
+                self.assertEqual(process.returncode, 125, stderr)
+                self.assertIn("cleanup unconfirmed", stderr)
+                self.assertFalse(receipt_dir.exists())
+                grandchild_pid = int(grandchild_pid_file.read_text(encoding="ascii"))
+                os.kill(grandchild_pid, signal.SIGKILL)
+                deadline = time.monotonic() + 2
+                while time.monotonic() < deadline:
+                    try:
+                        os.kill(grandchild_pid, 0)
+                    except ProcessLookupError:
+                        break
+                    time.sleep(0.05)
+                else:
+                    self.fail("test-owned grandchild did not stop after exact-PID cleanup")
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                    process.wait(timeout=2)
+                temporary.cleanup()
 
 
 if __name__ == "__main__":

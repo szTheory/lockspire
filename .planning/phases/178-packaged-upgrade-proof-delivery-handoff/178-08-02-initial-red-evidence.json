@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s test/acceptance -p client_verifier_ci_test.py -k wrapper_is_an_executable_maintained_entrypoint",
+  "exitCode": 1,
+  "output": "F\n======================================================================\nFAIL: test_wrapper_is_an_executable_maintained_entrypoint (client_verifier_ci_test.VerifierCiWrapperContracts.test_wrapper_is_an_executable_maintained_entrypoint)\n----------------------------------------------------------------------\nTraceback (most recent call last):\n  File \"/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/phase178-08-task2-historical-red-wuk4o555/test/acceptance/client_verifier_ci_test.py\", line 17, in test_wrapper_is_an_executable_maintained_entrypoint\n    self.assertTrue(WRAPPER.is_file(), \"pair proof wrapper must exist\")\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : pair proof wrapper must exist\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (failures=1)\n",
+  "targetTest": "client_verifier_ci_test.VerifierCiWrapperContracts.test_wrapper_is_an_executable_maintained_entrypoint",
+  "targetFile": "test/acceptance/client_verifier_ci_test.py",
+  "expected": "The pair-scoped verifier wrapper entrypoint exists and is executable before CI integration.",
+  "actual": "Fresh private archive reproduction from pre-implementation commit 2da528fba3ca894cda4e5776b47eb6ccaf12f93c ran for 0.041s with exit 1; exact unittest output is preserved.",
+  "semanticAssessment": "Historical-source RED reproduction only; no database or installed package command ran. Source SHA 2da528fba3ca894cda4e5776b47eb6ccaf12f93c; elapsed seconds 0.041."
+}

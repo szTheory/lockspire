@@ -36,6 +36,8 @@ if [[ "$test_mode" == true ]]; then
   command=("$fake_python" "$fake_runner" --pair "$pair")
   timeout_seconds=${LOCKSPIRE_VERIFIER_TEST_TIMEOUT:-2}
   [[ "$timeout_seconds" =~ ^[1-9][0-9]?$ ]] || { echo "invalid test timeout" >&2; exit 2; }
+  overall_timeout_seconds=${LOCKSPIRE_VERIFIER_TEST_OVERALL_TIMEOUT:-1500}
+  [[ "$overall_timeout_seconds" =~ ^[1-9][0-9]?$ ]] || { echo "invalid test overall timeout" >&2; exit 2; }
 else
   [[ "$receipt_dir" != *".."* && "$receipt_dir" != /* ]] || { echo "unsafe verifier receipt path" >&2; exit 2; }
   [[ "$receipt_dir" == ".artifacts/phase178/ci-$pair" ]] || { echo "verifier receipt path does not match its dependency pair" >&2; exit 2; }
@@ -49,9 +51,11 @@ else
   [[ ! -e "$repo_root/$receipt_dir/validated" ]] || { echo "validated output path is stale" >&2; exit 2; }
   command=(python3 "$runner")
   timeout_seconds=3600
+  overall_timeout_seconds=1500
 fi
 
 # Validate every path and freshness condition above before the first mutation.
+deadline=$((SECONDS + overall_timeout_seconds))
 if [[ "$test_mode" != true ]]; then
   mkdir -p "$repo_root/.artifacts/phase178"
   mkdir -m 700 "$repo_root/$receipt_dir"
@@ -62,9 +66,30 @@ run_owned() {
   shift
   local status=0
   local helper_pid=''
-  trap 'if [[ -n "$helper_pid" ]]; then kill -TERM "$helper_pid" 2>/dev/null || true; wait "$helper_pid" 2>/dev/null || true; fi; exit 143' TERM
-  trap 'if [[ -n "$helper_pid" ]]; then kill -INT "$helper_pid" 2>/dev/null || true; wait "$helper_pid" 2>/dev/null || true; fi; exit 130' INT
-  python3 - "$timeout_seconds" "$label" "$@" <<'PY' &
+  local remaining=$((deadline - SECONDS))
+  local selected_timeout=$timeout_seconds
+  local selected_label=$label
+  if ((remaining <= 0)); then
+    echo "verifier overall timeout before $label; no child started; diagnostics withheld" >&2
+    return 124
+  fi
+  if ((remaining < selected_timeout)); then
+    selected_timeout=$remaining
+    selected_label="overall/$label"
+  fi
+  handle_signal() {
+    local signal_name=$1 signal_status=$2 child_status=0
+    if [[ -n "$helper_pid" ]]; then
+      kill -"$signal_name" "$helper_pid" 2>/dev/null || true
+      if wait "$helper_pid" 2>/dev/null; then child_status=0; else child_status=$?; fi
+      helper_pid=''
+      if ((child_status == 125)); then exit 125; fi
+    fi
+    exit "$signal_status"
+  }
+  trap 'handle_signal TERM 143' TERM
+  trap 'handle_signal INT 130' INT
+  python3 - "$selected_timeout" "$selected_label" "$test_mode" "$@" <<'PY' &
 import os
 import errno
 import signal
@@ -74,27 +99,40 @@ import time
 
 timeout = int(sys.argv[1])
 label = sys.argv[2]
-command = sys.argv[3:]
+test_mode = sys.argv[3] == "true"
+command = sys.argv[4:]
 child = None
+force_group_denial = test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_FORCE_GROUP_DENIAL") == "1"
+cleanup_failure = "unconfirmed"
 
 def stop_group(process):
+    global cleanup_failure
+    if force_group_denial:
+        cleanup_failure = "test-group-denial"
+        try:
+            process.terminate()
+            process.wait(timeout=2)
+        except (ProcessLookupError, subprocess.TimeoutExpired):
+            pass
+        return False
     try:
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
         pass
     except PermissionError:
+        cleanup_failure = "group-signal-permission-denied"
         try:
             process.terminate()
         except ProcessLookupError:
             pass
         try:
             process.wait(timeout=2)
-            return True
+            return False
         except subprocess.TimeoutExpired:
             try:
                 process.kill()
                 process.wait(timeout=2)
-                return True
+                return False
             except (ProcessLookupError, subprocess.TimeoutExpired):
                 return False
     deadline = time.monotonic() + 2
@@ -104,12 +142,11 @@ def stop_group(process):
         except ProcessLookupError:
             return True
         except PermissionError:
-            if process.poll() is not None:
-                return True
+            cleanup_failure = "group-probe-permission-denied"
             try:
                 process.terminate()
                 process.wait(timeout=2)
-                return True
+                return False
             except (ProcessLookupError, subprocess.TimeoutExpired):
                 return False
         time.sleep(0.05)
@@ -117,6 +154,9 @@ def stop_group(process):
         os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
+    except PermissionError:
+        cleanup_failure = "group-kill-permission-denied"
+        return False
     try:
         os.killpg(process.pid, 0)
         return False
@@ -124,8 +164,9 @@ def stop_group(process):
         return True
 
 def interrupted(signum, _frame):
-    if child is not None:
-        stop_group(child)
+    if child is not None and not stop_group(child):
+        print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+        sys.exit(125)
     sys.exit(128 + signum)
 
 signal.signal(signal.SIGTERM, interrupted)
@@ -135,18 +176,21 @@ try:
     child = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, start_new_session=True)
     stage = "child-capture"
-    os.environ.get("LOCKSPIRE_VERIFIER_TEST_PID_FILE") and open(
+    test_mode and os.environ.get("LOCKSPIRE_VERIFIER_TEST_PID_FILE") and open(
         os.environ["LOCKSPIRE_VERIFIER_TEST_PID_FILE"], "w", encoding="ascii").write(str(child.pid))
     try:
         child.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         stopped = stop_group(child)
         child.wait()
+        if not stopped:
+            print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
+            sys.exit(125)
         print(f"verifier child timeout at {label}; diagnostics withheld", file=sys.stderr)
-        sys.exit(124 if stopped else 125)
+        sys.exit(124)
     stopped = stop_group(child)
     if not stopped:
-        print(f"verifier child cleanup unconfirmed at {label}; diagnostics withheld", file=sys.stderr)
+        print(f"verifier child cleanup unconfirmed at {label} ({cleanup_failure}); diagnostics withheld", file=sys.stderr)
         sys.exit(125)
     if child.returncode:
         print(f"verifier child failed at {label}; diagnostics withheld", file=sys.stderr)
