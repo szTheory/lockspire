@@ -11,7 +11,7 @@ bug_class: Bohrbug
 hypothesis: Separately tested producer and consumer schemas do not describe the same authenticated chain.
 test: Exercise actual local producers and consumers with external OS/build/database/GitHub boundaries replaced.
 expecting: Existing implementation rejects actual upload/helper output and accepts covered-input and typed-value substitutions.
-next_action: Commit the narrow registered source-runner correction; parent reruns the complete Python gate, then independent reviews remain required.
+next_action: Correct fixed release invocation strings and audited derived string relationships, then run receipt and actual full-chain checks and obtain scoped independent re-review.
 reasoning_checkpoint:
   hypothesis: The acceptance boundary trusts divergent hand-selected paths and unchecked values while requiring a serialized layout different from its actual producers.
   confirming_evidence:
@@ -126,3 +126,28 @@ Verification: native new real-child authority target failed its fixed assertion 
 Caller audit: every other production stop_process_group scenario caller (admin, rollout, endpoints, disclosure, bounded package commands) is factory-backed. Remaining direct Popen sites in build_provider, processes, client_lifetime_upgrade and clean_room_saas_journey use separate lifecycle consumers and are not callers of the changed strict authority API. No package_input or process-registry code was changed. Actual source DB execution remains prohibited; no such command ran.
 
 Counterfactual: loading the actual f809a40b guard source into an isolated in-memory module causes the new real-child authority target to fail one assertion with zero errors/skips/unexpected successes. Restoring the current guard module passes that identical target. No shared file was reverted and no ownership check was weakened.
+
+## Third security re-review string boundary — 2026-10-27
+
+Source fab5a49e669afc6b74515ad40e22feca4866b40a. Original and all independent re-review reports remain untouched. SEC-178-05 reports three actual producer invocation literals accepted as arbitrary nonempty strings. Read actual producer dictionary literals at verifier_endpoints.py and finite receipt consumer/schema before changes. New test reads those literals from the producer AST for its positive and mutates only in-memory copies with generated opaque/base64/hex/percent strings. Full 26-cell string-leaf walk uses boolean fixed-message assertions and no value-bearing subtest parameters.
+
+reasoning_checkpoint:
+  hypothesis: Nonempty-string checks accept same-type private payloads in fixed descriptions and insufficiently constrained derived identities.
+  confirming_evidence:
+    - Independent third security reviewer reproduced all three opaque invocation substitutions at b021d442.
+    - Actual producer uses three fixed invocation literals, run_id-derived release node, candidate-version/module-derived path, and issuer-derived rejected audience; consumer only checks nonempty/prefix/inequality for these channels.
+  falsification_test: The unchanged validator rejects the generated same-type substitutions while accepting the actual producer literals.
+  fix_rationale: Exact producer literals and independently related bounded identities close these finite string channels before raw copying without hiding or changing producer output.
+  blind_spots: No runtime or hosted action is authorized; controlled receipt/chain tests establish validator behavior only.
+  candidate_causes:
+    - code: type-only check used for a fixed description
+    - data: a well-typed but semantically arbitrary receipt string
+  and_gate: no; a single unchecked invocation field is sufficient to carry private bytes
+
+Native pre-edit evidence: three actual tests at fab5a49e, one producer-literal positive pass, two fixed boolean assertion failures, zero errors. The repeated capture propagated process exit 1 and its exact invocation is retained in 178-10-receipt-strings-native-red.json. RED_EVIDENCE_OK was obtained before editing verifier_receipts.py. The first in-memory collector returned process exit 0 while reporting the same native failing result; it was not accepted as a passing run or used instead of the exit-propagating capture. Prior native/checker timing gaps remain unchanged.
+
+Finite string inventory: 26 fixture cells, 876 string positions, 71 normalized paths, 3,504 generated opaque/base64/hex/percent substitutions. All reject after correction. Dispositions: schema/scope/pair/store/kinds/cases/fleet/public/failure/context descriptions are fixed enums or literals; hashes and revisions use fixed ASCII digest/commit grammars and existing owner/index/Git relationships; versions use bounded 96/128-character lexical contracts; PID uses bounded positive ASCII decimal; release node derives from indexed run_id; loaded beam path derives from candidate version and the exact module; endpoint issuer uses the actual loopback/port/mount grammar with discovered/audience equality and rejected URI derived as /wrong. The three command descriptions now equal the actual producer's literals, and an AST-based positive test detects future producer/consumer drift. No producer source, dependency, public API or independent report changed.
+
+Verification: receipt suite 19/0/0; initial chain/adjacent run 10 tests, zero failures, two ReceiptError errors from legacy positive fixtures containing invented HTTPS issuer/short RPC labels/unrelated node. Only those fixture values were aligned with retained producer evidence and exact descriptions; their missing-case/outside-beam negatives remain. Final stable run session 33136, PID 76066, start 2026-10-27T09:25:19.923058Z, deadline 240 seconds: 29 tests, zero failures/errors/skips/unexpected successes. The actual full source-to-handoff chain completed at 36.696 seconds with 26 cells/64 cases, exact uploaded bytes, authoritative fixture observations and the actual helper collector/validator/emitter. Source SHA-256 3d69d4a6cdc0f90141743313f78e710bfe44a0311da178ebc4d11269e9fd3f76 stayed unchanged during the run. Temporary roots and exact owned fixture sessions completed normal cleanup. No generated mutation value, raw child capture, exception argument or value-bearing test parameter was rendered or persisted.
+
+Counterfactual: the actual fab5a49e receipt module fails the fixed-invocation target once with zero errors/skips/unexpected successes; current module passes that identical target. No shared source was reverted. Scoped whitespace check passed. No full Python gate was repeated and no actual runtime, database, freeze, package producer, hosted observation or remote action ran. Source/security delta re-review is required; these local results do not close the independent finding.

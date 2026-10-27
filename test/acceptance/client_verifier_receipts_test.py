@@ -5,6 +5,10 @@ from __future__ import annotations
 import sys
 import unittest
 import json
+import ast
+import base64
+import copy
+import secrets
 import shutil
 import tempfile
 from contextlib import redirect_stdout, redirect_stderr
@@ -19,6 +23,108 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def _producer_release_invocations(self):
+        names = {"rpc_invocation", "check_invocation", "task_local_invocation"}
+        source = ROOT / "scripts/acceptance/clean_room/verifier_endpoints.py"
+        rows = {}
+        for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
+            if isinstance(node, ast.Dict):
+                for key, value in zip(node.keys, node.values):
+                    if isinstance(key, ast.Constant) and key.value in names:
+                        self.assertTrue(isinstance(value, ast.Constant) and type(value.value) is str,
+                                        "release producer invocation must remain a literal")
+                        self.assertTrue(key.value not in rows, "release producer invocation is duplicated")
+                        rows[key.value] = value.value
+        self.assertTrue(set(rows) == names, "release producer invocation set changed")
+        return rows
+
+    def test_actual_release_producer_invocation_literals_are_accepted(self):
+        receipt = json.loads((ROOT / "test/fixtures/verifier-matrix-26/release-rpc/locked-builtin/receipt.json").read_text())
+        observation = receipt["observations"][verifier_receipts.RELEASE_RPC_CASE_ID]
+        observation.update(self._producer_release_invocations())
+        self.assertTrue(verifier_receipts.validate_receipt(receipt) is receipt,
+                        "actual release producer invocations failed their consumer")
+
+    def test_release_invocations_reject_generated_same_type_private_strings(self):
+        receipt = json.loads((ROOT / "test/fixtures/verifier-matrix-26/release-rpc/locked-builtin/receipt.json").read_text())
+        opaque = "opaque_" + secrets.token_hex(24)
+        variants = (opaque, base64.urlsafe_b64encode(opaque.encode()).decode(), opaque.encode().hex(),
+                    "".join("%%%02X" % byte for byte in opaque.encode()))
+        accepted = 0
+        for field in self._producer_release_invocations():
+            for value in variants:
+                mutated = copy.deepcopy(receipt)
+                mutated["observations"][verifier_receipts.RELEASE_RPC_CASE_ID][field] = value
+                try:
+                    verifier_receipts.validate_receipt(mutated)
+                except verifier_receipts.ReceiptError:
+                    continue
+                accepted += 1
+        self.assertTrue(accepted == 0, "fixed release invocation accepted a private same-type string")
+
+    def test_all_26_receipt_string_leaves_reject_generated_opaque_and_encoded_values(self):
+        def strings(value, path=()):
+            if isinstance(value, dict):
+                for key, child in value.items():
+                    yield from strings(child, (*path, key))
+            elif isinstance(value, list):
+                for index, child in enumerate(value):
+                    yield from strings(child, (*path, index))
+            elif type(value) is str:
+                yield path
+        opaque = "opaque_" + secrets.token_hex(24)
+        variants = (opaque, base64.urlsafe_b64encode(opaque.encode()).decode(), opaque.encode().hex(),
+                    "".join("%%%02X" % byte for byte in opaque.encode()))
+        files = sorted((ROOT / "test/fixtures/verifier-matrix-26").rglob("*.json"))
+        self.assertTrue(len(files) == 26, "receipt string inventory lost a matrix cell")
+        accepted = 0
+        for path in files:
+            raw = json.loads(path.read_text())
+            rollout = raw["schema"] == "lockspire-installed-verifier-rollout-v1"
+            def validate(value):
+                if rollout:
+                    return verifier_receipts.validate_rollout_receipt(value, expected_pair=raw["pair"],
+                        expected_store=raw["store"], expected_runner=raw["runner_revision"],
+                        expected_candidate_source=raw["candidate"]["source_revision"], expected_scope=raw["scope"])
+                return verifier_receipts.validate_receipt(value)
+            validate(raw)
+            for leaf in strings(raw):
+                for replacement in variants:
+                    mutated = copy.deepcopy(raw)
+                    node = mutated
+                    for part in leaf[:-1]:
+                        node = node[part]
+                    node[leaf[-1]] = replacement
+                    try:
+                        validate(mutated)
+                    except verifier_receipts.ReceiptError:
+                        continue
+                    accepted += 1
+        self.assertTrue(accepted == 0, "finite receipt string inventory accepted an opaque same-type value")
+
+    def test_release_and_endpoint_strings_match_actual_producer_relationships(self):
+        raw = json.loads((ROOT / "test/fixtures/verifier-matrix-26/release-rpc/locked-builtin/receipt.json").read_text())
+        opaque = "opaque_" + secrets.token_hex(24)
+        case = verifier_receipts.RELEASE_RPC_CASE_ID
+        mutations = {
+            "release_node": "lockspire-verifier-" + ("0" if raw["run_id"][0] != "0" else "1") + raw["run_id"][1:12] + "@127.0.0.1",
+            "compiled_module_relative_path": f"lib/lockspire-{raw['candidate']['version']}/ebin/{opaque}.beam",
+            "process_pid": "9" * 20,
+        }
+        for field, value in mutations.items():
+            mutated = copy.deepcopy(raw)
+            mutated["observations"][case][field] = value
+            with self.assertRaises(verifier_receipts.ReceiptError):
+                verifier_receipts.validate_receipt(mutated)
+        for pair in ("locked", "floor"):
+            raw = json.loads((ROOT / f"test/fixtures/verifier-matrix-26/endpoints/{pair}-builtin/receipt.json").read_text())
+            for value in (opaque, "http://127.0.0.1:1/lockspire/" + opaque):
+                mutated = copy.deepcopy(raw)
+                for observation in mutated["observations"].values():
+                    observation["rejected_audience_uri"] = value
+                with self.assertRaises(verifier_receipts.ReceiptError):
+                    verifier_receipts.validate_receipt(mutated)
+
     def _fixture_runner_revision(self) -> str:
         path = ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json"
         return json.loads(path.read_text(encoding="utf-8"))["runner"]

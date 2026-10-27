@@ -22,7 +22,7 @@ import build_provider  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_endpoints  # noqa: E402
 from verifier_receipts import ENDPOINT_CASE_IDS, ReceiptError, validate_receipt  # noqa: E402
-from verifier_receipts import RELEASE_RPC_CASE_ID, RELEASE_RPC_OBSERVATION_FIELDS  # noqa: E402
+from verifier_receipts import RELEASE_RPC_CASE_ID, RELEASE_RPC_INVOCATIONS, RELEASE_RPC_OBSERVATION_FIELDS  # noqa: E402
 from redaction import Redactor, SentinelSet  # noqa: E402
 
 
@@ -75,12 +75,8 @@ class VerifierEndpointContracts(unittest.TestCase):
         candidate = {"kind": "checkout", "version": "1.6.1", **binding,
                      "runner_revision": "b" * 40,
                      "source_proof": hashlib.sha256(json.dumps(binding, sort_keys=True, separators=(",", ":")).encode()).hexdigest()}
-        observation = {"outcome": "pass", "executed": True, "assertion_passed": True,
-                       "fresh_jti": True, "http_status": 200,
-                       "configured_issuer": "https://issuer.example/lockspire",
-                       "discovered_issuer": "https://issuer.example/lockspire",
-                       "assertion_audience": "https://issuer.example/lockspire",
-                       "rejected_audience_uri": "https://issuer.example/lockspire/wrong"}
+        retained = json.loads((ROOT / "test/fixtures/verifier-matrix-26/endpoints/locked-builtin/receipt.json").read_text())
+        observation = dict(retained["observations"][ENDPOINT_CASE_IDS[0]])
         receipt = {
             "schema": "lockspire-installed-verifier-v1", "scope": "endpoints", "run_id": "d" * 32,
             "runner": "b" * 40, "pair": "locked", "store": "builtin", "candidate": candidate,
@@ -149,10 +145,8 @@ class VerifierEndpointContracts(unittest.TestCase):
             "task_local_check_ready": True, "rpc_dry_run_complete": True,
             "rpc_fresh_check_ready": True, "loaded_candidate_verified": True,
             "rpc_exit_code": 0, "check_exit_code": 0, "task_local_exit_code": 0,
-            "process_pid": "1234", "release_node": "lockspire-verifier-a@127.0.0.1",
-            "rpc_invocation": "bin/clean_room_provider rpc dry_run",
-            "check_invocation": "bin/clean_room_provider rpc check",
-            "task_local_invocation": "mix lockspire.clients.verifier.rewrap --check --limit 100",
+            "process_pid": "1234", "release_node": "lockspire-verifier-" + "e" * 12 + "@127.0.0.1",
+            **RELEASE_RPC_INVOCATIONS,
             "compiled_module_relative_path": "lib/lockspire-1.6.1/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam",
             "compiled_module_sha256": "d" * 64, "startup_context_source": "startup",
             "task_local_context_source": "task_local", "startup_current_key_id": "release-startup",

@@ -77,6 +77,13 @@ ENDPOINT_OBSERVATION_FIELDS = frozenset({
 ENDPOINT_LIFECYCLE_FIELDS = frozenset({"revoked_token_inactive"})
 ENDPOINT_FAPI_FIELDS = frozenset({"fapi_security_excluded", "fapi_message_signing_excluded"})
 RELEASE_RPC_CASE_ID = "VPROOF-02-RELEASE-RPC-DRY-RUN"
+# Exact descriptions emitted by verifier_endpoints.run_release_rpc. These are
+# evidence labels, never a channel for command output or caller-supplied text.
+RELEASE_RPC_INVOCATIONS = {
+    "rpc_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :dry_run, limit: 100)",
+    "check_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 100)",
+    "task_local_invocation": "mix lockspire.clients.verifier.rewrap --check --limit 100",
+}
 RELEASE_RPC_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "assembly_succeeded", "running_process_observed", "rpc_executed",
     "startup_mode_dedicated", "task_local_mode_dedicated", "task_local_check_ready",
@@ -373,9 +380,9 @@ def _validate_value_types(receipt: Any, *, rollout: bool) -> None:
             expected = bool if key == "resolved_dependency_verified" else str
             if type(value) is not expected:
                 raise ReceiptError("receipt identity scalar type is invalid")
-            if key == "version" and not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", value):
+            if key == "version" and (len(value) > 96 or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?", value)):
                 raise ReceiptError("receipt package version is invalid")
-            if field == "runtime" and not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*(?:[-+ .(][A-Za-z0-9.+() _-]{0,100})?", value):
+            if field == "runtime" and (len(value) > 128 or not re.fullmatch(r"[0-9]+(?:\.[0-9]+)*(?:[-+ .(][A-Za-z0-9.+() _-]{0,100})?", value)):
                 raise ReceiptError("receipt runtime version is invalid")
     for process in receipt.get("processes", {}).values():
         if not isinstance(process, dict):
@@ -399,7 +406,7 @@ def _validate_value_types(receipt: Any, *, rollout: bool) -> None:
                     continue
                 if type(value) is not str:
                     raise ReceiptError("receipt observation string type is invalid")
-                if key == "process_pid" and (not value.isdecimal() or int(value) <= 0):
+                if key == "process_pid" and (not re.fullmatch(r"[1-9][0-9]{0,9}", value) or int(value) > 2**31 - 1):
                     raise ReceiptError("release process PID is invalid")
             elif key.endswith(("_count", "_pid", "_http_status")) or key in _OBSERVATION_COUNTS | {"http_status"}:
                 if value is None and key == "http_status" and receipt.get("scope") == "disclosure-failure":
@@ -962,7 +969,9 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
             or result["assertion_audience"] != result["configured_issuer"]
             or result["rejected_audience_uri"] == result["configured_issuer"]
             or not isinstance(result["configured_issuer"], str)
-            or not result["configured_issuer"].startswith(("http://", "https://"))
+            or not re.fullmatch(r"http://127\.0\.0\.1:[1-9][0-9]{0,4}/lockspire", result["configured_issuer"])
+            or int(result["configured_issuer"].split(":")[2].split("/")[0]) > 65535
+            or result["rejected_audience_uri"] != result["configured_issuer"] + "/wrong"
         ):
             raise ReceiptError("installed endpoint observation is incomplete")
         if receipt["scope"] == "endpoints" and (
@@ -987,13 +996,14 @@ def validate_receipt(receipt: dict[str, Any], *, expected_pair: str | None = Non
                     or any(type(result.get(key)) is not int for key in int_fields)
                     or any(not isinstance(result.get(key), str) or not result[key] for key in string_fields)):
                 raise ReceiptError("running-release RPC observation is incomplete")
+            if any(result[field] != literal for field, literal in RELEASE_RPC_INVOCATIONS.items()):
+                raise ReceiptError("running-release RPC invocation labels differ from the producer contract")
             if (result["rpc_exit_code"] != 0 or result["check_exit_code"] != 0
                     or result["task_local_exit_code"] != 0 or result["compiled_module_sha256"] is None
                     or not SHA.fullmatch(result["compiled_module_sha256"])
-                    or result["compiled_module_relative_path"].startswith("/")
-                    or "../" in result["compiled_module_relative_path"]
-                    or not result["compiled_module_relative_path"].startswith("lib/lockspire-")
-                    or result["release_node"].startswith("-")
+                    or result["compiled_module_relative_path"] != (
+                        f"lib/lockspire-{candidate['version']}/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam")
+                    or result["release_node"] != f"lockspire-verifier-{receipt['run_id'][:12]}@127.0.0.1"
                     or result["startup_context_source"] != "startup"
                     or result["task_local_context_source"] != "task_local"
                     or result["startup_current_key_id"] != "release-startup"
