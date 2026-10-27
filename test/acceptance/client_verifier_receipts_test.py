@@ -71,6 +71,24 @@ class CompleteMatrixContracts(unittest.TestCase):
         changed = [*rows[:-1], {**rows[-1], "scope": "unknown"}]
         with self.assertRaises(verifier_receipts.ReceiptError):
             verifier_receipts.validate_matrix_links(changed, expected_runner="a" * 40)
+
+    def test_disclosure_success_and_failure_receipts_share_one_owned_run_id(self) -> None:
+        required = verifier_receipts.required_receipt_keys()
+        rows = [
+            {"scope": scope, "pair": pair, "store": store,
+             "run_id": f"{index:032x}", "receipt_sha256": f"{index + 1:064x}",
+             "runner_revision": "a" * 40,
+             "candidate_source_archive_tree": ["d" * 40, "e" * 64, "f" * 64],
+             "host_lock_sha256": "1" * 64, "compiled_candidate_sha256": "2" * 64,
+             "executed_count": len(verifier_receipts.expected_case_ids((scope, pair, store))),
+             "outcome": "pass",
+             "stable_case_ids": verifier_receipts.expected_case_ids((scope, pair, store))}
+            for index, (scope, pair, store) in enumerate(required)
+        ]
+        success = next(row for row in rows if (row["scope"], row["pair"]) == ("disclosure", "locked"))
+        failure = next(row for row in rows if (row["scope"], row["pair"]) == ("disclosure-failure", "locked"))
+        failure["run_id"] = success["run_id"]
+        self.assertEqual(len(verifier_receipts.validate_matrix_links(rows, expected_runner="a" * 40)), 26)
         changed = [*rows[:-1], {**rows[-1], "stable_case_ids": []}]
         with self.assertRaises(verifier_receipts.ReceiptError):
             verifier_receipts.validate_matrix_links(changed, expected_runner="a" * 40)
