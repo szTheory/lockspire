@@ -1,0 +1,55 @@
+{
+  "phase": "178",
+  "wave": 6,
+  "completed_plans": ["178-10"],
+  "observed_metadata_head": "b2ab4451f6bed8bf736c705d16b52c92b7620f85",
+  "runtime": "@opengsd/gsd-core 1.18.0",
+  "point": "execute:wave:post",
+  "dispatch": "Three known built-in check identifiers were invoked as fixed literal CLI arguments in manifest order; no arbitrary manifest shell text was interpolated.",
+  "checks": [
+    {
+      "query": "verify.schema-drift",
+      "exit_code": 0,
+      "result": {
+        "block": false,
+        "drift_detected": false,
+        "blocking": false,
+        "schema_files": [],
+        "orms": [],
+        "unpushed_orms": [],
+        "message": "",
+        "skipped": false
+      }
+    },
+    {
+      "query": "verify.codebase-drift",
+      "exit_code": 0,
+      "result": {
+        "block": false,
+        "skipped": true,
+        "reason": "no-structure-md",
+        "action_required": false,
+        "directive": "none",
+        "elements": []
+      }
+    },
+    {
+      "query": "ui.safety-gate",
+      "exit_code": 0,
+      "result": {
+        "frontend": true,
+        "hasUiFiles": false,
+        "hasUiSpec": false,
+        "block": false
+      }
+    }
+  ],
+  "wave_blocked": false,
+  "plans_complete": 10,
+  "plans_total": 12,
+  "next_ready_plan": "178-11",
+  "not_ready_plan": "178-12",
+  "unresolved_predecessor": "178-11",
+  "phase_complete": false,
+  "remote_mutations_authorized": false
+}
