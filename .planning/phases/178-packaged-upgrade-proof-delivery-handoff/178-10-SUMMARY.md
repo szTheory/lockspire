@@ -78,4 +78,4 @@ The earlier Python and source-gate qualification at source `5270f450` remains di
 
 ## Self-Check: PASSED
 
-All evidence files exist, the four plan commits (`a6f0c143`, `6910662b`, `ccd8fe1e`, `bb116d4a`) are ancestors of the measured plan-end HEAD, and frozen, review, source, and package validators passed. No source or covered input changed after the frozen evidence run.
+All evidence files exist, the four plan commits (`a6f0c143`, `6910662b`, `ccd8fe1e`, `bb116d4a`) are ancestors of the measured plan-end HEAD, and frozen, review, source, and package validators passed at the actual package checkout `ccd8fe1e`. After the later metadata-only summary commit, frozen, review, and source CLIs pass again; the source validator revalidates package evidence using the recorded executed runner `ccd8fe1e` and passes 26/64. A standalone package CLI call at the later metadata HEAD returns the generic rejection because it defaults the expected executed runner to current HEAD, while the immutable package receipts correctly identify `ccd8fe1e`; the explicit pinned package validation passes. No source or covered input changed after the frozen evidence run.
