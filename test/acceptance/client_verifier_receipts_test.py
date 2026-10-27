@@ -46,6 +46,44 @@ class CompleteMatrixContracts(unittest.TestCase):
             self.assertNotEqual(aggregate["runner_revision"], aggregate["aggregate_validator_revision"])
             self.assertEqual(len(aggregate["cells"]), 26)
 
+    def test_pair_cli_projects_exact_required_cells_for_each_dependency_pair(self) -> None:
+        import clean_room_verifier_upgrade as source
+        from unittest.mock import patch
+        artifacts = ROOT / ".artifacts"
+        fixture_receipt = json.loads((ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json").read_text())
+        retained_runner = fixture_receipt["runner"]
+        expected = {"locked": (14, 33), "floor": (12, 31)}
+        for pair, (receipt_count, case_count) in expected.items():
+            with self.subTest(pair=pair), tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+                parent = Path(temporary)
+                inputs = self._matrix_copy(parent)
+                with patch.object(source, "source_revision", return_value=retained_runner):
+                    with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                        result = source.main(["--pair", pair, "--store", "all", "--group", "all",
+                                              "--validate-receipts", str(inputs)])
+                self.assertEqual(result, 0)
+                index = json.loads((inputs / "validated" / "index.json").read_text(encoding="utf-8"))
+                self.assertEqual(index["executed_receipts"], receipt_count)
+                self.assertEqual(index["passed_cases"], case_count)
+                self.assertEqual(index["failed_cases"], 0)
+
+    def test_pair_cli_rejects_inputs_missing_the_selected_pair(self) -> None:
+        import clean_room_verifier_upgrade as source
+        from unittest.mock import patch
+        artifacts = ROOT / ".artifacts"
+        fixture_receipt = json.loads((ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json").read_text())
+        retained_runner = fixture_receipt["runner"]
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            inputs = self._matrix_copy(Path(temporary))
+            for scope, pair, store in verifier_receipts.required_receipt_keys():
+                if pair == "locked":
+                    source.matrix_receipt_path(inputs, scope, pair, store).unlink()
+            with patch.object(source, "source_revision", return_value=retained_runner):
+                with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                    result = source.main(["--pair", "locked", "--store", "all", "--group", "all",
+                                          "--validate-receipts", str(inputs)])
+            self.assertEqual(result, 1)
+
     def test_read_only_cli_rejects_missing_and_substituted_receipts(self) -> None:
         import clean_room_verifier_upgrade as source
         artifacts = ROOT / ".artifacts"
