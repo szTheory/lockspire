@@ -22,6 +22,7 @@ sys.path.insert(0, str(CLEAN_ROOM))
 sys.path.insert(0, str(ROOT / "scripts" / "ci"))
 
 from package_input import PackageInputError, PackageSource, package_tree_digest, prepare_package  # noqa: E402
+import package_input  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_delivery  # noqa: E402
 import verifier_receipts  # noqa: E402
@@ -74,6 +75,120 @@ class CandidateProvisioningContracts(unittest.TestCase):
                 )
             with self.assertRaises(ValueError):
                 provision_verifier_candidate.validate_checkout_pins(repo, package_source, package_source)
+
+    def test_actual_provisioner_manifest_and_versioned_archive_feed_package_selection(self) -> None:
+        """Exercise the producer/consumer path with only build and unpack OS seams stubbed."""
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary).resolve()
+            payload = repo / "source-package"
+            (payload / "lib").mkdir(parents=True)
+            (payload / "mix.exs").write_text('version: "1.8.0"\n', encoding="utf-8")
+            (payload / "lib/lockspire.ex").write_text("defmodule Lockspire do end\n", encoding="utf-8")
+            self._git(repo, "init", "-q")
+            self._git(repo, "config", "user.email", "fixture@example.invalid")
+            self._git(repo, "config", "user.name", "Fixture")
+            (repo / "mix.exs").write_text('version: "1.8.0"\n', encoding="utf-8")
+            (repo / "lib").mkdir()
+            (repo / "lib/lockspire.ex").write_text("defmodule Lockspire do end\n", encoding="utf-8")
+            self._git(repo, "add", "mix.exs", "lib/lockspire.ex")
+            self._git(repo, "commit", "-qm", "fixture package source")
+            revision = self._git(repo, "rev-parse", "HEAD")
+            artifact_root = repo / ".artifacts/phase178"
+            artifact_root.mkdir(parents=True)
+            phase_dir = repo / ".planning/phases" / verifier_delivery.PHASE_NAME
+            phase_dir.mkdir(parents=True)
+            canonical_manifest = phase_dir / "178-FROZEN-INPUTS.json"
+            canonical_manifest.write_bytes(b"retained canonical evidence\n")
+            job_manifest = artifact_root / "ci-candidate/178-FROZEN-INPUTS.json"
+
+            real_run = subprocess.run
+
+            def run_with_mocked_build(command, **kwargs):
+                if command[:2] == ("mix", "hex.build"):
+                    Path(command[3]).write_bytes(b"fixture Hex archive emitted by build boundary")
+                    return subprocess.CompletedProcess(command, 0, b"", b"")
+                return real_run(command, **kwargs)
+
+            def unpack_fixture(_archive: Path, destination: Path) -> None:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copytree(payload, destination)
+
+            authenticate_frozen = package_input.authenticated_frozen_source
+            verify_source_owner = package_input.verify_frozen_source_owner
+
+            def source_build_record() -> dict[str, object]:
+                return {
+                    "command": "git archive <source-revision>; mix hex.build --output <owned-temporary>/lockspire.tar",
+                    "cwd": "<owned-temporary>/source (git archive of source_revision)",
+                    "git_archive_exit_code": 0,
+                    "package_build_exit_code": 0,
+                    "package_stdout_bytes": 0,
+                    "package_stdout_sha256": hashlib.sha256(b"").hexdigest(),
+                    "package_stderr_bytes": 0,
+                    "package_stderr_sha256": hashlib.sha256(b"").hexdigest(),
+                    "rebuilt_archive_sha256": "a" * 64,
+                    "rebuilt_tree_sha256": package_tree_digest(payload),
+                }
+
+            def git_local(*args: str) -> str:
+                result = real_run(("git", *args), cwd=repo, check=False,
+                                  stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                  stderr=subprocess.DEVNULL, timeout=20)
+                if result.returncode:
+                    raise verifier_delivery.DeliveryError("fixture Git identity unavailable")
+                return result.stdout.decode("ascii").strip()
+
+            with patch.object(provision_verifier_candidate, "ROOT", repo), \
+                 patch.object(verifier_delivery, "ROOT", repo), \
+                 patch.object(verifier_delivery, "ARTIFACT_DEFAULT", artifact_root), \
+                 patch.object(verifier_delivery, "COVERED_INPUTS", ("mix.exs", "lib/lockspire.ex")), \
+                 patch.object(verifier_delivery, "PHASE175_FROZEN_INPUTS", ()), \
+                 patch.object(package_input, "PROJECT_ROOT", repo), \
+                 patch.object(verifier_delivery, "_git", side_effect=git_local), \
+                 patch.object(provision_verifier_candidate.subprocess, "run", side_effect=run_with_mocked_build), \
+                 patch.object(provision_verifier_candidate, "unpack_hex_tarball", side_effect=unpack_fixture), \
+                 patch.object(verifier_delivery, "unpack_hex_tarball", side_effect=unpack_fixture), \
+                 patch.object(verifier_delivery, "_rebuild_source_package",
+                              side_effect=lambda _revision: (
+                                  package_tree_digest(payload), source_build_record()
+                )), \
+                 patch.object(package_input, "authenticated_frozen_source",
+                              side_effect=lambda: authenticate_frozen(repo)), \
+                 patch.object(package_input, "verify_frozen_source_owner",
+                              side_effect=lambda source, archive_path, root: verify_source_owner(
+                                  source, archive_path, root, project_root=repo
+                              )), \
+                 patch.object(package_input, "unpack_hex_tarball", side_effect=unpack_fixture):
+                pins = provision_verifier_candidate.provision(
+                    revision, revision, Path(".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json"),
+                )
+                manifest = json.loads(job_manifest.read_text(encoding="utf-8"))
+                archive = repo / manifest["candidate_owner"]["archive_path"]
+                self.assertEqual(archive.name, "lockspire-1.8.0.tar")
+                self.assertEqual(canonical_manifest.read_bytes(), b"retained canonical evidence\n")
+                self.assertTrue(job_manifest.is_file())
+
+                with patch.dict(os.environ, {
+                    "LOCKSPIRE_FROZEN_INPUTS": str(job_manifest),
+                    "LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256": pins["expected_manifest_sha256"],
+                    "LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION": pins["expected_runner"],
+                    "LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION": pins["expected_candidate_source"],
+                    "LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256": pins["expected_archive_sha256"],
+                    "LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256": pins["expected_tree_sha256"],
+                }):
+                    selected_root, _entries, identity = prepare_package(
+                        repo / "consumer", PackageSource("checkout"),
+                    )
+
+            self.assertEqual(identity.kind, "frozen")
+            self.assertEqual(identity.version, "1.8.0")
+            self.assertEqual(identity.archive_sha256, pins["expected_archive_sha256"])
+            self.assertEqual(identity.tree_sha256, pins["expected_tree_sha256"])
+            self.assertEqual(identity.source_revision, revision)
+            self.assertEqual((selected_root / "lib/lockspire.ex").read_text(encoding="utf-8"),
+                             "defmodule Lockspire do end\n")
 
 
 class FrozenSourceOwnerContracts(unittest.TestCase):

@@ -148,11 +148,11 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         temporary, process, receipt_dir = self.fake_invocation("import time\ntime.sleep(15)\n", timeout=1)
         try:
             _stdout, stderr = process.communicate(timeout=8)
-            self.assertIn(process.returncode, {124, 125}, stderr)
+            self.assertTrue(process.returncode in {124, 125}, "timeout exit code must be bounded")
             if process.returncode == 124:
-                self.assertIn("timeout", stderr)
+                self.assertTrue("timeout" in stderr, "timeout failure should be identified")
             else:
-                self.assertIn("cleanup unconfirmed", stderr)
+                self.assertTrue("cleanup unconfirmed" in stderr, "cleanup failure should be identified")
             self.assertFalse(receipt_dir.exists())
         finally:
             temporary.cleanup()
@@ -172,7 +172,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
                 _stdout, signal_stderr = process.communicate(timeout=8)
                 self.assertIn(process.returncode, {125, 143})
                 if process.returncode == 125:
-                    self.assertIn("cleanup unconfirmed", signal_stderr)
+                    self.assertTrue("cleanup unconfirmed" in signal_stderr,
+                                    "signal cleanup failure should be identified")
                 with self.assertRaises(ProcessLookupError):
                     os.kill(child_pid, 0)
                 self.assertFalse(receipt_dir.exists())
@@ -189,7 +190,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             self.assertEqual(process.returncode, 78)
             self.assertTrue("fake success" not in stdout + stderr,
                             "captured child output must remain private")
-            self.assertIn("cannot create or validate", stderr)
+            self.assertTrue("cannot create or validate" in stderr,
+                            "invalid receipt destination should be rejected")
             self.assertFalse(receipt_dir.exists())
         finally:
             temporary.cleanup()
@@ -202,10 +204,10 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         try:
             _stdout, stderr = process.communicate(timeout=6)
             elapsed = time.monotonic() - started
-            self.assertIn(process.returncode, {124, 125}, stderr)
-            self.assertIn("overall", stderr)
+            self.assertTrue(process.returncode in {124, 125}, "overall timeout exit code must be bounded")
+            self.assertTrue("overall" in stderr, "overall timeout should be identified")
             if process.returncode == 125:
-                self.assertIn("cleanup unconfirmed", stderr)
+                self.assertTrue("cleanup unconfirmed" in stderr, "cleanup failure should be identified")
             self.assertLess(elapsed, 1.8)
             self.assertFalse(receipt_dir.exists())
         finally:
@@ -230,11 +232,22 @@ class VerifierCiWrapperContracts(unittest.TestCase):
             )
             try:
                 _stdout, stderr = process.communicate(timeout=8)
-                self.assertEqual(process.returncode, 125, stderr)
-                self.assertIn("cleanup unconfirmed", stderr)
+                self.assertTrue(process.returncode == 125, "forced process-group denial must fail closed")
+                self.assertTrue("cleanup unconfirmed" in stderr, "cleanup failure should be identified")
                 self.assertFalse(receipt_dir.exists())
                 wrapper_root_pid = int(root_pid_file.read_text(encoding="ascii"))
                 grandchild_pid = int(grandchild_pid_file.read_text(encoding="ascii"))
+                custody_prefix = "verifier owned session custody retained: "
+                custody_line = next((line for line in stderr.splitlines()
+                                     if line.startswith(custody_prefix)), None)
+                self.assertTrue(custody_line is not None, "retained cleanup custody should be identified")
+                custody_registry = Path(custody_line[len(custody_prefix):])
+                self.assertTrue(
+                    custody_registry.parent == Path(tempfile.gettempdir())
+                    and custody_registry.name.startswith("lockspire-verifier-owned-")
+                    and custody_registry.is_dir(),
+                    "retained cleanup custody must be a private test-owned registry",
+                )
             finally:
                 if process.poll() is None:
                     process.kill()
@@ -261,6 +274,11 @@ class VerifierCiWrapperContracts(unittest.TestCase):
                     time.sleep(0.05)
                 else:
                     self.fail("test-owned wrapper and descendant did not stop after exact-PID cleanup")
+                if locals().get("custody_registry") is not None:
+                    for record in custody_registry.iterdir():
+                        self.assertTrue(record.name.removesuffix(".json").isdecimal(),
+                                        "private custody registry must contain numeric PID records")
+                    shutil.rmtree(custody_registry)
                 temporary.cleanup()
 
 
