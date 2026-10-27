@@ -1,9 +1,9 @@
 {
   "candidate_owner": {
-    "archive_path": ".artifacts/phase178/ci-candidate/lockspire-1.6.1.tar",
+    "archive_path": ".artifacts/phase178/candidate-refreeze-e16a1071f39c/lockspire-1.6.1.tar",
     "archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
-    "extracted_tree_path": ".artifacts/phase178/ci-candidate/lockspire",
-    "owner_sha256": "78b3465818dcc56963ba6fd4996005ec9777954a076c51efb6877fd80e99bdab",
+    "extracted_tree_path": ".artifacts/phase178/candidate-refreeze-e16a1071f39c/lockspire",
+    "owner_sha256": "3833f87fee8e80bfc92c9092d941325c7eb3e64de9c50792d95c4c535d54393a",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21255,
-      "package_stdout_sha256": "d9076c0c5f077fda654572e77fe7e324d31e6408f43050d5bcb66a62ca3ad141",
+      "package_stdout_sha256": "023698d8d82171016ddfd5562a877791c580b6466da76358df680fa47331b76e",
       "rebuilt_archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
       "rebuilt_tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
     },
-    "source_revision": "51747a6e1a3c5ae9a786c5773256b1983d80b503",
-    "source_tree": "364e15cba2eeb0fd0e607db18b6ead61108c1af9",
+    "source_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
+    "source_tree": "fe2d49dd02fd5ed0e0ccff9346f9022927c18750",
     "tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -3631,7 +3631,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room/package_input.py",
-      "sha256": "21d580199101047c62ba980bdb95d231ef2f13935d250b6e61ef27d0dc66604e"
+      "sha256": "ef0779510c1a36e356b1b919a68f6aebd2bc718e5cfd848a6b7945a3f00f157e"
     },
     {
       "path": "scripts/acceptance/clean_room/processes.py",
@@ -3928,6 +3928,10 @@
     {
       "path": "test/acceptance/client_verifier_endpoints_test.py",
       "sha256": "dd5ccb6761d8394a4e20c85b945fbd7d63690752b82be922cd687f9467e742d3"
+    },
+    {
+      "path": "test/acceptance/client_verifier_launch_registration_test.py",
+      "sha256": "d5e3a45a6433d04d4f2d783ea80a2cc6a313c8184acda94baf075ef19febcd6d"
     },
     {
       "path": "test/acceptance/client_verifier_process_supervision_test.py",
@@ -5866,8 +5870,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-27T11:25:27.088693+00:00",
-  "runner_revision": "df8f9c510173959a86c6088ba3893d6fb79c62ec",
-  "runner_tree": "c1d57842baa6dea06ee1965f699af8dc1a7428cf",
+  "frozen_at": "2026-10-27T12:36:54.332940+00:00",
+  "runner_revision": "d59f84bbe31eec95362fe7199d84e8b16adca71e",
+  "runner_tree": "dd36b62a7de9377cafeadb766132d77b645522e4",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
