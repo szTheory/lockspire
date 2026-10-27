@@ -10,6 +10,8 @@
 - Frozen manifest: `178-FROZEN-INPUTS.json`, SHA-256 `ae5cfc65d48d51ac14655f08c28d67ecf9d0ba3c6f8920cee902818a16794919`; it records the complete bounded tracked closure and candidate owner digest `d218ae526198287ed187e1a568de4e73b39d114c1dd51f66d34cd02f888300b9`.
 - `verifier_delivery.py --check frozen` passed with all five explicit caller pins. The selected runtime profile for local package pairs is `local-current`; expected BEAM is Elixir `1.19.5`, OTP `28.5`. PostgreSQL server identity is captured independently for each pair owner before its producer groups.
 
+The review validator passed at the packet's exact independent implementation pin `24bb9c9f`. A separate applicability probe using `--expected-runner ec2bb155` was rejected because the packet deliberately requires exact implementation-revision equality; it did not alter or invalidate the original review result. Applicability from the accepted review scope to frozen runner `ec2bb155` is established by the frozen validator's full selected-path-set and byte equality check. No review lane is described as having reviewed `ec2bb155`.
+
 ## Reconciliation and preserved attempts
 
 All 13 Phase 175 immutable input hashes were rechecked by the freeze owner. The reviewed Plan 10 implementation bytes remain the accepted `24bb9c9f` review subject; `ec2bb155` is the frozen execution runner after evidence and planning metadata commits, with the closure validator proving reviewed-to-frozen selected-byte equality.
