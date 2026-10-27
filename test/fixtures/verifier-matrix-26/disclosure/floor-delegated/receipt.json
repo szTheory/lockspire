@@ -1,0 +1,56 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 1,
+  "host": {
+    "compiled_candidate_sha256": "ffbfe881ee3b5f64da47fde9b9e00363b0b6b2a3f6a5f79bb48c8642818b3252",
+    "live_view": "1.1.28",
+    "lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+    "phoenix": "1.8.5",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-DISCLOSURE-FLOOR-SUCCESS": {
+      "audit_projection_safe": true,
+      "cli_output_checked": true,
+      "executed": true,
+      "http_status": 200,
+      "logger_control_event_count": 2,
+      "logger_event_count": 3,
+      "logger_leak_count": 0,
+      "logger_operation_event_count": 0,
+      "maintenance_changed": true,
+      "nested_inspection_redacted": true,
+      "one_time_handoff_usable": true,
+      "outcome": "pass",
+      "output_leak_count": 0,
+      "query_control_event_count": 1,
+      "query_event_count": 6,
+      "query_leak_count": 0,
+      "query_operation_event_count": 5
+    }
+  },
+  "pair": "floor",
+  "partial": true,
+  "run_id": "c0c1db012c994132b28f1c01d1c5f9d0",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "disclosure",
+  "stable_case_ids": [
+    "VPROOF-02-DISCLOSURE-FLOOR-SUCCESS"
+  ],
+  "store": "delegated"
+}

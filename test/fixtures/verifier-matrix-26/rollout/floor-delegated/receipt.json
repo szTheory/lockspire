@@ -1,0 +1,81 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "compiled_candidate_sha256": "e291387a31266745edc15b3313562852ff08f24117fa5f1597998b4e8ff35c14",
+    "kind": "checkout",
+    "resolved_dependency_verified": true,
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 1,
+  "fleet_limits": [
+    "fleet parity",
+    "fleet quiescence",
+    "backup availability",
+    "rollback safety"
+  ],
+  "host": {
+    "live_view": "1.1.28",
+    "lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+    "phoenix": "1.8.5"
+  },
+  "observations": {
+    "backup_proven": false,
+    "candidate_compatible_rollback_pid": 4650,
+    "candidate_dedicated_activation_pid": 4509,
+    "candidate_legacy_overlap_pid": 4289,
+    "dedicated_hash_present": true,
+    "dedicated_write_after_drain": true,
+    "executed": true,
+    "fleet_parity_proven": false,
+    "isolated_old_process_pid": 5110,
+    "legacy_hash_preserved": true,
+    "legacy_write_read_shared_store": true,
+    "legacy_writer_pid": 4836,
+    "old_code_legacy_control_succeeded": true,
+    "old_code_rejects_dedicated": true,
+    "old_process_exit_observed": true,
+    "outcome": "pass",
+    "quiescence_proven": false,
+    "rollback_retains_dedicated_reads": true,
+    "switch_back_legacy_write_preserves_dedicated": true
+  },
+  "pair": "floor",
+  "partial": true,
+  "predecessor": {
+    "archive_sha256": "792967609e41d216fc0178ef069570c39350c9bb5ee481da4e2852993267e758",
+    "compiled_candidate_sha256": "ceaf91286e6e4133b7cccb45b02b56d5b34b5e0eb706c2cc673c4c1bfa72fc91",
+    "kind": "accepted-git-source",
+    "source_revision": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "tree_sha256": "2dcf7705bd5651e853a02a931a1e0c595639438b3bd0a36a9c330017eab98315",
+    "version": "1.6.1"
+  },
+  "processes": {
+    "candidate": {
+      "compiled_candidate_sha256": "e291387a31266745edc15b3313562852ff08f24117fa5f1597998b4e8ff35c14",
+      "pid": 5070
+    },
+    "predecessor": {
+      "compiled_candidate_sha256": "ceaf91286e6e4133b7cccb45b02b56d5b34b5e0eb706c2cc673c4c1bfa72fc91",
+      "pid": 4227
+    }
+  },
+  "run_id": "304878ab880d4f9b91c14b212a8a871e",
+  "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-rollout-v1",
+  "scope": "rollout",
+  "source_proof": {
+    "commit_tree": "127c8d480223cd4474447a73c7a80066be6fc2be",
+    "source_archive_sha256": "67a9daf5a54cb104e5647e3de3a7372b0eeee896189c2c043409e2497784f5a6"
+  },
+  "store": "delegated"
+}

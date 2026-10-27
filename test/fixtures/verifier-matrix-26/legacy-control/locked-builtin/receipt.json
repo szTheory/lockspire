@@ -1,0 +1,83 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "compiled_candidate_sha256": "a20d80fb2042975e024f3285b6df16d0ecc03f5037baa77ac217ca24cb76562d",
+    "kind": "checkout",
+    "resolved_dependency_verified": true,
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 1,
+  "fleet_limits": [
+    "fleet parity",
+    "fleet quiescence",
+    "backup availability",
+    "rollback safety"
+  ],
+  "host": {
+    "live_view": "1.2.10",
+    "lock_sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404",
+    "phoenix": "1.8.13"
+  },
+  "observations": {
+    "authenticated_age_kind_after": "migrated",
+    "authenticated_age_kind_before": "migrated",
+    "authenticated_deadline_preserved": true,
+    "client_hash_preserved": true,
+    "coverage": "locked-only bounded public legacy producer/adopter control",
+    "dedicated_format_after": "dedicated",
+    "executed": true,
+    "http_auth_failure": null,
+    "http_authentication_succeeded": true,
+    "legacy_format_before": "legacy",
+    "lifetime_prerequisite_migrated": true,
+    "outcome": "pass",
+    "public_pin_verified": true,
+    "release_source_evidence": "documented-public-release-source",
+    "verifier_specific_adoption_executed": true
+  },
+  "pair": "locked",
+  "partial": true,
+  "predecessor": {
+    "archive_sha256": "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d",
+    "compiled_candidate_sha256": "4e9dbde71c3b60e5edb51f4f1c2a39873a2831b2f2c6232fd0ccceefdf1a16d6",
+    "kind": "public-hex",
+    "source_revision": "d04be40262e975a4eb8d8567eb0d1458a9c23181",
+    "tree_sha256": "64211d4d9d7e4d20520a0f68141e01c5493b57e3bbf014a8cc8cb22ec328ed46",
+    "version": "1.6.1"
+  },
+  "processes": {
+    "candidate": {
+      "compiled_candidate_sha256": "a20d80fb2042975e024f3285b6df16d0ecc03f5037baa77ac217ca24cb76562d",
+      "pid": 38238
+    },
+    "predecessor": {
+      "compiled_candidate_sha256": "4e9dbde71c3b60e5edb51f4f1c2a39873a2831b2f2c6232fd0ccceefdf1a16d6",
+      "pid": 37884
+    }
+  },
+  "run_id": "7626b0c42abf46d88f47d84c8b420527",
+  "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-rollout-v1",
+  "scope": "legacy-control",
+  "source_proof": {
+    "archive_sha256": "629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d",
+    "package_tree_sha256": "64211d4d9d7e4d20520a0f68141e01c5493b57e3bbf014a8cc8cb22ec328ed46",
+    "public_source": "d04be40262e975a4eb8d8567eb0d1458a9c23181",
+    "release_evidence_sha256": "84b118c6fe908b1bbc80542f57f4070d45638525bfeb9d03c20115d7f9491f5c",
+    "release_record_sha256": "a27a212e0558bf2d7bae0ef760ed3ad2bfc162391e280aad0a61e0c7e81df2f7",
+    "source_claim": "public package files byte-match independently exported source commit",
+    "source_commit_tree": "55b53d527903e45ae55203167394c88933defb32",
+    "terminal_receipt_sha256": "4e0b9a46ff16a4549588edca08a2d54aed9a6f0139e7d3a2c76517b61947aa6e"
+  },
+  "store": "builtin"
+}

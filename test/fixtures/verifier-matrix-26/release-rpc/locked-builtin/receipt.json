@@ -1,0 +1,67 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 1,
+  "host": {
+    "compiled_candidate_sha256": "2b5396b9f1ffcaf6468d62406535d5cc18793f17669f45fe4477b7e590466360",
+    "live_view": "1.2.10",
+    "lock_sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404",
+    "phoenix": "1.8.13",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-RELEASE-RPC-DRY-RUN": {
+      "assembly_succeeded": true,
+      "check_exit_code": 0,
+      "check_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check, limit: 100)",
+      "compiled_module_relative_path": "lib/lockspire-1.6.1/ebin/Elixir.Lockspire.Admin.ClientVerifierMaintenance.beam",
+      "compiled_module_sha256": "4b6fb4e95f96b66032eca2fe735bcf21b6e831adf0005e90c8c879caf21f42d0",
+      "dry_run_pending": 0,
+      "dry_run_scanned": 0,
+      "executed": true,
+      "fresh_check_scanned": 0,
+      "loaded_candidate_verified": true,
+      "outcome": "pass",
+      "process_pid": "40765",
+      "release_node": "lockspire-verifier-32c59e3f73e5@127.0.0.1",
+      "rpc_dry_run_complete": true,
+      "rpc_executed": true,
+      "rpc_exit_code": 0,
+      "rpc_fresh_check_ready": true,
+      "rpc_invocation": "bin/clean_room_provider rpc Lockspire.Admin.ClientVerifierMaintenance.run(mode: :dry_run, limit: 100)",
+      "running_process_observed": true,
+      "startup_context_source": "startup",
+      "startup_current_key_id": "release-startup",
+      "startup_mode_dedicated": true,
+      "task_local_check_ready": true,
+      "task_local_context_source": "task_local",
+      "task_local_current_key_id": "task-local",
+      "task_local_exit_code": 0,
+      "task_local_invocation": "mix lockspire.clients.verifier.rewrap --check --limit 100",
+      "task_local_mode_dedicated": true
+    }
+  },
+  "pair": "locked",
+  "partial": true,
+  "run_id": "32c59e3f73e5491f90dd48dce8ef0073",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "release-rpc",
+  "stable_case_ids": [
+    "VPROOF-02-RELEASE-RPC-DRY-RUN"
+  ],
+  "store": "builtin"
+}

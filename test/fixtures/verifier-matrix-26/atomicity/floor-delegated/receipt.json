@@ -1,0 +1,62 @@
+{
+  "candidate": {
+    "archive_sha256": "8be113c5d8cd630ee9fefba3494aac2c236350589a5cd9e7c98600a11a8d1e91",
+    "kind": "checkout",
+    "runner_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "source_proof": "11296b52dc5b478d8a6a640d952c34c38295c602412d9fd8392776407e2ddef1",
+    "source_revision": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+    "tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243",
+    "version": "1.6.1"
+  },
+  "executed_count": 3,
+  "host": {
+    "compiled_candidate_sha256": "c6d7be306d4d47c63ca2079a17923373503390cd4c1af245b1811cd54422e959",
+    "live_view": "1.1.28",
+    "lock_sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954",
+    "phoenix": "1.8.5",
+    "resolved_dependency_verified": true,
+    "vendor_tree_sha256": "2af2082226f0be0e47b1f761cb4e98dd526effc0f93800fbacacce1f3a46b243"
+  },
+  "observations": {
+    "VPROOF-02-ATOMICITY-AUDIT-INSERT-ROLLBACK": {
+      "absent_committed_audit": true,
+      "executed": true,
+      "outcome": "pass",
+      "reached_insert": true,
+      "unchanged_ciphertext": true
+    },
+    "VPROOF-02-ATOMICITY-NESTED-REPORT-AND-COMMIT-ORDER": {
+      "executed": true,
+      "mutation_absent": true,
+      "nested_report_rejected": true,
+      "outcome": "pass",
+      "report_absent_before_commit": true,
+      "success_report_after_commit": true
+    },
+    "VPROOF-02-ATOMICITY-OUTER-ROLLBACK": {
+      "absent_committed_audit": true,
+      "executed": true,
+      "outcome": "pass",
+      "outer_rollback_observed": true,
+      "provisional_change_observed": true,
+      "unchanged_ciphertext": true
+    }
+  },
+  "pair": "floor",
+  "partial": true,
+  "run_id": "b8365fe38e204fb6882ef5eb583997ea",
+  "runner": "2da528fba3ca894cda4e5776b47eb6ccaf12f93c",
+  "runtime": {
+    "elixir": "1.19.5",
+    "otp": "28",
+    "postgresql": "14.17 (Homebrew)"
+  },
+  "schema": "lockspire-installed-verifier-v1",
+  "scope": "atomicity",
+  "stable_case_ids": [
+    "VPROOF-02-ATOMICITY-AUDIT-INSERT-ROLLBACK",
+    "VPROOF-02-ATOMICITY-OUTER-ROLLBACK",
+    "VPROOF-02-ATOMICITY-NESTED-REPORT-AND-COMMIT-ORDER"
+  ],
+  "store": "delegated"
+}

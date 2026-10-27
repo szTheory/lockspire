@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import sys
 import unittest
+import json
+import shutil
+import tempfile
+from contextlib import redirect_stdout, redirect_stderr
+from io import StringIO
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -14,6 +19,136 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def _matrix_copy(self, parent: Path) -> Path:
+        source = ROOT / "test" / "fixtures" / "verifier-matrix-26"
+        destination = parent / "inputs"
+        shutil.copytree(source, destination)
+        return destination
+
+    def test_read_only_cli_accepts_portable_26_receipt_fixture(self) -> None:
+        import clean_room_verifier_upgrade as source
+        artifacts = ROOT / ".artifacts"
+        artifacts.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            parent = Path(temporary)
+            inputs = self._matrix_copy(parent)
+            output = parent / "aggregate.json"
+            stdout, stderr = StringIO(), StringIO()
+            with redirect_stdout(stdout), redirect_stderr(stderr):
+                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                      "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
+            self.assertEqual(result, 0, "read-only matrix fixture should validate")
+            self.assertEqual(stderr.getvalue(), "")
+            aggregate = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(aggregate["executed_receipt_count"], 26)
+            self.assertEqual(aggregate["executed_case_count"], 64)
+            self.assertEqual(aggregate["failed_case_count"], 0)
+            self.assertNotEqual(aggregate["runner_revision"], aggregate["aggregate_validator_revision"])
+            self.assertEqual(len(aggregate["cells"]), 26)
+
+    def test_read_only_cli_rejects_missing_and_substituted_receipts(self) -> None:
+        import clean_room_verifier_upgrade as source
+        artifacts = ROOT / ".artifacts"
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            parent = Path(temporary)
+            inputs = self._matrix_copy(parent)
+            missing = inputs / "disclosure" / "locked-delegated" / "failure-receipt.json"
+            missing.unlink()
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                      "--validate-receipts", str(inputs)])
+            self.assertEqual(result, 1)
+
+    def test_read_only_cli_rejects_every_missing_cell_and_identity_substitution(self) -> None:
+        import clean_room_verifier_upgrade as source
+        artifacts = ROOT / ".artifacts"
+
+        def rejected(mutate) -> None:
+            with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+                parent = Path(temporary)
+                inputs = self._matrix_copy(parent)
+                mutate(inputs)
+                with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                    result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                          "--validate-receipts", str(inputs)])
+                self.assertEqual(result, 1)
+
+        for key in verifier_receipts.required_receipt_keys():
+            scope, pair, store = key
+            with self.subTest(missing=key):
+                rejected(lambda inputs, k=key: source.matrix_receipt_path(inputs, *k).unlink())
+
+        def mutate_cell(key, field, value):
+            def apply(inputs):
+                path = source.matrix_receipt_path(inputs, *key)
+                receipt = json.loads(path.read_text(encoding="utf-8"))
+                receipt[field] = value
+                path.write_text(json.dumps(receipt), encoding="utf-8")
+            return apply
+
+        wrong_labels = (
+            (("core", "locked", "builtin"), "scope", "recovery"),
+            (("core", "locked", "builtin"), "pair", "floor"),
+            (("core", "locked", "builtin"), "store", "delegated"),
+        )
+        for key, field, value in wrong_labels:
+            with self.subTest(label=(key, field, value)):
+                rejected(mutate_cell(key, field, value))
+
+        def mutate_candidate(key, field, value):
+            def apply(inputs):
+                path = source.matrix_receipt_path(inputs, *key)
+                receipt = json.loads(path.read_text(encoding="utf-8"))
+                candidate = receipt["candidate"]
+                candidate[field] = value
+                binding = {"archive_sha256": candidate["archive_sha256"],
+                           "source_revision": candidate["source_revision"],
+                           "tree_sha256": candidate["tree_sha256"]}
+                import hashlib
+                candidate["source_proof"] = hashlib.sha256(
+                    json.dumps(binding, sort_keys=True, separators=(",", ":")).encode()
+                ).hexdigest()
+                path.write_text(json.dumps(receipt), encoding="utf-8")
+            return apply
+
+        key = ("core", "locked", "builtin")
+        for field, value in (("source_revision", "c" * 40), ("archive_sha256", "c" * 64), ("tree_sha256", "c" * 64)):
+            with self.subTest(candidate=field):
+                rejected(mutate_candidate(key, field, value))
+        for field, value in (("lock_sha256", "c" * 64), ("compiled_candidate_sha256", "c" * 64)):
+            with self.subTest(host=field):
+                rejected(mutate_cell(key, "host", {"vendor_tree_sha256": "d" * 64,
+                    "compiled_candidate_sha256": value, "resolved_dependency_verified": True,
+                    "lock_sha256": "1" * 64 if field == "compiled_candidate_sha256" else value,
+                    "phoenix": "1.8.13", "live_view": "1.2.10"}))
+
+        def duplicate_run_id(inputs):
+            first = source.matrix_receipt_path(inputs, "core", "locked", "builtin")
+            second = source.matrix_receipt_path(inputs, "core", "floor", "builtin")
+            one, two = json.loads(first.read_text()), json.loads(second.read_text())
+            two["run_id"] = one["run_id"]
+            second.write_text(json.dumps(two))
+        rejected(duplicate_run_id)
+
+        def mismatched_disclosure_owner(inputs):
+            success = source.matrix_receipt_path(inputs, "disclosure", "locked", "delegated")
+            failure = source.matrix_receipt_path(inputs, "disclosure-failure", "locked", "delegated")
+            one, two = json.loads(success.read_text()), json.loads(failure.read_text())
+            two["host"]["compiled_candidate_sha256"] = "c" * 64
+            failure.write_text(json.dumps(two))
+        rejected(mismatched_disclosure_owner)
+        with tempfile.TemporaryDirectory(dir=artifacts) as temporary:
+            parent = Path(temporary)
+            inputs = self._matrix_copy(parent)
+            path = inputs / "core" / "locked-builtin" / "receipt.json"
+            receipt = json.loads(path.read_text(encoding="utf-8"))
+            receipt["runner"] = "c" * 40
+            path.write_text(json.dumps(receipt), encoding="utf-8")
+            with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                                      "--validate-receipts", str(inputs)])
+            self.assertEqual(result, 1)
+
     def test_disclosure_failure_case_maps_to_the_existing_disclosure_directory(self) -> None:
         import clean_room_verifier_upgrade as source
         root = Path(".artifacts/phase178/complete")
