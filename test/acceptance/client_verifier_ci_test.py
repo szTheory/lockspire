@@ -31,6 +31,8 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="lockspire-verifier-wrapper-repo-")
         root = Path(temporary.name)
         subprocess.run(("git", "init", "--quiet"), cwd=root, check=True)
+        subprocess.run(("git", "-c", "user.name=Lockspire Test", "-c", "user.email=lockspire-test@example.invalid",
+                        "commit", "--allow-empty", "--quiet", "-m", "wrapper test root"), cwd=root, check=True)
         wrapper = root / "scripts" / "ci" / WRAPPER.name
         wrapper.parent.mkdir(parents=True)
         shutil.copy2(WRAPPER, wrapper)

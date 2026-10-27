@@ -244,7 +244,8 @@ fi
 validation_status=0
 run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
   --validate-receipts "$repo_root/$receipt_dir" \
-  --expected-runner-revision "$runner_revision" || validation_status=$?
+  --expected-runner-revision "$runner_revision" \
+  --expected-candidate-source-revision "$runner_revision" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'

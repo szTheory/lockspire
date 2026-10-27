@@ -302,7 +302,7 @@ def validate_complete_matrix(rows: list[dict[str, Any]], *, expected_runner: str
 
 def validate_rollout_receipt(
     receipt: dict[str, Any], *, expected_pair: str, expected_store: str,
-    expected_runner: str, expected_scope: str,
+    expected_runner: str, expected_candidate_source: str, expected_scope: str,
 ) -> dict[str, Any]:
     """Validate the established rollout/public schema without restamping it."""
     required = {
@@ -321,7 +321,7 @@ def validate_rollout_receipt(
     candidate = receipt.get("candidate")
     if not isinstance(candidate, dict):
         raise ReceiptError("rollout candidate identity is missing")
-    if (candidate.get("kind") != "checkout" or candidate.get("source_revision") != expected_runner
+    if (candidate.get("kind") != "checkout" or candidate.get("source_revision") != expected_candidate_source
             or candidate.get("runner_revision") != expected_runner
             or not isinstance(candidate.get("version"), str)
             or any(not isinstance(candidate.get(field), str) or not SHA.fullmatch(candidate[field])
