@@ -83,6 +83,15 @@ def matrix_receipt_path(root: Path, scope: str, pair: str, store: str) -> Path:
     return root / directory_scope / f"{pair}-{store}" / filename
 
 
+def _single_tested_runner_revision(runners: set[str]) -> str:
+    if len(runners) != 1:
+        raise ReceiptError("receipts do not share one tested runner revision")
+    runner = next(iter(runners))
+    if not isinstance(runner, str) or not REVISION.fullmatch(runner):
+        raise ReceiptError("tested runner revision is invalid")
+    return runner
+
+
 def _b64(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
 
@@ -585,10 +594,10 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
     if pair not in {"locked", "floor"} or not receipt_dir.is_dir() or receipt_dir.is_symlink():
         raise ReceiptError("pair receipt directory is unavailable")
     root = receipt_dir.resolve()
-    expected_runner = source_revision()
     required = tuple(key for key in REQUIRED_MATRIX if key[1] == pair)
     records: list[dict[str, object]] = []
     candidates: set[tuple[str, str, str]] = set()
+    runners: set[str] = set()
     for scope, selected_pair, selected_store in required:
         path = matrix_receipt_path(root, scope, pair, selected_store)
         if path.is_symlink() or not path.is_file():
@@ -596,9 +605,11 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
         raw = path.read_bytes()
         receipt = load_receipt(path)
         if scope in {"rollout", "legacy-control"}:
+            runner_revision = receipt.get("runner_revision")
+            if not isinstance(runner_revision, str) or not REVISION.fullmatch(runner_revision):
+                raise ReceiptError("pair rollout runner identity is invalid")
             validate_rollout_receipt(receipt, expected_pair=pair, expected_store=selected_store,
-                                     expected_runner=expected_runner, expected_scope=scope)
-            runner_revision = receipt["runner_revision"]
+                                     expected_runner=runner_revision, expected_scope=scope)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
         else:
@@ -607,8 +618,9 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
             candidate = receipt["candidate"]
             compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
         binding = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
-        if runner_revision != expected_runner or binding[0] != expected_runner:
-            raise ReceiptError("pair receipt is not bound to the current committed source")
+        if binding[0] != runner_revision:
+            raise ReceiptError("pair receipt candidate does not match its tested runner revision")
+        runners.add(runner_revision)
         host_lock = receipt["host"]["lock_sha256"]
         if host_lock != sha256(PROOF_PAIR_LOCKS[pair]) or not re.fullmatch(r"[0-9a-f]{64}", compiled_candidate or ""):
             raise ReceiptError("pair receipt host identity does not match its runtime partition")
@@ -625,7 +637,9 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
         })
     if len(candidates) != 1:
         raise ReceiptError("pair receipts do not share one candidate source/archive/tree")
-    validated = validate_matrix_links(records, expected_runner=expected_runner, required_keys=required)
+    tested_runner = _single_tested_runner_revision(runners)
+    validator_revision = source_revision()
+    validated = validate_matrix_links(records, expected_runner=tested_runner, required_keys=required)
     validated_dir = root / "validated"
     if validated_dir.exists() or validated_dir.is_symlink():
         raise ReceiptError("validated receipt output must be absent before validation")
@@ -637,7 +651,8 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
         os.chmod(validated_dir / safe_name, 0o600)
     index = {
         "schema": "lockspire-installed-verifier-pair-v1",
-        "pair": pair, "runner_revision": expected_runner,
+        "pair": pair, "runner_revision": tested_runner,
+        "aggregate_validator_revision": validator_revision,
         "candidate_source_archive_tree": list(next(iter(candidates))),
         "required_receipts": len(required), "executed_receipts": len(validated),
         "required_cases": sum(len(row["stable_case_ids"]) for row in validated),
@@ -649,7 +664,8 @@ def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
     os.chmod(index_path, 0o600)
     print(json.dumps({"validated": True, "pair": pair, "receipts": len(validated),
                       "cases": index["passed_cases"], "failed_cases": 0,
-                      "runner_revision": expected_runner}, sort_keys=True))
+                      "runner_revision": tested_runner,
+                      "aggregate_validator_revision": validator_revision}, sort_keys=True))
     return index
 
 
@@ -700,11 +716,9 @@ def validate_matrix_directory(receipt_dir: Path) -> tuple[str, list[dict[str, ob
             "candidate_source_archive_tree": list(binding),
             "host_lock_sha256": host_lock, "compiled_candidate_sha256": compiled_candidate,
         })
-    if len(runners) != 1:
-        raise ReceiptError("raw receipts do not share one tested runner revision")
+    tested_runner = _single_tested_runner_revision(runners)
     if len(anchors) != 1:
         raise ReceiptError("raw receipts do not share one candidate source/archive/tree")
-    tested_runner = next(iter(runners))
     validated = validate_complete_matrix(records, expected_runner=tested_runner)
     return tested_runner, validated, next(iter(anchors))
 

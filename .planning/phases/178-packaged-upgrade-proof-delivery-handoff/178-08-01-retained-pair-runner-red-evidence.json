@@ -1,0 +1,10 @@
+{
+  "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 -m unittest discover -s test/acceptance -p 'client_verifier_receipts_test.py' -k pair_cli",
+  "exitCode": 1,
+  "output": "FF.\n======================================================================\nFAIL: test_pair_cli_projects_exact_required_cells_for_each_dependency_pair (client_verifier_receipts_test.CompleteMatrixContracts.test_pair_cli_projects_exact_required_cells_for_each_dependency_pair) (pair='locked')\n----------------------------------------------------------------------\nAssertionError: 1 != 0\n\n======================================================================\nFAIL: test_pair_cli_projects_exact_required_cells_for_each_dependency_pair (client_verifier_receipts_test.CompleteMatrixContracts.test_pair_cli_projects_exact_required_cells_for_each_dependency_pair) (pair='floor')\n----------------------------------------------------------------------\nAssertionError: 1 != 0\n\n----------------------------------------------------------------------\nRan 2 tests in 0.118s\n\nFAILED (failures=2)\n",
+  "targetTest": "client_verifier_receipts_test.CompleteMatrixContracts.test_pair_cli_projects_exact_required_cells_for_each_dependency_pair",
+  "targetFile": "test/acceptance/client_verifier_receipts_test.py",
+  "expected": "Read-only selected-pair validation should accept retained receipts when the tested runner and candidate source agree, while recording the current aggregate validator revision separately.",
+  "actual": "Both locked and floor projections of the real typed fixture failed because pair validation required each historical runner SHA to equal the later validator's current HEAD.",
+  "semanticAssessment": "Valid behavioral RED: both pair projection cases use the portable complete fixture and fail at source-revision policy after typed receipt validation. The missing selected-pair input case continues to reject as required."
+}
