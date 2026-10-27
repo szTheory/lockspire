@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import secrets
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -73,6 +74,13 @@ class MatrixExecutionFailure(Exception):
     def __init__(self, scope: str, pair: str, store: str):
         self.scope, self.pair, self.store = scope, pair, store
         super().__init__("installed verifier matrix cell failed")
+
+
+def matrix_receipt_path(root: Path, scope: str, pair: str, store: str) -> Path:
+    """Map aggregate scope labels onto the producer's immutable raw receipt path."""
+    directory_scope = "disclosure" if scope == "disclosure-failure" else scope
+    filename = "failure-receipt.json" if scope == "disclosure-failure" else "receipt.json"
+    return root / directory_scope / f"{pair}-{store}" / filename
 
 
 def _b64(value: bytes) -> str:
@@ -508,8 +516,7 @@ def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, o
     records: list[dict[str, object]] = []
     anchors: set[tuple[str, str, str]] = set()
     for scope, selected_pair, selected_store in REQUIRED_MATRIX:
-        filename = "failure-receipt.json" if scope == "disclosure-failure" else "receipt.json"
-        path = root / scope / f"{selected_pair}-{selected_store}" / filename
+        path = matrix_receipt_path(root, scope, selected_pair, selected_store)
         raw = path.read_bytes()
         receipt = load_receipt(path)
         if scope in {"rollout", "legacy-control"}:
@@ -572,6 +579,78 @@ def _complete_matrix(*, receipt_dir: Path, pair: str, store: str) -> dict[str, o
     return aggregate
 
 
+def _validate_pair_directory(receipt_dir: Path, pair: str) -> dict[str, object]:
+    if pair not in {"locked", "floor"} or not receipt_dir.is_dir() or receipt_dir.is_symlink():
+        raise ReceiptError("pair receipt directory is unavailable")
+    root = receipt_dir.resolve()
+    expected_runner = source_revision()
+    required = tuple(key for key in REQUIRED_MATRIX if key[1] == pair)
+    records: list[dict[str, object]] = []
+    candidates: set[tuple[str, str, str]] = set()
+    for scope, selected_pair, selected_store in required:
+        path = matrix_receipt_path(root, scope, pair, selected_store)
+        if path.is_symlink() or not path.is_file():
+            raise ReceiptError("pair receipt directory omits a required receipt")
+        raw = path.read_bytes()
+        receipt = load_receipt(path)
+        if scope in {"rollout", "legacy-control"}:
+            validate_rollout_receipt(receipt, expected_pair=pair, expected_store=selected_store,
+                                     expected_runner=expected_runner, expected_scope=scope)
+            runner_revision = receipt["runner_revision"]
+            candidate = receipt["candidate"]
+            compiled_candidate = receipt["processes"]["candidate"]["compiled_candidate_sha256"]
+        else:
+            validate_receipt(receipt, expected_pair=pair, expected_store=selected_store)
+            runner_revision = receipt["runner"]
+            candidate = receipt["candidate"]
+            compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
+        binding = (candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"])
+        if runner_revision != expected_runner or binding[0] != expected_runner:
+            raise ReceiptError("pair receipt is not bound to the current committed source")
+        host_lock = receipt["host"]["lock_sha256"]
+        if host_lock != sha256(PROOF_PAIR_LOCKS[pair]) or not re.fullmatch(r"[0-9a-f]{64}", compiled_candidate or ""):
+            raise ReceiptError("pair receipt host identity does not match its runtime partition")
+        candidates.add(binding)
+        records.append({
+            "scope": scope, "pair": pair, "store": selected_store,
+            "run_id": receipt["run_id"], "runner_revision": runner_revision,
+            "receipt_sha256": hashlib.sha256(raw).hexdigest(),
+            "candidate_source_archive_tree": list(binding),
+            "host_lock_sha256": host_lock, "compiled_candidate_sha256": compiled_candidate,
+            "stable_case_ids": expected_case_ids((scope, pair, selected_store)),
+            "executed_count": receipt["executed_count"], "outcome": "pass",
+            "receipt_path": path.relative_to(root).as_posix(),
+        })
+    if len(candidates) != 1:
+        raise ReceiptError("pair receipts do not share one candidate source/archive/tree")
+    validated = validate_matrix_links(records, expected_runner=expected_runner, required_keys=required)
+    validated_dir = root / "validated"
+    if validated_dir.exists() or validated_dir.is_symlink():
+        raise ReceiptError("validated receipt output must be absent before validation")
+    validated_dir.mkdir(mode=0o700)
+    for row in validated:
+        source = root / str(row["receipt_path"])
+        safe_name = f"{row['scope']}-{pair}-{row['store']}-{source.name}"
+        shutil.copyfile(source, validated_dir / safe_name)
+        os.chmod(validated_dir / safe_name, 0o600)
+    index = {
+        "schema": "lockspire-installed-verifier-pair-v1",
+        "pair": pair, "runner_revision": expected_runner,
+        "candidate_source_archive_tree": list(next(iter(candidates))),
+        "required_receipts": len(required), "executed_receipts": len(validated),
+        "required_cases": sum(len(row["stable_case_ids"]) for row in validated),
+        "passed_cases": sum(len(row["stable_case_ids"]) for row in validated),
+        "failed_cases": 0, "cells": validated,
+    }
+    index_path = validated_dir / "index.json"
+    index_path.write_text(json.dumps(index, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    os.chmod(index_path, 0o600)
+    print(json.dumps({"validated": True, "pair": pair, "receipts": len(validated),
+                      "cases": index["passed_cases"], "failed_cases": 0,
+                      "runner_revision": expected_runner}, sort_keys=True))
+    return index
+
+
 def self_test() -> int:
     command = [sys.executable, "-m", "unittest", "discover", "-s", "test/acceptance", "-p", "client_verifier_tracer_test.py"]
     result = subprocess.run(command, cwd=Path(__file__).resolve().parents[2], text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
@@ -590,8 +669,19 @@ def main(argv: list[str] | None = None) -> int:
         if args.self_test:
             return self_test()
         if args.validate_receipts:
-            receipt = validate_receipt(load_receipt(args.validate_receipts), expected_pair=args.pair, expected_store=args.store)
-            print(json.dumps({"validated": True, "scope": receipt["scope"], "executed_count": receipt["executed_count"]}, sort_keys=True))
+            if args.validate_receipts.is_dir():
+                if args.pair == "all":
+                    raise ReceiptError("pair validation requires one exact dependency pair")
+                _validate_pair_directory(args.validate_receipts, args.pair)
+            else:
+                receipt = load_receipt(args.validate_receipts)
+                if receipt.get("schema") == "lockspire-installed-verifier-rollout-v1":
+                    validate_rollout_receipt(receipt, expected_pair=args.pair,
+                        expected_store=args.store, expected_runner=source_revision(),
+                        expected_scope=receipt.get("scope"))
+                else:
+                    validate_receipt(receipt, expected_pair=args.pair, expected_store=args.store)
+                print(json.dumps({"validated": True, "scope": receipt["scope"], "executed_count": receipt["executed_count"]}, sort_keys=True))
             return 0
         if args.group == "tracer":
             run_tracer(pair=args.pair, store=args.store, receipt_dir=args.receipt_dir)
