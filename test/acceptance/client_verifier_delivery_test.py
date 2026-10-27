@@ -442,8 +442,9 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
             root = Path(temporary)
             archive = root / "lockspire-1.6.1.tar"
             archive.write_bytes(b"owned archive")
+            archive_digest = package_input.sha256(archive)
             frozen = PackageSource(
-                "frozen", str(archive), "a" * 64, "d" * 40, "b" * 64, str(root / "owner.json"),
+                "frozen", str(archive), archive_digest, "d" * 40, "b" * 64, str(root / "owner.json"),
             )
 
             def unpack(_archive: Path, package_root: Path) -> None:
@@ -454,7 +455,7 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
             with patch("package_input.authenticated_frozen_source", return_value=frozen), \
                  patch("package_input.source_revision", return_value="e" * 40), \
                  patch("package_input.validate_local_tarball",
-                       return_value=(archive, "1.6.1", "a" * 64)), \
+                       return_value=(archive, "1.6.1", archive_digest)), \
                  patch("package_input.unpack_hex_tarball", side_effect=unpack), \
                  patch("package_input.verify_frozen_source_owner",
                        return_value=("d" * 40, "b" * 64)) as verify_owner, \

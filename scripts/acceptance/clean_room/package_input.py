@@ -912,6 +912,49 @@ def validate_local_tarball(path: Path, allowed_root: Path, expected_sha256: str 
     return resolved, version, checksum
 
 
+def _frozen_archive_destination(run_root: Path, version: str, checksum: str) -> Path:
+    """Refuse stale or redirected private paths without changing their bytes."""
+    parent = run_root / "package"
+    for directory in (run_root, parent):
+        if directory.is_symlink() or (directory.exists() and not directory.is_dir()):
+            raise PackageInputError("frozen private package directory is unsafe")
+    destination = parent / f"lockspire-{version}.tar"
+    if (destination.is_symlink() or (destination.exists()
+            and (not destination.is_file() or sha256(destination) != checksum))):
+        raise PackageInputError("frozen private archive is stale or unsafe")
+    return destination
+
+
+def _materialize_frozen_archive(source: Path, run_root: Path, version: str, checksum: str) -> None:
+    destination = _frozen_archive_destination(run_root, version, checksum)
+    if destination.exists():
+        return  # An exact cached copy is reusable; never replace an existing file.
+    destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    descriptor = os.open(destination, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+    created = os.fstat(descriptor)
+    try:
+        digest = hashlib.sha256()
+        with os.fdopen(descriptor, "wb") as output, source.open("rb") as original:
+            while chunk := original.read(1024 * 1024):
+                output.write(chunk)
+                digest.update(chunk)
+            output.flush()
+            os.fsync(output.fileno())
+        current = destination.lstat()
+        if ((current.st_dev, current.st_ino) != (created.st_dev, created.st_ino)
+                or digest.hexdigest() != checksum or sha256(destination) != checksum):
+            raise PackageInputError("frozen private archive copy differs from its owner")
+    except BaseException:
+        # Remove only the file this call exclusively created, never a replacement.
+        try:
+            current = destination.lstat()
+            if (current.st_dev, current.st_ino) == (created.st_dev, created.st_ino):
+                destination.unlink()
+        except OSError:
+            pass
+        raise
+
+
 def prepare_package(run_root: Path, source: PackageSource | None = None) -> tuple[Path, tuple[str, ...], PackageIdentity]:
     frozen_source = authenticated_frozen_source()
     if source is None or (source.kind == "checkout" and frozen_source is not None):
@@ -960,6 +1003,8 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         raise PackageInputError("unknown Lockspire package source")
 
     tarball, version, checksum = validate_local_tarball(tarball, allowed_root, source.expected_sha256)
+    if source.kind == "frozen":
+        _frozen_archive_destination(run_root, version, checksum)
     if package_root.is_dir():
         tree = package_tree_digest(package_root)
         if source.kind == "frozen":
@@ -971,6 +1016,8 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
             source_revision_claim, runner, source_proof,
         )
         verify_candidate_input(tarball, package_root, identity)
+        if source.kind == "frozen":
+            _materialize_frozen_archive(tarball, run_root, version, checksum)
         return package_root.resolve(strict=True), inventory(package_root), identity
     unpack_hex_tarball(tarball, package_root)
     unpacked_version = package_version(package_root)
@@ -982,6 +1029,7 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     tree = package_tree_digest(package_root)
     if source.kind == "frozen":
         source_revision_claim, source_proof = verify_frozen_source_owner(source, tarball, package_root)
+        _materialize_frozen_archive(tarball, run_root, version, checksum)
     else:
         source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
     return package_root, entries, PackageIdentity(
