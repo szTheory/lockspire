@@ -449,21 +449,8 @@ def _verify_restore_and_rotation(
 
 
 def _read_startup_context(log_path: Path) -> tuple[bool, bool]:
-    found: dict[str, bool] = {}
-    try:
-        with log_path.open("r", encoding="utf-8", errors="replace") as handle:
-            for line in handle:
-                for field in ("SAFE_RECOVERY_CONTEXT_VALID", "SAFE_RECOVERY_PROTECTING_KEY"):
-                    marker = field + "="
-                    if line.startswith(marker):
-                        value = line[len(marker):].strip()
-                        if value in {"true", "false"}:
-                            found[field] = value == "true"
-    except OSError:
-        raise PackageInputError("owned recovery startup context witness is unavailable") from None
-    if set(found) != {"SAFE_RECOVERY_CONTEXT_VALID", "SAFE_RECOVERY_PROTECTING_KEY"}:
-        raise PackageInputError("owned recovery startup context witness is incomplete")
-    return found["SAFE_RECOVERY_CONTEXT_VALID"], found["SAFE_RECOVERY_PROTECTING_KEY"]
+    from startup_witness import consume
+    return consume(log_path)
 
 
 def _read_rotation_handoff(path: Path, redactor: Redactor) -> str:

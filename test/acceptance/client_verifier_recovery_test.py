@@ -112,7 +112,7 @@ class RecoveryDispatchTest(unittest.TestCase):
             ["fresh_jti_succeeded", "stale_http_status_500"],
         )
 
-    def test_startup_context_witness_reads_only_fixed_boolean_markers(self) -> None:
+    def test_startup_context_rejects_unowned_legacy_log(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             logfile = Path(temporary) / "server.log"
             logfile.write_text(
@@ -121,7 +121,8 @@ class RecoveryDispatchTest(unittest.TestCase):
                 "unregistered-child-content-must-not-be-returned\n",
                 encoding="utf-8",
             )
-            self.assertEqual(verifier_recovery._read_startup_context(logfile), (True, False))
+            with self.assertRaises(verifier_recovery.PackageInputError):
+                verifier_recovery._read_startup_context(logfile)
 
     def test_builtin_partial_readiness_uses_public_report_separation(self) -> None:
         host_source = (

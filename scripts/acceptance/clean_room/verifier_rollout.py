@@ -422,18 +422,27 @@ config :lockspire, Lockspire.Security.ClientSecretVerifier,
 
 def _start_server(host: Path, env: dict[str, str], log_path: Path | None, issuer: str):
     server_env = _server_environment(env)
+    witness = None
+    if server_env.get("LOCKSPIRE_RECOVERY_CONTEXT_WITNESS") == "true":
+        if log_path is None:
+            raise PackageInputError("owned startup witness path is required")
+        from startup_witness import StartupWitness
+        witness = StartupWitness(log_path, server_env)
     process = None
     try:
         process = start_owned_session(("mix", "run", "--no-halt"), cwd=host, env=server_env,
                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL)
+        if witness is not None:
+            process._lockspire_startup_witness = witness
+            witness.bind(process)
         deadline = time.monotonic() + 35
         while time.monotonic() < deadline:
             if process.poll() is not None:
                 raise PackageInputError("installed process exited before HTTP readiness")
             try:
                 with urllib.request.urlopen(issuer + "/.well-known/openid-configuration", timeout=1) as response:
-                    if response.status == 200:
+                    if response.status == 200 and (witness is None or witness.published()):
                         return process, process.pid
             except OSError:
                 time.sleep(0.15)
@@ -441,6 +450,9 @@ def _start_server(host: Path, env: dict[str, str], log_path: Path | None, issuer
     except BaseException:
         if process is not None and process.poll() is None:
             _stop_owned_server(process)
+            witness = None
+        if witness is not None:
+            witness.close()
         raise
 
 
@@ -449,6 +461,10 @@ def _stop_owned_server(process) -> None:
         return
     if not stop_process_group(process, grace=10):
         raise PackageInputError("installed process group cleanup could not be confirmed")
+    witness = getattr(process, "_lockspire_startup_witness", None)
+    if witness is not None:
+        witness.close()
+        del process._lockspire_startup_witness
 
 
 def _server_environment(env: dict[str, str]) -> dict[str, str]:

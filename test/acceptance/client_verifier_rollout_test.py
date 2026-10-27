@@ -134,7 +134,12 @@ class VerifierRolloutContracts(unittest.TestCase):
         self.assertEqual([path.name for path in selected], ["verifier_rollout.exs", "verifier_rollout.exs"])
         fixture_source = fixture.read_text(encoding="utf-8")
         self.assertFalse(fixture_source.startswith('"""'), "Elixir fixture must not start with a Python docstring")
-        self.assertIn('args = case System.argv() do ["--" | rest] -> rest; values -> values end', fixture_source)
+        self.assertRegex(
+            fixture_source,
+            r'\bargs\s*=\s*case\s+System\.argv\(\)\s+do\s+'
+            r'\["--"\s*\|\s*rest\]\s*->\s*rest(?:\s*;\s*|\s+)'
+            r'values\s*->\s*values\s+end\b',
+        )
         self.assertIn('write_mode: :dedicated', fixture_source,
                       "safe age inspection needs a dedicated reader context even during legacy writes")
         self.assertIn('legacy_read: :allow', fixture_source)

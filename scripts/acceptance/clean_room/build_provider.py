@@ -269,8 +269,20 @@ config :lockspire, :key_encryption,
         context = Lockspire.Config.client_secret_verifier_context()
         valid = context.state == :valid
         has_protecting_key = is_map(context.keys) and Map.has_key?(context.keys, "verifier-new")
-        IO.puts("SAFE_RECOVERY_CONTEXT_VALID=" <> to_string(valid))
-        IO.puts("SAFE_RECOVERY_PROTECTING_KEY=" <> to_string(has_protecting_key))
+        if directory = System.get_env("LOCKSPIRE_RECOVERY_STARTUP_DIRECTORY") do
+          nonce = System.fetch_env!("LOCKSPIRE_RECOVERY_STARTUP_NONCE")
+          true = String.match?(nonce, ~r/\\A[0-9a-f]{64}\\z/)
+          temporary = Path.join(directory, "witness.tmp")
+          destination = Path.join(directory, "witness")
+          payload = Enum.join([
+            "lockspire-startup-v1", "nonce=" <> nonce, "pid=" <> System.pid(),
+            "context_valid=" <> to_string(valid), "protecting_key=" <> to_string(has_protecting_key)
+          ], "\\n") <> "\\n"
+          File.write!(temporary, payload, [:binary, :exclusive])
+          File.chmod!(temporary, 0o600)
+          File.ln!(temporary, destination)
+          File.rm!(temporary)
+        end
       end
       {:ok, supervisor}
     end
