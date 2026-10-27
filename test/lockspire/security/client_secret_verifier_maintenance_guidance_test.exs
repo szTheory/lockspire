@@ -10,6 +10,9 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
                      |> String.replace(~r/\s+/, " ")
   @jwt_doc File.read!("docs/client-secret-jwt-host-guide.md") |> String.replace(~r/\s+/, " ")
   @supported_doc File.read!("docs/supported-surface.md") |> String.replace(~r/\s+/, " ")
+  @install_doc File.read!("docs/install-and-onboard.md") |> String.replace(~r/\s+/, " ")
+  @getting_started_doc File.read!("docs/getting-started.md") |> String.replace(~r/\s+/, " ")
+  @maintainer_doc File.read!("docs/maintainer-release.md") |> String.replace(~r/\s+/, " ")
 
   test "documented task modes and progress options match the live task help" do
     help = Mix.Tasks.Lockspire.Clients.Verifier.Rewrap.help()
@@ -18,7 +21,7 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
       section(
         @configuration_doc,
         "## Inspect, re-wrap, and check custody",
-        "## Reader-first activation"
+        "## Reader-first rollout, activation, and recovery"
       )
 
     for contract <- [
@@ -34,7 +37,10 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
 
     assert help =~ "fresh read-only custody check"
     assert runbook =~ "progress only"
-    assert runbook =~ "A resumed cursor never establishes readiness"
+    assert runbook =~ "never establishes readiness"
+    refute help =~ "--apply"
+    assert runbook =~ "no mode flag it applies"
+    assert runbook =~ "separate fresh `--check`"
   end
 
   test "runbook makes local check, fleet retirement, and logging boundaries explicit" do
@@ -48,7 +54,7 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
     rollout =
       section(
         @configuration_doc,
-        "## Reader-first activation and key retirement",
+        "## Reader-first rollout, activation, and recovery",
         "## Diagnostic boundaries"
       )
 
@@ -68,7 +74,8 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
     assert rollout =~ "Destroying a backup is a separate retention decision"
     assert @configuration_doc =~ "host-installed telemetry handlers"
     assert @configuration_doc =~ "PostgreSQL server logging"
-    assert support =~ "Phase 178"
+    assert support =~ "Phoenix 1.8.13 / LiveView 1.2.10"
+    assert support =~ "does not extend support to arbitrary stores"
     assert support =~ "fails closed"
   end
 
@@ -95,13 +102,19 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
     assert Policy.verify_client_secret(rotated_hash, rotated_secret)
 
     recovery =
-      section(@configuration_doc, "## Reader-first activation", "## Diagnostic boundaries")
+      section(
+        @configuration_doc,
+        "## Reader-first rollout, activation, and recovery",
+        "## Diagnostic boundaries"
+      )
 
     assert recovery =~ "Restoring the original key restores access"
     assert recovery =~ "That action replaces the partner secret"
     assert recovery =~ "one-time handoff"
     assert @jwt_doc =~ "Restoring the original key preserves the existing partner secret"
     assert @jwt_doc =~ "replaces that secret"
+    assert @configuration_doc =~ "original finite deadline"
+    assert @configuration_doc =~ "remains ineligible to authenticate"
   end
 
   test "release RPC and bare Mix descriptions agree with task help" do
@@ -111,7 +124,7 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
       section(
         @configuration_doc,
         "## Inspect, re-wrap, and check custody",
-        "## Reader-first activation"
+        "## Reader-first rollout, activation, and recovery"
       )
 
     assert help =~ "bin/app rpc"
@@ -121,6 +134,48 @@ defmodule Lockspire.Security.ClientSecretVerifierMaintenanceGuidanceTest do
     assert runbook =~ "immutable startup snapshot"
     assert runbook =~ "does not start Lockspire supervision"
     assert runbook =~ "mix run --no-start"
+  end
+
+  test "fresh install guidance assigns verifier keys to the host and preserves the shipped scope" do
+    assert @configuration_doc =~ "does not generate or provision verifier keys"
+    assert @configuration_doc =~ "write_mode: :legacy"
+    assert @configuration_doc =~ "legacy_read: :allow"
+    assert @configuration_doc =~ "write_mode: :dedicated"
+    assert @install_doc =~ "generator does not provision verifier keys"
+
+    assert @install_doc =~
+             "your team keeps its accounts, sign-in pages, layouts, branding, and product policy"
+
+    assert @install_doc =~
+             "Account resolution, user login, consent policy, branding, and logout remain host responsibilities"
+
+    assert @getting_started_doc =~ "separately from the files generated"
+
+    for endpoint <- [
+          "/token",
+          "/revoke",
+          "/introspect",
+          "/device/code",
+          "/backchannel/authentication"
+        ] do
+      assert @configuration_doc =~ endpoint
+      assert @jwt_doc =~ endpoint
+    end
+
+    assert @jwt_doc =~ "POST /par"
+    assert @jwt_doc =~ "HS384"
+    assert @jwt_doc =~ "HS512"
+    assert @jwt_doc =~ "Existing `client_secret_basic`"
+    assert @jwt_doc =~ "one-time handoff with the partner"
+  end
+
+  test "maintainer handoff keeps candidate, accepted main, and publication authority separate" do
+    assert @maintainer_doc =~ "one reviewed PR to `main`"
+    assert @maintainer_doc =~ "pre-merge audit does not mean the milestone is accepted"
+    assert @maintainer_doc =~ "--accept-sha <full-merged-main-sha>"
+    assert @maintainer_doc =~ "does not authorize a merge, tag, dispatch, or publication"
+    assert @maintainer_doc =~ "Release Please"
+    assert @supported_doc =~ "canonical public support contract"
   end
 
   defp verifier_context(keys, current) do
