@@ -229,13 +229,16 @@ def expected_case_ids(key: tuple[str, str, str]) -> list[str]:
     raise ReceiptError("matrix scope is outside the finite contract")
 
 
-def validate_matrix_links(rows: list[dict[str, Any]], *, expected_runner: str) -> list[dict[str, Any]]:
+def validate_matrix_links(
+    rows: list[dict[str, Any]], *, expected_runner: str,
+    required_keys: tuple[tuple[str, str, str], ...] | None = None,
+) -> list[dict[str, Any]]:
     """Validate the closed matrix index independently of its raw receipt bytes."""
     if not REVISION.fullmatch(expected_runner):
         raise ReceiptError("matrix runner identity is invalid")
-    expected = set(REQUIRED_MATRIX)
+    expected = set(REQUIRED_MATRIX if required_keys is None else required_keys)
     seen: set[tuple[str, str, str]] = set()
-    run_ids: set[str] = set()
+    run_ids: dict[str, tuple[str, str, str]] = {}
     candidate_bindings: set[tuple[str, str, str]] = set()
     normalized = []
     for row in rows:
@@ -249,9 +252,17 @@ def validate_matrix_links(rows: list[dict[str, Any]], *, expected_runner: str) -
             raise ReceiptError("matrix runner identity does not match the current execution")
         if not isinstance(row.get("run_id"), str) or not re.fullmatch(r"[0-9a-f]{32}", row["run_id"]):
             raise ReceiptError("matrix run identity is invalid")
-        if row["run_id"] in run_ids:
-            raise ReceiptError("matrix run identity is duplicated")
-        run_ids.add(row["run_id"])
+        prior_run = run_ids.get(row["run_id"])
+        if prior_run is not None:
+            same_disclosure_run = (
+                prior_run[1:] == key[1:]
+                and prior_run[2] == key[2] == "delegated"
+                and {prior_run[0], key[0]} == {"disclosure", "disclosure-failure"}
+            )
+            if not same_disclosure_run:
+                raise ReceiptError("matrix run identity is duplicated outside one disclosure capture")
+        else:
+            run_ids[row["run_id"]] = key
         if not isinstance(row.get("receipt_sha256"), str) or not SHA.fullmatch(row["receipt_sha256"]):
             raise ReceiptError("matrix raw receipt digest is invalid")
         if row.get("outcome") != "pass" or type(row.get("executed_count")) is not int or row["executed_count"] <= 0:
