@@ -296,6 +296,60 @@ run_owned "validate/$pair" "${command[@]}" --pair "$pair" --store all \
   --expected-candidate-source-revision "${expected_candidate_source:-$runner_revision}" || validation_status=$?
 ((validation_status == 0)) || exit "$validation_status"
 
+python3 - "$repo_root/$receipt_dir" "$pair" <<'PY' || { echo "validated raw receipt copies are unavailable" >&2; exit 2; }
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import sys
+
+root = Path(sys.argv[1])
+pair = sys.argv[2]
+index_path = root / "validated" / "index.json"
+try:
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    cells = index["cells"]
+    if index.get("pair") != pair or not isinstance(cells, list):
+        raise ValueError
+    target = root / "validated" / "raw"
+    target.mkdir(mode=0o700)
+    copies = []
+    for cell in cells:
+        scope, selected_pair, store = cell["scope"], cell["pair"], cell["store"]
+        relative = Path(cell["receipt_path"])
+        if (selected_pair != pair or not re.fullmatch(r"[a-z][a-z-]*", scope)
+                or not re.fullmatch(r"[a-z][a-z-]*", store)
+                or relative.is_absolute() or ".." in relative.parts):
+            raise ValueError
+        source = root / relative
+        current = root
+        for part in relative.parts:
+            current = current / part
+            if current.is_symlink():
+                raise ValueError
+        if not source.is_file():
+            raise ValueError
+        digest = hashlib.sha256(source.read_bytes()).hexdigest()
+        if digest != cell["receipt_sha256"]:
+            raise ValueError
+        name = f"{scope}-{pair}-{store}.json"
+        destination = target / name
+        if destination.exists() or destination.is_symlink():
+            raise ValueError
+        shutil.copyfile(source, destination)
+        copies.append({"scope": scope, "pair": pair, "store": store,
+                       "path": f"raw/{name}", "sha256": digest})
+    if len(copies) != index.get("executed_receipts"):
+        raise ValueError
+    with (root / "validated" / "raw-copies.json").open("x", encoding="utf-8") as output:
+        json.dump({"schema": "lockspire-validated-raw-copies-v1", "pair": pair,
+                   "copies": copies}, output, sort_keys=True, separators=(",", ":"))
+        output.write("\n")
+except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+    raise SystemExit(1)
+PY
+
 python3 - "$repo_root/$receipt_dir/validated/index.json" <<'PY'
 import json
 import sys

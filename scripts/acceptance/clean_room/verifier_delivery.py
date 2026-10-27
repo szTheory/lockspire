@@ -32,6 +32,11 @@ ARTIFACT_DEFAULT = ROOT / ".artifacts" / "phase178"
 REVISION = re.compile(r"[0-9a-f]{40,64}\Z")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 LATER_OWNER_FINDINGS = frozenset({"T-178-31", "T-178-32", "T-178-35", "T-178-36"})
+CANONICAL_CI_JOBS = (
+    "Dialyzer", "Release Hygiene Drift", "Fast Checks",
+    "Minimum Supported Elixir/OTP", "Integration Checks",
+    "Complete Coverage Evidence", "Adoption Demo Smoke",
+)
 PHASE175_FROZEN_INPUTS = (
     ("test/integration/client_secret_jwt_legacy_age_test.exs", "9cc57a31ebc5ed189a1fe41618aaa122447c8332758a96c5f7a58087b94f91c6"),
     ("test/lockspire/security/client_secret_verifier_compatibility_test.exs", "b409d40d4e1a1a88f9b8e18ab3023c278ae4d29e39fa26282dc0634b7029216d"),
@@ -318,17 +323,17 @@ def frozen_owner_document(
     revision = _git("rev-parse", "HEAD")
     if revision != expected_runner:
         raise DeliveryError("freeze runner differs from its independent caller pin")
-    source_tree_digest, source_build = _rebuild_source_package(revision)
+    source_tree_digest, source_build = _rebuild_source_package(expected_candidate_source)
     candidate_tree_digest = package_tree_digest(package_root)
-    if (revision != expected_candidate_source or sha256(archive) != expected_archive_sha256
+    if (sha256(archive) != expected_archive_sha256
             or candidate_tree_digest != expected_tree_sha256
             or source_tree_digest != expected_tree_sha256
             or source_tree_digest != candidate_tree_digest):
         raise DeliveryError("frozen candidate tree differs from package built from its source commit")
     owner: dict[str, Any] = {
         "schema": "lockspire-frozen-candidate-owner-v1",
-        "source_revision": revision,
-        "source_tree": _git("rev-parse", f"{revision}^{{tree}}"),
+        "source_revision": expected_candidate_source,
+        "source_tree": _git("rev-parse", f"{expected_candidate_source}^{{tree}}"),
         "archive_path": archive.relative_to(ROOT).as_posix(),
         "archive_sha256": sha256(archive),
         "extracted_tree_path": package_root.relative_to(ROOT).as_posix(),
@@ -844,6 +849,10 @@ def record_source_acceptance(
     record = {
         "schema": "lockspire-phase178-source-acceptance-v1",
         "tested_source_revision": frozen["runner_revision"],
+        "candidate_source_revision": frozen["candidate_owner"]["source_revision"],
+        "candidate_archive_sha256": frozen["candidate_owner"]["archive_sha256"],
+        "candidate_tree_sha256": frozen["candidate_owner"]["tree_sha256"],
+        "frozen_manifest_sha256": pins["expected_manifest_sha256"],
         "covered_inputs": frozen["covered_inputs"],
         "owned_source_manifest": source_manifest.name,
         "owned_source_manifest_sha256": sha256(source_manifest),
@@ -911,6 +920,223 @@ def _check_source(phase_dir: Path, locked_root: Path, floor_root: Path,
     return record
 
 
+def _blob_sha(revision: str, relative: str) -> str:
+    if not REVISION.fullmatch(revision):
+        raise DeliveryError("candidate source revision is malformed")
+    result = subprocess.run(("git", "show", f"{revision}:{relative}"), cwd=ROOT,
+                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, check=False, timeout=10)
+    if result.returncode:
+        raise DeliveryError("candidate covered input is unavailable")
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
+def _commit_shape(revision: str) -> tuple[str, list[str]]:
+    tree = _git("rev-parse", f"{revision}^{{tree}}")
+    parents = _git("show", "-s", "--format=%P", revision).split()
+    if any(not REVISION.fullmatch(parent) for parent in parents):
+        raise DeliveryError("candidate checkout parent identity is malformed")
+    return tree, parents
+
+
+def _check_candidate_identity(phase_dir: Path) -> dict[str, Any]:
+    candidate = _read_json(phase_dir / "178-CANDIDATE.json", "candidate identity")
+    observation_path = phase_dir / "178-CANDIDATE-OBSERVATION.json"
+    observation = _read_json(observation_path, "candidate raw observation")
+    source = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
+    candidate_fields = {
+        "schema", "reviewed_head_sha", "package_source_sha", "package_archive_sha256",
+        "package_tree_sha256", "frozen_manifest_sha256", "runner_sha", "executed_checkout_sha",
+        "checkout_tree", "checkout_parents", "covered_input_relation", "workflow_path", "event",
+        "run_id", "run_attempt", "observed_at", "failed_attempts", "source_acceptance_sha256",
+        "raw_observation_sha256",
+    }
+    if set(candidate) != candidate_fields or candidate.get("schema") != "lockspire-phase178-candidate-v1":
+        raise DeliveryError("candidate identity schema is invalid")
+    if source.get("schema") != "lockspire-phase178-source-acceptance-v1":
+        raise DeliveryError("candidate source acceptance identity is unavailable")
+    if candidate.get("source_acceptance_sha256") != sha256(phase_dir / "178-SOURCE-ACCEPTANCE.json"):
+        raise DeliveryError("candidate does not bind the source acceptance bytes")
+    if candidate.get("raw_observation_sha256") != sha256(observation_path):
+        raise DeliveryError("candidate raw observation digest is stale")
+    if observation.get("schema") != "lockspire-phase178-candidate-observation-v1":
+        raise DeliveryError("candidate raw observation schema is invalid")
+    if set(observation) != {"schema", "event", "run_id", "run_attempt", "pull_request_head_sha",
+                           "executed_checkout_sha", "checkout_tree", "checkout_parents"}:
+        raise DeliveryError("candidate raw observation contains unsupported fields")
+    fields = ("event", "run_id", "run_attempt", "executed_checkout_sha", "checkout_tree", "checkout_parents")
+    if (any(candidate.get(field) != observation.get(field) for field in fields)
+            or candidate.get("reviewed_head_sha") != observation.get("pull_request_head_sha")):
+        raise DeliveryError("candidate record differs from its raw workflow observation")
+    if candidate.get("workflow_path") != ".github/workflows/ci.yml":
+        raise DeliveryError("candidate workflow identity is unsupported")
+    event = candidate.get("event")
+    if event not in {"pull_request", "push"}:
+        raise DeliveryError("candidate event cannot establish protected workflow identity")
+    for key in ("reviewed_head_sha", "package_source_sha", "runner_sha", "executed_checkout_sha",
+                "checkout_tree"):
+        if not isinstance(candidate.get(key), str) or not REVISION.fullmatch(candidate[key]):
+            raise DeliveryError("candidate source identity is malformed")
+    if (not isinstance(candidate.get("run_id"), str) or not candidate["run_id"].isdigit()
+            or not isinstance(candidate.get("run_attempt"), int) or candidate["run_attempt"] < 1):
+        raise DeliveryError("candidate workflow run identity is malformed")
+    try:
+        datetime.fromisoformat(candidate["observed_at"].replace("Z", "+00:00"))
+    except (TypeError, ValueError, AttributeError):
+        raise DeliveryError("candidate observation time is malformed") from None
+    if not isinstance(candidate["failed_attempts"], list):
+        raise DeliveryError("candidate failed-attempt history is malformed")
+    if candidate["runner_sha"] != source.get("tested_source_revision"):
+        raise DeliveryError("candidate runner differs from source acceptance")
+    if candidate["package_source_sha"] != source.get("candidate_source_revision"):
+        raise DeliveryError("candidate package source differs from frozen source acceptance")
+    if (candidate.get("package_archive_sha256") != source.get("candidate_archive_sha256")
+            or candidate.get("package_tree_sha256") != source.get("candidate_tree_sha256")
+            or candidate.get("frozen_manifest_sha256") != source.get("frozen_manifest_sha256")):
+        raise DeliveryError("candidate package identity differs from frozen source acceptance")
+    ci = source.get("canonical_ci")
+    if (not isinstance(ci, dict) or ci.get("exit_code") != 0
+            or source.get("package_receipt_count") != 26 or source.get("package_case_count") != 64):
+        raise DeliveryError("candidate lacks complete successful local source/package acceptance")
+    stages = ci.get("stages")
+    if not isinstance(stages, list) or [row.get("name") for row in stages if isinstance(row, dict)] != [
+            "qa.architecture", "test.fast", "test.integration"]:
+        raise DeliveryError("candidate lacks the exact successful source CI stages")
+    if any(not isinstance(row, dict) or row.get("exit_code") != 0
+           or type(row.get("tests")) is not int or row["tests"] <= 0
+           or type(row.get("failures")) is not int or row["failures"] != 0
+           for row in stages):
+        raise DeliveryError("candidate source CI contains a missing or failed stage")
+    actual_tree, actual_parents = _commit_shape(candidate["executed_checkout_sha"])
+    if candidate["checkout_tree"] != actual_tree or candidate["checkout_parents"] != actual_parents:
+        raise DeliveryError("candidate checkout tree or parent relation differs from Git")
+    if candidate["event"] == "pull_request":
+        if (observation.get("pull_request_head_sha") != candidate["reviewed_head_sha"]
+                or not actual_parents or actual_parents[-1] != candidate["reviewed_head_sha"]):
+            raise DeliveryError("candidate PR head is not the observed synthetic checkout parent")
+    elif candidate["reviewed_head_sha"] != candidate["executed_checkout_sha"]:
+        raise DeliveryError("candidate push head differs from the executed checkout")
+    try:
+        relation = candidate["covered_input_relation"]
+        source_rows = {row["path"]: row["sha256"] for row in source["covered_inputs"]}
+    except (KeyError, TypeError):
+        raise DeliveryError("candidate covered-input relation is unavailable") from None
+    if not isinstance(relation, list) or {row.get("path") for row in relation if isinstance(row, dict)} != set(source_rows):
+        raise DeliveryError("candidate covered-input relation is incomplete")
+    for row in relation:
+        if not isinstance(row, dict) or set(row) != {"path", "runner_sha256", "package_sha256"}:
+            raise DeliveryError("candidate covered-input row is malformed")
+        path = row["path"]
+        if (row["runner_sha256"] != source_rows.get(path)
+                or row["package_sha256"] != _blob_sha(candidate["package_source_sha"], path)
+                or row["runner_sha256"] != row["package_sha256"]):
+            raise DeliveryError("candidate package/source relationship differs across covered bytes")
+    return candidate
+
+
+def _check_candidate(phase_dir: Path) -> dict[str, Any]:
+    identity = _check_candidate_identity(phase_dir)
+    gates = _read_json(phase_dir / "178-CANDIDATE-GATES.json", "candidate hosted gates")
+    gate_fields = {"schema", "workflow_path", "event", "run_id", "run_attempt",
+                   "executed_checkout_sha", "runner_sha", "package_source_sha",
+                   "source_acceptance_sha256", "status", "conclusion", "jobs",
+                   "package_artifacts", "failed_attempts"}
+    if set(gates) != gate_fields or gates.get("schema") != "lockspire-phase178-candidate-gates-v1":
+        raise DeliveryError("candidate hosted gate schema is invalid")
+    if (gates.get("workflow_path") != identity["workflow_path"]
+            or gates.get("event") != identity["event"]
+            or gates.get("run_id") != identity["run_id"]
+            or gates.get("run_attempt") != identity["run_attempt"]
+            or gates.get("executed_checkout_sha") != identity["executed_checkout_sha"]
+            or gates.get("runner_sha") != identity["runner_sha"]
+            or gates.get("package_source_sha") != identity["package_source_sha"]
+            or gates.get("source_acceptance_sha256") != identity["source_acceptance_sha256"]
+            or gates.get("status") != "completed" or gates.get("conclusion") != "success"):
+        raise DeliveryError("candidate hosted graph identities are mixed or stale")
+    jobs = gates.get("jobs")
+    if not isinstance(jobs, list) or len(jobs) != len(CANONICAL_CI_JOBS):
+        raise DeliveryError("candidate hosted job graph is incomplete")
+    job_ids: set[int] = set()
+    for name, job in zip(CANONICAL_CI_JOBS, jobs, strict=True):
+        if (not isinstance(job, dict) or set(job) != {"name", "job_id", "run_id", "run_attempt",
+                                                       "checkout_sha", "status", "conclusion"}
+                or job.get("name") != name
+                or job.get("run_id") != identity["run_id"]
+                or job.get("run_attempt") != identity["run_attempt"]
+                or job.get("checkout_sha") != identity["executed_checkout_sha"]
+                or job.get("status") != "completed" or job.get("conclusion") != "success"
+                or not isinstance(job.get("job_id"), int) or job["job_id"] <= 0):
+            raise DeliveryError("candidate hosted job graph contains a missing, mixed, or failed job")
+        if job["job_id"] in job_ids:
+            raise DeliveryError("candidate hosted job graph repeats an observed job")
+        job_ids.add(job["job_id"])
+    artifacts = gates.get("package_artifacts")
+    if (not isinstance(artifacts, list) or len(artifacts) != 2
+            or {row.get("pair") for row in artifacts if isinstance(row, dict)} != {"locked", "floor"}
+            or any(not isinstance(row, dict) or set(row) != {
+                "pair", "name", "artifact_id", "sha256", "raw_index_sha256", "receipt_count", "case_count",
+            } or row.get("name") != f"lockspire-verifier-upgrade-{identity['executed_checkout_sha']}-{row.get('pair')}"
+                or not isinstance(row.get("artifact_id"), int) or row["artifact_id"] <= 0
+                or not isinstance(row.get("sha256"), str) or not SHA.fullmatch(row["sha256"])
+                or not isinstance(row.get("raw_index_sha256"), str) or not SHA.fullmatch(row["raw_index_sha256"])
+                or row.get("receipt_count") != (14 if row.get("pair") == "locked" else 12)
+                or row.get("case_count") != (33 if row.get("pair") == "locked" else 31)
+                for row in artifacts)):
+        raise DeliveryError("candidate hosted package artifacts are incomplete or unauthenticated")
+    if not isinstance(gates.get("failed_attempts"), list):
+        raise DeliveryError("candidate hosted failed-attempt history is malformed")
+    return {"jobs": len(jobs), "run_id": identity["run_id"], "run_attempt": identity["run_attempt"]}
+
+
+def _check_handoff(phase_dir: Path) -> dict[str, Any]:
+    handoff = _read_json(phase_dir / "178-HANDOFF.json", "delivery handoff")
+    if set(handoff) != {"schema", "integration_status", "accepted_main_status", "owner", "next_action",
+                        "main_acceptance_path", "main_acceptance_sha256", "main_sha"} or handoff.get(
+                            "schema") != "lockspire-phase178-handoff-v1":
+        raise DeliveryError("delivery handoff schema is invalid")
+    if (not isinstance(handoff.get("owner"), str) or not handoff["owner"].strip()
+            or not isinstance(handoff.get("next_action"), str) or not handoff["next_action"].strip()):
+        raise DeliveryError("delivery handoff owner or next action is missing")
+    state = handoff.get("accepted_main_status")
+    if state == "pending":
+        if handoff.get("integration_status") not in {"pending", "blocked"}:
+            raise DeliveryError("pending main handoff has an incompatible integration status")
+        if (handoff.get("main_acceptance_path") is not None
+                or handoff.get("main_acceptance_sha256") is not None or handoff.get("main_sha") is not None
+                or (phase_dir / "178-MAIN-ACCEPTANCE.json").exists()):
+            raise DeliveryError("pending main handoff contains accepted-main helper evidence")
+        return {"accepted_main": False, "integration_status": handoff["integration_status"]}
+    if state != "accepted" or handoff.get("integration_status") != "accepted":
+        raise DeliveryError("delivery handoff state is unsupported")
+    main_path = phase_dir / "178-MAIN-ACCEPTANCE.json"
+    if handoff.get("main_acceptance_path") != main_path.name:
+        raise DeliveryError("accepted-main helper receipt path is invalid")
+    if handoff.get("main_acceptance_sha256") != sha256(main_path):
+        raise DeliveryError("accepted-main helper receipt bytes differ from the declared digest")
+    receipt = _read_json(main_path, "main acceptance helper receipt")
+    main_sha = handoff.get("main_sha")
+    if not isinstance(main_sha, str) or not REVISION.fullmatch(main_sha):
+        raise DeliveryError("accepted-main revision is malformed")
+    local_gate = receipt.get("local_gate")
+    required_ci = receipt.get("required_ci")
+    release = receipt.get("release_no_publish")
+    if (receipt.get("schema") != "lockspire-phase-139-acceptance-v1"
+            or receipt.get("baseline_sha") != main_sha
+            or not isinstance(local_gate, dict) or local_gate.get("status") != "pass"
+            or not isinstance(required_ci, dict) or required_ci.get("status") != "pass"
+            or required_ci.get("event") != "push" or required_ci.get("conclusion") != "success"
+            or not isinstance(release, dict) or release.get("status") != "pass"
+            or release.get("outcome") != "no_publish"):
+        raise DeliveryError("accepted-main helper receipt does not prove the required main gate")
+    candidate = _check_candidate_identity(phase_dir)
+    ancestor = subprocess.run(("git", "merge-base", "--is-ancestor", candidate["reviewed_head_sha"], main_sha),
+                              cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                              stderr=subprocess.DEVNULL, check=False, timeout=20)
+    if ancestor.returncode:
+        raise DeliveryError("accepted main does not contain the reviewed candidate")
+    return {"accepted_main": True, "main_sha": main_sha, "helper_sha256": handoff["main_acceptance_sha256"]}
+
+
 def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path,
           expected_runner: str | None = None,
           frozen_pins: dict[str, str] | None = None) -> dict[str, Any]:
@@ -931,14 +1157,12 @@ def check(stage: str, phase_dir: Path, locked_root: Path, floor_root: Path,
         if frozen_pins is None:
             raise DeliveryError("source validation requires independent frozen owner pins")
         return _check_source(phase_dir, locked_root, floor_root, frozen_pins)
-    if stage in {"candidate-identity", "candidate", "handoff"}:
-        record = _read_json(phase_dir / "178-SOURCE-ACCEPTANCE.json", "source acceptance record")
-        observed = record.get(stage.replace("-", "_") + "_observation")
-        if not isinstance(observed, dict) or observed.get("available") is not True:
-            raise DeliveryError(f"{stage} evidence is unavailable; acceptance cannot be claimed")
-        if not isinstance(observed.get("raw_sha256"), str) or not SHA.fullmatch(observed["raw_sha256"]):
-            raise DeliveryError(f"{stage} raw evidence is not authenticated")
-        raise DeliveryError(f"{stage} validation requires the later workflow evidence owner")
+    if stage == "candidate-identity":
+        return _check_candidate_identity(phase_dir)
+    if stage == "candidate":
+        return _check_candidate(phase_dir)
+    if stage == "handoff":
+        return _check_handoff(phase_dir)
     raise DeliveryError("unknown delivery check")
 
 

@@ -17,11 +17,60 @@ ROOT = Path(__file__).resolve().parents[2]
 CLEAN_ROOM = ROOT / "scripts" / "acceptance" / "clean_room"
 sys.path.insert(0, str(ROOT / "scripts" / "acceptance"))
 sys.path.insert(0, str(CLEAN_ROOM))
+sys.path.insert(0, str(ROOT / "scripts" / "ci"))
 
 from package_input import PackageInputError, PackageSource, package_tree_digest, prepare_package  # noqa: E402
 import clean_room_verifier_upgrade  # noqa: E402
 import verifier_delivery  # noqa: E402
 import verifier_receipts  # noqa: E402
+import provision_verifier_candidate  # noqa: E402
+
+
+class CandidateProvisioningContracts(unittest.TestCase):
+    def _git(self, repo: Path, *args: str) -> str:
+        result = __import__("subprocess").run(("git", *args), cwd=repo, check=True,
+                                             capture_output=True, text=True)
+        return result.stdout.strip()
+
+    def test_clean_job_source_pins_and_covered_bytes_accept_distinct_revisions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            self._git(repo, "init", "-q")
+            self._git(repo, "config", "user.email", "fixture@example.invalid")
+            self._git(repo, "config", "user.name", "Fixture")
+            (repo / "mix.exs").write_text("package bytes\n", encoding="utf-8")
+            self._git(repo, "add", "mix.exs")
+            self._git(repo, "commit", "-qm", "package source")
+            package_source = self._git(repo, "rev-parse", "HEAD")
+            (repo / "docs.md").write_text("runner-only observation metadata\n", encoding="utf-8")
+            self._git(repo, "add", "docs.md")
+            self._git(repo, "commit", "-qm", "runner metadata")
+            runner = self._git(repo, "rev-parse", "HEAD")
+            provision_verifier_candidate.validate_checkout_pins(repo, runner, package_source)
+            rows = provision_verifier_candidate.covered_input_relation(
+                repo, runner, package_source, ["mix.exs"],
+            )
+            self.assertEqual(rows[0]["runner_sha256"], rows[0]["package_sha256"])
+
+    def test_clean_job_rejects_stale_checkout_and_changed_candidate_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            repo = Path(temporary)
+            self._git(repo, "init", "-q")
+            self._git(repo, "config", "user.email", "fixture@example.invalid")
+            self._git(repo, "config", "user.name", "Fixture")
+            (repo / "mix.exs").write_text("package bytes\n", encoding="utf-8")
+            self._git(repo, "add", "mix.exs")
+            self._git(repo, "commit", "-qm", "package source")
+            package_source = self._git(repo, "rev-parse", "HEAD")
+            (repo / "mix.exs").write_text("changed package bytes\n", encoding="utf-8")
+            self._git(repo, "commit", "-qam", "runner changed source")
+            runner = self._git(repo, "rev-parse", "HEAD")
+            with self.assertRaises(ValueError):
+                provision_verifier_candidate.covered_input_relation(
+                    repo, runner, package_source, ["mix.exs"],
+                )
+            with self.assertRaises(ValueError):
+                provision_verifier_candidate.validate_checkout_pins(repo, package_source, package_source)
 
 
 class FrozenSourceOwnerContracts(unittest.TestCase):
@@ -205,6 +254,164 @@ class ComposedMatrixContracts(unittest.TestCase):
 
 
 class SemanticDeliveryRejections(unittest.TestCase):
+    def _source_record_with_observation(self, phase: Path, stage: str) -> None:
+        (phase / "178-SOURCE-ACCEPTANCE.json").write_text(json.dumps({
+            "schema": "lockspire-phase178-source-acceptance-v1",
+            f"{stage.replace('-', '_')}_observation": {"available": True, "raw_sha256": "a" * 64},
+        }), encoding="utf-8")
+
+    def test_candidate_identity_rejects_mixed_observed_checkout(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            phase = Path(temporary)
+            self._source_record_with_observation(phase, "candidate-identity")
+            candidate = {"schema": "lockspire-phase178-candidate-v1", "reviewed_head_sha": "a" * 40,
+                         "package_source_sha": "a" * 40, "runner_sha": "a" * 40,
+                         "executed_checkout_sha": "f" * 40, "checkout_parents": [],
+                         "checkout_tree": "b" * 40, "covered_input_relation": [],
+                         "workflow_path": ".github/workflows/ci.yml", "event": "pull_request",
+                         "run_id": "12345", "run_attempt": 2}
+            (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("candidate-identity", phase, phase, phase)
+
+    def test_candidate_identity_accepts_observed_head_and_synthetic_checkout_relation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            phase = Path(temporary)
+            head = verifier_delivery._git("rev-parse", "HEAD")
+            tree = verifier_delivery._git("rev-parse", "HEAD^{tree}")
+            parents = verifier_delivery._git("show", "-s", "--format=%P", head).split()
+            mix_digest = verifier_delivery.sha256(ROOT / "mix.exs")
+            observation = {
+                "schema": "lockspire-phase178-candidate-observation-v1",
+                "event": "push", "run_id": "12345", "run_attempt": 2,
+                "pull_request_head_sha": head, "executed_checkout_sha": head,
+                "checkout_tree": tree, "checkout_parents": parents,
+            }
+            raw = json.dumps(observation, sort_keys=True).encode() + b"\n"
+            (phase / "178-CANDIDATE-OBSERVATION.json").write_bytes(raw)
+            source = {
+                "schema": "lockspire-phase178-source-acceptance-v1",
+                "tested_source_revision": head, "candidate_source_revision": head,
+                "candidate_archive_sha256": "e" * 64, "candidate_tree_sha256": "f" * 64,
+                "frozen_manifest_sha256": "d" * 64,
+                "covered_inputs": [{"path": "mix.exs", "sha256": mix_digest}],
+                "canonical_ci": {"exit_code": 0, "stages": [
+                    {"name": name, "exit_code": 0, "tests": 1, "failures": 0}
+                    for name in ("qa.architecture", "test.fast", "test.integration")
+                ]}, "package_receipt_count": 26,
+                "package_case_count": 64,
+            }
+            (phase / "178-SOURCE-ACCEPTANCE.json").write_text(json.dumps(source), encoding="utf-8")
+            candidate = {
+                "schema": "lockspire-phase178-candidate-v1",
+                "reviewed_head_sha": head, "package_source_sha": head,
+                "package_archive_sha256": "e" * 64, "package_tree_sha256": "f" * 64,
+                "frozen_manifest_sha256": "d" * 64,
+                "runner_sha": head, "executed_checkout_sha": head,
+                "checkout_tree": tree, "checkout_parents": parents,
+                "covered_input_relation": [{"path": "mix.exs", "runner_sha256": mix_digest,
+                                             "package_sha256": mix_digest}],
+                "workflow_path": ".github/workflows/ci.yml", "event": "push",
+                "run_id": "12345", "run_attempt": 2,
+                "observed_at": "2026-10-27T12:00:00Z", "failed_attempts": [],
+                "source_acceptance_sha256": verifier_delivery.sha256(phase / "178-SOURCE-ACCEPTANCE.json"),
+                "raw_observation_sha256": hashlib.sha256(raw).hexdigest(),
+            }
+            (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
+            with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"):
+                result = verifier_delivery.check("candidate-identity", phase, phase, phase)
+            self.assertEqual(result["executed_checkout_sha"], head)
+            candidate["checkout_tree"] = "f" * 40
+            (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("candidate-identity", phase, phase, phase)
+            candidate["checkout_tree"] = tree
+            (phase / "178-CANDIDATE.json").write_text(json.dumps(candidate), encoding="utf-8")
+
+            jobs = [{"name": name, "run_id": "12345", "run_attempt": 2,
+                     "checkout_sha": head, "status": "completed", "conclusion": "success",
+                     "job_id": index + 1}
+                    for index, name in enumerate(verifier_delivery.CANONICAL_CI_JOBS)]
+            gates = {
+                "schema": "lockspire-phase178-candidate-gates-v1",
+                "workflow_path": ".github/workflows/ci.yml", "event": "push",
+                "run_id": "12345", "run_attempt": 2, "executed_checkout_sha": head,
+                "runner_sha": head, "package_source_sha": head,
+                "source_acceptance_sha256": candidate["source_acceptance_sha256"],
+                "status": "completed", "conclusion": "success",
+                "failed_attempts": [],
+                "jobs": jobs,
+                "package_artifacts": [{"pair": pair,
+                                        "name": f"lockspire-verifier-upgrade-{head}-{pair}",
+                                        "artifact_id": index + 1, "sha256": "c" * 64,
+                                        "raw_index_sha256": "d" * 64,
+                                        "receipt_count": 14 if pair == "locked" else 12,
+                                        "case_count": 33 if pair == "locked" else 31}
+                                       for index, pair in enumerate(("locked", "floor"))]
+            }
+            (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
+            with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"):
+                result = verifier_delivery.check("candidate", phase, phase, phase)
+            self.assertEqual(result["jobs"], 7)
+            gates["jobs"][-1]["run_attempt"] = 1
+            (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
+            with patch.object(verifier_delivery, "_safe_repo_file", return_value=ROOT / "mix.exs"), \
+                 self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("candidate", phase, phase, phase)
+            gates["jobs"][-1]["run_attempt"] = 2
+            (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
+
+            pending = {"schema": "lockspire-phase178-handoff-v1", "integration_status": "pending",
+                       "accepted_main_status": "pending", "owner": "maintainer",
+                       "next_action": "observe reviewed integration", "main_acceptance_path": None,
+                       "main_acceptance_sha256": None, "main_sha": None}
+            (phase / "178-HANDOFF.json").write_text(json.dumps(pending), encoding="utf-8")
+            self.assertFalse(verifier_delivery.check("handoff", phase, phase, phase)["accepted_main"])
+
+            helper = {
+                "schema": "lockspire-phase-139-acceptance-v1", "baseline_sha": head,
+                "local_gate": {"status": "pass"},
+                "required_ci": {"status": "pass", "event": "push", "conclusion": "success"},
+                "release_no_publish": {"status": "pass", "outcome": "no_publish"},
+            }
+            helper_bytes = json.dumps(helper, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+            (phase / "178-MAIN-ACCEPTANCE.json").write_bytes(helper_bytes)
+            accepted = {"schema": "lockspire-phase178-handoff-v1", "integration_status": "accepted",
+                        "accepted_main_status": "accepted", "owner": "maintainer",
+                        "next_action": "retain receipt", "main_acceptance_path": "178-MAIN-ACCEPTANCE.json",
+                        "main_acceptance_sha256": hashlib.sha256(helper_bytes).hexdigest(), "main_sha": head}
+            (phase / "178-HANDOFF.json").write_text(json.dumps(accepted), encoding="utf-8")
+            self.assertTrue(verifier_delivery.check("handoff", phase, phase, phase)["accepted_main"])
+            helper["baseline_sha"] = "f" * 40
+            changed_bytes = json.dumps(helper, sort_keys=True, separators=(",", ":")).encode() + b"\n"
+            (phase / "178-MAIN-ACCEPTANCE.json").write_bytes(changed_bytes)
+            accepted["main_acceptance_sha256"] = hashlib.sha256(changed_bytes).hexdigest()
+            (phase / "178-HANDOFF.json").write_text(json.dumps(accepted), encoding="utf-8")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("handoff", phase, phase, phase)
+
+    def test_candidate_gate_rejects_mixed_attempts_and_handoff_requires_raw_helper_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            phase = Path(temporary)
+            jobs = [{"name": name, "run_id": "12345", "run_attempt": 2,
+                     "checkout_sha": "a" * 40, "status": "completed", "conclusion": "success"}
+                    for name in verifier_delivery.CANONICAL_CI_JOBS]
+            jobs[-1]["run_attempt"] = 1
+            gates = {"schema": "lockspire-phase178-candidate-gates-v1", "run_id": "12345",
+                     "run_attempt": 2, "executed_checkout_sha": "a" * 40, "jobs": jobs}
+            (phase / "178-CANDIDATE-GATES.json").write_text(json.dumps(gates), encoding="utf-8")
+            self._source_record_with_observation(phase, "candidate")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("candidate", phase, phase, phase)
+
+            handoff = {"schema": "lockspire-phase178-handoff-v1", "integration_status": "pending",
+                       "accepted_main_status": "accepted", "owner": "maintainer",
+                       "next_action": "run reviewed integration", "main_acceptance_path": None}
+            (phase / "178-HANDOFF.json").write_text(json.dumps(handoff), encoding="utf-8")
+            self._source_record_with_observation(phase, "handoff")
+            with self.assertRaises(verifier_delivery.DeliveryError):
+                verifier_delivery.check("handoff", phase, phase, phase)
+
     def test_reviews_reject_explicit_unresolved_blockers_for_unrelated_commit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             phase = Path(temporary)

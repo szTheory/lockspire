@@ -17,6 +17,20 @@ WRAPPER = ROOT / "scripts" / "ci" / "run_verifier_upgrade_proof.sh"
 
 
 class VerifierCiWrapperContracts(unittest.TestCase):
+    def test_existing_pair_jobs_provision_explicit_pins_and_upload_validated_raw_receipts(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        wrapper = WRAPPER.read_text(encoding="utf-8")
+        self.assertEqual(workflow.count("- name: Provision authenticated verifier candidate inputs"), 2)
+        self.assertIn("EXPECTED_RUNNER_REVISION: ${{ github.sha }}", workflow)
+        self.assertIn("--expected-candidate-source \"$EXPECTED_CANDIDATE_SOURCE\"", workflow)
+        for flag in ("--expected-runner", "--expected-candidate-source", "--expected-archive-sha256",
+                     "--expected-tree-sha256", "--expected-manifest-sha256"):
+            self.assertIn(flag, workflow)
+        self.assertEqual(workflow.count("path: .artifacts/phase178/ci-"), 2)
+        self.assertEqual(workflow.count("/validated/**"), 2)
+        self.assertIn('"lockspire-validated-raw-copies-v1"', wrapper)
+        self.assertIn('digest != cell["receipt_sha256"]', wrapper)
+
     def test_wrapper_is_an_executable_maintained_entrypoint(self) -> None:
         self.assertTrue(WRAPPER.is_file(), "pair proof wrapper must exist")
         self.assertTrue(os.access(WRAPPER, os.X_OK), "pair proof wrapper must be executable")
