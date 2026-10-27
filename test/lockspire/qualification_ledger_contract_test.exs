@@ -9,6 +9,8 @@ defmodule Lockspire.QualificationLedgerContractTest do
   # earlier qualification execution. These pins authenticate historical evidence;
   # they do not qualify today's workspace. Keep the provenance in this selected
   # source file so the current delivery input closure authenticates it as well.
+  # Local qualification requires full Git history, as fast/minimum CI already
+  # provide with fetch-depth: 0. Missing objects fail closed without a fetch.
   @frozen_input_source %{
     "schema" => "lockspire-phase171-frozen-input-source-v1",
     "source_revision" => "173059a166e9ade0f5f57c9980b7b2400a98538c",
@@ -597,6 +599,12 @@ defmodule Lockspire.QualificationLedgerContractTest do
     refute valid_frozen_input_source?(Map.put(source, "source_revision", missing_revision)),
            "missing retained source must be rejected"
 
+    errors =
+      validate_frozen_input_source([], Map.put(source, "source_revision", missing_revision))
+
+    assert "retained frozen input source is unavailable; use a full-history checkout (fetch-depth: 0)" in errors,
+           "missing historical objects must explain the full-history prerequisite"
+
     refute valid_frozen_input_source?(
              Map.put(source, "source_revision", ledger["matrix"]["qualification_sha"])
            ),
@@ -625,6 +633,22 @@ defmodule Lockspire.QualificationLedgerContractTest do
   end
 
   defp valid_frozen_input_source?(_), do: false
+
+  defp validate_frozen_input_source(errors, source) do
+    available? =
+      is_map(source) and
+        match?({:ok, _}, frozen_source_file(source["source_revision"], @ledger_relative_path))
+
+    errors
+    |> require(
+      available?,
+      "retained frozen input source is unavailable; use a full-history checkout (fetch-depth: 0)"
+    )
+    |> require(
+      valid_frozen_input_source?(source),
+      "retained frozen input provenance must bind the unchanged ledger and ordered digest"
+    )
+  end
 
   defp draft_matrix(ledger, selection_status) do
     ledger
@@ -1221,6 +1245,7 @@ defmodule Lockspire.QualificationLedgerContractTest do
         is_list(manifest) and manifest != [],
         "frozen matrix requires an ordered input manifest"
       )
+      |> validate_frozen_input_source(load_frozen_input_source())
       |> require(
         valid_input_manifest?(ledger, manifest, matrix["input_digest"]),
         "frozen matrix input manifest or digest is invalid or drifted"

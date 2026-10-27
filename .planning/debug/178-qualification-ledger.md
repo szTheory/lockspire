@@ -2,7 +2,7 @@
 status: verifying
 trigger: "Diagnose and coherently correct the new qualification ledger contract's four focused failures after local Main synchronization."
 created: 2026-10-27T19:10:53Z
-updated: 2026-10-27T19:17:18Z
+updated: 2026-10-27T19:21:07Z
 ---
 
 ## Current Focus
@@ -11,7 +11,7 @@ bug_class: bohrbug
 hypothesis: Frozen Phase 171 input identities are compared with mutable workspace files, so a later supported-surface documentation change invalidates historical evidence.
 test: Bind the unchanged ledger and digest to the verified retained Git snapshot; compare source-based versus workspace-based hashing without database startup.
 expecting: The source-based consumer accepts the unchanged historical inputs and still rejects invalid provenance and mutated hashes; restoring workspace hashing recreates the original error family.
-next_action: Commit the exact consumer and debug record, then run the owned-source guard for the 25 focused tests on a clean source checkout.
+next_action: Commit the final actionable-history diagnostic and debug evidence, then rerun the same 25-test owned-source guard on the final clean source.
 reasoning_checkpoint:
   hypothesis: The historical frozen manifest fails because input_entry_hash reads today's supported-surface bytes rather than the retained frozen input snapshot.
   confirming_evidence:
@@ -73,6 +73,18 @@ started: Following the local Main synchronization which imported this selected t
   checked: Final bounded diagnostic proof and formatting.
   found: Proof /private/tmp/lockspire178-qualification-ledger-p8fm6vii/diagnostic.json has SHA-256 9dd4fd38a0d4265133c3e9a56417d4f1ad56165dc778ce9c56bdbfa5e1f843e6. Final selected consumer SHA-256 is 0d182480d4872ee6ce83e2f680fb5e69670ff0749b6001ad640ead24b95593e8. Formatting and scoped whitespace checks returned exit 0. Earlier implementation diagnostic proof remains retained separately and is not represented as final-source qualification.
   implication: Ready for a clean local commit and the smallest actual owned native run; full Python/matrix/native-CI qualification remains pending with the orchestrator.
+- timestamp: 2026-10-27T19:20:28Z
+  checked: First actual focused owned-source guard after local fix commit 8b3195faed43558b717a8a68c5c8834663bb317c.
+  found: 25 tests, zero failures; test exit 0 and guard exit 0; exact source and clean checkout confirmed before/after. Owned database OID 38634 was created, independently identified, migrated, dropped, and independently confirmed absent. All 24 owned child process groups stopped. Manifest SHA-256 78f1505dc28a738d852b657b7fa26fc4943d4af6033161d1ea4461ae76206f7d at /var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-b7un_67_/manifest.json; test PID 54956 and session 38295 terminal.
+  implication: Functional correction verified on 8b3195fa. A caller-requested actionable missing-history diagnostic remains to be added; this first run will not be restamped for the later revision.
+- timestamp: 2026-10-27T19:20:28Z
+  checked: Optional launcher liveness probe before the first actual guard launch.
+  found: A signal-zero PID query was denied by the sandbox before guard import or any database/child creation. The unnecessary query was removed; the actual guard used its existing exact private-target preflight.
+  implication: No source test or database attempt occurred in that launcher preflight failure, and no foreign resource was touched.
+- timestamp: 2026-10-27T19:21:07Z
+  checked: Final actionable missing-history diagnostic and private source-causal recheck after that source edit.
+  found: The consumer now returns a fixed message instructing use of a full-history checkout (fetch-depth 0) when the retained object is missing, without raw Git stderr or workspace fallback. The existing missing-source test asserts that message; total test definitions remain 25. Local qualification requires full Git history; fast/minimum CI already provide it. Final consumer SHA-256 a827ea95bf0a5c7b5e2fb06675c3f5711a4dd81764849c1bde7e1d8bf4b43e60; private original/fixed/workspace-counterfactual/fixed counts remain 1/0/1/0, zero unknowns. Proof /private/tmp/lockspire178-qualification-ledger-gg05ovc6/diagnostic.json SHA-256 ed9d77a61f22f134f3823163c915cf7d430b5db09b984608dea93b605f422e28. Format check exit 0; closure 1077; Phase 175 frozen inputs 13/13 unchanged.
+  implication: Earlier diagnostic and native proofs remain bound to their prior source epochs. Final-source native qualification is next.
 
 ## Resolution
 
