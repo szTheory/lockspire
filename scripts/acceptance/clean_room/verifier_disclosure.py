@@ -273,6 +273,9 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             path.write_text(json.dumps(receipt, sort_keys=True, indent=2) + "\n", encoding="utf-8")
             os.chmod(path, 0o600)
             resource.update(_stop_owned_server(server, port))
+            resource["server_state"] = (
+                "stopped" if resource["process_group_stop_confirmed"] else "cleanup_unconfirmed"
+            )
             server = None
             run_child_command(host, env, "ecto.drop")
             if _database_exists(database_name):
@@ -302,6 +305,9 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
     finally:
         if server is not None:
             resource.update(_stop_owned_server(server, port))
+            resource["server_state"] = (
+                "stopped" if resource["process_group_stop_confirmed"] else "cleanup_unconfirmed"
+            )
         if database_created and host is not None:
             try:
                 run_child_command(host, env, "ecto.drop")
@@ -553,14 +559,24 @@ def _stop_owned_server(process: subprocess.Popen[bytes], port: int) -> dict[str,
         "process_exit_code": return_code,
         "listener_port": port,
         "listener_bindable_after_stop": _listener_bindable(port),
+        "listener_accepting_after_stop": _listener_accepting(port),
     }
 
 
 def _listener_bindable(port: int) -> bool:
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             listener.bind(("127.0.0.1", port))
         return True
+    except OSError:
+        return False
+
+
+def _listener_accepting(port: int) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+            return True
     except OSError:
         return False
 

@@ -117,6 +117,15 @@ class VerifierDisclosureContracts(unittest.TestCase):
         )
         self.assertNotIn("server: true", config)
 
+    def test_stopped_owned_listener_is_not_accepting_and_can_be_rebound(self) -> None:
+        import socket
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+        self.assertFalse(verifier_disclosure._listener_accepting(port))
+        self.assertTrue(verifier_disclosure._listener_bindable(port))
+
 
 if __name__ == "__main__":
     unittest.main()
