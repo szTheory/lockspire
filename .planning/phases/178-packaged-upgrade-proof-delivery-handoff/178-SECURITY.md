@@ -10,18 +10,18 @@ Date: 2026-10-27
 
 Scope: Phase 178 Plan 10 pre-freeze implementation and evidence-control audit. All twelve plan threat registers and summaries 01–09 were read. This is ASVS Level 1 mitigation verification, with focused adversarial probes of the declared acceptance boundaries. It does not claim fresh frozen package, canonical contributor, hosted candidate, integration, or accepted-main proof.
 
-**ASVS Level:** 1  
-**Block on:** high  
-**Distinct threats:** 37; all use `mitigate`.  
-**Closed at implementation-presence depth:** 21  
-**Open:** 16 high; 12 affected by concrete implementation findings and four awaiting later delivery owners.  
+**ASVS Level:** 1
+**Block on:** high
+**Distinct threats:** 37; all use `mitigate`.
+**Closed at implementation-presence depth:** 21
+**Open:** 16 high; 12 affected by concrete implementation findings and four awaiting later delivery owners.
 **Open non-blocking:** 0
 
 ### Findings
 
 Every finding below remains **OPEN — BLOCKER**. No accepted-risk waiver closes it.
 
-**SEC-178-01 — High: frozen coverage omits inputs that determine selected outcomes.**  
+**SEC-178-01 — High: frozen coverage omits inputs that determine selected outcomes.**
 Maps to T-178-28.
 
 `verifier_delivery.py:35–64` omits all library source, `mix.exs`, root `mix.lock`, source configuration, `build_provider.py`, group producers, selected host fixtures, redaction/runtime helpers, and the floor lock. It also includes Phase 175’s final-source record without rehashing its thirteen referenced inputs during frozen validation.
@@ -30,7 +30,7 @@ Maps to T-178-28.
 
 Remediation: derive and freeze the bounded closure of selected package, source-test, host-template, lock, producer, helper, workflow and acceptance inputs. Reject changed selected bytes before execution and acceptance. Preserve explicit reconciliation for later metadata-only commits.
 
-**SEC-178-02 — High: review validation accepts explicit blocking findings and an unrelated reviewed commit.**  
+**SEC-178-02 — High: review validation accepts explicit blocking findings and an unrelated reviewed commit.**
 Maps to T-178-29.
 
 `verifier_delivery.py:438–458` checks headings, lane words and date syntax. It does not inspect verdict, severity, unresolved findings, reviewed commit, or applicable input identity.
@@ -39,7 +39,7 @@ An in-memory probe supplied all three lanes with an unbound commit and explicit 
 
 Remediation: validate attributable review identity and scope, bind the reviewed source/input relationship, and explicitly reject unresolved blocking findings. Markdown structure must remain an integrity check.
 
-**SEC-178-03 — High: source acceptance can be asserted without underlying execution evidence.**  
+**SEC-178-03 — High: source acceptance can be asserted without underlying execution evidence.**
 Maps to T-178-29 and T-178-30.
 
 `verifier_delivery.py:509–531` accepts caller-supplied counts and hash-shaped strings. It reads no owned-source manifest or underlying output, requires no canonical stage set, verifies no cleanup/source observation, and does not require complete package acceptance.
@@ -48,7 +48,7 @@ An isolated in-memory probe accepted one claimed passing test with an arbitrary 
 
 Remediation: validate preserved guard evidence and its digest, actual command/stage outcomes, nonzero canonical stage coverage, tested inputs and cleanup. Require the strict package result before granting combined source acceptance. Sensitive output may remain private; invented digest strings cannot establish its existence.
 
-**SEC-178-04 — High: composition accepts the wrong raw scope as a required cell.**  
+**SEC-178-04 — High: composition accepts the wrong raw scope as a required cell.**
 Maps to T-178-02, T-178-23 and T-178-30.
 
 `verifier_delivery.py:384–400` validates ordinary receipts by pair/store but never binds their actual scope and case IDs to the indexed scope. `_validate_pair_directory` similarly manufactures expected scope/case labels at `clean_room_verifier_upgrade.py:644–651`.
@@ -57,7 +57,7 @@ An in-memory composition replaced required `core/locked/builtin` evidence with a
 
 Remediation: require exact raw schema, scope, pair, store, stable cases and executed count for each expected cell before constructing index labels. Reject unindexed unexpected receipt cells and duplicate JSON keys consistently.
 
-**SEC-178-05 — High: rollout validation neither authenticates predecessor identity nor enforces safe nested fields.**  
+**SEC-178-05 — High: rollout validation neither authenticates predecessor identity nor enforces safe nested fields.**
 Maps to T-178-07 and T-178-21.
 
 `verifier_receipts.py:303–383` checks candidate fields and selected rollout booleans, but does not validate the rollout predecessor/source-proof binding or exact nested field sets.
@@ -66,7 +66,7 @@ An in-memory mutation replaced the predecessor with an unproven candidate-substi
 
 Remediation: enforce exact, typed nested schemas and expected predecessor/public identities, including their archive/tree/source proofs and process bindings. Reject extra sensitive fields before declaring receipt bytes safe.
 
-**SEC-178-06 — High: wrapper teardown does not own nested sessions.**  
+**SEC-178-06 — High: wrapper teardown does not own nested sessions.**
 Maps to T-178-24 and T-178-34.
 
 The wrapper launches the scenario runner in a new session at `run_verifier_upgrade_proof.sh:204–205` and stops that process group. Scenario helpers and serving hosts create additional sessions, including `package_input.py:141` and `verifier_core.py:138–145`. Default SIGTERM termination of the outer Python runner does not execute its cleanup blocks.
@@ -75,7 +75,7 @@ A controlled probe showed `stop_process_group` reporting success while an owned 
 
 Remediation: propagate interruption through an explicit owner that stops and verifies every registered child session, or retain children within the supervised group. Do not report confirmed cleanup from parent-group absence alone. Preserve exit 125 when cleanup is uncertain.
 
-**SEC-178-07 — High: transaction proof persists unregistered child material as “redacted” diagnostics.**  
+**SEC-178-07 — High: transaction proof persists unregistered child material as “redacted” diagnostics.**
 Maps to T-178-03 and T-178-21.
 
 `verifier_transactions.py:179–184` writes a tail of complete child output into `host-output.log`; `:146–151` similarly retains exception text. That redactor registers the outer encryption key and database URL at `:73–74`, while `_mix_env` generates additional verifier keys independently. Child-generated material can also be unknown to the parent.
@@ -84,14 +84,14 @@ An in-memory forced-failure probe confirmed an unregistered child marker reached
 
 Remediation: retain fixed reason categories, counts and hashes instead of diagnostic text. Where structured private handoffs carry required credentials, register them before processing other channels and never render those handoffs as evidence. Top-level fixed-error handling does not sanitize an earlier durable write.
 
-**SEC-178-08 — High: installed commit-order witness uses a non-mutating dry run.**  
+**SEC-178-08 — High: installed commit-order witness uses a non-mutating dry run.**
 Maps to T-178-15.
 
 `verifier_transactions.ex:196–217` correctly exercises nested-report rejection, but its positive `success_report_after_commit` observation comes from `run(mode: :dry_run)` at line 208. There is no selected mutating outer commit in that observation.
 
 Remediation: witness a real successful selected mutation and its commit boundary, then assert the report/event ordering. Retain dry-run and nested rejection as separate controls.
 
-**SEC-178-09 — High: final wrapper paths and runner identity rules contradict the authorized final sequence.**  
+**SEC-178-09 — High: final wrapper paths and runner identity rules contradict the authorized final sequence.**
 Maps to T-178-25, T-178-28 and T-178-30.
 
 The amended Plan 10 and delivery defaults use `final-locked` / `final-floor`; `run_verifier_upgrade_proof.sh:45–46` permits only `ci-$pair`. A privately captured invocation of the exact final-locked command exited **2** before mutation.
@@ -100,7 +100,7 @@ Line 82 also requires frozen runner SHA to equal current HEAD. That rejects a la
 
 Remediation: support narrowly validated final and CI destinations, retaining freshness and symlink checks. Distinguish executed runner, candidate source and later checkout identities through explicit covered-input relationships.
 
-**SEC-178-10 — High: clean hosted jobs cannot reconstruct the required frozen inputs or independently inspect uploaded raw receipts.**  
+**SEC-178-10 — High: clean hosted jobs cannot reconstruct the required frozen inputs or independently inspect uploaded raw receipts.**
 Maps to T-178-25 and T-178-32.
 
 The wrapper now requires frozen validation, which requires archive and extracted-tree paths under ignored `.artifacts/phase178`. The existing locked/floor jobs neither construct nor download those inputs before invoking it.
