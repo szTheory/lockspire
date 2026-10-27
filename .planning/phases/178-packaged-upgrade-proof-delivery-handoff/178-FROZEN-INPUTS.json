@@ -1,9 +1,9 @@
 {
   "candidate_owner": {
-    "archive_path": ".artifacts/phase178/candidate-refreeze-e16a1071f39c/lockspire-1.6.1.tar",
+    "archive_path": ".artifacts/phase178/candidate-refreeze-bb4c8e0b0f82/lockspire-1.6.1.tar",
     "archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
-    "extracted_tree_path": ".artifacts/phase178/candidate-refreeze-e16a1071f39c/lockspire",
-    "owner_sha256": "3833f87fee8e80bfc92c9092d941325c7eb3e64de9c50792d95c4c535d54393a",
+    "extracted_tree_path": ".artifacts/phase178/candidate-refreeze-bb4c8e0b0f82/lockspire",
+    "owner_sha256": "98b306c464f7204b4a6974dfb5f27e1673ab566fbe1bf2b88d76bface7325b14",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21255,
-      "package_stdout_sha256": "023698d8d82171016ddfd5562a877791c580b6466da76358df680fa47331b76e",
+      "package_stdout_sha256": "663be25f8c7aad70339f4722d9921fb9a9a3306d895dcb5ad4dae5cfef3ea990",
       "rebuilt_archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
       "rebuilt_tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
     },
-    "source_revision": "fea4446efd325726aaf167e1a55b6884f33b7706",
-    "source_tree": "fe2d49dd02fd5ed0e0ccff9346f9022927c18750",
+    "source_revision": "5270f450655ea5335f15b1724e546ba907128349",
+    "source_tree": "b9da022203c5e460b44b4a0e850d60d77fc44d51",
     "tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -3619,7 +3619,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room/build_provider.py",
-      "sha256": "77540aac1bda1dceeba310b714e589a8401d1bcfc0d7b1557cd08d367799ba19"
+      "sha256": "07bd1f60ee6ac904ad2c2b46cd91f46b70496c5acb3c43161aa841510b8f37fa"
     },
     {
       "path": "scripts/acceptance/clean_room/client_lifetime_upgrade.py",
@@ -3644,6 +3644,10 @@
     {
       "path": "scripts/acceptance/clean_room/selected_receipts.py",
       "sha256": "cf3d5254b39934e2d60c61b8deacbd8f8055b90406693cac8efff7a2a235b52b"
+    },
+    {
+      "path": "scripts/acceptance/clean_room/startup_witness.py",
+      "sha256": "45e43cc5db97dc51307f6c9db43dfd423bb3f6c49c94aad76eee45c820be5b18"
     },
     {
       "path": "scripts/acceptance/clean_room/verifier_core.py",
@@ -3675,11 +3679,11 @@
     },
     {
       "path": "scripts/acceptance/clean_room/verifier_recovery.py",
-      "sha256": "8ebf29d5f4e573ddd4f8e5a566edea97f396b380c5e524b2a4c2cc2baa289f12"
+      "sha256": "381044f99f2e593dcfca97582cd59d509539660a177ec96b7f52d9246154561a"
     },
     {
       "path": "scripts/acceptance/clean_room/verifier_rollout.py",
-      "sha256": "aaacc8c9e5b9eeaed86e682fb890708ecdadcf11a37b089f1e1d71b07acaffe4"
+      "sha256": "d889bba285a4565da24592fafbb01e9834dd696f070c3ee7aee194891c93789e"
     },
     {
       "path": "scripts/acceptance/clean_room/verifier_transactions.py",
@@ -3691,7 +3695,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room_saas_journey.py",
-      "sha256": "dff38746066aa28297a645554f00be3a908d9af5d2970a2b537bd7f1d772cade"
+      "sha256": "0b4bf1aaea6577168c371cc26b7841427ab6eb26e1423daa1eef5852491e52b8"
     },
     {
       "path": "scripts/acceptance/clean_room_verifier_upgrade.py",
@@ -3735,7 +3739,7 @@
     },
     {
       "path": "scripts/ci/run_credo.sh",
-      "sha256": "df22b6f91337cd6c68b048cae5fa9a81c7a4a80e0c9d7f0177bb40678c6e0a97"
+      "sha256": "b96c0197b8c75b71a2368b649f3a6024ec67ccd0df942364ce9522e71b12d6e8"
     },
     {
       "path": "scripts/ci/run_dialyzer.sh",
@@ -3843,7 +3847,7 @@
     },
     {
       "path": "scripts/maintainer/repo_hygiene_check.sh",
-      "sha256": "c9c19e488079536fb4332b7916f733edf7d4570f07d3cc4a158dfb42df385044"
+      "sha256": "309a078afc11da47eee42e67045b01bd86340e08686101bfc15454dc0cab2838"
     },
     {
       "path": "scripts/maintainer/verify_phase140_read_only_closure.py",
@@ -3883,7 +3887,7 @@
     },
     {
       "path": "test/acceptance/client_lifetime_boundary_test.py",
-      "sha256": "4f57813d3cf6e0ed0463dbc597216734f0f1c7499264324c00cc21d1881d5c20"
+      "sha256": "6f7fa5cc31f206f6fcbeca6ccd5d89055717d1b7ee66a2b805c36b4237229b6c"
     },
     {
       "path": "test/acceptance/client_lifetime_package_identity_test.py",
@@ -3904,6 +3908,10 @@
     {
       "path": "test/acceptance/client_lifetime_upgrade_test.py",
       "sha256": "e185cf750389cfac9f3280743dfe597347c34ce2f0aca50d2ed4f5c099fce1d5"
+    },
+    {
+      "path": "test/acceptance/client_startup_witness_test.py",
+      "sha256": "e45d42094e31c03040eee71748ab10cdec6efb342bbfc2fe9b8c8fe7125fde43"
     },
     {
       "path": "test/acceptance/client_verifier_ci_test.py",
@@ -3943,11 +3951,11 @@
     },
     {
       "path": "test/acceptance/client_verifier_recovery_test.py",
-      "sha256": "0d157556bd1d5b2ce1bb3f9a9be8cf5f77181303792c9036c5644a0f2d3c4fbe"
+      "sha256": "aa728edcfd514cdc687e6e37995d66ec66be51c4cf8ffd1dbaa18f86e5128225"
     },
     {
       "path": "test/acceptance/client_verifier_rollout_test.py",
-      "sha256": "c458ec33f8594c17e1a2d43dc64294941778ec76bd390cc72e0a068f3a739026"
+      "sha256": "67219a3d720cdc9633a2528f2ae92dcd50105af0e0b24cd72e107f2f31f0e6ae"
     },
     {
       "path": "test/acceptance/client_verifier_session_authority_test.py",
@@ -3972,6 +3980,10 @@
     {
       "path": "test/acceptance/owned_source_tests_test.py",
       "sha256": "9ad429acc2512200497da7e7adf93eafb330166bfa7ba43ed64459a04974733b"
+    },
+    {
+      "path": "test/acceptance/provider_environment_test.py",
+      "sha256": "1fc0eea215491d326e837d7f8ed87241d3f538169e6981ef983f46fe6e0555d0"
     },
     {
       "path": "test/acceptance/selected_receipt_test.py",
@@ -4119,15 +4131,15 @@
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-      "sha256": "c7db9ad3cb1cf0f4532e5a0a807f09177c090773f51fb2fa7477711a9d056318"
+      "sha256": "26f8c9f13bd1a0a0297c0ea510d8a0aa996f1bfa793e0a3f0e62f2a448dd67b1"
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
-      "sha256": "71949f25201506ffd1c8c14bc94829e14e8b07637d6e70472950a83d5bc13a42"
+      "sha256": "f9269ad5d26310ce94a7d8fc6ff6cd0984b785fa534b41a3bff8ca2cfef7c47c"
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_transactions.ex",
-      "sha256": "7e44ba6a92727a2c716f0069e860d8db1adedded84460a770aa1d4c1fa491dc9"
+      "sha256": "a30a06bf99c9b409bcb341b72d5aa0edb251b4a22008c87e7ec1f0d7cc2627de"
     },
     {
       "path": "test/clean_room/provider_host/lib/clean_room_provider_web/controllers/billing_controller.ex",
@@ -4155,11 +4167,11 @@
     },
     {
       "path": "test/clean_room/provider_host/verifier_endpoints.exs",
-      "sha256": "9d041992a1097e62cca7b554105063af6c9a85b875dc54042c94c4d44440e56c"
+      "sha256": "88e8cd2cd3250ac26d98b2dbd1660b0217901b33fe0cb02fb1d7107e8f3bdab5"
     },
     {
       "path": "test/clean_room/provider_host/verifier_rollout.exs",
-      "sha256": "9ca3b5b9d5784bb1fc94065319c0944ff12be293ba98896ab0760d1fbba8043a"
+      "sha256": "ff9c01e1fd142fe5293f84b6a6486d5eef63a89e2e487652288db23112e7563b"
     },
     {
       "path": "test/clean_room/test_admin_journey.py",
@@ -4643,7 +4655,7 @@
     },
     {
       "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-      "sha256": "b079c14998c8be2ca5ceb9b492ba160d3e27c734f9e36e6adb2c51cf0cac0400"
+      "sha256": "1d41386c60d248ff23add9ea2251d594b529846fec36afdc80d466133babf56b"
     },
     {
       "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -5147,7 +5159,7 @@
     },
     {
       "path": "test/lockspire/release/repository_hygiene_contract_test.exs",
-      "sha256": "8c54ae217d27c625703b5bb53570c38c58eb4abc2a869def74f5b9f87f089227"
+      "sha256": "fc4850f5fb81769700de9434f1f6d95c79da017ee3c92351ef8b4ae208125f15"
     },
     {
       "path": "test/lockspire/release/support_surface_contract_test.exs",
@@ -5239,7 +5251,7 @@
     },
     {
       "path": "test/lockspire/static_analysis_baseline_contract_test.exs",
-      "sha256": "8fdcf458478fd6f1c4f6b8161b830d2c38c8fffc3e6edc617a4f86c41f8514b2"
+      "sha256": "3be702d25a31856161dff869b26b886497367fd4834715927c935f5e603df95e"
     },
     {
       "path": "test/lockspire/storage/ciba_authorization_repository_test.exs",
@@ -5767,7 +5779,7 @@
     },
     {
       "path": "test/support/lockspire/release_proof/package_assertions.ex",
-      "sha256": "34f908d21c386d1a811f1d0ba018a23237b3c354bb45ec4ea3d21af83e6b7719"
+      "sha256": "4dad47b70a1958bb4e61301b29afa4dca001434eb254526166a5d37cad6c3c3a"
     },
     {
       "path": "test/support/lockspire/release_proof/paths.ex",
@@ -5870,8 +5882,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-27T12:36:54.332940+00:00",
-  "runner_revision": "d59f84bbe31eec95362fe7199d84e8b16adca71e",
-  "runner_tree": "dd36b62a7de9377cafeadb766132d77b645522e4",
+  "frozen_at": "2026-10-27T17:22:41.676144+00:00",
+  "runner_revision": "6910662b5b06cdb7ba27f3096c1193b42abf30a1",
+  "runner_tree": "b4985283a71f571eec5c2195bf069a348b2e47d5",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
