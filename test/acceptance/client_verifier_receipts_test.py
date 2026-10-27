@@ -14,6 +14,14 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def test_disclosure_failure_case_maps_to_the_existing_disclosure_directory(self) -> None:
+        import clean_room_verifier_upgrade as source
+        root = Path(".artifacts/phase178/complete")
+        self.assertEqual(
+            source.matrix_receipt_path(root, "disclosure-failure", "locked", "delegated"),
+            root / "disclosure" / "locked-delegated" / "failure-receipt.json",
+        )
+
     def test_owned_listener_gets_server_flag_without_mutating_one_off_environment(self) -> None:
         import clean_room_verifier_upgrade as source
         one_off = {"MIX_ENV": "dev", "CLEAN_ROOM_HTTP_SERVER": "false"}
