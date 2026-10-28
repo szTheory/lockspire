@@ -14,12 +14,14 @@ import tempfile
 import sys
 import unittest
 import uuid
-from unittest.mock import patch
+from unittest.mock import call, patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance"))
 import clean_room_admin_journey as admin_journey
+import clean_room_saas_journey as saas_journey
+import client_lifetime_upgrade as lifetime_upgrade
 from admin_receipts import validate_receipt, write_receipt
 import build_provider as provider_builder
 from package_input import PackageInputError
@@ -49,6 +51,72 @@ FULL_CASE_EVIDENCE = {
     "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
 }
 FULL_OBSERVATIONS = frozenset().union(*FULL_CASE_EVIDENCE.values()) | {"assets_200"}
+
+
+class CallbackCounterTests(unittest.TestCase):
+    def test_counts_only_allowlisted_complete_callback_markers_in_memory(self):
+        read_fd, write_fd = os.pipe()
+        stream = os.fdopen(read_fd, "rb", buffering=0)
+        counter = saas_journey.CallbackCounter(stream)
+        try:
+            output = (
+                b"ordinary output with sentinel-like-sensitive-content\n"
+                + b"discarded output\n" * 40_000
+                + b"LIFETIME_ADAPTER_CALLBACK register_client\n"
+                + b"LIFETIME_ADAPTER_CALLBACK transact\n"
+                + b"LIFETIME_ADAPTER_CALLBACK unrecognized\n"
+                + b"LIFETIME_ADAPTER_CALLBACK "
+                + b"x" * 200
+                + b"\nLIFETIME_ADAPTER_CALLBACK register_client\n"
+            )
+            os.write(write_fd, output)
+            os.write(write_fd, b"LIFETIME_ADAPTER_CALLBACK lock_clients")
+        finally:
+            os.close(write_fd)
+
+        self.assertTrue(counter.join(timeout=2))
+        stream.close()
+        self.assertEqual(
+            counter.snapshot(),
+            {"register_client": 2, "transact": 1},
+        )
+
+    def test_reader_failure_is_reported_without_a_thread_traceback(self):
+        class BrokenStream:
+            def fileno(self):
+                raise OSError("private stream failure")
+
+        counter = saas_journey.CallbackCounter(BrokenStream())
+        self.assertFalse(counter.join(timeout=2))
+        self.assertEqual(counter.snapshot(), {})
+
+    def test_all_processes_receive_a_stop_attempt_after_one_cleanup_failure(self):
+        first = object()
+        second = object()
+        with patch.object(saas_journey, "stop_process", side_effect=[False, True]) as stop:
+            self.assertFalse(saas_journey.stop_processes((first, second)))
+        self.assertEqual(stop.call_args_list, [call(first), call(second)])
+
+
+class LifetimeProviderEnvironmentTests(unittest.TestCase):
+    def test_uses_the_same_locked_dependency_and_build_paths_as_provider_setup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary)
+            child = run_root / "host"
+            child.mkdir()
+            with patch.dict(os.environ, {"MIX_ENV": "test"}):
+                environment = lifetime_upgrade.mix_env(
+                    child, run_root, "postgres://private/test", "tenant_a"
+                )
+
+            expected_cache = provider_builder.proof_pair_cache_root(
+                run_root / "deps-cache", "locked", "test"
+            ) / "provider" / "deps"
+            self.assertEqual(environment["MIX_DEPS_PATH"], str(expected_cache.resolve()))
+            self.assertEqual(environment["MIX_BUILD_PATH"], str((child / "_build" / "test").resolve()))
+            self.assertEqual(environment["MIX_ENV"], "test")
+            self.assertEqual(environment["DATABASE_URL"], "postgres://private/test")
+            self.assertEqual(environment["LOCKSPIRE_STORAGE_PREFIX"], "tenant_a")
 
 
 def full_scenario(case_id):

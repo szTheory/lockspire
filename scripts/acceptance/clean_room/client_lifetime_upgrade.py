@@ -16,7 +16,7 @@ import time
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
 
-from build_provider import prepare_provider
+from build_provider import prepare_provider, provider_environment
 from package_input import (
     candidate_host_provenance,
     PackageInputError,
@@ -160,19 +160,8 @@ def run_process(
 
 
 def mix_env(child: Path, run_root: Path, database_url: str, storage_prefix: str) -> dict[str, str]:
-    env = os.environ.copy()
-    dependency_root = run_root / "deps-cache" / "provider" / "deps"
-    hex_home = run_root / "hex-home"
-    mix_home = run_root / "mix-home"
-    dependency_root.mkdir(mode=0o700, parents=True, exist_ok=True)
-    hex_home.mkdir(mode=0o700, parents=True, exist_ok=True)
-    mix_home.mkdir(mode=0o700, parents=True, exist_ok=True)
+    env = provider_environment(run_root, child)
     env.update({
-        "MIX_ENV": "dev",
-        "MIX_BUILD_PATH": str(child / "_build"),
-        "MIX_DEPS_PATH": str(dependency_root),
-        "HEX_HOME": str(hex_home),
-        "MIX_HOME": str(mix_home),
         "DATABASE_URL": database_url,
         "LOCKSPIRE_STORAGE_PREFIX": storage_prefix,
         "LOCKSPIRE_KEY_ENCRYPTION_KEY": os.environ.get("LOCKSPIRE_KEY_ENCRYPTION_KEY", "") or "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",

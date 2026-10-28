@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from http.cookies import SimpleCookie
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
@@ -66,6 +67,17 @@ ACTIVE_REDACTOR: Redactor | None = None
 CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
 SELECTED_PAR_SHARED: dict[str, object] = {}
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
+LIFETIME_CALLBACKS = frozenset({
+    "lifetime_contract",
+    "transaction_authority",
+    "register_client",
+    "lock_clients",
+    "replace_client_registration",
+    "transact",
+})
+_CALLBACK_PREFIX = b"LIFETIME_ADAPTER_CALLBACK "
+_CALLBACK_MAX_LINE_BYTES = 128
+_CALLBACK_MAX_COUNT = 100_000
 
 
 class JourneyInterrupted(Exception):
@@ -222,27 +234,133 @@ def wait_ready(origin: str) -> None:
     raise AssertionError("listener readiness timed out")
 
 
-def start_process(child: Path, environment: dict[str, str], log_path: Path) -> subprocess.Popen[bytes]:
+class CallbackCounter:
+    """Count allowlisted provider callbacks while discarding every other byte."""
+
+    def __init__(self, stream: object) -> None:
+        self._stream = stream
+        self._counts: Counter[str] = Counter()
+        self._condition = threading.Condition()
+        self._done = False
+        self._failed = False
+        self._thread = threading.Thread(target=self._read, name="callback-counter", daemon=True)
+        self._thread.start()
+
+    def _accept_line(self, line: bytes, oversized: bool) -> None:
+        if oversized or not line.startswith(_CALLBACK_PREFIX):
+            return
+        try:
+            callback = line[len(_CALLBACK_PREFIX):].decode("ascii")
+        except UnicodeDecodeError:
+            return
+        if callback not in LIFETIME_CALLBACKS:
+            return
+        with self._condition:
+            if self._counts[callback] < _CALLBACK_MAX_COUNT:
+                self._counts[callback] += 1
+            self._condition.notify_all()
+
+    def _read(self) -> None:
+        line = bytearray()
+        oversized = False
+        try:
+            fd = self._stream.fileno()  # type: ignore[attr-defined]
+            while True:
+                chunk = os.read(fd, 4096)
+                if not chunk:
+                    break
+                for byte in chunk:
+                    if byte == 10:
+                        self._accept_line(bytes(line), oversized)
+                        line.clear()
+                        oversized = False
+                    elif not oversized:
+                        if len(line) < _CALLBACK_MAX_LINE_BYTES:
+                            line.append(byte)
+                        else:
+                            line.clear()
+                            oversized = True
+        except Exception:
+            self._failed = True
+        finally:
+            with self._condition:
+                self._done = True
+                self._condition.notify_all()
+
+    def snapshot(self, *, wait_for_all: bool = False, timeout: float = 5.0) -> dict[str, int]:
+        deadline = time.monotonic() + timeout
+        with self._condition:
+            while wait_for_all and not self._done and not all(self._counts.get(name, 0) for name in LIFETIME_CALLBACKS):
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    break
+                self._condition.wait(remaining)
+            return dict(sorted(self._counts.items()))
+
+    def join(self, timeout: float = 5.0) -> bool:
+        self._thread.join(timeout)
+        return not self._thread.is_alive() and not self._failed
+
+
+def start_process(child: Path, environment: dict[str, str]) -> subprocess.Popen[bytes]:
     process = start_owned_session(
         ("mix", "run", "--no-halt"), cwd=child,
         env=dict(environment, CLEAN_ROOM_HTTP_SERVER="true"), stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, close_fds=True,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True,
     )
+    if process.stdout is None:
+        stop_process(process)
+        raise PackageInputError("provider output counter could not start")
+    try:
+        process._clean_room_callback_counter = CallbackCounter(process.stdout)  # type: ignore[attr-defined]
+    except BaseException:
+        stop_process(process)
+        raise
     return process
 
 
-def stop_process(process: subprocess.Popen[bytes] | None) -> None:
+def stop_process(process: subprocess.Popen[bytes] | None) -> bool:
     if process is None:
-        return
-    if process.poll() is None:
-        os.killpg(process.pid, signal.SIGTERM)
-        try:
+        return True
+    stopped = True
+    try:
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGTERM)
+    except OSError:
+        stopped = False
+    try:
+        if process.poll() is None:
             process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired:
+        try:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait(timeout=5)
-    if hasattr(process, "_clean_room_log_handle"):
-        process._clean_room_log_handle.close()  # type: ignore[attr-defined]
+        except (OSError, subprocess.SubprocessError):
+            stopped = False
+    except (OSError, subprocess.SubprocessError):
+        stopped = False
+    counter = getattr(process, "_clean_room_callback_counter", None)
+    try:
+        if counter is not None and not counter.join(timeout=5):
+            stopped = False
+    finally:
+        if process.stdout is not None:
+            try:
+                process.stdout.close()
+            except OSError:
+                stopped = False
+    return stopped
+
+
+def stop_processes(processes: tuple[subprocess.Popen[bytes] | None, ...]) -> bool:
+    all_stopped = True
+    for process in processes:
+        try:
+            process_stopped = stop_process(process)
+        except Exception:
+            process_stopped = False
+        all_stopped = process_stopped and all_stopped
+    return all_stopped
 
 
 def drop_child_database(child: Path, environment: dict[str, str], label: str) -> None:
@@ -1047,7 +1165,7 @@ def run_dcr_lifetime(
     provider_child: Path,
     provider_environment: dict[str, str],
     handoff: Path,
-    provider_log: Path,
+    provider_process: subprocess.Popen[bytes],
     *,
     custom: bool = False,
 ) -> list[dict[str, object]]:
@@ -1139,7 +1257,8 @@ def run_dcr_lifetime(
         replacement = json.loads(str(replaced["body"]))
         register_secret(replacement.get("registration_access_token"))
         replacement_status = 200
-    callback_counts = callback_counts_from_log(provider_log) if is_custom else {}
+    callback_counter = getattr(provider_process, "_clean_room_callback_counter", None)
+    callback_counts = callback_counter.snapshot(wait_for_all=True) if is_custom and callback_counter is not None else {}
     if is_custom and not all(
         callback_counts.get(callback, 0) > 0
         for callback in ("lifetime_contract", "transaction_authority", "register_client", "lock_clients", "replace_client_registration", "transact")
@@ -1441,11 +1560,6 @@ def run_expired_and_disabled_app(
         "audit_counts": {"host_disable": disabled_audit_after - disabled_audit_before},
         "counts": {"executed": 7, "passed": 7, "failed": 0, "skipped": 0},
     }
-
-
-def callback_counts_from_log(path: Path) -> dict[str, int]:
-    counts = Counter(re.findall(r"^LIFETIME_ADAPTER_CALLBACK ([a-z_]+)$", path.read_text(encoding="utf-8"), re.MULTILINE))
-    return dict(sorted(counts.items()))
 
 
 def run_packaged_adapter_example(package_root: Path, provider_child: Path, environment: dict[str, str]) -> None:
@@ -1829,8 +1943,9 @@ def run_dpop(
         raise AssertionError("dpop exact proof replay was not rejected")
     print("dpop exact proof replay rejected")
 
-    stop_process(provider_process)
-    provider_process = start_process(provider_child, provider_environment, run_root / "provider-restart.log")
+    if not stop_process(provider_process):
+        raise PackageInputError("provider process did not stop cleanly")
+    provider_process = start_process(provider_child, provider_environment)
     # Publish the replacement before readiness or replay assertions.  If either
     # fails, the outer teardown still owns this live process and can release the
     # database deterministically.
@@ -2136,9 +2251,9 @@ def main(argv: list[str]) -> int:
                 client_child, client_environment = prepare_client(
                     run_root, client_database, handoff, client_port, package_root
                 )
-            provider_process = start_process(provider_child, provider_environment, run_root / "provider.log")
+            provider_process = start_process(provider_child, provider_environment)
             if client_child is not None and client_environment is not None:
-                client_process = start_process(client_child, client_environment, run_root / "client.log")
+                client_process = start_process(client_child, client_environment)
             wait_ready(PROVIDER_ORIGIN)
             if client_process is not None:
                 wait_ready(CLIENT_ORIGIN)
@@ -2151,7 +2266,7 @@ def main(argv: list[str]) -> int:
                     provider_child,
                     provider_environment,
                     handoff,
-                    run_root / "provider.log",
+                    provider_process,
                     custom=lifetime_leg == "custom",
                 )
             if "selected_authorization_par" in args.only:
@@ -2189,13 +2304,9 @@ def main(argv: list[str]) -> int:
             )), file=sys.stderr)
             result_code = 1
         finally:
-            try:
-                stop_process(client_process)
-                stop_process(provider_process)
-                cleanup["processes_stopped"] = all(process is None or process.poll() is not None for process in (client_process, provider_process))
-            except (OSError, subprocess.SubprocessError):
+            cleanup["processes_stopped"] = stop_processes((client_process, provider_process))
+            if not cleanup["processes_stopped"]:
                 result_code = 1
-                cleanup["processes_stopped"] = False
                 print("clean-room process cleanup failed", file=sys.stderr)
             try:
                 assert_owned_run_root(run_root, run_root_owner)
