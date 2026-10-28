@@ -14,13 +14,15 @@ defmodule Lockspire.Security.ClientSecretVerifier.OperationContext do
 
     case :persistent_term.get(Config.client_secret_verifier_cache_key(), missing) do
       %Context{} ->
-        {:ok, Config.client_secret_verifier_context(opts)}
+        opts
+        |> Config.client_secret_verifier_context()
+        |> validate_generation_context(opts)
 
       ^missing ->
         if Keyword.has_key?(opts, :client_secret_verifier_context) do
           {:error, @safe_failure}
         else
-          resolve_generation_context()
+          resolve_generation_context(opts)
         end
 
       _unavailable ->
@@ -51,11 +53,13 @@ defmodule Lockspire.Security.ClientSecretVerifier.OperationContext do
     _, _ -> {:error, @safe_failure}
   end
 
-  defp resolve_generation_context do
+  defp resolve_generation_context(opts) do
     alias Lockspire.Security.ClientSecretVerifier
 
     with signing_keyset <- Config.key_encryption!(),
-         forbidden <- Config.client_secret_verifier_operation_forbidden_key_bytes(signing_keyset),
+         forbidden <-
+           Config.client_secret_verifier_operation_forbidden_key_bytes(signing_keyset)
+           |> add_operation_key_bytes(opts),
          presence <- verifier_presence(ClientSecretVerifier),
          {:ok, %Context{state: state} = context} <- Context.resolve(presence, forbidden),
          true <- state in [:absent, :valid] do
@@ -74,5 +78,28 @@ defmodule Lockspire.Security.ClientSecretVerifier.OperationContext do
       {:ok, config} -> {:present, config}
       :error -> :absent
     end
+  end
+
+  defp validate_generation_context(%Context{} = context, opts) do
+    forbidden = add_operation_key_bytes(context.forbidden_key_bytes, opts)
+
+    case Context.validate(context, forbidden) do
+      {:ok, context} ->
+        {:ok, %{context | forbidden_key_bytes: forbidden}}
+
+      {:error, _reason} ->
+        {:error, @safe_failure}
+    end
+  end
+
+  defp validate_generation_context(_context, _opts), do: {:error, @safe_failure}
+
+  defp add_operation_key_bytes(forbidden, opts) do
+    option_keys =
+      [:secret_key_base, :legacy_secret_key_base]
+      |> Enum.flat_map(&Keyword.get_values(opts, &1))
+      |> Enum.filter(&(is_binary(&1) and &1 != ""))
+
+    (forbidden ++ option_keys) |> Enum.uniq()
   end
 end

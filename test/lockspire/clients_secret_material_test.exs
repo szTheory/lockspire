@@ -177,6 +177,35 @@ defmodule Lockspire.ClientsSecretMaterialTest do
     assert :persistent_term.get(cache_key, :missing) == :missing
   end
 
+  test "cold verifier configuration rejects operation endpoint key reuse" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    :persistent_term.erase(cache_key)
+
+    operation_key = :crypto.strong_rand_bytes(32)
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(operation_key)
+    )
+
+    for option <- [:secret_key_base, :legacy_secret_key_base] do
+      error =
+        assert_raise ArgumentError, fn ->
+          Clients.rotate_secret_material(
+            Keyword.merge([client_id: "cold-operation-key-overlap-client"], [
+              {option, operation_key}
+            ])
+          )
+        end
+
+      assert Exception.message(error) ==
+               "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+      assert :persistent_term.get(cache_key, :missing) == :missing
+    end
+  end
+
   test "cold invalid signing configuration fails closed without writing the verifier cache" do
     cache_key = Config.client_secret_verifier_cache_key()
     :persistent_term.erase(cache_key)
@@ -275,6 +304,32 @@ defmodule Lockspire.ClientsSecretMaterialTest do
 
     assert opened == material.client_secret
     assert Config.client_secret_verifier_context() == startup_context
+  end
+
+  test "cached verifier configuration rejects operation endpoint key reuse" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    operation_key = :crypto.strong_rand_bytes(32)
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(operation_key)
+    )
+
+    assert {:ok, startup_context} = Lockspire.Application.resolve_client_secret_verifier()
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(
+          client_id: "cached-operation-key-overlap-client",
+          secret_key_base: operation_key
+        )
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+    assert :persistent_term.get(cache_key) == startup_context
   end
 
   test "dedicated material binds an explicit identity and each generation is fresh" do
