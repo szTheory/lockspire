@@ -3,11 +3,14 @@ defmodule Lockspire.ClientsSecretMaterialTest do
 
   alias Lockspire.Clients
   alias Lockspire.Config
+  alias Lockspire.Security.ClientSecretVerifier
   alias Lockspire.Security.ClientSecretVerifier.Context
   alias Lockspire.Security.Policy
 
   setup do
     endpoint_config = Application.get_env(:lockspire, Lockspire.Web.Endpoint)
+    verifier_config = Application.fetch_env(:lockspire, ClientSecretVerifier)
+    key_encryption_config = Application.fetch_env(:lockspire, :key_encryption)
     cache_key = Config.client_secret_verifier_cache_key()
     cached_context = :persistent_term.get(cache_key, :missing)
 
@@ -22,6 +25,16 @@ defmodule Lockspire.ClientsSecretMaterialTest do
         :persistent_term.erase(cache_key)
       else
         :persistent_term.put(cache_key, cached_context)
+      end
+
+      case verifier_config do
+        {:ok, value} -> Application.put_env(:lockspire, ClientSecretVerifier, value)
+        :error -> Application.delete_env(:lockspire, ClientSecretVerifier)
+      end
+
+      case key_encryption_config do
+        {:ok, value} -> Application.put_env(:lockspire, :key_encryption, value)
+        :error -> Application.delete_env(:lockspire, :key_encryption)
       end
     end)
 
@@ -54,6 +67,214 @@ defmodule Lockspire.ClientsSecretMaterialTest do
              )
 
     assert opened == material.client_secret
+  end
+
+  test "cold secret generation resolves verifier configuration without caching it" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    :persistent_term.erase(cache_key)
+
+    legacy_secret = "cold-generation-legacy-endpoint-secret-key-base"
+    Application.put_env(:lockspire, Lockspire.Web.Endpoint, secret_key_base: legacy_secret)
+    Application.delete_env(:lockspire, ClientSecretVerifier)
+
+    legacy = Clients.rotate_secret_material(client_id: "cold-legacy-client")
+
+    assert {:ok, opened_legacy} =
+             Policy.unseal_client_secret_jwt_verifier(
+               legacy.client_secret_jwt_verifier_encrypted,
+               secret_key_base: legacy_secret
+             )
+
+    assert opened_legacy == legacy.client_secret
+    assert Policy.verify_client_secret(legacy.client_secret_hash, legacy.client_secret)
+    assert :persistent_term.get(cache_key, :missing) == :missing
+
+    verifier_key = :crypto.strong_rand_bytes(32)
+    verifier_config = dedicated_verifier_config(verifier_key)
+    Application.put_env(:lockspire, ClientSecretVerifier, verifier_config)
+
+    dedicated = Clients.rotate_secret_material(client_id: "cold-dedicated-client")
+
+    assert String.starts_with?(dedicated.client_secret_jwt_verifier_encrypted, "LSCV1.")
+
+    assert {:ok, context} =
+             Context.resolve(
+               {:present, verifier_config},
+               Config.client_secret_verifier_operation_forbidden_key_bytes(nil)
+             )
+
+    assert {:ok, opened_dedicated} =
+             Lockspire.Security.ClientSecretVerifier.open(
+               context,
+               "cold-dedicated-client",
+               dedicated.client_secret_jwt_verifier_encrypted,
+               []
+             )
+
+    assert opened_dedicated == dedicated.client_secret
+    assert Policy.verify_client_secret(dedicated.client_secret_hash, dedicated.client_secret)
+
+    assert {:error, _reason} =
+             Lockspire.Security.ClientSecretVerifier.open(
+               context,
+               "another-cold-dedicated-client",
+               dedicated.client_secret_jwt_verifier_encrypted,
+               []
+             )
+
+    assert :persistent_term.get(cache_key, :missing) == :missing
+  end
+
+  test "cold verifier configuration overlap fails closed and leaves startup cache empty" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    :persistent_term.erase(cache_key)
+
+    overlapping_key = :crypto.strong_rand_bytes(32)
+    Application.put_env(:lockspire, Lockspire.Web.Endpoint, secret_key_base: overlapping_key)
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(overlapping_key)
+    )
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(client_id: "cold-overlap-client")
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+    assert :persistent_term.get(cache_key, :missing) == :missing
+  end
+
+  test "cold verifier configuration rejects reuse of a signing key" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    :persistent_term.erase(cache_key)
+
+    signing_key = :crypto.strong_rand_bytes(32)
+
+    Application.put_env(:lockspire, :key_encryption,
+      keys: [{"signing-key", Base.encode64(signing_key)}],
+      current: "signing-key"
+    )
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(signing_key)
+    )
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(client_id: "cold-signing-key-overlap-client")
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+    assert :persistent_term.get(cache_key, :missing) == :missing
+  end
+
+  test "cold invalid signing configuration fails closed without writing the verifier cache" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    :persistent_term.erase(cache_key)
+
+    Application.put_env(:lockspire, :key_encryption,
+      keys: [{"broken", "not-base64"}],
+      current: "broken"
+    )
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(:crypto.strong_rand_bytes(32))
+    )
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(client_id: "cold-invalid-signing-config-client")
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+    assert :persistent_term.get(cache_key, :missing) == :missing
+  end
+
+  test "invalid startup snapshot remains authoritative for secret generation" do
+    cache_key = Config.client_secret_verifier_cache_key()
+    invalid = %Context{state: :invalid, reason: :invalid_options}
+    :persistent_term.put(cache_key, invalid)
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(:crypto.strong_rand_bytes(32))
+    )
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(client_id: "invalid-snapshot-client")
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+    assert :persistent_term.get(cache_key) == invalid
+  end
+
+  test "corrupt non-context cache entries never trigger cold configuration resolution" do
+    cache_key = Config.client_secret_verifier_cache_key()
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(:crypto.strong_rand_bytes(32))
+    )
+
+    for corrupt <- [:uninitialized, :unexpected] do
+      :persistent_term.put(cache_key, corrupt)
+
+      error =
+        assert_raise ArgumentError, fn ->
+          Clients.rotate_secret_material(client_id: "corrupt-cache-client")
+        end
+
+      assert Exception.message(error) ==
+               "client secret material generation failed: client_secret_verifier_configuration_invalid"
+
+      assert :persistent_term.get(cache_key) == corrupt
+    end
+  end
+
+  test "valid startup snapshot remains authoritative for secret generation" do
+    startup_key = :crypto.strong_rand_bytes(32)
+    startup_config = dedicated_verifier_config(startup_key)
+    Application.put_env(:lockspire, ClientSecretVerifier, startup_config)
+
+    assert {:ok, startup_context} = Lockspire.Application.resolve_client_secret_verifier()
+
+    Application.put_env(
+      :lockspire,
+      ClientSecretVerifier,
+      dedicated_verifier_config(:crypto.strong_rand_bytes(32))
+    )
+
+    client_id = "startup-snapshot-client"
+    material = Clients.rotate_secret_material(client_id: client_id)
+
+    assert {:ok, opened} =
+             Lockspire.Security.ClientSecretVerifier.open(
+               startup_context,
+               client_id,
+               material.client_secret_jwt_verifier_encrypted,
+               []
+             )
+
+    assert opened == material.client_secret
+    assert Config.client_secret_verifier_context() == startup_context
   end
 
   test "dedicated material binds an explicit identity and each generation is fresh" do
@@ -192,5 +413,14 @@ defmodule Lockspire.ClientsSecretMaterialTest do
       )
 
     context
+  end
+
+  defp dedicated_verifier_config(key) do
+    [
+      keys: [{"cold-key", Base.url_encode64(key, padding: false)}],
+      current: "cold-key",
+      write_mode: :dedicated,
+      legacy_read: :allow
+    ]
   end
 end

@@ -1,9 +1,8 @@
 defmodule Lockspire.Clients.SecretMaterial do
   @moduledoc false
 
-  alias Lockspire.Config
   alias Lockspire.Security.ClientSecretVerifier
-  alias Lockspire.Security.ClientSecretVerifier.Context
+  alias Lockspire.Security.ClientSecretVerifier.{Context, OperationContext}
   alias Lockspire.Security.Policy
 
   @secret_bytes 32
@@ -18,22 +17,30 @@ defmodule Lockspire.Clients.SecretMaterial do
   @spec generate(term(), keyword()) :: {:ok, map()} | {:error, atom()}
   def generate(client_id, opts) when is_list(opts) do
     secret = generate_token(@secret_bytes)
-    context = Config.client_secret_verifier_context(opts)
 
-    case seal(context, client_id, secret, opts) do
-      {:ok, verifier} ->
-        {:ok,
-         %{
-           client_secret: secret,
-           client_secret_hash: Policy.hash_client_secret(secret),
-           client_secret_jwt_verifier_encrypted: verifier
-         }}
+    case OperationContext.resolve_for_secret_generation(opts) do
+      {:ok, context} ->
+        case seal(context, client_id, secret, opts) do
+          {:ok, verifier} ->
+            {:ok,
+             %{
+               client_secret: secret,
+               client_secret_hash: Policy.hash_client_secret(secret),
+               client_secret_jwt_verifier_encrypted: verifier
+             }}
+
+          {:error, reason} when reason in @safe_reasons ->
+            {:error, reason}
+
+          {:error, _reason} ->
+            {:error, :client_secret_verifier_unavailable}
+        end
 
       {:error, reason} when reason in @safe_reasons ->
         {:error, reason}
 
       {:error, _reason} ->
-        {:error, :client_secret_verifier_unavailable}
+        {:error, :client_secret_verifier_configuration_invalid}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
