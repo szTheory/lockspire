@@ -34,7 +34,7 @@ def exercise(test_name: str) -> None:
         environment = locked_environment(child, "confidential_client", root / "deps-cache")
         environment.update({"DATABASE_URL": clean_room_database_url("client")})
         verify_child("confidential_client", child, root / "deps-cache", {"DATABASE_URL": environment["DATABASE_URL"]})
-        # The pinned clean-room graph uses JOSE 1.11.12.  Apply the same
+        # The pinned clean-room graph uses JOSE 1.11.13.  Apply the same
         # fail-closed child-local Elixir 1.19 compatibility patch proven for
         # the provider; the checked-in lock remains untouched.
         patch_jose_record_extractors(child, environment)
