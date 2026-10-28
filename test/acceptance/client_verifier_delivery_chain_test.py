@@ -200,7 +200,15 @@ def upload_tree(root: Path, pair: str) -> None:
     body = body.replace('Path.cwd() / "scripts/acceptance/clean_room"', repr(str(ROOT / "scripts/acceptance/clean_room")))
     from verifier_owner_fixture import CONTEXT_PINS
     context_env = {} if os.environ.get("LOCKSPIRE_RECEIPT_OWNER") else CONTEXT_PINS.get(str(root), {})
-    result = subprocess.run((sys.executable, "-c", body, str(root), pair),
+    # Execute the unchanged upload producer under the same explicit private
+    # lock context as its pair validator, including in the full private chain.
+    bootstrap = ("import sys\nfrom pathlib import Path\nsys.path.insert(0, "
+                 + repr(str(ROOT / "scripts/acceptance/clean_room")) + ")\nsys.path.insert(0, "
+                 + repr(str(ROOT / "test/acceptance")) + ")\n"
+                 "from verifier_owner_fixture import retained_lock_context\n"
+                 "with retained_lock_context(Path(sys.argv[1]).parent):\n    exec("
+                 + repr(body) + ")\n")
+    result = subprocess.run((sys.executable, "-c", bootstrap, str(root), pair),
                             capture_output=True, timeout=20, check=False,
                             env={**os.environ, **context_env, "PYTHONDONTWRITEBYTECODE": "1"})
     if result.returncode:
@@ -438,6 +446,10 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 target = repo / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / relative, target)
+            from verifier_owner_fixture import materialize_epoch_locks
+            import build_provider
+            epoch_locks = materialize_epoch_locks(repo, repository_layout=True)
+            stack.enter_context(patch.dict(build_provider.PROOF_PAIR_LOCKS, epoch_locks))
             self.git(repo, "add", "-f", "--", *selected)
             self.git(repo, "commit", "-qm", "full selected implementation fixture")
             frozen_revision = self.git(repo, "rev-parse", "HEAD")

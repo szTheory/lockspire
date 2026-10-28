@@ -477,7 +477,7 @@ class BoundedInputAndNestedFieldContracts(unittest.TestCase):
 
 class ComposedMatrixContracts(unittest.TestCase):
     def _pair_roots(self, parent: Path) -> tuple[Path, Path, str, tuple[str, str, str]]:
-        from verifier_owner_fixture import context_for_template, write_context
+        from verifier_owner_fixture import context_for_template, write_context, retained_lock_context
         source = ROOT / "test/fixtures/verifier-matrix-26"
         runner = json.loads((source / "core/locked-builtin/receipt.json").read_text())["runner"]
         candidate = json.loads((source / "core/locked-builtin/receipt.json").read_text())["candidate"]
@@ -492,7 +492,7 @@ class ComposedMatrixContracts(unittest.TestCase):
                 raw["runtime"] = dict(context["runtime"])
                 path.write_text(json.dumps(raw))
             context_env = write_context(root, context)
-            with patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+            with retained_lock_context(parent), patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
                 result = clean_room_verifier_upgrade.main([
                     "--pair", pair, "--store", "all", "--group", "all",
                     "--validate-receipts", str(root),
@@ -505,11 +505,13 @@ class ComposedMatrixContracts(unittest.TestCase):
         return roots[0], roots[1], runner, owner
 
     def _compose(self, locked, floor, **kwargs):
+        from verifier_owner_fixture import retained_lock_context
         # Explicit synthetic component context; the complete chain authenticates
         # actual archive metadata separately. Never promotes retained evidence.
         document = json.loads((locked / "receipt-owner.json").read_text())
         kwargs.update(expected_candidate_proof=document["candidate_owner_sha256"], expected_version=document["package_version"])
-        return verifier_delivery.compose_pair_indexes(locked, floor, **kwargs)
+        with retained_lock_context(locked.parent):
+            return verifier_delivery.compose_pair_indexes(locked, floor, **kwargs)
 
     def test_two_pair_indexes_compose_to_exact_closed_validator_matrix(self) -> None:
         artifacts = ROOT / ".artifacts" / "phase178"

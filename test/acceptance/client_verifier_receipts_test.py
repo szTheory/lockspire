@@ -23,6 +23,47 @@ import verifier_receipts  # noqa: E402
 
 
 class CompleteMatrixContracts(unittest.TestCase):
+    def _fixture_cli(self, source, arguments):
+        from verifier_owner_fixture import retained_lock_context
+        inputs = Path(arguments[arguments.index("--validate-receipts") + 1])
+        with retained_lock_context(inputs.parent):
+            return source.main(arguments)
+
+    def test_private_lock_epoch_matches_all_retained_receipts_and_restores_current_inputs(self):
+        from verifier_owner_fixture import check_template_epoch, retained_lock_context
+        import build_provider
+        import hashlib
+        before = dict(build_provider.PROOF_PAIR_LOCKS)
+        files = sorted((ROOT / "test/fixtures/verifier-matrix-26").rglob("*.json"))
+        self.assertTrue(len(files) == 26, "retained epoch matrix lost a required cell")
+        with tempfile.TemporaryDirectory() as temporary:
+            with retained_lock_context(Path(temporary)) as paths:
+                for path in files:
+                    raw = json.loads(path.read_text())
+                    check_template_epoch(raw)
+                    self.assertTrue(hashlib.sha256(paths[raw["pair"]].read_bytes()).hexdigest() == raw["host"]["lock_sha256"],
+                                    "private epoch lock failed its retained source binding")
+        self.assertTrue(build_provider.PROOF_PAIR_LOCKS == before, "fixture lock authority escaped its private scope")
+
+    def test_private_lock_epoch_rejects_borrowed_source_and_changed_private_bytes(self):
+        from verifier_owner_fixture import check_template_epoch, retained_lock_context
+        raw = json.loads((ROOT / "test/fixtures/verifier-matrix-26/core/locked-builtin/receipt.json").read_text())
+        for field in ("source_revision", "runner_revision"):
+            borrowed = copy.deepcopy(raw)
+            if field == "source_revision":
+                borrowed["candidate"][field] = "9" * 40
+            else:
+                borrowed["runner"] = "9" * 40
+            with self.assertRaises(AssertionError):
+                check_template_epoch(borrowed)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with retained_lock_context(root) as paths:
+                paths["locked"].write_bytes(paths["locked"].read_bytes() + b"\n")
+            with self.assertRaises(AssertionError):
+                with retained_lock_context(root):
+                    self.fail("changed private lock acquired fixture authority")
+
     def test_grammar_preserving_package_and_runtime_substitutions_require_owner(self):
         accepted = 0
         opaque = secrets.token_hex(16)
@@ -170,7 +211,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             output = parent / "aggregate.json"
             stdout, stderr = StringIO(), StringIO()
             with redirect_stdout(stdout), redirect_stderr(stderr):
-                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", self._fixture_runner_revision(),
                                       "--expected-candidate-source-revision", self._fixture_runner_revision(),
@@ -194,7 +235,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             inputs = self._matrix_copy(parent)
             output = parent / "aggregate.json"
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(inputs), "--aggregate-output", str(output)])
             self.assertEqual(result, 1)
             self.assertFalse(output.exists())
@@ -221,7 +262,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 ).hexdigest()
                 path.write_text(json.dumps(receipt), encoding="utf-8")
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                result = source.main([
+                result = self._fixture_cli(source, [
                     "--pair", "all", "--store", "all", "--group", "all",
                     "--historical-structure-only", "--validate-receipts", str(inputs),
                     "--expected-runner-revision", expected_runner,
@@ -242,7 +283,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 receipt_count, case_count = expected[pair]
                 shutil.rmtree(inputs / "validated")
                 with self.subTest(pair=pair), patch.dict(__import__("os").environ, CONTEXT_PINS[str(inputs)]), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                    result = source.main(["--pair", pair, "--store", "all", "--group", "all",
+                    result = self._fixture_cli(source, ["--pair", pair, "--store", "all", "--group", "all",
                                           "--validate-receipts", str(inputs),
                                           "--expected-runner-revision", expected_runner,
                                           "--expected-candidate-source-revision", candidate[0]])
@@ -263,7 +304,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 if pair == "locked":
                     source.matrix_receipt_path(inputs, scope, pair, store).unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                result = source.main(["--pair", "locked", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "locked", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", expected_runner,
                                       "--expected-candidate-source-revision", expected_runner])
@@ -278,7 +319,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             missing = inputs / "disclosure" / "locked-delegated" / "failure-receipt.json"
             missing.unlink()
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", self._fixture_runner_revision(),
                                       "--expected-candidate-source-revision", self._fixture_runner_revision()])
@@ -296,7 +337,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                 inputs = self._matrix_copy(parent)
                 mutate(inputs)
                 with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                    result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                    result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                           "--historical-structure-only", "--validate-receipts", str(inputs),
                                           "--expected-runner-revision", expected_runner,
                                           "--expected-candidate-source-revision", expected_runner])
@@ -381,7 +422,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             receipt["runner"] = "c" * 40
             path.write_text(json.dumps(receipt), encoding="utf-8")
             with redirect_stdout(StringIO()), redirect_stderr(StringIO()):
-                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(inputs),
                                       "--expected-runner-revision", expected_runner])
             self.assertEqual(result, 1)
@@ -414,7 +455,7 @@ class CompleteMatrixContracts(unittest.TestCase):
             empty.mkdir()
             output = Path(temporary) / "aggregate.json"
             with patch.object(source, "_complete_matrix", side_effect=AssertionError("package execution forbidden")):
-                result = source.main(["--pair", "all", "--store", "all", "--group", "all",
+                result = self._fixture_cli(source, ["--pair", "all", "--store", "all", "--group", "all",
                                       "--historical-structure-only", "--validate-receipts", str(empty), "--aggregate-output", str(output)])
             self.assertEqual(result, 1)
             self.assertFalse(output.exists())
