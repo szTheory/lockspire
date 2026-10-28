@@ -200,6 +200,50 @@ class VerifierDisclosureContracts(unittest.TestCase):
             self.assertNotIn("malformed_crypto", json.dumps(record))
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
+    def test_rejection_facts_do_not_coerce_bool_float_negative_or_oversized_counts(self) -> None:
+        capture = {
+            "channel_attribution": verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION,
+            "scenario": "malformed_crypto",
+            "reason": "malformed_verifier",
+            "forced_failure_observed": True,
+            "operation_result": "failed",
+            "failure_detail_count": 1,
+            "storage_failure_witness": False,
+            "logger_event_count": 2,
+            "logger_control_event_count": 2,
+            "logger_operation_event_count": 0,
+            "logger_leak_count": 0,
+            "query_event_count": 1,
+            "query_control_event_count": 1,
+            "query_operation_event_count": 0,
+            "query_leak_count": 0,
+            "cli_output_checked": True,
+            "report_redacted": True,
+            "audit_projection_safe": True,
+            "audit_unchanged": True,
+            "ciphertext_unchanged": True,
+            "http_status": 401,
+            "http_error_code": "invalid_client",
+            "http_outcome_safe": True,
+            "output_leak_count": 0,
+        }
+        mutations = (
+            ("logger_control_event_count", True, "logger_control_event_count"),
+            ("logger_control_event_count", 2.0, "logger_control_event_count"),
+            ("query_operation_event_count", -1, "query_operation_event_count"),
+            ("query_event_count", 2**31, "query_event_count"),
+        )
+        for field, value, sanitized_field in mutations:
+            with self.subTest(field=field, value_type=type(value).__name__):
+                invalid = dict(capture, **{field: value})
+                with self.assertRaises(verifier_receipts.DisclosureCaptureRejected) as caught:
+                    verifier_disclosure.validate_failure_capture(invalid)
+                facts = caught.exception.witness["facts"]
+                self.assertIsNone(facts[sanitized_field])
+                self.assertFalse(facts["logger_controls_exact"] if field == "logger_control_event_count" else facts["query_total_covers_attribution"])
+                if field == "query_event_count":
+                    self.assertFalse(facts["query_total_covers_attribution"])
+
     def test_encoded_sentinel_output_is_rejected_before_receipt_acceptance(self) -> None:
         sentinel = secrets.token_urlsafe(32)
         redactor = Redactor(SentinelSet.for_run())

@@ -223,24 +223,33 @@ def _disclosure_capture_facts(payload: object) -> dict[str, Any]:
         for field in DISCLOSURE_CAPTURE_FACT_COUNT_FIELDS:
             value = payload.get(field)
             facts[field] = value if type(value) is int and 0 <= value <= 2**31 - 1 else None
+        logger_counts = (
+            facts["logger_event_count"], facts["logger_control_event_count"],
+            facts["logger_operation_event_count"],
+        )
+        query_counts = (
+            facts["query_event_count"], facts["query_control_event_count"],
+            facts["query_operation_event_count"],
+        )
+        logger_leaks = facts["logger_leak_count"]
+        query_leaks = facts["query_leak_count"]
         facts.update({
-            "channel_attribution_matches": payload.get("channel_attribution") == DISCLOSURE_CHANNEL_ATTRIBUTION,
-            "logger_controls_exact": payload.get("logger_control_event_count") == 2,
-            "query_controls_exact": payload.get("query_control_event_count") == 1,
+            "channel_attribution_matches": (
+                type(payload.get("channel_attribution")) is str
+                and payload["channel_attribution"] == DISCLOSURE_CHANNEL_ATTRIBUTION
+            ),
+            "logger_controls_exact": facts["logger_control_event_count"] == 2,
+            "query_controls_exact": facts["query_control_event_count"] == 1,
             "logger_total_covers_attribution": (
-                type(payload.get("logger_event_count")) is int
-                and type(payload.get("logger_control_event_count")) is int
-                and type(payload.get("logger_operation_event_count")) is int
-                and payload["logger_event_count"] >= payload["logger_control_event_count"] + payload["logger_operation_event_count"]
+                all(value is not None for value in logger_counts)
+                and logger_counts[0] >= logger_counts[1] + logger_counts[2]
             ),
             "query_total_covers_attribution": (
-                type(payload.get("query_event_count")) is int
-                and type(payload.get("query_control_event_count")) is int
-                and type(payload.get("query_operation_event_count")) is int
-                and payload["query_event_count"] >= payload["query_control_event_count"] + payload["query_operation_event_count"]
+                all(value is not None for value in query_counts)
+                and query_counts[0] >= query_counts[1] + query_counts[2]
             ),
             "channel_leaks_zero": (
-                payload.get("logger_leak_count") == 0 and payload.get("query_leak_count") == 0
+                logger_leaks == 0 and query_leaks == 0
             ),
             "forced_failure_observed": payload.get("forced_failure_observed") is True,
             "operation_result_failed": payload.get("operation_result") == "failed",

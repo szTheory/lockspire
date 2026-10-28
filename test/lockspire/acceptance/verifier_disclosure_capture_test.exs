@@ -37,7 +37,7 @@ defmodule Lockspire.Acceptance.VerifierDisclosureCaptureTest do
       ack: {self(), make_ref()}
     }
 
-    on_exit(fn -> :ets.delete(table) end)
+    # The table is owned by this test process and is removed when it exits.
     {:ok, config: config}
   end
 
