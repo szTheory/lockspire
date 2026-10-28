@@ -4536,10 +4536,25 @@
           "id": "SEC-178-ROOT-RETENTION-TEST-01",
           "severity": "medium",
           "status": "resolved"
+        },
+        {
+          "disposition": "fix-before-freeze",
+          "evidence": "Disclosure operation-query counts subtract a control from all observed Repo events, and Logger operation counts use an uncorrelated interval delta. Neither handler establishes operation ownership or phase. Sensitive production reads intentionally suppress telemetry and malformed-material classification need not mutate, so legitimate operation-query counts can be zero while unrelated activity can inflate claimed operation evidence. Validators nevertheless require positive operation-query counts. Replace aggregate inference with independently tagged observed controls and owner/reference/phase-correlated operation counts, allowing genuine zero operation events while preserving global zero-leak scans and every independent forced-failure, classification, HTTP, storage, audit, ciphertext and CLI witness. Version the changed semantics and test background/control inflation, ownership/phase exclusions, missing controls, legitimate zero events and leak rejection. The original rejected predicate remains unknown; subsequent passing executions do not resolve this evidence-integrity defect.",
+          "files": [
+            "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
+            "lib/lockspire/admin/client_verifier_maintenance.ex",
+            "test/acceptance/client_verifier_disclosure_test.py"
+          ],
+          "id": "SEC-178-DISCLOSURE-ATTRIBUTION-01",
+          "severity": "high",
+          "status": "open"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-307abd6.md",
-      "report_sha256": "017ce9917fbb2dfda275f0f909473d75a42da181606f88d5061b21f3d6e28876",
+      "report_path": "178-SECURITY-REOPENING-307abd6.md",
+      "report_sha256": "d6e62bf3a5067654a41b931e7ec048f4a6cb2ab6abf8da24cbdedd54fe246357",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -8857,7 +8872,7 @@
       ],
       "reviewed_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
       "reviewer_identity": "Codex security auditor /root/review_178_security",
-      "verdict": "accepted"
+      "verdict": "rejected"
     },
     "source": {
       "findings": [
