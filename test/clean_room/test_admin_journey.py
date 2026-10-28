@@ -250,7 +250,7 @@ class JourneySetupCleanupTests(unittest.TestCase):
                 run_root.mkdir(mode=0o700)
                 return str(run_root)
             with patch.object(lifetime_upgrade.sys, "argv", ["client_lifetime_upgrade", "--scenario", "public"]), patch.dict(os.environ, {"LOCKSPIRE_UPGRADE_DEBUG_ROOT": ""}), patch.object(
-                lifetime_upgrade.tempfile, "mkdtemp", side_effect=create_upgrade_root
+                saas_journey.tempfile, "mkdtemp", side_effect=create_upgrade_root
             ), patch.object(
                 lifetime_upgrade, "prepare_package", return_value=(package_root, (), identity)
             ), patch.object(
