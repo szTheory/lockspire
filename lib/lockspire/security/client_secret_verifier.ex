@@ -86,9 +86,6 @@ defmodule Lockspire.Security.ClientSecretVerifier do
 
       {:error, _reason} ->
         {:error, :client_secret_verifier_configuration_invalid}
-
-      _ ->
-        {:error, :client_secret_verifier_unavailable}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}

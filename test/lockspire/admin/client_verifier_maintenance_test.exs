@@ -356,6 +356,37 @@ defmodule Lockspire.Admin.ClientVerifierMaintenanceTest do
     refute inspect(report.details) =~ oversized_id
   end
 
+  test "malformed authenticated-envelope input cannot establish custody or expose material" do
+    verifier =
+      "LSCV1.maintenance-test." <>
+        Base.url_encode64(:crypto.strong_rand_bytes(8), padding: false)
+
+    Application.put_env(
+      :lockspire,
+      :test_verifier_inventory_page,
+      {:clients, [secret_client("malformed-boundary-client", "stored-boundary-hash", verifier)]}
+    )
+
+    {outcome, report} =
+      case Lockspire.Admin.ClientVerifierMaintenance.run(mode: :check) do
+        {:error, value} when is_map(value) -> {:rejected, value}
+        _ -> {:unexpected, %{}}
+      end
+
+    entry = report |> Map.get(:details, []) |> List.first() || %{}
+
+    assert Enum.all?([
+             outcome == :rejected,
+             Map.get(report, :failed) == 1,
+             Map.get(report, :custody_condition_met?) == false,
+             Map.get(entry, :classification) == :malformed,
+             Map.get(entry, :key_id) == nil,
+             not String.contains?(inspect(report), verifier),
+             not String.contains?(inspect(report), "stored-boundary-hash")
+           ]),
+           "malformed custody must remain unready, unauthenticated, and redacted"
+  end
+
   defp old_context do
     keys = [
       {"old-maintenance-test",

@@ -384,10 +384,6 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
           end
         end
 
-      {:ok, _untrusted_metadata} ->
-        {:attention, :unreadable, :custody_unreadable, :repair_storage_or_recover,
-         %{authenticated?: false}}
-
       {:error, reason} ->
         {classification, safe_reason, action} = inspection_error(reason)
         {:attention, classification, safe_reason, action, %{authenticated?: false}}

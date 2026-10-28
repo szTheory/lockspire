@@ -255,6 +255,33 @@ defmodule Lockspire.Security.ClientSecretVerifierTest do
     assert {:ok, %Context{state: :invalid}} = Context.resolve({:present, base}, [key])
   end
 
+  test "raw rejection remains fixed before authenticated decoding" do
+    valid = context("boundary-key", random_key())
+    opaque = :crypto.strong_rand_bytes(32)
+
+    contexts = [
+      nil,
+      %{},
+      %{context: opaque},
+      %Context{state: :invalid},
+      %{valid | state: :unknown}
+    ]
+
+    ciphertexts = [nil, false, [opaque], %{material: opaque}, {:material, opaque}]
+
+    assert Enum.all?(contexts, fn raw ->
+             open_error(raw, "boundary-client", "LSCV1.invalid", []) ==
+               :client_secret_verifier_configuration_invalid
+           end),
+           "raw Context inputs must keep their fixed configuration rejection"
+
+    assert Enum.all?(ciphertexts, fn raw ->
+             open_error(valid, "boundary-client", raw, []) ==
+               :client_secret_verifier_unsupported_format
+           end),
+           "nonbinary ciphertext must be rejected before authenticated decoding"
+  end
+
   defp context(key_id, key) do
     {:ok, context} =
       Context.resolve(
