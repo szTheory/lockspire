@@ -1,0 +1,68 @@
+# Proposed v1.48 Milestone Pull Request Update
+
+**Title:** `feat: isolate and rotate client authentication verifiers (v1.48)`
+
+**Repository:** `szTheory/lockspire`
+
+**PR:** [#141](https://github.com/szTheory/lockspire/pull/141), open, normal, non-draft
+
+**Target:** `main`
+
+**Source branch:** `milestone/v1.48-client-auth-key-isolation`
+
+**Currently published PR head:** `4d512ae2c6a042e2b4557750eca2d49e57fb7189` (unchanged)
+
+**Proof execution checkout:** `834b84d40a6059c308303658bea8b83d9fb0e412` (local source acceptance identity; distinct from the proposed publication SHA)
+
+**Observed current `main`:** `173059a166e9ade0f5f57c9980b7b2400a98538c`, observed locally and with read-only remote ref query at 2026-10-28 13:02 UTC; it is an ancestor of the local preparation HEAD.
+
+**Proposed future push SHA:** Exact SHA recorded in the private publication plan after this local proposal commit. The proposal requires a normal non-force update of `refs/heads/milestone/v1.48-client-auth-key-isolation` to that exact SHA.
+
+**Readiness:** Review proposal only. The future push and PR body update require separate authorization. No push, PR body update, rerun, review, comment, merge, or publication occurred. VDELIV-01/02 remain pending.
+
+## Prepared PR Body
+
+### Summary
+
+Deliver the cumulative v1.48 client authentication key isolation and rotation milestone from Phases 175–178. Client-secret-JWT verifier material has dedicated rotatable encryption-key custody, independent of endpoint/session secrets and signing-key KEKs, with explicit read/write key selection, authenticated envelopes, and fail-closed behavior.
+
+The milestone also provides a reader-first legacy upgrade path, deliberate writer activation and legacy rejection, retry-safe rewrap and rotation, status and recovery tooling, and source-bound package proof across the existing supported dependency pairs. It preserves client secret hashes and lifetimes, one-time secret delivery, supported direct-client security behavior, and the host-owned account/login/policy seam.
+
+### Local proof and identities
+
+- **Current selected source:** The 1,078 selected inputs have scope SHA-256 `45d60561961df678ec1d4a4b81a1f128b5b89cf117db2a91fcff0b94f8331775`. Candidate source reviewed by three accepted lanes is `fefe8a7d948252293d7ffac7b8b20748d070d5bb`; review packet SHA-256 `e28b8c2b6d27617c898d216fe0c425a60485516099ce9603d6ece77507d2d322`. Corrected source, security, and integration lanes are `497c6860`, `b217a486`, and `e3adc839` respectively.
+- **Frozen package:** Lockspire 1.6.1 was frozen with runner `b99d6842c920a990de2c6df81123e43dc1a3bd2f`, manifest SHA-256 `905319d54428d7c7c18f9a48057cfe7652c445431400e20ddeebd85b5d860e3d`, archive SHA-256 `527353b93cb5796fdf7a1878dc629966eed7417c1223b6fd6248040fa85491c4`, extracted-tree SHA-256 `2c3900f7d7a21876341ee39593216d528f71432dc3948efc00b492cfb1a897a4`, and owner SHA-256 `5b63c4582c53af39cf40aaabee66f4e803117dfb1638b8a0607bc41a6c52c752`.
+- **Actual local execution:** Post-freeze guarded source CI passed at execution checkout `834b84d40a6059c308303658bea8b83d9fb0e412`: architecture 15/0, Fast 2,170/0 with two property checks, and Integration 261/0. The locked package profile passed 14 receipts/33 cases; the floor profile passed 12 receipts/31 cases; strict composition passed 26 receipts/64 cases with zero failures. The executed checkout, reviewed candidate source, frozen runner, archive, and extracted tree are separate identities. Python-focused correction coverage is the actual 279/0 run at `69f2579c19516fd87ff92c812d952d8743998e05`; later Python-related input bytes were not all unchanged. JAR-focused correction coverage is 91/0 plus static 0 at `9062db51`; confidential-client focused coverage is 5/0 at `2ac1217c`. These are distinct focused runs, not a rerun of all Python/JAR gates at `834b84d`. `VPROOF-02` is complete for this local 1,078-input proof.
+- **Source acceptance:** `178-SOURCE-ACCEPTANCE.json` binds the actual execution checkout, current owned source manifest SHA-256 `b517c3fc7453ac0945cd0e63878e3a445c799b30079415ad7471040099378595`, and package acceptance SHA-256 `b13214ca5395658a43306ae95cc276a24100efa67cf74e143ad41ccf18799e4b`. Locked native index SHA-256 `c647ddf51591a342feec6337af78368864a8206875c807fb838c67cc5814dc28`; floor native index SHA-256 `c688e23f267e01a3bd63e17f146efabee82fa8dc43c489e2d708e8a26581d743`.
+- **Candidate relationship:** This corrective candidate advances the milestone beyond previously published head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`. The exact publication SHA is the reviewed PR head; source acceptance remains bound to the earlier execution checkout `834b84d4`, not a later publication metadata commit.
+- **Main snapshot:** A read-only refresh at 2026-10-28 13:02 UTC observed both `origin/main` and remote `main` at `173059a166e9ade0f5f57c9980b7b2400a98538c`. This is a ref observation only, not exact-main acceptance. Earlier main CI #40198968774 and Release #40198968751 succeeded on this SHA on 2026-10-25; release publication jobs were skipped. Supplemental scheduled OIDF run #40455602937 failed on that SHA and remains separately disclosed.
+- **Details:** See [current Plan 10 evidence](.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-SUMMARY.md), [source acceptance](.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SOURCE-ACCEPTANCE.json), [package acceptance](.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-PACKAGE-ACCEPTANCE.md), [frozen inputs](.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-FROZEN-INPUTS.json), and [delivery reconciliation](.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-DELIVERY.md).
+
+### Candidate CI and merge status
+
+The previously published PR head `4d512ae2c6a042e2b4557750eca2d49e57fb7189` failed required candidate CI. A fresh read-only job-metadata observation of run `40620643629`, attempt 1, confirms all seven jobs are terminal: Dialyzer, Fast Checks, Minimum Supported Elixir/OTP, and Integration Checks failed; Release Hygiene Drift and Adoption Demo Smoke succeeded; Complete Coverage Evidence was skipped. Dependency Review run `40620643727`, attempt 1, succeeded. These results apply only to the previous published head and do not validate the corrective candidate. Earlier bounded diagnostics and local corrections retain their own evidence; this refresh read no logs and triggered no workflow. The minimum job’s inner failure remains unknown, and the local typed-transport correction is not claimed to fix it.
+
+The previous head’s synthetic merge object reported by GitHub is `e5ea09406cbbf581a028dce0572ee4f594994ee0`, tree `20c69eacc567c87f6c16fc4251440573ae6b2854`, with parents `173059a166e9ade0f5f57c9980b7b2400a98538c` and `4d512ae2c6a042e2b4557750eca2d49e57fb7189`. This metadata object does not establish successful job or package qualification. Keep it distinct from reviewed source, frozen runner, actual tested checkout, and the corrective PR head.
+
+`VDELIV-01` remains pending a compatible passing seven-job candidate graph, complete coverage evidence, and milestone audit. `VDELIV-02` remains pending the dated main/delivery acceptance handoff and ranking refresh. Phase 178 Plan 11 is incomplete; Plan 12 has not started. E-09/E-10, historical database incidents, prior failures, and existing generic/descriptorless flags remain preserved and unwaived.
+
+### Delivery status
+
+The source-bound local proof and hosted candidate CI are separate evidence. The hosted job statuses below are pinned to the previously published PR head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`; they do not qualify this candidate. No passing hosted graph, main acceptance, merge authorization, release, or package publication is claimed here. Release Please remains the release-intent path after future authorized integration.
+
+## Private prepared body and publication record
+
+**Private PR body:** `/private/tmp/lockspire178-pr141-final-local-delivery/pr-body.md`
+
+**Body SHA-256:** Recorded in the private publication plan beside the exact final metadata HEAD and read-only ref snapshot.
+
+**Private publication plan:** `/private/tmp/lockspire178-pr141-final-local-delivery/publication-plan.json`
+
+The private plan records the exact proposed push SHA, preconditions, body hash, and next authorization boundary. The body explicitly distinguishes the failed hosted graph at old PR head `4d512ae` from local proof at its recorded execution checkout; no GitHub mutation is represented as already done.
+
+## Proposed future publication sequence — not executed
+
+1. Immediately before pushing, perform read-only checks that PR #141 remains open/non-draft on `milestone/v1.48-client-auth-key-isolation`, that both the remote branch and PR head are still exactly `4d512ae2c6a042e2b4557750eca2d49e57fb7189`, and that the base remains `main` at `173059a166e9ade0f5f57c9980b7b2400a98538c` with current `main` adequate. If these preconditions fail, stop and revise the proposal.
+2. After separate authorization, perform a **non-force** push of the exact proposed SHA recorded in the private publication plan to `refs/heads/milestone/v1.48-client-auth-key-isolation`.
+3. Read-only verify the remote branch and existing PR #141 head both equal that exact SHA and the PR remains open/non-draft. Only then, under explicit approval covering the body update as well as the push, replace the body of PR #141 with the exact private body file above.
+4. This proposal does not authorize a rerun or workflow dispatch, review request/submission, comment, merge, release, or package publication. The push's naturally triggered CI remains unobserved until separately read-only observed. Passing candidate gates and milestone audit remain required for VDELIV-01.
