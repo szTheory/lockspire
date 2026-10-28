@@ -1,10 +1,10 @@
 {
   "schema": "lockspire-phase178-independent-reviews-v1",
-  "implementation_revision": "69f2579c19516fd87ff92c812d952d8743998e05",
+  "implementation_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
   "lanes": {
     "source": {
       "reviewer_identity": "Codex independent source reviewer",
-      "reviewed_revision": "69f2579c19516fd87ff92c812d952d8743998e05",
+      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
       "reviewed_at": "2026-10-28",
       "verdict": "accepted",
       "findings": [
@@ -13,7 +13,7 @@
           "severity": "low",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "The wrapper now installs cleanup_early_raw_root immediately after mktemp creates raw_root, before test-tool environment validation can exit. It removes only that invocation-local directory and preserves the prior exit status unless cleanup fails; the later full EXIT cleanup handler replaces it. The new regression invokes the actual wrapper with an invalid timeout through an invocation-local TMPDIR, asserts fixed usage failure and closed outer process custody, verifies the private TMPDIR is empty, and asserts exactly one outer owned session was admitted (no nested child launch).",
+          "evidence": "The previously reported early raw_root cleanup gap remains fixed: the invocation-local EXIT trap precedes validation exits. The current selected JAR change guards the JOSE success tuple with is_binary(plain_text). For a wrong-recipient {:error, %JOSE.JWE{}} result, this match fails and the existing else branch continues reduction to the next key. The regression places a wrong RSA private key before the matching key and requires the matching binary plaintext; existing negative cases and envelope telemetry assertions were not changed.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -1039,7 +1039,7 @@
         },
         {
           "path": "lib/lockspire/protocol/jar.ex",
-          "sha256": "a48cc7a35755a66b905056abeca9b454fd3a904e586678ae483be53a85c8b0e5"
+          "sha256": "d1db66e9bf462de8a831a6e3262a80e68f7e51a1ff44d0749fafce4155503f9a"
         },
         {
           "path": "lib/lockspire/protocol/jarm.ex",
@@ -3431,7 +3431,7 @@
         },
         {
           "path": "test/lockspire/protocol/jar_test.exs",
-          "sha256": "594b88a4c1aa97db21f859beeb03a8929b38781dfb9a8aee2c06c88c373fbba8"
+          "sha256": "311b7f58329ec9753e877b4bc20b449e54ec95328ddee9ea647b549858870a55"
         },
         {
           "path": "test/lockspire/protocol/jarm_test.exs",
@@ -4334,12 +4334,12 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-69f2579.md",
-      "report_sha256": "e8e9c37d8faf85960d6c613ba9742fb26cfce79c2ee4b92c421ef8026091e22c"
+      "report_path": "178-SOURCE-REVIEW-dda5709.md",
+      "report_sha256": "09cbd9ad0ca744445f992491e7a942a9b324ab27d7fae3a2a9932ec09f480afd"
     },
     "security": {
       "reviewer_identity": "Codex security auditor /root/phase178_execution_workflow/review178_security8",
-      "reviewed_revision": "69f2579c19516fd87ff92c812d952d8743998e05",
+      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
       "reviewed_at": "2026-10-28",
       "verdict": "accepted",
       "findings": [
@@ -5437,7 +5437,7 @@
         },
         {
           "path": "lib/lockspire/protocol/jar.ex",
-          "sha256": "a48cc7a35755a66b905056abeca9b454fd3a904e586678ae483be53a85c8b0e5"
+          "sha256": "d1db66e9bf462de8a831a6e3262a80e68f7e51a1ff44d0749fafce4155503f9a"
         },
         {
           "path": "lib/lockspire/protocol/jarm.ex",
@@ -7829,7 +7829,7 @@
         },
         {
           "path": "test/lockspire/protocol/jar_test.exs",
-          "sha256": "594b88a4c1aa97db21f859beeb03a8929b38781dfb9a8aee2c06c88c373fbba8"
+          "sha256": "311b7f58329ec9753e877b4bc20b449e54ec95328ddee9ea647b549858870a55"
         },
         {
           "path": "test/lockspire/protocol/jarm_test.exs",
@@ -8732,21 +8732,33 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-69f2579.md",
-      "report_sha256": "19c4fc8ce441cbf19991ac0f077f4970719cc39c263bb0a5f99c6986a43ea817"
+      "report_path": "178-SECURITY-REVIEW-dda5709.md",
+      "report_sha256": "65ffedf878f4b52a9108b71774c2a4a0890f6ace062c1f70dddf04ebd90faf2c"
     },
     "integration": {
       "reviewer_identity": "Codex integration reviewer — gpt-6-luna/low — /root/phase178_execution_workflow/review178_integration5",
-      "reviewed_revision": "69f2579c19516fd87ff92c812d952d8743998e05",
+      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
       "reviewed_at": "2026-10-28",
       "verdict": "accepted",
       "findings": [
+        {
+          "id": "JAR-PLAINTEXT-SHAPE",
+          "severity": "low",
+          "status": "resolved",
+          "disposition": "rechecked-fixed",
+          "evidence": "Jar.decrypt/2 now requires binary plaintext before halting key iteration. The only production caller, RequestObject.decrypt_request/1, receives the preserved error result and maps it to invalid_request_object. The added wrong-recipient-then-matching-key case covers continuation; the existing no-decryption-key failure case remains.",
+          "files": [
+            "lib/lockspire/protocol/jar.ex",
+            "lib/lockspire/protocol/request_object.ex",
+            "test/lockspire/protocol/jar_test.exs"
+          ]
+        },
         {
           "id": "SRC-11",
           "severity": "low",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "The wrapper installs cleanup_early_raw_root immediately after allocating raw_root, before chmod and test-mode tool validation; after setup, the full cleanup_owned EXIT trap replaces it. The regression checks invalid configuration preserves status 64, removes the temporary directory, and admits no nested owned child.",
+          "evidence": "Previously accepted correction: the CI proof wrapper installs early raw_root cleanup before chmod and tool-configuration checks.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -9772,7 +9784,7 @@
         },
         {
           "path": "lib/lockspire/protocol/jar.ex",
-          "sha256": "a48cc7a35755a66b905056abeca9b454fd3a904e586678ae483be53a85c8b0e5"
+          "sha256": "d1db66e9bf462de8a831a6e3262a80e68f7e51a1ff44d0749fafce4155503f9a"
         },
         {
           "path": "lib/lockspire/protocol/jarm.ex",
@@ -12164,7 +12176,7 @@
         },
         {
           "path": "test/lockspire/protocol/jar_test.exs",
-          "sha256": "594b88a4c1aa97db21f859beeb03a8929b38781dfb9a8aee2c06c88c373fbba8"
+          "sha256": "311b7f58329ec9753e877b4bc20b449e54ec95328ddee9ea647b549858870a55"
         },
         {
           "path": "test/lockspire/protocol/jarm_test.exs",
@@ -13067,8 +13079,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-69f2579.md",
-      "report_sha256": "cad304c24d25f414c129ebdb77f935833812fd5c8c8c7b9e9185d7cb5f35d54a"
+      "report_path": "178-INTEGRATION-REVIEW-dda5709.md",
+      "report_sha256": "94d17c7426a60d13d7ec660eec2e31aeaa1d515eaf4ed5e616c67880e5a67f68"
     }
   }
 }

@@ -6,7 +6,7 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: executing
-stopped_at: Phase 178 current 1,078-input review accepted; fresh freeze and source/package qualification pending
+stopped_at: Phase 178 current 1,078-input JAR correction review accepted; fresh authenticated freeze and post-freeze qualification pending
 last_updated: "2026-10-28T02:25:31Z"
 last_activity: 2026-10-27
 last_activity_desc: Local Phase 178 correction execution is active; current VPROOF-02 qualification is pending and VDELIV-01/02 remain pending
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plans 01–10 and their prior qualifications remain historical evidence for their exact recorded inputs. The current 1,078-input correction at `69f2579c` has three accepted review lanes and passed native review validation. Fresh freeze, post-freeze canonical CI, and both fixed package profiles are still pending; `VPROOF-02` remains pending until those gates complete. The published PR #141 head remains the exact authorized SHA and is unchanged. Its candidate CI has failed jobs and pending/skipped jobs; `VDELIV-01` and `VDELIV-02` remain pending. No merge, further branch update, or publication is authorized.
+**Current focus:** Phase 178 Plans 01–10 and their prior qualifications remain historical evidence for their exact recorded inputs. The current 1,078-input JAR correction at `dda57096` has three accepted review lanes and passed native review validation. A fresh authenticated freeze, post-freeze canonical CI, and both fixed package profiles are pending; `VPROOF-02` remains pending until those gates complete. The earlier `a3882231` post-freeze CI failure (15/0, Fast Checks 2,169/2 with two properties; integration not reached) is preserved separately and its failure IDs were unavailable. The published PR #141 head remains the exact authorized SHA and is unchanged. Its candidate CI has failed jobs and pending/skipped jobs; `VDELIV-01` and `VDELIV-02` remain pending. No merge, further branch update, or publication is authorized.
 
 ## Current Position
 
@@ -35,7 +35,7 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; next plan not started; 10/12 plans complete
-Status: Current 1,077-input Plan 10 review lanes and frozen inputs passed validation; fresh locked/floor wrappers passed 14/33 and 12/31; strict composition passed 26/64; post-freeze canonical CI passed at execution checkout 90d17f17. PR #141 is open at exact approved head 4d512ae2; its synthetic merge object is e5ea0940. Candidate CI attempt 1 has three required failures, one in progress, one skipped, and two successes; Dependency Review passed. No candidate graph is green, and the milestone audit and main/delivery acceptance remain outstanding.
+Status: Current 1,078-input JAR correction review lanes passed native validation. Fresh freeze, current post-freeze canonical CI, and both package profiles remain pending. Prior 1,077-input successes and the earlier 1,078-input `a3882231` CI failure remain historical and separately identified. PR #141 remains at approved head `4d512ae2`; candidate CI and main/delivery acceptance remain incomplete. `VPROOF-02`, `VDELIV-01`, and `VDELIV-02` remain pending for the current correction epoch.
 Last activity: 2026-10-27 — Local Phase 178 correction pass started; current source qualification pending; PR #141 candidate CI incomplete; VDELIV-01/02 pending
 
 ## Performance Metrics
