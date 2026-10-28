@@ -34,6 +34,78 @@ import run_owned_source_tests as source_guard
 from verifier_input_closure import selected_path
 
 
+class ReviewedCandidateHistory(unittest.TestCase):
+    """The real candidate selector needs its frozen source objects in shallow CI checkouts."""
+
+    def git(self, cwd: Path, *args: str) -> str:
+        result = subprocess.run(("git", *args), cwd=cwd, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                check=False, timeout=20)
+        self.assertEqual(result.returncode, 0, "private Git fixture operation failed")
+        return result.stdout.decode("utf-8").strip()
+
+    def test_actual_candidate_source_selector_fails_shallow_then_accepts_required_history(self):
+        with tempfile.TemporaryDirectory(prefix="lockspire-candidate-history-") as directory:
+            root = Path(directory)
+            origin = root / "origin"
+            checkout = root / "shallow"
+            origin.mkdir()
+            self.git(origin, "init", "-q")
+            self.git(origin, "config", "user.name", "Lockspire Fixture")
+            self.git(origin, "config", "user.email", "fixture@example.invalid")
+
+            for relative in provisioner.verifier_delivery.PLANNING_INPUTS:
+                source = ROOT / relative
+                if source.is_file() and not source.is_symlink():
+                    target = origin / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(source, target)
+
+            self.git(origin, "add", "--all")
+            self.git(origin, "commit", "-qm", "frozen candidate source")
+            source_revision = self.git(origin, "rev-parse", "HEAD")
+
+            metadata = origin / ".metadata/runner"
+            metadata.parent.mkdir(parents=True, exist_ok=True)
+            metadata.write_text("runner-only metadata\n")
+            self.git(origin, "add", ".metadata/runner")
+            self.git(origin, "commit", "-qm", "workflow checkout metadata")
+            runner_revision = self.git(origin, "rev-parse", "HEAD")
+
+            subprocess.run(("git", "clone", "--depth=1", f"file://{origin}", str(checkout)),
+                           stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                           check=True, timeout=30)
+            phase = checkout / ".planning/phases/fixture-phase"
+            phase.mkdir(parents=True)
+            rows = []
+            with patch.object(provisioner.verifier_delivery, "ROOT", origin):
+                covered = provisioner.verifier_delivery.covered_inputs(source_revision)
+            for relative in covered:
+                content = subprocess.run(("git", "show", f"{source_revision}:{relative}"),
+                                         cwd=origin, stdin=subprocess.DEVNULL,
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                         check=True, timeout=20).stdout
+                rows.append({"path": relative, "sha256": hashlib.sha256(content).hexdigest()})
+            frozen = {
+                "schema": "lockspire-phase178-frozen-inputs-v1",
+                "closure_rule": provisioner.verifier_delivery.CLOSURE_RULE,
+                "runner_revision": source_revision,
+                "candidate_owner": {"source_revision": source_revision},
+                "covered_inputs": rows,
+            }
+            (phase / "178-FROZEN-INPUTS.json").write_text(json.dumps(frozen))
+
+            with patch.object(provisioner, "ROOT", checkout), \
+                    patch.object(provisioner.verifier_delivery, "ROOT", checkout), \
+                    patch.object(provisioner.verifier_delivery, "PHASE_NAME", "fixture-phase"):
+                with self.assertRaises(ValueError, msg="shallow checkout must fail closed"):
+                    provisioner.reviewed_candidate_source(runner_revision)
+
+                self.git(checkout, "fetch", "--deepen=1", "origin")
+                self.assertEqual(provisioner.reviewed_candidate_source(runner_revision), source_revision,
+                                 "required source history should make the same selector pass")
+
+
 class ExternalBoundaries:
     """Only OS/build/database/GitHub seams; real producers remain in control."""
     def __init__(self, repo):
