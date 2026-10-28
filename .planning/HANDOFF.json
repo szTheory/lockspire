@@ -1,0 +1,96 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-10-28T14:14:31.150Z",
+  "phase": "178",
+  "phase_name": "Packaged Upgrade Proof & Delivery Handoff",
+  "phase_dir": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff",
+  "plan": 11,
+  "task": 2,
+  "total_tasks": 2,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Approved exact33db push and PR141 body update",
+      "status": "done",
+      "commit": "33db5483"
+    },
+    {
+      "id": 2,
+      "name": "Qualify hosted candidate graph",
+      "status": "in_progress",
+      "progress": "CI40696973463 attempt1 terminal; Integration and Minimum failed; bounded read-only attribution complete. Local current 1078-input proof remains valid only for its recorded identities."
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": "11-corrections",
+      "name": "Correct security-contract tests and authenticated packaged-source ownership; refine unknown legacy/minimum diagnostics; validate affected inputs",
+      "status": "not_started"
+    },
+    {
+      "id": "11-efficiency",
+      "name": "Consider small cache/timing improvements; measure successful baseline before proof-job redesign",
+      "status": "not_started"
+    },
+    {
+      "id": "11-delivery",
+      "name": "Prepare concrete exact-SHA publication proposal, then obtain new remote authorization and passing candidate graph/audit",
+      "status": "not_started"
+    },
+    {
+      "id": "12",
+      "name": "Final integrated-main/delivery acceptance handoff",
+      "status": "not_started"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Integration: three tests conflict with intentional SQL/error redaction; fresh/custom explicit tar+SHA lacks source ownership required downstream. Legacy PackageInputError inner cause unknown.",
+      "type": "technical",
+      "workaround": "Preserve real cold-create/rollback/race assertions and strict source ownership; inspect finite diagnostic seam before legacy correction."
+    },
+    {
+      "description": "Minimum: producer host_startup_failed/native1/cleanup stopped; VM exit versus readiness deadline unknown. Listener opt-in is only a source hypothesis.",
+      "type": "technical",
+      "workaround": "Inspect/refine typed startup facts; do not infer VM exit or expose raw logs."
+    },
+    {
+      "description": "Coverage skipped and expected verifier pair artifacts absent; VDELIV-01/02 incomplete.",
+      "type": "technical",
+      "workaround": "Affected local requalification and future authorized complete hosted qualification, audit and main acceptance."
+    }
+  ],
+  "async_jobs": [],
+  "human_actions_pending": [
+    {
+      "action": "Authorize exact future remote updates only after corrected local SHA/body are concrete",
+      "context": "Earlier exact33db push/body actions are complete; no new remote mutation authorized. Existing local implementation/commit authorization persists.",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Keep secure redaction and authentic source ownership",
+      "rationale": "Hosted stale expectations/wiring must not weaken production security or proof authority.",
+      "phase": "178"
+    },
+    {
+      "decision": "Preserve immutable historical proof and unknown causes",
+      "rationale": "Distinct scopes/identities and finite observations prevent false success or diagnosis claims.",
+      "phase": "178"
+    },
+    {
+      "decision": "Prioritize cache save boundaries, coverage caching and Integration timing upload; defer proof-job restructuring",
+      "rationale": "Small recommendations need no new deps; larger parallelism affects runner minutes, isolation and seven-job acceptance contract. No implementation or percentage savings claimed.",
+      "phase": "178"
+    }
+  ],
+  "uncommitted_files": [
+    " M .planning/STATE.md",
+    "?? .planning/HANDOFF.json",
+    "?? .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md"
+  ],
+  "next_action": "Run $gsd-resume-work. Read phase .continue-here.md and 178-11-APPROVED-UPDATE-OUTCOME.json; reconcile actual Git/remote state read-only, then resume Plan11 local CI corrections. Targeted execution after restoration: $gsd-execute-phase 178 --wave 7. Do not repeat completed push/body actions or start Plan12.",
+  "context_notes": "Handoff for clearing conversation context, not phase completion. STATE.md stale continuity and operator next steps were corrected. Essential diagnosis/efficiency/safety/resource facts are repo-local; supplemental private temp evidence may expire and raw logs were deliberately released. Previous DB/cache/credentials removed; fresh private owned resources and run_owned_source_tests.py are mandatory before DB/Mix tests. Preserve user root archive. All six earlier agent lanes are terminal; no current async external job. Precommit uncommitted snapshot below includes only handoff-owned files and is committed together; expect a clean checkout afterward."
+}

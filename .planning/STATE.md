@@ -6,8 +6,8 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: executing
-stopped_at: Approved exact 33db push and PR 141 body update verified; new hosted Integration and Minimum failed; read-only attribution complete
-last_updated: "2026-10-28T14:00:27.096694+00:00"
+stopped_at: Context handoff saved; resume Plan 11 local CI corrections from approved 33db publication and terminal hosted attribution
+last_updated: "2026-10-28T14:14:31.150Z"
 last_activity: 2026-10-28
 last_activity_desc: Current 1,078-input VPROOF-02 local qualification completed; PR #141 remains at its exact authorized published head with terminal failed hosted jobs; VDELIV-01/02 pending
 state_head: 33db5483bc5aa06b4a51d2742e90fb8616cad7c2
@@ -155,14 +155,15 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-28T13:09:01Z
-Stopped at: Prepared local exact-SHA non-force push and verified-head PR #141 body-update proposal; awaiting separate authorization
-Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-EXECUTION-CHECKPOINT.md
-Next: If authorized, first verify PR #141, its branch, and current main satisfy the recorded preconditions; non-force push only the exact SHA in the private publication plan. Then verify branch and PR head equal that SHA before separately updating the existing PR body. Do not rerun/dispatch workflows, request reviews, comment, merge, release, or publish under that proposal. Plan 11 remains incomplete until required candidate gates and audit are addressed; Plan 12 has not started. Preserve Plan 10 and prior source/package receipts for their exact identities. VPROOF-02 is complete for current local proof; VDELIV-01/02 remain pending. Preserve historical failures, source database incidents, E-09/E-10, and synthetic-secret exposure records.
+Last session: 2026-10-28T14:14:31.150Z
+Stopped at: Approved exact 33db push and PR #141 body update completed; Integration and Minimum failed; attribution complete; context handoff prepared.
+Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
+Structured handoff: .planning/HANDOFF.json
+Next: Run `$gsd-resume-work` after clearing context. Read the handoff and `178-11-APPROVED-UPDATE-OUTCOME.json` before resuming Plan 11 local corrections. Do not repeat the completed push/body update. Preserve redaction, authenticated source ownership, exact historical proof identities, and unresolved legacy/minimum causes. Local implementation/commits were previously authorized; further remote mutations require separate authorization. CI efficiency recommendations are captured in the handoff and have not been implemented. Plan 11 and VDELIV-01/02 remain incomplete; Plan 12 has not started.
 
 ### Blockers
 
-None
+- Current published CI run 40696973463 attempt 1 failed Integration and Minimum; coverage aggregation was skipped and required verifier pair artifacts are absent. Legacy inner failure and minimum VM-exit versus readiness-timeout remain unknown. See the structured handoff for exact evidence and correction scope.
 
 ## Decisions
 
@@ -264,7 +265,7 @@ None
 
 ## Operator Next Steps
 
-- Continue Phase 178 Plan 11 local requalification from the synchronized main base. Preserve the existing Plan 10 receipts as evidence for their original 1,076-input frozen closure; do not retarget them to the expanded 1,077-input closure. Refresh source review, frozen inputs, source gate, and package evidence before restoring VPROOF-02 to complete.
+- Resume Phase 178 Plan 11 from `.continue-here.md`: correct known security-contract test expectations and authenticated packaged-source ownership; refine bounded diagnostics before fixing unknown legacy/minimum causes. Current 1,078-input local VPROOF-02 qualification is already complete for its exact recorded inputs. New covered-input changes need affected review/requalification; never retarget old receipts. Consider the recorded cache/timing improvements; defer proof-job restructuring until a successful measured baseline exists.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
 
 ## 2026-10-28T14:00:27.096694+00:00 — Approved PR Update / Hosted Qualification
