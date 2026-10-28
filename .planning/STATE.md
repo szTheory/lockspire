@@ -9,7 +9,7 @@ status: executing
 stopped_at: PR 141 opened at exact authorized SHA; automatic candidate CI is incomplete and not green
 last_updated: "2026-10-28T02:25:31Z"
 last_activity: 2026-10-27
-last_activity_desc: Authorized exact-SHA push and PR 141 creation completed; candidate CI has failures/pending jobs, and VDELIV-01/02 remain pending
+last_activity_desc: Local Phase 178 correction execution is active; current VPROOF-02 qualification is pending and VDELIV-01/02 remain pending
 state_head: 90d17f1741970287f6299eca6e6dc6865a64ae9c
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plans 01–10 are complete under the approved local evidence sequence. Plan 10 has current 1,077-input source-bound review, frozen package, guarded CI, and 26/64 profile evidence; the prior 1,076-input records remain historical. `VPROOF-02` is complete for the current closure. The user-authorized exact-SHA push and normal PR #141 creation are complete. Its actual candidate CI attempt has failed jobs and pending/skipped jobs; `VDELIV-01` and `VDELIV-02` remain pending. No merge, further branch update, or publication is authorized by the current boundary.
+**Current focus:** Phase 178 Plans 01–10 and their original qualifications remain historical evidence for their exact recorded inputs. A newly authorized local correction pass is changing covered source/dependency bytes; current `VPROOF-02` qualification is pending until new review, freeze, source checks and package proofs complete. The published PR #141 head remains the authorized exact SHA and is unchanged. Its actual candidate CI attempt has failed jobs and pending/skipped jobs; `VDELIV-01` and `VDELIV-02` remain pending. No merge, further branch update, or publication is authorized by the current boundary.
 
 ## Current Position
 
@@ -36,7 +36,7 @@ Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; next plan not started; 10/12 plans complete
 Status: Current 1,077-input Plan 10 review lanes and frozen inputs passed validation; fresh locked/floor wrappers passed 14/33 and 12/31; strict composition passed 26/64; post-freeze canonical CI passed at execution checkout 90d17f17. PR #141 is open at exact approved head 4d512ae2; its synthetic merge object is e5ea0940. Candidate CI attempt 1 has three required failures, one in progress, one skipped, and two successes; Dependency Review passed. No candidate graph is green, and the milestone audit and main/delivery acceptance remain outstanding.
-Last activity: 2026-10-27 — User-authorized exact SHA push and PR #141 open; candidate CI incomplete; VDELIV-01 and VDELIV-02 pending
+Last activity: 2026-10-27 — Local Phase 178 correction pass started; current source qualification pending; PR #141 candidate CI incomplete; VDELIV-01/02 pending
 
 ## Performance Metrics
 
@@ -158,7 +158,7 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 Last session: 2026-10-28T02:25:31Z
 Stopped at: PR #141 opened at exact approved SHA; record authentic candidate workflow failures and await next authorization
 Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-EXECUTION-CHECKPOINT.md
-Next: Review `.planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-DELIVERY.md` and `178-11-EXECUTION-CHECKPOINT.md`. The authorized push and PR creation are complete. Observe actual PR checks read-only; do not push local tracking metadata, rerun workflows, edit the published SHA, request review, comment, merge, or publish without separate authorization. Preserve historical failures, source database incidents, E-09/E-10, and synthetic-secret exposure records. VPROOF-02 is complete; VDELIV-01/02 remain pending.
+Next: Complete only the authorized local corrections and local review-ready checks. Preserve Plan 10 and prior source/package receipts as historical facts; do not restamp them for changed inputs. Current VPROOF-02 qualification is pending until the orchestrator's independent reviews, new freeze and final guarded CI/package proof. VDELIV-01/02 remain pending. Preserve historical failures, source database incidents, E-09/E-10, and synthetic-secret exposure records. No additional remote action is authorized.
 
 ### Blockers
 
