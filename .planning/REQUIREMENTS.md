@@ -87,7 +87,7 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-03 | Phase 177 | Complete |
 | VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
-| VPROOF-02 | Phase 178 | Reopened — HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01; corrected attribution and affected qualification required |
+| VPROOF-02 | Phase 178 | Reopened — source attribution correction accepted at50d; fresh affected native qualification required |
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 

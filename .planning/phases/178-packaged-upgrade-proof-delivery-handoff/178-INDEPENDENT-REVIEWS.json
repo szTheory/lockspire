@@ -1,51 +1,54 @@
 {
-  "implementation_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+  "implementation_revision": "50d67751a7844dee2f5f595195a6ab455e313fc6",
   "lanes": {
     "integration": {
       "findings": [
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The C332 blocker was confined to that exact target: the test patched lifetime_upgrade.tempfile although that attribute was absent. In C307, it patches saas_journey.tempfile, the same tempfile module global resolved by RetainableTemporaryDirectory.__enter__ in its defining module. The fixture now reaches the intended failure path and checks owned-root retention. C332 report bytes and its target-specific rejection remain preserved.",
+          "evidence": "The 50d delta leaves the previously reviewed disclosure attribution implementation unchanged. The added Credo configuration recognizes the existing in-memory capture ref/phase tags; committed caller and test bytes still emit and consume those exact keys. The parent reports actual 7db post-commit results of acceptance 289/0, clean-room 48/0, and real-handler ExUnit 1/0. This reviewer ran no tests.",
           "files": [
-            "test/clean_room/test_admin_journey.py",
-            "scripts/acceptance/clean_room/client_lifetime_upgrade.py"
+            ".credo.exs",
+            "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "test/lockspire/acceptance/verifier_disclosure_capture_test.exs"
           ],
-          "id": "INT-178-C332-TEST-ATTRIBUTE",
-          "severity": "medium",
-          "status": "resolved"
-        },
-        {
-          "disposition": "rechecked-fixed",
-          "evidence": "Rechecked: provider/client sessions are added to outer custody immediately after owned-session start; callback counter initialization failures attempt stop; cleanup tries every owned process, accepts absence only for its captured identity, gates DB drop on closure, and retains the root when process or DB cleanup is uncertain. Admin host cleanup likewise uses the captured identity and gates DB/root deletion on process closure. Historical 15e rejection is preserved.",
-          "files": [
-            "scripts/acceptance/clean_room_saas_journey.py",
-            "scripts/acceptance/clean_room_admin_journey.py",
-            "test/clean_room/test_admin_journey.py"
-          ],
-          "id": "INT-178-LIFECYCLE-CUSTODY-15E",
+          "id": "INT-178-DISCLOSURE-ATTRIBUTION",
           "severity": "high",
           "status": "resolved"
         },
         {
           "disposition": "later-owner",
-          "evidence": "This integration review verifies static cross-boundary wiring and records the parent-supplied pinned Python outcomes for this exact committed source. Fresh canonical source validation, installed package proof, packaged host proof, complete compatible hosted candidate CI, and integrated-main acceptance remain separate required evidence and are not established by these Python harness runs.",
+          "evidence": "The earlier C307 floor attempt still lacks a persisted rejection witness. The exact rejected predicate remains unknown; the 7db correction and this metadata-only Credo delta cannot reconstruct it.",
           "files": [
-            "scripts/ci/run_test_matrix.sh",
-            "scripts/ci/run_host_integration_proof.sh",
-            "scripts/acceptance/clean_room_admin_journey.py"
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "scripts/acceptance/clean_room/verifier_receipts.py"
           ],
-          "id": "FRESH-CANONICAL-PACKAGE-HOST-PROOF-PENDING",
+          "id": "INT-178-ORIGINAL-FLOOR-PREDICATE-UNKNOWN",
+          "severity": "info",
+          "status": "deferred"
+        },
+        {
+          "disposition": "later-owner",
+          "evidence": "Parent reports that the pinned full acceptance 289/0, clean-room 48/0, and handler 1/0 results apply to source 7db. On 50d, strict Credo, formatting, and diff checks are reported passing. No fresh source qualification, canonical/package/host acceptance, or phase completion is established by this review. Earlier broad unpinned failures remain historical and unattributed.",
+          "files": [
+            ".credo.exs",
+            "scripts/ci/run_test_matrix.sh",
+            "scripts/ci/run_verifier_upgrade_proof.sh",
+            "scripts/acceptance/clean_room_verifier_upgrade.py"
+          ],
+          "id": "INT-178-FRESH-SOURCE-QUALIFICATION-PENDING",
           "severity": "info",
           "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-307abd6.md",
-      "report_sha256": "6c3aabcc339c5adc4f7f47a7eef5b35aad926b05aaf057ff9a332986393d076a",
+      "report_path": "178-INTEGRATION-REVIEW-50d6775.md",
+      "report_sha256": "995e32b7738ffed086991d582b688a8705d76d28e8ecdbf8374572715d1308af",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
           "path": ".credo.exs",
-          "sha256": "3e083aabb5d778bbccd1582d366f66a92e3f1f1cdcc01345b486511f7cd45b24"
+          "sha256": "b0e25d2687afa2d432995db4fc522faaf77539b4bcaf585adebb8867b418a552"
         },
         {
           "path": ".dockerignore",
@@ -2125,7 +2128,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_disclosure.py",
-          "sha256": "a3e3b43cc9c34bb7e862845cb71c1bb63f0b06b5cee176d3c035d2d5dfa25427"
+          "sha256": "b17ae35db9e336516125da51f0d9043ff048f975ff4be28dc064e679cc241bcd"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_endpoints.py",
@@ -2141,7 +2144,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "ccc7ba020470dcd005c6b102e21413965cfb3cb1a8e6bc9c8a3fb6cb0c71315a"
+          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -2165,7 +2168,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room_verifier_upgrade.py",
-          "sha256": "04896e73cca15a28760b4c6e3e1e8f7cdb1fbb200bc5bab668e4f6cfc654289a"
+          "sha256": "4e6d868d4d2f6676dc320040733e89cea384644765bb11bf0d07ca10ea8bb191"
         },
         {
           "path": "scripts/acceptance/client_lifetime_receipts.py",
@@ -2393,15 +2396,15 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_chain_test.py",
-          "sha256": "7ae155f9fcd3e59278ef7bc5b305d05796ee278c77f622516ac890ed2a64cd42"
+          "sha256": "7fc839e1fe64f38b95b2795b33f8cf7f0eff90edb2fab36be8418fb168329557"
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "e9796b18a0bdb69bbd9dcb1a2833ebe4043c34bf6cc5f923140228aae95dfc75"
+          "sha256": "106f1ee8a01753b4391f260ea1115ec270b07d4e6f1eb5bb05105c1ce0224c70"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
-          "sha256": "9dcc2296290607853bc849aeb266825ac56c5fa044845a0bfcebd1164e1d6601"
+          "sha256": "c9fee83e31defcee67ec75526aac23af501261e3bc6233a0bb7e63dc933fbb93"
         },
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
@@ -2417,7 +2420,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_receipts_test.py",
-          "sha256": "4f727360be2399d84b579e03adcd5801e797e967b7e3fce36245f385157d9e2a"
+          "sha256": "ba6c762d464327e0a0bf94fe754b9b5436c65a169a915a98a522b0bdd5b4edbd"
         },
         {
           "path": "test/acceptance/client_verifier_recovery_test.py",
@@ -2601,7 +2604,7 @@
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-          "sha256": "26f8c9f13bd1a0a0297c0ea510d8a0aa996f1bfa793e0a3f0e62f2a448dd67b1"
+          "sha256": "97f8e9b3c2eb7fb9b553603984cb3d708d83065d8b14b32c6c0b1d353ce9ab96"
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
@@ -3034,6 +3037,10 @@
         {
           "path": "test/integration/signing_key_upgrade_journey_test.exs",
           "sha256": "4ca220ff82efe5bcf6c123545ef8c11f02803dfab5f2d1ddea61bb1eb2aaf99c"
+        },
+        {
+          "path": "test/lockspire/acceptance/verifier_disclosure_capture_test.exs",
+          "sha256": "f25e0adf975bea9052c222108874abbbac910dff745ac4af1a9666fdbd2a31aa"
         },
         {
           "path": "test/lockspire/access_token_test.exs",
@@ -4356,8 +4363,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
-      "reviewer_identity": "R178C307",
+      "reviewed_revision": "50d67751a7844dee2f5f595195a6ab455e313fc6",
+      "reviewer_identity": "R17850D6",
       "verdict": "accepted"
     },
     "security": {
@@ -4538,28 +4545,49 @@
           "status": "resolved"
         },
         {
-          "disposition": "fix-before-freeze",
-          "evidence": "Disclosure operation-query counts subtract a control from all observed Repo events, and Logger operation counts use an uncorrelated interval delta. Neither handler establishes operation ownership or phase. Sensitive production reads intentionally suppress telemetry and malformed-material classification need not mutate, so legitimate operation-query counts can be zero while unrelated activity can inflate claimed operation evidence. Validators nevertheless require positive operation-query counts. Replace aggregate inference with independently tagged observed controls and owner/reference/phase-correlated operation counts, allowing genuine zero operation events while preserving global zero-leak scans and every independent forced-failure, classification, HTTP, storage, audit, ciphertext and CLI witness. Version the changed semantics and test background/control inflation, ownership/phase exclusions, missing controls, legitimate zero events and leak rejection. The original rejected predicate remains unknown; subsequent passing executions do not resolve this evidence-integrity defect.",
+          "disposition": "rechecked-fixed",
+          "evidence": "The committed correction measures controls independently and attributes operation events by actual capture process, reference and phase. Query controls use Ecto metadata.options; Logger events retain emission metadata and origin PID; capture metadata is restored in try/after. Global leak scans remain independent of attribution. Current capture and receipt validators permit legitimate zero operation counts while requiring exact controls, bounded exact-integer counts, consistent totals, zero leaks and all independent domain, forced-failure, HTTP, storage, audit, ciphertext, CLI and redaction witnesses. The required channel_attribution string is now registered at verifier_receipts.py:422 and excluded from the success boolean-field set at :937; current semantics still require its exact version. Historical validation requires explicit selection and does not supply a current-receipt fallback. This closes the source mitigation gap for T-178-20/29; new installed runtime qualification remains separate, and the original rejected predicate remains unknown.",
           "files": [
-            "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-            "scripts/acceptance/clean_room/verifier_disclosure.py",
             "scripts/acceptance/clean_room/verifier_receipts.py",
-            "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
-            "lib/lockspire/admin/client_verifier_maintenance.ex",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "scripts/acceptance/clean_room_verifier_upgrade.py",
+            "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
             "test/acceptance/client_verifier_disclosure_test.py"
           ],
           "id": "SEC-178-DISCLOSURE-ATTRIBUTION-01",
           "severity": "high",
-          "status": "open"
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The actual-handler regression removes the unconditional on_exit ETS deletion and explicitly relies on table-owner process exit at verifier_disclosure_capture_test.exs:40. Its process/reference/phase attribution and background-leak assertions remain present. This corrects the source-confirmed test lifecycle defect without changing production capture semantics. The executor reports an after-commit actual-handler ExUnit result of 1/0; I did not execute runtime tests.",
+          "files": [
+            "test/lockspire/acceptance/verifier_disclosure_capture_test.exs"
+          ],
+          "id": "SEC-178-DISCLOSURE-HANDLER-TEST-01",
+          "severity": "medium",
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "At verifier_receipts.py:221-253, diagnostic count facts are sanitized to exact integers within DISCLOSURE_COUNT_MAX or null. Every numeric control, total-coverage and leak predicate derives from those sanitized values, so boolean/float numeric equivalence, negative values and oversized values cannot produce affirmative numeric facts. Current success/failure capture and receipt validators enforce the matching count bound. Adversarial regression cases cover boolean, float, negative and oversized inputs. Rejection records retain fixed predicate names and allowlisted scalar facts without arbitrary payload keys or messages.",
+          "files": [
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "test/acceptance/client_verifier_disclosure_test.py"
+          ],
+          "id": "SRC-15",
+          "severity": "medium",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-SECURITY-REOPENING-307abd6.md",
-      "report_sha256": "d6e62bf3a5067654a41b931e7ec048f4a6cb2ab6abf8da24cbdedd54fe246357",
+      "report_path": "178-SECURITY-REVIEW-50d6775.md",
+      "report_sha256": "c4f905ccbdfe0d07381fb34bb7a6622c72333de0a89e2d3d7134ac8237438493",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
           "path": ".credo.exs",
-          "sha256": "3e083aabb5d778bbccd1582d366f66a92e3f1f1cdcc01345b486511f7cd45b24"
+          "sha256": "b0e25d2687afa2d432995db4fc522faaf77539b4bcaf585adebb8867b418a552"
         },
         {
           "path": ".dockerignore",
@@ -6639,7 +6667,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_disclosure.py",
-          "sha256": "a3e3b43cc9c34bb7e862845cb71c1bb63f0b06b5cee176d3c035d2d5dfa25427"
+          "sha256": "b17ae35db9e336516125da51f0d9043ff048f975ff4be28dc064e679cc241bcd"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_endpoints.py",
@@ -6655,7 +6683,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "ccc7ba020470dcd005c6b102e21413965cfb3cb1a8e6bc9c8a3fb6cb0c71315a"
+          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -6679,7 +6707,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room_verifier_upgrade.py",
-          "sha256": "04896e73cca15a28760b4c6e3e1e8f7cdb1fbb200bc5bab668e4f6cfc654289a"
+          "sha256": "4e6d868d4d2f6676dc320040733e89cea384644765bb11bf0d07ca10ea8bb191"
         },
         {
           "path": "scripts/acceptance/client_lifetime_receipts.py",
@@ -6907,15 +6935,15 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_chain_test.py",
-          "sha256": "7ae155f9fcd3e59278ef7bc5b305d05796ee278c77f622516ac890ed2a64cd42"
+          "sha256": "7fc839e1fe64f38b95b2795b33f8cf7f0eff90edb2fab36be8418fb168329557"
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "e9796b18a0bdb69bbd9dcb1a2833ebe4043c34bf6cc5f923140228aae95dfc75"
+          "sha256": "106f1ee8a01753b4391f260ea1115ec270b07d4e6f1eb5bb05105c1ce0224c70"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
-          "sha256": "9dcc2296290607853bc849aeb266825ac56c5fa044845a0bfcebd1164e1d6601"
+          "sha256": "c9fee83e31defcee67ec75526aac23af501261e3bc6233a0bb7e63dc933fbb93"
         },
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
@@ -6931,7 +6959,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_receipts_test.py",
-          "sha256": "4f727360be2399d84b579e03adcd5801e797e967b7e3fce36245f385157d9e2a"
+          "sha256": "ba6c762d464327e0a0bf94fe754b9b5436c65a169a915a98a522b0bdd5b4edbd"
         },
         {
           "path": "test/acceptance/client_verifier_recovery_test.py",
@@ -7115,7 +7143,7 @@
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-          "sha256": "26f8c9f13bd1a0a0297c0ea510d8a0aa996f1bfa793e0a3f0e62f2a448dd67b1"
+          "sha256": "97f8e9b3c2eb7fb9b553603984cb3d708d83065d8b14b32c6c0b1d353ce9ab96"
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
@@ -7548,6 +7576,10 @@
         {
           "path": "test/integration/signing_key_upgrade_journey_test.exs",
           "sha256": "4ca220ff82efe5bcf6c123545ef8c11f02803dfab5f2d1ddea61bb1eb2aaf99c"
+        },
+        {
+          "path": "test/lockspire/acceptance/verifier_disclosure_capture_test.exs",
+          "sha256": "f25e0adf975bea9052c222108874abbbac910dff745ac4af1a9666fdbd2a31aa"
         },
         {
           "path": "test/lockspire/access_token_test.exs",
@@ -8870,9 +8902,9 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+      "reviewed_revision": "50d67751a7844dee2f5f595195a6ab455e313fc6",
       "reviewer_identity": "Codex security auditor /root/review_178_security",
-      "verdict": "rejected"
+      "verdict": "accepted"
     },
     "source": {
       "findings": [
@@ -8889,7 +8921,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Inherited operation-key separation fix is unchanged from the accepted 0b71 source review; the cold and cached context validation paths still include operation-level secret_key_base values in the forbidden verifier-key set.",
+          "evidence": "Inherited operation-key separation fix remains unchanged and applicable on the selected closure; cold and cached verifier contexts still reject operation secret_key_base overlap.",
           "files": [
             "lib/lockspire/security/client_secret_verifier/operation_context.ex",
             "lib/lockspire/clients/secret_material.ex",
@@ -8901,7 +8933,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The startup ownership handoff is retained immediately in STARTED_HOST_PROCESSES; teardown uses the captured original process identity and native stop_process_group helper, checks session absence, joins the callback reader before pipe close, attempts each stop, and gates DB/root cleanup. DPoP restart refuses replacement until stop is confirmed. Regressions cover registration/counter failure, cleanup gating, and leader exit with live descendant.",
+          "evidence": "Inherited process custody fix remains unchanged: started hosts are registered before counter setup, stop uses captured process identity and confirms session absence, the reader is joined before pipe close, and DB/root cleanup is gated.",
           "files": [
             "scripts/acceptance/clean_room_saas_journey.py",
             "scripts/acceptance/clean_room/package_input.py",
@@ -8913,7 +8945,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Run-root, mix-tmp, TMPDIR, origin, and database URL setup is inside the SaaS cleanup try/finally; the finally restores prior TMPDIR and origin environment values plus module origin globals. A regression injects failure after TMPDIR assignment and checks environment restoration and removal of the empty root. The test fixture now patches saas_journey.tempfile, the module that owns RetainableTemporaryDirectory; this exact owner correction resolves the missed module-attribute access from the earlier review.",
+          "evidence": "Inherited setup cleanup fix remains unchanged: SaaS run-root/TMPDIR/origin setup is inside a protected try/finally; prior environment and module origin values are restored on setup failure.",
           "files": [
             "scripts/acceptance/clean_room_saas_journey.py",
             "test/clean_room/test_admin_journey.py"
@@ -8921,15 +8953,43 @@
           "id": "SRC-14",
           "severity": "medium",
           "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "Finite rejection facts now derive numeric exactness from count fields after sanitization to exact int values within DISCLOSURE_COUNT_MAX. Boolean/float/negative/oversized mutations produce null counts and false attribution/total/zero predicates. Current capture and success receipt validators also enforce the same maximum. Regressions cover bool, float, negative, and oversized controls/counts.",
+          "files": [
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "test/acceptance/client_verifier_disclosure_test.py"
+          ],
+          "id": "SRC-15",
+          "severity": "medium",
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The capture protocol now uses a fresh reference, owner PID, and operation/control phase. Logger event attribution checks metadata PID/reference/phase; query controls use the actual Ecto telemetry options shape (Ecto SQL builds metadata.options from telemetry_options), and operation queries require owner-process Logger metadata with the same reference/phase. The capture helper restores prior Logger metadata in an after block. Counts include all observed log/query events, while only attributable events contribute to control/operation counts; sentinel scans remain broad. Current success/failure validators require the attribution marker and exact measured controls while permitting zero operation queries. Old receipt field shapes are accepted only through explicit historical_structure_only validation; historical fixture bytes remain unchanged and synthetic current-contract copies are modified only in temporary test trees.",
+          "files": [
+            "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "scripts/acceptance/clean_room/verifier_disclosure.py",
+            "test/lockspire/acceptance/verifier_disclosure_capture_test.exs",
+            "test/acceptance/client_verifier_disclosure_test.py",
+            "test/acceptance/client_verifier_delivery_chain_test.py",
+            "test/acceptance/client_verifier_delivery_test.py"
+          ],
+          "id": "SEC-178-DISCLOSURE-ATTRIBUTION-01",
+          "severity": "high",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-307abd6.md",
-      "report_sha256": "0f0f73b25e7d1605630b870d122f1cc1fef76c1c4efce9a3cac668b74eaf2b0c",
+      "report_path": "178-SOURCE-REVIEW-50d6775.md",
+      "report_sha256": "7cdfe67ec18dd8d7743630ad99bbcb85488ed547598fea5f546c632f1593e2f0",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
           "path": ".credo.exs",
-          "sha256": "3e083aabb5d778bbccd1582d366f66a92e3f1f1cdcc01345b486511f7cd45b24"
+          "sha256": "b0e25d2687afa2d432995db4fc522faaf77539b4bcaf585adebb8867b418a552"
         },
         {
           "path": ".dockerignore",
@@ -11009,7 +11069,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_disclosure.py",
-          "sha256": "a3e3b43cc9c34bb7e862845cb71c1bb63f0b06b5cee176d3c035d2d5dfa25427"
+          "sha256": "b17ae35db9e336516125da51f0d9043ff048f975ff4be28dc064e679cc241bcd"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_endpoints.py",
@@ -11025,7 +11085,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "ccc7ba020470dcd005c6b102e21413965cfb3cb1a8e6bc9c8a3fb6cb0c71315a"
+          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -11049,7 +11109,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room_verifier_upgrade.py",
-          "sha256": "04896e73cca15a28760b4c6e3e1e8f7cdb1fbb200bc5bab668e4f6cfc654289a"
+          "sha256": "4e6d868d4d2f6676dc320040733e89cea384644765bb11bf0d07ca10ea8bb191"
         },
         {
           "path": "scripts/acceptance/client_lifetime_receipts.py",
@@ -11277,15 +11337,15 @@
         },
         {
           "path": "test/acceptance/client_verifier_delivery_chain_test.py",
-          "sha256": "7ae155f9fcd3e59278ef7bc5b305d05796ee278c77f622516ac890ed2a64cd42"
+          "sha256": "7fc839e1fe64f38b95b2795b33f8cf7f0eff90edb2fab36be8418fb168329557"
         },
         {
           "path": "test/acceptance/client_verifier_delivery_test.py",
-          "sha256": "e9796b18a0bdb69bbd9dcb1a2833ebe4043c34bf6cc5f923140228aae95dfc75"
+          "sha256": "106f1ee8a01753b4391f260ea1115ec270b07d4e6f1eb5bb05105c1ce0224c70"
         },
         {
           "path": "test/acceptance/client_verifier_disclosure_test.py",
-          "sha256": "9dcc2296290607853bc849aeb266825ac56c5fa044845a0bfcebd1164e1d6601"
+          "sha256": "c9fee83e31defcee67ec75526aac23af501261e3bc6233a0bb7e63dc933fbb93"
         },
         {
           "path": "test/acceptance/client_verifier_endpoints_test.py",
@@ -11301,7 +11361,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_receipts_test.py",
-          "sha256": "4f727360be2399d84b579e03adcd5801e797e967b7e3fce36245f385157d9e2a"
+          "sha256": "ba6c762d464327e0a0bf94fe754b9b5436c65a169a915a98a522b0bdd5b4edbd"
         },
         {
           "path": "test/acceptance/client_verifier_recovery_test.py",
@@ -11485,7 +11545,7 @@
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
-          "sha256": "26f8c9f13bd1a0a0297c0ea510d8a0aa996f1bfa793e0a3f0e62f2a448dd67b1"
+          "sha256": "97f8e9b3c2eb7fb9b553603984cb3d708d83065d8b14b32c6c0b1d353ce9ab96"
         },
         {
           "path": "test/clean_room/provider_host/lib/clean_room_provider/verifier_recovery.ex",
@@ -11918,6 +11978,10 @@
         {
           "path": "test/integration/signing_key_upgrade_journey_test.exs",
           "sha256": "4ca220ff82efe5bcf6c123545ef8c11f02803dfab5f2d1ddea61bb1eb2aaf99c"
+        },
+        {
+          "path": "test/lockspire/acceptance/verifier_disclosure_capture_test.exs",
+          "sha256": "f25e0adf975bea9052c222108874abbbac910dff745ac4af1a9666fdbd2a31aa"
         },
         {
           "path": "test/lockspire/access_token_test.exs",
@@ -13240,7 +13304,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+      "reviewed_revision": "50d67751a7844dee2f5f595195a6ab455e313fc6",
       "reviewer_identity": "independent-phase178-source-reviewer",
       "verdict": "accepted"
     }

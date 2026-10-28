@@ -1,19 +1,51 @@
 {
-  "blocking_finding": "SEC-178-DISCLOSURE-ATTRIBUTION-01",
-  "current_packet_sha256": "7a329b3358cfdafa696a6bd155b1ead759762c6c1cc2e35e6e753e66af42ff1b",
-  "implementation_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
-  "native_validation": "rejected",
+  "current_packet_sha256": "ab30ca0f53feb64618909c3741bc2a40880962944d4ad102472e0ef696483e61",
+  "current_reports": {
+    "integration": {
+      "path": "178-INTEGRATION-REVIEW-50d6775.md",
+      "sha256": "995e32b7738ffed086991d582b688a8705d76d28e8ecdbf8374572715d1308af"
+    },
+    "security": {
+      "path": "178-SECURITY-REVIEW-50d6775.md",
+      "sha256": "c4f905ccbdfe0d07381fb34bb7a6622c72333de0a89e2d3d7134ac8237438493"
+    },
+    "source": {
+      "path": "178-SOURCE-REVIEW-50d6775.md",
+      "sha256": "7cdfe67ec18dd8d7743630ad99bbcb85488ed547598fea5f546c632f1593e2f0"
+    }
+  },
+  "delta": "Operation process/reference/phase attribution; independently measured controls; legitimate zero operation telemetry with all independent domain witnesses; broad leak detection; finite current attribution version and explicit non-authoritative historical-only mode; bounded sanitized predicate facts; ownership-correct handler regression; Credo-only capture-key exceptions, without formatter changes. Rejected cb923 and reopened C307 judgments retained unchanged.",
+  "implementation_revision": "50d67751a7844dee2f5f595195a6ab455e313fc6",
+  "native_validation": "accepted",
+  "preserved_review_history": [
+    {
+      "path": "178-SOURCE-REVIEW-cb923a3-rejected.md",
+      "sha256": "2b9e319b7b256892cb339ed0a9eacbbeac0e59c721da478621686a90d8958fef"
+    },
+    {
+      "path": "178-SECURITY-REVIEW-cb923a3-rejected.md",
+      "sha256": "ef2c94e8509be21c1960f738dcd6d7f45ef71ceb7c29331c6f2c6f6274601132"
+    },
+    {
+      "path": "178-SOURCE-REVIEW-7dbb166-prior-acceptance.md",
+      "sha256": "6cbb2063526b5d1a45e0e29eef42f1d5c997db088de3674b49a7e8fa93a92b67"
+    },
+    {
+      "path": "178-INTEGRATION-REVIEW-7dbb166-prior-acceptance.md",
+      "sha256": "fbdda3ec14851d0673de3fd5a8517f26a8d219ec1bd8cee7490f123d9166205b"
+    }
+  ],
   "previous_packet": {
-    "path": "178-INDEPENDENT-REVIEWS-307abd6-before-reopening.json",
-    "sha256": "63d8fe17daf00929583dfb9609f8c218fa858108cae0e5512410c08677843396"
+    "path": "178-INDEPENDENT-REVIEWS-307abd6-reopened.json",
+    "sha256": "7a329b3358cfdafa696a6bd155b1ead759762c6c1cc2e35e6e753e66af42ff1b"
   },
   "previous_reconciliation": {
-    "path": "178-11-REVIEW-RECONCILIATION-307abd6-before-reopening.json",
-    "sha256": "7365239b234e8d6af6eb787f1fdbb8e32fa7a80d0c73db67f1baf5953dd9f2cf"
+    "path": "178-11-REVIEW-RECONCILIATION-307abd6-reopened.json",
+    "sha256": "86ef04bf672c6cf3a4a9e9d9bf3cd7a739cbb2cd5445903cbb73f888a8ddcc9f"
   },
-  "runtime_limits": "C307 canonical/lifetime and old-contract locked14/33+floor12/31 outcomes retain their original identities. Passing aggregate counters cannot close the new high attribution finding. No corrected-contract package/source acceptance or new host qualification is claimed. Executor source fixes are uncommitted; current working tree is intentionally dirty and unqualified. Original floor rejected predicate stays UNKNOWN; old diagnostic token limitations, E-09/E-10, incidents and generic/descriptorless flags remain preserved.",
+  "runtime_limits": "Authoritative after-commit Python acceptance289/0, clean-room48/0 and actual-handler ExUnit1/0 ran at7dbb166; only.credo.exs changed in50d. Tested implementation/test/runtime-config bytes are identical, and results are retained at actual7db identities. Format/strictCredo/diff pass after50d commit. New canonical, package, current/minimum installed-host qualification remains pending. VPROOF-02 stays reopened until affected native qualification. Hosted candidate/main gates remain pending. Historical failures, original unknown rejected predicate,46992 unknown inner-child closure, E-09/E-10 and generic/descriptorless flags remain unwaived.",
   "schema": "lockspire-phase178-review-reconciliation-v1",
-  "scope_count": 1078,
-  "scope_sha256": "3c69f26fc866b2b242fb6ecd07da79dead39e1ed40eb50aa4737117a7d2982a5",
-  "security_author_byte_verification": "d6e62bf3a5067654a41b931e7ec048f4a6cb2ab6abf8da24cbdedd54fe246357"
+  "scope_count": 1079,
+  "scope_sha256": "b869b5c3e7a6642e5dcd30d7ceaae766a6dea992fb698c5af6c4c0f4a0b3b28f",
+  "security_author_byte_verification": "c4f905ccbdfe0d07381fb34bb7a6622c72333de0a89e2d3d7134ac8237438493"
 }

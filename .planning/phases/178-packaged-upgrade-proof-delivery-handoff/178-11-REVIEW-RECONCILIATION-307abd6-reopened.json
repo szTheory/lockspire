@@ -1,0 +1,19 @@
+{
+  "blocking_finding": "SEC-178-DISCLOSURE-ATTRIBUTION-01",
+  "current_packet_sha256": "7a329b3358cfdafa696a6bd155b1ead759762c6c1cc2e35e6e753e66af42ff1b",
+  "implementation_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+  "native_validation": "rejected",
+  "previous_packet": {
+    "path": "178-INDEPENDENT-REVIEWS-307abd6-before-reopening.json",
+    "sha256": "63d8fe17daf00929583dfb9609f8c218fa858108cae0e5512410c08677843396"
+  },
+  "previous_reconciliation": {
+    "path": "178-11-REVIEW-RECONCILIATION-307abd6-before-reopening.json",
+    "sha256": "7365239b234e8d6af6eb787f1fdbb8e32fa7a80d0c73db67f1baf5953dd9f2cf"
+  },
+  "runtime_limits": "C307 canonical/lifetime and old-contract locked14/33+floor12/31 outcomes retain their original identities. Passing aggregate counters cannot close the new high attribution finding. No corrected-contract package/source acceptance or new host qualification is claimed. Executor source fixes are uncommitted; current working tree is intentionally dirty and unqualified. Original floor rejected predicate stays UNKNOWN; old diagnostic token limitations, E-09/E-10, incidents and generic/descriptorless flags remain preserved.",
+  "schema": "lockspire-phase178-review-reconciliation-v1",
+  "scope_count": 1078,
+  "scope_sha256": "3c69f26fc866b2b242fb6ecd07da79dead39e1ed40eb50aa4737117a7d2982a5",
+  "security_author_byte_verification": "d6e62bf3a5067654a41b931e7ec048f4a6cb2ab6abf8da24cbdedd54fe246357"
+}
