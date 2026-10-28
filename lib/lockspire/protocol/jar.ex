@@ -42,7 +42,8 @@ defmodule Lockspire.Protocol.Jar do
         try do
           with {:ok, jwk_map} <- PrivateJwk.decode(key),
                {:ok, jwk} <- PrivateJwk.to_jwk(jwk_map),
-               {plain_text, %JOSE.JWE{}} <- JOSE.JWK.block_decrypt(jwt, jwk) do
+               {plain_text, %JOSE.JWE{}} when is_binary(plain_text) <-
+                 JOSE.JWK.block_decrypt(jwt, jwk) do
             {:halt, {:ok, plain_text}}
           else
             _ -> {:cont, {:error, :decryption_failed}}

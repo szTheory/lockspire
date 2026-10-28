@@ -32,6 +32,26 @@ defmodule Lockspire.Protocol.JarTest do
       assert plain_text == jws_compact
     end
 
+    test "continues past a wrong recipient key to decrypt with a later matching key" do
+      enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+      wrong_jwk = JOSE.JWK.generate_key({:rsa, 2048})
+      payload = "inner-request-object"
+
+      jwe = JOSE.JWE.block_encrypt(enc_jwk, payload, %{"alg" => "RSA-OAEP", "enc" => "A256GCM"})
+      {_, compact} = JOSE.JWE.compact(jwe)
+
+      keys =
+        for {kid, jwk} <- [{"wrong-recipient", wrong_jwk}, {"matching-recipient", enc_jwk}] do
+          %Lockspire.Domain.SigningKey{
+            kid: kid,
+            private_jwk_encrypted: :erlang.term_to_binary(JOSE.JWK.to_map(jwk) |> elem(1))
+          }
+        end
+
+      decrypted? = match?({:ok, ^payload}, Jar.decrypt(compact, keys))
+      assert decrypted?, "JAR did not continue from a wrong key to matching binary plaintext"
+    end
+
     test "returns {:error, :decryption_failed} if no provided keys can decrypt the JWE" do
       enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
       other_enc_jwk = JOSE.JWK.generate_key({:rsa, 2048})
