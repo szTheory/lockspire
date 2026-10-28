@@ -49,7 +49,8 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
     assert validation_step =~ "if: always()"
     assert validation_step =~ "test -s .artifacts/ci/client-lifetimes/receipt.json"
     assert validation_step =~ "test -s .artifacts/ci/client-lifetimes/validation.json"
-    assert validation_step =~ "EXPECTED_SOURCE_REVISION: ${{ github.sha }}"
+    assert validation_step =~
+             "EXPECTED_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}"
     assert validation_step =~ "validation[\"valid\"] is True"
     assert validation_step =~ "receipt[\"source_revision\"] == expected"
 

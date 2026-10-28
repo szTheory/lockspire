@@ -234,7 +234,8 @@ jobs:
           otp-version: ${{ env.MIN_OTP_VERSION }}
 
       - name: Restore Mix cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: mix-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             deps
@@ -281,6 +282,20 @@ jobs:
       - name: Compile exact Phoenix and LiveView compatibility fixture
         working-directory: compatibility/phoenix_1_8_live_view_1_1
         run: mix compile --warnings-as-errors
+
+      - name: Verify prepared minimum cache inputs
+        run: git diff --exit-code -- mix.lock compatibility/phoenix_1_8_live_view_1_1/mix.lock
+
+      - name: Save prepared minimum Mix cache before host proof
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+            tmp/lockspire-compatibility-fixture/deps
+            tmp/lockspire-compatibility-fixture/_build
+          key: ${{ steps.mix-cache.outputs.cache-primary-key }}
 
       - name: Restore floor host proof dependency cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -380,7 +395,8 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
 
       - name: Restore Mix cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: mix-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             deps
@@ -406,6 +422,20 @@ jobs:
       - name: Install dependencies
         run: mix deps.get --check-locked
 
+      - name: Compile current source and verify prepared cache inputs
+        run: |
+          mix compile --warnings-as-errors
+          git diff --exit-code -- mix.lock
+
+      - name: Save prepared integration Mix cache before tests
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ steps.mix-cache.outputs.cache-primary-key }}
+
       - name: Provision authenticated verifier candidate inputs
         id: verifier-candidate
         env:
@@ -427,7 +457,23 @@ jobs:
           exit 1
 
       - name: Run integration suite including onboarding and OIDC E2E proof
+        env:
+          LOCKSPIRE_FROZEN_INPUTS: .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
+          LOCKSPIRE_EXPECTED_FROZEN_MANIFEST_SHA256: ${{ steps.verifier-candidate.outputs.expected_manifest_sha256 }}
+          LOCKSPIRE_EXPECTED_FROZEN_RUNNER_REVISION: ${{ steps.verifier-candidate.outputs.expected_runner }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_ARCHIVE_SHA256: ${{ steps.verifier-candidate.outputs.expected_archive_sha256 }}
+          LOCKSPIRE_EXPECTED_CANDIDATE_TREE_SHA256: ${{ steps.verifier-candidate.outputs.expected_tree_sha256 }}
         run: CLEAN_ROOM_CACHE_ROOT="$GITHUB_WORKSPACE/tmp/clean-room-cache" bash scripts/ci/run_test_matrix.sh --integration .artifacts/ci/integration-timings.json .artifacts/ci/coverage/integration "${{ github.sha }}"
+
+      - name: Upload integration test timing
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: integration-test-timings-${{ github.sha }}
+          path: .artifacts/ci/integration-timings.json
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Run locked packaged host proof
         id: host-proof-locked
@@ -473,7 +519,7 @@ jobs:
         id: validate-client-lifetime-receipt
         if: always()
         env:
-          EXPECTED_SOURCE_REVISION: ${{ github.sha }}
+          EXPECTED_SOURCE_REVISION: ${{ steps.verifier-candidate.outputs.expected_candidate_source }}
         run: |
           test -s .artifacts/ci/client-lifetimes/receipt.json
           test -s .artifacts/ci/client-lifetimes/validation.json
@@ -553,6 +599,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    env:
+      MIX_ENV: test
+
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -563,8 +612,21 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
 
+      - name: Restore compatible test Mix cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            deps
+            _build
+          key: ${{ runner.os }}-mix-fast-v2-${{ env.OTP_VERSION }}-${{ env.ELIXIR_VERSION }}-${{ hashFiles('mix.lock') }}
+
       - name: Install dependencies
         run: mix deps.get --check-locked
+
+      - name: Compile current source before importing coverage
+        run: |
+          mix compile --warnings-as-errors
+          git diff --exit-code -- mix.lock
 
       - name: Download SHA-bound fast coverage evidence
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
