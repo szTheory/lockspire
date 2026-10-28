@@ -1,9 +1,9 @@
 {
   "candidate_owner": {
-    "archive_path": ".artifacts/phase178/refreeze-equivalent-8a90-vfz7yy_8/lockspire-1.6.1.tar",
-    "archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
-    "extracted_tree_path": ".artifacts/phase178/refreeze-equivalent-8a90-vfz7yy_8/lockspire",
-    "owner_sha256": "b5dc88de4fa124c8b42f198bfa7a92dab43ba66f660b09945acd06c4588a8f39",
+    "archive_path": ".artifacts/phase178/refreeze-69f-830ea67e854c/lockspire.tar",
+    "archive_sha256": "c33bbff8f4310fedb577ca76ecd086cd10905be677022f6e6de32d3a035b3d44",
+    "extracted_tree_path": ".artifacts/phase178/refreeze-69f-830ea67e854c/lockspire",
+    "owner_sha256": "04e0613f5b53fb41a004106713d38e6d9909bebe12b80c51fad476a59b0205e5",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -147,7 +147,7 @@
       },
       {
         "path": "hex_metadata.config",
-        "sha256": "f7d76d25d18efbdd0a1c3fcad7a145960edb2e1af61d524b2c1780f01dee4984"
+        "sha256": "54aaf353e1349c066cd1d99b0c71ce32c9d79de4454ad44de823feb0bfe9d1f0"
       },
       {
         "path": "lib/lockspire/access_token.ex",
@@ -155,7 +155,7 @@
       },
       {
         "path": "lib/lockspire/admin/client_verifier_maintenance.ex",
-        "sha256": "864a00d15650ec7cb9c9c12adbcbf6c2a277855c3312a14414030d17c423c783"
+        "sha256": "56ae95a8e87c806bcdc64e3756dbb852fa4a731f5669113eb0c4d99146b98156"
       },
       {
         "path": "lib/lockspire/admin/clients.ex",
@@ -235,7 +235,7 @@
       },
       {
         "path": "lib/lockspire/clients/secret_material.ex",
-        "sha256": "dedbc5a4f656cafcf27d430df913af4504bab14ad801a40588834ff4098dcbf1"
+        "sha256": "cc94a7fb75531a17259547ab084bf1b373a17c7c70e34b2eb4840f4a748082ee"
       },
       {
         "path": "lib/lockspire/clients.ex",
@@ -779,7 +779,7 @@
       },
       {
         "path": "lib/lockspire/security/client_secret_verifier.ex",
-        "sha256": "5de5962b3377b59d89da0830be0089aee8e6355f8bc504ac8b5c3690b912cb6d"
+        "sha256": "2a0e086d36127a4dc924f4efb12c09909cafe52c5d446d3c15d7cbe1b74999e4"
       },
       {
         "path": "lib/lockspire/security/device_code.ex",
@@ -899,7 +899,7 @@
       },
       {
         "path": "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
-        "sha256": "7ae21b0d90f0ce09eb5d99f7c7dcd8261ed22aea5a41c55ca2ed42feabde74b0"
+        "sha256": "dd490a98caab668521734cd3cb4559b57d3cc1ccd577c8a244ada1321c3adc62"
       },
       {
         "path": "lib/lockspire/storage/ecto/repository/consent_store.ex",
@@ -1347,7 +1347,7 @@
       },
       {
         "path": "mix.exs",
-        "sha256": "279fea652c2dc808ffecab1383ccd28d4dfda84e30ce800330b615018261d5c5"
+        "sha256": "09efcd188d5da453734b5b5c10c86ac23ff9aa3d602df7e0d0ca128da8ab9538"
       },
       {
         "path": "priv/repo/migrations/20260422000100_create_lockspire_core_tables.exs",
@@ -1566,14 +1566,14 @@
       "package_build_exit_code": 0,
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "package_stdout_bytes": 21255,
-      "package_stdout_sha256": "15a6321d42207b5d5772e2d30617676d8c81a24ea339cdea0d6e17db0802f7ab",
-      "rebuilt_archive_sha256": "f6f49878f81adb27493a3de4027b00e14995a13bb79b690b4bbf9c21e9d7423d",
-      "rebuilt_tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
+      "package_stdout_bytes": 21270,
+      "package_stdout_sha256": "6e676ae549d75426a9241c1afb54abc5fc2c2a4103dd2ed7f49e27b997c7731c",
+      "rebuilt_archive_sha256": "c33bbff8f4310fedb577ca76ecd086cd10905be677022f6e6de32d3a035b3d44",
+      "rebuilt_tree_sha256": "048587c5db213ba97b446e38e2e709c339637bc071a5d42e7be7f2308cb3a15a"
     },
-    "source_revision": "8a90a0a833a25d5a6b5f6af6525ba818e577df61",
-    "source_tree": "70338617919209f05458b1e52ccfd0319ab1a9e4",
-    "tree_sha256": "edef4f97132d62cefa7816ef9daeb8f826bc3a2b5c591e2a8c592a45e453b475"
+    "source_revision": "69f2579c19516fd87ff92c812d952d8743998e05",
+    "source_tree": "5d6955ca60640b7657beff53567ac24b7f97c24a",
+    "tree_sha256": "048587c5db213ba97b446e38e2e709c339637bc071a5d42e7be7f2308cb3a15a"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
   "covered_inputs": [
@@ -1615,7 +1615,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "96ec6d02679d1887d47cfe37d5ecd74f7c371f219502d21b3e3acccf676e935b"
+      "sha256": "b65f62e3fe449ec6f89d27d50414c2524535424fa7e472887ac80bf65ca87c3f"
     },
     {
       "path": ".github/workflows/dependency-review.yml",
@@ -1879,7 +1879,7 @@
     },
     {
       "path": "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
-      "sha256": "74212156d931add8c5acae6ad67928d08951a6c698cc6f29fec88992af38a954"
+      "sha256": "cc645549fed4a389d8a9d7d3c09f5993c3072ca268537c0c18951b49763ebafd"
     },
     {
       "path": "compatibility/phoenix_1_8_live_view_1_1/test/admin_host_runtime_test.exs",
@@ -2167,7 +2167,7 @@
     },
     {
       "path": "examples/adoption_demo/mix.lock",
-      "sha256": "af21ad9c3ab4974b94d38db62aa8c58aa3802dfc35990d527f043997666a2f53"
+      "sha256": "c8b966ea3ac49a7cff8c00e90c7d50940326c74fa3fdc90241145caa831a2415"
     },
     {
       "path": "examples/adoption_demo/priv/repo/conformance_seeds.exs",
@@ -2199,7 +2199,7 @@
     },
     {
       "path": "lib/lockspire/admin/client_verifier_maintenance.ex",
-      "sha256": "864a00d15650ec7cb9c9c12adbcbf6c2a277855c3312a14414030d17c423c783"
+      "sha256": "56ae95a8e87c806bcdc64e3756dbb852fa4a731f5669113eb0c4d99146b98156"
     },
     {
       "path": "lib/lockspire/admin/clients.ex",
@@ -2279,7 +2279,7 @@
     },
     {
       "path": "lib/lockspire/clients/secret_material.ex",
-      "sha256": "dedbc5a4f656cafcf27d430df913af4504bab14ad801a40588834ff4098dcbf1"
+      "sha256": "cc94a7fb75531a17259547ab084bf1b373a17c7c70e34b2eb4840f4a748082ee"
     },
     {
       "path": "lib/lockspire/config.ex",
@@ -2807,7 +2807,7 @@
     },
     {
       "path": "lib/lockspire/security/client_secret_verifier.ex",
-      "sha256": "5de5962b3377b59d89da0830be0089aee8e6355f8bc504ac8b5c3690b912cb6d"
+      "sha256": "2a0e086d36127a4dc924f4efb12c09909cafe52c5d446d3c15d7cbe1b74999e4"
     },
     {
       "path": "lib/lockspire/security/client_secret_verifier/context.ex",
@@ -2943,7 +2943,7 @@
     },
     {
       "path": "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex",
-      "sha256": "7ae21b0d90f0ce09eb5d99f7c7dcd8261ed22aea5a41c55ca2ed42feabde74b0"
+      "sha256": "dd490a98caab668521734cd3cb4559b57d3cc1ccd577c8a244ada1321c3adc62"
     },
     {
       "path": "lib/lockspire/storage/ecto/repository/consent_store.ex",
@@ -3391,11 +3391,11 @@
     },
     {
       "path": "mix.exs",
-      "sha256": "279fea652c2dc808ffecab1383ccd28d4dfda84e30ce800330b615018261d5c5"
+      "sha256": "09efcd188d5da453734b5b5c10c86ac23ff9aa3d602df7e0d0ca128da8ab9538"
     },
     {
       "path": "mix.lock",
-      "sha256": "5baa6a78be65857defb11fc4fc26b271460c80d259e65a3ae4aebd6ac5962f28"
+      "sha256": "e2ccf31448cc00917e4b2af0ab780afeac99b094b6ad73be12ad411637b8aca5"
     },
     {
       "path": "priv/repo/migrations/20260422000100_create_lockspire_core_tables.exs",
@@ -3691,7 +3691,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room_admin_journey.py",
-      "sha256": "ba95b2f296a8bcbde24cc062c52bfabbd0a7494305d561edbf85a042724d3bd8"
+      "sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131"
     },
     {
       "path": "scripts/acceptance/clean_room_saas_journey.py",
@@ -3747,7 +3747,7 @@
     },
     {
       "path": "scripts/ci/run_host_integration_proof.sh",
-      "sha256": "b358e7979e16d9cedc5120da38757dc2957b778a4a146f0e4148b8d857aa053b"
+      "sha256": "5f041f7dfdf0f08d1bbebd1b51afa642e2dbb88673307f64aca18ed7f72a72a7"
     },
     {
       "path": "scripts/ci/run_owned_source_tests.py",
@@ -3882,6 +3882,10 @@
       "sha256": "1974adb614b129a90796686a850a7eeb1432c21fce485716f9d56af5a76428fc"
     },
     {
+      "path": "test/acceptance/client_admin_failure_transport_test.py",
+      "sha256": "e79d18bf886908f02bee54d3606ff600834b68050eae6c8aa6ad17d67fea4cb6"
+    },
+    {
       "path": "test/acceptance/client_frozen_package_layout_test.py",
       "sha256": "41ce459d505279e5c90a61cd477ad8a85b8ee90b6f574bfac5f97cd8114b8f44"
     },
@@ -3923,11 +3927,11 @@
     },
     {
       "path": "test/acceptance/client_verifier_delivery_chain_test.py",
-      "sha256": "f61c868024fb3e043750b0fefde696ea10876214558cbc76ea20b10fd752fe31"
+      "sha256": "7ae155f9fcd3e59278ef7bc5b305d05796ee278c77f622516ac890ed2a64cd42"
     },
     {
       "path": "test/acceptance/client_verifier_delivery_test.py",
-      "sha256": "d4dac4b5fe3986188744da443cc8259450e91a79ed22eecf8a7351ea03368f06"
+      "sha256": "e9796b18a0bdb69bbd9dcb1a2833ebe4043c34bf6cc5f923140228aae95dfc75"
     },
     {
       "path": "test/acceptance/client_verifier_disclosure_test.py",
@@ -3947,7 +3951,7 @@
     },
     {
       "path": "test/acceptance/client_verifier_receipts_test.py",
-      "sha256": "587248171ce59023b26b3587080412c0e10732c6f79f07c579c3b2465f3352f3"
+      "sha256": "4f727360be2399d84b579e03adcd5801e797e967b7e3fce36245f385157d9e2a"
     },
     {
       "path": "test/acceptance/client_verifier_recovery_test.py",
@@ -3991,7 +3995,7 @@
     },
     {
       "path": "test/acceptance/verifier_owner_fixture.py",
-      "sha256": "a292c51499c778dbac85f847dbd45d1d0dbaefab0edff83050ba2998bc0a207c"
+      "sha256": "75427789889e5ba66f07c49db823b6f8b40cf88d33abfff213008bb4890b3b04"
     },
     {
       "path": "test/browser/admin_multi_value_test.mjs",
@@ -4163,7 +4167,7 @@
     },
     {
       "path": "test/clean_room/provider_host/mix.lock",
-      "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+      "sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa"
     },
     {
       "path": "test/clean_room/provider_host/verifier_endpoints.exs",
@@ -4571,7 +4575,7 @@
     },
     {
       "path": "test/lockspire/admin/client_verifier_maintenance_test.exs",
-      "sha256": "501095142e1ec866c43c3467a58b0542d663e12e7d86a9b291951965a71bd350"
+      "sha256": "76b65454a3a3cbc0ac3a4d39c348171f2bf09b70b2c6642fb1daa70628ea5adc"
     },
     {
       "path": "test/lockspire/admin/clients_test.exs",
@@ -4675,7 +4679,7 @@
     },
     {
       "path": "test/lockspire/clients_secret_material_test.exs",
-      "sha256": "15d3bd3543f391e24dd196973c90717fddf1d0718e1096a7c67889bcc5007201"
+      "sha256": "617bc17f5d24e679cb1fb2fde9703fac72540a8671202f68e5c8a7d1b426d0bb"
     },
     {
       "path": "test/lockspire/clients_test.exs",
@@ -5227,7 +5231,7 @@
     },
     {
       "path": "test/lockspire/security/client_secret_verifier_test.exs",
-      "sha256": "01cb8e63ef4a6b42038477714bcd18bb5e40cd21fda3455b39acf910c88bc221"
+      "sha256": "d2b8e49e58373a41f3ecea4632380f304db98c1ef119d9c35d39343da3fb1ce7"
     },
     {
       "path": "test/lockspire/security/device_code_test.exs",
@@ -5886,8 +5890,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-27T20:15:32.095126+00:00",
-  "runner_revision": "6b1fc33cec26560601628c6e44f8c41ac3aa064b",
-  "runner_tree": "bd754914039fb79cdf539bddb2820191a10c1885",
+  "frozen_at": "2026-10-28T06:33:37.868750+00:00",
+  "runner_revision": "84c2a1fed14f7fb5128f9aba045cb4a896a3dc00",
+  "runner_tree": "33c0560a3e052c78f8e34d69c32cac425ec34ac2",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
