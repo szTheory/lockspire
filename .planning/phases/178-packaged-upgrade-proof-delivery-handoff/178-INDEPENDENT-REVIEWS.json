@@ -1,25 +1,22 @@
 {
   "schema": "lockspire-phase178-independent-reviews-v1",
-  "implementation_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
+  "implementation_revision": "fefe8a7d948252293d7ffac7b8b20748d070d5bb",
   "lanes": {
     "source": {
-      "reviewer_identity": "Codex independent source reviewer",
-      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
-      "reviewed_at": "2026-10-28",
-      "verdict": "accepted",
       "findings": [
         {
-          "id": "SRC-11",
-          "severity": "low",
-          "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "The previously reported early raw_root cleanup gap remains fixed: the invocation-local EXIT trap precedes validation exits. The current selected JAR change guards the JOSE success tuple with is_binary(plain_text). For a wrong-recipient {:error, %JOSE.JWE{}} result, this match fails and the existing else branch continues reduction to the next key. The regression places a wrong RSA private key before the matching key and requires the matching binary plaintext; existing negative cases and envelope telemetry assertions were not changed.",
+          "evidence": "The wrapper now installs cleanup_early_raw_root immediately after mktemp creates raw_root, before test-tool environment validation can exit. It removes only that invocation-local directory and preserves the prior exit status unless cleanup fails; the later full EXIT cleanup handler replaces it. The new regression invokes the actual wrapper with an invalid timeout through an invocation-local TMPDIR, asserts fixed usage failure and closed outer process custody, verifies the private TMPDIR is empty, and asserts exactly one outer owned session was admitted (no nested child launch).",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
-          ]
+          ],
+          "id": "SRC-11",
+          "severity": "low",
+          "status": "resolved"
         }
       ],
+      "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
           "path": ".credo.exs",
@@ -2059,7 +2056,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/build_client.py",
-          "sha256": "8e96381f0be1904f1177721354444c62990a9822144a567f56b5c4fda36e5c11"
+          "sha256": "fe336b39e01e42565feceef976e1c015af2791871a71bae0859e75f726dcf826"
         },
         {
           "path": "scripts/acceptance/clean_room/build_provider.py",
@@ -2523,11 +2520,11 @@
         },
         {
           "path": "test/clean_room/confidential_client/mix.exs",
-          "sha256": "59010018da14ad1f64cfa5daf9701acdb5cc8abc0c22a6c7673cc0527414d0a3"
+          "sha256": "fce29c3d943c3a906cbdf1910b71479d2e3c6b47a4b1289cbbe608b0ac28e2e3"
         },
         {
           "path": "test/clean_room/confidential_client/mix.lock",
-          "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+          "sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa"
         },
         {
           "path": "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
@@ -4334,12 +4331,15 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-dda5709.md",
-      "report_sha256": "09cbd9ad0ca744445f992491e7a942a9b324ab27d7fae3a2a9932ec09f480afd"
+      "reviewed_revision": "fefe8a7d948252293d7ffac7b8b20748d070d5bb",
+      "reviewer_identity": "Independent Phase178 source reviewer",
+      "verdict": "accepted",
+      "report_path": "178-SOURCE-REVIEW-fefe8a7-corrected.md",
+      "report_sha256": "497c6860239b358be19dcad181ece33f103f6a9ed36600e62af995494b259855"
     },
     "security": {
       "reviewer_identity": "Codex security auditor /root/phase178_execution_workflow/review178_security8",
-      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
+      "reviewed_revision": "fefe8a7d948252293d7ffac7b8b20748d070d5bb",
       "reviewed_at": "2026-10-28",
       "verdict": "accepted",
       "findings": [
@@ -6457,7 +6457,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/build_client.py",
-          "sha256": "8e96381f0be1904f1177721354444c62990a9822144a567f56b5c4fda36e5c11"
+          "sha256": "fe336b39e01e42565feceef976e1c015af2791871a71bae0859e75f726dcf826"
         },
         {
           "path": "scripts/acceptance/clean_room/build_provider.py",
@@ -6921,11 +6921,11 @@
         },
         {
           "path": "test/clean_room/confidential_client/mix.exs",
-          "sha256": "59010018da14ad1f64cfa5daf9701acdb5cc8abc0c22a6c7673cc0527414d0a3"
+          "sha256": "fce29c3d943c3a906cbdf1910b71479d2e3c6b47a4b1289cbbe608b0ac28e2e3"
         },
         {
           "path": "test/clean_room/confidential_client/mix.lock",
-          "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+          "sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa"
         },
         {
           "path": "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
@@ -8732,21 +8732,31 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-dda5709.md",
-      "report_sha256": "65ffedf878f4b52a9108b71774c2a4a0890f6ace062c1f70dddf04ebd90faf2c"
+      "report_path": "178-SECURITY-REVIEW-fefe8a7.md",
+      "report_sha256": "b217a48698ae5d7e6127ef0691138fc055ee629d693855e96bc4a6e0abf41de9"
     },
     "integration": {
       "reviewer_identity": "Codex integration reviewer — gpt-6-luna/low — /root/phase178_execution_workflow/review178_integration5",
-      "reviewed_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
+      "reviewed_revision": "fefe8a7d948252293d7ffac7b8b20748d070d5bb",
       "reviewed_at": "2026-10-28",
       "verdict": "accepted",
       "findings": [
+        {
+          "id": "CLIENT-JOSE-LOCK-COMMENT",
+          "severity": "info",
+          "status": "resolved",
+          "disposition": "rechecked-fixed",
+          "evidence": "The stale fixture version comment now states JOSE 1.11.13, matching the confidential-client manifest and lock. The edit is AST-equivalent to its parent.",
+          "files": [
+            "scripts/acceptance/clean_room/build_client.py"
+          ]
+        },
         {
           "id": "JAR-PLAINTEXT-SHAPE",
           "severity": "low",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "Jar.decrypt/2 now requires binary plaintext before halting key iteration. The only production caller, RequestObject.decrypt_request/1, receives the preserved error result and maps it to invalid_request_object. The added wrong-recipient-then-matching-key case covers continuation; the existing no-decryption-key failure case remains.",
+          "evidence": "Previously accepted correction: Jar.decrypt/2 requires binary plaintext before halting key iteration, and its only production caller maps decryption failure to invalid_request_object.",
           "files": [
             "lib/lockspire/protocol/jar.ex",
             "lib/lockspire/protocol/request_object.ex",
@@ -8758,7 +8768,7 @@
           "severity": "low",
           "status": "resolved",
           "disposition": "rechecked-fixed",
-          "evidence": "Previously accepted correction: the CI proof wrapper installs early raw_root cleanup before chmod and tool-configuration checks.",
+          "evidence": "Previously accepted correction: the host integration wrapper installs early raw_root cleanup before chmod and tool-configuration checks.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -10804,7 +10814,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/build_client.py",
-          "sha256": "8e96381f0be1904f1177721354444c62990a9822144a567f56b5c4fda36e5c11"
+          "sha256": "fe336b39e01e42565feceef976e1c015af2791871a71bae0859e75f726dcf826"
         },
         {
           "path": "scripts/acceptance/clean_room/build_provider.py",
@@ -11268,11 +11278,11 @@
         },
         {
           "path": "test/clean_room/confidential_client/mix.exs",
-          "sha256": "59010018da14ad1f64cfa5daf9701acdb5cc8abc0c22a6c7673cc0527414d0a3"
+          "sha256": "fce29c3d943c3a906cbdf1910b71479d2e3c6b47a4b1289cbbe608b0ac28e2e3"
         },
         {
           "path": "test/clean_room/confidential_client/mix.lock",
-          "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+          "sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa"
         },
         {
           "path": "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
@@ -13079,8 +13089,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-dda5709.md",
-      "report_sha256": "94d17c7426a60d13d7ec660eec2e31aeaa1d515eaf4ed5e616c67880e5a67f68"
+      "report_path": "178-INTEGRATION-REVIEW-fefe8a7.md",
+      "report_sha256": "e3adc839d3e97bfc7d318530aa02abf137d787e9afcb70015ae8cdc820c1a501"
     }
   }
 }
