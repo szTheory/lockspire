@@ -409,7 +409,7 @@ _OBSERVATION_STRINGS = frozenset({
     "outcome", "configured_issuer", "discovered_issuer", "assertion_audience", "rejected_audience_uri",
     "stale_error_code", "replay_error_code", "fresh_error_code", "missing_key_error_code",
     "old_secret_after_rotation_error_code", "new_secret_after_rotation_error_code",
-    "scenario", "reason", "operation_result", "http_error_code", "process_pid", "release_node",
+    "channel_attribution", "scenario", "reason", "operation_result", "http_error_code", "process_pid", "release_node",
     "rpc_invocation", "check_invocation", "task_local_invocation", "compiled_module_relative_path",
     "compiled_module_sha256", "startup_context_source", "task_local_context_source",
     "startup_current_key_id", "task_local_current_key_id",
@@ -924,7 +924,7 @@ def _validate_receipt_structure(
                 "outcome", "executed", "http_status", "logger_event_count", "query_event_count",
                 "logger_control_event_count", "logger_operation_event_count",
                 "query_control_event_count", "query_operation_event_count",
-                "logger_leak_count", "query_leak_count", "output_leak_count",
+                "logger_leak_count", "query_leak_count", "output_leak_count", "channel_attribution",
             }
             if receipt["scope"] == "disclosure"
             else frozenset()

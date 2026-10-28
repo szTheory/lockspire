@@ -490,6 +490,14 @@ class ComposedMatrixContracts(unittest.TestCase):
             for path in root.rglob("*.json"):
                 raw = json.loads(path.read_text())
                 raw["runtime"] = dict(context["runtime"])
+                if raw.get("scope") in {"disclosure", "disclosure-failure"}:
+                    # These copied v26 files are structural fixtures, not historical proof.
+                    # Rebuild their current-contract channel claim explicitly for this
+                    # synthetic owner-composition test; the retained fixtures stay untouched.
+                    for observation in raw["observations"].values():
+                        observation["channel_attribution"] = verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION
+                        observation["logger_operation_event_count"] = 0
+                        observation["query_operation_event_count"] = 0
                 path.write_text(json.dumps(raw))
             context_env = write_context(root, context)
             with retained_lock_context(parent), patch.dict(os.environ, context_env), redirect_stdout(StringIO()), redirect_stderr(StringIO()):

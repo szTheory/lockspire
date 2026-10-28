@@ -359,6 +359,14 @@ class ActualEndToEndDelivery(unittest.TestCase):
                                          tree_sha256=candidate[2], source_proof=proof, runner_revision=runner)
                 (raw["candidate"] if rollout else raw["host"])["vendor_tree_sha256"] = candidate[2]
                 raw["runtime"] = dict(context["runtime"])
+                if raw.get("scope") in {"disclosure", "disclosure-failure"}:
+                    # The copied v26 records are synthetic owner-composition inputs here.
+                    # Keep the retained historical fixtures unchanged and explicitly
+                    # project these copies onto the current finite capture contract.
+                    for observation in raw["observations"].values():
+                        observation["channel_attribution"] = receipts.DISCLOSURE_CHANNEL_ATTRIBUTION
+                        observation["logger_operation_event_count"] = 0
+                        observation["query_operation_event_count"] = 0
                 path.write_text(json.dumps(raw, sort_keys=True) + "\n")
             with patch.dict(os.environ, {"LOCKSPIRE_RECEIPT_OWNER": str(context_path),
                                         "LOCKSPIRE_EXPECTED_RECEIPT_OWNER_SHA256": context_digest}), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
