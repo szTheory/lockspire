@@ -1,0 +1,128 @@
+{
+  "schema": "lockspire-phase178-plan11-local-requalification-v1",
+  "recorded_at": "2026-10-28",
+  "state": "local-focused-source-guard-passed; canonical-ci-and-packaged-proof-pending",
+  "source_commits": [
+    "66f5169afab2b325d5f37d784d880d60623e68ed",
+    "0f513a6d120954a5695a95ac9757bcb68c1914b5",
+    "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770"
+  ],
+  "review_install_commit": "0e90b100522e13aa2db926e0ea8f42a1644c253a",
+  "focused_guard": {
+    "source_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "runner": "scripts/ci/run_owned_source_tests.py",
+    "selection": [
+      "test/mix/tasks/lockspire_client_create_cold_test.exs",
+      "test/lockspire/storage/client_lifetime_rollback_test.exs",
+      "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs",
+      "test/lockspire/ci_workflow_evidence_contract_test.exs",
+      "test/lockspire/ci_static_contract_test.exs",
+      "test/lockspire/host_integration_ci_contract_test.exs",
+      "test/lockspire/workflow_supply_chain_contract_test.exs"
+    ],
+    "include_integration": true,
+    "tests": 37,
+    "failures": 0,
+    "runner_exit": 0,
+    "checkout_clean_before": true,
+    "checkout_clean_after": true,
+    "elixir": "1.19.5",
+    "otp": "28.5",
+    "postgres": "14.17",
+    "erl_flags": "+S 4",
+    "private_hex_home": true,
+    "database_oid": 16384,
+    "port": 49239,
+    "database_cleanup": "independently_absent",
+    "owned_process_groups": "all_stopped",
+    "private_cluster": "removed",
+    "manifest_path": ".artifacts/phase178/local-owned-source-requalification-7dce61a6/manifests/4fh43nj5.manifest.json",
+    "manifest_sha256": "44cf93b34eb0ceaa332c18be95d80f2e1907937a76c4ddf31a027e18759b4e34",
+    "test_stdout_bytes": 185,
+    "test_stdout_sha256": "fbefa0907792ebf7d43faf05938b6f249293f7c89585b6d204343e150b0e43e5",
+    "tool_session_id": null,
+    "tool_cell_id": null,
+    "tool_id_note": "completed within the initial tool wait; no nested session identifier was returned"
+  },
+  "prior_attempts_and_retractions": [
+    {
+      "attempts": ["0qy9wa2m", "xe_xiwph"],
+      "result": "owned_database_create_unconfirmed",
+      "create_exit": 1,
+      "create_stderr_bytes": 287,
+      "create_stderr_sha256": "6782dc42c4174b0cad6b689956122e9e97f2f5407070675c805256ba35bee9fb",
+      "ownership": "unconfirmed_no_drop",
+      "cause": "unknown",
+      "retraction": "not attributed to checkout dirt"
+    },
+    {
+      "attempts": ["oexuzcy2", "la5uns4y"],
+      "result": "37 tests / 2 failures",
+      "include_integration": false,
+      "classification": "contract-only failed attempt; not verification of repaired integration tests",
+      "retraction": "do not claim repaired integration cases executed"
+    },
+    {
+      "attempt": "la5uns4y",
+      "retraction": "source-frame locations were incidental; all such attribution withdrawn"
+    },
+    {
+      "attempt": "tjvndv3y",
+      "result": "37 tests / 2 failures",
+      "include_integration": true,
+      "headers": [
+        "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:212",
+        "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:216"
+      ],
+      "assertions": "not yet known at this attempt"
+    },
+    {
+      "attempt": "2b9do844",
+      "result": "4 tests / 2 failures",
+      "failure_witnesses": [
+        {
+          "test_header": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:212",
+          "assertion": "positive-control client hash equality",
+          "assertion_location": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:282",
+          "correction": "run control rotation in Sandbox.unboxed_run before committed-state reads"
+        },
+        {
+          "test_header": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:216",
+          "assertion": "normalized storage error",
+          "assertion_location": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs:271",
+          "observed_reason_type": "postgres_error",
+          "correction": "normalize Postgrex and DBConnection errors at the Ecto AuditStore boundary"
+        }
+      ]
+    },
+    {
+      "attempt": "ae9s2kwx",
+      "result": "37 tests / 1 failure",
+      "test_header": "test/lockspire/storage/client_lifetime_rollback_test.exs:210",
+      "observed_reason_type": "storage_error",
+      "correction": "replace injected PostgreSQL text expectation at line 235 with :storage_error"
+    }
+  ],
+  "immutable_driver": {
+    "path": "/private/tmp/lockspire178-owned-validation-driver-7dce61a65c0eada9b1dbe57eb2c3513df9e5d770.py",
+    "sha256": "01017c2ae5634d848a0ad51306c61d2cc13e050ac41bf2b4367130a0998ce0bd",
+    "mode": "0444"
+  },
+  "sanitized_evidence_bundle": {
+    "path": ".artifacts/phase178/local-owned-source-requalification-7dce61a6/178-11-LOCAL-OWNED-SOURCE-EVIDENCE.json",
+    "sha256": "e5780f16b0c14e694d9b74997e2e9b73ad96d2186b2cc8f861aa1c7f9ba74bdd"
+  },
+  "review_status": {
+    "source": "accepted",
+    "security": "accepted",
+    "integration": "accepted",
+    "reviewed_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+    "active_source_blockers": 0
+  },
+  "remaining_local_work": [
+    "fresh authenticated candidate source freeze and owner manifest",
+    "canonical guarded source CI",
+    "installed locked and floor package proofs"
+  ],
+  "publication_status": "pending; no new remote action authorized"
+}
