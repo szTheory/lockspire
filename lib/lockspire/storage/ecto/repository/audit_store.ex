@@ -12,6 +12,9 @@ defmodule Lockspire.Storage.Ecto.Repository.AuditStore do
     |> AuditEventRecord.changeset(event)
     |> then(&Support.insert(repo, &1, sensitive: true))
     |> map_one(&AuditEventRecord.to_domain/1)
+    |> safe_result()
+  rescue
+    error -> {:error, safe_storage_error(error)}
   end
 
   def append_audit_event(repo, attrs) when is_map(attrs) do
@@ -19,7 +22,7 @@ defmodule Lockspire.Storage.Ecto.Repository.AuditStore do
     |> Event.normalize()
     |> then(&append_audit_event(repo, &1))
   rescue
-    error -> {:error, error}
+    error -> {:error, safe_storage_error(error)}
   end
 
   @spec transact_with_audit(module(), Event.t() | map(), (-> term())) ::
@@ -42,4 +45,11 @@ defmodule Lockspire.Storage.Ecto.Repository.AuditStore do
 
   defp map_one({:ok, record}, mapper), do: {:ok, mapper.(record)}
   defp map_one({:error, error}, _mapper), do: {:error, error}
+
+  defp safe_result({:error, error}), do: {:error, safe_storage_error(error)}
+  defp safe_result(result), do: result
+
+  defp safe_storage_error(%Postgrex.Error{}), do: :storage_error
+  defp safe_storage_error(%DBConnection.ConnectionError{}), do: :storage_unavailable
+  defp safe_storage_error(error), do: error
 end

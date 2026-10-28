@@ -275,9 +275,11 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
       remove_failure_trigger(failure)
 
       assert {:ok, %{client: rotated, client_secret: _plaintext}} =
-               Clients.rotate_client_secret(client_id, %{
-                 actor: %{type: :operator, id: "rollback-control"}
-               })
+               Sandbox.unboxed_run(Lockspire.TestRepo, fn ->
+                 Clients.rotate_client_secret(client_id, %{
+                   actor: %{type: :operator, id: "rollback-control"}
+                 })
+               end)
 
       assert client_row(client_id).client_secret_hash == rotated.client_secret_hash
       refute rotated.client_secret_hash == before_client.client_secret_hash
