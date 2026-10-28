@@ -11,6 +11,20 @@
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       checks: %{
+        extra: [
+          # These tags correlate in-memory verification events and are intentionally
+          # omitted from formatted application logs.
+          {Credo.Check.Warning.MissedMetadataKeyInLoggerConfig,
+           metadata_keys: [
+             :event,
+             :category,
+             :authorization_scheme,
+             :reason_code,
+             :required_audiences_count,
+             :lockspire_disclosure_capture_ref,
+             :lockspire_disclosure_capture_phase
+           ]}
+        ],
         disabled: [
           {Credo.Check.Design.AliasUsage, files: %{included: ["test/**/*.exs"]}},
           {Credo.Check.Readability.AliasOrder, files: %{included: ["test/**/*.exs"]}},
