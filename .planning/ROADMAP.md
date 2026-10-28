@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete; Phase 178 VPROOF-02 is reopened for HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01; old-contract execution results remain historical while Plan 11 corrects attribution and requalifies affected inputs. VDELIV-01/02 remain pending: PR #141 required candidate CI is incomplete, and main/delivery acceptance is unobserved. Non-authoritative edge/prohibition flags remain visible.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete; Phase 178 VPROOF-02 is locally qualified after accepted C50 attribution correction and fresh H175 source, lifetime, verifier-pair and installed current/minimum host proof; prior failed/old-contract results and custody limitations remain historical and unwaived. VDELIV-01/02 remain pending: PR #141 required candidate CI is incomplete, and main/delivery acceptance is unobserved. Non-authoritative edge/prohibition flags remain visible.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -272,7 +272,7 @@ Plans:
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 10/12 | In Progress | — |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; VPROOF-02 is reopened for HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01 and requires corrected reviewed attribution plus affected qualification; prior execution counts are not erased. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance remains unobserved. Plan 11 is incomplete; Plan 12 has not started. The phase remains in progress. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; VPROOF-02 is locally qualified with corrected reviewed attribution and fresh native source, lifetime, verifier-pair and current/minimum installed-host qualification. Overall requirement completion is 16/18; prior failures, retention limits and execution counts are not erased. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance remains unobserved. Plan 11 is incomplete; Plan 12 has not started. The phase remains in progress. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 

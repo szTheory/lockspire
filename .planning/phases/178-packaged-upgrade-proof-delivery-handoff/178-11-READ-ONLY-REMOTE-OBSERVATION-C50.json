@@ -1,0 +1,71 @@
+{
+  "candidate_updated": false,
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 122846256815,
+      "name": "Adoption Demo Smoke",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122846256991,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 122846257078,
+      "name": "Release Hygiene Drift",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 122846257121,
+      "name": "Dialyzer",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 122846257263,
+      "name": "Fast Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 122846257280,
+      "name": "Integration Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "id": 122850193766,
+      "name": "Complete Coverage Evidence",
+      "status": "completed"
+    }
+  ],
+  "merge_commit_scope": "GitHub metadata only; actual job checkout remains unproven",
+  "observed_at": "2026-10-28 23:48:20 UTC",
+  "pr": {
+    "base": "main",
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "draft": false,
+    "head": "milestone/v1.48-client-auth-key-isolation",
+    "head_sha": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2",
+    "merge_commit_sha": "70afa2a31df5d85549678008dbfeb106993126ec",
+    "merged": false,
+    "number": 141,
+    "state": "open",
+    "title": "feat: isolate and rotate client authentication verifiers (v1.48)",
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  },
+  "pr_number": 141,
+  "ref_query_exit_code": 0,
+  "remote_mutations": false,
+  "remote_refs": {
+    "main": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "milestone/v1.48-client-auth-key-isolation": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2"
+  },
+  "repo": "szTheory/lockspire",
+  "run_id": 40696973463
+}

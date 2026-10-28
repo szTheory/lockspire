@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: executing
-stopped_at: Plan 11 canonical source and lifetime passed; verifier and installed-host qualification executing
-last_updated: "2026-10-28T22:01:00.177014+00:00"
+stopped_at: Plan 11 local source/package/host proof qualified; exact publication proposal preparation
+last_updated: "2026-10-28T23:51:51.514347+00:00"
 last_activity: 2026-10-28
-last_activity_desc: Corrected C50d canonical 2456/0 plus 2 properties and lifetime 47 checks/9 scenarios passed; verifier proof executing
+last_activity_desc: Corrected C50d/H175 native proof passed; verifier 26/64, installed current/minimum hosts 96 scenarios; hosted CI and delivery pending
 state_head: 1757638a7770bb6f09c3b085f002fa7c8b7ed518
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plan 11 has three accepted author reviews for corrected source `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). Frozen execution checkout `1757638a7770bb6f09c3b085f002fa7c8b7ed518` passed canonical source CI: 2,456 tests, zero failures, two properties. The three lifetime tests passed, and native composition validated 47 checks across nine scenarios; parent independent checks reproduced the retained receipt bytes. The three earlier canonical failures remain unexplained, with their original identities retained and one failed-run journal pointer unavailable. VPROOF-02 remains reopened until locked/floor verifier and current/minimum installed-host qualification completes. PR #141 remains at `33db5483` with failed required hosted CI; no new remote action is authorized. Plan 11 incomplete; Plan 12 unstarted.
+**Current focus:** Phase 178 Plan 11 has three accepted author reviews for corrected source `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). Execution checkout `1757638a7770bb6f09c3b085f002fa7c8b7ed518` passed canonical source CI (2,456 tests, zero failures, two properties), three lifetime tests/native composition (47 checks/nine scenarios), verifier pairs (26 receipts/64 cases) and current/minimum installed hosts (96 scenarios). Root native review/frozen/source/package validation passed with exact covered-input equivalence; 79 original validation process pairs stopped. VPROOF-02 is locally qualified. Three earlier canonical failures remain unexplained, current84579 lacks a retained outer PG token/full terminal event despite attributed shutdown/root removal, and minimum71794 final PG/root status remains UNKNOWN. All original limitations and retractions remain unwaived. PR #141 stays at `33db5483` with failed required hosted CI. The next authorization boundary is the exact prepared non-force push and PR body update; no new remote action is authorized or performed. Plan 11 remains incomplete, Plan 12 unstarted, VDELIV-01/02 pending.
 
 ## Current Position
 
@@ -35,12 +35,12 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 not ready until Plan 11 completes
-Status: Corrected source and lifetime proof passed; locked/floor verifier and installed-host proof executing. Required hosted candidate graph and main/delivery acceptance remain pending.
-Last activity: 2026-10-28 — Canonical source and lifetime evidence independently verified; locked verifier partition running.
+Status: Local corrected-source/package/host proof qualified; exact publication proposal being prepared. Required hosted candidate graph, milestone audit and main/delivery acceptance remain pending.
+Last activity: 2026-10-28 — Native root validation and receipt/original-journal audits passed; local evidence promoted with prior artifacts retained.
 
 ## Performance Metrics
 
-v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 20 executed; 3/4 phases complete. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
+v1.48: 18 approved requirements, 4 approved phases (175–178), 31 plans with 29 executed; 3/4 phases complete. Phase 177 corrected source `5e8cd65e` passed full `mix ci` (15 boundary, 2 properties and 2,138 fast tests, 261 integration tests; zero failures), independent security 29/29, clean source review across 32 files and prior regressions 188/0. Independent verification passed 47/47 truths, six requirements and all 23 decisions; no behavior override. Earlier failed attempts and two unclassified/three prohibition flags remain visible. Phase 176 corrected source `71627f27` passed full `mix ci` (2 properties, 2,102 fast tests and 231 integration tests; zero failures), focused security 26/0 and prior-phase regressions 30/0. Independent verification passed 28/28 truths; security closed 22/22 threats and source review found zero issues across 29 files. Four initial audit mechanisms were corrected; failed environmental attempts and three generic edge/three prohibition flags remain disclosed. Earlier Phase 175 candidate f3ef32a7 passed canonical mix ci: boundary 15/0, main 2,055/0 and integration 210/0, with recorded skips/exclusions. Source review has zero open findings.  Fresh pre-qualification exact-main acceptance and required tracer feedback both passed: 22 PASS, 2 WARN, 0 BLOCK, full local contributor gate, seven canonical CI jobs and no-publish Release at `173059a1`. The receipt's final ExUnit stage is 200 tests; the main stage separately passed 2,057 tests. Historical v1.47 remains 4 completed phases, 10 plans and 14 verified requirements; its old receipts are unchanged.
 **Per-Plan Metrics:**
 
 | Plan | Duration | Tasks | Files |
