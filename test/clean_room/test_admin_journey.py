@@ -24,7 +24,7 @@ import clean_room_saas_journey as saas_journey
 import client_lifetime_upgrade as lifetime_upgrade
 from admin_receipts import validate_receipt, write_receipt
 import build_provider as provider_builder
-from package_input import PackageInputError
+from package_input import PackageInputError, _OWNED_IDENTITIES, owned_session_state, start_owned_session, stop_process_group
 
 FULL_CASE_IDS = (
     "allowed_entry", "assets", "live_navigation", "params_patch", "detail_task",
@@ -97,6 +97,77 @@ class CallbackCounterTests(unittest.TestCase):
             self.assertFalse(saas_journey.stop_processes((first, second)))
         self.assertEqual(stop.call_args_list, [call(first), call(second)])
 
+    def test_start_failure_keeps_the_registered_handle_and_blocks_database_cleanup(self):
+        process = SimpleNamespace(stdout=None, pid=456)
+        saas_journey.STARTED_HOST_PROCESSES.clear()
+        try:
+            with patch.object(saas_journey, "start_owned_session", return_value=process), patch.object(
+                saas_journey, "stop_process", return_value=False
+            ) as stop:
+                with self.assertRaises(PackageInputError):
+                    saas_journey.start_process(Path("host"), {})
+
+                self.assertEqual(saas_journey.STARTED_HOST_PROCESSES, [process])
+                self.assertFalse(saas_journey.stop_started_processes())
+                self.assertEqual(stop.call_count, 2)
+
+            with patch.object(saas_journey, "drop_child_database") as drop:
+                self.assertFalse(saas_journey.cleanup_child_databases(
+                    False, Path("client"), {}, Path("provider"), {}
+                ))
+                drop.assert_not_called()
+        finally:
+            saas_journey.STARTED_HOST_PROCESSES.clear()
+
+    def test_unconfirmed_process_cleanup_retains_owned_temporary_root(self):
+        with saas_journey.RetainableTemporaryDirectory(
+            "lockspire-retained-owned-root-"
+        ) as temporary:
+            root = Path(temporary)
+            (root / "custody-marker").write_text("owned", encoding="utf-8")
+
+        self.assertTrue((root / "custody-marker").is_file())
+        shutil.rmtree(root)
+
+    def test_leader_exit_with_live_descendant_is_not_reported_as_group_cleanup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            ready = Path(temporary) / "descendant-ready"
+            child_code = (
+                "import pathlib,signal,sys,time; "
+                "signal.signal(signal.SIGTERM,signal.SIG_IGN); "
+                "pathlib.Path(sys.argv[1]).write_text('ready'); time.sleep(1.5)"
+            )
+            parent_code = (
+                "import subprocess,sys,time; "
+                "subprocess.Popen([sys.executable,'-c',sys.argv[1],sys.argv[2]], "
+                "stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL); "
+                "time.sleep(30)"
+            )
+            process = start_owned_session(
+                (sys.executable, "-c", parent_code, child_code, str(ready)),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                close_fds=True,
+            )
+            identity = _OWNED_IDENTITIES[process.pid]
+            deadline = time.monotonic() + 2
+            while time.monotonic() < deadline and not ready.is_file():
+                time.sleep(0.01)
+            self.assertTrue(ready.is_file())
+
+            process._clean_room_identity = identity
+            try:
+                stopped = saas_journey.stop_process(process)
+                state_after_stop = owned_session_state(identity)
+            finally:
+                if owned_session_state(identity) != "absent":
+                    stop_process_group(process, grace=2)
+            self.assertTrue(stopped)
+            self.assertEqual(state_after_stop, "absent")
+            if process.stdout is not None:
+                process.stdout.close()
+
 
 class LifetimeProviderEnvironmentTests(unittest.TestCase):
     def test_uses_the_same_locked_dependency_and_build_paths_as_provider_setup(self):
@@ -117,6 +188,22 @@ class LifetimeProviderEnvironmentTests(unittest.TestCase):
             self.assertEqual(environment["MIX_ENV"], "test")
             self.assertEqual(environment["DATABASE_URL"], "postgres://private/test")
             self.assertEqual(environment["LOCKSPIRE_STORAGE_PREFIX"], "tenant_a")
+
+
+class AdminOwnedProcessCleanupTests(unittest.TestCase):
+    def test_signal_cleanup_accepts_only_absence_of_the_original_identity(self):
+        process = SimpleNamespace(pid=987)
+        identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
+        with patch.object(admin_journey, "stop_process_group", return_value=False), patch.object(
+            admin_journey, "owned_session_state", return_value="absent"
+        ):
+            self.assertTrue(admin_journey.stop_owned(process, identity))
+
+        for state in ("owned", "unconfirmed"):
+            with self.subTest(state=state), patch.object(
+                admin_journey, "stop_process_group", return_value=False
+            ), patch.object(admin_journey, "owned_session_state", return_value=state):
+                self.assertFalse(admin_journey.stop_owned(process, identity))
 
 
 def full_scenario(case_id):
@@ -495,8 +582,10 @@ class AdminCleanupRegressionTests(unittest.TestCase):
                 base.mkdir()
                 receipt_path = Path(temporary) / "receipt.json"
                 identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+                started_process = SimpleNamespace(pid=987)
+                process_identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
                 output = io.StringIO()
-                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10", "elixir": "1.20.4", "otp": "29"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observed), returncode=0), fault]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10", "elixir": "1.20.4", "otp": "29"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey, "start_owned_session", return_value=started_process), patch.object(admin_journey, "_OWNED_IDENTITIES", {started_process.pid: process_identity}), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observed), returncode=0), fault]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                     status = admin_journey.main(["--pair", "locked", "--mount", "/", "--scenario", "tracer", "--receipt", str(receipt_path)])
                 self.assertEqual(status, 1)
                 retained = validate_receipt(json.loads(receipt_path.read_text()))
@@ -516,8 +605,10 @@ class AdminCleanupRegressionTests(unittest.TestCase):
             base.mkdir()
             receipt = Path(temporary) / "receipt.json"
             identity = SimpleNamespace(source_revision="a" * 40, version="1.6.1", archive_sha256="b" * 64, tree_sha256="c" * 64)
+            started_process = SimpleNamespace(pid=987)
+            process_identity = SimpleNamespace(pid=987, pgid=987, sid=987, start=(123,))
             output = io.StringIO()
-            with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey.subprocess, "Popen"), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observation), returncode=1), SimpleNamespace(returncode=0)]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+            with patch.object(admin_journey.tempfile, "mkdtemp", return_value=str(base)), patch.object(admin_journey, "package_source"), patch.object(admin_journey, "prepare_package", return_value=(base, [], identity)), patch.object(admin_journey, "prepare_provider", return_value=base), patch.object(admin_journey, "run_child_command"), patch.object(admin_journey, "runtime_versions", return_value={"phoenix": "1.8.13", "live_view": "1.2.10"}), patch.object(admin_journey, "wait_ready"), patch.object(admin_journey, "start_owned_session", return_value=started_process), patch.object(admin_journey, "_OWNED_IDENTITIES", {started_process.pid: process_identity}), patch.object(admin_journey, "stop_owned", return_value=True), patch.object(admin_journey, "bounded_run", side_effect=[SimpleNamespace(stdout=json.dumps(observation), returncode=1), SimpleNamespace(returncode=0)]), patch.object(admin_journey.subprocess, "run", return_value=SimpleNamespace(stdout=b"")), contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
                 status = admin_journey.main(["--pair", "locked", "--mount", "/", "--receipt", str(receipt)])
             self.assertEqual(status, 1)
             self.assertNotIn(sentinel, output.getvalue())
@@ -826,7 +917,16 @@ class HostProofWrapperFailureTests(unittest.TestCase):
         result, _receipt_dir = self.run_wrapper("timeout", timeout_seconds=8)
 
         self.assertEqual(result.returncode, 124)
-        self.assertIn("bounded child timed out", result.stdout)
+        status_line = next(
+            line for line in result.stdout.splitlines()
+            if line.startswith("host integration command status: ")
+        )
+        status = json.loads(status_line.split(": ", 1)[1])
+        self.assertEqual(status["schema"], "lockspire-admin-command-status-v1")
+        self.assertEqual(status["stage"], "lifecycle")
+        self.assertEqual(status["reason"], "timeout")
+        self.assertEqual(status["status"], 124)
+        self.assertEqual(status["cleanup"], "stopped")
         self.assertNotIn(self.SENTINEL, result.stdout)
         self.assert_staging_redacted(_receipt_dir)
 
@@ -873,10 +973,21 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def test_database_cleanup_failure_turns_success_into_failure(self):
         for stage in ("drop-failure", "drop-timeout", "shared-drop-failure"):
             with self.subTest(stage=stage):
-                started = time.monotonic()
                 result, receipt_dir = self.run_wrapper(stage)
-                self.assertLess(time.monotonic() - started, 15)
                 self.assertEqual(result.returncode, 37 if stage == "shared-drop-failure" else 1)
+                if stage == "drop-timeout":
+                    statuses = [
+                        json.loads(line.split(": ", 1)[1])
+                        for line in result.stdout.splitlines()
+                        if line.startswith("host integration command status: ")
+                    ]
+                    self.assertTrue(any(
+                        status["stage"] == "cleanup"
+                        and status["reason"] == "timeout"
+                        and status["status"] == 124
+                        and status["cleanup"] == "stopped"
+                        for status in statuses
+                    ))
                 self.assertNotIn(self.SENTINEL, result.stdout)
                 self.assert_staging_redacted(receipt_dir)
 

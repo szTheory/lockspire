@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import re
 import signal
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -44,12 +45,15 @@ from selected_receipts import (
 )
 from package_input import (
     PackageInputError,
+    _OWNED_IDENTITIES,
     clean_room_database_url,
     copy_child_template,
     locked_environment,
     package_source,
     prepare_package,
     probe_environment,
+    owned_session_state,
+    stop_process_group,
     verify_candidate_host,
     verify_candidate_input,
     candidate_host_provenance,
@@ -67,6 +71,7 @@ ACTIVE_REDACTOR: Redactor | None = None
 CUSTOM_EXAMPLE_EVIDENCE: dict[str, object] | None = None
 SELECTED_PAR_SHARED: dict[str, object] = {}
 RUN_ROOT_MARKER = ".lockspire-clean-room-owner"
+STARTED_HOST_PROCESSES: list[subprocess.Popen[bytes]] = []
 LIFETIME_CALLBACKS = frozenset({
     "lifetime_contract",
     "transaction_authority",
@@ -82,6 +87,26 @@ _CALLBACK_MAX_COUNT = 100_000
 
 class JourneyInterrupted(Exception):
     """Raised from SIGINT/SIGTERM so the runner reaches its teardown path."""
+
+
+class RetainableTemporaryDirectory:
+    """Remove an owned journey root only after child and database cleanup pass."""
+
+    def __init__(self, prefix: str) -> None:
+        self.prefix = prefix
+        self.path: Path | None = None
+        self.preserve = True
+
+    def __enter__(self) -> str:
+        self.path = Path(tempfile.mkdtemp(prefix=self.prefix))
+        return str(self.path)
+
+    def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> bool:
+        if self.preserve:
+            return False
+        if self.path is not None:
+            shutil.rmtree(self.path)
+        return False
 
 
 def interruption_handler(signum: int, _frame: object) -> None:
@@ -308,6 +333,8 @@ def start_process(child: Path, environment: dict[str, str]) -> subprocess.Popen[
         env=dict(environment, CLEAN_ROOM_HTTP_SERVER="true"), stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, close_fds=True,
     )
+    STARTED_HOST_PROCESSES.append(process)
+    process._clean_room_identity = _OWNED_IDENTITIES.get(process.pid)  # type: ignore[attr-defined]
     if process.stdout is None:
         stop_process(process)
         raise PackageInputError("provider output counter could not start")
@@ -322,34 +349,31 @@ def start_process(child: Path, environment: dict[str, str]) -> subprocess.Popen[
 def stop_process(process: subprocess.Popen[bytes] | None) -> bool:
     if process is None:
         return True
-    stopped = True
+    identity = getattr(process, "_clean_room_identity", None)
     try:
-        if process.poll() is None:
-            os.killpg(process.pid, signal.SIGTERM)
-    except OSError:
+        stopped = stop_process_group(process, grace=5)
+    except Exception:
         stopped = False
-    try:
-        if process.poll() is None:
-            process.wait(timeout=5)
-    except subprocess.TimeoutExpired:
+    if not stopped and identity is not None:
         try:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=5)
-        except (OSError, subprocess.SubprocessError):
+            stopped = owned_session_state(identity) == "absent"
+        except Exception:
             stopped = False
-    except (OSError, subprocess.SubprocessError):
-        stopped = False
     counter = getattr(process, "_clean_room_callback_counter", None)
-    try:
-        if counter is not None and not counter.join(timeout=5):
-            stopped = False
-    finally:
-        if process.stdout is not None:
-            try:
-                process.stdout.close()
-            except OSError:
-                stopped = False
-    return stopped
+    counter_stopped = True
+    if stopped:
+        try:
+            if counter is not None and not counter.join(timeout=5):
+                counter_stopped = False
+        except Exception:
+            counter_stopped = False
+        finally:
+            if process.stdout is not None:
+                try:
+                    process.stdout.close()
+                except OSError:
+                    counter_stopped = False
+    return stopped and counter_stopped
 
 
 def stop_processes(processes: tuple[subprocess.Popen[bytes] | None, ...]) -> bool:
@@ -361,6 +385,29 @@ def stop_processes(processes: tuple[subprocess.Popen[bytes] | None, ...]) -> boo
             process_stopped = False
         all_stopped = process_stopped and all_stopped
     return all_stopped
+
+
+def stop_started_processes() -> bool:
+    return stop_processes(tuple(STARTED_HOST_PROCESSES))
+
+
+def cleanup_child_databases(
+    processes_stopped: bool,
+    client_child: Path | None,
+    client_environment: dict[str, str] | None,
+    provider_child: Path | None,
+    provider_environment: dict[str, str] | None,
+) -> bool:
+    if not processes_stopped:
+        return False
+    try:
+        if client_child is not None and client_environment is not None:
+            drop_child_database(client_child, client_environment, "client")
+        if provider_child is not None and provider_environment is not None:
+            drop_child_database(provider_child, provider_environment, "provider")
+    except (AssertionError, OSError, subprocess.SubprocessError):
+        return False
+    return True
 
 
 def drop_child_database(child: Path, environment: dict[str, str], label: str) -> None:
@@ -2108,6 +2155,10 @@ def main(argv: list[str]) -> int:
     kek = base64.b64encode(os.urandom(32)).decode("ascii")
     os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"] = kek
     register_secret(kek)
+    if STARTED_HOST_PROCESSES:
+        if not stop_started_processes():
+            return 1
+        STARTED_HOST_PROCESSES.clear()
     provider_process = client_process = None
     provider_child = client_child = None
     provider_environment = client_environment = None
@@ -2119,7 +2170,8 @@ def main(argv: list[str]) -> int:
     candidate: dict[str, str] | None = None
     candidate_binding: dict[str, object] | None = None
     source_revision = ""
-    with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-journey-") as temporary:
+    run_directory = RetainableTemporaryDirectory(prefix="lockspire-clean-room-journey-")
+    with run_directory as temporary:
         run_root = Path(temporary)
         run_root_owner = claim_run_root(run_root)
         runner_tmpdir = run_root / "mix-tmp"
@@ -2304,7 +2356,7 @@ def main(argv: list[str]) -> int:
             )), file=sys.stderr)
             result_code = 1
         finally:
-            cleanup["processes_stopped"] = stop_processes((client_process, provider_process))
+            cleanup["processes_stopped"] = stop_started_processes()
             if not cleanup["processes_stopped"]:
                 result_code = 1
                 print("clean-room process cleanup failed", file=sys.stderr)
@@ -2316,21 +2368,19 @@ def main(argv: list[str]) -> int:
                     field=type(error).__name__, count=1,
                 )), file=sys.stderr)
             else:
-                try:
-                    if client_child is not None and client_environment is not None:
-                        drop_child_database(client_child, client_environment, "client")
-                    if provider_child is not None and provider_environment is not None:
-                        drop_child_database(provider_child, provider_environment, "provider")
-                    cleanup["databases_removed"] = True
-                except (AssertionError, OSError, subprocess.SubprocessError):
+                cleanup["databases_removed"] = cleanup_child_databases(
+                    cleanup["processes_stopped"], client_child, client_environment,
+                    provider_child, provider_environment,
+                )
+                if not cleanup["databases_removed"]:
                     result_code = 1
-                    cleanup["databases_removed"] = False
                     print("clean-room database cleanup failed", file=sys.stderr)
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
             print("cleanup complete")
+        run_directory.preserve = not (cleanup["processes_stopped"] and cleanup["databases_removed"])
     cleanup["temporary_roots_removed"] = not run_root.exists()
     if "selected_authorization_par" in args.only and args.selected_receipt is not None and candidate_binding is not None:
         if selected_scenarios is None:

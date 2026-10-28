@@ -33,7 +33,11 @@ from build_provider import (
     run_child_command,
     run_child_command_output,
 )
-from package_input import bounded_run, start_owned_session, stop_process_group, PackageInputError, clean_room_database_url, locked_environment, package_source, prepare_package
+from package_input import (
+    PackageInputError, _OWNED_IDENTITIES, bounded_run, clean_room_database_url,
+    locked_environment, owned_session_state, package_source, prepare_package,
+    start_owned_session, stop_process_group,
+)
 from redaction import Redactor, SentinelSet
 
 
@@ -334,8 +338,12 @@ class HostStartupFailure(PackageInputError):
         super().__init__("provider host startup did not become ready")
 
 
-def stop_owned(process: subprocess.Popen[bytes] | None) -> bool:
-    return process is None or stop_process_group(process, grace=2)
+def stop_owned(process: subprocess.Popen[bytes] | None, identity=None) -> bool:
+    if process is None:
+        return True
+    if stop_process_group(process, grace=2):
+        return True
+    return identity is not None and owned_session_state(identity) == "absent"
 
 
 class ProofInterrupted(BaseException):
@@ -367,6 +375,7 @@ def main(argv: Sequence[str]) -> int:
     child: Path | None = None
     environment: dict[str, str] = {}
     process: subprocess.Popen[bytes] | None = None
+    process_identity = None
     database_url = ""
     database_created = False
     scenario = dict(DEFAULTS)
@@ -438,6 +447,9 @@ def main(argv: Sequence[str]) -> int:
         process = start_owned_session(("mix", "run", "--no-halt"), cwd=child, env=live_environment,
                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL, close_fds=True)
+        process_identity = _OWNED_IDENTITIES.get(process.pid)
+        if process_identity is None:
+            raise PackageInputError("host process identity was not registered")
         wait_ready(origin, process)
         stage = "browser"
         browser_script = Path(__file__).resolve().parents[2] / "test" / "browser" / "packaged_admin_proof.mjs"
@@ -501,22 +513,26 @@ def main(argv: Sequence[str]) -> int:
         for sig in previous_handlers:
             signal.signal(sig, signal.SIG_IGN)
         try:
-            cleanup["processes_stopped"] = stop_owned(process)
+            cleanup["processes_stopped"] = stop_owned(process, process_identity)
         except Exception:
             cleanup["processes_stopped"] = False
         cleanup["database_removed"] = not database_created
-        if child is not None and database_created:
+        if cleanup["processes_stopped"] and child is not None and database_created:
             try:
                 completed = bounded_run(("mix", "ecto.drop"), cwd=child, env=environment, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=4, stop_grace=0.5)
                 cleanup["database_removed"] = completed.returncode == 0
             except Exception:
                 cleanup["database_removed"] = False
-        try:
-            shutil.rmtree(base)
-            cleanup["run_root_removed"] = not base.exists()
-        except OSError:
+        if cleanup["processes_stopped"]:
+            try:
+                shutil.rmtree(base)
+                cleanup["run_root_removed"] = not base.exists()
+            except OSError:
+                cleanup["run_root_removed"] = False
+            cleanup["profile_removed"] = cleanup["profile_removed"] or cleanup["run_root_removed"]
+        else:
             cleanup["run_root_removed"] = False
-        cleanup["profile_removed"] = cleanup["profile_removed"] or cleanup["run_root_removed"]
+            cleanup["profile_removed"] = False
         for sig, handler in previous_handlers.items():
             signal.signal(sig, handler)
 
