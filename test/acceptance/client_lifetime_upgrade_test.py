@@ -7,6 +7,7 @@ from io import StringIO
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import Mock
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "acceptance" / "clean_room"))
@@ -14,9 +15,26 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "accept
 import client_lifetime_upgrade as upgrade  # noqa: E402
 from client_lifetime_upgrade import PackageInputError, validate_receipt  # noqa: E402
 from package_input import PackageIdentity  # noqa: E402
+from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 class LegacyUpgradeReceiptTest(unittest.TestCase):
+    def test_child_failure_retains_only_its_bounded_event_witness(self) -> None:
+        child = Mock(returncode=1)
+        child.communicate.return_value = (b"private child output", b"private child error")
+        with patch.object(upgrade.subprocess, "Popen", return_value=child):
+            with self.assertRaises(upgrade.LegacyRunnerFailure) as caught:
+                upgrade.run_process(
+                    Path("/private/child"), {}, ("mix", "run"),
+                    Redactor(SentinelSet.for_run()), stage="legacy_upgrade", scenario="selected",
+                )
+
+        self.assertEqual(caught.exception.summary, {
+            "stage": "legacy_upgrade", "scenario": "selected", "event": "child_exit",
+            "field": "stdout_stderr", "count": 2,
+        })
+        self.assertNotIn("private", str(caught.exception))
+
     def test_legacy_prefix_requires_http_use_promotion_and_state_preservation(self) -> None:
         scenario = self._scenario("public")
         scenario.pop("legacy_http_use_observation")

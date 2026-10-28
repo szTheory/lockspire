@@ -71,6 +71,14 @@ OLD_PACKAGE_FIELDS = frozenset({
 SAFE_COMMANDS = frozenset({"ecto.create", "ecto.migrate", "run", "lockspire.client.create", "ecto.drop"})
 
 
+class LegacyRunnerFailure(PackageInputError):
+    """A redacted child failure with its existing finite stage/event witness."""
+
+    def __init__(self, summary: dict[str, object]):
+        self.summary = summary
+        super().__init__("legacy package child failed; diagnostics withheld")
+
+
 SENSITIVE_OUTPUT = re.compile(
     r"(?i)(?:client_secret|registration_access_token|access_token|refresh_token|authorization_code|"
     r"pkce_verifier|verifier|private_key|cookie|secret|token|hash)\s*[:=]\s*[\"']?([^\s,;\"'}]+)"
@@ -113,26 +121,26 @@ def run_process(
     try:
         redactor.assert_safe("\0".join(args))
     except RuntimeError:
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_start", field="argv", count=1
-        ))) from None
+        )) from None
     try:
         process = subprocess.Popen(
             ("mix", *args), cwd=child, env=env, stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
     except OSError:
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_start", field="exception", count=1
-        ))) from None
+        )) from None
     try:
         stdout, stderr = process.communicate(timeout=timeout)
     except subprocess.TimeoutExpired:
         process.kill()
         process.communicate()
-        raise PackageInputError(str(safe_failure_summary(
+        raise LegacyRunnerFailure(safe_failure_summary(
             stage=stage, scenario=scenario, event="child_timeout", field="process", count=1
-        ))) from None
+        )) from None
     output = (stdout or b"").decode(errors="replace")
     error_output = (stderr or b"").decode(errors="replace")
     _register_output_material(redactor, output + "\n" + error_output)
@@ -142,7 +150,7 @@ def run_process(
             stage=stage, scenario=scenario, event="child_exit", field="stdout_stderr",
             count=len(output.splitlines()) + len(error_output.splitlines()),
         )
-        raise PackageInputError(str(summary))
+        raise LegacyRunnerFailure(summary)
     return {
         "pid": process.pid,
         "command": command,
@@ -844,7 +852,7 @@ def main() -> int:
                 print(rendered)
         return 0
     except (PackageInputError, OSError, ValueError) as error:
-        summary = safe_failure_summary(
+        summary = error.summary if isinstance(error, LegacyRunnerFailure) else safe_failure_summary(
             stage="legacy_upgrade", scenario="selected", event="runner_failure",
             field=type(error).__name__, count=1,
         )

@@ -268,9 +268,20 @@ defmodule Lockspire.Storage.ClientSecretLifetimeRotationRaceTest do
       Race.release(holder_pid, {:release_rollback, failure})
       assert {:ok, :released} = Race.await_task!(holder, 5_000)
       assert {:error, reason} = Race.await_task!(contender, 10_000)
-      assert inspect(reason) =~ "164-05 injected #{failure} failure"
+      assert reason == :storage_error
       assert client_row(client_id) == before_client
       assert rotation_audits(client_id) == before_audits
+
+      remove_failure_trigger(failure)
+
+      assert {:ok, %{client: rotated, client_secret: _plaintext}} =
+               Clients.rotate_client_secret(client_id, %{
+                 actor: %{type: :operator, id: "rollback-control"}
+               })
+
+      assert client_row(client_id).client_secret_hash == rotated.client_secret_hash
+      refute rotated.client_secret_hash == before_client.client_secret_hash
+      assert length(rotation_audits(client_id)) == length(before_audits) + 1
     after
       remove_failure_trigger(failure)
     end

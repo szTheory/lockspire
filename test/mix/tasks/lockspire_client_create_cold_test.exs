@@ -172,9 +172,7 @@ defmodule Mix.Tasks.Lockspire.Client.CreateColdTest do
     end
   end
 
-  test "control: the same insert is logged at debug when the guard is not in play",
-       %{prefix: prefix} do
-    client_id = prefix <> "-control"
+  test "control: a harmless query is logged at debug when the logger is enabled", %{} do
     original_repo_config = Application.get_env(:lockspire, Lockspire.TestRepo)
     original_level = Logger.level()
 
@@ -196,23 +194,15 @@ defmodule Mix.Tasks.Lockspire.Client.CreateColdTest do
     log =
       ExUnit.CaptureLog.capture_log([level: :debug], fn ->
         with_temp_repo(fn ->
-          {:ok, _result} =
-            Lockspire.Clients.register_client(%{
-              client_id: client_id,
-              client_type: "public",
-              redirect_uris: ["https://client.example.com/callback"],
-              allowed_scopes: ["profile"],
-              allowed_grant_types: ["authorization_code"],
-              token_endpoint_auth_method: "none"
-            })
+          assert %{rows: [[1]]} = Lockspire.TestRepo.query!("SELECT 1")
         end)
       end)
 
     Application.put_env(:lockspire, Lockspire.TestRepo, original_repo_config)
     Logger.configure(level: original_level)
 
-    # Without the TaskError guard the INSERT is visible, so the refutes above are not vacuous.
-    assert log =~ "INSERT"
+    # Prove capture is active without issuing a second credential-bearing write.
+    assert log =~ "SELECT 1"
   end
 
   test "a public client is created with the repo stopped and prints no secret", %{prefix: prefix} do

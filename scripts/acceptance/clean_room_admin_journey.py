@@ -83,24 +83,58 @@ FAILURE_REASONS = {
 }
 
 
-def validate_failure_record(value: object) -> dict[str, str] | None:
+def validate_failure_record(value: object) -> dict[str, object] | None:
     """Accept only the closed, non-sensitive producer-to-wrapper failure contract."""
-    if type(value) is not dict or set(value) != {"schema", "stage", "reason"}:
+    base_fields = {"schema", "stage", "reason"}
+    if type(value) is not dict or not base_fields <= set(value):
         return None
     schema, stage, reason = value["schema"], value["stage"], value["reason"]
     if (type(schema) is not str or schema != FAILURE_RECORD_SCHEMA or
             type(stage) is not str or type(reason) is not str or
             stage not in FAILURE_REASONS or reason not in FAILURE_REASONS[stage]):
         return None
-    return {"schema": schema, "stage": stage, "reason": reason}
+    if set(value) == base_fields:
+        return {"schema": schema, "stage": stage, "reason": reason}
+    if set(value) != base_fields | {"host_startup"} or stage != "host_startup":
+        return None
+    witness = value["host_startup"]
+    if type(witness) is not dict or set(witness) != {"host_exit_status", "readiness_deadline_elapsed"}:
+        return None
+    host_exit_status = witness["host_exit_status"]
+    deadline_elapsed = witness["readiness_deadline_elapsed"]
+    if (host_exit_status is not None and
+            (type(host_exit_status) is not int or not -255 <= host_exit_status <= 255)):
+        return None
+    if type(deadline_elapsed) is not bool:
+        return None
+    if (host_exit_status is None) != deadline_elapsed:
+        return None
+    return {
+        "schema": schema,
+        "stage": stage,
+        "reason": reason,
+        "host_startup": {
+            "host_exit_status": host_exit_status,
+            "readiness_deadline_elapsed": deadline_elapsed,
+        },
+    }
 
 
-def emit_failure_record(stage: str, reason: str, *, supplemental_cleanup: bool = False) -> None:
-    record = validate_failure_record({
+def emit_failure_record(
+    stage: str,
+    reason: str,
+    *,
+    host_startup_witness: dict[str, object] | None = None,
+    supplemental_cleanup: bool = False,
+) -> None:
+    payload: dict[str, object] = {
         "schema": FAILURE_RECORD_SCHEMA,
         "stage": stage,
         "reason": reason,
-    })
+    }
+    if host_startup_witness is not None:
+        payload["host_startup"] = host_startup_witness
+    record = validate_failure_record(payload)
     if record is None:
         record = {"schema": FAILURE_RECORD_SCHEMA, "stage": "diagnostics", "reason": "failure_record_malformed"}
     prefix = "admin proof cleanup record: " if supplemental_cleanup else "admin proof failure record: "
@@ -275,7 +309,10 @@ def wait_ready(origin: str, process: subprocess.Popen[bytes], timeout: float = 3
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         if process.poll() is not None:
-            raise PackageInputError("provider host exited before readiness")
+            raise HostStartupFailure(
+                host_exit_status=process.returncode,
+                readiness_deadline_elapsed=False,
+            )
         try:
             with urllib.request.urlopen(origin + "/login", timeout=0.5) as response:
                 if response.status == 200:
@@ -283,7 +320,18 @@ def wait_ready(origin: str, process: subprocess.Popen[bytes], timeout: float = 3
         except (OSError, urllib.error.URLError):
             pass
         time.sleep(0.05)
-    raise PackageInputError("provider host readiness timed out")
+    raise HostStartupFailure(host_exit_status=None, readiness_deadline_elapsed=True)
+
+
+class HostStartupFailure(PackageInputError):
+    """Finite startup witness captured before owned-process cleanup."""
+
+    def __init__(self, *, host_exit_status: int | None, readiness_deadline_elapsed: bool):
+        self.host_startup_witness = {
+            "host_exit_status": host_exit_status,
+            "readiness_deadline_elapsed": readiness_deadline_elapsed,
+        }
+        super().__init__("provider host startup did not become ready")
 
 
 def stop_owned(process: subprocess.Popen[bytes] | None) -> bool:
@@ -328,16 +376,21 @@ def main(argv: Sequence[str]) -> int:
     failed = False
     scenario_passed = False
     full_scenarios: list[dict[str, object]] = []
-    primary_failure: tuple[str, str] | None = None
+    primary_failure: tuple[str, str, dict[str, object] | None] | None = None
 
-    def record_failure(failure_stage: str, reason: str) -> None:
+    def record_failure(
+        failure_stage: str,
+        reason: str,
+        host_startup_witness: dict[str, object] | None = None,
+    ) -> None:
         nonlocal primary_failure
         if primary_failure is None:
-            primary_failure = (failure_stage, reason)
+            primary_failure = (failure_stage, reason, host_startup_witness)
 
     def publish_failure() -> None:
         if primary_failure is not None:
-            emit_failure_record(*primary_failure)
+            failure_stage, reason, witness = primary_failure
+            emit_failure_record(failure_stage, reason, host_startup_witness=witness)
         if not all(cleanup.values()):
             emit_failure_record("cleanup", "cleanup_failed", supplemental_cleanup=primary_failure is not None)
 
@@ -381,7 +434,8 @@ def main(argv: Sequence[str]) -> int:
         stage = "host_start"
         port = int(environment["PORT"])
         origin = f"http://127.0.0.1:{port}"
-        process = start_owned_session(("mix", "run", "--no-halt"), cwd=child, env=environment,
+        live_environment = dict(environment, CLEAN_ROOM_HTTP_SERVER="true")
+        process = start_owned_session(("mix", "run", "--no-halt"), cwd=child, env=live_environment,
                                       stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                       stderr=subprocess.DEVNULL, close_fds=True)
         wait_ready(origin, process)
@@ -436,7 +490,12 @@ def main(argv: Sequence[str]) -> int:
             "host_start": ("host_startup", "host_startup_failed"),
             "browser": ("browser", "browser_proof_failed"),
         }.get(stage, ("candidate", "candidate_unavailable"))
-        record_failure(failure_stage, reason)
+        startup_witness = (
+            error.host_startup_witness
+            if failure_stage == "host_startup" and isinstance(error, HostStartupFailure)
+            else None
+        )
+        record_failure(failure_stage, reason, startup_witness)
     finally:
         # Ignore repeated interruption while independent bounded cleanup actions run.
         for sig in previous_handlers:

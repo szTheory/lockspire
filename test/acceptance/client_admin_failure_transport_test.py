@@ -246,6 +246,9 @@ def producer_source(failure_stage: str, *, cleanup_failed: bool = False) -> str:
         "      'failure':'browser_timeout','stage':'cdp_setup','opaque':opaque,\n"
         "      'scenarios':[{'id':key,'outcome':'passed' if passed else 'failed','duration_ms':1,'counts':{},'observations':{}} for key in j.FULL_REQUIRED]}\n"
         "    return SimpleNamespace(returncode=0 if passed else 1,stdout=json.dumps(observed))\n"
+        "def readiness(*args):\n"
+        "    if failure_stage == 'host_startup_exit': raise j.HostStartupFailure(host_exit_status=1,readiness_deadline_elapsed=False)\n"
+        "    if failure_stage == 'host_startup_deadline': raise j.HostStartupFailure(host_exit_status=None,readiness_deadline_elapsed=True)\n"
         "with contextlib.ExitStack() as stack:\n"
         "    replacements={\n"
         "      'package_source':boundary('candidate'),\n"
@@ -256,7 +259,7 @@ def producer_source(failure_stage: str, *, cleanup_failed: bool = False) -> str:
         "      'run_child_command':command,\n"
         "      'runtime_versions':boundary('runtime_observation',{'phoenix':'1.8.13','live_view':'1.2.10','elixir':'1.19.5','otp':'28'}),\n"
         "      'start_owned_session':boundary('host_startup'),\n"
-        "      'wait_ready':lambda *args:None,\n"
+        "      'wait_ready':readiness,\n"
         "      'bounded_run':external,\n"
         "      'write_receipt':receipt}\n"
         "    for name,value in replacements.items(): stack.enter_context(patch.object(j,name,value))\n"
@@ -276,6 +279,21 @@ def records(stderr: bytes, prefix: str) -> list[dict]:
 
 
 class ClientAdminFailureTransport(unittest.TestCase):
+    def test_typed_host_startup_witness_crosses_the_actual_wrapper(self):
+        expected = {
+            "host_startup_exit": {"host_exit_status": 1, "readiness_deadline_elapsed": False},
+            "host_startup_deadline": {"host_exit_status": None, "readiness_deadline_elapsed": True},
+        }
+        for case, witness in expected.items():
+            status, _stdout, stderr, stopped = run_wrapper(producer_source(case))
+            primary = records(stderr, "host integration failure record: ")
+            self.assertEqual(status, 23)
+            self.assertTrue(stopped)
+            self.assertEqual(len(primary), 1)
+            self.assertEqual(primary[0]["stage"], "host_startup")
+            self.assertEqual(primary[0]["reason"], "host_startup_failed")
+            self.assertEqual(primary[0]["host_startup"], witness)
+
     def test_invalid_tool_configuration_removes_early_raw_capture_directory(self):
         temp_root = Path(tempfile.mkdtemp(prefix="lockspire-admin-invalid-config-")).resolve()
         temp_root.chmod(0o700)
@@ -300,6 +318,40 @@ class ClientAdminFailureTransport(unittest.TestCase):
             self.assertTrue(len(admitted) == 1, "invalid configuration launched a nested owned child")
         finally:
             shutil.rmtree(temp_root)
+
+    def test_startup_witness_distinguishes_observed_host_exit_from_readiness_deadline(self):
+        exited = type("ExitedProcess", (), {"returncode": 1, "poll": lambda self: 1})()
+        with self.assertRaises(journey.HostStartupFailure) as caught_exit:
+            journey.wait_ready("http://127.0.0.1:1", exited, timeout=1)
+        self.assertEqual(
+            caught_exit.exception.host_startup_witness,
+            {"host_exit_status": 1, "readiness_deadline_elapsed": False},
+        )
+
+        waiting = type("WaitingProcess", (), {"returncode": None, "poll": lambda self: None})()
+        with self.assertRaises(journey.HostStartupFailure) as caught_deadline:
+            journey.wait_ready("http://127.0.0.1:1", waiting, timeout=0)
+        self.assertEqual(
+            caught_deadline.exception.host_startup_witness,
+            {"host_exit_status": None, "readiness_deadline_elapsed": True},
+        )
+
+    def test_failure_record_accepts_only_consistent_typed_startup_witness(self):
+        base = {"schema": SCHEMA, "stage": "host_startup", "reason": "host_startup_failed"}
+        exited = {**base, "host_startup": {
+            "host_exit_status": 1, "readiness_deadline_elapsed": False,
+        }}
+        deadline = {**base, "host_startup": {
+            "host_exit_status": None, "readiness_deadline_elapsed": True,
+        }}
+        self.assertIsNotNone(journey.validate_failure_record(exited))
+        self.assertIsNotNone(journey.validate_failure_record(deadline))
+        self.assertIsNone(journey.validate_failure_record({**base, "host_startup": {
+            "host_exit_status": 1, "readiness_deadline_elapsed": True,
+        }}))
+        self.assertIsNone(journey.validate_failure_record({**base, "host_startup": {
+            "host_exit_status": "1", "readiness_deadline_elapsed": False,
+        }}))
 
     def producer_record(self) -> str:
         stderr = []

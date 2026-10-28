@@ -188,12 +188,23 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
         })
 
       assert {:error, reason} = result
-      assert inspect(reason) =~ "plan03 forced client rotation write failure"
+      assert reason == :storage_error
       refute match?({:ok, %{client_secret: _plaintext}}, result)
     end)
 
     assert client_row(client_id) == before
     assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits
+
+    remove_failure_triggers()
+
+    assert {:ok, %{client: rotated, client_secret: _plaintext}} =
+             Clients.rotate_client_secret(client_id, %{
+               actor: %{type: :operator, id: "rotation-write-control"}
+             })
+
+    refute client_row(client_id).client_secret_hash == before.client_secret_hash
+    assert rotated.client_secret_hash == client_row(client_id).client_secret_hash
+    assert Lockspire.TestRepo.aggregate(AuditEventRecord, :count) == before_audits + 1
   end
 
   test "required audit failure rolls back every secret replacement field and handoff" do

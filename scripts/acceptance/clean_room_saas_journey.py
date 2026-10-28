@@ -2037,8 +2037,13 @@ def main(argv: list[str]) -> int:
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
             source_revision = package_identity.source_revision or ""
             current_head = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
-            if not source_revision or source_revision != current_head:
-                raise PackageInputError("package source revision differs from the current committed source")
+            expected_source = os.environ.get("LOCKSPIRE_LIFETIME_SOURCE_REVISION") or current_head
+            if not source_revision or source_revision != expected_source:
+                raise PackageInputError("package source revision differs from its independently selected source")
+            if package_identity.kind == "frozen" and not package_identity.source_proof:
+                raise PackageInputError("frozen package source lacks authenticated owner proof")
+            if package_identity.kind == "checkout" and source_revision != current_head:
+                raise PackageInputError("checkout package source differs from the current committed source")
             if "selected_authorization_par" in args.only and subprocess.check_output(
                 ("git", "status", "--porcelain"), cwd=Path(__file__).resolve().parents[2], text=True
             ).strip():
