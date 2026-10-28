@@ -1,0 +1,49 @@
+{
+  "checked_head": "ea9f9fdf15559e915585f2769aeb167b08d45761",
+  "commands": [
+    {
+      "exit_code": 0,
+      "query": "verify-schema-drift",
+      "result": {
+        "block": false,
+        "blocking": false,
+        "drift_detected": false,
+        "message": "",
+        "orms": [],
+        "schema_files": [],
+        "skipped": false,
+        "unpushed_orms": []
+      }
+    },
+    {
+      "exit_code": 0,
+      "query": "verify-codebase-drift",
+      "result": {
+        "action_required": false,
+        "block": false,
+        "directive": "none",
+        "elements": [],
+        "reason": "no-structure-md",
+        "skipped": true
+      }
+    },
+    {
+      "exit_code": 0,
+      "query": "ui-safety-gate",
+      "result": {
+        "block": false,
+        "frontend": true,
+        "hasFrontendEvidence": false,
+        "hasUiFiles": false,
+        "hasUiSpec": false
+      }
+    }
+  ],
+  "observed_at_utc": "2026-10-28T13:16:52.002548+00:00",
+  "phase": 178,
+  "point": "execute:wave:post",
+  "runtime": "@opengsd/gsd-core@1.18.0",
+  "schema": "lockspire-phase178-wave-post-gates-v1",
+  "selected_scope_sha256": "45d60561961df678ec1d4a4b81a1f128b5b89cf117db2a91fcff0b94f8331775",
+  "subsequent_delta": "delivery_metadata_only_no_selected_input_changes"
+}
