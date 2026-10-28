@@ -161,6 +161,7 @@ DISCLOSURE_CASE_IDS = {
     "floor": ["VPROOF-02-DISCLOSURE-FLOOR-SUCCESS"],
 }
 DISCLOSURE_CHANNEL_ATTRIBUTION = "operation_process_phase_v1"
+DISCLOSURE_COUNT_MAX = 2**31 - 1
 DISCLOSURE_FAILURE_CASE_IDS = {
     "locked": [
         "VPROOF-02-DISCLOSURE-LOCKED-MALFORMED-CRYPTO",
@@ -222,7 +223,7 @@ def _disclosure_capture_facts(payload: object) -> dict[str, Any]:
     if isinstance(payload, dict):
         for field in DISCLOSURE_CAPTURE_FACT_COUNT_FIELDS:
             value = payload.get(field)
-            facts[field] = value if type(value) is int and 0 <= value <= 2**31 - 1 else None
+            facts[field] = value if type(value) is int and 0 <= value <= DISCLOSURE_COUNT_MAX else None
         logger_counts = (
             facts["logger_event_count"], facts["logger_control_event_count"],
             facts["logger_operation_event_count"],
@@ -755,7 +756,7 @@ def validate_failure_capture(payload: object) -> dict[str, Any]:
         "query_control_event_count", "query_operation_event_count", "query_leak_count",
         "output_leak_count",
     )
-    if any(type(payload[field]) is not int or payload[field] < 0 for field in count_fields):
+    if any(type(payload[field]) is not int or not 0 <= payload[field] <= DISCLOSURE_COUNT_MAX for field in count_fields):
         raise DisclosureCaptureRejected("capture_count_invalid", payload)
     if payload["channel_attribution"] != DISCLOSURE_CHANNEL_ATTRIBUTION:
         raise DisclosureCaptureRejected("channel_attribution_unsupported", payload)
@@ -1091,6 +1092,7 @@ def _validate_receipt_structure(
             if (
                 historical_invalid or current_invalid
                 or any(type(result[field]) is not int or result[field] < 0 for field in count_fields)
+                or (not historical_structure_only and any(result[field] > DISCLOSURE_COUNT_MAX for field in count_fields))
                 or result["logger_event_count"] == 0
                 or result["query_event_count"] == 0
                 or (not historical_structure_only and result["channel_attribution"] != DISCLOSURE_CHANNEL_ATTRIBUTION)

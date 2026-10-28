@@ -371,7 +371,7 @@ def validate_capture_payload(payload: object) -> dict[str, object]:
         "logger_operation_event_count", "query_control_event_count", "query_operation_event_count",
         "logger_leak_count", "query_leak_count", "audit_after_count",
     ):
-        if type(payload[field]) is not int or payload[field] < 0:
+        if type(payload[field]) is not int or not 0 <= payload[field] <= verifier_receipts.DISCLOSURE_COUNT_MAX:
             raise verifier_receipts.DisclosureCaptureRejected("capture_count_invalid", payload)
     if payload["logger_event_count"] <= 0 or payload["query_event_count"] <= 0:
         raise verifier_receipts.DisclosureCaptureRejected("capture_controls_invalid", payload)
