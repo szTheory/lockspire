@@ -1,9 +1,9 @@
 {
   "candidate_owner": {
-    "archive_path": ".artifacts/phase178/refreeze-jar-cgbutvh3/lockspire-1.6.1.tar",
+    "archive_path": ".artifacts/phase178/refreeze-jose-f21oixkp/lockspire-1.6.1.tar",
     "archive_sha256": "527353b93cb5796fdf7a1878dc629966eed7417c1223b6fd6248040fa85491c4",
-    "extracted_tree_path": ".artifacts/phase178/refreeze-jar-cgbutvh3/lockspire",
-    "owner_sha256": "4c9f9da5e5df4caa185e4b3cbffba493e44941bcb53a3c55328ff1178a3bca75",
+    "extracted_tree_path": ".artifacts/phase178/refreeze-jose-f21oixkp/lockspire",
+    "owner_sha256": "5b63c4582c53af39cf40aaabee66f4e803117dfb1638b8a0607bc41a6c52c752",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21270,
-      "package_stdout_sha256": "d8901b997406b0af59db607924a21e3c0a58fd8668ee96ccb32f0ce2e846e531",
+      "package_stdout_sha256": "dbfad4c3ecad99aa9d78aa70a81e2a8e0565f4b6c7e81996435fd8f05dead63d",
       "rebuilt_archive_sha256": "527353b93cb5796fdf7a1878dc629966eed7417c1223b6fd6248040fa85491c4",
       "rebuilt_tree_sha256": "2c3900f7d7a21876341ee39593216d528f71432dc3948efc00b492cfb1a897a4"
     },
-    "source_revision": "dda570968cbb14e31dd867a25a33bf349a7ab740",
-    "source_tree": "8a6b251e848ad7d47c2efe6725357086f90e96dc",
+    "source_revision": "fefe8a7d948252293d7ffac7b8b20748d070d5bb",
+    "source_tree": "79993b2029875c185585fc119e1348ed3078d79a",
     "tree_sha256": "2c3900f7d7a21876341ee39593216d528f71432dc3948efc00b492cfb1a897a4"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -3615,7 +3615,7 @@
     },
     {
       "path": "scripts/acceptance/clean_room/build_client.py",
-      "sha256": "8e96381f0be1904f1177721354444c62990a9822144a567f56b5c4fda36e5c11"
+      "sha256": "fe336b39e01e42565feceef976e1c015af2791871a71bae0859e75f726dcf826"
     },
     {
       "path": "scripts/acceptance/clean_room/build_provider.py",
@@ -4079,11 +4079,11 @@
     },
     {
       "path": "test/clean_room/confidential_client/mix.exs",
-      "sha256": "59010018da14ad1f64cfa5daf9701acdb5cc8abc0c22a6c7673cc0527414d0a3"
+      "sha256": "fce29c3d943c3a906cbdf1910b71479d2e3c6b47a4b1289cbbe608b0ac28e2e3"
     },
     {
       "path": "test/clean_room/confidential_client/mix.lock",
-      "sha256": "f77638eeed00fc0a7fa524219ad2fe0c0fd3c147b0436979b925bc4f236f4404"
+      "sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa"
     },
     {
       "path": "test/clean_room/confidential_client/priv/repo/migrations/20260827000000_create_oauth_transactions.exs",
@@ -5890,8 +5890,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-28T07:25:27.256520+00:00",
-  "runner_revision": "08cf57fd16a91222dfcd774f8234b95e61621408",
-  "runner_tree": "f035df10d1a1906be46cc7162e848dbfcc0dc1bd",
+  "frozen_at": "2026-10-28T08:17:43.897078+00:00",
+  "runner_revision": "b99d6842c920a990de2c6df81123e43dc1a3bd2f",
+  "runner_tree": "85fd0281b23e00f1f36c9e9a28af0fa63079d5a5",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }
