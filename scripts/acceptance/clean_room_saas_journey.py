@@ -104,7 +104,7 @@ class RetainableTemporaryDirectory:
     def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> bool:
         if self.preserve:
             return False
-        if self.path is not None:
+        if self.path is not None and self.path.exists():
             shutil.rmtree(self.path)
         return False
 
@@ -2066,7 +2066,7 @@ def assert_bare_mix_tasks(provider_child: Path, provider_environment: dict[str, 
 
 
 def main(argv: list[str]) -> int:
-    global ACTIVE_REDACTOR
+    global ACTIVE_REDACTOR, PROVIDER_ORIGIN, CLIENT_ORIGIN
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", action="append", choices=("happy_path", "boundary", "lifecycle", "negative", "dpop", "dcr_lifetime", "selected_authorization_par"))
     parser.add_argument("--lifetime-leg", action="append", choices=("fresh", "custom", "legacy"))
@@ -2173,30 +2173,37 @@ def main(argv: list[str]) -> int:
     run_directory = RetainableTemporaryDirectory(prefix="lockspire-clean-room-journey-")
     with run_directory as temporary:
         run_root = Path(temporary)
-        run_root_owner = claim_run_root(run_root)
+        run_root_owner = None
         runner_tmpdir = run_root / "mix-tmp"
-        runner_tmpdir.mkdir(mode=0o700)
         previous_tmpdir = os.environ.get("TMPDIR")
-        # Mix Sync lock files live below TMPDIR.  Every acceptance run gets an
-        # owned directory so a concurrent Mix process cannot race its lock-file
-        # replacement or cleanup against this run.
-        os.environ["TMPDIR"] = str(runner_tmpdir)
-        provider_port, client_port = configure_origins()
-        # The router overlay captures its audience while the child host compiles
-        # during prepare_provider, so these origins must be inherited before
-        # that call rather than added only to the later server environment.
-        os.environ.update({
-            "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN,
-            "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
-        })
-        provider_database = clean_room_database_url("provider")
-        client_database = clean_room_database_url("client")
+        previous_provider_origin = os.environ.get("CLEAN_ROOM_PROVIDER_ORIGIN")
+        previous_client_origin = os.environ.get("CLEAN_ROOM_CLIENT_ORIGIN")
+        previous_provider_origin_value = PROVIDER_ORIGIN
+        previous_client_origin_value = CLIENT_ORIGIN
+        provider_port = client_port = None
+        provider_database = client_database = None
 
         def track_provider_process(process: subprocess.Popen[bytes]) -> None:
             nonlocal provider_process
             provider_process = process
 
         try:
+            run_root_owner = claim_run_root(run_root)
+            runner_tmpdir.mkdir(mode=0o700)
+            # Mix Sync lock files live below TMPDIR. Every acceptance run gets an
+            # owned directory so a concurrent Mix process cannot race its lock-file
+            # replacement or cleanup against this run.
+            os.environ["TMPDIR"] = str(runner_tmpdir)
+            provider_port, client_port = configure_origins()
+            # The router overlay captures its audience while the child host compiles
+            # during prepare_provider, so these origins must be inherited before
+            # that call rather than added only to the later server environment.
+            os.environ.update({
+                "CLEAN_ROOM_PROVIDER_ORIGIN": PROVIDER_ORIGIN,
+                "CLEAN_ROOM_CLIENT_ORIGIN": CLIENT_ORIGIN,
+            })
+            provider_database = clean_room_database_url("provider")
+            client_database = clean_room_database_url("client")
             assert_owned_run_root(run_root, run_root_owner)
             probe_environment()
             assert_redaction_guard(redactor)
@@ -2360,25 +2367,39 @@ def main(argv: list[str]) -> int:
             if not cleanup["processes_stopped"]:
                 result_code = 1
                 print("clean-room process cleanup failed", file=sys.stderr)
-            try:
-                assert_owned_run_root(run_root, run_root_owner)
-            except AssertionError as error:
-                print(str(safe_failure_summary(
-                    stage="saas_journey", scenario="cleanup", event="runner_failure",
-                    field=type(error).__name__, count=1,
-                )), file=sys.stderr)
+            if run_root_owner is None:
+                cleanup["databases_removed"] = provider_child is None and client_child is None
             else:
-                cleanup["databases_removed"] = cleanup_child_databases(
-                    cleanup["processes_stopped"], client_child, client_environment,
-                    provider_child, provider_environment,
-                )
-                if not cleanup["databases_removed"]:
+                try:
+                    assert_owned_run_root(run_root, run_root_owner)
+                except AssertionError as error:
                     result_code = 1
-                    print("clean-room database cleanup failed", file=sys.stderr)
+                    print(str(safe_failure_summary(
+                        stage="saas_journey", scenario="cleanup", event="runner_failure",
+                        field=type(error).__name__, count=1,
+                    )), file=sys.stderr)
+                else:
+                    cleanup["databases_removed"] = cleanup_child_databases(
+                        cleanup["processes_stopped"], client_child, client_environment,
+                        provider_child, provider_environment,
+                    )
+                    if not cleanup["databases_removed"]:
+                        result_code = 1
+                        print("clean-room database cleanup failed", file=sys.stderr)
             if previous_tmpdir is None:
                 os.environ.pop("TMPDIR", None)
             else:
                 os.environ["TMPDIR"] = previous_tmpdir
+            if previous_provider_origin is None:
+                os.environ.pop("CLEAN_ROOM_PROVIDER_ORIGIN", None)
+            else:
+                os.environ["CLEAN_ROOM_PROVIDER_ORIGIN"] = previous_provider_origin
+            if previous_client_origin is None:
+                os.environ.pop("CLEAN_ROOM_CLIENT_ORIGIN", None)
+            else:
+                os.environ["CLEAN_ROOM_CLIENT_ORIGIN"] = previous_client_origin
+            PROVIDER_ORIGIN = previous_provider_origin_value
+            CLIENT_ORIGIN = previous_client_origin_value
             print("cleanup complete")
         run_directory.preserve = not (cleanup["processes_stopped"] and cleanup["databases_removed"])
     cleanup["temporary_roots_removed"] = not run_root.exists()

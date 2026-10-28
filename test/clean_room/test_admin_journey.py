@@ -206,6 +206,63 @@ class AdminOwnedProcessCleanupTests(unittest.TestCase):
                 self.assertFalse(admin_journey.stop_owned(process, identity))
 
 
+class JourneySetupCleanupTests(unittest.TestCase):
+    def test_pre_host_setup_failure_restores_environment_and_removes_empty_owned_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary) / "owned-run"
+            receipt = Path(temporary) / "receipt.json"
+            original = {
+                "TMPDIR": "/private/tmp/original-mix-tmp",
+                "CLEAN_ROOM_PROVIDER_ORIGIN": "http://127.0.0.1:49991",
+                "CLEAN_ROOM_CLIENT_ORIGIN": "http://127.0.0.1:49992",
+            }
+            def fail_after_origin_configuration():
+                saas_journey.PROVIDER_ORIGIN = "http://127.0.0.1:49993"
+                saas_journey.CLIENT_ORIGIN = "http://127.0.0.1:49994"
+                raise OSError("private setup failure")
+
+            def create_owned_root(*_arguments, **_options):
+                run_root.mkdir(mode=0o700)
+                return str(run_root)
+
+            with patch.dict(os.environ, original), patch.object(
+                saas_journey.tempfile, "mkdtemp", side_effect=create_owned_root
+            ), patch.object(
+                saas_journey, "configure_origins", side_effect=fail_after_origin_configuration
+            ), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = saas_journey.main(["--only", "dcr_lifetime", "--receipt", str(receipt)])
+                self.assertEqual({key: os.environ.get(key) for key in original}, original)
+                self.assertEqual(saas_journey.PROVIDER_ORIGIN, "http://127.0.0.1:4100")
+                self.assertEqual(saas_journey.CLIENT_ORIGIN, "http://127.0.0.1:4101")
+
+            self.assertEqual(result, 1)
+            self.assertFalse(run_root.exists())
+
+    def test_failed_legacy_upgrade_retains_its_owned_temporary_root(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            run_root = Path(temporary) / "owned-upgrade"
+            package_root = Path(temporary) / "candidate-package"
+            identity = SimpleNamespace(
+                version="1.6.1", source_revision="a" * 40,
+                archive_sha256="b" * 64, tree_sha256="c" * 64,
+            )
+            def create_upgrade_root(*_arguments, **_options):
+                run_root.mkdir(mode=0o700)
+                return str(run_root)
+            with patch.object(lifetime_upgrade.sys, "argv", ["client_lifetime_upgrade", "--scenario", "public"]), patch.dict(os.environ, {"LOCKSPIRE_UPGRADE_DEBUG_ROOT": ""}), patch.object(
+                lifetime_upgrade.tempfile, "mkdtemp", side_effect=create_upgrade_root
+            ), patch.object(
+                lifetime_upgrade, "prepare_package", return_value=(package_root, (), identity)
+            ), patch.object(
+                lifetime_upgrade, "run_scenario", side_effect=PackageInputError("private failure")
+            ), contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                result = lifetime_upgrade.main()
+
+            self.assertEqual(result, 1)
+            self.assertTrue(run_root.is_dir())
+            shutil.rmtree(run_root)
+
+
 def full_scenario(case_id):
     flags = {name: name in FULL_CASE_EVIDENCE[case_id] for name in FULL_OBSERVATIONS}
     counts = {name: 0 for name in ("assets", "websocket_handshakes", "successful_joins", "navigations", "params_checks", "http_checks", "staff_checks")}

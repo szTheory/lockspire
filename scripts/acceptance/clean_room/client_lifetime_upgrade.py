@@ -11,7 +11,6 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from urllib.parse import parse_qs, urlencode, urlparse
 from urllib.request import urlopen
@@ -28,7 +27,11 @@ from package_input import (
 )
 from lifetime_receipts import validate_candidate_identity_agreement
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from clean_room_saas_journey import Browser, _run_host_control, basic, csrf, redirect, safe_oauth_error_code, s256, start_process, stop_process, wait_ready
+from clean_room_saas_journey import (
+    Browser, RetainableTemporaryDirectory, _run_host_control, basic, csrf,
+    redirect, safe_oauth_error_code, s256, start_process,
+    stop_started_processes, wait_ready,
+)
 from redaction import Redactor, SentinelSet, safe_failure_summary
 from processes import allocate_loopback_port
 
@@ -599,18 +602,17 @@ def run_scenario(
         raise PackageInputError("candidate signing key setup did not complete before the HTTP token flow")
     http_port = allocate_loopback_port(set())
     candidate_env.update({"PORT": str(http_port), "LOCKSPIRE_ISSUER": f"http://127.0.0.1:{http_port}/lockspire"})
-    http_process = start_process(candidate_host, candidate_env, run_root / f"candidate-http-{prefix}.log")
-    try:
-        origin = f"http://127.0.0.1:{http_port}"
-        wait_ready(origin)
+    def observe_legacy_http(origin: str) -> tuple[dict[str, object], tuple[dict[str, object], str]]:
         http_observation = exercise_legacy_http_use(origin, legacy_dcr_id, legacy_secret, redactor)
-        promotion_observation, promotion_marker = replace_legacy_authorities(
+        promotion = replace_legacy_authorities(
             origin, candidate_host, candidate_env, legacy_dcr_id, legacy_secret, legacy_rat, run_root, redactor
         )
-    finally:
-        stop_process(http_process)
-    if http_process.poll() is None:
-        raise PackageInputError("candidate HTTP process remained alive after legacy upgrade observation")
+        return http_observation, promotion
+
+    http_process, http_results = run_candidate_http_flow(
+        candidate_host, candidate_env, http_port, observe_legacy_http
+    )
+    http_observation, (promotion_observation, promotion_marker) = http_results
     if http_observation != {
         "par_http_status": 201, "authorize_http_status": 302, "login_http_status": 200, "token_http_status": 200,
         "lifetime_version": 0, "client_secret_date_kind": "past", "access_token_issued": True,
@@ -659,6 +661,29 @@ def run_scenario(
         "rollback_boundary": "retain schema and v1 state; fix forward or use lifetime-aware rollback",
     }
     return receipt
+
+
+def run_candidate_http_flow(
+    candidate_host: Path,
+    candidate_env: dict[str, str],
+    http_port: int,
+    flow,
+) -> tuple[subprocess.Popen[bytes], object]:
+    """Run the legacy HTTP observation and close its exact owned process group."""
+    http_process = None
+    try:
+        # Keep this call aligned with the two-argument provider start_process API.
+        http_process = start_process(candidate_host, candidate_env)
+        origin = f"http://127.0.0.1:{http_port}"
+        wait_ready(origin)
+        observation = flow(origin)
+    finally:
+        if not stop_started_processes():
+            raise PackageInputError("candidate HTTP process group cleanup is unconfirmed")
+
+    if http_process is None or http_process.poll() is None:
+        raise PackageInputError("candidate HTTP process remained alive after legacy upgrade observation")
+    return http_process, observation
 
 
 def validate_receipt(receipt: dict[str, object], expected_prefixes: set[str] | None = None) -> None:
@@ -791,6 +816,8 @@ def main() -> int:
             validate_receipt(json.loads(args.check_receipt.read_text()))
             print("lifetime upgrade receipt verified")
             return 0
+        if not stop_started_processes():
+            raise PackageInputError("an earlier candidate HTTP process group is still owned")
         selected = list(SCENARIOS) if args.scenario == "all" else [args.scenario]
         debug_root = str(args.work_root) if args.work_root else os.environ.get("LOCKSPIRE_UPGRADE_DEBUG_ROOT")
         if debug_root:
@@ -817,7 +844,8 @@ def main() -> int:
                 args.receipt.write_text(rendered + "\n")
             print(rendered)
         else:
-            with tempfile.TemporaryDirectory(prefix="lockspire-lifetime-upgrade-") as temporary:
+            run_directory = RetainableTemporaryDirectory(prefix="lockspire-lifetime-upgrade-")
+            with run_directory as temporary:
                 run_root = Path(temporary)
                 candidate_package, _entries, candidate_identity = prepare_package(
                     run_root, PackageSource("tar", str(args.package_tar), args.package_sha256)
@@ -839,6 +867,7 @@ def main() -> int:
                     args.receipt.parent.mkdir(parents=True, exist_ok=True)
                     args.receipt.write_text(rendered + "\n")
                 print(rendered)
+                run_directory.preserve = False
         return 0
     except (PackageInputError, OSError, ValueError) as error:
         summary = error.summary if isinstance(error, LegacyRunnerFailure) else safe_failure_summary(

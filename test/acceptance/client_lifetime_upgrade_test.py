@@ -19,6 +19,52 @@ from redaction import Redactor, SentinelSet  # noqa: E402
 
 
 class LegacyUpgradeReceiptTest(unittest.TestCase):
+    def test_legacy_http_boundary_uses_provider_signature_and_blocks_after_uncertain_cleanup(self) -> None:
+        host = Path("/controlled/candidate")
+        environment = {"MIX_ENV": "test"}
+        started = []
+        continuation = []
+        process = Mock(pid=123, returncode=1)
+        process.poll.return_value = 1
+
+        def start_candidate(candidate_host, candidate_env):
+            started.append((candidate_host, candidate_env))
+            return process
+
+        with patch.object(upgrade, "start_process", side_effect=start_candidate), \
+             patch.object(upgrade, "wait_ready") as wait_ready, \
+             patch.object(upgrade, "stop_started_processes", return_value=False) as stop:
+            def candidate_then_database_teardown():
+                upgrade.run_candidate_http_flow(
+                    host, environment, 49123, lambda origin: {"origin": origin}
+                )
+                continuation.append("database teardown")
+
+            with self.assertRaisesRegex(PackageInputError, "process group cleanup is unconfirmed"):
+                candidate_then_database_teardown()
+
+        self.assertEqual(started, [(host, environment)])
+        wait_ready.assert_called_once_with("http://127.0.0.1:49123")
+        stop.assert_called_once_with()
+        self.assertEqual(continuation, [])
+
+    def test_legacy_http_boundary_retries_owned_cleanup_after_startup_counter_failure(self) -> None:
+        host = Path("/controlled/candidate")
+        environment = {"MIX_ENV": "test"}
+        cleanup_attempts = []
+
+        def fail_after_process_registration(candidate_host, candidate_env):
+            self.assertEqual(candidate_host, host)
+            self.assertIs(candidate_env, environment)
+            raise PackageInputError("callback counter setup failed")
+
+        with patch.object(upgrade, "start_process", side_effect=fail_after_process_registration), \
+             patch.object(upgrade, "stop_started_processes", side_effect=lambda: cleanup_attempts.append("stop") or False):
+            with self.assertRaisesRegex(PackageInputError, "process group cleanup is unconfirmed"):
+                upgrade.run_candidate_http_flow(host, environment, 49123, lambda _origin: None)
+
+        self.assertEqual(cleanup_attempts, ["stop"])
+
     def test_child_failure_retains_only_its_bounded_event_witness(self) -> None:
         child = Mock(returncode=1)
         child.communicate.return_value = (b"private child output", b"private child error")

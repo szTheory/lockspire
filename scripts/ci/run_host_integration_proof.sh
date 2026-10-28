@@ -102,6 +102,7 @@ fi
 deadline=$((started + pair_budget))
 bounded_result=''
 bounded_status=0
+cleanup_record_emitted=false
 run_bounded() {
   limit=$1
   stage=$2
@@ -305,12 +306,17 @@ emit_failure_record() {
     candidate:candidate_unavailable|provider_preparation:provider_preparation_failed|database_create:database_creation_failed|database_migrate:database_migration_failed|runtime_observation:runtime_observation_failed|host_startup:host_startup_failed|lifecycle:lifecycle_failed|browser:browser_proof_failed|receipt:receipt_invalid|receipt:receipt_write_failed|cleanup:cleanup_failed|diagnostics:failure_record_missing|diagnostics:failure_record_malformed|diagnostics:output_limit_exceeded) ;;
     *) stage=diagnostics; reason=failure_record_malformed ;;
   esac
+  if [[ "$stage" == cleanup ]]; then
+    [[ "$cleanup_record_emitted" == false ]] || return 0
+    cleanup_record_emitted=true
+  fi
   local prefix='host integration failure record'
   if [[ "$stage" == cleanup ]]; then prefix='host integration cleanup record'; fi
   printf '%s: {"schema":"lockspire-admin-proof-failure-v1","stage":"%s","reason":"%s"}\n' "$prefix" "$stage" "$reason" >&2
 }
 emit_browser_diagnostic() {
-  python3 -c 'import json,sys
+  local diagnostics
+  diagnostics=$(python3 -c 'import json,sys
 from pathlib import Path
 sys.path.insert(0,str(Path.cwd()/"scripts"/"acceptance"))
 from clean_room_admin_journey import FAILURE_RECORD_SCHEMA,safe_browser_failure_summary,validate_failure_record
@@ -319,10 +325,14 @@ except (TypeError,ValueError): payload={}
 record=validate_failure_record(payload.get("failure_record"))
 cleanup=validate_failure_record(payload.get("cleanup_record"))
 if record is None: record={"schema":FAILURE_RECORD_SCHEMA,"stage":"diagnostics","reason":"failure_record_malformed"}
-print("host integration failure record: "+json.dumps(record,sort_keys=True),file=sys.stderr)
-if cleanup is not None and cleanup["stage"] == "cleanup": print("host integration cleanup record: "+json.dumps(cleanup,sort_keys=True),file=sys.stderr)
-for summary in payload.get("browser_diagnostics",[])[:8]: print("host integration browser diagnostic: "+json.dumps(safe_browser_failure_summary(summary),sort_keys=True),file=sys.stderr)
-' <<<"$bounded_result"
+print("host integration failure record: "+json.dumps(record,sort_keys=True))
+if cleanup is not None and cleanup["stage"] == "cleanup": print("host integration cleanup record: "+json.dumps(cleanup,sort_keys=True))
+for summary in payload.get("browser_diagnostics",[])[:8]: print("host integration browser diagnostic: "+json.dumps(safe_browser_failure_summary(summary),sort_keys=True))
+' <<<"$bounded_result")
+  if [[ "$diagnostics" == *"host integration cleanup record: "* ]]; then
+    cleanup_record_emitted=true
+  fi
+  [[ -z "$diagnostics" ]] || printf '%s\n' "$diagnostics" >&2
 }
 extract_stdout() {
   python3 -c 'import json,sys

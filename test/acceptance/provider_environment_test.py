@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import base64
 from contextlib import ExitStack, redirect_stderr
-from io import StringIO
+from io import BytesIO, StringIO
 import os
 import shutil
 from pathlib import Path
@@ -216,18 +216,26 @@ class ProviderEnvironmentContracts(unittest.TestCase):
 
     def test_saas_live_boot_enables_http_without_mutating_its_caller(self):
         observed = []
-        process = object()
+        process = SimpleNamespace(pid=123, stdout=BytesIO())
+        process_identity = SimpleNamespace(pid=123, parent_pid=1, pgid=123, sid=123, start=(456,))
+        counter = object()
 
         def start(_command, **options):
             observed.append(options["env"].get("CLEAN_ROOM_HTTP_SERVER"))
             return process
 
         environment = {"MIX_ENV": "test", "CLEAN_ROOM_HTTP_SERVER": "false"}
-        with patch.object(journey, "start_owned_session", side_effect=start):
-            actual = journey.start_process(Path("/controlled/provider"), environment, Path("/controlled/log"))
+        with patch.object(journey, "start_owned_session", side_effect=start), \
+             patch.object(journey, "_OWNED_IDENTITIES", {process.pid: process_identity}), \
+             patch.object(journey, "CallbackCounter", return_value=counter):
+            actual = journey.start_process(Path("/controlled/provider"), environment)
         self.assertIs(actual, process)
+        self.assertIs(actual._clean_room_callback_counter, counter)
+        self.assertIs(actual._clean_room_identity, process_identity)
         self.assertEqual(observed, ["true"])
         self.assertEqual(environment["CLEAN_ROOM_HTTP_SERVER"], "false")
+        journey.STARTED_HOST_PROCESSES.remove(process)
+        process.stdout.close()
 
     def test_failed_mix_command_reports_a_fixed_stage_without_child_output_or_arguments(self):
         cases = [
