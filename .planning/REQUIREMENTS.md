@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements; current Phase 178 source-bound package proof closes VPROOF-02, while VDELIV-01/02 remain pending. Generic edge and non-authoritative prohibition flags remain visible in their reports.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements. Current Phase 178 local source-bound package proof closes VPROOF-02; VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance is not observed. Generic edge and non-authoritative prohibition flags remain visible in their reports.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -36,7 +36,7 @@
 ### Proof and delivery
 
 - [x] **VPROOF-01**: Security reviewer can verify that verifier plaintext, encryption keys and ciphertext stay out of logs, SQL diagnostics, telemetry, audit, operator reports and protocol responses across success and failure paths.
-- [ ] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers. Previous qualification remains historical for its recorded bytes; corrected inputs are pending new qualification.
+- [x] **VPROOF-02**: Maintainer can reproduce source-bound package-installed fresh/legacy-upgrade, mixed-key/version, rotation, rejection and recovery journeys on the existing supported dependency pairs, including actual PostgreSQL concurrency/rollback and a supported configured-store composition; unavailable cases remain explicit failures or blockers. Current local qualification is bound to the 1,078-input closure and actual tested checkout `834b84d40a6059c308303658bea8b83d9fb0e412`; prior closures remain historical.
 - [ ] **VDELIV-01**: Reviewer can assess a completed milestone audit, focused security/code review and passing required candidate contributor/CI gates, with install/upgrade/support guidance matching verified behavior and no new dependency or public protocol scope.
 - [ ] **VDELIV-02**: Next maintainer can resume from a dated delivery/main-acceptance and resource-custody handoff, with unknown work preserved and the rolling ranking refreshed to retain UI quality next and its completed interview.
 
@@ -87,11 +87,11 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-03 | Phase 177 | Complete |
 | VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
-| VPROOF-02 | Phase 178 | Pending — current correction inputs require independent review, refreeze, and fresh source/package qualification; prior 1,077-input evidence remains historical |
+| VPROOF-02 | Phase 178 | Complete — current 1,078-input local source/package proof; no hosted or main acceptance implied |
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
-**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 15 currently verified complete and 3 pending. Roadmap approved 2026-10-25. The original 1,076- and 1,077-input Plan 10 evidence remains historical and valid only for its recorded closures. Current corrected inputs need independent review, refreeze, and fresh source/package qualification; VDELIV-01/02 still require hosted candidate CI, milestone audit, and main/delivery evidence.
+**Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 16 currently verified complete and 2 pending. Roadmap approved 2026-10-25. The original 1,076- and 1,077-input Plan 10 evidence remains historical and valid only for its recorded closures. Current 1,078-input local qualification closes VPROOF-02; VDELIV-01/02 still require passing hosted candidate CI, milestone audit, and main/delivery evidence.
 
 ---
-*Last updated: 2026-10-27 when authorized local Phase 178 corrections began; current VPROOF-02 and VDELIV-01/02 are pending.*
+*Last updated: 2026-10-28 after current 1,078-input local source/package qualification; VPROOF-02 complete locally, VDELIV-01/02 pending.*

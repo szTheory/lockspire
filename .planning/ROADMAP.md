@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete (15/18 requirements); Phase 178 is planned in 12 plans and 8 waves. Non-authoritative edge/prohibition flags remain visible; package proof and delivery are pending.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–177 independently verified complete; Phase 178 Plan 10 completes current local VPROOF-02 for the 1,078-input closure. VDELIV-01/02 remain pending: PR #141 required candidate CI is incomplete, and main/delivery acceptance is unobserved. Non-authoritative edge/prohibition flags remain visible.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
@@ -272,7 +272,7 @@ Plans:
 | 177. Safe Verifier Maintenance & Recovery | 9/9 | Complete    | 2026-10-26 |
 | 178. Packaged Upgrade Proof & Delivery Handoff | 10/12 | In Progress | — |
 
-**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; prior VPROOF-02 qualification remains historical for its exact 1,077-input closure. The authorized local correction pass changes covered inputs, so current VPROOF-02 is pending fresh review/refreeze/source/package qualification; VDELIV-01/02 remain pending hosted candidate, audit, and main/delivery evidence. The phase remains in progress. Roadmap approved 2026-10-25.
+**Coverage:** 18/18 approved requirements map exactly once; 4 approved phases; Phases 175–177 completed 19/19 plans and 15/18 requirements. Phase 178 has 10/12 plans executed; current 1,078-input local review/refreeze/source/package qualification completes VPROOF-02. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance remains unobserved. Plan 11 is incomplete; Plan 12 has not started. The phase remains in progress. Roadmap approved 2026-10-25.
 
 ## Completed Backlog Scope
 

@@ -1,6 +1,6 @@
 # v1.48 Delivery Status — Open PR, Candidate Checks Incomplete
 
-**Observed:** 2026-10-28 02:25 UTC
+**Observed:** 2026-10-28 13:02 UTC
 **Status:** The user-authorized normal milestone PR is open. Candidate checks have produced failures and remain incomplete. No merge or publication occurred.
 
 ## Pull Request
@@ -8,7 +8,7 @@
 - Repository: `szTheory/lockspire`; PR [#141](https://github.com/szTheory/lockspire/pull/141), title `feat: isolate and rotate client authentication verifiers (v1.48)`, normal non-draft.
 - Source branch: `milestone/v1.48-client-auth-key-isolation`; immutable published head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`.
 - Base: protected `main` at `173059a166e9ade0f5f57c9980b7b2400a98538c` when opened.
-- Submitted body: SHA-256 `b3bc7e601afea5fca177942f4933bac3ba214df7f1efc4ae06cff2aa6c8a4757`, same prepared content as [the local proposal](178-11-PR-PROPOSAL.md).
+- Submitted body at original publication: SHA-256 `b3bc7e601afea5fca177942f4933bac3ba214df7f1efc4ae06cff2aa6c8a4757`. A corrected local-only replacement is prepared at `/private/tmp/lockspire178-pr141-final-local-delivery/pr-body.md`; its digest and exact final metadata HEAD are in the private publication plan. The remote PR body remains unchanged pending separate authorization.
 - GitHub reports PR synthetic merge commit `e5ea09406cbbf581a028dce0572ee4f594994ee0`, tree `20c69eacc567c87f6c16fc4251440573ae6b2854`, parents `173059a166e9ade0f5f57c9980b7b2400a98538c` and `4d512ae2c6a042e2b4557750eca2d49e57fb7189`. This records the PR merge object; no job-log checkout assertion or package artifact was inspected.
 
 ## Automatically Triggered Checks
@@ -44,12 +44,16 @@ Native guarded source CI passed at execution checkout 90d17: 15/0, 2,166/0 with 
 
 ## Main, Hygiene, and Custody
 
-At the pre-open read-only observation on 2026-10-28, live `main` and `origin/main` were `173059a166e9ade0f5f57c9980b7b2400a98538c`; main was an ancestor of the approved branch. The bounded repo-owned hygiene command `bash scripts/maintainer/repo_hygiene_check.sh --ci --skip-mix-ci` exited 0 with 18 PASS, 0 WARN, 0 BLOCK; it skipped `mix ci` and is not exact-main acceptance. The latest observed main CI #40198968774 and Release #40198968751 succeeded on that SHA on 2026-10-25; Release publication jobs were skipped. Supplemental OIDF run #40455602937 failed separately on that main SHA.
+At the pre-open read-only observation on 2026-10-28, live `main` and `origin/main` were `173059a166e9ade0f5f57c9980b7b2400a98538c`; main was an ancestor of the approved branch. A read-only refresh at 13:02 UTC reconfirmed remote `main` at the same SHA; local `origin/main` matched, remained an ancestor of local HEAD `834b84d40a6059c308303658bea8b83d9fb0e412`, and the remote milestone branch remained at the published PR head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`. The bounded repo-owned hygiene command `bash scripts/maintainer/repo_hygiene_check.sh --ci --skip-mix-ci` exited 0 with 18 PASS, 0 WARN, 0 BLOCK; it skipped `mix ci` and is not exact-main acceptance. The latest observed main CI #40198968774 and Release #40198968751 succeeded on that SHA on 2026-10-25; Release publication jobs were skipped. Supplemental OIDF run #40455602937 failed separately on that main SHA. No full hygiene/Mix command was rerun during this local metadata pass.
 
 The original root archive and protected backup SHA-256 `5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be` remain verified. The root-owned PostgreSQL service and private cache were closed and removed; custody is recorded at `/private/tmp/lockspire178-root-closure-e6b82laq/terminal.json`, SHA-256 `78f832ffe3e1459955684c323a5d420b39c4fc162704da3267e1cdd928ef8599`. No further DB/package runtime action is pending or available.
 
 ## Requirement Status and Boundary
 
-`VPROOF-02` is complete for the current source-bound local proof. `VDELIV-01` remains pending a passing compatible seven-job candidate graph, complete coverage evidence, and milestone audit. `VDELIV-02` remains pending the dated main/delivery acceptance handoff and ranking refresh. E-09/E-10 and existing flags remain open and unwaived.
+`VPROOF-02` is complete for the current 1,078-input source-bound local proof, summarized in [the current Plan 10 addendum](178-10-SUMMARY.md#2026-10-28-local-delivery-reconciliation--current-1078-input-closure). `VDELIV-01` remains pending a passing compatible seven-job candidate graph, complete coverage evidence, and milestone audit. `VDELIV-02` remains pending the dated main/delivery acceptance handoff and ranking refresh. E-09/E-10 and existing flags remain open and unwaived.
 
 Authorization covered only pushing exact SHA `4d512ae2c6a042e2b4557750eca2d49e57fb7189` and opening this normal PR. Subsequent local tracking updates are unpushed; no branch update, rerun, review request/comment, merge, or publication is authorized by this record. The local checkpoint is [178-11-EXECUTION-CHECKPOINT.md](178-11-EXECUTION-CHECKPOINT.md). The exact pre-publication proposal, delivery, and checkpoint remain preserved under `*-INITIAL-2026-10-27.md`.
+
+## 2026-10-28 Local Body and Checkpoint Preparation
+
+The updated review-ready proposal is [178-11-PR-PROPOSAL.md](178-11-PR-PROPOSAL.md). Its private body file was prepared from the refreshed local proof and records the exact published PR head, actual tested checkout, current frozen candidate, and observed failed/pending/skipped hosted jobs. No remote update was made. Final metadata publication SHA, body path/hash, current main/ref snapshot, and the bounded action awaiting authorization are recorded outside the repository in the private publication plan. Plan 11 is not complete; Plan 12 has not started; Phase 178 remains in progress.
