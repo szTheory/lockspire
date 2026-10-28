@@ -1,0 +1,1364 @@
+{
+  "baseline_head": "781b6e2a9c11e11c2bcb0608bc1efb212562350e",
+  "custody": [
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": true,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62123,
+        "pid": 62123,
+        "sid": 62123,
+        "start": [
+          1793164417,
+          691325
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62132,
+        "pgid": 62134,
+        "pid": 62134,
+        "sid": 62134,
+        "start": [
+          1793164417,
+          907011
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62123,
+        "pid": 62123,
+        "sid": 62123,
+        "start": [
+          1793164417,
+          691325
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62132,
+        "pgid": 62134,
+        "pid": 62134,
+        "sid": 62134,
+        "start": [
+          1793164417,
+          907011
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62123,
+        "pid": 62123,
+        "sid": 62123,
+        "start": [
+          1793164417,
+          691325
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62132,
+        "pgid": 62134,
+        "pid": 62134,
+        "sid": 62134,
+        "start": [
+          1793164417,
+          907011
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62182,
+        "pid": 62182,
+        "sid": 62182,
+        "start": [
+          1793164430,
+          371999
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62191,
+        "pgid": 62193,
+        "pid": 62193,
+        "sid": 62193,
+        "start": [
+          1793164430,
+          586722
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62182,
+        "pid": 62182,
+        "sid": 62182,
+        "start": [
+          1793164430,
+          371999
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62191,
+        "pgid": 62193,
+        "pid": 62193,
+        "sid": 62193,
+        "start": [
+          1793164430,
+          586722
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62182,
+        "pid": 62182,
+        "sid": 62182,
+        "start": [
+          1793164430,
+          371999
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62206,
+        "pid": 62206,
+        "sid": 62206,
+        "start": [
+          1793164431,
+          121169
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62215,
+        "pgid": 62216,
+        "pid": 62216,
+        "sid": 62216,
+        "start": [
+          1793164431,
+          336939
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62206,
+        "pid": 62206,
+        "sid": 62206,
+        "start": [
+          1793164431,
+          121169
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62215,
+        "pgid": 62216,
+        "pid": 62216,
+        "sid": 62216,
+        "start": [
+          1793164431,
+          336939
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62206,
+        "pid": 62206,
+        "sid": 62206,
+        "start": [
+          1793164431,
+          121169
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62230,
+        "pid": 62230,
+        "sid": 62230,
+        "start": [
+          1793164431,
+          877185
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62239,
+        "pgid": 62241,
+        "pid": 62241,
+        "sid": 62241,
+        "start": [
+          1793164432,
+          92434
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62230,
+        "pid": 62230,
+        "sid": 62230,
+        "start": [
+          1793164431,
+          877185
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62239,
+        "pgid": 62241,
+        "pid": 62241,
+        "sid": 62241,
+        "start": [
+          1793164432,
+          92434
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62230,
+        "pid": 62230,
+        "sid": 62230,
+        "start": [
+          1793164431,
+          877185
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62254,
+        "pid": 62254,
+        "sid": 62254,
+        "start": [
+          1793164432,
+          629871
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62263,
+        "pgid": 62265,
+        "pid": 62265,
+        "sid": 62265,
+        "start": [
+          1793164432,
+          846870
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62254,
+        "pid": 62254,
+        "sid": 62254,
+        "start": [
+          1793164432,
+          629871
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62263,
+        "pgid": 62265,
+        "pid": 62265,
+        "sid": 62265,
+        "start": [
+          1793164432,
+          846870
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62254,
+        "pid": 62254,
+        "sid": 62254,
+        "start": [
+          1793164432,
+          629871
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62279,
+        "pid": 62279,
+        "sid": 62279,
+        "start": [
+          1793164433,
+          395652
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62288,
+        "pgid": 62289,
+        "pid": 62289,
+        "sid": 62289,
+        "start": [
+          1793164433,
+          610796
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62279,
+        "pid": 62279,
+        "sid": 62279,
+        "start": [
+          1793164433,
+          395652
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62288,
+        "pgid": 62289,
+        "pid": 62289,
+        "sid": 62289,
+        "start": [
+          1793164433,
+          610796
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62279,
+        "pid": 62279,
+        "sid": 62279,
+        "start": [
+          1793164433,
+          395652
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62303,
+        "pid": 62303,
+        "sid": 62303,
+        "start": [
+          1793164434,
+          151331
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62312,
+        "pgid": 62313,
+        "pid": 62313,
+        "sid": 62313,
+        "start": [
+          1793164434,
+          366325
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62303,
+        "pid": 62303,
+        "sid": 62303,
+        "start": [
+          1793164434,
+          151331
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62312,
+        "pgid": 62313,
+        "pid": 62313,
+        "sid": 62313,
+        "start": [
+          1793164434,
+          366325
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62303,
+        "pid": 62303,
+        "sid": 62303,
+        "start": [
+          1793164434,
+          151331
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62327,
+        "pid": 62327,
+        "sid": 62327,
+        "start": [
+          1793164434,
+          904706
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62336,
+        "pgid": 62337,
+        "pid": 62337,
+        "sid": 62337,
+        "start": [
+          1793164435,
+          118250
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62327,
+        "pid": 62327,
+        "sid": 62327,
+        "start": [
+          1793164434,
+          904706
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62336,
+        "pgid": 62337,
+        "pid": 62337,
+        "sid": 62337,
+        "start": [
+          1793164435,
+          118250
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62327,
+        "pid": 62327,
+        "sid": 62327,
+        "start": [
+          1793164434,
+          904706
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62351,
+        "pid": 62351,
+        "sid": 62351,
+        "start": [
+          1793164435,
+          656053
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62360,
+        "pgid": 62361,
+        "pid": 62361,
+        "sid": 62361,
+        "start": [
+          1793164435,
+          871068
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62351,
+        "pid": 62351,
+        "sid": 62351,
+        "start": [
+          1793164435,
+          656053
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62360,
+        "pgid": 62361,
+        "pid": 62361,
+        "sid": 62361,
+        "start": [
+          1793164435,
+          871068
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62351,
+        "pid": 62351,
+        "sid": 62351,
+        "start": [
+          1793164435,
+          656053
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62374,
+        "pid": 62374,
+        "sid": 62374,
+        "start": [
+          1793164436,
+          410981
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62384,
+        "pgid": 62385,
+        "pid": 62385,
+        "sid": 62385,
+        "start": [
+          1793164436,
+          626145
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62374,
+        "pid": 62374,
+        "sid": 62374,
+        "start": [
+          1793164436,
+          410981
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62384,
+        "pgid": 62385,
+        "pid": 62385,
+        "sid": 62385,
+        "start": [
+          1793164436,
+          626145
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62374,
+        "pid": 62374,
+        "sid": 62374,
+        "start": [
+          1793164436,
+          410981
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62400,
+        "pid": 62400,
+        "sid": 62400,
+        "start": [
+          1793164437,
+          163640
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62409,
+        "pgid": 62410,
+        "pid": 62410,
+        "sid": 62410,
+        "start": [
+          1793164437,
+          378715
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62410,
+        "pgid": 62413,
+        "pid": 62413,
+        "sid": 62413,
+        "start": [
+          1793164437,
+          785023
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62400,
+        "pid": 62400,
+        "sid": 62400,
+        "start": [
+          1793164437,
+          163640
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62409,
+        "pgid": 62410,
+        "pid": 62410,
+        "sid": 62410,
+        "start": [
+          1793164437,
+          378715
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62410,
+        "pgid": 62413,
+        "pid": 62413,
+        "sid": 62413,
+        "start": [
+          1793164437,
+          785023
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62400,
+        "pid": 62400,
+        "sid": 62400,
+        "start": [
+          1793164437,
+          163640
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62426,
+        "pid": 62426,
+        "sid": 62426,
+        "start": [
+          1793164438,
+          544394
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62435,
+        "pgid": 62437,
+        "pid": 62437,
+        "sid": 62437,
+        "start": [
+          1793164438,
+          759480
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62426,
+        "pid": 62426,
+        "sid": 62426,
+        "start": [
+          1793164438,
+          544394
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62435,
+        "pgid": 62437,
+        "pid": 62437,
+        "sid": 62437,
+        "start": [
+          1793164438,
+          759480
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62426,
+        "pid": 62426,
+        "sid": 62426,
+        "start": [
+          1793164438,
+          544394
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": false,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62449,
+        "pid": 62449,
+        "sid": 62449,
+        "start": [
+          1793164439,
+          306776
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62458,
+        "pgid": 62460,
+        "pid": 62460,
+        "sid": 62460,
+        "start": [
+          1793164439,
+          524116
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62449,
+        "pid": 62449,
+        "sid": 62449,
+        "start": [
+          1793164439,
+          306776
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62458,
+        "pgid": 62460,
+        "pid": 62460,
+        "sid": 62460,
+        "start": [
+          1793164439,
+          524116
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62449,
+        "pid": 62449,
+        "sid": 62449,
+        "start": [
+          1793164439,
+          306776
+        ]
+      }
+    },
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 62122,
+        "pid": 62122,
+        "sid": 62122,
+        "start": [
+          1793164417,
+          594907
+        ]
+      }
+    },
+    {
+      "direct_term": true,
+      "event": "source",
+      "forced_os_probe_denial": true,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac",
+      "wrapper_sha256": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62472,
+        "pid": 62472,
+        "sid": 62472,
+        "start": [
+          1793164440,
+          83749
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62481,
+        "pgid": 62483,
+        "pid": 62483,
+        "sid": 62483,
+        "start": [
+          1793164440,
+          297979
+        ]
+      }
+    },
+    {
+      "event": "direct_term",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62472,
+        "pid": 62472,
+        "sid": 62472,
+        "start": [
+          1793164440,
+          83749
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62472,
+        "pid": 62472,
+        "sid": 62472,
+        "start": [
+          1793164440,
+          83749
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 62481,
+        "pgid": 62483,
+        "pid": 62483,
+        "sid": 62483,
+        "start": [
+          1793164440,
+          297979
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62122,
+        "pgid": 62472,
+        "pid": 62472,
+        "sid": 62472,
+        "start": [
+          1793164440,
+          83749
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 62481,
+        "pgid": 62483,
+        "pid": 62483,
+        "sid": 62483,
+        "start": [
+          1793164440,
+          297979
+        ]
+      }
+    }
+  ],
+  "errors": 0,
+  "failure_lines": [
+    455,
+    212
+  ],
+  "failures": 1,
+  "safe_observations": [
+    "transport_observation status=125 stopped=true stage=candidate reason=candidate_unavailable groups=2",
+    "transport_observation status=23 stopped=true stage=candidate reason=candidate_unavailable groups=2",
+    "transport_observation status=23 stopped=true stage=browser reason=browser_proof_failed groups=2",
+    "transport_observation status=23 stopped=true stage=provider_preparation reason=provider_preparation_failed groups=2",
+    "transport_observation status=23 stopped=true stage=database_create reason=database_creation_failed groups=2",
+    "transport_observation status=23 stopped=true stage=database_migrate reason=database_migration_failed groups=2",
+    "transport_observation status=23 stopped=true stage=runtime_observation reason=runtime_observation_failed groups=2",
+    "transport_observation status=23 stopped=true stage=host_startup reason=host_startup_failed groups=2",
+    "transport_observation status=23 stopped=true stage=browser reason=browser_proof_failed groups=2",
+    "transport_observation status=23 stopped=true stage=receipt reason=receipt_invalid groups=2",
+    "transport_observation status=23 stopped=true stage=diagnostics reason=failure_record_missing groups=3",
+    "transport_observation status=23 stopped=true stage=browser reason=browser_proof_failed groups=2",
+    "transport_observation status=23 stopped=true stage=browser reason=browser_proof_failed groups=2",
+    "transport_observation status=125 stopped=true stage=browser reason=browser_proof_failed groups=2"
+  ],
+  "schema": "lockspire-admin-transport-controls-v1",
+  "skips": 0,
+  "source_hashes": {
+    "scripts/acceptance/clean_room_admin_journey.py": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+    "scripts/ci/run_host_integration_proof.sh": "6d688de80aaa724d0c61300ae9a75cf1ae1e0d2ae531deaf12b00f04681f5931",
+    "test/acceptance/client_admin_failure_transport_test.py": "86c9db198c8a571376b01631490149722130e2c04565f5dd2f80e71626ae7aac"
+  },
+  "source_unchanged": true,
+  "tests": 7,
+  "unconfirmed_custody": false
+}

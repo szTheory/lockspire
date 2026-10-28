@@ -66,6 +66,45 @@ BROWSER_STAGES = frozenset({
 })
 BROWSER_COUNTS = frozenset({"assets", "websocket_handshakes", "successful_joins", "navigations"})
 BROWSER_OBSERVATIONS = frozenset({"login", "overview", "clients", "authorized_http", "connected_hook"})
+BROWSER_SUMMARY_FAILURES = BROWSER_FAILURES | {"failure_missing", "failure_non_string", "failure_unrecognized"}
+FAILURE_RECORD_SCHEMA = "lockspire-admin-proof-failure-v1"
+FAILURE_REASONS = {
+    "candidate": frozenset({"candidate_unavailable"}),
+    "provider_preparation": frozenset({"provider_preparation_failed"}),
+    "database_create": frozenset({"database_creation_failed"}),
+    "database_migrate": frozenset({"database_migration_failed"}),
+    "runtime_observation": frozenset({"runtime_observation_failed"}),
+    "lifecycle": frozenset({"lifecycle_failed"}),
+    "host_startup": frozenset({"host_startup_failed"}),
+    "browser": frozenset({"browser_proof_failed"}),
+    "receipt": frozenset({"receipt_invalid", "receipt_write_failed"}),
+    "cleanup": frozenset({"cleanup_failed"}),
+    "diagnostics": frozenset({"failure_record_missing", "failure_record_malformed", "output_limit_exceeded"}),
+}
+
+
+def validate_failure_record(value: object) -> dict[str, str] | None:
+    """Accept only the closed, non-sensitive producer-to-wrapper failure contract."""
+    if type(value) is not dict or set(value) != {"schema", "stage", "reason"}:
+        return None
+    schema, stage, reason = value["schema"], value["stage"], value["reason"]
+    if (type(schema) is not str or schema != FAILURE_RECORD_SCHEMA or
+            type(stage) is not str or type(reason) is not str or
+            stage not in FAILURE_REASONS or reason not in FAILURE_REASONS[stage]):
+        return None
+    return {"schema": schema, "stage": stage, "reason": reason}
+
+
+def emit_failure_record(stage: str, reason: str, *, supplemental_cleanup: bool = False) -> None:
+    record = validate_failure_record({
+        "schema": FAILURE_RECORD_SCHEMA,
+        "stage": stage,
+        "reason": reason,
+    })
+    if record is None:
+        record = {"schema": FAILURE_RECORD_SCHEMA, "stage": "diagnostics", "reason": "failure_record_malformed"}
+    prefix = "admin proof cleanup record: " if supplemental_cleanup else "admin proof failure record: "
+    print(prefix + json.dumps(record, sort_keys=True), file=sys.stderr)
 
 
 def safe_enum(value: object, allowed, fallback: str = "unknown") -> str:
@@ -82,7 +121,7 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
     elif not isinstance(raw_failure, str):
         failure = "failure_non_string"
     else:
-        failure = raw_failure if raw_failure in BROWSER_FAILURES else "failure_unrecognized"
+        failure = raw_failure if raw_failure in BROWSER_SUMMARY_FAILURES else "failure_unrecognized"
     raw_stage = observed.get("stage")
     stage = raw_stage if isinstance(raw_stage, str) and raw_stage in BROWSER_STAGES else "unknown"
     outcome = observed.get("outcome")
@@ -91,7 +130,7 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
     raw_counts = observed.get("counts")
     counts = raw_counts if (
         isinstance(raw_counts, dict) and set(raw_counts) == BROWSER_COUNTS and
-        all(type(value) is int and value >= 0 for value in raw_counts.values())
+        all(type(value) is int and 0 <= value <= 2**31 - 1 for value in raw_counts.values())
     ) else {}
     raw_observations = observed.get("observations")
     observations = raw_observations if (
@@ -142,6 +181,31 @@ def safe_browser_failure_summary(observed: object) -> dict[str, object]:
                 })
         if failed_cases:
             result["failed_cases"] = failed_cases[:8]
+    # The shell also consumes this producer's already-reduced legacy summary.
+    # Revalidate that representation with the same finite vocabulary.
+    def safe_fields(value: object, allowed) -> list[str]:
+        if not isinstance(value, list):
+            return []
+        return sorted({item for item in value if isinstance(item, str) and item in allowed})
+
+    first = observed.get("first_case")
+    if "first_case" not in result and isinstance(first, dict):
+        result["first_case"] = {
+            "id": safe_enum(first.get("id"), FULL_REQUIRED),
+            "failure": safe_enum(first.get("failure"), BROWSER_FAILURES, "failure_unrecognized"),
+            "outcome": safe_enum(first.get("outcome"), {"passed", "failed"}),
+            "count_fields": safe_fields(first.get("count_fields"), BROWSER_COUNTS | {"params_checks", "http_checks", "staff_checks"}),
+            "observation_fields": safe_fields(first.get("observation_fields"), FULL_OBSERVATIONS),
+        }
+    published_cases = observed.get("failed_cases")
+    if "failed_cases" not in result and isinstance(published_cases, list):
+        retained = [{
+            "id": safe_enum(item.get("id"), FULL_REQUIRED),
+            "failure": safe_enum(item.get("failure"), BROWSER_FAILURES, "failure_unrecognized"),
+            "false_evidence": safe_fields(item.get("false_evidence"), FULL_OBSERVATIONS),
+        } for item in published_cases[:8] if isinstance(item, dict)]
+        if retained:
+            result["failed_cases"] = retained
     return result
 
 
@@ -239,7 +303,7 @@ def main(argv: Sequence[str]) -> int:
     try:
         run_id = str(uuid.UUID(args.run_id))
     except (ValueError, AttributeError):
-        print("invalid run id")
+        emit_failure_record("diagnostics", "failure_record_malformed")
         return 2
 
     redactor = Redactor(SentinelSet.for_run())
@@ -264,6 +328,19 @@ def main(argv: Sequence[str]) -> int:
     failed = False
     scenario_passed = False
     full_scenarios: list[dict[str, object]] = []
+    primary_failure: tuple[str, str] | None = None
+
+    def record_failure(failure_stage: str, reason: str) -> None:
+        nonlocal primary_failure
+        if primary_failure is None:
+            primary_failure = (failure_stage, reason)
+
+    def publish_failure() -> None:
+        if primary_failure is not None:
+            emit_failure_record(*primary_failure)
+        if not all(cleanup.values()):
+            emit_failure_record("cleanup", "cleanup_failed", supplemental_cleanup=primary_failure is not None)
+
     try:
         selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
         package_root, _entries, identity = prepare_package(base, selected_source)
@@ -276,6 +353,7 @@ def main(argv: Sequence[str]) -> int:
         admin_path = f"{mount}/admin" or "/admin"
         os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"] = base64.b64encode(secrets.token_bytes(32)).decode("ascii")
         redactor.register_material(os.environ["LOCKSPIRE_KEY_ENCRYPTION_KEY"])
+        stage = "provider_preparation"
         child = prepare_provider(
             base, database_url, package_root=package_root, candidate_identity=identity,
             port=port, cache_root=Path(os.environ["CLEAN_ROOM_CACHE_ROOT"]) if os.environ.get("CLEAN_ROOM_CACHE_ROOT") else None,
@@ -344,36 +422,21 @@ def main(argv: Sequence[str]) -> int:
             summary = safe_browser_failure_summary(observed)
             print("browser proof failed: " + json.dumps(summary, sort_keys=True), file=sys.stderr)
         if browser.returncode != 0 or not scenario_passed:
+            record_failure("browser", "browser_proof_failed")
             failed = True
     except BaseException as error:
         failed = True
         # Do not retain exception strings; known stage names are the only diagnostics.
-        detail = redactor.text(error)
-        safe_errors = (
-            "provider installer failed", "generated admin route authorization seam changed",
-            "provider router proof-control insertion point changed", "admin proof host source is missing",
-            "admin proof browser initializer is missing", "provider boundary audit found forbidden seam",
-            "provider boundary audit found forbidden lifetime-adapter reference",
-            "provider lifetime adapter is missing a documented public seam",
-            "provider vendor inventory drifted after installation", "provider package installer failed",
-            "runtime versions could not be observed",
-            "compiled runtime or asset source escaped the isolated provider host",
-            "observed Phoenix and LiveView versions do not match selected pair",
-        )
-        safe_detail = next((candidate for candidate in safe_errors if detail.startswith(candidate)), "unknown")
-        if safe_detail == "unknown" and re.fullmatch(r"[A-Za-z0-9_.-]+ failed with exit status [0-9]+", detail):
-            safe_detail = detail
-        if safe_detail == "unknown" and stage.startswith("database_"):
-            lowered = detail.lower()
-            safe_detail = next((label for needle, label in (
-                ("password authentication failed", "database_authentication_failed"),
-                ("connection refused", "database_connection_refused"),
-                ("no such file or directory", "database_socket_unavailable"),
-                ("no migrations", "migration_files_missing"),
-                ("migration path", "migration_path_invalid"),
-                ("migration failed", "migration_failed"),
-            ) if needle in lowered), "database_command_failed")
-        print(f"admin browser proof failed at {stage} {type(error).__name__} ({safe_detail})", file=sys.stderr)
+        failure_stage, reason = {
+            "candidate": ("candidate", "candidate_unavailable"),
+            "provider_preparation": ("provider_preparation", "provider_preparation_failed"),
+            "database_create": ("database_create", "database_creation_failed"),
+            "database_migrate": ("database_migrate", "database_migration_failed"),
+            "runtime_versions": ("runtime_observation", "runtime_observation_failed"),
+            "host_start": ("host_startup", "host_startup_failed"),
+            "browser": ("browser", "browser_proof_failed"),
+        }.get(stage, ("candidate", "candidate_unavailable"))
+        record_failure(failure_stage, reason)
     finally:
         # Ignore repeated interruption while independent bounded cleanup actions run.
         for sig in previous_handlers:
@@ -406,13 +469,16 @@ def main(argv: Sequence[str]) -> int:
     }
     if not source_revision:
         # A receipt without a source identity cannot be validated or treated as evidence.
-        print("admin browser proof failed before candidate identity was available", file=sys.stderr)
+        if not failed:
+            record_failure("candidate", "candidate_unavailable")
+        publish_failure()
         return 1
     duration_ms = scenario.get("duration_ms", int((time.monotonic() - started) * 1000))
     if type(duration_ms) is not int or duration_ms < 0:
         failed = True
         scenario["outcome"] = "failed"
         duration_ms = 0
+        record_failure("browser", "browser_proof_failed")
     scenario["duration_ms"] = duration_ms
     if failed or not all(cleanup.values()):
         scenario["outcome"] = "failed"
@@ -426,9 +492,11 @@ def main(argv: Sequence[str]) -> int:
     try:
         write_receipt(args.receipt, receipt, expected_run_id=run_id, expected_source=source_revision, expected_pair=args.pair, expected_mount=args.mount, expected_archive=candidate["archive_sha256"], expected_tree=candidate["tree_sha256"], expected_scenario_set=args.scenario)
     except (OSError, ValueError) as error:
-        detail = "receipt_invalid" if isinstance(error, ValueError) else "receipt_write_failed"
-        print(f"admin browser proof receipt validation failed: {detail}", file=sys.stderr)
+        reason = "receipt_invalid" if isinstance(error, ValueError) else "receipt_write_failed"
+        record_failure("receipt", reason)
+        publish_failure()
         return 1
+    publish_failure()
     print(json.dumps({"result": receipt["result"], "scenario_count": len(receipt["scenarios"]), "cleanup": cleanup}, sort_keys=True))
     return 0 if receipt["result"] == "passed" else 1
 

@@ -1,0 +1,116 @@
+{
+  "custody": [
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 61116,
+        "pid": 61116,
+        "sid": 61116,
+        "start": [
+          1793164261,
+          942624
+        ]
+      }
+    },
+    {
+      "direct_term": true,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "b164aa2a84beef92efb3b4f8cef60d2f2846dc4b134cec5e62548db95ea79901",
+      "wrapper_sha256": "34b5f5f502fdd0338df8be1a0d103656a8bbaed3b65638799450532593ae8e64"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 61116,
+        "pgid": 61118,
+        "pid": 61118,
+        "sid": 61118,
+        "start": [
+          1793164262,
+          37851
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 61127,
+        "pgid": 61128,
+        "pid": 61128,
+        "sid": 61128,
+        "start": [
+          1793164262,
+          251767
+        ]
+      }
+    },
+    {
+      "event": "direct_term",
+      "identity": {
+        "parent_pid": 61116,
+        "pgid": 61118,
+        "pid": 61118,
+        "sid": 61118,
+        "start": [
+          1793164262,
+          37851
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 61116,
+        "pgid": 61118,
+        "pid": 61118,
+        "sid": 61118,
+        "start": [
+          1793164262,
+          37851
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 61127,
+        "pgid": 61128,
+        "pid": 61128,
+        "sid": 61128,
+        "start": [
+          1793164262,
+          251767
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 61116,
+        "pgid": 61118,
+        "pid": 61118,
+        "sid": 61118,
+        "start": [
+          1793164262,
+          37851
+        ]
+      }
+    }
+  ],
+  "errors": 0,
+  "failures": 0,
+  "safe_observations": [
+    "transport_observation status=143 stopped=true stage=unknown reason=unknown groups=2"
+  ],
+  "schema": "lockspire-admin-transport-term-v1",
+  "skips": 0,
+  "tests": 1,
+  "unconfirmed_custody": false
+}

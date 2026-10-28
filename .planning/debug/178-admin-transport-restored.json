@@ -1,0 +1,117 @@
+{
+  "custody": [
+    {
+      "event": "owner",
+      "identity": {
+        "parent_pid": 16973,
+        "pgid": 65136,
+        "pid": 65136,
+        "sid": 65136,
+        "start": [
+          1793164780,
+          497142
+        ]
+      }
+    },
+    {
+      "direct_term": true,
+      "event": "source",
+      "forced_os_probe_denial": false,
+      "producer_sha256": "bcde3f09d0cb16bcf44892bfa98b03927be6a29bffd0eb7a4f08150867c08131",
+      "test_sha256": "d6fe5926c1e23fd27cb43b7cf7b11eb37fbab1051598eb2490da3483fc94f320",
+      "wrapper_sha256": "6297620f8d605987fd820fa60367f86214215359cdaebb0465221cc47129180a"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65136,
+        "pgid": 65137,
+        "pid": 65137,
+        "sid": 65137,
+        "start": [
+          1793164780,
+          580175
+        ]
+      }
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65146,
+        "pgid": 65147,
+        "pid": 65147,
+        "sid": 65147,
+        "start": [
+          1793164780,
+          795242
+        ]
+      }
+    },
+    {
+      "event": "direct_term",
+      "identity": {
+        "parent_pid": 65136,
+        "pgid": 65137,
+        "pid": 65137,
+        "sid": 65137,
+        "start": [
+          1793164780,
+          580175
+        ]
+      }
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 65136,
+        "pgid": 65137,
+        "pid": 65137,
+        "sid": 65137,
+        "start": [
+          1793164780,
+          580175
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "closure",
+      "identity": {
+        "parent_pid": 65146,
+        "pgid": 65147,
+        "pid": 65147,
+        "sid": 65147,
+        "start": [
+          1793164780,
+          795242
+        ]
+      },
+      "kernel_probe_errno": 3,
+      "state": "absent"
+    },
+    {
+      "event": "admitted_before_exec",
+      "identity": {
+        "parent_pid": 65136,
+        "pgid": 65137,
+        "pid": 65137,
+        "sid": 65137,
+        "start": [
+          1793164780,
+          580175
+        ]
+      }
+    }
+  ],
+  "errors": 0,
+  "failures": 0,
+  "restored_exact_wrapper": true,
+  "safe_observations": [
+    "transport_observation status=143 stopped=true stage=diagnostics reason=failure_record_missing groups=2"
+  ],
+  "schema": "lockspire-admin-transport-restored-v1",
+  "skips": 0,
+  "tests": 5,
+  "wrapper_sha256": "6297620f8d605987fd820fa60367f86214215359cdaebb0465221cc47129180a"
+}
