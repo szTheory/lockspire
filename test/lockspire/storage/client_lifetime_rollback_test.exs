@@ -232,7 +232,7 @@ defmodule Lockspire.Storage.ClientLifetimeRollbackTest do
         })
 
       assert {:error, reason} = result
-      assert inspect(reason) =~ "plan12 forced audit write failure"
+      assert reason == :storage_error
       refute match?({:ok, %{client_secret: _plaintext}}, result)
     end)
 
