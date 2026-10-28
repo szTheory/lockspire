@@ -1,0 +1,146 @@
+{
+  "schema": "lockspire-phase178-approved-update-outcome-v1",
+  "observed_at_utc": "2026-10-28T14:00:27.017Z",
+  "repository": "szTheory/lockspire",
+  "pr_number": 141,
+  "pr_url": "https://github.com/szTheory/lockspire/pull/141",
+  "published_sha": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2",
+  "approved_body_sha256": "cb4b7c4d8dee3d09ada103dce2b486f11b0548e4c54163a3e65ca457e99f3a38",
+  "actions": {
+    "non_force_exact_push": "completed_verified",
+    "replace_only_approved_pr_body": "completed_verified",
+    "other_remote_mutations": false
+  },
+  "approval_plan_sha256": "d13342d00108fbb53b38c690dcd23f9e3f5389d13ce9c25cca1503d6f811931a",
+  "action_journal": {
+    "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire178-approved-update-zx0dftax/journal.json",
+    "sha256": "a86a492553b71b6a3725351099e975b30b46c9a8a2d8ec9f14493a67bf7f4685"
+  },
+  "ci": {
+    "run_id": 40696973463,
+    "run_attempt": 1,
+    "event": "pull_request",
+    "workflow_path": ".github/workflows/ci.yml",
+    "head_sha": "33db5483bc5aa06b4a51d2742e90fb8616cad7c2",
+    "status": "completed",
+    "conclusion": "failure",
+    "jobs": [
+      {
+        "id": 122846256815,
+        "name": "Adoption Demo Smoke",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 122846256991,
+        "name": "Minimum Supported Elixir/OTP",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 122846257078,
+        "name": "Release Hygiene Drift",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 122846257121,
+        "name": "Dialyzer",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 122846257263,
+        "name": "Fast Checks",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "id": 122846257280,
+        "name": "Integration Checks",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      {
+        "id": 122850193766,
+        "name": "Complete Coverage Evidence",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    ],
+    "dependency_review_run_id": 40696973443,
+    "dependency_review_conclusion": "success",
+    "required_pair_artifacts_observed": 0,
+    "artifact_archives_downloaded": false
+  },
+  "observed_pr_merge_object": {
+    "sha": "70afa2a31df5d85549678008dbfeb106993126ec",
+    "actual_job_checkout_not_separately_proven": true
+  },
+  "attribution": {
+    "path": "/private/tmp/lockspire178-hosted33db-v664ysna/attribution.json",
+    "sha256": "199fb9fa52934d96398d533b3fdd6642dfdeb9935bca6dcd1955344564290b44",
+    "source_changes": false,
+    "local_runtime": false,
+    "raw_log_custody": "released",
+    "integration": {
+      "suite_1": {
+        "tests": 565,
+        "failures": 3,
+        "seed": 36080
+      },
+      "suite_2": {
+        "tests": 3,
+        "failures": 3,
+        "seed": 632735
+      },
+      "known_test_failures": [
+        {
+          "path": "test/mix/tasks/lockspire_client_create_cold_test.exs",
+          "line": 175
+        },
+        {
+          "path": "test/lockspire/storage/client_lifetime_rollback_test.exs",
+          "line": 161
+        },
+        {
+          "path": "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs",
+          "line": 212
+        },
+        {
+          "path": "test/integration/app_lifetime_packaged_upgrade_test.exs",
+          "line": 11
+        },
+        {
+          "path": "test/integration/client_lifetime_packaged_journey_test.exs",
+          "line": 9
+        },
+        {
+          "path": "test/integration/client_lifetime_packaged_journey_test.exs",
+          "line": 102
+        }
+      ],
+      "source_findings": [
+        "Three tests conflict with intentional SQL/error redaction; preserve actual cold persistence, rollback and race invariants when correcting them.",
+        "Fresh/custom tar-plus-SHA path has no authenticated source owner while downstream requires Git source identity; preserve ownership checks.",
+        "Legacy runner exposes PackageInputError at legacy_upgrade/selected; narrower inner cause remains unknown."
+      ]
+    },
+    "minimum": {
+      "producer_stage": "host_startup",
+      "producer_reason": "host_startup_failed",
+      "command_native_exit": 1,
+      "cleanup": "stopped",
+      "vm_exit_status": null,
+      "vm_exit_or_readiness_deadline_unexposed": true,
+      "listener_opt_in": "source_candidate_not_established_runtime_cause"
+    }
+  },
+  "requirements": {
+    "VPROOF-02": "local_proof_retains_exact_recorded_identity",
+    "VDELIV-01": "blocked_failed_candidate_graph_missing_pair_artifacts",
+    "VDELIV-02": "pending_main_delivery_acceptance"
+  },
+  "authorization_boundary": "No additional push, body change, rerun, dispatch, review, comment, merge, release or package publication is authorized. Further tracking commits remain local and unpushed.",
+  "resources": "Previous root-owned PostgreSQL, credentials and Hex cache remain closed and removed; no local runtime was launched."
+}

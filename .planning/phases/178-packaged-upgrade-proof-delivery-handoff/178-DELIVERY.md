@@ -1,9 +1,9 @@
-# v1.48 Delivery Status — Open PR, Candidate Checks Incomplete
+# v1.48 Delivery Status — Approved Update Published, Hosted Gates Failed
 
 **Observed:** 2026-10-28T13:16:52.002548+00:00
-**Status:** The user-authorized normal milestone PR is open. Candidate checks have produced failures and remain incomplete. No merge or publication occurred.
+**Status:** PR #141 is open at approved update `33db5483bc5aa06b4a51d2742e90fb8616cad7c2`; its approved body update is verified. The new candidate run is terminal with failed required gates. No merge, release, rerun, dispatch, review, or comment occurred.
 
-## Pull Request
+## Original Publication and Preserved History
 
 - Repository: `szTheory/lockspire`; PR [#141](https://github.com/szTheory/lockspire/pull/141), title `feat: isolate and rotate client authentication verifiers (v1.48)`, normal non-draft.
 - Source branch: `milestone/v1.48-client-auth-key-isolation`; immutable published head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`.
@@ -63,3 +63,13 @@ The corrected proposal is [178-11-PR-PROPOSAL.md](178-11-PR-PROPOSAL.md). It pro
 The current 1,078-input proof remains bound to execution `834b84d40a6059c308303658bea8b83d9fb0e412`, frozen runner `b99d6842c920a990de2c6df81123e43dc1a3bd2f`, and reviewed source `fefe8a7d948252293d7ffac7b8b20748d070d5bb`. Root independently validated reviews, frozen ownership, source, and pinned package composition (26/64/0), then closed the replacement private lab. Current closure: `/private/tmp/lockspire178-pr141-root-closure-g8h938st/terminal.json`, SHA-256 `9ab2b3932c0c8ce00ba7f52b05fc843fdd9a8358fcb2176d013f56ecc06bdb06`. Port 54547, controller/process group 1307, credentials, and the owned Hex cache are absent; no further local runtime is required or authorized in this checkpoint. Historical resource custody above remains unchanged for its own epoch.
 
 The refreshed old-head graph has four failures, including Minimum Supported Elixir/OTP; its inner minimum failure remains unknown. New local proof does not establish hosted or main acceptance. The updated body is prepared for the corrective candidate, with the exact future push SHA and body hash kept in the separate private publication plan. No new remote action has occurred.
+
+## 2026-10-28T14:00:27.096694+00:00 — Approved 33db Update and Terminal Hosted Result
+
+The user explicitly authorized both actions: non-force push of exactly `33db5483bc5aa06b4a51d2742e90fb8616cad7c2` to the existing milestone branch, then replacement of only PR #141’s body with approved SHA-256 `cb4b7c4d8dee3d09ada103dce2b486f11b0548e4c54163a3e65ca457e99f3a38`. Both completed and were independently verified against the remote branch and GitHub PR readback. The PR remains open/non-draft, based on `main` at `173059a166e9ade0f5f57c9980b7b2400a98538c`. The new synthetic merge object observed in PR metadata is `70afa2a31df5d85549678008dbfeb106993126ec`; that metadata alone is not claimed as an observed job checkout.
+
+Automatically triggered CI [run 40696973463](https://github.com/szTheory/lockspire/actions/runs/40696973463), attempt 1, event `pull_request`, is terminal with failure. Fast Checks, Dialyzer, Release Hygiene Drift, and Adoption Demo Smoke succeeded; Integration and Minimum Supported Elixir/OTP failed; Complete Coverage Evidence was skipped. Dependency Review run 40696973443 succeeded. No expected locked/floor verifier-upgrade pair artifacts were present, and no artifact archives were downloaded. The complete safe observation and attribution references are in `178-11-APPROVED-UPDATE-OUTCOME.json`.
+
+Integration produced 565 tests/3 failures (seed 36080) and a packaged suite of 3 tests/3 failures (seed 632735). The first three tests expect SQL or raw PostgreSQL details suppressed by deliberate security controls; corrections must preserve cold persistence/no-ambient-key behavior, forced rollback state/audit invariants, and one-winner race semantics. Fresh/custom packaged paths have a source-level tar-plus-SHA ownership gap; authenticated Git/frozen ownership must be wired without weakening authority. Legacy exposes only `runner_failure/PackageInputError` at `legacy_upgrade/selected`; a narrower inner cause is unobserved. Minimum’s closed producer witness is `host_startup/host_startup_failed`, command native exit 1, cleanup stopped. This is not a VM exit status; VM exit versus readiness timeout remains unexposed, and the missing listener opt-in is only a source candidate. No source edits, local runtime, or new resources were introduced during attribution.
+
+The local source/package proof at `834b84d4` and its generated records remain unchanged for their actual inputs. Current hosted candidate qualification has not passed. Plan 11 and Phase 178 remain incomplete, Plan 12 is not started, and VDELIV-01/02 remain pending. Further local correction needs an owned-resource plan before any runtime; the prior PostgreSQL/credentials/cache remain removed. Any later tracking commit is local and unpushed; the exact approved published head remains `33db5483`. No further remote mutation is authorized.
