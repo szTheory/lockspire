@@ -1,27 +1,26 @@
 {
-  "implementation_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
+  "implementation_revision": "0b71ece011c26e0742d9eb3c20a660bd896add11",
   "lanes": {
     "integration": {
       "findings": [
         {
           "disposition": "later-owner",
-          "evidence": "The only covered-path delta from accepted 7dce61a is two inserted blank lines around the existing multiline assertion in ci_workflow_evidence_contract_test.exs; normalized diff is empty and all changed hunk content is whitespace. Cross-phase workflow/package ownership, source C versus checkout H, rollback/audit propagation, and prior 37 tests / 0 failures across seven selected files remain unchanged and retain 7dce61a applicability. The canonical private-clone attempt at this target stopped at formatting before ExUnit, so this report makes no canonical runtime or package-proof claim.",
+          "evidence": "Static cross-boundary review confirms cold generation resolves the uncached verifier config and signing-key exclusions without publishing or supervising a context; the cache-present path uses the immutable startup snapshot through Config.client_secret_verifier_context/1 and revalidates it against endpoint and per-operation secret key bytes. Explicit local contexts are checked by Context.validate/2. Both secret_key_base and legacy_secret_key_base binary option values are excluded in cold and cached paths, invalid/corrupt cache states fail closed, and the startup cache remains unchanged. Clients registration still obtains generated secret material before persistence, persists only hash/encrypted verifier via the existing client store, and returns plaintext only through RegistrationResult; no protocol/API wiring changes. Parent-provided focused result is 62 tests / 0 failures with include_integration=true, owned private DB clean/removed, plus Credo 727 files/66 checks/0 issues. Fresh-VM installed proof has not yet run on this revision and is not claimed.",
           "files": [
-            "test/lockspire/ci_workflow_evidence_contract_test.exs",
-            ".github/workflows/ci.yml",
-            "scripts/ci/run_test_matrix.sh",
-            "scripts/acceptance/clean_room/package_input.py",
-            "lib/lockspire/storage/ecto/repository/audit_store.ex",
-            "test/lockspire/storage/client_lifetime_rollback_test.exs",
-            "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs"
+            "lib/lockspire/clients/secret_material.ex",
+            "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+            "lib/lockspire/config.ex",
+            "lib/lockspire/clients.ex",
+            "lib/lockspire/storage/ecto/repository/client_store.ex",
+            "test/lockspire/clients_secret_material_test.exs"
           ],
-          "id": "CANONICAL-FORMAT-ONLY-DELTA",
+          "id": "FRESH-VM-INSTALLED-PROOF-PENDING",
           "severity": "info",
           "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-0d0e744.md",
-      "report_sha256": "017f5e043ac8fc87fb781981148a3475700adfab879956bbee12fde0bc2ac84c",
+      "report_path": "178-INTEGRATION-REVIEW-0b71ece.md",
+      "report_sha256": "b2cd3bed2a1a5d281b6fc29fe1f25eb5f06ec81cece281117877b1d5c2eeebc0",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -726,7 +725,7 @@
         },
         {
           "path": "lib/lockspire/clients/secret_material.ex",
-          "sha256": "cc94a7fb75531a17259547ab084bf1b373a17c7c70e34b2eb4840f4a748082ee"
+          "sha256": "f5115a514961f71488ce846035001339c50eb6e1cab8c5723cc3a8789bf6a7b8"
         },
         {
           "path": "lib/lockspire/config.ex",
@@ -1266,7 +1265,7 @@
         },
         {
           "path": "lib/lockspire/security/client_secret_verifier/operation_context.ex",
-          "sha256": "c92425a73c9d469e3f500e56d90f5fa9bc52883b0277860d1e5918054ba9f1a0"
+          "sha256": "f1dbb3b70a2dfb12431fe564ee49d7238bbe84624ca4db08912133d755b5c475"
         },
         {
           "path": "lib/lockspire/security/device_code.ex",
@@ -3126,7 +3125,7 @@
         },
         {
           "path": "test/lockspire/clients_secret_material_test.exs",
-          "sha256": "617bc17f5d24e679cb1fb2fde9703fac72540a8671202f68e5c8a7d1b426d0bb"
+          "sha256": "0a89c511e641c13a4624c05af786442e998312953d548783dce63816dcb3eb71"
         },
         {
           "path": "test/lockspire/clients_test.exs",
@@ -4337,8 +4336,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
-      "reviewer_identity": "R178F0D7",
+      "reviewed_revision": "0b71ece011c26e0742d9eb3c20a660bd896add11",
+      "reviewer_identity": "R178A0B7",
       "verdict": "accepted"
     },
     "security": {
@@ -4429,10 +4428,38 @@
           "id": "T-178-36",
           "severity": "high",
           "status": "deferred"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The registration controller supplies the active host conn.secret_key_base through protocol registration into SecretMaterial. Cold generation now adds all nonempty binary values under both secret_key_base and legacy_secret_key_base before Context.resolve. Cached and explicit contexts are revalidated against their existing forbidden bytes plus those operation values; only a local validated copy receives the combined exclusions. Context validation checks the entire decoded key ring, so an operation endpoint key equal to any dedicated verifier key is rejected before sealing or client persistence. No startup-cache mutation or fresh app-env reload is introduced on the cached path.",
+          "files": [
+            "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+            "lib/lockspire/clients/secret_material.ex",
+            "lib/lockspire/protocol/registration.ex",
+            "lib/lockspire/web/controllers/registration_controller.ex",
+            "lib/lockspire/security/client_secret_verifier/context.ex",
+            "test/lockspire/clients_secret_material_test.exs",
+            "docs/client-secret-verifier-configuration.md"
+          ],
+          "id": "SRC-12",
+          "severity": "high",
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The corrected generation-only resolver distinguishes actual cache absence with a fresh reference, rejects malformed cache values and cold explicit context overrides, and preserves established cached getter/override semantics. Cold resolution validates fresh signing configuration plus configured and operation-supplied endpoint/signing key exclusions. Legacy and dedicated seal paths remain separate, with no cache publication or supervision startup. This source mechanism correction is present; the earlier conversational 7edf acceptance is retracted for its missed operation-key exclusion, and installed cold-VM execution remains separate runtime requalification.",
+          "files": [
+            "lib/lockspire/clients/secret_material.ex",
+            "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+            "test/lockspire/clients_secret_material_test.exs"
+          ],
+          "id": "SEC-178-COLD-GENERATION-01",
+          "severity": "medium",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-0d0e744.md",
-      "report_sha256": "9ca78868330a0ab6d4a877e40486e5407a956e1843e58521f6a157b4affd8be4",
+      "report_path": "178-SECURITY-REVIEW-0b71ece.md",
+      "report_sha256": "f7741a737ab8a7e683d106ebdae1a02d8ce603af0ff545c945cab152d8d61fbe",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -5137,7 +5164,7 @@
         },
         {
           "path": "lib/lockspire/clients/secret_material.ex",
-          "sha256": "cc94a7fb75531a17259547ab084bf1b373a17c7c70e34b2eb4840f4a748082ee"
+          "sha256": "f5115a514961f71488ce846035001339c50eb6e1cab8c5723cc3a8789bf6a7b8"
         },
         {
           "path": "lib/lockspire/config.ex",
@@ -5677,7 +5704,7 @@
         },
         {
           "path": "lib/lockspire/security/client_secret_verifier/operation_context.ex",
-          "sha256": "c92425a73c9d469e3f500e56d90f5fa9bc52883b0277860d1e5918054ba9f1a0"
+          "sha256": "f1dbb3b70a2dfb12431fe564ee49d7238bbe84624ca4db08912133d755b5c475"
         },
         {
           "path": "lib/lockspire/security/device_code.ex",
@@ -7537,7 +7564,7 @@
         },
         {
           "path": "test/lockspire/clients_secret_material_test.exs",
-          "sha256": "617bc17f5d24e679cb1fb2fde9703fac72540a8671202f68e5c8a7d1b426d0bb"
+          "sha256": "0a89c511e641c13a4624c05af786442e998312953d548783dce63816dcb3eb71"
         },
         {
           "path": "test/lockspire/clients_test.exs",
@@ -8748,7 +8775,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
+      "reviewed_revision": "0b71ece011c26e0742d9eb3c20a660bd896add11",
       "reviewer_identity": "Codex security auditor /root/review_178_security",
       "verdict": "accepted"
     },
@@ -8756,7 +8783,7 @@
       "findings": [
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Unchanged from the accepted 7dce61a review: scripts/ci/run_host_integration_proof.sh:73-85 installs the early EXIT cleanup trap immediately after raw_root creation; test/acceptance/client_admin_failure_transport_test.py:300-319 exercises that failure path through the actual wrapper and checks cleanup.",
+          "evidence": "Unchanged inherited fix: scripts/ci/run_host_integration_proof.sh:73-85 installs the early EXIT cleanup trap immediately after raw_root creation; test/acceptance/client_admin_failure_transport_test.py:300-319 checks this failure path through the actual wrapper.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -8764,10 +8791,24 @@
           "id": "SRC-11",
           "severity": "low",
           "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The cold path now passes the operation options to add_operation_key_bytes/2 before Context.resolve at lib/lockspire/security/client_secret_verifier/operation_context.ex:56-65. The cached path at lines 83-91 validates the selected startup/override context against its startup forbidden bytes plus the operation bytes, and returns the augmented context locally without updating persistent_term. Lines 97-103 collect every nonempty binary value for both :secret_key_base and :legacy_secret_key_base. New cold tests at test/lockspire/clients_secret_material_test.exs:180-207 exercise both option names with no Lockspire endpoint secret configured and assert no cache publication; cached test at lines 309-333 confirms overlap is rejected and the startup cache remains unchanged. This closes the key reuse path from SRC-12. Fresh-VM runtime validation remains pending and is not claimed by this source review.",
+          "files": [
+            "lib/lockspire/security/client_secret_verifier/operation_context.ex",
+            "lib/lockspire/clients/secret_material.ex",
+            "test/lockspire/clients_secret_material_test.exs",
+            "lib/lockspire/protocol/registration.ex",
+            "docs/client-secret-verifier-configuration.md"
+          ],
+          "id": "SRC-12",
+          "severity": "high",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-0d0e744.md",
-      "report_sha256": "26eec67243dd446df4f0bf1366ad3e8d373b3cbb0b0cf23cc792e1f8c2093262",
+      "report_path": "178-SOURCE-REVIEW-0b71ece.md",
+      "report_sha256": "3fefab8be501bc7b42ef19f8b4c94b0f5b27be2a5684adb16e934737bc8f0c92",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -9472,7 +9513,7 @@
         },
         {
           "path": "lib/lockspire/clients/secret_material.ex",
-          "sha256": "cc94a7fb75531a17259547ab084bf1b373a17c7c70e34b2eb4840f4a748082ee"
+          "sha256": "f5115a514961f71488ce846035001339c50eb6e1cab8c5723cc3a8789bf6a7b8"
         },
         {
           "path": "lib/lockspire/config.ex",
@@ -10012,7 +10053,7 @@
         },
         {
           "path": "lib/lockspire/security/client_secret_verifier/operation_context.ex",
-          "sha256": "c92425a73c9d469e3f500e56d90f5fa9bc52883b0277860d1e5918054ba9f1a0"
+          "sha256": "f1dbb3b70a2dfb12431fe564ee49d7238bbe84624ca4db08912133d755b5c475"
         },
         {
           "path": "lib/lockspire/security/device_code.ex",
@@ -11872,7 +11913,7 @@
         },
         {
           "path": "test/lockspire/clients_secret_material_test.exs",
-          "sha256": "617bc17f5d24e679cb1fb2fde9703fac72540a8671202f68e5c8a7d1b426d0bb"
+          "sha256": "0a89c511e641c13a4624c05af786442e998312953d548783dce63816dcb3eb71"
         },
         {
           "path": "test/lockspire/clients_test.exs",
@@ -13083,7 +13124,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
+      "reviewed_revision": "0b71ece011c26e0742d9eb3c20a660bd896add11",
       "reviewer_identity": "Independent Phase178 source reviewer",
       "verdict": "accepted"
     }
