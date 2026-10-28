@@ -1,0 +1,42 @@
+{
+  "schema": "lockspire-phase178-plan11-correction-delta-v3",
+  "previous_delta": {
+    "path": "/private/tmp/lockspire178-11-correction-delta-v2.json",
+    "sha256": "828b6f5c9789169c45019f9d7f3559da99db22f8ded2352c7c96cd3b16caae83"
+  },
+  "final_source_revision": "307abd6d8381f8b676950dd2f35285661ca40945",
+  "final_tree": "25ff2fef42f79927ee4e401a325e1f17de916e73",
+  "checkout_clean_before_and_after_tests": true,
+  "selected_inputs": {
+    "path_count": 32,
+    "sha256": "a8ada9901cd9ae7e92363fb601c7704e2b542fedd676f1a587f1cb42036ebf41",
+    "composition": "All test/acceptance/*_test.py files, test/clean_room/test_admin_journey.py, and implementation scripts/acceptance/clean_room/client_lifetime_upgrade.py, scripts/acceptance/clean_room_saas_journey.py, scripts/ci/run_host_integration_proof.sh. Same pre/post."
+  },
+  "correction_timeline": {
+    "commit_33278459": "Removed an unused tempfile import from client_lifetime_upgrade.py. The subsequent full clean-room session20629 had already run before this removal, so its apparent 48/0 did not validate the committed bytes: test_admin_journey.py still patched lifetime_upgrade.tempfile and would raise AttributeError.",
+    "commit_307abd6d": "Changed the retained-root regression to patch saas_journey.tempfile, the actual owner of RetainableTemporaryDirectory's factory. Targeted test passed 1/1 and both full suites were then run on clean C=307abd6d."
+  },
+  "failed_attempt_history": [
+    {"tool_session": 43876, "result": "48 tests, 1 fixture failure (argparse read unittest argv); retained historically, fixed via explicit patched argv."},
+    {"tool_session": 28260, "result": "285 tests, 5 failures, 1 error: three stale redaction assertions expected detail in generic exception text instead of finite summary; three admin producer-wrapper assertions and a typed-witness error used a start_owned_session fixture returning None. Corrected summaries and fake exact identity fixture."},
+    {"tool_session": 14224, "result": "285 tests, 1 failure: OS-boundary denial output two cleanup_failed records. Safe parsed follow-up confirmed duplicate publication. Corrected wrapper to forward/remember validated child cleanup records and dedupe identical finite cleanup publication without skipping cleanup actions."},
+    {"tool_session": 20629, "result": "48/0 was run before unused tempfile import removal and is not valid for C=33278459 or C=307abd6d; never use as final evidence."}
+  ],
+  "final_verification": {
+    "runtime": {"elixir": "1.19.5", "otp": "28.5", "erl_flags": "+S 4"},
+    "acceptance": {"tool_session": 18178, "command": "python3 -m unittest discover -s test/acceptance -p '*_test.py'", "tests": 285, "failures": 0, "elapsed_seconds": 133.626},
+    "clean_room": {"tool_session": 60911, "command": "python3 test/clean_room/test_admin_journey.py", "tests": 48, "failures": 0, "elapsed_seconds": 49.682},
+    "targeted_retained_root_after_fix": {"tests": 1, "failures": 0},
+    "static": {"py_compile": "passed", "bash_n": "passed", "shellcheck": "passed", "git_diff_check": "passed"},
+    "warnings": [
+      "Full acceptance emitted ResourceWarnings for unclosed buffered pipe readers in existing client_admin_failure_transport_test fixtures; all tests passed and reported owned process-group cleanup true.",
+      "Full acceptance emitted one ResourceWarning from a synthetic HTTPError 500 fixture; all tests passed."
+    ]
+  },
+  "preserved_unknowns": {
+    "causal_probe_46992": "Custom leg read absent provider.log at tracked line 1447 after stdout/stderr DEVNULL; exception subtype UNKNOWN. Legacy public leg failed ecto.create; stderr digest 3850054c0b20b1a3ca1e4b323137889219193265a8eac904113a77f928df7051; actual cause UNKNOWN. Runner cleanup refused_or_unconfirmed without original source-child tokens, so child closure UNKNOWN/unwaived. Outer private PostgreSQL process/temp cleanup separately confirmed.",
+    "stale_package_epochs": "C=0b71ece011c26e0742d9eb3c20a660bd896add11/H=5957cdb1a23a1605e32c73b97569edfe3f921929 package and canonical evidence are stale for changed source closure and are not requalification."
+  },
+  "archive": {"path": "lockspire-1.6.1.tar", "sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be"},
+  "qualification_boundary": "No guarded ExUnit, private PostgreSQL, canonical CI, packaged lifetime proof, or current/minimum host qualification was run on C=307abd6d. Do not start these until accepted author reviews, fresh authenticated freeze and native owner validation; rebase the external coordinator/sidecar pins first. No remote mutation, no Plan12, no plan completion claim."
+}

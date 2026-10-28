@@ -1,0 +1,38 @@
+{
+  "current_packet_sha256": "25bea8f7c8b92c4a23d62306029876c313aa20ee2a2ccea21a0452ba4b3cab17",
+  "current_reports": {
+    "integration": {
+      "path": "178-INTEGRATION-REVIEW-0b71ece.md",
+      "sha256": "b2cd3bed2a1a5d281b6fc29fe1f25eb5f06ec81cece281117877b1d5c2eeebc0"
+    },
+    "security": {
+      "path": "178-SECURITY-REVIEW-0b71ece.md",
+      "sha256": "f7741a737ab8a7e683d106ebdae1a02d8ce603af0ff545c945cab152d8d61fbe"
+    },
+    "source": {
+      "path": "178-SOURCE-REVIEW-0b71ece.md",
+      "sha256": "3fefab8be501bc7b42ef19f8b4c94b0f5b27be2a5684adb16e934737bc8f0c92"
+    }
+  },
+  "delta": "Fresh-VM secret generation resolves a generation-only context when startup cache is absent. Every operation-supplied endpoint key is excluded in cold and cached contexts. Source rejection of7edf is preserved; security author retracts that conversational acceptance in current report.",
+  "implementation_revision": "0b71ece011c26e0742d9eb3c20a660bd896add11",
+  "native_validation": "accepted",
+  "previous_packet": {
+    "path": "178-INDEPENDENT-REVIEWS-0d0e744.json",
+    "sha256": "a22a344e4e2018d5c5b489ce625215f3abeaf4b2b4b98b5c8653321dbd22e23e"
+  },
+  "previous_reconciliation": {
+    "path": "178-11-REVIEW-RECONCILIATION-0d0e744.json",
+    "sha256": "8b8e54ca766ada5c8b9803427353d63dda660c8a0006bc378d159b5898fdc38f"
+  },
+  "rejected_source_review": {
+    "finding": "SRC-12",
+    "path": "178-SOURCE-REVIEW-7edfca-rejected.md",
+    "sha256": "a9d6100db03801cfa07eee86100e30e29b8339e99560bd2c7b54739102624b87"
+  },
+  "runtime_limits": "Focused owned-source62/0 belongs to0b71. Canonical/source and package/host proof at0d0e are historical. New canonical, installed, hosted candidate and integrated-main qualification remain separate and pending. Existing incidents and E-09/E-10 are preserved and unwaived.",
+  "schema": "lockspire-phase178-review-reconciliation-v1",
+  "scope_count": 1078,
+  "scope_sha256": "7ec050ba2c659a57fdf56134ab08c1de3fbfd96d1068ad24703d39b0396b2d36",
+  "security_author_byte_verification": "f7741a737ab8a7e683d106ebdae1a02d8ce603af0ff545c945cab152d8d61fbe"
+}
