@@ -46,9 +46,9 @@ The PR merge object reported by GitHub is `e5ea09406cbbf581a028dce0572ee4f594994
 
 `VDELIV-01` remains pending a compatible passing seven-job candidate graph, complete coverage evidence, and milestone audit. `VDELIV-02` remains pending the dated main/delivery acceptance handoff and ranking refresh. Phase 178 Plan 11 is incomplete; Plan 12 has not started. E-09/E-10, historical database incidents, prior failures, and existing generic/descriptorless flags remain preserved and unwaived.
 
-### Authorization boundary
+### Delivery status
 
-The initial push of `4d512ae2c6a042e2b4557750eca2d49e57fb7189` and normal PR #141 creation were authorized and completed. The corrective source and metadata shown here remain local and unpushed. This proposed body is for use only after the exact proposed candidate SHA is pushed and verified as the head of existing PR #141; it does not claim hosted acceptance for the current old PR head. Release Please remains the release-intent path after future authorized integration.
+The source-bound local proof and hosted candidate CI are separate evidence. The hosted job statuses below are pinned to the previously published PR head `4d512ae2c6a042e2b4557750eca2d49e57fb7189`; they do not qualify this candidate. No passing hosted graph, main acceptance, merge authorization, or publication is claimed here. Release Please remains the release-intent path after future authorized integration.
 
 ## Private prepared body and publication record
 
