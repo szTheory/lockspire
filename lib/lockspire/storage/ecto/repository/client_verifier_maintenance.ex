@@ -160,7 +160,6 @@ defmodule Lockspire.Storage.Ecto.Repository.ClientVerifierMaintenance do
         case Lockspire.Storage.Ecto.Repository.append_audit_event(audit_attrs) do
           {:ok, _event} -> {:ok, :changed}
           {:error, _reason} -> {:error, @safe_error}
-          _ -> {:error, @safe_error}
         end
 
       {0, _} ->

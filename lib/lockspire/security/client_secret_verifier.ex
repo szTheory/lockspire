@@ -60,20 +60,17 @@ defmodule Lockspire.Security.ClientSecretVerifier do
     _ -> {:error, :client_secret_verifier_unavailable}
   end
 
-  @spec open(Context.t(), term(), term(), keyword()) :: {:ok, binary()} | {:error, atom()}
-  def open(context, client_id, encrypted, opts) do
+  @spec open(term(), term(), term(), keyword()) :: {:ok, binary()} | {:error, atom()}
+  def open(%Context{state: :invalid}, _client_id, _encrypted, _opts),
+    do: {:error, :client_secret_verifier_configuration_invalid}
+
+  def open(%Context{} = context, client_id, encrypted, opts) do
     with {:ok, %Context{} = context} <- Context.validate(context),
          :ok <- validate_identity(client_id),
          true <- is_binary(encrypted),
          {:ok, secret} <- open_value(context, client_id, encrypted, opts) do
       {:ok, secret}
     else
-      {:ok, %Context{state: :invalid}} ->
-        {:error, :client_secret_verifier_configuration_invalid}
-
-      {:ok, _context} ->
-        {:error, :client_secret_verifier_configuration_invalid}
-
       false ->
         {:error, :client_secret_verifier_unsupported_format}
 
@@ -96,6 +93,9 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
   end
+
+  def open(_context, _client_id, _encrypted, _opts),
+    do: {:error, :client_secret_verifier_configuration_invalid}
 
   @spec prepare_migrated(Context.t(), term(), term(), term(), keyword()) ::
           {:ok, binary()} | {:error, atom()}
@@ -307,9 +307,7 @@ defmodule Lockspire.Security.ClientSecretVerifier do
            ) do
       {:ok, secret}
     else
-      false -> {:error, :client_secret_verifier_unsupported_format}
       {:error, reason} -> {:error, reason}
-      _ -> {:error, :client_secret_verifier_unavailable}
     end
   end
 
@@ -424,9 +422,6 @@ defmodule Lockspire.Security.ClientSecretVerifier do
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
   end
-
-  defp authenticated_material(_context, _client_id, _encrypted),
-    do: {:error, :client_secret_verifier_unsupported_format}
 
   defp fetch_current_key(context, key_id) do
     case Map.fetch(context.keys, key_id) do

@@ -34,9 +34,6 @@ defmodule Lockspire.Clients.SecretMaterial do
 
       {:error, _reason} ->
         {:error, :client_secret_verifier_unavailable}
-
-      _other ->
-        {:error, :client_secret_verifier_unavailable}
     end
   rescue
     _ -> {:error, :client_secret_verifier_unavailable}
@@ -62,9 +59,6 @@ defmodule Lockspire.Clients.SecretMaterial do
   end
 
   defp seal(%Context{}, _client_id, _secret, _opts),
-    do: {:error, :client_secret_verifier_configuration_invalid}
-
-  defp seal(_context, _client_id, _secret, _opts),
     do: {:error, :client_secret_verifier_configuration_invalid}
 
   defp generate_token(size) do

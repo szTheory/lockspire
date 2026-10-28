@@ -41,7 +41,6 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
         else: {:error, public_report(report)}
     else
       {:error, reason} when is_atom(reason) -> {:error, safe_reason(reason)}
-      _ -> {:error, :client_secret_verifier_maintenance_failed}
     end
   rescue
     _ -> {:error, :client_secret_verifier_maintenance_failed}
@@ -392,10 +391,6 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
       {:error, reason} ->
         {classification, safe_reason, action} = inspection_error(reason)
         {:attention, classification, safe_reason, action, %{authenticated?: false}}
-
-      _other ->
-        {:attention, :unreadable, :custody_unreadable, :repair_storage_or_recover,
-         %{authenticated?: false}}
     end
   rescue
     _ ->
@@ -461,9 +456,6 @@ defmodule Lockspire.Admin.ClientVerifierMaintenance do
             )
 
           {:error, _safe_reason} ->
-            failed_row(report, client.client_id, :maintenance_failed)
-
-          _other ->
             failed_row(report, client.client_id, :maintenance_failed)
         end
 

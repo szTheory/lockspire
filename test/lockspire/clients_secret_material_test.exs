@@ -153,6 +153,19 @@ defmodule Lockspire.ClientsSecretMaterialTest do
 
       refute Exception.message(error) =~ inspect(context)
     end
+
+    invalid_context = %Context{state: :invalid, reason: :invalid_options}
+
+    error =
+      assert_raise ArgumentError, fn ->
+        Clients.rotate_secret_material(
+          client_id: "invalid-context-client",
+          client_secret_verifier_context: invalid_context
+        )
+      end
+
+    assert Exception.message(error) ==
+             "client secret material generation failed: client_secret_verifier_configuration_invalid"
   end
 
   test "legacy helper keeps its missing endpoint secret error clear" do

@@ -73,6 +73,16 @@ defmodule Lockspire.Security.ClientSecretVerifierTest do
     assert false == open_matches?(context, decomposed, envelope, secret)
   end
 
+  test "raw and invalid verifier contexts reject with the fixed configuration error" do
+    invalid_context = %Context{state: :invalid, reason: :invalid_options}
+
+    assert ClientSecretVerifier.open(:not_a_context, "client", "malformed", []) ==
+             {:error, :client_secret_verifier_configuration_invalid}
+
+    assert ClientSecretVerifier.open(invalid_context, "client", "malformed", []) ==
+             {:error, :client_secret_verifier_configuration_invalid}
+  end
+
   test "wrong key, wrong identity, and bound-field tampering fail closed" do
     key_id = "verifier-1"
     key = random_key()
