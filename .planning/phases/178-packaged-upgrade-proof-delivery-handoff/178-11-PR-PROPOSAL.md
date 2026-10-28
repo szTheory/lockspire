@@ -12,7 +12,7 @@
 
 **Currently published PR head:** `4d512ae2c6a042e2b4557750eca2d49e57fb7189` (unchanged)
 
-**Current local preparation HEAD:** `efc3742892c8b5396b70f78cc79ff66a0b2cb026` (unpublished)
+**Proof execution checkout:** `834b84d40a6059c308303658bea8b83d9fb0e412` (local source acceptance identity; distinct from the proposed publication SHA)
 
 **Observed current `main`:** `173059a166e9ade0f5f57c9980b7b2400a98538c`, observed locally and with read-only remote ref query at 2026-10-28 13:02 UTC; it is an ancestor of the local preparation HEAD.
 
