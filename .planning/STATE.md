@@ -6,11 +6,11 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: executing
-stopped_at: Plan11 corrected source accepted; fresh native qualification pending; Plan12 awaits hosted gates
-last_updated: "2026-10-28T20:43:11.312098+00:00"
+stopped_at: Plan 11 canonical source and lifetime passed; verifier and installed-host qualification executing
+last_updated: "2026-10-28T22:01:00.177014+00:00"
 last_activity: 2026-10-28
-last_activity_desc: Accepted corrected disclosure attribution source50d; native requalification pending, no remote mutation
-state_head: 50d67751a7844dee2f5f595195a6ab455e313fc6
+last_activity_desc: Corrected C50d canonical 2456/0 plus 2 properties and lifetime 47 checks/9 scenarios passed; verifier proof executing
+state_head: 1757638a7770bb6f09c3b085f002fa7c8b7ed518
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase178 Plan11 has accepted source, security and integration author reviews for corrected candidate `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). The disclosure attribution HIGH source finding and two follow-up findings are rechecked-fixed. VPROOF-02 remains reopened until fresh frozen native qualification of corrected semantics. Actual clean7db tests passed acceptance289/0, clean-room48/0 and handler1/0; only Credo policy differs at50d, where strictCredo/format/diff pass. C307 old-contract outcomes remain historical. Original floor predicate and46992 inner closure remain UNKNOWN. PR141 is still at33db with failed requiredCI; no new remote action is authorized. Plan11 incomplete; Plan12 unstarted.
+**Current focus:** Phase 178 Plan 11 has three accepted author reviews for corrected source `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). Frozen execution checkout `1757638a7770bb6f09c3b085f002fa7c8b7ed518` passed canonical source CI: 2,456 tests, zero failures, two properties. The three lifetime tests passed, and native composition validated 47 checks across nine scenarios; parent independent checks reproduced the retained receipt bytes. The three earlier canonical failures remain unexplained, with their original identities retained and one failed-run journal pointer unavailable. VPROOF-02 remains reopened until locked/floor verifier and current/minimum installed-host qualification completes. PR #141 remains at `33db5483` with failed required hosted CI; no new remote action is authorized. Plan 11 incomplete; Plan 12 unstarted.
 
 ## Current Position
 
@@ -35,8 +35,8 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 not ready until Plan 11 completes
-Status: Source correction reviewed and accepted; fresh freeze and native source/package/current/minimum-host qualification executing. Required hosted candidate graph and main/delivery acceptance remain pending.
-Last activity: 2026-10-28 — Three author reviews accept corrected source50d; VPROOF-02 awaits fresh native qualification.
+Status: Corrected source and lifetime proof passed; locked/floor verifier and installed-host proof executing. Required hosted candidate graph and main/delivery acceptance remain pending.
+Last activity: 2026-10-28 — Canonical source and lifetime evidence independently verified; locked verifier partition running.
 
 ## Performance Metrics
 
@@ -265,7 +265,7 @@ Next: After clearing context, run `$gsd-execute-phase 178` with no wave filter. 
 
 ## Operator Next Steps
 
-- Resume Phase 178 Plan 11 from `.continue-here.md`: correct known security-contract test expectations and authenticated packaged-source ownership; refine bounded diagnostics before fixing unknown legacy/minimum causes. Current 1,078-input local VPROOF-02 qualification is already complete for its exact recorded inputs. New covered-input changes need affected review/requalification; never retarget old receipts. Consider the recorded cache/timing improvements; defer proof-job restructuring until a successful measured baseline exists.
+- Resume Phase 178 Plan 11 from the latest execution checkpoint: preserve C50d/H175 canonical and lifetime evidence, finish native verifier pairs and six installed-admin journeys, then transfer validated owner/source/package records and prepare the exact final publication proposal. Keep all failed epochs, retractions, missing-token limitations, E-09/E-10 and generic/descriptorless flags visible. No additional push/body update/rerun/merge/release is authorized by the consumed `33db5483` approval.
 - Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
 
 ## 2026-10-28T14:00:27.096694+00:00 — Approved PR Update / Hosted Qualification

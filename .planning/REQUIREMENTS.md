@@ -1,7 +1,7 @@
 # Requirements: Lockspire v1.48 Client Authentication Key Isolation & Rotation
 
 **Defined:** 2026-10-25
-**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements. Phase 178 VPROOF-02 is reopened for HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01: old-contract passes remain historical while operation-owned channel evidence is corrected and requalified. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance is not observed. Generic edge and non-authoritative prohibition flags remain visible in their reports.
+**Status:** All 18 requirements approved by the owner with “lgtm” on 2026-10-25; roadmap approved on 2026-10-25. Phases 175–177 independently verified 15/18 requirements. Phase 178 VPROOF-02 remains reopened following HIGH SEC-178-DISCLOSURE-ATTRIBUTION-01. The source correction is accepted at `50d67751`, and fresh canonical source/lifetime proof passed; affected verifier and installed-host qualification remains pending. Old-contract results stay historical. VDELIV-01/02 remain pending because PR #141 candidate CI is incomplete and main/delivery acceptance is not observed. Generic edge and non-authoritative prohibition flags remain visible in their reports.
 **Core Value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 **Research:** [SEC-01 synthesis](research/v1.48-client-auth-key-isolation/SUMMARY.md).
 
@@ -87,11 +87,11 @@ Each approved requirement maps exactly once to the approved roadmap, continuing 
 | VOPS-03 | Phase 177 | Complete |
 | VOPS-04 | Phase 177 | Complete |
 | VPROOF-01 | Phase 177 | Complete |
-| VPROOF-02 | Phase 178 | Reopened — source attribution correction accepted at50d; fresh affected native qualification required |
+| VPROOF-02 | Phase 178 | Reopened — corrected source canonical/lifetime proof passed at C50d/H175; verifier and installed-host proof pending |
 | VDELIV-01 | Phase 178 | Pending |
 | VDELIV-02 | Phase 178 | Pending |
 
 **Coverage:** 18 requirements; 18 mapped exactly once; 0 unmapped; 15 currently verified complete and 3 pending. Roadmap approved 2026-10-25. The original 1,076- and 1,077-input Plan 10 evidence remains historical and valid only for its recorded closures. Earlier source/package results retain their exact identities. VPROOF-02 requires corrected channel attribution and fresh affected qualification; VDELIV-01/02 still require passing hosted candidate CI, milestone audit, and main/delivery evidence.
 
 ---
-*Last updated: 2026-10-28 after independent security reopening of disclosure evidence attribution; VPROOF-02 and VDELIV-01/02 pending.*
+*Last updated: 2026-10-28 after corrected-source canonical and lifetime qualification; VPROOF-02 and VDELIV-01/02 remain pending.*
