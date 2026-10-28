@@ -1,69 +1,33 @@
 {
-  "corrections": [
-    {
-      "kind": "native-header-format",
-      "outcome": "native rejection preserved; author corrected to separate header lines; judgment and manifest unchanged",
-      "source": "178-INTEGRATION-REVIEW-66f5169-header-rejected.md"
+  "current_packet_sha256": "a22a344e4e2018d5c5b489ce625215f3abeaf4b2b4b98b5c8653321dbd22e23e",
+  "current_reports": {
+    "integration": {
+      "path": "178-INTEGRATION-REVIEW-0d0e744.md",
+      "sha256": "017f5e043ac8fc87fb781981148a3475700adfab879956bbee12fde0bc2ac84c"
     },
-    {
-      "kind": "focused-count",
-      "outcome": "author corrected seven-files/37-tests distinction; original report retained; no canonical/package qualification claimed",
-      "source": "178-INTEGRATION-REVIEW-7dce61a-count-prior.md"
+    "security": {
+      "path": "178-SECURITY-REVIEW-0d0e744.md",
+      "sha256": "9ca78868330a0ab6d4a877e40486e5407a956e1843e58521f6a157b4affd8be4"
+    },
+    "source": {
+      "path": "178-SOURCE-REVIEW-0d0e744.md",
+      "sha256": "26eec67243dd446df4f0bf1366ad3e8d373b3cbb0b0cf23cc792e1f8c2093262"
     }
-  ],
-  "current_packet_sha256": "f7d00a6184e0f3a468e04965f4867d2c044a761f0b74f109a51ef88c65cceb2d",
-  "current_reports": [
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SOURCE-REVIEW-7dce61a.md",
-      "sha256": "46f07dc0a5d151a995afba7c1fe3161f85a4eb197ecb8016851604f2707eef6d"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-REVIEW-7dce61a.md",
-      "sha256": "8fce27a7f38282449f63468b1377170a76426420491cdd88137ae03a0c1e2d66"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-REVIEW-7dce61a.md",
-      "sha256": "eb6ad6f249a7b60fe0948ab0f054c4a8127f6909c2aee63d4ac48b6a4f949d41"
-    }
-  ],
-  "historical_reports": [
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SOURCE-REVIEW-66f5169.md",
-      "sha256": "0ea1813523842dffbac9697119997803caa18a0cde3651b61a53fecdd4e24ecb"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-REVIEW-66f5169.md",
-      "sha256": "c7ee5c17000555484c22bd706d4f3e68cb32ee29e1684a26f9da5096db44fcba"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-REVIEW-66f5169.md",
-      "sha256": "d30db483136d7c07dd36472f146a2e1c3dae766df17e9edf00e093113c058cce"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INDEPENDENT-REVIEWS-66f5169.json",
-      "sha256": "31288d8cd3b0bec8c0f4bf09c31698cd4872c3dc19c4714051597aee6b3ccc4b"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-REVIEW-66f5169-header-rejected.md",
-      "sha256": "8f068841441e7bedd5f3a154411584c55569be9a4ffc35e3ef71124861a68aad"
-    },
-    {
-      "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INTEGRATION-REVIEW-7dce61a-count-prior.md",
-      "sha256": "85bedf2ac5ea3a569bff73a3818a7d98975b0e37fafede639990aaa7f3e38439"
-    }
-  ],
-  "implementation_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+  },
+  "delta": "Only two formatter-added blank lines in test/lockspire/ci_workflow_evidence_contract_test.exs; all nonblank bytes unchanged from7dce. Authors rechecked and accepted the exact new closure.",
+  "implementation_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
   "native_validation": "accepted",
-  "prior_active_packet": {
-    "path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-INDEPENDENT-REVIEWS-fefe8a7-before-7dce61a.json",
-    "sha256": "e28b8c2b6d27617c898d216fe0c425a60485516099ce9603d6ece77507d2d322"
+  "previous_packet": {
+    "path": "178-INDEPENDENT-REVIEWS-7dce61a.json",
+    "sha256": "f7d00a6184e0f3a468e04965f4867d2c044a761f0b74f109a51ef88c65cceb2d"
   },
-  "reviewer_author_verification": {
-    "security66": "c7ee5c17000555484c22bd706d4f3e68cb32ee29e1684a26f9da5096db44fcba",
-    "security7dce": "8fce27a7f38282449f63468b1377170a76426420491cdd88137ae03a0c1e2d66"
+  "previous_reconciliation": {
+    "path": "178-11-REVIEW-RECONCILIATION-7dce61a.json",
+    "sha256": "6f7f54b0f18ca5c6ff012975ba505a452bdb7023a6feda3a09ee73dfba140dfd"
   },
-  "runtime_limits": "Review acceptance is bounded static source acceptance. Focused guarded 37/0 at7dce is separate. Canonical source/package/hosted/main outcomes remain pending for new closure.",
+  "runtime_limits": "Earlier focused37/0 belongs to7dce; failed canonical attempts atde1117 stopped atformat gate beforeExUnit. Fresh canonical/package/hosted/main outcomes remain pending for0d0e.",
   "schema": "lockspire-phase178-review-reconciliation-v1",
   "scope_count": 1078,
-  "scope_sha256": "18b73a7e0801988c8b96f3a37e8349afa81b78ce10e31f7c020e62baecb6615d"
+  "scope_sha256": "1af0d866eb6cdb6891549bd7a497db00a1724a27e9a75cfe2c5ee88b79eca0f4",
+  "security_author_byte_verification": "9ca78868330a0ab6d4a877e40486e5407a956e1843e58521f6a157b4affd8be4"
 }

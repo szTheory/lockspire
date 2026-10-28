@@ -1,25 +1,27 @@
 {
-  "implementation_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+  "implementation_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
   "lanes": {
     "integration": {
       "findings": [
         {
           "disposition": "later-owner",
-          "evidence": "At the target, AuditStore maps PostgrexError to :storage_error and DBConnection.ConnectionError to :storage_unavailable for both returned and rescued errors while passing domain and changeset errors through. ClientStore append_audit_or_rollback converts the audit failure into TransactionStore.rollback; TransactionStore returns the rollback reason. The race test checks exact original client row and audit set after the forced failure, then removes the trigger and performs the success control in Sandbox.unboxed_run before checking independently committed row/audit state. The lifetime rollback test now asserts :storage_error and retains row and audit invariants (including existing handoff checks in the suite). Parent-provided guarded focused result: 37 tests passed / 0 failures across seven selected files, clean before/after and owned database absent; this is not canonical source CI or package proof. Historical 66f5169 37/2 and 0/1 failures remain preserved.",
+          "evidence": "The only covered-path delta from accepted 7dce61a is two inserted blank lines around the existing multiline assertion in ci_workflow_evidence_contract_test.exs; normalized diff is empty and all changed hunk content is whitespace. Cross-phase workflow/package ownership, source C versus checkout H, rollback/audit propagation, and prior 37 tests / 0 failures across seven selected files remain unchanged and retain 7dce61a applicability. The canonical private-clone attempt at this target stopped at formatting before ExUnit, so this report makes no canonical runtime or package-proof claim.",
           "files": [
+            "test/lockspire/ci_workflow_evidence_contract_test.exs",
+            ".github/workflows/ci.yml",
+            "scripts/ci/run_test_matrix.sh",
+            "scripts/acceptance/clean_room/package_input.py",
             "lib/lockspire/storage/ecto/repository/audit_store.ex",
-            "lib/lockspire/storage/ecto/repository/client_store.ex",
-            "lib/lockspire/storage/ecto/repository/transaction_store.ex",
             "test/lockspire/storage/client_lifetime_rollback_test.exs",
             "test/lockspire/storage/client_secret_lifetime_rotation_race_test.exs"
           ],
-          "id": "FOCUSED-ROLLBACK-AUDIT-RECHECK-NOT-CANONICAL-PROOF",
+          "id": "CANONICAL-FORMAT-ONLY-DELTA",
           "severity": "info",
           "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-7dce61a.md",
-      "report_sha256": "eb6ad6f249a7b60fe0948ab0f054c4a8127f6909c2aee63d4ac48b6a4f949d41",
+      "report_path": "178-INTEGRATION-REVIEW-0d0e744.md",
+      "report_sha256": "017f5e043ac8fc87fb781981148a3475700adfab879956bbee12fde0bc2ac84c",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -3104,7 +3106,7 @@
         },
         {
           "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-          "sha256": "bce98897912b59de94366b1fd333ae0bb56b29128a39a2b11acf0613af3bff3b"
+          "sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
         },
         {
           "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -4335,8 +4337,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
-      "reviewer_identity": "R178D7C1",
+      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
+      "reviewer_identity": "R178F0D7",
       "verdict": "accepted"
     },
     "security": {
@@ -4429,8 +4431,8 @@
           "status": "deferred"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-7dce61a.md",
-      "report_sha256": "8fce27a7f38282449f63468b1377170a76426420491cdd88137ae03a0c1e2d66",
+      "report_path": "178-SECURITY-REVIEW-0d0e744.md",
+      "report_sha256": "9ca78868330a0ab6d4a877e40486e5407a956e1843e58521f6a157b4affd8be4",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -7515,7 +7517,7 @@
         },
         {
           "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-          "sha256": "bce98897912b59de94366b1fd333ae0bb56b29128a39a2b11acf0613af3bff3b"
+          "sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
         },
         {
           "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -8746,7 +8748,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
       "reviewer_identity": "Codex security auditor /root/review_178_security",
       "verdict": "accepted"
     },
@@ -8754,7 +8756,7 @@
       "findings": [
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Rechecked the inherited fix at scripts/ci/run_host_integration_proof.sh:73-85: the EXIT cleanup trap is installed immediately after raw_root creation, before later tool configuration can fail. The actual-wrapper regression at test/acceptance/client_admin_failure_transport_test.py:300-319 asserts fixed usage failure, confirmed outer cleanup, empty invocation-local TMPDIR, and exactly one admitted outer session. This previously accepted low finding is unchanged and remains fixed.",
+          "evidence": "Unchanged from the accepted 7dce61a review: scripts/ci/run_host_integration_proof.sh:73-85 installs the early EXIT cleanup trap immediately after raw_root creation; test/acceptance/client_admin_failure_transport_test.py:300-319 exercises that failure path through the actual wrapper and checks cleanup.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -8764,8 +8766,8 @@
           "status": "resolved"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-7dce61a.md",
-      "report_sha256": "46f07dc0a5d151a995afba7c1fe3161f85a4eb197ecb8016851604f2707eef6d",
+      "report_path": "178-SOURCE-REVIEW-0d0e744.md",
+      "report_sha256": "26eec67243dd446df4f0bf1366ad3e8d373b3cbb0b0cf23cc792e1f8c2093262",
       "reviewed_at": "2026-10-28",
       "reviewed_files": [
         {
@@ -11850,7 +11852,7 @@
         },
         {
           "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-          "sha256": "bce98897912b59de94366b1fd333ae0bb56b29128a39a2b11acf0613af3bff3b"
+          "sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
         },
         {
           "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -13081,7 +13083,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "7dce61a65c0eada9b1dbe57eb2c3513df9e5d770",
+      "reviewed_revision": "0d0e74417cd98c5ef93c3f1f8af1b10143b692e0",
       "reviewer_identity": "Independent Phase178 source reviewer",
       "verdict": "accepted"
     }
