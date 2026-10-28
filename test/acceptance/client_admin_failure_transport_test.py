@@ -32,7 +32,8 @@ PROBE_RECORDS = []
 
 
 def run_wrapper(journey_source: str, *, timeout: int = 10,
-                deny_group_probe: bool = False, direct_term: bool = False) -> tuple[int, bytes, bytes, bool]:
+                deny_group_probe: bool = False, direct_term: bool = False,
+                extra_env: dict[str, str] | None = None) -> tuple[int, bytes, bytes, bool]:
     """Run the actual shell consumer with bounded output and owned cleanup."""
     global UNCONFIRMED_CUSTODY
     if UNCONFIRMED_CUSTODY:
@@ -87,6 +88,8 @@ def run_wrapper(journey_source: str, *, timeout: int = 10,
         "PYTHONDONTWRITEBYTECODE": "1",
         "LOCKSPIRE_PROOF_TEST_READY_FILE": str(work / "ready"),
     })
+    if extra_env:
+        env.update(extra_env)
     if deny_group_probe:
         # Narrow fake external OS boundary. Registration, producer, parser,
         # capture and consumer stay real. The independent parent is unpatched.
@@ -273,6 +276,31 @@ def records(stderr: bytes, prefix: str) -> list[dict]:
 
 
 class ClientAdminFailureTransport(unittest.TestCase):
+    def test_invalid_tool_configuration_removes_early_raw_capture_directory(self):
+        temp_root = Path(tempfile.mkdtemp(prefix="lockspire-admin-invalid-config-")).resolve()
+        temp_root.chmod(0o700)
+        try:
+            record_start = len(PROBE_RECORDS)
+            status, stdout, stderr, stopped = run_wrapper(
+                producer_source("browser"),
+                extra_env={
+                    "TMPDIR": str(temp_root),
+                    "LOCKSPIRE_PROOF_TEST_TIMEOUT_SECONDS": "invalid",
+                },
+            )
+            self.assertTrue(status == 64, "invalid tool configuration status changed")
+            self.assertTrue(stopped, "wrapper parent cleanup was not confirmed")
+            self.assertTrue(stdout == b"" and b"usage:" in stderr, "invalid configuration output was not fixed usage text")
+            self.assertTrue(list(temp_root.iterdir()) == [], "early raw capture directory remained after validation exit")
+            admitted = {
+                (row["identity"]["pid"], row["identity"]["pgid"], row["identity"]["sid"], tuple(row["identity"]["start"]))
+                for row in PROBE_RECORDS[record_start:]
+                if row.get("event") == "admitted_before_exec"
+            }
+            self.assertTrue(len(admitted) == 1, "invalid configuration launched a nested owned child")
+        finally:
+            shutil.rmtree(temp_root)
+
     def producer_record(self) -> str:
         stderr = []
 

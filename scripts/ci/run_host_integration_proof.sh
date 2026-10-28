@@ -70,6 +70,19 @@ for path in "$stage_dir"/*; do
   exit 64
 done
 raw_root=$(mktemp -d "${TMPDIR:-/tmp}/lockspire-host-proof.XXXXXX")
+cleanup_early_raw_root() {
+  local original_status=$? cleanup_status=0
+  trap - EXIT
+  if [[ -n "${raw_root:-}" && -d "$raw_root" ]]; then
+    rm -rf -- "$raw_root" || {
+      echo "host integration proof cleanup failed" >&2
+      cleanup_status=125
+    }
+  fi
+  if ((cleanup_status != 0)); then exit "$cleanup_status"; fi
+  exit "$original_status"
+}
+trap cleanup_early_raw_root EXIT
 chmod 700 "$raw_root"
 started=$SECONDS
 pair_budget=900
