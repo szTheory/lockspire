@@ -81,6 +81,7 @@ class VerifierDisclosureContracts(unittest.TestCase):
 
     def test_success_capture_distinguishes_controls_and_operation_witnesses(self) -> None:
         payload = {
+            "channel_attribution": verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION,
             "operation_result": "ok",
             "logger_event_count": 2,
             "query_event_count": 4,
@@ -95,9 +96,109 @@ class VerifierDisclosureContracts(unittest.TestCase):
             "ciphertext_changed": True,
         }
         self.assertEqual(verifier_disclosure.validate_capture_payload(payload), payload)
-        no_query_operation = dict(payload, query_operation_event_count=0)
+        zero_operations = dict(payload, query_operation_event_count=0)
+        self.assertEqual(verifier_disclosure.validate_capture_payload(zero_operations), zero_operations)
+        missing_control = dict(payload, query_control_event_count=0)
         with self.assertRaises(verifier_receipts.ReceiptError):
-            verifier_disclosure.validate_capture_payload(no_query_operation)
+            verifier_disclosure.validate_capture_payload(missing_control)
+        over_attributed = dict(payload, query_event_count=3)
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_disclosure.validate_capture_payload(over_attributed)
+
+    def test_failure_capture_accepts_zero_operation_events_with_measured_controls(self) -> None:
+        capture = {
+            "channel_attribution": verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION,
+            "scenario": "malformed_crypto",
+            "reason": "malformed_verifier",
+            "forced_failure_observed": True,
+            "operation_result": "failed",
+            "failure_detail_count": 1,
+            "storage_failure_witness": False,
+            "logger_event_count": 2,
+            "logger_control_event_count": 2,
+            "logger_operation_event_count": 0,
+            "logger_leak_count": 0,
+            "query_event_count": 1,
+            "query_control_event_count": 1,
+            "query_operation_event_count": 0,
+            "query_leak_count": 0,
+            "cli_output_checked": True,
+            "report_redacted": True,
+            "audit_projection_safe": True,
+            "audit_unchanged": True,
+            "ciphertext_unchanged": True,
+            "http_status": 401,
+            "http_error_code": "invalid_client",
+            "http_outcome_safe": True,
+            "output_leak_count": 0,
+        }
+        self.assertEqual(verifier_disclosure.validate_failure_capture(capture), capture)
+
+    def test_old_attributionless_disclosure_receipt_is_historical_only(self) -> None:
+        receipt = json.loads(
+            (ROOT / "test/fixtures/verifier-matrix-26/disclosure/locked-delegated/receipt.json").read_text()
+        )
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts._validate_receipt_structure(receipt)
+        self.assertIs(
+            verifier_receipts._validate_receipt_structure(receipt, historical_structure_only=True),
+            receipt,
+        )
+        current = json.loads(json.dumps(receipt))
+        observation = current["observations"][verifier_receipts.DISCLOSURE_CASE_IDS["locked"][0]]
+        observation["channel_attribution"] = verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION
+        observation["query_operation_event_count"] = 0
+        self.assertIs(verifier_receipts._validate_receipt_structure(current), current)
+
+        failure = json.loads(
+            (ROOT / "test/fixtures/verifier-matrix-26/disclosure/locked-delegated/failure-receipt.json").read_text()
+        )
+        with self.assertRaises(verifier_receipts.ReceiptError):
+            verifier_receipts._validate_receipt_structure(failure)
+        self.assertIs(
+            verifier_receipts._validate_receipt_structure(failure, historical_structure_only=True),
+            failure,
+        )
+
+    def test_rejected_capture_persists_only_allowlisted_predicate_and_safe_facts(self) -> None:
+        capture = {
+            "channel_attribution": verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION,
+            "scenario": "malformed_crypto",
+            "reason": "malformed_verifier",
+            "forced_failure_observed": True,
+            "operation_result": "failed",
+            "failure_detail_count": 1,
+            "storage_failure_witness": False,
+            "logger_event_count": 2,
+            "logger_control_event_count": 2,
+            "logger_operation_event_count": 0,
+            "logger_leak_count": 0,
+            "query_event_count": 2,
+            "query_control_event_count": 1,
+            "query_operation_event_count": 2,
+            "query_leak_count": 0,
+            "cli_output_checked": True,
+            "report_redacted": True,
+            "audit_projection_safe": True,
+            "audit_unchanged": True,
+            "ciphertext_unchanged": True,
+            "http_status": 401,
+            "http_error_code": "invalid_client",
+            "http_outcome_safe": True,
+            "output_leak_count": 0,
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "capture-rejection.json"
+            with self.assertRaises(verifier_receipts.DisclosureCaptureRejected) as caught:
+                verifier_disclosure.validate_failure_capture(capture)
+            record = verifier_disclosure.persist_capture_rejection(path, caught.exception)
+            saved = json.loads(path.read_text())
+            self.assertEqual(saved, record)
+            self.assertEqual(record["schema"], "lockspire-disclosure-capture-rejection-v1")
+            self.assertEqual(record["predicate"], "capture_totals_invalid")
+            self.assertTrue(record["facts"]["query_total_covers_attribution"] is False)
+            self.assertNotIn("malformed_crypto", json.dumps(record))
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
     def test_encoded_sentinel_output_is_rejected_before_receipt_acceptance(self) -> None:
         sentinel = secrets.token_urlsafe(32)
@@ -183,6 +284,7 @@ class VerifierDisclosureContracts(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "failure-receipt.json"
             safe = {
+                "channel_attribution": verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION,
                 "scenario": "unknown_key_crypto",
                 "reason": "unknown_key",
                 "forced_failure_observed": True,

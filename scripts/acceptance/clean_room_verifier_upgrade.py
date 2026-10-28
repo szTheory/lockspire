@@ -717,8 +717,14 @@ def validate_matrix_directory(
             runner_revision = receipt.get("runner")
             if runner_revision != expected_runner:
                 raise ReceiptError("group receipt does not match its expected tested runner")
-            validator = __import__("verifier_receipts")._validate_receipt_structure if _structure_only else validate_receipt
-            validator(receipt, expected_pair=pair, expected_store=store)
+            if _structure_only:
+                validator = __import__("verifier_receipts")._validate_receipt_structure
+                validator(
+                    receipt, expected_pair=pair, expected_store=store,
+                    historical_structure_only=True,
+                )
+            else:
+                validate_receipt(receipt, expected_pair=pair, expected_store=store)
             candidate = receipt["candidate"]
             compiled_candidate = receipt["host"]["compiled_candidate_sha256"]
         runners.add(runner_revision)

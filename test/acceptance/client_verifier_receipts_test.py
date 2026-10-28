@@ -152,7 +152,7 @@ class CompleteMatrixContracts(unittest.TestCase):
                     return verifier_receipts._validate_rollout_structure(value, expected_pair=raw["pair"],
                         expected_store=raw["store"], expected_runner=raw["runner_revision"],
                         expected_candidate_source=raw["candidate"]["source_revision"], expected_scope=raw["scope"])
-                return verifier_receipts._validate_receipt_structure(value)
+                return verifier_receipts._validate_receipt_structure(value, historical_structure_only=True)
             validate(raw)
             for leaf in strings(raw):
                 for replacement in variants:

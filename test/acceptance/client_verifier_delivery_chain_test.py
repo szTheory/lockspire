@@ -189,7 +189,7 @@ def validator(raw):
             expected_runner=raw["runner_revision"],
             expected_candidate_source=raw["candidate"]["source_revision"], expected_scope=raw["scope"],
         )
-    return receipts._validate_receipt_structure(raw)
+    return receipts._validate_receipt_structure(raw, historical_structure_only=True)
 
 
 def upload_tree(root: Path, pair: str) -> None:

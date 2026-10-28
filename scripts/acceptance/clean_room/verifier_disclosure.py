@@ -25,7 +25,7 @@ from verifier_receipts import ReceiptError, validate_receipt
 
 
 CAPTURE_FIELDS = frozenset({
-    "operation_result", "logger_event_count", "query_event_count",
+    "channel_attribution", "operation_result", "logger_event_count", "query_event_count",
     "logger_control_event_count", "logger_operation_event_count",
     "query_control_event_count", "query_operation_event_count",
     "logger_leak_count", "query_leak_count", "nested_inspection_redacted",
@@ -208,7 +208,13 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             output, error = _decode_channels(output, error, redactor)
             _assert_safe_channels(output, error, redactor)
             capture = _one_json(output, "VERIFIER_DISCLOSURE_CAPTURE_JSON=")
-            capture = validate_capture_payload(capture)
+            try:
+                capture = validate_capture_payload(capture)
+            except verifier_receipts.DisclosureCaptureRejected as rejection:
+                resource["capture_rejection"] = rejection.witness
+                _persist_resource(destination, resource)
+                persist_capture_rejection(destination / "capture-rejection.json", rejection)
+                raise PackageInputError("installed disclosure capture rejected by finite predicate") from None
             audit_handoff = root / "audit-handoff.json"
             _private_path(audit_handoff)
             _write_private_json(audit_handoff, {
@@ -229,6 +235,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
                 raise PackageInputError("installed disclosure audit projection is malformed")
             if (
                 capture["operation_result"] != "ok"
+                or capture["channel_attribution"] != verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION
                 or capture["ciphertext_changed"] is not True
                 or audit["audit_inserted"] is not True
                 or audit["ciphertext_changed"] is not True
@@ -243,6 +250,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
 
             observation = {
                 "outcome": "pass", "executed": True,
+                "channel_attribution": capture["channel_attribution"],
                 "logger_event_count": capture["logger_event_count"],
                 "query_event_count": capture["query_event_count"],
                 "logger_control_event_count": capture["logger_control_event_count"],
@@ -315,6 +323,7 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
             "stage": stage if stage in {"package", "provider", "custody_config", "host_environment", "database", "registration", "rotation", "server", "http", "maintenance"} else "unknown",
             "reason": safe_reason, "runner": source_revision(),
             "failure_capture_stage": resource.get("failure_capture_stage", "not_started"),
+            "capture_rejection": resource.get("capture_rejection"),
         }
         failure_path = destination / "failed-attempt.json"
         failure_path.write_text(json.dumps(failure, sort_keys=True, indent=2) + "\n", encoding="utf-8")
@@ -356,27 +365,52 @@ def _run_cell(pair: str, destination: Path) -> dict[str, object]:
 
 def validate_capture_payload(payload: object) -> dict[str, object]:
     if not isinstance(payload, dict) or set(payload) != CAPTURE_FIELDS:
-        raise ReceiptError("disclosure capture fields do not match the finite contract")
+        raise verifier_receipts.DisclosureCaptureRejected("capture_fields_invalid", payload)
     for field in (
         "logger_event_count", "query_event_count", "logger_control_event_count",
         "logger_operation_event_count", "query_control_event_count", "query_operation_event_count",
         "logger_leak_count", "query_leak_count", "audit_after_count",
     ):
         if type(payload[field]) is not int or payload[field] < 0:
-            raise ReceiptError("disclosure channel count is invalid")
+            raise verifier_receipts.DisclosureCaptureRejected("capture_count_invalid", payload)
     if payload["logger_event_count"] <= 0 or payload["query_event_count"] <= 0:
-        raise ReceiptError("disclosure capture has no owned channel witness")
-    if payload["logger_control_event_count"] <= 0 or payload["query_control_event_count"] <= 0:
-        raise ReceiptError("disclosure capture lacks an observed non-sensitive control")
-    if payload["query_operation_event_count"] <= 0:
-        raise ReceiptError("disclosure maintenance produced no query-channel operation witness")
+        raise verifier_receipts.DisclosureCaptureRejected("capture_controls_invalid", payload)
+    if payload["channel_attribution"] != verifier_receipts.DISCLOSURE_CHANNEL_ATTRIBUTION:
+        raise verifier_receipts.DisclosureCaptureRejected("channel_attribution_unsupported", payload)
+    if payload["logger_control_event_count"] != 2 or payload["query_control_event_count"] != 1:
+        raise verifier_receipts.DisclosureCaptureRejected("capture_controls_invalid", payload)
+    if (
+        payload["logger_event_count"] < payload["logger_control_event_count"] + payload["logger_operation_event_count"]
+        or payload["query_event_count"] < payload["query_control_event_count"] + payload["query_operation_event_count"]
+    ):
+        raise verifier_receipts.DisclosureCaptureRejected("capture_totals_invalid", payload)
     if payload["logger_leak_count"] or payload["query_leak_count"]:
-        raise ReceiptError("disclosure capture observed sensitive channel material")
+        raise verifier_receipts.DisclosureCaptureRejected("capture_channel_leak_observed", payload)
     if type(payload["nested_inspection_redacted"]) is not bool or not payload["nested_inspection_redacted"]:
-        raise ReceiptError("disclosure nested inspection was not redacted")
+        raise verifier_receipts.DisclosureCaptureRejected("capture_redaction_invalid", payload)
     if type(payload["ciphertext_changed"]) is not bool or payload["operation_result"] != "ok":
-        raise ReceiptError("disclosure maintenance operation did not complete safely")
+        raise verifier_receipts.DisclosureCaptureRejected("capture_operation_invalid", payload)
     return payload
+
+
+def persist_capture_rejection(
+    path: Path, rejection: verifier_receipts.DisclosureCaptureRejected,
+) -> dict[str, object]:
+    if not isinstance(rejection, verifier_receipts.DisclosureCaptureRejected):
+        raise ReceiptError("disclosure capture rejection is not finite")
+    record = {
+        "schema": "lockspire-disclosure-capture-rejection-v1",
+        "predicate": rejection.witness["predicate"],
+        "facts": rejection.witness["facts"],
+    }
+    if path.exists() or path.is_symlink():
+        raise ReceiptError("disclosure capture rejection path is already occupied")
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".tmp")
+    temporary.write_text(json.dumps(record, sort_keys=True, indent=2) + "\n", encoding="utf-8")
+    os.chmod(temporary, 0o600)
+    os.replace(temporary, path)
+    return record
 
 
 def _run_failure_proof(
@@ -455,7 +489,13 @@ def _run_failure_proof(
         capture["output_leak_count"] = 0
         resource["failure_capture_stage"] = "capture_validation"
         _persist_resource(destination, resource)
-        capture = validate_failure_capture(capture)
+        try:
+            capture = validate_failure_capture(capture)
+        except verifier_receipts.DisclosureCaptureRejected as rejection:
+            resource["capture_rejection"] = rejection.witness
+            _persist_resource(destination, resource)
+            persist_capture_rejection(destination / f"failure-{scenario}-capture-rejection.json", rejection)
+            raise PackageInputError("installed disclosure failure capture rejected by finite predicate") from None
         safe_case = {"capture": capture}
         resource["failure_capture_stage"] = "artifact_write"
         _persist_resource(destination, resource)

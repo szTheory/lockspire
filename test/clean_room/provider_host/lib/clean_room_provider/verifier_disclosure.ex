@@ -217,17 +217,25 @@ defmodule CleanRoomProvider.VerifierDisclosure do
 
     :ets.insert(capture_table, [
       {:logger_count, 0},
+      {:logger_control_count, 0},
+      {:logger_operation_count, 0},
       {:query_count, 0},
+      {:query_control_count, 0},
+      {:query_operation_count, 0},
       {:logger_leaks, 0},
       {:query_leaks, 0}
     ])
 
+    capture_ref = make_ref()
+    capture_pid = self()
     ack_ref = make_ref()
 
     :ok =
       :logger.add_handler(@logger_handler, CleanRoomProvider.VerifierDisclosure.LoggerHandler, %{
         table: capture_table,
         sentinels: sentinels,
+        capture_ref: capture_ref,
+        capture_pid: capture_pid,
         ack: {self(), ack_ref}
       })
 
@@ -238,11 +246,19 @@ defmodule CleanRoomProvider.VerifierDisclosure do
         handler_id,
         @query_event,
         &CleanRoomProvider.VerifierDisclosure.QueryHandler.handle_event/4,
-        %{table: capture_table, sentinels: sentinels}
+        %{
+          table: capture_table,
+          sentinels: sentinels,
+          capture_ref: capture_ref,
+          capture_pid: capture_pid
+        }
       )
 
     try do
-      Logger.info("clean_room_verifier_disclosure_control_start")
+      with_capture_metadata(capture_ref, :control, fn ->
+        Logger.info("clean_room_verifier_disclosure_control_start")
+      end)
+
       await_logger_ack(ack_ref, :start)
 
       _ =
@@ -250,27 +266,34 @@ defmodule CleanRoomProvider.VerifierDisclosure do
           Repo,
           "SELECT $1::text",
           ["clean-room-disclosure-failure-control"],
-          log: :debug
+          log: :debug,
+          telemetry_options: [lockspire_disclosure_capture: {capture_ref, :control}]
         )
 
-      before_operation = count(capture_table, :logger_count)
-      api_result = ClientVerifierMaintenance.run(mode: :apply, limit: 100)
-      report = failure_report(api_result)
+      {api_result, report, cli_failed} =
+        with_capture_metadata(capture_ref, :operation, fn ->
+          api_result = ClientVerifierMaintenance.run(mode: :apply, limit: 100)
+          report = failure_report(api_result)
 
-      cli_failed =
-        try do
-          Mix.Task.reenable("lockspire.clients.verifier.rewrap")
-          Mix.Task.run("lockspire.clients.verifier.rewrap", ["--limit", "100"])
-          false
-        rescue
-          error -> error.__struct__ == Mix.Error
-        catch
-          _kind, _reason -> false
-        end
+          cli_failed =
+            try do
+              Mix.Task.reenable("lockspire.clients.verifier.rewrap")
+              Mix.Task.run("lockspire.clients.verifier.rewrap", ["--limit", "100"])
+              false
+            rescue
+              error -> error.__struct__ == Mix.Error
+            catch
+              _kind, _reason -> false
+            end
 
-      Logger.info("clean_room_verifier_disclosure_control_end")
+          {api_result, report, cli_failed}
+        end)
+
+      with_capture_metadata(capture_ref, :control, fn ->
+        Logger.info("clean_room_verifier_disclosure_control_end")
+      end)
+
       await_logger_ack(ack_ref, :end)
-      after_operation = count(capture_table, :logger_count)
 
       {:ok, client} = Clients.get_client(client_id)
       audits = audit_rows(client_id)
@@ -284,6 +307,7 @@ defmodule CleanRoomProvider.VerifierDisclosure do
         end)
 
       payload = %{
+        "channel_attribution" => "operation_process_phase_v1",
         "scenario" => scenario,
         "reason" => expected.reason_text,
         "forced_failure_observed" =>
@@ -293,11 +317,11 @@ defmodule CleanRoomProvider.VerifierDisclosure do
         "failure_detail_count" => report.failed,
         "storage_failure_witness" => storage_failure_reached?(trigger),
         "logger_event_count" => count(capture_table, :logger_count),
-        "logger_control_event_count" => 2,
-        "logger_operation_event_count" => max(after_operation - before_operation - 1, 0),
+        "logger_control_event_count" => count(capture_table, :logger_control_count),
+        "logger_operation_event_count" => count(capture_table, :logger_operation_count),
         "logger_leak_count" => count(capture_table, :logger_leaks),
-        "query_control_event_count" => 1,
-        "query_operation_event_count" => max(count(capture_table, :query_count) - 1, 0),
+        "query_control_event_count" => count(capture_table, :query_control_count),
+        "query_operation_event_count" => count(capture_table, :query_operation_count),
         "query_event_count" => count(capture_table, :query_count),
         "query_leak_count" => count(capture_table, :query_leaks),
         "cli_output_checked" => cli_failed,
@@ -414,17 +438,25 @@ defmodule CleanRoomProvider.VerifierDisclosure do
 
     :ets.insert(table, [
       {:logger_count, 0},
+      {:logger_control_count, 0},
+      {:logger_operation_count, 0},
       {:query_count, 0},
+      {:query_control_count, 0},
+      {:query_operation_count, 0},
       {:logger_leaks, 0},
       {:query_leaks, 0}
     ])
 
+    capture_ref = make_ref()
+    capture_pid = self()
     ack_ref = make_ref()
 
     :ok =
       :logger.add_handler(@logger_handler, CleanRoomProvider.VerifierDisclosure.LoggerHandler, %{
         table: table,
         sentinels: sentinels,
+        capture_ref: capture_ref,
+        capture_pid: capture_pid,
         ack: {self(), ack_ref}
       })
 
@@ -435,34 +467,44 @@ defmodule CleanRoomProvider.VerifierDisclosure do
         handler_id,
         @query_event,
         &CleanRoomProvider.VerifierDisclosure.QueryHandler.handle_event/4,
-        %{table: table, sentinels: sentinels}
+        %{table: table, sentinels: sentinels, capture_ref: capture_ref, capture_pid: capture_pid}
       )
 
     try do
-      Logger.info("clean_room_verifier_disclosure_control_start")
+      with_capture_metadata(capture_ref, :control, fn ->
+        Logger.info("clean_room_verifier_disclosure_control_start")
+      end)
+
       await_logger_ack(ack_ref, :start)
 
       _ =
         Ecto.Adapters.SQL.query!(Repo, "SELECT $1::text", ["clean-room-disclosure-control"],
-          log: :debug
+          log: :debug,
+          telemetry_options: [lockspire_disclosure_capture: {capture_ref, :control}]
         )
 
-      before_operation = count(table, :logger_count)
-      operation_result = safe_operation(operation)
-      Logger.info("clean_room_verifier_disclosure_control_end")
+      operation_result =
+        with_capture_metadata(capture_ref, :operation, fn ->
+          safe_operation(operation)
+        end)
+
+      with_capture_metadata(capture_ref, :control, fn ->
+        Logger.info("clean_room_verifier_disclosure_control_end")
+      end)
+
       await_logger_ack(ack_ref, :end)
-      after_operation = count(table, :logger_count)
 
       {:ok, client} = Clients.get_client(client_id)
       inspection = inspect(%{client: client, stored: %{client: client}})
 
       payload = %{
+        "channel_attribution" => "operation_process_phase_v1",
         "operation_result" => operation_result,
-        "logger_control_event_count" => 2,
-        "logger_operation_event_count" => max(after_operation - before_operation - 1, 0),
+        "logger_control_event_count" => count(table, :logger_control_count),
+        "logger_operation_event_count" => count(table, :logger_operation_count),
         "logger_event_count" => count(table, :logger_count),
-        "query_control_event_count" => 1,
-        "query_operation_event_count" => max(count(table, :query_count) - 1, 0),
+        "query_control_event_count" => count(table, :query_control_count),
+        "query_operation_event_count" => count(table, :query_operation_count),
         "query_event_count" => count(table, :query_count),
         "logger_leak_count" => count(table, :logger_leaks),
         "query_leak_count" => count(table, :query_leaks),
@@ -486,6 +528,21 @@ defmodule CleanRoomProvider.VerifierDisclosure do
       {:verifier_disclosure_logger_ack, ^reference, ^phase} -> :ok
     after
       5_000 -> raise "owned Logger capture acknowledgment timed out"
+    end
+  end
+
+  defp with_capture_metadata(capture_ref, phase, fun) do
+    previous_metadata = Logger.metadata()
+
+    Logger.metadata(
+      lockspire_disclosure_capture_ref: capture_ref,
+      lockspire_disclosure_capture_phase: phase
+    )
+
+    try do
+      fun.()
+    after
+      Logger.reset_metadata(previous_metadata)
     end
   end
 
@@ -560,7 +617,7 @@ defmodule CleanRoomProvider.VerifierDisclosure.LoggerHandler do
   def removing_handler(_config), do: :ok
 
   def log(event, config) do
-    record(config.table, :logger_count, :logger_leaks, event, config.sentinels)
+    record(config.table, event, config)
     rendered = inspect(event, limit: :infinity, printable_limit: :infinity)
 
     if String.contains?(rendered, "clean_room_verifier_disclosure_control_start") do
@@ -574,13 +631,29 @@ defmodule CleanRoomProvider.VerifierDisclosure.LoggerHandler do
     :ok
   end
 
-  defp record(table, count_key, leak_key, event, sentinels) do
+  defp record(table, event, config) do
     rendered = inspect(event, limit: :infinity, printable_limit: :infinity)
-    :ets.update_counter(table, count_key, {2, 1})
+    :ets.update_counter(config.table, :logger_count, {2, 1})
 
-    if Enum.any?(sentinels, &String.contains?(rendered, &1)) do
-      :ets.update_counter(table, leak_key, {2, 1})
+    event_metadata = Map.get(event, :meta, %{})
+
+    if attributed?(event_metadata, config, :control) do
+      :ets.update_counter(config.table, :logger_control_count, {2, 1})
     end
+
+    if attributed?(event_metadata, config, :operation) do
+      :ets.update_counter(config.table, :logger_operation_count, {2, 1})
+    end
+
+    if Enum.any?(config.sentinels, &String.contains?(rendered, &1)) do
+      :ets.update_counter(config.table, :logger_leaks, {2, 1})
+    end
+  end
+
+  defp attributed?(metadata, config, phase) do
+    Map.get(metadata, :pid) == config.capture_pid and
+      Map.get(metadata, :lockspire_disclosure_capture_ref) == config.capture_ref and
+      Map.get(metadata, :lockspire_disclosure_capture_phase) == phase
   end
 end
 
@@ -590,6 +663,20 @@ defmodule CleanRoomProvider.VerifierDisclosure.QueryHandler do
   def handle_event(_event, _measurements, metadata, config) do
     rendered = inspect(metadata, limit: :infinity, printable_limit: :infinity)
     :ets.update_counter(config.table, :query_count, {2, 1})
+
+    if self() == config.capture_pid and
+         Keyword.get(metadata.options, :lockspire_disclosure_capture) ==
+           {config.capture_ref, :control} do
+      :ets.update_counter(config.table, :query_control_count, {2, 1})
+    end
+
+    process_metadata = Logger.metadata()
+
+    if self() == config.capture_pid and
+         Keyword.get(process_metadata, :lockspire_disclosure_capture_ref) == config.capture_ref and
+         Keyword.get(process_metadata, :lockspire_disclosure_capture_phase) == :operation do
+      :ets.update_counter(config.table, :query_operation_count, {2, 1})
+    end
 
     if Enum.any?(config.sentinels, &String.contains?(rendered, &1)) do
       :ets.update_counter(config.table, :query_leaks, {2, 1})

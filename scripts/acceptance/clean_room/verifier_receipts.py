@@ -160,6 +160,7 @@ DISCLOSURE_CASE_IDS = {
     "locked": ["VPROOF-02-DISCLOSURE-LOCKED-SUCCESS"],
     "floor": ["VPROOF-02-DISCLOSURE-FLOOR-SUCCESS"],
 }
+DISCLOSURE_CHANNEL_ATTRIBUTION = "operation_process_phase_v1"
 DISCLOSURE_FAILURE_CASE_IDS = {
     "locked": [
         "VPROOF-02-DISCLOSURE-LOCKED-MALFORMED-CRYPTO",
@@ -173,15 +174,16 @@ DISCLOSURE_FAILURE_CASE_IDS = {
     ],
 }
 DISCLOSURE_SUCCESS_FIELDS = frozenset({
-    "outcome", "executed", "logger_event_count", "query_event_count",
+    "outcome", "executed", "channel_attribution", "logger_event_count", "query_event_count",
     "logger_control_event_count", "logger_operation_event_count",
     "query_control_event_count", "query_operation_event_count",
     "logger_leak_count", "query_leak_count", "output_leak_count",
     "cli_output_checked", "audit_projection_safe", "nested_inspection_redacted",
     "one_time_handoff_usable", "maintenance_changed", "http_status",
 })
+HISTORICAL_DISCLOSURE_SUCCESS_FIELDS = DISCLOSURE_SUCCESS_FIELDS - {"channel_attribution"}
 DISCLOSURE_FAILURE_FIELDS = frozenset({
-    "outcome", "executed", "scenario", "reason", "forced_failure_observed",
+    "outcome", "executed", "channel_attribution", "scenario", "reason", "forced_failure_observed",
     "operation_result", "failure_detail_count", "storage_failure_witness",
     "logger_event_count", "logger_control_event_count", "logger_operation_event_count",
     "logger_leak_count", "query_event_count", "query_control_event_count",
@@ -189,6 +191,7 @@ DISCLOSURE_FAILURE_FIELDS = frozenset({
     "report_redacted", "audit_projection_safe", "audit_unchanged", "ciphertext_unchanged",
     "http_status", "http_error_code", "http_outcome_safe", "output_leak_count",
 })
+HISTORICAL_DISCLOSURE_FAILURE_FIELDS = DISCLOSURE_FAILURE_FIELDS - {"channel_attribution"}
 CORE_OBSERVATION_FIELDS = frozenset({
     "outcome", "executed", "http_status", "token_issued", "dedicated_verifier_persisted",
     "fresh_signed_assertion", "dry_run_reported", "dry_run_unchanged", "apply_committed",
@@ -201,8 +204,77 @@ class ReceiptError(ValueError):
     pass
 
 
+DISCLOSURE_CAPTURE_REJECTION_PREDICATES = frozenset({
+    "capture_fields_invalid", "capture_scenario_unsupported", "capture_count_invalid",
+    "channel_attribution_unsupported", "capture_controls_invalid", "capture_totals_invalid",
+    "capture_channel_leak_observed", "capture_redaction_invalid", "capture_operation_invalid",
+    "capture_domain_witness_invalid",
+})
+DISCLOSURE_CAPTURE_FACT_COUNT_FIELDS = (
+    "logger_event_count", "logger_control_event_count", "logger_operation_event_count",
+    "query_event_count", "query_control_event_count", "query_operation_event_count",
+    "logger_leak_count", "query_leak_count",
+)
+
+
+def _disclosure_capture_facts(payload: object) -> dict[str, Any]:
+    facts: dict[str, Any] = {}
+    if isinstance(payload, dict):
+        for field in DISCLOSURE_CAPTURE_FACT_COUNT_FIELDS:
+            value = payload.get(field)
+            facts[field] = value if type(value) is int and 0 <= value <= 2**31 - 1 else None
+        facts.update({
+            "channel_attribution_matches": payload.get("channel_attribution") == DISCLOSURE_CHANNEL_ATTRIBUTION,
+            "logger_controls_exact": payload.get("logger_control_event_count") == 2,
+            "query_controls_exact": payload.get("query_control_event_count") == 1,
+            "logger_total_covers_attribution": (
+                type(payload.get("logger_event_count")) is int
+                and type(payload.get("logger_control_event_count")) is int
+                and type(payload.get("logger_operation_event_count")) is int
+                and payload["logger_event_count"] >= payload["logger_control_event_count"] + payload["logger_operation_event_count"]
+            ),
+            "query_total_covers_attribution": (
+                type(payload.get("query_event_count")) is int
+                and type(payload.get("query_control_event_count")) is int
+                and type(payload.get("query_operation_event_count")) is int
+                and payload["query_event_count"] >= payload["query_control_event_count"] + payload["query_operation_event_count"]
+            ),
+            "channel_leaks_zero": (
+                payload.get("logger_leak_count") == 0 and payload.get("query_leak_count") == 0
+            ),
+            "forced_failure_observed": payload.get("forced_failure_observed") is True,
+            "operation_result_failed": payload.get("operation_result") == "failed",
+            "storage_failure_witness": payload.get("storage_failure_witness") is True,
+            "audit_unchanged": payload.get("audit_unchanged") is True,
+            "ciphertext_unchanged": payload.get("ciphertext_unchanged") is True,
+        })
+    else:
+        facts.update({
+            "channel_attribution_matches": False,
+            "logger_controls_exact": False,
+            "query_controls_exact": False,
+            "logger_total_covers_attribution": False,
+            "query_total_covers_attribution": False,
+            "channel_leaks_zero": False,
+            "forced_failure_observed": False,
+            "operation_result_failed": False,
+            "storage_failure_witness": False,
+            "audit_unchanged": False,
+            "ciphertext_unchanged": False,
+        })
+    return facts
+
+
+class DisclosureCaptureRejected(ReceiptError):
+    def __init__(self, predicate: str, payload: object):
+        if predicate not in DISCLOSURE_CAPTURE_REJECTION_PREDICATES:
+            raise ValueError("disclosure capture rejection predicate is outside its fixed enum")
+        self.witness = {"predicate": predicate, "facts": _disclosure_capture_facts(payload)}
+        super().__init__("disclosure capture rejected by finite predicate")
+
+
 DISCLOSURE_FAILURE_CAPTURE_FIELDS = frozenset({
-    "scenario", "reason", "forced_failure_observed", "operation_result",
+    "channel_attribution", "scenario", "reason", "forced_failure_observed", "operation_result",
     "failure_detail_count", "storage_failure_witness", "logger_event_count",
     "logger_control_event_count", "logger_operation_event_count", "logger_leak_count",
     "query_event_count", "query_control_event_count", "query_operation_event_count",
@@ -210,6 +282,7 @@ DISCLOSURE_FAILURE_CAPTURE_FIELDS = frozenset({
     "audit_unchanged", "ciphertext_unchanged", "http_status", "http_error_code",
     "http_outcome_safe", "output_leak_count",
 })
+HISTORICAL_DISCLOSURE_FAILURE_CAPTURE_FIELDS = DISCLOSURE_FAILURE_CAPTURE_FIELDS - {"channel_attribution"}
 
 # This map is the package acceptance boundary.  The two disclosure files are
 # separate receipt inputs because their producers deliberately preserve that
@@ -609,9 +682,9 @@ def _validate_rollout_structure(
     return receipt
 
 
-def validate_failure_capture(payload: object) -> dict[str, Any]:
-    if not isinstance(payload, dict) or set(payload) != DISCLOSURE_FAILURE_CAPTURE_FIELDS:
-        raise ReceiptError("disclosure failure fields do not match the finite contract")
+def _validate_historical_failure_capture(payload: object) -> dict[str, Any]:
+    if not isinstance(payload, dict) or set(payload) != HISTORICAL_DISCLOSURE_FAILURE_CAPTURE_FIELDS:
+        raise ReceiptError("historical disclosure failure fields do not match the retained contract")
     expected = {
         "malformed_crypto": ("malformed_verifier", 401, "invalid_client", False),
         "unknown_key_crypto": ("unknown_key", 401, "invalid_client", False),
@@ -619,7 +692,7 @@ def validate_failure_capture(payload: object) -> dict[str, Any]:
     }
     scenario = payload["scenario"]
     if type(scenario) is not str or scenario not in expected:
-        raise ReceiptError("disclosure failure scenario is outside the finite contract")
+        raise ReceiptError("historical disclosure failure scenario is unsupported")
     reason, http_status, http_error_code, requires_storage_witness = expected[scenario]
     count_fields = (
         "failure_detail_count", "logger_event_count", "logger_control_event_count",
@@ -628,7 +701,7 @@ def validate_failure_capture(payload: object) -> dict[str, Any]:
         "output_leak_count",
     )
     if any(type(payload[field]) is not int or payload[field] < 0 for field in count_fields):
-        raise ReceiptError("disclosure failure count is invalid")
+        raise ReceiptError("historical disclosure failure count is invalid")
     if (
         payload["reason"] != reason
         or payload["operation_result"] != "failed"
@@ -641,9 +714,7 @@ def validate_failure_capture(payload: object) -> dict[str, Any]:
         or payload["query_control_event_count"] <= 0
         or payload["query_operation_event_count"] <= 0
         or payload["query_event_count"] < payload["query_control_event_count"]
-        or payload["logger_leak_count"] != 0
-        or payload["query_leak_count"] != 0
-        or payload["output_leak_count"] != 0
+        or any(payload[field] != 0 for field in ("logger_leak_count", "query_leak_count", "output_leak_count"))
         or payload["storage_failure_witness"] is not requires_storage_witness
         or type(payload["http_status"]) is not int
         or payload["http_status"] != http_status
@@ -653,7 +724,59 @@ def validate_failure_capture(payload: object) -> dict[str, Any]:
             "audit_unchanged", "ciphertext_unchanged", "http_outcome_safe",
         ))
     ):
-        raise ReceiptError("disclosure forced-failure evidence is incomplete or unsafe")
+        raise ReceiptError("historical disclosure failure evidence is incomplete or unsafe")
+    return payload
+
+
+def validate_failure_capture(payload: object) -> dict[str, Any]:
+    if not isinstance(payload, dict) or set(payload) != DISCLOSURE_FAILURE_CAPTURE_FIELDS:
+        raise DisclosureCaptureRejected("capture_fields_invalid", payload)
+    expected = {
+        "malformed_crypto": ("malformed_verifier", 401, "invalid_client", False),
+        "unknown_key_crypto": ("unknown_key", 401, "invalid_client", False),
+        "storage_failure": ("maintenance_failed", 200, "other", True),
+    }
+    scenario = payload["scenario"]
+    if type(scenario) is not str or scenario not in expected:
+        raise DisclosureCaptureRejected("capture_scenario_unsupported", payload)
+    reason, http_status, http_error_code, requires_storage_witness = expected[scenario]
+    count_fields = (
+        "failure_detail_count", "logger_event_count", "logger_control_event_count",
+        "logger_operation_event_count", "logger_leak_count", "query_event_count",
+        "query_control_event_count", "query_operation_event_count", "query_leak_count",
+        "output_leak_count",
+    )
+    if any(type(payload[field]) is not int or payload[field] < 0 for field in count_fields):
+        raise DisclosureCaptureRejected("capture_count_invalid", payload)
+    if payload["channel_attribution"] != DISCLOSURE_CHANNEL_ATTRIBUTION:
+        raise DisclosureCaptureRejected("channel_attribution_unsupported", payload)
+    if payload["logger_control_event_count"] != 2 or payload["query_control_event_count"] != 1:
+        raise DisclosureCaptureRejected("capture_controls_invalid", payload)
+    if (
+        payload["logger_event_count"] < payload["logger_control_event_count"] + payload["logger_operation_event_count"]
+        or payload["query_event_count"] < payload["query_control_event_count"] + payload["query_operation_event_count"]
+    ):
+        raise DisclosureCaptureRejected("capture_totals_invalid", payload)
+    if payload["logger_leak_count"] != 0 or payload["query_leak_count"] != 0 or payload["output_leak_count"] != 0:
+        raise DisclosureCaptureRejected("capture_channel_leak_observed", payload)
+    if (
+        payload["reason"] != reason
+        or payload["operation_result"] != "failed"
+        or payload["forced_failure_observed"] is not True
+        or payload["failure_detail_count"] <= 0
+        or payload["logger_event_count"] <= 0
+        or payload["query_event_count"] <= 0
+        or payload["storage_failure_witness"] is not requires_storage_witness
+        or type(payload["http_status"]) is not int
+        or payload["http_status"] != http_status
+        or payload["http_error_code"] != http_error_code
+    ):
+        raise DisclosureCaptureRejected("capture_domain_witness_invalid", payload)
+    if any(payload[field] is not True for field in (
+        "cli_output_checked", "report_redacted", "audit_projection_safe",
+        "audit_unchanged", "ciphertext_unchanged", "http_outcome_safe",
+    )):
+        raise DisclosureCaptureRejected("capture_redaction_invalid", payload)
     return payload
 
 
@@ -676,7 +799,10 @@ def load_receipt(path: Path) -> dict[str, Any]:
     return value
 
 
-def _validate_receipt_structure(receipt: dict[str, Any], *, expected_pair: str | None = None, expected_store: str | None = None) -> dict[str, Any]:
+def _validate_receipt_structure(
+    receipt: dict[str, Any], *, expected_pair: str | None = None,
+    expected_store: str | None = None, historical_structure_only: bool = False,
+) -> dict[str, Any]:
     _validate_value_types(receipt, rollout=False)
     if set(receipt) != ROOT_FIELDS:
         raise ReceiptError("receipt fields do not match the finite contract")
@@ -751,8 +877,10 @@ def _validate_receipt_structure(receipt: dict[str, Any], *, expected_pair: str |
         else frozenset().union(*ATOMICITY_OBSERVATION_FIELDS.values()) if receipt["scope"] == "atomicity"
         else RECOVERY_OBSERVATION_FIELDS if receipt["scope"] == "recovery"
         else ISSUANCE_OBSERVATION_FIELDS if receipt["scope"] == "issuance"
-        else DISCLOSURE_SUCCESS_FIELDS if receipt["scope"] == "disclosure"
-        else DISCLOSURE_FAILURE_FIELDS if receipt["scope"] == "disclosure-failure"
+        else (HISTORICAL_DISCLOSURE_SUCCESS_FIELDS if historical_structure_only else DISCLOSURE_SUCCESS_FIELDS)
+        if receipt["scope"] == "disclosure"
+        else (HISTORICAL_DISCLOSURE_FAILURE_FIELDS if historical_structure_only else DISCLOSURE_FAILURE_FIELDS)
+        if receipt["scope"] == "disclosure-failure"
         else TRACER_OBSERVATION_FIELDS
     )
     if receipt["scope"] == "endpoints" and case_ids != ENDPOINT_CASE_IDS:
@@ -931,14 +1059,32 @@ def _validate_receipt_structure(receipt: dict[str, Any], *, expected_pair: str |
                 "query_leak_count", "output_leak_count", "logger_control_event_count",
                 "logger_operation_event_count", "query_control_event_count", "query_operation_event_count",
             }
+            historical_invalid = (
+                historical_structure_only
+                and (
+                    set(result) != HISTORICAL_DISCLOSURE_SUCCESS_FIELDS
+                    or result["logger_control_event_count"] == 0
+                    or result["query_control_event_count"] == 0
+                    or result["query_operation_event_count"] == 0
+                )
+            )
+            current_invalid = (
+                not historical_structure_only
+                and (
+                    set(result) != DISCLOSURE_SUCCESS_FIELDS
+                    or result["channel_attribution"] != DISCLOSURE_CHANNEL_ATTRIBUTION
+                    or result["logger_control_event_count"] != 2
+                    or result["query_control_event_count"] != 1
+                    or result["logger_event_count"] < result["logger_control_event_count"] + result["logger_operation_event_count"]
+                    or result["query_event_count"] < result["query_control_event_count"] + result["query_operation_event_count"]
+                )
+            )
             if (
-                set(result) != DISCLOSURE_SUCCESS_FIELDS
+                historical_invalid or current_invalid
                 or any(type(result[field]) is not int or result[field] < 0 for field in count_fields)
                 or result["logger_event_count"] == 0
                 or result["query_event_count"] == 0
-                or result["logger_control_event_count"] == 0
-                or result["query_control_event_count"] == 0
-                or result["query_operation_event_count"] == 0
+                or (not historical_structure_only and result["channel_attribution"] != DISCLOSURE_CHANNEL_ATTRIBUTION)
                 or any(result[field] != 0 for field in ("logger_leak_count", "query_leak_count", "output_leak_count"))
                 or any(result[field] is not True for field in (
                     "cli_output_checked", "audit_projection_safe", "nested_inspection_redacted",
@@ -948,14 +1094,21 @@ def _validate_receipt_structure(receipt: dict[str, Any], *, expected_pair: str |
             ):
                 raise ReceiptError("disclosure success channel evidence is incomplete or unsafe")
         if receipt["scope"] == "disclosure-failure":
-            if set(result) != DISCLOSURE_FAILURE_FIELDS:
+            expected_failure_fields = (
+                HISTORICAL_DISCLOSURE_FAILURE_FIELDS if historical_structure_only else DISCLOSURE_FAILURE_FIELDS
+            )
+            if set(result) != expected_failure_fields:
                 raise ReceiptError("disclosure failure observation fields are incomplete")
             scenario_by_case = dict(zip(DISCLOSURE_FAILURE_CASE_IDS[receipt["pair"]], (
                 "malformed_crypto", "unknown_key_crypto", "storage_failure"
             )))
             if result.get("scenario") != scenario_by_case[case_id]:
                 raise ReceiptError("disclosure failure case ID does not match its scenario")
-            validate_failure_capture({key: value for key, value in result.items() if key not in {"outcome", "executed"}})
+            capture = {key: value for key, value in result.items() if key not in {"outcome", "executed"}}
+            if historical_structure_only:
+                _validate_historical_failure_capture(capture)
+            else:
+                validate_failure_capture(capture)
         endpoint_expected_fields = ENDPOINT_OBSERVATION_FIELDS
         if receipt["scope"] == "endpoints" and case_id == "VPROOF-02-HTTP-REVOCATION-JWT":
             endpoint_expected_fields |= ENDPOINT_LIFECYCLE_FIELDS
