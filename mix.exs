@@ -58,7 +58,7 @@ defmodule Lockspire.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:oban, "~> 2.21.0"},
       {:req, "~> 0.5"},
-      {:jose, "~> 1.11"},
+      {:jose, "~> 1.11 and >= 1.11.13"},
       {:jason, "~> 1.4"},
       {:jcs, "~> 0.2"},
       {:nimble_options, "~> 1.1"},
