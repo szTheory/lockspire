@@ -1,34 +1,38 @@
 {
-  "implementation_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+  "implementation_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
   "lanes": {
     "integration": {
       "findings": [
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The tracer attribution test now expects PackageInputError for a local tar supplied with an explicit revision but without a verifiable source owner. This matches the final package-input contract that an asserted source revision must be tied to the executed revision, effective package membership, and tracked blobs. The test-only change does not modify production behavior.",
+          "evidence": "The committed workflow pins HEX_VERSION=2.6.0, disables setup-beam's implicit Hex install, and explicitly installs the reviewed builder immediately afterward in all six setup-beam jobs. The regression enumerates the same six jobs and asserts that ordering. The existing floor and locked installed-verifier callers still receive the provisioned candidate identity and upload only validated outputs. This establishes workflow wiring by source inspection, not execution of the final hosted graph.",
           "files": [
-            "test/acceptance/client_verifier_tracer_test.py",
-            "scripts/acceptance/clean_room/package_input.py"
+            ".github/workflows/ci.yml",
+            "test/acceptance/client_verifier_ci_test.py",
+            "docs/maintainer-release.md"
           ],
-          "id": "INT-178-TRACER-UNBOUND-OWNER-EXPECTATION",
+          "id": "INT-178-HEX260-CI-BUILDER",
           "severity": "medium",
           "status": "resolved"
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The fake host-proof failure fixture now clones the committed source into its private temporary root before building the fake package, preventing ignored workspace content from changing the package-input result before the intended lifecycle failure. Its cleanup assertion permits only the two exact Mix coordination directory names for the current uid, and rejects symlinks and non-directories. This test-only change improves failure-stage isolation and cleanup observability.",
+          "evidence": "The predecessor archive/tree constants and the four rollout fixture identities use the exact Hex 2.6.0 artifact pair fe9e88780a5c7fdd395b6f03349d3ef71c21a77518833a38055676958744dda5 / c5d441d1a77b8978c63c3a44f4c09b61420df5a6f6f81f24c5b1354a799b613d. The four fixtures change only those two predecessor fields; their source revision, Git-export proof, compiled-candidate values and observations remain unchanged. Tests accept the fixture identity and reject both retired Hex 2.5 pins. The committed qualification record (SHA-256 c6895a01b00d80abb392e637d9c616972a6f101725707b182ecccaf778f6c07b) records four Mac current/minimum builds and two Debian 13 Linux arm64 package builds with identical artifact/tree bytes. These are artifact qualification and representative validator fixtures, not fresh behavior receipts or final-C acceptance.",
           "files": [
-            "test/clean_room/test_admin_journey.py",
-            "scripts/ci/run_host_integration_proof.sh",
-            "scripts/acceptance/clean_room/package_input.py"
+            "scripts/acceptance/clean_room/verifier_receipts.py",
+            "test/acceptance/client_verifier_rollout_test.py",
+            "test/fixtures/verifier-matrix-26/rollout/floor-builtin/receipt.json",
+            "test/fixtures/verifier-matrix-26/rollout/floor-delegated/receipt.json",
+            "test/fixtures/verifier-matrix-26/rollout/locked-builtin/receipt.json",
+            "test/fixtures/verifier-matrix-26/rollout/locked-delegated/receipt.json"
           ],
-          "id": "INT-178-FAKE-HOST-CHECKOUT-ISOLATION",
+          "id": "INT-178-HEX260-PREDECESSOR-PINS",
           "severity": "medium",
           "status": "resolved"
         },
         {
           "disposition": "later-owner",
-          "evidence": "The final covered production-source files match the accepted 6e8 review, but no fresh compatible hosted evidence was observed binding the reviewed head, package source, executed synthetic checkout parents/tree, and covered-input relation for final revision e13a7197. The prior hosted run 40792440885 predates these changes and does not establish final checkout provenance.",
+          "evidence": "No compatible hosted observation for final C was reviewed that binds the candidate source to the actually executed synthetic checkout owner, parent/tree identity and covered-input relation. The new Hex qualification is package-build evidence and does not close the hosted source-owner observation.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/provision_verifier_candidate.py",
@@ -41,7 +45,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "No fresh compatible canonical run/attempt with all seven required jobs passing and both pair package artifacts was observed for final revision e13a7197. The parent reports an earlier full canonical result at 6e8 and a final-source run in progress; neither is a completed e13a7197 hosted result. Full canonical, package, and hosted qualification is not claimed here.",
+          "evidence": "The final C canonical CI graph, all required jobs and both pair package artifacts have not been observed passing. No full final-C native canonical/source runtime acceptance was reported at review time. The six Hex builds qualify the predecessor package identity only and do not imply CI completion.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/run_test_matrix.sh",
@@ -50,11 +54,31 @@
           "id": "T-178-32",
           "severity": "high",
           "status": "deferred"
+        },
+        {
+          "disposition": "later-owner",
+          "evidence": "Main/integration acceptance and the required hosted handoff remain pending. This integration review provides no publication, merge or main-acceptance evidence.",
+          "files": [
+            "scripts/acceptance/clean_room/verifier_delivery.py"
+          ],
+          "id": "T-178-35",
+          "severity": "high",
+          "status": "deferred"
+        },
+        {
+          "disposition": "later-owner",
+          "evidence": "The audit/flag lifecycle obligation remains open at its original severity. This review does not waive E-09/E-10, generic or descriptorless flags, incidents, unknown outcomes or retractions, and supplies no later-owner closure.",
+          "files": [
+            "scripts/acceptance/clean_room/verifier_delivery.py"
+          ],
+          "id": "T-178-36",
+          "severity": "high",
+          "status": "deferred"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-e13a7197.md",
-      "report_sha256": "20e533ee2ac8bdca2e3fcc3d99cafe43d609288285823d4661acbe202879e652",
-      "reviewed_at": "2026-10-28",
+      "report_path": "178-INTEGRATION-REVIEW-98b79e54.md",
+      "report_sha256": "89fda3cfb42ad86226ad2b42ee6f76950083c5d7f75e44f4ae44c6a2c4fa1f69",
+      "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
           "path": ".credo.exs",
@@ -94,7 +118,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "9c538250915eb70c2d6bc8d76eceed4121c4ce2bad5fd94a2193125133c51950"
+          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -434,7 +458,7 @@
         },
         {
           "path": "docs/maintainer-release.md",
-          "sha256": "e9a16977ce7f993a0a79e5fbee009603b84f2c6331ce6b831c13f8980f2e38c7"
+          "sha256": "2a876009ccb7b0cc73e6c30731e04b0b50a3e8ea00762fe516ca53cd1411f781"
         },
         {
           "path": "docs/mtls-host-guide.md",
@@ -2154,7 +2178,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
+          "sha256": "88442fabab11ed6cc2288858809f5685ef5a46651786ca0e6c8caf5641161faa"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -2398,7 +2422,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "30c1c6eebb57b63e192ea291fb02555a7710ac67de06ed62871d02518fd5380c"
+          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -2438,7 +2462,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_rollout_test.py",
-          "sha256": "67219a3d720cdc9633a2528f2ae92dcd50105af0e0b24cd72e107f2f31f0e6ae"
+          "sha256": "6d538e86ebd469bc3c5f80f0278e1c18dabce8ae0e97114cd7899ebc9b51130d"
         },
         {
           "path": "test/acceptance/client_verifier_session_authority_test.py",
@@ -2750,19 +2774,19 @@
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-builtin/receipt.json",
-          "sha256": "992fe5f0166b06227879d6029487609f2b9e420af99ba4407b35c0438480765f"
+          "sha256": "f151fd02ec355eea1e686ddcf746c7372daadc3d47504445b5450b5281831e7e"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-delegated/receipt.json",
-          "sha256": "a4e7292b6a06fbedf9a9c2f52f34cff19afebd0baf4bbb38a200e0d8e9f68b02"
+          "sha256": "d357097af0e69363b43758d5241de5fa7b28a262165e35d546d4437d8caaa310"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-builtin/receipt.json",
-          "sha256": "eeb2da540e0844ae5d188df8d14a2b24e3351dffd2150d923ebd651bb1a017a8"
+          "sha256": "b1ce11558e5ca0d595f594c85a56446ca153373faebbe8498686e15a977ab098"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-delegated/receipt.json",
-          "sha256": "147026bc86d01049fe30bdc937da3467b1c86958cbc5bc764e8576bdf6377626"
+          "sha256": "e9606f7ff2ee626d9d9e1dbd99944fcd2d2252b38557565b40dec04aa80cef48"
         },
         {
           "path": "test/integration/app_lifetime_authorization_test.exs",
@@ -4373,8 +4397,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
-      "reviewer_identity": "R178E13INT",
+      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "reviewer_identity": "R178HEXINT98B79",
       "verdict": "accepted"
     },
     "security": {
@@ -4413,7 +4437,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "The seven-job workflow and semantic same-attempt job/artifact checks are unchanged. This audit correction does not establish a passing hosted graph, and the later-owner obligation remains pending.",
+          "evidence": "The seven-job graph, action pins, job/receipt ownership boundaries and semantic same-attempt artifact checks remain applicable. The only reviewed workflow delta explicitly installs Hex2.6.0 in all six BEAM jobs. This source review supplies no passing hosted graph; the later-owner obligation remains pending.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/acceptance/clean_room/verifier_delivery.py"
@@ -4556,7 +4580,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The committed correction measures controls independently and attributes operation events by actual capture process, reference and phase. Query controls use Ecto metadata.options; Logger events retain emission metadata and origin PID; capture metadata is restored in try/after. Global leak scans remain independent of attribution. Current capture and receipt validators permit legitimate zero operation counts while requiring exact controls, bounded exact-integer counts, consistent totals, zero leaks and all independent domain, forced-failure, HTTP, storage, audit, ciphertext, CLI and redaction witnesses. The required channel_attribution string is now registered at verifier_receipts.py:422 and excluded from the success boolean-field set at :937; current semantics still require its exact version. Historical validation requires explicit selection and does not supply a current-receipt fallback. This closes the source mitigation gap for T-178-20/29; new installed runtime qualification remains separate, and the original rejected predicate remains unknown.",
+          "evidence": "The committed correction measures controls independently and attributes operation events by actual capture process, reference and phase. Query controls use Ecto metadata.options; Logger events retain emission metadata and origin PID; capture metadata is restored in try/after. Global leak scans remain independent of attribution. Current capture and receipt validators permit legitimate zero operation counts while requiring exact controls, bounded exact-integer counts, consistent totals, zero leaks and all independent domain, forced-failure, HTTP, storage, audit, ciphertext, CLI and redaction witnesses. The required channel_attribution string is now registered at verifier_receipts.py:424 and excluded from the success boolean-field set at :939; current semantics still require its exact version. Historical validation requires explicit selection and does not supply a current-receipt fallback. This closes the source mitigation gap for T-178-20/29; new installed runtime qualification remains separate, and the original rejected predicate remains unknown.",
           "files": [
             "scripts/acceptance/clean_room/verifier_receipts.py",
             "scripts/acceptance/clean_room/verifier_disclosure.py",
@@ -4602,8 +4626,8 @@
           "status": "resolved"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-e13a7197.md",
-      "report_sha256": "ee0b52aaf4cfa8f172980b0ae8aa223b627d3dee20774d729c9ae12e601d15e2",
+      "report_path": "178-SECURITY-REVIEW-98b79e54.md",
+      "report_sha256": "fdc15f8b3ea0932bf851b217155dcbbfeff25fe3f3d354608d9f66b59a30668b",
       "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
@@ -4644,7 +4668,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "9c538250915eb70c2d6bc8d76eceed4121c4ce2bad5fd94a2193125133c51950"
+          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -4984,7 +5008,7 @@
         },
         {
           "path": "docs/maintainer-release.md",
-          "sha256": "e9a16977ce7f993a0a79e5fbee009603b84f2c6331ce6b831c13f8980f2e38c7"
+          "sha256": "2a876009ccb7b0cc73e6c30731e04b0b50a3e8ea00762fe516ca53cd1411f781"
         },
         {
           "path": "docs/mtls-host-guide.md",
@@ -6704,7 +6728,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
+          "sha256": "88442fabab11ed6cc2288858809f5685ef5a46651786ca0e6c8caf5641161faa"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -6948,7 +6972,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "30c1c6eebb57b63e192ea291fb02555a7710ac67de06ed62871d02518fd5380c"
+          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -6988,7 +7012,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_rollout_test.py",
-          "sha256": "67219a3d720cdc9633a2528f2ae92dcd50105af0e0b24cd72e107f2f31f0e6ae"
+          "sha256": "6d538e86ebd469bc3c5f80f0278e1c18dabce8ae0e97114cd7899ebc9b51130d"
         },
         {
           "path": "test/acceptance/client_verifier_session_authority_test.py",
@@ -7300,19 +7324,19 @@
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-builtin/receipt.json",
-          "sha256": "992fe5f0166b06227879d6029487609f2b9e420af99ba4407b35c0438480765f"
+          "sha256": "f151fd02ec355eea1e686ddcf746c7372daadc3d47504445b5450b5281831e7e"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-delegated/receipt.json",
-          "sha256": "a4e7292b6a06fbedf9a9c2f52f34cff19afebd0baf4bbb38a200e0d8e9f68b02"
+          "sha256": "d357097af0e69363b43758d5241de5fa7b28a262165e35d546d4437d8caaa310"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-builtin/receipt.json",
-          "sha256": "eeb2da540e0844ae5d188df8d14a2b24e3351dffd2150d923ebd651bb1a017a8"
+          "sha256": "b1ce11558e5ca0d595f594c85a56446ca153373faebbe8498686e15a977ab098"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-delegated/receipt.json",
-          "sha256": "147026bc86d01049fe30bdc937da3467b1c86958cbc5bc764e8576bdf6377626"
+          "sha256": "e9606f7ff2ee626d9d9e1dbd99944fcd2d2252b38557565b40dec04aa80cef48"
         },
         {
           "path": "test/integration/app_lifetime_authorization_test.exs",
@@ -8923,7 +8947,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
       "reviewer_identity": "Codex security auditor /root/correction_security",
       "verdict": "accepted"
     },
@@ -9015,8 +9039,8 @@
           "status": "resolved"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-e13a7197.md",
-      "report_sha256": "0a9c01aba4cb39bf46986c55435ae99cf52a6c3f0218497435cf7dbb71972262",
+      "report_path": "178-SOURCE-REVIEW-98b79e54.md",
+      "report_sha256": "626bf9c4ce8cd1d7b4ef46d240e893862ad3b0c602922a484ce7bf6646cad0b1",
       "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
@@ -9057,7 +9081,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "9c538250915eb70c2d6bc8d76eceed4121c4ce2bad5fd94a2193125133c51950"
+          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -9397,7 +9421,7 @@
         },
         {
           "path": "docs/maintainer-release.md",
-          "sha256": "e9a16977ce7f993a0a79e5fbee009603b84f2c6331ce6b831c13f8980f2e38c7"
+          "sha256": "2a876009ccb7b0cc73e6c30731e04b0b50a3e8ea00762fe516ca53cd1411f781"
         },
         {
           "path": "docs/mtls-host-guide.md",
@@ -11117,7 +11141,7 @@
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_receipts.py",
-          "sha256": "31dbd057d503644bfd82206e4e6d9cec244d378b7e0e263413ae510df1a70834"
+          "sha256": "88442fabab11ed6cc2288858809f5685ef5a46651786ca0e6c8caf5641161faa"
         },
         {
           "path": "scripts/acceptance/clean_room/verifier_recovery.py",
@@ -11361,7 +11385,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "30c1c6eebb57b63e192ea291fb02555a7710ac67de06ed62871d02518fd5380c"
+          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -11401,7 +11425,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_rollout_test.py",
-          "sha256": "67219a3d720cdc9633a2528f2ae92dcd50105af0e0b24cd72e107f2f31f0e6ae"
+          "sha256": "6d538e86ebd469bc3c5f80f0278e1c18dabce8ae0e97114cd7899ebc9b51130d"
         },
         {
           "path": "test/acceptance/client_verifier_session_authority_test.py",
@@ -11713,19 +11737,19 @@
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-builtin/receipt.json",
-          "sha256": "992fe5f0166b06227879d6029487609f2b9e420af99ba4407b35c0438480765f"
+          "sha256": "f151fd02ec355eea1e686ddcf746c7372daadc3d47504445b5450b5281831e7e"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/floor-delegated/receipt.json",
-          "sha256": "a4e7292b6a06fbedf9a9c2f52f34cff19afebd0baf4bbb38a200e0d8e9f68b02"
+          "sha256": "d357097af0e69363b43758d5241de5fa7b28a262165e35d546d4437d8caaa310"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-builtin/receipt.json",
-          "sha256": "eeb2da540e0844ae5d188df8d14a2b24e3351dffd2150d923ebd651bb1a017a8"
+          "sha256": "b1ce11558e5ca0d595f594c85a56446ca153373faebbe8498686e15a977ab098"
         },
         {
           "path": "test/fixtures/verifier-matrix-26/rollout/locked-delegated/receipt.json",
-          "sha256": "147026bc86d01049fe30bdc937da3467b1c86958cbc5bc764e8576bdf6377626"
+          "sha256": "e9606f7ff2ee626d9d9e1dbd99944fcd2d2252b38557565b40dec04aa80cef48"
         },
         {
           "path": "test/integration/app_lifetime_authorization_test.exs",
@@ -13336,8 +13360,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
-      "reviewer_identity": "independent-phase178-source-reviewer-e13a7197",
+      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "reviewer_identity": "independent-phase178-source-reviewer-98b79e54",
       "verdict": "accepted"
     }
   },
