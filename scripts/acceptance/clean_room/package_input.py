@@ -835,7 +835,8 @@ def verify_frozen_source_owner(
 def expected_package_files() -> frozenset[str]:
     """Read Mix's evaluated package file set without starting the application."""
     expression = (
-        'files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files); '
+        'files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files) '
+        '|> Enum.filter(&File.regular?/1); '
         'IO.puts("LOCKSPIRE_PACKAGE_FILES_BEGIN"); Enum.each(files, &IO.puts/1); '
         'IO.puts("LOCKSPIRE_PACKAGE_FILES_END")'
     )
