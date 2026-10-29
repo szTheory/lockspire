@@ -1,5 +1,5 @@
 {
-  "implementation_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+  "implementation_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
   "lanes": {
     "integration": {
       "findings": [
@@ -32,7 +32,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "No compatible hosted observation for final C was reviewed that binds the candidate source to the actually executed synthetic checkout owner, parent/tree identity and covered-input relation. The new Hex qualification is package-build evidence and does not close the hosted source-owner observation.",
+          "evidence": "No compatible hosted observation for exact EC92 was reviewed that binds the provisioned candidate source to the actually executed synthetic checkout owner, parent/tree identity and covered-input relation. No hosted run for EC92 was available at this judgment; the C35 hosted attempt remains historical.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/provision_verifier_candidate.py",
@@ -45,7 +45,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "The final C canonical CI graph, all required jobs and both pair package artifacts have not been observed passing. No full final-C native canonical/source runtime acceptance was reported at review time. The six Hex builds qualify the predecessor package identity only and do not imply CI completion.",
+          "evidence": "The exact EC92 canonical graph and both pair artifacts have not passed. C35\u2019s full canonical attempt failed after 15 archives / 0; the original precise predicate remains UNKNOWN. The explicit-try style correction and reported Credo/format results do not establish full EC92 runtime, canonical or hosted acceptance.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/ci/run_test_matrix.sh",
@@ -57,7 +57,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "Main/integration acceptance and the required hosted handoff remain pending. This integration review provides no publication, merge or main-acceptance evidence.",
+          "evidence": "Main/integration acceptance for EC92 and the required hosted handoff remain pending. C35 Python, focused-target and earlier integration/lifetime/native-package/SaaS results stay attributed to their actual C35 or older epochs and are not restamped onto EC92.",
           "files": [
             "scripts/acceptance/clean_room/verifier_delivery.py"
           ],
@@ -67,17 +67,40 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "The audit/flag lifecycle obligation remains open at its original severity. This review does not waive E-09/E-10, generic or descriptorless flags, incidents, unknown outcomes or retractions, and supplies no later-owner closure.",
+          "evidence": "The audit/flag lifecycle obligation remains open at its original severity. The style-only KeyCache change does not waive E-09/E-10, generic or descriptorless flags, incidents, unknown outcomes or retractions, and supplies no later-owner closure.",
           "files": [
             "scripts/acceptance/clean_room/verifier_delivery.py"
           ],
           "id": "T-178-36",
           "severity": "high",
           "status": "deferred"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "Both hosted installed-verifier callers now pass the exact provisioned candidate manifest path while retaining the independent expected-manifest digest from the same provisioning step. The wrapper accepts only the owned candidate-manifest path, verifies it against explicit pins and exports that selected file to the verifier consumer. The CI contract test checks both pair commands, the manifest selection and retained digest. This repairs the identified floor caller selection mismatch at source level; the earlier hosted attempt remains failed history and does not qualify C35.",
+          "files": [
+            ".github/workflows/ci.yml",
+            "test/acceptance/client_verifier_ci_test.py"
+          ],
+          "id": "INT-178-CANDIDATE-MANIFEST-SELECTION",
+          "severity": "medium",
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "The request path remains connected end to end: VerifyToken.fetch_key/1 calls KeyCache.get_key/1; a cold miss routes to the actual ETS owner GenServer; if the repository is ready, the owner loads the full active-key set, converts public JWKs, updates the ETS table, marks even an empty result warm, and returns the selected key for signature verification. Concurrent cold misses serialize through the same owner. Warm, pending and disabled unknown-kid misses remain ETS-only; background retry handles cold/unready or failed initialization. Regressions cover readiness before retry, concurrent first access, throttled failed load and retry, manual retry cancellation, empty warm snapshots, disabled initial refresh, and warm failure retaining cached keys. A separate executor-reported focused private run is tied to this exact full source tree (91 passed, 0 failed; KeyCache, VerifyToken and telemetry selections) with a fresh owned PostgreSQL instance; this review did not run it. The run's scope does not establish C35 full canonical, full matrix, current/minimum, SaaS, hosted or main acceptance. Requests arriving while storage remains unready fail closed until the scheduled retry succeeds.",
+          "files": [
+            "lib/lockspire/key_cache.ex",
+            "lib/lockspire/plug/verify_token.ex",
+            "test/lockspire/key_cache_test.exs"
+          ],
+          "id": "INT-178-KEYCACHE-VERIFYTOKEN-COLD-SNAPSHOT",
+          "severity": "medium",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-INTEGRATION-REVIEW-98b79e54.md",
-      "report_sha256": "89fda3cfb42ad86226ad2b42ee6f76950083c5d7f75e44f4ae44c6a2c4fa1f69",
+      "report_path": "178-INTEGRATION-REVIEW-ec92cca0.md",
+      "report_sha256": "6d2f28e4e25543b8ede5c82468ad47dcaab3b310c322edefd6a962ae1d4a5693",
       "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
@@ -118,7 +141,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
+          "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -950,7 +973,7 @@
         },
         {
           "path": "lib/lockspire/key_cache.ex",
-          "sha256": "32602bf045dc43ec79ed86bdef8102dae3a8f4bbcdad7dfdeecd8949485d1001"
+          "sha256": "52e6e209c2d90131735cd941fd57247709b718bb1a4c32a2b6622a6b41739cf9"
         },
         {
           "path": "lib/lockspire/live_dashboard_page.ex",
@@ -2422,7 +2445,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
+          "sha256": "bc801d5fe3210211f5617d2316908b5a6e953652b15fa01a481e84a1d0dd5276"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -3330,7 +3353,7 @@
         },
         {
           "path": "test/lockspire/key_cache_test.exs",
-          "sha256": "30b2565457392309e1659275d1a6fda54d7756540626861699a2a6362c90661b"
+          "sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564"
         },
         {
           "path": "test/lockspire/mtls/certificate_test.exs",
@@ -4397,8 +4420,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
-      "reviewer_identity": "R178HEXINT98B79",
+      "reviewed_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+      "reviewer_identity": "R178KeyCacheIntegrationEC92",
       "verdict": "accepted"
     },
     "security": {
@@ -4437,7 +4460,7 @@
         },
         {
           "disposition": "later-owner",
-          "evidence": "The seven-job graph, action pins, job/receipt ownership boundaries and semantic same-attempt artifact checks remain applicable. The only reviewed workflow delta explicitly installs Hex2.6.0 in all six BEAM jobs. This source review supplies no passing hosted graph; the later-owner obligation remains pending.",
+          "evidence": "The seven-job graph, action pins, explicit Hex2.6.0 installation, job/receipt ownership boundaries and semantic same-attempt artifact checks remain applicable. Both hosted pair commands now explicitly select their job-provisioned .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json while retaining independent runner, source, archive, tree and manifest digest pins. Validator bodies and graph permissions are unchanged. This source review supplies no passing hosted graph; the later-owner obligation remains pending.",
           "files": [
             ".github/workflows/ci.yml",
             "scripts/acceptance/clean_room/verifier_delivery.py"
@@ -4624,10 +4647,35 @@
           "id": "SEC-178-TAR-TRACKED-STATE-01",
           "severity": "high",
           "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "Both floor and locked hosted workflow calls now select the freshly provisioned job manifest explicitly at ci.yml:339 and :516. The unchanged wrapper restricts selection to that exact relative path, rejects symlink components, and retains independently supplied runner/source/archive/tree/manifest SHA checks. The regression covers both callers and preserves their manifest digest argument. This corrects caller/default-path disagreement without weakening validators or attributing an unrecorded original hosted predicate.",
+          "files": [
+            ".github/workflows/ci.yml",
+            "scripts/ci/run_verifier_upgrade_proof.sh",
+            "test/acceptance/client_verifier_ci_test.py"
+          ],
+          "id": "SEC-178-CI-FROZEN-SELECTOR-01",
+          "severity": "medium",
+          "status": "resolved"
+        },
+        {
+          "disposition": "rechecked-fixed",
+          "evidence": "KeyCache.get_key at26-36 returns warm/pending/disabled misses from ETS without owner or storage requests. Cold loading at79-99 is serialized through the actual ETS owner at240-247 and passes no requested KID to the full-snapshot loader at162. Failed cold attempts enter pending state and use one independent tokenized retry; stale retries are ignored/cancelled at127-138 and198-209. Missing tables, owner failure and call exits fail closed. Successful empty snapshots become warm; warm refresh failures retain existing keys without short retry; successful binary-key eviction at169-179 preserves the atom marker and retirement behavior. VerifyToken's missing-key rejection and strict signature/claim checks remain unchanged. Tests cover default repository readiness, concurrent cold loading, retry throttling, empty snapshots, opt-out, manual refresh, warm failure and retirement. Fresh diagnostics demonstrate the old missing-key path only; full new-source runtime qualification remains separate.",
+          "files": [
+            "lib/lockspire/key_cache.ex",
+            "test/lockspire/key_cache_test.exs",
+            "lib/lockspire/plug/verify_token.ex",
+            "lib/lockspire/storage/ecto/repository/signing_key_store.ex"
+          ],
+          "id": "SEC-178-KEYCACHE-COLD-SNAPSHOT-01",
+          "severity": "medium",
+          "status": "resolved"
         }
       ],
-      "report_path": "178-SECURITY-REVIEW-98b79e54.md",
-      "report_sha256": "fdc15f8b3ea0932bf851b217155dcbbfeff25fe3f3d354608d9f66b59a30668b",
+      "report_path": "178-SECURITY-REVIEW-ec92cca0.md",
+      "report_sha256": "ab4141196cf8971b082eca7a3c94a6b06c3af226c54bb244327b2f7e7b1cba9f",
       "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
@@ -4668,7 +4716,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
+          "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -5500,7 +5548,7 @@
         },
         {
           "path": "lib/lockspire/key_cache.ex",
-          "sha256": "32602bf045dc43ec79ed86bdef8102dae3a8f4bbcdad7dfdeecd8949485d1001"
+          "sha256": "52e6e209c2d90131735cd941fd57247709b718bb1a4c32a2b6622a6b41739cf9"
         },
         {
           "path": "lib/lockspire/live_dashboard_page.ex",
@@ -6972,7 +7020,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
+          "sha256": "bc801d5fe3210211f5617d2316908b5a6e953652b15fa01a481e84a1d0dd5276"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -7880,7 +7928,7 @@
         },
         {
           "path": "test/lockspire/key_cache_test.exs",
-          "sha256": "30b2565457392309e1659275d1a6fda54d7756540626861699a2a6362c90661b"
+          "sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564"
         },
         {
           "path": "test/lockspire/mtls/certificate_test.exs",
@@ -8947,7 +8995,7 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "reviewed_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
       "reviewer_identity": "Codex security auditor /root/correction_security",
       "verdict": "accepted"
     },
@@ -8955,7 +9003,7 @@
       "findings": [
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Rechecked the inherited wrapper cleanup finding against the final source. The EXIT trap remains immediately after private staging-root creation; the source-revision propagation delta does not move or bypass that trap. The failure-path regression remains in the selected closure.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: Rechecked the inherited wrapper cleanup finding against the final source. The EXIT trap remains immediately after private staging-root creation; the source-revision propagation delta does not move or bypass that trap. The failure-path regression remains in the selected closure.",
           "files": [
             "scripts/ci/run_host_integration_proof.sh",
             "test/acceptance/client_admin_failure_transport_test.py"
@@ -8966,7 +9014,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Rechecked the inherited verifier-key separation finding against the changed operation_context.ex bytes and unchanged callers/tests. Config.client_secret_verifier_context/1 returns a Context struct even for invalid configuration; validate_generation_context/2 still routes that struct through Context.validate/2 and maps its error to the fixed safe failure. The removed private catch-all was unreachable under the typed return contract.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: Rechecked the inherited verifier-key separation finding against the changed operation_context.ex bytes and unchanged callers/tests. Config.client_secret_verifier_context/1 returns a Context struct even for invalid configuration; validate_generation_context/2 still routes that struct through Context.validate/2 and maps its error to the fixed safe failure. The removed private catch-all was unreachable under the typed return contract.",
           "files": [
             "lib/lockspire/security/client_secret_verifier/operation_context.ex",
             "lib/lockspire/clients/secret_material.ex",
@@ -8978,7 +9026,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The inherited process-custody finding remains rechecked-fixed. The updated wrapper failure fixture builds the fake package from a committed clean shared clone so ignored workspace files cannot contaminate package-source verification; it still asserts exact process termination, database drop, redaction, and raw staging cleanup. Its narrow allowance is limited to the two exact regular Mix runtime directories under the fixture-owned TMPDIR.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: The inherited process-custody finding remains rechecked-fixed. The updated wrapper failure fixture builds the fake package from a committed clean shared clone so ignored workspace files cannot contaminate package-source verification; it still asserts exact process termination, database drop, redaction, and raw staging cleanup. Its narrow allowance is limited to the two exact regular Mix runtime directories under the fixture-owned TMPDIR.",
           "files": [
             "scripts/acceptance/clean_room_saas_journey.py",
             "scripts/acceptance/clean_room/package_input.py",
@@ -8990,7 +9038,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Rechecked the changed SaaS journey around source selection. The new selector only changes which independently authenticated source revision is compared; the protected run-root/TMPDIR/origin setup and restoration finally block remain intact.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: Rechecked the changed SaaS journey around source selection. The new selector only changes which independently authenticated source revision is compared; the protected run-root/TMPDIR/origin setup and restoration finally block remain intact.",
           "files": [
             "scripts/acceptance/clean_room_saas_journey.py",
             "test/clean_room/test_admin_journey.py"
@@ -9001,7 +9049,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "Finite rejection facts now derive numeric exactness from count fields after sanitization to exact int values within DISCLOSURE_COUNT_MAX. Boolean/float/negative/oversized mutations produce null counts and false attribution/total/zero predicates. Current capture and success receipt validators also enforce the same maximum. Regressions cover bool, float, negative, and oversized controls/counts.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: Finite rejection facts now derive numeric exactness from count fields after sanitization to exact int values within DISCLOSURE_COUNT_MAX. Boolean/float/negative/oversized mutations produce null counts and false attribution/total/zero predicates. Current capture and success receipt validators also enforce the same maximum. Regressions cover bool, float, negative, and oversized controls/counts.",
           "files": [
             "scripts/acceptance/clean_room/verifier_receipts.py",
             "scripts/acceptance/clean_room/verifier_disclosure.py",
@@ -9013,7 +9061,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The capture protocol now uses a fresh reference, owner PID, and operation/control phase. Logger event attribution checks metadata PID/reference/phase; query controls use the actual Ecto telemetry options shape (Ecto SQL builds metadata.options from telemetry_options), and operation queries require owner-process Logger metadata with the same reference/phase. The capture helper restores prior Logger metadata in an after block. Counts include all observed log/query events, while only attributable events contribute to control/operation counts; sentinel scans remain broad. Current success/failure validators require the attribution marker and exact measured controls while permitting zero operation queries. Old receipt field shapes are accepted only through explicit historical_structure_only validation; historical fixture bytes remain unchanged and synthetic current-contract copies are modified only in temporary test trees.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: The capture protocol now uses a fresh reference, owner PID, and operation/control phase. Logger event attribution checks metadata PID/reference/phase; query controls use the actual Ecto telemetry options shape (Ecto SQL builds metadata.options from telemetry_options), and operation queries require owner-process Logger metadata with the same reference/phase. The capture helper restores prior Logger metadata in an after block. Counts include all observed log/query events, while only attributable events contribute to control/operation counts; sentinel scans remain broad. Current success/failure validators require the attribution marker and exact measured controls while permitting zero operation queries. Old receipt field shapes are accepted only through explicit historical_structure_only validation; historical fixture bytes remain unchanged and synthetic current-contract copies are modified only in temporary test trees.",
           "files": [
             "test/clean_room/provider_host/lib/clean_room_provider/verifier_disclosure.ex",
             "scripts/acceptance/clean_room/verifier_receipts.py",
@@ -9029,7 +9077,7 @@
         },
         {
           "disposition": "rechecked-fixed",
-          "evidence": "The tracked-deletion source-attribution bypass found and rejected at 31802 remains fixed by the before/after tracked-diff guard in unchanged production source at e13a7197. The added fixture isolation ensures wrapper failure regressions build an archive from committed inputs, and the deletion/change regressions remain in the covered test source.",
+          "evidence": "Inherited baseline finding rechecked at EC92: its cited source/test paths are unchanged from the accepted C35 report, and the single key_cache.ex syntax delta does not affect its verified fix. Resolved disposition remains applicable. Prior evidence: Inherited baseline finding rechecked at C: all cited source/test paths remain byte-identical to the accepted 98b79e54 review, so the current four-file delta does not alter its verified fix. Its resolved disposition remains applicable. Prior evidence: The tracked-deletion source-attribution bypass found and rejected at 31802 remains fixed by the before/after tracked-diff guard in unchanged production source at e13a7197. The added fixture isolation ensures wrapper failure regressions build an archive from committed inputs, and the deletion/change regressions remain in the covered test source.",
           "files": [
             "scripts/acceptance/clean_room/package_input.py",
             "test/clean_room/test_admin_journey.py"
@@ -9039,8 +9087,8 @@
           "status": "resolved"
         }
       ],
-      "report_path": "178-SOURCE-REVIEW-98b79e54.md",
-      "report_sha256": "626bf9c4ce8cd1d7b4ef46d240e893862ad3b0c602922a484ce7bf6646cad0b1",
+      "report_path": "178-SOURCE-REVIEW-ec92cca0.md",
+      "report_sha256": "e9cbd6b699a7da057c8b17897022d57418c8ff63eb74e8679081ef54dd81552d",
       "reviewed_at": "2026-10-29",
       "reviewed_files": [
         {
@@ -9081,7 +9129,7 @@
         },
         {
           "path": ".github/workflows/ci.yml",
-          "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
+          "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
         },
         {
           "path": ".github/workflows/dependency-review.yml",
@@ -9913,7 +9961,7 @@
         },
         {
           "path": "lib/lockspire/key_cache.ex",
-          "sha256": "32602bf045dc43ec79ed86bdef8102dae3a8f4bbcdad7dfdeecd8949485d1001"
+          "sha256": "52e6e209c2d90131735cd941fd57247709b718bb1a4c32a2b6622a6b41739cf9"
         },
         {
           "path": "lib/lockspire/live_dashboard_page.ex",
@@ -11385,7 +11433,7 @@
         },
         {
           "path": "test/acceptance/client_verifier_ci_test.py",
-          "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
+          "sha256": "bc801d5fe3210211f5617d2316908b5a6e953652b15fa01a481e84a1d0dd5276"
         },
         {
           "path": "test/acceptance/client_verifier_core_test.py",
@@ -12293,7 +12341,7 @@
         },
         {
           "path": "test/lockspire/key_cache_test.exs",
-          "sha256": "30b2565457392309e1659275d1a6fda54d7756540626861699a2a6362c90661b"
+          "sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564"
         },
         {
           "path": "test/lockspire/mtls/certificate_test.exs",
@@ -13360,8 +13408,8 @@
           "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
         }
       ],
-      "reviewed_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
-      "reviewer_identity": "independent-phase178-source-reviewer-98b79e54",
+      "reviewed_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+      "reviewer_identity": "independent-phase178-source-reviewer-ec92cca0",
       "verdict": "accepted"
     }
   },

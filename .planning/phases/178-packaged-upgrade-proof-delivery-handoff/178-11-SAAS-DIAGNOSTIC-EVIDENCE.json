@@ -1,0 +1,1099 @@
+{
+  "active_attempt": {
+    "exact_security_accepted": true,
+    "fresh_resource_reason": "key_not_found",
+    "helper_path": "/private/tmp/lockspire178-saas-diagnostic-m98b79e54-v11.py",
+    "helper_sha256": "f5ddf2fe22bb133ad6109386ce794623b16f861c149292f56c10638384aed65f",
+    "original_tool_exec_session_id": 12323,
+    "proof_qualified": false,
+    "run_root": "held in original tool process; await exact launcher result; do not glob/guess",
+    "started_at": "2026-10-29T14:33:41.814378+00:00",
+    "status": "finished_operational_diagnostic_only_journey_failed"
+  },
+  "attempts": [
+    {
+      "candidate_provisioned": {
+        "archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+        "current_hex_home_sha256": "5420b55a3ae6e74f94a63853391fef4b46c2d73e194399025f79bffe8348873f",
+        "current_mix_home_sha256": "23d75150edce787b814648c86c2f8297e2120260d477ac291385744b539b9e53",
+        "event": "candidate_provisioned",
+        "journey_sha256": "25812b5b2c87fe8bb83e5cf006da5e8e6b01d965113fcc7e7decffd4fd39f03d",
+        "manifest": "/private/tmp/lockspire178-saas-diagnostic-gnb1zaiz/runner/.artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json",
+        "manifest_mode": 384,
+        "manifest_sha256": "8df2322b43cadaab171ce1e55c33176e3d482f50f5e145790bb00565b216ff9a",
+        "runner_revision": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+        "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+        "tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b"
+      },
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 24309,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-gnb1zaiz/events.json",
+        "sha256": "1dfc9666f9c59fbf8e70e52594816967ccfabc84243125034dcf2e6402e8170c"
+      },
+      "fresh_rejected_predicate": "UNKNOWN; no AssertionError/status observations; stopped before target",
+      "helper": {
+        "bytes": 31311,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-m98b79e54-v4.py",
+        "sha256": "08be1ca1a2219993a6c3c2990641f84417694a7ae8f67a71fa240371040eac1e"
+      },
+      "historical_hosted_assertion": "UNKNOWN; this attempt does not diagnose it",
+      "independent_postrun_audit": {
+        "author": "Codex security auditor /root/correction_security",
+        "closure_accepted": true,
+        "original_same_token_pairs_verified": 61,
+        "proof_qualified": false,
+        "serialization": "parent transcription of returned audit facts"
+      },
+      "journey": {
+        "assertion_count": 0,
+        "assertions": [],
+        "event": "journey_result",
+        "exit": 1,
+        "status_count": 0,
+        "status_rows": [],
+        "stderr_bytes": 118,
+        "stderr_sha256": "94492cc686c643647fbf7ec8644c7924a043598b55532fd42ffc8aa1e507f9a2",
+        "stdout_bytes": 415,
+        "stdout_sha256": "4eeed33e32791dad8f4326a9cc7e69b454c6f9b394e5a16e675e60fe32a4c09b"
+      },
+      "launch": {
+        "bytes": 511,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-gnb1zaiz/launch-result.json",
+        "sha256": "7e7a424e3c36f4d8bba583370944863b54c558ff3c55c898f93e7fe4d05ce737"
+      },
+      "original_group_registrations": 61,
+      "original_group_stop_absence_closures": 61,
+      "outer_launcher_retention": {
+        "auditor_pairing_scope": "61 original children including PG; not an independently retained outer native token",
+        "captured_from_tool_creation_response": true,
+        "independent_outer_native_pid_pgid_start_tuple": "not exposed/retained; do not infer it from inner creator PID",
+        "original_tool_exec_session_id": 24446,
+        "tool_terminal_exit": 0
+      },
+      "runner": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "source_C": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "static_helper_binding_gap": {
+        "captured_defaults_functions": [
+          "authenticated_frozen_source",
+          "verify_frozen_source_owner"
+        ],
+        "correction": "new helper will close bootstrap owner, import actual M module under fresh namespace and install independent original-custody owner before PG/provision/journey",
+        "file": "scripts/acceptance/clean_room/package_input.py",
+        "reason": "BASE module imported before clone; later PROJECT_ROOT assignment does not rebind captured defaults",
+        "validators_weakened": false
+      },
+      "terminal": {
+        "all_original_records_closed": true,
+        "assertion_count": 0,
+        "diagnostic_completed": true,
+        "event": "terminal",
+        "journey_exit_code": 1,
+        "journey_invoked": true,
+        "observer_ok": true,
+        "original_child_groups_closed": true,
+        "original_postgres_closed": true,
+        "pg_data_retained": true,
+        "proof_qualified": false,
+        "root_tar_preserved": true,
+        "run_retained": true,
+        "source_runner_unchanged": true
+      }
+    },
+    {
+      "candidate_provisioned": {
+        "archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+        "current_hex_home_sha256": "5420b55a3ae6e74f94a63853391fef4b46c2d73e194399025f79bffe8348873f",
+        "current_mix_home_sha256": "23d75150edce787b814648c86c2f8297e2120260d477ac291385744b539b9e53",
+        "event": "candidate_provisioned",
+        "journey_sha256": "25812b5b2c87fe8bb83e5cf006da5e8e6b01d965113fcc7e7decffd4fd39f03d",
+        "manifest": "/private/tmp/lockspire178-saas-diagnostic-u93cpi8z/runner/.artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json",
+        "manifest_mode": 384,
+        "manifest_sha256": "442ae19da5fa17939a8066fd6dbd976ae07964035002a9d51f7c18fa042aedaf",
+        "runner_revision": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+        "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+        "tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b"
+      },
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 180065,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-u93cpi8z/events.json",
+        "sha256": "712f358b72609da0a2836c927a97d416af2ad7ca9694404ca8e958b9b9fd16cb"
+      },
+      "fresh_rejected_predicate": "UNKNOWN; AssertionError summary observed but first64 exception capacity filled by routine OSError before target",
+      "helper": {
+        "bytes": 41340,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-m98b79e54-v7.py",
+        "sha256": "b849fdb054a5c5be2d4f386b3a635562aa86580220f244d52ef06a9239ccd70e"
+      },
+      "historical_hosted_assertion": "UNKNOWN; no rejected predicate location inferred",
+      "independent_postrun_audit": {
+        "author": "Codex security auditor /root/correction_security",
+        "closure_accepted": true,
+        "exact_predicate_unavailable": true,
+        "no_OS_reprobe_or_cleanup": true,
+        "same_original_token_pairs_verified": 478,
+        "serialization": "parent transcription of returned audit facts"
+      },
+      "journey": {
+        "assertion_count": 0,
+        "assertions": [],
+        "event": "journey_result",
+        "exit": 1,
+        "safe_summaries": [
+          {
+            "count": 1,
+            "event": "runner_failure",
+            "field": "AssertionError",
+            "scenario": "unknown",
+            "stage": "saas_journey"
+          }
+        ],
+        "safe_summary_count": 1,
+        "status_count": 7,
+        "status_rows": [
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "client start"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider authorize"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider login"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider interaction"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider consent"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider consent approval"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "client journey receipt"
+          }
+        ],
+        "status_unclassified_count": 0,
+        "stderr_bytes": 115,
+        "stderr_sha256": "df064f26efc1644f8e3d5905e97d75f74829b8f5c9fe2ad379f34772e07104c0",
+        "stdout_bytes": 147490,
+        "stdout_sha256": "bb445ec42f7d12c82a20af18b30b27a8153382b2fd1204bd91549a68c521474d",
+        "tracked_exception_count": 64,
+        "tracked_exceptions": [
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 103
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_session_state",
+            "line": 106
+          },
+          {
+            "class": "OSError",
+            "file": "scripts/acceptance/clean_room/package_input.py",
+            "function": "owned_process_identity",
+            "line": 93
+          }
+        ]
+      },
+      "launch": {
+        "bytes": 511,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-u93cpi8z/launch-result.json",
+        "sha256": "00aaee02fc91e4cfdc9281b6998d6ce5de82833a7b1f6b795d1e59345a37a81c"
+      },
+      "module_bindings": {
+        "defaults_root_match": true,
+        "event": "module_bindings",
+        "journey_clean_room_match": true,
+        "passed": true,
+        "rows": [
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room/package_input.py",
+            "role": "package_input",
+            "root_binding": "match"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room/verifier_delivery.py",
+            "role": "verifier_delivery",
+            "root_binding": "match"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/ci/provision_verifier_candidate.py",
+            "role": "lockspire178_provision_verifier_candidate",
+            "root_binding": "match"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room/build_provider.py",
+            "role": "build_provider",
+            "root_binding": "match"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room_saas_journey.py",
+            "role": "clean_room_saas_journey",
+            "root_binding": "not_applicable"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room/build_client.py",
+            "role": "build_client",
+            "root_binding": "not_applicable"
+          },
+          {
+            "file_matches": true,
+            "file_role": "scripts/acceptance/clean_room/redaction.py",
+            "role": "redaction",
+            "root_binding": "not_applicable"
+          }
+        ]
+      },
+      "original_group_registrations": 478,
+      "original_group_stop_absence_closures": 478,
+      "original_pools": {
+        "bootstrap": 4,
+        "runner": 474
+      },
+      "outer_launcher_retention": {
+        "independent_outer_native_token": "not exposed/retained; audit covers478children/PG",
+        "original_tool_exec_session_id": 81128,
+        "tool_terminal_exit": 0
+      },
+      "runner": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "source_C": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "static_observer_limit": "combined first64 buffer omitted later AssertionError; v8 separates per-class last64 buffers and counts",
+      "terminal": {
+        "all_original_records_closed": true,
+        "assertion_count": 0,
+        "bootstrap_original_records": 4,
+        "diagnostic_completed": true,
+        "event": "terminal",
+        "journey_exit_code": 1,
+        "journey_invoked": true,
+        "observer_ok": true,
+        "original_child_groups_closed": true,
+        "original_postgres_closed": true,
+        "pg_data_retained": true,
+        "proof_qualified": false,
+        "root_tar_preserved": true,
+        "run_retained": true,
+        "runner_original_records": 474,
+        "safe_summary_count": 1,
+        "source_runner_unchanged": true,
+        "tracked_exception_count": 64
+      }
+    },
+    {
+      "candidate_provisioned": {
+        "archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+        "current_hex_home_sha256": "5420b55a3ae6e74f94a63853391fef4b46c2d73e194399025f79bffe8348873f",
+        "current_mix_home_sha256": "23d75150edce787b814648c86c2f8297e2120260d477ac291385744b539b9e53",
+        "event": "candidate_provisioned",
+        "journey_sha256": "25812b5b2c87fe8bb83e5cf006da5e8e6b01d965113fcc7e7decffd4fd39f03d",
+        "manifest": "/private/tmp/lockspire178-saas-diagnostic-gp8kyukh/runner/.artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json",
+        "manifest_mode": 384,
+        "manifest_sha256": "3604899d70cd65adaf16bf6ec94616924e0c42e52b477040c02871ba4b689825",
+        "runner_revision": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+        "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+        "tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b"
+      },
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 182330,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-gp8kyukh/events.json",
+        "sha256": "e2c4a017409c673969e4faa290423ce414c903e8c2b8c3e24f127f6c9ea77c05"
+      },
+      "fresh_predicate": {
+        "class": "AssertionError",
+        "client_safe_failed_stage": "resource_http",
+        "fatal_function": "run_happy",
+        "fatal_line": 1840,
+        "file": "scripts/acceptance/clean_room_saas_journey.py",
+        "propagation_function": "main",
+        "propagation_line": 2347,
+        "soft_caught_assertions": [
+          {
+            "function": "csrf",
+            "line": 255
+          },
+          {
+            "function": "browser_authorize",
+            "line": 616
+          }
+        ]
+      },
+      "helper": {
+        "bytes": 43939,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-m98b79e54-v8.py",
+        "sha256": "c8ce190ced124629044a3e39ec6061dfff90bd96d0e04da1875e0f5c69a1ae79"
+      },
+      "independent_audit": {
+        "PG_stopped_after_last_child": true,
+        "assertion_observations_untruncated": true,
+        "author": "Codex security auditor /root/correction_security",
+        "parent_transcription": true,
+        "proof_qualified": false,
+        "same_original_child_token_pairs_closed": 478
+      },
+      "journey": {
+        "assertion_count": 4,
+        "assertions": [
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "csrf",
+            "line": 255
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "browser_authorize",
+            "line": 616
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "run_happy",
+            "line": 1840
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "main",
+            "line": 2347
+          }
+        ],
+        "client_receipt_count": 1,
+        "client_receipt_unclassified_count": 0,
+        "client_receipts": [
+          {
+            "complete": false,
+            "failed_stage": "resource_http"
+          }
+        ],
+        "event": "journey_result",
+        "exit": 1,
+        "safe_summaries": [
+          {
+            "count": 1,
+            "event": "runner_failure",
+            "field": "AssertionError",
+            "scenario": "unknown",
+            "stage": "saas_journey"
+          }
+        ],
+        "safe_summary_count": 1,
+        "status_count": 7,
+        "status_rows": [
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "client start"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider authorize"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider login"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider interaction"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider consent"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider consent approval"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "client journey receipt"
+          }
+        ],
+        "status_unclassified_count": 0,
+        "stderr_bytes": 115,
+        "stderr_sha256": "df064f26efc1644f8e3d5905e97d75f74829b8f5c9fe2ad379f34772e07104c0",
+        "stdout_bytes": 148419,
+        "stdout_sha256": "244b44091ed720fbf830e5d3e7e9dae592ec0952fd2e934f27708695ab767f26",
+        "tracked_exception_counts": {
+          "AssertionError": 4,
+          "OSError": 5026,
+          "PackageInputError": 0
+        },
+        "tracked_exception_truncated": {
+          "AssertionError": false,
+          "OSError": true,
+          "PackageInputError": false
+        }
+      },
+      "launch": {
+        "bytes": 511,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-gp8kyukh/launch-result.json",
+        "sha256": "f9734fda5f45dc1e90876d3eb5f0f147137f6c5f0cfe6934e82b79d8bb12b427"
+      },
+      "original_hosted_assertion": "not directly observed; fresh predicate is a separate reproduction",
+      "outer_launcher_retention": {
+        "independent_outer_native_token": "not exposed/retained; audit covers478children/PG",
+        "original_tool_exec_session_id": 93025,
+        "tool_terminal_exit": 0
+      },
+      "runner": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "source_C": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "terminal": {
+        "all_original_records_closed": true,
+        "assertion_count": 4,
+        "bootstrap_original_records": 4,
+        "diagnostic_completed": true,
+        "event": "terminal",
+        "journey_exit_code": 1,
+        "journey_invoked": true,
+        "observer_ok": true,
+        "original_child_groups_closed": true,
+        "original_postgres_closed": true,
+        "pg_data_retained": true,
+        "proof_qualified": false,
+        "root_tar_preserved": true,
+        "run_retained": true,
+        "runner_original_records": 474,
+        "safe_summary_count": 1,
+        "source_runner_unchanged": true,
+        "tracked_exception_count": 5030,
+        "tracked_exception_counts": {
+          "AssertionError": 4,
+          "OSError": 5026,
+          "PackageInputError": 0
+        },
+        "tracked_exception_truncated": {
+          "AssertionError": false,
+          "OSError": true,
+          "PackageInputError": false
+        }
+      }
+    },
+    {
+      "candidate_provisioned": {
+        "archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+        "current_hex_home_sha256": "5420b55a3ae6e74f94a63853391fef4b46c2d73e194399025f79bffe8348873f",
+        "current_mix_home_sha256": "23d75150edce787b814648c86c2f8297e2120260d477ac291385744b539b9e53",
+        "event": "candidate_provisioned",
+        "journey_sha256": "25812b5b2c87fe8bb83e5cf006da5e8e6b01d965113fcc7e7decffd4fd39f03d",
+        "manifest": "/private/tmp/lockspire178-saas-diagnostic-32h094_d/runner/.artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json",
+        "manifest_mode": 384,
+        "manifest_sha256": "026b9b3bed36cc68f59669a16968c9b339085cdf55a04111bccf8fcd317069a9",
+        "runner_revision": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+        "source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+        "tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b"
+      },
+      "data_and_root_retained": true,
+      "events": {
+        "bytes": 182943,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-32h094_d/events.json",
+        "sha256": "fc775fe44366fe196f3cd4a0001afa1fd3a530b749c7ef30c918dc2a2aeb466d"
+      },
+      "fresh_resource_guard_reason": "key_not_found",
+      "helper": {
+        "bytes": 48539,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-m98b79e54-v11.py",
+        "sha256": "f5ddf2fe22bb133ad6109386ce794623b16f861c149292f56c10638384aed65f"
+      },
+      "independent_audit": {
+        "PG_stopped_after_last_child": true,
+        "author": "Codex security auditor /root/correction_security",
+        "key_not_found_count": 1,
+        "original_counter_refs_joined": 2,
+        "parent_transcription": true,
+        "proof_qualified": false,
+        "reason_projection_truncated": false,
+        "same_original_child_token_pairs_closed": 478
+      },
+      "journey": {
+        "assertion_count": 4,
+        "assertions": [
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "csrf",
+            "line": 255
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "browser_authorize",
+            "line": 616
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "run_happy",
+            "line": 1840
+          },
+          {
+            "class": "AssertionError",
+            "file": "scripts/acceptance/clean_room_saas_journey.py",
+            "function": "main",
+            "line": 2347
+          }
+        ],
+        "client_receipt_count": 1,
+        "client_receipt_unclassified_count": 0,
+        "client_receipts": [
+          {
+            "complete": false,
+            "failed_stage": "resource_http"
+          }
+        ],
+        "event": "journey_result",
+        "exit": 1,
+        "safe_summaries": [
+          {
+            "count": 1,
+            "event": "runner_failure",
+            "field": "AssertionError",
+            "scenario": "unknown",
+            "stage": "saas_journey"
+          }
+        ],
+        "safe_summary_count": 1,
+        "status_count": 7,
+        "status_rows": [
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "client start"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider authorize"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider login"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider interaction"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "provider consent"
+          },
+          {
+            "actual": 302,
+            "expected": 302,
+            "label": "provider consent approval"
+          },
+          {
+            "actual": 200,
+            "expected": 200,
+            "label": "client journey receipt"
+          }
+        ],
+        "status_unclassified_count": 0,
+        "stderr_bytes": 115,
+        "stderr_sha256": "df064f26efc1644f8e3d5905e97d75f74829b8f5c9fe2ad379f34772e07104c0",
+        "stdout_bytes": 148417,
+        "stdout_sha256": "262cd9435afc7c966eb15f0cd6f4ece89e0ad7ae1af834f7320d8f213c6a22a8",
+        "tracked_exception_counts": {
+          "AssertionError": 4,
+          "OSError": 5028,
+          "PackageInputError": 0
+        },
+        "tracked_exception_truncated": {
+          "AssertionError": false,
+          "OSError": true,
+          "PackageInputError": false
+        }
+      },
+      "launch": {
+        "bytes": 511,
+        "mode": "0o600",
+        "path": "/private/tmp/lockspire178-saas-diagnostic-32h094_d/launch-result.json",
+        "sha256": "92a915e5a09a41018ea04c20ed2e581bb0cbdd1330854ba8da93210ebda3b5eb"
+      },
+      "original_hosted_predicate": "not directly observed; no retrospective location/cause assertion",
+      "outer_launcher_retention": {
+        "independent_outer_native_token": "not exposed/retained; audit covers478children/PG",
+        "original_tool_exec_session_id": 12323,
+        "tool_terminal_exit": 0
+      },
+      "runner": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "source_C": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "terminal": {
+        "all_original_records_closed": true,
+        "assertion_count": 4,
+        "bootstrap_original_records": 4,
+        "diagnostic_completed": true,
+        "event": "terminal",
+        "journey_exit_code": 1,
+        "journey_invoked": true,
+        "observer_ok": true,
+        "original_child_groups_closed": true,
+        "original_postgres_closed": true,
+        "pg_data_retained": true,
+        "proof_qualified": false,
+        "resource_counter_count": 2,
+        "resource_counters_joined": true,
+        "resource_verification_reason_counts": {
+          "insufficient_scope": 0,
+          "invalid_audience": 0,
+          "invalid_issuer": 0,
+          "invalid_signature": 0,
+          "invalid_time_claims": 0,
+          "invalid_typ": 0,
+          "key_not_found": 1,
+          "malformed": 0,
+          "missing_exp": 0,
+          "missing_iat": 0,
+          "missing_sub": 0,
+          "missing_token": 0,
+          "no_kid": 0,
+          "opaque_token_not_accepted": 0,
+          "unclassified": 0,
+          "verification_crashed": 0
+        },
+        "resource_verification_reasons": [
+          "key_not_found"
+        ],
+        "resource_verification_reasons_truncated": false,
+        "root_tar_preserved": true,
+        "run_retained": true,
+        "runner_original_records": 474,
+        "safe_summary_count": 1,
+        "source_runner_unchanged": true,
+        "tracked_exception_count": 5032,
+        "tracked_exception_counts": {
+          "AssertionError": 4,
+          "OSError": 5028,
+          "PackageInputError": 0
+        },
+        "tracked_exception_truncated": {
+          "AssertionError": false,
+          "OSError": true,
+          "PackageInputError": false
+        }
+      },
+      "underlying_initial_snapshot_state": "not directly observed; deferred startup vs initial loader failure not distinguished"
+    }
+  ],
+  "global_security": "OPEN_THREATS4 unchanged",
+  "next_helper": "no active SaaS diagnostic; cold-start source regression now running separately",
+  "original_CI_failure_relabelled": false,
+  "purpose": "fresh diagnostic only; no qualification",
+  "recorded_at": "2026-10-29T14:19:53.707977+00:00",
+  "remote_mutations_after_approved_push_body": false,
+  "schema": "lockspire-phase178-saas-diagnostic-evidence-v1"
+}

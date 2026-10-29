@@ -1,11 +1,11 @@
 {
-  "candidate_archive_sha256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
-  "candidate_source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
-  "candidate_tree_sha256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b",
+  "candidate_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+  "candidate_source_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+  "candidate_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b",
   "canonical_ci": {
     "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 scripts/ci/run_owned_source_tests.py --ci",
     "exit_code": 0,
-    "manifest_sha256": "31b42f51a47fb6eaba752342528b7f241f79700ae33ef4038bc093ddabd41ab4",
+    "manifest_sha256": "d2921ad8aacd26a6a4c9d734ae16ff752e1a5f8dce6541630263486758d40b4f",
     "stages": [
       {
         "exit_code": 0,
@@ -13,7 +13,7 @@
         "name": "qa.architecture",
         "properties": 0,
         "stdout_bytes": 355,
-        "stdout_sha256": "efc12b01bab9f9de8fe418434c7e6553896e594dd78a3e2857d6b13d2f28c148",
+        "stdout_sha256": "c9aa808228263ad578e04f11736c007371474f8255243af4edd492edad525ef4",
         "tests": 15
       },
       {
@@ -21,17 +21,17 @@
         "failures": 0,
         "name": "test.fast",
         "properties": 2,
-        "stdout_bytes": 593366,
-        "stdout_sha256": "ce68bc9793439d3d9c1e9c305beb8530e261477a2043f39bfc2bafe0d5cbaa19",
-        "tests": 2180
+        "stdout_bytes": 591100,
+        "stdout_sha256": "97f94a34213a125f6e36d7bcd4d5feffff07372718ec6278e9c6d6fd0a3e7673",
+        "tests": 2187
       },
       {
         "exit_code": 0,
         "failures": 0,
         "name": "test.integration",
         "properties": 0,
-        "stdout_bytes": 124664,
-        "stdout_sha256": "df2bb32477fea6973aac40a8b957237d31f73be4b32775c8fb4b96e9783fabc6",
+        "stdout_bytes": 124675,
+        "stdout_sha256": "bf6c617d841bbe11f6e6218147ac49aa15cdc56d94e86a51b01ac163cd9cd8bf",
         "tests": 261
       }
     ]
@@ -75,7 +75,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "7507cb3ec5f967954c793ed010ccb42004fd610fc3dcfece67fabfa49f33abb9"
+      "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
     },
     {
       "path": ".github/workflows/dependency-review.yml",
@@ -907,7 +907,7 @@
     },
     {
       "path": "lib/lockspire/key_cache.ex",
-      "sha256": "32602bf045dc43ec79ed86bdef8102dae3a8f4bbcdad7dfdeecd8949485d1001"
+      "sha256": "52e6e209c2d90131735cd941fd57247709b718bb1a4c32a2b6622a6b41739cf9"
     },
     {
       "path": "lib/lockspire/live_dashboard_page.ex",
@@ -2379,7 +2379,7 @@
     },
     {
       "path": "test/acceptance/client_verifier_ci_test.py",
-      "sha256": "243842a54b808fd7775d11ce9d528a69d4383bee697e74d1fce01c7b2fcf8502"
+      "sha256": "bc801d5fe3210211f5617d2316908b5a6e953652b15fa01a481e84a1d0dd5276"
     },
     {
       "path": "test/acceptance/client_verifier_core_test.py",
@@ -3287,7 +3287,7 @@
     },
     {
       "path": "test/lockspire/key_cache_test.exs",
-      "sha256": "30b2565457392309e1659275d1a6fda54d7756540626861699a2a6362c90661b"
+      "sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564"
     },
     {
       "path": "test/lockspire/mtls/certificate_test.exs",
@@ -4354,13 +4354,13 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_manifest_sha256": "0ef81be5e59e84b5fd9f97322dfcab0627194d8a6d30429da1a9bb74b3db687b",
-  "frozen_runner_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+  "frozen_manifest_sha256": "44163c6c7b6e9cc5399ec81bd2f42a09c2d507a49e6452d4cdb34ccd41e76b9c",
+  "frozen_runner_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
   "owned_source_manifest": "178-OWNED-SOURCE-MANIFEST.json",
-  "owned_source_manifest_sha256": "31b42f51a47fb6eaba752342528b7f241f79700ae33ef4038bc093ddabd41ab4",
-  "package_acceptance_sha256": "e97fc1cea316edaff23e588d5b16fb694ca9f58f9680e4e286a84e0a65a18ea4",
+  "owned_source_manifest_sha256": "d2921ad8aacd26a6a4c9d734ae16ff752e1a5f8dce6541630263486758d40b4f",
+  "package_acceptance_sha256": "3ba454af5fe078023e52dc47e3d1168b1f560ee199c48e3f9ed147612115261e",
   "package_case_count": 64,
   "package_receipt_count": 26,
   "schema": "lockspire-phase178-source-acceptance-v1",
-  "tested_source_revision": "98b79e540cebddfdb8a27ce16c133b54d7213970"
+  "tested_source_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35"
 }

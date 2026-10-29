@@ -1,0 +1,585 @@
+{
+  "C35_full_canonical_failed": {
+    "counts": [
+      {
+        "failures": 0,
+        "scope": "architecture_only",
+        "tests": 15
+      }
+    ],
+    "events": {
+      "path": "/private/tmp/lockspire178-canonical-4qf70ato/events.json",
+      "sha256": "61f82b160d7f63cc41e0ad9bcad2b2120c0a0bd1e7595c40da0da91e15141e09"
+    },
+    "exact_original_predicate": "UNKNOWN",
+    "inner_outer_original_groups_absent": true,
+    "materialization_permitted": false,
+    "native_exit": 1,
+    "native_failure": {
+      "reason": "tests_failed",
+      "stage": "ci"
+    },
+    "native_source_after_fields": "ABSENT on failure; independent Git read clean C35",
+    "original_tool_session": 28627,
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-canonical-launcher-35c083bc-v9.json",
+      "sha256": "0f9653f85a596f3f54eddd56e8997b9366b9dc65aab926fc6f7de4ba1f41f8e5"
+    },
+    "owned_manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-skanmotd/manifest.json",
+      "sha256": "8a7e99750544c699be535ef16256552ea8f0ba61b7a6e10147bff0ef08f4a616"
+    },
+    "postgres_and_database_absent": true,
+    "private_data_retained": true,
+    "root_tar_preserved": true
+  },
+  "C35_python_harness": {
+    "acceptance_tests": 292,
+    "actual_source": "35c083bc8dac3b6a6acf92ccdf321e4295261a8a",
+    "clean_room_tests": 56,
+    "failures": 0,
+    "original_tool_session": 49677,
+    "record": {
+      "path": "/private/tmp/lockspire178-python-35c083bc.json",
+      "sha256": "1e5f667b0b099c99cc70e0548c7a163aad92232f940ac75937ba8416848fb727"
+    }
+  },
+  "Docker_private_config_probe": {
+    "configuration": "new private700Dockerconfig/cli-plugins containing only symlink to pinned local Compose plugin; no personal config/credential/context copied",
+    "native_error_message": "not persisted; command-or-flag-unrecognized classifier false, no literalerrorclaim",
+    "no_daemon_commands": true,
+    "only_explicit_plugin_only_DOCKER_CONFIG_added": {
+      "exit": 0,
+      "valid_json": true
+    },
+    "original_processes_closed": true,
+    "record": {
+      "path": "/private/tmp/lockspire178-compose-config-probe-qzj_9spa/result.json",
+      "sha256": "b4c9e70f3c706fd35bb65c83f8be53400f4f7bac29e1b210a6d99171efda1d17"
+    },
+    "same_private_HOME": {
+      "exit": 125,
+      "valid_json": false
+    },
+    "source_change_required": "not justified by these fresh8 failures"
+  },
+  "EC92_canonical_failed": {
+    "counts": [
+      {
+        "failures": 0,
+        "properties": 0,
+        "scope": "architecture",
+        "tests": 15
+      },
+      {
+        "failures": 8,
+        "properties": 2,
+        "scope": "fast",
+        "tests": 2187
+      }
+    ],
+    "data_and_root_retained": true,
+    "events": {
+      "path": "/private/tmp/lockspire178-canonical-5emav912/events.json",
+      "sha256": "4ef1a03ce08d22f8fccc53b2766d8a22383397d207bafbe5d58f236347303b13"
+    },
+    "inner_outer_groups_and_postgres_database_absent": true,
+    "native_after_source_fields": "ABSENT on failure, independently observed Git clean EC92",
+    "native_exit": 1,
+    "original_failure_identities_and_predicates": "UNKNOWN; not retained in original records",
+    "original_tool_session": 9914,
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-canonical-launcher-ec92cca0-v1.json",
+      "sha256": "8e5480fb269b3640d01052303b912663164a90facda2f229d107c96cedda0028"
+    },
+    "owned_manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-w4gsq_r4/manifest.json",
+      "sha256": "164dcbe7f32c9a73ccca508e0603a3ea0bd3b09261b7daacf4453ca0aca4ad45"
+    },
+    "protected_tar_preserved": true,
+    "qualification": "failed",
+    "security_audit": "independently confirmed original records/cleanup; no retrospective identity/predicate inference"
+  },
+  "EC92_fresh_diagnostic": {
+    "cleanup": {
+      "inner_outer_groups_absent": true,
+      "observers_ok": true,
+      "postgres_database_absent": true,
+      "private_data_and_root_retained": true,
+      "readers_closed": true,
+      "root_tar_preserved": true
+    },
+    "counts": [
+      {
+        "failures": 0,
+        "scope": "architecture",
+        "tests": 15
+      },
+      {
+        "failures": 8,
+        "properties": 2,
+        "scope": "fast",
+        "tests": 2187
+      }
+    ],
+    "events": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-ec92-kxg0kpw7/events.json",
+      "sha256": "1e0f61d495be5a4b1cb414db0e2d6096c95a322a2e9090ed78f7bf2cae8f7df0"
+    },
+    "fresh_failure_observations": {
+      "common_locations": [
+        750,
+        833
+      ],
+      "file": "test/lockspire/adoption_demo_docker_contract_test.exs",
+      "fixed_error_class": "RuntimeError",
+      "header_lines": [
+        397,
+        296,
+        316,
+        331,
+        355,
+        369,
+        306,
+        339
+      ],
+      "original_9914_failure_identity_relation": "not established; matchingcount8doesnotidentifypriorfailures",
+      "projection_complete": true,
+      "validated_location_count": 32
+    },
+    "helper": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/canonical-diagnostic-ec92-v6.py",
+      "sha256": "efe2dd732b6adf795209371db2b2e361a837b3b7884ceede8ab8fca6a3f99282"
+    },
+    "old_original_8_identities": "UNKNOWN and not retrospectively inferred",
+    "original_tool_session": 19377,
+    "outer": {
+      "path": "/private/tmp/lockspire178-launch-canonical-diagnostic-ec92-v4.py",
+      "sha256": "74798f8b3a245a2ed00db3039511c61e8b426e3f0f8bc3595aa5786807564b65"
+    },
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-launcher-ec92-v4.json",
+      "sha256": "af8692dee4e8d33d8c68505e2dbd1e78206eff37f270b13d25d6a2f000502c20"
+    },
+    "owned_manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-w60sn2gr/manifest.json",
+      "sha256": "1daf0439e306d7ff814fecd6c616f1ec2ff0a3fa9d4f30c482c47b963e671da6"
+    },
+    "projection": "native failure counts 0..100, source-validated tracked test/lib file+line, fixed error classes only; originals stopped before passive parsing; no raw header titles/messages/values/stacks persisted",
+    "security_accepted": true,
+    "source": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "status": "finished failed; actual fresh8Dockercontract failures captured"
+  },
+  "EC92_host_helper_preparation": {
+    "current_inner_sha256": "0117ac042a7ddf07129b750c40d591b1d7756256c1fe9102ee150432cc460d91",
+    "fixes": "original-owned bootstrap before Git; same-byte pinned bootstrap owner; global Git config sealed; fresh ROOT PI captured-default binding; owned later Git identity query; restored fixed projector alias",
+    "inner_security_verdict": "accepted conditional on separately reviewed owned outer",
+    "minimum_inner_sha256": "f7fa8ec4f6b54f2c32c386b1d5b506d367700a0a8cbd88266beeade686ce049a",
+    "status": "historical unrun v9 preparation; superseded by actual current v10/minimum v11 qualified runs below"
+  },
+  "ROOT_acceptance_promotion": {
+    "covered_inputs": 1079,
+    "old_C98_records_and_artifact_roots": "preserved in .artifacts/phase178/ec92-correction",
+    "promotion": {
+      "path": ".artifacts/phase178/ec92-correction/promotion.json",
+      "sha256": "91475904e036907f36ff2176fa3bd8fbebecc2d97b4340b74d82c4457c165635"
+    },
+    "review_closure_sha256": "a1d8fcc089314dd56aa2f75135116b56ceac374766cc2b788c4aac1ee2a3501a",
+    "status": "completed; independently audited"
+  },
+  "ROOT_semantic_validation": {
+    "covered_inputs_unchanged": 1079,
+    "original_children_closed": 83,
+    "phase_records_unchanged": true,
+    "record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/root-semantic-ec92-_i5v61zi/result.json",
+      "sha256": "51a5f320003649aee23b1d8b3b1a945191a9440ec217d0201180509821f510f0"
+    },
+    "retained_rebuild_roots": 8,
+    "source_runtime_rerun": false,
+    "stages": [
+      "reviews",
+      "frozen",
+      "package",
+      "source"
+    ],
+    "status": "passed; independently audited"
+  },
+  "SaaS_bound_helpers_ready": {
+    "inner": {
+      "path": "/private/tmp/lockspire178-saas-ec92-qualification-bound-v1.py",
+      "sha256": "38b6b9c7c36a1de3f1f2928ae9d434a00948a2db6c94a9798b808e45aa3babc2"
+    },
+    "native_owner_pins_match": true,
+    "outer": {
+      "path": "/private/tmp/lockspire178-saas-ec92-qualification-outer-root-v2.py",
+      "sha256": "86eb632cb2ae96b48bd01c4f98947ba208f249f69e885e40b2b500c1178921dc"
+    },
+    "security_exact_accepted": true,
+    "status": "executed successfully by original tool74519; all five groups qualified"
+  },
+  "active_runtime": "none; all EC92 runtime tools finished and independently audited",
+  "combined_verifier_matrix": {
+    "cases": 64,
+    "composition": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/composed-matrix-ec92.json",
+      "sha256": "dd8ebadb08a80ee2799a9c11c19c437935a76960abd2020d068ff46a46a82fbd"
+    },
+    "failures": 0,
+    "receipts": 26
+  },
+  "design": "cold-only serialized full public-key snapshot; preserve warm ETS fast path/no unknown-kid DB amplification, disabled initialization, warm error cache retention and key eviction",
+  "failed_lifetime_default_sandbox": {
+    "execution_context": "worker omitted require_escalated; approved successful source PG runs used require_escalated",
+    "failure_not_requalified": true,
+    "observed": "initdb exit1 before PG server start; precise predicate UNKNOWN; original group absent/data retained",
+    "original_worker_tool_session": 63907,
+    "record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/collect-lifetimes-pxjlf83y/result.json",
+      "sha256": "de06a5fe1ea3c0b3ae4acdff74404f330fbbb552515b1e0ff453b79f4985e20e"
+    },
+    "stale_empty_receipt_root_preservation": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/lifetime-receipt-preservation-before-escalated.json",
+      "sha256": "92a16b5e22dfe3892f6b41b7910763c94aa4bdb864b1807a66e1fba525b0c7e1"
+    }
+  },
+  "focused_Docker_contract": {
+    "cleanup": "all original groups/PG/DB absent; retained data/root; tar preserved",
+    "events": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-ec92-flbfaljg/events.json",
+      "sha256": "c6449f53cd383ffa4c2973bd79a063efaa6e5883f35079663a58345d11203bc2"
+    },
+    "failures": 0,
+    "helper_sha256": "f697744e3a17d69bdce4770a2831a90ff4369c0c79c0f16e40aae8fb0b9f28ac",
+    "original_tool_session": 56935,
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-launcher-ec92-focused-v5.json",
+      "sha256": "a1764fd1f2c11317dc754056fbaa6232f5272ae3c96b9146765b24fd0bfa6a88"
+    },
+    "outer_sha256": "e55b8bfdd0985bbc3710c8975ef867c26be64348ab4ce99dc1193ba2c9797bec",
+    "owned_manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-gw_of6_i/manifest.json",
+      "sha256": "05bc27ec020dedf46b81c59004db4c7bb7e81ec24ca85f018b3fc52fc40ab856"
+    },
+    "scope": "one whole Docker contract file, ci=False; never full canonical qualification",
+    "security_postrun_audit": "independently accepted",
+    "source_before_after": "EC92 exact and clean",
+    "status": "passed",
+    "tests": 33
+  },
+  "fresh_Credo_diagnostic": {
+    "exit": 4,
+    "issue": "Credo.Check.Readability.PreferImplicitTry",
+    "record": {
+      "path": "/private/tmp/lockspire178-c35-credo-diagnostic-v1.json",
+      "sha256": "8d54c1495446cb9a46e7abe8d28ac218c79bb2fb781f21b55aac818666cacae5"
+    },
+    "scope": "fresh separate quality diagnosis, not retrospectively retained original CI predicate",
+    "source_location": "lib/lockspire/key_cache.ex:213"
+  },
+  "full_Docker_config_canonical": {
+    "cleanup": "all original groups/PG/DB absent; readers closed; source EC92 clean before/after; tar preserved; data/root retained",
+    "counts": [
+      {
+        "failures": 0,
+        "scope": "architecture",
+        "tests": 15
+      },
+      {
+        "failures": 0,
+        "properties": 2,
+        "scope": "fast",
+        "tests": 2187
+      },
+      {
+        "failures": 0,
+        "scope": "integration",
+        "tests": 261
+      }
+    ],
+    "events": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-ec92-p427jdqo/events.json",
+      "sha256": "a5dcb83bcf538b4d1673fd5598feaaafd8399197bf3f08fa2101d0dc41bea421"
+    },
+    "failures": 0,
+    "focused_success_condition": "parent and security independently verified actual33/0 before full launch",
+    "helper": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/canonical-diagnostic-ec92-full-v8.py",
+      "sha256": "e00317789b5f56e77f18d02cc1b639a97d484959d4463ec7ef3b87ce9739e316"
+    },
+    "original_tool_session": 1905,
+    "outer": {
+      "path": "/private/tmp/lockspire178-launch-canonical-diagnostic-ec92-full-v6.py",
+      "sha256": "1f0a8f660e459af6e0aff710cb45b8995416873ba881fc30b29b2f287ac5c8a5"
+    },
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-canonical-diagnostic-launcher-ec92-full-v6.json",
+      "sha256": "17aa0f8bdfa4c8e0425fba60840e112e6260b2b4b98fa43930f4c98442254b7c"
+    },
+    "owned_manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-4to1dj38/manifest.json",
+      "sha256": "d2921ad8aacd26a6a4c9d734ae16ff752e1a5f8dce6541630263486758d40b4f"
+    },
+    "prelaunch_security_accepted": true,
+    "properties": 2,
+    "source": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "status": "passed; independently audited",
+    "tests": 2463
+  },
+  "full_SaaS": {
+    "all_required_markers_once": true,
+    "data_retained": true,
+    "events": {
+      "path": "/private/tmp/lockspire178-saas-ec92-qualification-9r4fl3xe/events.json",
+      "sha256": "c221e2ab60025decaba1e4dc94f8e8567eb8dd0476607c035b7502a6ecea6e6d"
+    },
+    "groups": [
+      "happy_path",
+      "boundary",
+      "lifecycle",
+      "negative",
+      "dpop"
+    ],
+    "http_status_rows": 75,
+    "key_not_found_warnings": 0,
+    "original_tokens_closed": 474,
+    "original_tool_session": 74519,
+    "outer_record": {
+      "path": "/private/tmp/lockspire178-saas-ec92-qualification-outer-root-v2.json",
+      "sha256": "5ee997d002eb263839fb2c7c21c311d01588d47915014cab66efaf6005adf2f3"
+    },
+    "softcaught_csrf_assertions_retained": 4,
+    "status": "passed; independently audited"
+  },
+  "historical_C35_epoch": {
+    "canonical_launcher": {
+      "path": "/private/tmp/lockspire178-launch-canonical-35c083bc-v2.py",
+      "security_accepted": true,
+      "sha256": "b6a54223d38cf320a6dba8ba3bb40b0c2e7be0363edea9ed6a6cd99ae1eebafa"
+    },
+    "canonical_original_tool_session": 28627,
+    "generated_helpers_security_accepted": true,
+    "path": "/private/tmp/lockspire178-native-c35-keycache-v9-3_45b4_v",
+    "preparation_sha256": "94f9aa2a7c0ff129c5ed4b3a53631459e6d4e9d1c6ae6afa2fe6c5ed6dec6869",
+    "status": "C35 epoch retained failed; no materialization; NEW EC92 preparation pending"
+  },
+  "historical_C98_installed_host_custody_limit": {
+    "baseline_helper_scope": "actual C98 current/minimum v4 native receipts and recorded runtime/PG closure facts retain their observed attribution",
+    "baseline_source_reports_unchanged": true,
+    "new_EC92_requirements": "new v9 bootstrap-owned dual-namespace helpers plus separately accepted actual-original-owned outer before fresh96 scenarios",
+    "no_retrospective_authority": "no independent original creation token is present for those boundaries; no reenrollment or inferred group absence",
+    "unrecorded_boundaries": [
+      "pre-manager Git clone/checkout",
+      "later raw Git source-identity query",
+      "outer helper OS kernel creation tuple"
+    ]
+  },
+  "historical_RED_launch": {
+    "exact_security_accepted": true,
+    "expected": "new regression failure, not proof qualification",
+    "failures": 2,
+    "fresh_private_postgresql": true,
+    "helper": "/private/tmp/lockspire178-keycache-red-_a5z5yd5/focused-red-v1.py",
+    "helper_sha256": "859c06657aeba48e0e2c47e10f591586277af29c6e74ac6870e406e592f8d6b0",
+    "manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-uvoq8jmm/manifest.json",
+      "sha256": "60da5f43a49c2ed55b87885b76726e56c93bc4cd2ce03fb34f957aad9ef2f123"
+    },
+    "original_tool_exec_session_id": 61026,
+    "source_tests_only_through_owned_runner": true,
+    "status": "finished_expected_regression_failure",
+    "tests": 9
+  },
+  "historical_production_library_sha256": "32602bf045dc43ec79ed86bdef8102dae3a8f4bbcdad7dfdeecd8949485d1001",
+  "implementation": {
+    "commit": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "delta_from_C35": "PreferImplicitTry style only; no behavior change claimed from runtime evidence",
+    "library_sha256": "52e6e209c2d90131735cd941fd57247709b718bb1a4c32a2b6622a6b41739cf9",
+    "tests_sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564",
+    "tree": "8b9fede4e2b7ab1a7df17159e676131d2fe7319c"
+  },
+  "implementation_C35": {
+    "commit": "35c083bc8dac3b6a6acf92ccdf321e4295261a8a",
+    "library_sha256": "0ebdc93db6ea63b36a63653bef83b33186b8d8ac778407d323f39f86eb58b478",
+    "tests_sha256": "ffb25c933babaa727b2de6501c5e5deea8bace63366ec934d9afc5bcd5dd6564",
+    "tree": "06a31452cfd676b22b8b719247fdde94922917ea"
+  },
+  "installed_hosts": {
+    "all_original_owned_processes_closed": true,
+    "current": {
+      "original_tool_session": 91013,
+      "outer_record": {
+        "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/host-current-outer-ec92-v11.json",
+        "sha256": "03e7027edb3d74c60f39ef4bd23dfb15827c457d96d8dd298ce0895b842f4e68"
+      },
+      "runtime": "Elixir 1.19.5 / OTP 28.5",
+      "scenarios": 48
+    },
+    "data_retained": true,
+    "failures": 0,
+    "minimum": {
+      "original_tool_session": 38079,
+      "outer_record": {
+        "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/host-minimum-outer-ec92-v11.json",
+        "sha256": "98d1f0a67e90e85a798c5b78d8657977e0b9171f2515558429e29e6e6da2aa06"
+      },
+      "runtime": "Elixir 1.18.4 / OTP 27.3.4.15",
+      "scenarios": 48
+    },
+    "mounts": [
+      "/lockspire",
+      "/teams/ops/identity",
+      "/"
+    ],
+    "status": "passed; independently audited",
+    "total_scenarios": 96
+  },
+  "native_dependency_floor_verifier": {
+    "actual_runtime": "Elixir 1.19.5 / OTP 28.5; dependency-floor pair",
+    "cases": 31,
+    "collector_record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/collect-verifier-floor-final-pur818u_/result.json",
+      "sha256": "1756cc32a2a5520f7e5da4d6581b4197866dee125b57d8ec0bcacb44b460e404"
+    },
+    "failures": 0,
+    "receipts": 12,
+    "status": "passed",
+    "validated_index": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/repo/.artifacts/phase178/final-floor/validated/index.json",
+      "sha256": "493adf6e13639c5941459e42821353bc80e404077192bd10092df8605e75da9a"
+    },
+    "worker_original_tool_session": 47631
+  },
+  "native_lifetimes": {
+    "checks_executed": 47,
+    "checks_passed": 47,
+    "cleanup": "original source children/privatePG/dependents stopped, ownedDB independently absent; retainDataRoot",
+    "collector_record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/collect-lifetimes-12o5lm_z/result.json",
+      "sha256": "08b88b4d79949afe53079be4cc2a09de17e5852ddabdeb3d3411bbae3a5b4b99"
+    },
+    "composed_sha256": "2593d955fa66396e87cbbc691f0eb8d63b83ee3694c2b6a5530b8aeca9709bd7",
+    "composition_record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/lifetime-composition-validation-ec92.json",
+      "sha256": "a48e4972c8fc3e5d76dba9bab9ec5aa99e43152179c6298fec88e7483c6f078f"
+    },
+    "failures": 0,
+    "independent_recompose_byte_identical": true,
+    "scenarios": 9,
+    "skipped": 0,
+    "source_before_after": "EC92 clean",
+    "source_tests": 3,
+    "status": "passed",
+    "validation_sha256": "cf08ffc84295afa9136d28497e8581b35e53c6ed9665100d4a743b3a94339a87",
+    "worker_original_tool_session": 66037
+  },
+  "native_locked_verifier": {
+    "cases": 33,
+    "collector_record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/collect-verifier-locked-oo4_9g_j/result.json",
+      "sha256": "0de3313aca22300e46389013931fc90e96776189104571b510e7623e8e9aaf5a"
+    },
+    "data_retained": true,
+    "failures": 0,
+    "invalid_metadata": 0,
+    "native_exit": 0,
+    "observer_ok": true,
+    "outer_group_stopped": true,
+    "private_database_boundary": true,
+    "private_pg_cleanup": true,
+    "receipt_owner_sha256": "9ddc5901e31ad63575fa944d4851b625e1db62b1ec368137e5c06eac0d420d3d",
+    "receipts": 14,
+    "source_archive_tree": "EC92/eea947/01285",
+    "status": "passed",
+    "validated_index": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/repo/.artifacts/phase178/ci-locked/validated/index.json",
+      "sha256": "18ba9356a73aa9611935cb80c7ef76bd50c86d241318ec11bcf92219229db091"
+    },
+    "worker_original_tool_session": 56575
+  },
+  "native_provision": {
+    "archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+    "manifest_sha256": "44163c6c7b6e9cc5399ec81bd2f42a09c2d507a49e6452d4cdb34ccd41e76b9c",
+    "owner_pins": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/owner-pins.json",
+      "sha256": "768f0acd29bb05ed5f39cbd6e0d87bb0fe9d45783e630e6aff4a6d2259356cca"
+    },
+    "record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/work-ec92cca0-Hec92cca0/collect-provision-88rzfqgm/result.json",
+      "sha256": "b23fcbfb39a4a7122c24b9643c642cdea2e5e09e730c64c7a965c93ed6908c53"
+    },
+    "runner_and_source": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "status": "passed",
+    "tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
+  },
+  "new_epoch": {
+    "canonical_sha256": "1cf638be41b97f62575584c77b8d4143935d9471a6934ad6936b4cb86bc21812",
+    "donor_tree_relation": "compiled dependency donor is AA tree==C35 tree, unequal to EC92; own project output excluded from active dev/test; fresh project compile required",
+    "launcher": {
+      "path": "/private/tmp/lockspire178-launch-canonical-ec92cca0-v2.py",
+      "security_accepted": true,
+      "sha256": "90b30d8d9d55445a7ff49f32a7ec206aab96c716183c91403fd5a5c57d69001f"
+    },
+    "original_tool_session": 9914,
+    "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg",
+    "preparation_sha256": "26e7423af12b024370582016a976af00306c42fdd1261ad1b41df8958c3d92dd",
+    "source": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "status": "first EC92 canonical failed; no materialization/native qualification"
+  },
+  "new_source_full_qualification": "passed locally at exact EC92; fresh hosted CI pending",
+  "observed_fresh_resource_reason": "key_not_found",
+  "original_CI_exact_predicate": "UNKNOWN; fresh reproduction is separate",
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "production_source_implementation": "committed EC92; local qualification complete",
+  "qualified_cache_transfer": {
+    "record": {
+      "path": "/private/tmp/lockspire178-native-ec92-kc-p65bkebg/materialization-scoped-ec92-full-v2.json",
+      "sha256": "1cfcd4033240c88adf0d161e68983e67d4fbe6738a1e4945ee35add773a1bb01"
+    },
+    "security_audit": "accepted, exact before/copy/after scoped inventories/internal25links/sourceclean/targuards"
+  },
+  "recorded_at": "2026-10-29T18:00:07.016342+00:00",
+  "remote_mutations_after_approved_push_body": false,
+  "reviews_EC92": {
+    "closure": "a1d8fcc089314dd56aa2f75135116b56ceac374766cc2b788c4aac1ee2a3501a",
+    "global": "OPEN_THREATS4",
+    "local_verdict": "accepted",
+    "packet_path": "178-INDEPENDENT-REVIEWS-ec92cca0.json",
+    "sha256": "1861d93320173ab556648f34b91a34ef76fd45c104a74f4d3cce71b3dc17712c"
+  },
+  "schema": "lockspire-phase178-keycache-startup-correction-v1",
+  "scope": [
+    "lib/lockspire/key_cache.ex",
+    "test/lockspire/key_cache_test.exs"
+  ],
+  "style_verification": {
+    "format_exit": 0,
+    "full_credo_exit": 0,
+    "issue_count": 0,
+    "no_app_or_postgres": true,
+    "record": {
+      "path": "/private/tmp/lockspire178-keycache-style-verification-v1.json",
+      "sha256": "3581541c1c3a67fffcfd316ebc183ec3c4dc3e55a2f430c4bad38a87f629d6ed"
+    }
+  },
+  "targeted_GREEN": {
+    "cleanup": "independently_absent",
+    "failures": 0,
+    "manifest": {
+      "path": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-3l1550nt/manifest.json",
+      "sha256": "8b39bb287e6b637552425f8c2ae47260f9784ef349306c95bd8785443962d22b"
+    },
+    "original_tool_exec_session_id": 66672,
+    "private_data_retained": true,
+    "source": "aa04733b392921a3794f69b1b43e520dc5c5c7c1",
+    "tests": 91,
+    "whole_tree_equals_C35": true
+  },
+  "tests_only_snapshot": {
+    "commit": "c6d2160d18488b70d348c115757d4c2ed836f438",
+    "only_test_changed": true,
+    "root": "/private/tmp/lockspire178-keycache-red-_a5z5yd5/repo",
+    "test_sha256": "46f5fedc24206dea0436dfe74e11144b52fed440581a1125d8d071a802cf67b7"
+  }
+}

@@ -6,11 +6,11 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: in_progress
-stopped_at: dc627981 CI failed; manifest caller fixed locally2b5d39b2; owned SaaS diagnosis preparation
-last_updated: "2026-10-29T13:50:03.059796+00:00"
-last_activity: 2026-10-28
-last_activity_desc: terminal CI4pass2fail1skip; local manifest fix12tests; SaaSassertion diagnosis preparing
-state_head: 98b79e54
+stopped_at: EC92 local qualification passed; local qualification and final validation passed; exact remote update pending
+last_updated: "2026-10-29T18:00:07.016342+00:00"
+last_activity: 2026-10-29
+last_activity_desc: all EC92 local runtime proof and independent audits passed; hosted CI pending
+state_head: ec92cca0
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Published dc627981/body8fa1d873 update is verified; its CI40882212125 attempt1 failed (4pass/2fail/1skip). Local2b5d39b2 corrects both omitted job-manifest selectors with12passing regression tests/actionlint. Integration source565/0 and lifetime3/0 passed, then SaaS AssertionError after readiness; original assertion UNKNOWN. A fresh owned passive diagnosis is preparing, no runtime yet. Prior C98 local qualification remains its own actual source epoch; no new-source full acceptance, candidate graph or main acceptance is claimed. No further remote mutation authorized. Plan11 incomplete, Plan12 unready; preserve all prior limits.
+**Current focus:** EC92 local qualification passed: 2,463 tests/0 failures plus two properties; lifetime47/9; packaged verifier26/64; five SaaS groups; installed hosts96/96 on current and minimum runtimes. All runtime tools finished and independently audited. ROOT acceptance records now bind EC92; prior records/failures remain preserved. Final metadata validation passed all four stages. Local evidence is recorded for the exact PR141 push/body proposal. Fresh hosted CI, audit and exact-main acceptance remain pending; Plan11 incomplete/Plan12 unready; OPEN_THREATS4.
 
 ## Current Position
 
@@ -35,8 +35,8 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — LOCAL CI CORRECTION /
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 waits on Plan 11
-Status: Published dc627981 CI failed. Local manifest-caller fix committed; SaaS assertion diagnosis preparing. New source qualification, hosted graph/audit/main acceptance pending.
-Last activity: 2026-10-29 UTC — C98 local acceptance promoted; final transfer verification and remote proposal preparation.
+Status: EC92 local qualification passed; exact remote update pending; hosted/audit/main acceptance pending.
+Last activity: 2026-10-29 UTC — EC92 canonical, lifetimes, verifier pairs, SaaS and current/minimum installed hosts passed; five ROOT acceptance records promoted with old evidence retained.
 
 ## Performance Metrics
 
