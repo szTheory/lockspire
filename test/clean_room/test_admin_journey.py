@@ -90,6 +90,34 @@ class PackageSourceRevisionTests(unittest.TestCase):
             package_input.package_source(None, None, source_revision="a" * 40)
 
 
+class ExpectedPackageFileSetTests(unittest.TestCase):
+    def test_declared_but_absent_mix_path_is_excluded_until_it_exists(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "mix.exs").write_text(
+                'defmodule Fixture.MixProject do\n'
+                '  use Mix.Project\n'
+                '  def project, do: [app: :fixture, version: "0.0.1", '
+                'package: [files: ~w(mix.exs docs/user-flows-jtbd.md)]]\n'
+                '  def application, do: [extra_applications: [:logger]]\n'
+                'end\n',
+                encoding="utf-8",
+            )
+            with patch.object(package_input, "PROJECT_ROOT", root), patch.dict(
+                os.environ,
+                {"ASDF_ELIXIR_VERSION": "1.19.5-otp-28", "ASDF_ERLANG_VERSION": "28.5"},
+            ):
+                self.assertEqual(package_input.expected_package_files(), frozenset({"mix.exs"}))
+
+                docs = root / "docs"
+                docs.mkdir()
+                (docs / "user-flows-jtbd.md").write_text("fixture input\n", encoding="utf-8")
+                self.assertEqual(
+                    package_input.expected_package_files(),
+                    frozenset({"mix.exs", "docs/user-flows-jtbd.md"}),
+                )
+
+
 class LocalTarSourceBindingTests(unittest.TestCase):
     def make_fixture(self, root: Path) -> tuple[Path, Path, str]:
         repository = root / "source"
