@@ -942,6 +942,15 @@ class HostProofWrapperFailureTests(unittest.TestCase):
     def setUpClass(cls):
         cls._temporary = tempfile.TemporaryDirectory(prefix="lockspire-host-proof-fakes-")
         cls.tools = Path(cls._temporary.name)
+        # Package ownership checks must observe committed inputs. An ignored
+        # workspace file can otherwise contaminate the fake package and prevent
+        # these tests from ever reaching their intended lifecycle failure stage.
+        checkout = cls.tools / "source"
+        subprocess.run(
+            ["git", "clone", "--quiet", "--shared", str(cls.ROOT), str(checkout)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True,
+        )
+        cls.ROOT = checkout
         package_dir = cls.tools / "package"
         package_dir.mkdir()
         version = __import__("re").search(r'version: "([^"]+)"', (cls.ROOT / "mix.exs").read_text()).group(1)
@@ -1078,7 +1087,15 @@ class HostProofWrapperFailureTests(unittest.TestCase):
             ready.unlink()
             with self.assertRaises(ProcessLookupError):
                 os.kill(owned_pid, 0)
-        self.assertEqual(list(raw_parent.iterdir()), [], "private logs and raw receipts must be removed")
+        # The real Mix package-file observer creates its own coordination
+        # directories in TMPDIR. They are fixture-owned runtime metadata, not
+        # wrapper logs or receipts; accept only these exact regular directories.
+        mix_runtime_directories = {f"mix_pubsub_user{os.getuid()}", f"mix_lock_user{os.getuid()}"}
+        remaining = [
+            path for path in raw_parent.iterdir()
+            if path.name not in mix_runtime_directories or path.is_symlink() or not path.is_dir()
+        ]
+        self.assertEqual(remaining, [], "private logs and raw receipts must be removed")
         drop_record = receipt_dir / "drop-record"
         self.assertTrue(drop_record.exists(), "the wrapper must drop its lifecycle database on every exit")
         self.assertRegex(drop_record.read_text(), r"^lockspire_proof_locked_[a-f0-9]{20}\n$")
