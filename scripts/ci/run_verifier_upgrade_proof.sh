@@ -69,6 +69,11 @@ else
   command=(python3 "$runner")
   timeout_seconds=3600
   overall_timeout_seconds=1500
+  # Locked also assembles and boots a release after the shared scenario groups.
+  # Its final RPC group exhausted the former 25m total on hosted Ubuntu.
+  if [[ "$pair" == locked ]]; then
+    overall_timeout_seconds=2400
+  fi
   if [[ -n "$selected_manifest" ]]; then
     [[ "$selected_manifest" == ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json" ]] || { echo "unsafe frozen manifest selection" >&2; exit 2; }
     frozen_inputs="$repo_root/$selected_manifest"

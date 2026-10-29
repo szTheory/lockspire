@@ -363,10 +363,10 @@ jobs:
   integration:
     name: Integration Checks
     runs-on: ubuntu-latest
-    # The integration suite + host proof measured 792s; the locked verifier
-    # scenario window measured 1,112s. Their 31.7m combined time exceeds 30m,
-    # so reserve 45m for setup, validation, and observed runtime variance.
-    timeout-minutes: 45
+    # Run 40927824424 spent 20m before the locked verifier, which exhausted its
+    # former 25m total in release RPC. Reserve its bounded 40m proof window plus
+    # setup, source/host checks, uploads and cleanup without clipping that window.
+    timeout-minutes: 75
 
     services:
       postgres:
