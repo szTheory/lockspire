@@ -146,6 +146,92 @@
     "synthetic_merge_metadata_only": "49e561c4f34590c51ccf6275735d82d3ce091294",
     "url": "https://github.com/szTheory/lockspire/pull/141"
   },
+  "retained_helper_files": [
+    {
+      "bytes": 15404,
+      "original": "/private/tmp/lockspire178-host-final.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/lockspire178-host-final.py",
+      "sha256": "76970d64bfb7a4138f8b8f279a73a31313efacbfa02cc21cd670bbe3e4c7b6f7"
+    },
+    {
+      "bytes": 8389,
+      "original": "/private/tmp/lockspire178-admin-journey-child-e13.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/lockspire178-admin-journey-child-e13.py",
+      "sha256": "41875c04f3488bef6e3db4535f93929a22a866a303c31c5e3c1807aa8502eb50"
+    },
+    {
+      "bytes": 16137,
+      "original": "/private/tmp/lockspire178-host-cleanup-observer.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/lockspire178-host-cleanup-observer.py",
+      "sha256": "3a3cc7054915bfb69d3cd4b88ee8813ff903591ac2030e962487b4bc52c7dd78"
+    },
+    {
+      "bytes": 9654,
+      "original": "/private/tmp/lockspire178-admin-journey-cleanup-observer.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/lockspire178-admin-journey-cleanup-observer.py",
+      "sha256": "7736aff598f4ac88c6f607da4794d85e7c508a19b5d339b6ee76ce218d1d676b"
+    },
+    {
+      "bytes": 11196,
+      "original": "/private/tmp/lockspire178-native-collect.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/lockspire178-native-collect.py",
+      "sha256": "7d7f30bd60350aa08329d84bd63b9cd9ddb968232611f5f590e209e82626ce32"
+    },
+    {
+      "bytes": 109774,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/driver.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/driver.py",
+      "sha256": "6381203c5698378ae8a6ad8166f89453c99ac64cf6cf88789a5626df93f9dd86"
+    },
+    {
+      "bytes": 20907,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/coordinator.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/coordinator.py",
+      "sha256": "ea08e3e61b75e7a5e2937afe8363c434ce1349dc796218e02bd1c98c86d8b060"
+    },
+    {
+      "bytes": 30006,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/matrix.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/matrix.py",
+      "sha256": "f0f2c56a6afee7522967f5bd846a53f08a1bfb9e84b294a71b496a6874f820e4"
+    },
+    {
+      "bytes": 3055,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/epoch.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/epoch.json",
+      "sha256": "f2196267a1bc747409c304502d239db58f4da61797afe00bfbeedd647614590d"
+    },
+    {
+      "bytes": 11958,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/rollout-rejection-observer-v2.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/rollout-rejection-observer-v2.py",
+      "sha256": "896ea984cdf1b924042f005ea7a8a6309c2b54f12954509161118f07dcb22ee5"
+    },
+    {
+      "bytes": 110283,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/rollout-rejection-driver-v2.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/rollout-rejection-driver-v2.py",
+      "sha256": "928f3b13b1cb11ae7c88b20ffbb8d295437a0a7998fc04cec96b1c8e5f3083b9"
+    },
+    {
+      "bytes": 20970,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/rollout-rejection-coordinator-v2.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/rollout-rejection-coordinator-v2.py",
+      "sha256": "09c7de3f0aa31c35993bbc94353f2b83d0f20e795b6cf74bcbad81321b407878"
+    },
+    {
+      "bytes": 11634,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/rollout-rejection-collector-v2.py",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/rollout-rejection-collector-v2.py",
+      "sha256": "53c63ddb8642a6915d56243d70b273a813baec4656a31f2bcaf0d2e4a2028178"
+    },
+    {
+      "bytes": 839,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/rollout-rejection-helper-pins-v2.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/helpers/rollout-rejection-helper-pins-v2.json",
+      "sha256": "c26de2a5199f2265fe28baed95848cb1e3efd580a696a0cbf5ef244bbfedb57c"
+    }
+  ],
   "retained_original_metadata": [
     {
       "bytes": 9970,
