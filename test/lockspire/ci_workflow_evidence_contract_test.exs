@@ -40,7 +40,7 @@ defmodule Lockspire.CiWorkflowEvidenceContractTest do
     workflow = File.read!(@workflow)
     integration_job = integration_job(workflow)
 
-    assert integration_job =~ "timeout-minutes: 45"
+    assert integration_job =~ "timeout-minutes: 75"
     assert integration_job =~ "bash scripts/ci/run_test_matrix.sh --integration"
     assert integration_job =~ "Run integration suite including onboarding and OIDC E2E proof"
     validation_step = step_block(integration_job, "Validate client lifetime receipt")
