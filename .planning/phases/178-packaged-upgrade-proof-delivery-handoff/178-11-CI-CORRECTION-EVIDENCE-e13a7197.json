@@ -1,0 +1,336 @@
+{
+  "canonical_source": {
+    "actual_execution_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "data_root": "retained",
+    "database_cleanup": "independently_absent",
+    "outer_pg_and_inner_groups": "confirmed_stopped_in_original_events",
+    "owned_manifest_sha256": "654cddbe329152cf6a92f54677be2744fba6b7beaac6a7d54cad3cc9ea47d145",
+    "suites": [
+      [
+        {
+          "failures": 0,
+          "properties": 0,
+          "stdout_bytes": 355,
+          "stdout_sha256": "7d9bafe1598dc7ae0afeb6e10242000049c47bc3d9207b2eedf1d0732580135d",
+          "tests": 15
+        },
+        {
+          "failures": 0,
+          "properties": 2,
+          "stdout_bytes": 590583,
+          "stdout_sha256": "083de0f031b0f2e802958407ab5c393ce833f6041a5ded4111133805a52ba3b9",
+          "tests": 2180
+        },
+        {
+          "failures": 0,
+          "properties": 0,
+          "stdout_bytes": 124684,
+          "stdout_sha256": "472c5d1c1253855e1b5069d6df0216a4941bb6871ae94bcf14d3a22d90e283c0",
+          "tests": 261
+        }
+      ]
+    ]
+  },
+  "frozen_native_epoch": {
+    "epoch_root": "/private/tmp/lockspire178-e13-native-3fml_p78",
+    "floor_verifier_pair": "not_started",
+    "locked_verifier_pair": {
+      "collector_invalid_metadata": 0,
+      "collector_record_sha256": "9f8389a82f54f185429b3e8e0d38d0e991b11329c7614c687dda4acd527d3f7b",
+      "coordinator_exit": 13,
+      "core_receipts": 2,
+      "dependent_cleanup_confirmation": false,
+      "native_child_exit": 1,
+      "original_collector_record": "/private/tmp/lockspire178-e13-native-3fml_p78/work-e13a7197-He13a7197/collect-verifier-locked-6c4w3not/result.json",
+      "original_outer_group_stopped": true,
+      "original_pg_group_stopped": true,
+      "private_data": "retained_by_policy",
+      "rejected_predicate": "UNKNOWN",
+      "rollout_failure_class": "ReceiptError",
+      "status": "failed_first_attempt"
+    },
+    "native_provision": "passed",
+    "pins": {
+      "expected_archive_sha256": "ef8b944fb6666e718ac52d3bff60acbf5724cb7314b90c1f1c6880ce353b7250",
+      "expected_candidate_source": "e13a71976f216c8953e060729825b821a3e6eba5",
+      "expected_manifest_sha256": "db0980fe309616e4e7bae191b32afd0aba411b4ddfb587027c4d12732fd67901",
+      "expected_runner": "e13a71976f216c8953e060729825b821a3e6eba5",
+      "expected_tree_sha256": "a0503351b9529b9c7f7728b9d96a0808c58e8ac1328db199ae7f38083c42a464"
+    },
+    "runner_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "source_revision": "e13a71976f216c8953e060729825b821a3e6eba5"
+  },
+  "installed_current": {
+    "all_original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "archive_sha256": "ef8b944fb6666e718ac52d3bff60acbf5724cb7314b90c1f1c6880ce353b7250",
+    "native_receipts": 3,
+    "passed": true,
+    "private_pg_data": "retained_by_policy",
+    "scenarios": 48,
+    "source_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "tree_sha256": "a0503351b9529b9c7f7728b9d96a0808c58e8ac1328db199ae7f38083c42a464"
+  },
+  "installed_minimum": {
+    "all_original_inner_outer_and_pg_groups_confirmed_stopped": true,
+    "archive_sha256": "e610e7fba89d1ab9e25cee9bb4d6410a41c4ddc5c74379aa6b77662b12249e27",
+    "native_receipts": 3,
+    "passed": true,
+    "private_pg_data": "retained_by_policy",
+    "scenarios": 48,
+    "source_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "tree_sha256": "acb61fb460e72f92ff87d753c63341fce7404fa13872c8b0b1f5be58e6c42259"
+  },
+  "local_metadata_tip": "998d68cbd45d98bbe6f06cf42344858e23aafde8",
+  "native_lifetimes": {
+    "checks": 47,
+    "dependent_cleanup_confirmed": true,
+    "exunit_tests": 3,
+    "failed": 0,
+    "failures": 0,
+    "independent_recomposition_byte_identical": true,
+    "original_pg_group_stopped": true,
+    "owned_database_cleanup": "independently_absent",
+    "private_pg_data": "retained_by_policy",
+    "receipt_sha256": "6326fb680973420775b8c34252ac4d76cbe8fd797109507e522a2ed2fbba3851",
+    "runner_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "scenarios": 9,
+    "skipped": 0,
+    "source_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+    "validation_sha256": "57cdbd579fbf81209bad5a81643d76e9d26a4e18baa010d7d794ea76573738ca"
+  },
+  "pending": [
+    "locked and floor verifier-pair completion and native matrix composition",
+    "refresh current native source/package acceptance and delivery proposal",
+    "new exact remote authorization before any push or PR edit",
+    "compatible passing seven-job hosted graph",
+    "Plan12 audit and main/delivery acceptance"
+  ],
+  "previous_host_attempts": {
+    "cause": "UNKNOWN; later successful DROP does not diagnose the earlier failures",
+    "first_current_and_minimum": "16 browser scenarios per attempt reached, but receipt result failed because database_removed=false; inner/outer and original PG groups confirmed stopped; data retained"
+  },
+  "prior_evidence_limits": "All C50/H175 records, earlier unknown failures/closures and retractions remain applicable to their original epochs. No new pass restamps those records. Root archive overwrite/restoration remains in 178-11-LOCAL-INCIDENT.md. Diagnostic 0349 run with MIX_DEBUG=1 failed four fast tests; exact individual causes were not retained. Subsequent non-debug passes do not diagnose that failure.",
+  "python_harness_suites": {
+    "acceptance": {
+      "diagnostic_sha256": "3a829489e094dafd0216150cc3dfad93f4a89659121a94b19b9d6aad356e0598",
+      "failures": 0,
+      "tests": 289
+    },
+    "clean_room": {
+      "diagnostic_sha256": "98d27be0178be652ad275e0108d5f3b7e229f9a85f785994b27e0a280e36b2b6",
+      "failures": 0,
+      "tests": 56
+    },
+    "execution_identity_limit": "Executed in the working tree after final code edits, with test fixture changes subsequently committed as e13. Exact Git HEAD at invocation was not separately captured; these are not native source-owner manifests."
+  },
+  "recorded_at": "2026-10-29T09:59:33.653434+00:00",
+  "remote_mutations_performed": false,
+  "remote_readonly_observation": {
+    "actual_job_checkout_not_inferred": true,
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "body_sha256": "eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3",
+    "canonical_run": {
+      "conclusion": "failure",
+      "id": 40792440885,
+      "status": "completed"
+    },
+    "dependency_review": {
+      "conclusion": "success",
+      "id": 40792440963,
+      "status": "completed"
+    },
+    "head_sha": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "merged": false,
+    "remote_mutation": false,
+    "state": "open",
+    "synthetic_merge_metadata_only": "49e561c4f34590c51ccf6275735d82d3ce091294",
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  },
+  "retained_original_metadata": [
+    {
+      "bytes": 9970,
+      "original": "/private/tmp/lockspire178-requalify-ffum82ez/events.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/00-events.json",
+      "sha256": "45bd1eee9a67bbf3a54fc6e8f4ab7250419ce92ce53e34060bb989ecfb3d6639"
+    },
+    {
+      "bytes": 13385,
+      "original": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-zeo9w37o/manifest.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/01-manifest.json",
+      "sha256": "654cddbe329152cf6a92f54677be2744fba6b7beaac6a7d54cad3cc9ea47d145"
+    },
+    {
+      "bytes": 6644,
+      "original": "/private/tmp/lockspire178-host-final-23n6odx6/events.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/02-events.json",
+      "sha256": "21a1b9edff00b32e719d88957073b444def585d49cb8610c58ba7630ae339964"
+    },
+    {
+      "bytes": 5298,
+      "original": "/private/tmp/lockspire178-host-final-23n6odx6/journal-0.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/03-journal-0.jsonl",
+      "sha256": "fd6e95a23693e29dd63b0b0b38e08f6d32cf757a6a68e30c17b9acca3b461263"
+    },
+    {
+      "bytes": 12990,
+      "original": "/private/tmp/lockspire178-host-final-23n6odx6/receipt-0.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/04-receipt-0.json",
+      "sha256": "052299077712225f093edbba6172d641bc5ed6cc513531b450d9bfd3384b34b2"
+    },
+    {
+      "bytes": 6651,
+      "original": "/private/tmp/lockspire178-host-final-4krsbfoo/events.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/05-events.json",
+      "sha256": "4b29ea54ed35ac8c9b709768b4093f0ea1c2bad9d6e91f70b92304db140c8a67"
+    },
+    {
+      "bytes": 5296,
+      "original": "/private/tmp/lockspire178-host-final-4krsbfoo/journal-0.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/06-journal-0.jsonl",
+      "sha256": "0c00a7569322fb3a08616e17f9ba0e8785ee4631939485d27120188dbed0e364"
+    },
+    {
+      "bytes": 12989,
+      "original": "/private/tmp/lockspire178-host-final-4krsbfoo/receipt-0.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/07-receipt-0.json",
+      "sha256": "068f2dfb06a912b088df75e697790cf6b73eeea169a9be3638b31513148ebcd1"
+    },
+    {
+      "bytes": 9510,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/events.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/08-events.json",
+      "sha256": "a636f41c45551a24553b4c0e2f5f76462a722897e34e734e0374cdf66d7c7609"
+    },
+    {
+      "bytes": 5339,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/journal-0.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/09-journal-0.jsonl",
+      "sha256": "a0da782c551a4bf2007abfb75afd697278976437534bd00de0197d3d94359351"
+    },
+    {
+      "bytes": 12990,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/receipt-0.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/10-receipt-0.json",
+      "sha256": "3282dcd71fa3d123d999a92f225009cc4a28817b58a4be71c575b9ba37da6227"
+    },
+    {
+      "bytes": 5339,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/journal-1.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/11-journal-1.jsonl",
+      "sha256": "3d44c136ebd75ee288d45a688e9aa151f5f766a7efbe9827842a05cdf23c738c"
+    },
+    {
+      "bytes": 12995,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/receipt-1.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/12-receipt-1.json",
+      "sha256": "472daac6b4ed82b4e60ecf751a38b9ca5f19da2dc9c2ca64429318bb68528993"
+    },
+    {
+      "bytes": 5331,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/journal-2.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/13-journal-2.jsonl",
+      "sha256": "d327559a9a55c2ba98d430842636eaa697666db98d2a9bbd4829dcf1df6de7e7"
+    },
+    {
+      "bytes": 12977,
+      "original": "/private/tmp/lockspire178-host-final-5ez7idgy/receipt-2.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/14-receipt-2.json",
+      "sha256": "f4d21a6b30b6bb0423a95d0cd5f71e44698c95c83e5d009605bb4cbabbe1ca02"
+    },
+    {
+      "bytes": 9514,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/events.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/15-events.json",
+      "sha256": "0f8628b82b6095c6ac8addd69675568df5799afcff62ff9d08f775440cca8bd1"
+    },
+    {
+      "bytes": 5337,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/journal-0.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/16-journal-0.jsonl",
+      "sha256": "91772c5796dd68ff82493c410ab309c7848502a463d5eeaf6e54e968c66edc95"
+    },
+    {
+      "bytes": 12985,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/receipt-0.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/17-receipt-0.json",
+      "sha256": "1a3012bed3658bd0e4daef52090edcc016fa6b20d17370030c5aa71a0637be2c"
+    },
+    {
+      "bytes": 5307,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/journal-1.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/18-journal-1.jsonl",
+      "sha256": "69853d499be39ec5af4f0dbb59a6f5ec082e2008a052ed518cfa3316ba86b220"
+    },
+    {
+      "bytes": 12995,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/receipt-1.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/19-receipt-1.json",
+      "sha256": "0cc125313c557ea35b7e3e9bc3e75ce22ca42bdf60cf9c6e87865daa43678c94"
+    },
+    {
+      "bytes": 5337,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/journal-2.jsonl",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/20-journal-2.jsonl",
+      "sha256": "d7e9c599c0bff58779f5619a519c635d1d80e2dc250e291594c6482e5e44d4a8"
+    },
+    {
+      "bytes": 12976,
+      "original": "/private/tmp/lockspire178-host-final-gm3rpq2r/receipt-2.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/21-receipt-2.json",
+      "sha256": "5bd7cc473afb1746f6f2f1c11ac0725017aeb92c4740da14822c78de7daf5b9c"
+    },
+    {
+      "bytes": 2367,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/work-e13a7197-He13a7197/collect-provision-hplmjibh/result.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/22-result.json",
+      "sha256": "fb44d43139431f818b66a13dfb7fe2c825b9484c294a4ab29e4752def12e96f5"
+    },
+    {
+      "bytes": 22319,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/work-e13a7197-He13a7197/collect-lifetimes-aa895w51/result.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/23-result.json",
+      "sha256": "f7a98a9b66d257080701befd9077d7450217f63757e41c8940e603d5bfac3b96"
+    },
+    {
+      "bytes": 4738,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/repo/.artifacts/phase178/lifetime-receipts-e13a7197-He13a7197/composed.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/24-composed.json",
+      "sha256": "6326fb680973420775b8c34252ac4d76cbe8fd797109507e522a2ed2fbba3851"
+    },
+    {
+      "bytes": 468,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/repo/.artifacts/phase178/lifetime-receipts-e13a7197-He13a7197/validation.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/25-validation.json",
+      "sha256": "57cdbd579fbf81209bad5a81643d76e9d26a4e18baa010d7d794ea76573738ca"
+    },
+    {
+      "bytes": 4738,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/repo/.artifacts/phase178/lifetime-receipts-e13a7197-He13a7197/recomposed.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/26-recomposed.json",
+      "sha256": "6326fb680973420775b8c34252ac4d76cbe8fd797109507e522a2ed2fbba3851"
+    },
+    {
+      "bytes": 468,
+      "original": "/private/tmp/lockspire178-e13-native-3fml_p78/repo/.artifacts/phase178/lifetime-receipts-e13a7197-He13a7197/revalidation.json",
+      "retained_copy": "/Users/jon/projects/lockspire/.artifacts/phase178/e13-correction-progress/27-revalidation.json",
+      "sha256": "57cdbd579fbf81209bad5a81643d76e9d26a4e18baa010d7d794ea76573738ca"
+    }
+  ],
+  "reviews": {
+    "covered_digest": "f9502301f64d5a624e4298b462795766173a61edb48798274ba15ec6af32c496",
+    "covered_files": 1079,
+    "integration": "accepted_local_source_only",
+    "later_owner_threats": [
+      "T-178-31",
+      "T-178-32",
+      "T-178-35",
+      "T-178-36"
+    ],
+    "native_three_lane_gate": "passed",
+    "security": "accepted_local_source_only",
+    "source": "accepted"
+  },
+  "schema": "lockspire-phase178-ci-correction-progress-v1",
+  "source_revision": "e13a71976f216c8953e060729825b821a3e6eba5",
+  "status": "local_requalification_in_progress"
+}
