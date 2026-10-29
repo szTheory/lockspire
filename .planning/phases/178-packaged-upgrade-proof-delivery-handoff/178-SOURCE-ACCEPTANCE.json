@@ -1,11 +1,11 @@
 {
   "candidate_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
-  "candidate_source_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+  "candidate_source_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
   "candidate_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b",
   "canonical_ci": {
     "command": "ASDF_ELIXIR_VERSION=1.19.5-otp-28 ASDF_ERLANG_VERSION=28.5 ERL_FLAGS='+S 4' python3 scripts/ci/run_owned_source_tests.py --ci",
     "exit_code": 0,
-    "manifest_sha256": "d2921ad8aacd26a6a4c9d734ae16ff752e1a5f8dce6541630263486758d40b4f",
+    "manifest_sha256": "9cf6be7a953acae0f56742ec1c7cdd6e86e40e2b56ccd01d470f601b708671d8",
     "stages": [
       {
         "exit_code": 0,
@@ -13,7 +13,7 @@
         "name": "qa.architecture",
         "properties": 0,
         "stdout_bytes": 355,
-        "stdout_sha256": "c9aa808228263ad578e04f11736c007371474f8255243af4edd492edad525ef4",
+        "stdout_sha256": "20da14cefe88578ad4b48dd05d30609dad75ead5986cdacca81f9dedcb16e82d",
         "tests": 15
       },
       {
@@ -21,8 +21,8 @@
         "failures": 0,
         "name": "test.fast",
         "properties": 2,
-        "stdout_bytes": 591100,
-        "stdout_sha256": "97f94a34213a125f6e36d7bcd4d5feffff07372718ec6278e9c6d6fd0a3e7673",
+        "stdout_bytes": 594422,
+        "stdout_sha256": "f170f2df665110d5fd93a8c0d08a00ad406340e87d92730efaa52bedd3249d90",
         "tests": 2187
       },
       {
@@ -30,8 +30,8 @@
         "failures": 0,
         "name": "test.integration",
         "properties": 0,
-        "stdout_bytes": 124675,
-        "stdout_sha256": "bf6c617d841bbe11f6e6218147ac49aa15cdc56d94e86a51b01ac163cd9cd8bf",
+        "stdout_bytes": 124662,
+        "stdout_sha256": "a3b9a55e07476c11017e43cccd65078babd6a91be4dd86c719cb3fd835ac3004",
         "tests": 261
       }
     ]
@@ -75,7 +75,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
+      "sha256": "ab64ee4f2eeede8fbf4ef96410b8598397d21e361adf910417752e9b96a8e782"
     },
     {
       "path": ".github/workflows/dependency-review.yml",
@@ -2219,7 +2219,7 @@
     },
     {
       "path": "scripts/ci/run_verifier_upgrade_proof.sh",
-      "sha256": "4a90bc270b1456193dfe5cb6bf1109ea5ee7d8f6eaf69220d3e17017a542d3bf"
+      "sha256": "d3c6fbbd274b2214b2ff708329a5c09fc5b32024fc1c6df2c253b8ee05b75add"
     },
     {
       "path": "scripts/ci_monitor.cjs",
@@ -3123,7 +3123,7 @@
     },
     {
       "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-      "sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
+      "sha256": "6e713558183169a8f9e0083c8034be5714662792f00f5d4937c46107d332486b"
     },
     {
       "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -4354,13 +4354,13 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_manifest_sha256": "44163c6c7b6e9cc5399ec81bd2f42a09c2d507a49e6452d4cdb34ccd41e76b9c",
-  "frozen_runner_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+  "frozen_manifest_sha256": "8b18518e65d943c30021a79b36883162f27bc58cd7666196c948d2f2ebb40698",
+  "frozen_runner_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
   "owned_source_manifest": "178-OWNED-SOURCE-MANIFEST.json",
-  "owned_source_manifest_sha256": "d2921ad8aacd26a6a4c9d734ae16ff752e1a5f8dce6541630263486758d40b4f",
-  "package_acceptance_sha256": "3ba454af5fe078023e52dc47e3d1168b1f560ee199c48e3f9ed147612115261e",
+  "owned_source_manifest_sha256": "9cf6be7a953acae0f56742ec1c7cdd6e86e40e2b56ccd01d470f601b708671d8",
+  "package_acceptance_sha256": "d5bcefa3c861cf2d88d1a3f19226ae78ae70fe53a41936ca98a58f123502b8cd",
   "package_case_count": 64,
   "package_receipt_count": 26,
   "schema": "lockspire-phase178-source-acceptance-v1",
-  "tested_source_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35"
+  "tested_source_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811"
 }

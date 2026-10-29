@@ -1,0 +1,250 @@
+{
+  "candidate": {
+    "executed_checkout_sha": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+    "package_source_sha": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+    "reviewed_head_sha": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+    "run_attempt": 1,
+    "run_id": "40927824424"
+  },
+  "dispositions": [
+    {
+      "caveat": "The original unclassified edge remains separately visible; no probe pass is claimed.",
+      "evidence_owner": "Phase 175 verifier baseline and exact-main acceptance",
+      "evidence_refs": [
+        "../175-accepted-baseline-verifier-compatibility-contract/175-VERIFICATION.md",
+        "../175-accepted-baseline-verifier-compatibility-contract/175-MAIN-ACCEPTANCE.json",
+        "../175-accepted-baseline-verifier-compatibility-contract/175-CUSTODY.md"
+      ],
+      "phase": 175,
+      "requirement": "VBASE-01",
+      "status": "complete"
+    },
+    {
+      "caveat": "Historical probe limitation remains disclosed.",
+      "evidence_owner": "Phase 175 compatibility contract and verification",
+      "evidence_refs": [
+        "../175-accepted-baseline-verifier-compatibility-contract/175-VERIFICATION.md",
+        "../175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md"
+      ],
+      "phase": 175,
+      "requirement": "VBASE-02",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 source/runtime verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "SEC-01",
+      "status": "complete"
+    },
+    {
+      "caveat": "E02 remains an unclassified flagged edge; no automatic dismissal is claimed.",
+      "evidence_owner": "Phase 176 source/runtime verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md",
+        "../176-dedicated-verifier-custody-compatible-runtime/176-PROBE-DISPOSITION.md"
+      ],
+      "phase": 176,
+      "requirement": "SEC-02",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 source/security verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "SEC-03",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 source/runtime verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "SEC-04",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 endpoint/runtime verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "SEC-05",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 upgrade compatibility verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "VUP-01",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 176 rolling deployment verification",
+      "evidence_refs": [
+        "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md"
+      ],
+      "phase": 176,
+      "requirement": "VUP-02",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 177 maintenance and rotation verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VUP-03",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 177 maintenance tooling verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VOPS-01",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 177 transaction/store verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VOPS-02",
+      "status": "complete"
+    },
+    {
+      "evidence_owner": "Phase 177 status/redaction verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VOPS-03",
+      "status": "complete"
+    },
+    {
+      "caveat": "E-09 remains unclassified and flagged.",
+      "evidence_owner": "Phase 177 recovery verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VOPS-04",
+      "status": "complete"
+    },
+    {
+      "caveat": "E-10 and the original descriptorless flags remain unresolved; the concrete owned channels were tested.",
+      "evidence_owner": "Phase 177 disclosure/redaction verification",
+      "evidence_refs": [
+        "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md"
+      ],
+      "phase": 177,
+      "requirement": "VPROOF-01",
+      "status": "complete"
+    },
+    {
+      "caveat": "Fresh E7AD local source2463/0+2properties and matrix26/64/0 passed. Private assembly and ROOT preservation/promotion passed; unversioned acceptance records now identify actual E7AD source/runner and the four ROOT semantic stages passed. Earlier EC92 lifetime/SaaS/96host evidence is referenced through measured identical archive/tree bytes, not relabelled. Hosted candidate CI is excluded.",
+      "evidence_owner": "E7AD fresh canonical source and locked/floor package proof plus three independent reviews; byte-identical EC92 package lifetime/SaaS/installed-host evidence at original EC92 execution identities",
+      "evidence_refs": [
+        "178-11-LOCKED-DEADLINE-CORRECTION.json",
+        "178-INDEPENDENT-REVIEWS-e7ad5e67.json",
+        "178-11-CI-CORRECTION-EVIDENCE-ec92cca0.json",
+        "178-SOURCE-ACCEPTANCE.json",
+        "178-PACKAGE-ACCEPTANCE.md"
+      ],
+      "phase": 178,
+      "requirement": "VPROOF-02",
+      "status": "complete"
+    },
+    {
+      "blocker": "Published f962fce4 run40927824424 attempt1 ended cancelled: five passing jobs, Integration cancelled and Coverage skipped; locked package artifact absent. Fresh E7AD source is local only. A newly authorized exact-head push and successful seven-job same-attempt graph with both artifacts, candidate validation and canonical milestone audit remain required.",
+      "evidence_owner": "Current PR candidate run and independent milestone audit",
+      "evidence_refs": [
+        "178-CANDIDATE.json",
+        "178-CANDIDATE-OBSERVATION.json",
+        "178-ACCEPTANCE-ADDENDUM.md",
+        "178-11-EC92-HOSTED-CI-TERMINAL.json"
+      ],
+      "phase": 178,
+      "requirement": "VDELIV-01",
+      "status": "pending"
+    },
+    {
+      "blocker": "Dated pending handoff and ranking are present; candidate acceptance and canonical milestone audit remain pending. Integration and accepted main have not occurred and no main receipt exists. D-19 permits explicit pending-main premerge handoff but does not waive missing candidate CI.",
+      "evidence_owner": "Dated custody/delivery handoff and exact-main acceptance boundary",
+      "evidence_refs": [
+        "178-CUSTODY.md",
+        "178-HANDOFF.md",
+        "178-HANDOFF.json",
+        "178-ACCEPTANCE-ADDENDUM.md",
+        "178-DELIVERY.md",
+        "../../MILESTONE-ARC.md"
+      ],
+      "phase": 178,
+      "requirement": "VDELIV-02",
+      "status": "pending"
+    }
+  ],
+  "preserved_unresolved_flags": [
+    {
+      "id": "E-09",
+      "note": "No deterministic category was supplied; do not call it passed or dismissed.",
+      "source": "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md",
+      "status": "unclassified"
+    },
+    {
+      "id": "E-10",
+      "note": "No deterministic category was supplied; do not call it passed or dismissed.",
+      "source": "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md",
+      "status": "unclassified"
+    },
+    {
+      "id": "E02",
+      "note": "Human classification remains required.",
+      "source": "../176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md",
+      "status": "unclassified_flagged"
+    },
+    {
+      "id": "descriptorless_phase177_prohibitions",
+      "note": "Keep the original statements/status and human-review recommendation.",
+      "source": "../177-safe-verifier-maintenance-recovery/177-VERIFICATION.md",
+      "status": "unverified_flagged_non_authoritative"
+    },
+    {
+      "id": "phase178_projected_prohibitions",
+      "source": "178-12-PLAN.md",
+      "statements": [
+        "MUST NOT turn package-local custody proof into fleet key-retirement or backup authority.",
+        "MUST NOT label pending delivery as accepted main or infer publication or merge approval from research delegation.",
+        "MUST NOT replace partner credentials or extend authenticated lifetime as an automatic recovery shortcut."
+      ],
+      "status": "unresolved_flagged_non_authoritative",
+      "verification": null
+    },
+    {
+      "id": "VDELIV-01/VDELIV-02 spec-less assumptions",
+      "source": "178-12-PLAN.md",
+      "status": "unresolved",
+      "verification": null
+    }
+  ],
+  "recorded_at": "2026-10-29T20:19:25.971243+00:00",
+  "schema": "lockspire-phase178-requirement-dispositions-v1",
+  "summary": {
+    "candidate_graph_terminal": true,
+    "complete": 16,
+    "global_security": "OPEN_THREATS4",
+    "main_acceptance": "pending",
+    "pending": 2,
+    "total": 18
+  }
+}

@@ -1,3 +1,19 @@
+# Phase 178 Evidence Reconciliation
+
+**Current checkpoint — 2026-10-29T20:19:25.971243+00:00.** Local source `e7ad5e67b7c6d00f97ce347b2576b671ddafd811` passed the fresh canonical gate: 2,463 tests, zero failures, and two properties. Fresh locked and floor verifier partitions passed 14 receipts/33 cases and 12 receipts/31 cases; their strict composition passed 26 receipts/64 cases with zero failures. Both partitions used actual local Elixir 1.19.5/OTP 28/PostgreSQL 14.17. All owned runtime processes and private PostgreSQL are closed; data and evidence roots are retained. Private evidence assembly passed all five native stages, and ROOT now holds byte-and-mode-identical E7AD acceptance records. The four ROOT semantic checks (reviews, frozen inputs, package and source) passed; every original validation child closed and temporary roots remain retained. Prior EC92 records and artifact roots were preserved.
+
+The fresh E7AD archive `eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c` and extracted tree `01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b` exactly match EC92. EC92 lifetime proof (47 checks/nine scenarios), five SaaS groups, and 96 installed-host scenarios remain attributable to their original EC92 execution identities. They were not rerun or relabelled as E7AD. Three independent E7AD review lanes cover all 1,079 selected inputs; only the workflow, wrapper budget, and matching test expectation differ from EC92. The locked wrapper now has a bounded 40-minute total and Integration a 75-minute job window; the floor remains 25/45 minutes. Assertions and custody controls are unchanged.
+
+Published PR #141 remains at `f962fce47d97a78ae67522301aa65104d42a8b2d`. Its approved push/body update completed; that authorization is consumed. CI `40927824424` attempt 1 ended **cancelled**: five jobs passed, Integration was cancelled, and Complete Coverage Evidence skipped. Integration passed 565 source tests, three lifetime tests, SaaS and packaged-host steps before `verifier child timeout at overall/release-rpc/locked/builtin` at the old 1,500-second overall deadline. The precise inner release-RPC predicate remains **UNKNOWN**. The floor ZIP is retained; the locked artifact is absent. This attempt cannot qualify the new local source or be mixed with a future attempt.
+
+**Next action:** review the exact metadata commit and prepared PR body, obtain fresh approval for that exact push/body update, then observe the new canonical seven-job graph and both package artifacts from one run/attempt. No new remote mutation is authorized. Plan 11 remains incomplete; Plan 12 is not ready. Requirements remain 16/18 complete and two pending. Integration and accepted main remain pending; `178-MAIN-ACCEPTANCE.json` remains absent. Security remains `OPEN_THREATS4`. E-09/E-10, E02, generic edges, descriptorless prohibitions, historical failures, unknown causes/closures, and the root-tar incident retain their original dispositions. The old f962 candidate identity/security delta does not qualify an unpublished E7AD candidate.
+
+Latest local evidence: [178-11-LOCKED-DEADLINE-CORRECTION.json](178-11-LOCKED-DEADLINE-CORRECTION.json). Terminal hosted observation: [178-11-EC92-HOSTED-CI-TERMINAL.json](178-11-EC92-HOSTED-CI-TERMINAL.json).
+
+## Historical observations — retained at their original dates
+
+The earlier entries below are historical observations. Their words “current,” “active,” “preparing,” and “pending” describe their own checkpoint, not the checkpoint above.
+
 # Phase 178 Plan 10 Frozen Evidence Reconciliation
 
 ## Frozen owner
@@ -25,6 +41,18 @@ The other preexisting root `lockspire-*.tar` files were inventoried with their m
 ## Limits
 
 This freeze establishes source/archive/tree and bounded-input identity only. It does not establish installed HTTP/PostgreSQL outcomes, canonical source CI, hosted CI, candidate delivery, integration authorization, main acceptance, or Linux process-identity behavior. The recorded Phase 178 source database incidents and unresolved Phase 177 findings E-09/E-10 remain unchanged and non-waived.
+
+## 2026-10-29 EC92 source/package reconciliation and current candidate boundary
+
+The current local acceptance is the EC92 epoch, source and runner `ec92cca096edd4d9d9efd2d5f128889346de4c35`, tree `8b9fede4e2b7ab1a7df17159e676131d2fe7319c`, 1,079 selected source inputs (closure SHA-256 `a1d8fcc089314dd56aa2f75135116b56ceac374766cc2b788c4aac1ee2a3501a`), and frozen manifest SHA-256 `44163c6c7b6e9cc5399ec81bd2f42a09c2d507a49e6452d4cdb34ccd41e76b9c`. Its package archive/tree are `eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c` / `01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b`. The exact local owner record is [178-11-CI-CORRECTION-EVIDENCE-ec92cca0.json](178-11-CI-CORRECTION-EVIDENCE-ec92cca0.json); its source/package promotion is byte-identical and source acceptance SHA-256 is `24b524bb7905927b47ea00ca19bc82e47fa9d3a111fe21bda2b8e196b75b1f0a`.
+
+Local execution recorded canonical CI `2,463 tests / 0 failures / 2 properties`, lifetime coverage `47 checks / 9 scenarios` plus 3 ExUnit tests, verifier partitions of locked `14 receipts / 33 cases` and floor `12 receipts / 31 cases`, five successful SaaS groups, and installed current/minimum profiles at 48 scenarios each. Independent review covers 1,079 source rows and the semantic check passed. These are local EC92 outcomes; old C50/H175/e13 failures, unknown closure/causes, root-tar incident and C98 attribution limitations are not reclassified.
+
+The current candidate is separate: PR head `f962fce47d97a78ae67522301aa65104d42a8b2d`, workflow run `40927824424` attempt 1, actual observed merge checkout `b327184765668e0f070312d0a26e6a17a3ce8ccb`, tree `5421a819c0d67351f7de61584ecd1016dd230770`, parents base `173059a166e9ade0f5f57c9980b7b2400a98538c` then PR head. In the latest owner observation, three required jobs had passed; Fast Checks and Integration Checks were running; the Minimum job's fast and floor-host steps passed but it was not terminal; Complete Coverage Evidence had no terminal status. No complete gate record or same-attempt locked/floor package download exists yet. Thus the hosted candidate relation is not accepted even though candidate identity validation passed.
+
+The 72-file finite retention inventory is `.artifacts/phase178/ec92-correction/retained-index.json` (SHA-256 `802ad4d606ffdcd7817faade7b474f7808876ff90a6b17f366b8f2ce0eea89b4`). It records exact origin, retained path, digest, size, kind, and mode. Preserve that index and its files. No raw process output, private PostgreSQL data, or full build/cache tree is promoted into this repository index. See [178-CUSTODY.md](178-CUSTODY.md) for the current disposition, and [178-ACCEPTANCE-ADDENDUM.md](178-ACCEPTANCE-ADDENDUM.md) for the pending hosted/main boundary.
+
+The current 18 requirement evidence owners and statuses are listed in [178-REQUIREMENT-DISPOSITIONS.json](178-REQUIREMENT-DISPOSITIONS.json). VDELIV-01/02 remain pending. E-09/E-10 and the descriptorless prohibition flags remain unresolved with their original provenance; the Phase 178 projected prohibitions and two spec-less VDELIV edges remain flagged/unclassified with null verification. Security remains `OPEN_THREATS4`; no independent milestone audit or main acceptance is claimed in this preterminal reconciliation.
 
 ## Current refreeze after accepted archive-layout correction — 2026-10-27
 

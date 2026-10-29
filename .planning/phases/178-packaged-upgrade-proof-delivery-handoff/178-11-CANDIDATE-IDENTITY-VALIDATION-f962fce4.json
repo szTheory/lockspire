@@ -1,0 +1,17 @@
+{
+  "authoritative_run_PR_ref_and_commit_relations_checked": true,
+  "candidate_sha256": "ffa15b8e759d4df2bef38a1da88213b7995fc2ca902b9468eb79730df62ca41b",
+  "claim_limit": "Identity only; no complete hosted graph or uploaded artifact success claimed.",
+  "command": "PYTHONDONTWRITEBYTECODE=1 python3 scripts/acceptance/clean_room/verifier_delivery.py --check candidate-identity --phase-dir .planning/phases/178-packaged-upgrade-proof-delivery-handoff",
+  "covered_input_rows": 1079,
+  "executed_checkout": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+  "exit_code": 0,
+  "observation_sha256": "d5730485f53cb957c76c6790d868603d01599a185906311df8cbe3a8b855ccd8",
+  "observed_at": "2026-10-29T18:12:17.969771+00:00",
+  "original_tool_session": 74202,
+  "reviewed_head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+  "run_attempt": 1,
+  "run_id": 40927824424,
+  "schema": "lockspire-phase178-candidate-identity-validation-v1",
+  "validated": "candidate-identity"
+}

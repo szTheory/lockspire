@@ -1,0 +1,179 @@
+{
+  "schema": "lockspire-phase178-hosted-ci-terminal-v1",
+  "observed_at": "2026-10-29T18:58:55.794Z",
+  "reviewed_head": "f962fce47d97a78ae67522301aa65104d42a8b2d",
+  "implementation_source": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
+  "pr": 141,
+  "run_id": 40927824424,
+  "run_attempt": 1,
+  "event": "pull_request",
+  "workflow_path": ".github/workflows/ci.yml",
+  "status": "completed",
+  "conclusion": "cancelled",
+  "actual_checkout": "b327184765668e0f070312d0a26e6a17a3ce8ccb",
+  "checkout_tree": "5421a819c0d67351f7de61584ecd1016dd230770",
+  "checkout_parents": [
+    "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "f962fce47d97a78ae67522301aa65104d42a8b2d"
+  ],
+  "jobs": [
+    {
+      "id": 123637948225,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:28:07Z"
+    },
+    {
+      "id": 123637948706,
+      "name": "Dialyzer",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:08:06Z"
+    },
+    {
+      "id": 123637948715,
+      "name": "Fast Checks",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:14:20Z"
+    },
+    {
+      "id": 123637948750,
+      "name": "Release Hygiene Drift",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:07:46Z"
+    },
+    {
+      "id": 123637948785,
+      "name": "Adoption Demo Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:08:23Z"
+    },
+    {
+      "id": 123637948917,
+      "name": "Integration Checks",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:07:34Z",
+      "completed_at": "2026-10-29T18:52:43Z"
+    },
+    {
+      "id": 123662784192,
+      "name": "Complete Coverage Evidence",
+      "status": "completed",
+      "conclusion": "skipped",
+      "run_id": 40927824424,
+      "run_attempt": 1,
+      "started_at": "2026-10-29T18:52:44Z",
+      "completed_at": "2026-10-29T18:52:43Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12924645943,
+      "name": "lockspire-host-integration-b327184765668e0f070312d0a26e6a17a3ce8ccb-locked",
+      "digest": "sha256:98fc6432d1de6a74ad970506d93df112c1594a7b44ca2df1890fb735de28e86b",
+      "expired": false
+    },
+    {
+      "id": 12923290762,
+      "name": "lockspire-host-integration-b327184765668e0f070312d0a26e6a17a3ce8ccb-floor",
+      "digest": "sha256:3e0a6873303c5bfbe257feec396156285f22a9e89dac6b098c90f9fc388c63a3",
+      "expired": false
+    },
+    {
+      "id": 12922779509,
+      "name": "lockspire-client-lifetimes-b327184765668e0f070312d0a26e6a17a3ce8ccb",
+      "digest": "sha256:6f9bd4868fdf71c3e576d9ab02a31c28a738907a486f1ba026ffdcac8f921ac0",
+      "expired": false
+    },
+    {
+      "id": 12922043271,
+      "name": "integration-test-timings-b327184765668e0f070312d0a26e6a17a3ce8ccb",
+      "digest": "sha256:33823fd885d00a6d07b5ce193f69c9034048a629b7c1860621db31c42df8da0a",
+      "expired": false
+    },
+    {
+      "id": 12921701881,
+      "name": "lockspire-coverage-fast-b327184765668e0f070312d0a26e6a17a3ce8ccb",
+      "digest": "sha256:b8e076d049d889da86c18b21416c2be506e6086fb42d19aad8b633a2ddbd165c",
+      "expired": false
+    },
+    {
+      "id": 12921357073,
+      "name": "fast-test-timings",
+      "digest": "sha256:3994b4fd47c8da05106cde9eb4e14ce692efaa76b36b5f791137ccf80e9f1ac5",
+      "expired": false
+    },
+    {
+      "id": 12921084514,
+      "name": "lockspire-verifier-upgrade-b327184765668e0f070312d0a26e6a17a3ce8ccb-floor",
+      "digest": "sha256:f09b15e43e4cff2dcf2e7384cc32d53619248aee71b768a579e39bdd9fdd2fe0",
+      "expired": false
+    }
+  ],
+  "integration": {
+    "job_id": 123637948917,
+    "started_at": "2026-10-29T18:07:34Z",
+    "completed_at": "2026-10-29T18:52:43Z",
+    "log_utf8_sha256": "b585ea7602b6c93aa14f39332e6b46d17d5d98a0290a9d21045fc9d17939feeb",
+    "raw_log_persisted": false,
+    "source_tests": 565,
+    "lifetime_tests": 3,
+    "failures": 0,
+    "suite_and_locked_host_steps": "success",
+    "native_failure": [
+      {
+        "timestamp": "2026-10-29T18:52:39.6280111Z",
+        "kind": "timeout",
+        "label": "overall/release-rpc/locked/builtin"
+      }
+    ],
+    "wrapper_overall_budget_seconds": 1500,
+    "job_timeout_minutes": 45,
+    "release_rpc_exact_inner_predicate": "UNKNOWN; no inner failure details were retained",
+    "wrapper_timeout_marker_emitted_after_owned_stop_guard": true,
+    "original_native_creation_tuples_downloaded": false,
+    "assertion_error_in_log": false,
+    "key_not_found_in_log": false
+  },
+  "floor": {
+    "artifact_id": 12921084514,
+    "path": ".artifacts/phase178/candidate-downloads/40927824424-1/floor.zip",
+    "archive_sha256": "f09b15e43e4cff2dcf2e7384cc32d53619248aee71b768a579e39bdd9fdd2fe0",
+    "hosted_digest_match": true,
+    "job_status": "success",
+    "runtime_observation": {
+      "elixir": "1.18.4",
+      "otp": "27",
+      "postgresql": "14.24"
+    },
+    "independent_complete_candidate_validation": "not_run; locked artifact absent"
+  },
+  "locked_artifact_present": false,
+  "complete_required_graph": false,
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "approval_consumed": true,
+  "remote_mutations_after_approved_push_body": false
+}

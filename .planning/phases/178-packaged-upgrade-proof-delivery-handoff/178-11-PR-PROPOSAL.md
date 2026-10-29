@@ -1,20 +1,20 @@
-# Corrected v1.48 PR141 update proposal
+# PR141 E7AD correction proposal
 
-This proposal prepares a new remote update; it performs none. PR141 is open, non-draft and unmerged. Read-only observation reconfirmed published head `cc61cffc563fc8df141313c26442186c0b4645a3`, base `173059a166e9ade0f5f57c9980b7b2400a98538c`, and current body SHA256 `eaf0ad6a6f6d8b6733356af2ec799da59a8506e743296bbd0f2acd8c4fa90fe3`. CI40792440885 failed; DependencyReview40792440963 succeeded. Synthetic merge metadata alone does not establish an actual job checkout.
+The previous approved push/body update completed at `f962fce47d97a78ae67522301aa65104d42a8b2d`. Read-only recovery observation reconfirmed PR141 open, non-draft and unmerged at that head, base `173059a166e9ade0f5f57c9980b7b2400a98538c`. The previous proposal is retained byte-for-byte in [the prior proposal](178-11-PR-PROPOSAL-BEFORE-e7ad5e67.md). No new remote mutation has occurred.
 
-Reviewed, frozen and tested implementation C is `98b79e540cebddfdb8a27ce16c133b54d7213970`. Three independent reviews bind1,079 committed inputs with closure digest `751a4255e9ca7a9dbea6ab1fa69b124391c329a46e68d77ac8e36e3821a7992f`. The final proposed push head H is a later metadata commit whose exact SHA is recorded outside this file to avoid self-reference. All selected input paths and bytes must match C at H.
+The new tested source is `e7ad5e67b7c6d00f97ce347b2576b671ddafd811`, tree `6562e38ea613cf1c9b8651da3bd647d764fb4c0e`. All 1,079 selected inputs have canonical row digest `010613c567019f5dbca057ea5b749038ec54ae273467a17f87520bac76835b1f`. Only the workflow, bounded timeout wrapper and matching test expectation differ from EC92; application/package bytes are identical.
 
-Canonical source proof passed2,456 tests/zero failures/two properties. Python291+56, lifetime47checks/9scenarios, verifier26receipts/64cases and installed96scenarios across both actual runtimes passed locally. Frozen archive `08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4`, tree `5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b`, manifest `0ef81be5e59e84b5fd9f97322dfcab0627194d8a6d30429da1a9bb74b3db687b`. Native records retain actual C, not H. All prior failed attempts, unknowns, limits, root-tar restoration incident and E09/E10/generic/descriptorless flags remain unwaived. Global security retains four later-owner high obligations.
+[The correction ledger](178-11-LOCKED-DEADLINE-CORRECTION.json) records fresh source CI (2,463 tests, zero failures, two properties), new verifier matrix (26 receipts, 64 passing cases), three independent review lanes, preserved prior records, final native semantic validation and the finite retained-evidence index. Prior EC92 lifetime/SaaS/96host proofs keep their original identities through measured archive/tree equality. The C762 failure and all older failed/unknown observations are preserved.
 
-Current full evidence: [98 correction](178-11-CI-CORRECTION-EVIDENCE-98b79e54.json). Previous proposal bytes remain in [before98 proposal](178-11-PR-PROPOSAL-BEFORE-98b79e54.md). No new hosted candidate graph or main acceptance exists. Plan11 and Phase178 remain incomplete; Plan12 is not ready.
+Hosted CI40927824424 attempt1 was cancelled: five jobs passed, Integration cancelled and Coverage skipped. The former locked overall deadline emitted `overall/release-rpc/locked/builtin`; its precise inner predicate remains unknown. The new bounded locked total is40minutes, Integration75minutes; floor25/45minutes is unchanged. No new hosted graph is claimed.
 
-## Exact publication boundary
+The exact final metadata head, PR body and body SHA-256 are recorded after this commit in `/private/tmp/lockspire178-pr141-update-e7ad5e67/proposal.json` to avoid self-reference. The body links to evidence at that head. The final committed selected inputs must equal tested E7AD.
 
-The exact final H, prepared PR-body path/hash and preconditions will be retained in `/private/tmp/lockspire178-pr141-update-98b79e54/publication-plan.json` after the local metadata commit. The body links to committed evidence at H and explicitly distinguishes source C, metadata H, local results and pending hosted/main gates.
+Proposed actions after fresh exact authorization:
 
-1. Before mutation, reconfirm PR141 is open/non-draft/unmerged at cc61, its remote source ref matches, base/main remain1730, and exact H is a non-force descendant of cc61. Stop and reconcile any changed precondition.
-2. Only after explicit authorization of both actions, non-force push exactly H to `refs/heads/milestone/v1.48-client-auth-key-isolation`.
-3. Independently verify remote and PR heads equal H, then replace only PR141's body with the exact approved body bytes. Verify byte-identical readback.
-4. Observe naturally triggered hosted CI separately. This proposal excludes rerun/dispatch, comments, submitted/requested reviews, merge, release and package publication.
+1. Reconfirm PR141 and remote branch still equal f962fce4, the base is173059a1, and the proposed head is a non-force descendant. Reconcile changed preconditions before any mutation.
+2. Push exactly the recorded metadata head to the existing milestone branch without force.
+3. Verify remote branch and PR head equal that exact head, update only PR141 body to the recorded exact bytes, and verify its readback.
+4. Observe automatic CI and retain its actual synthetic checkout, complete seven-job graph and both same-attempt package artifacts. Validate the actual candidate before canonical milestone audit.
 
-The prior exact cc61 push/body approval is consumed; the explicit execution handoff requires new authorization for this update. VDELIV01 still needs the compatible seven-job hosted graph, same-attempt artifacts and milestone audit. VDELIV02 still needs main/delivery acceptance. No SUMMARY11/12 or phase-complete claim is authorized by local qualification.
+The prior exact approval is consumed; this update requires fresh authorization. No merge, publication, rerun, manual dispatch, comment or review is proposed. Plan11 remains incomplete, Plan12 is not ready, global security is OPEN_THREATS4, and main acceptance remains pending. E-09/E-10/generic/descriptorless flags retain original dispositions.

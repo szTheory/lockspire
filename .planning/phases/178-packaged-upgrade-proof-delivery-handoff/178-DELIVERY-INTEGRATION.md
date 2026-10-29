@@ -1,0 +1,75 @@
+# v1.48 Delivery Integration Audit — 2026-10-29
+
+**Scope:** Cross-phase contracts and end-to-end data flow for Phases 175–178, plus the current delivery boundary. This is an integration audit, not a canonical milestone-completion audit or an accepted-main receipt.
+
+**Source/runtime evidence identity:** Lockspire package/source `ec92cca096edd4d9d9efd2d5f128889346de4c35`; archive SHA-256 `eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c`; extracted tree SHA-256 `01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b`. Candidate identity validation is separately recorded for published PR head `f962fce47d97a78ae67522301aa65104d42a8b2d` and actual GitHub PR checkout `b327184765668e0f070312d0a26e6a17a3ce8ccb` (tree `5421a819c0d67351f7de61584ecd1016dd230770`, parents base `173059a166e9ade0f5f57c9980b7b2400a98538c` and PR head). The package source, reviewed head, and synthetic CI checkout are distinct identities.
+
+## Summary
+
+- **Implementation wiring:** WIRED for the 16 behavior requirements owned by Phases 175–177 and local VPROOF-02. Prior phase verification contains explicit key-link and persisted-data traces; Phase 178 EC92 evidence records source acceptance, 26 package receipts covering 64 cases, delegated PostgreSQL composition, installed current/minimum hosts, and SaaS clean-room proof.
+- **Delivery wiring:** PARTIAL / BLOCKED. PR #141 run `40927824424`, attempt 1 was nonterminal at the owner observation recorded in `178-HANDOFF.md`; the seven-job same-attempt graph and locked/floor hosted artifact pair were not accepted. Plan 11 remains incomplete. Integration and accepted-main acceptance remain pending; there is no main receipt.
+- **Cross-phase blocker:** The candidate gate is still pending under VDELIV-01. The dated explicit pending integration/main handoff satisfies the permitted pre-merge handoff boundary under Context D-19/roadmap criterion 4; accepted main remains pending and does not authorize the next milestone.
+
+## Provides / consumes map
+
+| Phase | Provides | Consumed by | Integration result |
+|---|---|---|---|
+| 175 — baseline contract | Stable compatibility cases, legacy format/age contract, accepted pre-verifier predecessor identity, exact-main helper/entry receipt and custody model | 176 verifier config/read/write behavior; 177 maintenance contract; 178 installed predecessor/control and acceptance matrix | WIRED. `175-VERIFICATION.md` traces persisted caller tests, compatibility ledger, and helper receipt. The VBASE-01 historical/unclassified edge remains recorded separately. |
+| 176 — verifier implementation | Dedicated context/envelope, compatible legacy reader and age policy, all existing writer paths, endpoint authentication and guarded issuance | 177 custody maintenance/recovery; 178 package-installed upgrade/endpoint/rollback cases | WIRED. `176-VERIFICATION.md` explicitly traces direct registration, DCR, operator rotation, protocol reader, persisted endpoint/replay effects, and guidance. E02/E14/E15 remain flagged/unclassified as recorded. |
+| 177 — safe operations | Selected-store maintenance capability, Ecto inventory/CAS/audit implementation, Admin report/core, Mix task, recovery and disclosure behavior | 178 delegated host composition and installed operator flows | WIRED. `177-VERIFICATION.md` traces the callback/delegate, selected transaction, crypto, CLI, persisted data and test guidance links. E-09/E-10 and descriptorless prohibitions remain unresolved/non-authoritative. |
+| 178 — packaged proof and delivery | EC92 package/source receipts, two dependency-pair proof partitions, local host/SaaS evidence, candidate identity and dated handoff | Reviewer and next PR/main acceptance owner | PARTIAL. Local VPROOF-02 evidence is present, but hosted candidate completion and accepted-main continuation are pending. |
+
+## End-to-end connection traces
+
+| Flow | Verified connection path | Result / edge boundary |
+|---|---|---|
+| Contract → implementation → installed evidence | Phase 175 stable IDs/age and compatibility contract → Phase 176 `SecretMaterial` and `ClientSecretVerifier` → Phase 177 store maintenance → Phase 178 package source/archive/tree and installed hosts | WIRED through local EC92. Source acceptance records 2,463 tests, 0 failures, 2 properties; lifetime evidence records 47 checks/9 scenarios; package acceptance records 26 receipts/64 cases with 0 failures across locked/floor and built-in/delegated coverage; installed hosts record 48 scenarios each; SaaS clean-room record is passed. This does not establish fleet parity or hosted CI. |
+| Credential creation → authentication | Direct registration/DCR/operator rotation → final client ID and `SecretMaterial.generate/2` → persisted hash plus verifier ciphertext → `ClientSecretJwt` / `ClientSecretVerifier.open/4` → token/introspection/revocation/device/CIBA handlers → replay/JTI and persisted effects | WIRED by Phase 176 verification and Phase 178 endpoint cases (9 per dependency pair). PAR/FAPI exclusions and existing HS256/issuer-audience/JTI rules are retained. |
+| Maintenance request → persisted rewrap → display/report | `mix lockspire.clients.verifier.rewrap` → `Admin.ClientVerifierMaintenance` → selected configured client store capability and authority preflight → authenticated classifier/rewrap → Ecto inventory/CAS/audit inside transaction → allowlisted CLI report | WIRED by Phase 177 trace and Phase 178 package operation groups. Unsupported/mismatched store authority fails before mutation; actual external/custom host storage beyond the declared composition is not claimed. |
+| Key loss/rotation → recovery → subsequent authentication | Missing/unknown key yields redacted non-ready status and JWT fail-closed → restore valid verifier key or existing authorized secret rotation/reprovision → coherent persisted replacement → fresh authentication/replay path | WIRED by Phase 177 persisted recovery evidence and Phase 178 recovery receipts in both pairs. No partner-secret replacement or lifetime extension is inferred. |
+| Candidate source → hosted gate → integration/main receipt | EC92 package identity → reviewed PR head f962fce4 → observed synthetic checkout b3271847 → same-attempt 7-job graph and package artifacts → authorized integration → synchronized exact-main helper receipt | PARTIAL / BLOCKED at hosted candidate graph and artifacts. Attempt 1 was in progress in the latest documented owner observation. No integration/main receipt exists; no gate result is inferred from local package success or the partial hosted checks. |
+
+No new public protocol scope is introduced by these phases; relevant existing protocol endpoints and writer/admin paths are exercised at their actual supported entry points. The E2E result is based on persisted PostgreSQL and installed-host receipts cited by the phase records, not source file existence alone.
+
+## Requirements Integration Map
+
+| Requirement | Integration path | Status | Issue / evidence owner |
+|---|---|---|---|
+| VBASE-01 | Phase 175 retained-delivery reconciliation → existing exact-main helper/receipt and custody → Phase 178 next delivery boundary | WIRED (baseline); current v1.48 final acceptance pending | Phase 175 `175-VERIFICATION.md`, `175-MAIN-ACCEPTANCE.json`; final v1.48 main acceptance is a separate pending requirement. Historical edge remains visible. |
+| VBASE-02 | Phase 175 compatibility contract/stable cases → Phase 176 reader/writer/age/rollout behavior → Phase 178 finite package matrix | WIRED | `175-VERIFICATION.md`, `176-VERIFICATION.md`, `178-PACKAGE-ACCEPTANCE.md`; historical probe limits remain disclosed. |
+| SEC-01 | Configured dedicated key → verifier sealing → all writer persistence paths | WIRED | Phase 176 source/runtime verification and EC92 source/package proof. |
+| SEC-02 | Host config resolver → validated context/startup snapshot and operation-local context → explicit failure/no silent fallback | WIRED | Phase 176 verification and EC92 source/package evidence; E02 classification remains flagged. |
+| SEC-03 | Stored envelope → authenticated AEAD/AAD parser → text-safe fail-closed auth boundary | WIRED | Phase 176 verification and source acceptance; no endpoint response exposes verifier material. |
+| SEC-04 | Direct/DCR/operator rotation → final ID → hash/verifier pair → existing lifecycle/store/audit and one-time secret handoff | WIRED | Phase 176 link trace; Phase 178 package flows retain configured lifetimes. |
+| SEC-05 | Persisted verifier → JWT auth shared reader → five supported endpoint handlers and replay/JTI effects | WIRED | Phase 176 endpoint trace and 178 locked/floor endpoint groups; PAR/FAPI exclusions retained. |
+| VUP-01 | Phase 175 legacy contract → Phase 176 authenticated legacy reader/age policy → explicit rejection and installed legacy control | WIRED | Phases 176 and 178. Aged/unreadable cases follow recorded disposition; no age bypass. |
+| VUP-02 | Phase 176 reader-first/write activation sequence and rollback limit → Phase 178 mixed old/new process and installed rollout cases | WIRED locally | Phase 176 guidance and Phase 178 rollout package receipts; does not imply fleet quiescence/parity. |
+| VUP-03 | Existing verifier key → selected-store authenticated rewrap → verifier-only CAS/audit → preserved fields and recovery | WIRED | Phase 177 full trace and Phase 178 two-pair recovery/atomicity receipts. |
+| VOPS-01 | CLI dry-run/apply/check → Admin core → selected repo lifecycle → partial/non-ready failing outcomes | WIRED | Phase 177 source tests/trace and Phase 178 installed maintenance cases. |
+| VOPS-02 | Selected configured store → transaction callback → Ecto CAS and audit atomically; independent PG contention/rollback witnesses | WIRED | Phase 177 and Phase 178 delegated PostgreSQL package cases. |
+| VOPS-03 | All-row inventory → authenticated classifier → redacted readiness/report | WIRED | Phase 177 and Phase 178 package/Admin cases; status is local, not fleet parity. |
+| VOPS-04 | Lost-key fail-closed auth → status identifies affected client → restore key or authorized existing rotation → fresh auth | WIRED | Phase 177 recovery trace and Phase 178 recovery package cases. E-09 remains unclassified. |
+| VPROOF-01 | Secret/key/ciphertext sentinels → owned logs/query telemetry/audit/Admin/CLI/protocol surfaces on success and failure | WIRED for owned channels | Phase 177 disclosure trace and Phase 178 installed disclosure evidence. E-10, descriptorless prohibitions, host custom instrumentation and PostgreSQL server logging boundaries remain flagged/unresolved. |
+| VPROOF-02 | Source manifest → accepted archive/tree → locked/floor host locks and compiled identities → installed HTTP/PG/SaaS journeys | WIRED locally | EC92 source acceptance and package acceptance: 26 receipts/64 cases, native matrix, lifetime, installed current/minimum and SaaS evidence. Candidate hosted gates are not included. |
+| VDELIV-01 | Focused review/source evidence + candidate identity → complete same-attempt hosted CI/artifacts → canonical milestone audit and guidance disposition | PARTIAL (BLOCKER) | Current run `40927824424` attempt 1 was nonterminal at latest observation; no accepted seven-job graph or same-attempt artifact pair; canonical audit remains to be completed. Preserve OPEN_THREATS4. |
+| VDELIV-02 | Dated handoff/custody/ranking → explicit pending integration/main boundary; later authorized integration → exact-main helper and receipt | WIRED for pre-merge handoff; accepted main PENDING | The dated handoff records candidate, owner, blocker, next action, custody, and absent main receipt. D-19 and roadmap criterion 4 permit this pending state to satisfy the pre-merge handoff requirement; it does not claim integration/accepted main or authorize the next milestone. |
+
+All 18 requirement owners are accounted for in `178-REQUIREMENT-DISPOSITIONS.json` (16 complete, 2 pending). All requirements have integration touchpoints across phases or into the delivery boundary; none is silently orphaned. VDELIV-01/02 remain spec-less assumptions unresolved/null verification as recorded. E-09, E-10, E02, and descriptorless prohibition flags retain their original classification and provenance; this report does not resolve or waive them. Phase 178 projected prohibitions likewise remain flagged non-authoritative.
+
+## Findings
+
+### BLOCKER — hosted candidate delivery edge is incomplete (VDELIV-01)
+
+**Connection:** reviewed PR head → actual synthetic checkout → complete same-attempt required job graph and locked/floor artifacts → candidate acceptance. The identity validator accepted the 1,079 covered-input relations, and the documented partial CI observations show some checks passed, but run `40927824424` attempt 1 was not terminal and no same-attempt artifact pair was accepted. Thus candidate CI and milestone audit cannot be recorded as complete. **Owner/next action:** PR owner/repository maintainer records terminal job outcomes, preserves all attempts, and validates only artifacts owned by the completed attempt; then complete the independent canonical audit. Do not assemble results across attempts.
+
+### Pending main boundary — integration and accepted-main continuation (VDELIV-02)
+
+**Connection:** reviewed candidate → normal authorized integration → synchronized exact main → existing helper receipt. The actual integration/main action has not occurred and no `178-MAIN-ACCEPTANCE.json` exists. The current dated handoff records this truthfully, with owner, blocker, and next action; under D-19 and roadmap criterion 4, that explicit pending state satisfies the pre-merge VDELIV-02 handoff boundary. It does not claim accepted main, authorize publication, or authorize implementation of the next milestone. **Owner/next action:** repository maintainer follows normal review/integration authorization after candidate gates and canonical audit; after actual integration, run the existing helper only under its synchronized-main conditions and preserve stdout/command/exit/time/digest/checkout status.
+
+### WARNING — historical evidence flags remain unresolved
+
+E-09/E-10, Phase 176 E02, descriptorless prohibition records, and Phase 178 spec-less delivery edges are not mechanically resolved by the flow evidence. The local behavior paths listed above remain evidenced, but generic historical classifications and global security closure (`OPEN_THREATS4`) remain outside this audit's authority. Preserve source provenance and null/unverified state.
+
+## Audit boundaries
+
+This report did not run application/tests/DB/process probes or query GitHub; candidate observations are those already recorded by the owner in the handoff. Local package results do not establish hosted CI, synthetic-checkout artifact ownership, fleet parity, host quiescence, backups, key retirement safety, publication, merge authorization, or accepted main. Pending delivery is an explicit pre-merge state under D-19, not a green integration result. No per-requirement item is claimed complete beyond its cited evidence owner.

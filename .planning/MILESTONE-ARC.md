@@ -10,6 +10,10 @@ Improve the trustworthiness of the existing embedded Phoenix OAuth/OIDC provider
 
 The user approved this rolling-roadmap posture on 2026-10-24: research and adversarially examine consequential decisions upstream, synthesize a coherent recommendation, execute within the selected scope with little interruption, and leave a verifiable delivery handoff. Future candidates are adjustable hypotheses, not automatic execution authority.
 
+## 2026-10-29 delivery checkpoint
+
+E7AD local source passed 2,463 tests/zero failures plus two properties; fresh locked/floor verifier proof composed 26 receipts/64 passing cases with zero failures. Its archive/tree match EC92 byte-for-byte, so prior EC92 lifetime/SaaS/96host proof keeps its original execution attribution. Local metadata assembly, preservation/promotion and ROOT semantic checks passed. Published PR #141 remains f962fce4; CI40927824424 ended cancelled (five passed, Integration cancelled, Coverage skipped). Fresh exact push/body approval and a successful new hosted graph/artifact pair are still required. Plan11 is incomplete, Plan12 is not ready, 16/18 requirements are complete, and security remains OPEN_THREATS4. Integration/main acceptance are pending. This outcome does not change the UI-next ranking or authorize its implementation. Q1–Q10/final confirmation and OPS-03/KEK-04/token evidence triggers remain intact.
+
 ## Ranked Milestone Sequence
 
 | Order / handle | Outcome and bounded scope | Status / entry trigger | Exit evidence |
@@ -70,6 +74,12 @@ See [scope and decisions](research/v1.47-core-hardening/SCOPE.md), [research syn
 At milestone start and close, compare this ranking against fresh branch/main/CI state, supported-surface docs, current code/tests, adopter evidence and retained findings. Mark candidates selected, shipped, deferred, obsolete or rejected with a reason and source/date. Carry unresolved owners and next triggers forward. Change stale proposals rather than restarting the discussion or inheriting their claims.
 
 At each run stop, record base and head SHAs, owned edits/worktrees, validation commands/results, blockers, remaining cleanup, and the next exact action in STATE.md or its linked handoff. Planning completion, implementation completion, integration into green main and public publication are distinct states.
+
+## 2026-10-29 Phase 178 delivery checkpoint
+
+The EC92 source-bound local package and host qualification is recorded with its actual identities in [the Phase 178 correction evidence](phases/178-packaged-upgrade-proof-delivery-handoff/178-11-CI-CORRECTION-EVIDENCE-ec92cca0.json). The single milestone PR #141 is at reviewed head `f962fce47d97a78ae67522301aa65104d42a8b2d`; run `40927824424` attempt 1 is still in progress at the latest owner observation. Dialyzer, Release Hygiene Drift and Adoption Demo Smoke passed; Fast Checks and Integration Checks were running; the Minimum job's fast and floor-host steps passed but the job was not terminal; Complete Coverage Evidence had no terminal result. Candidate gates and matching hosted package artifacts are therefore pending; integration and accepted main remain pending. Do not start the next implementation or infer merge/publication authority from the local proof.
+
+UI Stories & Continuous Quality remains the next substantial candidate after the security milestone's delivery/main gates are actually satisfied. Keep its accepted Q1–Q10 and final summary intact; no version or phase numbers are reserved. Retain the original proposal, recommendations, OPS-03/KEK-04/token-lifecycle triggers and all existing conditional ranking criteria. This checkpoint does not restart the UI interview or claim UI implementation/acceptance.
 
 ## Delivery Posture
 

@@ -3,7 +3,7 @@
     "archive_path": ".artifacts/phase178/ci-candidate/lockspire-1.6.1.tar",
     "archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
     "extracted_tree_path": ".artifacts/phase178/ci-candidate/lockspire",
-    "owner_sha256": "b9b3938a2c701138d58f09a7686a70565b1d06f1129f0696ee113ced588fa0de",
+    "owner_sha256": "3f255dd700f7f46129033f5ae437aa09fd611ab0a545533bd5aaf1abd6ad1469",
     "package_files": [
       {
         "path": ".formatter.exs",
@@ -1567,12 +1567,12 @@
       "package_stderr_bytes": 0,
       "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "package_stdout_bytes": 21270,
-      "package_stdout_sha256": "0439dbb0cf5436b71cb13d3f75fa12a3ed0c14bbeffdc3460d1b34123337276d",
+      "package_stdout_sha256": "79d13b3eeb30ba7b626be80b8cd2f32bb798e2d2c433eabbc16258016c36c12a",
       "rebuilt_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
       "rebuilt_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
     },
-    "source_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
-    "source_tree": "8b9fede4e2b7ab1a7df17159e676131d2fe7319c",
+    "source_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+    "source_tree": "6562e38ea613cf1c9b8651da3bd647d764fb4c0e",
     "tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b"
   },
   "closure_rule": "lockspire-phase178-tracked-input-closure-v1",
@@ -1615,7 +1615,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "a6f4add2c221256d067f073dc62c828d5b0810bf61f00a0e1ea4beb38655b0d3"
+      "sha256": "ab64ee4f2eeede8fbf4ef96410b8598397d21e361adf910417752e9b96a8e782"
     },
     {
       "path": ".github/workflows/dependency-review.yml",
@@ -3759,7 +3759,7 @@
     },
     {
       "path": "scripts/ci/run_verifier_upgrade_proof.sh",
-      "sha256": "4a90bc270b1456193dfe5cb6bf1109ea5ee7d8f6eaf69220d3e17017a542d3bf"
+      "sha256": "d3c6fbbd274b2214b2ff708329a5c09fc5b32024fc1c6df2c253b8ee05b75add"
     },
     {
       "path": "scripts/ci_monitor.cjs",
@@ -4663,7 +4663,7 @@
     },
     {
       "path": "test/lockspire/ci_workflow_evidence_contract_test.exs",
-      "sha256": "a45da2b19c35011303584c4bc276af213a29c7e16c5001f1e182c7daae307e8f"
+      "sha256": "6e713558183169a8f9e0083c8034be5714662792f00f5d4937c46107d332486b"
     },
     {
       "path": "test/lockspire/clean_room_admin_integration_test.exs",
@@ -5894,8 +5894,8 @@
       "sha256": "9de5811128ae5f6580288922955d282e1e0ca2f849bbb3bed016e917386f744f"
     }
   ],
-  "frozen_at": "2026-10-29T16:46:38.477994+00:00",
-  "runner_revision": "ec92cca096edd4d9d9efd2d5f128889346de4c35",
-  "runner_tree": "8b9fede4e2b7ab1a7df17159e676131d2fe7319c",
+  "frozen_at": "2026-10-29T19:42:07.828111+00:00",
+  "runner_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "runner_tree": "6562e38ea613cf1c9b8651da3bd647d764fb4c0e",
   "schema": "lockspire-phase178-frozen-inputs-v1"
 }

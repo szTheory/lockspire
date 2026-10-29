@@ -6,11 +6,11 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: in_progress
-stopped_at: EC92 local qualification passed; local qualification and final validation passed; exact remote update pending
-last_updated: "2026-10-29T18:00:07.016342+00:00"
+stopped_at: E7AD source and both matrix partitions passed; local evidence assembly/ROOT promotion/semantic checks passed; fresh push approval next
+last_updated: "2026-10-29T20:19:25.971243+00:00"
 last_activity: 2026-10-29
-last_activity_desc: all EC92 local runtime proof and independent audits passed; hosted CI pending
-state_head: ec92cca0
+last_activity_desc: E7AD source2463/0+2properties and strict matrix26receipts/64cases/0; old hosted run cancelled; new candidate CI pending
+state_head: e7ad5e67
 progress:
   total_phases: 4
   completed_phases: 3
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** EC92 local qualification passed: 2,463 tests/0 failures plus two properties; lifetime47/9; packaged verifier26/64; five SaaS groups; installed hosts96/96 on current and minimum runtimes. All runtime tools finished and independently audited. ROOT acceptance records now bind EC92; prior records/failures remain preserved. Final metadata validation passed all four stages. Local evidence is recorded for the exact PR141 push/body proposal. Fresh hosted CI, audit and exact-main acceptance remain pending; Plan11 incomplete/Plan12 unready; OPEN_THREATS4.
+**Current focus:** E7AD source and both matrix partitions passed; strict composition26receipts/64cases/0 and all original runtime/PG cleanup are confirmed, with private data retained. Archive/tree exactly match EC92; prior EC92 lifetime/SaaS/96host proof remains at its original identities. Local evidence assembly, preservation/promotion and all four ROOT semantic checks passed. The exact metadata commit/body is being prepared for fresh push approval. Published f962fce4 remains unchanged; CI40927824424 is terminal cancelled with5passed/Integrationcancelled/Coverageskipped and no locked artifact. Inner release-RPC predicate UNKNOWN. Plan11incomplete/12unready;16/18requirements;OPEN_THREATS4. No new remote authorization.
 
 ## Current Position
 
@@ -35,8 +35,8 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — LOCAL CI CORRECTION /
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 waits on Plan 11
-Status: EC92 local qualification passed; exact remote update pending; hosted/audit/main acceptance pending.
-Last activity: 2026-10-29 UTC — EC92 canonical, lifetimes, verifier pairs, SaaS and current/minimum installed hosts passed; five ROOT acceptance records promoted with old evidence retained.
+Status: E7AD local source/matrix qualification passed; local assembly/promotion/semantic checks passed; final metadata commit pending; hosted/audit/main acceptance pending.
+Last activity: 2026-10-29 UTC — E7AD canonical2463/0+2properties; fresh locked14/33 and floor12/31 composed26/64/0; no active runtime/PG; new exact candidate push approval is next after local metadata verification.
 
 ## Performance Metrics
 
