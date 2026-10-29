@@ -336,6 +336,7 @@ jobs:
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
           --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
           --expected-tree-sha256 "$EXPECTED_TREE_SHA256"
+          --frozen-manifest .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
           --expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"
 
       - name: Upload validated exact-floor verifier upgrade receipts
@@ -512,6 +513,7 @@ jobs:
           --expected-candidate-source "$EXPECTED_CANDIDATE_SOURCE"
           --expected-archive-sha256 "$EXPECTED_ARCHIVE_SHA256"
           --expected-tree-sha256 "$EXPECTED_TREE_SHA256"
+          --frozen-manifest .artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json
           --expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"
 
       - name: Upload validated locked verifier upgrade receipts

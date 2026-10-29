@@ -48,6 +48,27 @@ class VerifierCiWrapperContracts(unittest.TestCase):
         self.assertIn('"lockspire-validated-raw-copies-v1"', wrapper)
         self.assertIn('digest != cell["receipt_sha256"]', wrapper)
 
+    def test_both_hosted_pair_commands_select_their_provisioned_frozen_manifest(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        selected_manifest = ".artifacts/phase178/ci-candidate/178-FROZEN-INPUTS.json"
+        for pair, step_name in (
+            ("floor", "Run exact-floor installed verifier upgrade proof"),
+            ("locked", "Run locked installed verifier upgrade proof"),
+        ):
+            step = workflow.split(f"- name: {step_name}", 1)[1].split("\n      - name:", 1)[0]
+            self.assertIn(
+                f"bash scripts/ci/run_verifier_upgrade_proof.sh --pair {pair}", step,
+                f"{pair} proof step must invoke its own pair command",
+            )
+            self.assertIn(
+                f"--frozen-manifest {selected_manifest}", step,
+                f"{pair} proof must select the manifest whose digest it receives from provisioning",
+            )
+            self.assertIn(
+                '--expected-manifest-sha256 "$EXPECTED_MANIFEST_SHA256"', step,
+                f"{pair} proof must retain the independently provisioned manifest digest",
+            )
+
     def test_wrapper_is_an_executable_maintained_entrypoint(self) -> None:
         self.assertTrue(WRAPPER.is_file(), "pair proof wrapper must exist")
         self.assertTrue(os.access(WRAPPER, os.X_OK), "pair proof wrapper must be executable")
