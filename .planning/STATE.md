@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: in_progress
-stopped_at: 98b79e54 local proof passed; local acceptance verified; exact remote update approval boundary
-last_updated: "2026-10-29T13:11:30.313208+00:00"
+stopped_at: dc627981 CI failed; manifest caller fixed locally2b5d39b2; owned SaaS diagnosis preparation
+last_updated: "2026-10-29T13:50:03.059796+00:00"
 last_activity: 2026-10-28
-last_activity_desc: C98 canonical2456, verifier64, lifetime47 and installed96 passed locally; remote approval pending
+last_activity_desc: terminal CI4pass2fail1skip; local manifest fix12tests; SaaSassertion diagnosis preparing
 state_head: 98b79e54
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Source `98b79e540cebddfdb8a27ce16c133b54d7213970` has three independent1079-input reviews and passing local canonical2456/0 (two properties), Python291+56/0, lifetime47/9, verifier26/64 and installed96 scenarios across both actual runtimes. Five new native acceptance records were promoted after preserving old records. Final BASE semantic validation passed; exact metadata SHA/PR-body proposal is prepared at the remote approval boundary. Old cc61 CI failed; hosted candidate/main gates remain pending. No new remote mutation. Plan11 incomplete, Plan12 unready. All prior limits remain unwaived.
+**Current focus:** Published dc627981/body8fa1d873 update is verified; its CI40882212125 attempt1 failed (4pass/2fail/1skip). Local2b5d39b2 corrects both omitted job-manifest selectors with12passing regression tests/actionlint. Integration source565/0 and lifetime3/0 passed, then SaaS AssertionError after readiness; original assertion UNKNOWN. A fresh owned passive diagnosis is preparing, no runtime yet. Prior C98 local qualification remains its own actual source epoch; no new-source full acceptance, candidate graph or main acceptance is claimed. No further remote mutation authorized. Plan11 incomplete, Plan12 unready; preserve all prior limits.
 
 ## Current Position
 
@@ -35,7 +35,7 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — LOCAL CI CORRECTION /
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 waits on Plan 11
-Status: C98 local canonical, lifetime, full verifier matrix and both installed runtimes passed. Final transfer validation passed; exact remote update approval boundary; hosted CI/audit/main acceptance pending.
+Status: Published dc627981 CI failed. Local manifest-caller fix committed; SaaS assertion diagnosis preparing. New source qualification, hosted graph/audit/main acceptance pending.
 Last activity: 2026-10-29 UTC — C98 local acceptance promoted; final transfer verification and remote proposal preparation.
 
 ## Performance Metrics

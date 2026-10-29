@@ -1,0 +1,86 @@
+{
+  "schema": "lockspire-phase178-approved-update-outcome-v1",
+  "recorded_at": "2026-10-29T13:30:17.307Z",
+  "approval": {
+    "user_reply": "yes",
+    "exact_push_sha": "dc6279813a7efa5746c73c24827ce2ba7231c198",
+    "exact_body_sha256": "8fa1d873204323534a9d3bc585b8f56400e3e4d6b5e3189fef16305fbe3ca779",
+    "scope": "nonforce push and PR141 body replacement only"
+  },
+  "push_verified": true,
+  "remote_head": "dc6279813a7efa5746c73c24827ce2ba7231c198",
+  "base": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+  "body_exact_readback": true,
+  "body_utf8_bytes": 4713,
+  "pr_url": "https://github.com/szTheory/lockspire/pull/141",
+  "pr_state": "open",
+  "merged": false,
+  "draft": false,
+  "synthetic_merge_metadata": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+  "run_observations": {
+    "workflow_runs": [
+      {
+        "id": 40882212149,
+        "name": "Dependency Review",
+        "status": "completed",
+        "conclusion": "success",
+        "run_number": 252,
+        "jobs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40882212149/jobs",
+        "logs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40882212149/logs",
+        "workflow_id": 265468429
+      },
+      {
+        "id": 40882212125,
+        "name": "CI",
+        "status": "in_progress",
+        "conclusion": null,
+        "run_number": 417,
+        "jobs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40882212125/jobs",
+        "logs_url": "https://api.github.com/repos/szTheory/lockspire/actions/runs/40882212125/logs",
+        "workflow_id": 265468428
+      }
+    ]
+  },
+  "initial_jobs": [
+    {
+      "id": 123476421196,
+      "name": "Integration Checks",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 123476421251,
+      "name": "Adoption Demo Smoke",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123476421443,
+      "name": "Dialyzer",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123476421464,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "in_progress",
+      "conclusion": null
+    },
+    {
+      "id": 123476421478,
+      "name": "Release Hygiene Drift",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123476421496,
+      "name": "Fast Checks",
+      "status": "in_progress",
+      "conclusion": null
+    }
+  ],
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "authorization_consumed": true,
+  "other_remote_mutations": false
+}

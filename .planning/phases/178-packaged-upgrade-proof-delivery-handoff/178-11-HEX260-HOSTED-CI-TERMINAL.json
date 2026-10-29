@@ -1,0 +1,184 @@
+{
+  "schema": "lockspire-phase178-hosted-ci-terminal-v1",
+  "observed_at": "2026-10-29T13:47:37.737Z",
+  "reviewed_head": "dc6279813a7efa5746c73c24827ce2ba7231c198",
+  "implementation_source_C": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+  "pr": 141,
+  "run_id": 40882212125,
+  "run_attempt": 1,
+  "workflow_path": ".github/workflows/ci.yml",
+  "event": "pull_request",
+  "status": "completed",
+  "conclusion": "failure",
+  "actual_checkout": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+  "checkout_tree": "b60aa690b09710413e1d6a96027c507cc685095b",
+  "checkout_parents": [
+    "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "dc6279813a7efa5746c73c24827ce2ba7231c198"
+  ],
+  "jobs": [
+    {
+      "id": 123476421196,
+      "name": "Integration Checks",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        {
+          "name": "Run integration suite including onboarding and OIDC E2E proof",
+          "number": 14
+        }
+      ]
+    },
+    {
+      "id": 123476421251,
+      "name": "Adoption Demo Smoke",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 123476421443,
+      "name": "Dialyzer",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 123476421464,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        {
+          "name": "Run exact-floor installed verifier upgrade proof",
+          "number": 18
+        }
+      ]
+    },
+    {
+      "id": 123476421478,
+      "name": "Release Hygiene Drift",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 123476421496,
+      "name": "Fast Checks",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 123484138073,
+      "name": "Complete Coverage Evidence",
+      "status": "completed",
+      "conclusion": "skipped",
+      "failed_steps": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12902340811,
+      "name": "lockspire-client-lifetimes-e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "sha256": "sha256:9096ad11b47369b355efecd2ad4ca0eb1c70d33c225d04e82e5ec0aba4b7cb49",
+      "bytes": 1743,
+      "expired": false
+    },
+    {
+      "id": 12901463230,
+      "name": "integration-test-timings-e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "sha256": "sha256:bee8d2e4199e8416c5dd0f1fe30a69443f46eb87871f958eb4e238d50a2e580a",
+      "bytes": 737,
+      "expired": false
+    },
+    {
+      "id": 12900848750,
+      "name": "lockspire-host-integration-e8015ca7a1e12d69452f8f887b4b5f4a76617fe0-floor",
+      "sha256": "sha256:8bd2303ff4c84d9f9bac1630912dcda370de3414d27e6337a84a1f5aa65b7f51",
+      "bytes": 4423,
+      "expired": false
+    },
+    {
+      "id": 12900497750,
+      "name": "lockspire-coverage-fast-e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "sha256": "sha256:ac7a1a32ff8bcb31f6ddb2bb5958c31307c63e0569e078a110485d5de5a74bca",
+      "bytes": 262935,
+      "expired": false
+    },
+    {
+      "id": 12900378974,
+      "name": "fast-test-timings",
+      "sha256": "sha256:48597cf0007db7a905cb335678093dd1f701970a456ff7e37e8b43d484a59735",
+      "bytes": 379,
+      "expired": false
+    }
+  ],
+  "minimum": {
+    "step": "Run exact-floor installed verifier upgrade proof",
+    "step_number": 18,
+    "native_exit": 2,
+    "observed_source_fixed_messages": [
+      "delivery evidence rejected; diagnostics withheld",
+      "authenticated frozen candidate inputs failed validation"
+    ],
+    "observed_expected_pins": {
+      "EXPECTED_RUNNER": "e8015ca7a1e12d69452f8f887b4b5f4a76617fe0",
+      "EXPECTED_CANDIDATE_SOURCE": "98b79e540cebddfdb8a27ce16c133b54d7213970",
+      "EXPECTED_ARCHIVE_SHA256": "08f16c479f2a5c8ae9c6cc20889ba8420e100d3adaa6d30587e331672a2e3ea4",
+      "EXPECTED_TREE_SHA256": "5e2984c981cb85526e1ca99e6f0e8c6f833538d8f6858d2ba7746b3dc4b7827b",
+      "EXPECTED_MANIFEST_SHA256": "31f4a2abace89bad8c88fa9f5b228a7ca7af6c85831ac69fa79f465e96c3f4da"
+    },
+    "checked_in_manifest_sha256": "0ef81be5e59e84b5fd9f97322dfcab0627194d8a6d30429da1a9bb74b3db687b",
+    "static_caller_mismatch": "both verifier commands omit --frozen-manifest; wrapper defaults checked-in phase manifest despite caller's job-manifest SHA",
+    "original_native_exception_predicate": "not retained; do not claim a recorded exception location",
+    "raw_verifier_cases_started": false,
+    "earlier_fast_and_packaged_host_steps": "success"
+  },
+  "integration": {
+    "step": "Run integration suite including onboarding and OIDC E2E proof",
+    "native_exit": 1,
+    "source_integration": {
+      "tests": 565,
+      "failures": 0,
+      "seconds": 212
+    },
+    "packaged_lifetime": {
+      "tests": 3,
+      "failures": 0,
+      "seconds": 462
+    },
+    "native_lifetime_validation_exit": 0,
+    "saas_clean_room": {
+      "seconds": 128,
+      "exit": 1,
+      "exception_class": "AssertionError",
+      "safe_failure": {
+        "stage": "saas_journey",
+        "scenario": "unknown",
+        "event": "runner_failure",
+        "count": 1
+      },
+      "original_rejected_assertion": "UNKNOWN",
+      "milestones_observed": [
+        "candidate built",
+        "provider prepared",
+        "provider database created",
+        "provider migrated",
+        "provider smoke complete",
+        "readiness complete",
+        "cleanup complete"
+      ],
+      "happy_path_complete_marker_observed": false,
+      "cleanup_failure_marker_observed": false
+    },
+    "locked_verifier_step": "skipped"
+  },
+  "expected_verifier_pair_artifacts_present": false,
+  "artifact_archives_downloaded": false,
+  "passing_candidate_graph": false,
+  "phase11_complete": false,
+  "phase12": "not_ready",
+  "approval_consumed": true,
+  "additional_remote_mutations": false
+}
