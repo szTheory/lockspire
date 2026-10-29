@@ -210,13 +210,11 @@ defmodule Lockspire.KeyCache do
   end
 
   defp ready_for_snapshot?(state) do
-    try do
-      state.ready?.() == true
-    rescue
-      _ -> false
-    catch
-      _, _ -> false
-    end
+    state.ready?.() == true
+  rescue
+    _ -> false
+  catch
+    _, _ -> false
   end
 
   defp lookup_key(table_name, kid) do
