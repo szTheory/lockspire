@@ -183,6 +183,20 @@ then checks all 16 packaged browser cases at `/lockspire`,
 `/teams/ops/identity`, and `/`. This separates source/lifecycle evidence from
 real Chrome/CDP transport evidence.
 
+CI installs Hex 2.6.0 explicitly before dependency or package work. The verifier
+predecessor pins include generated package metadata, so local verifier proofs
+must use the same builder (`mix local.hex 2.6.0 --force`) in a private `MIX_HOME`
+for each selected Elixir/OTP runtime. Build that archive with the selected runtime;
+do not copy a compiled Hex archive between OTP versions. A builder upgrade needs
+explicit artifact requalification before changing these pins. This CI proof
+setting does not change the library support matrix or the publishing workflow.
+The predecessor is rebuilt from accepted Git commit
+`173059a166e9ade0f5f57c9980b7b2400a98538c`; its requalified archive/tree pins
+identify the Hex 2.6.0 rebuild. Earlier Hex 2.5.1 builds have different generated
+`hex_metadata.config` bytes. Their original evidence remains historical evidence
+for those artifacts, and cannot stand in for the requalified build. The published
+legacy-control tarball and its pins remain separate.
+
 Local requirements are Bash, Python 3, Mix dependencies for the selected pair,
 Node.js 22.15 or newer with built-in `fetch` and `WebSocket`, and an installed
 Chrome-compatible browser. The wrapper discovers Chrome from the standard

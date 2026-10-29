@@ -17,6 +17,7 @@ permissions:
 env:
   ELIXIR_VERSION: "1.19.5"
   OTP_VERSION: "28"
+  HEX_VERSION: "2.6.0"
   MIN_ELIXIR_VERSION: "1.18.4"
   MIN_OTP_VERSION: "27"
 
@@ -35,6 +36,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Dialyzer cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -119,6 +124,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -232,6 +241,10 @@ jobs:
         with:
           elixir-version: ${{ env.MIN_ELIXIR_VERSION }}
           otp-version: ${{ env.MIN_OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
         id: mix-cache
@@ -393,6 +406,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore Mix cache
         id: mix-cache
@@ -611,6 +628,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore compatible test Mix cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -681,6 +702,10 @@ jobs:
         with:
           elixir-version: ${{ env.ELIXIR_VERSION }}
           otp-version: ${{ env.OTP_VERSION }}
+          install-hex: false
+
+      - name: Install reviewed Hex package builder
+        run: mix local.hex "$HEX_VERSION" --force
 
       - name: Restore adoption demo Mix cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import re
 import signal
 import shutil
 import subprocess
@@ -17,6 +18,22 @@ WRAPPER = ROOT / "scripts" / "ci" / "run_verifier_upgrade_proof.sh"
 
 
 class VerifierCiWrapperContracts(unittest.TestCase):
+    def test_ci_installs_the_reviewed_package_builder_before_using_mix(self) -> None:
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        self.assertIn('  HEX_VERSION: "2.6.0"\n', workflow)
+        jobs = re.split(r"(?m)^  ([a-z][a-z0-9_-]*):\n", workflow.split("\njobs:\n", 1)[1])
+        beam_jobs = []
+        for name, body in zip(jobs[1::2], jobs[2::2]):
+            steps = body.split("\n      - name: ")
+            for index, step in enumerate(steps):
+                if "uses: erlef/setup-beam@" not in step:
+                    continue
+                beam_jobs.append(name)
+                self.assertIn("install-hex: false", step, name)
+                self.assertLess(index + 1, len(steps), name)
+                self.assertIn('run: mix local.hex "$HEX_VERSION" --force', steps[index + 1], name)
+        self.assertCountEqual(beam_jobs, ["dialyzer", "fast", "compatibility", "integration", "coverage-aggregate", "adoption-demo"])
+
     def test_existing_pair_jobs_provision_explicit_pins_and_upload_validated_raw_receipts(self) -> None:
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         wrapper = WRAPPER.read_text(encoding="utf-8")

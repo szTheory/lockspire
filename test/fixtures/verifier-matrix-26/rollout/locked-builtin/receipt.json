@@ -47,11 +47,11 @@
   "pair": "locked",
   "partial": true,
   "predecessor": {
-    "archive_sha256": "792967609e41d216fc0178ef069570c39350c9bb5ee481da4e2852993267e758",
+    "archive_sha256": "fe9e88780a5c7fdd395b6f03349d3ef71c21a77518833a38055676958744dda5",
     "compiled_candidate_sha256": "9c305dd465357bb7be33bfb72178e1a576a53e2c299e3b9b82122f7f62fa64cf",
     "kind": "accepted-git-source",
     "source_revision": "173059a166e9ade0f5f57c9980b7b2400a98538c",
-    "tree_sha256": "2dcf7705bd5651e853a02a931a1e0c595639438b3bd0a36a9c330017eab98315",
+    "tree_sha256": "c5d441d1a77b8978c63c3a44f4c09b61420df5a6f6f81f24c5b1354a799b613d",
     "version": "1.6.1"
   },
   "processes": {

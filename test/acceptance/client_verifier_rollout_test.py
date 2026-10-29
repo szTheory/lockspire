@@ -79,6 +79,25 @@ class VerifierRolloutContracts(unittest.TestCase):
         with self.assertRaises(verifier_receipts.ReceiptError):
             verifier_receipts._validate_rollout_structure(receipt, **expected)
 
+    def test_rollout_rejects_artifact_pins_from_the_retired_hex_builder(self) -> None:
+        receipt = self._rollout_fixture()
+        expected = {
+            "expected_pair": "locked", "expected_store": "builtin",
+            "expected_runner": receipt["runner_revision"],
+            "expected_candidate_source": receipt["candidate"]["source_revision"],
+            "expected_scope": "rollout",
+        }
+        verifier_receipts._validate_rollout_structure(receipt, **expected)
+        for field, retired in (
+            ("archive_sha256", "792967609e41d216fc0178ef069570c39350c9bb5ee481da4e2852993267e758"),
+            ("tree_sha256", "2dcf7705bd5651e853a02a931a1e0c595639438b3bd0a36a9c330017eab98315"),
+        ):
+            with self.subTest(field=field):
+                mutated = self._rollout_fixture()
+                mutated["predecessor"][field] = retired
+                with self.assertRaises(verifier_receipts.ReceiptError):
+                    verifier_receipts._validate_rollout_structure(mutated, **expected)
+
     def test_cli_group_selection_dispatches_explicit_scope_independent_of_matrix_width(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             receipt_dir = Path(temporary)
