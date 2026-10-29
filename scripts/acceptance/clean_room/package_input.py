@@ -877,6 +877,20 @@ def verify_local_tar_source_owner(
                 or revision != runner_revision
                 or package_tree_digest(package_root) != tree_sha256):
             raise ValueError
+
+        def require_clean_tracked_source() -> None:
+            observed = subprocess.run(
+                ("git", "diff", "--quiet", revision, "--"), cwd=PROJECT_ROOT,
+                stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                check=False, timeout=10,
+            )
+            if observed.returncode != 0:
+                raise ValueError
+
+        # Mix expands package globs against this checkout. A tracked deletion
+        # must not shrink both the observed file set and tar while claiming HEAD.
+        # This is a single-user invocation boundary, like the package path guard.
+        require_clean_tracked_source()
         source_tree = subprocess.run(
             ("git", "rev-parse", f"{revision}^{{tree}}"), cwd=PROJECT_ROOT,
             stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
@@ -904,6 +918,7 @@ def verify_local_tar_source_owner(
             if (blob.returncode != 0
                     or hashlib.sha256(blob.stdout).digest() != hashlib.sha256(packaged).digest()):
                 raise ValueError
+        require_clean_tracked_source()
         proof = _source_binding_digest(revision, archive_sha256, tree_sha256)
         return revision, proof
     except (OSError, ValueError, UnicodeError, PackageInputError, subprocess.TimeoutExpired):

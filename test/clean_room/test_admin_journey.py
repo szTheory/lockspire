@@ -153,6 +153,33 @@ class LocalTarSourceBindingTests(unittest.TestCase):
             self.assertEqual(bound_revision, revision)
             self.assertRegex(source_proof, r"^[0-9a-f]{64}$")
 
+    def test_rejects_tracked_deletion_hidden_from_both_mix_and_archive(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+            (repository / "lib" / "source.ex").unlink()
+            (package / "lib" / "source.ex").unlink()
+            with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                package_input, "expected_package_files", return_value=frozenset({"mix.exs"})
+            ), self.assertRaises(PackageInputError):
+                package_input.verify_local_tar_source_owner(
+                    revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+                )
+
+    def test_rechecks_tracked_state_after_observing_mix_file_set(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+
+            def changed_checkout():
+                (repository / "lib" / "source.ex").write_text("changed during observation\n")
+                return frozenset({"mix.exs", "lib/source.ex"})
+
+            with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                package_input, "expected_package_files", side_effect=changed_checkout
+            ), self.assertRaises(PackageInputError):
+                package_input.verify_local_tar_source_owner(
+                    revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+                )
+
     def test_rejects_missing_extra_modified_or_differently_owned_package_files(self):
         for mutation in ("missing", "extra", "modified", "wrong_revision"):
             with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
