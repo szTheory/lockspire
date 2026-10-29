@@ -832,6 +832,83 @@ def verify_frozen_source_owner(
     return revision, owner["owner_sha256"]
 
 
+def expected_package_files() -> frozenset[str]:
+    """Read Mix's evaluated package file set without starting the application."""
+    expression = (
+        'files = Mix.Project.config() |> Keyword.fetch!(:package) |> Keyword.fetch!(:files); '
+        'IO.puts("LOCKSPIRE_PACKAGE_FILES_BEGIN"); Enum.each(files, &IO.puts/1); '
+        'IO.puts("LOCKSPIRE_PACKAGE_FILES_END")'
+    )
+    completed = bounded_run(
+        ("mix", "run", "--no-compile", "--no-deps-check", "--no-start", "-e", expression),
+        cwd=PROJECT_ROOT, env=dict(os.environ), stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=60,
+    )
+    if completed.returncode != 0:
+        raise PackageInputError("Mix package file set could not be observed")
+    try:
+        lines = completed.stdout.decode("utf-8", errors="strict").splitlines()
+        start = lines.index("LOCKSPIRE_PACKAGE_FILES_BEGIN")
+        end = lines.index("LOCKSPIRE_PACKAGE_FILES_END", start + 1)
+        if lines.count("LOCKSPIRE_PACKAGE_FILES_BEGIN") != 1 or lines.count("LOCKSPIRE_PACKAGE_FILES_END") != 1:
+            raise ValueError
+        entries = lines[start + 1:end]
+        if not entries or any(
+            not isinstance(entry, str)
+            or Path(entry).is_absolute()
+            or ".." in Path(entry).parts
+            or not re.fullmatch(r"[A-Za-z0-9_./-]+", entry)
+            for entry in entries
+        ) or len(entries) != len(set(entries)):
+            raise ValueError
+        return frozenset(entries)
+    except (UnicodeError, ValueError):
+        raise PackageInputError("Mix package file set could not be validated") from None
+
+
+def verify_local_tar_source_owner(
+    revision: str, runner_revision: str, package_root: Path,
+    archive_sha256: str, tree_sha256: str,
+) -> tuple[str, str]:
+    """Bind a locally built tar to every packaged tracked blob at this checkout."""
+    try:
+        if (not re.fullmatch(r"[0-9a-f]{40,64}", revision)
+                or revision != runner_revision
+                or package_tree_digest(package_root) != tree_sha256):
+            raise ValueError
+        source_tree = subprocess.run(
+            ("git", "rev-parse", f"{revision}^{{tree}}"), cwd=PROJECT_ROOT,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            check=False, timeout=10,
+        )
+        if (source_tree.returncode != 0
+                or not re.fullmatch(r"[0-9a-f]{40,64}", source_tree.stdout.decode("ascii", errors="strict").strip())):
+            raise ValueError
+        entries = inventory(package_root)
+        if "mix.exs" not in entries or "hex_metadata.config" not in entries:
+            raise ValueError
+        actual_sources = set(entries) - {"hex_metadata.config"}
+        if actual_sources != expected_package_files():
+            raise ValueError
+        for entry in entries:
+            # Hex generates this metadata file from the package manifest.
+            if entry == "hex_metadata.config":
+                continue
+            blob = subprocess.run(
+                ("git", "show", f"{revision}:{entry}"), cwd=PROJECT_ROOT,
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                check=False, timeout=10,
+            )
+            packaged = (package_root / entry).read_bytes()
+            if (blob.returncode != 0
+                    or hashlib.sha256(blob.stdout).digest() != hashlib.sha256(packaged).digest()):
+                raise ValueError
+        proof = _source_binding_digest(revision, archive_sha256, tree_sha256)
+        return revision, proof
+    except (OSError, ValueError, UnicodeError, PackageInputError, subprocess.TimeoutExpired):
+        raise PackageInputError("local package tar source-to-archive binding is unproven") from None
+
+
 def verify_candidate_input(archive: Path, package_root: Path, identity: PackageIdentity) -> None:
     """Verify the source artifact and extracted tree before any child can reuse them."""
     if not archive.is_file() or sha256(archive) != (identity.archive_sha256 or identity.sha256):
@@ -1108,6 +1185,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
         tree = package_tree_digest(package_root)
         if source.kind == "frozen":
             source_revision_claim, source_proof = verify_frozen_source_owner(source, tarball, package_root)
+        elif source.kind == "tar" and source.source_revision is not None:
+            source_revision_claim, source_proof = verify_local_tar_source_owner(
+                source.source_revision, runner, package_root, checksum, tree,
+            )
         else:
             source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
         identity = PackageIdentity(
@@ -1129,6 +1210,10 @@ def prepare_package(run_root: Path, source: PackageSource | None = None) -> tupl
     if source.kind == "frozen":
         source_revision_claim, source_proof = verify_frozen_source_owner(source, tarball, package_root)
         _materialize_frozen_archive(tarball, run_root, version, checksum)
+    elif source.kind == "tar" and source.source_revision is not None:
+        source_revision_claim, source_proof = verify_local_tar_source_owner(
+            source.source_revision, runner, package_root, checksum, tree,
+        )
     else:
         source_revision_claim, source_proof = _external_source_claim(source, checksum, tree)
     return package_root, entries, PackageIdentity(
@@ -1305,15 +1390,24 @@ def update_locks() -> None:
             shutil.copy2(child_root / "mix.lock", template / "mix.lock")
 
 
-def package_source(package_tar: Path | None, hex_version: str | None, expected_sha256: str | None = None) -> PackageSource:
+def package_source(
+    package_tar: Path | None,
+    hex_version: str | None,
+    expected_sha256: str | None = None,
+    source_revision: str | None = None,
+) -> PackageSource:
     if package_tar is not None and hex_version is not None:
         raise PackageInputError("choose either a local package tar or exact Hex version")
     if package_tar is not None:
-        return PackageSource("tar", str(package_tar), expected_sha256)
+        return PackageSource("tar", str(package_tar), expected_sha256, source_revision)
     if hex_version is not None:
+        if source_revision is not None:
+            raise PackageInputError("package source revision requires a local package tar")
         return PackageSource("hex", exact_version(hex_version), expected_sha256)
     if expected_sha256 is not None:
         raise PackageInputError("--package-sha256 requires --package-tar or --hex-version")
+    if source_revision is not None:
+        raise PackageInputError("package source revision requires a local package tar")
     return PackageSource("checkout")
 
 
@@ -1324,6 +1418,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--cache-root", type=Path)
     parser.add_argument("--package-tar", type=Path)
     parser.add_argument("--package-sha256")
+    parser.add_argument("--source-revision")
     parser.add_argument("--hex-version")
     parser.add_argument("--inspect", action="store_true")
     return parser.parse_args(argv)
@@ -1337,7 +1432,10 @@ def main(argv: Sequence[str]) -> int:
             raise PackageInputError("choose either --package-tar or --hex-version")
 
         if args.inspect:
-            source = package_source(args.package_tar, args.hex_version, args.package_sha256)
+            source = package_source(
+                args.package_tar, args.hex_version, args.package_sha256,
+                args.source_revision,
+            )
             with tempfile.TemporaryDirectory(prefix="lockspire-clean-room-inspect-") as temporary:
                 _root, _entries, identity = prepare_package(Path(temporary), source)
             print(json.dumps(identity.safe_receipt(), sort_keys=True, separators=(",", ":")))

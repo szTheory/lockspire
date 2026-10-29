@@ -224,6 +224,16 @@ def safe_oauth_error_code(response: dict[str, object]) -> str:
     return ""
 
 
+def selected_package_source_revision(current_head: str, environment: dict[str, str] | None = None) -> str:
+    """Prefer the authenticated package source over the hosted synthetic checkout."""
+    selected = os.environ if environment is None else environment
+    return (
+        selected.get("LOCKSPIRE_LIFETIME_SOURCE_REVISION")
+        or selected.get("LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION")
+        or current_head
+    )
+
+
 def redirect(response: dict[str, object], label: str) -> str:
     value = response["headers"].get("location")  # type: ignore[union-attr]
     if not isinstance(value, str):
@@ -2211,7 +2221,7 @@ def main(argv: list[str]) -> int:
             package_root, _package_inventory, package_identity = prepare_package(run_root, selected_source)
             source_revision = package_identity.source_revision or ""
             current_head = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=Path(__file__).resolve().parents[2], text=True).strip()
-            expected_source = os.environ.get("LOCKSPIRE_LIFETIME_SOURCE_REVISION") or current_head
+            expected_source = selected_package_source_revision(current_head)
             if not source_revision or source_revision != expected_source:
                 raise PackageInputError("package source revision differs from its independently selected source")
             if package_identity.kind == "frozen" and not package_identity.source_proof:

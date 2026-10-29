@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "accept
 import clean_room_admin_journey as admin_journey
 import clean_room_saas_journey as saas_journey
 import client_lifetime_upgrade as lifetime_upgrade
+import package_input
 from admin_receipts import validate_receipt, write_receipt
 import build_provider as provider_builder
 from package_input import PackageInputError, _OWNED_IDENTITIES, owned_session_state, start_owned_session, stop_process_group
@@ -51,6 +52,98 @@ FULL_CASE_EVIDENCE = {
     "public_protocol_error": {"protocol_error_shape", "no_staff_checks"},
 }
 FULL_OBSERVATIONS = frozenset().union(*FULL_CASE_EVIDENCE.values()) | {"assets_200"}
+
+
+class PackageSourceRevisionTests(unittest.TestCase):
+    def test_authenticated_candidate_source_wins_over_synthetic_checkout_sha(self):
+        source = "a" * 40
+        synthetic_merge = "b" * 40
+        self.assertEqual(
+            saas_journey.selected_package_source_revision(
+                synthetic_merge,
+                {"LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION": source},
+            ),
+            source,
+        )
+
+    def test_lifetime_source_override_and_checkout_fallback_keep_precedence(self):
+        current = "c" * 40
+        candidate = "b" * 40
+        lifetime = "a" * 40
+        self.assertEqual(
+            saas_journey.selected_package_source_revision(
+                current,
+                {
+                    "LOCKSPIRE_LIFETIME_SOURCE_REVISION": lifetime,
+                    "LOCKSPIRE_EXPECTED_CANDIDATE_SOURCE_REVISION": candidate,
+                },
+            ),
+            lifetime,
+        )
+        self.assertEqual(saas_journey.selected_package_source_revision(current, {}), current)
+
+    def test_generic_tar_stays_unattributed_without_an_explicit_source_owner(self):
+        source = package_input.package_source(Path("/tmp/lockspire-1.6.1.tar"), None)
+        self.assertEqual(source.kind, "tar")
+        self.assertIsNone(source.source_revision)
+        with self.assertRaises(PackageInputError):
+            package_input.package_source(None, None, source_revision="a" * 40)
+
+
+class LocalTarSourceBindingTests(unittest.TestCase):
+    def make_fixture(self, root: Path) -> tuple[Path, Path, str]:
+        repository = root / "source"
+        repository.mkdir()
+        (repository / "lib").mkdir()
+        (repository / "mix.exs").write_text("defmodule Fixture.MixProject do\nend\n")
+        (repository / "lib" / "source.ex").write_text("defmodule Fixture.Source do\nend\n")
+        subprocess.run(("git", "init", "-q"), cwd=repository, check=True)
+        subprocess.run(("git", "config", "user.email", "fixture@example.test"), cwd=repository, check=True)
+        subprocess.run(("git", "config", "user.name", "Fixture"), cwd=repository, check=True)
+        subprocess.run(("git", "add", "mix.exs", "lib/source.ex"), cwd=repository, check=True)
+        subprocess.run(("git", "commit", "-qm", "fixture source"), cwd=repository, check=True)
+        revision = subprocess.check_output(("git", "rev-parse", "HEAD"), cwd=repository, text=True).strip()
+        package = root / "package"
+        (package / "lib").mkdir(parents=True)
+        (package / "mix.exs").write_text((repository / "mix.exs").read_text())
+        (package / "lib" / "source.ex").write_text((repository / "lib" / "source.ex").read_text())
+        (package / "hex_metadata.config").write_text("generated package metadata")
+        return repository, package, revision
+
+    def bind(self, repository: Path, package: Path, revision: str) -> tuple[str, str]:
+        with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+            package_input, "expected_package_files", return_value=frozenset({"mix.exs", "lib/source.ex"})
+        ):
+            return package_input.verify_local_tar_source_owner(
+                revision, revision, package, "d" * 64, package_input.package_tree_digest(package),
+            )
+
+    def test_matches_the_complete_mix_file_set_and_tracked_blob_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository, package, revision = self.make_fixture(Path(temporary))
+            bound_revision, source_proof = self.bind(repository, package, revision)
+            self.assertEqual(bound_revision, revision)
+            self.assertRegex(source_proof, r"^[0-9a-f]{64}$")
+
+    def test_rejects_missing_extra_modified_or_differently_owned_package_files(self):
+        for mutation in ("missing", "extra", "modified", "wrong_revision"):
+            with self.subTest(mutation=mutation), tempfile.TemporaryDirectory() as temporary:
+                repository, package, revision = self.make_fixture(Path(temporary))
+                runner = revision
+                if mutation == "missing":
+                    (package / "lib" / "source.ex").unlink()
+                elif mutation == "extra":
+                    (package / "lib" / "untracked.ex").write_text("defmodule Fixture.Untracked do\nend\n")
+                elif mutation == "modified":
+                    (package / "lib" / "source.ex").write_text("defmodule Fixture.Changed do\nend\n")
+                else:
+                    runner = "b" * 40
+                with patch.object(package_input, "PROJECT_ROOT", repository), patch.object(
+                    package_input, "expected_package_files", return_value=frozenset({"mix.exs", "lib/source.ex"})
+                ), self.assertRaises(PackageInputError):
+                    package_input.verify_local_tar_source_owner(
+                        revision, runner, package, "d" * 64, package_input.package_tree_digest(package),
+                    )
 
 
 class CallbackCounterTests(unittest.TestCase):

@@ -92,8 +92,6 @@ defmodule Lockspire.Security.ClientSecretVerifier.OperationContext do
     end
   end
 
-  defp validate_generation_context(_context, _opts), do: {:error, @safe_failure}
-
   defp add_operation_key_bytes(forbidden, opts) do
     option_keys =
       [:secret_key_base, :legacy_secret_key_base]

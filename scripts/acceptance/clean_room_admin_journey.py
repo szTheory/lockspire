@@ -268,6 +268,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--run-id", default=str(uuid.uuid4()))
     parser.add_argument("--package-tar", type=Path)
     parser.add_argument("--package-sha256")
+    parser.add_argument("--package-source-revision")
     parser.add_argument("--hex-version")
     return parser.parse_args(argv)
 
@@ -404,7 +405,10 @@ def main(argv: Sequence[str]) -> int:
             emit_failure_record("cleanup", "cleanup_failed", supplemental_cleanup=primary_failure is not None)
 
     try:
-        selected_source = package_source(args.package_tar, args.hex_version, args.package_sha256)
+        selected_source = package_source(
+            args.package_tar, args.hex_version, args.package_sha256,
+            args.package_source_revision,
+        )
         package_root, _entries, identity = prepare_package(base, selected_source)
         source_revision = identity.source_revision or ""
         database_url = clean_room_database_url("admin")

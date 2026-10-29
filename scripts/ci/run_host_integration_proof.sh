@@ -419,6 +419,8 @@ package_dir=$raw_root/package
 mkdir -m 700 "$package_dir"
 candidate_version=$(sed -nE 's/^[[:space:]]*version: "([^"]+)".*/\1/p' mix.exs | head -n 1)
 candidate_tar=$package_dir/lockspire-$candidate_version.tar
+source_revision=${GITHUB_SHA:-$(git rev-parse HEAD)}
+[[ "$source_revision" =~ ^[0-9a-f]{40,64}$ ]] || fail_stage package_identity 1
 run_bounded 0 package_build "$mix_bin" hex.build --output "$candidate_tar" || status=$?
 ((status == 0)) || fail_stage package_build "$status"
 [[ -s "$candidate_tar" ]] || fail_stage package_identity 1
@@ -429,14 +431,13 @@ with open(sys.argv[1], "rb") as handle: print(hashlib.file_digest(handle, "sha25
 PY
 )
 status=0
-run_bounded 0 package_identity python3 scripts/acceptance/clean_room/package_input.py --inspect --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" || status=$?
+run_bounded 0 package_identity python3 scripts/acceptance/clean_room/package_input.py --inspect --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" --source-revision "$source_revision" || status=$?
 ((status == 0)) || fail_stage package_identity "$status"
 identity=$(python3 -c 'import json,sys; value=json.load(sys.stdin)["identity"]; print(json.dumps(value,sort_keys=True))' <<<"$bounded_result") || fail_stage package_identity 1
 candidate_version=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' <<<"$identity")
 candidate_sha=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["archive_sha256"])' <<<"$identity")
 candidate_tree=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["tree_sha256"])' <<<"$identity")
-source_revision=${GITHUB_SHA:-$(git rev-parse HEAD)}
-[[ "$source_revision" =~ ^[0-9a-f]{40,64}$ && -n "$candidate_version" && "$candidate_sha" =~ ^[0-9a-f]{64}$ && "$candidate_tree" =~ ^[0-9a-f]{64}$ ]] || fail_stage package_identity 1
+[[ -n "$candidate_version" && "$candidate_sha" =~ ^[0-9a-f]{64}$ && "$candidate_tree" =~ ^[0-9a-f]{64}$ ]] || fail_stage package_identity 1
 runtime_expression='Application.load(:phoenix); Application.load(:phoenix_live_view); IO.puts("PAIR_RUNTIME|" <> to_string(Application.spec(:phoenix, :vsn)) <> "|" <> to_string(Application.spec(:phoenix_live_view, :vsn)) <> "|" <> System.version() <> "|" <> to_string(:erlang.system_info(:otp_release)))'
 status=0
 run_in_test 0 runtime_observation env MIX_ENV=test LOCKSPIRE_TEST_DB_NAME="$db_name" "$mix_bin" run --no-start -e "$runtime_expression" || status=$?
@@ -481,7 +482,7 @@ for index in 0 1 2; do
   run_id=$(python3 -c 'import uuid; print(uuid.uuid4())')
   raw_receipt=$raw_root/$pair-$suffix.json
   status=0
-  run_bounded 180 browser "${journey_command[@]}" --pair "$pair" --mount "$mount" --scenario full --receipt "$raw_receipt" --run-id "$run_id" --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" || status=$?
+  run_bounded 180 browser "${journey_command[@]}" --pair "$pair" --mount "$mount" --scenario full --receipt "$raw_receipt" --run-id "$run_id" --package-tar "$candidate_tar" --package-sha256 "$candidate_sha" --package-source-revision "$source_revision" || status=$?
   if ((status != 0)); then
     fail_stage "browser_$index" "$status"
   fi
