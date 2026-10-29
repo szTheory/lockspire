@@ -5,11 +5,11 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
-status: executing
-stopped_at: Approved exact update published; required candidate CI has a Dialyzer warning failure
-last_updated: "2026-10-29T00:17:04.916001+00:00"
+status: paused
+stopped_at: Context handoff at Plan 11; terminal candidate CI has Dialyzer, Integration and Minimum failures
+last_updated: "2026-10-29T01:48:56.293Z"
 last_activity: 2026-10-28
-last_activity_desc: Published cc61cffc and exact PR141 body; CI40792440885 Dialyzer failed, remaining jobs running
+last_activity_desc: Saved current Plan 11 handoff; terminal CI has three failures; resume autonomous local correction
 state_head: 1757638a7770bb6f09c3b085f002fa7c8b7ed518
 progress:
   total_phases: 4
@@ -27,15 +27,15 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plan 11 has three accepted author reviews for corrected source `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). Execution checkout `1757638a7770bb6f09c3b085f002fa7c8b7ed518` passed canonical source CI (2,456 tests, zero failures, two properties), three lifetime tests/native composition (47 checks/nine scenarios), verifier pairs (26 receipts/64 cases) and current/minimum installed hosts (96 scenarios). Root native review/frozen/source/package validation passed with exact covered-input equivalence; 79 original validation process pairs stopped. VPROOF-02 is locally qualified. Three earlier canonical failures remain unexplained, current84579 lacks a retained outer PG token/full terminal event despite attributed shutdown/root removal, and minimum71794 final PG/root status remains UNKNOWN. All original limitations and retractions remain unwaived. PR #141 is now verified at published `cc61cffc563fc8df141313c26442186c0b4645a3` with the exact approved body. Automatic CI40792440885 has a Dialyzer `pattern_match_cov` failure at operation_context.ex:95; remaining jobs were still running at observation. The exact push/body authorization is consumed, and no further remote mutation is authorized. Plan 11 remains incomplete, Plan 12 unstarted, VDELIV-01/02 pending.
+**Current focus:** Phase 178 Plan 11 has three accepted author reviews for corrected source `50d67751a7844dee2f5f595195a6ab455e313fc6` (1,079 selected inputs). Execution checkout `1757638a7770bb6f09c3b085f002fa7c8b7ed518` passed canonical source CI (2,456 tests, zero failures, two properties), three lifetime tests/native composition (47 checks/nine scenarios), verifier pairs (26 receipts/64 cases) and current/minimum installed hosts (96 scenarios). Root native review/frozen/source/package validation passed with exact covered-input equivalence; 79 original validation process pairs stopped. VPROOF-02 is locally qualified. Three earlier canonical failures remain unexplained, current84579 lacks a retained outer PG token/full terminal event despite attributed shutdown/root removal, and minimum71794 final PG/root status remains UNKNOWN. All original limitations and retractions remain unwaived. PR #141 is now verified at published `cc61cffc563fc8df141313c26442186c0b4645a3` with the exact approved body. Automatic CI40792440885 has a Dialyzer `pattern_match_cov` failure at operation_context.ex:95; CI is now terminal: Fast, Release Hygiene and Adoption Smoke passed; Dialyzer, Integration and Minimum failed; Coverage skipped. Current Integration/Minimum causes remain UNKNOWN and no source fix has been applied since publication. The exact push/body authorization is consumed, and no further remote mutation is authorized. Plan 11 remains incomplete, Plan 12 unstarted, VDELIV-01/02 pending.
 
 ## Current Position
 
-Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — EXECUTING
+Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — PAUSED AT CI CORRECTION CHECKPOINT
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 not ready until Plan 11 completes
-Status: Approved exact push and PR body update complete. Required hosted CI has a new Dialyzer failure; milestone audit and main/delivery acceptance remain pending.
+Status: Approved exact push and PR body update complete. Required hosted CI has Dialyzer, Integration and Minimum failures; milestone audit and main/delivery acceptance remain pending.
 Last activity: 2026-10-28 — Published exact approved cc61cffc and verified body; observed automatic CI and recorded finite Dialyzer warning evidence.
 
 ## Performance Metrics
@@ -155,15 +155,15 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 
 ## Session Continuity
 
-Last session: 2026-10-28T14:24:03Z
-Stopped at: Resume context restored from structured handoff and checkpoint. Clean local bdbd6e5e and open PR #141 at 33db5483 reconfirmed; hosted CI still has four successes, two failures and coverage skipped. Ready for Plan 11 local corrections; no implementation or runtime started during restoration.
+Last session: 2026-10-29T01:48:56.293Z
+Stopped at: Terminal CI40792440885 on published cc61cffc has three failures; no source correction applied. Fresh context should resume local diagnosis/fixes in Plan 11.
 Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
-Structured handoff: Consumed on resume; original retained in commit bdbd6e5e and detailed phase checkpoint above.
-Next: After clearing context, run `$gsd-execute-phase 178` with no wave filter. Read phase `continue.md`, the retained `.continue-here.md` and `178-11-APPROVED-UPDATE-OUTCOME.json` before execution. Resume Plan 11 local CI corrections and continue through remaining ready work automatically; the owner explicitly does not want to babysit individual waves or routine continuation prompts. Fix and verify routine scoped failures autonomously. Do not repeat the completed push/body update. Preserve redaction, authenticated source ownership, exact historical proof identities, and unresolved legacy/minimum causes. Local implementation/commits were previously authorized; further remote mutations require separate authorization after the corrected local SHA/body are concrete and reviewable. CI efficiency recommendations remain captured in the phase checkpoint and have not been implemented. Plan 11 and VDELIV-01/02 remain incomplete; Plan 12 has not started and remains dependent on Plan 11. Historical Phase 143 plans without summaries retain their existing disposition; no pending todo files, interrupted agent or async-job manifest was found. Resume bookkeeping changes are uncommitted and intentional; see phase `continue.md`.
+Structured handoff: .planning/HANDOFF.json; current human-readable entry: phase continue.md. Both were refreshed from current refs/jobs, not the obsolete33db failure snapshot.
+Next: After clearing context, run `$gsd-execute-phase 178` with no wave filter. Read phase continue.md, .continue-here.md and 178-11-TERMINAL-CI-40792440885.json first. Inspect current Integration/Minimum finite failure witnesses and reproduce Dialyzer pattern_match_cov at operation_context.ex:95, then make and verify minimal scoped local corrections autonomously. Local implementation/tests/reviews/commits are already authorized. Prepare concrete corrected source/proof/SHA/body before asking for any new remote mutation; do not repeat completed cc61cffc push/body update. Plan 11 and VDELIV-01/02 remain incomplete; Plan 12 remains unstarted. Preserve exact C50/H175 proof identities, all prior unknown causes/closures, source-test private ownership, strict redaction and the protected root tar.
 
 ### Blockers
 
-- Current published CI run 40696973463 attempt 1 failed Integration and Minimum; coverage aggregation was skipped and required verifier pair artifacts are absent. Legacy inner failure and minimum VM-exit versus readiness-timeout remain unknown. See the retained phase checkpoint and committed approved-update outcome for exact evidence and correction scope.
+- Published candidate CI40792440885 is terminal: Dialyzer, Integration and Minimum failed; Coverage skipped. Dialyzer has a finite pattern_match_cov witness at operation_context.ex:95; current Integration/Minimum inner causes remain UNKNOWN. Local corrections are not blocked on human approval. Passing hosted candidate gates, milestone audit and main/delivery acceptance remain pending.
 
 ## Decisions
 
@@ -265,8 +265,8 @@ Next: After clearing context, run `$gsd-execute-phase 178` with no wave filter. 
 
 ## Operator Next Steps
 
-- Resume Phase 178 Plan 11 from the latest execution checkpoint: preserve C50d/H175 canonical and lifetime evidence, finish native verifier pairs and six installed-admin journeys, then transfer validated owner/source/package records and prepare the exact final publication proposal. Keep all failed epochs, retractions, missing-token limitations, E-09/E-10 and generic/descriptorless flags visible. No additional push/body update/rerun/merge/release is authorized by the consumed `33db5483` approval.
-- Preserve the immutable entry receipt, candidate CI/input hashes and retained custody; integrated-main acceptance remains Phase 178 work under the single milestone PR train. Merge and publication remain separately gated.
+- After clearing context, run `$gsd-execute-phase 178` without --wave. Resume Plan 11 from current phase continue.md/.continue-here.md and the terminal CI40792440885 record. Diagnose and fix the three current failures locally under existing authorization; do not repeat earlier completed fixes or publication.
+- Preserve C50/H175 native proof and all historical failures/limits. Refresh affected evidence for new covered inputs before proposing an exact next remote update. The cc61cffc push/body approval is consumed; further remote mutation needs a new concrete approval. Plan 12 and main/delivery acceptance remain dependent work.
 
 ## 2026-10-28T14:00:27.096694+00:00 — Approved PR Update / Hosted Qualification
 

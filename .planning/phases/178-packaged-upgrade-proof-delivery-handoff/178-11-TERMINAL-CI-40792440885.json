@@ -1,0 +1,96 @@
+{
+  "complete_seven_job_graph_observed": true,
+  "dialyzer_finite_failure": {
+    "cannot_match": true,
+    "covered_pattern": true,
+    "job_id": 123180682056,
+    "raw_log_persisted": false,
+    "source_location": {
+      "line": 95,
+      "path": "lib/lockspire/security/client_secret_verifier/operation_context.ex"
+    },
+    "unused_function": false,
+    "warning_ids": [
+      "pattern_match_cov"
+    ]
+  },
+  "integration_failure_cause": "UNKNOWN; current job logs have not been diagnosed",
+  "jobs": [
+    {
+      "conclusion": "success",
+      "id": 123180681753,
+      "name": "Fast Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 123180682039,
+      "name": "Release Hygiene Drift",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 123180682053,
+      "name": "Integration Checks",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 123180682056,
+      "name": "Dialyzer",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "id": 123180682125,
+      "name": "Minimum Supported Elixir/OTP",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 123180682126,
+      "name": "Adoption Demo Smoke",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "id": 123183685286,
+      "name": "Complete Coverage Evidence",
+      "status": "completed"
+    }
+  ],
+  "minimum_failure_cause": "UNKNOWN; current job logs have not been diagnosed",
+  "observed_at": "2026-10-29 01:42:39 UTC",
+  "observed_attempt_scope": "connector latest-attempt jobs; response omits attempt number",
+  "passing_required_graph": false,
+  "pr": {
+    "base_sha": "173059a166e9ade0f5f57c9980b7b2400a98538c",
+    "draft": false,
+    "head_sha": "cc61cffc563fc8df141313c26442186c0b4645a3",
+    "merge_commit_sha": "49e561c4f34590c51ccf6275735d82d3ce091294",
+    "merged": false,
+    "number": 141,
+    "state": "open",
+    "url": "https://github.com/szTheory/lockspire/pull/141"
+  },
+  "published_head": "cc61cffc563fc8df141313c26442186c0b4645a3",
+  "read_only": true,
+  "remote_mutations_performed": false,
+  "run_id": 40792440885,
+  "schema": "lockspire-phase178-terminal-candidate-ci-observation-v1",
+  "source_fix_applied": false,
+  "workflow_runs": [
+    {
+      "conclusion": "failure",
+      "id": 40792440885,
+      "name": "CI",
+      "status": "completed"
+    },
+    {
+      "conclusion": "success",
+      "id": 40792440963,
+      "name": "Dependency Review",
+      "status": "completed"
+    }
+  ]
+}
