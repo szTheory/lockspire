@@ -35,11 +35,8 @@ class PackageAttributionTest(unittest.TestCase):
             (package / "mix.exs").write_text('version: "1.6.1"\n')
             (package / "lib.ex").write_text("package tree\n")
             with patch("package_input.validate_local_tarball", return_value=(archive, "1.6.1", "a" * 64)), \
-                 patch("package_input.verify_candidate_input"):
-                _path, _entries, identity = prepare_package(
-                    root, PackageSource("tar", str(archive), source_revision="d" * 40)
-                )
-            self.assertIsNone(identity.source_revision)
+                 patch("package_input.verify_candidate_input"), self.assertRaises(PackageInputError):
+                prepare_package(root, PackageSource("tar", str(archive), source_revision="d" * 40))
 
     def test_external_source_claim_with_unbound_proof_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
