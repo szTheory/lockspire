@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 11
 status: in_progress
-stopped_at: Plan 11 corrected e13 source passed canonical CI; installed and frozen package requalification active
-last_updated: "2026-10-29T03:10:01.389747+00:00"
+stopped_at: e13 source, lifetime and 96 installed scenarios passed; locked rollout ReceiptError under passive diagnosis
+last_updated: "2026-10-29T10:03:35.665289+00:00"
 last_activity: 2026-10-28
-last_activity_desc: Corrected CI source e13 passed 2456 tests and current installed48; minimum/frozen proof active
+last_activity_desc: e13 passed 2456 source tests, 47 lifetime checks and 96 installed scenarios; diagnosing locked rollout ReceiptError
 state_head: 998d68cb
 progress:
   total_phases: 4
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase 178 Plan 11 local corrections are committed through source `e13a71976f216c8953e060729825b821a3e6eba5`, with independent reviews at metadata `998d68cb`. Exact e13 canonical CI passed 2,456 tests/zero failures/two properties under the owned source runner; acceptance 289/0 and clean-room 56/0 passed. Current installed proof passed 48 scenarios/three native receipts with original inner/outer/PG groups stopped and private data retained. Minimum installed proof is active, and new frozen/lifetime/verifier proof is not yet qualified. Earlier current/minimum first-mount attempts failed DB cleanup; causes remain UNKNOWN despite a later current pass. Root tar was overwritten by an earlier canonical alias and restored from exact original bytes, as disclosed in 178-11-LOCAL-INCIDENT.md. C50/H175 proof remains its historical epoch. Published PR141 remains cc61cffc at last observation; no new remote mutation is authorized or performed. Plan11/12 and VDELIV-01/02 remain incomplete.
+**Current focus:** Phase 178 Plan 11 source `e13a71976f216c8953e060729825b821a3e6eba5` has accepted native independent reviews. Exact canonical CI passed 2,456/0 with two properties; Python acceptance289/0 and clean-room56/0 passed final working-tree bytes; actual current/minimum installed hosts passed96 browser scenarios with complete original journals and PG shutdown/data retained. Frozen e13 provisioning and native lifetime3tests/47checks/9scenarios passed. First locked verifier attempt retained two core receipts then failed rollout with ReceiptError; exact predicate UNKNOWN, original outer/PG stopped, dependent cleanup unconfirmed, data retained. New passive fresh-run diagnosis is under static review; floor verifier unstarted. Earlier failures/unknown closures and restored root archive incident remain unwaived. PR141 is still observed open/unmerged at cc61cffc with unchanged approved body; old CI failed. No new remote mutation is authorized or performed. Plan11/12 and VDELIV-01/02 remain incomplete.
 
 ## Current Position
 
@@ -35,7 +35,7 @@ Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — LOCAL CI CORRECTION /
 Current Plan: 11
 Total Plans in Phase: 12
 Plan: 11 of 12; 10/12 complete; Plan 12 waits on Plan 11
-Status: Corrected source and three independent reviews accepted locally; exact source canonical and current installed proof passed. Minimum/frozen proof active; hosted CI/audit/main acceptance pending.
+Status: Corrected source and three independent reviews accepted locally; exact source canonical and current installed proof passed. Locked rollout receipt rejection is under diagnosis; floor verifier and full package composition remain pending, followed by hosted CI/audit/main acceptance.
 Last activity: 2026-10-29 UTC — Saved attributed e13 progress and original metadata; no remote mutation.
 
 ## Performance Metrics
@@ -156,10 +156,10 @@ Closeout type: verified_closeout. Known verification overrides: 0 newly acknowle
 ## Session Continuity
 
 Last session: 2026-10-29 UTC, autonomous Plan 11 correction work remains active.
-Stopped at: Corrected e13 source passed exact canonical CI, Python harness and current installed proof. Minimum installed and new frozen/lifetime/verifier requalification are active.
+Stopped at: Corrected e13 source passed exact canonical CI, Python harness and current installed proof. Current/minimum installed96 and frozen/lifetime47 qualified; first locked verifier failed rollout ReceiptError, now passive diagnosis under static review.
 Resume file: .planning/phases/178-packaged-upgrade-proof-delivery-handoff/.continue-here.md
 Current progress: 178-11-CI-CORRECTION-EVIDENCE-e13a7197.json. Original CI failure handoff and C50/H175 proof remain historical; do not replay the consumed cc61 push/body update.
-Next: Reconcile the explicitly owned running jobs before starting any duplicate proof. Source C and native runner H are both e13a71976f216c8953e060729825b821a3e6eba5 in the new proof epoch /private/tmp/lockspire178-e13-native-3fml_p78. Current installed proof finished at /private/tmp/lockspire178-host-final-5ez7idgy; minimum observed proof is at /private/tmp/lockspire178-host-final-gm3rpq2r. New native provision collection is in progress (collector outputs under epoch/work-e13a7197-He13a7197/collect-provision-*). Continue all ready local preparation automatically; no new remote mutation is authorized. Preserve all prior unknowns and the root tar.
+Next: Reconcile the explicitly owned running jobs before starting any duplicate proof. Source C and native runner H are both e13a71976f216c8953e060729825b821a3e6eba5 in the new proof epoch /private/tmp/lockspire178-e13-native-3fml_p78. Current and minimum installed proof finished at /private/tmp/lockspire178-host-final-5ez7idgy and /private/tmp/lockspire178-host-final-gm3rpq2r. Provision and lifetime collectors passed. Locked collect-verifier-locked-6c4w3not failed with ReceiptError; new diagnostic variants await static acceptance. Floor verifier unstarted. Continue all ready local preparation automatically; no new remote mutation is authorized. Preserve all prior unknowns and the root tar.
 
 ### Blockers
 
