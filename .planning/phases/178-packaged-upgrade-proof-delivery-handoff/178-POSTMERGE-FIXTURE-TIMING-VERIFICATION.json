@@ -1,0 +1,926 @@
+{
+  "candidate_sha": "5e524fd34919f38988e6142aaf1da0e5bff54a98",
+  "classification_limit": "Controlled delay proves a fixture timing defect; the exact assertion from the original intermittent failure remains unknown. Neither synthetic fixtures nor the later full diagnostic grant accepted-main status.",
+  "controlled_delay_reproduction": {
+    "exit_code": 0,
+    "observations": [
+      {
+        "accepted_main": false,
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "classification": "synthetic_fixture_only",
+        "elapsed_ms": 4748,
+        "injected_delay_seconds": 3,
+        "reason": "polling_timeout",
+        "scenario": "ci-run-replaced",
+        "status": 1,
+        "wait_seconds": 2
+      },
+      {
+        "accepted_main": false,
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "classification": "synthetic_fixture_only",
+        "elapsed_ms": 5779,
+        "injected_delay_seconds": 3,
+        "reason": "run_identity_changed",
+        "scenario": "ci-run-replaced",
+        "status": 1,
+        "wait_seconds": 3600
+      },
+      {
+        "accepted_main": false,
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "classification": "synthetic_fixture_only",
+        "elapsed_ms": 4510,
+        "injected_delay_seconds": 3,
+        "reason": "polling_timeout",
+        "scenario": "main-advances-during-poll",
+        "status": 1,
+        "wait_seconds": 2
+      },
+      {
+        "accepted_main": false,
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "classification": "synthetic_fixture_only",
+        "elapsed_ms": 6126,
+        "injected_delay_seconds": 3,
+        "reason": "main_identity_changed",
+        "scenario": "main-advances-during-poll",
+        "status": 1,
+        "wait_seconds": 3600
+      }
+    ],
+    "stderr_bytes": 0
+  },
+  "corrected_contract": {
+    "accepted_main": false,
+    "classification": "synthetic_fixture_only",
+    "elapsed_seconds": 122.0317141249543,
+    "exit_code": 0,
+    "file": "/Users/jon/projects/lockspire/test/support/lockspire/release_proof/package_assertions.ex",
+    "observations": [
+      {
+        "event": "fixture_started",
+        "scenario": "success",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance SHA"
+        ],
+        "elapsed_ms": 515,
+        "event": "fixture_finished",
+        "scenario": "success",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "head-mismatch",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 624,
+        "event": "fixture_finished",
+        "scenario": "head-mismatch",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "main-mismatch",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 529,
+        "event": "fixture_finished",
+        "scenario": "main-mismatch",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "remote-mismatch",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 536,
+        "event": "fixture_finished",
+        "scenario": "remote-mismatch",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "fetch-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 579,
+        "event": "fixture_finished",
+        "scenario": "fetch-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "head-moves",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1920,
+        "event": "fixture_finished",
+        "scenario": "head-moves",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "main-moves",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 1847,
+        "event": "fixture_finished",
+        "scenario": "main-moves",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "status-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance checkout"
+        ],
+        "elapsed_ms": 450,
+        "event": "fixture_finished",
+        "scenario": "status-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 2112,
+        "event": "fixture_finished",
+        "scenario": "mix-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-signal",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1885,
+        "event": "fixture_finished",
+        "scenario": "mix-signal",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-zero-tests",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1575,
+        "event": "fixture_finished",
+        "scenario": "mix-zero-tests",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-malformed",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1435,
+        "event": "fixture_finished",
+        "scenario": "mix-malformed",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-one-suite",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 2136,
+        "event": "fixture_finished",
+        "scenario": "mix-one-suite",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-two-suites",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1637,
+        "event": "fixture_finished",
+        "scenario": "mix-two-suites",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-failing-suite",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1703,
+        "event": "fixture_finished",
+        "scenario": "mix-failing-suite",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-runs-empty",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 1739,
+        "event": "fixture_finished",
+        "scenario": "ci-runs-empty",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-runs-duplicate",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 1592,
+        "event": "fixture_finished",
+        "scenario": "ci-runs-duplicate",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-runs-malformed",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 1474,
+        "event": "fixture_finished",
+        "scenario": "ci-runs-malformed",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-repository",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 2112,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-repository",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-workflow-id",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 1873,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-workflow-id",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-name",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 2660,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-name",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-path",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 2594,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-path",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-event",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 2345,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-event",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-branch",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 2098,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-branch",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-wrong-sha",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 1629,
+        "event": "fixture_finished",
+        "scenario": "ci-wrong-sha",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-failed",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 1783,
+        "event": "fixture_finished",
+        "scenario": "ci-failed",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-missing-url",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 1722,
+        "event": "fixture_finished",
+        "scenario": "ci-missing-url",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-cancelled",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow identity"
+        ],
+        "elapsed_ms": 1773,
+        "event": "fixture_finished",
+        "scenario": "ci-cancelled",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-queued-timeout",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 1696,
+        "event": "fixture_finished",
+        "scenario": "ci-queued-timeout",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-run-replaced",
+        "wait_seconds": 3600
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 6026,
+        "event": "fixture_finished",
+        "scenario": "ci-run-replaced",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "main-advances-during-poll",
+        "wait_seconds": 3600
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 6144,
+        "event": "fixture_finished",
+        "scenario": "main-advances-during-poll",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-jobs-incomplete",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow jobs"
+        ],
+        "elapsed_ms": 2177,
+        "event": "fixture_finished",
+        "scenario": "ci-jobs-incomplete",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-job-owner",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "required CI jobs"
+        ],
+        "elapsed_ms": 2451,
+        "event": "fixture_finished",
+        "scenario": "ci-job-owner",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-job-attempt",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "required CI jobs"
+        ],
+        "elapsed_ms": 2031,
+        "event": "fixture_finished",
+        "scenario": "ci-job-attempt",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-job-source",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "required CI jobs"
+        ],
+        "elapsed_ms": 1879,
+        "event": "fixture_finished",
+        "scenario": "ci-job-source",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-owner",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2228,
+        "event": "fixture_finished",
+        "scenario": "release-job-owner",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-attempt",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2623,
+        "event": "fixture_finished",
+        "scenario": "release-job-attempt",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-source",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2537,
+        "event": "fixture_finished",
+        "scenario": "release-job-source",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-published",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2925,
+        "event": "fixture_finished",
+        "scenario": "release-published",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-missing",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2587,
+        "event": "fixture_finished",
+        "scenario": "release-job-missing",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-duplicate",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2245,
+        "event": "fixture_finished",
+        "scenario": "release-job-duplicate",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-terminal-missing",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2104,
+        "event": "fixture_finished",
+        "scenario": "release-job-terminal-missing",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-terminal-success",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2160,
+        "event": "fixture_finished",
+        "scenario": "release-job-terminal-success",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-terminal-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2885,
+        "event": "fixture_finished",
+        "scenario": "release-job-terminal-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-terminal-unexpected",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2297,
+        "event": "fixture_finished",
+        "scenario": "release-job-terminal-unexpected",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "release-job-terminal-duplicate",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "release no-publish"
+        ],
+        "elapsed_ms": 2912,
+        "event": "fixture_finished",
+        "scenario": "release-job-terminal-duplicate",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-running-list-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "adoption demo Docker"
+        ],
+        "elapsed_ms": 2545,
+        "event": "fixture_finished",
+        "scenario": "docker-running-list-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-stopped-list-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "adoption demo Docker"
+        ],
+        "elapsed_ms": 2405,
+        "event": "fixture_finished",
+        "scenario": "docker-stopped-list-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-main-race",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "acceptance identity"
+        ],
+        "elapsed_ms": 3310,
+        "event": "fixture_finished",
+        "scenario": "docker-main-race",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-volume-list-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "adoption demo Docker"
+        ],
+        "elapsed_ms": 3033,
+        "event": "fixture_finished",
+        "scenario": "docker-volume-list-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-warn",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "WARN dispositions"
+        ],
+        "elapsed_ms": 2880,
+        "event": "fixture_finished",
+        "scenario": "docker-warn",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "success",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "WARN dispositions"
+        ],
+        "elapsed_ms": 2195,
+        "event": "fixture_finished",
+        "scenario": "success",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-warn",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "WARN dispositions"
+        ],
+        "elapsed_ms": 1966,
+        "event": "fixture_finished",
+        "scenario": "docker-warn",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-warn",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "WARN dispositions"
+        ],
+        "elapsed_ms": 1967,
+        "event": "fixture_finished",
+        "scenario": "docker-warn",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "ci-secret-response",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "workflow evidence"
+        ],
+        "elapsed_ms": 1473,
+        "event": "fixture_finished",
+        "scenario": "ci-secret-response",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "mix-secret-failure",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [
+          "local gate"
+        ],
+        "elapsed_ms": 1662,
+        "event": "fixture_finished",
+        "scenario": "mix-secret-failure",
+        "status": 1
+      },
+      {
+        "event": "fixture_started",
+        "scenario": "docker-warn",
+        "wait_seconds": 0
+      },
+      {
+        "block_labels": [],
+        "elapsed_ms": 3282,
+        "event": "fixture_finished",
+        "scenario": "docker-warn",
+        "status": 0
+      },
+      {
+        "accepted_main": false,
+        "classification": "synthetic_fixture_only",
+        "elapsed_ms": 121518,
+        "event": "diagnostic_complete",
+        "status": "passed"
+      }
+    ],
+    "schema": "lockspire-v148-fixture-fix-verification-v1",
+    "source_sha256": "7bad2f7d9b1034b0f362c37696b7d76f3b57d44e68b5cb4c9d1653d16967f754",
+    "stderr_bytes": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "c8da89e4e0f00bf1a88b65eb31618b21423422c7f8539ebb3f80c474a005909a"
+  },
+  "diagnostic_observations": {
+    "block_labels": [],
+    "exception_classes": [],
+    "exit_code": 0,
+    "exunit_seeds": [
+      "530892",
+      "158959",
+      "242871"
+    ],
+    "failure_locations": [],
+    "matched_rejection_predicates": [],
+    "stage": "ci",
+    "stdout_bytes": 715755,
+    "stdout_sha256": "030ace8f430f5d5a435fd8b1bc9505bdb2d628251490a9570c2d84733f3ee1be",
+    "timeout_ms": []
+  },
+  "existing_integration_authorization": "unchanged; applies to prior candidate, not this new source",
+  "main_acceptance": "held; no actual helper receipt",
+  "original_failure": {
+    "attempt": 4,
+    "cleanup": "independently_absent",
+    "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+    "line": 188,
+    "precise_original_assertion": "unknown; original child output was not retained",
+    "private_postgres_closed": true
+  },
+  "original_main_sha": "3f64e1c6c1af19f0e5f074aff326fa04f7f6b642",
+  "protected_root_tar_sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be",
+  "remote_mutations_for_this_correction": false,
+  "schema": "lockspire-v148-postmerge-fixture-debug-v1",
+  "source_file": "test/support/lockspire/release_proof/package_assertions.ex",
+  "source_sha256": "7bad2f7d9b1034b0f362c37696b7d76f3b57d44e68b5cb4c9d1653d16967f754",
+  "status": "verified_local_only",
+  "unmodified_full_source_diagnostic": {
+    "accepted_main": false,
+    "classification": "diagnostic_only",
+    "cleanup": "independently_absent",
+    "exit_code": 0,
+    "finished_at": "2026-10-30T15:19:09.061840+00:00",
+    "main_sha": "3f64e1c6c1af19f0e5f074aff326fa04f7f6b642",
+    "postgres_data_retained": true,
+    "private_postgres_closed": true,
+    "schema": "lockspire-v148-source-diagnostic-v1",
+    "source_manifest": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-0or7uvp9/manifest.json",
+    "source_state": "passed",
+    "started_at": "2026-10-30T15:12:21.789534+00:00"
+  }
+}

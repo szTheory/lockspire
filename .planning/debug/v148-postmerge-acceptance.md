@@ -15,10 +15,10 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 
 ## Current Focus
 
-hypothesis: Ancestry-only provenance conflates commit identity with integration of identical reviewed source.
-test: Real Git squash fixtures plus authoritative PR metadata, including negative mutations.
-expecting: An authenticated merged PR with an identical full tree provides a narrow squash bridge; changed/unrelated source fails.
-next_action: Execute the approved non-force push and correction PR, require green CI before merge, then synchronize main and run fresh exact-main acceptance.
+hypothesis: Controlled delay confirms that two-second race-fixture budgets can prevent the intended second observation; original intermittent assertion remains unknown.
+test: Old-budget delay experiments timeout; the full corrected rejection contract passes with deliberate three-second delays and unchanged outer timeout. Unmodified full diagnostic also passed, separately.
+expecting: Review the concrete test-only correction before granting a new exact-source integration authorization; actual main receipt remains required afterward.
+next_action: User approved fixture candidate and conditional integration at observed15:27:24UTC. Push, verify every canonical hosted job, merge exact head, synchronize main, then run fresh actual helper and validate emitted handoff. Preserve previous attempts and data.
 
 ## Evidence
 
@@ -82,3 +82,17 @@ root_cause: Ancestry-only integration checks, temporary GitHub PR associations/m
 fix: Preserve strict historical identities; authenticate an origin merged-PR/full-tree squash bridge, recover old checkout ownership from all seven exact-attempt job logs, and label historical candidate validation separately from the fresh main gate. Keep synthetic fixtures bound to their immutable source/lock epoch.
 verification: Final300 native pinned Python tests passed; live original7-job/26-receipt/64-case historical candidate revalidation passed; hygiene18/0/0 and whitespace/compilation checks passed. Exact-main gate remains pending integration.
 files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptance/client_verifier_delivery_chain_test.py; test/acceptance/verifier_owner_fixture.py; planning checkpoint/evidence records.
+
+## Integration and subsequent local failure — 2026-10-30
+
+- Correction PR143 merged after all canonical premerge jobs passed. Main `3f64e1c6c1af19f0e5f074aff326fa04f7f6b642` passed all seven CI jobs in run41068236671 and no-publish Release41068236662.
+- Acceptance attempt3's actual owned source gate passed15 architecture/2187 fast plus2properties/261integration, zero failures; helper later blocked on workflow lookup while hosted CI was pending. Exact failing lookup predicate unknown. Original processes closed and data retained.
+- Attempt4, started only after hosted success, failed the fast suite with one failure at repository_hygiene_contract_test.exs:188; integration did not run. Its database was independently absent after cleanup, every child group stopped, and original private PostgreSQL closed. No main receipt emitted.
+- Isolated synthetic rejection fixtures passed within their original180second timeout. The two polling-race scenarios have two-second helper budgets, but timing is only a hypothesis, not an established original cause.
+- Full diagnostic source run keeps original source/test selection/timeouts; captures only validated locations, fixed exception/predicate labels, counts and hashes. It is diagnostic only. Preserve the safety stop until resolved.
+
+## Controlled fixture timing defect and verified correction
+
+A three-second first fake workflow response makes both old two-second fixtures expire before their second observation. Main advancement then rejects at workflow evidence rather than acceptance identity; run replacement's broad label previously accepted timeout as success. With a3600second helper budget, both reach their intended identity check. The prepared correction retains the existing180second outer test limit, injects that delay, and strengthens replacement-message assertion. The complete corrected contract passed in122seconds; formatting/whitespace checks passed. This independently demonstrates a fixture defect but does not recover the original failed assertion. Evidence and proposal are linked from STATE; local source commit is recorded in the proposal. No new remote operation is authorized or executed. Main acceptance remains held.
+
+User approved the concrete additional correction proposal on2026-10-30; approval observed15:27:24UTC. The canonical authorization names5e524; prior9ffe authorization retained in178-SQUASH-CORRECTION-INTEGRATION-AUTHORIZATION.json. No receipt is granted by this authorization.

@@ -5,12 +5,12 @@ milestone_name: Client Authentication Key Isolation & Rotation
 current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
-status: awaiting_integration
-stopped_at: PR141 squash merged; postmerge CI passed; final correction verified 300 Python tests and historical26/64; exact-main acceptance pending correction integration and authorization custody
+status: verifying
+stopped_at: additional fixture correction approved; integration and exact-main acceptance in progress
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
-state_head: 9ffe69f1
+state_head: 3f64e1c6
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,7 +21,22 @@ progress:
 
 # Project State
 
-## Current postmerge checkpoint — 2026-10-30
+## Current acceptance checkpoint — 2026-10-30
+
+Read [working preferences](WORKING-PREFERENCES.md) before OpenGSD planning, execution, review, or user-facing updates. These are the user's explicit communication and workflow corrections.
+
+The user authorized the correction and conditional integration. PR [#143](https://github.com/szTheory/lockspire/pull/143) passed every canonical premerge CI job and merged. HEAD/main/origin/main are synchronized at `3f64e1c6c1af19f0e5f074aff326fa04f7f6b642`. Postmerge CI [41068236671](https://github.com/szTheory/lockspire/actions/runs/41068236671) passed all seven canonical jobs; Release [41068236662](https://github.com/szTheory/lockspire/actions/runs/41068236662) passed with publication jobs skipped.
+
+The first complete fresh owned contributor gate passed architecture, fast, and integration suites; database cleanup and private PostgreSQL closure were confirmed. Its acceptance helper stopped on workflow-evidence lookup while CI was running. Once hosted CI completed, the next exact-main helper attempt failed one local test: `test/lockspire/release/repository_hygiene_contract_test.exs:188`, the acceptance helper's rejection-path contract. That attempt stopped, its database was independently cleaned, and private PostgreSQL closed. No accepted-main receipt exists.
+
+The full unmodified owned source diagnostic passed; its database cleanup and original private PostgreSQL closure were confirmed. It did not reproduce the failure and cannot grant accepted-main status. A controlled three-second first workflow response independently demonstrated a two-second fixture deadline defect: main advancement is masked by polling timeout, and run replacement can pass on the wrong rejection reason. The original failed attempt's exact assertion remains unknown.
+
+A test-only correction is committed locally at `5e524fd34919f38988e6142aaf1da0e5bff54a98` on `fix/v148-polling-fixtures`. The complete rejection contract passed with deliberate delays within its existing180second bound; formatting/whitespace checks passed. Production helper/library code is unchanged. Main/origin/main remain at the merged correction revision; root HEAD now names this new local candidate. The user approved [the additional fixture correction proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-FIXTURE-TIMING-PROPOSAL.md) on2026-10-30 (observed15:27:24UTC): one non-force push/PR/conditional merge, truthful exact-source authorization, then fresh exact-main acceptance. The prior authorization bytes are retained separately; canonical authorization now names the approved fixture candidate.
+
+The active execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All original processes are closed, private data and failed attempts retained, protected package unchanged, and accepted-main receipt absent. Preserve the safety stop until the correction is authorized, integrated, and accepted by the actual helper.
+Next: finish exact-main acceptance and validate the actual handoff. Milestone archiving and UI-quality milestone setup follow acceptance; existing PARTIAL coverage debt and UI decision boundaries remain. No UI implementation has started.
+
+## Earlier postmerge debug checkpoint — 2026-10-30
 
 PR #141 is squash merged at `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`; local HEAD/main/origin/main agreed at the initial observation. Its full Git tree equals final PR head `4a90525ccef493fc486e2950eecaeff703c88473`. Postmerge CI `40987320716` passed all seven canonical jobs; Release `40987320718` succeeded. The local correction is on `fix/v148-squash-acceptance`; these observations do not replace the exact-main helper receipt.
 

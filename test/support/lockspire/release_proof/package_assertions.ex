@@ -454,8 +454,10 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
       {"missing workflow URL", "ci-missing-url", []},
       {"cancelled workflow", "ci-cancelled", []},
       {"bounded polling timeout", "ci-queued-timeout", []},
-      {"polling identity replacement", "ci-run-replaced", [wait_seconds: 2]},
-      {"main advancement during polling", "main-advances-during-poll", [wait_seconds: 2]},
+      # These cases must reach the second observation. Their outer test timeout
+      # bounds a hung fixture; a short polling deadline can mask the intended race.
+      {"polling identity replacement", "ci-run-replaced", [wait_seconds: 3600]},
+      {"main advancement during polling", "main-advances-during-poll", [wait_seconds: 3600]},
       {"incomplete job pagination", "ci-jobs-incomplete", []},
       {"wrong CI job run owner", "ci-job-owner", []},
       {"wrong CI job run attempt", "ci-job-attempt", []},
@@ -496,6 +498,11 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
 
       assert output =~ "[BLOCK] #{expected_block}:",
              "#{label} did not reject at #{expected_block}: #{output}"
+
+      if scenario == "ci-run-replaced" do
+        assert output =~ "workflow run identity changed during polling",
+               "#{label} must observe replacement rather than merely time out"
+      end
 
       refute output =~ "fixture-credential-sentinel", "#{label} leaked fixture credentials"
       refute output =~ ~s({"workflow_runs"), "#{label} leaked a raw workflow response"
@@ -1012,11 +1019,17 @@ defmodule Lockspire.TestSupport.ReleaseProof.PackageAssertions do
           ci-cancelled) printf '{"workflow_runs":['; ci_run 1001 completed cancelled; printf ']}\n' ;;
           ci-queued-timeout) printf '{"workflow_runs":['; ci_run 1001 queued null; printf ']}\n' ;;
           ci-run-replaced)
-            count="$(bump ci_run)"; printf '{"workflow_runs":['
+            count="$(bump ci_run)"
+            # Exceed the former two-second budget before the first response.
+            [ "$count" -eq 1 ] && sleep 3
+            printf '{"workflow_runs":['
             [ "$count" -eq 1 ] && ci_run 1001 queued null || ci_run 1002 completed success
             printf ']}\n' ;;
           main-advances-during-poll)
-            count="$(bump ci_run)"; printf '{"workflow_runs":['
+            count="$(bump ci_run)"
+            # Exceed the former two-second budget before the first response.
+            [ "$count" -eq 1 ] && sleep 3
+            printf '{"workflow_runs":['
             [ "$count" -eq 1 ] && ci_run 1001 queued null || ci_run 1001 completed success
             printf ']}\n' ;;
           *) printf '{"workflow_runs":['; ci_run; printf ']}\n' ;;
