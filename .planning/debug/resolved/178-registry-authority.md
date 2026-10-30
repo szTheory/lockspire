@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Second source review SEC-178-06: caller-authored numeric registry row signals an unrelated same-user sibling session"
 created: 2026-10-27T08:11:15.055317+00:00
-updated: 2026-10-27T08:39:18.355681+00:00
+updated: 2026-10-30T19:29:56.936128+00:00
 ---
 
 ## Current Focus
@@ -92,3 +92,14 @@ files_changed:
   - test/acceptance/client_verifier_wrapper_paths_test.py
 
 Limits: macOS actual process and peer APIs were executed here; Linux /proc/SO_PEERCRED branch was not executed in this environment. A missing leader with a surviving unverifiable group, changed creation identity, denied identity/signal operation or incomplete launch does not grant numeric kill authority; it retains diagnostic custody and refuses completion. The API acknowledges registrations only after OS ownership admission. Arbitrary sessions started outside start_owned_session are outside this API's declared supervision boundary. No database, genuine package producer, freeze, canonical CI, remote write, hosted/main acceptance, reviewer waiver or threat-ledger closure is claimed.
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `awaiting_human_verify` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `d9e2d8bb4f749698d06ff2e2041a6663387dc1379086995b806e93fe9f063c22`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

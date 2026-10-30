@@ -1,0 +1,29 @@
+{
+  "schema": "lockspire-v148-closeout-python-v1",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "test/acceptance",
+    "-p",
+    "*_test.py"
+  ],
+  "source_revision": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "exit_code": 0,
+  "group_closed": true,
+  "elapsed_seconds": 163.381,
+  "counts": [
+    [
+      "306",
+      "163.146"
+    ]
+  ],
+  "ok": true,
+  "stdout_bytes": 6744,
+  "stderr_bytes": 10192,
+  "stdout_sha256": "3688671d7d97b44671bebaa534b92772b6b9f2d382bccb5a56b55d45112bafa6",
+  "stderr_sha256": "693568d9cf91635d75eb9bd09968e02e7877e4137cded6e7ef4fff27eee8e435",
+  "diagnostics": "raw child output withheld; only counts/hashes retained"
+}

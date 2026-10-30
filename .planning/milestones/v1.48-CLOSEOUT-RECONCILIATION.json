@@ -1,0 +1,184 @@
+{
+  "schema": "lockspire-v148-closeout-reconciliation-v1",
+  "date": "2026-10-30T19:29:56.936128+00:00",
+  "accepted_source": "dc3969302152028e2132759eb9edf5a7d260ac39",
+  "native_python": {
+    "schema": "lockspire-v148-closeout-python-v1",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "test/acceptance",
+      "-p",
+      "*_test.py"
+    ],
+    "source_revision": "dc3969302152028e2132759eb9edf5a7d260ac39",
+    "exit_code": 0,
+    "group_closed": true,
+    "elapsed_seconds": 152.148,
+    "counts": [
+      [
+        "301",
+        "151.907"
+      ]
+    ],
+    "ok": true,
+    "stdout_bytes": 6743,
+    "stderr_bytes": 10187,
+    "stdout_sha256": "ed851a3620cdc6820d60254fdbe291da2efe675553862cebbd782c0ad3a44204",
+    "stderr_sha256": "97acf3395f67aed1631f9de452f578436b24e0e1e3812469f62b6c3f24eee175",
+    "diagnostics": "raw child output withheld; only counts/hashes retained"
+  },
+  "debug_resolutions": [
+    {
+      "slug": "178-admin-transport-cleanup",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "01a9a7e4cd3d634d21c8ea4ec0da5bf3ae379087288f0d313a6bcc245ac46067",
+      "resolved_path": ".planning/debug/resolved/178-admin-transport-cleanup.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-confidential-client-jose",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "5c87efc4e187a7d35126a52f308768aafa97b82d1d576c3f6e65d104124961e9",
+      "resolved_path": ".planning/debug/resolved/178-confidential-client-jose.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-core-source-diagnosis",
+      "prior_status": "verifying",
+      "prior_sha256": "29134100eceb524ed9c34c2c81fb66f23c4b9b7cff02fe052fac66903aa87583",
+      "resolved_path": ".planning/debug/resolved/178-core-source-diagnosis.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-delivery-chain",
+      "prior_status": "verifying",
+      "prior_sha256": "d3056f66468fe0563b69de718b19cb78a5dbe6ce49380a61bd8904d4f764a18b",
+      "resolved_path": ".planning/debug/resolved/178-delivery-chain.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-fixture-lock-epoch",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "d732fe0d2b9eeb1412567417528b5151af681fa87ee9d9c085f5a3d721cb23ab",
+      "resolved_path": ".planning/debug/resolved/178-fixture-lock-epoch.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-installed-recovery-stage",
+      "prior_status": "investigating",
+      "prior_sha256": "26eff562ccd47c7ed67ee29dd05d2ace43b0254fb74ec6f8507da41c92d45456",
+      "resolved_path": ".planning/debug/resolved/178-installed-recovery-stage.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-jar-decryption-result",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "d7aa73242563d765a313d319627acdffd3c42a3be9332ef5c29a109f94711942",
+      "resolved_path": ".planning/debug/resolved/178-jar-decryption-result.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-pending-launch-runtime",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "d2152526e01ab58a137e643be8d0690905bd4ef9c524da662c1b158355c75070",
+      "resolved_path": ".planning/debug/resolved/178-pending-launch-runtime.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-qualification-ledger",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "74411be387ab5bbd5c82cbe3406ed1c27f716b28d67f4a7899a192f1e8b562ee",
+      "resolved_path": ".planning/debug/resolved/178-qualification-ledger.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-registry-authority",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "d9e2d8bb4f749698d06ff2e2041a6663387dc1379086995b806e93fe9f063c22",
+      "resolved_path": ".planning/debug/resolved/178-registry-authority.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-remaining-dialyzer",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "b5729931b31726b788f28a068995ea7638bbb325decaba788704e230f25e7f8a",
+      "resolved_path": ".planning/debug/resolved/178-remaining-dialyzer.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-src11-early-cleanup",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "1dd125255c9d9b8e3a303ab7fa0101fcf29851c282cf0afa12ee1137157802ad",
+      "resolved_path": ".planning/debug/resolved/178-src11-early-cleanup.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-startup-witness",
+      "prior_status": "verifying",
+      "prior_sha256": "55a4f2f961883d08d1a17247c3965ab6ccf183ce530884fe8d3abed8dfa0ba9c",
+      "resolved_path": ".planning/debug/resolved/178-startup-witness.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    },
+    {
+      "slug": "178-wrapper-lifecycle",
+      "prior_status": "awaiting_human_verify",
+      "prior_sha256": "12f9fa9b5d472416d81093512b3c5364e04a07aa2ac6dcdba2293b6ea3ce46cd",
+      "resolved_path": ".planning/debug/resolved/178-wrapper-lifecycle.md",
+      "resolution": "later independent review, installed proof, accepted-main gate and fresh native regression suite",
+      "historical_limits_preserved": true
+    }
+  ],
+  "historical_reports": [
+    {
+      "original_path": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION-INITIAL.md",
+      "history_path": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/history/176-VERIFICATION-INITIAL.md",
+      "sha256": "893d269a0ae1f8be1fc94e1d186ce6afbdd74e958ff4e435531626eaab1ee09e",
+      "superseded_by": ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-VERIFICATION.md",
+      "original_status": "human_needed"
+    },
+    {
+      "original_path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION-PRE-AUDIT.md",
+      "history_path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/history/178-VERIFICATION-PRE-AUDIT.md",
+      "sha256": "a15a6e4eb137ae92d2ed03fc1027449d08aca86be1601f4b0e63efbfa18ddd5d",
+      "superseded_by": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md",
+      "original_status": "gaps_found"
+    },
+    {
+      "original_path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION-PRE-SECURITY.md",
+      "history_path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/history/178-VERIFICATION-PRE-SECURITY.md",
+      "sha256": "86ce48653cac2d13c1abc30cf65c297748a9b870337eb0bfe36cd34caf73c513",
+      "superseded_by": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-FINAL-c465-attempt2.md",
+      "original_status": "human_needed"
+    }
+  ],
+  "selected_input_count": 1079,
+  "selected_input_changes": [],
+  "frozen_phase177_report_sha256": "e452a2145d31c41ac766c6fc7c95ea4e75c57884e40b2272fe48213baab9f1ef",
+  "frozen_phase177_unchanged": true,
+  "archival_status": "local_migration_verified_candidate_integration_pending",
+  "remaining_blocker": "Corrective candidate requires its own hosted CI, explicit integration approval and fresh synchronized-main acceptance before archival.",
+  "overrides_applied": 0,
+  "phase_directories_moved": false,
+  "requirements_removed": false,
+  "tag_created": false,
+  "migration_authorized": true,
+  "migration_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "current_phase_reports_verified": true
+}

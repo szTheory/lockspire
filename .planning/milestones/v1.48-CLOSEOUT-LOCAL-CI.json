@@ -1,0 +1,61 @@
+{
+  "schema": "lockspire-v148-migration-local-ci-v1",
+  "started_at": "2026-10-30T19:37:55.342623+00:00",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-migration-ci-zc4kxmsj",
+  "socket_root": "/private/tmp/lv148-ci-w3kefqjl",
+  "status": "passed",
+  "application_scope": "fresh private clone and PostgreSQL; original resources untouched",
+  "source_revision": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "port": 58764,
+  "postgres_pid": 36886,
+  "guard_pid": 36909,
+  "exit_code": 0,
+  "stdout_bytes": 187,
+  "stderr_bytes": 0,
+  "stdout_sha256": "fc13a4beba4a42c6d1dc630af530cf475663878ba73cd463764a3df786069792",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "guard": {
+    "cleanup": "independently_absent",
+    "failure": null,
+    "manifest": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-435wmtpp/manifest.json",
+    "status": "pass"
+  },
+  "source_manifest_original": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-435wmtpp/manifest.json",
+  "source_manifest_sha256": "c05c659d29ba536db7f22f33ef7c0f4c62dd3358deeb2610d130701da6e44ffa",
+  "exunit_counts": [
+    [
+      {
+        "failures": 0,
+        "properties": 0,
+        "stdout_bytes": 1378,
+        "stdout_sha256": "d673724a789ef06a610adbb44b926f98db24963248ee4d98feea88c39010296b",
+        "tests": 15
+      },
+      {
+        "failures": 0,
+        "properties": 2,
+        "stdout_bytes": 598456,
+        "stdout_sha256": "c48a115cc3d31aafc4e753d12b2195f8513f780b7d7ab389d61d47e7a6ae431e",
+        "tests": 2187
+      },
+      {
+        "failures": 0,
+        "properties": 0,
+        "stdout_bytes": 124853,
+        "stdout_sha256": "0ad117d440475b86cdc181bbbb7a569bff4b7d2c2a7b39f07bf303d583207036",
+        "tests": 261
+      }
+    ]
+  ],
+  "guard_group_closed": true,
+  "authenticated_sessions": 1362,
+  "sessions_absent": 1362,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "unconfirmed_roots": 0,
+  "supervisor_errors": [],
+  "private_postgres_closed": true,
+  "protected_root_tar_unchanged": true,
+  "private_data_retained": true,
+  "finished_at": "2026-10-30T19:44:43.434284+00:00"
+}

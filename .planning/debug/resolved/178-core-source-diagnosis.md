@@ -1,8 +1,8 @@
 ---
-status: verifying
+status: resolved
 trigger: "Root-authorized offline diagnosis of genuine fresh locked/core failure at 39607629; no PostgreSQL 5432 connections or actions; one private nonaccepting pre-provider bootstrap permitted."
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-30T19:29:56.936128+00:00
 ---
 
 ## Current Focus
@@ -81,3 +81,14 @@ verification:
 limits: Original genuine attempt traceback was unavailable and its incomplete historical custody remains unchanged. Existing frozen inputs cover the old source and must be refreshed after independent source/security delta review. No downstream provider, PostgreSQL capacity/catalog/custody, installed cell, full matrix or acceptance is established; no remote writes occurred. Existing owner context was stale diagnostic input only and was not restamped.
 oracle_type: specified and counterfactual; authenticated frozen archive/tree identity plus original source entry path
 files_changed: scripts/acceptance/clean_room/package_input.py; test/acceptance/client_frozen_package_layout_test.py; test/acceptance/client_verifier_delivery_test.py; this diagnosis document
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `verifying` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `29134100eceb524ed9c34c2c81fb66f23c4b9b7cff02fe052fac66903aa87583`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

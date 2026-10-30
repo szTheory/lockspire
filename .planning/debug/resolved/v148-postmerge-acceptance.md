@@ -1,5 +1,5 @@
 ---
-status: integrating
+status: resolved
 trigger: "v1.48 postmerge acceptance after PR 141 squash"
 created: 2026-10-30
 updated: 2026-10-30
@@ -15,10 +15,10 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 
 ## Current Focus
 
-hypothesis: Confirmed: owner validation used today's workflow digest for historical execution authority.
-test: Red full-squash/CI-change regression reproduced OwnerError; final full native301suite, both chains, tampering negatives, real retained-evidence probe and native exact-source provisioning now pass. Synthetic fixtures use their pinned workflow epoch.
-expecting: Integrate the verified correction before any new accepted-main claim. All original receipts/owners remain unchanged.
-next_action: User approved owner-binding candidate75de906c and conditional integration at observed17:28:54UTC. Push, verify all hosted jobs, merge exact head, synchronize main, then fresh actual helper and complete handoff validation. Preserve prior receipts and failures; no further confirmation required within this scope.
+hypothesis: Confirmed and corrected: squash/closed-PR provenance and historical source/workflow authority were conflated with current checkout state; an independent rejection fixture had a timing race.
+test: Exact integrated main passed its own hosted CI/no-publish Release, fresh actual owned contributor gate, complete historical validation and canonical root handoff verification. Real helper receipt/capture preserved byte-for-byte.
+expecting: No acceptance work remains; stop at milestone closure boundary while retaining PARTIAL debt and all prior failures/unknowns.
+next_action: `$gsd-complete-milestone 1.48`; preserve frozen CI input paths and saved UI-quality boundaries. No user action needed for this resolved acceptance task.
 
 ## Evidence
 
@@ -80,7 +80,7 @@ next_action: User approved owner-binding candidate75de906c and conditional integ
 
 root_cause: Ancestry-only integration checks, temporary GitHub PR associations/merge refs treated as permanent, and historical candidate evidence evaluated against today's working bytes. The synthetic fixture epoch independently required invalid HEAD ancestry.
 fix: Preserve strict historical identities; authenticate an origin merged-PR/full-tree squash bridge, recover old checkout ownership from all seven exact-attempt job logs, and label historical candidate validation separately from the fresh main gate. Keep synthetic fixtures bound to their immutable source/lock epoch.
-verification: Final300 native pinned Python tests passed; live original7-job/26-receipt/64-case historical candidate revalidation passed; hygiene18/0/0 and whitespace/compilation checks passed. Exact-main gate remains pending integration.
+verification: Actual exact-main helper and complete canonical handoff passed ondc396930. Own seven-job CI and no-publish Release succeeded; fresh2463-test contributor gate passed; helper/PG groups closed, data retained, protected tar unchanged. Full301native Python qualification, complete ordinary/squash chains and native exact-source provisioning also passed; see final acceptance artifacts.
 files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptance/client_verifier_delivery_chain_test.py; test/acceptance/verifier_owner_fixture.py; planning checkpoint/evidence records.
 
 ## Integration and subsequent local failure — 2026-10-30
@@ -110,3 +110,7 @@ Authenticated complete-input validation now reaches compose_pair_indexes / valid
 The full squash-chain CI-change regression reproduced OwnerError before the fix. Delivery owner validation now selects committed workflow bytes from the independently authenticated runner and uses a private snapshot with the unchanged owner validator. Both local composition/upload paths bind original workflow digests, package/version/runtime/observation identities, and profiles. Adversarial source/digest/runtime/runner substitutions fail closed. Synthetic template CLI/composition/upload contexts explicitly retain their immutable workflow epoch; no retained evidence rewritten.
 
 Final full native301suite passed with all five source hashes unchanged, both full chains passed, real retained-evidence/actual helper probe passed as unintegrated local evidence, native provisioning1079inputs passed with identical package archive/tree and clean source, hygiene18/0/0 and whitespace passed. Intermediate full-suite fixture failures remain recorded. Candidate/proposal/evidence are linked from STATE. No new remote action or authorization repointing occurred; canonical handoff remains pending and MAINreceipt absent. Original actual helper receipt/source capture are preserved under explicit attempt5 snapshot names. All original helper/database groups closed, data retained, protected package unchanged. Additional exact-source integration authority is the remaining boundary.
+
+## Final accepted outcome — 2026-10-30
+
+Fresh actual attempt6 accepted maindc3969302152028e2132759eb9edf5a7d260ac39. Helper receiptc74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2 and source captureed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5 were copied unchanged into canonical paths and validated in the root repository. Own CI41105446891attempt1 all7success; Release41105446769 no publication; fresh contributor15/2187+2properties/261all0failures; hygiene22/2/0 with retained-resource dispositions. Every original helper/PG group closed and data retained; root protected archive unchanged. No historical proof was restamped. Frozen validation/advisoryunknowns and formalPARTIAL debt remain. Milestone not archived; next required boundary is complete-milestone1.48, then saved UI-quality milestone discussion. Exact acceptance is resolved.

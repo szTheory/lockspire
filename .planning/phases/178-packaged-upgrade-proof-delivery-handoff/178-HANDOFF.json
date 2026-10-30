@@ -1,10 +1,10 @@
 {
-  "accepted_main_status": "pending",
-  "integration_status": "pending",
-  "main_acceptance_path": null,
-  "main_acceptance_sha256": null,
-  "main_sha": null,
-  "next_action": "PR #141 is squash merged at b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f and postmerge CI40987320716 passed all seven jobs; Release40987320718 succeeded. Exact-main acceptance remains pending. The local correction passed300 Python tests and live historical revalidation7jobs/26receipts/64cases. Review its exact integration-authorization proposal and integrate only after approval. Historical candidate validation preserves original identities and is not a new runtime run or accepted-main receipt. Then run the existing exact-main helper on clean synchronized HEAD/main/origin/main with fresh owned source gate, matching push CI, no-publish Release, warning dispositions and committed authorization custody. No MAIN receipt exists yet. Preserve all original c465/3c7bd/E7AD execution identities, failures, unknowns, and nonblocking PARTIAL coverage debt. Once main acceptance passes, complete v1.48 and begin the UI-quality milestone discussion with Q1-Q10/final confirmation intact.",
-  "owner": "PR owner / repository maintainer",
+  "accepted_main_status": "accepted",
+  "integration_status": "accepted",
+  "main_acceptance_path": "178-MAIN-ACCEPTANCE.json",
+  "main_acceptance_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+  "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+  "next_action": "Exact-main acceptance passed; preserve original evidence and PARTIAL coverage debt, then complete v1.48 and discuss the approved UI-quality milestone.",
+  "owner": "repository maintainer",
   "schema": "lockspire-phase178-handoff-v1"
 }

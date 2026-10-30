@@ -1,0 +1,23 @@
+{
+  "expected_tree": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b",
+  "observed_tree": "a5c7e48864d429ef858ff24d2145597a8c6638d6db6a4ccb4074a5501195c4ab",
+  "build": {
+    "command": "git archive <source-revision>; mix hex.build --output <owned-temporary>/lockspire.tar",
+    "cwd": "<owned-temporary>/source (git archive of source_revision)",
+    "git_archive_exit_code": 0,
+    "package_build_exit_code": 0,
+    "package_stdout_bytes": 21270,
+    "package_stdout_sha256": "589dcfb9eb2331726918c2baecb5c87f7bec160f14df88be55dc7b4bb7e97789",
+    "package_stderr_bytes": 0,
+    "package_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "rebuilt_archive_sha256": "180e3220e03082cefd1c4dba39ea332152f75576efa9a4fa10b462af9fba8a84",
+    "rebuilt_tree_sha256": "a5c7e48864d429ef858ff24d2145597a8c6638d6db6a4ccb4074a5501195c4ab"
+  },
+  "changed_files": [
+    {
+      "path": "hex_metadata.config",
+      "expected": "ff9c4fd36739614dbe3eaacb2972fa6f0f14fcd05588e1fe36867c578e158b54",
+      "observed": "54aaf353e1349c066cd1d99b0c71ce32c9d79de4454ad44de823feb0bfe9d1f0"
+    }
+  ]
+}

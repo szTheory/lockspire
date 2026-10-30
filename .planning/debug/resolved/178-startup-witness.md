@@ -1,7 +1,7 @@
 ---
-status: verifying
+status: resolved
 created: 2026-10-27
-updated: 2026-10-27
+updated: 2026-10-30T19:29:56.936128+00:00
 trigger: "Repair the diagnosed startup producer/reader transport mismatch without raw log capture."
 ---
 
@@ -46,3 +46,14 @@ verification:
   revert_and_reconfirm: exact legacy start/reader substitution fails target; typed restoration passes,2/2runtime sessions absent
 limits: Controlled producer VM uses a runtime getter and host-service boundary; it is not a full installed recovery/DB acceptance. Existing bfe frozen1073 source is stale for changed code and new selected helper/test. Independent delta review/refreeze remains necessary. Root separately owns two Elixir lint files and canonical CI. No real recovery cell, source CI, freeze, matrix, remote operation or self-review closure was performed after this correction.
 files_changed: verifier_rollout.py; verifier_recovery.py; startup_witness.py; only generated Application startup block in build_provider.py; three focused Python test files; this journal
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `verifying` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `55a4f2f961883d08d1a17247c3965ab6ccf183ce530884fe8d3abed8dfa0ba9c`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

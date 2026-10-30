@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "Phase178 Group4 actual transport controls returned cleanup_failed/125 and lost primary evidence; preserve original inner custody uncertainty."
 created: 2026-10-28T04:51:52.373162+00:00
-updated: 2026-10-28T05:21:40Z
+updated: 2026-10-30T19:29:56.936128+00:00
 ---
 
 ## Current Focus
@@ -138,3 +138,14 @@ files_changed:
 oracle_type: specified
 
 Historical limits: published PR141 head4d512ae2c6a042e2b4557750eca2d49e57fb7189 is unchanged. Hosted minimum browser_0 inner failure remains UNKNOWN. Root PG1307 is intentionally alive and unrelated. This session does not inspect or stop root services, run Mix/DB/browser/package proof, or authorize remote writes.
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `awaiting_human_verify` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `01a9a7e4cd3d634d21c8ea4ec0da5bf3ae379087288f0d313a6bcc245ac46067`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

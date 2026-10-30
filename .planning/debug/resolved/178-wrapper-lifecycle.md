@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "SEC-178-06 actual-wrapper nested-session leak and SEC-178-09 final paths/checkout relation"
 created: 2026-10-27T00:00:00Z
-updated: 2026-10-27T00:00:00Z
+updated: 2026-10-30T19:29:56.936128+00:00
 ---
 
 ## Current Focus
@@ -91,3 +91,14 @@ files_changed:
 oracle_type: specified
 
 Independent review remains pending. All probe-owned groups were confirmed absent before removing their exact temporary roots; no uncertain local process remains. The OS EPERM interruption and lexical-path mistake remain explicit historical evidence. Only the independent reviewer may disposition SEC-178-06/09; this journal makes no threat-ledger closure or production/staging acceptance claim.
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `awaiting_human_verify` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `12f9fa9b5d472416d81093512b3c5364e04a07aa2ac6dcdba2293b6ea3ce46cd`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

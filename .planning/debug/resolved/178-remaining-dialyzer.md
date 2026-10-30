@@ -1,5 +1,6 @@
 ---
-status: awaiting_human_verify
+updated: 2026-10-30T19:29:56.936128+00:00
+status: resolved
 trigger: "Classify and correct remaining standalone Dialyzer warning without weakening rejection boundaries"
 verified_date: 2026-10-28
 ---
@@ -37,3 +38,14 @@ reasoning_checkpoint:
 oracle_type: derived
 verification: "affected guarded22/0 and exact standalone zero-warning analysis at358ea; no hosted rerun/fullCI/fullPython/installed proof"
 guardrail_verdict: "local checks complete; independent applicability and hosted requalification pending"
+
+
+## Closeout reconciliation — 2026-10-30
+
+The original `awaiting_human_verify` checkpoint above is superseded for the implemented fix by the later independent source/integration/security review of the complete selected closure, the final declared-threat assessment, actual current/minimum installed-package receipts and accepted main `dc3969302152028e2132759eb9edf5a7d260ac39`. See [closeout reconciliation](../../milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [final phase verification](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-VERIFICATION.md), and [actual main acceptance](../../phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md).
+
+The native acceptance suite was rerun at this unchanged main during closeout: 301 tests passed, exit 0, owned group closed; [safe result](../../milestones/v1.48-CLOSEOUT-PYTHON.json). These later observations satisfy the earlier review/qualification follow-up for the current correction. For the installed-recovery journal, the later root diagnosis owns the `:inets` cause and subsequent fixture corrections; the original diagnostic-only entry did not establish that cause.
+
+This resolves the current debugging work, not unknown predicates or custody from earlier failed runs. Original diagnostic/TDD limits, unknown historical closures, failed attempts, retained resources and formal PARTIAL/Nyquist-false flags remain unchanged. No historical run is restamped, no unknown process is stopped, and no new database/package/application proof, integration or publication is authorized.
+
+Original checkpoint SHA-256: `b5729931b31726b788f28a068995ea7638bbb325decaba788704e230f25e7f8a`. The body above remains unchanged; only its leading lifecycle status/updated date and this reconciliation changed.

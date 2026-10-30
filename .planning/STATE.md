@@ -6,11 +6,11 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: owner-binding correction approved; conditional integration and fresh exact-main acceptance in progress
+stopped_at: closeout migration local gates passed; candidate CI and integration/main acceptance pending
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
-state_head: 75de906c
+last_activity_desc: Closeout migration local contributor/native/provision gates passed; preserve prior accepted-main evidence and formal debt
+state_head: fb76ffbe
 progress:
   total_phases: 4
   completed_phases: 4
@@ -21,29 +21,33 @@ progress:
 
 # Project State
 
-## Current acceptance checkpoint — 2026-10-30
+## Current closeout work — 2026-10-30
 
-Read [working preferences](WORKING-PREFERENCES.md), including the user's latest instruction to continue authorized work until a real decision or phase/milestone boundary.
+The owner selected resolution before archival, then explicitly authorized the scoped CI evidence-lifecycle migration and new acceptance. Work is on `fix/v148-verification-evidence-lifecycle`; milestone archival/tagging and the next UI milestone have not started.
 
-Both checker corrections are merged. PR [#143](https://github.com/szTheory/lockspire/pull/143) corrected squash/historical provenance; PR [#144](https://github.com/szTheory/lockspire/pull/144) corrected a rejection-fixture timing defect after controlled delay reproduced it. All seven canonical premerge jobs and Dependency Review passed for the exact approved second head. After that merge, HEAD/main/origin/main were synchronized at `7afd18e6b6678576aa52acfc00e32cdbeb958760`; its full tree equals reviewed head `e6e999e44a8c942934339ceff62fdd18883fc010`.
+Fourteen obsolete debug checkpoints are reconciled against later independent review/runtime/main evidence; three superseded verification reports are byte-preserved in phase history. The original accepted main remains historical acceptance, not approval of the new migration. The migration preserves the original Phase 177 report as a pinned immutable snapshot, resolves historical selected inputs from their actual Git tree and lets the active report evolve. Native lifecycle regressions and the complete Python acceptance suite passed; the canonical contributor gate passed in a new private checkout/database with every authenticated process and the private database closed. Exact-source native provisioning passed and reproduced the original package bytes under the verified isolated Hex 2.6.0 builder. No stale-verification override was authorized.
 
-Postmerge CI [41088094026](https://github.com/szTheory/lockspire/actions/runs/41088094026) passed all seven canonical jobs. Release [41088094056](https://github.com/szTheory/lockspire/actions/runs/41088094056) succeeded without publication. The user explicitly approved the additional fixture correction and its conditional integration/fresh acceptance; canonical authorization names source `5e524fd34919f38988e6142aaf1da0e5bff54a98`, with prior authorization retained separately. No further user input is needed within this work.
+See [closeout reconciliation](milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [native migration check](milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json), and [local contributor gate](milestones/v1.48-CLOSEOUT-LOCAL-CI.json). Continue local verification/review and prepare the concrete correction for review. Merge, refreshed exact-main acceptance, publication and UI implementation remain distinct boundaries; no such action is inferred from old receipts. The agent acts next; no user input is currently needed for local work.
 
-The actual exact-main helper completed successfully on merged source, including the complete fresh owned local gate and its emitted real receipt. Its private database was independently cleaned, original helper/database groups closed, protected package unchanged, and private data retained. Full accepted handoff validation remains held; no canonical main receipt is copied to this repository yet.
+## Historical accepted-main checkpoint — 2026-10-30
 
-Private-lab preparation initially prevented keychain access by changing HOME and omitted the retained candidate archive/tree. GitHub-only credential context is now scoped to the existing keychain without copying credentials; retained package files were copied with all digests verified. Both failures remain recorded.
+**Exact-main acceptance passed; canonical handoff validated.** v1.48 implementation is accepted on main and ready for milestone closure; archiving has not run.
 
-The remaining authoritative failure was historical owner selection against current CI bytes. The local review branch `fix/v148-historical-workflow-owners` now holds correction `75de906c2571dcc1913520bb46e9d494ed492c96`; local main/origin/main remain7afd18e6. The correction selects workflow bytes from the independently authenticated runner for local and uploaded owner validation. The final full native Python suite passed301tests with all five source files unchanged; both complete handoff chains and adversarial owner checks passed. A local unintegrated probe passed the real retained-evidence chain and actual helper receipt. Native exact-source provisioning passed1079inputs, unchanged package bytes, and clean source afterward; hygiene/whitespace passed. Intermediate fixture failures and preparation failures remain recorded.
+HEAD/main/origin/main are synchronized at `dc3969302152028e2132759eb9edf5a7d260ac39`. The actual helper passed a fresh owned contributor gate, exact main push CI, no-publish Release, source/authorization custody, and complete historical candidate validation. The exact emitted receipt/source capture were copied into canonical repository records and validated again here. All original helper/database groups are closed, data retained, and protected package/demo resources unchanged. The two hygiene warnings explicitly retain stopped demo containers and project volumes; no acceptance block remains.
 
-The concrete [owner-binding integration proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-OWNER-BINDING-PROPOSAL.md) is ready. The user approved this concrete additional integration on2026-10-30, observed17:28:54UTC: one non-force push/PR/conditional merge, exact-source authorization, and fresh acceptance. Canonical authorization now names75de906c; previous5e524 authorization is retained separately. No additional confirmation is needed within that scope. Canonical handoff remains pending and canonical MAIN receipt absent. Attempt5's real helper receipt/source capture are separately named snapshots; never reuse them as proof of a later main revision.
+Read [the acceptance result](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-ACCEPTANCE.md), [canonical receipt](phases/178-packaged-upgrade-proof-delivery-handoff/178-MAIN-ACCEPTANCE.json), [accepted handoff](phases/178-packaged-upgrade-proof-delivery-handoff/178-HANDOFF.json), and [root verification](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-MAIN-DELIVERY-VERIFICATION.json). The resolved [debug session](debug/resolved/v148-postmerge-acceptance.md) retains root causes, failed attempts and precise remaining unknowns.
 
-The execution checkpoint is `/private/tmp/lockspire-v148-postmerge-progress.json`. All owned helper/database groups are closed, data and earlier failures retained, protected root tar unchanged, and no release published. Next: push this approved correction, finish its own CI/conditional merge, then fresh exact-main helper/handoff. Milestone archiving and UI work remain pending; PARTIAL debt is unchanged. Preserve frozen source-input paths during later milestone closure.
+The user approved each exact correction's integration; PRs143/144/145 merged only after hosted success. Historical source/review/checkout/receipt identities were preserved separately from this fresh main gate. Formal coverage remains PARTIAL/Nyquistfalse with original advisory and unknown classifications preserved. No release was published and no UI implementation started.
+
+Next: `$gsd-complete-milestone 1.48`, then the approved UI-quality milestone at its own boundary. Preserve the frozen175/177/178 input paths required by CI during closure. Follow [working preferences](WORKING-PREFERENCES.md), including continuing authorized work until a real decision or phase/milestone boundary. No user action is needed to finish this acceptance task.
+
+All checkpoints below are historical; their pending/approval instructions are superseded by the accepted state above.
 
 ## Earlier postmerge debug checkpoint — 2026-10-30
 
 PR #141 is squash merged at `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`; local HEAD/main/origin/main agreed at the initial observation. Its full Git tree equals final PR head `4a90525ccef493fc486e2950eecaeff703c88473`. Postmerge CI `40987320716` passed all seven canonical jobs; Release `40987320718` succeeded. The local correction is on `fix/v148-squash-acceptance`; these observations do not replace the exact-main helper receipt.
 
-Debug session [v148-postmerge-acceptance](debug/v148-postmerge-acceptance.md) reproduces ancestry-only false negatives, removed GitHub PR associations/merge refs, and historical/live validation conflation. The correction authenticates a merged-PR/full-tree squash bridge and all seven original checkout logs, preserving original tested/reviewed revisions. Synthetic fixtures retain their original epoch. Final300 pinned/native Python tests passed, including both full handoff chains. Live historical candidate revalidation passed7jobs/26receipts/64cases; it is not a new runtime run or main receipt. Hygiene passed18/0/0. Initial failures and environment/mode repairs remain separately recorded.
+Debug session [v148-postmerge-acceptance](debug/resolved/v148-postmerge-acceptance.md) reproduces ancestry-only false negatives, removed GitHub PR associations/merge refs, and historical/live validation conflation. The correction authenticates a merged-PR/full-tree squash bridge and all seven original checkout logs, preserving original tested/reviewed revisions. Synthetic fixtures retain their original epoch. Final300 pinned/native Python tests passed, including both full handoff chains. Live historical candidate revalidation passed7jobs/26receipts/64cases; it is not a new runtime run or main receipt. Hygiene passed18/0/0. Initial failures and environment/mode repairs remain separately recorded.
 
 Committed correction source `9ffe69f1` also passed native exact-checkout provisioning in a fresh private root: all1079selected inputs, clean source afterward, archive/tree identical to the original package, protected root tar unchanged, and no app/database started. Future CI uses its actual checkout SHA; original runtime proof remains historical.
 
@@ -59,16 +63,15 @@ See: .planning/PROJECT.md (updated 2026-10-25 after v1.48 selection)
 
 **Core value:** A Phoenix team can become a trustworthy OAuth/OIDC provider inside its existing app without inventing the dangerous parts itself.
 
-**Current focus:** Phase178 and v1.48 are complete on the premerge branch:12/12phaseplans31/31milestoneplans4/4phases18/18requirements. Actual final verification4/4passed; final independentsecuritySECURED37/37zeroopen/acceptedrisksASVS1; canonicalmilestoneaudittech_debt/no criticalgaps/18integrationpaths5flows. Postrunformalcoveragevalidated/PARTIAL/nyquistfalse; frozen178VALIDATIONdraft remains byte-identical, advisorygeneric/null/prohibitionflagsunresolved/unverified/nonauthoritative and oldfailures/unknowns preserved. Publishedheadc465/qualifiedsourceE7AD/actualcheckout3c7bd/CI40954208717attempt2all7green+sameattemptartifacts/native26/64 remain distinct actual identities. Allownedprocessesclosed/dataretained. Next review exactfinalevidence-onlymetadata commit+preparedPRbody, freshapprovalrequired foranotherexactpush/body; finalmetadataSHAunknownuntilcommit. Existingapprovalsconsumed/nootherremoteauthority. Integration/acceptedmainpendingD19/nullrefs/noMAINreceipt; milestone notarchived. UI-next/Q1–Q10/finalconfirmation/triggers unchanged, nofutureimplementationauthorized.
+**Current focus:** Original v1.48 implementation is accepted on main; the authorized closeout evidence-lifecycle correction has passing local gates and awaits candidate CI, integration and new exact-main acceptance. No archival/tagging or UI work has begun. See the current closeout checkpoint above; historical acceptance and PARTIAL debt remain preserved.
 
 ## Current Position
 
-Phase: 178 (Packaged Upgrade Proof & Delivery Handoff) — COMPLETE PREMERGE / READY FOR REVIEW
-Current Plan: 12
-Total Plans in Phase: 12
-Plan: 12/12 complete; 31/31 milestone plans, 4/4 phases and 18/18 requirements complete premerge
-Status: completed premerge / ready for review; milestone not archived; fresh final exact commit/body push approval required; integration/main pending.
-Last activity: 2026-10-29 UTC — final verification4/4/security37/37/audit18requirements4phases18paths5flows/Plan12complete; nonblocking formalcoveragePARTIAL retained.
+Phase:178 (Packaged Upgrade Proof & Delivery Handoff) — COMPLETE / ACCEPTED MAIN
+Plan:12/12 complete;31/31 milestone plans,4/4 phases and18/18 requirements implemented.
+Status: exact-main acceptance and canonical handoff passed; milestone closure/archiving pending.
+Last activity:2026-10-30UTC — fresh owned local gate, own hosted CI/no-publish Release, historical evidence and canonical handoff validation passed. Original groups closed/data retained; nonblocking formal coveragePARTIAL remains.
+Next command: `$gsd-complete-milestone 1.48`.
 
 ## Performance Metrics
 
@@ -324,3 +327,15 @@ These decisions retain their original checkpoint context. Earlier stage-specific
 ## 2026-10-28T14:00:27.096694+00:00 — Approved PR Update / Hosted Qualification
 
 The user-authorized exact `33db5483` non-force push and approved `cb4b7c4d` PR #141 body update completed and were verified. Run 40696973463 attempt 1 is terminal: four required successes, Integration and Minimum failures, Complete Coverage skipped; Dependency Review succeeded. Six Integration headers and Minimum’s fixed startup witness are attributed in `178-11-APPROVED-UPDATE-OUTCOME.json`. No source change or local runtime followed the hosted failures. The old private lab/cache remain removed. Plan 11/Phase 178 and VDELIV-01/02 remain incomplete; no merge or further remote mutation is authorized. Subsequent tracking commits remain local and unpushed, distinct from published `33db5483`.
+
+## Active approved integration — 2026-10-30
+
+The user approved exact source75de906c on2026-10-30, observed17:28:54UTC. Approved headbceb05817a3b7c2aa124482aa56fca6c049759a2 is pushed in [PR145](https://github.com/szTheory/lockspire/pull/145). CI41099344636 attempt1 is running; Dependency Review41099344327 passed. Fast, hygiene, static analysis, adoption smoke and minimum-supported runtime jobs passed; Integration remains active and coverage completion is pending. GitHub list-job reads intermittently return502, so exact run/head/attempt and individual job ownership are independently checked through commit-check IDs. Require fresh complete all-seven success and unchanged PR head before merge; do not weaken the gate.
+
+The current CI observer is execsession38153 with `/private/tmp/lockspire-v148_watch_checks.py`, and current record `/private/tmp/lockspire-v148-owner-pr145-check-watch.json`. Full execution context remains `/private/tmp/lockspire-v148-postmerge-progress.json`. No local test database is running. Prior actual helper receipt/source capture/handoff moved byte-for-byte into private attempt5 retention; the private checkout is restored clean and pending. Fresh attempt6 is prepared; its driver reloads and hashes the integrated checker after checkout before execution. GitHub-only keychain context and bounded transient-read retries are prepared; build homes remain private, credentials are not copied, and failed reads still fail closed.
+
+Next: finish authorized conditional merge, synchronize main, wait for its own exact push CI/no-publish Release, run fresh actual helper attempt6, validate actual handoff, copy actual receipt/source capture into canonical root records, then stop at the milestone-completion boundary. No further confirmation is needed within this authorization.
+
+## Owner correction merged — 2026-10-30
+
+PR145 merged after all seven canonical CI jobs and Dependency Review passed for approved headbceb0581. The completed CI graph was independently validated through run/attempt/head-bound individual job observations; GitHub list-job endpoint timeouts remained observational failures, with no gate waived. HEAD/main/origin/main now agree atdc3969302152028e2132759eb9edf5a7d260ac39, whose full tree equals the approved head. Own push CI41105446891 and Release41105446769 are running. No actual fresh main acceptance has started yet; attempt6 waits for own hosted success. All prior helper/database groups closed and data retained. Continue without another confirmation within the approved scope; no milestone/UI boundary has been crossed.
