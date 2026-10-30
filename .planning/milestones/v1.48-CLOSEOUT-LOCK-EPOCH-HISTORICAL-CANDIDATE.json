@@ -1,0 +1,27 @@
+{
+  "schema": "lockspire-v148-security-historical-validation-v1",
+  "started_at": "2026-10-30T22:11:53.232146+00:00",
+  "checker_source": "bc7ccf614f208f8d9a92afde33093400de2adac2",
+  "new_runtime_execution": false,
+  "historical_execution_not_restamped": true,
+  "application_started": false,
+  "database_started": false,
+  "status": "passed",
+  "result": {
+    "jobs": 7,
+    "run_id": "40954208717",
+    "run_attempt": 2,
+    "artifacts": {
+      "locked": {
+        "receipts": 14,
+        "cases": 33
+      },
+      "floor": {
+        "receipts": 12,
+        "cases": 31
+      }
+    },
+    "validation_scope": "historical_candidate"
+  },
+  "finished_at": "2026-10-30T22:12:15.479312+00:00"
+}

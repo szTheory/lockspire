@@ -1,0 +1,27 @@
+{
+  "schema": "lockspire-v148-hygiene-timeout-remedy-v1",
+  "observed_at": "2026-10-30T22:35:41.555293+00:00",
+  "failure_source": "bc7ccf614f208f8d9a92afde33093400de2adac2",
+  "confirmed_failure": {
+    "path": "test/lockspire/release/repository_hygiene_contract_test.exs",
+    "line": 188,
+    "exception_classes": [
+      "ExUnit.TimeoutError"
+    ],
+    "known_fixture_labels": []
+  },
+  "original_aggregate_timeout_ms": 180000,
+  "new_aggregate_timeout_ms": 600000,
+  "isolated_original_assertion_function_elapsed_ms": 116474,
+  "isolated_original_exunit_case_elapsed_ms": 131941,
+  "original_exunit_module": {
+    "tests": 11,
+    "failures": 0
+  },
+  "change_scope": "Only the aggregate fake-backend test timeout and explanatory comment; no assertion, scenario, real helper timeout, live window or application code changes.",
+  "gate_waiver": false,
+  "earlier_unidentified_failure_cause": "still unknown; not retroactively assigned",
+  "fresh_full_suite": "passed",
+  "qualified_source": "e4ac86f0bb4f9c5a27a260d850658ce43957509f",
+  "local_gate_record": "v1.48-CLOSEOUT-REQUALIFICATION-LOCAL-CI.json"
+}

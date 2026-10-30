@@ -1,0 +1,26 @@
+{
+  "schema": "lockspire-v148-safe-failure-location-v1",
+  "command_exit": 1,
+  "test_locations": [
+    {
+      "path": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "line": 188
+    }
+  ],
+  "failure_context": [
+    {
+      "path": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "line": 188,
+      "exception_classes": [
+        "ExUnit.TimeoutError"
+      ],
+      "known_fixture_labels": []
+    }
+  ],
+  "diagnostic_categories": [
+    "timeout",
+    "exit",
+    "failed"
+  ],
+  "raw_diagnostics_persisted": false
+}

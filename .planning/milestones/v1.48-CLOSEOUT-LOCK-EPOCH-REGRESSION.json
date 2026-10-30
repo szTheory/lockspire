@@ -1,0 +1,28 @@
+{
+  "schema": "lockspire-v148-historical-lock-regression-v1",
+  "observed_at": "2026-10-30T22:10:15.976187+00:00",
+  "red": {
+    "test": "ActualEndToEndDelivery.test_actual_squash_chain_with_full_closure_and_authoritative_boundaries",
+    "result": "failed at historical package composition after committed dependency-lock update",
+    "reason": "package host lock does not match the selected dependency pair",
+    "test_count": 1,
+    "exit_code": 1
+  },
+  "focused_helper_tests": {
+    "tests": 2,
+    "failures": 0,
+    "exit_code": 0
+  },
+  "full_handoff_green": {
+    "tests": 1,
+    "failures": 0,
+    "exit_code": 0,
+    "serialized_current_lock_substitution_rejected": true,
+    "actual_helper_receipt_handoff_consumed": true
+  },
+  "current_execution_rule": "Working-tree pair locks remain strict by default.",
+  "historical_execution_rule": "Authenticated original local/hosted runner selects its committed canonical pair lock blob; missing/unpinned source rejects without fallback.",
+  "no_receipt_restamping": true,
+  "no_frozen_input_changes": true,
+  "scope": "Necessary dependency-update compatibility correction inside the already authorized evidence-lifecycle migration and renewed affected proof; no new protocol/storage behavior or gate waiver."
+}

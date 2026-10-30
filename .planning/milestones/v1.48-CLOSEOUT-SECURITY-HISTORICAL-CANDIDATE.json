@@ -1,0 +1,13 @@
+{
+  "schema": "lockspire-v148-security-historical-validation-v1",
+  "started_at": "2026-10-30T22:05:20.728117+00:00",
+  "checker_source": "cbd0133c948fd57e11d666cc91340b2b4f8afad9",
+  "new_runtime_execution": false,
+  "historical_execution_not_restamped": true,
+  "application_started": false,
+  "database_started": false,
+  "status": "failed",
+  "failure_class": "DeliveryError",
+  "reason": "package host lock does not match the selected dependency pair",
+  "finished_at": "2026-10-30T22:05:40.493533+00:00"
+}

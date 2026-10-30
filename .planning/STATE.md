@@ -6,7 +6,7 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: focused security source passed local qualification; final-head hosted CI and fresh main acceptance next
+stopped_at: historical lock epoch correction locally qualified; final hosted gate and main acceptance pending
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Five focused lock updates passed audit, rendering, native, contributor and provisioning gates; authorized hosted qualification next
@@ -379,3 +379,7 @@ A controlled fresh retry uses the unchanged OwnedSourceTests class and unchanged
 Selected source `cbd0133c948fd57e11d666cc91340b2b4f8afad9` passes the actual root advisory audit, malformed/normal attribute rendering smoke, complete native acceptance suite, canonical owned contributor gate and fresh exact-source provisioning. Only five phoenix_html lock tuples changed; every original frozen input remains exact and the library package archive/tree reproduce historical bytes. The first cache mismatch and cleanup are preserved separately. All successful gate sessions and private PostgreSQL closed; data retained and protected root tar unchanged.
 
 The owner authorized this focused source change and continued integration/archive. The agent continues necessary metadata push/PR update, complete own hosted current/minimum qualification, conditional protected merge, fresh main acceptance and milestone archive/local tag. No extra acknowledgment is needed within scope. Main acceptance is pending, no merge/archive/tag/publication/UI work has occurred. Earlier stop instructions for the resolved dependency decision are superseded; required gates remain mandatory.
+
+## Historical lock epoch qualified — 2026-10-30
+
+Source `e4ac86f0bb4f9c5a27a260d850658ce43957509f` passes full native and owned contributor gates, fresh1080-input provisioning with unchanged library bytes, and actual original candidate replay against its authenticated original lock blobs. Only the necessary validator/history regressions and measured aggregate fixture allowance changed after the focused4.4.0 source; no original proof/flag was rewritten and current-run lock checks remain strict. Every authenticated child and private PostgreSQL closed; data retained and protected tar unchanged. Owner authority remains the approved migration, focused security remedy and renewed acceptance. Continue final metadata/PR push, required own hosted graph/artifacts, protected merge, fresh main helper and archive/local tag without further acknowledgment. No publication, tag push or UI implementation.

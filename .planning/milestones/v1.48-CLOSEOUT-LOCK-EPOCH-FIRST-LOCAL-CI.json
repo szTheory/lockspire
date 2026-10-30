@@ -1,0 +1,57 @@
+{
+  "schema": "lockspire-v148-migration-local-ci-v1",
+  "started_at": "2026-10-30T22:11:54.241103+00:00",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-lock-epoch-ci-i0kt_dyn",
+  "socket_root": "/private/tmp/lv148-ci-cxni_620",
+  "status": "failed",
+  "application_scope": "fresh private clone and PostgreSQL; original resources untouched",
+  "source_revision": "bc7ccf614f208f8d9a92afde33093400de2adac2",
+  "port": 52298,
+  "postgres_pid": 61190,
+  "guard_pid": 61215,
+  "exit_code": 1,
+  "stdout_bytes": 226,
+  "stderr_bytes": 0,
+  "stdout_sha256": "7877fd151c7460812b50c8a238cbf5d1cab12be1831ed879b8f1e1fe3af6b4d0",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "guard": {
+    "cleanup": "independently_absent",
+    "failure": {
+      "reason": "tests_failed",
+      "stage": "ci"
+    },
+    "manifest": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-6moqcl46/manifest.json",
+    "status": "failed"
+  },
+  "source_manifest_original": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-6moqcl46/manifest.json",
+  "source_manifest_sha256": "0b505547454ee8ff2106faf181abc27f542b69b612d025266e257227e4eedd47",
+  "exunit_counts": [
+    [
+      {
+        "failures": 0,
+        "properties": 0,
+        "stdout_bytes": 354,
+        "stdout_sha256": "c4843604d5bb4fc6c722cd689e6ad139d3485930f1d74d8817ba6abfd06ad1fc",
+        "tests": 15
+      },
+      {
+        "failures": 1,
+        "properties": 2,
+        "stdout_bytes": 593150,
+        "stdout_sha256": "21cdc01940d919f83435394b7f82e55fee89d8e5ec56722e098a146c44251c79",
+        "tests": 2187
+      }
+    ]
+  ],
+  "guard_group_closed": true,
+  "authenticated_sessions": 1113,
+  "sessions_absent": 1113,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "unconfirmed_roots": 0,
+  "supervisor_errors": [],
+  "private_postgres_closed": true,
+  "protected_root_tar_unchanged": true,
+  "private_data_retained": true,
+  "finished_at": "2026-10-30T22:18:35.286143+00:00"
+}
