@@ -25,8 +25,8 @@ covered_files:
   - ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/176-PROBE-REVIEW.md"
   - ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/history/176-PRE-CLOSEOUT-REPORT.md"
   - ".planning/phases/176-dedicated-verifier-custody-compatible-runtime/history/176-VERIFICATION-INITIAL.md"
-  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-MAIN-ACCEPTANCE.json"
-  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-MAIN-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/history/accepted-main-dc396930/178-MAIN-ACCEPTANCE.json"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/history/accepted-main-dc396930/178-MAIN-OWNED-SOURCE-MANIFEST.json"
   - "docs/client-secret-jwt-host-guide.md"
   - "docs/client-secret-verifier-configuration.md"
   - "lib/lockspire/admin/clients.ex"
@@ -60,7 +60,7 @@ covered_files:
   - "test/lockspire/security/client_secret_verifier_test.exs"
   - "test/lockspire/web/live/admin/clients_live_test.exs"
   - "test/support/architecture/public_compatibility_manifest.ex"
-covered_digest: "v4:sha256:5ee4b2f7660585053e24fa1384d8e0ef2e0f5b5f847c75db3737d9bcc95ddd6e"
+covered_digest: "v4:sha256:0a83ffc849621c22d469d650d4b754003ad17d0603337c9b516ad96e1cfceea6"
 behavior_unverified: 0
 overrides_applied: 0
 autonomous_judgment:
@@ -105,6 +105,7 @@ unclassified_probe_edges:
 
 
 
+
 # Phase 176: closeout re-verification at accepted main
 
 **Verified:** 2026-10-30T19:47:43.967034+00:00
@@ -115,7 +116,7 @@ unclassified_probe_edges:
 
 The complete selected source still provides dedicated independent verifier custody, final-identity-bound writer pairs, strict authenticated envelope parsing, supported endpoint authentication, preserved age/replay/lifecycle semantics, explicit legacy policy and reader-first rollout. I inspected the changes since the original 176 gate: maintenance extraction shares the authenticated material decoder, secret generation uses operation-local resolution only when no serving snapshot exists, cross-purpose exclusions include operation-supplied secrets, and narrowed typed clauses retain safe rescue outcomes. Those changes are covered by later 177/178 reviews, their unit/integration owners and the actual accepted-main contributor gate.
 
-The actual [main source manifest](../178-packaged-upgrade-proof-delivery-handoff/178-MAIN-OWNED-SOURCE-MANIFEST.json) binds this source before/after, clean checkout, successful canonical CI and independently absent owned database. Its recorded boundary, fast and integration suites all have zero failures. Receipt/source hashes and all 1,079 current selected files were revalidated against accepted main during this closeout; this consumes the actual later execution, without changing its date or identity. The fresh [native Python check](../../milestones/v1.48-CLOSEOUT-PYTHON.json) passed all 301 harness tests with exit 0 and closed ownership. No additional DB/runtime/package gate was launched.
+The actual [main source manifest](../178-packaged-upgrade-proof-delivery-handoff/history/accepted-main-dc396930/178-MAIN-OWNED-SOURCE-MANIFEST.json) binds this source before/after, clean checkout, successful canonical CI and independently absent owned database. Its recorded boundary, fast and integration suites all have zero failures. Receipt/source hashes and all 1,079 current selected files were revalidated against accepted main during this closeout; this consumes the actual later execution, without changing its date or identity. The fresh [native Python check](../../milestones/v1.48-CLOSEOUT-PYTHON.json) passed all 301 harness tests with exit 0 and closed ownership. No additional DB/runtime/package gate was launched.
 
 | Requirement | Current source and executable owner | Disposition |
 |---|---|---|

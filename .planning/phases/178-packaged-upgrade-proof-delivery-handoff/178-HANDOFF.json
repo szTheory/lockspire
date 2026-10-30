@@ -1,10 +1,10 @@
 {
-  "accepted_main_status": "accepted",
-  "integration_status": "accepted",
-  "main_acceptance_path": "178-MAIN-ACCEPTANCE.json",
-  "main_acceptance_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
-  "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
-  "next_action": "Exact-main acceptance passed; preserve original evidence and PARTIAL coverage debt, then complete v1.48 and discuss the approved UI-quality milestone.",
+  "accepted_main_status": "pending",
+  "integration_status": "pending",
+  "main_acceptance_path": null,
+  "main_acceptance_sha256": null,
+  "main_sha": null,
+  "next_action": "Approved correction integration is in progress. After required final CI and protected merge, capture fresh main acceptance; prior dc396930 receipts are preserved under history/accepted-main-dc396930/.",
   "owner": "repository maintainer",
   "schema": "lockspire-phase178-handoff-v1"
 }

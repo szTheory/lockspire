@@ -29,6 +29,8 @@ Fourteen obsolete debug checkpoints are reconciled against later independent rev
 
 See [closeout reconciliation](milestones/v1.48-CLOSEOUT-RECONCILIATION.md), [native migration check](milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json), and [local contributor gate](milestones/v1.48-CLOSEOUT-LOCAL-CI.json). The owner approved the concrete [integration proposal](milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md) with “yes”, observed2026-10-30T20:52:05Z. The agent continues the bounded metadata push, final required checks, conditional protected merge, fresh synchronized-main acceptance and milestone archive/local tag. No further acknowledgment is needed within this approved scope. No merge or new main acceptance has occurred yet. Publication and UI implementation remain separate boundaries.
 
+A pre-merge receipt-path check found the previous tracked MAIN receipt/capture at the exclusive fresh-output locations. The local metadata-only correction preserves those bytes in their existing accepted-main history, frees the canonical output paths and keeps handoff pending. All selected implementation bytes and four current phase reports are unchanged/verified. The approved single metadata push is already used; one additional non-force metadata push and its restarted final CI require owner approval. See [preflight](milestones/v1.48-CLOSEOUT-RECEIPT-PATH-PREFLIGHT.json).
+
 ## Historical accepted-main checkpoint — 2026-10-30
 
 **Exact-main acceptance passed; canonical handoff validated.** v1.48 implementation is accepted on main and ready for milestone closure; archiving has not run.
