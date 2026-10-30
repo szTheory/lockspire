@@ -1,0 +1,54 @@
+{
+  "accepted_main": false,
+  "application_started": false,
+  "candidate_result": {
+    "artifacts": {
+      "floor": {
+        "cases": 31,
+        "receipts": 12
+      },
+      "locked": {
+        "cases": 33,
+        "receipts": 14
+      }
+    },
+    "jobs": 7,
+    "run_attempt": 2,
+    "run_id": "40954208717"
+  },
+  "database_started": false,
+  "executed_checkout": "3c7bd2ade7dfe0f8b8a29e6f7ae4dd9965e8dbee",
+  "failed_prior_attempts": [
+    {
+      "accepted": false,
+      "exec_session": 63684,
+      "only_changed_package_path": "hex_metadata.config",
+      "reason": "rebuild tree mismatch with runtime-local Hex 2.4.2"
+    },
+    {
+      "accepted": false,
+      "exec_session": 65854,
+      "reason": "unchanged guard manifest had mode 0644 instead of 0600"
+    }
+  ],
+  "final_pr_head": "4a90525ccef493fc486e2950eecaeff703c88473",
+  "observed_process_pid": 59493,
+  "observed_tool_exec_session": 73388,
+  "protected_package_sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be",
+  "protected_package_unchanged": true,
+  "recorded_at": "2026-10-30T12:33:18.274627+00:00",
+  "retained_manifest_mode_restoration": {
+    "after": "0600",
+    "before": "0644",
+    "bytes_match_source_record_and_ci_digest": true,
+    "path": "178-OWNED-SOURCE-MANIFEST.json"
+  },
+  "reviewed_head": "c465f2b8156c2f17db82910452dbcdf16aa8353b",
+  "runtime_acceptance_rerun": false,
+  "schema": "lockspire-v148-postmerge-historical-candidate-validation-v1",
+  "source_revision": "e7ad5e67b7c6d00f97ce347b2576b671ddafd811",
+  "squash_main": "b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f",
+  "validation_scope": "historical_candidate",
+  "validator_git_head": "e857c9c69a407d3e7bd85a96d1c1189e7108bbae",
+  "validator_worktree_sha256": "0a34659ffabbe26b65108fbd071b95ca63d4de56538d18245116e89ef5ef61c8"
+}

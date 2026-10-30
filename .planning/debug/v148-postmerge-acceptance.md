@@ -50,6 +50,18 @@ next_action: Review the exact local correction and authorize its remote integrat
   checked: Separate native run with ASDF_ELIXIR_VERSION=1.19.5-otp-28, ASDF_ERLANG_VERSION=28.5 and ERL_FLAGS='+S 4'.
   observed: All 298 Python acceptance tests passed, zero failures/errors/skips/unexpected successes. Both complete ordinary-merge and squash handoff chains passed. Hygiene --ci --skip-mix-ci passed 18/0/0; whitespace and Python compilation checks passed. Protected root package SHA-256 remained 5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be.
   implication: Local correction is verified. Combined runtime/environment changes explain the passing rerun, but do not isolate the precise cause of the original five failures. This is not a fresh canonical Mix gate or accepted-main receipt.
+- timestamp: 2026-10-30
+  checked: Live retained-candidate identity after the initial local correction commit e857c9c6.
+  observed: GitHub returns an empty pull_requests association for CI40954208717 attempt2 and HTTP404 for refs/pull/141/merge. The original seven job checkout logs still authenticate actual checkout 3c7bd2a. An ancestry fix alone was insufficient; candidate validation also conflated historical evidence with today's working bytes.
+  implication: Authenticate closed-PR identity using exact attempt/job ownership and checkout logs; revalidate historical source/package bytes at their original authenticated checkout while requiring a separate fresh main gate.
+- timestamp: 2026-10-30
+  checked: Native historical candidate revalidation, original exec session73388/PID59493.
+  observed: Seven jobs and both exact same-attempt artifacts passed, locked14/33 plus floor12/31, validation_scope=historical_candidate. No application/database was started and protected root tar stayed unchanged. Original Hex2.6.0 was required: runtime-local Hex2.4.2 changed only hex_metadata.config. The original source manifest's two recorded digests matched its bytes; its checkout mode0644 was tightened to0600 without changing bytes.
+  implication: Original E7AD/c465/3c7bd execution identities remain historical and valid. Failed builder/mode attempts remain recorded in 178-POSTMERGE-CANDIDATE-VALIDATION.json; no main receipt is claimed.
+- timestamp: 2026-10-30
+  checked: Final native pinned Python gate, original exec session96510/PID56405.
+  observed: 299 tests passed, zero failures/errors/skips/unexpected successes; all three source file hashes were unchanged throughout. Complete ordinary-merge and postmerge-squash chains include lost refs, wrong/duplicated/missing checkout logs, wrong closed-PR metadata/attempts, and later tooling changes. 178-POSTMERGE-DEBUG-TESTS-FINAL.json binds these results to actual local HEADe857 plus the exact uncommitted file hashes.
+  implication: Final checker correction is reviewable; integration and fresh exact-main acceptance remain pending.
 
 ## Eliminated
 
@@ -58,7 +70,7 @@ next_action: Review the exact local correction and authorize its remote integrat
 
 ## Resolution
 
-root_cause: Delivery provenance required ordinary Git ancestry after a squash; the synthetic fixture epoch independently made the same invalid HEAD-ancestry assumption.
-fix: Preserve strict ancestry for historical evidence; add an authoritative same-repository merged-PR bridge with reviewed-head ancestry, full-tree equality at the squash boundary, and merge containment in selected main. Keep synthetic fixtures tied to their immutable published source/lock epoch.
-verification: 298 native pinned Python tests passed; 18 hygiene PASS/zero WARN/BLOCK; five focused squash tests and live PR141 provenance passed. Exact-main gate remains pending integration.
+root_cause: Ancestry-only integration checks, temporary GitHub PR associations/merge refs treated as permanent, and historical candidate evidence evaluated against today's working bytes. The synthetic fixture epoch independently required invalid HEAD ancestry.
+fix: Preserve strict historical identities; authenticate an origin merged-PR/full-tree squash bridge, recover old checkout ownership from all seven exact-attempt job logs, and label historical candidate validation separately from the fresh main gate. Keep synthetic fixtures bound to their immutable source/lock epoch.
+verification: Final299 native pinned Python tests passed; live original7-job/26-receipt/64-case historical candidate revalidation passed; hygiene18/0/0 and whitespace/compilation checks passed. Exact-main gate remains pending integration.
 files_changed: scripts/acceptance/clean_room/verifier_delivery.py; test/acceptance/client_verifier_delivery_chain_test.py; test/acceptance/verifier_owner_fixture.py; planning checkpoint/evidence records.

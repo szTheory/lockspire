@@ -6,7 +6,7 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: awaiting_integration
-stopped_at: PR141 squash merged; postmerge CI passed; correction verified 298 Python tests; exact-main acceptance pending correction integration and authorization custody
+stopped_at: PR141 squash merged; postmerge CI passed; final correction verified 299 Python tests and historical26/64; exact-main acceptance pending correction integration and authorization custody
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
@@ -23,9 +23,9 @@ progress:
 
 ## Current postmerge checkpoint — 2026-10-30
 
-PR #141 is squash merged at `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`; local HEAD/main/origin/main agree. Its full Git tree equals final PR head `4a90525ccef493fc486e2950eecaeff703c88473`. Postmerge CI `40987320716` passed all seven canonical jobs; Release `40987320718` succeeded. These observations do not replace the exact-main helper receipt.
+PR #141 is squash merged at `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`; local HEAD/main/origin/main agreed at the initial observation. Its full Git tree equals final PR head `4a90525ccef493fc486e2950eecaeff703c88473`. Postmerge CI `40987320716` passed all seven canonical jobs; Release `40987320718` succeeded. The local correction is on `fix/v148-squash-acceptance`; these observations do not replace the exact-main helper receipt.
 
-Debug session [v148-postmerge-acceptance](debug/v148-postmerge-acceptance.md) reproduces ancestry-only false negatives. The local correction verifies an authoritative merged PR and an identical full-tree squash bridge, preserving original tested/reviewed revisions. The synthetic fixture epoch had a separate HEAD-ancestry assumption. All 298 pinned/native Python acceptance tests passed, including both full handoff chains; hygiene passed 18/0/0. The initial unpinned sandboxed run's five native-test failures remain recorded separately.
+Debug session [v148-postmerge-acceptance](debug/v148-postmerge-acceptance.md) reproduces ancestry-only false negatives, removed GitHub PR associations/merge refs, and historical/live validation conflation. The correction authenticates a merged-PR/full-tree squash bridge and all seven original checkout logs, preserving original tested/reviewed revisions. Synthetic fixtures retain their original epoch. Final299 pinned/native Python tests passed, including both full handoff chains. Live historical candidate revalidation passed7jobs/26receipts/64cases; it is not a new runtime run or main receipt. Hygiene passed18/0/0. Initial failures and environment/mode repairs remain separately recorded.
 
 Next: review the exact verified correction plus integration-authorization proposal. The authorization record and `178-MAIN-ACCEPTANCE.json` remain absent. Main acceptance requires the integrated correction, clean synchronized main, fresh owned contributor gate, exact push CI, no-publish Release, and committed authorization custody. After acceptance, complete v1.48, then start milestone discussion for the approved UI-quality direction. Existing Q1–Q10/final confirmation and nonblocking PARTIAL coverage debt remain intact; no UI implementation has started.
 

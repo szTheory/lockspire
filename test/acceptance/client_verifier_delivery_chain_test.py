@@ -219,6 +219,19 @@ class SquashIntegrationHistory(unittest.TestCase):
         self.assertEqual(delivery.integration_authorization(self.squash)["status"], "authorized")
         self.assertEqual(json.loads(path.read_bytes()), record)
 
+    def test_job_log_escape_retry_captures_bytes_and_is_limited_to_logs(self):
+        endpoint = "repos/fixture/repo/actions/jobs/123/logs"
+        rejected = subprocess.CompletedProcess([], 1, b"", b"the response contains terminal escape sequences")
+        captured = subprocess.CompletedProcess([], 0, b"\x1b[31mprivate fixture bytes\x1b[0m", b"")
+        with patch.object(subprocess, "run", side_effect=(rejected, captured)) as command:
+            self.assertEqual(delivery._github_bytes(endpoint), captured.stdout)
+            self.assertEqual(command.call_args_list[-1].args[0], ("gh", "api", endpoint, "--allow-escape-sequences"))
+            self.assertEqual(command.call_args_list[-1].kwargs["stdout"], subprocess.PIPE)
+        with patch.object(subprocess, "run", return_value=rejected) as command:
+            with self.assertRaises(delivery.DeliveryError):
+                delivery._github_bytes("repos/fixture/repo/pulls/7")
+            self.assertEqual(command.call_count, 1)
+
 
 class ExternalBoundaries:
     """Only OS/build/database/GitHub seams; real producers remain in control."""
@@ -279,7 +292,8 @@ class ExternalBoundaries:
             return subprocess.CompletedProcess(command, 0, b"package-built\n", b"")
         if tuple(command[:2]) == ("gh", "api"):
             data = self.api.get(command[2])
-            return subprocess.CompletedProcess(command, int(data is None), json.dumps(data).encode(), b"")
+            output = data.encode() if command[2].endswith("/logs") and isinstance(data, str) else json.dumps(data).encode()
+            return subprocess.CompletedProcess(command, int(data is None), output, b"")
         return self.real_run(command, **kwargs)
 
     def unpack(self, archive, destination):
@@ -751,7 +765,50 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 self.boundary.api["repos/fixture/repo/pulls/7"] = {
                     "number": 7, "merged": True, "state": "closed", "merged_at": "2026-10-30T01:41:21Z",
                     "merge_commit_sha": main_sha, "head": {"sha": final_head},
-                    "base": {"ref": "main", "repo": {"full_name": "fixture/repo"}}}
+                    "base": {"ref": "main", "sha": frozen_revision, "repo": {"full_name": "fixture/repo"}}}
+                # Closed PRs lose their run association and temporary merge
+                # ref. Each original job's immutable checkout log remains.
+                run["pull_requests"] = []
+                del self.boundary.api["repos/fixture/repo/git/ref/pull/7/merge"]
+                for job in jobs:
+                    self.boundary.api[f"repos/fixture/repo/actions/jobs/{job['id']}/logs"] = (
+                        "2026-10-27T12:00:00Z [command]/usr/bin/git log -1 --format=%H\n"
+                        f"2026-10-27T12:00:01Z {merge}\n")
+                self.assertEqual(delivery._check_candidate_identity(phase)["executed_checkout_sha"], merge)
+                closed_pull = self.boundary.api["repos/fixture/repo/pulls/7"]
+                for mutation in ({"merged": False}, {"base": {"ref": "main", "sha": head,
+                                    "repo": {"full_name": "fixture/repo"}}}):
+                    self.boundary.api["repos/fixture/repo/pulls/7"] = {**closed_pull, **mutation}
+                    with self.assertRaises(delivery.DeliveryError):
+                        delivery._check_candidate_identity(phase)
+                self.boundary.api["repos/fixture/repo/pulls/7"] = closed_pull
+                jobs[0]["run_attempt"] = 2
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._check_candidate_identity(phase)
+                jobs[0]["run_attempt"] = 1
+                log_path = f"repos/fixture/repo/actions/jobs/{jobs[0]['id']}/logs"
+                valid_log = self.boundary.api[log_path]
+                for changed_log in (valid_log.replace(merge, head), valid_log + valid_log, "unbound checkout " + merge):
+                    self.boundary.api[log_path] = changed_log
+                    with self.assertRaises(delivery.DeliveryError):
+                        delivery._check_candidate_identity(phase)
+                self.boundary.api[log_path] = valid_log
+                # A later tooling correction has its own fresh main gate;
+                # it must not restamp historical package/source acceptance.
+                tooling = repo / "scripts/acceptance/clean_room/verifier_delivery.py"
+                tooling.write_text(tooling.read_text() + "\n# subsequent fixture tooling correction\n")
+                self.git(repo, "add", "--", tooling.relative_to(repo).as_posix())
+                self.git(repo, "commit", "-qm", "later tooling correction")
+                corrected = self.git(repo, "rev-parse", "HEAD")
+                auth_record = json.loads(authorization_path.read_bytes())
+                auth_record["candidate_sha"] = corrected
+                authorization_path.write_text(json.dumps(auth_record))
+                self.git(repo, "add", "--", authorization_path.relative_to(repo).as_posix())
+                self.git(repo, "commit", "-qm", "authorize corrected source")
+                main_sha = self.git(repo, "rev-parse", "HEAD")
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._check_candidate(phase)
+                self.assertEqual(delivery._check_candidate(phase, historical=True)["validation_scope"], "historical_candidate")
             self.git(repo, "update-ref", "refs/heads/main", main_sha)
             self.git(repo, "update-ref", "refs/remotes/origin/main", main_sha)
             self.boundary.api["repos/fixture/repo/git/ref/heads/main"] = {"ref": "refs/heads/main", "object": {"sha": main_sha}}
