@@ -6,8 +6,8 @@ The default operating mode is not "find the next milestone." The default is: kee
 
 ## Current Baseline
 
-- Release Please version metadata: `1.6.1` <!-- x-release-please-version -->
-- Release Please date metadata: `2026-10-20` <!-- x-release-please-date -->
+- Release Please version metadata: `1.7.0` <!-- x-release-please-version -->
+- Release Please date metadata: `2026-10-30` <!-- x-release-please-date -->
 - Latest public package: Hex `1.6.1`, published from source `d04be40262e975a4eb8d8567eb0d1458a9c23181` on 2026-10-20. Release Please metadata above is not publication proof.
 - Artifact truth: protected release run [39496849388](https://github.com/szTheory/lockspire/actions/runs/39496849388) for source `d04be40262e975a4eb8d8567eb0d1458a9c23181` was backed by matching canonical push CI [39495931590](https://github.com/szTheory/lockspire/actions/runs/39495931590), whose seven required jobs passed on that exact SHA. The release run verified the public Hex checksum `629abdc1b6721620f3d9084dbbe78da1e254650da5c552d0cc0f5b0c00f1cc6d`, HexDocs, [lockspire-v1.6.1](https://github.com/szTheory/lockspire/releases/tag/lockspire-v1.6.1), and clean-room install. Its terminal receipt records `release_verified: true` with no blocker. Independent maintainer-machine verification matched the public API, downloaded tarball, retained manifest and fresh-install lock checksum; confirmed the fixed TaskError-based keys.reencrypt implementation, exact 11-task inventory, four versioned docs pages and release/tag source; and compiled and ran gen.kek from isolated Hex/Mix homes with only its output length recorded.
 - Current-main truth: release source `main` was `d04be40262e975a4eb8d8567eb0d1458a9c23181` at the 2026-10-20 publication observation; canonical CI [39495931590](https://github.com/szTheory/lockspire/actions/runs/39495931590) and Release push [39495931519](https://github.com/szTheory/lockspire/actions/runs/39495931519) passed. Later release-record documentation commits are distinct from this published source.
