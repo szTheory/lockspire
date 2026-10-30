@@ -18,7 +18,7 @@ reproduction: Compare reviewed head 4a90525ccef493fc486e2950eecaeff703c88473 wit
 hypothesis: Ancestry-only provenance conflates commit identity with integration of identical reviewed source.
 test: Real Git squash fixtures plus authoritative PR metadata, including negative mutations.
 expecting: An authenticated merged PR with an identical full tree provides a narrow squash bridge; changed/unrelated source fails.
-next_action: Review the exact local correction and authorize its remote integration plus committed authorization custody; then run fresh exact-main acceptance on the merged SHA.
+next_action: Review source9ffe69f1 on fix/v148-squash-acceptance and 178-POSTMERGE-INTEGRATION-PROPOSAL.md; authorize its remote integration plus committed authorization custody, then run fresh exact-main acceptance on the merged SHA.
 
 ## Evidence
 
@@ -66,6 +66,10 @@ next_action: Review the exact local correction and authorize its remote integrat
   checked: Prospective hosted source selection for the correction.
   observed: Both hosted proof jobs still used --reviewed-candidate-source, whose selector requires exact selected-byte agreement with the historical E7AD closure. Any checker correction changes selected bytes and would be rejected before proof execution. Both steps now pass --expected-candidate-source "$EXPECTED_RUNNER_REVISION" to the existing provisioner and retain their job-owned manifest/digest path. Actionlint passed; final300 native tests passed with zero failures/errors/skips/unexpected successes and all five source hashes unchanged. The source-bound record is 178-POSTMERGE-DEBUG-TESTS-CHECKOUT-PINS.json (original session14143/PID37073). Native exact-checkout provisioning follows at committed source.
   implication: Future CI must prove its actual checkout as fresh source while historical milestone evidence remains frozen at its original identities.
+- timestamp: 2026-10-30
+  checked: Native provisioner with both source and runner pinned to committed9ffe69f122f9a1d2fd3821ee0bf0bcbf5635094a in a fresh private shared-object checkout, original session63506/PID79518.
+  observed: Passed with1079selected inputs and clean source afterward. Archiveeea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c/tree01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b equal the historical package. No app/database started; protected root tar unchanged. 178-POSTMERGE-NATIVE-PROVISION.json retains exact pins and private root.
+  implication: The final correction can provision fresh job-owned source without rewriting original proof records or claiming a new runtime acceptance run. Only remote integration/authorization and fresh exact-main gates remain.
 
 ## Eliminated
 

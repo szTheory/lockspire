@@ -10,7 +10,7 @@ stopped_at: PR141 squash merged; postmerge CI passed; final correction verified 
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
 last_activity_desc: Debug v1.48 postmerge acceptance; preserve historical evidence and PARTIAL coverage debt
-state_head: b55eaafc
+state_head: 9ffe69f1
 progress:
   total_phases: 4
   completed_phases: 4
@@ -27,7 +27,9 @@ PR #141 is squash merged at `b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f`; local HE
 
 Debug session [v148-postmerge-acceptance](debug/v148-postmerge-acceptance.md) reproduces ancestry-only false negatives, removed GitHub PR associations/merge refs, and historical/live validation conflation. The correction authenticates a merged-PR/full-tree squash bridge and all seven original checkout logs, preserving original tested/reviewed revisions. Synthetic fixtures retain their original epoch. Final300 pinned/native Python tests passed, including both full handoff chains. Live historical candidate revalidation passed7jobs/26receipts/64cases; it is not a new runtime run or main receipt. Hygiene passed18/0/0. Initial failures and environment/mode repairs remain separately recorded.
 
-Next: review the exact verified correction plus integration-authorization proposal. The authorization record and `178-MAIN-ACCEPTANCE.json` remain absent. Main acceptance requires the integrated correction, clean synchronized main, fresh owned contributor gate, exact push CI, no-publish Release, and committed authorization custody. After acceptance, complete v1.48, then start milestone discussion for the approved UI-quality direction. Existing Q1–Q10/final confirmation and nonblocking PARTIAL coverage debt remain intact; no UI implementation has started.
+Committed correction source `9ffe69f1` also passed native exact-checkout provisioning in a fresh private root: all1079selected inputs, clean source afterward, archive/tree identical to the original package, protected root tar unchanged, and no app/database started. Future CI uses its actual checkout SHA; original runtime proof remains historical.
+
+Next: review [the integration proposal](phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTMERGE-INTEGRATION-PROPOSAL.md). The authorization record and `178-MAIN-ACCEPTANCE.json` remain absent. Main acceptance requires the integrated correction, clean synchronized main, fresh owned contributor gate, exact push CI, no-publish Release, and committed authorization custody. Run the helper from an isolated synchronized checkout with a fresh private PostgreSQL target to preserve the protected root tar; retain its actual receipt and source manifest. After acceptance, complete v1.48, then start milestone discussion for the approved UI-quality direction. Existing Q1–Q10/final confirmation and nonblocking PARTIAL coverage debt remain intact; no UI implementation has started.
 
 ## Historical premerge checkpoint
 
