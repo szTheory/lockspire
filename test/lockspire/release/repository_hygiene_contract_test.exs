@@ -184,7 +184,10 @@ defmodule Lockspire.Release.RepositoryHygieneContractTest do
 
   @tag :phase139_gap_closure
   @tag :phase139_exact_sha_hygiene
-  @tag timeout: 180_000
+  # This aggregate executes dozens of real collector/guard process fixtures.
+  # Bound the aggregate without letting full-suite overhead hide its assertions;
+  # the helper's own scenario deadlines remain unchanged.
+  @tag timeout: 600_000
   test "exact-SHA repository hygiene fails every ambiguous or stale path closed" do
     PackageAssertions.assert_phase_139_exact_sha_hygiene_fail_closed!()
   end
