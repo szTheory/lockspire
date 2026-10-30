@@ -173,7 +173,7 @@ jobs:
         run: bash scripts/ci/run_test_matrix.sh --fast .artifacts/ci/fast-timings.json .artifacts/ci/coverage/fast "${{ github.sha }}"
 
       - name: Upload SHA-bound fast coverage evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-coverage-fast-${{ github.sha }}
           path: |
@@ -184,7 +184,7 @@ jobs:
 
       - name: Upload fast test timing
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: fast-test-timings
           path: .artifacts/ci/fast-timings.json
@@ -341,7 +341,7 @@ jobs:
 
       - name: Upload validated exact-floor verifier upgrade receipts
         if: always() && steps.verifier-proof-floor.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-verifier-upgrade-${{ github.sha }}-floor
           path: .artifacts/phase178/ci-floor/validated/**
@@ -350,7 +350,7 @@ jobs:
 
       - name: Upload validated exact-floor host proof receipts
         if: always() && steps.host-proof-floor.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-host-integration-${{ github.sha }}-floor
           path: .artifacts/ci/host-integration/floor/*.json
@@ -486,7 +486,7 @@ jobs:
 
       - name: Upload integration test timing
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: integration-test-timings-${{ github.sha }}
           path: .artifacts/ci/integration-timings.json
@@ -518,7 +518,7 @@ jobs:
 
       - name: Upload validated locked verifier upgrade receipts
         if: always() && steps.verifier-proof-locked.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-verifier-upgrade-${{ github.sha }}-locked
           path: .artifacts/phase178/ci-locked/validated/**
@@ -527,7 +527,7 @@ jobs:
 
       - name: Upload validated locked host proof receipts
         if: always() && steps.host-proof-locked.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-host-integration-${{ github.sha }}-locked
           path: .artifacts/ci/host-integration/locked/*.json
@@ -593,7 +593,7 @@ jobs:
 
       - name: Upload SHA-bound client lifetime receipts
         if: always() && steps.validate-client-lifetime-receipt.outcome == 'success'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-client-lifetimes-${{ github.sha }}
           path: |
@@ -603,7 +603,7 @@ jobs:
           retention-days: 14
 
       - name: Upload SHA-bound integration coverage evidence
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: lockspire-coverage-integration-${{ github.sha }}
           path: |
