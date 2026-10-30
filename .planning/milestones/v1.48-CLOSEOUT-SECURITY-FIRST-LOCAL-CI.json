@@ -1,0 +1,40 @@
+{
+  "schema": "lockspire-v148-migration-local-ci-v1",
+  "started_at": "2026-10-30T21:39:34.201593+00:00",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-security-ci-l8vxrw9t",
+  "socket_root": "/private/tmp/lv148-ci-a5nnzqx_",
+  "status": "failed",
+  "application_scope": "fresh private clone and PostgreSQL; original resources untouched",
+  "source_revision": "cbd0133c948fd57e11d666cc91340b2b4f8afad9",
+  "port": 53880,
+  "postgres_pid": 36655,
+  "guard_pid": 36670,
+  "exit_code": 1,
+  "stdout_bytes": 255,
+  "stderr_bytes": 0,
+  "stdout_sha256": "68324692446ebbcfcc95d925a9cfc0b85c52b3d8026040102c3ce2ce7ebc5f3c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "guard": {
+    "cleanup": "not_owned_or_uncertain_create",
+    "failure": {
+      "reason": "effective_config_mismatch",
+      "stage": "preflight"
+    },
+    "manifest": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-hwmapy1e/manifest.json",
+    "status": "failed"
+  },
+  "source_manifest_original": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-hwmapy1e/manifest.json",
+  "source_manifest_sha256": "28d1c3b0ec145bff567f63d819ebc616ed1b00bdc23854f63563ee6e60a7d1a7",
+  "exunit_counts": [],
+  "guard_group_closed": true,
+  "authenticated_sessions": 4,
+  "sessions_absent": 4,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "unconfirmed_roots": 0,
+  "supervisor_errors": [],
+  "private_postgres_closed": true,
+  "protected_root_tar_unchanged": true,
+  "private_data_retained": true,
+  "finished_at": "2026-10-30T21:39:41.224730+00:00"
+}

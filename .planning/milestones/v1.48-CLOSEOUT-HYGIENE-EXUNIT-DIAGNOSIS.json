@@ -1,0 +1,117 @@
+{
+  "schema": "lockspire-v148-hygiene-budget-diagnosis-v1",
+  "source": "bc7ccf614f208f8d9a92afde33093400de2adac2",
+  "application_started": false,
+  "database_started": false,
+  "fixture_backends": "fake GitHub/Mix/PostgreSQL/Docker in owned throwaway repos",
+  "raw_fixture_output_persisted": false,
+  "exit_code": 0,
+  "observations": [
+    {
+      "line": 14,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 5,
+      "exception_classes": []
+    },
+    {
+      "line": 38,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 43,
+      "exception_classes": []
+    },
+    {
+      "line": 42,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 1,
+      "exception_classes": []
+    },
+    {
+      "line": 47,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 1933,
+      "exception_classes": []
+    },
+    {
+      "line": 60,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 76,
+      "exception_classes": []
+    },
+    {
+      "line": 154,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 19,
+      "exception_classes": []
+    },
+    {
+      "line": 161,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 2576,
+      "exception_classes": []
+    },
+    {
+      "line": 168,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 8730,
+      "exception_classes": []
+    },
+    {
+      "line": 175,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 4843,
+      "exception_classes": []
+    },
+    {
+      "line": 181,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 1589,
+      "exception_classes": []
+    },
+    {
+      "line": 188,
+      "status": "passed",
+      "file": "test/lockspire/release/repository_hygiene_contract_test.exs",
+      "stage": "fixture_case",
+      "elapsed_ms": 131941,
+      "exception_classes": []
+    },
+    {
+      "total": 11,
+      "stage": "fixture_total",
+      "failures": 0,
+      "elapsed_ms": 151780,
+      "excluded": 0,
+      "skipped": 0
+    }
+  ],
+  "stdout_sha256": "32c4911903482cac492d97c3f324c55da41297c09f2d81184a9775120e86cc84",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "status": "observed",
+  "root_group_closed": true,
+  "authenticated_sessions": 1305,
+  "sessions_absent": 1305,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "supervisor_errors": []
+}

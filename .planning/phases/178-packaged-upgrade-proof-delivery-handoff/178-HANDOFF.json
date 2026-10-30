@@ -4,7 +4,7 @@
   "main_acceptance_path": null,
   "main_acceptance_sha256": null,
   "main_sha": null,
-  "next_action": "PR #141 is squash merged at b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f and postmerge CI40987320716 passed all seven jobs; Release40987320718 succeeded. Exact-main acceptance remains pending. The local correction passed300 Python tests and live historical revalidation7jobs/26receipts/64cases. Review its exact integration-authorization proposal and integrate only after approval. Historical candidate validation preserves original identities and is not a new runtime run or accepted-main receipt. Then run the existing exact-main helper on clean synchronized HEAD/main/origin/main with fresh owned source gate, matching push CI, no-publish Release, warning dispositions and committed authorization custody. No MAIN receipt exists yet. Preserve all original c465/3c7bd/E7AD execution identities, failures, unknowns, and nonblocking PARTIAL coverage debt. Once main acceptance passes, complete v1.48 and begin the UI-quality milestone discussion with Q1-Q10/final confirmation intact.",
-  "owner": "PR owner / repository maintainer",
+  "next_action": "Approved correction integration is in progress. After required final CI and protected merge, capture fresh main acceptance; prior dc396930 receipts are preserved under history/accepted-main-dc396930/.",
+  "owner": "repository maintainer",
   "schema": "lockspire-phase178-handoff-v1"
 }

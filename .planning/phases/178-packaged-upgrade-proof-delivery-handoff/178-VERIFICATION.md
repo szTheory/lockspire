@@ -1,52 +1,87 @@
 ---
 phase: 178-packaged-upgrade-proof-delivery-handoff
-verified: 2026-10-30T00:23:13Z
+verified: 2026-10-30T22:46:07.903858+00:00
 status: passed
 score: 4/4 roadmap truths verified
 covered_files:
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-01-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-01-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-02-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-02-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-03-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-03-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-04-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-04-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-05-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-05-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-07-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-07-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-08-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-08-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-09-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-09-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-CANDIDATE-VALIDATION-c465f2b8-attempt2.json
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-12-PLAN.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-12-SUMMARY.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTRUN-VALIDATION.md
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-REQUIREMENT-DISPOSITIONS.json
-  - .planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-FINAL-c465-attempt2.md
-  - docs/client-secret-jwt-host-guide.md
-  - docs/client-secret-verifier-configuration.md
-  - lib/lockspire/admin/client_verifier_maintenance.ex
-  - lib/lockspire/security/client_secret_verifier.ex
-  - lib/lockspire/storage/client_verifier_maintenance.ex
-  - scripts/acceptance/clean_room/package_input.py
-  - scripts/acceptance/clean_room/verifier_core.py
-  - scripts/acceptance/clean_room/verifier_disclosure.py
-  - scripts/acceptance/clean_room/verifier_endpoints.py
-  - scripts/acceptance/clean_room/verifier_receipts.py
-  - scripts/acceptance/clean_room/verifier_recovery.py
-  - scripts/acceptance/clean_room/verifier_rollout.py
-  - scripts/acceptance/clean_room/verifier_transactions.py
-  - scripts/acceptance/clean_room_verifier_upgrade.py
-covered_digest: "v4:sha256:66ddf16dae73290b41360ea490058fa0e83800191810e30150dea1090ab312ca"
+  - ".planning/milestones/v1.48-CLOSEOUT-HYGIENE-BUDGET-DIAGNOSIS.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-HYGIENE-EXUNIT-DIAGNOSIS.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-HYGIENE-TIMEOUT-REMEDY.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-LOCK-EPOCH-REGRESSION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-LOCK-EPOCH-REVIEW.md"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-CI-DIAGNOSTIC.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-HISTORICAL-CANDIDATE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-NATIVE-PROVISION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-PYTHON.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-REQUALIFICATION-REVIEW.md"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-AUTHORIZATION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-CI-DIAGNOSTIC.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-FIRST-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-FIRST-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-GATE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-HISTORICAL-CANDIDATE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-NATIVE-PROVISION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-PYTHON.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-REVIEW.md"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SECOND-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SECOND-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SMOKE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-UPGRADE.json"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-01-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-01-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-02-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-02-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-03-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-03-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-04-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-04-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-05-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-05-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-06-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-07-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-07-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-08-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-08-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-09-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-09-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-10-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-CANDIDATE-VALIDATION-c465f2b8-attempt2.json"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-11-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-12-PLAN.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-12-SUMMARY.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-POSTRUN-VALIDATION.md"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-REQUIREMENT-DISPOSITIONS.json"
+  - ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-SECURITY-FINAL-c465-attempt2.md"
+  - "compatibility/phoenix_1_8_live_view_1_1/mix.lock"
+  - "docs/client-secret-jwt-host-guide.md"
+  - "docs/client-secret-verifier-configuration.md"
+  - "examples/adoption_demo/mix.lock"
+  - "lib/lockspire/admin/client_verifier_maintenance.ex"
+  - "lib/lockspire/security/client_secret_verifier.ex"
+  - "lib/lockspire/storage/client_verifier_maintenance.ex"
+  - "mix.lock"
+  - "scripts/acceptance/clean_room/package_input.py"
+  - "scripts/acceptance/clean_room/verifier_core.py"
+  - "scripts/acceptance/clean_room/verifier_delivery.py"
+  - "scripts/acceptance/clean_room/verifier_disclosure.py"
+  - "scripts/acceptance/clean_room/verifier_endpoints.py"
+  - "scripts/acceptance/clean_room/verifier_receipts.py"
+  - "scripts/acceptance/clean_room/verifier_recovery.py"
+  - "scripts/acceptance/clean_room/verifier_rollout.py"
+  - "scripts/acceptance/clean_room/verifier_transactions.py"
+  - "scripts/acceptance/clean_room_verifier_upgrade.py"
+  - "test/acceptance/client_verifier_delivery_chain_test.py"
+  - "test/clean_room/confidential_client/mix.lock"
+  - "test/clean_room/provider_host/mix.lock"
+  - "test/lockspire/release/repository_hygiene_contract_test.exs"
+covered_digest: "v4:sha256:127b21391536f64781c91a8c98ae19a05ea7d0e646a219dda89ffc79245dd62f"
 behavior_unverified: 0
 overrides_applied: 0
 re_verification:
@@ -155,3 +190,15 @@ Phase 178's four roadmap truths and all three phase requirements are independent
 
 _Verified: 2026-10-30T00:23:13Z_  
 _Verifier: the agent (gsd-verifier)_
+
+## Focused dependency security requalification — 2026-10-30
+
+The owner authorized the newly published phoenix_html advisory remediation. At source `cbd0133c948fd57e11d666cc91340b2b4f8afad9`, all five active locks move only phoenix_html4.3.0 to4.4.0. The actual root dependency audit and dynamic-attribute rendering regression pass; the complete native acceptance suite and canonical owned contributor gate also pass. [Review](../../milestones/v1.48-CLOSEOUT-SECURITY-REVIEW.md), [actual contributor gate](../../milestones/v1.48-CLOSEOUT-SECURITY-LOCAL-CI.json), [source capture](../../milestones/v1.48-CLOSEOUT-SECURITY-OWNED-SOURCE-MANIFEST.json), [native regressions](../../milestones/v1.48-CLOSEOUT-SECURITY-PYTHON.json), and [fresh provisioning](../../milestones/v1.48-CLOSEOUT-SECURITY-NATIVE-PROVISION.json) preserve the new source identity. The exact library package archive/tree are unchanged; selected dependency inputs have changed and receive new qualification.
+
+The first copied-cache attempt's compile preflight refused a lock mismatch before test database creation; all its authenticated sessions/private PostgreSQL closed. deps.get refreshed only the private cache before the successful full run. The original failed required audit and all earlier runtime/proof identities remain historical. Own final-head CI, new current/minimum installed proof and resulting exact-main acceptance remain pending; these local results do not replace them. Formal PARTIAL/Nyquist-false and every existing generic, null/descriptorless, advisory, non-certifying or custody limit remain unchanged. No override or risk waiver is applied.
+
+## Historical dependency-lock correction qualified — 2026-10-30
+
+At selected source `e4ac86f0bb4f9c5a27a260d850658ce43957509f`, the complete native acceptance suite and canonical private owned contributor gate pass. The real retained original candidate revalidates all seven jobs and both strict same-attempt26receipt/64case partitions from its original local/hosted lock blobs, without restamping its source or runtime. Fresh exact-source provisioning reproduces the original library package bytes and binds all1080selected inputs. [Bounded review](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-REVIEW.md), [native results](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-PYTHON.json), [actual contributor gate](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-LOCAL-CI.json), [capture](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-OWNED-SOURCE-MANIFEST.json), [real historical replay](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-HISTORICAL-CANDIDATE.json), [fresh freeze](../../milestones/v1.48-CLOSEOUT-REQUALIFICATION-NATIVE-PROVISION.json).
+
+The change is necessary for the authorized dependency update: historical validation previously compared original proof with today's locks. Only the existing authenticated historical path now selects original committed pair-lock bytes; default current-run checks remain strict. Missing/unpinned history and a grammar-preserving current-lock substitution fail. The complete squash/helper/handoff regression passed after its intended RED. The full-context fixture timeout was independently identified as ExUnit.TimeoutError; only its bounded aggregate allowance changed to600seconds, preserving every assertion and the real helper/live budgets. Original failed replay, earlier unidentified fast failure, prior actual receipts and all formal PARTIAL/Nyquist-false/advisory/unknown limits remain preserved. Final own hosted CI/current-minimum proof and fresh resulting-main acceptance remain pending; no override is applied.

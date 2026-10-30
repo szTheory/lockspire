@@ -1,0 +1,9 @@
+{
+  "schema": "lockspire-v148-safe-failure-location-v1",
+  "command_exit": 0,
+  "test_locations": [],
+  "diagnostic_categories": [
+    "failed"
+  ],
+  "raw_diagnostics_persisted": false
+}

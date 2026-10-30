@@ -1,0 +1,57 @@
+{
+  "schema": "lockspire-v148-migration-local-ci-v1",
+  "started_at": "2026-10-30T21:40:37.890326+00:00",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-security-ci-2wisuyj2",
+  "socket_root": "/private/tmp/lv148-ci-hihmjkvn",
+  "status": "failed",
+  "application_scope": "fresh private clone and PostgreSQL; original resources untouched",
+  "source_revision": "cbd0133c948fd57e11d666cc91340b2b4f8afad9",
+  "port": 54217,
+  "postgres_pid": 38634,
+  "guard_pid": 38647,
+  "exit_code": 1,
+  "stdout_bytes": 226,
+  "stderr_bytes": 0,
+  "stdout_sha256": "4e6ae0ed583ec9597530e572c82c8fe9d59de070337b244c6c153cc75ff695ba",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "guard": {
+    "cleanup": "independently_absent",
+    "failure": {
+      "reason": "tests_failed",
+      "stage": "ci"
+    },
+    "manifest": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-z5stjvbp/manifest.json",
+    "status": "failed"
+  },
+  "source_manifest_original": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-owned-source-tests-z5stjvbp/manifest.json",
+  "source_manifest_sha256": "ce0f29a9effdc4166d25d3f13c86a891056a6df6b586fe09815557878230caeb",
+  "exunit_counts": [
+    [
+      {
+        "failures": 0,
+        "properties": 0,
+        "stdout_bytes": 740,
+        "stdout_sha256": "2747d261ed74cd20402671140ea77841a0f02bca18a2cd182d1a94d91d20e95a",
+        "tests": 15
+      },
+      {
+        "failures": 1,
+        "properties": 2,
+        "stdout_bytes": 600111,
+        "stdout_sha256": "94fce2e7fad16edce57cebf08c3450f8dee5a6e315397aeda19764d48ea69221",
+        "tests": 2187
+      }
+    ]
+  ],
+  "guard_group_closed": true,
+  "authenticated_sessions": 1303,
+  "sessions_absent": 1303,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "unconfirmed_roots": 0,
+  "supervisor_errors": [],
+  "private_postgres_closed": true,
+  "protected_root_tar_unchanged": true,
+  "private_data_retained": true,
+  "finished_at": "2026-10-30T21:47:48.130117+00:00"
+}

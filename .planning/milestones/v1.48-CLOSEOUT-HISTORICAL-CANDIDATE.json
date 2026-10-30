@@ -1,0 +1,37 @@
+{
+  "schema": "lockspire-v148-closeout-historical-candidate-v1",
+  "status": "passed",
+  "checker_source_revision": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "historical_execution_not_restamped": true,
+  "builder": {
+    "hex": "2.6.0",
+    "elixir": "1.19.5",
+    "otp": "28.5"
+  },
+  "prior_attempts": [
+    {
+      "status": "failed",
+      "classification": "unpinned frozen source package build failed"
+    },
+    {
+      "status": "failed",
+      "classification": "pinned Elixir/OTP but active Hex 2.4.2 changed only hex_metadata.config; original package requires Hex 2.6.0"
+    }
+  ],
+  "result": {
+    "jobs": 7,
+    "run_id": "40954208717",
+    "run_attempt": 2,
+    "artifacts": {
+      "locked": {
+        "receipts": 14,
+        "cases": 33
+      },
+      "floor": {
+        "receipts": 12,
+        "cases": 31
+      }
+    },
+    "validation_scope": "historical_candidate"
+  }
+}

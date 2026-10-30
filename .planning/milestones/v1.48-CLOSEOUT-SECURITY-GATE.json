@@ -1,0 +1,109 @@
+{
+  "schema": "lockspire-v148-closeout-security-gate-v1",
+  "observed_at": "2026-10-30T21:17:10.110148+00:00",
+  "status": "blocked_pending_source_change_decision",
+  "pr": 146,
+  "approved_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "reviewed_head": "a9bccf534285ec85f9f5aa793902a0844513fad9",
+  "executed_checkout": "5f82a9b59d82ccd73cdc1850aa510432ccdd2569",
+  "ci_run_id": 41129182396,
+  "run_attempt": 1,
+  "failed_job_id": 124315591614,
+  "failed_job": "Fast Checks",
+  "failed_step": "Audit dependencies (retired + CVEs)",
+  "failure": "mix deps.audit exit 1: phoenix_html 4.3.0 is affected by EEF-CVE-2026-117645 (MEDIUM)",
+  "fixed_available_version": "4.4.0",
+  "active_affected_lock_paths": [
+    "mix.lock",
+    "examples/adoption_demo/mix.lock",
+    "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
+    "test/clean_room/confidential_client/mix.lock",
+    "test/clean_room/provider_host/mix.lock"
+  ],
+  "primary_sources": [
+    {
+      "url": "https://api.osv.dev/v1/vulns/EEF-CVE-2026-117645",
+      "response_sha256": "ffb3493ceb7db0ab91e4fbfef5e017c8144da4771b44ad66046864916397d9b8",
+      "fields": {
+        "id": "EEF-CVE-2026-117645",
+        "summary": "Phoenix.HTML vulnerable to attribute injection via unvalidated attribute names in attributes_escape/1",
+        "aliases": [
+          "CVE-2026-117645"
+        ],
+        "published": "2026-10-30T20:25:06.758Z",
+        "modified": "2026-10-30T20:30:03.351618265Z",
+        "references": [
+          {
+            "type": "WEB",
+            "url": "https://cna.erlef.org/cves/CVE-2026-117645.html"
+          },
+          {
+            "type": "WEB",
+            "url": "https://github.com/phoenixframework/phoenix_html/commit/6ad3a1d7960891a468d54636054a98e11dfb5111"
+          },
+          {
+            "type": "FIX",
+            "url": "https://github.com/phoenixframework/phoenix_html/commit/d9e4e6b2d9be49e25fb6d6b4fdbb2008174f01a6"
+          },
+          {
+            "type": "FIX",
+            "url": "https://github.com/phoenixframework/phoenix_html/commit/a47dc8944a773b7e9273d9691dc6744ec793f1de"
+          },
+          {
+            "type": "PACKAGE",
+            "url": "https://hex.pm/packages/phoenix_html"
+          }
+        ],
+        "severity": [
+          {
+            "type": "CVSS_V4",
+            "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:P/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N"
+          }
+        ],
+        "affected_hex_ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "1.0.0"
+              },
+              {
+                "fixed": "3.3.5"
+              }
+            ]
+          },
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "4.0.0"
+              },
+              {
+                "fixed": "4.4.0"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "url": "https://hex.pm/api/packages/phoenix_html/releases/4.4.0",
+      "response_sha256": "221af430d66849a012f64a1dea63a893faed2e8d50691cfeda27c54d2b96a5ac",
+      "fields": {
+        "version": "4.4.0",
+        "checksum": "94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228",
+        "inserted_at": "2026-10-30T17:24:34.269817Z",
+        "requirements": {},
+        "retirement": null,
+        "has_docs": true
+      }
+    }
+  ],
+  "lockspire_reachability": "not established; upstream condition requires attacker-controlled attribute names",
+  "merge_performed": false,
+  "new_main_acceptance_started": false,
+  "archive_or_tag_created": false,
+  "suppression_or_gate_bypass": false,
+  "approval_required_because": "Changing selected dependency inputs falls outside exact-source integration approval; the proposal expressly requires stopping after a failed required gate.",
+  "recommended_next_action": "Authorize focused security dependency remediation, review/test it and renew affected source/package proof, then continue conditional protected integration and v1.48 closure."
+}

@@ -1,0 +1,7 @@
+{
+  "authorized_at": "2026-10-30T20:52:05Z",
+  "authorized_by": "repository maintainer (explicit user approval)",
+  "candidate_sha": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "schema": "lockspire-phase178-integration-authorization-v1",
+  "status": "authorized"
+}

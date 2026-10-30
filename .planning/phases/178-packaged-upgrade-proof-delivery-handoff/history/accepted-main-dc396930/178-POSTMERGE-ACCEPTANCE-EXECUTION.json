@@ -1,0 +1,256 @@
+{
+  "actual_execution": {
+    "accepted_main": true,
+    "attempt_dir": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4/acceptance-attempt-6",
+    "database_started": true,
+    "finished_at": "2026-10-30T18:53:27.001943+00:00",
+    "handoff_result": {
+      "accepted_main": true,
+      "helper_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+      "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39"
+    },
+    "helper_process_closed": true,
+    "hygiene": {
+      "block": 0,
+      "pass": 22,
+      "status": "pass",
+      "warn": 2
+    },
+    "local_gate": {
+      "exunit_tests": 2463,
+      "manifest_path": ".planning/phases/178-packaged-upgrade-proof-delivery-handoff/178-MAIN-OWNED-SOURCE-MANIFEST.json",
+      "manifest_sha256": "ed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5",
+      "status": "pass"
+    },
+    "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+    "postgres_data_retained": true,
+    "postgres_pid": 95755,
+    "postgres_port": 61826,
+    "postgres_socket_dir": "/private/tmp/lv148-pg-vjhmq9xd",
+    "private_lab": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4",
+    "private_postgres_closed": true,
+    "protected_root_tar_unchanged": true,
+    "receipt_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+    "release_no_publish": 41105446769,
+    "required_ci": 41105446891,
+    "schema": "lockspire-v148-main-acceptance-execution-v1",
+    "started_at": "2026-10-30T18:46:39.203177+00:00",
+    "status": "passed"
+  },
+  "canonical_receipt_and_capture_copied_byte_identically": true,
+  "canonical_root_validation": {
+    "data_retained": true,
+    "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+    "original_helper_and_database_closed": true,
+    "private_execution_result": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4/acceptance-attempt-6/result.json",
+    "protected_root_tar_unchanged": true,
+    "receipt_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+    "schema": "lockspire-v148-root-main-delivery-v1",
+    "source_manifest_sha256": "ed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5",
+    "status": "passed",
+    "validation": {
+      "accepted_main": true,
+      "helper_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+      "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39"
+    }
+  },
+  "formal_coverage": "PARTIAL; Nyquist false; frozen validation draft and advisory/unknown classifications unchanged",
+  "main_ci_observation": {
+    "accepted_main": false,
+    "all_canonical_success": true,
+    "canonical_complete": true,
+    "expected_head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124247879767,
+        "name": "Complete Coverage Evidence",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233884514,
+        "name": "Dialyzer",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233884478,
+        "name": "Minimum Supported Elixir/OTP",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": "Run exact-floor installed verifier upgrade proof"
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233884415,
+        "name": "Adoption Demo Smoke",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233884368,
+        "name": "Release Hygiene Drift",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233884314,
+        "name": "Integration Checks",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": "Upload integration test timing"
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+        "id": 124233883857,
+        "name": "Fast Checks",
+        "run_attempt": 1,
+        "run_id": 41105446891,
+        "status": "completed",
+        "step": null
+      }
+    ],
+    "observed_at": "2026-10-30T18:45:33.617833+00:00",
+    "run_conclusion": "success",
+    "run_id": 41105446891,
+    "run_status": "completed",
+    "schema": "lockspire-v148-authoritative-check-watch-v1",
+    "status": "observed"
+  },
+  "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+  "merged_pr": 145,
+  "milestone_archived": false,
+  "next_action": "$gsd-complete-milestone 1.48; preserve required frozen source/evidence paths. UI milestone selection follows at its own boundary.",
+  "premerge_ci_observation": {
+    "accepted_main": false,
+    "all_canonical_success": true,
+    "canonical_complete": true,
+    "expected_head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+    "jobs": [
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124232309946,
+        "name": "Complete Coverage Evidence",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213333705,
+        "name": "Release Hygiene Drift",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213333532,
+        "name": "Integration Checks",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": "Run integration suite including onboarding and OIDC E2E proof"
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213333519,
+        "name": "Adoption Demo Smoke",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213333435,
+        "name": "Dialyzer",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": null
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213333380,
+        "name": "Minimum Supported Elixir/OTP",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": "Install exact Phoenix and LiveView compatibility fixture"
+      },
+      {
+        "conclusion": "success",
+        "head_sha": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+        "id": 124213332961,
+        "name": "Fast Checks",
+        "run_attempt": 1,
+        "run_id": 41099344636,
+        "status": "completed",
+        "step": null
+      }
+    ],
+    "observed_at": "2026-10-30T18:14:25.620066+00:00",
+    "run_conclusion": "success",
+    "run_id": 41099344636,
+    "run_status": "completed",
+    "schema": "lockspire-v148-authoritative-check-watch-v1",
+    "status": "observed"
+  },
+  "prior_failures_and_data_retained": true,
+  "private_transport": {
+    "credentials_copied": false,
+    "final_failure_not_suppressed": true,
+    "keychain_home_scoped_to_gh": true,
+    "maximum_attempts": 3,
+    "private_build_home_preserved": true,
+    "retry_only_default_get_api": true,
+    "retry_scope": "Default GET only for explicit Lockspire REST paths, user, and rate_limit; mutation flags, compact mutation flags, other commands/endpoints delegate without retries.",
+    "schema": "lockspire-v148-gh-private-transport-v1",
+    "successful_payload_unchanged": true,
+    "total_deadline_seconds": 26,
+    "transient_http_codes": [
+      502,
+      503,
+      504
+    ],
+    "wrapper_sha256": "c9f2dff944ed4eaf2915a73a7ec63117b881779d95cbeea3967d13bd81034cbc"
+  },
+  "qualified_correction_source": "75de906c2571dcc1913520bb46e9d494ed492c96",
+  "raw_child_or_hosted_logs_persisted": false,
+  "receipt_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+  "reviewed_pr_head": "bceb05817a3b7c2aa124482aa56fca6c049759a2",
+  "schema": "lockspire-v148-final-main-acceptance-v1",
+  "source_capture_sha256": "ed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5",
+  "status": "accepted"
+}

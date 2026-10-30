@@ -1,0 +1,78 @@
+{
+  "schema": "lockspire-v148-closeout-hosted-ci-v1",
+  "run_id": 41129182396,
+  "run_attempt": 1,
+  "pr": 146,
+  "reviewed_head": "a9bccf534285ec85f9f5aa793902a0844513fad9",
+  "local_tested_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "executed_checkout": "5f82a9b59d82ccd73cdc1850aa510432ccdd2569",
+  "status": "failed",
+  "validation_toolchain": {
+    "hex": "2.6.0",
+    "elixir": "1.19.5",
+    "otp": "28.5"
+  },
+  "prior_local_validation": {
+    "status": "failed",
+    "stage": "package_unpack",
+    "environment": "Unpinned observer process omitted the isolated toolchain; actual CI remained successful.",
+    "diagnostic": "Fixed-message tracing located the native unpack boundary; no raw child output was exposed."
+  },
+  "observed_at": "2026-10-30T21:47:39.174106+00:00",
+  "run_status": "completed",
+  "conclusion": "failure",
+  "jobs": [
+    {
+      "name": "Adoption Demo Smoke",
+      "id": 124315591128,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Fast Checks",
+      "id": 124315591614,
+      "status": "completed",
+      "conclusion": "failure",
+      "step": null
+    },
+    {
+      "name": "Release Hygiene Drift",
+      "id": 124315591649,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Minimum Supported Elixir/OTP",
+      "id": 124315591738,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Integration Checks",
+      "id": 124315591796,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Dialyzer",
+      "id": 124315591816,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Complete Coverage Evidence",
+      "id": 124330237837,
+      "status": "completed",
+      "conclusion": "skipped",
+      "step": null
+    }
+  ],
+  "failure_class": "AssertionError",
+  "reason": "unclassified boundary rejection",
+  "finished_at": "2026-10-30T21:47:39.239154+00:00"
+}

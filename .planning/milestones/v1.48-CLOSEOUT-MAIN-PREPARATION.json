@@ -1,0 +1,39 @@
+{
+  "schema": "lockspire-v148-closeout-main-preparation-v1",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-closeout-main-fv0fir96",
+  "repo": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-closeout-main-fv0fir96/repo",
+  "database_started": false,
+  "application_started": false,
+  "source_preparation_only": true,
+  "approval_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "github_transport_sha256": "c9f2dff944ed4eaf2915a73a7ec63117b881779d95cbeea3967d13bd81034cbc",
+  "retained_historical_copies": [
+    {
+      "path": ".artifacts/phase178/final-locked",
+      "files": 54,
+      "inventory_sha256": "4b2e81a609b66cf928e3a45e2f014e4bca620a550e434f1f20d4eb4d19cf9a94",
+      "byte_identical_copy": true
+    },
+    {
+      "path": ".artifacts/phase178/final-floor",
+      "files": 48,
+      "inventory_sha256": "01b5db6c0d49030e3411016a4cf78402c2696cc6b6213537e9d437f2924ddae8",
+      "byte_identical_copy": true
+    },
+    {
+      "path": ".artifacts/phase178/final-candidate",
+      "files": 390,
+      "inventory_sha256": "c7c66175819d5480e1b9489d111305f7e4e558f73234b0d4a11a58d6354e62ed",
+      "byte_identical_copy": true
+    },
+    {
+      "path": ".artifacts/phase178/candidate-downloads/40954208717-2",
+      "files": 3,
+      "inventory_sha256": "b9c6e708ae22b718a2441071ab4c154189f6b9e5d146e692f579804ae2d07a6e",
+      "byte_identical_copy": true
+    }
+  ],
+  "credentials_copied": false,
+  "protected_root_tar_sha256": "5626784a5699cd17cce2236e3c828ac149af2f8ef901ccfd1b7fcda6145ee9be",
+  "status": "prepared"
+}

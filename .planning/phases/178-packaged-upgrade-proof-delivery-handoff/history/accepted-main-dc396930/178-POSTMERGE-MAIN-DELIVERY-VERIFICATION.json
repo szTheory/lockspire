@@ -1,0 +1,16 @@
+{
+  "data_retained": true,
+  "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39",
+  "original_helper_and_database_closed": true,
+  "private_execution_result": "/private/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-main-acceptance-c9_pn6_4/acceptance-attempt-6/result.json",
+  "protected_root_tar_unchanged": true,
+  "receipt_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+  "schema": "lockspire-v148-root-main-delivery-v1",
+  "source_manifest_sha256": "ed489fe535e631bfdb3012de79f6c5678a8cdadf80a089c45c2f707f45b368a5",
+  "status": "passed",
+  "validation": {
+    "accepted_main": true,
+    "helper_sha256": "c74c4f3715d05852a09a33e92d3535351ed2f02f116e5011233a05fd01016cc2",
+    "main_sha": "dc3969302152028e2132759eb9edf5a7d260ac39"
+  }
+}

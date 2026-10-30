@@ -1,0 +1,23 @@
+{
+  "schema": "lockspire-v148-closeout-native-provision-v1",
+  "status": "passed",
+  "source_revision": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "private_checkout": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-migration-ci-zc4kxmsj/repo",
+  "builder": {
+    "hex": "2.6.0",
+    "elixir": "1.19.5",
+    "otp": "28.5"
+  },
+  "pins": {
+    "expected_runner": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+    "expected_candidate_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+    "expected_archive_sha256": "eea947dd6a734b60bd502b4d202ecc9cfa7cc7adbdf05bf21d30fa7830f9209c",
+    "expected_tree_sha256": "01285ffcc1ef607ebefe39ff02bbf08f50bb0ac44127cef1cd05dbc324bce10b",
+    "expected_manifest_sha256": "539f660a2abeff599767569583f1e4f2b0cf0653534e1eb7bc6ff1f2919258df"
+  },
+  "covered_inputs": 1080,
+  "application_started": false,
+  "database_started": false,
+  "package_archive_equal_historical": true,
+  "package_tree_equal_historical": true
+}

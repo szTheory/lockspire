@@ -1,0 +1,158 @@
+{
+  "schema": "lockspire-v148-closeout-hosted-ci-v1",
+  "run_id": 41118584782,
+  "run_attempt": 1,
+  "pr": 146,
+  "reviewed_head": "c3cff600e37a35acd13444336cea8abae8ef3ff6",
+  "local_tested_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "executed_checkout": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+  "status": "passed",
+  "validation_toolchain": {
+    "hex": "2.6.0",
+    "elixir": "1.19.5",
+    "otp": "28.5"
+  },
+  "prior_local_validation": {
+    "status": "failed",
+    "stage": "package_unpack",
+    "environment": "Unpinned observer process omitted the isolated toolchain; actual CI remained successful.",
+    "diagnostic": "Fixed-message tracing located the native unpack boundary; no raw child output was exposed."
+  },
+  "observed_at": "2026-10-30T20:36:46.674256+00:00",
+  "run_status": "completed",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "Dialyzer",
+      "id": 124279139693,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Integration Checks",
+      "id": 124279139806,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Fast Checks",
+      "id": 124279139978,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Adoption Demo Smoke",
+      "id": 124279140000,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Minimum Supported Elixir/OTP",
+      "id": 124279140018,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Release Hygiene Drift",
+      "id": 124279140155,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Complete Coverage Evidence",
+      "id": 124297804207,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    }
+  ],
+  "checkout_log_bindings": [
+    {
+      "job": "Dialyzer",
+      "id": 124279139693,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 23789,
+      "log_sha256": "6d8b0035e0e17b647d8b143608d4a1e24678ed78ff176cc8915b60274e0db434"
+    },
+    {
+      "job": "Integration Checks",
+      "id": 124279139806,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 389694,
+      "log_sha256": "7b5690205bffa61d11e65f9ec16011784161d70920c1a8518591d3881c6b6d34"
+    },
+    {
+      "job": "Fast Checks",
+      "id": 124279139978,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 1154055,
+      "log_sha256": "92fee8bf1c0671769d789bec6e739650cfbc44858f0e7b810b42c5edde0a9e27"
+    },
+    {
+      "job": "Adoption Demo Smoke",
+      "id": 124279140000,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 138929,
+      "log_sha256": "7360cb8124bf8d658d4a6d2c8e9aa17e5a87237a68429764cad50e043b84152c"
+    },
+    {
+      "job": "Minimum Supported Elixir/OTP",
+      "id": 124279140018,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 1053795,
+      "log_sha256": "8d2e7b6f11ba49a797242e761807ef9a76a695c1b3dc7a355a2017122b494cbf"
+    },
+    {
+      "job": "Release Hygiene Drift",
+      "id": 124279140155,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 20581,
+      "log_sha256": "9788fe15363918e41158474d05f9822147b4ed45e06f49a37c7c3ef792bc74d4"
+    },
+    {
+      "job": "Complete Coverage Evidence",
+      "id": 124297804207,
+      "checkout_sha": "b9c7de05c011aca7e93e175643ec4a1abcaa792f",
+      "log_bytes": 86678,
+      "log_sha256": "0cf9e10084add2ce41be43b91dc189d9c40bfab8728d9fb9f0d7496498138871"
+    }
+  ],
+  "artifacts": [
+    {
+      "pair": "locked",
+      "artifact_id": 13009652237,
+      "name": "lockspire-verifier-upgrade-b9c7de05c011aca7e93e175643ec4a1abcaa792f-locked",
+      "sha256": "502a24c15f2e2eed94de517d19064128356c17b92e3101bc9cbdca93bb7dc540",
+      "owner_job": "Integration Checks",
+      "profile": "hosted-current",
+      "path": "/private/tmp/lockspire-v148-migration-ci-artifacts/locked.zip",
+      "validation": {
+        "receipts": 14,
+        "cases": 33
+      }
+    },
+    {
+      "pair": "floor",
+      "artifact_id": 13008317814,
+      "name": "lockspire-verifier-upgrade-b9c7de05c011aca7e93e175643ec4a1abcaa792f-floor",
+      "sha256": "5f38fe3f8c962e4c666f7cde1626baa1534b1cc0d9f72cc4c478d464386eca62",
+      "owner_job": "Minimum Supported Elixir/OTP",
+      "profile": "hosted-minimum",
+      "path": "/private/tmp/lockspire-v148-migration-ci-artifacts/floor.zip",
+      "validation": {
+        "receipts": 12,
+        "cases": 31
+      }
+    }
+  ],
+  "raw_job_logs_persisted": false,
+  "application_or_database_started": false,
+  "old_execution_restamped": false,
+  "finished_at": "2026-10-30T20:37:01.538943+00:00"
+}

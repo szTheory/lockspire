@@ -1,0 +1,22 @@
+{
+  "schema": "lockspire-v148-focused-security-authorization-v1",
+  "status": "authorized",
+  "observed_at": "2026-10-30T21:36:25Z",
+  "user_reply": "yeah go for it i authorize u",
+  "scope": "Focused phoenix_html update to 4.4.0 in affected active locks, review/tests, renewed affected source/package proofs, gated protected integration and v1.48 archive/local tag.",
+  "prior_exact_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "new_source_sha": "e4ac86f0bb4f9c5a27a260d850658ce43957509f",
+  "exclusions": [
+    "advisory suppression",
+    "CI bypass",
+    "package publication",
+    "milestone tag push",
+    "UI implementation"
+  ],
+  "implementation_changed_at_checkpoint": false,
+  "local_qualification": "passed",
+  "local_qualified_at": "2026-10-30T22:46:07.903858+00:00",
+  "previous_qualified_security_source": "cbd0133c948fd57e11d666cc91340b2b4f8afad9",
+  "necessary_compatibility_correction": "Historical local/hosted pair locks are selected from their authenticated original runner commits; current-run locks stay strict. This is required to renew proof after the authorized dependency update and follows the existing evidence-lifecycle migration scope.",
+  "test_fixture_follow_through": "Confirmed full-context ExUnit.TimeoutError at the aggregate fake-backend fixture; only its allowance changed180000to600000ms. Every assertion/scenario and actual helper/live budget is unchanged."
+}

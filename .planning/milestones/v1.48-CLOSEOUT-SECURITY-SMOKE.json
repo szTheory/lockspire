@@ -1,0 +1,39 @@
+{
+  "schema": "lockspire-v148-security-dependency-smoke-v1",
+  "steps": [
+    {
+      "command": [
+        "mix",
+        "deps.audit"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "9e9a62b284d1580e4475976847fb8a71c4cfac71c416f1dd7928bac4777266e6",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "mix",
+        "deps.compile",
+        "phoenix_html"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "elixir",
+        "-pa",
+        "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-security-upgrade-9iauo3v5/repo/_build/dev/lib/phoenix_html/ebin",
+        "-e",
+        "for attrs <- [%{\"x onmouseover\" => \"alert(1)\"}, [data: [{\"x onclick\", \"alert(1)\"}]]] do try do Phoenix.HTML.attributes_escape(attrs); raise \"unsafe attribute accepted\" rescue ArgumentError -> :ok end end; \" data-testid=\\\"safe\\\"\" = Phoenix.HTML.safe_to_string(Phoenix.HTML.attributes_escape(%{\"data-testid\" => \"safe\"})); IO.puts(\"malformed dynamic attributes rejected; normal attributes preserved\")"
+      ],
+      "exit_code": 0,
+      "stdout_sha256": "8a6d4aedd59465af499419ba4bdaebdcaec39d90443d34fca83dced0ceca4ec8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "status": "passed",
+  "application_started": false,
+  "database_started": false
+}

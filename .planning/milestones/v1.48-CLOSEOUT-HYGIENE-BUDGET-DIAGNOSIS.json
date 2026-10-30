@@ -1,0 +1,27 @@
+{
+  "schema": "lockspire-v148-hygiene-budget-diagnosis-v1",
+  "source": "bc7ccf614f208f8d9a92afde33093400de2adac2",
+  "application_started": false,
+  "database_started": false,
+  "fixture_backends": "fake GitHub/Mix/PostgreSQL/Docker in owned throwaway repos",
+  "raw_fixture_output_persisted": false,
+  "exit_code": 0,
+  "observations": [
+    {
+      "status": "passed",
+      "stage": "fixture_total",
+      "elapsed_ms": 116474,
+      "test_budget_ms": 180000
+    }
+  ],
+  "stdout_sha256": "39736e71a1a4699739ac125937389bb1863b5b0a8a85d98f1a31e12d95218ff6",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stderr_bytes": 0,
+  "status": "observed",
+  "root_group_closed": true,
+  "authenticated_sessions": 1209,
+  "sessions_absent": 1209,
+  "pending_launches": 0,
+  "registration_refused": false,
+  "supervisor_errors": []
+}
