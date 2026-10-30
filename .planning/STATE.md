@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: extra metadata push explicitly approved; final CI, conditional merge and main acceptance in progress
+stopped_at: focused phoenix_html security remediation authorized; implementing and renewing affected acceptance
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Owner explicitly approved the extra metadata push and continued integration/acceptance/archive sequence
+last_activity_desc: Owner authorized focused phoenix_html 4.4.0 remediation and renewed acceptance before gated integration/archive
 state_head: fb76ffbe
 progress:
   total_phases: 4
@@ -20,6 +20,18 @@ progress:
 ---
 
 # Project State
+
+## Focused security remediation authorized — 2026-10-30
+
+The owner replied “yeah go for it i authorize u”, authorizing the focused phoenix_html4.4.0 update, review/tests and renewed affected source/package proof, then continuation through successful required checks, protected integration, fresh main acceptance and the original v1.48 archive/local tag. The prior exact-source restriction is expanded only for this focused remediation. No additional acknowledgment is required for the implementation, necessary bookkeeping and conditional integration within this scope. No advisory suppression, gate bypass, publication, tag push or UI implementation is authorized. The agent acts next and is continuing work. [Actual authorization](milestones/v1.48-CLOSEOUT-SECURITY-AUTHORIZATION.json).
+
+## Current security gate — 2026-10-30
+
+The approved extra metadata push completed. Final PR146 CI failed its required dependency audit: the locked `phoenix_html 4.3.0` is covered by newly published CVE-2026-117645, an attribute-name injection issue. Upstream lists4.4.0 as fixed and Hex confirms that release is available. Actual Lockspire exposure has not been established; the upstream precondition is attacker-controlled attribute names. [Gate evidence and primary sources](milestones/v1.48-CLOSEOUT-SECURITY-GATE.json).
+
+The failed required gate stops the conditional merge. No PR merge, fresh main acceptance, milestone archive or tag has occurred. No audit exception or risk waiver is proposed. Changing selected dependency inputs exceeds the approved exact source; the owner is being asked to authorize a focused update in affected active locks, review/tests and renewed affected source/package proofs. Original historical proof stays immutable. The agent is waiting for this material decision, not another acknowledgment of the metadata push. The read-only final CI observer may collect remaining results; no local application or database is running.
+
+Earlier approved continuation instructions below remain conditional on successful required gates and are superseded at this unresolved security boundary.
 
 ## Current closeout work — 2026-10-30
 

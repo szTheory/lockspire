@@ -1,0 +1,72 @@
+{
+  "schema": "lockspire-v148-closeout-hosted-ci-v1",
+  "run_id": 41126719241,
+  "run_attempt": 1,
+  "pr": 146,
+  "reviewed_head": "d543a54e124f0dd537c3649b9f32a48257ad0940",
+  "local_tested_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "executed_checkout": "860b4a8c6da256d3abf11f81d953183df52872a1",
+  "status": "failed",
+  "validation_toolchain": {
+    "hex": "2.6.0",
+    "elixir": "1.19.5",
+    "otp": "28.5"
+  },
+  "observed_at": "2026-10-30T21:12:57.822171+00:00",
+  "run_status": "completed",
+  "conclusion": "cancelled",
+  "jobs": [
+    {
+      "name": "Integration Checks",
+      "id": 124307030684,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "step": null
+    },
+    {
+      "name": "Release Hygiene Drift",
+      "id": 124307030830,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Fast Checks",
+      "id": 124307030872,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Dialyzer",
+      "id": 124307030968,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Minimum Supported Elixir/OTP",
+      "id": 124307031040,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "step": null
+    },
+    {
+      "name": "Adoption Demo Smoke",
+      "id": 124307031101,
+      "status": "completed",
+      "conclusion": "success",
+      "step": null
+    },
+    {
+      "name": "Complete Coverage Evidence",
+      "id": 124315579344,
+      "status": "completed",
+      "conclusion": "cancelled",
+      "step": null
+    }
+  ],
+  "failure_class": "AssertionError",
+  "reason": "unclassified boundary rejection",
+  "finished_at": "2026-10-30T21:12:57.851557+00:00"
+}

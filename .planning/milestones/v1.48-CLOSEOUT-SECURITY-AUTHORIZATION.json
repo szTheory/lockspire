@@ -1,0 +1,17 @@
+{
+  "schema": "lockspire-v148-focused-security-authorization-v1",
+  "status": "authorized",
+  "observed_at": "2026-10-30T21:36:25Z",
+  "user_reply": "yeah go for it i authorize u",
+  "scope": "Focused phoenix_html update to 4.4.0 in affected active locks, review/tests, renewed affected source/package proofs, gated protected integration and v1.48 archive/local tag.",
+  "prior_exact_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
+  "new_source_sha": "pending implementation and verification",
+  "exclusions": [
+    "advisory suppression",
+    "CI bypass",
+    "package publication",
+    "milestone tag push",
+    "UI implementation"
+  ],
+  "implementation_changed_at_checkpoint": false
+}
