@@ -1,6 +1,6 @@
 ---
 phase: 177-safe-verifier-maintenance-recovery
-verified: 2026-10-30T19:47:43.967034+00:00
+verified: 2026-10-30T21:58:59.230778+00:00
 status: passed
 score: 47/47 must-haves verified
 covered_files:
@@ -8,6 +8,20 @@ covered_files:
   - ".planning/milestones/v1.48-CLOSEOUT-LOCAL-CI.json"
   - ".planning/milestones/v1.48-CLOSEOUT-OWNED-SOURCE-MANIFEST.json"
   - ".planning/milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-AUTHORIZATION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-CI-DIAGNOSTIC.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-FIRST-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-FIRST-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-GATE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-NATIVE-PROVISION.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-PYTHON.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-REVIEW.md"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SECOND-LOCAL-CI.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SECOND-OWNED-SOURCE-MANIFEST.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-SMOKE.json"
+  - ".planning/milestones/v1.48-CLOSEOUT-SECURITY-UPGRADE.json"
   - ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-COMPATIBILITY.json"
   - ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTEXT.md"
   - ".planning/phases/175-accepted-baseline-verifier-compatibility-contract/175-CONTRACT.md"
@@ -47,9 +61,11 @@ covered_files:
   - ".planning/phases/177-safe-verifier-maintenance-recovery/177-SECURITY.md"
   - ".planning/phases/177-safe-verifier-maintenance-recovery/177-SOURCE-ACCEPTANCE.json"
   - ".planning/phases/177-safe-verifier-maintenance-recovery/177-VALIDATION.md"
+  - "compatibility/phoenix_1_8_live_view_1_1/mix.lock"
   - "docs/client-secret-jwt-host-guide.md"
   - "docs/client-secret-verifier-configuration.md"
   - "docs/supported-surface.md"
+  - "examples/adoption_demo/mix.lock"
   - "lib/lockspire/admin/client_verifier_maintenance.ex"
   - "lib/lockspire/config.ex"
   - "lib/lockspire/domain/client.ex"
@@ -61,9 +77,12 @@ covered_files:
   - "lib/lockspire/storage/ecto/repository/client_store.ex"
   - "lib/lockspire/storage/ecto/repository/client_verifier_maintenance.ex"
   - "lib/mix/tasks/lockspire.clients.verifier.rewrap.ex"
+  - "mix.lock"
   - "scripts/acceptance/clean_room/verifier_delivery.py"
   - "scripts/acceptance/clean_room/verifier_input_closure.py"
   - "test/acceptance/client_verifier_planning_lifecycle_test.py"
+  - "test/clean_room/confidential_client/mix.lock"
+  - "test/clean_room/provider_host/mix.lock"
   - "test/integration/client_secret_verifier_maintenance_concurrency_test.exs"
   - "test/integration/client_secret_verifier_maintenance_disclosure_test.exs"
   - "test/integration/client_secret_verifier_maintenance_issuance_test.exs"
@@ -82,7 +101,7 @@ covered_files:
   - "test/support/architecture/public_compatibility_manifest.ex"
   - "test/support/client_verifier_maintenance_concurrency.ex"
   - "test/support/delegated_verifier_maintenance_store.ex"
-covered_digest: "v4:sha256:217420cc268922dca70a65c00452955c24026674d8189ef015c5a143bd289d6b"
+covered_digest: "v4:sha256:61609838c8c5fd3fc53913547cb2b74702dc0101a0c4e33e1e66f924c7b6b1aa"
 behavior_unverified: 0
 overrides_applied: 0
 decision_coverage:
@@ -135,3 +154,9 @@ No generic edge/prohibition is passed, classified, dismissed or waived here. For
 ## Hosted closeout correction proof
 
 The correction's own CI passed every canonical job at the independently observed synthetic checkout, and all seven checkout logs plus same-attempt artifact digests/owner jobs were authenticated. Strict current/minimum uploaded receipts validated26/64/0. [Actual result](../../milestones/v1.48-CLOSEOUT-HOSTED-CI.json). The first local observer omitted the isolated toolchain and failed package unpack; the same actual CI evidence passed with the confirmed native pinned setup. No CI run was rerun or relabelled to repair that observer setup. Integration and new main acceptance still await [owner approval](../../milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md).
+
+## Focused dependency security requalification — 2026-10-30
+
+The owner authorized the newly published phoenix_html advisory remediation. At source `cbd0133c948fd57e11d666cc91340b2b4f8afad9`, all five active locks move only phoenix_html4.3.0 to4.4.0. The actual root dependency audit and dynamic-attribute rendering regression pass; the complete native acceptance suite and canonical owned contributor gate also pass. [Review](../../milestones/v1.48-CLOSEOUT-SECURITY-REVIEW.md), [actual contributor gate](../../milestones/v1.48-CLOSEOUT-SECURITY-LOCAL-CI.json), [source capture](../../milestones/v1.48-CLOSEOUT-SECURITY-OWNED-SOURCE-MANIFEST.json), [native regressions](../../milestones/v1.48-CLOSEOUT-SECURITY-PYTHON.json), and [fresh provisioning](../../milestones/v1.48-CLOSEOUT-SECURITY-NATIVE-PROVISION.json) preserve the new source identity. The exact library package archive/tree are unchanged; selected dependency inputs have changed and receive new qualification.
+
+The first copied-cache attempt's compile preflight refused a lock mismatch before test database creation; all its authenticated sessions/private PostgreSQL closed. deps.get refreshed only the private cache before the successful full run. The original failed required audit and all earlier runtime/proof identities remain historical. Own final-head CI, new current/minimum installed proof and resulting exact-main acceptance remain pending; these local results do not replace them. Formal PARTIAL/Nyquist-false and every existing generic, null/descriptorless, advisory, non-certifying or custody limit remain unchanged. No override or risk waiver is applied.

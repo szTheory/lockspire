@@ -1,0 +1,54 @@
+{
+  "schema": "lockspire-v148-security-dependency-upgrade-v1",
+  "started_at": "2026-10-30T21:38:17.798155+00:00",
+  "lab": "/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-security-upgrade-9iauo3v5",
+  "status": "passed",
+  "version_before": "4.3.0",
+  "version_after": "4.4.0",
+  "records": [
+    {
+      "path": "mix.lock",
+      "before_sha256": "e2ccf31448cc00917e4b2af0ab780afeac99b094b6ad73be12ad411637b8aca5",
+      "after_sha256": "272f72f85c7244e379cffdae13361ce97a8c31cef2ca426c955492ca19ebe3d3",
+      "only_changed_package": "phoenix_html",
+      "mix_update_output_sha256": "702ccc917e358c70eb761e6df39462688feaa667ef5e6b8a9d49c4995a1f4aac",
+      "new_entry": "\"phoenix_html\": {:hex, :phoenix_html, \"4.4.0\", \"d4007bc52fee85af48c30a0d541a5b0590e4f1f12f2f9c227bb004620090c0e3\", [:mix], [], \"hexpm\", \"94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228\"},"
+    },
+    {
+      "path": "examples/adoption_demo/mix.lock",
+      "before_sha256": "c8b966ea3ac49a7cff8c00e90c7d50940326c74fa3fdc90241145caa831a2415",
+      "after_sha256": "a936b22ef0ae16943bff4ca1d402983efe77ca334026975fb052b3379d31ced2",
+      "only_changed_package": "phoenix_html",
+      "mix_update_output_sha256": "6c3f5f70b7f18c48ec7f79c5d2d044f27adfb823e59c3e7d96350120ea2efa7b",
+      "new_entry": "\"phoenix_html\": {:hex, :phoenix_html, \"4.4.0\", \"d4007bc52fee85af48c30a0d541a5b0590e4f1f12f2f9c227bb004620090c0e3\", [:mix], [], \"hexpm\", \"94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228\"},"
+    },
+    {
+      "path": "compatibility/phoenix_1_8_live_view_1_1/mix.lock",
+      "before_sha256": "cc645549fed4a389d8a9d7d3c09f5993c3072ca268537c0c18951b49763ebafd",
+      "after_sha256": "aade9035b7b95dfbffad2e79bc162c5e8b30453f806427b00ccdb0e95e098dad",
+      "only_changed_package": "phoenix_html",
+      "mix_update_output_sha256": "0753b2270e1e8468ec0d475e8c425a3ac2b56897ac9f6db9efa5266a1416ca70",
+      "new_entry": "\"phoenix_html\": {:hex, :phoenix_html, \"4.4.0\", \"d4007bc52fee85af48c30a0d541a5b0590e4f1f12f2f9c227bb004620090c0e3\", [:mix], [], \"hexpm\", \"94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228\"},"
+    },
+    {
+      "path": "test/clean_room/confidential_client/mix.lock",
+      "before_sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa",
+      "after_sha256": "733da581ca4c00ead69a643e2b15a06a60228e69a5e4164c4d8c6949f8082b49",
+      "only_changed_package": "phoenix_html",
+      "mix_update_output_sha256": "5b26405e0d425f5cc3aa9f3a8efa41cabe4b8497cdc1763873b64ab92d37eeff",
+      "new_entry": "\"phoenix_html\": {:hex, :phoenix_html, \"4.4.0\", \"d4007bc52fee85af48c30a0d541a5b0590e4f1f12f2f9c227bb004620090c0e3\", [:mix], [], \"hexpm\", \"94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228\"},"
+    },
+    {
+      "path": "test/clean_room/provider_host/mix.lock",
+      "before_sha256": "8e0a277a93edd57d6f21d522ce628757b90215c7e6c369b0945682b7af6ab6fa",
+      "after_sha256": "733da581ca4c00ead69a643e2b15a06a60228e69a5e4164c4d8c6949f8082b49",
+      "only_changed_package": "phoenix_html",
+      "mix_update_output_sha256": "f851dd7bab621ee9a306a6afd1112f6db09e69af5903ac947f7655b6c9551bbe",
+      "new_entry": "\"phoenix_html\": {:hex, :phoenix_html, \"4.4.0\", \"d4007bc52fee85af48c30a0d541a5b0590e4f1f12f2f9c227bb004620090c0e3\", [:mix], [], \"hexpm\", \"94832038da7ab8f86d4c0d36f7797a269fd06fe611f25c69f55108c075505228\"},"
+    }
+  ],
+  "database_started": false,
+  "application_started": false,
+  "resolver_vendor_note": "Clean-room resolver-only vendor contains exact project mix.exs to expose its transitive dependency graph; this is not an installed-runtime proof.",
+  "finished_at": "2026-10-30T21:38:32.428218+00:00"
+}

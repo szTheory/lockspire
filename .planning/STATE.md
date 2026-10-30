@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: focused phoenix_html security remediation authorized; implementing and renewing affected acceptance
+stopped_at: focused security source passed local qualification; final-head hosted CI and fresh main acceptance next
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Owner authorized focused phoenix_html 4.4.0 remediation and renewed acceptance before gated integration/archive
+last_activity_desc: Five focused lock updates passed audit, rendering, native, contributor and provisioning gates; authorized hosted qualification next
 state_head: fb76ffbe
 progress:
   total_phases: 4
@@ -367,3 +367,15 @@ Read-only watcher exec session44984 still observes CI41126719241 on the previous
 ## Additional metadata push authorized — 2026-10-30
 
 The owner answered “yes” and reaffirmed “i approve”, observed at2026-10-30T21:11:06Z, authorizing the prepared receipt-path metadata correction, one additional non-force push, restarted final CI and the already-approved protected merge/new-main-acceptance/archive sequence. The previous extra-push waiting instructions are superseded. Selected implementation remains exactly `fb76ffbe`. The agent acts next; no further acknowledgment is required within this scope unless a new material decision or failed safety gate requires input.
+
+## Focused source qualification retry — 2026-10-30
+
+Sourcecbd0133c has five focused lock changes, a successful actual advisory/rendering smoke, all306native acceptance regressions and exact-source provisioning with unchanged library package bytes. The first private gate refused a copied-cache lock mismatch before test database creation; the second reached15passing architecture checks and2187fast tests with one failure, then stopped before integration. Every authenticated session and private PostgreSQL closed in both attempts; data and failed manifests are retained. The second attempt's failing test identity remains unavailable because the guard retained only redacted counts/hashes. No cause or waiver is inferred.
+
+A controlled fresh retry uses the unchanged OwnedSourceTests class and unchanged real PrivateProcessRunner; a temporary wrapper copies only validated test source locations/fixed diagnostic categories from the actual result and returns it unchanged. No source/test assertion is masked or bypassed. Its outer supervisor preserves authenticated RAM process authority and independent cleanup. The current private lab and live status are in [actual gate record](milestones/v1.48-CLOSEOUT-SECURITY-LOCAL-CI.json); the runner is execsession34740 and `/private/tmp/lockspire-v148-security-diagnostic-ci.py`. If the gate fails, use safe locations in `v1.48-CLOSEOUT-SECURITY-CI-DIAGNOSTIC.json` to investigate. If it passes, retain the earlier unidentified failure, finish qualification/report/auth metadata with `/private/tmp/lockspire-v148-security-qualify.py`, then continue the authorized final push, complete hosted qualification, protected merge, fresh main helper and v1.48 archive/local tag. No further owner acknowledgment is required within the approved focused remedy.
+
+## Focused security source locally qualified — 2026-10-30
+
+Selected source `cbd0133c948fd57e11d666cc91340b2b4f8afad9` passes the actual root advisory audit, malformed/normal attribute rendering smoke, complete native acceptance suite, canonical owned contributor gate and fresh exact-source provisioning. Only five phoenix_html lock tuples changed; every original frozen input remains exact and the library package archive/tree reproduce historical bytes. The first cache mismatch and cleanup are preserved separately. All successful gate sessions and private PostgreSQL closed; data retained and protected root tar unchanged.
+
+The owner authorized this focused source change and continued integration/archive. The agent continues necessary metadata push/PR update, complete own hosted current/minimum qualification, conditional protected merge, fresh main acceptance and milestone archive/local tag. No extra acknowledgment is needed within scope. Main acceptance is pending, no merge/archive/tag/publication/UI work has occurred. Earlier stop instructions for the resolved dependency decision are superseded; required gates remain mandatory.
