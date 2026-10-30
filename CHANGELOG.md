@@ -4,6 +4,22 @@ All notable changes to Lockspire will be documented in this file.
 
 The format is based on Keep a Changelog, and versions follow Semantic Versioning.
 
+## [1.7.0](https://github.com/szTheory/lockspire/compare/lockspire-v1.6.1...lockspire-v1.7.0) (2026-10-30)
+
+
+### Features
+
+* deliver client lifetimes and reliable host admin integration ([#138](https://github.com/szTheory/lockspire/issues/138)) ([fe38bee](https://github.com/szTheory/lockspire/commit/fe38beee987b135e87c99e7aa7f2488b4c8613e8))
+* isolate and rotate client authentication verifiers (v1.48) ([#141](https://github.com/szTheory/lockspire/issues/141)) ([b55eaaf](https://github.com/szTheory/lockspire/commit/b55eaafc6b01273aad6b72dc6d6301c76cf7fd4f))
+
+
+### Bug Fixes
+
+* accept reviewed squash history and preserve postmerge evidence ([#143](https://github.com/szTheory/lockspire/issues/143)) ([3f64e1c](https://github.com/szTheory/lockspire/commit/3f64e1c6c1af19f0e5f074aff326fa04f7f6b642))
+* bind historical receipt owners to executed workflows ([#145](https://github.com/szTheory/lockspire/issues/145)) ([dc39693](https://github.com/szTheory/lockspire/commit/dc3969302152028e2132759eb9edf5a7d260ac39))
+* harden authorization errors and pushed-request authority ([173059a](https://github.com/szTheory/lockspire/commit/173059a166e9ade0f5f57c9980b7b2400a98538c))
+* preserve verifier evidence lifecycle and update HTML security dependency ([#146](https://github.com/szTheory/lockspire/issues/146)) ([a5bc265](https://github.com/szTheory/lockspire/commit/a5bc26585bb3c9196ae7f04ce5d368fc547953d3))
+
 ## [1.6.1](https://github.com/szTheory/lockspire/compare/lockspire-v1.6.0...lockspire-v1.6.1) (2026-10-20)
 
 
