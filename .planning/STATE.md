@@ -6,10 +6,10 @@ current_phase: 178
 current_phase_name: Packaged Upgrade Proof & Delivery Handoff
 current_plan: 12
 status: verifying
-stopped_at: owner approved closeout integration; final metadata CI and conditional merge in progress
+stopped_at: receipt-path correction prepared; awaiting one additional metadata-push approval
 last_updated: "2026-10-30"
 last_activity: 2026-10-30
-last_activity_desc: Owner approved exact correction integration, fresh main acceptance and milestone archival; preserve original evidence and debt
+last_activity_desc: Canonical receipt-output collision resolved locally; isolated acceptance environment prepared; extra metadata push awaiting owner approval
 state_head: fb76ffbe
 progress:
   total_phases: 4
@@ -341,3 +341,13 @@ Next: finish authorized conditional merge, synchronize main, wait for its own ex
 ## Owner correction merged — 2026-10-30
 
 PR145 merged after all seven canonical CI jobs and Dependency Review passed for approved headbceb0581. The completed CI graph was independently validated through run/attempt/head-bound individual job observations; GitHub list-job endpoint timeouts remained observational failures, with no gate waived. HEAD/main/origin/main now agree atdc3969302152028e2132759eb9edf5a7d260ac39, whose full tree equals the approved head. Own push CI41105446891 and Release41105446769 are running. No actual fresh main acceptance has started yet; attempt6 waits for own hosted success. All prior helper/database groups closed and data retained. Continue without another confirmation within the approved scope; no milestone/UI boundary has been crossed.
+
+## Receipt-path approval checkpoint — 2026-10-30
+
+The local correction is committed at `ff49b0a7`; remote PR146 remains at approved metadata head `d543a54e`. Implementation bytes remain exactly the tested `fb76ffbe`; all four reports are current. The earlier actual main receipts are byte-preserved in `phases/178-packaged-upgrade-proof-delivery-handoff/history/accepted-main-dc396930/`. Canonical MAIN receipt/capture paths are now absent locally so the unchanged helper can publish fresh outputs with its existing exclusive-write contract. No index masking, source edit or validator bypass was used.
+
+The original approval specified one metadata push and that push was used. A concise approval question for one additional metadata-only non-force push is pending. Do not push again or merge until that answer arrives. On approval, mark the preflight additional push authorized, make the one metadata push, observe the new final CI identity (the previous in-progress run is superseded by GitHub concurrency), then continue the already-approved protected merge, fresh main acceptance and archive/local tag without additional acknowledgments.
+
+[Fresh isolated acceptance preparation](milestones/v1.48-CLOSEOUT-MAIN-PREPARATION.json) records `/var/folders/f3/f0clj9rd2zb85n2c849wcsrc0000gn/T/lockspire-v148-closeout-main-fv0fir96`. Historical evidence was copied byte-for-byte; no database/application started and no credentials were copied. Its Git origin is canonical GitHub. Continue using confirmed private Hex2.6.0/Elixir1.19.5/OTP28.5 and the existing GET-only keychain-scoped wrapper. The old accepted lab remains unchanged.
+
+Read-only watcher exec session44984 still observes CI41126719241 on the previous remote head; its result is separate from any later final-head run. Its private progress is `/private/tmp/lockspire-v148-final-pr-watch.json`. No live local test/database process remains. The user acts next on the extra-push question; the agent is waiting on that decision. Milestone remains open; no merge/tag/archive/publication or UI implementation occurred.
