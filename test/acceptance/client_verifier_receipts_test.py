@@ -24,9 +24,9 @@ import verifier_receipts  # noqa: E402
 
 class CompleteMatrixContracts(unittest.TestCase):
     def _fixture_cli(self, source, arguments):
-        from verifier_owner_fixture import retained_lock_context
+        from verifier_owner_fixture import retained_lock_context, retained_workflow_context
         inputs = Path(arguments[arguments.index("--validate-receipts") + 1])
-        with retained_lock_context(inputs.parent):
+        with retained_lock_context(inputs.parent), retained_workflow_context(inputs.parent):
             return source.main(arguments)
 
     def test_private_lock_epoch_matches_all_retained_receipts_and_restores_current_inputs(self):

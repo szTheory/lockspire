@@ -88,7 +88,37 @@ def retained_lock_context(root: Path):
         yield paths
 
 
-def context_for_template(template: dict) -> dict:
+@contextmanager
+def retained_workflow_context(root: Path):
+    """Select template authority from its original immutable workflow epoch."""
+    import verifier_receipt_owner
+    from package_input import bounded_run
+    if root.resolve() == ROOT.resolve() or root.is_symlink():
+        raise AssertionError("fixture workflow context requires a private root")
+    _epoch_lock_bytes()  # Authenticate the same immutable published epoch.
+    result = bounded_run(("git", "show", TEMPLATE_SOURCE_REVISION + ":.github/workflows/ci.yml"),
+                         cwd=ROOT, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, timeout=15)
+    if result.returncode or not result.stdout:
+        raise AssertionError("pinned fixture workflow is unavailable")
+    selection = root / ".fixture-workflow-epoch"
+    workflow = selection / ".github/workflows/ci.yml"
+    for path in (selection, selection / ".github", workflow.parent, workflow):
+        if path.is_symlink():
+            raise AssertionError("private fixture workflow is unsafe")
+    workflow.parent.mkdir(parents=True, exist_ok=True)
+    if workflow.exists():
+        if not workflow.is_file() or workflow.read_bytes() != result.stdout:
+            raise AssertionError("private fixture workflow differs from its pinned epoch")
+    else:
+        with workflow.open("xb") as output:
+            output.write(result.stdout)
+        workflow.chmod(0o600)
+    with patch.object(verifier_receipt_owner, "ROOT", selection):
+        yield selection
+
+
+def context_for_template(template: dict, *, selection_root: Path = ROOT) -> dict:
     from verifier_receipt_owner import selected_runtime
     from package_input import bounded_run
     check_template_epoch(template)
@@ -101,7 +131,7 @@ def context_for_template(template: dict) -> dict:
     match = re.search(r'^\s*version:\s*"([^"]+)"', source, re.MULTILINE)
     if match is None:
         raise AssertionError("template source package version unavailable")
-    elixir, otp, digest = selected_runtime(ROOT, "local-current")
+    elixir, otp, digest = selected_runtime(selection_root, "local-current")
     return {"schema": "lockspire-verifier-receipt-owner-v1", "profile": "local-current",
         "runner_revision": template.get("runner", template.get("runner_revision")),
         "candidate_source_archive_tree": [candidate["source_revision"], candidate["archive_sha256"], candidate["tree_sha256"]],

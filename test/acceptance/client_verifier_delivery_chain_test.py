@@ -106,6 +106,51 @@ class ReviewedCandidateHistory(unittest.TestCase):
                                  "required source history should make the same selector pass")
 
 
+class HistoricalOwnerSelection(unittest.TestCase):
+    """Only the independently supplied execution commit selects an owner workflow."""
+
+    git = ReviewedCandidateHistory.git
+
+    def test_original_owner_survives_ci_edits_but_current_digest_cannot_replace_it(self):
+        with tempfile.TemporaryDirectory(prefix="lockspire-owner-history-") as temporary:
+            root = Path(temporary)
+            self.git(root, "init", "-q")
+            self.git(root, "config", "user.name", "Lockspire Fixture")
+            self.git(root, "config", "user.email", "fixture@example.invalid")
+            workflow = root / ".github/workflows/ci.yml"
+            workflow.parent.mkdir(parents=True)
+            workflow.write_bytes((ROOT / ".github/workflows/ci.yml").read_bytes())
+            self.git(root, "add", ".")
+            self.git(root, "commit", "-qm", "original owner selection")
+            runner = self.git(root, "rev-parse", "HEAD")
+            elixir, otp, digest = owner_context.selected_runtime(root, "local-current")
+            candidate = ("a" * 40, "b" * 64, "c" * 64)
+            proof = "d" * 64
+            document = {"schema": "lockspire-verifier-receipt-owner-v1", "profile": "local-current",
+                "runner_revision": runner, "selection_source_sha256": digest,
+                "candidate_source_archive_tree": list(candidate), "candidate_owner_sha256": proof,
+                "package_version": "1.6.1", "runtime": {"elixir": elixir, "otp": otp, "postgresql": "14.17"},
+                "server_version_num": "140017", "observations": {
+                    "beam_sha256": hashlib.sha256((elixir + "\n" + otp + "\n").encode()).hexdigest(),
+                    "server_sha256": hashlib.sha256(b"140017\n").hexdigest()}}
+            workflow.write_bytes(workflow.read_bytes() + b"\n# later CI provisioning change\n")
+            self.git(root, "commit", "-qam", "later workflow")
+            current_digest = hashlib.sha256(workflow.read_bytes()).hexdigest()
+            claims = {"runner": runner, "package_version": "1.6.1", "candidate": candidate,
+                      "proof": proof, "profile": "local-current"}
+            with patch.object(delivery, "ROOT", root):
+                self.assertEqual(delivery._owner_at_runner(document, **claims).document, document)
+                for changed in ({**document, "selection_source_sha256": current_digest},
+                                {**document, "runtime": {**document["runtime"], "elixir": "0.0.0"}},
+                                {**document, "runner_revision": self.git(root, "rev-parse", "HEAD")}):
+                    with self.assertRaises(owner_context.OwnerError):
+                        delivery._owner_at_runner(changed, **claims)
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._owner_at_runner(document, **{**claims, "runner": "0" * 40})
+                with self.assertRaises(delivery.DeliveryError):
+                    delivery._owner_at_runner(document, **{**claims, "runner": "HEAD"})
+
+
 class SquashIntegrationHistory(unittest.TestCase):
     """Real Git identities; only the external GitHub responses are fixtures."""
 
@@ -328,13 +373,14 @@ def upload_tree(root: Path, pair: str) -> None:
     body = body.replace('Path.cwd() / "scripts/acceptance/clean_room"', repr(str(ROOT / "scripts/acceptance/clean_room")))
     from verifier_owner_fixture import CONTEXT_PINS
     context_env = {} if os.environ.get("LOCKSPIRE_RECEIPT_OWNER") else CONTEXT_PINS.get(str(root), {})
+    workflow_context = ", retained_workflow_context(Path(sys.argv[1]).parent)" if context_env else ""
     # Execute the unchanged upload producer under the same explicit private
     # lock context as its pair validator, including in the full private chain.
     bootstrap = ("import sys\nfrom pathlib import Path\nsys.path.insert(0, "
                  + repr(str(ROOT / "scripts/acceptance/clean_room")) + ")\nsys.path.insert(0, "
                  + repr(str(ROOT / "test/acceptance")) + ")\n"
-                 "from verifier_owner_fixture import retained_lock_context\n"
-                 "with retained_lock_context(Path(sys.argv[1]).parent):\n    exec("
+                 "from verifier_owner_fixture import retained_lock_context, retained_workflow_context\n"
+                 "with retained_lock_context(Path(sys.argv[1]).parent)" + workflow_context + ":\n    exec("
                  + repr(body) + ")\n")
     result = subprocess.run((sys.executable, "-c", bootstrap, str(root), pair),
                             capture_output=True, timeout=20, check=False,
@@ -797,7 +843,10 @@ class ActualEndToEndDelivery(unittest.TestCase):
                 # it must not restamp historical package/source acceptance.
                 tooling = repo / "scripts/acceptance/clean_room/verifier_delivery.py"
                 tooling.write_text(tooling.read_text() + "\n# subsequent fixture tooling correction\n")
-                self.git(repo, "add", "--", tooling.relative_to(repo).as_posix())
+                workflow = repo / ".github/workflows/ci.yml"
+                workflow.write_text(workflow.read_text() + "\n# subsequent CI provisioning correction\n")
+                self.git(repo, "add", "--", tooling.relative_to(repo).as_posix(),
+                         workflow.relative_to(repo).as_posix())
                 self.git(repo, "commit", "-qm", "later tooling correction")
                 corrected = self.git(repo, "rev-parse", "HEAD")
                 auth_record = json.loads(authorization_path.read_bytes())
