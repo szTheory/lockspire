@@ -4,6 +4,7 @@ verified: 2026-10-30T19:47:43.967034+00:00
 status: passed
 score: 28/28 must-haves verified
 covered_files:
+  - ".planning/milestones/v1.48-CLOSEOUT-HOSTED-CI.json"
   - ".planning/milestones/v1.48-CLOSEOUT-LOCAL-CI.json"
   - ".planning/milestones/v1.48-CLOSEOUT-OWNED-SOURCE-MANIFEST.json"
   - ".planning/milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json"
@@ -59,7 +60,7 @@ covered_files:
   - "test/lockspire/security/client_secret_verifier_test.exs"
   - "test/lockspire/web/live/admin/clients_live_test.exs"
   - "test/support/architecture/public_compatibility_manifest.ex"
-covered_digest: "v4:sha256:e039f161bf9d7edf5314049d27db9d2fece57e02e5148f05c8ec28cba7d55713"
+covered_digest: "v4:sha256:5ee4b2f7660585053e24fa1384d8e0ef2e0f5b5f847c75db3737d9bcc95ddd6e"
 behavior_unverified: 0
 overrides_applied: 0
 autonomous_judgment:
@@ -103,6 +104,7 @@ unclassified_probe_edges:
 ---
 
 
+
 # Phase 176: closeout re-verification at accepted main
 
 **Verified:** 2026-10-30T19:47:43.967034+00:00
@@ -133,4 +135,8 @@ No generic edge, descriptorless prohibition, fleet parity/backup/quiescence clai
 
 ## Migration candidate verification
 
-Reverified at `fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3` after the authorized selector migration. The fresh canonical owned contributor gate and full native acceptance suite passed at this exact source. Product/package source is unchanged from previously accepted main; the new source changes proof selection and its regressions. [Actual local gate](../../milestones/v1.48-CLOSEOUT-LOCAL-CI.json), [owned source manifest](../../milestones/v1.48-CLOSEOUT-OWNED-SOURCE-MANIFEST.json), [native check](../../milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json). These actual new executions refresh the report without relabelling earlier main/package proof or waiving flags. Candidate CI/integration/main acceptance for this correction remain pending.
+Reverified at `fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3` after the authorized selector migration. The fresh canonical owned contributor gate and full native acceptance suite passed at this exact source. Product/package source is unchanged from previously accepted main; the new source changes proof selection and its regressions. [Actual local gate](../../milestones/v1.48-CLOSEOUT-LOCAL-CI.json), [owned source manifest](../../milestones/v1.48-CLOSEOUT-OWNED-SOURCE-MANIFEST.json), [native check](../../milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json). These actual new executions refresh the report without relabelling earlier main/package proof or waiving flags. The correction's own candidate CI and uploaded receipts passed; integration and new main acceptance remain pending.
+
+## Hosted closeout correction proof
+
+The correction's own CI passed every canonical job at the independently observed synthetic checkout, and all seven checkout logs plus same-attempt artifact digests/owner jobs were authenticated. Strict current/minimum uploaded receipts validated26/64/0. [Actual result](../../milestones/v1.48-CLOSEOUT-HOSTED-CI.json). The first local observer omitted the isolated toolchain and failed package unpack; the same actual CI evidence passed with the confirmed native pinned setup. No CI run was rerun or relabelled to repair that observer setup. Integration and new main acceptance still await [owner approval](../../milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md).

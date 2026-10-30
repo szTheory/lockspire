@@ -172,13 +172,16 @@
   "selected_input_changes": [],
   "frozen_phase177_report_sha256": "e452a2145d31c41ac766c6fc7c95ea4e75c57884e40b2272fe48213baab9f1ef",
   "frozen_phase177_unchanged": true,
-  "archival_status": "local_migration_verified_candidate_integration_pending",
-  "remaining_blocker": "Corrective candidate requires its own hosted CI, explicit integration approval and fresh synchronized-main acceptance before archival.",
+  "archival_status": "waiting_for_owner_integration_approval",
+  "remaining_blocker": "The fully verified corrective source needs owner authorization for bounded metadata push/conditional merge, then fresh synchronized-main acceptance before archival.",
   "overrides_applied": 0,
   "phase_directories_moved": false,
   "requirements_removed": false,
   "tag_created": false,
   "migration_authorized": true,
   "migration_source": "fb76ffbed7d8cb5aac3c9206a8e15640f0ffada3",
-  "current_phase_reports_verified": true
+  "current_phase_reports_verified": true,
+  "own_hosted_ci": "passed",
+  "uploaded_artifact_validation": "26 receipts / 64 cases / 0 failures",
+  "integration_authorized": false
 }

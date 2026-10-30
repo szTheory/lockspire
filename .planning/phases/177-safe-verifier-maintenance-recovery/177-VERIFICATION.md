@@ -4,6 +4,7 @@ verified: 2026-10-30T19:47:43.967034+00:00
 status: passed
 score: 47/47 must-haves verified
 covered_files:
+  - ".planning/milestones/v1.48-CLOSEOUT-HOSTED-CI.json"
   - ".planning/milestones/v1.48-CLOSEOUT-LOCAL-CI.json"
   - ".planning/milestones/v1.48-CLOSEOUT-OWNED-SOURCE-MANIFEST.json"
   - ".planning/milestones/v1.48-CLOSEOUT-PYTHON-MIGRATION.json"
@@ -81,7 +82,7 @@ covered_files:
   - "test/support/architecture/public_compatibility_manifest.ex"
   - "test/support/client_verifier_maintenance_concurrency.ex"
   - "test/support/delegated_verifier_maintenance_store.ex"
-covered_digest: "v4:sha256:49e4cdadbfaf64a7197dbe136fcaf112e6092716d5106bb27133c0eb20bec400"
+covered_digest: "v4:sha256:217420cc268922dca70a65c00452955c24026674d8189ef015c5a143bd289d6b"
 behavior_unverified: 0
 overrides_applied: 0
 decision_coverage:
@@ -102,6 +103,7 @@ unverified_prohibitions:
     flagged: true
     disposition: "non-authoritative autonomous flag; human review recommended"
 ---
+
 
 # Phase 177: closeout re-verification
 
@@ -128,4 +130,8 @@ I rechecked the changes since the original 177 gate: duplicate typed fallthrough
 
 The [original source verification](history/177-SOURCE-VERIFICATION.md) is preserved byte-for-byte at its pinned digest. It retains the authored 47-truth/23-decision matrix, original commands/results, six requirement mappings and original dates. It is immutable evidence, not the active phase report. The Git-tree selector migration chooses its snapshot only for commits containing that snapshot and reads the original committed report for older executions. Missing/substituted selected snapshot bytes fail the applicable proof checks; changing between historical and new path sets is a source change, never a metadata-only bridge.
 
-No generic edge/prohibition is passed, classified, dismissed or waived here. Formal PARTIAL/Nyquist-false, prior incidents, unknown predicates and custody limits remain. Local source acceptance is separate from the new correction's candidate CI, integration and synchronized-main acceptance, which are pending; no publication or UI work is authorized.
+No generic edge/prohibition is passed, classified, dismissed or waived here. Formal PARTIAL/Nyquist-false, prior incidents, unknown predicates and custody limits remain. The correction's own candidate CI and uploaded receipts also passed. Local/candidate acceptance remains separate from integration and synchronized-main acceptance, which are pending; no publication or UI work is authorized.
+
+## Hosted closeout correction proof
+
+The correction's own CI passed every canonical job at the independently observed synthetic checkout, and all seven checkout logs plus same-attempt artifact digests/owner jobs were authenticated. Strict current/minimum uploaded receipts validated26/64/0. [Actual result](../../milestones/v1.48-CLOSEOUT-HOSTED-CI.json). The first local observer omitted the isolated toolchain and failed package unpack; the same actual CI evidence passed with the confirmed native pinned setup. No CI run was rerun or relabelled to repair that observer setup. Integration and new main acceptance still await [owner approval](../../milestones/v1.48-CLOSEOUT-INTEGRATION-PROPOSAL.md).

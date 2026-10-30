@@ -2,7 +2,7 @@
 
 ## Milestones
 
-- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 implemented; accepted main verified. All four current phase reports verify after the authorized evidence-lifecycle migration. Its contributor/native/provision gates passed; candidate CI and correction integration/main acceptance still block archival. No override authorized.
+- 🚧 **v1.48 Client Authentication Key Isolation & Rotation** — Phases 175–178 implemented; accepted main verified. All four current phase reports verify after the authorized evidence-lifecycle migration. Its contributor/native/provision and own hosted CI/artifact gates passed; owner integration approval and new main acceptance still block archival. No override authorized.
 - ✅ [v1.47 OAuth/OIDC Core Interoperability & Hardening](milestones/v1.47-ROADMAP.md) — completed 2026-10-25; Phases171–174, 10 plans, 14/14 requirements; accepted main173059a1; package publication separate.
 - ✅ [v1.46 Embedded Host Integration Reliability](milestones/v1.46-ROADMAP.md) — completed 2026-10-24; Phases 167–170, 16 plans, 15/15 requirements; package publication separate.
 - ✅ [v1.45 DCR Lifetime Enforcement](milestones/v1.45-ROADMAP.md) — completed 2026-10-22; Phases 162–166, 40 plans, 18/18 requirements; package publication separate.
